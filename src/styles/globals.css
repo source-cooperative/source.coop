@@ -1,0 +1,35 @@
+@font-face {
+  font-family: "BerkleyMono";
+  src: url("/fonts/BerkeleyMonoVariable-Regular.woff"),
+    url("/fonts/BerkeleyMonoVariable-Regular.woff2");
+  font-weight: 100;
+}
+
+body {
+  overscroll-behavior: none;
+  text-rendering: optimizeLegibility;
+}
+
+a {
+  text-decoration: none;
+}
+
+html,
+body,
+main {
+  height: max-content;
+}
+
+html {
+  overflow-y: scroll;
+}
+
+#__next {
+  height: max-content;
+}
+
+@keyframes l {
+  to {
+    clip-path: inset(0 -1ch 0 0)
+  }
+}
