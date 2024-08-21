@@ -1,46 +1,33 @@
-import { useFeatured } from "@/lib/api";
 import { RepositoryListing } from "@/components/RepositoryListing";
 import { Heading, Grid, Box } from "theme-ui";
 
+import { listFeaturedRepositories } from "@/lib/client/repositories";
+
 export default function FeaturedRepositories() {
-    const { repositories, isLoading, isError } = useFeatured();
-    
+  const { data: repositories, error: isError } = listFeaturedRepositories();
 
-    if (isLoading) {
-        const repositories = [null, null, null];
-        return (
-            <Box>
-            <Heading as="h1" sx={{textAlign: "center"}}>Featured Repositories</Heading>
-            <Grid>
-                {
-                    repositories.map((repository, i) => {
-                        return <RepositoryListing key={`repository-${i}`} repository={repository} truncate={true} />
-                    })
-                }
-            </Grid>
-            </Box>
-        )
-    }
-
-    if (isError) {
-        return <Heading as="h2">Failed to load Featured Repositories</Heading>
-    }
-
-    console.log(repositories, isError)
-    if (!isError && repositories) {
-        return (
-            <Box>
-            <Heading as="h1" sx={{textAlign: "center"}}>Featured Repositories</Heading>
-            <Grid>
-                {
-                    repositories.map((repository, i) => {
-                        return <RepositoryListing key={`repository-${i}`} repository={repository} truncate={true} />
-                    })
-                }
-            </Grid>
-            </Box>
-        )
-    }
-
-    
+  return (
+    <Box>
+      <Heading as="h1" sx={{ textAlign: "center" }}>
+        Featured Repositories
+      </Heading>
+      {isError ? (
+        <Heading as="h2">Failed to load Featured Repositories</Heading>
+      ) : (
+        <Grid>
+          {(repositories ? repositories : [null, null, null]).map(
+            (repository, i) => {
+              return (
+                <RepositoryListing
+                  key={`repository-${i}`}
+                  repository={repository}
+                  truncate={true}
+                />
+              );
+            }
+          )}
+        </Grid>
+      )}
+    </Box>
+  );
 }

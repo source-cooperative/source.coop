@@ -59,8 +59,8 @@ export default {
         purple: "#bc85d9",
         pink: "#e587b6",
         grey: "#a9b4c4",
-      }
-    }
+      },
+    },
   },
   text: {
     fontSize: 1,
@@ -68,13 +68,13 @@ export default {
       fontSize: 0,
       fontWeight: "body",
       fontStyle: "normal",
-      fontFamily: "mono"
+      fontFamily: "mono",
     },
     paragraph: {
       mt: 2,
       mb: 1,
       fontSize: 1,
-      lineHeight: "1.5em"
+      lineHeight: "1.5em",
     },
     description: {
       fontSize: 1,
@@ -94,7 +94,7 @@ export default {
       fontSize: 0,
       fontWeight: "body",
       fontStyle: "normal",
-      p: 0
+      p: 0,
     },
     title: {
       m: 0,
@@ -104,15 +104,15 @@ export default {
       fontFamily: "mono",
       fontSize: 0,
       fontWeight: "bold",
-      fontStyle: "normal"
-    }
+      fontStyle: "normal",
+    },
   },
   forms: {
     input: {
-      borderColor: 'accent',
-      '&:focus': {
-        borderColor: 'primary',
-        outline: 'none',
+      borderColor: "accent",
+      "&:focus": {
+        borderColor: "primary",
+        outline: "none",
       },
       backgroundColor: "muted",
       fontFamily: "mono",
@@ -120,34 +120,34 @@ export default {
       borderRadius: 0,
       "&:disabled": {
         backgroundColor: "hinted",
-        color: "accent"
-      }
+        color: "accent",
+      },
     },
     textarea: {
       backgroundColor: "muted",
       borderRadius: 0,
-      borderColor: 'accent',
+      borderColor: "accent",
       fontFamily: "mono",
       fontSize: 1,
-      '&:focus': {
-        borderColor: 'primary',
-        outline: 'none',
+      "&:focus": {
+        borderColor: "primary",
+        outline: "none",
       },
       "&:disabled": {
         backgroundColor: "hinted",
-        color: "accent"
+        color: "accent",
       },
-      resize: "none"
+      resize: "none",
     },
     label: {
       fontSize: 0,
       fontFamily: "mono",
-      alignItems: "center"
+      alignItems: "center",
     },
     checkbox: {
       borderRadius: 0,
       border: 1,
-      borderColor: "accent"
+      borderColor: "accent",
     },
     select: {
       fontSize: 1,
@@ -157,9 +157,9 @@ export default {
       backgroundColor: "muted",
       "&:disabled": {
         backgroundColor: "hinted",
-        color: "accent"
-      }
-    }
+        color: "accent",
+      },
+    },
   },
   buttons: {
     primary: {
@@ -175,13 +175,13 @@ export default {
       fontSize: 2,
       fontWeight: "body",
       "&:hover": {
-        color: "highlight"
+        color: "highlight",
       },
       "&:disabled": {
         color: "background",
         backgroundColor: "highlight",
-        cursor: "not-allowed"
-      }
+        cursor: "not-allowed",
+      },
     },
     success: {
       textTransform: "uppercase",
@@ -196,13 +196,13 @@ export default {
       fontSize: 2,
       fontWeight: "body",
       "&:hover": {
-        color: "highlight"
+        color: "highlight",
       },
       "&:disabled": {
         color: "background",
         backgroundColor: "highlight",
-        cursor: "not-allowed"
-      }
+        cursor: "not-allowed",
+      },
     },
     error: {
       textTransform: "uppercase",
@@ -217,18 +217,18 @@ export default {
       fontSize: 2,
       fontWeight: "body",
       "&:hover": {
-        color: "highlight"
+        color: "highlight",
       },
       "&:disabled": {
         color: "background",
         backgroundColor: "highlight",
-        cursor: "not-allowed"
-      }
+        cursor: "not-allowed",
+      },
     },
     nav: {
       textTransform: "uppercase",
       m: 0,
-      p: [2,2,2,2],
+      p: [2, 2, 2, 2],
       textAlign: "right",
       width: "100%",
       backgroundColor: "primary",
@@ -236,16 +236,16 @@ export default {
       borderRadius: 0,
       cursor: "pointer",
       fontFamily: "mono",
-      fontSize: [0,0,1,1],
+      fontSize: [0, 0, 1, 1],
       fontWeight: "body",
       "&:hover": {
-        color: "highlight"
+        color: "highlight",
       },
       "&:disabled": {
         color: "background",
-        backgroundColor: "highlight"
-      }
-    }
+        backgroundColor: "highlight",
+      },
+    },
   },
   images: {
     profileImage: {
@@ -253,7 +253,7 @@ export default {
       border: "3px solid",
       borderColor: "primary",
       width: "180.6px",
-      height: "180.6px"
+      height: "180.6px",
     },
     navProfileImage: {
       borderRadius: 0,
@@ -261,7 +261,7 @@ export default {
       borderColor: "primary",
       cursor: "pointer",
       width: "50px",
-      height: "50px"
+      height: "50px",
     },
   },
   cards: {
@@ -271,7 +271,7 @@ export default {
       textDecoration: "none",
       fontSize: 0,
       fontFamily: "mono",
-      maxWidth: "fit-content"
+      maxWidth: "fit-content",
     },
     blockquote: {
       fontStyle: "italic",
@@ -286,7 +286,7 @@ export default {
       borderColor: "secondary",
       borderStyle: "solid",
       borderWidth: "1px",
-      backgroundColor: "muted"
+      backgroundColor: "muted",
     },
     code: {
       my: 1,
@@ -309,7 +309,7 @@ export default {
         overflowX: "auto",
         fontFamily: "mono",
         fontSize: 0,
-        m: 0
+        m: 0,
       },
     },
     inlineCode: {
@@ -324,14 +324,14 @@ export default {
       maxWidth: "100%",
       width: "fit-content",
       fontFamily: "mono",
-      fontSize: 0
+      fontSize: 0,
     },
     listing: {
       borderStyle: "none none none solid",
       borderWidth: "0px",
       borderColor: "secondary",
-      pl: 0
-    }
+      pl: 0,
+    },
   },
   alerts: {
     primary: {
@@ -378,15 +378,15 @@ export default {
   links: {
     color: "text",
     "&:hover": {
-      color: "secondary"
+      color: "secondary",
     },
     breadcrumb: {
       color: "secondary",
       "&:hover": {
         textDecoration: "underline",
-        color: "primary"
-      }
-    },  
+        color: "primary",
+      },
+    },
     footer: {
       fontFamily: "mono",
       fontSize: 0,
@@ -396,8 +396,8 @@ export default {
       textDecoration: "underline",
       textTransform: "uppercase",
       "&:hover": {
-        color: "secondary"
-      }
+        color: "secondary",
+      },
     },
     link: {
       cursor: "pointer",
@@ -406,7 +406,7 @@ export default {
       textDecoration: "underline",
       "&:hover": {
         color: "secondary",
-        textDecoration: "underline"
+        textDecoration: "underline",
       },
     },
     tag: {
@@ -420,7 +420,7 @@ export default {
       textTransform: "uppercase",
       "&:hover": {
         color: "text",
-        textDecoration: "underline"
+        textDecoration: "underline",
       },
     },
     navLinkActive: {
@@ -431,7 +431,7 @@ export default {
       textTransform: "uppercase",
       "&:hover": {
         color: "text",
-        textDecoration: "underline"
+        textDecoration: "underline",
       },
     },
     navLinkExpanded: {
@@ -443,9 +443,9 @@ export default {
       textTransform: "uppercase",
       "&:hover": {
         color: "text",
-        textDecoration: "underline"
+        textDecoration: "underline",
       },
-    }
+    },
   },
   layout: {
     container: {
@@ -480,7 +480,7 @@ export default {
       borderColor: "secondary",
       borderWidth: "1px",
       borderStyle: "solid",
-      borderCollapse: "collapse"
+      borderCollapse: "collapse",
     },
     th: {
       backgroundColor: "accent",
@@ -495,19 +495,19 @@ export default {
       borderWidth: "1px",
       borderStyle: "solid",
       "&:nth-child(even)": {
-        backgroundColor: "muted"
-      }
+        backgroundColor: "muted",
+      },
     },
     td: {
       borderColor: "secondary",
       borderWidth: "1px",
       borderStyle: "solid",
-      p: 1
+      p: 1,
     },
   },
   breakpoints: ["40em", "64em", "102em"],
   config: {
-    initialColorModeName: "light",
+    initialColorModeName: "dark",
     printColorModeName: "light",
     useColorSchemeMediaQuery: false,
   },
