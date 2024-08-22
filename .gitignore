@@ -1,6 +1,6 @@
 # Created by https://www.toptal.com/developers/gitignore/api/osx,windows,linux,nextjs,react,node
 # Edit at https://www.toptal.com/developers/gitignore?templates=osx,windows,linux,nextjs,react,node
-
+dump/
 ### Linux ###
 *~
 
@@ -255,4 +255,3 @@ $RECYCLE.BIN/
 *.lnk
 
 # End of https://www.toptal.com/developers/gitignore/api/osx,windows,linux,nextjs,react,node
-
