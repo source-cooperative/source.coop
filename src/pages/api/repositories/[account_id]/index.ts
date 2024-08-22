@@ -1,17 +1,20 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { get_account, get_repositories } from "@/lib/api/utils";
+import { get_account, get_repositories, get_session } from "@/lib/api/utils";
 import {
+  Actions,
   ErrorResponse,
   Repository,
   RepositoryListResponse,
 } from "@/lib/api/types";
 import { convertToNumber } from "@/lib/utils";
+import { isAuthorized } from "@/lib/api/authz";
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<RepositoryListResponse | ErrorResponse>
 ) {
   const { account_id, next, limit, tags, q } = req.query;
+  const session = await get_session(req);
 
   const page = next ? convertToNumber(next) : 1;
   const returnLimit = limit ? convertToNumber(limit) : 10;
@@ -19,7 +22,10 @@ export default async function handler(
 
   const account = await get_account(account_id as string);
 
-  if (!account) {
+  if (
+    !account ||
+    !isAuthorized(session, account, Actions.GET_ACCOUNT_PROFILE)
+  ) {
     return res.status(404).json({
       code: 404,
       message: `Account ${account_id} not found`,
@@ -27,6 +33,9 @@ export default async function handler(
   }
 
   var repositories = await get_repositories();
+  repositories = repositories.filter((repository) =>
+    isAuthorized(session, repository, Actions.LIST_REPOSITORY)
+  );
 
   // Filter out repositories which don't belong to the account specified in the query parameter
   repositories = repositories.filter(

@@ -1,14 +1,10 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { checkSession, get_account } from "@/lib/api/utils";
-import {
-  OrganizationAccount,
-  UserAccount,
-  ErrorResponse,
-} from "@/lib/api/types";
+import { get_account } from "@/lib/api/utils";
+import { ErrorResponse, Account } from "@/lib/api/types";
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<UserAccount | OrganizationAccount | ErrorResponse>
+  res: NextApiResponse<Account | ErrorResponse>
 ) {
   const { account_id } = req.query;
 

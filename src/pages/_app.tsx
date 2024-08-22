@@ -22,7 +22,7 @@ import { SWRConfig } from "swr";
 const fetcher = async (opts) => {
   const { path, args, exclude_credentials, external, raw, markdown } = opts;
 
-  var url = new URL(external ? path : process.env.NEXT_PUBLIC_API_BASE + path);
+  var url = new URL(external ? path : process.env.NEXT_PUBLIC_BASE_URL + path);
 
   if (args) {
     var params = [];
