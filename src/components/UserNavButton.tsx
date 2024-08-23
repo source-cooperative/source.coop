@@ -6,6 +6,13 @@ import ory from "@/pkg/sdk";
 import { useRouter } from "next/router";
 
 import { useUser } from "@/lib/api";
+import { Configuration, FrontendApi } from "@ory/client";
+
+const frontend = new FrontendApi(
+  new Configuration({
+    basePath: `${process.env.NEXT_PUBLIC_BASE_URL}/api/.ory`,
+  })
+);
 
 function DownArrow({ ...props }) {
   return (
@@ -62,31 +69,30 @@ export default function UserNavButton() {
   const router = useRouter();
   const [expanded, setExpanded] = useState(false);
   const [colorMode, setColorMode] = useColorMode();
+  const [logoutUrl, setLogoutUrl] = useState(null);
+
+  if (user && !user.account) {
+    router.push("/complete-signup");
+  }
+
+  useEffect(() => {
+    frontend
+      .createBrowserLogoutFlow()
+      .then((res) => {
+        setLogoutUrl(res.data.logout_url);
+      })
+      .catch((e) => {});
+  }, []);
 
   if (!user || isError) {
     return (
       <Box sx={{ justifySelf: "center", display: "inline-block" }}>
-        <Button
-          variant="nav"
-          href={
-            "/auth/login?return_to=" +
-            process.env.NEXT_PUBLIC_BASE_URL +
-            router.asPath
-          }
-        >
+        <Button variant="nav" href={`/api/.ory/ui/login`}>
           Sign In / Register
         </Button>
       </Box>
     );
-  } else if (!user.account) {
-    return (
-      <Box sx={{ justifySelf: "center", display: "inline-block" }}>
-        <Button variant="nav" href="/auth/username">
-          Claim Username
-        </Button>
-      </Box>
-    );
-  } else {
+  } else if (user.account) {
     return (
       <Box
         sx={{ justifySelf: "center", display: "inline-block" }}
@@ -99,7 +105,9 @@ export default function UserNavButton() {
             setExpanded(!expanded);
           }}
         >
-          {user.profile.name.first_name} {user.profile.name.last_name}{" "}
+          {user?.account?.profile?.name
+            ? user?.account?.profile?.name
+            : "Source User"}{" "}
           <DownArrow />
         </Button>
         <Box sx={{ position: "relative" }}>
@@ -118,7 +126,7 @@ export default function UserNavButton() {
             <Button variant="nav" href={"/" + user.account.account_id}>
               @{user.account.account_id}
             </Button>
-            {user.flags.includes("create_repository") ? (
+            {user.flags?.includes("create_repository") ? (
               <Button variant="nav" href="/repositories/new">
                 New Repository
               </Button>
@@ -128,10 +136,7 @@ export default function UserNavButton() {
             <Button variant="nav" href={"/account/profile"}>
               Settings
             </Button>
-            <Button
-              variant="nav"
-              href={"/auth/logout?return_to=" + router.asPath}
-            >
+            <Button variant="nav" href={logoutUrl}>
               Sign Out
             </Button>
             <Button

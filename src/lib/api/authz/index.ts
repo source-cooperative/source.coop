@@ -9,47 +9,85 @@ import {
   MembershipState,
   MembershipRole,
   RepositoryDataMode,
+  APIKey,
+  Membership,
 } from "@/lib/api/types";
+import logger from "@/utils/logger";
+import { isAdmin } from "../utils";
 
 export function isAuthorized(
   principal: UserSession,
-  resource: Account | Repository,
+  resource: Account | Repository | APIKey | Membership,
   action: Actions
 ): boolean {
+  let result: boolean;
+
   if (action === Actions.CREATE_ACCOUNT) {
-    return createAccount(principal, resource as Account);
+    result = createAccount(principal, resource as Account);
   } else if (action === Actions.CREATE_REPOSITORY) {
-    return createRepository(principal, resource as Repository);
+    result = createRepository(principal, resource as Repository);
   } else if (action === Actions.DISABLE_ACCOUNT) {
-    return disableAccount(principal, resource as Account);
+    result = disableAccount(principal, resource as Account);
   } else if (action === Actions.DISABLE_REPOSITORY) {
-    return disableRepository(principal, resource as Repository);
+    result = disableRepository(principal, resource as Repository);
   } else if (action === Actions.GET_ACCOUNT_PROFILE) {
-    return getAccountProfile(principal, resource as Account);
+    result = getAccountProfile(principal, resource as Account);
   } else if (action === Actions.PUT_REPOSITORY) {
-    return putRepository(principal, resource as Repository);
+    result = putRepository(principal, resource as Repository);
   } else if (action === Actions.LIST_REPOSITORY) {
-    return listRepository(principal, resource as Repository);
+    result = listRepository(principal, resource as Repository);
   } else if (action === Actions.GET_REPOSITORY) {
-    return getRepository(principal, resource as Repository);
+    result = getRepository(principal, resource as Repository);
   } else if (action === Actions.READ_REPOSITORY_DATA) {
-    return readRepositoryData(principal, resource as Repository);
+    result = readRepositoryData(principal, resource as Repository);
   } else if (action === Actions.WRITE_REPOSITORY_DATA) {
-    return writeRepositoryData(principal, resource as Repository);
+    result = writeRepositoryData(principal, resource as Repository);
   } else if (action === Actions.PUT_ACCOUNT_PROFILE) {
-    return putAccountProfile(principal, resource as Account);
+    result = putAccountProfile(principal, resource as Account);
   } else if (action === Actions.GET_ACCOUNT_FLAGS) {
-    return getAccountFlags(principal, resource as Account);
+    result = getAccountFlags(principal, resource as Account);
   } else if (action === Actions.PUT_ACCOUNT_FLAGS) {
-    return putAccountFlags(principal, resource as Account);
+    result = putAccountFlags(principal, resource as Account);
+  } else if (action === Actions.LIST_ACCOUNT_API_KEYS) {
+    result = listAccountAPIKeys(principal, resource as Account);
+  } else if (action === Actions.GET_API_KEY) {
+    result = getAPIKey(principal, resource as APIKey);
+  } else if (action === Actions.CREATE_API_KEY) {
+    result = createAPIKey(principal, resource as APIKey);
+  } else if (action === Actions.REVOKE_API_KEY) {
+    result = revokeAPIKey(principal, resource as APIKey);
+  } else if (action === Actions.GET_MEMBERSHIP) {
+    result = getMembership(principal, resource as Membership);
+  } else if (action === Actions.ACCEPT_MEMBERSHIP) {
+    result = acceptMembership(principal, resource as Membership);
+  } else if (action === Actions.REJECT_MEMBERSHIP) {
+    result = rejectMembership(principal, resource as Membership);
+  } else if (action === Actions.REVOKE_MEMBERSHIP) {
+    result = revokeMembership(principal, resource as Membership);
+  } else if (action === Actions.INVITE_MEMBERSHIP) {
+    result = inviteMembership(principal, resource as Membership);
+  } else {
+    result = false;
   }
 
-  return false;
+  const principial_id = principal
+    ? principal.account
+      ? principal.account.account_id
+      : principal.identity_id
+    : "ANONYMOUS";
+
+  const authorized = result ? "AUTHORIZED" : "UNAUTHORIZED";
+
+  logger.debug(
+    `Checked authorization for principal "${principial_id}" with action "${action}"; Result: ${authorized}`
+  );
+
+  return result;
 }
 
 function putAccountFlags(principal: UserSession, account: Account): boolean {
   // If the user is an admin, they are authorized
-  if (principal?.account?.flags.includes(AccountFlags.ADMIN)) {
+  if (isAdmin(principal)) {
     return true;
   }
 
@@ -59,7 +97,7 @@ function putAccountFlags(principal: UserSession, account: Account): boolean {
 
 function getAccountFlags(principal: UserSession, account: Account): boolean {
   // If the user is an admin, they are authorized
-  if (principal?.account?.flags.includes(AccountFlags.ADMIN)) {
+  if (isAdmin(principal)) {
     return true;
   }
 
@@ -96,7 +134,7 @@ function getAccountFlags(principal: UserSession, account: Account): boolean {
 
 function putAccountProfile(principal: UserSession, account: Account): boolean {
   // If the user is an admin, they are authorized
-  if (principal?.account?.flags.includes(AccountFlags.ADMIN)) {
+  if (isAdmin(principal)) {
     return true;
   }
 
@@ -190,7 +228,7 @@ function readRepositoryData(
   repository: Repository
 ): boolean {
   // If the user is an admin, they are authorized
-  if (principal?.account?.flags.includes(AccountFlags.ADMIN)) {
+  if (isAdmin(principal)) {
     return true;
   }
 
@@ -235,7 +273,7 @@ function getRepository(
   repository: Repository
 ): boolean {
   // If the user is an admin, they are authorized
-  if (principal?.account?.flags.includes(AccountFlags.ADMIN)) {
+  if (isAdmin(principal)) {
     return true;
   }
 
@@ -252,7 +290,7 @@ function listRepository(
   repository: Repository
 ): boolean {
   // If the user is an admin, they are authorized
-  if (principal?.account?.flags.includes(AccountFlags.ADMIN)) {
+  if (isAdmin(principal)) {
     return true;
   }
 
@@ -307,7 +345,7 @@ function putRepository(
   }
 
   // If the user is an admin, they are authorized
-  if (principal?.account?.flags.includes(AccountFlags.ADMIN)) {
+  if (isAdmin(principal)) {
     return true;
   }
 
@@ -349,7 +387,7 @@ function putRepository(
 
 function getAccountProfile(principal: UserSession, account: Account): boolean {
   // If the user is an admin, they are authorized
-  if (principal?.account?.flags?.includes(AccountFlags.ADMIN)) {
+  if (isAdmin(principal)) {
     return true;
   }
 
@@ -366,7 +404,7 @@ function disableRepository(
   repository: Repository
 ): boolean {
   // If the user is an admin, they are authorized
-  if (principal?.account?.flags.includes(AccountFlags.ADMIN)) {
+  if (isAdmin(principal)) {
     return true;
   }
 
@@ -375,7 +413,7 @@ function disableRepository(
 
 function disableAccount(principal: UserSession, account: Account): boolean {
   // If the user is an admin, they are authorized
-  if (principal?.account?.flags.includes(AccountFlags.ADMIN)) {
+  if (isAdmin(principal)) {
     return true;
   }
 
@@ -392,7 +430,7 @@ function createRepository(
   }
 
   // If the user is an admin, they are authorized
-  if (principal?.account?.flags.includes(AccountFlags.ADMIN)) {
+  if (isAdmin(principal)) {
     return true;
   }
 
@@ -407,7 +445,7 @@ function createRepository(
 function createAccount(principal: UserSession, account: Account): boolean {
   // Handle user creation
   if (account.account_type === AccountType.USER) {
-    // If the user is signed in or has already created an account, they are not authorized
+    // If the user is not signed in or has already created an account, they are not authorized
     if (principal?.account || !principal?.identity_id) {
       return false;
     }
@@ -423,7 +461,7 @@ function createAccount(principal: UserSession, account: Account): boolean {
     }
 
     // If the user is an admin, they are authorized
-    if (principal.account.flags.includes(AccountFlags.ADMIN)) {
+    if (isAdmin(principal)) {
       return true;
     }
 
@@ -433,6 +471,290 @@ function createAccount(principal: UserSession, account: Account): boolean {
     }
 
     return false;
+  }
+
+  return false;
+}
+
+function createAPIKey(principal: UserSession, api_key: APIKey): boolean {
+  // If the user is an admin, they are authorized
+  if (isAdmin(principal)) {
+    return true;
+  }
+
+  // If the user does not have an account, they are not authorized
+  if (!principal?.account) {
+    return false;
+  }
+
+  // If the user is the owner of the API key, they are authorized
+  if (api_key.account_id === principal.account.account_id) {
+    return true;
+  }
+
+  // If the user is an owner or maintainer of the organization, they are authorized
+  if (
+    hasRole(
+      principal,
+      [MembershipRole.OWNERS, MembershipRole.MAINTAINERS],
+      api_key.account_id
+    )
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+function listAccountAPIKeys(principal: UserSession, account: Account): boolean {
+  // If the user is an admin, they are authorized
+  if (isAdmin(principal)) {
+    return true;
+  }
+
+  // If the user does not have an account, they are not authorized
+  if (!principal?.account) {
+    return false;
+  }
+
+  // If the user is the owner of the API key, they are authorized
+  if (account.account_id === principal.account.account_id) {
+    return true;
+  }
+
+  // If the user is an owner or maintainer of the organization, they are authorized
+  if (
+    hasRole(
+      principal,
+      [MembershipRole.OWNERS, MembershipRole.MAINTAINERS],
+      account.account_id
+    )
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+function revokeAPIKey(principal: UserSession, api_key: APIKey): boolean {
+  // If the user is an admin, they are authorized
+  if (isAdmin(principal)) {
+    return true;
+  }
+
+  // If the user does not have an account, they are not authorized
+  if (!principal?.account) {
+    return false;
+  }
+
+  // If the user is the owner of the API key, they are authorized
+  if (api_key.account_id === principal.account.account_id) {
+    return true;
+  }
+
+  // If the user is an owner or maintainer of the organization, they are authorized
+  if (
+    hasRole(
+      principal,
+      [MembershipRole.OWNERS, MembershipRole.MAINTAINERS],
+      api_key.account_id
+    )
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+function getAPIKey(principal: UserSession, api_key: APIKey): boolean {
+  // If the user is an admin, they are authorized
+  if (isAdmin(principal)) {
+    return true;
+  }
+
+  // If the user does not have an account, they are not authorized
+  if (!principal?.account) {
+    return false;
+  }
+
+  // If the user is the owner of the API key, they are authorized
+  if (api_key.account_id === principal?.account?.account_id) {
+    return true;
+  }
+
+  // If the user is an owner or maintainer of the organization, they are authorized
+  if (
+    hasRole(
+      principal,
+      [MembershipRole.OWNERS, MembershipRole.MAINTAINERS],
+      api_key.account_id
+    )
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+function getMembership(
+  principal: UserSession,
+  membership: Membership
+): boolean {
+  // If the membership is active, the user is authorized
+  if (membership.state === MembershipState.MEMBER) {
+    return true;
+  }
+
+  // If the user is an admin, they are authorized
+  if (isAdmin(principal)) {
+    return true;
+  }
+
+  if (membership.state === MembershipState.REVOKED) {
+    return false;
+  }
+
+  // If the membership pertains to the principal's account, they are authorized
+  if (principal?.account?.account_id === membership.account_id) {
+    return true;
+  }
+
+  // If the user is an owner or maintainer of the organization or repository, they are authorized
+  if (
+    hasRole(
+      principal,
+      [MembershipRole.OWNERS, MembershipRole.MAINTAINERS],
+      membership.membership_account_id,
+      membership.repository_id
+    )
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+function acceptMembership(
+  principal: UserSession,
+  membership: Membership
+): boolean {
+  // If the membership pertains to the principal's account, they are authorized
+  if (principal?.account?.account_id === membership.account_id) {
+    return true;
+  }
+
+  return false;
+}
+
+function rejectMembership(
+  principal: UserSession,
+  membership: Membership
+): boolean {
+  // If the membership pertains to the principal's account, they are authorized
+  if (principal?.account?.account_id === membership.account_id) {
+    return true;
+  }
+
+  return false;
+}
+
+function revokeMembership(
+  principal: UserSession,
+  membership: Membership
+): boolean {
+  // If the user is an admin, they are authorized
+  if (isAdmin(principal)) {
+    return true;
+  }
+
+  // If the membership pertains to the principal's account, they are authorized
+  if (principal?.account?.account_id === membership.account_id) {
+    return true;
+  }
+
+  // If the user is an owner or maintainer of the organization or repository, they are authorized
+  if (
+    hasRole(
+      principal,
+      [MembershipRole.OWNERS, MembershipRole.MAINTAINERS],
+      membership.membership_account_id,
+      membership.repository_id
+    )
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+function inviteMembership(
+  principal: UserSession,
+  membership: Membership
+): boolean {
+  // If the user is an admin, they are authorized
+  if (isAdmin(principal)) {
+    return true;
+  }
+
+  // If the user is an owner or maintainer of the organization or repository, they are authorized
+  if (
+    hasRole(
+      principal,
+      [MembershipRole.OWNERS, MembershipRole.MAINTAINERS],
+      membership.membership_account_id,
+      membership.repository_id
+    )
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+function hasRole(
+  principal: UserSession,
+  roles: MembershipRole[],
+  account_id: String,
+  repository_id?: String
+): boolean {
+  // If the user is the owner of the account, they are authorized
+  if (principal?.account?.account_id === account_id) {
+    return true;
+  }
+
+  if (!principal || !principal?.memberships || !principal?.account) {
+    return false;
+  }
+
+  for (var membership of principal.memberships) {
+    if (membership.state !== MembershipState.MEMBER) {
+      continue;
+    }
+
+    if (membership.account_id !== account_id) {
+      continue;
+    }
+
+    if (!roles.includes(membership.role)) {
+      continue;
+    }
+
+    // If the membership is organizationship-wide, return true
+    if (
+      !membership.repository_id &&
+      membership.membership_account_id === account_id
+    ) {
+      return true;
+    }
+
+    // If the membership is repository-specific, check the repository_id
+    if (
+      membership.repository_id &&
+      membership.membership_account_id === account_id &&
+      membership.repository_id === repository_id
+    ) {
+      return true;
+    }
   }
 
   return false;

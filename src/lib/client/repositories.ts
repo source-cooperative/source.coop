@@ -20,11 +20,42 @@ export function listRepositories(
   refreshInterval: number = null,
   revalidateOnFocus: boolean = false
 ): SWRResponse<RepositoryListResponse, Error> {
-  console.log(search_term, page, limit, tags);
   return useSWR<RepositoryListResponse, Error>(
     {
       path: "/api/repositories/",
       args: { next: page, limit, tags, q: search_term },
+    },
+    { refreshInterval, revalidateOnFocus }
+  );
+}
+
+export function listRepositoriesByAccount(
+  account_id: string,
+  page: number = 1,
+  limit: number = 10,
+  search_term?: string,
+  tags?: string[],
+  refreshInterval: number = null,
+  revalidateOnFocus: boolean = false
+): SWRResponse<RepositoryListResponse, Error> {
+  return useSWR<RepositoryListResponse, Error>(
+    {
+      path: `/api/repositories/${account_id}`,
+      args: { next: page, limit, tags, q: search_term },
+    },
+    { refreshInterval, revalidateOnFocus }
+  );
+}
+
+export function getRepository(
+  account_id: string,
+  repository_id: string,
+  refreshInterval: number = null,
+  revalidateOnFocus: boolean = false
+): SWRResponse<RepositoryListResponse, Error> {
+  return useSWR<RepositoryListResponse, Error>(
+    {
+      path: `/api/repositories/${account_id}/${repository_id}`,
     },
     { refreshInterval, revalidateOnFocus }
   );

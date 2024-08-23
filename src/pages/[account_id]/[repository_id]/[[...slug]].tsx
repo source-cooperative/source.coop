@@ -7,31 +7,25 @@ import { RepositoryListing } from "@/components/RepositoryListing";
 import { Divider } from "theme-ui";
 
 import { useRepository, useRepositorySideNav } from "@/lib/api";
+import { getRepository } from "@/lib/client/repositories";
 
 export default function RepositoryDetail() {
   const router = useRouter();
 
-  const {
-    account_id,
-    repository_id
-  } = router.query;
-
-  const { repository, isError } = useRepository({
-    account_id: router.query.account_id,
-    repository_id: router.query.repository_id
-  })
-
-  const { sideNavLinks } = useRepositorySideNav({
-    account_id: router.query.account_id,
-    repository_id: router.query.repository_id,
-    active_page: "browse"
-  })
+  const { account_id, repository_id } = router.query;
+  const { data: repository, error } = getRepository(
+    account_id as string,
+    repository_id as string
+  );
 
   return (
-    <Layout notFound={isError && isError.status === 404} sideNavLinks={sideNavLinks}>
+    <Layout notFound={error && error.status === 404} sideNavLinks={[]}>
       <RepositoryListing repository={repository} truncate={false} />
       <Divider />
-      <RepositoryBrowser account_id={account_id} repository_id={repository_id}/>
+      <RepositoryBrowser
+        account_id={account_id}
+        repository_id={repository_id}
+      />
     </Layout>
-  )
+  );
 }

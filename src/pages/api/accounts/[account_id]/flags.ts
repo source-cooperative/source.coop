@@ -12,25 +12,33 @@ import {
   AccountFlagsSchema,
 } from "@/lib/api/types";
 import { isAuthorized } from "@/lib/api/authz";
+import logger from "@/utils/logger";
 
 async function getFlags(
   req: NextApiRequest,
   res: NextApiResponse<AccountFlags[] | ErrorResponse>
 ) {
-  const { account_id } = req.query;
-  const session = await get_session(req);
-  const account = await get_account(account_id as string);
+  try {
+    const { account_id } = req.query;
+    const session = await get_session(req);
+    const account = await get_account(account_id as string);
 
-  if (!account) {
-    return res
-      .status(404)
-      .json({ code: 404, message: `Account ${account_id} not found` });
-  } else {
-    if (!isAuthorized(session, account, Actions.GET_ACCOUNT_FLAGS)) {
-      return res.status(401).json({ code: 401, message: "Unauthorized" });
+    if (!account) {
+      return res
+        .status(404)
+        .json({ code: 404, message: `Account ${account_id} not found` });
+    } else {
+      if (!isAuthorized(session, account, Actions.GET_ACCOUNT_FLAGS)) {
+        return res.status(401).json({ code: 401, message: "Unauthorized" });
+      }
+
+      return res.status(200).json(account.flags);
     }
-
-    return res.status(200).json(account.flags);
+  } catch (e) {
+    logger.error(e);
+    return res
+      .status(500)
+      .json({ code: 500, message: "Internal Server Error" });
   }
 }
 
@@ -38,34 +46,44 @@ async function putFlags(
   req: NextApiRequest,
   res: NextApiResponse<AccountFlags[] | ErrorResponse>
 ) {
-  const { account_id } = req.query;
-  const session = await get_session(req);
-  var account = await get_account(account_id as string);
+  try {
+    const { account_id } = req.query;
+    const session = await get_session(req);
+    var account = await get_account(account_id as string);
 
-  // If the account does not exist, return a 404 error
-  if (!account) {
+    // If the account does not exist, return a 404 error
+    if (!account) {
+      return res
+        .status(404)
+        .json({ code: 404, message: `Account ${account_id} not found` });
+    }
+
+    // If the user does not have permission to view the account profile, return a 401 error
+    if (!isAuthorized(session, account, Actions.PUT_ACCOUNT_FLAGS)) {
+      return res.status(401).json({ code: 401, message: "Unauthorized" });
+    }
+
+    // Parse the request body
+    const { result: flags, error } = parse_request_body(
+      req,
+      AccountFlagsSchema
+    );
+
+    // If the request body is invalid, return the parse error
+    if (error) {
+      return res.status(error.code).json(error);
+    }
+
+    account.flags = flags;
+    put_account(account);
+
+    return res.status(200).json(flags);
+  } catch (e) {
+    logger.error(e);
     return res
-      .status(404)
-      .json({ code: 404, message: `Account ${account_id} not found` });
+      .status(500)
+      .json({ code: 500, message: "Internal Server Error" });
   }
-
-  // If the user does not have permission to view the account profile, return a 401 error
-  if (!isAuthorized(session, account, Actions.PUT_ACCOUNT_FLAGS)) {
-    return res.status(401).json({ code: 401, message: "Unauthorized" });
-  }
-
-  // Parse the request body
-  const { result: flags, error } = parse_request_body(req, AccountFlagsSchema);
-
-  // If the request body is invalid, return the parse error
-  if (error) {
-    return res.status(error.code).json(error);
-  }
-
-  account.flags = flags;
-  put_account(account);
-
-  return res.status(200).json(flags);
 }
 
 export default async function handler(
