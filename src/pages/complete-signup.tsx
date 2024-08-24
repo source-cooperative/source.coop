@@ -6,10 +6,14 @@ import {
   Text,
   Paragraph,
   Alert,
+  Input,
+  Select,
 } from "theme-ui";
 import SourceButton from "@/components/Button";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 import { Configuration, FrontendApi } from "@ory/client";
 
@@ -31,7 +35,7 @@ import {
   Account,
   AccountProfile,
   AccountType,
-} from "@/lib/api/types";
+} from "@/api/types";
 
 function removeNullAndEmptyProperties<T extends object>(obj: T): Partial<T> {
   return Object.fromEntries(
@@ -307,8 +311,6 @@ const COUNTRIES = [
   { value: "Zimbabwe", label: "Zimbabwe" },
 ];
 
-var stateOptions = [];
-
 const account_id_schema = z
   .string()
   .regex(/^(?=.{4,40}$)[a-z0-9](?:(?!--)[a-z0-9-])*[a-z0-9]$/);
@@ -328,6 +330,14 @@ export default function AccountForm() {
       beginEndHyphen: false,
       consecutiveHyphen: false,
     });
+  const {
+    control,
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({
+    resolver: zodResolver(AccountProfileSchema),
+  });
   const [logoutUrl, setLogoutUrl] = useState(null);
   const [profileValidationErrors, setProfileValidationErrors] = useState({});
   const [username, setUsername] = useState(null);
@@ -510,7 +520,7 @@ export default function AccountForm() {
       ) : (
         <></>
       )}
-      <Box as="form" onSubmit={(e) => console.log(e)}>
+      <Box as="form" onSubmit={handleSubmit((d) => console.log(d))}>
         <Grid
           sx={{
             gridTemplateColumns: [],
@@ -588,35 +598,18 @@ export default function AccountForm() {
             You can fill out your profile information later if you'd like.
           </Paragraph>
 
-          <FormInput
-            sx={{}}
-            name="name"
-            label="Name"
-            required={false}
-            message={
-              profileValidationErrors["name"]
-                ? { type: "error", text: profileValidationErrors["name"] }
-                : null
-            }
-            help={null}
-            disabled={submitting}
-            onChange={(e) => setProfile({ ...profile, name: e.target.value })}
-          />
+          <input {...register("name")} />
 
-          <FormInput
-            sx={{}}
+          <Controller
             name="bio"
-            label="Bio"
-            required={false}
-            message={
-              profileValidationErrors["bio"]
-                ? { type: "error", text: profileValidationErrors["bio"] }
-                : null
-            }
-            help={null}
-            disabled={submitting}
-            onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
+            control={control}
+            render={({ field }) => <Input {...field} />}
           />
+          <Select>
+            {COUNTRIES.map((country) => (
+              <option>{country.value}</option>
+            ))}
+          </Select>
 
           <FormSelect
             sx={{}}
@@ -658,7 +651,6 @@ export default function AccountForm() {
                 Object.keys(profileValidationErrors).length > 0 ||
                 submitting
               }
-              onClick={(e) => submitForm(e)}
             >
               {submitting ? "Submitting..." : "Complete Registration"}
             </SourceButton>

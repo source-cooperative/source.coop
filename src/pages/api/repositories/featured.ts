@@ -1,7 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { get_repositories, get_session } from "@/lib/api/utils";
-import { Actions, ErrorResponse, Repository } from "@/lib/api/types";
-import { isAuthorized } from "@/lib/api/authz";
+import { getSession } from "@/api/utils";
+import { Actions, ErrorResponse, Repository } from "@/api/types";
+import { isAuthorized } from "@/api/authz";
+import { getFeaturedRepositories } from "@/api/db";
 import logger from "@/utils/logger";
 
 export default async function handler(
@@ -9,19 +10,13 @@ export default async function handler(
   res: NextApiResponse<Repository[] | ErrorResponse>
 ) {
   try {
-    const session = await get_session(req);
-    var repositories = await get_repositories();
+    const session = await getSession(req);
+    var repositories = await getFeaturedRepositories();
     repositories = repositories.filter((repository) =>
-      isAuthorized(session, repository, Actions.LIST_REPOSITORY)
+      isAuthorized(session, repository, Actions.ListRepository)
     );
 
-    res
-      .status(200)
-      .json(
-        repositories.filter(
-          (repository: Repository) => repository.featured === 1
-        )
-      );
+    res.status(200).json(repositories);
   } catch (e) {
     logger.error(e);
     return res

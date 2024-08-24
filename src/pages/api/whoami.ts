@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { get_session } from "@/lib/api/utils";
-import { ErrorResponse, UserSession } from "@/lib/api/types";
+import { getSession } from "@/api/utils";
+import { ErrorResponse, UserSession } from "@/api/types";
 import logger from "@/utils/logger";
 
 export default async function handler(
@@ -8,7 +8,7 @@ export default async function handler(
   res: NextApiResponse<UserSession | ErrorResponse>
 ) {
   try {
-    const session = await get_session(req);
+    const session = await getSession(req);
     if (!session) {
       return res.status(401).json({ code: 401, message: "No Session Found" });
     }
