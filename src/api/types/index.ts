@@ -39,6 +39,43 @@ export enum RepositoryDataProvider {
   GCP = "gcp",
 }
 
+export enum S3Regions {
+  AF_SOUTH_1 = "af-south-1",
+  AP_EAST_1 = "ap-east-1",
+  AP_NORTHEAST_1 = "ap-northeast-1",
+  AP_NORTHEAST_2 = "ap-northeast-2",
+  AP_NORTHEAST_3 = "ap-northeast-3",
+  AP_SOUTH_1 = "ap-south-1",
+  AP_SOUTH_2 = "ap-south-2",
+  AP_SOUTHEAST_1 = "ap-southeast-1",
+  AP_SOUTHEAST_2 = "ap-southeast-2",
+  AP_SOUTHEAST_3 = "ap-southeast-3",
+  AP_SOUTHEAST_4 = "ap-southeast-4",
+  AP_SOUTHEAST_5 = "ap-southeast-5",
+  CA_CENTRAL_1 = "ca-central-1",
+  CA_WEST_1 = "ca-west-1",
+  CN_NORTH_1 = "cn-north-1",
+  CN_NORTHWEST_1 = "cn-northwest-1",
+  EU_CENTRAL_1 = "eu-central-1",
+  EU_CENTRAL_2 = "eu-central-2",
+  EU_NORTH_1 = "eu-north-1",
+  EU_SOUTH_1 = "eu-south-1",
+  EU_SOUTH_2 = "eu-south-2",
+  EU_WEST_1 = "eu-west-1",
+  EU_WEST_2 = "eu-west-2",
+  EU_WEST_3 = "eu-west-3",
+  IL_CENTRAL_1 = "il-central-1",
+  ME_CENTRAL_1 = "me-central-1",
+  ME_SOUTH_1 = "me-south-1",
+  SA_EAST_1 = "sa-east-1",
+  US_EAST_1 = "us-east-1",
+  US_EAST_2 = "us-east-2",
+  US_GOV_EAST_1 = "us-gov-east-1",
+  US_GOV_WEST_1 = "us-gov-west-1",
+  US_WEST_1 = "us-west-1",
+  US_WEST_2 = "us-west-2",
+}
+
 export const RepositoryMirrorSchema = z.discriminatedUnion("provider", [
   z.object({
     name: z.string({
@@ -46,15 +83,19 @@ export const RepositoryMirrorSchema = z.discriminatedUnion("provider", [
       invalid_type_error: "Name must be a string",
     }),
     provider: z.literal(RepositoryDataProvider.S3),
-    uri: z.string().url("Invalid URI format"),
+    bucket: z.string({
+      required_error: "Bucket is required",
+      invalid_type_error: "Bucket must be a string",
+    }),
+    prefix: z.string({
+      required_error: "Prefix is required",
+      invalid_type_error: "Prefix must be a string",
+    }),
     region: z.string({
       required_error: "Region is required",
       invalid_type_error: "Region must be a string",
     }),
-    delimiter: z.string({
-      required_error: "Delimiter is required",
-      invalid_type_error: "Delimiter must be a string",
-    }),
+    default_delimiter: z.optional(z.string()),
   }),
   z.object({
     name: z.string({
@@ -62,15 +103,23 @@ export const RepositoryMirrorSchema = z.discriminatedUnion("provider", [
       invalid_type_error: "Name must be a string",
     }),
     provider: z.literal(RepositoryDataProvider.Azure),
-    uri: z.string().url("Invalid URI format"),
+    account: z.string({
+      required_error: "Account is required",
+      invalid_type_error: "Account must be a string",
+    }),
+    container: z.string({
+      required_error: "Container is required",
+      invalid_type_error: "Container must be a string",
+    }),
     region: z.string({
       required_error: "Region is required",
       invalid_type_error: "Region must be a string",
     }),
-    delimiter: z.string({
-      required_error: "Delimiter is required",
-      invalid_type_error: "Delimiter must be a string",
+    prefix: z.string({
+      required_error: "Prefix is required",
+      invalid_type_error: "Prefix must be a string",
     }),
+    default_delimiter: z.optional(z.string()),
   }),
 ]);
 
@@ -106,7 +155,6 @@ export const RepositoryMetaSchema = z.object({
       invalid_type_error: "Tag must be a string",
     })
   ),
-  published: z.string().datetime("Invalid date format"),
 });
 
 export type RepositoryMeta = z.infer<typeof RepositoryMetaSchema>;
@@ -117,18 +165,18 @@ export type RepositoryListResponse = {
   count: Number;
 };
 
-export enum RepositoryMode {
+export enum RepositoryState {
   Listed = "listed",
   Unlisted = "unlisted",
-  Private = "private",
 }
 
-export const RepositoryModeSchema = z.nativeEnum(RepositoryMode, {
+export const RepositoryStateSchema = z.nativeEnum(RepositoryState, {
   errorMap: () => ({ message: "Invalid repository mode" }),
 });
 
 export enum RepositoryDataMode {
   Open = "open",
+  Subscription = "subscription",
   Private = "private",
 }
 
@@ -151,13 +199,14 @@ export enum RepositoryFeatured {
 export const RepositorySchema = z.object({
   account_id: z.string().regex(ID_REGEX, "Invalid account ID format"),
   repository_id: z.string().regex(ID_REGEX, "Invalid repository ID format"),
-  mode: RepositoryModeSchema,
+  state: RepositoryStateSchema,
   data_mode: RepositoryDataModeSchema,
   featured: z.nativeEnum(RepositoryFeatured, {
     errorMap: () => ({ message: "Invalid featured value" }),
   }),
   meta: RepositoryMetaSchema,
   data: RepositoryDataSchema,
+  published: z.string().datetime("Invalid date format"),
   disabled: z.boolean(),
 });
 
@@ -269,7 +318,7 @@ export const APIKeySchema = z.object({
   }),
   account_id: z.string().regex(ID_REGEX, "Invalid account ID format"),
   disabled: z.boolean(),
-  expires: z.string().datetime("Invalid expiration date format"), // TODO: change to datetime
+  expires: z.string().datetime("Invalid expiration date format"),
   name: z.string({
     required_error: "API key name is required",
     invalid_type_error: "API key name must be a string",

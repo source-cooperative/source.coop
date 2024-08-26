@@ -1,11 +1,15 @@
-import { isAdmin } from "@/api/utils";
-import { UserSession, AccountFlags } from "@/api/types";
+import { isAdmin, getProfileImage } from "@/api/utils";
+import { UserSession, AccountFlags, AccountType } from "@/api/types";
 
 describe("Authorization Tests", () => {
   test("Admin user is identified correctly", () => {
     const adminSession: UserSession = {
       account: {
         account_id: "123",
+        account_type: AccountType.USER,
+        profile: {
+          name: "Admin User",
+        },
         flags: [AccountFlags.ADMIN],
         disabled: false,
       },
@@ -17,6 +21,10 @@ describe("Authorization Tests", () => {
     const nonAdminSession: UserSession = {
       account: {
         account_id: "456",
+        account_type: AccountType.USER,
+        profile: {
+          name: "Regular User",
+        },
         flags: [],
         disabled: false,
       },
@@ -28,7 +36,12 @@ describe("Authorization Tests", () => {
     const noFlagsSession: UserSession = {
       account: {
         account_id: "789",
+        account_type: AccountType.USER,
         disabled: false,
+        profile: {
+          name: "No Flags User",
+        },
+        flags: [],
       },
     };
     expect(isAdmin(noFlagsSession)).toBe(false);
@@ -43,7 +56,6 @@ describe("Authorization Tests", () => {
     expect(isAdmin(noAccountSession)).toBe(false);
   });
 });
-import { getProfileImage } from "./index"; // Adjust the import path as needed
 
 describe("getProfileImage", () => {
   it("should return a valid Gravatar URL for a given email", () => {

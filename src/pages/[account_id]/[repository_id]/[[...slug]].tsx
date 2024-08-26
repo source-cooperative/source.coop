@@ -19,7 +19,7 @@ export default function RepositoryDetail() {
   );
 
   return (
-    <Layout notFound={error && error.status === 404} sideNavLinks={[]}>
+    <Layout notFound={true} sideNavLinks={[]}>
       <RepositoryListing repository={repository} truncate={false} />
       <Divider />
       <RepositoryBrowser

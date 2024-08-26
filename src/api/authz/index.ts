@@ -38,13 +38,13 @@ import {
   Actions,
   UserSession,
   AccountFlags,
-  RepositoryMode,
   AccountType,
   MembershipState,
   MembershipRole,
   RepositoryDataMode,
   APIKey,
   Membership,
+  RepositoryState,
 } from "@/api/types";
 import { isAdmin } from "@/api/utils";
 import { match } from "ts-pattern";
@@ -297,7 +297,7 @@ function listRepository(
   }
 
   // If the repository is listed , everyone is authorized
-  if (repository.mode === RepositoryMode.Listed) {
+  if (repository.state === RepositoryState.Listed) {
     return true;
   }
 

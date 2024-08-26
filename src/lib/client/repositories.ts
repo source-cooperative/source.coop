@@ -1,9 +1,9 @@
 import useSWR from "swr";
 import { SWRResponse } from "swr";
-import { Repository, RepositoryListResponse } from "@/lib/api/types";
+import { Repository, RepositoryListResponse } from "@/api/types";
 
 export function listFeaturedRepositories(
-  refreshInterval: number = null,
+  refreshInterval: number = 5,
   revalidateOnFocus: boolean = false
 ): SWRResponse<Repository[], Error> {
   return useSWR<Repository[], Error>(
@@ -17,7 +17,7 @@ export function listRepositories(
   limit: number = 10,
   search_term?: string,
   tags?: string[],
-  refreshInterval: number = null,
+  refreshInterval: number = 5,
   revalidateOnFocus: boolean = false
 ): SWRResponse<RepositoryListResponse, Error> {
   return useSWR<RepositoryListResponse, Error>(
@@ -35,7 +35,7 @@ export function listRepositoriesByAccount(
   limit: number = 10,
   search_term?: string,
   tags?: string[],
-  refreshInterval: number = null,
+  refreshInterval: number = 5,
   revalidateOnFocus: boolean = false
 ): SWRResponse<RepositoryListResponse, Error> {
   return useSWR<RepositoryListResponse, Error>(
@@ -50,7 +50,7 @@ export function listRepositoriesByAccount(
 export function getRepository(
   account_id: string,
   repository_id: string,
-  refreshInterval: number = null,
+  refreshInterval: number = 5,
   revalidateOnFocus: boolean = false
 ): SWRResponse<RepositoryListResponse, Error> {
   return useSWR<RepositoryListResponse, Error>(

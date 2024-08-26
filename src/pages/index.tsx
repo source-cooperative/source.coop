@@ -1,13 +1,9 @@
 import { Layout } from "../components/Layout";
 import { Paragraph, Box, Heading, Grid } from "theme-ui";
 import { CodeBlock } from "@/components/CodeBlock";
-import { listFeaturedRepositories } from "@/lib/client/repositories";
-import { RepositoryListing } from "@/components/RepositoryListing";
 import FeaturedRepositories from "@/components/FeaturedRepositories";
 
 export default function Home() {
-  const { data: repositories, error: isError } = listFeaturedRepositories();
-
   return (
     <>
       <main>

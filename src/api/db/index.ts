@@ -95,7 +95,7 @@ export async function getRepositories(): Promise<Repository[]> {
 
   try {
     const response = await docClient.send(command);
-    return response.Items.map((item) => item as Repository);
+    return response.Items?.map((item) => item as Repository) ?? [];
   } catch (e) {
     logger.error(e);
     throw e;
@@ -137,7 +137,7 @@ export async function getRepository(
  * @returns A Promise that resolves to an array of Repository objects, or null if none found.
  * @throws Will throw an error if there's an issue querying DynamoDB.
  */
-export async function getFeaturedRepositories(): Promise<Repository[] | null> {
+export async function getFeaturedRepositories(): Promise<Repository[]> {
   const command = new QueryCommand({
     TableName: "source-cooperative-repositories",
     IndexName: "featured",
@@ -149,7 +149,7 @@ export async function getFeaturedRepositories(): Promise<Repository[] | null> {
 
   try {
     const response = await client.send(command);
-    return response.Items.map((item) => item as Repository);
+    return response.Items?.map((item) => item as Repository) ?? [];
   } catch (e) {
     logger.error(e);
     throw e;
@@ -169,7 +169,7 @@ export async function getAccounts(): Promise<Account[]> {
 
   try {
     const response = await docClient.send(command);
-    return response.Items.map((item) => item as Account);
+    return response.Items?.map((item) => item as Account) ?? [];
   } catch (e) {
     logger.error(e);
     throw e;
@@ -297,7 +297,7 @@ export async function getAccount(accountId: string): Promise<Account | null> {
  */
 export async function getMembershipsForUser(
   accountId: string
-): Promise<Membership[] | null> {
+): Promise<Membership[]> {
   const command = new QueryCommand({
     TableName: "source-cooperative-memberships",
     KeyConditionExpression: "account_id = :account_id",
@@ -308,7 +308,7 @@ export async function getMembershipsForUser(
 
   try {
     const response = await client.send(command);
-    return response.Items.map((item) => item as Membership);
+    return response.Items?.map((item) => item as Membership) ?? [];
   } catch (e) {
     logger.error(e);
     throw e;
@@ -323,7 +323,7 @@ export async function getMembershipsForUser(
  */
 export async function getMemberships(
   membershipAccountId: string
-): Promise<Membership[] | null> {
+): Promise<Membership[]> {
   const command = new QueryCommand({
     TableName: "source-cooperative-memberships",
     IndexName: "membership_account_id",
@@ -335,7 +335,7 @@ export async function getMemberships(
 
   try {
     const response = await client.send(command);
-    return response.Items.map((item) => item as Membership);
+    return response.Items?.map((item) => item as Membership) ?? [];
   } catch (e) {
     logger.error(e);
     throw e;
@@ -348,7 +348,7 @@ export async function getMemberships(
  * @returns A Promise that resolves to an array of APIKey objects, or null if none found.
  * @throws Will throw an error if there's an issue querying DynamoDB.
  */
-export async function getAPIKeys(accountId: string): Promise<APIKey[] | null> {
+export async function getAPIKeys(accountId: string): Promise<APIKey[]> {
   const command = new QueryCommand({
     TableName: "source-cooperative-api-keys",
     IndexName: "account_id",
@@ -360,7 +360,7 @@ export async function getAPIKeys(accountId: string): Promise<APIKey[] | null> {
 
   try {
     const response = await client.send(command);
-    return response.Items.map((item) => item as APIKey);
+    return response.Items?.map((item) => item as APIKey) ?? [];
   } catch (e) {
     logger.error(e);
     throw e;

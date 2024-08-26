@@ -1,6 +1,6 @@
 import useSWR from "swr";
 import { SWRResponse } from "swr";
-import { AccountProfileResponse } from "@/lib/api/types";
+import { AccountProfileResponse } from "@/api/types";
 
 export type ClientError = {
   status: number;
@@ -8,7 +8,7 @@ export type ClientError = {
 
 export function getProfile(
   account_id: string,
-  refreshInterval: number = null,
+  refreshInterval: number = 5,
   revalidateOnFocus: boolean = false
 ): SWRResponse<AccountProfileResponse, ClientError> {
   return useSWR<AccountProfileResponse, ClientError>(

@@ -1,14 +1,16 @@
 {
-  "name": "source-frontend",
+  "name": "source-cooperative-frontend",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dump": "./scripts/dump.sh",
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
+    "start": "ts-node -P cli/tsconfig.json cli/main.ts",
+    "db-start": "scripts/db_start.sh",
+    "db-stop": "scripts/db_stop.sh",
     "lint": "next lint",
-    "cli": "node src/cli/index.ts",
+    "install-cli": "cd cli/ && npm run build && npm link --force",
     "test": "jest"
   },
   "dependencies": {
@@ -56,11 +58,13 @@
     "@types/jest": "^29.5.12",
     "@types/node": "22.5.0",
     "aws-sdk-client-mock": "^4.0.1",
+    "dotenv": "^16.4.5",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
     "pino-pretty": "^11.2.2",
     "ts-jest": "^29.2.5",
     "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
     "typescript": "5.5.4"
   }
 }

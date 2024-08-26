@@ -4,13 +4,15 @@ import {
   Actions,
   UserSession,
   AccountFlags,
-  RepositoryMode,
+  RepositoryState,
   AccountType,
   MembershipState,
   MembershipRole,
   RepositoryDataMode,
   APIKey,
   Membership,
+  RepositoryFeatured,
+  RepositoryDataProvider,
 } from "@/api/types";
 import { isAuthorized } from "./index";
 
@@ -21,6 +23,10 @@ describe("Authorization Tests", () => {
       account_id: "admin_id",
       flags: [AccountFlags.ADMIN],
       account_type: AccountType.USER,
+      disabled: false,
+      profile: {
+        name: "Admin User",
+      },
     },
     identity_id: "admin_identity_id",
   };
@@ -30,6 +36,10 @@ describe("Authorization Tests", () => {
       account_id: "user_id",
       flags: [],
       account_type: AccountType.USER,
+      profile: {
+        name: "Regular User",
+      },
+      disabled: false,
     },
     identity_id: "user_identity_id",
   };
@@ -38,6 +48,10 @@ describe("Authorization Tests", () => {
     account: {
       account_id: "owner_id",
       flags: [],
+      profile: {
+        name: "Owner User",
+      },
+      disabled: false,
       account_type: AccountType.USER,
     },
     identity_id: "owner_identity_id",
@@ -47,6 +61,7 @@ describe("Authorization Tests", () => {
         membership_account_id: "org_id",
         role: MembershipRole.Owners,
         state: MembershipState.Member,
+        state_changed: new Date().toISOString(),
       },
     ],
   };
@@ -55,18 +70,47 @@ describe("Authorization Tests", () => {
     account_id: "org_id",
     account_type: AccountType.ORGANIZATION,
     disabled: false,
+    profile: {
+      name: "Org",
+    },
+    flags: [],
   };
 
   const repository: Repository = {
     repository_id: "repo_id",
     account_id: "org_id",
     disabled: false,
-    mode: RepositoryMode.Listed,
+    state: RepositoryState.Listed,
     data_mode: RepositoryDataMode.Open,
+    featured: RepositoryFeatured.Featured,
+    meta: {
+      title: "Test Repository",
+      description: "This is a test repository",
+      tags: ["test", "demo"],
+    },
+    data: {
+      cdn: "https://example.com/cdn",
+      primary_mirror: "primary-mirror",
+      mirrors: {
+        "mirror-1": {
+          name: "Test Mirror",
+          provider: RepositoryDataProvider.S3,
+          bucket: "test-bucket",
+          prefix: "test-prefix",
+          region: "us-west-2",
+        },
+      },
+    },
+    published: new Date().toISOString(),
   };
 
   const apiKey: APIKey = {
     account_id: "org_id",
+    disabled: false,
+    name: "Test API Key",
+    access_key_id: "test_access_key_id",
+    expires: new Date(Date.now() + 86400000).toISOString(),
+    secret_access_key: "test_secret_access_key",
   };
 
   const membership: Membership = {
@@ -75,6 +119,7 @@ describe("Authorization Tests", () => {
     repository_id: "repo_id",
     role: MembershipRole.WriteData,
     state: MembershipState.Invited,
+    state_changed: new Date().toISOString(),
   };
 
   test("Admin can perform any action", () => {
