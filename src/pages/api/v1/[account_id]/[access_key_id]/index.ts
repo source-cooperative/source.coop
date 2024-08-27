@@ -5,11 +5,16 @@ import {
   APIKey,
   APIKeySchema,
   APIKeyRequestSchema,
+  Actions,
 } from "@/api/types";
 import { isAuthorized } from "@/api/authz";
 import { getAPIKey, getAccount, putAPIKey } from "@/api/db";
 import { withErrorHandling } from "@/api/middleware";
-import { MethodNotImplementedError, NotFoundError } from "@/api/errors";
+import {
+  MethodNotImplementedError,
+  NotFoundError,
+  UnauthorizedError,
+} from "@/api/errors";
 
 import crypto from "crypto";
 import { StatusCodes } from "http-status-codes";
@@ -56,7 +61,7 @@ async function getAPIKeyHandler(
   const { access_key_id } = req.query;
   const session = await getSession(req);
 
-  // TODO: Check authorization
+  // TODO: Do I need to check for leaking here?
 
   const api_key = await getAPIKey(access_key_id as string);
 
@@ -64,7 +69,9 @@ async function getAPIKeyHandler(
     throw new NotFoundError(`API Key ${access_key_id} not found`);
   }
 
-  // TODO: Check authorization
+  /*if (!isAuthorized(session, api_key, Actions.GetAPIKey)) {
+    throw new UnauthorizedError();
+    }*/
 
   return res.status(StatusCodes.OK).json(api_key as APIKey);
 }
@@ -82,7 +89,9 @@ async function deleteAPIKeyHandler(
     throw new NotFoundError(`API Key ${access_key_id} not found`);
   }
 
-  // TODO: Check authorization
+  /*if (!isAuthorized(session, api_key, Actions.RevokeAPIKey)) {
+    throw new UnauthorizedError();
+    }*/
 
   api_key.disabled = true;
 

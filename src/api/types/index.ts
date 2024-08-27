@@ -31,9 +31,9 @@
 
 import { z } from "zod";
 
-export const ID_REGEX = /^(?=.{4,40}$)[a-z0-9](?:(?!--)[a-z0-9-])*[a-z0-9]$/;
+export const ID_REGEX = /^(?=.{3,40}$)[a-z0-9](?:(?!--)[a-z0-9-])*[a-z0-9]$/;
 
-export enum RepositoryDataProvider {
+export enum DataProvider {
   S3 = "s3",
   Azure = "az",
   GCP = "gcp",
@@ -76,63 +76,18 @@ export enum S3Regions {
   US_WEST_2 = "us-west-2",
 }
 
-export const RepositoryMirrorSchema = z.discriminatedUnion("provider", [
-  z.object({
-    name: z.string({
-      required_error: "Name is required",
-      invalid_type_error: "Name must be a string",
-    }),
-    provider: z.literal(RepositoryDataProvider.S3),
-    bucket: z.string({
-      required_error: "Bucket is required",
-      invalid_type_error: "Bucket must be a string",
-    }),
-    prefix: z.string({
-      required_error: "Prefix is required",
-      invalid_type_error: "Prefix must be a string",
-    }),
-    region: z.string({
-      required_error: "Region is required",
-      invalid_type_error: "Region must be a string",
-    }),
-    default_delimiter: z.optional(z.string()),
-  }),
-  z.object({
-    name: z.string({
-      required_error: "Name is required",
-      invalid_type_error: "Name must be a string",
-    }),
-    provider: z.literal(RepositoryDataProvider.Azure),
-    account: z.string({
-      required_error: "Account is required",
-      invalid_type_error: "Account must be a string",
-    }),
-    container: z.string({
-      required_error: "Container is required",
-      invalid_type_error: "Container must be a string",
-    }),
-    region: z.string({
-      required_error: "Region is required",
-      invalid_type_error: "Region must be a string",
-    }),
-    prefix: z.string({
-      required_error: "Prefix is required",
-      invalid_type_error: "Prefix must be a string",
-    }),
-    default_delimiter: z.optional(z.string()),
-  }),
-]);
+export enum AzureRegions {
+  WEST_EUROPE = "westeurope",
+}
+
+export const RepositoryMirrorSchema = z.object({
+  data_connection_id: z.string(),
+  prefix: z.string(),
+});
 
 export type RepositoryMirror = z.infer<typeof RepositoryMetaSchema>;
 
-export type RepositoryData = {
-  cdn: string;
-  primary_mirror: string;
-  mirrors: Map<string, RepositoryMirror>;
-};
-
 export const RepositoryDataSchema = z.object({
-  cdn: z.string().url("Invalid CDN URL"),
   primary_mirror: z.string({
     required_error: "Primary mirror is required",
     invalid_type_error: "Primary mirror must be a string",
@@ -184,13 +139,6 @@ export const RepositoryDataModeSchema = z.nativeEnum(RepositoryDataMode, {
   errorMap: () => ({ message: "Invalid repository data mode" }),
 });
 
-export const RepositoryDataProviderSchema = z.nativeEnum(
-  RepositoryDataProvider,
-  {
-    errorMap: () => ({ message: "Invalid repository data provider" }),
-  }
-);
-
 export enum RepositoryFeatured {
   Featured = 1,
   NotFeatured = 0,
@@ -206,9 +154,81 @@ export const RepositorySchema = z.object({
   }),
   meta: RepositoryMetaSchema,
   data: RepositoryDataSchema,
-  published: z.string().datetime("Invalid date format"),
+  published: z.string().datetime({ offset: true }),
   disabled: z.boolean(),
 });
+
+export enum S3AuthenticationType {
+  AccessKey = "access_key",
+  IAMRole = "iam_role",
+}
+
+export enum AzureAuthenticationType {
+  SasToken = "sas_token",
+}
+
+export const S3AccessKeyAuthenticationSchema = z.object({
+  type: z.literal(S3AuthenticationType.AccessKey),
+  access_key_id: z.string(),
+  secret_access_key: z.string(),
+});
+
+export const S3AuthenticationSchema = z.discriminatedUnion("type", [
+  S3AccessKeyAuthenticationSchema,
+]);
+
+export const AzureSasTokenAuthenticationSchema = z.object({
+  type: z.literal(AzureAuthenticationType.SasToken),
+  sas_token: z.string(),
+});
+
+export const AzureAuthenticationSchema = z.discriminatedUnion("type", [
+  AzureSasTokenAuthenticationSchema,
+]);
+
+export type S3Authentication = z.infer<typeof S3AuthenticationSchema>;
+export type AzureAuthentication = z.infer<typeof AzureAuthenticationSchema>;
+
+export const S3DataConnectionSchema = z.object({
+  provider: z.literal(DataProvider.S3),
+  bucket: z.string(),
+  base_prefix: z.string(),
+  region: z.nativeEnum(S3Regions),
+  authentication: z.optional(S3AuthenticationSchema),
+});
+
+export const AzureDataConnectionSchema = z.object({
+  provider: z.literal(DataProvider.Azure),
+  account_name: z.string(),
+  container_name: z.string(),
+  base_prefix: z.string(),
+  region: z.nativeEnum(AzureRegions),
+  authentication: z.optional(AzureAuthenticationSchema),
+});
+
+export type S3DataConnection = z.infer<typeof S3DataConnectionSchema>;
+export type AzureDataConnection = z.infer<typeof AzureDataConnectionSchema>;
+
+export const DataConnnectionDetailsSchema = z.discriminatedUnion("provider", [
+  S3DataConnectionSchema,
+  AzureDataConnectionSchema,
+]);
+
+export type DataConnectionDetails = z.infer<
+  typeof DataConnnectionDetailsSchema
+>;
+
+export const DataConnectionSchema = z.object({
+  data_connection_id: z
+    .string()
+    .regex(ID_REGEX, "Invalid data connection ID format"),
+  name: z.string(),
+  prefix_template: z.optional(z.string()),
+  read_only: z.boolean(),
+  details: DataConnnectionDetailsSchema,
+});
+
+export type DataConnection = z.infer<typeof DataConnectionSchema>;
 
 export type Repository = z.infer<typeof RepositorySchema>;
 
@@ -241,7 +261,7 @@ export const AccountProfileSchema = z.object({
       invalid_type_error: "Name must be a string",
     })
     .min(1, "Name must not be empty")
-    .max(50, "Name must not exceed 50 characters"),
+    .max(100, "Name must not exceed 50 characters"),
   bio: z.optional(z.string()),
   location: z.optional(z.string()),
   url: z.optional(z.string().url("Invalid URL format")),

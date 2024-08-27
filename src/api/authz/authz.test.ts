@@ -12,7 +12,7 @@ import {
   APIKey,
   Membership,
   RepositoryFeatured,
-  RepositoryDataProvider,
+  DataProvider,
 } from "@/api/types";
 import { isAuthorized } from "./index";
 
@@ -89,15 +89,11 @@ describe("Authorization Tests", () => {
       tags: ["test", "demo"],
     },
     data: {
-      cdn: "https://example.com/cdn",
       primary_mirror: "primary-mirror",
       mirrors: {
         "mirror-1": {
-          name: "Test Mirror",
-          provider: RepositoryDataProvider.S3,
-          bucket: "test-bucket",
           prefix: "test-prefix",
-          region: "us-west-2",
+          data_connection_id: "foo",
         },
       },
     },
