@@ -3,12 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dump": "./scripts/dump.sh",
-    "dev": "next dev",
+    "dev": "scripts/db_start.sh && next dev",
     "build": "next build",
-    "start": "ts-node -P cli/tsconfig.json cli/main.ts",
-    "db-start": "scripts/db_start.sh",
-    "db-stop": "scripts/db_stop.sh",
+    "kill": "scripts/db_stop.sh",
     "lint": "next lint",
     "install-cli": "cd cli/ && npm run build && npm link --force",
     "test": "jest"
