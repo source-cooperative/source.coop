@@ -1,0 +1,35 @@
+[
+  {
+    "access_key_id": "SCREGULARUSER",
+    "expires": "3000-01-01T00:00:00Z",
+    "account_id": "regular-user",
+    "name": "Regular User API Key",
+    "disabled": false,
+    "secret_access_key": "foobar"
+  },
+  {
+    "access_key_id": "SCDISABLED",
+    "expires": "3000-01-01T00:00:00Z",
+    "account_id": "regular-user",
+    "name": "Disabled User API Key",
+    "disabled": true,
+    "secret_access_key": "foobar"
+  },
+  {
+    "access_key_id": "SCORGANIZATION",
+    "expires": "3000-01-01T00:00:00Z",
+    "account_id": "organization",
+    "name": "Organization API Key",
+    "disabled": false,
+    "secret_access_key": "foobar"
+  },
+  {
+    "access_key_id": "SCREPOSITORY",
+    "expires": "3000-01-01T00:00:00Z",
+    "account_id": "organization",
+    "repository_id": "org-repo-id",
+    "name": "Repository API Key",
+    "disabled": false,
+    "secret_access_key": "foobar"
+  }
+]

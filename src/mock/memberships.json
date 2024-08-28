@@ -1,0 +1,44 @@
+[
+  {
+    "account_id": "organization-owner-user",
+    "membership_account_id": "organization",
+    "role": "owners",
+    "state": "member",
+    "state_changed": "2020-01-01T00:00:00Z"
+  },
+  {
+    "account_id": "organization-maintainer-user",
+    "membership_account_id": "organization",
+    "role": "maintainers",
+    "state": "member",
+    "state_changed": "2020-01-01T00:00:00Z"
+  },
+  {
+    "account_id": "organization-read-data-user",
+    "membership_account_id": "organization",
+    "role": "read_data",
+    "state": "member",
+    "state_changed": "2020-01-01T00:00:00Z"
+  },
+  {
+    "account_id": "organization-write-data-user",
+    "membership_account_id": "organization",
+    "role": "write_data",
+    "state": "member",
+    "state_changed": "2020-01-01T00:00:00Z"
+  },
+  {
+    "account_id": "regular-user",
+    "membership_account_id": "organization",
+    "role": "maintainers",
+    "state": "invited",
+    "state_changed": "2020-01-01T00:00:00Z"
+  },
+  {
+    "account_id": "create-repositories-user",
+    "membership_account_id": "organization",
+    "role": "maintainers",
+    "state": "revoked",
+    "state_changed": "2020-01-01T00:00:00Z"
+  }
+]

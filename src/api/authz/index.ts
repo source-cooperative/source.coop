@@ -76,8 +76,14 @@ export function isAuthorized(
     .with(Actions.ListRepository, () =>
       listRepository(principal, resource as Repository)
     )
+    .with(Actions.ListAccount, () =>
+      listAccount(principal, resource as Account)
+    )
     .with(Actions.GetRepository, () =>
       getRepository(principal, resource as Repository)
+    )
+    .with(Actions.GetAccount, () =>
+      getAccount(principal, resource as Account)
     )
     .with(Actions.ReadRepositoryData, () =>
       readRepositoryData(principal, resource as Repository)
@@ -125,6 +131,16 @@ export function isAuthorized(
 }
 
 function putAccountFlags(principal: UserSession, account: Account): boolean {
+  // If the user does not have an account, they are not authorized
+  if (!principal?.account) {
+    return false;
+  }
+
+  // If the user is disabled, they are not authorized
+  if (principal?.account?.disabled) {
+    return false;
+  }
+
   // If the user is an admin, they are authorized
   if (isAdmin(principal)) {
     return true;
@@ -135,6 +151,16 @@ function putAccountFlags(principal: UserSession, account: Account): boolean {
 }
 
 function getAccountFlags(principal: UserSession, account: Account): boolean {
+  // If the user does not have an account, they are not authorized
+  if (!principal?.account) {
+    return false;
+  }
+
+  // If the user is disabled, they are not authorized
+  if (principal?.account?.disabled) {
+    return false;
+  }
+
   // If the user is an admin, they are authorized
   if (isAdmin(principal)) {
     return true;
@@ -155,14 +181,12 @@ function getAccountFlags(principal: UserSession, account: Account): boolean {
     return false;
   }
 
-  // If the user is a member of the repository, they are authorized
+  // If the user is an owner or maintainer of the repository, they are authorized
   return hasRole(
     principal,
     [
       MembershipRole.Owners,
-      MembershipRole.Maintainers,
-      MembershipRole.WriteData,
-      MembershipRole.ReadData,
+      MembershipRole.Maintainers
     ],
     account.account_id
   );
@@ -213,6 +237,11 @@ function writeRepositoryData(
     return false;
   }
 
+  // If the account is disabled, no one is authorized
+  if (principal?.account?.disabled) {
+    return false;
+  }
+
   // If the repository is under the user's account, they are authorized
   if (principal?.account?.account_id === repository.account_id) {
     return true;
@@ -221,7 +250,7 @@ function writeRepositoryData(
   // If the user is an owner or maintainer of the repository, they are authorized
   return hasRole(
     principal,
-    [MembershipRole.Owners, MembershipRole.Maintainers],
+    [MembershipRole.Owners, MembershipRole.Maintainers, MembershipRole.WriteData],
     repository.account_id,
     repository.repository_id
   );
@@ -231,6 +260,11 @@ function readRepositoryData(
   principal: UserSession,
   repository: Repository
 ): boolean {
+  // If the user is disabled, they are not authorized
+  if (principal?.account?.disabled) {
+    return false;
+  }
+
   // If the user is an admin, they are authorized
   if (isAdmin(principal)) {
     return true;
@@ -269,6 +303,11 @@ function getRepository(
   principal: UserSession,
   repository: Repository
 ): boolean {
+  // If the user is disabled, they are not authorized
+  if (principal?.account?.disabled) {
+    return false;
+  }
+
   // If the user is an admin, they are authorized
   if (isAdmin(principal)) {
     return true;
@@ -279,13 +318,39 @@ function getRepository(
     return false;
   }
 
-  return true;
+  // If the repository is open, everyone is authorized
+  if (repository.data_mode === RepositoryDataMode.Open) {
+    return true;
+  }
+
+  // If the repository is under the user's account, they are authorized
+  if (principal?.account?.account_id === repository.account_id) {
+    return true;
+  }
+
+  // If the user is a member of the repository, they are authorized
+  return hasRole(
+    principal,
+    [
+      MembershipRole.Owners,
+      MembershipRole.Maintainers,
+      MembershipRole.WriteData,
+      MembershipRole.ReadData,
+    ],
+    repository.account_id,
+    repository.repository_id
+  );
 }
 
 function listRepository(
   principal: UserSession,
   repository: Repository
 ): boolean {
+  // If the user is disabled, they are not authorized
+  if (principal?.account?.disabled) {
+    return false;
+  }
+
   // If the user is an admin, they are authorized
   if (isAdmin(principal)) {
     return true;
@@ -297,7 +362,7 @@ function listRepository(
   }
 
   // If the repository is listed , everyone is authorized
-  if (repository.state === RepositoryState.Listed) {
+  if (repository.state === RepositoryState.Listed && repository.data_mode === RepositoryDataMode.Open) {
     return true;
   }
 
@@ -334,6 +399,11 @@ function putRepository(
     return false;
   }
 
+  // If the user is disabled, they are not authorized
+  if (principal?.account?.disabled) {
+    return false;
+  }
+
   // If the user is an admin, they are authorized
   if (isAdmin(principal)) {
     return true;
@@ -359,6 +429,11 @@ function putRepository(
 }
 
 function getAccountProfile(principal: UserSession, account: Account): boolean {
+  // If the user is disabled, they are not authorized
+  if (principal?.account?.disabled) {
+    return false;
+  }
+
   // If the user is an admin, they are authorized
   if (isAdmin(principal)) {
     return true;
@@ -376,18 +451,123 @@ function disableRepository(
   principal: UserSession,
   repository: Repository
 ): boolean {
+  // If the user does not have an account, they are not authorized
+  if (!principal?.account) {
+    return false;
+  }
+
+  // If the user is disabled, they are not authorized
+  if (principal?.account?.disabled) {
+    return false;
+  }
+
   // If the user is an admin, they are authorized
   if (isAdmin(principal)) {
     return true;
   }
 
-  return false;
+  // If the repository is disabled, they are not authorized
+  if (repository.disabled) {
+    return false;
+  }
+
+  // If the repository is under the user's account, they are authorized
+  if (principal?.account?.account_id === repository.account_id) {
+    return true;
+  }
+
+  return hasRole(
+    principal,
+    [MembershipRole.Owners, MembershipRole.Maintainers],
+    repository.account_id,
+    repository.repository_id
+  );
 }
 
 function disableAccount(principal: UserSession, account: Account): boolean {
+  // If the user does not have an account, they are not authorized
+  if (!principal?.account) {
+    return false;
+  }
+
+  // If the user is disabled, they are not authorized
+  if (principal?.account?.disabled) {
+    return false;
+  }
+
   // If the user is an admin, they are authorized
   if (isAdmin(principal)) {
     return true;
+  }
+
+  if (account.account_type === AccountType.ORGANIZATION) {
+    return hasRole(
+      principal,
+      [MembershipRole.Owners],
+      account.account_id
+    );
+  }
+
+  return false;
+}
+
+function getAccount(principal: UserSession, account: Account): boolean {
+  // If the user does not have an account, they are not authorized
+  if (!principal?.account) {
+    return false;
+  }
+
+  // If the user is disabled, they are not authorized
+  if (principal?.account?.disabled) {
+    return false;
+  }
+
+  // If the user is an admin, they are authorized
+  if (isAdmin(principal)) {
+    return true;
+  }
+
+  if (account.account_type === AccountType.ORGANIZATION) {
+    return hasRole(
+      principal,
+      [MembershipRole.Owners, MembershipRole.Maintainers],
+      account.account_id
+    );
+  } else if (account.account_type === AccountType.USER) {
+    if (principal?.account?.account_id === account.account_id) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function listAccount(principal: UserSession, account: Account): boolean {
+  // If the user does not have an account, they are not authorized
+  if (!principal?.account) {
+    return false;
+  }
+
+  // If the user is disabled, they are not authorized
+  if (principal?.account?.disabled) {
+    return false;
+  }
+
+  // If the user is an admin, they are authorized
+  if (isAdmin(principal)) {
+    return true;
+  }
+
+  if (account.account_type === AccountType.ORGANIZATION) {
+    return hasRole(
+      principal,
+      [MembershipRole.Owners, MembershipRole.Maintainers],
+      account.account_id
+    );
+  } else if (account.account_type === AccountType.USER) {
+    if (principal?.account?.account_id === account.account_id) {
+      return true;
+    }
   }
 
   return false;
@@ -402,17 +582,32 @@ function createRepository(
     return false;
   }
 
+  // If the user is disabled, they are not authorized
+  if (principal?.account?.disabled) {
+    return false;
+  }
+
   // If the user is an admin, they are authorized
   if (isAdmin(principal)) {
     return true;
   }
 
-  // If the user has the create repositories flag, they are authorized
-  if (principal?.account?.flags.includes(AccountFlags.CREATE_REPOSITORIES)) {
+  // If the user does not have the create repositories flag, they are not authorized
+  if (!principal?.account?.flags.includes(AccountFlags.CREATE_REPOSITORIES)) {
+    return false;
+  }
+
+  // If the repository is under the user's account, they are authorized
+  if (principal?.account?.account_id === repository.account_id) {
     return true;
   }
 
-  return false;
+  return hasRole(
+    principal,
+    [MembershipRole.Owners, MembershipRole.Maintainers],
+    repository.account_id,
+    repository.repository_id
+  );
 }
 
 function createAccount(principal: UserSession, account: Account): boolean {
@@ -433,6 +628,11 @@ function createAccount(principal: UserSession, account: Account): boolean {
       return false;
     }
 
+    // If the user is disabled, they are not authorized
+    if (principal?.account?.disabled) {
+      return false;
+    }
+
     // If the user is an admin, they are authorized
     if (isAdmin(principal)) {
       return true;
@@ -450,14 +650,19 @@ function createAccount(principal: UserSession, account: Account): boolean {
 }
 
 function createAPIKey(principal: UserSession, api_key: APIKey): boolean {
-  // If the user is an admin, they are authorized
-  if (isAdmin(principal)) {
-    return true;
-  }
-
   // If the user does not have an account, they are not authorized
   if (!principal?.account) {
     return false;
+  }
+
+  // If the user is disabled, they are not authorized
+  if (principal?.account?.disabled) {
+    return false;
+  }
+
+  // If the user is an admin, they are authorized
+  if (isAdmin(principal)) {
+    return true;
   }
 
   // If the user is the owner of the API key, they are authorized
@@ -474,14 +679,19 @@ function createAPIKey(principal: UserSession, api_key: APIKey): boolean {
 }
 
 function listAccountAPIKeys(principal: UserSession, account: Account): boolean {
-  // If the user is an admin, they are authorized
-  if (isAdmin(principal)) {
-    return true;
-  }
-
   // If the user does not have an account, they are not authorized
   if (!principal?.account) {
     return false;
+  }
+
+  // If the user is disabled, they are not authorized
+  if (principal?.account?.disabled) {
+    return false;
+  }
+
+  // If the user is an admin, they are authorized
+  if (isAdmin(principal)) {
+    return true;
   }
 
   // If the user is the owner of the API key, they are authorized
@@ -498,13 +708,23 @@ function listAccountAPIKeys(principal: UserSession, account: Account): boolean {
 }
 
 function revokeAPIKey(principal: UserSession, api_key: APIKey): boolean {
+  // If the user does not have an account, they are not authorized
+  if (!principal?.account) {
+    return false;
+  }
+
+  // If the user is disabled, they are not authorized
+  if (principal?.account?.disabled) {
+    return false;
+  }
+
   // If the user is an admin, they are authorized
   if (isAdmin(principal)) {
     return true;
   }
 
-  // If the user does not have an account, they are not authorized
-  if (!principal?.account) {
+  // If the API key is disabled, the user is not authorized
+  if (api_key.disabled) {
     return false;
   }
 
@@ -522,13 +742,23 @@ function revokeAPIKey(principal: UserSession, api_key: APIKey): boolean {
 }
 
 function getAPIKey(principal: UserSession, api_key: APIKey): boolean {
+  // If the user does not have an account, they are not authorized
+  if (!principal?.account) {
+    return false;
+  }
+
+  // If the user is disabled, they are not authorized
+  if (principal?.account?.disabled) {
+    return false;
+  }
+
   // If the user is an admin, they are authorized
   if (isAdmin(principal)) {
     return true;
   }
 
-  // If the user does not have an account, they are not authorized
-  if (!principal?.account) {
+  // If the API key is disabled, the user is not authorized
+  if (api_key.disabled) {
     return false;
   }
 
@@ -549,9 +779,19 @@ function getMembership(
   principal: UserSession,
   membership: Membership
 ): boolean {
+  // If the user is disabled, they are not authorized
+  if (principal?.account?.disabled) {
+    return false;
+  }
+
   // If the membership is active, the user is authorized
   if (membership.state === MembershipState.Member) {
     return true;
+  }
+
+  // If the user does not have an account, they are not authorized
+  if (!principal?.account) {
+    return false;
   }
 
   // If the user is an admin, they are authorized
@@ -581,6 +821,16 @@ function acceptMembership(
   principal: UserSession,
   membership: Membership
 ): boolean {
+  // If the user is disabled, they are not authorized
+  if (principal?.account?.disabled) {
+    return false;
+  }
+
+  // If the user is an admin, they are authorized
+  if (isAdmin(principal)) {
+    return true;
+  }
+
   // If the membership pertains to the principal's account, they are authorized
   if (principal?.account?.account_id === membership.account_id) {
     return true;
@@ -593,6 +843,16 @@ function rejectMembership(
   principal: UserSession,
   membership: Membership
 ): boolean {
+  // If the user is disabled, they are not authorized
+  if (principal?.account?.disabled) {
+    return false;
+  }
+
+  // If the user is an admin, they are authorized
+  if (isAdmin(principal)) {
+    return true;
+  }
+
   // If the membership pertains to the principal's account, they are authorized
   if (principal?.account?.account_id === membership.account_id) {
     return true;
@@ -605,6 +865,11 @@ function revokeMembership(
   principal: UserSession,
   membership: Membership
 ): boolean {
+  // If the user is disabled, they are not authorized
+  if (principal?.account?.disabled) {
+    return false;
+  }
+
   // If the user is an admin, they are authorized
   if (isAdmin(principal)) {
     return true;
@@ -628,6 +893,11 @@ function inviteMembership(
   principal: UserSession,
   membership: Membership
 ): boolean {
+  // If the user is disabled, they are not authorized
+  if (principal?.account?.disabled) {
+    return false;
+  }
+
   // If the user is an admin, they are authorized
   if (isAdmin(principal)) {
     return true;

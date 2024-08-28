@@ -337,6 +337,7 @@ export const APIKeySchema = z.object({
     invalid_type_error: "Access key ID must be a string",
   }),
   account_id: z.string().regex(ID_REGEX, "Invalid account ID format"),
+  repository_id: z.optional(z.string().regex(ID_REGEX, "Invalid account ID format")),
   disabled: z.boolean(),
   expires: z.string().datetime("Invalid expiration date format"),
   name: z.string({
