@@ -674,7 +674,8 @@ function createAPIKey(principal: UserSession, api_key: APIKey): boolean {
   return hasRole(
     principal,
     [MembershipRole.Owners, MembershipRole.Maintainers],
-    api_key.account_id
+    api_key.account_id,
+    api_key.repository_id
   );
 }
 
@@ -737,7 +738,8 @@ function revokeAPIKey(principal: UserSession, api_key: APIKey): boolean {
   return hasRole(
     principal,
     [MembershipRole.Owners, MembershipRole.Maintainers],
-    api_key.account_id
+    api_key.account_id,
+    api_key.repository_id
   );
 }
 
@@ -771,7 +773,8 @@ function getAPIKey(principal: UserSession, api_key: APIKey): boolean {
   return hasRole(
     principal,
     [MembershipRole.Owners, MembershipRole.Maintainers],
-    api_key.account_id
+    api_key.account_id,
+    api_key.repository_id
   );
 }
 

@@ -91,6 +91,71 @@
     "email": "organizationReadData@source.coop"
   },
   {
+    "account_id": "repo-member-owner",
+    "account_type": "user",
+    "disabled": false,
+    "profile": {
+      "name": "Repository Member Owner",
+      "bio": "This is a user account which is an owner of a repository",
+      "location": "United States"
+    },
+    "identity_id": "repo_member_owner_identity_id",
+    "flags": [],
+    "email": "repositoryMemberOwner@source.coop"
+  },
+  {
+    "account_id": "repo-member-maintainer",
+    "account_type": "user",
+    "disabled": false,
+    "profile": {
+      "name": "Repository Member Maintainer",
+      "bio": "This is a user account which is a maintainer of a repository",
+      "location": "United States"
+    },
+    "identity_id": "repo_member_maintainer_identity_id",
+    "flags": [],
+    "email": "repositoryMemberMaintainer@source.coop"
+  },
+  {
+    "account_id": "repo-member-read-data",
+    "account_type": "user",
+    "disabled": false,
+    "profile": {
+      "name": "Repository Member Read Data",
+      "bio": "This is a user account which is a read data member of a repository",
+      "location": "United States"
+    },
+    "identity_id": "repo_member_read_data_identity_id",
+    "flags": [],
+    "email": "repositoryMemberReadData@source.coop"
+  },
+  {
+    "account_id": "repo-member-write-data",
+    "account_type": "user",
+    "disabled": false,
+    "profile": {
+      "name": "Repository Member Write Data",
+      "bio": "This is a user account which is a write data member of a repository",
+      "location": "United States"
+    },
+    "identity_id": "repo_member_write_data_identity_id",
+    "flags": [],
+    "email": "repositoryMemberWriteData@source.coop"
+  },
+  {
+    "account_id": "repo-member-invited",
+    "account_type": "user",
+    "disabled": false,
+    "profile": {
+      "name": "Repository Member Invited",
+      "bio": "This is a user account which is an invited member of a repository",
+      "location": "United States"
+    },
+    "identity_id": "repo_member_invited_identity_id",
+    "flags": [],
+    "email": "repositoryMemberInvited@source.coop"
+  },
+  {
     "account_id": "organization-write-data-user",
     "account_type": "user",
     "disabled": false,

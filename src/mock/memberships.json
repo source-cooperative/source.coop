@@ -40,5 +40,45 @@
     "role": "maintainers",
     "state": "revoked",
     "state_changed": "2020-01-01T00:00:00Z"
+  },
+  {
+    "account_id": "repo-member-owner",
+    "membership_account_id": "organization",
+    "repository_id": "org-repo-id",
+    "role": "owners",
+    "state": "member",
+    "state_changed": "2020-01-01T00:00:00Z"
+  },
+  {
+    "account_id": "repo-member-maintainer",
+    "membership_account_id": "organization",
+    "repository_id": "org-repo-id",
+    "role": "maintainers",
+    "state": "member",
+    "state_changed": "2020-01-01T00:00:00Z"
+  },
+  {
+    "account_id": "repo-member-read-data",
+    "membership_account_id": "organization",
+    "repository_id": "org-repo-id",
+    "role": "read_data",
+    "state": "member",
+    "state_changed": "2020-01-01T00:00:00Z"
+  },
+  {
+    "account_id": "repo-member-write-data",
+    "membership_account_id": "organization",
+    "repository_id": "org-repo-id",
+    "role": "write_data",
+    "state": "member",
+    "state_changed": "2020-01-01T00:00:00Z"
+  },
+  {
+    "account_id": "repo-member-invited",
+    "membership_account_id": "organization",
+    "repository_id": "org-repo-id",
+    "role": "owners",
+    "state": "invited",
+    "state_changed": "2020-01-01T00:00:00Z"
   }
 ]

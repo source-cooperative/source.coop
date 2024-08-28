@@ -7,19 +7,11 @@ import {
   RepositorySchema,
   Actions,
   UserSession,
-  UserSessionSchema,
-  AccountFlags,
-  RepositoryState,
   AccountType,
   Membership,
   MembershipSchema,
-  MembershipState,
-  MembershipRole,
-  RepositoryDataMode,
   APIKey,
   APIKeySchema,
-  RepositoryFeatured,
-  DataProvider,
 } from "@/api/types";
 import * as fs from "fs";
 import { z } from "zod";
@@ -135,6 +127,16 @@ describe("Authorization Tests", () => {
       .toBe(false);
     expect(isAuthorized(sessions["organization-write-data-user"], repo, action))
       .toBe(false);
+    expect(isAuthorized(sessions["repo-member-owner"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-maintainer"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-read-data"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-write-data"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-invited"], repo, action))
+      .toBe(false);
     expect(isAuthorized(sessions["disabled"], repo, action))
       .toBe(false);
     expect(isAuthorized(sessions["regular-user"], repo, action))
@@ -157,6 +159,16 @@ describe("Authorization Tests", () => {
     expect(isAuthorized(sessions["organization-read-data-user"], repo, action))
       .toBe(false);
     expect(isAuthorized(sessions["organization-write-data-user"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-owner"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-maintainer"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-read-data"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-write-data"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-invited"], repo, action))
       .toBe(false);
     expect(isAuthorized(sessions["disabled"], repo, action))
       .toBe(false);
@@ -185,6 +197,16 @@ describe("Authorization Tests", () => {
       .toBe(true);
     expect(isAuthorized(sessions["organization-write-data-user"], repo, action))
       .toBe(true);
+    expect(isAuthorized(sessions["repo-member-owner"], repo, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["repo-member-maintainer"], repo, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["repo-member-read-data"], repo, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["repo-member-write-data"], repo, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["repo-member-invited"], repo, action))
+      .toBe(true);
     expect(isAuthorized(sessions["disabled"], repo, action))
       .toBe(false);
     expect(isAuthorized(sessions["regular-user"], repo, action))
@@ -207,6 +229,16 @@ describe("Authorization Tests", () => {
     expect(isAuthorized(sessions["organization-read-data-user"], repo, action))
       .toBe(true);
     expect(isAuthorized(sessions["organization-write-data-user"], repo, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["repo-member-owner"], repo, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["repo-member-maintainer"], repo, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["repo-member-read-data"], repo, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["repo-member-write-data"], repo, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["repo-member-invited"], repo, action))
       .toBe(true);
     expect(isAuthorized(sessions["disabled"], repo, action))
       .toBe(false);
@@ -231,6 +263,16 @@ describe("Authorization Tests", () => {
       .toBe(true);
     expect(isAuthorized(sessions["organization-write-data-user"], repo, action))
       .toBe(true);
+    expect(isAuthorized(sessions["repo-member-owner"], repo, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["repo-member-maintainer"], repo, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["repo-member-read-data"], repo, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["repo-member-write-data"], repo, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["repo-member-invited"], repo, action))
+      .toBe(true);
     expect(isAuthorized(sessions["disabled"], repo, action))
       .toBe(false);
     expect(isAuthorized(sessions["regular-user"], repo, action))
@@ -254,6 +296,16 @@ describe("Authorization Tests", () => {
       .toBe(true);
     expect(isAuthorized(sessions["organization-write-data-user"], repo, action))
       .toBe(true);
+    expect(isAuthorized(sessions["repo-member-owner"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-maintainer"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-read-data"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-write-data"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-invited"], repo, action))
+      .toBe(false);
     expect(isAuthorized(sessions["disabled"], repo, action))
       .toBe(false);
     expect(isAuthorized(sessions["regular-user"], repo, action))
@@ -276,6 +328,16 @@ describe("Authorization Tests", () => {
     expect(isAuthorized(sessions["organization-read-data-user"], repo, action))
       .toBe(false);
     expect(isAuthorized(sessions["organization-write-data-user"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-owner"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-maintainer"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-read-data"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-write-data"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-invited"], repo, action))
       .toBe(false);
     expect(isAuthorized(sessions["disabled"], repo, action))
       .toBe(false);
@@ -304,6 +366,16 @@ describe("Authorization Tests", () => {
       .toBe(true);
     expect(isAuthorized(sessions["organization-write-data-user"], repo, action))
       .toBe(true);
+    expect(isAuthorized(sessions["repo-member-owner"], repo, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["repo-member-maintainer"], repo, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["repo-member-read-data"], repo, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["repo-member-write-data"], repo, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["repo-member-invited"], repo, action))
+      .toBe(true);
     expect(isAuthorized(sessions["disabled"], repo, action))
       .toBe(false);
     expect(isAuthorized(sessions["regular-user"], repo, action))
@@ -326,6 +398,16 @@ describe("Authorization Tests", () => {
     expect(isAuthorized(sessions["organization-read-data-user"], repo, action))
       .toBe(true);
     expect(isAuthorized(sessions["organization-write-data-user"], repo, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["repo-member-owner"], repo, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["repo-member-maintainer"], repo, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["repo-member-read-data"], repo, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["repo-member-write-data"], repo, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["repo-member-invited"], repo, action))
       .toBe(true);
     expect(isAuthorized(sessions["disabled"], repo, action))
       .toBe(false);
@@ -350,6 +432,16 @@ describe("Authorization Tests", () => {
       .toBe(true);
     expect(isAuthorized(sessions["organization-write-data-user"], repo, action))
       .toBe(true);
+    expect(isAuthorized(sessions["repo-member-owner"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-maintainer"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-read-data"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-write-data"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-invited"], repo, action))
+      .toBe(false);
     expect(isAuthorized(sessions["disabled"], repo, action))
       .toBe(false);
     expect(isAuthorized(sessions["regular-user"], repo, action))
@@ -373,6 +465,16 @@ describe("Authorization Tests", () => {
       .toBe(true);
     expect(isAuthorized(sessions["organization-write-data-user"], repo, action))
       .toBe(true);
+    expect(isAuthorized(sessions["repo-member-owner"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-maintainer"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-read-data"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-write-data"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-invited"], repo, action))
+      .toBe(false);
     expect(isAuthorized(sessions["disabled"], repo, action))
       .toBe(false);
     expect(isAuthorized(sessions["regular-user"], repo, action))
@@ -395,6 +497,16 @@ describe("Authorization Tests", () => {
     expect(isAuthorized(sessions["organization-read-data-user"], repo, action))
       .toBe(false);
     expect(isAuthorized(sessions["organization-write-data-user"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-owner"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-maintainer"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-read-data"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-write-data"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-invited"], repo, action))
       .toBe(false);
     expect(isAuthorized(sessions["disabled"], repo, action))
       .toBe(false);
@@ -423,6 +535,16 @@ describe("Authorization Tests", () => {
       .toBe(false);
     expect(isAuthorized(sessions["organization-write-data-user"], repo, action))
       .toBe(false);
+    expect(isAuthorized(sessions["repo-member-owner"], repo, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["repo-member-maintainer"], repo, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["repo-member-read-data"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-write-data"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-invited"], repo, action))
+      .toBe(false);
     expect(isAuthorized(sessions["disabled"], repo, action))
       .toBe(false);
     expect(isAuthorized(sessions["regular-user"], repo, action))
@@ -445,6 +567,16 @@ describe("Authorization Tests", () => {
     expect(isAuthorized(sessions["organization-read-data-user"], repo, action))
       .toBe(false);
     expect(isAuthorized(sessions["organization-write-data-user"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-owner"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-maintainer"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-read-data"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-write-data"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-invited"], repo, action))
       .toBe(false);
     expect(isAuthorized(sessions["disabled"], repo, action))
       .toBe(false);
@@ -469,6 +601,16 @@ describe("Authorization Tests", () => {
     expect(isAuthorized(sessions["organization-read-data-user"], repo, action))
       .toBe(false);
     expect(isAuthorized(sessions["organization-write-data-user"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-owner"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-maintainer"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-read-data"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-write-data"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-invited"], repo, action))
       .toBe(false);
     expect(isAuthorized(sessions["disabled"], repo, action))
       .toBe(false);
@@ -497,6 +639,16 @@ describe("Authorization Tests", () => {
       .toBe(false);
     expect(isAuthorized(sessions["organization-write-data-user"], repo, action))
       .toBe(false);
+    expect(isAuthorized(sessions["repo-member-owner"], repo, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["repo-member-maintainer"], repo, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["repo-member-read-data"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-write-data"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-invited"], repo, action))
+      .toBe(false);
     expect(isAuthorized(sessions["disabled"], repo, action))
       .toBe(false);
     expect(isAuthorized(sessions["regular-user"], repo, action))
@@ -519,6 +671,16 @@ describe("Authorization Tests", () => {
     expect(isAuthorized(sessions["organization-read-data-user"], repo, action))
       .toBe(false);
     expect(isAuthorized(sessions["organization-write-data-user"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-owner"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-maintainer"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-read-data"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-write-data"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-invited"], repo, action))
       .toBe(false);
     expect(isAuthorized(sessions["disabled"], repo, action))
       .toBe(false);
@@ -543,6 +705,16 @@ describe("Authorization Tests", () => {
     expect(isAuthorized(sessions["organization-read-data-user"], repo, action))
       .toBe(false);
     expect(isAuthorized(sessions["organization-write-data-user"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-owner"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-maintainer"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-read-data"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-write-data"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-invited"], repo, action))
       .toBe(false);
     expect(isAuthorized(sessions["disabled"], repo, action))
       .toBe(false);
@@ -571,6 +743,16 @@ describe("Authorization Tests", () => {
       .toBe(true);
     expect(isAuthorized(sessions["organization-write-data-user"], repo, action))
       .toBe(true);
+    expect(isAuthorized(sessions["repo-member-owner"], repo, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["repo-member-maintainer"], repo, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["repo-member-read-data"], repo, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["repo-member-write-data"], repo, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["repo-member-invited"], repo, action))
+      .toBe(true);
     expect(isAuthorized(sessions["disabled"], repo, action))
       .toBe(false);
     expect(isAuthorized(sessions["regular-user"], repo, action))
@@ -593,6 +775,16 @@ describe("Authorization Tests", () => {
     expect(isAuthorized(sessions["organization-read-data-user"], repo, action))
       .toBe(true);
     expect(isAuthorized(sessions["organization-write-data-user"], repo, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["repo-member-owner"], repo, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["repo-member-maintainer"], repo, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["repo-member-read-data"], repo, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["repo-member-write-data"], repo, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["repo-member-invited"], repo, action))
       .toBe(true);
     expect(isAuthorized(sessions["disabled"], repo, action))
       .toBe(false);
@@ -618,6 +810,16 @@ describe("Authorization Tests", () => {
       .toBe(false);
     expect(isAuthorized(sessions["organization-write-data-user"], repo, action))
       .toBe(false);
+    expect(isAuthorized(sessions["repo-member-owner"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-maintainer"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-read-data"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-write-data"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-invited"], repo, action))
+      .toBe(false);
     expect(isAuthorized(sessions["disabled"], repo, action))
       .toBe(false);
     expect(isAuthorized(sessions["regular-user"], repo, action))
@@ -641,6 +843,16 @@ describe("Authorization Tests", () => {
       .toBe(true);
     expect(isAuthorized(sessions["organization-write-data-user"], repo, action))
       .toBe(true);
+    expect(isAuthorized(sessions["repo-member-owner"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-maintainer"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-read-data"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-write-data"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-invited"], repo, action))
+      .toBe(false);
     expect(isAuthorized(sessions["disabled"], repo, action))
       .toBe(false);
     expect(isAuthorized(sessions["regular-user"], repo, action))
@@ -663,6 +875,16 @@ describe("Authorization Tests", () => {
     expect(isAuthorized(sessions["organization-read-data-user"], repo, action))
       .toBe(true);
     expect(isAuthorized(sessions["organization-write-data-user"], repo, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["repo-member-owner"], repo, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["repo-member-maintainer"], repo, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["repo-member-read-data"], repo, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["repo-member-write-data"], repo, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["repo-member-invited"], repo, action))
       .toBe(true);
     expect(isAuthorized(sessions["disabled"], repo, action))
       .toBe(false);
@@ -691,6 +913,16 @@ describe("Authorization Tests", () => {
       .toBe(false);
     expect(isAuthorized(sessions["organization-write-data-user"], repo, action))
       .toBe(true);
+    expect(isAuthorized(sessions["repo-member-owner"], repo, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["repo-member-maintainer"], repo, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["repo-member-read-data"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-write-data"], repo, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["repo-member-invited"], repo, action))
+      .toBe(false);
     expect(isAuthorized(sessions["disabled"], repo, action))
       .toBe(false);
     expect(isAuthorized(sessions["regular-user"], repo, action))
@@ -713,6 +945,16 @@ describe("Authorization Tests", () => {
     expect(isAuthorized(sessions["organization-read-data-user"], repo, action))
       .toBe(false);
     expect(isAuthorized(sessions["organization-write-data-user"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-owner"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-maintainer"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-read-data"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-write-data"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-invited"], repo, action))
       .toBe(false);
     expect(isAuthorized(sessions["disabled"], repo, action))
       .toBe(false);
@@ -738,6 +980,16 @@ describe("Authorization Tests", () => {
       .toBe(false);
     expect(isAuthorized(sessions["organization-write-data-user"], repo, action))
       .toBe(false);
+    expect(isAuthorized(sessions["repo-member-owner"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-maintainer"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-read-data"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-write-data"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-invited"], repo, action))
+      .toBe(false);
     expect(isAuthorized(sessions["disabled"], repo, action))
       .toBe(false);
     expect(isAuthorized(sessions["regular-user"], repo, action))
@@ -761,6 +1013,16 @@ describe("Authorization Tests", () => {
       .toBe(false);
     expect(isAuthorized(sessions["organization-write-data-user"], repo, action))
       .toBe(true);
+    expect(isAuthorized(sessions["repo-member-owner"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-maintainer"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-read-data"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-write-data"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-invited"], repo, action))
+      .toBe(false);
     expect(isAuthorized(sessions["disabled"], repo, action))
       .toBe(false);
     expect(isAuthorized(sessions["regular-user"], repo, action))
@@ -784,6 +1046,16 @@ describe("Authorization Tests", () => {
       .toBe(false);
     expect(isAuthorized(sessions["organization-write-data-user"], repo, action))
       .toBe(true);
+    expect(isAuthorized(sessions["repo-member-owner"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-maintainer"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-read-data"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-write-data"], repo, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-invited"], repo, action))
+      .toBe(false);
     expect(isAuthorized(sessions["disabled"], repo, action))
       .toBe(false);
     expect(isAuthorized(sessions["regular-user"], repo, action))
@@ -994,6 +1266,16 @@ describe("Authorization Tests", () => {
       .toBe(false);
     expect(isAuthorized(sessions["organization-write-data-user"], account, action))
       .toBe(false);
+    expect(isAuthorized(sessions["repo-member-owner"], account, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-maintainer"], account, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-read-data"], account, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-write-data"], account, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-invited"], account, action))
+      .toBe(false);
     expect(isAuthorized(sessions["disabled"], account, action))
       .toBe(false);
     expect(isAuthorized(sessions["regular-user"], account, action))
@@ -1027,6 +1309,16 @@ describe("Authorization Tests", () => {
     expect(isAuthorized(sessions["organization-read-data-user"], account, action))
       .toBe(false);
     expect(isAuthorized(sessions["organization-write-data-user"], account, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-owner"], account, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-maintainer"], account, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-read-data"], account, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-write-data"], account, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-invited"], account, action))
       .toBe(false);
     expect(isAuthorized(sessions["disabled"], account, action))
       .toBe(false);
@@ -1055,6 +1347,16 @@ describe("Authorization Tests", () => {
       .toBe(false);
     expect(isAuthorized(sessions["organization-write-data-user"], account, action))
       .toBe(false);
+    expect(isAuthorized(sessions["repo-member-owner"], account, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-maintainer"], account, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-read-data"], account, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-write-data"], account, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-invited"], account, action))
+      .toBe(false);
     expect(isAuthorized(sessions["disabled"], account, action))
       .toBe(false);
     expect(isAuthorized(sessions["regular-user"], account, action))
@@ -1088,6 +1390,16 @@ describe("Authorization Tests", () => {
     expect(isAuthorized(sessions["organization-read-data-user"], account, action))
       .toBe(false);
     expect(isAuthorized(sessions["organization-write-data-user"], account, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-owner"], account, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-maintainer"], account, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-read-data"], account, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-write-data"], account, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-invited"], account, action))
       .toBe(false);
     expect(isAuthorized(sessions["disabled"], account, action))
       .toBe(false);
@@ -1116,6 +1428,16 @@ describe("Authorization Tests", () => {
       .toBe(false);
     expect(isAuthorized(sessions["organization-write-data-user"], account, action))
       .toBe(false);
+    expect(isAuthorized(sessions["repo-member-owner"], account, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-maintainer"], account, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-read-data"], account, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-write-data"], account, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-invited"], account, action))
+      .toBe(false);
     expect(isAuthorized(sessions["disabled"], account, action))
       .toBe(false);
     expect(isAuthorized(sessions["regular-user"], account, action))
@@ -1149,6 +1471,16 @@ describe("Authorization Tests", () => {
     expect(isAuthorized(sessions["organization-read-data-user"], account, action))
       .toBe(false);
     expect(isAuthorized(sessions["organization-write-data-user"], account, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-owner"], account, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-maintainer"], account, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-read-data"], account, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-write-data"], account, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-invited"], account, action))
       .toBe(false);
     expect(isAuthorized(sessions["disabled"], account, action))
       .toBe(false);
@@ -1177,6 +1509,16 @@ describe("Authorization Tests", () => {
       .toBe(false);
     expect(isAuthorized(sessions["organization-write-data-user"], account, action))
       .toBe(false);
+    expect(isAuthorized(sessions["repo-member-owner"], account, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-maintainer"], account, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-read-data"], account, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-write-data"], account, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-invited"], account, action))
+      .toBe(false);
     expect(isAuthorized(sessions["disabled"], account, action))
       .toBe(false);
     expect(isAuthorized(sessions["regular-user"], account, action))
@@ -1211,6 +1553,16 @@ describe("Authorization Tests", () => {
       .toBe(false);
     expect(isAuthorized(sessions["organization-write-data-user"], account, action))
       .toBe(false);
+    expect(isAuthorized(sessions["repo-member-owner"], account, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-maintainer"], account, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-read-data"], account, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-write-data"], account, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-invited"], account, action))
+      .toBe(false);
     expect(isAuthorized(sessions["disabled"], account, action))
       .toBe(false);
     expect(isAuthorized(sessions["regular-user"], account, action))
@@ -1238,6 +1590,16 @@ describe("Authorization Tests", () => {
       .toBe(false);
     expect(isAuthorized(sessions["organization-write-data-user"], apiKey, action))
       .toBe(false);
+    expect(isAuthorized(sessions["repo-member-owner"], apiKey, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-maintainer"], apiKey, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-read-data"], apiKey, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-write-data"], apiKey, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-invited"], apiKey, action))
+      .toBe(false);
     expect(isAuthorized(sessions["disabled"], apiKey, action))
       .toBe(false);
     expect(isAuthorized(sessions["regular-user"], apiKey, action))
@@ -1260,6 +1622,16 @@ describe("Authorization Tests", () => {
     expect(isAuthorized(sessions["organization-read-data-user"], apiKey, action))
       .toBe(false);
     expect(isAuthorized(sessions["organization-write-data-user"], apiKey, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-owner"], apiKey, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-maintainer"], apiKey, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-read-data"], apiKey, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-write-data"], apiKey, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-invited"], apiKey, action))
       .toBe(false);
     expect(isAuthorized(sessions["disabled"], apiKey, action))
       .toBe(false);
@@ -1284,6 +1656,16 @@ describe("Authorization Tests", () => {
       .toBe(false);
     expect(isAuthorized(sessions["organization-write-data-user"], apiKey, action))
       .toBe(false);
+    expect(isAuthorized(sessions["repo-member-owner"], apiKey, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-maintainer"], apiKey, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-read-data"], apiKey, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-write-data"], apiKey, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-invited"], apiKey, action))
+      .toBe(false);
     expect(isAuthorized(sessions["disabled"], apiKey, action))
       .toBe(false);
     expect(isAuthorized(sessions["regular-user"], apiKey, action))
@@ -1306,6 +1688,16 @@ describe("Authorization Tests", () => {
     expect(isAuthorized(sessions["organization-read-data-user"], apiKey, action))
       .toBe(false);
     expect(isAuthorized(sessions["organization-write-data-user"], apiKey, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-owner"], apiKey, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["repo-member-maintainer"], apiKey, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["repo-member-read-data"], apiKey, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-write-data"], apiKey, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-invited"], apiKey, action))
       .toBe(false);
     expect(isAuthorized(sessions["disabled"], apiKey, action))
       .toBe(false);
@@ -1334,6 +1726,16 @@ describe("Authorization Tests", () => {
       .toBe(false);
     expect(isAuthorized(sessions["organization-write-data-user"], apiKey, action))
       .toBe(false);
+    expect(isAuthorized(sessions["repo-member-owner"], apiKey, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-maintainer"], apiKey, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-read-data"], apiKey, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-write-data"], apiKey, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-invited"], apiKey, action))
+      .toBe(false);
     expect(isAuthorized(sessions["disabled"], apiKey, action))
       .toBe(false);
     expect(isAuthorized(sessions["regular-user"], apiKey, action))
@@ -1356,6 +1758,16 @@ describe("Authorization Tests", () => {
     expect(isAuthorized(sessions["organization-read-data-user"], apiKey, action))
       .toBe(false);
     expect(isAuthorized(sessions["organization-write-data-user"], apiKey, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-owner"], apiKey, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-maintainer"], apiKey, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-read-data"], apiKey, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-write-data"], apiKey, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-invited"], apiKey, action))
       .toBe(false);
     expect(isAuthorized(sessions["disabled"], apiKey, action))
       .toBe(false);
@@ -1380,6 +1792,16 @@ describe("Authorization Tests", () => {
       .toBe(false);
     expect(isAuthorized(sessions["organization-write-data-user"], apiKey, action))
       .toBe(false);
+    expect(isAuthorized(sessions["repo-member-owner"], apiKey, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-maintainer"], apiKey, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-read-data"], apiKey, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-write-data"], apiKey, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-invited"], apiKey, action))
+      .toBe(false);
     expect(isAuthorized(sessions["disabled"], apiKey, action))
       .toBe(false);
     expect(isAuthorized(sessions["regular-user"], apiKey, action))
@@ -1402,6 +1824,16 @@ describe("Authorization Tests", () => {
     expect(isAuthorized(sessions["organization-read-data-user"], apiKey, action))
       .toBe(false);
     expect(isAuthorized(sessions["organization-write-data-user"], apiKey, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-owner"], apiKey, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["repo-member-maintainer"], apiKey, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["repo-member-read-data"], apiKey, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-write-data"], apiKey, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-invited"], apiKey, action))
       .toBe(false);
     expect(isAuthorized(sessions["disabled"], apiKey, action))
       .toBe(false);
@@ -1430,6 +1862,16 @@ describe("Authorization Tests", () => {
       .toBe(false);
     expect(isAuthorized(sessions["organization-write-data-user"], apiKey, action))
       .toBe(false);
+    expect(isAuthorized(sessions["repo-member-owner"], apiKey, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-maintainer"], apiKey, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-read-data"], apiKey, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-write-data"], apiKey, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-invited"], apiKey, action))
+      .toBe(false);
     expect(isAuthorized(sessions["disabled"], apiKey, action))
       .toBe(false);
     expect(isAuthorized(sessions["regular-user"], apiKey, action))
@@ -1453,6 +1895,16 @@ describe("Authorization Tests", () => {
       .toBe(false);
     expect(isAuthorized(sessions["organization-write-data-user"], apiKey, action))
       .toBe(false);
+    expect(isAuthorized(sessions["repo-member-owner"], apiKey, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-maintainer"], apiKey, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-read-data"], apiKey, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-write-data"], apiKey, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-invited"], apiKey, action))
+      .toBe(false);
     expect(isAuthorized(sessions["disabled"], apiKey, action))
       .toBe(false);
     expect(isAuthorized(sessions["regular-user"], apiKey, action))
@@ -1475,6 +1927,16 @@ describe("Authorization Tests", () => {
     expect(isAuthorized(sessions["organization-read-data-user"], apiKey, action))
       .toBe(false);
     expect(isAuthorized(sessions["organization-write-data-user"], apiKey, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-owner"], apiKey, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["repo-member-maintainer"], apiKey, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["repo-member-read-data"], apiKey, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-write-data"], apiKey, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-invited"], apiKey, action))
       .toBe(false);
     expect(isAuthorized(sessions["disabled"], apiKey, action))
       .toBe(false);
@@ -1505,6 +1967,16 @@ describe("Authorization Tests", () => {
       .toBe(false);
     expect(isAuthorized(sessions["organization-write-data-user"], membership, action))
       .toBe(false);
+    expect(isAuthorized(sessions["repo-member-owner"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-maintainer"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-read-data"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-write-data"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-invited"], membership, action))
+      .toBe(false);
     expect(isAuthorized(sessions["disabled"], membership, action))
       .toBe(false);
     expect(isAuthorized(sessions["regular-user"], membership, action))
@@ -1529,6 +2001,16 @@ describe("Authorization Tests", () => {
     expect(isAuthorized(sessions["organization-read-data-user"], membership, action))
       .toBe(true);
     expect(isAuthorized(sessions["organization-write-data-user"], membership, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["repo-member-owner"], membership, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["repo-member-maintainer"], membership, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["repo-member-read-data"], membership, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["repo-member-write-data"], membership, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["repo-member-invited"], membership, action))
       .toBe(true);
     expect(isAuthorized(sessions["disabled"], membership, action))
       .toBe(false);
@@ -1555,6 +2037,53 @@ describe("Authorization Tests", () => {
       .toBe(false);
     expect(isAuthorized(sessions["organization-write-data-user"], membership, action))
       .toBe(false);
+    expect(isAuthorized(sessions["repo-member-owner"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-maintainer"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-read-data"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-write-data"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-invited"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["disabled"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["regular-user"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["create-repositories-user"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["anonymous"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["no-account"], membership, action))
+      .toBe(false);
+
+    // Regular User Repository Membership Invite
+    var membership = memberships.find((membership) => {
+      return membership.account_id == "repo-member-invited" && membership.membership_account_id == "organization"
+    });
+    expect(isAuthorized(sessions["admin"], membership, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["organization-owner-user"], membership, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["organization-maintainer-user"], membership, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["organization-read-data-user"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["organization-read-data-user"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["organization-write-data-user"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-owner"], membership, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["repo-member-maintainer"], membership, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["repo-member-read-data"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-write-data"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-invited"], membership, action))
+      .toBe(true);
     expect(isAuthorized(sessions["disabled"], membership, action))
       .toBe(false);
     expect(isAuthorized(sessions["regular-user"], membership, action))
@@ -1584,10 +2113,57 @@ describe("Authorization Tests", () => {
       .toBe(false);
     expect(isAuthorized(sessions["organization-write-data-user"], membership, action))
       .toBe(false);
+    expect(isAuthorized(sessions["repo-member-owner"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-maintainer"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-read-data"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-write-data"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-invited"], membership, action))
+      .toBe(false);
     expect(isAuthorized(sessions["disabled"], membership, action))
       .toBe(false);
     expect(isAuthorized(sessions["regular-user"], membership, action))
       .toBe(true);
+    expect(isAuthorized(sessions["create-repositories-user"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["anonymous"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["no-account"], membership, action))
+      .toBe(false);
+
+    // Regular User Repository Membership Invite
+    var membership = memberships.find((membership) => {
+      return membership.account_id == "repo-member-invited" && membership.membership_account_id == "organization"
+    });
+    expect(isAuthorized(sessions["admin"], membership, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["organization-owner-user"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["organization-maintainer-user"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["organization-read-data-user"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["organization-read-data-user"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["organization-write-data-user"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-owner"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-maintainer"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-read-data"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-write-data"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-invited"], membership, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["disabled"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["regular-user"], membership, action))
+      .toBe(false);
     expect(isAuthorized(sessions["create-repositories-user"], membership, action))
       .toBe(false);
     expect(isAuthorized(sessions["anonymous"], membership, action))
@@ -1613,10 +2189,57 @@ describe("Authorization Tests", () => {
       .toBe(false);
     expect(isAuthorized(sessions["organization-write-data-user"], membership, action))
       .toBe(false);
+    expect(isAuthorized(sessions["repo-member-owner"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-maintainer"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-read-data"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-write-data"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-invited"], membership, action))
+      .toBe(false);
     expect(isAuthorized(sessions["disabled"], membership, action))
       .toBe(false);
     expect(isAuthorized(sessions["regular-user"], membership, action))
       .toBe(true);
+    expect(isAuthorized(sessions["create-repositories-user"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["anonymous"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["no-account"], membership, action))
+      .toBe(false);
+
+    // Regular User Repository Membership Invite
+    var membership = memberships.find((membership) => {
+      return membership.account_id == "repo-member-invited" && membership.membership_account_id == "organization"
+    });
+    expect(isAuthorized(sessions["admin"], membership, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["organization-owner-user"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["organization-maintainer-user"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["organization-read-data-user"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["organization-read-data-user"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["organization-write-data-user"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-owner"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-maintainer"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-read-data"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-write-data"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-invited"], membership, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["disabled"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["regular-user"], membership, action))
+      .toBe(false);
     expect(isAuthorized(sessions["create-repositories-user"], membership, action))
       .toBe(false);
     expect(isAuthorized(sessions["anonymous"], membership, action))
@@ -1642,6 +2265,16 @@ describe("Authorization Tests", () => {
       .toBe(false);
     expect(isAuthorized(sessions["organization-write-data-user"], membership, action))
       .toBe(false);
+    expect(isAuthorized(sessions["repo-member-owner"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-maintainer"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-read-data"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-write-data"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-invited"], membership, action))
+      .toBe(false);
     expect(isAuthorized(sessions["disabled"], membership, action))
       .toBe(false);
     expect(isAuthorized(sessions["regular-user"], membership, action))
@@ -1666,6 +2299,51 @@ describe("Authorization Tests", () => {
     expect(isAuthorized(sessions["organization-read-data-user"], membership, action))
       .toBe(true);
     expect(isAuthorized(sessions["organization-write-data-user"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-owner"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-maintainer"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-read-data"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-write-data"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-invited"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["disabled"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["regular-user"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["create-repositories-user"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["anonymous"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["no-account"], membership, action))
+      .toBe(false);
+
+    // Repository Member Membership
+    var membership = memberships.find((membership) => {
+      return membership.account_id == "repo-member-owner" && membership.membership_account_id == "organization" && membership.repository_id == "org-repo-id"
+    });
+    expect(isAuthorized(sessions["admin"], membership, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["organization-owner-user"], membership, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["organization-maintainer-user"], membership, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["organization-read-data-user"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["organization-write-data-user"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-owner"], membership, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["repo-member-maintainer"], membership, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["repo-member-read-data"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-write-data"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-invited"], membership, action))
       .toBe(false);
     expect(isAuthorized(sessions["disabled"], membership, action))
       .toBe(false);
@@ -1695,6 +2373,53 @@ describe("Authorization Tests", () => {
     expect(isAuthorized(sessions["organization-read-data-user"], membership, action))
       .toBe(false);
     expect(isAuthorized(sessions["organization-write-data-user"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-owner"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-maintainer"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-read-data"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-write-data"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-invited"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["disabled"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["regular-user"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["create-repositories-user"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["anonymous"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["no-account"], membership, action))
+      .toBe(false);
+
+    // Regular User Repository Membership Invite
+    var membership = memberships.find((membership) => {
+      return membership.account_id == "repo-member-invited" && membership.membership_account_id == "organization"
+    });
+    expect(isAuthorized(sessions["admin"], membership, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["organization-owner-user"], membership, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["organization-maintainer-user"], membership, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["organization-read-data-user"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["organization-read-data-user"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["organization-write-data-user"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-owner"], membership, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["repo-member-maintainer"], membership, action))
+      .toBe(true);
+    expect(isAuthorized(sessions["repo-member-read-data"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-write-data"], membership, action))
+      .toBe(false);
+    expect(isAuthorized(sessions["repo-member-invited"], membership, action))
       .toBe(false);
     expect(isAuthorized(sessions["disabled"], membership, action))
       .toBe(false);
