@@ -488,7 +488,7 @@ function disableRepository(
 
 function disableAccount(principal: UserSession, account: Account): boolean {
   // If the user does not have an account, they are not authorized
-  if (!principal?.account) {
+  if (!principal || !principal?.account) {
     return false;
   }
 

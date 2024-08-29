@@ -38,6 +38,14 @@ describe("/api/v1/accounts", () => {
   it("should throw UnauthorizedError when user is not signed in", async () => {
     (getSession as jest.Mock).mockResolvedValue(null);
 
+    req.body = {
+      account_id: "new-user-account",
+      account_type: AccountType.USER,
+      profile: {
+        name: "New User",
+      },
+    };
+
     await expect(handler(req, res)).rejects.toThrow(UnauthorizedError);
   });
 

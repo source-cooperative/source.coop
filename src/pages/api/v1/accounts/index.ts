@@ -1,12 +1,10 @@
+// Import necessary modules and types
 import type { NextApiRequest, NextApiResponse } from "next";
 import { getSession } from "@/api/utils";
 import {
   Account,
-  AccountSchema,
   AccountType,
   AccountCreationRequestSchema,
-  UserSession,
-  AccountFlags,
   Actions,
 } from "@/api/types";
 import { withErrorHandling } from "@/api/middleware";
@@ -16,9 +14,8 @@ import {
   MethodNotImplementedError,
   UnauthorizedError,
 } from "@/api/errors";
-import { getAccount, putAccount } from "@/api/db";
+import { putAccount } from "@/api/db";
 import { isAuthorized } from "@/api/authz";
-import logger from "@/utils/logger";
 
 /**
  * @openapi
@@ -51,46 +48,55 @@ async function createAccountHandler(
   req: NextApiRequest,
   res: NextApiResponse<Account>
 ): Promise<void> {
+  // Get the current session
   const session = await getSession(req);
-  if (!session) {
-    throw new UnauthorizedError();
-  }
 
+  // Parse and validate the account creation request
   const accountRequest = AccountCreationRequestSchema.parse(req.body);
+
+  // Create a new account object
   const newAccount: Account = {
     ...accountRequest,
     disabled: false,
     flags: [],
     identity_id:
       accountRequest.account_type === AccountType.USER
-        ? session.identity_id
+        ? session?.identity_id
         : undefined,
   };
 
+  // Check if the user is authorized to create an account
   if (!isAuthorized(session, newAccount, Actions.CreateAccount)) {
     throw new UnauthorizedError();
   }
 
+  // Attempt to create the account in the database
   const [account, success] = await putAccount(newAccount, true);
 
+  // If the account creation was not successful, throw an error
   if (!success) {
     throw new BadRequestError(
       `Account with ID ${account.account_id} already exists`
     );
   }
 
+  // Send the created account as the response
   res.status(StatusCodes.OK).json(account);
 }
 
+// Handler function for the API route
 export async function handler(
   req: NextApiRequest,
   res: NextApiResponse<Account>
 ) {
+  // Check if the request method is POST
   if (req.method === "POST") {
     return createAccountHandler(req, res);
   }
 
+  // If the method is not POST, throw an error
   throw new MethodNotImplementedError();
 }
 
+// Export the handler with error handling middleware
 export default withErrorHandling(handler);
