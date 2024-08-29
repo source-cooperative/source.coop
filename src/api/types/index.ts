@@ -28,10 +28,15 @@
  * // Use the schemas for validation
  * const validRepo = RepositorySchema.parse(someData);
  */
-
+import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
 import { z } from "zod";
 
-export const ID_REGEX = /^(?=.{3,40}$)[a-z0-9](?:(?!--)[a-z0-9-])*[a-z0-9]$/;
+extendZodWithOpenApi(z);
+
+export const MIN_ID_LENGTH = 3;
+export const MAX_ID_LENGTH = 40;
+
+export const ID_REGEX = /^[a-z0-9](?:(?!--)[a-z0-9-])*[a-z0-9]$/;
 
 export enum DataProvider {
   S3 = "s3",
@@ -80,37 +85,43 @@ export enum AzureRegions {
   WEST_EUROPE = "westeurope",
 }
 
-export const RepositoryMirrorSchema = z.object({
-  data_connection_id: z.string(),
-  prefix: z.string(),
-});
+export const RepositoryMirrorSchema = z
+  .object({
+    data_connection_id: z.string(),
+    prefix: z.string(),
+  })
+  .openapi("RepositoryMirror");
 
 export type RepositoryMirror = z.infer<typeof RepositoryMetaSchema>;
 
-export const RepositoryDataSchema = z.object({
-  primary_mirror: z.string({
-    required_error: "Primary mirror is required",
-    invalid_type_error: "Primary mirror must be a string",
-  }),
-  mirrors: z.record(RepositoryMirrorSchema),
-});
+export const RepositoryDataSchema = z
+  .object({
+    primary_mirror: z.string({
+      required_error: "Primary mirror is required",
+      invalid_type_error: "Primary mirror must be a string",
+    }),
+    mirrors: z.record(RepositoryMirrorSchema),
+  })
+  .openapi("RepositoryData");
 
-export const RepositoryMetaSchema = z.object({
-  title: z.string({
-    required_error: "Title is required",
-    invalid_type_error: "Title must be a string",
-  }),
-  description: z.string({
-    required_error: "Description is required",
-    invalid_type_error: "Description must be a string",
-  }),
-  tags: z.array(
-    z.string({
-      required_error: "Tag is required",
-      invalid_type_error: "Tag must be a string",
-    })
-  ),
-});
+export const RepositoryMetaSchema = z
+  .object({
+    title: z.string({
+      required_error: "Title is required",
+      invalid_type_error: "Title must be a string",
+    }),
+    description: z.string({
+      required_error: "Description is required",
+      invalid_type_error: "Description must be a string",
+    }),
+    tags: z.array(
+      z.string({
+        required_error: "Tag is required",
+        invalid_type_error: "Tag must be a string",
+      })
+    ),
+  })
+  .openapi("RepositoryMeta");
 
 export type RepositoryMeta = z.infer<typeof RepositoryMetaSchema>;
 
@@ -125,9 +136,11 @@ export enum RepositoryState {
   Unlisted = "unlisted",
 }
 
-export const RepositoryStateSchema = z.nativeEnum(RepositoryState, {
-  errorMap: () => ({ message: "Invalid repository mode" }),
-});
+export const RepositoryStateSchema = z
+  .nativeEnum(RepositoryState, {
+    errorMap: () => ({ message: "Invalid repository mode" }),
+  })
+  .openapi("RepositoryState");
 
 export enum RepositoryDataMode {
   Open = "open",
@@ -135,28 +148,42 @@ export enum RepositoryDataMode {
   Private = "private",
 }
 
-export const RepositoryDataModeSchema = z.nativeEnum(RepositoryDataMode, {
-  errorMap: () => ({ message: "Invalid repository data mode" }),
-});
+export const RepositoryDataModeSchema = z
+  .nativeEnum(RepositoryDataMode, {
+    errorMap: () => ({ message: "Invalid repository data mode" }),
+  })
+  .openapi("RepositoryDataMode");
 
 export enum RepositoryFeatured {
   Featured = 1,
   NotFeatured = 0,
 }
 
-export const RepositorySchema = z.object({
-  account_id: z.string().regex(ID_REGEX, "Invalid account ID format"),
-  repository_id: z.string().regex(ID_REGEX, "Invalid repository ID format"),
-  state: RepositoryStateSchema,
-  data_mode: RepositoryDataModeSchema,
-  featured: z.nativeEnum(RepositoryFeatured, {
-    errorMap: () => ({ message: "Invalid featured value" }),
-  }),
-  meta: RepositoryMetaSchema,
-  data: RepositoryDataSchema,
-  published: z.string().datetime({ offset: true }),
-  disabled: z.boolean(),
-});
+export const RepositorySchema = z
+  .object({
+    account_id: z
+      .string()
+      .min(MIN_ID_LENGTH)
+      .max(MAX_ID_LENGTH)
+      .toLowerCase()
+      .regex(ID_REGEX, "Invalid account ID format"),
+    repository_id: z
+      .string()
+      .min(MIN_ID_LENGTH)
+      .max(MAX_ID_LENGTH)
+      .toLowerCase()
+      .regex(ID_REGEX, "Invalid repository ID format"),
+    state: RepositoryStateSchema,
+    data_mode: RepositoryDataModeSchema,
+    featured: z.nativeEnum(RepositoryFeatured, {
+      errorMap: () => ({ message: "Invalid featured value" }),
+    }),
+    meta: RepositoryMetaSchema,
+    data: RepositoryDataSchema,
+    published: z.string().datetime({ offset: true }),
+    disabled: z.boolean(),
+  })
+  .openapi("Repository");
 
 export enum S3AuthenticationType {
   AccessKey = "access_key",
@@ -167,66 +194,82 @@ export enum AzureAuthenticationType {
   SasToken = "sas_token",
 }
 
-export const S3AccessKeyAuthenticationSchema = z.object({
-  type: z.literal(S3AuthenticationType.AccessKey),
-  access_key_id: z.string(),
-  secret_access_key: z.string(),
-});
+export const S3AccessKeyAuthenticationSchema = z
+  .object({
+    type: z.literal(S3AuthenticationType.AccessKey),
+    access_key_id: z.string(),
+    secret_access_key: z.string(),
+  })
+  .openapi("S3AccessKeyAuthentication");
 
-export const S3AuthenticationSchema = z.discriminatedUnion("type", [
-  S3AccessKeyAuthenticationSchema,
-]);
+export const S3AuthenticationSchema = z
+  .discriminatedUnion("type", [S3AccessKeyAuthenticationSchema])
+  .openapi("S3Authentication");
 
-export const AzureSasTokenAuthenticationSchema = z.object({
-  type: z.literal(AzureAuthenticationType.SasToken),
-  sas_token: z.string(),
-});
+export const AzureSasTokenAuthenticationSchema = z
+  .object({
+    type: z.literal(AzureAuthenticationType.SasToken),
+    sas_token: z.string(),
+  })
+  .openapi("AzureSasTokenAuthentication");
 
-export const AzureAuthenticationSchema = z.discriminatedUnion("type", [
-  AzureSasTokenAuthenticationSchema,
-]);
+export const AzureAuthenticationSchema = z
+  .discriminatedUnion("type", [AzureSasTokenAuthenticationSchema])
+  .openapi("AzureAuthentication");
 
 export type S3Authentication = z.infer<typeof S3AuthenticationSchema>;
 export type AzureAuthentication = z.infer<typeof AzureAuthenticationSchema>;
 
-export const S3DataConnectionSchema = z.object({
-  provider: z.literal(DataProvider.S3),
-  bucket: z.string(),
-  base_prefix: z.string(),
-  region: z.nativeEnum(S3Regions),
-  authentication: z.optional(S3AuthenticationSchema),
-});
+export const S3DataConnectionSchema = z
+  .object({
+    provider: z.literal(DataProvider.S3),
+    bucket: z.string(),
+    base_prefix: z.string(),
+    region: z.nativeEnum(S3Regions),
+    authentication: z.optional(S3AuthenticationSchema),
+  })
+  .openapi("S3DataConnection");
 
-export const AzureDataConnectionSchema = z.object({
-  provider: z.literal(DataProvider.Azure),
-  account_name: z.string(),
-  container_name: z.string(),
-  base_prefix: z.string(),
-  region: z.nativeEnum(AzureRegions),
-  authentication: z.optional(AzureAuthenticationSchema),
-});
+export const AzureDataConnectionSchema = z
+  .object({
+    provider: z.literal(DataProvider.Azure),
+    account_name: z.string(),
+    container_name: z.string(),
+    base_prefix: z.string(),
+    region: z.nativeEnum(AzureRegions),
+    authentication: z.optional(AzureAuthenticationSchema),
+  })
+  .openapi("AzureDataConnection");
 
 export type S3DataConnection = z.infer<typeof S3DataConnectionSchema>;
 export type AzureDataConnection = z.infer<typeof AzureDataConnectionSchema>;
 
-export const DataConnnectionDetailsSchema = z.discriminatedUnion("provider", [
-  S3DataConnectionSchema,
-  AzureDataConnectionSchema,
-]);
+export const DataConnnectionDetailsSchema = z
+  .discriminatedUnion("provider", [
+    S3DataConnectionSchema,
+    AzureDataConnectionSchema,
+  ])
+  .openapi("DataConnectionDetails");
 
 export type DataConnectionDetails = z.infer<
   typeof DataConnnectionDetailsSchema
 >;
 
-export const DataConnectionSchema = z.object({
-  data_connection_id: z
-    .string()
-    .regex(ID_REGEX, "Invalid data connection ID format"),
-  name: z.string(),
-  prefix_template: z.optional(z.string()),
-  read_only: z.boolean(),
-  details: DataConnnectionDetailsSchema,
-});
+export const DataConnectionSchema = z
+  .object({
+    data_connection_id: z
+      .string()
+      .min(MIN_ID_LENGTH)
+      .max(MAX_ID_LENGTH)
+      .toLowerCase()
+      .regex(ID_REGEX, "Invalid data connection ID format"),
+    name: z.string(),
+    prefix_template: z.optional(z.string()),
+    read_only: z.boolean(),
+    required_flag: z.optional(z.string()),
+    details: DataConnnectionDetailsSchema,
+  })
+  .openapi("DataConnection");
 
 export type DataConnection = z.infer<typeof DataConnectionSchema>;
 
@@ -238,9 +281,11 @@ export enum AccountType {
   SERVICE = "service",
 }
 
-export const AccountTypeSchema = z.nativeEnum(AccountType, {
-  errorMap: () => ({ message: "Invalid account type" }),
-});
+export const AccountTypeSchema = z
+  .nativeEnum(AccountType, {
+    errorMap: () => ({ message: "Invalid account type" }),
+  })
+  .openapi("AccountType");
 
 export enum AccountFlags {
   ADMIN = "admin",
@@ -248,24 +293,30 @@ export enum AccountFlags {
   CREATE_ORGANIZATIONS = "create_organizations",
 }
 
-export const AccountFlagsSchema = z.array(
-  z.nativeEnum(AccountFlags, {
-    errorMap: () => ({ message: "Invalid account flag" }),
-  })
-);
-
-export const AccountProfileSchema = z.object({
-  name: z
-    .string({
-      required_error: "Name is required",
-      invalid_type_error: "Name must be a string",
+export const AccountFlagsSchema = z
+  .array(
+    z.nativeEnum(AccountFlags, {
+      errorMap: () => ({ message: "Invalid account flag" }),
     })
-    .min(1, "Name must not be empty")
-    .max(100, "Name must not exceed 50 characters"),
-  bio: z.optional(z.string()),
-  location: z.optional(z.string()),
-  url: z.optional(z.string().url("Invalid URL format")),
-});
+  )
+  .openapi("AccountFlags");
+
+export const AccountProfileSchema = z
+  .object({
+    name: z
+      .optional(z.string().max(128, "Name must not exceed 128 characters"))
+      .openapi({ example: "Isaac Asimov" }),
+    bio: z
+      .optional(z.string().max(512, "Bio must not exceed 512 characters"))
+      .openapi({ example: "Software Engineer @radiantearth" }),
+    location: z
+      .optional(z.string().max(128, "Location must not exceed 128 characters"))
+      .openapi({ example: "Augsburg, Germany" }),
+    url: z
+      .optional(z.string().url("Invalid URL format"))
+      .openapi({ example: "https://source.coop" }),
+  })
+  .openapi("AccountProfile");
 
 export type AccountProfile = z.infer<typeof AccountProfileSchema>;
 
@@ -277,15 +328,22 @@ export type AccountProfileResponse = {
   profile_image: string;
 };
 
-export const AccountSchema = z.object({
-  account_id: z.string().regex(ID_REGEX, "Invalid account ID format"),
-  account_type: AccountTypeSchema,
-  identity_id: z.optional(z.string()),
-  email: z.optional(z.string().email("Invalid email format")),
-  disabled: z.boolean(),
-  profile: AccountProfileSchema,
-  flags: AccountFlagsSchema,
-});
+export const AccountSchema = z
+  .object({
+    account_id: z
+      .string()
+      .min(MIN_ID_LENGTH)
+      .max(MAX_ID_LENGTH)
+      .toLowerCase()
+      .regex(ID_REGEX, "Invalid account ID format")
+      .openapi({ example: "account-id" }),
+    account_type: AccountTypeSchema,
+    identity_id: z.optional(z.string()).openapi({ example: "identity-id" }),
+    disabled: z.boolean(),
+    profile: AccountProfileSchema,
+    flags: AccountFlagsSchema,
+  })
+  .openapi("Account");
 
 export type Account = z.infer<typeof AccountSchema>;
 
@@ -302,9 +360,11 @@ export enum MembershipRole {
   WriteData = "write_data",
 }
 
-export const MembershipRoleSchema = z.nativeEnum(MembershipRole, {
-  errorMap: () => ({ message: "Invalid membership role" }),
-});
+export const MembershipRoleSchema = z
+  .nativeEnum(MembershipRole, {
+    errorMap: () => ({ message: "Invalid membership role" }),
+  })
+  .openapi("MembershipRole");
 
 export enum MembershipState {
   Invited = "invited",
@@ -312,63 +372,111 @@ export enum MembershipState {
   Member = "member",
 }
 
-export const MembershipStateSchema = z.nativeEnum(MembershipState, {
-  errorMap: () => ({ message: "Invalid membership state" }),
-});
+export const MembershipStateSchema = z
+  .nativeEnum(MembershipState, {
+    errorMap: () => ({ message: "Invalid membership state" }),
+  })
+  .openapi("MembershipState");
 
-export const MembershipSchema = z.object({
-  account_id: z.string().regex(ID_REGEX, "Invalid account ID format"),
-  membership_account_id: z
-    .string()
-    .regex(ID_REGEX, "Invalid membership account ID format"),
-  repository_id: z.optional(
-    z.string().regex(ID_REGEX, "Invalid repository ID format")
-  ),
-  role: MembershipRoleSchema,
-  state: MembershipStateSchema,
-  state_changed: z.string().datetime("Invalid date format for state changed"),
-});
+export const MembershipSchema = z
+  .object({
+    account_id: z
+      .string()
+      .min(MIN_ID_LENGTH)
+      .max(MAX_ID_LENGTH)
+      .toLowerCase()
+      .regex(ID_REGEX, "Invalid account ID format")
+      .openapi({ example: "account-id" }),
+    membership_account_id: z
+      .string()
+      .min(MIN_ID_LENGTH)
+      .max(MAX_ID_LENGTH)
+      .toLowerCase()
+      .regex(ID_REGEX, "Invalid membership account ID format")
+      .openapi({ example: "organization-id" }),
+    repository_id: z
+      .optional(
+        z
+          .string()
+          .min(MIN_ID_LENGTH)
+          .max(MAX_ID_LENGTH)
+          .toLowerCase()
+          .regex(ID_REGEX, "Invalid repository ID format")
+      )
+      .openapi({ example: "repository-id" }),
+    role: MembershipRoleSchema,
+    state: MembershipStateSchema,
+    state_changed: z.string().datetime("Invalid date format for state changed"),
+  })
+  .openapi("Membership");
 
 export type Membership = z.infer<typeof MembershipSchema>;
 
-export const APIKeySchema = z.object({
-  access_key_id: z.string({
-    required_error: "Access key ID is required",
-    invalid_type_error: "Access key ID must be a string",
-  }),
-  account_id: z.string().regex(ID_REGEX, "Invalid account ID format"),
-  repository_id: z.optional(z.string().regex(ID_REGEX, "Invalid account ID format")),
-  disabled: z.boolean(),
-  expires: z.string().datetime("Invalid expiration date format"),
-  name: z.string({
-    required_error: "API key name is required",
-    invalid_type_error: "API key name must be a string",
-  }), // TODO: Add regex for name
-  secret_access_key: z.string({
-    required_error: "Secret access key is required",
-    invalid_type_error: "Secret access key must be a string",
-  }),
-});
+export const APIKeySchema = z
+  .object({
+    access_key_id: z.string({
+      required_error: "Access key ID is required",
+      invalid_type_error: "Access key ID must be a string",
+    }),
+    account_id: z
+      .string()
+      .min(MIN_ID_LENGTH)
+      .max(MAX_ID_LENGTH)
+      .toLowerCase()
+      .regex(ID_REGEX, "Invalid account ID format"),
+    repository_id: z.optional(
+      z
+        .string()
+        .min(MIN_ID_LENGTH)
+        .max(MAX_ID_LENGTH)
+        .toLowerCase()
+        .regex(ID_REGEX, "Invalid repository ID format")
+    ),
+    disabled: z.boolean(),
+    expires: z.string().datetime("Invalid expiration date format"),
+    name: z.string({
+      required_error: "API key name is required",
+      invalid_type_error: "API key name must be a string",
+    }), // TODO: Add regex for name
+    secret_access_key: z.string({
+      required_error: "Secret access key is required",
+      invalid_type_error: "Secret access key must be a string",
+    }),
+  })
+  .openapi("APIKey");
 
 export type APIKey = z.infer<typeof APIKeySchema>;
 
-export const APIKeyRequestSchema = z.object({
-  name: z.string({
-    required_error: "API key name is required",
-    invalid_type_error: "API key name must be a string",
-  }),
-  expires: z.string().datetime("Invalid expiration date format"),
-});
+export const APIKeyRequestSchema = z
+  .object({
+    name: z.string({
+      required_error: "API key name is required",
+      invalid_type_error: "API key name must be a string",
+    }),
+    expires: z.string().datetime("Invalid expiration date format"),
+  })
+  .openapi("APIKeyRequest");
 
 export type APIKeyRequest = z.infer<typeof APIKeyRequestSchema>;
 
-export const UserSessionSchema = z.object({
-  identity_id: z.optional(z.string()),
-  account: z.optional(AccountSchema),
-  memberships: z.optional(z.array(MembershipSchema)),
-});
+export const UserSessionSchema = z
+  .object({
+    identity_id: z.optional(z.string()).openapi({ example: "identity-id" }),
+    account: z.optional(AccountSchema),
+    memberships: z.optional(z.array(MembershipSchema)),
+  })
+  .openapi("UserSession");
 
 export type UserSession = z.infer<typeof UserSessionSchema>;
+
+export const AccountCreationRequestSchema = AccountSchema.pick({
+  account_id: true,
+  account_type: true,
+  profile: true,
+}).openapi("AccountCreationRequest");
+export type AccountCreationRequest = z.infer<
+  typeof AccountCreationRequestSchema
+>;
 
 export enum Actions {
   CreateRepository = "repository:create",

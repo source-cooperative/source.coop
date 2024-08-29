@@ -182,16 +182,25 @@ export async function getAccounts(): Promise<Account[]> {
  * @returns A Promise that resolves to the added or updated Account object.
  * @throws Will throw an error if there's an issue putting the item in DynamoDB.
  */
-export async function putAccount(account: Account): Promise<Account> {
+export async function putAccount(
+  account: Account,
+  checkIfExists: boolean = false
+): Promise<[Account, boolean]> {
   const command = new PutItemCommand({
     TableName: "source-cooperative-accounts",
     Item: marshall(account),
+    ConditionExpression: checkIfExists
+      ? "attribute_not_exists(account_id)"
+      : undefined,
   });
 
   try {
     await docClient.send(command);
-    return account;
+    return [account, true];
   } catch (e) {
+    if (e instanceof Error && e.name === "ConditionalCheckFailedException") {
+      return [account, false];
+    }
     logger.error(e);
     throw e;
   }

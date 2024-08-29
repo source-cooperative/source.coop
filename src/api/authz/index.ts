@@ -82,9 +82,7 @@ export function isAuthorized(
     .with(Actions.GetRepository, () =>
       getRepository(principal, resource as Repository)
     )
-    .with(Actions.GetAccount, () =>
-      getAccount(principal, resource as Account)
-    )
+    .with(Actions.GetAccount, () => getAccount(principal, resource as Account))
     .with(Actions.ReadRepositoryData, () =>
       readRepositoryData(principal, resource as Repository)
     )
@@ -184,10 +182,7 @@ function getAccountFlags(principal: UserSession, account: Account): boolean {
   // If the user is an owner or maintainer of the repository, they are authorized
   return hasRole(
     principal,
-    [
-      MembershipRole.Owners,
-      MembershipRole.Maintainers
-    ],
+    [MembershipRole.Owners, MembershipRole.Maintainers],
     account.account_id
   );
 
@@ -250,7 +245,11 @@ function writeRepositoryData(
   // If the user is an owner or maintainer of the repository, they are authorized
   return hasRole(
     principal,
-    [MembershipRole.Owners, MembershipRole.Maintainers, MembershipRole.WriteData],
+    [
+      MembershipRole.Owners,
+      MembershipRole.Maintainers,
+      MembershipRole.WriteData,
+    ],
     repository.account_id,
     repository.repository_id
   );
@@ -362,7 +361,10 @@ function listRepository(
   }
 
   // If the repository is listed , everyone is authorized
-  if (repository.state === RepositoryState.Listed && repository.data_mode === RepositoryDataMode.Open) {
+  if (
+    repository.state === RepositoryState.Listed &&
+    repository.data_mode === RepositoryDataMode.Open
+  ) {
     return true;
   }
 
@@ -501,11 +503,7 @@ function disableAccount(principal: UserSession, account: Account): boolean {
   }
 
   if (account.account_type === AccountType.ORGANIZATION) {
-    return hasRole(
-      principal,
-      [MembershipRole.Owners],
-      account.account_id
-    );
+    return hasRole(principal, [MembershipRole.Owners], account.account_id);
   }
 
   return false;
@@ -644,6 +642,11 @@ function createAccount(principal: UserSession, account: Account): boolean {
     }
 
     return false;
+  }
+
+  // Let admins create service accounts
+  if (account.account_type === AccountType.SERVICE) {
+    return isAdmin(principal);
   }
 
   return false;

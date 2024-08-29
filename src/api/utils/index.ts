@@ -38,6 +38,7 @@ import {
 import type { NextApiRequest } from "next";
 import { isAuthorized } from "@/api/authz";
 import crypto from "crypto";
+import logger from "@/utils/logger";
 
 /**
  * Authenticates a user using API key credentials.
@@ -150,19 +151,19 @@ async function authenticateWithCookie(
 export async function getSession(
   req: NextApiRequest
 ): Promise<UserSession | null> {
-  const { access_key_id, secret_access_key } = req.query;
+  const { authorization } = req.headers;
 
   // Try API key authentication first
-  if (
-    typeof access_key_id === "string" &&
-    typeof secret_access_key === "string"
-  ) {
-    const apiKeySession = await authenticateWithApiKey(
-      access_key_id,
-      secret_access_key
-    );
-    if (apiKeySession) {
-      return apiKeySession;
+  if (authorization) {
+    const [access_key_id, secret_access_key] = authorization.split(" ");
+    if (access_key_id && secret_access_key) {
+      const apiKeySession = await authenticateWithApiKey(
+        access_key_id,
+        secret_access_key
+      );
+      if (apiKeySession) {
+        return apiKeySession;
+      }
     }
   }
 

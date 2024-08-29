@@ -8,16 +8,35 @@ import { MethodNotImplementedError, UnauthorizedError } from "@/api/errors";
 async function whoamiHandler(
   req: NextApiRequest,
   res: NextApiResponse<UserSession>
-) {
+): Promise<void> {
   const session = await getSession(req);
   if (!session) {
     throw new UnauthorizedError();
   }
 
-  return res.status(StatusCodes.OK).json(session);
+  res.status(StatusCodes.OK).json(session);
 }
 
-async function handler(req: NextApiRequest, res: NextApiResponse<UserSession>) {
+/**
+ * @openapi
+ * /api/v1/whoami:
+ *   get:
+ *     tags: [Authentication]
+ *     description: Get the current user's session information. If the current session is not valid, a 401 error is returned.
+ *     responses:
+ *       200:
+ *         description: Returns the user session data
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/UserSession'
+ *       401:
+ *         description: Unauthorized - No valid session found
+ */
+export async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse<UserSession>
+) {
   if (req.method === "GET") {
     return whoamiHandler(req, res);
   }
