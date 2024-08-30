@@ -14,8 +14,7 @@ type ApiHandler = (req: NextApiRequest, res: NextApiResponse) => Promise<void>;
 export function withErrorHandling(handler: ApiHandler): ApiHandler {
   return async (req, res) => {
     try {
-      const body = await handler(req, res);
-      return res.status(StatusCodes.OK).json(body);
+      await handler(req, res);
     } catch (e) {
       if (e instanceof NotFoundError) {
         return res.status(StatusCodes.NOT_FOUND).json({

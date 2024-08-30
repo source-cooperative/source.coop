@@ -235,16 +235,25 @@ export async function putRepository(
  * @returns A Promise that resolves to the added or updated APIKey object.
  * @throws Will throw an error if there's an issue putting the item in DynamoDB.
  */
-export async function putAPIKey(apiKey: APIKey): Promise<APIKey> {
+export async function putAPIKey(
+  apiKey: APIKey,
+  checkIfExists: boolean = false
+): Promise<[APIKey, boolean]> {
   const command = new PutItemCommand({
     TableName: "source-cooperative-api-keys",
     Item: marshall(apiKey),
+    ConditionExpression: checkIfExists
+      ? "attribute_not_exists(access_key_id)"
+      : undefined,
   });
 
   try {
     await docClient.send(command);
-    return apiKey;
+    return [apiKey, true];
   } catch (e) {
+    if (e instanceof Error && e.name === "ConditionalCheckFailedException") {
+      return [apiKey, false];
+    }
     logger.error(e);
     throw e;
   }
@@ -357,13 +366,19 @@ export async function getMemberships(
  * @returns A Promise that resolves to an array of APIKey objects, or null if none found.
  * @throws Will throw an error if there's an issue querying DynamoDB.
  */
-export async function getAPIKeys(accountId: string): Promise<APIKey[]> {
+export async function getAPIKeys(
+  accountId: string,
+  repositoryId: string | null = null
+): Promise<APIKey[]> {
   const command = new QueryCommand({
     TableName: "source-cooperative-api-keys",
     IndexName: "account_id",
-    KeyConditionExpression: "account_id = :account_id",
+    KeyConditionExpression: repositoryId
+      ? "account_id = :account_id AND repository_id = :repository_id"
+      : "account_id = :account_id",
     ExpressionAttributeValues: {
       ":account_id": accountId,
+      ...(repositoryId && { ":repository_id": repositoryId }),
     },
   });
 

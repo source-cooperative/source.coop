@@ -1,14 +1,14 @@
 import { StatusCodes } from "http-status-codes";
 import type { NextApiRequest, NextApiResponse } from "next";
 import swaggerJSDoc from "swagger-jsdoc";
-import {
-  OpenAPIRegistry,
-  OpenApiGeneratorV3,
-} from "@asteasolutions/zod-to-openapi";
+import { OpenApiGeneratorV3 } from "@asteasolutions/zod-to-openapi";
 import {
   AccountCreationRequestSchema,
   AccountSchema,
+  APIKeyRequestSchema,
+  APIKeySchema,
   MembershipSchema,
+  RedactedAPIKeySchema,
   UserSessionSchema,
 } from "@/api/types";
 
@@ -34,6 +34,9 @@ export default async function handler(
     AccountSchema,
     MembershipSchema,
     AccountCreationRequestSchema,
+    APIKeySchema,
+    APIKeyRequestSchema,
+    RedactedAPIKeySchema,
   ]);
   openapiSpecification["components"] = {
     securitySchemes: {

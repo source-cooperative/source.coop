@@ -123,6 +123,9 @@ export function isAuthorized(
     .with(Actions.InviteMembership, () =>
       inviteMembership(principal, resource as Membership)
     )
+    .with(Actions.ListRepositoryAPIKeys, () =>
+      listAccountAPIKeys(principal, resource as Repository)
+    )
     .otherwise(() => false);
 
   return result;
@@ -708,6 +711,39 @@ function listAccountAPIKeys(principal: UserSession, account: Account): boolean {
     principal,
     [MembershipRole.Owners, MembershipRole.Maintainers],
     account.account_id
+  );
+}
+
+function listRepositoryAPIKeys(
+  principal: UserSession,
+  repository: Repository
+): boolean {
+  // If the user does not have an account, they are not authorized
+  if (!principal?.account) {
+    return false;
+  }
+
+  // If the user is disabled, they are not authorized
+  if (principal?.account?.disabled) {
+    return false;
+  }
+
+  // If the user is an admin, they are authorized
+  if (isAdmin(principal)) {
+    return true;
+  }
+
+  // If the user is the owner of the API key, they are authorized
+  if (repository.account_id === principal.account.account_id) {
+    return true;
+  }
+
+  // If the user is an owner or maintainer of the organization, they are authorized
+  return hasRole(
+    principal,
+    [MembershipRole.Owners, MembershipRole.Maintainers],
+    repository.account_id,
+    repository.repository_id
   );
 }
 

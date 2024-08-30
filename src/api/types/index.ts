@@ -380,6 +380,10 @@ export const MembershipStateSchema = z
 
 export const MembershipSchema = z
   .object({
+    membership_id: z
+      .string()
+      .uuid()
+      .openapi({ example: "00000000-0000-0000-0000-000000000000" }),
     account_id: z
       .string()
       .min(MIN_ID_LENGTH)
@@ -414,34 +418,49 @@ export type Membership = z.infer<typeof MembershipSchema>;
 
 export const APIKeySchema = z
   .object({
-    access_key_id: z.string({
-      required_error: "Access key ID is required",
-      invalid_type_error: "Access key ID must be a string",
-    }),
+    access_key_id: z
+      .string({
+        required_error: "Access key ID is required",
+        invalid_type_error: "Access key ID must be a string",
+      })
+      .min(2)
+      .max(24)
+      .startsWith("SC")
+      .toUpperCase()
+      .openapi({ example: "SCFOOBAR" }),
     account_id: z
       .string()
       .min(MIN_ID_LENGTH)
       .max(MAX_ID_LENGTH)
       .toLowerCase()
-      .regex(ID_REGEX, "Invalid account ID format"),
-    repository_id: z.optional(
-      z
-        .string()
-        .min(MIN_ID_LENGTH)
-        .max(MAX_ID_LENGTH)
-        .toLowerCase()
-        .regex(ID_REGEX, "Invalid repository ID format")
-    ),
+      .regex(ID_REGEX, "Invalid account ID format")
+      .openapi({ example: "account-id" }),
+    repository_id: z
+      .optional(
+        z
+          .string()
+          .min(MIN_ID_LENGTH)
+          .max(MAX_ID_LENGTH)
+          .toLowerCase()
+          .regex(ID_REGEX, "Invalid repository ID format")
+      )
+      .openapi({ example: "repository-id" }),
     disabled: z.boolean(),
     expires: z.string().datetime("Invalid expiration date format"),
-    name: z.string({
-      required_error: "API key name is required",
-      invalid_type_error: "API key name must be a string",
-    }), // TODO: Add regex for name
-    secret_access_key: z.string({
-      required_error: "Secret access key is required",
-      invalid_type_error: "Secret access key must be a string",
-    }),
+    name: z
+      .string({
+        required_error: "API key name is required",
+        invalid_type_error: "API key name must be a string",
+      })
+      .min(1)
+      .max(128)
+      .openapi({ example: "Dev Machine" }),
+    secret_access_key: z
+      .string({
+        required_error: "Secret access key is required",
+        invalid_type_error: "Secret access key must be a string",
+      })
+      .length(64),
   })
   .openapi("APIKey");
 
@@ -449,10 +468,12 @@ export type APIKey = z.infer<typeof APIKeySchema>;
 
 export const APIKeyRequestSchema = z
   .object({
-    name: z.string({
-      required_error: "API key name is required",
-      invalid_type_error: "API key name must be a string",
-    }),
+    name: z
+      .string({
+        required_error: "API key name is required",
+        invalid_type_error: "API key name must be a string",
+      })
+      .openapi({ example: "Dev Machine" }),
     expires: z.string().datetime("Invalid expiration date format"),
   })
   .openapi("APIKeyRequest");
@@ -478,12 +499,19 @@ export type AccountCreationRequest = z.infer<
   typeof AccountCreationRequestSchema
 >;
 
+export const RedactedAPIKeySchema = APIKeySchema.omit({
+  secret_access_key: true,
+}).openapi("RedactedAPIKey");
+
+export type RedactedAPIKey = z.infer<typeof RedactedAPIKeySchema>;
+
 export enum Actions {
   CreateRepository = "repository:create",
   PutRepository = "repository:put",
   DisableRepository = "repository:disable",
   ListRepository = "repository:list",
   GetRepository = "repository:get",
+  ListRepositoryAPIKeys = "repository:listAPIKeys",
 
   ReadRepositoryData = "repository:data:read",
   WriteRepositoryData = "repository:data:write",

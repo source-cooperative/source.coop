@@ -37,8 +37,44 @@ import {
 } from "@/api/db";
 import type { NextApiRequest } from "next";
 import { isAuthorized } from "@/api/authz";
-import crypto from "crypto";
 import logger from "@/utils/logger";
+import * as crypto from "crypto";
+
+export function generateAccessKeyID(): string {
+  const prefix = "SC";
+  const length = 22;
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  let result = "";
+
+  // Generate cryptographically strong random values
+  const randomBytes = crypto.randomBytes(length);
+
+  for (let i = 0; i < length; i++) {
+    // Use modulo to map the random byte to an index in the chars string
+    const randomIndex = randomBytes[i] % chars.length;
+    result += chars[randomIndex];
+  }
+
+  return prefix + result;
+}
+
+export function generateSecretAccessKey(): string {
+  const length = 64;
+  const chars =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let result = "";
+
+  // Generate cryptographically strong random values
+  const randomBytes = crypto.randomBytes(length);
+
+  for (let i = 0; i < length; i++) {
+    // Use modulo to map the random byte to an index in the chars string
+    const randomIndex = randomBytes[i] % chars.length;
+    result += chars[randomIndex];
+  }
+
+  return result;
+}
 
 /**
  * Authenticates a user using API key credentials.
