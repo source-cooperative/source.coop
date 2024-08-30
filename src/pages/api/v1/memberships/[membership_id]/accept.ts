@@ -75,13 +75,16 @@ async function acceptMembershipHandler(
   }
 
   // Update membership state
-  membership.state = MembershipState.Member;
-  membership.state_changed = new Date().toISOString();
+  const updatedMembership: Membership = {
+    ...membership,
+    state: MembershipState.Member,
+    state_changed: new Date().toISOString(),
+  };
 
   // Save updated membership
-  putMembership(membership);
+  await putMembership(updatedMembership);
 
-  res.status(StatusCodes.OK).json(membership);
+  res.status(StatusCodes.OK).json(updatedMembership);
 }
 
 // Handler function for the API route

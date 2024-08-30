@@ -72,13 +72,16 @@ async function revokeMembershipHandler(
   }
 
   // Update membership state
-  membership.state = MembershipState.Revoked;
-  membership.state_changed = new Date().toISOString();
+  const updatedMembership: Membership = {
+    ...membership,
+    state: MembershipState.Revoked,
+    state_changed: new Date().toISOString(),
+  };
 
   // Save updated membership
-  putMembership(membership);
+  await putMembership(updatedMembership);
 
-  res.status(StatusCodes.OK).json(membership);
+  res.status(StatusCodes.OK).json(updatedMembership);
 }
 
 // Handler function for the API route
