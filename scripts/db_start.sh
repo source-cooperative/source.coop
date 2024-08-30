@@ -184,7 +184,7 @@ function create_tables() {
         return 1
     fi
 
-
+    echo "Creating table source-cooperative-data-connections..."
     # shellcheck disable=SC2086
     response=$(aws dynamodb --endpoint-url http://localhost:8000 create-table \
         --table-name source-cooperative-data-connections \
