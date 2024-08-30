@@ -13,11 +13,14 @@ import { isAuthorized } from "@/api/authz";
 
 /**
  * @openapi
- * /api/v1/accounts/{account_id}/flags:
+ * /accounts/{account_id}/flags:
  *   get:
  *     tags: [Accounts]
  *     summary: Get account flags
- *     description: Retrieves the flags of a specific account. Requires appropriate permissions.
+ *     description: Retrieves the flags of a specific account.
+ *       For a User account, users may only get the flags for their own account.
+ *       For an Organization account, only users who are `owners` or `maintainers` of the organization may get the flags.
+ *       Users with the `admin` flag may get the flags for any account.
  *     parameters:
  *       - in: path
  *         name: account_id
@@ -60,11 +63,11 @@ async function getAccountFlagsHandler(
 
 /**
  * @openapi
- * /api/v1/accounts/{account_id}/flags:
+ * /accounts/{account_id}/flags:
  *   put:
  *     tags: [Accounts]
  *     summary: Update account flags
- *     description: Updates the flags of a specific account. Requires appropriate permissions.
+ *     description: Updates the flags of a specific account. You must have the `admin` flag to update the flags for an account.
  *     parameters:
  *       - in: path
  *         name: account_id

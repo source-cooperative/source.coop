@@ -14,11 +14,11 @@ import { isAuthorized } from "@/api/authz";
 
 /**
  * @openapi
- * /api/v1/accounts/{account_id}/profile:
+ * /accounts/{account_id}/profile:
  *   get:
  *     tags: [Accounts]
  *     summary: Get account profile
- *     description: Retrieves the profile of a specific account. Requires appropriate permissions.
+ *     description: Retrieves the profile of a specific account. Any user, authenticated or not, can retrieve the profile of any account.
  *     parameters:
  *       - in: path
  *         name: account_id
@@ -67,11 +67,14 @@ async function getAccountProfileHandler(
 
 /**
  * @openapi
- * /api/v1/accounts/{account_id}/profile:
+ * /accounts/{account_id}/profile:
  *   put:
  *     tags: [Accounts]
  *     summary: Update account profile
- *     description: Updates the profile of a specific account. Requires appropriate permissions.
+ *     description: Updates the profile of a specific account.
+ *       For a User account, you must be authenticated as the user you are updating the profile for.
+ *       For an Organization account, you must be authenticated as an `owners` member of the organization you are updating the profile for.
+ *      Users with the `admin` flag may update the profile for any account.
  *     parameters:
  *       - in: path
  *         name: account_id

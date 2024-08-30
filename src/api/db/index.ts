@@ -318,6 +318,7 @@ export async function getMembershipsForUser(
 ): Promise<Membership[]> {
   const command = new QueryCommand({
     TableName: "source-cooperative-memberships",
+    IndexName: "account_id",
     KeyConditionExpression: "account_id = :account_id",
     ExpressionAttributeValues: {
       ":account_id": accountId,
@@ -340,20 +341,50 @@ export async function getMembershipsForUser(
  * @throws Will throw an error if there's an issue querying DynamoDB.
  */
 export async function getMemberships(
-  membershipAccountId: string
+  membershipAccountId: string,
+  repositoryId: string | null = null
 ): Promise<Membership[]> {
   const command = new QueryCommand({
     TableName: "source-cooperative-memberships",
     IndexName: "membership_account_id",
-    KeyConditionExpression: "membership_account_id = :membership_account_id",
+    KeyConditionExpression: repositoryId
+      ? "membership_account_id = :membership_account_id AND repository_id = :repository_id"
+      : "membership_account_id = :membership_account_id",
     ExpressionAttributeValues: {
       ":membership_account_id": membershipAccountId,
+      ...(repositoryId && { ":repository_id": repositoryId }),
     },
   });
 
   try {
     const response = await client.send(command);
     return response.Items?.map((item) => item as Membership) ?? [];
+  } catch (e) {
+    logger.error(e);
+    throw e;
+  }
+}
+
+/**
+ * Retrieves memberships for an account from DynamoDB.
+ * @param membershipAccountId - The account ID to search for memberships.
+ * @returns A Promise that resolves to an array of Membership objects, or null if none found.
+ * @throws Will throw an error if there's an issue querying DynamoDB.
+ */
+export async function getMembership(
+  membershipId: string
+): Promise<Membership | null> {
+  const command = new QueryCommand({
+    TableName: "source-cooperative-memberships",
+    KeyConditionExpression: "membership_id = :membership_id",
+    ExpressionAttributeValues: {
+      ":membership_id": membershipId,
+    },
+  });
+
+  try {
+    const response = await client.send(command);
+    return (response.Items?.[0] as Membership) ?? null;
   } catch (e) {
     logger.error(e);
     throw e;
@@ -398,17 +429,25 @@ export async function getAPIKeys(
  * @throws Will throw an error if there's an issue putting the item in DynamoDB.
  */
 export async function putMembership(
-  membership: Membership
-): Promise<Membership> {
+  membership: Membership,
+  checkIfExists: boolean = false
+): Promise<[Membership, boolean]> {
   const command = new PutItemCommand({
     TableName: "source-cooperative-memberships",
     Item: marshall(membership),
+    ConditionExpression: checkIfExists
+      ? "attribute_not_exists(membership_id)"
+      : undefined,
   });
 
   try {
     await docClient.send(command);
-    return membership;
+    return [membership, true];
   } catch (e) {
+    if (e instanceof Error && e.name === "ConditionalCheckFailedException") {
+      logger.error(e);
+      return [membership, false];
+    }
     logger.error(e);
     throw e;
   }

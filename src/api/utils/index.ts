@@ -212,7 +212,7 @@ export async function getSession(
  * @param session - The user session object.
  * @returns A boolean indicating whether the user is an admin.
  */
-export function isAdmin(session?: UserSession): boolean {
+export function isAdmin(session?: UserSession | null): boolean {
   if (session?.account?.flags) {
     return session?.account?.flags.includes(AccountFlags.ADMIN);
   } else {

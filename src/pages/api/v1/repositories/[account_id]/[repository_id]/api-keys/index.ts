@@ -4,6 +4,7 @@ import { getSession } from "@/api/utils";
 import {
   Actions,
   APIKey,
+  APIKeyRequest,
   APIKeyRequestSchema,
   RedactedAPIKey,
   RedactedAPIKeySchema,
@@ -22,11 +23,13 @@ import { generateAccessKeyID, generateSecretAccessKey } from "@/api/utils";
 
 /**
  * @openapi
- * /api/v1/repositories/{account_id}/{repository_id}/api-keys:
+ * /repositories/{account_id}/{repository_id}/api-keys:
  *   post:
  *     tags: [API Keys, Repositories]
  *     summary: Create a new API key
- *     description: Creates a new API key for the specified repository. Requires appropriate permissions.
+ *     description: Creates a new API key for the specified repository.
+ *       Only users who are an `owners` or `maintainers` member of the repository or organization may create an API Key.
+ *       Users with the `admin` flag may create API keys for any repository.
  *     parameters:
  *       - in: path
  *         name: account_id
@@ -71,7 +74,7 @@ async function createAPIKeyHandler(
   const { account_id, repository_id } = req.query;
 
   // Parse and validate the API key request
-  const apiKeyRequest: APIKey = APIKeyRequestSchema.parse(req.body);
+  const apiKeyRequest: APIKeyRequest = APIKeyRequestSchema.parse(req.body);
 
   // Check if the expiration date is in the future
   if (Date.parse(apiKeyRequest.expires) <= Date.now()) {
@@ -90,10 +93,10 @@ async function createAPIKeyHandler(
     );
   }
 
-  let [apiKeyCreated, success] = [null, false];
+  let [apiKeyCreated, success]: [APIKey | null, boolean] = [null, false];
   do {
     // Create the API key object
-    var apiKey: APIKey = {
+    let apiKey: APIKey = {
       ...apiKeyRequest,
       disabled: false,
       account_id: repository.account_id,
@@ -109,19 +112,23 @@ async function createAPIKeyHandler(
 
     // Attempt to put the API key in the database
     [apiKeyCreated, success] = await putAPIKey(apiKey, true);
-  } while (!success);
 
-  // Send the created API key as the response
-  res.status(StatusCodes.OK).json(apiKeyCreated);
+    if (success) {
+      // Send the created API key as the response
+      res.status(StatusCodes.OK).json(apiKeyCreated);
+    }
+  } while (!success);
 }
 
 /**
  * @openapi
- * /api/v1/repositories/{account_id}/{repository_id}/api-keys:
+ * /repositories/{account_id}/{repository_id}/api-keys:
  *   get:
  *     tags: [API Keys, Repositories]
  *     summary: List API keys for a repository
- *     description: Retrieves all API keys associated with the specified repository. Requires appropriate permissions. Secret Access Keys are redacted and are only visible upon the initial creation of the API Key.
+ *     description: Retrieves all API keys associated with the specified repository.
+ *       Only users who are an `owners` or `maintainers` member of the repository or organization may list API keys.
+ *       Users with the `admin` flag may list API keys for any repository.
  *     parameters:
  *       - in: path
  *         name: account_id

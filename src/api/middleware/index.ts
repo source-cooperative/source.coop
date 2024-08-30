@@ -17,38 +17,50 @@ export function withErrorHandling(handler: ApiHandler): ApiHandler {
       await handler(req, res);
     } catch (e) {
       if (e instanceof NotFoundError) {
-        return res.status(StatusCodes.NOT_FOUND).json({
-          code: StatusCodes.NOT_FOUND,
-          message: e.message,
-        });
+        if (!res.headersSent) {
+          res.status(StatusCodes.NOT_FOUND).json({
+            code: StatusCodes.NOT_FOUND,
+            message: e.message,
+          });
+        }
       } else if (e instanceof UnauthorizedError) {
-        return res.status(StatusCodes.UNAUTHORIZED).json({
-          code: StatusCodes.UNAUTHORIZED,
-          message: e.message,
-        });
+        if (!res.headersSent) {
+          res.status(StatusCodes.UNAUTHORIZED).json({
+            code: StatusCodes.UNAUTHORIZED,
+            message: e.message,
+          });
+        }
       } else if (e instanceof ZodError) {
-        return res.status(StatusCodes.BAD_REQUEST).json({
-          code: StatusCodes.BAD_REQUEST,
-          message: "Validation error",
-          errors: e.errors,
-        });
+        if (!res.headersSent) {
+          res.status(StatusCodes.BAD_REQUEST).json({
+            code: StatusCodes.BAD_REQUEST,
+            message: "Validation error",
+            errors: e.errors,
+          });
+        }
       } else if (e instanceof MethodNotImplementedError) {
-        return res.status(StatusCodes.NOT_IMPLEMENTED).json({
-          code: StatusCodes.NOT_IMPLEMENTED,
-          message: e.message,
-        });
+        if (!res.headersSent) {
+          res.status(StatusCodes.NOT_IMPLEMENTED).json({
+            code: StatusCodes.NOT_IMPLEMENTED,
+            message: e.message,
+          });
+        }
       } else if (e instanceof BadRequestError) {
-        return res.status(StatusCodes.BAD_REQUEST).json({
-          code: StatusCodes.BAD_REQUEST,
-          message: e.message,
-        });
+        if (!res.headersSent) {
+          res.status(StatusCodes.BAD_REQUEST).json({
+            code: StatusCodes.BAD_REQUEST,
+            message: e.message,
+          });
+        }
       }
 
       logger.error(e);
-      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-        code: StatusCodes.INTERNAL_SERVER_ERROR,
-        message: "Internal server error",
-      });
+      if (!res.headersSent) {
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+          code: StatusCodes.INTERNAL_SERVER_ERROR,
+          message: "Internal server error",
+        });
+      }
     }
   };
 }

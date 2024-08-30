@@ -19,11 +19,14 @@ import { isAuthorized } from "@/api/authz";
 
 /**
  * @openapi
- * /api/v1/accounts:
+ * /accounts:
  *   post:
  *     tags: [Accounts]
  *     summary: Create a new account
- *     description: Creates a new account. Users can only create one User account. Other account types require appropriate permissions.
+ *     description: Creates a new account.
+ *       Authenticated users can only create a user account if they do not already have one.
+ *       Only users with the `create_organizations` flag may create organization accounts.
+ *       Users with the `admin` flag may create any account.
  *     requestBody:
  *       required: true
  *       content:

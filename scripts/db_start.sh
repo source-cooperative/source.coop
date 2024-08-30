@@ -28,6 +28,7 @@ function errecho() {
 function create_tables() {
     echo "Creating tables in the local dynamodb instance..."
 
+    echo "Creating table source-cooperative-accounts..."
     # shellcheck disable=SC2086
     response=$(aws dynamodb --endpoint-url http://localhost:8000 create-table \
         --table-name source-cooperative-accounts \
@@ -65,12 +66,14 @@ function create_tables() {
                 }
             ]"
     )
+    echo $response
 
     # shellcheck disable=SC2181
     if [[ ${?} -ne 0 ]]; then
         return 1
     fi
 
+    echo "Creating table source-cooperative-repositories..."
     # shellcheck disable=SC2086
     response=$(aws dynamodb --endpoint-url http://localhost:8000 create-table \
         --table-name source-cooperative-repositories \
@@ -104,6 +107,7 @@ function create_tables() {
         return 1
     fi
 
+    echo "Creating table source-cooperative-api-keys..."
     # shellcheck disable=SC2086
     response=$(aws dynamodb --endpoint-url http://localhost:8000 create-table \
         --table-name source-cooperative-api-keys \
@@ -135,22 +139,35 @@ function create_tables() {
         return 1
     fi
 
-
+    echo "Creating table source-cooperative-memberships..."
     # shellcheck disable=SC2086
     response=$(aws dynamodb --endpoint-url http://localhost:8000 create-table \
         --table-name source-cooperative-memberships \
         --attribute-definitions \
+            AttributeName=membership_id,AttributeType=S \
             AttributeName=account_id,AttributeType=S \
             AttributeName=membership_account_id,AttributeType=S \
+            AttributeName=repository_id,AttributeType=S \
         --key-schema \
-            AttributeName=account_id,KeyType=HASH \
+            AttributeName=membership_id,KeyType=HASH \
         --provisioned-throughput \
             ReadCapacityUnits=1,WriteCapacityUnits=1 \
         --global-secondary-indexes \
             "[
                 {
                     \"IndexName\": \"membership_account_id\",
-                    \"KeySchema\": [{\"AttributeName\":\"membership_account_id\",\"KeyType\":\"HASH\"}],
+                    \"KeySchema\": [{\"AttributeName\":\"membership_account_id\",\"KeyType\":\"HASH\"},{\"AttributeName\":\"repository_id\",\"KeyType\":\"RANGE\"}],
+                    \"Projection\":{
+                        \"ProjectionType\":\"ALL\"
+                    },
+                    \"ProvisionedThroughput\": {
+                        \"ReadCapacityUnits\": 1,
+                        \"WriteCapacityUnits\": 1
+                    }
+                },
+                {
+                    \"IndexName\": \"account_id\",
+                    \"KeySchema\": [{\"AttributeName\":\"account_id\",\"KeyType\":\"HASH\"}],
                     \"Projection\":{
                         \"ProjectionType\":\"ALL\"
                     },

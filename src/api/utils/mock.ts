@@ -67,11 +67,10 @@ export const apiKeys: APIKey[] = loadAndValidateJson(
   z.array(APIKeySchema)
 );
 
-export const sessions: Record<string, UserSession> = {
+export const sessions: Record<string, UserSession | null> = {
   anonymous: null,
   "no-account": {
     identity_id: "foobar",
-    account: null,
     memberships: [],
   },
 };

@@ -1107,366 +1107,6 @@ describe("Authorization Tests", () => {
     expect(isAuthorized(sessions["no-account"], repo, action)).toBe(false);
   });
 
-  test("Action: account:create", () => {
-    const action = Actions.CreateAccount;
-
-    // User Account
-    var account = sessions["regular-user"].account;
-    expect(isAuthorized(sessions["admin"], account, action)).toBe(false);
-    expect(
-      isAuthorized(sessions["organization-owner-user"], account, action)
-    ).toBe(false);
-    expect(
-      isAuthorized(sessions["organization-maintainer-user"], account, action)
-    ).toBe(false);
-    expect(
-      isAuthorized(sessions["organization-read-data-user"], account, action)
-    ).toBe(false);
-    expect(
-      isAuthorized(sessions["organization-write-data-user"], account, action)
-    ).toBe(false);
-    expect(isAuthorized(sessions["disabled"], account, action)).toBe(false);
-    expect(isAuthorized(sessions["regular-user"], account, action)).toBe(false);
-    expect(
-      isAuthorized(sessions["create-repositories-user"], account, action)
-    ).toBe(false);
-    expect(isAuthorized(sessions["anonymous"], account, action)).toBe(false);
-    expect(isAuthorized(sessions["no-account"], account, action)).toBe(true);
-
-    // Organization Account
-    var account: Account = {
-      account_id: "organization",
-      account_type: AccountType.ORGANIZATION,
-      disabled: false,
-      profile: {
-        name: "Organization",
-        bio: "This is an organization",
-        location: "United States",
-      },
-      flags: [],
-    };
-    expect(isAuthorized(sessions["admin"], account, action)).toBe(true);
-    expect(
-      isAuthorized(sessions["organization-owner-user"], account, action)
-    ).toBe(true);
-    expect(
-      isAuthorized(sessions["organization-maintainer-user"], account, action)
-    ).toBe(false);
-    expect(
-      isAuthorized(sessions["organization-read-data-user"], account, action)
-    ).toBe(false);
-    expect(
-      isAuthorized(sessions["organization-write-data-user"], account, action)
-    ).toBe(false);
-    expect(isAuthorized(sessions["disabled"], account, action)).toBe(false);
-    expect(isAuthorized(sessions["regular-user"], account, action)).toBe(false);
-    expect(
-      isAuthorized(sessions["create-repositories-user"], account, action)
-    ).toBe(false);
-    expect(isAuthorized(sessions["anonymous"], account, action)).toBe(false);
-    expect(isAuthorized(sessions["no-account"], account, action)).toBe(false);
-  });
-
-  test("Action: account:disable", () => {
-    const action = Actions.DisableAccount;
-
-    // User Account
-    var account = sessions["regular-user"].account;
-    expect(isAuthorized(sessions["admin"], account, action)).toBe(true);
-    expect(
-      isAuthorized(sessions["organization-owner-user"], account, action)
-    ).toBe(false);
-    expect(
-      isAuthorized(sessions["organization-maintainer-user"], account, action)
-    ).toBe(false);
-    expect(
-      isAuthorized(sessions["organization-read-data-user"], account, action)
-    ).toBe(false);
-    expect(
-      isAuthorized(sessions["organization-write-data-user"], account, action)
-    ).toBe(false);
-    expect(isAuthorized(sessions["disabled"], account, action)).toBe(false);
-    expect(isAuthorized(sessions["regular-user"], account, action)).toBe(false);
-    expect(
-      isAuthorized(sessions["create-repositories-user"], account, action)
-    ).toBe(false);
-    expect(isAuthorized(sessions["anonymous"], account, action)).toBe(false);
-    expect(isAuthorized(sessions["no-account"], account, action)).toBe(false);
-
-    // Organization Account
-    var account: Account = {
-      account_id: "organization",
-      account_type: AccountType.ORGANIZATION,
-      disabled: false,
-      profile: {
-        name: "Organization",
-        bio: "This is an organization",
-        location: "United States",
-      },
-      flags: [],
-    };
-    expect(isAuthorized(sessions["admin"], account, action)).toBe(true);
-    expect(
-      isAuthorized(sessions["organization-owner-user"], account, action)
-    ).toBe(true);
-    expect(
-      isAuthorized(sessions["organization-maintainer-user"], account, action)
-    ).toBe(false);
-    expect(
-      isAuthorized(sessions["organization-read-data-user"], account, action)
-    ).toBe(false);
-    expect(
-      isAuthorized(sessions["organization-write-data-user"], account, action)
-    ).toBe(false);
-    expect(isAuthorized(sessions["disabled"], account, action)).toBe(false);
-    expect(isAuthorized(sessions["regular-user"], account, action)).toBe(false);
-    expect(
-      isAuthorized(sessions["create-repositories-user"], account, action)
-    ).toBe(false);
-    expect(isAuthorized(sessions["anonymous"], account, action)).toBe(false);
-    expect(isAuthorized(sessions["no-account"], account, action)).toBe(false);
-  });
-
-  test("Action: account:get", () => {
-    const action = Actions.GetAccount;
-
-    // User Account
-    var account = sessions["regular-user"].account;
-    expect(isAuthorized(sessions["admin"], account, action)).toBe(true);
-    expect(
-      isAuthorized(sessions["organization-owner-user"], account, action)
-    ).toBe(false);
-    expect(
-      isAuthorized(sessions["organization-maintainer-user"], account, action)
-    ).toBe(false);
-    expect(
-      isAuthorized(sessions["organization-read-data-user"], account, action)
-    ).toBe(false);
-    expect(
-      isAuthorized(sessions["organization-write-data-user"], account, action)
-    ).toBe(false);
-    expect(isAuthorized(sessions["disabled"], account, action)).toBe(false);
-    expect(isAuthorized(sessions["regular-user"], account, action)).toBe(true);
-    expect(
-      isAuthorized(sessions["create-repositories-user"], account, action)
-    ).toBe(false);
-    expect(isAuthorized(sessions["anonymous"], account, action)).toBe(false);
-    expect(isAuthorized(sessions["no-account"], account, action)).toBe(false);
-
-    // Organization Account
-    var account: Account = {
-      account_id: "organization",
-      account_type: AccountType.ORGANIZATION,
-      disabled: false,
-      profile: {
-        name: "Organization",
-        bio: "This is an organization",
-        location: "United States",
-      },
-      flags: [],
-    };
-    expect(isAuthorized(sessions["admin"], account, action)).toBe(true);
-    expect(
-      isAuthorized(sessions["organization-owner-user"], account, action)
-    ).toBe(true);
-    expect(
-      isAuthorized(sessions["organization-maintainer-user"], account, action)
-    ).toBe(true);
-    expect(
-      isAuthorized(sessions["organization-read-data-user"], account, action)
-    ).toBe(false);
-    expect(
-      isAuthorized(sessions["organization-write-data-user"], account, action)
-    ).toBe(false);
-    expect(isAuthorized(sessions["disabled"], account, action)).toBe(false);
-    expect(isAuthorized(sessions["regular-user"], account, action)).toBe(false);
-    expect(
-      isAuthorized(sessions["create-repositories-user"], account, action)
-    ).toBe(false);
-    expect(isAuthorized(sessions["anonymous"], account, action)).toBe(false);
-    expect(isAuthorized(sessions["no-account"], account, action)).toBe(false);
-  });
-
-  test("Action: account:list", () => {
-    const action = Actions.ListAccount;
-
-    // User Account
-    var account = sessions["regular-user"].account;
-    expect(isAuthorized(sessions["admin"], account, action)).toBe(true);
-    expect(
-      isAuthorized(sessions["organization-owner-user"], account, action)
-    ).toBe(false);
-    expect(
-      isAuthorized(sessions["organization-maintainer-user"], account, action)
-    ).toBe(false);
-    expect(
-      isAuthorized(sessions["organization-read-data-user"], account, action)
-    ).toBe(false);
-    expect(
-      isAuthorized(sessions["organization-write-data-user"], account, action)
-    ).toBe(false);
-    expect(isAuthorized(sessions["repo-member-owner"], account, action)).toBe(
-      false
-    );
-    expect(
-      isAuthorized(sessions["repo-member-maintainer"], account, action)
-    ).toBe(false);
-    expect(
-      isAuthorized(sessions["repo-member-read-data"], account, action)
-    ).toBe(false);
-    expect(
-      isAuthorized(sessions["repo-member-write-data"], account, action)
-    ).toBe(false);
-    expect(isAuthorized(sessions["repo-member-invited"], account, action)).toBe(
-      false
-    );
-    expect(isAuthorized(sessions["disabled"], account, action)).toBe(false);
-    expect(isAuthorized(sessions["regular-user"], account, action)).toBe(true);
-    expect(
-      isAuthorized(sessions["create-repositories-user"], account, action)
-    ).toBe(false);
-    expect(isAuthorized(sessions["anonymous"], account, action)).toBe(false);
-    expect(isAuthorized(sessions["no-account"], account, action)).toBe(false);
-
-    // Organization Account
-    var account: Account = {
-      account_id: "organization",
-      account_type: AccountType.ORGANIZATION,
-      disabled: false,
-      profile: {
-        name: "Organization",
-        bio: "This is an organization",
-        location: "United States",
-      },
-      flags: [],
-    };
-    expect(isAuthorized(sessions["admin"], account, action)).toBe(true);
-    expect(
-      isAuthorized(sessions["organization-owner-user"], account, action)
-    ).toBe(true);
-    expect(
-      isAuthorized(sessions["organization-maintainer-user"], account, action)
-    ).toBe(true);
-    expect(
-      isAuthorized(sessions["organization-read-data-user"], account, action)
-    ).toBe(false);
-    expect(
-      isAuthorized(sessions["organization-write-data-user"], account, action)
-    ).toBe(false);
-    expect(isAuthorized(sessions["repo-member-owner"], account, action)).toBe(
-      false
-    );
-    expect(
-      isAuthorized(sessions["repo-member-maintainer"], account, action)
-    ).toBe(false);
-    expect(
-      isAuthorized(sessions["repo-member-read-data"], account, action)
-    ).toBe(false);
-    expect(
-      isAuthorized(sessions["repo-member-write-data"], account, action)
-    ).toBe(false);
-    expect(isAuthorized(sessions["repo-member-invited"], account, action)).toBe(
-      false
-    );
-    expect(isAuthorized(sessions["disabled"], account, action)).toBe(false);
-    expect(isAuthorized(sessions["regular-user"], account, action)).toBe(false);
-    expect(
-      isAuthorized(sessions["create-repositories-user"], account, action)
-    ).toBe(false);
-    expect(isAuthorized(sessions["anonymous"], account, action)).toBe(false);
-    expect(isAuthorized(sessions["no-account"], account, action)).toBe(false);
-  });
-
-  test("Action: account:listAPIKeys", () => {
-    const action = Actions.ListAccountAPIKeys;
-
-    // User Account
-    var account = sessions["regular-user"].account;
-    expect(isAuthorized(sessions["admin"], account, action)).toBe(true);
-    expect(
-      isAuthorized(sessions["organization-owner-user"], account, action)
-    ).toBe(false);
-    expect(
-      isAuthorized(sessions["organization-maintainer-user"], account, action)
-    ).toBe(false);
-    expect(
-      isAuthorized(sessions["organization-read-data-user"], account, action)
-    ).toBe(false);
-    expect(
-      isAuthorized(sessions["organization-write-data-user"], account, action)
-    ).toBe(false);
-    expect(isAuthorized(sessions["repo-member-owner"], account, action)).toBe(
-      false
-    );
-    expect(
-      isAuthorized(sessions["repo-member-maintainer"], account, action)
-    ).toBe(false);
-    expect(
-      isAuthorized(sessions["repo-member-read-data"], account, action)
-    ).toBe(false);
-    expect(
-      isAuthorized(sessions["repo-member-write-data"], account, action)
-    ).toBe(false);
-    expect(isAuthorized(sessions["repo-member-invited"], account, action)).toBe(
-      false
-    );
-    expect(isAuthorized(sessions["disabled"], account, action)).toBe(false);
-    expect(isAuthorized(sessions["regular-user"], account, action)).toBe(true);
-    expect(
-      isAuthorized(sessions["create-repositories-user"], account, action)
-    ).toBe(false);
-    expect(isAuthorized(sessions["anonymous"], account, action)).toBe(false);
-    expect(isAuthorized(sessions["no-account"], account, action)).toBe(false);
-
-    // Organization Account
-    var account: Account = {
-      account_id: "organization",
-      account_type: AccountType.ORGANIZATION,
-      disabled: false,
-      profile: {
-        name: "Organization",
-        bio: "This is an organization",
-        location: "United States",
-      },
-      flags: [],
-    };
-    expect(isAuthorized(sessions["admin"], account, action)).toBe(true);
-    expect(
-      isAuthorized(sessions["organization-owner-user"], account, action)
-    ).toBe(true);
-    expect(
-      isAuthorized(sessions["organization-maintainer-user"], account, action)
-    ).toBe(true);
-    expect(
-      isAuthorized(sessions["organization-read-data-user"], account, action)
-    ).toBe(false);
-    expect(
-      isAuthorized(sessions["organization-write-data-user"], account, action)
-    ).toBe(false);
-    expect(isAuthorized(sessions["repo-member-owner"], account, action)).toBe(
-      false
-    );
-    expect(
-      isAuthorized(sessions["repo-member-maintainer"], account, action)
-    ).toBe(false);
-    expect(
-      isAuthorized(sessions["repo-member-read-data"], account, action)
-    ).toBe(false);
-    expect(
-      isAuthorized(sessions["repo-member-write-data"], account, action)
-    ).toBe(false);
-    expect(isAuthorized(sessions["repo-member-invited"], account, action)).toBe(
-      false
-    );
-    expect(isAuthorized(sessions["disabled"], account, action)).toBe(false);
-    expect(isAuthorized(sessions["regular-user"], account, action)).toBe(false);
-    expect(
-      isAuthorized(sessions["create-repositories-user"], account, action)
-    ).toBe(false);
-    expect(isAuthorized(sessions["anonymous"], account, action)).toBe(false);
-    expect(isAuthorized(sessions["no-account"], account, action)).toBe(false);
-  });
-
   test("Action: repository:listAPIKeys", () => {
     const action = Actions.ListRepositoryAPIKeys;
 
@@ -1548,11 +1188,392 @@ describe("Authorization Tests", () => {
     expect(isAuthorized(sessions["no-account"], repo, action)).toBe(false);
   });
 
-  test("Action: account:flags:get", () => {
-    const action = Actions.GetAccountFlags;
+  test("Action: repository:listRepositoryMemberships", () => {
+    const action = Actions.ListRepositoryMemberships;
+
+    // Organization Repository
+    var repo = mappedRepositories["organization"]["org-repo-id"];
+    expect(isAuthorized(sessions["admin"], repo, action)).toBe(true);
+    expect(
+      isAuthorized(sessions["organization-owner-user"], repo, action)
+    ).toBe(true);
+    expect(
+      isAuthorized(sessions["organization-maintainer-user"], repo, action)
+    ).toBe(true);
+    expect(
+      isAuthorized(sessions["organization-read-data-user"], repo, action)
+    ).toBe(false);
+    expect(
+      isAuthorized(sessions["organization-write-data-user"], repo, action)
+    ).toBe(false);
+    expect(isAuthorized(sessions["repo-member-owner"], repo, action)).toBe(
+      true
+    );
+    expect(isAuthorized(sessions["repo-member-maintainer"], repo, action)).toBe(
+      true
+    );
+    expect(isAuthorized(sessions["repo-member-read-data"], repo, action)).toBe(
+      false
+    );
+    expect(isAuthorized(sessions["repo-member-write-data"], repo, action)).toBe(
+      false
+    );
+    expect(isAuthorized(sessions["repo-member-invited"], repo, action)).toBe(
+      false
+    );
+    expect(isAuthorized(sessions["disabled"], repo, action)).toBe(false);
+    expect(isAuthorized(sessions["regular-user"], repo, action)).toBe(false);
+    expect(
+      isAuthorized(sessions["create-repositories-user"], repo, action)
+    ).toBe(false);
+    expect(isAuthorized(sessions["anonymous"], repo, action)).toBe(false);
+    expect(isAuthorized(sessions["no-account"], repo, action)).toBe(false);
+
+    // Regular User Repository
+    repo =
+      mappedRepositories["create-repositories-user"]["regular-user-repo-id"];
+    expect(isAuthorized(sessions["admin"], repo, action)).toBe(true);
+    expect(
+      isAuthorized(sessions["organization-owner-user"], repo, action)
+    ).toBe(false);
+    expect(
+      isAuthorized(sessions["organization-maintainer-user"], repo, action)
+    ).toBe(false);
+    expect(
+      isAuthorized(sessions["organization-read-data-user"], repo, action)
+    ).toBe(false);
+    expect(
+      isAuthorized(sessions["organization-write-data-user"], repo, action)
+    ).toBe(false);
+    expect(isAuthorized(sessions["repo-member-owner"], repo, action)).toBe(
+      false
+    );
+    expect(isAuthorized(sessions["repo-member-maintainer"], repo, action)).toBe(
+      false
+    );
+    expect(isAuthorized(sessions["repo-member-read-data"], repo, action)).toBe(
+      false
+    );
+    expect(isAuthorized(sessions["repo-member-write-data"], repo, action)).toBe(
+      false
+    );
+    expect(isAuthorized(sessions["repo-member-invited"], repo, action)).toBe(
+      false
+    );
+    expect(isAuthorized(sessions["disabled"], repo, action)).toBe(false);
+    expect(isAuthorized(sessions["regular-user"], repo, action)).toBe(false);
+    expect(
+      isAuthorized(sessions["create-repositories-user"], repo, action)
+    ).toBe(true);
+    expect(isAuthorized(sessions["anonymous"], repo, action)).toBe(false);
+    expect(isAuthorized(sessions["no-account"], repo, action)).toBe(false);
+  });
+
+  test("Action: account:create", () => {
+    const action = Actions.CreateAccount;
 
     // User Account
-    var account = sessions["regular-user"].account;
+    var account: Account = sessions["regular-user"]!.account as Account;
+    expect(isAuthorized(sessions["admin"], account, action)).toBe(false);
+    expect(
+      isAuthorized(sessions["organization-owner-user"], account, action)
+    ).toBe(false);
+    expect(
+      isAuthorized(sessions["organization-maintainer-user"], account, action)
+    ).toBe(false);
+    expect(
+      isAuthorized(sessions["organization-read-data-user"], account, action)
+    ).toBe(false);
+    expect(
+      isAuthorized(sessions["organization-write-data-user"], account, action)
+    ).toBe(false);
+    expect(isAuthorized(sessions["disabled"], account, action)).toBe(false);
+    expect(isAuthorized(sessions["regular-user"], account, action)).toBe(false);
+    expect(
+      isAuthorized(sessions["create-repositories-user"], account, action)
+    ).toBe(false);
+    expect(isAuthorized(sessions["anonymous"], account, action)).toBe(false);
+    expect(isAuthorized(sessions["no-account"], account, action)).toBe(true);
+
+    // Organization Account
+    account = {
+      account_id: "organization",
+      account_type: AccountType.ORGANIZATION,
+      disabled: false,
+      profile: {
+        name: "Organization",
+        bio: "This is an organization",
+        location: "United States",
+      },
+      flags: [],
+    };
+    expect(isAuthorized(sessions["admin"], account, action)).toBe(true);
+    expect(
+      isAuthorized(sessions["organization-owner-user"], account, action)
+    ).toBe(true);
+    expect(
+      isAuthorized(sessions["organization-maintainer-user"], account, action)
+    ).toBe(false);
+    expect(
+      isAuthorized(sessions["organization-read-data-user"], account, action)
+    ).toBe(false);
+    expect(
+      isAuthorized(sessions["organization-write-data-user"], account, action)
+    ).toBe(false);
+    expect(isAuthorized(sessions["disabled"], account, action)).toBe(false);
+    expect(isAuthorized(sessions["regular-user"], account, action)).toBe(false);
+    expect(
+      isAuthorized(sessions["create-repositories-user"], account, action)
+    ).toBe(false);
+    expect(isAuthorized(sessions["anonymous"], account, action)).toBe(false);
+    expect(isAuthorized(sessions["no-account"], account, action)).toBe(false);
+  });
+
+  test("Action: account:disable", () => {
+    const action = Actions.DisableAccount;
+
+    // User Account
+    var account = sessions["regular-user"]!.account;
+    expect(isAuthorized(sessions["admin"], account, action)).toBe(true);
+    expect(
+      isAuthorized(sessions["organization-owner-user"], account, action)
+    ).toBe(false);
+    expect(
+      isAuthorized(sessions["organization-maintainer-user"], account, action)
+    ).toBe(false);
+    expect(
+      isAuthorized(sessions["organization-read-data-user"], account, action)
+    ).toBe(false);
+    expect(
+      isAuthorized(sessions["organization-write-data-user"], account, action)
+    ).toBe(false);
+    expect(isAuthorized(sessions["disabled"], account, action)).toBe(false);
+    expect(isAuthorized(sessions["regular-user"], account, action)).toBe(false);
+    expect(
+      isAuthorized(sessions["create-repositories-user"], account, action)
+    ).toBe(false);
+    expect(isAuthorized(sessions["anonymous"], account, action)).toBe(false);
+    expect(isAuthorized(sessions["no-account"], account, action)).toBe(false);
+
+    // Organization Account
+    account = {
+      account_id: "organization",
+      account_type: AccountType.ORGANIZATION,
+      disabled: false,
+      profile: {
+        name: "Organization",
+        bio: "This is an organization",
+        location: "United States",
+      },
+      flags: [],
+    };
+    expect(isAuthorized(sessions["admin"], account, action)).toBe(true);
+    expect(
+      isAuthorized(sessions["organization-owner-user"], account, action)
+    ).toBe(true);
+    expect(
+      isAuthorized(sessions["organization-maintainer-user"], account, action)
+    ).toBe(false);
+    expect(
+      isAuthorized(sessions["organization-read-data-user"], account, action)
+    ).toBe(false);
+    expect(
+      isAuthorized(sessions["organization-write-data-user"], account, action)
+    ).toBe(false);
+    expect(isAuthorized(sessions["disabled"], account, action)).toBe(false);
+    expect(isAuthorized(sessions["regular-user"], account, action)).toBe(false);
+    expect(
+      isAuthorized(sessions["create-repositories-user"], account, action)
+    ).toBe(false);
+    expect(isAuthorized(sessions["anonymous"], account, action)).toBe(false);
+    expect(isAuthorized(sessions["no-account"], account, action)).toBe(false);
+  });
+
+  test("Action: account:get", () => {
+    const action = Actions.GetAccount;
+
+    // User Account
+    var account = sessions["regular-user"]!.account;
+    expect(isAuthorized(sessions["admin"], account, action)).toBe(true);
+    expect(
+      isAuthorized(sessions["organization-owner-user"], account, action)
+    ).toBe(false);
+    expect(
+      isAuthorized(sessions["organization-maintainer-user"], account, action)
+    ).toBe(false);
+    expect(
+      isAuthorized(sessions["organization-read-data-user"], account, action)
+    ).toBe(false);
+    expect(
+      isAuthorized(sessions["organization-write-data-user"], account, action)
+    ).toBe(false);
+    expect(isAuthorized(sessions["disabled"], account, action)).toBe(false);
+    expect(isAuthorized(sessions["regular-user"], account, action)).toBe(true);
+    expect(
+      isAuthorized(sessions["create-repositories-user"], account, action)
+    ).toBe(false);
+    expect(isAuthorized(sessions["anonymous"], account, action)).toBe(false);
+    expect(isAuthorized(sessions["no-account"], account, action)).toBe(false);
+
+    // Organization Account
+    account = {
+      account_id: "organization",
+      account_type: AccountType.ORGANIZATION,
+      disabled: false,
+      profile: {
+        name: "Organization",
+        bio: "This is an organization",
+        location: "United States",
+      },
+      flags: [],
+    };
+    expect(isAuthorized(sessions["admin"], account, action)).toBe(true);
+    expect(
+      isAuthorized(sessions["organization-owner-user"], account, action)
+    ).toBe(true);
+    expect(
+      isAuthorized(sessions["organization-maintainer-user"], account, action)
+    ).toBe(true);
+    expect(
+      isAuthorized(sessions["organization-read-data-user"], account, action)
+    ).toBe(false);
+    expect(
+      isAuthorized(sessions["organization-write-data-user"], account, action)
+    ).toBe(false);
+    expect(isAuthorized(sessions["disabled"], account, action)).toBe(false);
+    expect(isAuthorized(sessions["regular-user"], account, action)).toBe(false);
+    expect(
+      isAuthorized(sessions["create-repositories-user"], account, action)
+    ).toBe(false);
+    expect(isAuthorized(sessions["anonymous"], account, action)).toBe(false);
+    expect(isAuthorized(sessions["no-account"], account, action)).toBe(false);
+  });
+
+  test("Action: account:listMemberships", () => {
+    const action = Actions.ListAccountMemberships;
+
+    // User Account
+    var account = sessions["regular-user"]!.account;
+    expect(isAuthorized(sessions["admin"], account, action)).toBe(true);
+    expect(
+      isAuthorized(sessions["organization-owner-user"], account, action)
+    ).toBe(false);
+    expect(
+      isAuthorized(sessions["organization-maintainer-user"], account, action)
+    ).toBe(false);
+    expect(
+      isAuthorized(sessions["organization-read-data-user"], account, action)
+    ).toBe(false);
+    expect(
+      isAuthorized(sessions["organization-write-data-user"], account, action)
+    ).toBe(false);
+    expect(isAuthorized(sessions["disabled"], account, action)).toBe(false);
+    expect(isAuthorized(sessions["regular-user"], account, action)).toBe(true);
+    expect(
+      isAuthorized(sessions["create-repositories-user"], account, action)
+    ).toBe(false);
+    expect(isAuthorized(sessions["anonymous"], account, action)).toBe(false);
+    expect(isAuthorized(sessions["no-account"], account, action)).toBe(false);
+
+    // Organization Account
+    account = {
+      account_id: "organization",
+      account_type: AccountType.ORGANIZATION,
+      disabled: false,
+      profile: {
+        name: "Organization",
+        bio: "This is an organization",
+        location: "United States",
+      },
+      flags: [],
+    };
+    expect(isAuthorized(sessions["admin"], account, action)).toBe(true);
+    expect(
+      isAuthorized(sessions["organization-owner-user"], account, action)
+    ).toBe(true);
+    expect(
+      isAuthorized(sessions["organization-maintainer-user"], account, action)
+    ).toBe(true);
+    expect(
+      isAuthorized(sessions["organization-read-data-user"], account, action)
+    ).toBe(false);
+    expect(
+      isAuthorized(sessions["organization-write-data-user"], account, action)
+    ).toBe(false);
+    expect(isAuthorized(sessions["disabled"], account, action)).toBe(false);
+    expect(isAuthorized(sessions["regular-user"], account, action)).toBe(false);
+    expect(
+      isAuthorized(sessions["create-repositories-user"], account, action)
+    ).toBe(false);
+    expect(isAuthorized(sessions["anonymous"], account, action)).toBe(false);
+    expect(isAuthorized(sessions["no-account"], account, action)).toBe(false);
+  });
+
+  test("Action: account:listAPIKeys", () => {
+    const action = Actions.ListAccountAPIKeys;
+
+    // User Account
+    var account = sessions["regular-user"]!.account;
+    expect(isAuthorized(sessions["admin"], account, action)).toBe(true);
+    expect(
+      isAuthorized(sessions["organization-owner-user"], account, action)
+    ).toBe(false);
+    expect(
+      isAuthorized(sessions["organization-maintainer-user"], account, action)
+    ).toBe(false);
+    expect(
+      isAuthorized(sessions["organization-read-data-user"], account, action)
+    ).toBe(false);
+    expect(
+      isAuthorized(sessions["organization-write-data-user"], account, action)
+    ).toBe(false);
+    expect(isAuthorized(sessions["disabled"], account, action)).toBe(false);
+    expect(isAuthorized(sessions["regular-user"], account, action)).toBe(true);
+    expect(
+      isAuthorized(sessions["create-repositories-user"], account, action)
+    ).toBe(false);
+    expect(isAuthorized(sessions["anonymous"], account, action)).toBe(false);
+    expect(isAuthorized(sessions["no-account"], account, action)).toBe(false);
+
+    // Organization Account
+    account = {
+      account_id: "organization",
+      account_type: AccountType.ORGANIZATION,
+      disabled: false,
+      profile: {
+        name: "Organization",
+        bio: "This is an organization",
+        location: "United States",
+      },
+      flags: [],
+    };
+    expect(isAuthorized(sessions["admin"], account, action)).toBe(true);
+    expect(
+      isAuthorized(sessions["organization-owner-user"], account, action)
+    ).toBe(true);
+    expect(
+      isAuthorized(sessions["organization-maintainer-user"], account, action)
+    ).toBe(true);
+    expect(
+      isAuthorized(sessions["organization-read-data-user"], account, action)
+    ).toBe(false);
+    expect(
+      isAuthorized(sessions["organization-write-data-user"], account, action)
+    ).toBe(false);
+    expect(isAuthorized(sessions["disabled"], account, action)).toBe(false);
+    expect(isAuthorized(sessions["regular-user"], account, action)).toBe(false);
+    expect(
+      isAuthorized(sessions["create-repositories-user"], account, action)
+    ).toBe(false);
+    expect(isAuthorized(sessions["anonymous"], account, action)).toBe(false);
+    expect(isAuthorized(sessions["no-account"], account, action)).toBe(false);
+  });
+
+  test("Action: account:list", () => {
+    const action = Actions.ListAccount;
+
+    // User Account
+    var account = sessions["regular-user"]!.account;
     expect(isAuthorized(sessions["admin"], account, action)).toBe(true);
     expect(
       isAuthorized(sessions["organization-owner-user"], account, action)
@@ -1590,7 +1611,187 @@ describe("Authorization Tests", () => {
     expect(isAuthorized(sessions["no-account"], account, action)).toBe(false);
 
     // Organization Account
-    var account: Account = {
+    account = {
+      account_id: "organization",
+      account_type: AccountType.ORGANIZATION,
+      disabled: false,
+      profile: {
+        name: "Organization",
+        bio: "This is an organization",
+        location: "United States",
+      },
+      flags: [],
+    };
+    expect(isAuthorized(sessions["admin"], account, action)).toBe(true);
+    expect(
+      isAuthorized(sessions["organization-owner-user"], account, action)
+    ).toBe(true);
+    expect(
+      isAuthorized(sessions["organization-maintainer-user"], account, action)
+    ).toBe(true);
+    expect(
+      isAuthorized(sessions["organization-read-data-user"], account, action)
+    ).toBe(false);
+    expect(
+      isAuthorized(sessions["organization-write-data-user"], account, action)
+    ).toBe(false);
+    expect(isAuthorized(sessions["repo-member-owner"], account, action)).toBe(
+      false
+    );
+    expect(
+      isAuthorized(sessions["repo-member-maintainer"], account, action)
+    ).toBe(false);
+    expect(
+      isAuthorized(sessions["repo-member-read-data"], account, action)
+    ).toBe(false);
+    expect(
+      isAuthorized(sessions["repo-member-write-data"], account, action)
+    ).toBe(false);
+    expect(isAuthorized(sessions["repo-member-invited"], account, action)).toBe(
+      false
+    );
+    expect(isAuthorized(sessions["disabled"], account, action)).toBe(false);
+    expect(isAuthorized(sessions["regular-user"], account, action)).toBe(false);
+    expect(
+      isAuthorized(sessions["create-repositories-user"], account, action)
+    ).toBe(false);
+    expect(isAuthorized(sessions["anonymous"], account, action)).toBe(false);
+    expect(isAuthorized(sessions["no-account"], account, action)).toBe(false);
+  });
+
+  test("Action: account:listAPIKeys", () => {
+    const action = Actions.ListAccountAPIKeys;
+
+    // User Account
+    var account = sessions["regular-user"]!.account;
+    expect(isAuthorized(sessions["admin"], account, action)).toBe(true);
+    expect(
+      isAuthorized(sessions["organization-owner-user"], account, action)
+    ).toBe(false);
+    expect(
+      isAuthorized(sessions["organization-maintainer-user"], account, action)
+    ).toBe(false);
+    expect(
+      isAuthorized(sessions["organization-read-data-user"], account, action)
+    ).toBe(false);
+    expect(
+      isAuthorized(sessions["organization-write-data-user"], account, action)
+    ).toBe(false);
+    expect(isAuthorized(sessions["repo-member-owner"], account, action)).toBe(
+      false
+    );
+    expect(
+      isAuthorized(sessions["repo-member-maintainer"], account, action)
+    ).toBe(false);
+    expect(
+      isAuthorized(sessions["repo-member-read-data"], account, action)
+    ).toBe(false);
+    expect(
+      isAuthorized(sessions["repo-member-write-data"], account, action)
+    ).toBe(false);
+    expect(isAuthorized(sessions["repo-member-invited"], account, action)).toBe(
+      false
+    );
+    expect(isAuthorized(sessions["disabled"], account, action)).toBe(false);
+    expect(isAuthorized(sessions["regular-user"], account, action)).toBe(true);
+    expect(
+      isAuthorized(sessions["create-repositories-user"], account, action)
+    ).toBe(false);
+    expect(isAuthorized(sessions["anonymous"], account, action)).toBe(false);
+    expect(isAuthorized(sessions["no-account"], account, action)).toBe(false);
+
+    // Organization Account
+    account = {
+      account_id: "organization",
+      account_type: AccountType.ORGANIZATION,
+      disabled: false,
+      profile: {
+        name: "Organization",
+        bio: "This is an organization",
+        location: "United States",
+      },
+      flags: [],
+    };
+    expect(isAuthorized(sessions["admin"], account, action)).toBe(true);
+    expect(
+      isAuthorized(sessions["organization-owner-user"], account, action)
+    ).toBe(true);
+    expect(
+      isAuthorized(sessions["organization-maintainer-user"], account, action)
+    ).toBe(true);
+    expect(
+      isAuthorized(sessions["organization-read-data-user"], account, action)
+    ).toBe(false);
+    expect(
+      isAuthorized(sessions["organization-write-data-user"], account, action)
+    ).toBe(false);
+    expect(isAuthorized(sessions["repo-member-owner"], account, action)).toBe(
+      false
+    );
+    expect(
+      isAuthorized(sessions["repo-member-maintainer"], account, action)
+    ).toBe(false);
+    expect(
+      isAuthorized(sessions["repo-member-read-data"], account, action)
+    ).toBe(false);
+    expect(
+      isAuthorized(sessions["repo-member-write-data"], account, action)
+    ).toBe(false);
+    expect(isAuthorized(sessions["repo-member-invited"], account, action)).toBe(
+      false
+    );
+    expect(isAuthorized(sessions["disabled"], account, action)).toBe(false);
+    expect(isAuthorized(sessions["regular-user"], account, action)).toBe(false);
+    expect(
+      isAuthorized(sessions["create-repositories-user"], account, action)
+    ).toBe(false);
+    expect(isAuthorized(sessions["anonymous"], account, action)).toBe(false);
+    expect(isAuthorized(sessions["no-account"], account, action)).toBe(false);
+  });
+
+  test("Action: account:flags:get", () => {
+    const action = Actions.GetAccountFlags;
+
+    // User Account
+    var account = sessions["regular-user"]!.account;
+    expect(isAuthorized(sessions["admin"], account, action)).toBe(true);
+    expect(
+      isAuthorized(sessions["organization-owner-user"], account, action)
+    ).toBe(false);
+    expect(
+      isAuthorized(sessions["organization-maintainer-user"], account, action)
+    ).toBe(false);
+    expect(
+      isAuthorized(sessions["organization-read-data-user"], account, action)
+    ).toBe(false);
+    expect(
+      isAuthorized(sessions["organization-write-data-user"], account, action)
+    ).toBe(false);
+    expect(isAuthorized(sessions["repo-member-owner"], account, action)).toBe(
+      false
+    );
+    expect(
+      isAuthorized(sessions["repo-member-maintainer"], account, action)
+    ).toBe(false);
+    expect(
+      isAuthorized(sessions["repo-member-read-data"], account, action)
+    ).toBe(false);
+    expect(
+      isAuthorized(sessions["repo-member-write-data"], account, action)
+    ).toBe(false);
+    expect(isAuthorized(sessions["repo-member-invited"], account, action)).toBe(
+      false
+    );
+    expect(isAuthorized(sessions["disabled"], account, action)).toBe(false);
+    expect(isAuthorized(sessions["regular-user"], account, action)).toBe(true);
+    expect(
+      isAuthorized(sessions["create-repositories-user"], account, action)
+    ).toBe(false);
+    expect(isAuthorized(sessions["anonymous"], account, action)).toBe(false);
+    expect(isAuthorized(sessions["no-account"], account, action)).toBe(false);
+
+    // Organization Account
+    account = {
       account_id: "organization",
       account_type: AccountType.ORGANIZATION,
       disabled: false,
@@ -1642,7 +1843,7 @@ describe("Authorization Tests", () => {
     const action = Actions.PutAccountFlags;
 
     // User Account
-    var account = sessions["regular-user"].account;
+    var account = sessions["regular-user"]!.account;
     expect(isAuthorized(sessions["admin"], account, action)).toBe(true);
     expect(
       isAuthorized(sessions["organization-owner-user"], account, action)
@@ -1680,7 +1881,7 @@ describe("Authorization Tests", () => {
     expect(isAuthorized(sessions["no-account"], account, action)).toBe(false);
 
     // Organization Account
-    var account: Account = {
+    account = {
       account_id: "organization",
       account_type: AccountType.ORGANIZATION,
       disabled: false,

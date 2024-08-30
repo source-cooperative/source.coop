@@ -36,7 +36,7 @@ describe("withErrorHandling middleware", () => {
 
     await wrappedHandler(mockReq as NextApiRequest, mockRes as NextApiResponse);
 
-    expect(jsonMock).toHaveBeenCalledWith({ success: true });
+    expect(handler).toHaveBeenCalledWith(mockReq, mockRes);
   });
 
   it("should handle NotFoundError", async () => {

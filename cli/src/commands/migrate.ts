@@ -109,10 +109,6 @@ export async function migrate(inputDir: string, outputDir: string) {
 
     account.profile.location = identity["traits"]["country"];
 
-    account.email = identity["verifiable_addresses"][0]["value"];
-    if (account.email === "cristian.leoni@e-geos-it") {
-      account.email = "cristian.leoni@e-geos.it";
-    }
     if (identity["metadata_public"]) {
       var flags = [];
       for (const flag of identity["metadata_public"]["flags"]) {
@@ -130,8 +126,10 @@ export async function migrate(inputDir: string, outputDir: string) {
 
   var filteredAccounts = [];
   for (const account of newAccounts) {
-    if (account.profile.name.length <= 0) {
-      continue;
+    if (account && account.profile && account.profile.name) {
+      if (account?.profile?.name?.length <= 0) {
+        continue;
+      }
     }
     filteredAccounts.push(account);
   }
@@ -147,6 +145,7 @@ export async function migrate(inputDir: string, outputDir: string) {
     }
 
     newMemberships.push({
+      membership_id: crypto.randomUUID(),
       account_id: relationship["subject_id"],
       membership_account_id: relationship["object"],
       role:
@@ -163,10 +162,11 @@ export async function migrate(inputDir: string, outputDir: string) {
     newApiKeys.push({
       account_id: apiKey.account_id,
       access_key_id: apiKey.access_key_id,
-      secret_access_key: apiKey.secret_access_key,
+      secret_access_key:
+        "M1n2O3p4Q5r6S7t8U9v0W1x2Y3z4A5B6C7D8E9F0G1H2I3J4K5L6M7N8O9P00000",
       name: apiKey.name,
       disabled: apiKey.disabled,
-      expires: apiKey.expired,
+      expires: "3000-01-01T00:00:00Z",
     });
   }
 
@@ -247,7 +247,7 @@ export async function migrate(inputDir: string, outputDir: string) {
 
   ensureOutputDir(outputDir, "table");
 
-  writeJsonFile(outputDir, "table", "api-keys.json", apiKeys);
+  writeJsonFile(outputDir, "table", "api-keys.json", newApiKeys);
   writeJsonFile(outputDir, "table", "memberships.json", newMemberships);
   writeJsonFile(outputDir, "table", "accounts.json", filteredAccounts);
   writeJsonFile(outputDir, "table", "repositories.json", newRepositories);

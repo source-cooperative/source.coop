@@ -4,6 +4,7 @@ import { getSession } from "@/api/utils";
 import {
   Actions,
   APIKey,
+  APIKeyRequest,
   APIKeyRequestSchema,
   RedactedAPIKey,
   RedactedAPIKeySchema,
@@ -22,11 +23,16 @@ import { generateAccessKeyID, generateSecretAccessKey } from "@/api/utils";
 
 /**
  * @openapi
- * /api/v1/accounts/{account_id}/api-keys:
+ * /accounts/{account_id}/api-keys:
  *   post:
  *     tags: [API Keys, Accounts]
- *     summary: Create a new API key
- *     description: Creates a new API key for the specified account. Requires appropriate permissions.
+ *     summary: Create a new API key for an account.
+ *     description: >
+ *       Creates a new API key for the specified account. API key expiration date must be in the future.
+ *       For user accounts, you must be authenticated as the user account you are creating the API key for.
+ *       For organization accounts, you must be authenticated as either an `owners` or `maintainers` member for the organization account you are creating the API key for.
+ *
+ *       Only users with the `admin` flag may create API keys for service accounts.
  *     parameters:
  *       - in: path
  *         name: account_id
@@ -65,7 +71,7 @@ async function createAPIKeyHandler(
   const { account_id } = req.query;
 
   // Parse and validate the API key request
-  const apiKeyRequest: APIKey = APIKeyRequestSchema.parse(req.body);
+  const apiKeyRequest: APIKeyRequest = APIKeyRequestSchema.parse(req.body);
 
   // Check if the expiration date is in the future
   if (Date.parse(apiKeyRequest.expires) <= Date.now()) {
@@ -79,10 +85,11 @@ async function createAPIKeyHandler(
     throw new NotFoundError(`Account with ID ${account_id} not found`);
   }
 
-  let [apiKeyCreated, success] = [null, false];
+  let [apiKeyCreated, success]: [APIKey | null, boolean] = [null, false];
+
   do {
     // Create the API key object
-    var apiKey: APIKey = {
+    let apiKey: APIKey = {
       ...apiKeyRequest,
       disabled: false,
       account_id: account.account_id,
@@ -97,19 +104,24 @@ async function createAPIKeyHandler(
 
     // Attempt to put the API key in the database
     [apiKeyCreated, success] = await putAPIKey(apiKey, true);
+    if (success) {
+      // Send the created API key as the response
+      res.status(StatusCodes.OK).json(apiKeyCreated);
+    }
   } while (!success);
-
-  // Send the created API key as the response
-  res.status(StatusCodes.OK).json(apiKeyCreated);
 }
 
 /**
  * @openapi
- * /api/v1/accounts/{account_id}/api-keys:
+ * /accounts/{account_id}/api-keys:
  *   get:
  *     tags: [API Keys, Accounts]
  *     summary: List API keys for an account
- *     description: Retrieves all API keys associated with the specified account. Requires appropriate permissions. Secret Access Keys are redacted and are only visible upon the initial creation of the API Key.
+ *     description: Retrieves all API keys associated with the specified account.
+ *       For user accounts, you must be authenticated as the user account you are listing API keys for.
+ *       For organization accounts, you must be authenticated as either an `owners` or `maintainers` member of the organization account you are listing API keys for.
+ *
+ *       Only users with the `admin` flag may list API keys for service accounts.
  *     parameters:
  *       - in: path
  *         name: account_id

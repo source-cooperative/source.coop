@@ -5,39 +5,39 @@ import { Actions, Membership, MembershipState } from "@/api/types";
 import { withErrorHandling } from "@/api/middleware";
 import { StatusCodes } from "http-status-codes";
 import {
+  BadRequestError,
   MethodNotImplementedError,
   NotFoundError,
   UnauthorizedError,
-  BadRequestError,
 } from "@/api/errors";
 import { getMembership, putMembership } from "@/api/db";
 import { isAuthorized } from "@/api/authz";
 
 /**
  * @openapi
- * /memberships/{membership_id}/revoke:
+ * /memberships/{membership_id}/reject:
  *   post:
  *     tags: [Memberships]
- *     summary: Revokes a membership.
+ *     summary: Rejects a membership invitation.
  *     description: >
- *       Revokes the specified membership.
- *       The user must be authorized to revoke the membership.
+ *       Rejects a membership invitation for the specified membership.
+ *       The user must be authorized to reject the membership.
  *     parameters:
  *       - in: path
  *         name: membership_id
  *         required: true
  *         schema:
  *           type: string
- *         description: The ID of the membership to revoke
+ *         description: The ID of the membership to reject
  *     responses:
  *       200:
- *         description: Successfully revoked membership
+ *         description: Successfully rejected membership
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Membership'
  *       400:
- *         description: Bad Request - Membership is already revoked
+ *         description: Bad Request - Membership is not in a pending state
  *       401:
  *         description: Unauthorized - No valid session found or insufficient permissions
  *       404:
@@ -45,7 +45,7 @@ import { isAuthorized } from "@/api/authz";
  *       500:
  *         description: Internal server error
  */
-async function revokeMembershipHandler(
+async function rejectMembershipHandler(
   req: NextApiRequest,
   res: NextApiResponse<Membership>
 ): Promise<void> {
@@ -61,13 +61,16 @@ async function revokeMembershipHandler(
   }
 
   // Check if the user is authorized to accept the membership
-  if (!isAuthorized(session, membership, Actions.RevokeMembership)) {
+  if (!isAuthorized(session, membership, Actions.RejectMembership)) {
     throw new UnauthorizedError();
   }
 
-  if (membership.state === MembershipState.Revoked) {
+  if (
+    membership.state === MembershipState.Member ||
+    membership.state === MembershipState.Revoked
+  ) {
     throw new BadRequestError(
-      `Membership with ID ${membership_id} is already revoked`
+      `Membership with ID ${membership_id} is not pending`
     );
   }
 
@@ -88,7 +91,7 @@ export async function handler(
 ) {
   // Check if the request method is POST
   if (req.method === "POST") {
-    return revokeMembershipHandler(req, res);
+    return rejectMembershipHandler(req, res);
   }
 
   // If the method is not POST, throw an error

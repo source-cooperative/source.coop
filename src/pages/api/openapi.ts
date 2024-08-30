@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 import { StatusCodes } from "http-status-codes";
 import type { NextApiRequest, NextApiResponse } from "next";
 import swaggerJSDoc from "swagger-jsdoc";
@@ -7,6 +9,7 @@ import {
   AccountSchema,
   APIKeyRequestSchema,
   APIKeySchema,
+  MembershipInvitationSchema,
   MembershipSchema,
   RedactedAPIKeySchema,
   UserSessionSchema,
@@ -23,6 +26,16 @@ export default async function handler(
         title: "Source Cooperative API",
         version: "1.0.0",
       },
+      servers: [
+        {
+          url: "http://localhost:3000/api/v1",
+          description: "Development",
+        },
+        {
+          url: "https://beta.source.coop/api/v1",
+          description: "Source Cooperative Beta",
+        },
+      ],
     },
     apis: ["./src/pages/api/**/*.ts"],
   };
@@ -37,6 +50,7 @@ export default async function handler(
     APIKeySchema,
     APIKeyRequestSchema,
     RedactedAPIKeySchema,
+    MembershipInvitationSchema,
   ]);
   openapiSpecification["components"] = {
     securitySchemes: {

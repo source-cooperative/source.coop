@@ -9,14 +9,17 @@
  * - API keys
  * - User sessions
  * - Action types for authorization
+ * - Data connections and providers
  *
  * The module uses Zod for runtime type checking and validation of these structures.
+ * It also extends Zod with OpenAPI functionality for API documentation.
  *
  * @module api/types
  * @requires zod
+ * @requires @asteasolutions/zod-to-openapi
  *
  * @example
- * import { Repository, Account, Membership, Actions } from '@/api/types';
+ * import { Repository, Account, Membership, Actions, DataConnection } from '@/api/types';
  *
  * // Use the types in your code
  * const repo: Repository = {
@@ -27,6 +30,9 @@
  *
  * // Use the schemas for validation
  * const validRepo = RepositorySchema.parse(someData);
+ *
+ * // Use OpenAPI extended schemas
+ * const openApiSpec = generateOpenApiDocumentation(RepositorySchema);
  */
 import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
 import { z } from "zod";
@@ -307,7 +313,7 @@ export const AccountProfileSchema = z
       .optional(z.string().max(128, "Name must not exceed 128 characters"))
       .openapi({ example: "Isaac Asimov" }),
     bio: z
-      .optional(z.string().max(512, "Bio must not exceed 512 characters"))
+      .optional(z.string().max(1024, "Bio must not exceed 1024 characters"))
       .openapi({ example: "Software Engineer @radiantearth" }),
     location: z
       .optional(z.string().max(128, "Location must not exceed 128 characters"))
@@ -499,6 +505,13 @@ export type AccountCreationRequest = z.infer<
   typeof AccountCreationRequestSchema
 >;
 
+export const MembershipInvitationSchema = MembershipSchema.pick({
+  account_id: true,
+  role: true,
+}).openapi("MembershipInvitation");
+
+export type MembershipInvitation = z.infer<typeof MembershipInvitationSchema>;
+
 export const RedactedAPIKeySchema = APIKeySchema.omit({
   secret_access_key: true,
 }).openapi("RedactedAPIKey");
@@ -512,6 +525,7 @@ export enum Actions {
   ListRepository = "repository:list",
   GetRepository = "repository:get",
   ListRepositoryAPIKeys = "repository:listAPIKeys",
+  ListRepositoryMemberships = "repository:listMemberships",
 
   ReadRepositoryData = "repository:data:read",
   WriteRepositoryData = "repository:data:write",
@@ -521,6 +535,7 @@ export enum Actions {
   GetAccount = "account:get",
   ListAccount = "account:list",
   ListAccountAPIKeys = "account:listAPIKeys",
+  ListAccountMemberships = "account:listMemberships",
 
   GetAccountFlags = "account:flags:get",
   PutAccountFlags = "account:flags:put",
@@ -537,4 +552,12 @@ export enum Actions {
   RejectMembership = "membership:reject",
   RevokeMembership = "membership:revoke",
   InviteMembership = "membership:invite",
+
+  GetDataConnection = "data_connection:get",
+  PutDataConnection = "data_connection:put",
+  UseDataConnection = "data_connection:use",
+  DisableDataConnection = "data_connection:disable",
+
+  UpdateDataConnectionCredentials = "data_connection:credentials:update",
+  GetDataConnectionCredentials = "data_connection:credentials:get",
 }

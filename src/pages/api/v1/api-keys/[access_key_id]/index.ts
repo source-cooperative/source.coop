@@ -10,11 +10,15 @@ import { isAuthorized } from "@/api/authz";
 
 /**
  * @openapi
- * /api/v1/api-keys/{access_key_id}:
+ * /api-keys/{access_key_id}:
  *   delete:
  *     tags: [API Keys]
  *     summary: Revoke an API key
- *     description: Revokes (disables) the specified API key. Requires appropriate permissions.
+ *     description: Revokes (disables) the specified API key.
+ *       For an API Key assigned to a User account, only the user who created the API key can revoke it.
+ *       For an API Key assigned to an Organization, only organization members with `owners` or `maintainers` membership can revoke it.
+ *       For an API Key assigned to a Repoisitory, only repository or organization members with `owners` or `maintainers` membership can revoke it.
+ *       Users with the `admin` flag may disable any API Key.
  *     parameters:
  *       - in: path
  *         name: access_key_id

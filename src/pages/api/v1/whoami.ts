@@ -19,10 +19,13 @@ async function whoamiHandler(
 
 /**
  * @openapi
- * /api/v1/whoami:
+ * /whoami:
  *   get:
  *     tags: [Authentication]
- *     description: Get the current user's session information. If the current session is not valid, a 401 error is returned.
+ *     description: Get the current user's session information.
+ *       If the user is authenticated but has not created an account, the account field will be null.
+ *       If the user is not authenticated, a `401 - Unauthorized` response will be returned.
+ *       This endpoint can be used to list all of the authenticated user's memberships.
  *     responses:
  *       200:
  *         description: Returns the user session data
