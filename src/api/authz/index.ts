@@ -45,13 +45,20 @@ import {
   APIKey,
   Membership,
   RepositoryState,
+  DataConnection,
 } from "@/api/types";
 import { isAdmin } from "@/api/utils";
 import { match } from "ts-pattern";
 
 export function isAuthorized(
   principal: UserSession | null,
-  resource: Account | Repository | APIKey | Membership | undefined,
+  resource:
+    | Account
+    | Repository
+    | APIKey
+    | Membership
+    | DataConnection
+    | undefined,
   action: Actions
 ): boolean {
   if (resource === undefined) {
@@ -139,9 +146,123 @@ export function isAuthorized(
     .with(Actions.ListAccountMemberships, () =>
       listAccountMemberships(principal, resource as Account)
     )
+    .with(Actions.GetDataConnection, () =>
+      getDataConnection(principal, resource as DataConnection)
+    )
+    .with(Actions.CreateDataConnection, () =>
+      createDataConnection(principal, resource as DataConnection)
+    )
+    .with(Actions.DisableDataConnection, () =>
+      disableDataConnection(principal, resource as DataConnection)
+    )
+    .with(Actions.UseDataConnection, () =>
+      useDataConnection(principal, resource as DataConnection)
+    )
+    .with(Actions.ViewDataConnectionCredentials, () =>
+      viewDataConnectionCredentials(principal, resource as DataConnection)
+    )
+    .with(Actions.PutDataConnection, () =>
+      putDataConnection(principal, resource as DataConnection)
+    )
     .otherwise(() => false);
 
   return result;
+}
+
+function getDataConnection(
+  principal: UserSession | null,
+  dataConnection: DataConnection
+): boolean {
+  if (principal?.account?.disabled) {
+    return false;
+  }
+
+  return true;
+}
+
+function createDataConnection(
+  principal: UserSession | null,
+  dataConnection: DataConnection
+): boolean {
+  if (principal?.account?.disabled) {
+    return false;
+  }
+
+  if (isAdmin(principal)) {
+    return true;
+  }
+  return false;
+}
+
+function disableDataConnection(
+  principal: UserSession | null,
+  dataConnection: DataConnection
+): boolean {
+  if (principal?.account?.disabled) {
+    return false;
+  }
+
+  if (isAdmin(principal)) {
+    return true;
+  }
+
+  return false;
+}
+
+function useDataConnection(
+  principal: UserSession | null,
+  dataConnection: DataConnection
+): boolean {
+  if (principal?.account?.disabled) {
+    return false;
+  }
+
+  if (isAdmin(principal)) {
+    return true;
+  }
+
+  if (dataConnection.read_only) {
+    return false;
+  }
+
+  if (dataConnection.required_flag) {
+    if (principal?.account?.flags?.includes(dataConnection.required_flag)) {
+      return true;
+    }
+    return false;
+  } else {
+    return true;
+  }
+}
+
+function viewDataConnectionCredentials(
+  principal: UserSession | null,
+  dataConnection: DataConnection
+): boolean {
+  if (principal?.account?.disabled) {
+    return false;
+  }
+
+  if (isAdmin(principal)) {
+    return true;
+  }
+
+  return false;
+}
+
+function putDataConnection(
+  principal: UserSession | null,
+  dataConnection: DataConnection
+): boolean {
+  if (principal?.account?.disabled) {
+    return false;
+  }
+
+  if (isAdmin(principal)) {
+    return true;
+  }
+
+  return false;
 }
 
 function putAccountFlags(

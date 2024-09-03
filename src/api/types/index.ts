@@ -191,40 +191,37 @@ export const RepositorySchema = z
   })
   .openapi("Repository");
 
-export enum S3AuthenticationType {
-  AccessKey = "access_key",
-  IAMRole = "iam_role",
-}
-
-export enum AzureAuthenticationType {
-  SasToken = "sas_token",
+export enum DataConnectionAuthenticationType {
+  S3AccessKey = "s3_access_key",
+  S3IAMRole = "s3_iam_role",
+  AzureSasToken = "az_sas_token",
 }
 
 export const S3AccessKeyAuthenticationSchema = z
   .object({
-    type: z.literal(S3AuthenticationType.AccessKey),
+    type: z.literal(DataConnectionAuthenticationType.S3AccessKey),
     access_key_id: z.string(),
     secret_access_key: z.string(),
   })
   .openapi("S3AccessKeyAuthentication");
 
-export const S3AuthenticationSchema = z
-  .discriminatedUnion("type", [S3AccessKeyAuthenticationSchema])
-  .openapi("S3Authentication");
-
 export const AzureSasTokenAuthenticationSchema = z
   .object({
-    type: z.literal(AzureAuthenticationType.SasToken),
+    type: z.literal(DataConnectionAuthenticationType.AzureSasToken),
     sas_token: z.string(),
   })
   .openapi("AzureSasTokenAuthentication");
 
-export const AzureAuthenticationSchema = z
-  .discriminatedUnion("type", [AzureSasTokenAuthenticationSchema])
-  .openapi("AzureAuthentication");
+export const DataConnectionAuthenticationSchema = z
+  .discriminatedUnion("type", [
+    S3AccessKeyAuthenticationSchema,
+    AzureSasTokenAuthenticationSchema,
+  ])
+  .openapi("DataConnectionAuthentication");
 
-export type S3Authentication = z.infer<typeof S3AuthenticationSchema>;
-export type AzureAuthentication = z.infer<typeof AzureAuthenticationSchema>;
+export type DataConnectionAuthentication = z.infer<
+  typeof DataConnectionAuthenticationSchema
+>;
 
 export const S3DataConnectionSchema = z
   .object({
@@ -232,7 +229,6 @@ export const S3DataConnectionSchema = z
     bucket: z.string(),
     base_prefix: z.string(),
     region: z.nativeEnum(S3Regions),
-    authentication: z.optional(S3AuthenticationSchema),
   })
   .openapi("S3DataConnection");
 
@@ -243,7 +239,6 @@ export const AzureDataConnectionSchema = z
     container_name: z.string(),
     base_prefix: z.string(),
     region: z.nativeEnum(AzureRegions),
-    authentication: z.optional(AzureAuthenticationSchema),
   })
   .openapi("AzureDataConnection");
 
@@ -261,6 +256,12 @@ export type DataConnectionDetails = z.infer<
   typeof DataConnnectionDetailsSchema
 >;
 
+export enum AccountFlags {
+  ADMIN = "admin",
+  CREATE_REPOSITORIES = "create_repositories",
+  CREATE_ORGANIZATIONS = "create_organizations",
+}
+
 export const DataConnectionSchema = z
   .object({
     data_connection_id: z
@@ -272,8 +273,9 @@ export const DataConnectionSchema = z
     name: z.string(),
     prefix_template: z.optional(z.string()),
     read_only: z.boolean(),
-    required_flag: z.optional(z.string()),
+    required_flag: z.optional(z.nativeEnum(AccountFlags)),
     details: DataConnnectionDetailsSchema,
+    authentication: z.optional(DataConnectionAuthenticationSchema),
   })
   .openapi("DataConnection");
 
@@ -292,12 +294,6 @@ export const AccountTypeSchema = z
     errorMap: () => ({ message: "Invalid account type" }),
   })
   .openapi("AccountType");
-
-export enum AccountFlags {
-  ADMIN = "admin",
-  CREATE_REPOSITORIES = "create_repositories",
-  CREATE_ORGANIZATIONS = "create_organizations",
-}
 
 export const AccountFlagsSchema = z
   .array(
@@ -554,10 +550,9 @@ export enum Actions {
   InviteMembership = "membership:invite",
 
   GetDataConnection = "data_connection:get",
-  PutDataConnection = "data_connection:put",
-  UseDataConnection = "data_connection:use",
+  CreateDataConnection = "data_connection:create",
   DisableDataConnection = "data_connection:disable",
-
-  UpdateDataConnectionCredentials = "data_connection:credentials:update",
-  GetDataConnectionCredentials = "data_connection:credentials:get",
+  UseDataConnection = "data_connection:use",
+  ViewDataConnectionCredentials = "data_connection:credentials:view",
+  PutDataConnection = "data_connection:put",
 }

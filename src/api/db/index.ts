@@ -35,6 +35,7 @@
 import {
   Account,
   APIKey,
+  DataConnection,
   Membership,
   Repository,
   RepositoryFeatured,
@@ -445,9 +446,67 @@ export async function putMembership(
     return [membership, true];
   } catch (e) {
     if (e instanceof Error && e.name === "ConditionalCheckFailedException") {
-      logger.error(e);
       return [membership, false];
     }
+    logger.error(e);
+    throw e;
+  }
+}
+
+export async function getDataConnections(): Promise<DataConnection[]> {
+  const command = new ScanCommand({
+    TableName: "source-cooperative-data-connections",
+    ConsistentRead: true,
+  });
+
+  try {
+    const response = await docClient.send(command);
+    return response.Items?.map((item) => item as DataConnection) ?? [];
+  } catch (e) {
+    logger.error(e);
+    throw e;
+  }
+}
+
+export async function putDataConnection(
+  dataConnection: DataConnection,
+  checkIfExists: boolean = false
+): Promise<[DataConnection, boolean]> {
+  const command = new PutItemCommand({
+    TableName: "source-cooperative-data-connections",
+    Item: marshall(dataConnection),
+    ConditionExpression: checkIfExists
+      ? "attribute_not_exists(data_connection_id)"
+      : undefined,
+  });
+
+  try {
+    await docClient.send(command);
+    return [dataConnection, true];
+  } catch (e) {
+    if (e instanceof Error && e.name === "ConditionalCheckFailedException") {
+      return [dataConnection, false];
+    }
+    logger.error(e);
+    throw e;
+  }
+}
+
+export async function getDataConnection(
+  dataConnectionId: string
+): Promise<DataConnection | null> {
+  const command = new QueryCommand({
+    TableName: "source-cooperative-data-connections",
+    KeyConditionExpression: "data_connection_id = :data_connection_id",
+    ExpressionAttributeValues: {
+      ":data_connection_id": dataConnectionId,
+    },
+  });
+
+  try {
+    const response = await client.send(command);
+    return (response.Items?.[0] as DataConnection) ?? null;
+  } catch (e) {
     logger.error(e);
     throw e;
   }

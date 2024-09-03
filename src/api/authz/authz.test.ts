@@ -5,7 +5,15 @@ import {
   mappedAPIKeys,
   memberships,
 } from "../utils/mock";
-import { Account, Actions, AccountType } from "@/api/types";
+import {
+  Account,
+  Actions,
+  AccountType,
+  AccountFlags,
+  DataConnection,
+  S3Regions,
+  DataProvider,
+} from "@/api/types";
 
 describe("Authorization Tests", () => {
   test("Action: repository:create", () => {
@@ -2997,6 +3005,462 @@ describe("Authorization Tests", () => {
     ).toBe(false);
     expect(isAuthorized(sessions["anonymous"], membership, action)).toBe(false);
     expect(isAuthorized(sessions["no-account"], membership, action)).toBe(
+      false
+    );
+  });
+
+  test("Action: data_connection:get", () => {
+    const action = Actions.GetDataConnection;
+
+    var dataConnection: DataConnection = {
+      data_connection_id: "test-connection",
+      name: "Test Connection",
+      read_only: false,
+      details: {
+        provider: DataProvider.S3,
+        bucket: "test-bucket",
+        base_prefix: "test-prefix",
+        region: S3Regions.US_EAST_1,
+      },
+    };
+
+    expect(isAuthorized(sessions["admin"], dataConnection, action)).toBe(true);
+    expect(
+      isAuthorized(sessions["organization-owner-user"], dataConnection, action)
+    ).toBe(true);
+    expect(
+      isAuthorized(
+        sessions["organization-maintainer-user"],
+        dataConnection,
+        action
+      )
+    ).toBe(true);
+    expect(
+      isAuthorized(
+        sessions["organization-read-data-user"],
+        dataConnection,
+        action
+      )
+    ).toBe(true);
+    expect(
+      isAuthorized(
+        sessions["organization-write-data-user"],
+        dataConnection,
+        action
+      )
+    ).toBe(true);
+    expect(
+      isAuthorized(sessions["repo-member-owner"], dataConnection, action)
+    ).toBe(true);
+    expect(
+      isAuthorized(sessions["repo-member-maintainer"], dataConnection, action)
+    ).toBe(true);
+    expect(
+      isAuthorized(sessions["repo-member-read-data"], dataConnection, action)
+    ).toBe(true);
+    expect(
+      isAuthorized(sessions["repo-member-write-data"], dataConnection, action)
+    ).toBe(true);
+    expect(
+      isAuthorized(sessions["repo-member-invited"], dataConnection, action)
+    ).toBe(true);
+    expect(isAuthorized(sessions["disabled"], dataConnection, action)).toBe(
+      false
+    );
+    expect(isAuthorized(sessions["regular-user"], dataConnection, action)).toBe(
+      true
+    );
+    expect(
+      isAuthorized(sessions["create-repositories-user"], dataConnection, action)
+    ).toBe(true);
+    expect(isAuthorized(sessions["anonymous"], dataConnection, action)).toBe(
+      true
+    );
+    expect(isAuthorized(sessions["no-account"], dataConnection, action)).toBe(
+      true
+    );
+  });
+
+  test("Action: data_connection:create", () => {
+    const action = Actions.CreateDataConnection;
+
+    var dataConnection: DataConnection = {
+      data_connection_id: "test-connection",
+      name: "Test Connection",
+      read_only: false,
+      details: {
+        provider: DataProvider.S3,
+        bucket: "test-bucket",
+        base_prefix: "test-prefix",
+        region: S3Regions.US_EAST_1,
+      },
+    };
+
+    expect(isAuthorized(sessions["admin"], dataConnection, action)).toBe(true);
+    expect(
+      isAuthorized(sessions["organization-owner-user"], dataConnection, action)
+    ).toBe(false);
+    expect(
+      isAuthorized(
+        sessions["organization-maintainer-user"],
+        dataConnection,
+        action
+      )
+    ).toBe(false);
+    expect(
+      isAuthorized(
+        sessions["organization-read-data-user"],
+        dataConnection,
+        action
+      )
+    ).toBe(false);
+    expect(
+      isAuthorized(
+        sessions["organization-write-data-user"],
+        dataConnection,
+        action
+      )
+    ).toBe(false);
+    expect(
+      isAuthorized(sessions["repo-member-owner"], dataConnection, action)
+    ).toBe(false);
+    expect(
+      isAuthorized(sessions["repo-member-maintainer"], dataConnection, action)
+    ).toBe(false);
+    expect(
+      isAuthorized(sessions["repo-member-read-data"], dataConnection, action)
+    ).toBe(false);
+    expect(
+      isAuthorized(sessions["repo-member-write-data"], dataConnection, action)
+    ).toBe(false);
+    expect(
+      isAuthorized(sessions["repo-member-invited"], dataConnection, action)
+    ).toBe(false);
+    expect(isAuthorized(sessions["disabled"], dataConnection, action)).toBe(
+      false
+    );
+    expect(isAuthorized(sessions["regular-user"], dataConnection, action)).toBe(
+      false
+    );
+    expect(
+      isAuthorized(sessions["create-repositories-user"], dataConnection, action)
+    ).toBe(false);
+    expect(isAuthorized(sessions["anonymous"], dataConnection, action)).toBe(
+      false
+    );
+    expect(isAuthorized(sessions["no-account"], dataConnection, action)).toBe(
+      false
+    );
+  });
+
+  test("Action: data_connection:disable", () => {
+    const action = Actions.DisableDataConnection;
+
+    var dataConnection: DataConnection = {
+      data_connection_id: "test-connection",
+      name: "Test Connection",
+      read_only: false,
+      details: {
+        provider: DataProvider.S3,
+        bucket: "test-bucket",
+        base_prefix: "test-prefix",
+        region: S3Regions.US_EAST_1,
+      },
+    };
+
+    expect(isAuthorized(sessions["admin"], dataConnection, action)).toBe(true);
+    expect(
+      isAuthorized(sessions["organization-owner-user"], dataConnection, action)
+    ).toBe(false);
+    expect(
+      isAuthorized(
+        sessions["organization-maintainer-user"],
+        dataConnection,
+        action
+      )
+    ).toBe(false);
+    expect(
+      isAuthorized(
+        sessions["organization-read-data-user"],
+        dataConnection,
+        action
+      )
+    ).toBe(false);
+    expect(
+      isAuthorized(
+        sessions["organization-write-data-user"],
+        dataConnection,
+        action
+      )
+    ).toBe(false);
+    expect(
+      isAuthorized(sessions["repo-member-owner"], dataConnection, action)
+    ).toBe(false);
+    expect(
+      isAuthorized(sessions["repo-member-maintainer"], dataConnection, action)
+    ).toBe(false);
+    expect(
+      isAuthorized(sessions["repo-member-read-data"], dataConnection, action)
+    ).toBe(false);
+    expect(
+      isAuthorized(sessions["repo-member-write-data"], dataConnection, action)
+    ).toBe(false);
+    expect(
+      isAuthorized(sessions["repo-member-invited"], dataConnection, action)
+    ).toBe(false);
+    expect(isAuthorized(sessions["disabled"], dataConnection, action)).toBe(
+      false
+    );
+    expect(isAuthorized(sessions["regular-user"], dataConnection, action)).toBe(
+      false
+    );
+    expect(
+      isAuthorized(sessions["create-repositories-user"], dataConnection, action)
+    ).toBe(false);
+    expect(isAuthorized(sessions["anonymous"], dataConnection, action)).toBe(
+      false
+    );
+    expect(isAuthorized(sessions["no-account"], dataConnection, action)).toBe(
+      false
+    );
+  });
+
+  test("Action: data_connection:use", () => {
+    const action = Actions.UseDataConnection;
+
+    var dataConnection: DataConnection = {
+      data_connection_id: "test-connection",
+      name: "Test Connection",
+      read_only: false,
+      details: {
+        provider: DataProvider.S3,
+        bucket: "test-bucket",
+        base_prefix: "test-prefix",
+        region: S3Regions.US_EAST_1,
+      },
+    };
+
+    expect(isAuthorized(sessions["admin"], dataConnection, action)).toBe(true);
+    expect(
+      isAuthorized(sessions["organization-owner-user"], dataConnection, action)
+    ).toBe(true);
+    expect(
+      isAuthorized(
+        sessions["organization-maintainer-user"],
+        dataConnection,
+        action
+      )
+    ).toBe(true);
+    expect(
+      isAuthorized(
+        sessions["organization-read-data-user"],
+        dataConnection,
+        action
+      )
+    ).toBe(true);
+    expect(
+      isAuthorized(
+        sessions["organization-write-data-user"],
+        dataConnection,
+        action
+      )
+    ).toBe(true);
+    expect(
+      isAuthorized(sessions["repo-member-owner"], dataConnection, action)
+    ).toBe(true);
+    expect(
+      isAuthorized(sessions["repo-member-maintainer"], dataConnection, action)
+    ).toBe(true);
+    expect(
+      isAuthorized(sessions["repo-member-read-data"], dataConnection, action)
+    ).toBe(true);
+    expect(
+      isAuthorized(sessions["repo-member-write-data"], dataConnection, action)
+    ).toBe(true);
+    expect(
+      isAuthorized(sessions["repo-member-invited"], dataConnection, action)
+    ).toBe(true);
+    expect(isAuthorized(sessions["disabled"], dataConnection, action)).toBe(
+      false
+    );
+    expect(isAuthorized(sessions["regular-user"], dataConnection, action)).toBe(
+      true
+    );
+    expect(
+      isAuthorized(sessions["create-repositories-user"], dataConnection, action)
+    ).toBe(true);
+    expect(isAuthorized(sessions["anonymous"], dataConnection, action)).toBe(
+      true
+    );
+    expect(isAuthorized(sessions["no-account"], dataConnection, action)).toBe(
+      true
+    );
+
+    // Test with read_only set to true
+    dataConnection.read_only = true;
+    expect(isAuthorized(sessions["admin"], dataConnection, action)).toBe(true);
+    expect(
+      isAuthorized(sessions["organization-owner-user"], dataConnection, action)
+    ).toBe(false);
+    expect(isAuthorized(sessions["regular-user"], dataConnection, action)).toBe(
+      false
+    );
+
+    // Test with required_flag
+    dataConnection.read_only = false;
+    dataConnection.required_flag = AccountFlags.CREATE_REPOSITORIES;
+    expect(isAuthorized(sessions["admin"], dataConnection, action)).toBe(true);
+    expect(
+      isAuthorized(sessions["organization-owner-user"], dataConnection, action)
+    ).toBe(true);
+    expect(
+      isAuthorized(sessions["create-repositories-user"], dataConnection, action)
+    ).toBe(true);
+    expect(isAuthorized(sessions["regular-user"], dataConnection, action)).toBe(
+      false
+    );
+  });
+
+  test("Action: data_connection:credentials:view", () => {
+    const action = Actions.ViewDataConnectionCredentials;
+
+    var dataConnection: DataConnection = {
+      data_connection_id: "test-connection",
+      name: "Test Connection",
+      read_only: false,
+      details: {
+        provider: DataProvider.S3,
+        bucket: "test-bucket",
+        base_prefix: "test-prefix",
+        region: S3Regions.US_EAST_1,
+      },
+    };
+
+    expect(isAuthorized(sessions["admin"], dataConnection, action)).toBe(true);
+    expect(
+      isAuthorized(sessions["organization-owner-user"], dataConnection, action)
+    ).toBe(false);
+    expect(
+      isAuthorized(
+        sessions["organization-maintainer-user"],
+        dataConnection,
+        action
+      )
+    ).toBe(false);
+    expect(
+      isAuthorized(
+        sessions["organization-read-data-user"],
+        dataConnection,
+        action
+      )
+    ).toBe(false);
+    expect(
+      isAuthorized(
+        sessions["organization-write-data-user"],
+        dataConnection,
+        action
+      )
+    ).toBe(false);
+    expect(
+      isAuthorized(sessions["repo-member-owner"], dataConnection, action)
+    ).toBe(false);
+    expect(
+      isAuthorized(sessions["repo-member-maintainer"], dataConnection, action)
+    ).toBe(false);
+    expect(
+      isAuthorized(sessions["repo-member-read-data"], dataConnection, action)
+    ).toBe(false);
+    expect(
+      isAuthorized(sessions["repo-member-write-data"], dataConnection, action)
+    ).toBe(false);
+    expect(
+      isAuthorized(sessions["repo-member-invited"], dataConnection, action)
+    ).toBe(false);
+    expect(isAuthorized(sessions["disabled"], dataConnection, action)).toBe(
+      false
+    );
+    expect(isAuthorized(sessions["regular-user"], dataConnection, action)).toBe(
+      false
+    );
+    expect(
+      isAuthorized(sessions["create-repositories-user"], dataConnection, action)
+    ).toBe(false);
+    expect(isAuthorized(sessions["anonymous"], dataConnection, action)).toBe(
+      false
+    );
+    expect(isAuthorized(sessions["no-account"], dataConnection, action)).toBe(
+      false
+    );
+  });
+
+  test("Action: data_connection:put", () => {
+    const action = Actions.PutDataConnection;
+
+    var dataConnection: DataConnection = {
+      data_connection_id: "test-connection",
+      name: "Test Connection",
+      read_only: false,
+      details: {
+        provider: DataProvider.S3,
+        bucket: "test-bucket",
+        base_prefix: "test-prefix",
+        region: S3Regions.US_EAST_1,
+      },
+    };
+
+    expect(isAuthorized(sessions["admin"], dataConnection, action)).toBe(true);
+    expect(
+      isAuthorized(sessions["organization-owner-user"], dataConnection, action)
+    ).toBe(false);
+    expect(
+      isAuthorized(
+        sessions["organization-maintainer-user"],
+        dataConnection,
+        action
+      )
+    ).toBe(false);
+    expect(
+      isAuthorized(
+        sessions["organization-read-data-user"],
+        dataConnection,
+        action
+      )
+    ).toBe(false);
+    expect(
+      isAuthorized(
+        sessions["organization-write-data-user"],
+        dataConnection,
+        action
+      )
+    ).toBe(false);
+    expect(
+      isAuthorized(sessions["repo-member-owner"], dataConnection, action)
+    ).toBe(false);
+    expect(
+      isAuthorized(sessions["repo-member-maintainer"], dataConnection, action)
+    ).toBe(false);
+    expect(
+      isAuthorized(sessions["repo-member-read-data"], dataConnection, action)
+    ).toBe(false);
+    expect(
+      isAuthorized(sessions["repo-member-write-data"], dataConnection, action)
+    ).toBe(false);
+    expect(
+      isAuthorized(sessions["repo-member-invited"], dataConnection, action)
+    ).toBe(false);
+    expect(isAuthorized(sessions["disabled"], dataConnection, action)).toBe(
+      false
+    );
+    expect(isAuthorized(sessions["regular-user"], dataConnection, action)).toBe(
+      false
+    );
+    expect(
+      isAuthorized(sessions["create-repositories-user"], dataConnection, action)
+    ).toBe(false);
+    expect(isAuthorized(sessions["anonymous"], dataConnection, action)).toBe(
+      false
+    );
+    expect(isAuthorized(sessions["no-account"], dataConnection, action)).toBe(
       false
     );
   });

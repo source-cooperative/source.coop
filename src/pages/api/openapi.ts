@@ -9,6 +9,7 @@ import {
   AccountSchema,
   APIKeyRequestSchema,
   APIKeySchema,
+  DataConnectionSchema,
   MembershipInvitationSchema,
   MembershipSchema,
   RedactedAPIKeySchema,
@@ -51,6 +52,7 @@ export default async function handler(
     APIKeyRequestSchema,
     RedactedAPIKeySchema,
     MembershipInvitationSchema,
+    DataConnectionSchema,
   ]);
   openapiSpecification["components"] = {
     securitySchemes: {
