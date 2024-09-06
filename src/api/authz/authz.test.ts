@@ -13,6 +13,7 @@ import {
   DataConnection,
   S3Regions,
   DataProvider,
+  RepositoryDataMode,
 } from "@/api/types";
 
 describe("Authorization Tests", () => {
@@ -3016,6 +3017,7 @@ describe("Authorization Tests", () => {
       data_connection_id: "test-connection",
       name: "Test Connection",
       read_only: false,
+      allowed_data_modes: [RepositoryDataMode.Open],
       details: {
         provider: DataProvider.S3,
         bucket: "test-bucket",
@@ -3088,6 +3090,7 @@ describe("Authorization Tests", () => {
       data_connection_id: "test-connection",
       name: "Test Connection",
       read_only: false,
+      allowed_data_modes: [RepositoryDataMode.Open],
       details: {
         provider: DataProvider.S3,
         bucket: "test-bucket",
@@ -3160,6 +3163,7 @@ describe("Authorization Tests", () => {
       data_connection_id: "test-connection",
       name: "Test Connection",
       read_only: false,
+      allowed_data_modes: [RepositoryDataMode.Open],
       details: {
         provider: DataProvider.S3,
         bucket: "test-bucket",
@@ -3232,6 +3236,7 @@ describe("Authorization Tests", () => {
       data_connection_id: "test-connection",
       name: "Test Connection",
       read_only: false,
+      allowed_data_modes: [RepositoryDataMode.Open],
       details: {
         provider: DataProvider.S3,
         bucket: "test-bucket",
@@ -3328,6 +3333,7 @@ describe("Authorization Tests", () => {
       data_connection_id: "test-connection",
       name: "Test Connection",
       read_only: false,
+      allowed_data_modes: [RepositoryDataMode.Open],
       details: {
         provider: DataProvider.S3,
         bucket: "test-bucket",
@@ -3400,6 +3406,7 @@ describe("Authorization Tests", () => {
       data_connection_id: "test-connection",
       name: "Test Connection",
       read_only: false,
+      allowed_data_modes: [RepositoryDataMode.Open],
       details: {
         provider: DataProvider.S3,
         bucket: "test-bucket",

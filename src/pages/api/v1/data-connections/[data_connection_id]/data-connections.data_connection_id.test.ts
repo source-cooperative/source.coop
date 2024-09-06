@@ -18,6 +18,7 @@ import {
   UserSession,
   DataConnection,
   AccountType,
+  RepositoryDataMode,
 } from "@/api/types";
 
 jest.mock("@/api/utils", () => ({
@@ -67,6 +68,7 @@ describe("/api/v1/data-connections/[data_connection_id]", () => {
         data_connection_id: "test-connection",
         name: "Test Connection",
         read_only: false,
+        allowed_data_modes: [RepositoryDataMode.Open],
         details: {
           provider: DataProvider.S3,
           bucket: "test-bucket",
@@ -119,6 +121,7 @@ describe("/api/v1/data-connections/[data_connection_id]", () => {
         data_connection_id: "test-connection",
         name: "Updated Test Connection",
         read_only: true,
+        allowed_data_modes: [RepositoryDataMode.Open],
         details: {
           provider: DataProvider.S3,
           bucket: "updated-bucket",
@@ -194,6 +197,7 @@ describe("/api/v1/data-connections/[data_connection_id]", () => {
         data_connection_id: "test-connection",
         name: "Test Connection",
         read_only: false,
+        allowed_data_modes: [RepositoryDataMode.Open],
         details: {
           provider: DataProvider.S3,
           bucket: "test-bucket",

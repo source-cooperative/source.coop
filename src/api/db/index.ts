@@ -214,17 +214,24 @@ export async function putAccount(
  * @throws Will throw an error if there's an issue putting the item in DynamoDB.
  */
 export async function putRepository(
-  repository: Repository
-): Promise<Repository> {
+  repository: Repository,
+  checkIfExists: boolean = false
+): Promise<[Repository, boolean]> {
   const command = new PutItemCommand({
     TableName: "source-cooperative-repositories",
     Item: marshall(repository),
+    ConditionExpression: checkIfExists
+      ? "attribute_not_exists(account_id) AND attribute_not_exists(repository_id)"
+      : undefined,
   });
 
   try {
     await docClient.send(command);
-    return repository;
+    return [repository, true];
   } catch (e) {
+    if (e instanceof Error && e.name === "ConditionalCheckFailedException") {
+      return [repository, false];
+    }
     logger.error(e);
     throw e;
   }

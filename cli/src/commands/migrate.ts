@@ -175,6 +175,7 @@ export async function migrate(inputDir: string, outputDir: string) {
       data_connection_id: "aws-opendata-us-west-2",
       name: "AWS Open Data (US-West-2)",
       read_only: false,
+      allowed_data_modes: [RepositoryDataMode.Open],
       prefix_template:
         "{{repository.repository_id}}/{{repository.account_id}}/",
       details: {
@@ -190,6 +191,7 @@ export async function migrate(inputDir: string, outputDir: string) {
       prefix_template:
         "{{repository.repository_id}}/{{repository.account_id}}/",
       read_only: true,
+      allowed_data_modes: [RepositoryDataMode.Open],
       details: {
         provider: DataProvider.Azure,
         account_name: "radiantearth",

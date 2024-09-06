@@ -13,7 +13,11 @@ import {
   MembershipInvitationSchema,
   MembershipSchema,
   RedactedAPIKeySchema,
+  RepositoryCreationRequestSchema,
+  RepositoryMetaSchema,
+  RepositorySchema,
   UserSessionSchema,
+  RepositoryUpdateRequestSchema,
 } from "@/api/types";
 
 export default async function handler(
@@ -53,6 +57,10 @@ export default async function handler(
     RedactedAPIKeySchema,
     MembershipInvitationSchema,
     DataConnectionSchema,
+    RepositoryCreationRequestSchema,
+    RepositorySchema,
+    RepositoryMetaSchema,
+    RepositoryUpdateRequestSchema,
   ]);
   openapiSpecification["components"] = {
     securitySchemes: {

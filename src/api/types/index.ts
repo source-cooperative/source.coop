@@ -269,10 +269,12 @@ export const DataConnectionSchema = z
       .min(MIN_ID_LENGTH)
       .max(MAX_ID_LENGTH)
       .toLowerCase()
-      .regex(ID_REGEX, "Invalid data connection ID format"),
+      .regex(ID_REGEX, "Invalid data connection ID format")
+      .openapi({ example: "data-connection-id" }),
     name: z.string(),
     prefix_template: z.optional(z.string()),
     read_only: z.boolean(),
+    allowed_data_modes: z.array(z.nativeEnum(RepositoryDataMode)),
     required_flag: z.optional(z.nativeEnum(AccountFlags)),
     details: DataConnnectionDetailsSchema,
     authentication: z.optional(DataConnectionAuthenticationSchema),
@@ -499,6 +501,35 @@ export const AccountCreationRequestSchema = AccountSchema.pick({
 }).openapi("AccountCreationRequest");
 export type AccountCreationRequest = z.infer<
   typeof AccountCreationRequestSchema
+>;
+
+export const RepositoryCreationRequestSchema = RepositorySchema.pick({
+  repository_id: true,
+  data_mode: true,
+  meta: true,
+})
+  .extend({
+    data_connection_id: z
+      .string()
+      .min(MIN_ID_LENGTH)
+      .max(MAX_ID_LENGTH)
+      .toLowerCase()
+      .regex(ID_REGEX, "Invalid data connection ID format")
+      .openapi({ example: "data-connection-id" }),
+  })
+  .openapi("RepositoryCreationRequest");
+
+export type RepositoryCreationRequest = z.infer<
+  typeof RepositoryCreationRequestSchema
+>;
+
+export const RepositoryUpdateRequestSchema = RepositorySchema.pick({
+  meta: true,
+  state: true,
+}).openapi("RepositoryUpdateRequest");
+
+export type RepositoryUpdateRequest = z.infer<
+  typeof RepositoryUpdateRequestSchema
 >;
 
 export const MembershipInvitationSchema = MembershipSchema.pick({

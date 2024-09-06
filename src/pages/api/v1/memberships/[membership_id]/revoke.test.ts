@@ -146,11 +146,11 @@ describe("/api/v1/memberships/[membership_id]/revoke", () => {
 
     expect(updatedMembership).not.toBeNull();
     if (updatedMembership) {
-      expect(updatedMembership.state_changed).not.toBe(
+      expect((updatedMembership as Membership).state_changed).not.toBe(
         mockMembership.state_changed
       );
       expect(
-        new Date(updatedMembership.state_changed).getTime()
+        new Date((updatedMembership as Membership).state_changed).getTime()
       ).toBeGreaterThan(new Date(mockMembership.state_changed).getTime());
     }
   });
@@ -212,11 +212,11 @@ describe("/api/v1/memberships/[membership_id]/revoke", () => {
 
     expect(updatedMembership).not.toBeNull();
     if (updatedMembership) {
-      expect(updatedMembership.state_changed).not.toBe(
+      expect((updatedMembership as Membership).state_changed).not.toBe(
         mockMembership.state_changed
       );
       expect(
-        new Date(updatedMembership.state_changed).getTime()
+        new Date((updatedMembership as Membership).state_changed).getTime()
       ).toBeGreaterThan(new Date(mockMembership.state_changed).getTime());
     }
   });
