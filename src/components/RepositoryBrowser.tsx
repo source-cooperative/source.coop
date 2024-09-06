@@ -200,10 +200,21 @@ export default function RepositoryBrowser({ account_id, repository_id }) {
   }, [router.query]);
 
   if (resultState.loading) {
-    return <>Loading...</>;
+    return (
+      <Box>
+        <RepositoryBreadcrumbs
+          account_id={account_id}
+          repository_id={repository_id}
+          prefix={slug}
+          basePath={router.asPath}
+        />
+        <Box sx={{ textAlign: "center", pt: 4 }}>
+          <Text sx={{ fontFamily: "mono", fontSize: 1 }}>Loading...</Text>
+        </Box>
+      </Box>
+    );
   }
   if (resultState.listResult) {
-    console.log(resultState.listResult);
     return (
       <Box>
         <RepositoryBreadcrumbs
@@ -358,5 +369,19 @@ export default function RepositoryBrowser({ account_id, repository_id }) {
     );
   }
 
-  return <>Error loading page. Refresh to try again.</>;
+  return (
+    <Box>
+      <RepositoryBreadcrumbs
+        account_id={account_id}
+        repository_id={repository_id}
+        prefix={slug}
+        basePath={router.asPath}
+      />
+      <Box sx={{ textAlign: "center", pt: 4 }}>
+        <Text sx={{ fontFamily: "mono", fontSize: 1 }}>
+          Error loading page. Refresh to try again.
+        </Text>
+      </Box>
+    </Box>
+  );
 }

@@ -7,27 +7,34 @@ import { RepositoryListing } from "@/components/RepositoryListing";
 
 import { useRepository, useRepositorySideNav } from "@/lib/api";
 
-
 export default function RepositoryDetail() {
   const router = useRouter();
 
   const { repository, isLoading, isError } = useRepository({
     account_id: router.query.account_id,
-    repository_id: router.query.repository_id
-  })
+    repository_id: router.query.repository_id,
+  });
 
   const { sideNavLinks } = useRepositorySideNav({
     account_id: router.query.account_id,
     repository_id: router.query.repository_id,
-    active_page: "readme"
-  })
+    active_page: "readme",
+  });
 
   return (
-    <Layout notFound={isError && isError.status === 404} sideNavLinks={sideNavLinks}>
-      
+    <Layout
+      notFound={isError && isError.status === 404}
+      sideNavLinks={sideNavLinks}
+    >
       <RepositoryListing repository={repository} truncate={false} />
       <Divider />
-      <Markdown url={repository ? `${repository.data.cdn}/${repository.account_id}/${repository.repository_id}/README.md` : null} />
+      <Markdown
+        url={
+          repository
+            ? `${process.env.NEXT_PUBLIC_S3_ENDPOINT}/${repository.account_id}/${repository.repository_id}/README.md`
+            : null
+        }
+      />
     </Layout>
-  )
+  );
 }
