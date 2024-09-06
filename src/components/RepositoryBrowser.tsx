@@ -179,7 +179,6 @@ export default function RepositoryBrowser({ account_id, repository_id }) {
         });
         s3Client.send(listCommand).then(
           (res) => {
-            console.log(res);
             setResultState({
               loading: false,
               listResult: res,
@@ -188,7 +187,6 @@ export default function RepositoryBrowser({ account_id, repository_id }) {
             });
           },
           (e) => {
-            console.log(e);
             setResultState({
               loading: false,
               listResult: null,
