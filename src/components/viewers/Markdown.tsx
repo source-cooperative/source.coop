@@ -8,7 +8,7 @@ import provider from "@mdx-js/react";
 import * as runtime from "react/jsx-runtime";
 import { evaluate } from "@mdx-js/mdx";
 import { mdxOptions } from "@/lib/md";
-import Skeleton from 'react-loading-skeleton';
+import Skeleton from "react-loading-skeleton";
 import { Heading, Paragraph } from "theme-ui";
 import SourceLink from "../SourceLink";
 
@@ -19,9 +19,8 @@ export function Markdown({ url }) {
 
   useEffect(() => {
     if (!url) {
-      return
+      return;
     }
-
     fetch(url).then((res) => {
       if (res.ok) {
         res.text().then((text) => {
@@ -33,24 +32,34 @@ export function Markdown({ url }) {
           } as any).then((module) => {
             setMdxModule(module);
           });
-        })
+        });
       } else {
         setNotFound(true);
       }
-    })
-
-    
+    });
   }, [url]);
 
   if (notFound) {
-    return <>
-      <Heading as="h1">This Repository Does Not Contain a README</Heading>
-      <Paragraph>If you are the owner of this repository, follow the instructions <SourceLink href={"https://github.com/radiantearth/source-cooperative/wiki/Repositories#readme-markdown-files"}>here</SourceLink> to create a README.md</Paragraph>
-    </>
+    return (
+      <>
+        <Heading as="h1">This Repository Does Not Contain a README</Heading>
+        <Paragraph>
+          If you are the owner of this repository, follow the instructions{" "}
+          <SourceLink
+            href={
+              "https://github.com/radiantearth/source-cooperative/wiki/Repositories#readme-markdown-files"
+            }
+          >
+            here
+          </SourceLink>{" "}
+          to create a README.md
+        </Paragraph>
+      </>
+    );
   }
 
   if (!mdxModule) {
-    return <Skeleton count={10} />
+    return <Skeleton count={10} />;
   } else {
     return <Content />;
   }
