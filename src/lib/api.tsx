@@ -301,32 +301,3 @@ export async function claimUsername({ account_id, identity_id }) {
     }
   });
 }
-
-export function useRepositoryBrowsePage({
-  account_id,
-  repository_id,
-  cdn,
-  prefix,
-  limit,
-  next,
-}) {
-  console.log(prefix);
-  const { data, error, isLoading } = useSWR(
-    {
-      path:
-        !account_id || !repository_id || !cdn
-          ? null
-          : `${cdn}/${account_id}/${repository_id}/${prefix}`,
-      args: { next, limit },
-      external: true,
-      exclude_credentials: true,
-    },
-    { refreshInterval: 0 }
-  );
-
-  return {
-    browseResult: data,
-    isLoading,
-    isError: error,
-  };
-}
