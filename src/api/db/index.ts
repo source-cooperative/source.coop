@@ -103,6 +103,26 @@ export async function getRepositories(): Promise<Repository[]> {
   }
 }
 
+export async function getRepositoriesByAccount(
+  accountId: string
+): Promise<Repository[] | null> {
+  const command = new QueryCommand({
+    TableName: "source-cooperative-repositories",
+    KeyConditionExpression: "account_id = :account_id",
+    ExpressionAttributeValues: {
+      ":account_id": accountId,
+    },
+  });
+
+  try {
+    const response = await client.send(command);
+    return response.Items?.map((item) => item as Repository) ?? [];
+  } catch (e) {
+    logger.error(e);
+    throw e;
+  }
+}
+
 /**
  * Retrieves a specific repository based on account ID and repository ID.
  * @param accountId - The account ID associated with the repository.

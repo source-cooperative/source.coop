@@ -1,13 +1,17 @@
 import useSWR from "swr";
 import { SWRResponse } from "swr";
-import { Repository, RepositoryListResponse } from "@/api/types";
+import {
+  Repository,
+  RepositoryList,
+  RepositoryListResponse,
+} from "@/api/types";
 
 export function listFeaturedRepositories(
   refreshInterval: number = 5,
   revalidateOnFocus: boolean = false
-): SWRResponse<Repository[], Error> {
-  return useSWR<Repository[], Error>(
-    { path: "/api/repositories/featured" },
+): SWRResponse<RepositoryListResponse, Error> {
+  return useSWR<RepositoryListResponse, Error>(
+    { path: "/api/v1/repositories/featured" },
     { refreshInterval, revalidateOnFocus }
   );
 }
@@ -22,7 +26,7 @@ export function listRepositories(
 ): SWRResponse<RepositoryListResponse, Error> {
   return useSWR<RepositoryListResponse, Error>(
     {
-      path: "/api/repositories/",
+      path: "/api/v1/repositories/",
       args: { next: page, limit, tags, q: search_term },
     },
     { refreshInterval, revalidateOnFocus }
@@ -37,10 +41,10 @@ export function listRepositoriesByAccount(
   tags?: string[],
   refreshInterval: number = 5,
   revalidateOnFocus: boolean = false
-): SWRResponse<RepositoryListResponse, Error> {
-  return useSWR<RepositoryListResponse, Error>(
+): SWRResponse<RepositoryList, Error> {
+  return useSWR<RepositoryList, Error>(
     {
-      path: `/api/repositories/${account_id}`,
+      path: `/api/v1/repositories/${account_id}`,
       args: { next: page, limit, tags, q: search_term },
     },
     { refreshInterval, revalidateOnFocus }
@@ -52,10 +56,10 @@ export function getRepository(
   repository_id: string,
   refreshInterval: number = 5,
   revalidateOnFocus: boolean = false
-): SWRResponse<RepositoryListResponse, Error> {
-  return useSWR<RepositoryListResponse, Error>(
+): SWRResponse<Repository, Error> {
+  return useSWR<Repository, Error>(
     {
-      path: `/api/repositories/${account_id}/${repository_id}`,
+      path: `/api/v1/repositories/${account_id}/${repository_id}`,
     },
     { refreshInterval, revalidateOnFocus }
   );

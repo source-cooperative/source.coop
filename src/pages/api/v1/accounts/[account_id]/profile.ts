@@ -1,7 +1,12 @@
 // Import necessary modules and types
 import type { NextApiRequest, NextApiResponse } from "next";
-import { getSession } from "@/api/utils";
-import { AccountProfile, AccountProfileSchema, Actions } from "@/api/types";
+import { getEmail, getProfileImage, getSession } from "@/api/utils";
+import {
+  AccountProfile,
+  AccountProfileResponse,
+  AccountProfileSchema,
+  Actions,
+} from "@/api/types";
 import { withErrorHandling } from "@/api/middleware";
 import { StatusCodes } from "http-status-codes";
 import {
@@ -42,7 +47,7 @@ import { isAuthorized } from "@/api/authz";
  */
 async function getAccountProfileHandler(
   req: NextApiRequest,
-  res: NextApiResponse<AccountProfile>
+  res: NextApiResponse<AccountProfileResponse>
 ): Promise<void> {
   // Extract account_id from request query
   const { account_id } = req.query;
@@ -61,8 +66,17 @@ async function getAccountProfileHandler(
     throw new UnauthorizedError();
   }
 
+  const email = account.identity_id
+    ? await getEmail(account.identity_id)
+    : null;
+
+  const profile: AccountProfileResponse = {
+    ...account.profile,
+    profile_image: email ? getProfileImage(email) : undefined,
+  };
+
   // Send successful response with account profile
-  res.status(StatusCodes.OK).json(account.profile);
+  res.status(StatusCodes.OK).json(profile);
 }
 
 /**
@@ -106,7 +120,7 @@ async function getAccountProfileHandler(
  */
 async function putAccountProfileHandler(
   req: NextApiRequest,
-  res: NextApiResponse<AccountProfile>
+  res: NextApiResponse<AccountProfileResponse>
 ): Promise<void> {
   // Extract account_id from request query
   const { account_id } = req.query;
@@ -140,7 +154,7 @@ async function putAccountProfileHandler(
 // Main handler function for the API endpoint
 export async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<AccountProfile>
+  res: NextApiResponse<AccountProfileResponse>
 ) {
   // Route request based on HTTP method
   if (req.method === "GET") {

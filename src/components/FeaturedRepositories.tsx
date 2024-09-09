@@ -15,7 +15,7 @@ export default function FeaturedRepositories() {
         <Heading as="h2">Failed to load Featured Repositories</Heading>
       ) : (
         <Grid>
-          {(repositories ? repositories : [null, null, null]).map(
+          {(repositories ? repositories.repositories : [null, null, null]).map(
             (repository, i) => {
               return (
                 <RepositoryListing

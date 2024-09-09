@@ -12,7 +12,7 @@ export function getProfile(
   revalidateOnFocus: boolean = false
 ): SWRResponse<AccountProfileResponse, ClientError> {
   return useSWR<AccountProfileResponse, ClientError>(
-    { path: `/api/accounts/${account_id}/profile` },
+    { path: `/api/v1/accounts/${account_id}/profile` },
     { refreshInterval, revalidateOnFocus }
   );
 }

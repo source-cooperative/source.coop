@@ -6,7 +6,7 @@ const API_BASE = process.env.NEXT_PUBLIC_API_BASE;
 
 export function useFeatured() {
   const { data, error, isLoading } = useSWR(
-    { path: "/api/repositories/featured" },
+    { path: "/api/v1/repositories/featured" },
     { refreshInterval: 5000 }
   );
 

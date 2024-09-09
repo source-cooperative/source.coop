@@ -8,6 +8,7 @@ import { Divider } from "theme-ui";
 
 import { useRepository, useRepositorySideNav } from "@/lib/api";
 import { getRepository } from "@/lib/client/repositories";
+import { SideNavLink } from "@/lib/types";
 
 export default function RepositoryDetail() {
   const router = useRouter();
@@ -18,8 +19,24 @@ export default function RepositoryDetail() {
     repository_id as string
   );
 
+  const sideNavLinks: SideNavLink[] = [
+    {
+      title: "Read Me",
+      href: `/repositories/${account_id}/${repository_id}/description`,
+    },
+    {
+      title: "Browse",
+      href: `/${account_id}/${repository_id}`,
+      active: true,
+    },
+    {
+      title: "Download",
+      href: `/repositories/${account_id}/${repository_id}/download`,
+    },
+  ];
+
   return (
-    <Layout notFound={true} sideNavLinks={[]}>
+    <Layout notFound={error != null} sideNavLinks={sideNavLinks}>
       <RepositoryListing repository={repository} truncate={false} />
       <Divider />
       <RepositoryBrowser

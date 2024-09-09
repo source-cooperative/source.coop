@@ -324,13 +324,13 @@ export const AccountProfileSchema = z
 
 export type AccountProfile = z.infer<typeof AccountProfileSchema>;
 
-export type AccountProfileResponse = {
-  name?: string;
-  bio?: string;
-  location?: string;
-  url?: string;
-  profile_image: string;
-};
+export const AccountProfileResponseSchema = AccountProfileSchema.extend({
+  profile_image: z.optional(z.string()),
+}).openapi("AccountProfileResponse");
+
+export type AccountProfileResponse = z.infer<
+  typeof AccountProfileResponseSchema
+>;
 
 export const AccountSchema = z
   .object({
@@ -469,6 +469,15 @@ export const APIKeySchema = z
   .openapi("APIKey");
 
 export type APIKey = z.infer<typeof APIKeySchema>;
+
+export const RepositoryListSchema = z
+  .object({
+    repositories: z.array(RepositorySchema),
+    next: z.optional(z.string()),
+  })
+  .openapi("RepositoryListResponse");
+
+export type RepositoryList = z.infer<typeof RepositoryListSchema>;
 
 export const APIKeyRequestSchema = z
   .object({

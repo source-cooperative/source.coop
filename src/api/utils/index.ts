@@ -220,6 +220,29 @@ export function isAdmin(session?: UserSession | null): boolean {
   }
 }
 
+export async function getEmail(identity_id: string): Promise<string | null> {
+  console.log(`${process.env.ORY_SDK_URL}/admin/identities/${identity_id}`);
+
+  const response = await fetch(
+    `${process.env.ORY_SDK_URL}/admin/identities/${identity_id}`,
+    {
+      headers: {
+        Authorization: `Bearer ${process.env.ORY_ACCESS_TOKEN}`,
+      },
+    }
+  );
+
+  if (!response.ok) {
+    return null;
+  }
+  const data = await response.json();
+
+  console.log(data);
+  for (const recover_address of data.recovery_addresses) {
+    return "kevin@kb.gg";
+  }
+}
+
 /**
  * Generates a Gravatar profile image URL based on the provided email address.
  * If no email is provided, it uses a default email address.

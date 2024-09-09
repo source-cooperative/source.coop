@@ -5,6 +5,7 @@ import {
   Repository,
   RepositoryCreationRequestSchema,
   RepositoryFeatured,
+  RepositoryList,
   RepositoryState,
 } from "@/api/types";
 import {
@@ -14,15 +15,38 @@ import {
   UnauthorizedError,
 } from "@/api/errors";
 import { getSession } from "@/api/utils";
-import { getAccount, getDataConnection, putRepository } from "@/api/db";
+import {
+  getAccount,
+  getDataConnection,
+  getRepositoriesByAccount,
+  putRepository,
+} from "@/api/db";
 import { isAuthorized } from "@/api/authz";
 import Handlebars from "handlebars";
 import { StatusCodes } from "http-status-codes";
 
 async function listRepositoriesHandler(
   req: NextApiRequest,
-  res: NextApiResponse<Repository>
-): Promise<void> {}
+  res: NextApiResponse<RepositoryList>
+): Promise<void> {
+  const session = await getSession(req);
+
+  const { account_id } = req.query;
+
+  const account = await getAccount(account_id as string);
+
+  if (!account) {
+    throw new NotFoundError(`Account with ID ${account_id} not found`);
+  }
+
+  const repositories = await getRepositoriesByAccount(account_id as string);
+
+  const filteredRepositories = repositories.filter((repository) => {
+    return isAuthorized(session, repository, Actions.ListRepository);
+  });
+
+  res.status(StatusCodes.OK).json({ repositories: filteredRepositories });
+}
 
 /**
  * @openapi
@@ -167,7 +191,7 @@ async function createRepositoryHandler(
 
 export async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<Repository | Repository[]>
+  res: NextApiResponse<Repository | RepositoryList>
 ) {
   // Check if the request method is POST or GET
   if (req.method === "POST") {

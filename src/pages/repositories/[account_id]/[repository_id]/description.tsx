@@ -6,35 +6,45 @@ import { Divider } from "theme-ui";
 import { RepositoryListing } from "@/components/RepositoryListing";
 
 import { useRepository, useRepositorySideNav } from "@/lib/api";
+import { getRepository } from "@/lib/client/repositories";
+import { SideNavLink } from "@/lib/types";
 
 export default function RepositoryDetail() {
   const router = useRouter();
+  const { account_id, repository_id } = router.query;
 
-  const { repository, isLoading, isError } = useRepository({
-    account_id: router.query.account_id,
-    repository_id: router.query.repository_id,
-  });
+  const { data: repository, error } = getRepository(
+    account_id as string,
+    repository_id as string
+  );
 
-  const { sideNavLinks } = useRepositorySideNav({
-    account_id: router.query.account_id,
-    repository_id: router.query.repository_id,
-    active_page: "readme",
-  });
+  const sideNavLinks: SideNavLink[] = [
+    {
+      title: "Read Me",
+      href: `/repositories/${account_id}/${repository_id}/description`,
+      active: true,
+    },
+    {
+      title: "Browse",
+      href: `/${account_id}/${repository_id}`,
+    },
+    {
+      title: "Download",
+      href: `/repositories/${account_id}/${repository_id}/download`,
+    },
+  ];
 
   return (
-    <Layout
-      notFound={isError && isError.status === 404}
-      sideNavLinks={sideNavLinks}
-    >
+    <Layout notFound={error != null} sideNavLinks={sideNavLinks}>
       <RepositoryListing repository={repository} truncate={false} />
       <Divider />
-      <Markdown
-        url={
-          repository
-            ? `${process.env.NEXT_PUBLIC_S3_ENDPOINT}/${repository.account_id}/${repository.repository_id}/README.md`
-            : null
-        }
-      />
+      {repository ? (
+        <Markdown
+          url={`${process.env.NEXT_PUBLIC_S3_ENDPOINT}/${account_id}/${repository_id}/README.md`}
+        />
+      ) : (
+        <></>
+      )}
     </Layout>
   );
 }
