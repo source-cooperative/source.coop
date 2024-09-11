@@ -7,6 +7,7 @@ import {
   MembershipInvitation,
   MembershipInvitationSchema,
   MembershipState,
+  AccountType,
 } from "@/api/types";
 import { withErrorHandling } from "@/api/middleware";
 import { StatusCodes } from "http-status-codes";
@@ -83,6 +84,12 @@ async function inviteMemberHandler(
   if (!invitedAccount) {
     throw new NotFoundError(
       `Invited account with ID ${membershipInvitation.account_id} not found`
+    );
+  }
+
+  if (invitedAccount.account_type !== AccountType.User) {
+    throw new BadRequestError(
+      `Invited account with ID ${membershipInvitation.account_id} is not a user account`
     );
   }
 

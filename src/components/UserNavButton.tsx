@@ -7,6 +7,7 @@ import { useRouter } from "next/router";
 
 import { useUser } from "@/lib/api";
 import { Configuration, FrontendApi } from "@ory/client";
+import { AccountFlags, MembershipState } from "@/api/types";
 
 const frontend = new FrontendApi(
   new Configuration({
@@ -71,10 +72,6 @@ export default function UserNavButton() {
   const [colorMode, setColorMode] = useColorMode();
   const [logoutUrl, setLogoutUrl] = useState(null);
 
-  if (user && !user.account) {
-    router.push("/complete-signup");
-  }
-
   useEffect(() => {
     frontend
       .createBrowserLogoutFlow()
@@ -82,6 +79,19 @@ export default function UserNavButton() {
         setLogoutUrl(res.data.logout_url);
       })
       .catch((e) => {});
+
+    fetch("/api/v1/whoami", {
+      method: "GET",
+      credentials: "include",
+    }).then((res) => {
+      if (res.ok) {
+        res.json().then((data) => {
+          if (!data.account) {
+            router.push("/complete-signup");
+          }
+        });
+      }
+    });
   }, []);
 
   if (!user || isError) {
@@ -123,19 +133,32 @@ export default function UserNavButton() {
               width: "max-content",
             }}
           >
-            <Button variant="nav" href={"/" + user.account.account_id}>
+            <Button variant="nav" href={`/${user.account.account_id}`}>
               @{user.account.account_id}
             </Button>
-            {user.flags?.includes("create_repository") ? (
-              <Button variant="nav" href="/repositories/new">
-                New Repository
+            {user.memberships.map((membership, i) => {
+              if (membership.state !== MembershipState.Member) {
+                return <></>;
+              }
+              return (
+                <Button
+                  key={i}
+                  variant="nav"
+                  href={`/${membership.membership_account_id}`}
+                >
+                  {`@${membership.membership_account_id}`}
+                </Button>
+              );
+            })}
+
+            {user?.account?.flags.includes(
+              AccountFlags.CREATE_ORGANIZATIONS
+            ) && (
+              <Button variant="nav" href="/create-organization">
+                Create Organization
               </Button>
-            ) : (
-              <></>
             )}
-            <Button variant="nav" href={"/account/profile"}>
-              Settings
-            </Button>
+
             <Button variant="nav" href={logoutUrl}>
               Sign Out
             </Button>

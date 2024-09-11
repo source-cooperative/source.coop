@@ -372,17 +372,26 @@ export async function getMemberships(
   membershipAccountId: string,
   repositoryId: string | null = null
 ): Promise<Membership[]> {
-  const command = new QueryCommand({
+  let command = new QueryCommand({
     TableName: "source-cooperative-memberships",
     IndexName: "membership_account_id",
-    KeyConditionExpression: repositoryId
-      ? "membership_account_id = :membership_account_id AND repository_id = :repository_id"
-      : "membership_account_id = :membership_account_id",
+    KeyConditionExpression: "membership_account_id = :membership_account_id",
     ExpressionAttributeValues: {
       ":membership_account_id": membershipAccountId,
-      ...(repositoryId && { ":repository_id": repositoryId }),
     },
   });
+  if (repositoryId) {
+    command = new QueryCommand({
+      TableName: "source-cooperative-memberships",
+      IndexName: "membership_account_id_repository_id",
+      KeyConditionExpression:
+        "membership_account_id = :membership_account_id AND repository_id = :repository_id",
+      ExpressionAttributeValues: {
+        ":membership_account_id": membershipAccountId,
+        ":repository_id": repositoryId,
+      },
+    });
+  }
 
   try {
     const response = await client.send(command);

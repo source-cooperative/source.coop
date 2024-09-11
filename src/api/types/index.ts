@@ -308,16 +308,28 @@ export const AccountFlagsSchema = z
 export const AccountProfileSchema = z
   .object({
     name: z
-      .optional(z.string().max(128, "Name must not exceed 128 characters"))
+      .preprocess((name) => {
+        if (!name || typeof name !== "string") return undefined;
+        return name === "" ? undefined : name;
+      }, z.optional(z.string().max(128, "Name must not exceed 128 characters")))
       .openapi({ example: "Isaac Asimov" }),
     bio: z
-      .optional(z.string().max(1024, "Bio must not exceed 1024 characters"))
+      .preprocess((bio) => {
+        if (!bio || typeof bio !== "string") return undefined;
+        return bio === "" ? undefined : bio;
+      }, z.optional(z.string().max(1024, "Bio must not exceed 1024 characters")))
       .openapi({ example: "Software Engineer @radiantearth" }),
     location: z
-      .optional(z.string().max(128, "Location must not exceed 128 characters"))
+      .preprocess((location) => {
+        if (!location || typeof location !== "string") return undefined;
+        return location === "" ? undefined : location;
+      }, z.optional(z.string().max(128, "Location must not exceed 128 characters")))
       .openapi({ example: "Augsburg, Germany" }),
     url: z
-      .optional(z.string().url("Invalid URL format"))
+      .preprocess((url) => {
+        if (!url || typeof url !== "string") return undefined;
+        return url === "" ? undefined : url;
+      }, z.optional(z.string().url()))
       .openapi({ example: "https://source.coop" }),
   })
   .openapi("AccountProfile");
@@ -326,6 +338,7 @@ export type AccountProfile = z.infer<typeof AccountProfileSchema>;
 
 export const AccountProfileResponseSchema = AccountProfileSchema.extend({
   profile_image: z.optional(z.string()),
+  account_type: z.optional(z.nativeEnum(AccountType)),
 }).openapi("AccountProfileResponse");
 
 export type AccountProfileResponse = z.infer<
@@ -336,10 +349,19 @@ export const AccountSchema = z
   .object({
     account_id: z
       .string()
-      .min(MIN_ID_LENGTH)
-      .max(MAX_ID_LENGTH)
+      .min(
+        MIN_ID_LENGTH,
+        `Account ID must be at least ${MIN_ID_LENGTH} characters`
+      )
+      .max(
+        MAX_ID_LENGTH,
+        `Account ID must not exceed ${MAX_ID_LENGTH} characters`
+      )
       .toLowerCase()
-      .regex(ID_REGEX, "Invalid account ID format")
+      .regex(
+        ID_REGEX,
+        "Account ID may not begin or end with a hyphen OR contain consecutive hyphens"
+      )
       .openapi({ example: "account-id" }),
     account_type: AccountTypeSchema,
     identity_id: z.optional(z.string()).openapi({ example: "identity-id" }),
@@ -482,10 +504,16 @@ export type RepositoryList = z.infer<typeof RepositoryListSchema>;
 export const APIKeyRequestSchema = z
   .object({
     name: z
-      .string({
-        required_error: "API key name is required",
-        invalid_type_error: "API key name must be a string",
-      })
+      .preprocess(
+        (name) => {
+          if (!name || typeof name !== "string") return undefined;
+          return name === "" ? undefined : name;
+        },
+        z.string({
+          required_error: "API key name is required",
+          invalid_type_error: "API key name must be a string",
+        })
+      )
       .openapi({ example: "Dev Machine" }),
     expires: z.string().datetime("Invalid expiration date format"),
   })

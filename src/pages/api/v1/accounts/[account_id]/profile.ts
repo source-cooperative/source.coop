@@ -73,6 +73,7 @@ async function getAccountProfileHandler(
   const profile: AccountProfileResponse = {
     ...account.profile,
     profile_image: email ? getProfileImage(email) : undefined,
+    account_type: account.account_type,
   };
 
   // Send successful response with account profile

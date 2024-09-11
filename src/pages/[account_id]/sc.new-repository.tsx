@@ -1,19 +1,21 @@
 import { Layout } from "@/components/Layout";
 import { useRouter } from "next/router";
-import { Heading, Divider, Grid } from "theme-ui";
-import { RepositoryList } from "@/components/RepositoryList";
-
+import { Heading, Divider, Box, Text, Input, Alert } from "theme-ui";
 import { getProfile, getFlags } from "@/lib/client/accounts";
 import { AccountObject } from "@/components/AccountObject";
-import { listRepositoriesByAccount } from "@/lib/client/repositories";
 import { SideNavLink } from "@/lib/types";
-import { useUser } from "@/lib/api";
+
+import { useForm, SubmitHandler } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { AccountProfile, AccountProfileSchema } from "@/api/types";
+import SourceButton from "@/components/Button";
 import { useEffect, useState } from "react";
+import { useUser } from "@/lib/api";
 import {
   AccountFlags,
-  AccountType,
   MembershipRole,
   MembershipState,
+  AccountType,
 } from "@/api/types";
 
 export default function TenantDetails() {
@@ -30,7 +32,7 @@ export default function TenantDetails() {
     {
       href: `/${account_id}`,
       title: "Repositories",
-      active: true,
+      active: false,
     },
   ];
 
@@ -103,7 +105,7 @@ export default function TenantDetails() {
         newSideNav.push({
           href: `/${account_id}/sc.new-repository`,
           title: "New Repository",
-          active: false,
+          active: true,
         });
       }
     }
@@ -118,8 +120,41 @@ export default function TenantDetails() {
     setSideNavLinks(newSideNav);
   }, [account_id, user, profile, accountFlags]);
 
-  const { data: repositories, error: repositoriesError } =
-    listRepositoriesByAccount(account_id as string);
+  const [submitting, setSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState(null);
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<AccountProfile>({
+    resolver: zodResolver(AccountProfileSchema),
+    defaultValues: profile,
+  });
+
+  useEffect(() => {
+    reset(profile);
+  }, [profile]);
+
+  const onSubmit: SubmitHandler<AccountProfile> = (data) => {
+    setSubmitting(true);
+    fetch(`/api/v1/accounts/${account_id}/profile`, {
+      method: "PUT",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    }).then((res) => {
+      setSubmitting(false);
+      if (!res.ok) {
+        res.json().then((data) => {
+          setErrorMessage(data.message);
+        });
+      }
+    });
+  };
 
   return (
     <>
@@ -127,32 +162,57 @@ export default function TenantDetails() {
         notFound={error && error.status === 404}
         sideNavLinks={sideNavLinks}
       >
+        {errorMessage ? (
+          <Alert variant={"error"} sx={{ my: 2 }}>
+            {errorMessage}
+          </Alert>
+        ) : (
+          <></>
+        )}
         <AccountObject profile={profile} account_id={account_id as string} />
         <Heading sx={{ mb: 2 }} as="h1">
-          Repositories
+          New Repository
         </Heading>
         <Divider />
-        <Grid
-          sx={{
-            gridTemplateColumns: "1fr",
-            justifyContent: "stretch",
-            gridGap: 4,
-          }}
-        >
-          {repositories ? (
-            repositories.repositories.length > 0 ? (
-              <RepositoryList
-                repositoryResult={repositories}
-                isLoading={false}
-                isError={false}
-              />
-            ) : (
-              <Heading as="h2">No Repositories Found</Heading>
-            )
-          ) : (
-            <></>
-          )}
-        </Grid>
+        <Box as="form" onSubmit={handleSubmit(onSubmit)} sx={{ maxWidth: 400 }}>
+          <Box sx={{ textAlign: "left" }}>
+            <Text sx={{ fontFamily: "mono", fontSize: 0 }}>Name</Text>
+            <Input {...register("name")} />
+            <Text sx={{ fontFamily: "mono", fontSize: 0, color: "red" }}>
+              {errors.name?.message}
+            </Text>
+          </Box>
+
+          <Box sx={{ textAlign: "left" }}>
+            <Text sx={{ fontFamily: "mono", fontSize: 0 }}>Bio</Text>
+            <Input {...register("bio")} />
+            <Text sx={{ fontFamily: "mono", fontSize: 0, color: "red" }}>
+              {errors.bio?.message}
+            </Text>
+          </Box>
+
+          <Box sx={{ textAlign: "left" }}>
+            <Text sx={{ fontFamily: "mono", fontSize: 0 }}>Location</Text>
+            <Input {...register("location")} />
+            <Text sx={{ fontFamily: "mono", fontSize: 0, color: "red" }}>
+              {errors.location?.message}
+            </Text>
+          </Box>
+
+          <Box sx={{ textAlign: "left" }}>
+            <Text sx={{ fontFamily: "mono", fontSize: 0 }}>Website</Text>
+            <Input {...register("url")} />
+            <Text sx={{ fontFamily: "mono", fontSize: 0, color: "red" }}>
+              {errors.url?.message}
+            </Text>
+          </Box>
+
+          <Box sx={{ textAlign: "left", mt: 3 }}>
+            <SourceButton disabled={submitting}>
+              {submitting ? "Updating..." : "Update"}
+            </SourceButton>
+          </Box>
+        </Box>
       </Layout>
     </>
   );

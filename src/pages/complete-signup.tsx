@@ -3,45 +3,32 @@ import {
   Container,
   Grid,
   Heading,
-  Text,
   Paragraph,
-  Alert,
   Input,
   Select,
+  Text,
+  Alert,
 } from "theme-ui";
 import SourceButton from "@/components/Button";
-import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-
+import Link from "next/link";
+import { Dimmer } from "@carbonplan/components";
+import { Logo } from "@/components/Logo";
 import { Configuration, FrontendApi } from "@ory/client";
+import { useState, useEffect } from "react";
+import {
+  AccountCreationRequest,
+  AccountCreationRequestSchema,
+  AccountType,
+} from "@/api/types";
 
 const frontend = new FrontendApi(
   new Configuration({
     basePath: `${process.env.NEXT_PUBLIC_BASE_URL}/api/.ory`,
   })
 );
-
-import Link from "next/link";
-
-import { Dimmer } from "@carbonplan/components";
-import { Logo } from "@/components/Logo";
-import { FormInput, FormSelect } from "@/components/Form";
-
-import { z } from "zod";
-import {
-  AccountProfileSchema,
-  Account,
-  AccountProfile,
-  AccountType,
-} from "@/api/types";
-
-function removeNullAndEmptyProperties<T extends object>(obj: T): Partial<T> {
-  return Object.fromEntries(
-    Object.entries(obj).filter(([_, value]) => value !== null && value !== "")
-  ) as Partial<T>;
-}
 
 const COUNTRIES = [
   { value: "Somewhere On Planet Earth", label: "Somewhere On Planet Earth" },
@@ -311,188 +298,56 @@ const COUNTRIES = [
   { value: "Zimbabwe", label: "Zimbabwe" },
 ];
 
-const account_id_schema = z
-  .string()
-  .regex(/^(?=.{4,40}$)[a-z0-9](?:(?!--)[a-z0-9-])*[a-z0-9]$/);
-
-const account_id_length_schema = z.string().regex(/^.{4,40}$/);
-const account_id_characters_schema = z.string().regex(/^[a-z0-9-]*$/);
-const account_id_begin_end_hyphen_schema = z.string().regex(/^(?!-).*(?<!-)$/);
-const account_id_consecutive_hyphen_schema = z.string().regex(/^(?!.*--).*$/);
+export async function createAccount(
+  accountCreationRequest: AccountCreationRequest
+): Promise<null> {
+  console.log(accountCreationRequest);
+  return null;
+}
 
 export default function AccountForm() {
-  const [usernameCandidate, setUsernameCandidate] = useState(null);
-  const [validationMessage, setValidationMessage] = useState(null);
-  const [usernameCandidateValidation, setUsernameCandidateValidation] =
-    useState({
-      length: false,
-      characters: false,
-      beginEndHyphen: false,
-      consecutiveHyphen: false,
-    });
   const {
-    control,
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm({
-    resolver: zodResolver(AccountProfileSchema),
-  });
-  const [logoutUrl, setLogoutUrl] = useState(null);
-  const [profileValidationErrors, setProfileValidationErrors] = useState({});
-  const [username, setUsername] = useState(null);
-  const [submitting, setSubmitting] = useState(false);
-  const [submissionError, setSubmissionError] = useState(null);
-  const router = useRouter();
-
-  const [profile, setProfile] = useState({
-    name: null,
-    bio: null,
-    location: COUNTRIES[0].value,
-    url: null,
+  } = useForm<AccountCreationRequest>({
+    resolver: zodResolver(AccountCreationRequestSchema),
+    defaultValues: {
+      account_type: AccountType.USER,
+    },
   });
 
-  useEffect(() => {
-    var validationErrors = {};
-
-    const { success, error } = AccountProfileSchema.safeParse(
-      removeNullAndEmptyProperties(profile)
-    );
-    if (error) {
-      for (var issue of error.issues) {
-        if (!(issue.path[0] in validationErrors)) {
-          validationErrors[issue.path[0]] = [issue.message];
-        } else {
-          validationErrors[issue.path[0]].push(issue.message);
-        }
+  const onSubmit: SubmitHandler<AccountCreationRequest> = (data) => {
+    setSubmitting(true);
+    fetch(`/api/v1/accounts`, {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    }).then((res) => {
+      if (res.ok) {
+        router.push(`/${data.account_id}`);
+      } else {
+        res.json().then((data) => {
+          setErrorMessage(data.message);
+        });
+        setSubmitting(false);
       }
-    }
-    console.log(Object.keys(validationErrors).length);
-    setProfileValidationErrors(validationErrors);
-  }, [profile]);
+    });
+  };
+
+  const [errorMessage, setErrorMessage] = useState(null);
+  const [logoutUrl, setLogoutUrl] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     frontend.createBrowserLogoutFlow().then((res) => {
       setLogoutUrl(res.data.logout_url);
     });
   }, []);
-
-  function submitForm(e) {
-    e.preventDefault();
-    const formData = new FormData(e.target.form as HTMLFormElement);
-    const formValues = Object.fromEntries(formData);
-
-    const account: Account = {
-      account_id: formValues.account_id as string,
-      account_type: AccountType.USER,
-      profile: removeNullAndEmptyProperties({
-        name: formValues.name as string,
-        bio: formValues.bio as string,
-        location: formValues.location as string,
-        url: formValues.url as string,
-      }),
-      flags: [],
-      disabled: false,
-    };
-
-    setSubmitting(true);
-    fetch(`/api/accounts`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(account),
-    }).then((response) => {
-      if (response.ok) {
-        router.push("/");
-      } else {
-        response.json().then((data) => {
-          if (data.code !== 400) {
-            setSubmissionError(
-              `Internal Server Error. Please try again later.`
-            );
-          } else {
-            setSubmissionError(`${data.message.error}`);
-          }
-        });
-      }
-      setSubmitting(false);
-    });
-  }
-
-  useEffect(() => {
-    setUsername(null);
-    if (!usernameCandidate) {
-      setValidationMessage(null);
-      return;
-    }
-
-    var result = account_id_schema.safeParse(usernameCandidate);
-
-    const length_result = account_id_length_schema.safeParse(usernameCandidate);
-    const characters_result =
-      account_id_characters_schema.safeParse(usernameCandidate);
-    const begin_end_hyphen_result =
-      account_id_begin_end_hyphen_schema.safeParse(usernameCandidate);
-    const consecutive_hyphen_result =
-      account_id_consecutive_hyphen_schema.safeParse(usernameCandidate);
-
-    setUsernameCandidateValidation({
-      length: length_result.success,
-      characters: characters_result.success,
-      beginEndHyphen: begin_end_hyphen_result.success,
-      consecutiveHyphen: consecutive_hyphen_result.success,
-    });
-
-    if (!result.success) {
-      setValidationMessage({
-        type: "error",
-        text: "Invalid username.",
-      });
-      return;
-    }
-
-    const timer = setTimeout(() => {
-      setValidationMessage({
-        type: "warning",
-        text: "Checking username availability...",
-      });
-
-      try {
-        fetch(
-          `${process.env.NEXT_PUBLIC_BASE_URL}/api/accounts/${usernameCandidate}/profile`
-        ).then((res) => {
-          var username = null;
-          if (res.ok) {
-            setValidationMessage({
-              type: "error",
-              text: "This username is already taken. Please try another.",
-            });
-          } else if (res.status == 404) {
-            setValidationMessage({
-              type: "success",
-              text: "This username is available!",
-            });
-            username = usernameCandidate;
-          } else {
-            setValidationMessage({
-              type: "error",
-              text: "Whoops! There was an error checking for username availability. Try again soon.",
-            });
-          }
-
-          setUsername(username);
-        });
-      } catch (e) {
-        setValidationMessage({
-          type: "error",
-          text: "Whoops! There was an error checking for username availability. Try again soon.",
-        });
-      }
-    }, 250);
-
-    return () => clearTimeout(timer);
-  }, [usernameCandidate]);
 
   return (
     <Container
@@ -515,12 +370,8 @@ export default function AccountForm() {
           />
         </Link>
       </Box>
-      {submissionError ? (
-        <Alert variant={"error"}>{submissionError}</Alert>
-      ) : (
-        <></>
-      )}
-      <Box as="form" onSubmit={handleSubmit((d) => console.log(d))}>
+      {errorMessage ? <Alert variant={"error"}>{errorMessage}</Alert> : <></>}
+      <Box as="form" onSubmit={handleSubmit(onSubmit)}>
         <Grid
           sx={{
             gridTemplateColumns: [],
@@ -538,56 +389,28 @@ export default function AccountForm() {
             Choose a Username
           </Heading>
 
-          <FormInput
-            sx={{}}
-            name="account_id"
-            label="Username"
-            required={true}
-            help={null}
-            disabled={submitting}
-            message={validationMessage}
-            onChange={(e) => setUsernameCandidate(e.target.value)}
-          />
-
           <Box sx={{ textAlign: "left" }}>
-            <Paragraph sx={{ my: 0 }}>
+            <Text sx={{ fontFamily: "mono", fontSize: 0 }}>Username</Text>
+            <Input {...register("account_id")} />
+            <Text sx={{ fontFamily: "mono", fontSize: 0, color: "red" }}>
+              {errors.account_id?.message}
+            </Text>
+          </Box>
+          <Box sx={{ textAlign: "left" }}>
+            <Paragraph sx={{ my: 0, fontFamily: "mono", fontSize: 0 }}>
               Usernames must meet the following criteria:
             </Paragraph>
-            <Paragraph
-              sx={{
-                my: 0,
-                color: usernameCandidateValidation.length ? "green" : "red",
-              }}
-            >
-              • Between 4 and 40 characters in length
+            <Paragraph sx={{ my: 0, fontFamily: "mono", fontSize: 0 }}>
+              • Between 3 and 40 characters in length
             </Paragraph>
-            <Paragraph
-              sx={{
-                my: 0,
-                color: usernameCandidateValidation.characters ? "green" : "red",
-              }}
-            >
-              • Contain only lowercase letters, numbers, or hyphens
+            <Paragraph sx={{ my: 0, fontFamily: "mono", fontSize: 0 }}>
+              • Contain only letters, numbers, and hyphens
             </Paragraph>
-            <Paragraph
-              sx={{
-                my: 0,
-                color: usernameCandidateValidation.beginEndHyphen
-                  ? "green"
-                  : "red",
-              }}
-            >
-              • Does not begin or end with a hyphen
+            <Paragraph sx={{ my: 0, fontFamily: "mono", fontSize: 0 }}>
+              • Must not start or end with a hyphen
             </Paragraph>
-            <Paragraph
-              sx={{
-                my: 0,
-                color: usernameCandidateValidation.consecutiveHyphen
-                  ? "green"
-                  : "red",
-              }}
-            >
-              • Contains no consecutive hyphens
+            <Paragraph sx={{ my: 0, fontFamily: "mono", fontSize: 0 }}>
+              • Must not contain consecutive hyphens
             </Paragraph>
           </Box>
 
@@ -598,60 +421,44 @@ export default function AccountForm() {
             You can fill out your profile information later if you'd like.
           </Paragraph>
 
-          <input {...register("name")} />
+          <Box sx={{ textAlign: "left" }}>
+            <Text sx={{ fontFamily: "mono", fontSize: 0 }}>Name</Text>
+            <Input {...register("profile.name")} />
+            <Text sx={{ fontFamily: "mono", fontSize: 0, color: "red" }}>
+              {errors.profile?.name?.message}
+            </Text>
+          </Box>
 
-          <Controller
-            name="bio"
-            control={control}
-            render={({ field }) => <Input {...field} />}
-          />
-          <Select>
-            {COUNTRIES.map((country) => (
-              <option>{country.value}</option>
-            ))}
-          </Select>
+          <Box sx={{ textAlign: "left" }}>
+            <Text sx={{ fontFamily: "mono", fontSize: 0 }}>Bio</Text>
+            <Input {...register("profile.bio")} />
+            <Text sx={{ fontFamily: "mono", fontSize: 0, color: "red" }}>
+              {errors.profile?.bio?.message}
+            </Text>
+          </Box>
 
-          <FormSelect
-            sx={{}}
-            name="location"
-            label="Location"
-            required={false}
-            message={
-              profileValidationErrors["location"]
-                ? { type: "error", text: profileValidationErrors["location"] }
-                : null
-            }
-            help={null}
-            disabled={submitting}
-            options={COUNTRIES}
-            onChange={(e) =>
-              setProfile({ ...profile, location: e.target.value })
-            }
-          />
+          <Box sx={{ textAlign: "left" }}>
+            <Text sx={{ fontFamily: "mono", fontSize: 0 }}>Location</Text>
+            <Select {...register("profile.location")}>
+              {COUNTRIES.map((country, i) => (
+                <option key={`country-${i}`}>{country.value}</option>
+              ))}
+            </Select>
+            <Text sx={{ fontFamily: "mono", fontSize: 0, color: "red" }}>
+              {errors.profile?.location?.message}
+            </Text>
+          </Box>
 
-          <FormInput
-            sx={{}}
-            name="url"
-            label="Website"
-            required={false}
-            message={
-              profileValidationErrors["url"]
-                ? { type: "error", text: profileValidationErrors["url"] }
-                : null
-            }
-            help={null}
-            disabled={submitting}
-            onChange={(e) => setProfile({ ...profile, url: e.target.value })}
-          />
+          <Box sx={{ textAlign: "left" }}>
+            <Text sx={{ fontFamily: "mono", fontSize: 0 }}>Website</Text>
+            <Input {...register("profile.url")} />
+            <Text sx={{ fontFamily: "mono", fontSize: 0, color: "red" }}>
+              {errors.profile?.url?.message}
+            </Text>
+          </Box>
 
           <Box sx={{ textAlign: "center" }}>
-            <SourceButton
-              disabled={
-                !username ||
-                Object.keys(profileValidationErrors).length > 0 ||
-                submitting
-              }
-            >
+            <SourceButton disabled={submitting}>
               {submitting ? "Submitting..." : "Complete Registration"}
             </SourceButton>
           </Box>

@@ -221,8 +221,6 @@ export function isAdmin(session?: UserSession | null): boolean {
 }
 
 export async function getEmail(identity_id: string): Promise<string | null> {
-  console.log(`${process.env.ORY_SDK_URL}/admin/identities/${identity_id}`);
-
   const response = await fetch(
     `${process.env.ORY_SDK_URL}/admin/identities/${identity_id}`,
     {
@@ -237,9 +235,8 @@ export async function getEmail(identity_id: string): Promise<string | null> {
   }
   const data = await response.json();
 
-  console.log(data);
   for (const recover_address of data.recovery_addresses) {
-    return "kevin@kb.gg";
+    return recover_address.value;
   }
 }
 

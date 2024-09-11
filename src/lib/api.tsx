@@ -65,7 +65,7 @@ export function useRepositoryList({ next, limit, tags, q }) {
 
 export function useUser() {
   const { data, error, isLoading } = useSWR(
-    { path: "/api/whoami" },
+    { path: "/api/v1/whoami" },
     { refreshInterval: 10000 }
   );
 

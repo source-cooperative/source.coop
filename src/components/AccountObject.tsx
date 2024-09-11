@@ -3,7 +3,13 @@ import { Info, Globe } from "@carbonplan/icons";
 import Skeleton from "react-loading-skeleton";
 import Link from "next/link";
 
-export function AccountObject({ profile }: { profile: any }) {
+export function AccountObject({
+  profile,
+  account_id,
+}: {
+  profile: any;
+  account_id: string;
+}) {
   console.log(profile);
   return (
     <Grid
@@ -15,6 +21,7 @@ export function AccountObject({ profile }: { profile: any }) {
           profile && profile.profile_image ? "185px auto" : "auto",
         ],
         gridGap: 0,
+        mb: 3,
       }}
     >
       {profile && profile.profile_image ? (
@@ -39,7 +46,7 @@ export function AccountObject({ profile }: { profile: any }) {
         <></>
       )}
       <Heading as="h1" sx={{ justifySelf: "flex-start", my: 0, width: "100%" }}>
-        {!profile ? <Skeleton /> : profile.name}
+        {!profile ? <Skeleton /> : profile.name ? profile.name : account_id}
       </Heading>
       <Box>
         {!profile ? (

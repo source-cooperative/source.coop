@@ -155,8 +155,19 @@ function create_tables() {
         --global-secondary-indexes \
             "[
                 {
-                    \"IndexName\": \"membership_account_id\",
+                    \"IndexName\": \"membership_account_id_repository_id\",
                     \"KeySchema\": [{\"AttributeName\":\"membership_account_id\",\"KeyType\":\"HASH\"},{\"AttributeName\":\"repository_id\",\"KeyType\":\"RANGE\"}],
+                    \"Projection\":{
+                        \"ProjectionType\":\"ALL\"
+                    },
+                    \"ProvisionedThroughput\": {
+                        \"ReadCapacityUnits\": 1,
+                        \"WriteCapacityUnits\": 1
+                    }
+                },
+                {
+                    \"IndexName\": \"membership_account_id\",
+                    \"KeySchema\": [{\"AttributeName\":\"membership_account_id\",\"KeyType\":\"HASH\"}],
                     \"Projection\":{
                         \"ProjectionType\":\"ALL\"
                     },
