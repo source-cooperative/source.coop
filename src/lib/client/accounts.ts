@@ -1,4 +1,5 @@
 import useSWR from "swr";
+import useSWRImmutable from "swr/immutable";
 import { SWRResponse } from "swr";
 import {
   AccountFlags,
@@ -12,33 +13,32 @@ export type ClientError = {
 
 export function getProfile(
   account_id: string,
-  refreshInterval: number = 5,
+  refreshInterval: number = 5000,
   revalidateOnFocus: boolean = false
 ): SWRResponse<AccountProfileResponse, ClientError> {
-  return useSWR<AccountProfileResponse, ClientError>(
-    { path: `/api/v1/accounts/${account_id}/profile` },
-    { refreshInterval, revalidateOnFocus }
+  return useSWRImmutable<AccountProfileResponse, ClientError>(
+    account_id ? { path: `/api/v1/accounts/${account_id}/profile` } : null
   );
 }
 
 export function getFlags(
   account_id: string,
-  refreshInterval: number = 5,
+  refreshInterval: number = 5000,
   revalidateOnFocus: boolean = false
 ): SWRResponse<AccountFlags[], ClientError> {
   return useSWR<AccountFlags[], ClientError>(
-    { path: `/api/v1/accounts/${account_id}/flags` },
+    account_id ? { path: `/api/v1/accounts/${account_id}/flags` } : null,
     { refreshInterval, revalidateOnFocus }
   );
 }
 
 export function getAPIKeys(
   account_id: string,
-  refreshInterval: number = 5,
+  refreshInterval: number = 5000,
   revalidateOnFocus: boolean = false
 ): SWRResponse<RedactedAPIKey[], ClientError> {
   return useSWR<RedactedAPIKey[], ClientError>(
-    { path: `/api/v1/accounts/${account_id}/api-keys` },
+    account_id ? { path: `/api/v1/accounts/${account_id}/api-keys` } : null,
     { refreshInterval, revalidateOnFocus }
   );
 }

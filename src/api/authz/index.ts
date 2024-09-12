@@ -873,32 +873,12 @@ function listAccountMemberships(
   principal: UserSession | null,
   account: Account
 ): boolean {
-  // If the user does not have an account, they are not authorized
-  if (!principal?.account) {
-    return false;
-  }
-
   // If the user is disabled, they are not authorized
   if (principal?.account?.disabled) {
     return false;
   }
 
-  // If the user is an admin, they are authorized
-  if (isAdmin(principal)) {
-    return true;
-  }
-
-  // If the user is the owner of the API key, they are authorized
-  if (account.account_id === principal.account.account_id) {
-    return true;
-  }
-
-  // If the user is an owner or maintainer of the organization, they are authorized
-  return hasRole(
-    principal,
-    [MembershipRole.Owners, MembershipRole.Maintainers],
-    account.account_id
-  );
+  return true;
 }
 
 function listRepositoryAPIKeys(

@@ -112,20 +112,30 @@ export const RepositoryDataSchema = z
 
 export const RepositoryMetaSchema = z
   .object({
-    title: z.string({
-      required_error: "Title is required",
-      invalid_type_error: "Title must be a string",
-    }),
-    description: z.string({
-      required_error: "Description is required",
-      invalid_type_error: "Description must be a string",
-    }),
-    tags: z.array(
+    title: z.preprocess(
+      (title) => {
+        if (!title || typeof title !== "string") return undefined;
+        return title === "" ? undefined : title;
+      },
       z.string({
-        required_error: "Tag is required",
-        invalid_type_error: "Tag must be a string",
+        required_error: "Title is required",
+        invalid_type_error: "Title must be a string",
       })
     ),
+    description: z.preprocess(
+      (description) => {
+        if (!description || typeof description !== "string") return undefined;
+        return description === "" ? undefined : description;
+      },
+      z.string({
+        required_error: "Description is required",
+        invalid_type_error: "Description must be a string",
+      })
+    ),
+    tags: z
+      .string()
+      .transform((value) => value.split(","))
+      .pipe(z.string().trim().array()),
   })
   .openapi("RepositoryMeta");
 
@@ -174,9 +184,12 @@ export const RepositorySchema = z
       .toLowerCase()
       .regex(ID_REGEX, "Invalid account ID format"),
     repository_id: z
-      .string()
-      .min(MIN_ID_LENGTH)
-      .max(MAX_ID_LENGTH)
+      .string({
+        required_error: "Repository ID is required",
+        invalid_type_error: "Repository ID must be a string",
+      })
+      .min(MIN_ID_LENGTH, "Repository ID must be at least 3 characters long")
+      .max(MAX_ID_LENGTH, "Repository ID may not be longer than 40 characters")
       .toLowerCase()
       .regex(ID_REGEX, "Invalid repository ID format"),
     state: RepositoryStateSchema,

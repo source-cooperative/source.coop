@@ -2,18 +2,16 @@ import { Box, useColorMode } from "theme-ui";
 import Button from "./Button";
 import { useEffect, useState } from "react";
 import SVG from "./SVG";
-import ory from "@/pkg/sdk";
 import { useRouter } from "next/router";
-
-import { useUser } from "@/lib/api";
-import { Configuration, FrontendApi } from "@ory/client";
-import { AccountFlags, MembershipState } from "@/api/types";
-
-const frontend = new FrontendApi(
-  new Configuration({
-    basePath: `${process.env.NEXT_PUBLIC_BASE_URL}/api/.ory`,
-  })
-);
+import useSWR from "swr";
+import { ClientError } from "@/lib/client/accounts";
+import {
+  AccountFlags,
+  APIKey,
+  APIKeyRequest,
+  MembershipState,
+  UserSession,
+} from "@/api/types";
 
 function DownArrow({ ...props }) {
   return (
@@ -39,62 +37,95 @@ function DownArrow({ ...props }) {
   );
 }
 
-function DropDown({ expanded, ...props }) {
-  return (
-    <Box
-      sx={{
-        display: expanded ? "block" : "none",
-        backgroundColor: "primary",
-        p: 2,
-        minWidth: "max-content",
-        position: "absolute",
-        ...props,
-      }}
-    >
-      <Button href="#" sx={{ display: "block" }} variant="nav">
-        Repositories
-      </Button>
-      <Button href="#" sx={{ display: "block" }} variant="nav">
-        Organizations
-      </Button>
-      <Button href="#" sx={{ display: "block" }} variant="nav">
-        Sign Out
-      </Button>
-    </Box>
-  );
+function generateNewKey(account_id: string) {
+  const keyRequest: APIKeyRequest = {
+    name: `Automatically generated key used for browser-based authentication (${
+      navigator.userAgent.includes("Chrome")
+        ? "Chrome"
+        : navigator.userAgent.includes("Firefox")
+        ? "Firefox"
+        : navigator.userAgent.includes("Safari")
+        ? "Safari"
+        : "Unknown"
+    } on ${
+      /Windows/.test(navigator.userAgent)
+        ? "Windows"
+        : /Mac/.test(navigator.userAgent)
+        ? "macOS"
+        : /Linux/.test(navigator.userAgent)
+        ? "Linux"
+        : /Android/.test(navigator.userAgent)
+        ? "Android"
+        : /iOS/.test(navigator.userAgent)
+        ? "iOS"
+        : "Unknown"
+    })`,
+    expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // Valid for 30 days
+  };
+
+  fetch(`/api/v1/accounts/${account_id}/api-keys`, {
+    credentials: "include",
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(keyRequest),
+  }).then((res) => {
+    if (res.ok) {
+      res.json().then((data) => {
+        localStorage.setItem(`sc-api-key-${account_id}`, JSON.stringify(data));
+      });
+    }
+  });
 }
 
 export default function UserNavButton() {
-  const { user, isLoading, isError } = useUser();
-
   const router = useRouter();
   const [expanded, setExpanded] = useState(false);
   const [colorMode, setColorMode] = useColorMode();
-  const [logoutUrl, setLogoutUrl] = useState(null);
+
+  const {
+    data: user,
+    isLoading: _userIsLoading,
+    error: _userError,
+  } = useSWR<UserSession, ClientError>(
+    { path: `/api/v1/whoami` },
+    {
+      refreshInterval: 0,
+    }
+  );
+
+  const { data: logoutUrl } = useSWR<
+    { logout_url: string; logout_token: string },
+    ClientError
+  >({ path: `/api/.ory/self-service/logout/browser` }, { refreshInterval: 0 });
 
   useEffect(() => {
-    frontend
-      .createBrowserLogoutFlow()
-      .then((res) => {
-        setLogoutUrl(res.data.logout_url);
-      })
-      .catch((e) => {});
+    if (user && !user.account) {
+      router.push("/complete-signup");
+      return;
+    }
 
-    fetch("/api/v1/whoami", {
-      method: "GET",
-      credentials: "include",
-    }).then((res) => {
-      if (res.ok) {
-        res.json().then((data) => {
-          if (!data.account) {
-            router.push("/complete-signup");
-          }
-        });
+    if (!user || !user?.account) {
+      return;
+    }
+
+    var existingKey = localStorage.getItem(
+      `sc-api-key-${user.account.account_id}`
+    );
+    if (existingKey) {
+      const apiKey: APIKey = JSON.parse(existingKey);
+      if (new Date(apiKey.expires) < new Date()) {
+        localStorage.removeItem(`sc-api-key-${user.account.account_id}`);
+        generateNewKey(user.account.account_id);
+        return;
       }
-    });
-  }, []);
+    } else {
+      generateNewKey(user.account.account_id);
+    }
+  }, [user]);
 
-  if (!user || isError) {
+  if (!user) {
     return (
       <Box sx={{ justifySelf: "center", display: "inline-block" }}>
         <Button variant="nav" href={`/api/.ory/ui/login`}>
@@ -159,7 +190,7 @@ export default function UserNavButton() {
               </Button>
             )}
 
-            <Button variant="nav" href={logoutUrl}>
+            <Button variant="nav" href={logoutUrl?.logout_url}>
               Sign Out
             </Button>
             <Button

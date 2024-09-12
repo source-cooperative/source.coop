@@ -1,40 +1,9 @@
 import { Box, Grid, Select } from "theme-ui";
 import SourceLink from "./SourceLink";
 import Skeleton from "react-loading-skeleton";
-import SVG from "./SVG";
 import { useRouter } from "next/router";
 import { SideNavLink } from "@/lib/types";
 import { NextRouter } from "next/router";
-
-function SideNavArrow({ expanded }) {
-  if (expanded) {
-    return (
-      <SVG
-        viewBox="0 0 16 16"
-        width="16px"
-        sx={{ fill: "secondary", "&:hover": { fill: "text" } }}
-      >
-        <path
-          fill-rule="evenodd"
-          d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"
-        />
-      </SVG>
-    );
-  } else {
-    return (
-      <SVG
-        viewBox="0 0 16 16"
-        width="16px"
-        sx={{ fill: "secondary", "&:hover": { fill: "text" } }}
-      >
-        <path
-          fill-rule="evenodd"
-          d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"
-        />
-      </SVG>
-    );
-  }
-}
 
 function onSelectChange(
   e: React.ChangeEvent<HTMLSelectElement>,

@@ -1,10 +1,18 @@
 import { RepositoryListing } from "@/components/RepositoryListing";
 import { Heading, Grid, Box } from "theme-ui";
-
-import { listFeaturedRepositories } from "@/lib/client/repositories";
+import { RepositoryListResponse } from "@/api/types";
+import useSWR from "swr";
 
 export default function FeaturedRepositories() {
-  const { data: repositories, error: isError } = listFeaturedRepositories();
+  const { data: repositories, error: isError } = useSWR<
+    RepositoryListResponse,
+    Error
+  >(
+    { path: "/api/v1/repositories/featured" },
+    {
+      refreshInterval: 0,
+    }
+  );
 
   return (
     <Box>

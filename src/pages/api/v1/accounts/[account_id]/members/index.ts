@@ -87,7 +87,7 @@ async function inviteMemberHandler(
     );
   }
 
-  if (invitedAccount.account_type !== AccountType.User) {
+  if (invitedAccount.account_type !== AccountType.USER) {
     throw new BadRequestError(
       `Invited account with ID ${membershipInvitation.account_id} is not a user account`
     );
