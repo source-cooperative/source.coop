@@ -22,7 +22,13 @@ import { SWRConfig } from "swr";
 const fetcher = async (opts) => {
   const { path, args, exclude_credentials, external, raw, markdown } = opts;
 
-  var url = new URL(external ? path : process.env.NEXT_PUBLIC_BASE_URL + path);
+  const localUrl = process.env.VERCEL_URL
+    ? process.env.VERCEL_URL
+    : process.env.NEXT_PUBLIC_BASE_URL
+    ? process.env.NEXT_PUBLIC_BASE_URL
+    : "http://localhost:3000";
+
+  var url = new URL(external ? path : localUrl + path);
 
   if (args) {
     var params = [];
