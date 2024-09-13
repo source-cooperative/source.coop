@@ -19,10 +19,15 @@ import toast, { Toaster } from "react-hot-toast";
 
 import { SWRConfig } from "swr";
 
-const fetcher = async (opts) => {
-  const { path, args, exclude_credentials, external, raw, markdown } = opts;
-
-  let searchParams: null;
+const fetcher = async ({
+  path,
+  args,
+  exclude_credentials,
+  external,
+  raw,
+  markdown,
+}) => {
+  let searchParams: string | null = null;
   if (args) {
     var params = [];
 
