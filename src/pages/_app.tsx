@@ -22,14 +22,7 @@ import { SWRConfig } from "swr";
 const fetcher = async (opts) => {
   const { path, args, exclude_credentials, external, raw, markdown } = opts;
 
-  const localUrl = process.env.VERCEL_URL
-    ? process.env.VERCEL_URL
-    : process.env.NEXT_PUBLIC_BASE_URL
-    ? process.env.NEXT_PUBLIC_BASE_URL
-    : "http://localhost:3000";
-
-  var url = new URL(external ? path : localUrl + path);
-
+  let searchParams: null;
   if (args) {
     var params = [];
 
@@ -39,7 +32,7 @@ const fetcher = async (opts) => {
       }
     });
 
-    url.search = new URLSearchParams(params).toString();
+    searchParams = new URLSearchParams(params).toString();
   }
 
   var options = {};
@@ -47,7 +40,10 @@ const fetcher = async (opts) => {
     options = { credentials: "include" };
   }
 
-  const res = await fetch(url, options);
+  const res = await fetch(
+    searchParams ? `${path}?${searchParams}` : path,
+    options
+  );
 
   // If the status code is not in the range 200-299,
   // we still try to parse and throw it.
