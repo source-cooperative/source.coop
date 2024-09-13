@@ -221,7 +221,6 @@ export function isAdmin(session?: UserSession | null): boolean {
 }
 
 export async function getEmail(identity_id: string): Promise<string | null> {
-  return "kevin@radiant.earth"; // TODO: Remove this line
   const response = await fetch(
     `${process.env.ORY_SDK_URL}/admin/identities/${identity_id}`,
     {

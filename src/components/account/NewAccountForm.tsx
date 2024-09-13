@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from "react";
-import useSWR from "swr";
+import React, { useState } from "react";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -13,61 +12,38 @@ import {
   Select,
 } from "theme-ui";
 import {
-  AccountProfileResponse,
-  AccountProfile,
-  AccountProfileSchema,
-  UserSession,
-  AccountFlags,
-  MembershipRole,
-  MembershipState,
+  AccountCreationRequestSchema,
+  AccountCreationRequest,
+  AccountType,
 } from "@/api/types";
-import { ClientError } from "@/lib/client/accounts";
 import { COUNTRIES } from "@/lib/constants";
+import { useRouter } from "next/navigation";
 
-export function EditProfileForm({ account_id }: { account_id: string }) {
+export function NewAccountForm() {
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
 
-  const {
-    data: profile,
-    mutate: refreshProfile,
-    isLoading: profileIsLoading,
-    error: profileError,
-  } = useSWR<AccountProfileResponse, ClientError>(
-    account_id ? { path: `/api/v1/accounts/${account_id}/profile` } : null,
-    {
-      refreshInterval: 0,
-    }
-  );
-
-  const { data: user } = useSWR<UserSession, ClientError>(
-    { path: `/api/v1/whoami` },
-    {
-      refreshInterval: 0,
-    }
-  );
+  const router = useRouter();
 
   const {
     register,
     handleSubmit,
     reset,
     formState: { errors },
-  } = useForm<AccountProfile>({
-    resolver: zodResolver(AccountProfileSchema),
-    defaultValues: profile,
+  } = useForm<AccountCreationRequest>({
+    resolver: zodResolver(AccountCreationRequestSchema),
+    defaultValues: {
+      account_type: AccountType.ORGANIZATION,
+    },
   });
 
-  useEffect(() => {
-    reset(profile);
-  }, [profile]);
-
-  const onSubmit: SubmitHandler<AccountProfile> = (data) => {
+  const onSubmit: SubmitHandler<AccountCreationRequest> = (data) => {
     setSubmitting(true);
     setErrorMessage(null);
     setSuccessMessage(null);
-    fetch(`/api/v1/accounts/${account_id}/profile`, {
-      method: "PUT",
+    fetch(`/api/v1/accounts`, {
+      method: "POST",
       credentials: "include",
       headers: {
         "Content-Type": "application/json",
@@ -80,52 +56,17 @@ export function EditProfileForm({ account_id }: { account_id: string }) {
           setErrorMessage(data.message);
         });
       } else {
-        setSuccessMessage("Saved");
-        refreshProfile();
+        router.push(`/${data.account_id}`);
+        setSuccessMessage("Created");
       }
     });
   };
-
-  let hasEditPermissions = false;
-  if (user && user?.account?.flags?.includes(AccountFlags.ADMIN)) {
-    hasEditPermissions = true;
-  } else if (user && user?.account?.account_id === account_id) {
-    hasEditPermissions = true;
-  } else {
-    if (user) {
-      for (const membership of user?.memberships) {
-        if (
-          membership.membership_account_id === account_id &&
-          membership.state === MembershipState.Member &&
-          (membership.role === MembershipRole.Owners ||
-            membership.role === MembershipRole.Maintainers)
-        ) {
-          hasEditPermissions = true;
-          break;
-        }
-      }
-    }
-  }
-
-  if (!hasEditPermissions) {
-    return <></>;
-  }
-
-  if (profileError && profileError.status === 404) {
-    return <></>;
-  }
-
-  if (profileError) {
-    return (
-      <Box variant="cards.componentMessage">Error loading account profile</Box>
-    );
-  }
 
   return (
     <Box>
       <Box as="form" onSubmit={handleSubmit(onSubmit)}>
         <fieldset disabled={submitting}>
-          <Text variant="formTitle">Profile</Text>
+          <Text variant="formTitle">New Organization</Text>
           <Grid
             variant="form"
             sx={{
@@ -142,21 +83,22 @@ export function EditProfileForm({ account_id }: { account_id: string }) {
             )}
             <Box variant="formField" sx={{ gridColumn: "1 / span 1" }}>
               <Text variant="formLabel">Account ID</Text>
-              <Input disabled={true} value={account_id} />
+              <Input {...register("account_id")} />
+              <Text variant="formError">{errors.account_id?.message}</Text>
             </Box>
             <Box variant="formField" sx={{ gridColumn: "1 / span 2" }}>
               <Text variant="formLabel">Name</Text>
-              <Input {...register("name")} />
-              <Text variant="formError">{errors.name?.message}</Text>
+              <Input {...register("profile.name")} />
+              <Text variant="formError">{errors.profile?.name?.message}</Text>
             </Box>
             <Box variant="formField" sx={{ gridColumn: "1 / -1" }}>
               <Text variant="formLabel">Bio</Text>
-              <Textarea rows={8} {...register("bio")} />
-              <Text variant="formError">{errors.bio?.message}</Text>
+              <Textarea rows={8} {...register("profile.bio")} />
+              <Text variant="formError">{errors.profile?.bio?.message}</Text>
             </Box>
             <Box variant="formField" sx={{ gridColumn: 1 }}>
               <Text variant="formLabel">Location</Text>
-              <Select {...register("location")}>
+              <Select {...register("profile.location")}>
                 {COUNTRIES.map((country, i) => {
                   return (
                     <option key={i} value={country.value}>
@@ -168,11 +110,11 @@ export function EditProfileForm({ account_id }: { account_id: string }) {
             </Box>
             <Box variant="formField" sx={{ gridColumn: 1 }}>
               <Text variant="formLabel">URL</Text>
-              <Input {...register("url")} />
-              <Text variant="formError">{errors.url?.message}</Text>
+              <Input {...register("profile.url")} />
+              <Text variant="formError">{errors.profile?.url?.message}</Text>
             </Box>
             <Box variant="cards.formButtonBox" sx={{ gridColumn: "1 / -1" }}>
-              <Button variant="formSubmit">Save</Button>
+              <Button variant="formSubmit">Create</Button>
             </Box>
           </Grid>
         </fieldset>

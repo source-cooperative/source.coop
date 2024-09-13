@@ -192,7 +192,7 @@ export function Layout({
                 sx={{
                   alignContent: "center",
                   backgroundColor: "background",
-                  zIndex: 9999,
+                  zIndex: 999,
                   justifyContent: "right",
                   mr: [0, 0, 3, 3],
                   pb: [1, 1, 0, 0],

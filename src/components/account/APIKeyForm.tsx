@@ -104,17 +104,14 @@ export function APIKeyForm({ account_id }) {
         <fieldset disabled={submitting}>
           <Text variant="formTitle">Create API Key</Text>
           <Grid variant="form">
-            {errorMessage ||
-              (successMessage && (
-                <Box variant="cards.formMessageBox">
-                  {errorMessage && (
-                    <Alert variant="error">{errorMessage}</Alert>
-                  )}
-                  {successMessage && (
-                    <Alert variant="success">{successMessage}</Alert>
-                  )}
-                </Box>
-              ))}
+            {(errorMessage || successMessage) && (
+              <Box variant="cards.formMessageBox">
+                {errorMessage && <Alert variant="error">{errorMessage}</Alert>}
+                {successMessage && (
+                  <Alert variant="success">{successMessage}</Alert>
+                )}
+              </Box>
+            )}
             <Box variant="formField" sx={{ gridColumn: 1 }}>
               <Text variant="formLabel">Name</Text>
               <Input {...register("name")} />

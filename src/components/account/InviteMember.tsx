@@ -99,12 +99,14 @@ export function InviteMember({ account_id }: { account_id: string }) {
         <fieldset disabled={submitting}>
           <Text variant="formTitle">Invite Account</Text>
           <Grid variant="form">
-            <Box variant="cards.formMessageBox">
-              {errorMessage && <Alert variant="error">{errorMessage}</Alert>}
-              {successMessage && (
-                <Alert variant="success">{successMessage}</Alert>
-              )}
-            </Box>
+            {(errorMessage || successMessage) && (
+              <Box variant="cards.formMessageBox">
+                {errorMessage && <Alert variant="error">{errorMessage}</Alert>}
+                {successMessage && (
+                  <Alert variant="success">{successMessage}</Alert>
+                )}
+              </Box>
+            )}
             <Box variant="formField" sx={{ gridColumn: 1 }}>
               <Text variant="formLabel">Account ID</Text>
               <Input {...register("account_id")} />

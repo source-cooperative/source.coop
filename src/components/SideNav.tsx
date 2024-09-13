@@ -50,16 +50,15 @@ export default function SideNav({ links }: { links: SideNavLink[] }) {
         <Grid
           sx={{
             gridGap: 0,
-            borderStyle: "none solid none none",
             mr: 2,
             pr: 3,
             py: 1,
-            borderWidth: "1px",
             fontFamily: "mono",
             borderColor: "codeBorder",
             fontSize: 3,
             gridTemplateColumns: "1fr",
             justifyItems: "right",
+            textAlign: "right",
           }}
         >
           {links.map((link, i) => {

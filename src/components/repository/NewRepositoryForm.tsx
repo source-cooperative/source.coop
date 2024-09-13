@@ -117,6 +117,7 @@ export function NewRepositoryForm({ account_id }: { account_id: string }) {
         cleanedTags.push(tag);
       }
     }
+    // @ts-ignore
     data.meta.tags = cleanedTags.join(",");
 
     fetch(`/api/v1/repositories/${account_id}`, {

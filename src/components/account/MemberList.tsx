@@ -152,7 +152,7 @@ export function MemberList({ account_id }: { account_id: string }) {
   if (!hasEditPermissions) {
     if (activeMembers?.length > 0) {
       return (
-        <>
+        <Box>
           <Text variant="formTitle">Members</Text>
           <Grid
             variant="form"
@@ -180,21 +180,39 @@ export function MemberList({ account_id }: { account_id: string }) {
               </>
             ))}
           </Grid>
-        </>
+        </Box>
       );
     }
 
     return (
-      <Box variant="cards.componentMessage">This account has no members.</Box>
+      <>
+        <Box sx={{ gridColumn: "1 / -1" }}>
+          <Text variant="formTitle">Members</Text>
+          <Grid
+            variant="form"
+            sx={{
+              gridTemplateColumns: "1fr",
+              alignItems: "center",
+              mb: 3,
+            }}
+          >
+            <Box variant="cards.componentMessage">
+              This account has no members.
+            </Box>
+          </Grid>
+        </Box>
+      </>
     );
   }
 
   return (
     <Box>
-      <Box variant="cards.formMessageBox">
-        {errorMessage && <Alert variant="error">{errorMessage}</Alert>}
-        {successMessage && <Alert variant="success">{successMessage}</Alert>}
-      </Box>
+      {(errorMessage || successMessage) && (
+        <Box variant="cards.formMessageBox">
+          {errorMessage && <Alert variant="error">{errorMessage}</Alert>}
+          {successMessage && <Alert variant="success">{successMessage}</Alert>}
+        </Box>
+      )}
       <fieldset disabled={submitting}>
         {activeMembers?.length > 0 && (
           <>

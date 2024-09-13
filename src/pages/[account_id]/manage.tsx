@@ -30,7 +30,10 @@ export default function ManageAccount() {
   return (
     <>
       <Layout
-        notFound={profileError && profileError.status === 404}
+        notFound={
+          profileError &&
+          (profileError.status === 404 || profileError.status === 401)
+        }
         sideNavLinks={sideNavLinks}
       >
         <Grid
@@ -51,6 +54,7 @@ export default function ManageAccount() {
           <Box sx={{ gridColumn: "1 / -1" }}>
             <EditProfileForm account_id={account_id as string} />
           </Box>
+
           <Box sx={{ gridColumn: "1" }}>
             <APIKeyForm account_id={account_id} />
           </Box>

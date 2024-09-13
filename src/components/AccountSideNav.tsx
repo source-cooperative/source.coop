@@ -73,9 +73,9 @@ export function AccountSideNavLinks({ account_id }: { account_id: string }) {
 
     if (profile?.account_type === AccountType.ORGANIZATION) {
       newSideNav.push({
-        href: `/${account_id}/sc.members`,
+        href: `/${account_id}/members`,
         title: "Members",
-        active: currentPath === `/${account_id}/sc.members`,
+        active: currentPath === `/${account_id}/members`,
       });
     }
 
@@ -101,16 +101,16 @@ export function AccountSideNavLinks({ account_id }: { account_id: string }) {
 
     if (editPermissions) {
       newSideNav.push({
-        href: `/${account_id}/sc.manage`,
+        href: `/${account_id}/manage`,
         title: "Manage",
-        active: currentPath === `/${account_id}/sc.manage`,
+        active: currentPath === `/${account_id}/manage`,
       });
 
       if (accountFlags?.includes(AccountFlags.CREATE_REPOSITORIES)) {
         newSideNav.push({
-          href: `/${account_id}/sc.new-repository`,
+          href: `/${account_id}/new-repository`,
           title: "New Repository",
-          active: currentPath === `/${account_id}/sc.new-repository`,
+          active: currentPath === `/${account_id}/new-repository`,
         });
       }
     }

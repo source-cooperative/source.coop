@@ -1,7 +1,13 @@
 import React, { useState } from "react";
 import useSWR from "swr";
 import { Box, Text, Grid, Button, Alert } from "theme-ui";
-import { AccountProfileResponse } from "@/api/types";
+import {
+  AccountProfileResponse,
+  UserSession,
+  AccountFlags,
+  MembershipRole,
+  MembershipState,
+} from "@/api/types";
 import { ClientError } from "@/lib/client/accounts";
 
 export function DangerBox({ account_id }: { account_id: string }) {
@@ -20,16 +26,44 @@ export function DangerBox({ account_id }: { account_id: string }) {
     }
   );
 
+  const { data: user } = useSWR<UserSession, ClientError>(
+    { path: `/api/v1/whoami` },
+    {
+      refreshInterval: 0,
+    }
+  );
+
+  let hasEditPermissions = false;
+  if (user && user?.account?.flags?.includes(AccountFlags.ADMIN)) {
+    hasEditPermissions = true;
+  } else if (user && user?.account?.account_id === account_id) {
+    hasEditPermissions = true;
+  } else {
+    if (user) {
+      for (const membership of user?.memberships) {
+        if (
+          membership.membership_account_id === account_id &&
+          membership.state === MembershipState.Member &&
+          (membership.role === MembershipRole.Owners ||
+            membership.role === MembershipRole.Maintainers)
+        ) {
+          hasEditPermissions = true;
+          break;
+        }
+      }
+    }
+  }
+
+  if (!hasEditPermissions) {
+    return <></>;
+  }
+
   if (profileError && profileError.status === 404) {
-    return <Box variant="cards.componentMessage">Account Not Found</Box>;
+    return <></>;
   }
 
   if (profileError) {
     return <Box variant="cards.componentMessage">Error loading profile</Box>;
-  }
-
-  if (profileIsLoading) {
-    return <Box variant="cards.componentMessage">Loading...</Box>;
   }
 
   function disableAccount() {
@@ -72,17 +106,14 @@ export function DangerBox({ account_id }: { account_id: string }) {
         <fieldset disabled={submitting}>
           <Text variant="formTitle">Danger Box</Text>
           <Grid variant="form">
-            {errorMessage ||
-              (successMessage && (
-                <Box variant="cards.formMessageBox">
-                  {errorMessage && (
-                    <Alert variant="error">{errorMessage}</Alert>
-                  )}
-                  {successMessage && (
-                    <Alert variant="success">{successMessage}</Alert>
-                  )}
-                </Box>
-              ))}
+            {(errorMessage || successMessage) && (
+              <Box variant="cards.formMessageBox">
+                {errorMessage && <Alert variant="error">{errorMessage}</Alert>}
+                {successMessage && (
+                  <Alert variant="success">{successMessage}</Alert>
+                )}
+              </Box>
+            )}
             <Button
               variant="formDestructive"
               onClick={(e: React.MouseEvent<HTMLButtonElement>) => {

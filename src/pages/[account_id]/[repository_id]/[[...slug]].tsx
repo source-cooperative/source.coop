@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { Layout } from "@/components/Layout";
-import RepositoryBrowser from "@/components/RepositoryBrowser";
+import RepositoryBrowser from "@/components/repository/RepositoryBrowser";
 import { getRepositorySideNavLinks } from "@/lib/sidenav/repositories";
-import { RepositoryListing } from "@/components/RepositoryListing";
+import { RepositoryListing } from "@/components/repository/RepositoryListing";
 import { Divider } from "theme-ui";
 
 import { useRepository, useRepositorySideNav } from "@/lib/api";

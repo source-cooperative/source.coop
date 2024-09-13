@@ -1,7 +1,7 @@
 import { Layout } from "@/components/Layout";
 import { useRouter } from "next/router";
-import { Heading, Divider, Grid } from "theme-ui";
-import { RepositoryList } from "@/components/RepositoryList";
+import { Heading, Box, Grid } from "theme-ui";
+import { RepositoryList } from "@/components/repository/RepositoryList";
 
 import { getProfile, getFlags } from "@/lib/client/accounts";
 import { AccountObject } from "@/components/account/AccountObject";
@@ -90,34 +90,24 @@ export default function TenantDetails() {
   return (
     <>
       <Layout
-        notFound={profileError && profileError.status === 404}
+        notFound={
+          profileError &&
+          (profileError.status === 404 || profileError.status === 401)
+        }
         sideNavLinks={sideNavLinks}
       >
-        <AccountObject account_id={account_id as string} />
-        <Heading sx={{ mb: 2 }} as="h1">
-          Repositories
-        </Heading>
-        <Divider />
         <Grid
           sx={{
+            gap: 4,
             gridTemplateColumns: "1fr",
-            justifyContent: "stretch",
-            gridGap: 4,
           }}
         >
-          {repositories ? (
-            repositories.repositories.length > 0 ? (
-              <RepositoryList
-                repositoryResult={repositories}
-                isLoading={false}
-                isError={false}
-              />
-            ) : (
-              <Heading as="h2">No Repositories Found</Heading>
-            )
-          ) : (
-            <></>
-          )}
+          <Box sx={{ gridColumn: "1 / -1" }}>
+            <AccountObject account_id={account_id as string} />
+          </Box>
+          <Box sx={{ gridColumn: "1 / -1" }}>
+            <RepositoryList account_id={account_id as string} />
+          </Box>
         </Grid>
       </Layout>
     </>

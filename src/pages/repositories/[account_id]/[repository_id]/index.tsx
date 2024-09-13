@@ -3,7 +3,7 @@ import { useRouter } from "next/router";
 import { Layout } from "@/components/Layout";
 import { Markdown } from "@/components/viewers/Markdown";
 import { Divider } from "theme-ui";
-import { RepositoryListing } from "@/components/RepositoryListing";
+import { RepositoryListing } from "@/components/repository/RepositoryListing";
 
 import { useRepository, useRepositorySideNav } from "@/lib/api";
 

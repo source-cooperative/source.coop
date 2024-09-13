@@ -1,14 +1,13 @@
 import { Layout } from "../components/Layout";
-import { Paragraph, Box, Heading, Grid } from "theme-ui";
-import { CodeBlock } from "@/components/CodeBlock";
-import FeaturedRepositories from "@/components/FeaturedRepositories";
+import { Paragraph, Box, Heading, Card } from "theme-ui";
+import { RepositoryList } from "@/components/repository/RepositoryList";
 
 export default function Home() {
   return (
     <>
       <main>
         <Layout>
-          <CodeBlock copyButton={false}>
+          <Card variant="code">
             <Paragraph>
               Source Cooperative is a neutral, non-profit data-sharing utility
               that allows trusted organizations to share data without purchasing
@@ -17,9 +16,10 @@ export default function Home() {
               rather than requiring proprietary APIs or SaaS interfaces. It is
               currently in private beta.
             </Paragraph>
-          </CodeBlock>
-
-          <FeaturedRepositories />
+          </Card>
+          <Box sx={{ mt: 4 }}>
+            <RepositoryList title={"Featured Repositories"} featured={true} />
+          </Box>
         </Layout>
       </main>
     </>

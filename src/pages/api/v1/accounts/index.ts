@@ -65,7 +65,7 @@ async function createAccountHandler(
     identity_id:
       accountRequest.account_type === AccountType.USER
         ? session?.identity_id
-        : undefined,
+        : "N/A",
   };
 
   // Check if the user is authorized to create an account

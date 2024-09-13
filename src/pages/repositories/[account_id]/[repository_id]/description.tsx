@@ -3,7 +3,7 @@ import { useRouter } from "next/router";
 import { Layout } from "@/components/Layout";
 import { Markdown } from "@/components/viewers/Markdown";
 import { Divider } from "theme-ui";
-import { RepositoryListing } from "@/components/RepositoryListing";
+import { RepositoryListing } from "@/components/repository/RepositoryListing";
 
 import { useRepository, useRepositorySideNav } from "@/lib/api";
 import { getRepository } from "@/lib/client/repositories";
@@ -37,7 +37,6 @@ export default function RepositoryDetail() {
   return (
     <Layout notFound={error != null} sideNavLinks={sideNavLinks}>
       <RepositoryListing repository={repository} truncate={false} />
-      <Divider />
       {repository ? (
         <Markdown
           url={`${process.env.NEXT_PUBLIC_S3_ENDPOINT}/${account_id}/${repository_id}/README.md`}

@@ -157,6 +157,7 @@ export default function UserNavButton() {
               position: "absolute",
               top: 0,
               right: 0,
+              zIndex: 99999,
               opacity: expanded ? 1 : 0,
               pointerEvents: expanded ? "all" : "none",
               backgroundColor: "primary",

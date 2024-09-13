@@ -42,7 +42,10 @@ export default function TenantDetails() {
   return (
     <>
       <Layout
-        notFound={profileError && profileError.status === 404}
+        notFound={
+          profileError &&
+          (profileError.status === 404 || profileError.status === 401)
+        }
         sideNavLinks={sideNavLinks}
       >
         <Grid

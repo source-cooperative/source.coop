@@ -1,8 +1,8 @@
 import { useRouter } from "next/router";
 import { Box, Paragraph, Card, Grid, Text, Flex, Heading } from "theme-ui";
 import Skeleton from "react-loading-skeleton";
-import SVG from "./SVG";
-import SourceLink from "./SourceLink";
+import SVG from "@/components/SVG";
+import SourceLink from "@/components/SourceLink";
 import SourceButton from "@/components/Button";
 import dynamic from "next/dynamic";
 import Link from "next/link";

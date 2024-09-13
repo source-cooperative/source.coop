@@ -1,6 +1,6 @@
 import { Box, Paragraph, Heading, Flex, Text, Card, Link } from "theme-ui";
 import SourceLink from "@/components/SourceLink";
-import RepositoryTag from "@/components/RepositoryTag";
+import RepositoryTag from "@/components/repository/RepositoryTag";
 import { useState } from "react";
 import moment from "moment";
 import Skeleton from "react-loading-skeleton";

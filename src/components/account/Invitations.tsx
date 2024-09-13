@@ -133,12 +133,14 @@ export function Invitations({ account_id }: { account_id: string }) {
               );
             })}
           </Grid>
-          <Box variant="cards.formMessageBox">
-            {errorMessage && <Alert variant="error">{errorMessage}</Alert>}
-            {successMessage && (
-              <Alert variant="success">{successMessage}</Alert>
-            )}
-          </Box>
+          {(errorMessage || successMessage) && (
+            <Box variant="cards.formMessageBox">
+              {errorMessage && <Alert variant="error">{errorMessage}</Alert>}
+              {successMessage && (
+                <Alert variant="success">{successMessage}</Alert>
+              )}
+            </Box>
+          )}
         </fieldset>
       </Box>
     </>

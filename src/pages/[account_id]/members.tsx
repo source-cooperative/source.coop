@@ -25,7 +25,10 @@ export default function TenantDetails() {
 
   return (
     <Layout
-      notFound={profileError && profileError.status === 404}
+      notFound={
+        profileError &&
+        (profileError.status === 404 || profileError.status === 401)
+      }
       sideNavLinks={sideNavLinks}
     >
       <Grid
@@ -38,9 +41,7 @@ export default function TenantDetails() {
           <AccountObject account_id={account_id as string} />
         </Box>
         <InviteMember account_id={account_id as string} />
-        <Box>
-          <MemberList account_id={account_id as string} />
-        </Box>
+        <MemberList account_id={account_id as string} />
       </Grid>
     </Layout>
   );

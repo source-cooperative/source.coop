@@ -139,6 +139,21 @@ export default {
         color: "accent",
       },
     },
+    readonly: {
+      borderColor: "accent",
+      "&:focus": {
+        borderColor: "primary",
+        outline: "none",
+      },
+      backgroundColor: "hinted",
+      fontFamily: "mono",
+      fontSize: 1,
+      borderRadius: 0,
+      "&:disabled": {
+        backgroundColor: "hinted",
+        color: "primary",
+      },
+    },
     textarea: {
       backgroundColor: "hinted",
       borderRadius: 0,

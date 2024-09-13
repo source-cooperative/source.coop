@@ -1,5 +1,5 @@
 import { Box, Heading, Image, Grid, Text } from "theme-ui";
-import { AccountProfileResponse } from "@/api/types";
+import { Account, AccountProfileResponse } from "@/api/types";
 import { ClientError } from "@/lib/client/accounts";
 import useSWR from "swr";
 import { GoLocation, GoLink, GoInfo } from "react-icons/go";
@@ -12,6 +12,14 @@ export function AccountObject({ account_id }: { account_id: string }) {
   >(account_id ? { path: `/api/v1/accounts/${account_id}/profile` } : null, {
     refreshInterval: 0,
   });
+
+  const { data: account } = useSWR<Account, ClientError>(
+    account_id ? { path: `/api/v1/accounts/${account_id}` } : null,
+    {
+      refreshInterval: 0,
+    }
+  );
+
   return (
     <Grid
       sx={{
@@ -37,6 +45,9 @@ export function AccountObject({ account_id }: { account_id: string }) {
       )}
       <Box>
         <Heading as="h1" sx={{ my: 0 }}>
+          {account && account?.disabled && (
+            <Text sx={{ color: "red", fontFamily: "mono" }}>[DISABLED]</Text>
+          )}
           {profile?.name ? profile.name : account_id}
         </Heading>
         <Grid
