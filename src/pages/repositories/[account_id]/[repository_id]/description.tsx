@@ -1,11 +1,7 @@
-import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { Layout } from "@/components/Layout";
 import { Markdown } from "@/components/viewers/Markdown";
-import { Divider } from "theme-ui";
 import { RepositoryListing } from "@/components/repository/RepositoryListing";
-
-import { useRepository, useRepositorySideNav } from "@/lib/api";
 import { getRepository } from "@/lib/client/repositories";
 import { SideNavLink } from "@/lib/types";
 

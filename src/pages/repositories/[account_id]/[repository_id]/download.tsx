@@ -1,9 +1,7 @@
 import { useRouter } from "next/router";
 import { Layout } from "@/components/Layout";
-import { Divider } from "theme-ui";
 import { RepositoryListing } from "@/components/repository/RepositoryListing";
 
-import { useRepository, useRepositorySideNav, useUser } from "@/lib/api";
 import { getRepository } from "@/lib/client/repositories";
 import { SideNavLink } from "@/lib/types";
 
@@ -31,8 +29,6 @@ export default function RepositoryDownload() {
       active: true,
     },
   ];
-
-  const { user } = useUser();
 
   return (
     <Layout notFound={error != null} sideNavLinks={sideNavLinks}>

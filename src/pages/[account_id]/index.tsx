@@ -1,19 +1,11 @@
 import { Layout } from "@/components/Layout";
 import { useRouter } from "next/router";
-import { Heading, Box, Grid } from "theme-ui";
+import { Box, Grid } from "theme-ui";
 import { RepositoryList } from "@/components/repository/RepositoryList";
 
-import { getProfile, getFlags } from "@/lib/client/accounts";
 import { AccountObject } from "@/components/account/AccountObject";
-import { listRepositoriesByAccount } from "@/lib/client/repositories";
-import { SideNavLink } from "@/lib/types";
-import { useUser } from "@/lib/api";
-import { useEffect, useState } from "react";
 import {
   AccountFlags,
-  AccountType,
-  MembershipRole,
-  MembershipState,
   AccountProfileResponse,
   UserSession,
   RepositoryListResponse,
