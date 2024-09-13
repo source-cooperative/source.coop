@@ -28,7 +28,7 @@ import { COUNTRIES } from "@/lib/constants";
 
 const frontend = new FrontendApi(
   new Configuration({
-    basePath: `${process.env.NEXT_PUBLIC_BASE_URL}/api/.ory`,
+    basePath: `/api/.ory`,
   })
 );
 
