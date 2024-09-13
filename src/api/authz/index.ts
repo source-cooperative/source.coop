@@ -134,9 +134,6 @@ export function isAuthorized(
     .with(Actions.InviteMembership, () =>
       inviteMembership(principal, resource as Membership)
     )
-    .with(Actions.ListAccountAPIKeys, () =>
-      listAccountAPIKeys(principal, resource as Account)
-    )
     .with(Actions.ListRepositoryAPIKeys, () =>
       listRepositoryAPIKeys(principal, resource as Repository)
     )
