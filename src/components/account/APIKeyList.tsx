@@ -56,6 +56,7 @@ export function APIKeyList({
     data: apiKeys,
     mutate: reloadAPIKeys,
     error,
+    isLoading,
   } = useSWR<RedactedAPIKey[], ClientError>(
     account_id && !repository_id
       ? { path: `/api/v1/accounts/${account_id}/api-keys` }
@@ -76,6 +77,10 @@ export function APIKeyList({
 
   if (error && error.status === 401) {
     return <></>;
+  }
+
+  if (isLoading) {
+    return <Box variant="cards.componentMessage">Loading API Keys...</Box>;
   }
 
   if (error) {

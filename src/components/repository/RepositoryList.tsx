@@ -56,7 +56,29 @@ export function RepositoryList({
     );
   }
 
-  const { data: repositoryListResponse } = res;
+  const { data: repositoryListResponse, isLoading, error } = res;
+
+  if (isLoading) {
+    return (
+      <>
+        <Text variant="formTitle">{title}</Text>
+        <Card variant="code">
+          <Box variant="cards.componentMessage">Loading...</Box>
+        </Card>
+      </>
+    );
+  }
+
+  if (error) {
+    return (
+      <>
+        <Text variant="formTitle">{title}</Text>
+        <Card variant="code">
+          <Box variant="cards.componentMessage">Error Loading Repositories</Box>
+        </Card>
+      </>
+    );
+  }
 
   if (repositoryListResponse?.repositories?.length === 0) {
     return (

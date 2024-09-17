@@ -57,7 +57,6 @@ const client = new DynamoDBClient({
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
   },
   region: process.env.AWS_DEFAULT_REGION,
-  endpoint: isProd ? undefined : "http://localhost:8000/",
 });
 const docClient = DynamoDBDocumentClient.from(client);
 
@@ -175,6 +174,7 @@ export async function getFeaturedRepositories(): Promise<Repository[]> {
 
   try {
     const response = await client.send(command);
+    console.log(response);
     return response.Items?.map((item) => item as Repository) ?? [];
   } catch (e) {
     logger.error(e);
