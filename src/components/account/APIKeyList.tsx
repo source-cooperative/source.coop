@@ -40,7 +40,13 @@ function CopyableInput({ title, value }: { title: string; value: string }) {
   );
 }
 
-export function APIKeyList({ account_id }) {
+export function APIKeyList({
+  account_id,
+  repository_id,
+}: {
+  account_id: string;
+  repository_id?: string;
+}) {
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
@@ -51,7 +57,11 @@ export function APIKeyList({ account_id }) {
     mutate: reloadAPIKeys,
     error,
   } = useSWR<RedactedAPIKey[], ClientError>(
-    account_id ? { path: `/api/v1/accounts/${account_id}/api-keys` } : null,
+    account_id && !repository_id
+      ? { path: `/api/v1/accounts/${account_id}/api-keys` }
+      : account_id && repository_id
+      ? { path: `/api/v1/repositories/${account_id}/${repository_id}/api-keys` }
+      : null,
     {
       refreshInterval: 0,
     }
@@ -66,6 +76,10 @@ export function APIKeyList({ account_id }) {
 
   if (error && error.status === 401) {
     return <></>;
+  }
+
+  if (error) {
+    return <Box variant="cards.componentMessage">Failed to load API Keys</Box>;
   }
 
   return (
@@ -156,7 +170,7 @@ export function APIKeyList({ account_id }) {
                                 setErrorMessage(null);
                                 setSuccessMessage(null);
                                 fetch(
-                                  `/api/v1/api-keys//${apiKey.access_key_id}`,
+                                  `/api/v1/api-keys/${apiKey.access_key_id}`,
                                   {
                                     method: "DELETE",
                                   }

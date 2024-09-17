@@ -238,6 +238,8 @@ export async function getEmail(identity_id: string): Promise<string | null> {
   for (const recover_address of data.recovery_addresses) {
     return recover_address.value;
   }
+
+  return null;
 }
 
 /**

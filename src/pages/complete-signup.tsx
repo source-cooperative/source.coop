@@ -23,6 +23,9 @@ import {
   AccountCreationRequestSchema,
   AccountType,
 } from "@/api/types";
+import useSWR from "swr";
+import { UserSession } from "@/api/types";
+import { ClientError } from "@/lib/client/accounts";
 
 import { COUNTRIES } from "@/lib/constants";
 
@@ -40,6 +43,22 @@ export async function createAccount(
 }
 
 export default function AccountForm() {
+  const [errorMessage, setErrorMessage] = useState(null);
+  const [logoutUrl, setLogoutUrl] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  const router = useRouter();
+
+  const { data: user, mutate: refreshUser } = useSWR<UserSession, ClientError>(
+    { path: `/api/v1/whoami` },
+    {
+      refreshInterval: 0,
+    }
+  );
+
+  if (user && user.account) {
+    router.push(`/${user.account.account_id}`);
+  }
+
   const {
     register,
     handleSubmit,
@@ -62,7 +81,9 @@ export default function AccountForm() {
       body: JSON.stringify(data),
     }).then((res) => {
       if (res.ok) {
-        router.push(`/${data.account_id}`);
+        refreshUser().then(() => {
+          router.push(`/${data.account_id}`);
+        });
       } else {
         res.json().then((data) => {
           setErrorMessage(data.message);
@@ -71,11 +92,6 @@ export default function AccountForm() {
       }
     });
   };
-
-  const [errorMessage, setErrorMessage] = useState(null);
-  const [logoutUrl, setLogoutUrl] = useState(null);
-  const [submitting, setSubmitting] = useState(false);
-  const router = useRouter();
 
   useEffect(() => {
     frontend.createBrowserLogoutFlow().then((res) => {

@@ -28,10 +28,10 @@ function errecho() {
 function create_tables() {
     echo "Creating tables in the local dynamodb instance..."
 
-    echo "Creating table source-cooperative-accounts..."
+    echo "Creating table sc-accounts..."
     # shellcheck disable=SC2086
     response=$(aws dynamodb --endpoint-url http://localhost:8000 create-table \
-        --table-name source-cooperative-accounts \
+        --table-name sc-accounts \
         --attribute-definitions \
             AttributeName=account_id,AttributeType=S \
             AttributeName=identity_id,AttributeType=S \
@@ -66,17 +66,16 @@ function create_tables() {
                 }
             ]"
     )
-    echo $response
 
     # shellcheck disable=SC2181
     if [[ ${?} -ne 0 ]]; then
         return 1
     fi
 
-    echo "Creating table source-cooperative-repositories..."
+    echo "Creating table sc-repositories..."
     # shellcheck disable=SC2086
     response=$(aws dynamodb --endpoint-url http://localhost:8000 create-table \
-        --table-name source-cooperative-repositories \
+        --table-name sc-repositories \
         --attribute-definitions \
             AttributeName=account_id,AttributeType=S \
             AttributeName=repository_id,AttributeType=S \
@@ -107,10 +106,10 @@ function create_tables() {
         return 1
     fi
 
-    echo "Creating table source-cooperative-api-keys..."
+    echo "Creating table sc-api-keys..."
     # shellcheck disable=SC2086
     response=$(aws dynamodb --endpoint-url http://localhost:8000 create-table \
-        --table-name source-cooperative-api-keys \
+        --table-name sc-api-keys \
         --attribute-definitions \
             AttributeName=access_key_id,AttributeType=S \
             AttributeName=account_id,AttributeType=S \
@@ -139,10 +138,10 @@ function create_tables() {
         return 1
     fi
 
-    echo "Creating table source-cooperative-memberships..."
+    echo "Creating table sc-memberships..."
     # shellcheck disable=SC2086
     response=$(aws dynamodb --endpoint-url http://localhost:8000 create-table \
-        --table-name source-cooperative-memberships \
+        --table-name sc-memberships \
         --attribute-definitions \
             AttributeName=membership_id,AttributeType=S \
             AttributeName=account_id,AttributeType=S \
@@ -195,10 +194,10 @@ function create_tables() {
         return 1
     fi
 
-    echo "Creating table source-cooperative-data-connections..."
+    echo "Creating table sc-data-connections..."
     # shellcheck disable=SC2086
     response=$(aws dynamodb --endpoint-url http://localhost:8000 create-table \
-        --table-name source-cooperative-data-connections \
+        --table-name sc-data-connections \
         --attribute-definitions \
             AttributeName=data_connection_id,AttributeType=S \
         --key-schema \

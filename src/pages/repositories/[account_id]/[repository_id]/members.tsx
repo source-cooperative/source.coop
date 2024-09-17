@@ -1,16 +1,19 @@
+import { InviteMember } from "@/components/account/InviteMember";
+import { MemberList } from "@/components/account/MemberList";
 import { useRouter } from "next/router";
 import { Layout } from "@/components/Layout";
-import { Markdown } from "@/components/viewers/Markdown";
 import { RepositoryListing } from "@/components/repository/RepositoryListing";
+
 import { getRepository } from "@/lib/client/repositories";
 import { RepositorySideNavLinks } from "@/components/RepositorySideNav";
 import { useState, useEffect } from "react";
 import useSWR from "swr";
 import { Repository } from "@/api/types";
 import { ClientError } from "@/lib/client/accounts";
-import { Grid, Box } from "theme-ui";
+import { Box, Grid } from "theme-ui";
+import { AccessData } from "@/components/repository/AccessData";
 
-export default function RepositoryDetail() {
+export default function TenantDetails() {
   const router = useRouter();
 
   const { account_id, repository_id } = router.query;
@@ -45,24 +48,23 @@ export default function RepositoryDetail() {
 
   return (
     <Layout
-      notFound={repositoryError && repositoryError.status === 404}
+      notFound={
+        repositoryError &&
+        (repositoryError.status === 404 || repositoryError.status === 401)
+      }
       sideNavLinks={sideNavLinks}
     >
       <Grid
         sx={{
           gap: 4,
+          gridTemplateColumns: ["1fr", "1fr", "1fr 3fr", "1fr 5fr"],
         }}
       >
         <Box sx={{ gridColumn: "1 / -1" }}>
           <RepositoryListing repository={repository} truncate={false} />
         </Box>
-        {repository ? (
-          <Markdown
-            url={`${process.env.NEXT_PUBLIC_S3_ENDPOINT}/${accountId}/${repositoryId}/README.md`}
-          />
-        ) : (
-          <></>
-        )}
+        <InviteMember account_id={accountId} repository_id={repositoryId} />
+        <MemberList account_id={accountId} repository_id={repositoryId} />
       </Grid>
     </Layout>
   );

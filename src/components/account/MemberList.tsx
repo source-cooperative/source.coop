@@ -11,7 +11,13 @@ import { ClientError } from "@/lib/client/accounts";
 import useSWR from "swr";
 import { useState } from "react";
 
-export function MemberList({ account_id }: { account_id: string }) {
+export function MemberList({
+  account_id,
+  repository_id,
+}: {
+  account_id: string;
+  repository_id?: string;
+}) {
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
@@ -21,7 +27,11 @@ export function MemberList({ account_id }: { account_id: string }) {
     mutate: reloadMemberships,
     error,
   } = useSWR<Membership[], ClientError>(
-    account_id ? { path: `/api/v1/accounts/${account_id}/members` } : null,
+    account_id && !repository_id
+      ? { path: `/api/v1/accounts/${account_id}/members` }
+      : account_id && repository_id
+      ? { path: `/api/v1/repositories/${account_id}/${repository_id}/members` }
+      : null,
     {
       refreshInterval: 0,
     }
@@ -130,12 +140,28 @@ export function MemberList({ account_id }: { account_id: string }) {
       for (const membership of user?.memberships) {
         if (
           membership.membership_account_id === account_id &&
+          !membership.repository_id &&
           membership.state === MembershipState.Member &&
           (membership.role === MembershipRole.Owners ||
             membership.role === MembershipRole.Maintainers)
         ) {
           hasEditPermissions = true;
           break;
+        }
+      }
+
+      if (repository_id) {
+        for (const membership of user?.memberships) {
+          if (
+            membership.membership_account_id === account_id &&
+            membership.repository_id === repository_id &&
+            membership.state === MembershipState.Member &&
+            (membership.role === MembershipRole.Owners ||
+              membership.role === MembershipRole.Maintainers)
+          ) {
+            hasEditPermissions = true;
+            break;
+          }
         }
       }
     }

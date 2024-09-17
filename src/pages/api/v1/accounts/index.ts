@@ -6,6 +6,7 @@ import {
   AccountType,
   AccountCreationRequestSchema,
   Actions,
+  AccountFlags,
 } from "@/api/types";
 import { withErrorHandling } from "@/api/middleware";
 import { StatusCodes } from "http-status-codes";
@@ -61,7 +62,7 @@ async function createAccountHandler(
   const newAccount: Account = {
     ...accountRequest,
     disabled: false,
-    flags: [],
+    flags: [AccountFlags.CREATE_ORGANIZATIONS],
     identity_id:
       accountRequest.account_type === AccountType.USER
         ? session?.identity_id

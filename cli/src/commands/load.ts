@@ -13,6 +13,7 @@ import {
   DataConnection,
   Membership,
 } from "@/api/types";
+import { marshall } from "@aws-sdk/util-dynamodb";
 
 async function loadAndValidateJson<T extends z.ZodType>(
   path: string,
@@ -54,7 +55,9 @@ async function batchInsertIntoDynamoDB(
   items: Repository[] | Account[] | Membership[] | APIKey[] | DataConnection[]
 ): Promise<void> {
   // Create a DynamoDB client
-  const client = new DynamoDBClient({});
+  const client = new DynamoDBClient({
+    endpoint: "http://localhost:8000",
+  });
   const docClient = DynamoDBDocumentClient.from(client);
   for (const item of items) {
     const params = {
@@ -66,7 +69,8 @@ async function batchInsertIntoDynamoDB(
       const command = new PutCommand(params);
       await docClient.send(command);
     } catch (error) {
-      console.error("Error inserting item:", error);
+      console.error(`Error inserting item into ${tableName}:`, error);
+      console.log(item);
       throw error;
     }
   }
@@ -103,12 +107,9 @@ export async function load(loadDirectory: string) {
   console.log(`API Key Count: ${apiKeys.length}`);
   console.log(`Data Connection Count: ${dataConnections.length}`);
 
-  batchInsertIntoDynamoDB("source-cooperative-accounts", accounts);
-  batchInsertIntoDynamoDB("source-cooperative-repositories", repositories);
-  batchInsertIntoDynamoDB("source-cooperative-api-keys", apiKeys);
-  batchInsertIntoDynamoDB("source-cooperative-memberships", memberships);
-  batchInsertIntoDynamoDB(
-    "source-cooperative-data-connections",
-    dataConnections
-  );
+  await batchInsertIntoDynamoDB("sc-accounts", accounts);
+  await batchInsertIntoDynamoDB("sc-repositories", repositories);
+  await batchInsertIntoDynamoDB("sc-api-keys", apiKeys);
+  await batchInsertIntoDynamoDB("sc-memberships", memberships);
+  await batchInsertIntoDynamoDB("sc-data-connections", dataConnections);
 }

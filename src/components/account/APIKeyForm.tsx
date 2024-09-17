@@ -14,13 +14,23 @@ import { useState } from "react";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
-export function APIKeyForm({ account_id }) {
+export function APIKeyForm({
+  account_id,
+  repository_id,
+}: {
+  account_id: string;
+  repository_id?: string;
+}) {
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
 
   const { mutate: reloadAPIKeys } = useSWR<RedactedAPIKey[], ClientError>(
-    account_id ? { path: `/api/v1/accounts/${account_id}/api-keys` } : null,
+    account_id && !repository_id
+      ? { path: `/api/v1/accounts/${account_id}/api-keys` }
+      : account_id && repository_id
+      ? { path: `/api/v1/repositories/${account_id}/${repository_id}/api-keys` }
+      : null,
     {
       refreshInterval: 0,
     }
@@ -49,28 +59,53 @@ export function APIKeyForm({ account_id }) {
     setErrorMessage(null);
     setSuccessMessage(null);
 
-    fetch(`/api/v1/accounts/${account_id}/api-keys`, {
-      method: "POST",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(data),
-    }).then((res) => {
-      if (res.ok) {
-        res.json().then((data) => {
-          localStorage.setItem("latest-api-key", JSON.stringify(data));
-          setSubmitting(false);
-          setSuccessMessage("API Key Created");
-          reloadAPIKeys();
-        });
-      } else {
-        res.json().then((data) => {
-          setSubmitting(false);
-          setErrorMessage(data.message);
-        });
-      }
-    });
+    if (account_id && !repository_id) {
+      fetch(`/api/v1/accounts/${account_id}/api-keys`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      }).then((res) => {
+        if (res.ok) {
+          res.json().then((data) => {
+            localStorage.setItem("latest-api-key", JSON.stringify(data));
+            setSubmitting(false);
+            setSuccessMessage("API Key Created");
+            reloadAPIKeys();
+          });
+        } else {
+          res.json().then((data) => {
+            setSubmitting(false);
+            setErrorMessage(data.message);
+          });
+        }
+      });
+    } else if (account_id && repository_id) {
+      fetch(`/api/v1/repositories/${account_id}/${repository_id}/api-keys`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      }).then((res) => {
+        if (res.ok) {
+          res.json().then((data) => {
+            localStorage.setItem("latest-api-key", JSON.stringify(data));
+            setSubmitting(false);
+            setSuccessMessage("API Key Created");
+            reloadAPIKeys();
+          });
+        } else {
+          res.json().then((data) => {
+            setSubmitting(false);
+            setErrorMessage(data.message);
+          });
+        }
+      });
+    }
   };
 
   let hasEditPermissions = false;
@@ -83,12 +118,28 @@ export function APIKeyForm({ account_id }) {
       for (const membership of user?.memberships) {
         if (
           membership.membership_account_id === account_id &&
+          !membership.repository_id &&
           membership.state === MembershipState.Member &&
           (membership.role === MembershipRole.Owners ||
             membership.role === MembershipRole.Maintainers)
         ) {
           hasEditPermissions = true;
           break;
+        }
+      }
+
+      if (repository_id) {
+        for (const membership of user?.memberships) {
+          if (
+            membership.membership_account_id === account_id &&
+            membership.repository_id === repository_id &&
+            membership.state === MembershipState.Member &&
+            (membership.role === MembershipRole.Owners ||
+              membership.role === MembershipRole.Maintainers)
+          ) {
+            hasEditPermissions = true;
+            break;
+          }
         }
       }
     }

@@ -9,10 +9,10 @@
  * handling and logging for each database operation.
  *
  * Tables used:
- * - source-cooperative-accounts
- * - source-cooperative-repositories
- * - source-cooperative-api-keys
- * - source-cooperative-memberships
+ * - sc-accounts
+ * - sc-repositories
+ * - sc-api-keys
+ * - sc-memberships
  *
  * @module db
  * @requires @aws-sdk/client-dynamodb
@@ -66,7 +66,7 @@ export async function getAccountByIdentityId(
   identityId: string
 ): Promise<Account | null> {
   const command = new QueryCommand({
-    TableName: "source-cooperative-accounts",
+    TableName: "sc-accounts",
     IndexName: "identity_id",
     KeyConditionExpression: "identity_id = :identity_id",
     ExpressionAttributeValues: {
@@ -90,7 +90,7 @@ export async function getAccountByIdentityId(
  */
 export async function getRepositories(): Promise<Repository[]> {
   const command = new ScanCommand({
-    TableName: "source-cooperative-repositories",
+    TableName: "sc-repositories",
     ConsistentRead: true,
   });
 
@@ -105,9 +105,9 @@ export async function getRepositories(): Promise<Repository[]> {
 
 export async function getRepositoriesByAccount(
   accountId: string
-): Promise<Repository[] | null> {
+): Promise<Repository[]> {
   const command = new QueryCommand({
-    TableName: "source-cooperative-repositories",
+    TableName: "sc-repositories",
     KeyConditionExpression: "account_id = :account_id",
     ExpressionAttributeValues: {
       ":account_id": accountId,
@@ -135,7 +135,7 @@ export async function getRepository(
   repositoryId: string
 ): Promise<Repository | null> {
   const command = new QueryCommand({
-    TableName: "source-cooperative-repositories",
+    TableName: "sc-repositories",
     KeyConditionExpression:
       "account_id = :account_id AND repository_id = :repository_id",
     ExpressionAttributeValues: {
@@ -160,7 +160,7 @@ export async function getRepository(
  */
 export async function getFeaturedRepositories(): Promise<Repository[]> {
   const command = new QueryCommand({
-    TableName: "source-cooperative-repositories",
+    TableName: "sc-repositories",
     IndexName: "featured",
     KeyConditionExpression: "featured = :featured",
     ExpressionAttributeValues: {
@@ -184,7 +184,7 @@ export async function getFeaturedRepositories(): Promise<Repository[]> {
  */
 export async function getAccounts(): Promise<Account[]> {
   const command = new ScanCommand({
-    TableName: "source-cooperative-accounts",
+    TableName: "sc-accounts",
     ConsistentRead: true,
   });
 
@@ -208,7 +208,7 @@ export async function putAccount(
   checkIfExists: boolean = false
 ): Promise<[Account, boolean]> {
   const command = new PutItemCommand({
-    TableName: "source-cooperative-accounts",
+    TableName: "sc-accounts",
     Item: marshall(account),
     ConditionExpression: checkIfExists
       ? "attribute_not_exists(account_id)"
@@ -238,7 +238,7 @@ export async function putRepository(
   checkIfExists: boolean = false
 ): Promise<[Repository, boolean]> {
   const command = new PutItemCommand({
-    TableName: "source-cooperative-repositories",
+    TableName: "sc-repositories",
     Item: marshall(repository),
     ConditionExpression: checkIfExists
       ? "attribute_not_exists(account_id) AND attribute_not_exists(repository_id)"
@@ -268,7 +268,7 @@ export async function putAPIKey(
   checkIfExists: boolean = false
 ): Promise<[APIKey, boolean]> {
   const command = new PutItemCommand({
-    TableName: "source-cooperative-api-keys",
+    TableName: "sc-api-keys",
     Item: marshall(apiKey),
     ConditionExpression: checkIfExists
       ? "attribute_not_exists(access_key_id)"
@@ -295,7 +295,7 @@ export async function putAPIKey(
  */
 export async function getAPIKey(accessKeyId: string): Promise<APIKey | null> {
   const command = new QueryCommand({
-    TableName: "source-cooperative-api-keys",
+    TableName: "sc-api-keys",
     KeyConditionExpression: "access_key_id = :access_key_id",
     ExpressionAttributeValues: {
       ":access_key_id": accessKeyId,
@@ -319,7 +319,7 @@ export async function getAPIKey(accessKeyId: string): Promise<APIKey | null> {
  */
 export async function getAccount(accountId: string): Promise<Account | null> {
   const command = new QueryCommand({
-    TableName: "source-cooperative-accounts",
+    TableName: "sc-accounts",
     KeyConditionExpression: "account_id = :account_id",
     ExpressionAttributeValues: {
       ":account_id": accountId,
@@ -345,7 +345,7 @@ export async function getMembershipsForUser(
   accountId: string
 ): Promise<Membership[]> {
   const command = new QueryCommand({
-    TableName: "source-cooperative-memberships",
+    TableName: "sc-memberships",
     IndexName: "account_id",
     KeyConditionExpression: "account_id = :account_id",
     ExpressionAttributeValues: {
@@ -373,7 +373,7 @@ export async function getMemberships(
   repositoryId: string | null = null
 ): Promise<Membership[]> {
   let command = new QueryCommand({
-    TableName: "source-cooperative-memberships",
+    TableName: "sc-memberships",
     IndexName: "membership_account_id",
     KeyConditionExpression: "membership_account_id = :membership_account_id",
     ExpressionAttributeValues: {
@@ -382,7 +382,7 @@ export async function getMemberships(
   });
   if (repositoryId) {
     command = new QueryCommand({
-      TableName: "source-cooperative-memberships",
+      TableName: "sc-memberships",
       IndexName: "membership_account_id_repository_id",
       KeyConditionExpression:
         "membership_account_id = :membership_account_id AND repository_id = :repository_id",
@@ -412,7 +412,7 @@ export async function getMembership(
   membershipId: string
 ): Promise<Membership | null> {
   const command = new QueryCommand({
-    TableName: "source-cooperative-memberships",
+    TableName: "sc-memberships",
     KeyConditionExpression: "membership_id = :membership_id",
     ExpressionAttributeValues: {
       ":membership_id": membershipId,
@@ -439,11 +439,12 @@ export async function getAPIKeys(
   repositoryId: string | null = null
 ): Promise<APIKey[]> {
   const command = new QueryCommand({
-    TableName: "source-cooperative-api-keys",
+    TableName: "sc-api-keys",
     IndexName: "account_id",
-    KeyConditionExpression: repositoryId
-      ? "account_id = :account_id AND repository_id = :repository_id"
-      : "account_id = :account_id",
+    KeyConditionExpression: "account_id = :account_id",
+    FilterExpression: repositoryId
+      ? "repository_id = :repository_id"
+      : "attribute_not_exists(repository_id)",
     ExpressionAttributeValues: {
       ":account_id": accountId,
       ...(repositoryId && { ":repository_id": repositoryId }),
@@ -470,7 +471,7 @@ export async function putMembership(
   checkIfExists: boolean = false
 ): Promise<[Membership, boolean]> {
   const command = new PutItemCommand({
-    TableName: "source-cooperative-memberships",
+    TableName: "sc-memberships",
     Item: marshall(membership),
     ConditionExpression: checkIfExists
       ? "attribute_not_exists(membership_id)"
@@ -491,7 +492,7 @@ export async function putMembership(
 
 export async function getDataConnections(): Promise<DataConnection[]> {
   const command = new ScanCommand({
-    TableName: "source-cooperative-data-connections",
+    TableName: "sc-data-connections",
     ConsistentRead: true,
   });
 
@@ -509,7 +510,7 @@ export async function putDataConnection(
   checkIfExists: boolean = false
 ): Promise<[DataConnection, boolean]> {
   const command = new PutItemCommand({
-    TableName: "source-cooperative-data-connections",
+    TableName: "sc-data-connections",
     Item: marshall(dataConnection),
     ConditionExpression: checkIfExists
       ? "attribute_not_exists(data_connection_id)"
@@ -532,7 +533,7 @@ export async function getDataConnection(
   dataConnectionId: string
 ): Promise<DataConnection | null> {
   const command = new QueryCommand({
-    TableName: "source-cooperative-data-connections",
+    TableName: "sc-data-connections",
     KeyConditionExpression: "data_connection_id = :data_connection_id",
     ExpressionAttributeValues: {
       ":data_connection_id": dataConnectionId,

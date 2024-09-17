@@ -8,12 +8,19 @@ import { MemberList } from "@/components/account/MemberList";
 import { useRouter } from "next/router";
 import useSWR from "swr";
 import { Grid, Box } from "theme-ui";
+import { useEffect, useState } from "react";
 
 export default function TenantDetails() {
   const router = useRouter();
   const { account_id } = router.query;
+  const [accountId, setAccountId] = useState<string>(account_id as string);
+
+  useEffect(() => {
+    setAccountId(account_id as string);
+  }, [account_id]);
+
   const sideNavLinks = AccountSideNavLinks({
-    account_id: account_id as string,
+    account_id: accountId,
   });
 
   const { error: profileError } = useSWR<AccountProfileResponse, ClientError>(
@@ -38,10 +45,10 @@ export default function TenantDetails() {
         }}
       >
         <Box sx={{ gridColumn: "1 / -1" }}>
-          <AccountObject account_id={account_id as string} />
+          <AccountObject account_id={accountId} />
         </Box>
-        <InviteMember account_id={account_id as string} />
-        <MemberList account_id={account_id as string} />
+        <InviteMember account_id={accountId} />
+        <MemberList account_id={accountId} />
       </Grid>
     </Layout>
   );

@@ -582,6 +582,14 @@ export type RepositoryUpdateRequest = z.infer<
   typeof RepositoryUpdateRequestSchema
 >;
 
+export const RepositoryFeaturedUpdateRequestSchema = RepositorySchema.pick({
+  featured: true,
+}).openapi("RepositoryFeaturedUpdateRequest");
+
+export type RepositoryFeaturedUpdateRequest = z.infer<
+  typeof RepositoryFeaturedUpdateRequestSchema
+>;
+
 export const MembershipInvitationSchema = MembershipSchema.pick({
   account_id: true,
   role: true,

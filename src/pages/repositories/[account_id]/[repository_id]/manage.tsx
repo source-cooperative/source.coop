@@ -1,19 +1,22 @@
 import { useRouter } from "next/router";
 import { Layout } from "@/components/Layout";
-import { Markdown } from "@/components/viewers/Markdown";
 import { RepositoryListing } from "@/components/repository/RepositoryListing";
-import { getRepository } from "@/lib/client/repositories";
 import { RepositorySideNavLinks } from "@/components/RepositorySideNav";
-import { useState, useEffect } from "react";
+import { EditRepositoryForm } from "@/components/repository/EditRepositoryForm";
+import { Box, Grid } from "theme-ui";
 import useSWR from "swr";
-import { Repository } from "@/api/types";
 import { ClientError } from "@/lib/client/accounts";
-import { Grid, Box } from "theme-ui";
+import { Repository } from "@/api/types";
+import { DangerBox } from "@/components/repository/DangerBox";
+import { AdminBox } from "@/components/repository/AdminBox";
+import { useEffect, useState } from "react";
+import { APIKeyList } from "@/components/account/APIKeyList";
+import { APIKeyForm } from "@/components/account/APIKeyForm";
 
-export default function RepositoryDetail() {
+export default function RepositoryDownload() {
   const router = useRouter();
-
   const { account_id, repository_id } = router.query;
+
   const [accountId, setAccountId] = useState<string>(account_id as string);
   const [repositoryId, setRepositoryId] = useState<string>(
     repository_id as string
@@ -51,18 +54,36 @@ export default function RepositoryDetail() {
       <Grid
         sx={{
           gap: 4,
+          gridTemplateColumns: [
+            "1fr",
+            "1fr 1fr",
+            "1fr 1fr 1fr",
+            "1fr 1fr 1fr 1fr",
+          ],
         }}
       >
         <Box sx={{ gridColumn: "1 / -1" }}>
           <RepositoryListing repository={repository} truncate={false} />
         </Box>
-        {repository ? (
-          <Markdown
-            url={`${process.env.NEXT_PUBLIC_S3_ENDPOINT}/${accountId}/${repositoryId}/README.md`}
+        <Box sx={{ gridColumn: "1 / -1" }}>
+          <EditRepositoryForm
+            account_id={accountId}
+            repository_id={repositoryId}
           />
-        ) : (
-          <></>
-        )}
+        </Box>
+        <Box sx={{ gridColumn: "1" }}>
+          <APIKeyForm account_id={accountId} repository_id={repositoryId} />
+        </Box>
+        <Box
+          sx={{
+            gridColumn: ["span 1", "span 2", "span 2", "span 3"],
+            gridRow: "span 5",
+          }}
+        >
+          <APIKeyList account_id={accountId} repository_id={repositoryId} />
+        </Box>
+        <DangerBox account_id={accountId} repository_id={repositoryId} />
+        <AdminBox account_id={accountId} repository_id={repositoryId} />
       </Grid>
     </Layout>
   );

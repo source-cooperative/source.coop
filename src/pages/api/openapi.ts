@@ -19,6 +19,7 @@ import {
   UserSessionSchema,
   RepositoryUpdateRequestSchema,
   RepositoryListSchema,
+  RepositoryFeaturedUpdateRequestSchema,
 } from "@/api/types";
 
 export default async function handler(
@@ -63,6 +64,7 @@ export default async function handler(
     RepositoryMetaSchema,
     RepositoryUpdateRequestSchema,
     RepositoryListSchema,
+    RepositoryFeaturedUpdateRequestSchema,
   ]);
   openapiSpecification["components"] = {
     securitySchemes: {

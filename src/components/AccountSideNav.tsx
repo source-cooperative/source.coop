@@ -54,22 +54,16 @@ export function AccountSideNavLinks({ account_id }: { account_id: string }) {
     },
   ];
 
-  const [sideNavLinks, setSideNavLinks] =
-    useState<SideNavLink[]>(baseSideNavLinks);
+  const [sideNavLinks, setSideNavLinks] = useState<SideNavLink[]>([]);
 
   useEffect(() => {
     if (!account_id) {
       return;
     }
 
-    if (!user) {
-      return;
-    }
-
     var newSideNav = [...baseSideNavLinks];
 
     var editPermissions = false;
-    var adminPermissions = false;
 
     if (profile?.account_type === AccountType.ORGANIZATION) {
       newSideNav.push({
@@ -79,48 +73,50 @@ export function AccountSideNavLinks({ account_id }: { account_id: string }) {
       });
     }
 
-    if (user?.account?.flags.includes(AccountFlags.ADMIN)) {
-      editPermissions = true;
-      adminPermissions = true;
-    }
-
-    if (user?.account?.account_id === account_id) {
-      editPermissions = true;
-    }
-
-    for (const membership of user?.memberships) {
-      if (
-        membership.membership_account_id === account_id &&
-        membership.state === MembershipState.Member &&
-        (membership.role === MembershipRole.Owners ||
-          membership.role === MembershipRole.Maintainers)
-      ) {
+    if (user) {
+      if (user?.account?.flags.includes(AccountFlags.ADMIN)) {
         editPermissions = true;
       }
-    }
 
-    if (editPermissions) {
-      newSideNav.push({
-        href: `/${account_id}/manage`,
-        title: "Manage",
-        active: currentPath === `/${account_id}/manage`,
-      });
+      if (user?.account?.account_id === account_id) {
+        editPermissions = true;
+      }
+      if (user.memberships) {
+        for (const membership of user?.memberships) {
+          if (
+            membership.membership_account_id === account_id &&
+            membership.state === MembershipState.Member &&
+            (membership.role === MembershipRole.Owners ||
+              membership.role === MembershipRole.Maintainers)
+          ) {
+            editPermissions = true;
+          }
+        }
+      }
 
-      if (accountFlags?.includes(AccountFlags.CREATE_REPOSITORIES)) {
+      if (editPermissions) {
         newSideNav.push({
-          href: `/${account_id}/new-repository`,
-          title: "New Repository",
-          active: currentPath === `/${account_id}/new-repository`,
+          href: `/${account_id}/manage`,
+          title: "Manage",
+          active: currentPath === `/${account_id}/manage`,
+        });
+
+        if (accountFlags?.includes(AccountFlags.CREATE_REPOSITORIES)) {
+          newSideNav.push({
+            href: `/${account_id}/new-repository`,
+            title: "New Repository",
+            active: currentPath === `/${account_id}/new-repository`,
+          });
+        }
+      }
+
+      if (user?.account?.account_id === account_id) {
+        newSideNav.push({
+          href: `/api/.ory/ui/settings`,
+          title: "Security",
+          active: false,
         });
       }
-    }
-
-    if (user?.account?.account_id === account_id) {
-      newSideNav.push({
-        href: `/api/.ory/ui/settings`,
-        title: "Security",
-        active: false,
-      });
     }
 
     setSideNavLinks(newSideNav);

@@ -39,13 +39,19 @@ async function listRepositoriesHandler(
     throw new NotFoundError(`Account with ID ${account_id} not found`);
   }
 
-  const repositories = await getRepositoriesByAccount(account_id as string);
+  const repositories: Repository[] = await getRepositoriesByAccount(
+    account_id as string
+  );
 
   const filteredRepositories = repositories.filter((repository) => {
     return isAuthorized(session, repository, Actions.ListRepository);
   });
 
-  res.status(StatusCodes.OK).json({ repositories: filteredRepositories });
+  const response: RepositoryList = {
+    repositories: filteredRepositories,
+  };
+
+  res.status(StatusCodes.OK).json(response);
 }
 
 /**

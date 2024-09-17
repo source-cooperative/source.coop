@@ -97,7 +97,7 @@ export function Layout({
                 </Alert>
               );
             })}
-            {pendingInvitations.length > 0 ? (
+            {pendingInvitations?.length > 0 ? (
               <Alert variant="info">
                 <SourceLink href={`/${user?.account?.account_id}/sc.manage`}>
                   {`You have ${pendingInvitations.length} pending invitation(s).`}

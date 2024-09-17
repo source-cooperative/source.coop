@@ -12,12 +12,21 @@ import { FlagsForm } from "@/components/account/FlagsForm";
 import { APIKeyForm } from "@/components/account/APIKeyForm";
 import { APIKeyList } from "@/components/account/APIKeyList";
 import { Invitations } from "@/components/account/Invitations";
+import { BrowserSettings } from "@/components/account/BrowserSettings";
+import { useState, useEffect } from "react";
 
 export default function ManageAccount() {
   const router = useRouter();
   const { account_id } = router.query;
+
+  const [accountId, setAccountId] = useState<string>(account_id as string);
+
+  useEffect(() => {
+    setAccountId(account_id as string);
+  }, [account_id]);
+
   const sideNavLinks = AccountSideNavLinks({
-    account_id: account_id as string,
+    account_id: accountId,
   });
 
   const { isLoading: _profileIsLoading, error: profileError } = useSWR<
@@ -48,26 +57,27 @@ export default function ManageAccount() {
           }}
         >
           <Box sx={{ gridColumn: "1 / -1" }}>
-            <AccountObject account_id={account_id as string} />
+            <AccountObject account_id={accountId} />
           </Box>
-          <Invitations account_id={account_id as string} />
+          <Invitations account_id={accountId} />
           <Box sx={{ gridColumn: "1 / -1" }}>
-            <EditProfileForm account_id={account_id as string} />
+            <EditProfileForm account_id={accountId} />
           </Box>
 
           <Box sx={{ gridColumn: "1" }}>
-            <APIKeyForm account_id={account_id} />
+            <APIKeyForm account_id={accountId} />
           </Box>
           <Box
             sx={{
               gridColumn: ["span 1", "span 2", "span 2", "span 3"],
-              gridRow: "span 4",
+              gridRow: "span 5",
             }}
           >
-            <APIKeyList account_id={account_id} />
+            <APIKeyList account_id={accountId} />
           </Box>
-          <FlagsForm account_id={account_id as string} />
-          <DangerBox account_id={account_id as string} />
+          <BrowserSettings account_id={accountId} />
+          <FlagsForm account_id={accountId} />
+          <DangerBox account_id={accountId} />
         </Grid>
       </Layout>
     </>

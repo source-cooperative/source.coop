@@ -95,8 +95,16 @@ export function Invitations({ account_id }: { account_id: string }) {
                   <Box sx={{ gridColumn: ["span 2", "1", "1", "1"] }}>
                     <Text sx={{ fontWeight: "body", fontSize: 1 }}>
                       Invited to{" "}
-                      <SourceLink href={`/${invitation.membership_account_id}`}>
+                      <SourceLink
+                        href={
+                          invitation.repository_id
+                            ? `/repositories/${invitation.membership_account_id}/${invitation.repository_id}/description`
+                            : `/${invitation.membership_account_id}`
+                        }
+                      >
                         @{invitation.membership_account_id}
+                        {invitation.repository_id &&
+                          `/${invitation.repository_id}`}
                       </SourceLink>{" "}
                       on{" "}
                       {new Date(invitation.state_changed).toLocaleDateString(

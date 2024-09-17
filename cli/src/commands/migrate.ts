@@ -62,14 +62,16 @@ export async function migrate(inputDir: string, outputDir: string) {
 
   for (const account of accounts) {
     var profile: AccountProfile = {
-      name: account.account_type == "organization" ? account.name : "",
+      name: account.account_type == "organization" ? account.name : "Unknown",
     };
 
     if (
       account.account_type == "organization" &&
       account.description !== null
     ) {
-      profile.bio = account.description;
+      if (profile && profile.bio && profile.bio.length > 0) {
+        profile.bio = account.description;
+      }
     }
 
     var newAccount = {
@@ -81,7 +83,7 @@ export async function migrate(inputDir: string, outputDir: string) {
       disabled: account.disabled,
       profile: profile,
       identity_id: account.identity_id,
-      flags: [],
+      flags: [AccountFlags.CREATE_ORGANIZATIONS],
     };
 
     newAccounts.push(newAccount);
@@ -103,8 +105,10 @@ export async function migrate(inputDir: string, outputDir: string) {
       " " +
       identity["traits"]["name"]["last_name"];
 
-    if (identity["traits"]["bio"] !== null) {
-      account.profile.bio = identity["traits"]["bio"];
+    if (identity["traits"]["bio"]) {
+      if (identity["traits"]["bio"].length > 0) {
+        account.profile.bio = identity["traits"]["bio"];
+      }
     }
 
     account.profile.location = identity["traits"]["country"];
@@ -116,8 +120,6 @@ export async function migrate(inputDir: string, outputDir: string) {
           flags.push(AccountFlags.CREATE_REPOSITORIES);
         } else if (flag === "admin") {
           flags.push(AccountFlags.ADMIN);
-        } else if (flag === "create_organizations") {
-          flags.push(AccountFlags.CREATE_ORGANIZATIONS);
         }
       }
       account.flags = flags;
@@ -234,9 +236,11 @@ export async function migrate(inputDir: string, outputDir: string) {
           ? RepositoryFeatured.Featured
           : RepositoryFeatured.NotFeatured,
       meta: {
-        description: repository.meta.description,
+        description: repository.meta.description
+          ? repository.meta.description
+          : "No Description Provided",
         title: repository.meta.title,
-        tags: repository.meta.tags,
+        tags: repository.meta.tags.join(","),
       },
       published: repository.meta.published,
       disabled: repository.disabled,
