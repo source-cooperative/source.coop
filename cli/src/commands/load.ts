@@ -50,14 +50,18 @@ async function loadAndValidateJson<T extends z.ZodType>(
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, PutCommand } from "@aws-sdk/lib-dynamodb";
 
+function sleep(ms: number) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
 async function batchInsertIntoDynamoDB(
   tableName: string,
   items: Repository[] | Account[] | Membership[] | APIKey[] | DataConnection[]
 ): Promise<void> {
   // Create a DynamoDB client
-  const client = new DynamoDBClient({
-    endpoint: "http://localhost:8000",
-  });
+  const client = new DynamoDBClient({});
   const docClient = DynamoDBDocumentClient.from(client);
   for (const item of items) {
     const params = {
@@ -68,6 +72,7 @@ async function batchInsertIntoDynamoDB(
     try {
       const command = new PutCommand(params);
       await docClient.send(command);
+      await sleep(40);
     } catch (error) {
       console.error(`Error inserting item into ${tableName}:`, error);
       console.log(item);

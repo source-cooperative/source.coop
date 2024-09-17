@@ -3,9 +3,6 @@
 import dotenv from "dotenv";
 
 import { Command } from "commander";
-import * as fs from "fs";
-import * as path from "path";
-import { APIKeyRequestSchema, APIKeyRequest } from "@/api/types";
 import {
   dumpOryIdentities,
   dumpOryRelationships,

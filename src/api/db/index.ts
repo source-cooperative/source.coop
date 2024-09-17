@@ -52,6 +52,11 @@ import logger from "@/utils/logger";
 const isProd = process.env.NODE_ENV === "production";
 
 const client = new DynamoDBClient({
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  },
+  region: process.env.AWS_DEFAULT_REGION,
   endpoint: isProd ? undefined : "http://localhost:8000/",
 });
 const docClient = DynamoDBDocumentClient.from(client);

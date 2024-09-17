@@ -9,6 +9,7 @@ dotenv.config();
 const envSchema = z.object({
   ORY_SDK_URL: z.optional(z.string().url()),
   ORY_ACCESS_TOKEN: z.optional(z.string()),
+  ENDPOINT_URL: z.optional(z.string().url()),
 });
 
 // Validate environment variables
