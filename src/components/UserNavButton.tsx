@@ -13,6 +13,18 @@ import {
   UserSession,
 } from "@/api/types";
 
+import { Configuration, FrontendApi, Session, Identity } from "@ory/client";
+const ory = new FrontendApi(
+  new Configuration({
+    basePath: "https://xenodochial-leavitt-0608bs4zxv.projects.oryapis.com",
+    accessToken: process.env.ORY_ACCESS_TOKEN,
+    baseOptions: {
+      withCredentials: true, // Important for CORS
+      timeout: 30000, // 30 seconds
+    },
+  })
+);
+
 function DownArrow({ ...props }) {
   return (
     <>
@@ -101,6 +113,17 @@ export default function UserNavButton() {
   >({ path: `/api/.ory/self-service/logout/browser` }, { refreshInterval: 0 });
 
   useEffect(() => {
+    ory
+      .createBrowserLoginFlow()
+      .then(({ data }) => {
+        console.log(data);
+      })
+      .catch((err) => {
+        console.error(err);
+      });
+  }, [router]);
+
+  useEffect(() => {
     if (user && !user.account) {
       router.push("/complete-signup");
       return;
@@ -128,7 +151,7 @@ export default function UserNavButton() {
   if (!user) {
     return (
       <Box sx={{ justifySelf: "center", display: "inline-block" }}>
-        <Button variant="nav" href={`/api/.ory/ui/login`}>
+        <Button variant="nav" href={`${process.env.ORY_SDK_URL}/ui/login`}>
           Sign In / Register
         </Button>
       </Box>

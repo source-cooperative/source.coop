@@ -2,7 +2,7 @@ import { useRouter } from "next/router";
 import { Layout } from "@/components/Layout";
 import RepositoryBrowser from "@/components/repository/RepositoryBrowser";
 import { RepositoryListing } from "@/components/repository/RepositoryListing";
-import { Divider } from "theme-ui";
+import { Grid } from "theme-ui";
 import { RepositorySideNavLinks } from "@/components/RepositorySideNav";
 import { useState, useEffect } from "react";
 import useSWR from "swr";
@@ -45,9 +45,13 @@ export default function RepositoryDetail() {
       notFound={repositoryError && repositoryError.status === 404}
       sideNavLinks={sideNavLinks}
     >
-      <RepositoryListing repository={repository} truncate={false} />
-      <Divider />
-      <RepositoryBrowser account_id={accountId} repository_id={repositoryId} />
+      <Grid sx={{ gap: 4 }}>
+        <RepositoryListing repository={repository} truncate={false} />
+        <RepositoryBrowser
+          account_id={accountId}
+          repository_id={repositoryId}
+        />
+      </Grid>
     </Layout>
   );
 }
