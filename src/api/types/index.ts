@@ -152,6 +152,11 @@ export enum RepositoryState {
   Unlisted = "unlisted",
 }
 
+export enum RepositoryPermissions {
+  Write = "write",
+  Read = "read",
+}
+
 export const RepositoryStateSchema = z
   .nativeEnum(RepositoryState, {
     errorMap: () => ({ message: "Invalid repository mode" }),
@@ -404,6 +409,13 @@ export const MembershipRoleSchema = z
     errorMap: () => ({ message: "Invalid membership role" }),
   })
   .openapi("MembershipRole");
+
+export const RepositoryPermissionsResponseSchema = z.array(
+  z.nativeEnum(RepositoryPermissions)
+);
+export type RepositoryPermissionsResponse = z.infer<
+  typeof RepositoryPermissionsResponseSchema
+>;
 
 export enum MembershipState {
   Invited = "invited",

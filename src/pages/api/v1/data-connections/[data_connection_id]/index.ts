@@ -54,23 +54,28 @@ async function getDataConnectionHandler(
     );
   }
 
-  if (!isAuthorized(session, dataConnection, Actions.GetDataConnection)) {
-    throw new UnauthorizedError();
-  }
+  const { authorization } = req.headers;
+  if (authorization === process.env.SOURCE_KEY) {
+    res.status(StatusCodes.OK).json(dataConnection);
+  } else {
+    if (!isAuthorized(session, dataConnection, Actions.GetDataConnection)) {
+      throw new UnauthorizedError();
+    }
 
-  if (
-    !isAuthorized(
-      session,
-      dataConnection,
-      Actions.ViewDataConnectionCredentials
-    )
-  ) {
-    dataConnection = DataConnectionSchema.omit({
-      authentication: true,
-    }).parse(dataConnection);
-  }
+    if (
+      !isAuthorized(
+        session,
+        dataConnection,
+        Actions.ViewDataConnectionCredentials
+      )
+    ) {
+      dataConnection = DataConnectionSchema.omit({
+        authentication: true,
+      }).parse(dataConnection);
+    }
 
-  res.status(StatusCodes.OK).json(dataConnection);
+    res.status(StatusCodes.OK).json(dataConnection);
+  }
 }
 
 /**

@@ -61,6 +61,10 @@ async function batchInsertIntoDynamoDB(
   items: Repository[] | Account[] | Membership[] | APIKey[] | DataConnection[]
 ): Promise<void> {
   // Create a DynamoDB client
+  console.log(process.env.AWS_ENDPOINT_URL);
+  console.log(process.env.AWS_ACCESS_KEY_ID);
+  console.log(process.env.AWS_SECRET_ACCESS_KEY);
+  console.log(process.env.AWS_DEFAULT_REGION);
   const client = new DynamoDBClient({});
   const docClient = DynamoDBDocumentClient.from(client);
   for (const item of items) {

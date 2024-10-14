@@ -12,18 +12,29 @@ import {
   MembershipState,
   UserSession,
 } from "@/api/types";
+import { edgeConfig } from "@ory/integrations/next";
 
 import { Configuration, FrontendApi, Session, Identity } from "@ory/client";
-const ory = new FrontendApi(
-  new Configuration({
-    basePath: "https://xenodochial-leavitt-0608bs4zxv.projects.oryapis.com",
-    accessToken: process.env.ORY_ACCESS_TOKEN,
-    baseOptions: {
-      withCredentials: true, // Important for CORS
-      timeout: 30000, // 30 seconds
-    },
-  })
-);
+
+const baseUrl: string = process.env.NEXT_PUBLIC_IS_PROD
+  ? process.env.NEXT_PUBLIC_ORY_SDK_URL
+  : "http://localhost:3000/api/.ory";
+
+let ory: FrontendApi;
+if (process.env.NEXT_PUBLIC_IS_PROD) {
+  ory = new FrontendApi(
+    new Configuration({
+      basePath: process.env.NEXT_PUBLIC_ORY_SDK_URL,
+      accessToken: process.env.ORY_ACCESS_TOKEN,
+      baseOptions: {
+        withCredentials: true, // Important for CORS
+        timeout: 30000, // 30 seconds
+      },
+    })
+  );
+} else {
+  ory = new FrontendApi(new Configuration(edgeConfig));
+}
 
 function DownArrow({ ...props }) {
   return (
@@ -95,6 +106,7 @@ export default function UserNavButton() {
   const router = useRouter();
   const [expanded, setExpanded] = useState(false);
   const [colorMode, setColorMode] = useColorMode();
+  const [logoutUrl, setLogoutUrl] = useState<string | null>(null);
 
   const {
     data: user,
@@ -107,21 +119,14 @@ export default function UserNavButton() {
     }
   );
 
-  const { data: logoutUrl } = useSWR<
-    { logout_url: string; logout_token: string },
-    ClientError
-  >({ path: `/api/.ory/self-service/logout/browser` }, { refreshInterval: 0 });
-
   useEffect(() => {
-    ory
-      .createBrowserLoginFlow()
-      .then(({ data }) => {
-        console.log(data);
-      })
-      .catch((err) => {
-        console.error(err);
-      });
-  }, [router]);
+    if (!user) {
+      return;
+    }
+    ory.createBrowserLogoutFlow().then(({ data }) => {
+      setLogoutUrl(data.logout_url);
+    });
+  }, [router, user]);
 
   useEffect(() => {
     if (user && !user.account) {
@@ -151,7 +156,7 @@ export default function UserNavButton() {
   if (!user) {
     return (
       <Box sx={{ justifySelf: "center", display: "inline-block" }}>
-        <Button variant="nav" href={`${process.env.ORY_SDK_URL}/ui/login`}>
+        <Button variant="nav" href={`${baseUrl}/ui/login`}>
           Sign In / Register
         </Button>
       </Box>
@@ -214,7 +219,7 @@ export default function UserNavButton() {
               </Button>
             )}
 
-            <Button variant="nav" href={logoutUrl?.logout_url}>
+            <Button variant="nav" href={logoutUrl}>
               Sign Out
             </Button>
             <Button

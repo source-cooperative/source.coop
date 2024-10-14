@@ -53,10 +53,10 @@ const isProd = process.env.NODE_ENV === "production";
 
 const client = new DynamoDBClient({
   credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID ?? "bar",
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY ?? "foo",
   },
-  region: process.env.AWS_DEFAULT_REGION,
+  region: process.env.AWS_DEFAULT_REGION ?? "us-east-1",
 });
 const docClient = DynamoDBDocumentClient.from(client);
 
@@ -174,7 +174,6 @@ export async function getFeaturedRepositories(): Promise<Repository[]> {
 
   try {
     const response = await client.send(command);
-    console.log(response);
     return response.Items?.map((item) => item as Repository) ?? [];
   } catch (e) {
     logger.error(e);
