@@ -24,7 +24,7 @@ let ory: FrontendApi;
 if (process.env.NEXT_PUBLIC_IS_PROD) {
   ory = new FrontendApi(
     new Configuration({
-      basePath: process.env.NEXT_PUBLIC_ORY_SDK_URL,
+      basePath: baseUrl,
       accessToken: process.env.ORY_ACCESS_TOKEN,
       baseOptions: {
         withCredentials: true, // Important for CORS

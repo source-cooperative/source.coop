@@ -28,12 +28,27 @@ import { UserSession } from "@/api/types";
 import { ClientError } from "@/lib/client/accounts";
 
 import { COUNTRIES } from "@/lib/constants";
+import { edgeConfig } from "@ory/integrations/next";
 
-const frontend = new FrontendApi(
-  new Configuration({
-    basePath: `/api/.ory`,
-  })
-);
+const baseUrl: string = process.env.NEXT_PUBLIC_IS_PROD
+  ? process.env.NEXT_PUBLIC_ORY_SDK_URL
+  : "http://localhost:3000/api/.ory";
+
+let ory: FrontendApi;
+if (process.env.NEXT_PUBLIC_IS_PROD) {
+  ory = new FrontendApi(
+    new Configuration({
+      basePath: baseUrl,
+      accessToken: process.env.ORY_ACCESS_TOKEN,
+      baseOptions: {
+        withCredentials: true, // Important for CORS
+        timeout: 30000, // 30 seconds
+      },
+    })
+  );
+} else {
+  ory = new FrontendApi(new Configuration(edgeConfig));
+}
 
 export async function createAccount(
   accountCreationRequest: AccountCreationRequest

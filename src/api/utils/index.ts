@@ -222,7 +222,7 @@ export function isAdmin(session?: UserSession | null): boolean {
 
 export async function getEmail(identity_id: string): Promise<string | null> {
   const response = await fetch(
-    `${process.env.ORY_SDK_URL}/admin/identities/${identity_id}`,
+    `${process.env.NEXT_PUBLIC_ORY_SDK_URL}/admin/identities/${identity_id}`,
     {
       headers: {
         Authorization: `Bearer ${process.env.ORY_ACCESS_TOKEN}`,
