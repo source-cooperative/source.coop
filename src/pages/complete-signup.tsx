@@ -109,7 +109,7 @@ export default function AccountForm() {
   };
 
   useEffect(() => {
-    frontend.createBrowserLogoutFlow().then((res) => {
+    ory.createBrowserLogoutFlow().then((res) => {
       setLogoutUrl(res.data.logout_url);
     });
   }, []);
