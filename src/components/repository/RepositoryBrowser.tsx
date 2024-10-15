@@ -19,8 +19,8 @@ const s3Client = new S3Client({
   region: "us-east-1",
   forcePathStyle: true,
   credentials: {
-    accessKeyId: "foo",
-    secretAccessKey: "bar",
+    accessKeyId: "anonymous",
+    secretAccessKey: "anonymous",
   },
 });
 
