@@ -112,7 +112,7 @@ export function AccountSideNavLinks({ account_id }: { account_id: string }) {
 
       if (user?.account?.account_id === account_id) {
         newSideNav.push({
-          href: `/api/.ory/ui/settings`,
+          href: `${process.env.NEXT_PUBLIC_ORY_SDK_URL}/ui/settings`,
           title: "Security",
           active: false,
         });
