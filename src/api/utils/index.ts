@@ -134,7 +134,7 @@ async function authenticateWithCookie(
 
   // Make a request to Ory to validate the session
   const response = await fetch(
-    `${process.env.NEXT_PUBLIC_BASE_URL}/api/.ory/sessions/whoami`,
+    `${process.env.NEXT_PUBLIC_ORY_SDK_URL}/sessions/whoami`,
     {
       method: "GET",
       headers: { Cookie: cookieHeader },
