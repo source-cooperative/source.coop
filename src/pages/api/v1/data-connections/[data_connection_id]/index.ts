@@ -55,6 +55,8 @@ async function getDataConnectionHandler(
   }
 
   const { authorization } = req.headers;
+  console.log("Env Key: " + process.env.SOURCE_KEY);
+  console.log("Recevied: " + authorization);
   if (authorization === process.env.SOURCE_KEY) {
     res.status(StatusCodes.OK).json(dataConnection);
   } else {
