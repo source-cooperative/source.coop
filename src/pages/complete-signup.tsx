@@ -53,7 +53,6 @@ if (process.env.NEXT_PUBLIC_IS_PROD) {
 export async function createAccount(
   accountCreationRequest: AccountCreationRequest
 ): Promise<null> {
-  console.log(accountCreationRequest);
   return null;
 }
 
