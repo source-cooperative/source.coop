@@ -227,12 +227,6 @@ export default function AccountForm() {
               {submitting ? "Submitting..." : "Complete Registration"}
             </SourceButton>
           </Box>
-
-          <Box sx={{ textAlign: "center" }}>
-            <SourceButton disabled={!logoutUrl} href={logoutUrl}>
-              Log Out
-            </SourceButton>
-          </Box>
         </Grid>
       </Box>
       <Box
