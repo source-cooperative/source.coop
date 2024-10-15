@@ -1,40 +1,69 @@
-import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { Layout } from "@/components/Layout";
 import { Markdown } from "@/components/viewers/Markdown";
-import { Divider } from "theme-ui";
-import { RepositoryListing } from "@/components/RepositoryListing";
-
-import { useRepository, useRepositorySideNav } from "@/lib/api";
+import { RepositoryListing } from "@/components/repository/RepositoryListing";
+import { getRepository } from "@/lib/client/repositories";
+import { RepositorySideNavLinks } from "@/components/RepositorySideNav";
+import { useState, useEffect } from "react";
+import useSWR from "swr";
+import { Repository } from "@/api/types";
+import { ClientError } from "@/lib/client/accounts";
+import { Grid, Box } from "theme-ui";
 
 export default function RepositoryDetail() {
   const router = useRouter();
 
-  const { repository, isLoading, isError } = useRepository({
-    account_id: router.query.account_id,
-    repository_id: router.query.repository_id,
-  });
+  const { account_id, repository_id } = router.query;
+  const [accountId, setAccountId] = useState<string>(account_id as string);
+  const [repositoryId, setRepositoryId] = useState<string>(
+    repository_id as string
+  );
 
-  const { sideNavLinks } = useRepositorySideNav({
-    account_id: router.query.account_id,
-    repository_id: router.query.repository_id,
-    active_page: "readme",
+  useEffect(() => {
+    setAccountId(account_id as string);
+    setRepositoryId(repository_id as string);
+  }, [account_id, repository_id]);
+
+  const {
+    data: repository,
+    mutate: refreshRepository,
+    isLoading: repositoryIsLoading,
+    error: repositoryError,
+  } = useSWR<Repository, ClientError>(
+    account_id && repository_id
+      ? { path: `/api/v1/repositories/${account_id}/${repository_id}` }
+      : null,
+    {
+      refreshInterval: 0,
+    }
+  );
+
+  const sideNavLinks = RepositorySideNavLinks({
+    account_id: accountId,
+    repository_id: repositoryId,
   });
 
   return (
     <Layout
-      notFound={isError && isError.status === 404}
+      notFound={repositoryError && repositoryError.status === 404}
       sideNavLinks={sideNavLinks}
     >
-      <RepositoryListing repository={repository} truncate={false} />
-      <Divider />
-      <Markdown
-        url={
-          repository
-            ? `${process.env.NEXT_PUBLIC_S3_ENDPOINT}/${repository.account_id}/${repository.repository_id}/README.md`
-            : null
-        }
-      />
+      <Grid
+        sx={{
+          gap: 4,
+        }}
+      >
+        <Box sx={{ gridColumn: "1 / -1" }}>
+          <RepositoryListing repository={repository} truncate={false} />
+        </Box>
+        {repository ? (
+          <Markdown
+            url={`${process.env.NEXT_PUBLIC_S3_ENDPOINT}/${accountId}/${repositoryId}/README.md`}
+          />
+        ) : (
+          <></>
+        )}
+      </Grid>
     </Layout>
   );
 }

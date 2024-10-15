@@ -1,37 +1,57 @@
-import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { Layout } from "@/components/Layout";
-import RepositoryBrowser from "@/components/RepositoryBrowser";
-import { getRepositorySideNavLinks } from "@/lib/sidenav/repositories";
-import { RepositoryListing } from "@/components/RepositoryListing";
-import { Divider } from "theme-ui";
-
-import { useRepository, useRepositorySideNav } from "@/lib/api";
+import RepositoryBrowser from "@/components/repository/RepositoryBrowser";
+import { RepositoryListing } from "@/components/repository/RepositoryListing";
+import { Grid } from "theme-ui";
+import { RepositorySideNavLinks } from "@/components/RepositorySideNav";
+import { useState, useEffect } from "react";
+import useSWR from "swr";
+import { Repository } from "@/api/types";
+import { ClientError } from "@/lib/client/accounts";
 
 export default function RepositoryDetail() {
   const router = useRouter();
 
-  const {
-    account_id,
-    repository_id
-  } = router.query;
+  const { account_id, repository_id } = router.query;
+  const [accountId, setAccountId] = useState<string>(account_id as string);
+  const [repositoryId, setRepositoryId] = useState<string>(
+    repository_id as string
+  );
 
-  const { repository, isError } = useRepository({
-    account_id: router.query.account_id,
-    repository_id: router.query.repository_id
-  })
+  useEffect(() => {
+    setAccountId(account_id as string);
+    setRepositoryId(repository_id as string);
+  }, [account_id, repository_id]);
 
-  const { sideNavLinks } = useRepositorySideNav({
-    account_id: router.query.account_id,
-    repository_id: router.query.repository_id,
-    active_page: "browse"
-  })
+  const { data: repository, error: repositoryError } = useSWR<
+    Repository,
+    ClientError
+  >(
+    account_id && repository_id
+      ? { path: `/api/v1/repositories/${account_id}/${repository_id}` }
+      : null,
+    {
+      refreshInterval: 0,
+    }
+  );
+
+  const sideNavLinks = RepositorySideNavLinks({
+    account_id: accountId,
+    repository_id: repositoryId,
+  });
 
   return (
-    <Layout notFound={isError && isError.status === 404} sideNavLinks={sideNavLinks}>
-      <RepositoryListing repository={repository} truncate={false} />
-      <Divider />
-      <RepositoryBrowser account_id={account_id} repository_id={repository_id}/>
+    <Layout
+      notFound={repositoryError && repositoryError.status === 404}
+      sideNavLinks={sideNavLinks}
+    >
+      <Grid sx={{ gap: 4 }}>
+        <RepositoryListing repository={repository} truncate={false} />
+        <RepositoryBrowser
+          account_id={accountId}
+          repository_id={repositoryId}
+        />
+      </Grid>
     </Layout>
-  )
+  );
 }

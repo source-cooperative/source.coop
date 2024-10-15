@@ -1,0 +1,25 @@
+{
+  "name": "source-cooperative-cli",
+  "version": "0.1.0",
+  "description": "CLI Tool for interacting with Source Cooperative",
+  "main": "dist/cli/src/index.js",
+  "bin": {
+    "sc": "./dist/cli/src/index.js"
+  },
+  "scripts": {
+    "start": "node dist/cli/src/index.js",
+    "build": "tsc -p tsconfig.json && tsc-alias",
+    "dev": "ts-node -r tsconfig-paths/register src/index.ts",
+    "prepublish": "npm run build"
+  },
+  "dependencies": {
+    "commander": "^8.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^16.18.106",
+    "ts-node": "^10.9.2",
+    "tsc-alias": "^1.8.10",
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "^4.9.5"
+  }
+}

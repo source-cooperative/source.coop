@@ -1,0 +1,163 @@
+[
+  {
+    "repository_id": "regular-user-repo-id",
+    "account_id": "create-repositories-user",
+    "state": "listed",
+    "data_mode": "open",
+    "featured": 0,
+    "meta": {
+      "description": "Regular user's repository",
+      "title": "Regular",
+      "tags": ["mock"]
+    },
+    "published": "2020-01-01T00:00:00Z",
+    "disabled": false,
+    "data": {
+      "primary_mirror": "primary-data-connection",
+      "mirrors": {
+        "primary-data-connection": {
+          "data_connection_id": "primary-data-connection",
+          "prefix": "create-repositories-user/regular-user-repo-id/"
+        }
+      }
+    }
+  },
+  {
+    "repository_id": "org-repo-id",
+    "account_id": "organization",
+    "state": "listed",
+    "data_mode": "open",
+    "featured": 0,
+    "meta": {
+      "description": "Organization's repository",
+      "title": "Organization",
+      "tags": ["mock"]
+    },
+    "published": "2020-01-01T00:00:00Z",
+    "disabled": false,
+    "data": {
+      "primary_mirror": "primary-data-connection",
+      "mirrors": {
+        "primary-data-connection": {
+          "data_connection_id": "primary-data-connection",
+          "prefix": "organization/org-repo-id/"
+        }
+      }
+    }
+  },
+  {
+    "repository_id": "disabled-org-repo-id",
+    "account_id": "organization",
+    "state": "listed",
+    "data_mode": "open",
+    "featured": 0,
+    "meta": {
+      "description": "Disabled Organization's repository",
+      "title": "Disabled Repo",
+      "tags": ["mock"]
+    },
+    "published": "2020-01-01T00:00:00Z",
+    "disabled": true,
+    "data": {
+      "primary_mirror": "primary-data-connection",
+      "mirrors": {
+        "primary-data-connection": {
+          "data_connection_id": "primary-data-connection",
+          "prefix": "organization/disabled-org-repo-id/"
+        }
+      }
+    }
+  },
+  {
+    "repository_id": "unlisted-org-repo-id",
+    "account_id": "organization",
+    "state": "unlisted",
+    "data_mode": "open",
+    "featured": 0,
+    "meta": {
+      "description": "Unlisted Organization's repository",
+      "title": "Unlisted Repo",
+      "tags": ["mock"]
+    },
+    "published": "2020-01-01T00:00:00Z",
+    "disabled": false,
+    "data": {
+      "primary_mirror": "primary-data-connection",
+      "mirrors": {
+        "primary-data-connection": {
+          "data_connection_id": "primary-data-connection",
+          "prefix": "organization/unlisted-org-repo-id/"
+        }
+      }
+    }
+  },
+  {
+    "repository_id": "featured-org-repo-id",
+    "account_id": "organization",
+    "state": "listed",
+    "data_mode": "open",
+    "featured": 1,
+    "meta": {
+      "description": "Featured Organization's repository",
+      "title": "Featured Repo",
+      "tags": ["mock"]
+    },
+    "published": "2020-01-01T00:00:00Z",
+    "disabled": false,
+    "data": {
+      "primary_mirror": "primary-data-connection",
+      "mirrors": {
+        "primary-data-connection": {
+          "data_connection_id": "primary-data-connection",
+          "prefix": "organization/featured-org-repo-id/"
+        }
+      }
+    }
+  },
+  {
+    "repository_id": "private-org-repo-id",
+    "account_id": "organization",
+    "state": "listed",
+    "data_mode": "private",
+    "featured": 0,
+    "meta": {
+      "description": "Private Organization's repository",
+      "title": "Private Repo",
+      "tags": ["mock"]
+    },
+    "published": "2020-01-01T00:00:00Z",
+    "disabled": false,
+    "data": {
+      "primary_mirror": "primary-data-connection",
+      "mirrors": {
+        "primary-data-connection": {
+          "data_connection_id": "primary-data-connection",
+          "prefix": "organization/private-org-repo-id/"
+        }
+      }
+    }
+  },
+  {
+    "repository_id": "subscription-org-repo-id",
+    "account_id": "organization",
+    "state": "listed",
+    "data_mode": "subscription",
+    "featured": 0,
+    "meta": {
+      "description": "Subscription Organization's repository",
+      "title": "Subscription Repo",
+      "tags": ["mock"]
+    },
+    "published": "2020-01-01T00:00:00Z",
+    "disabled": false,
+    "data": {
+      "primary_mirror": "primary-data-connection",
+      "mirrors": {
+        "primary-data-connection": {
+          "data_connection_id": "primary-data-connection",
+          "prefix": "organization/subscription-org-repo-id/"
+        }
+      }
+    }
+  }
+]

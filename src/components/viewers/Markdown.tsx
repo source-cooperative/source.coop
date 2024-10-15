@@ -11,6 +11,7 @@ import { mdxOptions } from "@/lib/md";
 import Skeleton from "react-loading-skeleton";
 import { Heading, Paragraph } from "theme-ui";
 import SourceLink from "../SourceLink";
+import { Grid, Text, Box } from "theme-ui";
 
 export function Markdown({ url }) {
   const [mdxModule, setMdxModule] = useState(null);
@@ -41,26 +42,39 @@ export function Markdown({ url }) {
 
   if (notFound) {
     return (
-      <>
-        <Heading as="h1">This Repository Does Not Contain a README</Heading>
-        <Paragraph>
-          If you are the owner of this repository, follow the instructions{" "}
-          <SourceLink
-            href={
-              "https://github.com/radiantearth/source-cooperative/wiki/Repositories#readme-markdown-files"
-            }
-          >
-            here
-          </SourceLink>{" "}
-          to create a README.md
-        </Paragraph>
-      </>
+      <Box>
+        <Text variant="formTitle">README</Text>
+        <Grid variant="form">
+          <Box variant="cards.componentMessage">
+            <Text>
+              This Repository Does Not Contain a README. If you are the owner of
+              this repository, follow the instructions{" "}
+              <SourceLink
+                href={
+                  "https://github.com/radiantearth/source-cooperative/wiki/Repositories#readme-markdown-files"
+                }
+              >
+                here
+              </SourceLink>{" "}
+              to create a README.md
+            </Text>
+          </Box>
+        </Grid>
+      </Box>
     );
   }
 
-  if (!mdxModule) {
-    return <Skeleton count={10} />;
-  } else {
-    return <Content />;
+  if (mdxModule) {
+    return (
+      <Box>
+        <Content />
+      </Box>
+    );
   }
+
+  return (
+    <Box>
+      <Skeleton count={10} />
+    </Box>
+  );
 }

@@ -59,8 +59,8 @@ export default {
         purple: "#bc85d9",
         pink: "#e587b6",
         grey: "#a9b4c4",
-      }
-    }
+      },
+    },
   },
   text: {
     fontSize: 1,
@@ -68,13 +68,29 @@ export default {
       fontSize: 0,
       fontWeight: "body",
       fontStyle: "normal",
-      fontFamily: "mono"
+      fontFamily: "mono",
     },
     paragraph: {
       mt: 2,
       mb: 1,
       fontSize: 1,
-      lineHeight: "1.5em"
+      lineHeight: "1.5em",
+    },
+    formTitle: {
+      fontSize: 3,
+      fontFamily: "mono",
+      fontWeight: "bold",
+    },
+    formLabel: {
+      fontSize: 0,
+      fontFamily: "mono",
+      fontWeight: "body",
+    },
+    formError: {
+      fontSize: 0,
+      color: "red",
+      fontFamily: "mono",
+      fontWeight: "body",
     },
     description: {
       fontSize: 1,
@@ -94,7 +110,7 @@ export default {
       fontSize: 0,
       fontWeight: "body",
       fontStyle: "normal",
-      p: 0
+      p: 0,
     },
     title: {
       m: 0,
@@ -104,62 +120,90 @@ export default {
       fontFamily: "mono",
       fontSize: 0,
       fontWeight: "bold",
-      fontStyle: "normal"
-    }
+      fontStyle: "normal",
+    },
   },
   forms: {
     input: {
-      borderColor: 'accent',
-      '&:focus': {
-        borderColor: 'primary',
-        outline: 'none',
+      borderColor: "accent",
+      "&:focus": {
+        borderColor: "primary",
+        outline: "none",
       },
-      backgroundColor: "muted",
+      backgroundColor: "hinted",
       fontFamily: "mono",
       fontSize: 1,
       borderRadius: 0,
       "&:disabled": {
         backgroundColor: "hinted",
-        color: "accent"
-      }
+        color: "accent",
+      },
+    },
+    readonly: {
+      borderColor: "accent",
+      "&:focus": {
+        borderColor: "primary",
+        outline: "none",
+      },
+      backgroundColor: "hinted",
+      fontFamily: "mono",
+      fontSize: 1,
+      borderRadius: 0,
+      "&:disabled": {
+        backgroundColor: "hinted",
+        color: "primary",
+      },
     },
     textarea: {
-      backgroundColor: "muted",
+      backgroundColor: "hinted",
       borderRadius: 0,
-      borderColor: 'accent',
+      borderColor: "accent",
       fontFamily: "mono",
       fontSize: 1,
-      '&:focus': {
-        borderColor: 'primary',
-        outline: 'none',
+      "&:focus": {
+        borderColor: "primary",
+        outline: "none",
       },
       "&:disabled": {
         backgroundColor: "hinted",
-        color: "accent"
+        color: "accent",
       },
-      resize: "none"
+      resize: "none",
     },
     label: {
       fontSize: 0,
       fontFamily: "mono",
-      alignItems: "center"
+      alignItems: "center",
     },
     checkbox: {
       borderRadius: 0,
       border: 1,
-      borderColor: "accent"
+      borderColor: "accent",
     },
     select: {
       fontSize: 1,
       fontFamily: "mono",
       borderRadius: 0,
       borderColor: "accent",
-      backgroundColor: "muted",
+      backgroundColor: "hinted",
       "&:disabled": {
         backgroundColor: "hinted",
-        color: "accent"
-      }
-    }
+        color: "accent",
+      },
+    },
+    minimalSelect: {
+      fontSize: 0,
+      pr: 4,
+      mr: 1,
+      fontFamily: "mono",
+      borderRadius: 0,
+      borderColor: "accent",
+      backgroundColor: "hinted",
+      "&:disabled": {
+        backgroundColor: "hinted",
+        color: "accent",
+      },
+    },
   },
   buttons: {
     primary: {
@@ -175,13 +219,73 @@ export default {
       fontSize: 2,
       fontWeight: "body",
       "&:hover": {
-        color: "highlight"
+        color: "highlight",
       },
       "&:disabled": {
         color: "background",
         backgroundColor: "highlight",
-        cursor: "not-allowed"
-      }
+        cursor: "not-allowed",
+      },
+    },
+    formSubmit: {
+      textTransform: "uppercase",
+      p: 2,
+      m: 0,
+      color: "background",
+      borderRadius: 0,
+      backgroundColor: "primary",
+      cursor: "pointer",
+      fontFamily: "mono",
+      fontSize: 1,
+      fontWeight: "body",
+      "&:hover": {
+        color: "highlight",
+      },
+      "&:disabled": {
+        color: "background",
+        backgroundColor: "highlight",
+        cursor: "not-allowed",
+      },
+    },
+    formDestructive: {
+      textTransform: "uppercase",
+      p: 2,
+      m: 0,
+      color: "background",
+      borderRadius: 0,
+      backgroundColor: "red",
+      cursor: "pointer",
+      fontFamily: "mono",
+      fontSize: 1,
+      fontWeight: "body",
+      "&:hover": {
+        color: "highlight",
+      },
+      "&:disabled": {
+        color: "background",
+        backgroundColor: "highlight",
+        cursor: "not-allowed",
+      },
+    },
+    formSuccess: {
+      textTransform: "uppercase",
+      p: 2,
+      m: 0,
+      color: "background",
+      borderRadius: 0,
+      backgroundColor: "green",
+      cursor: "pointer",
+      fontFamily: "mono",
+      fontSize: 1,
+      fontWeight: "body",
+      "&:hover": {
+        color: "highlight",
+      },
+      "&:disabled": {
+        color: "background",
+        backgroundColor: "highlight",
+        cursor: "not-allowed",
+      },
     },
     success: {
       textTransform: "uppercase",
@@ -196,13 +300,13 @@ export default {
       fontSize: 2,
       fontWeight: "body",
       "&:hover": {
-        color: "highlight"
+        color: "highlight",
       },
       "&:disabled": {
         color: "background",
         backgroundColor: "highlight",
-        cursor: "not-allowed"
-      }
+        cursor: "not-allowed",
+      },
     },
     error: {
       textTransform: "uppercase",
@@ -217,18 +321,18 @@ export default {
       fontSize: 2,
       fontWeight: "body",
       "&:hover": {
-        color: "highlight"
+        color: "highlight",
       },
       "&:disabled": {
         color: "background",
         backgroundColor: "highlight",
-        cursor: "not-allowed"
-      }
+        cursor: "not-allowed",
+      },
     },
     nav: {
       textTransform: "uppercase",
       m: 0,
-      p: [2,2,2,2],
+      p: [2, 2, 2, 2],
       textAlign: "right",
       width: "100%",
       backgroundColor: "primary",
@@ -236,16 +340,16 @@ export default {
       borderRadius: 0,
       cursor: "pointer",
       fontFamily: "mono",
-      fontSize: [0,0,1,1],
+      fontSize: [0, 0, 1, 1],
       fontWeight: "body",
       "&:hover": {
-        color: "highlight"
+        color: "highlight",
       },
       "&:disabled": {
         color: "background",
-        backgroundColor: "highlight"
-      }
-    }
+        backgroundColor: "highlight",
+      },
+    },
   },
   images: {
     profileImage: {
@@ -253,7 +357,7 @@ export default {
       border: "3px solid",
       borderColor: "primary",
       width: "180.6px",
-      height: "180.6px"
+      height: "180.6px",
     },
     navProfileImage: {
       borderRadius: 0,
@@ -261,7 +365,24 @@ export default {
       borderColor: "primary",
       cursor: "pointer",
       width: "50px",
-      height: "50px"
+      height: "50px",
+    },
+  },
+  grids: {
+    form: {
+      gap: 2,
+      borderStyle: "solid",
+      borderWidth: "1px",
+      borderColor: "secondary",
+      backgroundColor: "muted",
+      p: 2,
+      position: "relative",
+      width: "100%",
+      fontFamily: "mono",
+      fontSize: 0,
+    },
+    formField: {
+      textAlign: "left",
     },
   },
   cards: {
@@ -271,7 +392,7 @@ export default {
       textDecoration: "none",
       fontSize: 0,
       fontFamily: "mono",
-      maxWidth: "fit-content"
+      maxWidth: "fit-content",
     },
     blockquote: {
       fontStyle: "italic",
@@ -286,7 +407,53 @@ export default {
       borderColor: "secondary",
       borderStyle: "solid",
       borderWidth: "1px",
-      backgroundColor: "muted"
+      backgroundColor: "muted",
+    },
+    componentMessage: {
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      height: "4em",
+      fontSize: 3,
+      fontFamily: "mono",
+    },
+    formContainer: {
+      width: ["100%", "100%", "50%", "20%"],
+    },
+    formButtonBox: {
+      display: "flex",
+      gap: 2,
+      justifyContent: "right",
+    },
+    formMessageBox: {
+      gridColumn: "1 / -1",
+    },
+    formField: {
+      textAlign: "left",
+    },
+    form: {
+      my: 1,
+      borderStyle: "solid",
+      borderWidth: "1px",
+      borderColor: "secondary",
+      backgroundColor: "muted",
+      p: 2,
+      position: "relative",
+      width: "100%",
+      fontFamily: "mono",
+      overflowWrap: "anywhere",
+      overflowX: "auto",
+      fontSize: 0,
+      pre: {
+        borderWidth: 0,
+        px: 0,
+        transform: "translateY(0em)",
+        overflowWrap: "anywhere",
+        overflowX: "auto",
+        fontFamily: "mono",
+        fontSize: 0,
+        m: 0,
+      },
     },
     code: {
       my: 1,
@@ -309,7 +476,7 @@ export default {
         overflowX: "auto",
         fontFamily: "mono",
         fontSize: 0,
-        m: 0
+        m: 0,
       },
     },
     inlineCode: {
@@ -324,14 +491,14 @@ export default {
       maxWidth: "100%",
       width: "fit-content",
       fontFamily: "mono",
-      fontSize: 0
+      fontSize: 0,
     },
     listing: {
       borderStyle: "none none none solid",
       borderWidth: "0px",
       borderColor: "secondary",
-      pl: 0
-    }
+      pl: 0,
+    },
   },
   alerts: {
     primary: {
@@ -346,6 +513,9 @@ export default {
       color: "text",
       bg: "green",
       fontFamily: "mono",
+      fontSize: 0,
+      p: 1,
+      fontWeight: "bold",
       justifyContent: "center",
       textAlign: "center",
       borderRadius: 0,
@@ -362,6 +532,9 @@ export default {
       color: "text",
       bg: "red",
       fontFamily: "mono",
+      fontSize: 0,
+      p: 1,
+      fontWeight: "bold",
       justifyContent: "center",
       textAlign: "center",
       borderRadius: 0,
@@ -378,15 +551,15 @@ export default {
   links: {
     color: "text",
     "&:hover": {
-      color: "secondary"
+      color: "secondary",
     },
     breadcrumb: {
       color: "secondary",
       "&:hover": {
         textDecoration: "underline",
-        color: "primary"
-      }
-    },  
+        color: "primary",
+      },
+    },
     footer: {
       fontFamily: "mono",
       fontSize: 0,
@@ -396,8 +569,8 @@ export default {
       textDecoration: "underline",
       textTransform: "uppercase",
       "&:hover": {
-        color: "secondary"
-      }
+        color: "secondary",
+      },
     },
     link: {
       cursor: "pointer",
@@ -406,7 +579,7 @@ export default {
       textDecoration: "underline",
       "&:hover": {
         color: "secondary",
-        textDecoration: "underline"
+        textDecoration: "underline",
       },
     },
     tag: {
@@ -420,7 +593,7 @@ export default {
       textTransform: "uppercase",
       "&:hover": {
         color: "text",
-        textDecoration: "underline"
+        textDecoration: "underline",
       },
     },
     navLinkActive: {
@@ -431,7 +604,7 @@ export default {
       textTransform: "uppercase",
       "&:hover": {
         color: "text",
-        textDecoration: "underline"
+        textDecoration: "underline",
       },
     },
     navLinkExpanded: {
@@ -443,9 +616,9 @@ export default {
       textTransform: "uppercase",
       "&:hover": {
         color: "text",
-        textDecoration: "underline"
+        textDecoration: "underline",
       },
-    }
+    },
   },
   layout: {
     container: {
@@ -460,6 +633,11 @@ export default {
       letterSpacing: "body",
       textUnderlineThickness: "max(0.08em, 1px)",
       textUnderlineOffset: "0.15em",
+    },
+    fieldset: {
+      border: 0,
+      p: 0,
+      m: 0,
     },
     ul: {
       mt: 1,
@@ -480,7 +658,7 @@ export default {
       borderColor: "secondary",
       borderWidth: "1px",
       borderStyle: "solid",
-      borderCollapse: "collapse"
+      borderCollapse: "collapse",
     },
     th: {
       backgroundColor: "accent",
@@ -495,19 +673,19 @@ export default {
       borderWidth: "1px",
       borderStyle: "solid",
       "&:nth-child(even)": {
-        backgroundColor: "muted"
-      }
+        backgroundColor: "muted",
+      },
     },
     td: {
       borderColor: "secondary",
       borderWidth: "1px",
       borderStyle: "solid",
-      p: 1
+      p: 1,
     },
   },
   breakpoints: ["40em", "64em", "102em"],
   config: {
-    initialColorModeName: "light",
+    initialColorModeName: "dark",
     printColorModeName: "light",
     useColorSchemeMediaQuery: false,
   },
