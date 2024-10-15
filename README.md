@@ -17,7 +17,7 @@ export BASE_URL=http://localhost:3000
 After having set up your environment variables, run the following command to start the service locally:
 
 ```
-npm run dev
+npm run devaa
 ```
 
 You can now access the service at [http://localhost:3000](http://localhost:3000)
