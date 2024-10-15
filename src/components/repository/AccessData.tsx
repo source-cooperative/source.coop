@@ -128,7 +128,7 @@ export function AccessData({
                 commands instead of the {"--endpoint-url"} parameter)
               </Text>
               <Card variant="code">
-                <Text sx={{ display: "block" }}>[profile sc]</Text>
+                <Text sx={{ display: "block" }}>[sc]</Text>
                 <Text sx={{ display: "block" }}>
                   {"aws_access_key_id=<YOUR_API_ACCESS_KEY_ID_HERE>"}
                 </Text>
