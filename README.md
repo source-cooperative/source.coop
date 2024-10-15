@@ -1,4 +1,4 @@
-## Environment Variable Setup
+ ## Environment Variable Setup
 
 Run the following terminal commands to set up your environment variables.
 
