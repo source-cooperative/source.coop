@@ -59,6 +59,7 @@ async function getDataConnectionHandler(
   console.log("Recevied: " + authorization);
   console.log("Equivalency: " + (authorization === process.env.SOURCE_KEY));
   if (authorization === process.env.SOURCE_KEY) {
+    console.log(dataConnection);
     res.status(StatusCodes.OK).json(dataConnection);
   } else {
     if (!isAuthorized(session, dataConnection, Actions.GetDataConnection)) {
