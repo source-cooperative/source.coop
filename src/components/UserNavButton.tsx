@@ -156,7 +156,10 @@ export default function UserNavButton() {
   if (!user) {
     return (
       <Box sx={{ justifySelf: "center", display: "inline-block" }}>
-        <Button variant="nav" href={`${baseUrl}/ui/login`}>
+        <Button
+          variant="nav"
+          href={`${process.env.NEXT_PUBLIC_ORY_SDK_URL}/ui/login`}
+        >
           Sign In / Register
         </Button>
       </Box>
