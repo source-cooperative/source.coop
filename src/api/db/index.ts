@@ -49,15 +49,22 @@ import {
 } from "@aws-sdk/lib-dynamodb";
 import logger from "@/utils/logger";
 
-const isProd = process.env.NODE_ENV === "production";
+const isProd = process.env.NEXT_PUBLIC_IS_PROD === "1";
+let client;
+if (isProd) {
+  client = new DynamoDBClient({
+    credentials: {
+      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    },
+    region: process.env.AWS_DEFAULT_REGION,
+  });
+} else {
+  client = new DynamoDBClient({
+    endpoint: "http://localhost:8000",
+  });
+}
 
-const client = new DynamoDBClient({
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID ?? "bar",
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY ?? "foo",
-  },
-  region: process.env.AWS_DEFAULT_REGION ?? "us-east-1",
-});
 const docClient = DynamoDBDocumentClient.from(client);
 
 /**
