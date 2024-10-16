@@ -19,6 +19,7 @@ import {
 } from "@/api/errors";
 import { getAccount, getMemberships, putMembership } from "@/api/db";
 import { isAuthorized } from "@/api/authz";
+import * as crypto from "crypto";
 
 /**
  * @openapi
