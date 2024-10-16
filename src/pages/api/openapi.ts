@@ -35,16 +35,12 @@ export default async function handler(
       },
       servers: [
         {
-          url: "http://localhost:3000/api/v1",
-          description: "Development",
-        },
-        {
-          url: "https://beta.source.coop/api/v1",
-          description: "Source Cooperative Beta",
+          url: "https://source.coop/api/v1",
+          description: "Source Cooperative",
         },
       ],
     },
-    apis: ["./src/pages/api/**/*.ts"],
+    apis: ["./src/pages/api/v1/**/*.ts"],
   };
 
   var openapiSpecification = swaggerJSDoc(options);

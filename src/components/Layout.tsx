@@ -13,7 +13,13 @@ import SideNav from "./SideNav";
 import SourceLink from "./SourceLink";
 import UserNavButton from "./UserNavButton";
 
-const alerts = [];
+const alerts = [
+  {
+    type: "warning",
+    message:
+      "NOTE: This service is under active development. Certain features may not work or become unavailable at any time.",
+  },
+];
 
 export function Loading() {
   return (
