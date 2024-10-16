@@ -333,6 +333,7 @@ export default function RepositoryBrowser({ account_id, repository_id }) {
               File Name
             </Text>
             <Text>{objectFilename}</Text>
+
             <Text
               sx={{ textTransform: "uppercase", fontWeight: "bold", pr: 2 }}
             >
@@ -342,6 +343,12 @@ export default function RepositoryBrowser({ account_id, repository_id }) {
               {resultState.object.ContentLength.toLocaleString()} Bytes (
               {humanFileSize(resultState.object.ContentLength)})
             </Text>
+            <Text
+              sx={{ textTransform: "uppercase", fontWeight: "bold", pr: 2 }}
+            >
+              Content Type
+            </Text>
+            <Text>{resultState.object.ContentType}</Text>
             <Text
               sx={{ textTransform: "uppercase", fontWeight: "bold", pr: 2 }}
             >
