@@ -69,3 +69,8 @@ npm run kill
 ```
 
 You will need to restart the local webserver and repopulate the database after running this command.
+
+
+## Deployment
+
+Any commits pushed to the `main` branch will be automatically deployed via Vercel.
