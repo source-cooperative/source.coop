@@ -8,6 +8,7 @@ This repository contains the Next.JS application which hosts the Source Cooperat
  - Docker installed and running locally
  - An ory account and project set up for local development
  - NPM installed on your local machine
+ - Default AWS Credentials configured which has permissions to read from the production DynamoDB tables
 
 ### Install Dependencies
 
