@@ -13,8 +13,7 @@ export default function Home() {
               that allows trusted organizations to share data without purchasing
               a data portal SaaS subscription or managing infrastructure. Source
               allows organizations to share data using standard HTTP methods
-              rather than requiring proprietary APIs or SaaS interfaces. It is
-              currently in private beta.
+              rather than requiring proprietary APIs or SaaS interfaces.
             </Paragraph>
           </Card>
           <Box sx={{ mt: 4 }}>
