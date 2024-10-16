@@ -313,7 +313,7 @@ export default function RepositoryBrowser({ account_id, repository_id }) {
       );
       viewer = <GeoJSONViewer url={objectUrl} />;
     }
-
+    console.log(resultState.object);
     return (
       <Box>
         <RepositoryBreadcrumbs
@@ -322,41 +322,57 @@ export default function RepositoryBrowser({ account_id, repository_id }) {
           prefix={slug}
           basePath={router.asPath}
         />
-        <Box>
-          <Heading as="h2">Details</Heading>
-          <Card
-            variant="code"
-            sx={{ fontSize: 1, maxWidth: "fit-content", pr: 6 }}
-          >
-            <ul>
-              <li>
-                <Heading
-                  as="h4"
-                  sx={{ display: "inline", textTransform: "uppercase" }}
-                >
-                  Name:
-                </Heading>{" "}
-                {objectFilename}
-              </li>
-              <li>
-                <Heading
-                  as="h4"
-                  sx={{ display: "inline", textTransform: "uppercase" }}
-                >
-                  URL:
-                </Heading>{" "}
-                <Link href={objectUrl}>
-                  <Text sx={{ color: "primary", textDecoration: "underline" }}>
-                    {objectUrl}
-                  </Text>
-                </Link>
-              </li>
-            </ul>
-          </Card>
-          <Button variant="primary" href={objectUrl} sx={{ mt: 2 }}>
-            Download
-          </Button>
-        </Box>
+        <Card
+          variant="code"
+          sx={{ fontSize: 1, maxWidth: "fit-content", p: 2 }}
+        >
+          <Grid sx={{ gridTemplateColumns: "auto 1fr", gap: 1 }}>
+            <Text
+              sx={{ textTransform: "uppercase", fontWeight: "bold", pr: 2 }}
+            >
+              File Name
+            </Text>
+            <Text>{objectFilename}</Text>
+            <Text
+              sx={{ textTransform: "uppercase", fontWeight: "bold", pr: 2 }}
+            >
+              File Size
+            </Text>
+            <Text>
+              {resultState.object.ContentLength.toLocaleString()} Bytes (
+              {humanFileSize(resultState.object.ContentLength)})
+            </Text>
+            <Text
+              sx={{ textTransform: "uppercase", fontWeight: "bold", pr: 2 }}
+            >
+              Last Modified
+            </Text>
+            <Text>{resultState.object.LastModified.toString()}</Text>
+            <Text
+              sx={{ textTransform: "uppercase", fontWeight: "bold", pr: 2 }}
+            >
+              Data URL
+            </Text>
+            <Link href={objectUrl}>
+              <Text sx={{ color: "primary", textDecoration: "underline" }}>
+                {objectUrl}
+              </Text>
+            </Link>
+            <Text
+              sx={{ textTransform: "uppercase", fontWeight: "bold", pr: 2 }}
+            >
+              S3 URI
+            </Text>
+            <Text sx={{ color: "primary" }}>
+              s3://{account_id}/{repository_id}/{slug}
+            </Text>
+          </Grid>
+          <Box sx={{ textAlign: "right" }}>
+            <Button variant="primary" href={objectUrl} sx={{ mt: 2 }}>
+              Download
+            </Button>
+          </Box>
+        </Card>
         {viewer ? (
           <>
             <Heading as="h2">Preview</Heading>
