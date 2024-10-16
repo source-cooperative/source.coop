@@ -221,18 +221,14 @@ export default function UserNavButton() {
                 Create Organization
               </Button>
             )}
-
-            <Button variant="nav" href={logoutUrl}>
-              Sign Out
-            </Button>
             <Button
               variant="nav"
-              sx={{ display: ["initial", "initial", "none", "none"] }}
-              onClick={(e) => {
-                setColorMode(colorMode === "light" ? "dark" : "light");
-              }}
+              href={`${process.env.NEXT_PUBLIC_ORY_SDK_URL}/ui/settings`}
             >
-              {colorMode == "light" ? "Dark Mode" : "Light Mode"}
+              Account Security
+            </Button>
+            <Button variant="nav" href={logoutUrl}>
+              Sign Out
             </Button>
           </Box>
         </Box>

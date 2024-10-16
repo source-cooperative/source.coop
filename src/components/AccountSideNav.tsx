@@ -109,14 +109,6 @@ export function AccountSideNavLinks({ account_id }: { account_id: string }) {
           });
         }
       }
-
-      if (user?.account?.account_id === account_id) {
-        newSideNav.push({
-          href: `${process.env.NEXT_PUBLIC_ORY_SDK_URL}/ui/settings`,
-          title: "Security",
-          active: false,
-        });
-      }
     }
 
     setSideNavLinks(newSideNav);
