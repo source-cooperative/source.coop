@@ -214,7 +214,14 @@ export enum DataConnectionAuthenticationType {
   S3IAMRole = "s3_iam_role",
   AzureSasToken = "az_sas_token",
   S3ECSTaskRole = "s3_ecs_task_role",
+  S3Local = "s3_local",
 }
+
+export const S3LocalAuthenticationSchema = z
+  .object({
+    type: z.literal(DataConnectionAuthenticationType.S3ECSTaskRole),
+  })
+  .openapi("S3LocalAuthentication");
 
 export const S3ECSTaskRoleAuthenticationSchema = z
   .object({
@@ -242,6 +249,7 @@ export const DataConnectionAuthenticationSchema = z
     S3AccessKeyAuthenticationSchema,
     AzureSasTokenAuthenticationSchema,
     S3ECSTaskRoleAuthenticationSchema,
+    S3LocalAuthenticationSchema,
   ])
   .openapi("DataConnectionAuthentication");
 
