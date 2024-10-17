@@ -2,7 +2,8 @@
 
 
 # Set the container name or ID
-CONTAINER_NAME="dynamodb"
+DYNAMODB_CONTAINER_NAME="source-dynamodb"
+S3_CONTAINER_NAME="source-s3"
 
 ###############################################################################
 # function iecho
@@ -25,32 +26,78 @@ function errecho() {
   printf "%s\n" "$*" 1>&2
 }
 
+function start_s3() {
+    echo "Checking if the S3 container is already running..."
 
-function start_db() {
-    echo "Checking if the dynamodb container is already running..."
-
-    if docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
-        echo "Container '$CONTAINER_NAME' is already running."
+    if docker ps --format '{{.Names}}' | grep -q "^${S3_CONTAINER_NAME}$"; then
+        echo "Container '$S3_CONTAINER_NAME' is already running."
         return 1
     fi
 
-    echo "Container '$CONTAINER_NAME' is not running. Starting DynamoDB Local..."
+    echo "Container '$S3_CONTAINER_NAME' is not running. Starting DynamoDB Local..."
 
-    docker run -d --name=$CONTAINER_NAME -p 8000:8000 amazon/dynamodb-local
+    docker run -d --name=$S3_CONTAINER_NAME -p 5050:5000 motoserver/moto
 
-    # DynamoDB Local endpoint
+    # S3 endpoint
+    S3_ENDPOINT="http://localhost:5050"
+
+    # Function to check if DynamoDB is ready
+    check_s3_ready() {
+    aws s3 ls --endpoint-url $S3_ENDPOINT > /dev/null 2>&1
+    return $?
+    }
+
+    echo "Waiting for S3 to be ready..."
+
+    # Wait for the container to be in a running state
+    while [ "$(docker inspect -f {{.State.Running}} $S3_CONTAINER_NAME 2>/dev/null)" != "true" ]; do
+        sleep 1
+    done
+
+    # Wait for DynamoDB to be responsive
+    COUNTER=0
+    TIMEOUT=30
+    until check_s3_ready || [ $COUNTER -eq $TIMEOUT ]; do
+        echo "S3 is not ready yet. Waiting..."
+        sleep 1
+        ((COUNTER++))
+    done
+
+    if [ $COUNTER -eq $TIMEOUT ]; then
+        echo "Timeout: S3 did not become ready in time."
+        exit 1
+    else
+        aws s3 mb s3://source-cooperative --endpoint-url $S3_ENDPOINT
+        echo "S3 is ready!"
+    fi
+}
+
+
+function start_db() {
+    echo "Checking if the DynamoDB container is already running..."
+
+    if docker ps --format '{{.Names}}' | grep -q "^${DYNAMODB_CONTAINER_NAME}$"; then
+        echo "Container '$DYNAMODB_CONTAINER_NAME' is already running."
+        return 1
+    fi
+
+    echo "Container '$DYNAMODB_CONTAINER_NAME' is not running. Starting DynamoDB Local..."
+
+    docker run -d --name=$DYNAMODB_CONTAINER_NAME -p 8000:8000 amazon/dynamodb-local
+
+    # DynamoDB endpoint
     DYNAMODB_ENDPOINT="http://localhost:8000"
 
-    # Function to check if DynamoDB Local is ready
+    # Function to check if DynamoDB is ready
     check_dynamodb_ready() {
     aws dynamodb list-tables --endpoint-url $DYNAMODB_ENDPOINT --region us-west-2 > /dev/null 2>&1
     return $?
     }
 
-    echo "Waiting for DynamoDB Local to be ready..."
+    echo "Waiting for DynamoDB to be ready..."
 
     # Wait for the container to be in a running state
-    while [ "$(docker inspect -f {{.State.Running}} $CONTAINER_NAME 2>/dev/null)" != "true" ]; do
+    while [ "$(docker inspect -f {{.State.Running}} $DYNAMODB_CONTAINER_NAME 2>/dev/null)" != "true" ]; do
         sleep 1
     done
 
@@ -58,24 +105,25 @@ function start_db() {
     COUNTER=0
     TIMEOUT=30
     until check_dynamodb_ready || [ $COUNTER -eq $TIMEOUT ]; do
-        echo "DynamoDB Local is not ready yet. Waiting..."
+        echo "DynamoDB is not ready yet. Waiting..."
         sleep 1
         ((COUNTER++))
     done
 
     if [ $COUNTER -eq $TIMEOUT ]; then
-        echo "Timeout: DynamoDB Local did not become ready in time."
+        echo "Timeout: DynamoDB did not become ready in time."
         exit 1
     else
-        echo "DynamoDB Local is ready!"
+        echo "DynamoDB is ready!"
     fi
 }
 
 
-start_db
+start_s3
+echo "S3 is running at http://localhost:5050"
 
-echo "DynamoDB Local is running at http://localhost:8000"
+start_db
+echo "DynamoDB is running at http://localhost:8000"
 
 echo "Initializing tables..."
-
 sc init

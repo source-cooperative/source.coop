@@ -18,6 +18,8 @@ import {
 import { putAccount } from "@/api/db";
 import { isAuthorized } from "@/api/authz";
 
+const isProd = process.env.NEXT_PUBLIC_IS_PROD === "1";
+
 /**
  * @openapi
  * /accounts:
@@ -58,11 +60,19 @@ async function createAccountHandler(
   // Parse and validate the account creation request
   const accountRequest = AccountCreationRequestSchema.parse(req.body);
 
+  const flags: AccountFlags[] = isProd
+    ? [AccountFlags.CREATE_ORGANIZATIONS]
+    : [
+        AccountFlags.CREATE_ORGANIZATIONS,
+        AccountFlags.CREATE_REPOSITORIES,
+        AccountFlags.ADMIN,
+      ];
+
   // Create a new account object
   const newAccount: Account = {
     ...accountRequest,
     disabled: false,
-    flags: [AccountFlags.CREATE_ORGANIZATIONS],
+    flags,
     identity_id:
       accountRequest.account_type === AccountType.USER
         ? session?.identity_id

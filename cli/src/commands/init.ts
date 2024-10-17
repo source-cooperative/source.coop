@@ -1,4 +1,12 @@
+import {
+  DataConnection,
+  DataConnectionAuthenticationType,
+  DataProvider,
+  RepositoryDataMode,
+  S3Regions,
+} from "@/api/types";
 import { DynamoDBClient, CreateTableCommand } from "@aws-sdk/client-dynamodb";
+import { DynamoDBDocumentClient, PutCommand } from "@aws-sdk/lib-dynamodb";
 
 export async function init(production: boolean) {
   let client;
@@ -256,5 +264,31 @@ async function createTables(client: DynamoDBClient) {
 
   try {
     await client.send(createDataConnectionsTableCommand);
+    const localDataConnection: DataConnection = {
+      data_connection_id: "local",
+      name: "Local S3 Endpoint",
+      prefix_template:
+        "{{repository.account_id}}/{{repository.repository_id}}/",
+      read_only: false,
+      allowed_data_modes: [RepositoryDataMode.Open],
+      details: {
+        provider: DataProvider.S3,
+        bucket: "source-cooperative",
+        base_prefix: "",
+        region: S3Regions.US_WEST_2,
+      },
+      authentication: {
+        type: DataConnectionAuthenticationType.S3Local,
+      },
+    };
+
+    const docClient = DynamoDBDocumentClient.from(client);
+    const params = {
+      TableName: "sc-data-connections",
+      Item: localDataConnection,
+    };
+
+    const command = new PutCommand(params);
+    await docClient.send(command);
   } catch (_) {}
 }
