@@ -25,193 +25,6 @@ function errecho() {
   printf "%s\n" "$*" 1>&2
 }
 
-function create_tables() {
-    echo "Creating tables in the local dynamodb instance..."
-
-    echo "Creating table sc-accounts..."
-    # shellcheck disable=SC2086
-    response=$(aws dynamodb --endpoint-url http://localhost:8000 create-table \
-        --table-name sc-accounts \
-        --attribute-definitions \
-            AttributeName=account_id,AttributeType=S \
-            AttributeName=identity_id,AttributeType=S \
-            AttributeName=account_type,AttributeType=S \
-        --key-schema \
-            AttributeName=account_id,KeyType=HASH \
-        --provisioned-throughput \
-            ReadCapacityUnits=1,WriteCapacityUnits=1 \
-        --global-secondary-indexes \
-            "[
-                {
-                    \"IndexName\": \"identity_id\",
-                    \"KeySchema\": [{\"AttributeName\":\"identity_id\",\"KeyType\":\"HASH\"}],
-                    \"Projection\":{
-                        \"ProjectionType\":\"ALL\"
-                    },
-                    \"ProvisionedThroughput\": {
-                        \"ReadCapacityUnits\": 1,
-                        \"WriteCapacityUnits\": 1
-                    }
-                },
-                {
-                    \"IndexName\": \"account_type\",
-                    \"KeySchema\": [{\"AttributeName\":\"account_type\",\"KeyType\":\"HASH\"}],
-                    \"Projection\":{
-                        \"ProjectionType\":\"ALL\"
-                    },
-                    \"ProvisionedThroughput\": {
-                        \"ReadCapacityUnits\": 1,
-                        \"WriteCapacityUnits\": 1
-                    }
-                }
-            ]"
-    )
-
-    # shellcheck disable=SC2181
-    if [[ ${?} -ne 0 ]]; then
-        return 1
-    fi
-
-    echo "Creating table sc-repositories..."
-    # shellcheck disable=SC2086
-    response=$(aws dynamodb --endpoint-url http://localhost:8000 create-table \
-        --table-name sc-repositories \
-        --attribute-definitions \
-            AttributeName=account_id,AttributeType=S \
-            AttributeName=repository_id,AttributeType=S \
-            AttributeName=featured,AttributeType=N \
-        --key-schema \
-            AttributeName=account_id,KeyType=HASH \
-            AttributeName=repository_id,KeyType=RANGE \
-        --provisioned-throughput \
-            ReadCapacityUnits=1,WriteCapacityUnits=1 \
-        --global-secondary-indexes \
-            "[
-                {
-                    \"IndexName\": \"featured\",
-                    \"KeySchema\": [{\"AttributeName\":\"featured\",\"KeyType\":\"HASH\"}],
-                    \"Projection\":{
-                        \"ProjectionType\":\"ALL\"
-                    },
-                    \"ProvisionedThroughput\": {
-                        \"ReadCapacityUnits\": 1,
-                        \"WriteCapacityUnits\": 1
-                    }
-                }
-            ]"
-    )
-
-    # shellcheck disable=SC2181
-    if [[ ${?} -ne 0 ]]; then
-        return 1
-    fi
-
-    echo "Creating table sc-api-keys..."
-    # shellcheck disable=SC2086
-    response=$(aws dynamodb --endpoint-url http://localhost:8000 create-table \
-        --table-name sc-api-keys \
-        --attribute-definitions \
-            AttributeName=access_key_id,AttributeType=S \
-            AttributeName=account_id,AttributeType=S \
-        --key-schema \
-            AttributeName=access_key_id,KeyType=HASH \
-        --provisioned-throughput \
-            ReadCapacityUnits=1,WriteCapacityUnits=1 \
-        --global-secondary-indexes \
-            "[
-                {
-                    \"IndexName\": \"account_id\",
-                    \"KeySchema\": [{\"AttributeName\":\"account_id\",\"KeyType\":\"HASH\"}],
-                    \"Projection\":{
-                        \"ProjectionType\":\"ALL\"
-                    },
-                    \"ProvisionedThroughput\": {
-                        \"ReadCapacityUnits\": 1,
-                        \"WriteCapacityUnits\": 1
-                    }
-                }
-            ]"
-    )
-
-    # shellcheck disable=SC2181
-    if [[ ${?} -ne 0 ]]; then
-        return 1
-    fi
-
-    echo "Creating table sc-memberships..."
-    # shellcheck disable=SC2086
-    response=$(aws dynamodb --endpoint-url http://localhost:8000 create-table \
-        --table-name sc-memberships \
-        --attribute-definitions \
-            AttributeName=membership_id,AttributeType=S \
-            AttributeName=account_id,AttributeType=S \
-            AttributeName=membership_account_id,AttributeType=S \
-            AttributeName=repository_id,AttributeType=S \
-        --key-schema \
-            AttributeName=membership_id,KeyType=HASH \
-        --provisioned-throughput \
-            ReadCapacityUnits=1,WriteCapacityUnits=1 \
-        --global-secondary-indexes \
-            "[
-                {
-                    \"IndexName\": \"membership_account_id_repository_id\",
-                    \"KeySchema\": [{\"AttributeName\":\"membership_account_id\",\"KeyType\":\"HASH\"},{\"AttributeName\":\"repository_id\",\"KeyType\":\"RANGE\"}],
-                    \"Projection\":{
-                        \"ProjectionType\":\"ALL\"
-                    },
-                    \"ProvisionedThroughput\": {
-                        \"ReadCapacityUnits\": 1,
-                        \"WriteCapacityUnits\": 1
-                    }
-                },
-                {
-                    \"IndexName\": \"membership_account_id\",
-                    \"KeySchema\": [{\"AttributeName\":\"membership_account_id\",\"KeyType\":\"HASH\"}],
-                    \"Projection\":{
-                        \"ProjectionType\":\"ALL\"
-                    },
-                    \"ProvisionedThroughput\": {
-                        \"ReadCapacityUnits\": 1,
-                        \"WriteCapacityUnits\": 1
-                    }
-                },
-                {
-                    \"IndexName\": \"account_id\",
-                    \"KeySchema\": [{\"AttributeName\":\"account_id\",\"KeyType\":\"HASH\"}],
-                    \"Projection\":{
-                        \"ProjectionType\":\"ALL\"
-                    },
-                    \"ProvisionedThroughput\": {
-                        \"ReadCapacityUnits\": 1,
-                        \"WriteCapacityUnits\": 1
-                    }
-                }
-            ]"
-    )
-
-    # shellcheck disable=SC2181
-    if [[ ${?} -ne 0 ]]; then
-        return 1
-    fi
-
-    echo "Creating table sc-data-connections..."
-    # shellcheck disable=SC2086
-    response=$(aws dynamodb --endpoint-url http://localhost:8000 create-table \
-        --table-name sc-data-connections \
-        --attribute-definitions \
-            AttributeName=data_connection_id,AttributeType=S \
-        --key-schema \
-            AttributeName=data_connection_id,KeyType=HASH \
-        --provisioned-throughput \
-            ReadCapacityUnits=1,WriteCapacityUnits=1 \
-    )
-
-    # shellcheck disable=SC2181
-    if [[ ${?} -ne 0 ]]; then
-        return 1
-    fi
-}
-
 
 function start_db() {
     echo "Checking if the dynamodb container is already running..."
@@ -256,11 +69,13 @@ function start_db() {
     else
         echo "DynamoDB Local is ready!"
     fi
-
-    create_tables
 }
 
 
 start_db
 
 echo "DynamoDB Local is running at http://localhost:8000"
+
+echo "Initializing tables..."
+
+sc init

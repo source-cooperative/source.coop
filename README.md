@@ -6,9 +6,7 @@ This repository contains the Next.JS application which hosts the Source Cooperat
 
 ### Prerequisites
  - Docker installed and running locally
- - An ory account and project set up for local development
  - NPM installed on your local machine
- - Default AWS Credentials configured which has permissions to read from the production DynamoDB tables
 
 ### Install Dependencies
 
@@ -26,22 +24,12 @@ To install the Source Cooperative CLI, run the following command:
 npm run install-cli
 ```
 
-### Dumping Data
+### Setting up Ory
 
-In order to populate the local DynamoDB instance, you must first dump the data from the production database. To do this, run the following CLI command:
-
-```
-sc dump dump --production
-```
-
-### Environment Variable Setup
-
-Run the following terminal commands to set up your environment variables.
-
-```
-export ORY_SDK_URL=<DEVELOPMENT_ORY_API_URL_HERE>
-export ORY_ACCESS_TOKEN=<YOUR_ORY_ACCESS_TOKEN_HERE>
-```
+To set up Ory, create an [Ory](https://ory.sh) and create a new project in the [console](https://console.ory.sh).
+After creating the project, navigate to the project settings and create a new API key.
+Copy the API key and set it as the `ORY_ACCESS_TOKEN` environment variable.
+Next, copy the `API endpoint` URL and set it as the `ORY_SDK_URL` environment variable.
 
 ### Run Locally
 
@@ -49,13 +37,6 @@ After having set up your environment variables, run the following command to sta
 
 ```
 npm run dev
-```
-
-### Load Data
-
-You can populate the local DynamoDB database with the dump you created earlier by running the following CLI command:
-```
-sc load dump
 ```
 
 You can now access the service at [http://localhost:3000](http://localhost:3000)
@@ -69,7 +50,7 @@ To reset the database, stop the local webserver and run the following CLI comman
 npm run kill
 ```
 
-You will need to restart the local webserver and repopulate the database after running this command.
+You will need to restart the local webserver after running this command.
 
 
 ## Running Tests

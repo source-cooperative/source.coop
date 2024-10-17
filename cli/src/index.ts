@@ -3,6 +3,7 @@
 import { Command } from "commander";
 import { dump } from "./commands/dump";
 import { load } from "./commands/load";
+import { init } from "./commands/init";
 
 const program = new Command();
 
@@ -23,5 +24,9 @@ const dumpCommand = program
   .action((output) => {
     dump(output, program.opts().production);
   });
+
+const initCommand = program.command("init").action(() => {
+  init(program.opts().production);
+});
 
 program.parse(process.argv);

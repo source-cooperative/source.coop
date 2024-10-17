@@ -50,12 +50,12 @@ import {
 import logger from "@/utils/logger";
 
 const isProd = process.env.NEXT_PUBLIC_IS_PROD === "1";
-let client;
+let client: DynamoDBClient;
 if (isProd) {
   client = new DynamoDBClient({
     credentials: {
-      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+      accessKeyId: process.env.AWS_ACCESS_KEY_ID as string,
+      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY as string,
     },
     region: process.env.AWS_DEFAULT_REGION,
   });
