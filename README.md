@@ -39,7 +39,8 @@ After having set up your environment variables, run the following command to sta
 npm run dev
 ```
 
-You can now access the service at [http://localhost:3000](http://localhost:3000)
+You can now access the service at [http://localhost:3000](http://localhost:3000).
+Now, make sure that you have the [Source Cooperative Data Proxy](https://github.com/source-cooperative/data.source.coop) running locally as well.
 
 
 ### Resetting the Database
