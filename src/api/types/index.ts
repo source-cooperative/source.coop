@@ -213,7 +213,14 @@ export enum DataConnectionAuthenticationType {
   S3AccessKey = "s3_access_key",
   S3IAMRole = "s3_iam_role",
   AzureSasToken = "az_sas_token",
+  S3ECSTaskRole = "s3_ecs_task_role",
 }
+
+export const S3ECSTaskRoleAuthenticationSchema = z
+  .object({
+    type: z.literal(DataConnectionAuthenticationType.S3ECSTaskRole),
+  })
+  .openapi("S3ECSTaskRoleAuthentication");
 
 export const S3AccessKeyAuthenticationSchema = z
   .object({
@@ -234,6 +241,7 @@ export const DataConnectionAuthenticationSchema = z
   .discriminatedUnion("type", [
     S3AccessKeyAuthenticationSchema,
     AzureSasTokenAuthenticationSchema,
+    S3ECSTaskRoleAuthenticationSchema,
   ])
   .openapi("DataConnectionAuthentication");
 
