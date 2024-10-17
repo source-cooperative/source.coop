@@ -219,7 +219,7 @@ export enum DataConnectionAuthenticationType {
 
 export const S3LocalAuthenticationSchema = z
   .object({
-    type: z.literal(DataConnectionAuthenticationType.S3ECSTaskRole),
+    type: z.literal(DataConnectionAuthenticationType.S3Local),
   })
   .openapi("S3LocalAuthentication");
 
