@@ -26,7 +26,7 @@ npm run install-cli
 
 ### Setting up Ory
 
-To set up Ory, create an [Ory](https://ory.sh) and create a new project in the [console](https://console.ory.sh).
+To set up Ory, create an [Ory](https://ory.sh) account and create a new project in the [console](https://console.ory.sh).
 After creating the project, navigate to the project settings and create a new API key.
 Copy the API key and set it as the `ORY_ACCESS_TOKEN` environment variable.
 Next, copy the `API endpoint` URL and set it as the `ORY_SDK_URL` environment variable.
