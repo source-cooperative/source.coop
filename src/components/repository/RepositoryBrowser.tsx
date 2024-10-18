@@ -313,7 +313,6 @@ export default function RepositoryBrowser({ account_id, repository_id }) {
       );
       viewer = <GeoJSONViewer url={objectUrl} />;
     }
-    console.log(resultState.object);
     return (
       <Box>
         <RepositoryBreadcrumbs
@@ -371,7 +370,7 @@ export default function RepositoryBrowser({ account_id, repository_id }) {
               S3 URI
             </Text>
             <Text sx={{ color: "primary" }}>
-              s3://{account_id}/{repository_id}/{slug}
+              s3://{account_id}/{repository_id}/{resultState.key}
             </Text>
           </Grid>
           <Box sx={{ textAlign: "right" }}>
