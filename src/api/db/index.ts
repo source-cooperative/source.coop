@@ -42,6 +42,7 @@ import {
 } from "@/api/types";
 import { marshall } from "@aws-sdk/util-dynamodb";
 import { DynamoDBClient, PutItemCommand } from "@aws-sdk/client-dynamodb";
+import { awsCredentialsProvider } from "@vercel/functions/oidc";
 import {
   ScanCommand,
   DynamoDBDocumentClient,
@@ -50,13 +51,13 @@ import {
 import logger from "@/utils/logger";
 
 const isProd = process.env.NEXT_PUBLIC_IS_PROD === "1";
+const AWS_ROLE_ARN = process.env.AWS_ROLE_ARN!;
 let client: DynamoDBClient;
 if (isProd) {
   client = new DynamoDBClient({
-    credentials: {
-      accessKeyId: process.env.AWS_ACCESS_KEY_ID as string,
-      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY as string,
-    },
+    credentials: awsCredentialsProvider({
+      roleArn: AWS_ROLE_ARN,
+    }),
     region: process.env.AWS_DEFAULT_REGION,
   });
 } else {
