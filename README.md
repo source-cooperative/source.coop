@@ -10,7 +10,7 @@ This repository contains the Next.JS application which hosts the Source Cooperat
 
 ### Install Dependencies
 
-To install the dependencies, run the following command:
+To install the dependencies, run the following command for main project and the Source Cooperative CLI project:
 
 ```
 npm install
@@ -33,7 +33,7 @@ Next, copy the `API endpoint` URL and set it as the `ORY_SDK_URL` environment va
 
 ### Run Locally
 
-After having set up your environment variables, run the following command to start the service locally:
+After having set up your environment variables, run the following command to start the service locally after completing the above steps:
 
 ```
 npm run dev
