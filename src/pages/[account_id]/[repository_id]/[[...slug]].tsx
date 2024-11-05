@@ -27,7 +27,7 @@ export default function RepositoryDetail() {
     Repository,
     ClientError
   >(
-    account_id && repository_id
+    accountId && repositoryId
       ? { path: `/api/v1/repositories/${account_id}/${repository_id}` }
       : null,
     {
@@ -39,6 +39,8 @@ export default function RepositoryDetail() {
     account_id: accountId,
     repository_id: repositoryId,
   });
+
+  if (!accountId || !repositoryId) return <div>Loading...</div>;
 
   return (
     <Layout
