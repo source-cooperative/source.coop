@@ -5,6 +5,9 @@
 DYNAMODB_CONTAINER_NAME="source-dynamodb"
 S3_CONTAINER_NAME="source-s3"
 
+# Get the directory of the current script
+SCRIPT_DIR=$(dirname "$0")
+
 ###############################################################################
 # function iecho
 #
@@ -68,6 +71,7 @@ function start_s3() {
         exit 1
     else
         aws s3 mb s3://source-cooperative --endpoint-url $S3_ENDPOINT
+        aws s3api put-bucket-policy --bucket source-cooperative --policy file://"${SCRIPT_DIR}/bucket_policy.json" --endpoint-url $S3_ENDPOINT
         echo "S3 is ready!"
     fi
 }
