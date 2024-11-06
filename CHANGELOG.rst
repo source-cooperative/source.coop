@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Version 0.1.3
+-------------
+
+* Fixed the page loading (issue)[https://github.com/source-cooperative/source.coop/issues/14]
+
 Version 0.1.2
 -------------
 
