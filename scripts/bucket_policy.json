@@ -1,0 +1,10 @@
+{
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": "*",
+      "Action": ["s3:Get*", "s3:List*"],
+      "Resource": "arn:aws:s3:::source-cooperative/*"
+    }
+  ]
+}
