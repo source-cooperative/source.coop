@@ -211,7 +211,7 @@ export function AccessData({
             <Box>
               <Text>Copy a single file to the repository</Text>
               <Card variant="code">
-                aws s3 cp <PATH_TO_FILE> s3://{account_id}/{repository_id}/ --endpoint-url=
+                aws s3 cp {"<PATH_TO_FILE>"} s3://{account_id}/{repository_id}/ --endpoint-url=
                 {process.env.NEXT_PUBLIC_S3_ENDPOINT}
               </Card>
             </Box>
