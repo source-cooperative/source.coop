@@ -209,16 +209,28 @@ export function AccessData({
               specify the Endpoint URL parameter in requests.
             </Paragraph>
             <Box>
-              <Text>Copy a single file to the repository</Text>
+              <Text>List the contents of the repository</Text>
               <Card variant="code">
-                aws s3 cp {"<PATH_TO_FILE>"} s3://{account_id}/{repository_id}/ --endpoint-url=
+                aws s3 ls s3://{account_id}/{repository_id}/ --endpoint-url=
                 {process.env.NEXT_PUBLIC_S3_ENDPOINT}
               </Card>
             </Box>
             <Box>
-              <Text>Copy the entire working directory to the repository</Text>
+              <Text>
+                Download the entire repository to the current working directory
+              </Text>
               <Card variant="code">
-                aws s3 sync . s3://{account_id}/{repository_id}/ . --endpoint-url=
+                aws s3 sync s3://{account_id}/{repository_id}/ . --endpoint-url=
+                {process.env.NEXT_PUBLIC_S3_ENDPOINT}
+              </Card>
+            </Box>
+            <Box>
+              <Text>
+                Download a specific file to the current working directory
+              </Text>
+              <Card variant="code">
+                aws s3 cp s3://{account_id}/{repository_id}/{"<PATH_TO_FILE>"} .
+                --endpoint-url=
                 {process.env.NEXT_PUBLIC_S3_ENDPOINT}
               </Card>
             </Box>
