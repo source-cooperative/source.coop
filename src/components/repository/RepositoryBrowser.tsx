@@ -370,7 +370,7 @@ export default function RepositoryBrowser({ account_id, repository_id }) {
               S3 URI
             </Text>
             <Text sx={{ color: "primary" }}>
-              s3://{account_id}/{repository_id}/{resultState.key}
+              s3://{account_id}/{resultState.key}
             </Text>
           </Grid>
           <Box sx={{ textAlign: "right" }}>
