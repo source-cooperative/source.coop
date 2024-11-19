@@ -14,14 +14,14 @@ program.parse(process.argv);
 const loadCommand = program
   .command("load")
   .argument("<loadDirectory>", "Load Directory")
-  .action((loadDirectory) => {
+  .action((loadDirectory: string) => {
     load(loadDirectory, program.opts().production);
   });
 
 const dumpCommand = program
   .command("dump")
   .argument("<output>", "Output folder")
-  .action((output) => {
+  .action((output: string) => {
     dump(output, program.opts().production);
   });
 
