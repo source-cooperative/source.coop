@@ -31,6 +31,18 @@ After creating the project, navigate to the project settings and create a new AP
 Copy the API key and set it as the `ORY_ACCESS_TOKEN` environment variable.
 Next, copy the `API endpoint` URL and set it as the `ORY_SDK_URL` environment variable.
 
+You can copy `.env.local` to `.env` and set the values inside it to avoid leaking secrets, since the latter file is not versioned. Also `.env` is loaded after `.env.local`, so it will override the values.
+
+```bash
+cp .env.local .env
+vi .env
+```
+
+```bash
+ORY_ACCESS_TOKEN=ory_pat_xxxxx
+ORY_SDK_URL=https://xxxxx.projects.oryapis.com%
+```
+
 ### Run Locally
 
 After having set up your environment variables, run the following command to start the service locally:
