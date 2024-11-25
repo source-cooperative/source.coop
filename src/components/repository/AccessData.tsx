@@ -218,7 +218,7 @@ export function AccessData({
             <Box>
               <Text>Copy the entire working directory to the repository</Text>
               <Card variant="code">
-                aws s3 sync . s3://{account_id}/{repository_id}/ . --endpoint-url=
+                aws s3 sync . s3://{account_id}/{repository_id}/ --endpoint-url=
                 {process.env.NEXT_PUBLIC_S3_ENDPOINT}
               </Card>
             </Box>
