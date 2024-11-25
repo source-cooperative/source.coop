@@ -5,8 +5,20 @@ This repository contains the Next.JS application which hosts the Source Cooperat
 ## Getting Started
 
 ### Prerequisites
- - Docker installed and running locally
- - NPM installed on your local machine
+
+- Docker installed and running locally
+- NPM installed on your local machine
+- AWS CLI installed on your local machine
+
+Ensure the AWS CLI is configured (even in the values don't matter) by running, e.g.:
+
+```bash
+$ aws configure
+AWS Access Key ID [None]: dummy
+AWS Secret Access Key [None]: dummy
+Default region name [None]: us-east-1
+Default output format [None]:
+```
 
 ### Install Dependencies
 
@@ -52,8 +64,14 @@ npm run dev
 ```
 
 You can now access the service at [http://localhost:3000](http://localhost:3000).
-Now, make sure that you have the [Source Cooperative Data Proxy](https://github.com/source-cooperative/data.source.coop) running locally as well.
 
+You can also check that the was correctly initialized by running the following command and ensuring it contains a non-empty list of tables:
+
+```
+aws dynamodb list-tables --page-size 1 --endpoint-url=http://localhost:8000
+```
+
+Now, make sure that you have the [Source Cooperative Data Proxy](https://github.com/source-cooperative/data.source.coop) running locally as well.
 
 ### Resetting the Database
 
