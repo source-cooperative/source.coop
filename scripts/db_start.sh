@@ -37,14 +37,14 @@ function start_s3() {
         return 1
     fi
 
-    echo "Container '$S3_CONTAINER_NAME' is not running. Starting DynamoDB Local..."
+    echo "Container '$S3_CONTAINER_NAME' is not running. Starting S3 Local..."
 
     docker run -d --name=$S3_CONTAINER_NAME -p 5050:5000 motoserver/moto
 
     # S3 endpoint
     S3_ENDPOINT="http://localhost:5050"
 
-    # Function to check if DynamoDB is ready
+    # Function to check if S3 is ready
     check_s3_ready() {
     aws s3 ls --endpoint-url $S3_ENDPOINT > /dev/null 2>&1
     return $?
@@ -57,7 +57,7 @@ function start_s3() {
         sleep 1
     done
 
-    # Wait for DynamoDB to be responsive
+    # Wait for S3 to be responsive
     COUNTER=0
     TIMEOUT=30
     until check_s3_ready || [ $COUNTER -eq $TIMEOUT ]; do
