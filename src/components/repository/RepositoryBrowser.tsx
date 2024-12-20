@@ -1,18 +1,20 @@
-import { useRouter } from "next/router";
-import { Box, Paragraph, Card, Grid, Text, Flex, Heading } from "theme-ui";
-import Skeleton from "react-loading-skeleton";
+import { AzureDataConnectionSchema, DataConnection, DataConnectionDetails, Repository, S3DataConnectionSchema } from "@/api/types";
+import { default as Button, default as SourceButton } from "@/components/Button";
 import SVG from "@/components/SVG";
 import SourceLink from "@/components/SourceLink";
-import SourceButton from "@/components/Button";
-import dynamic from "next/dynamic";
-import Link from "next/link";
-import Button from "@/components/Button";
+import { ClientError } from "@/lib/client/accounts";
 import {
-  S3Client,
   HeadObjectCommand,
   ListObjectsV2Command,
+  S3Client,
 } from "@aws-sdk/client-s3";
+import dynamic from "next/dynamic";
+import Link from "next/link";
+import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
+import Skeleton from "react-loading-skeleton";
+import useSWR from "swr";
+import { Box, Card, Flex, Grid, Heading, Paragraph, Text } from "theme-ui";
 
 const s3Client = new S3Client({
   endpoint: process.env.NEXT_PUBLIC_S3_ENDPOINT,
@@ -147,6 +149,13 @@ export default function RepositoryBrowser({ account_id, repository_id }) {
     key: null,
   });
 
+  const [dataConnectionDetails, setDataConnectionDetails] = useState(
+    {
+      s3DataConnection: null,
+      azureDataConnection: null,
+    }
+  );
+
   useEffect(() => {
     if (!account_id || !repository_id) {
       return;
@@ -159,7 +168,7 @@ export default function RepositoryBrowser({ account_id, repository_id }) {
       : `${repository_id}/`;
 
     setResultState({ loading: true, listResult: null, object: null, key });
-
+    
     const input = {
       Bucket: bucket,
       Key: key,
@@ -198,6 +207,28 @@ export default function RepositoryBrowser({ account_id, repository_id }) {
       }
     );
   }, [router.query]);
+
+
+  const { data: repository } = useSWR<Repository, ClientError>(
+    resultState.object ? { path: `/api/v1/repositories/${account_id}/${repository_id}` } : null,
+    {
+      refreshInterval: 0,
+    }
+  );
+  const { data: dataConnection } = useSWR<DataConnection, ClientError>(
+    repository ? { path: `/api/v1/data-connections/${repository.data.primary_mirror}` } : null,
+    {
+      refreshInterval: 0,
+    }
+  );
+  useEffect(() => {
+    if (dataConnection) {
+      setDataConnectionDetails({
+        s3DataConnection: S3DataConnectionSchema.safeParse(dataConnection.details).success ? S3DataConnectionSchema.parse(dataConnection.details) : null,
+        azureDataConnection: AzureDataConnectionSchema.safeParse(dataConnection.details).success ? AzureDataConnectionSchema.parse(dataConnection.details) : null,
+      });
+    }
+  }, [dataConnection]);
 
   if (resultState.loading) {
     return (
@@ -357,7 +388,7 @@ export default function RepositoryBrowser({ account_id, repository_id }) {
             <Text
               sx={{ textTransform: "uppercase", fontWeight: "bold", pr: 2 }}
             >
-              Data URL
+              Source URL
             </Text>
             <Link href={objectUrl}>
               <Text sx={{ color: "primary", textDecoration: "underline" }}>
@@ -367,10 +398,11 @@ export default function RepositoryBrowser({ account_id, repository_id }) {
             <Text
               sx={{ textTransform: "uppercase", fontWeight: "bold", pr: 2 }}
             >
-              S3 URI
+              Cloud URI
             </Text>
             <Text sx={{ color: "primary" }}>
-              s3://{account_id}/{resultState.key}
+              {dataConnectionDetails.s3DataConnection ? `s3://${dataConnectionDetails.s3DataConnection.bucket}/${account_id}/${resultState.key}` : ""}
+              {dataConnectionDetails.azureDataConnection ? `https://${dataConnectionDetails.azureDataConnection.account_name}.blob.core.windows.net/${dataConnectionDetails.azureDataConnection.container_name}/${account_id}/${resultState.key}` : ""}
             </Text>
           </Grid>
           <Box sx={{ textAlign: "right" }}>
