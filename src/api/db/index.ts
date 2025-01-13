@@ -510,7 +510,7 @@ export async function getDataConnections(): Promise<DataConnection[]> {
 
   try {
     const response = await docClient.send(command);
-    return response.Items?.map((item) => item as DataConnection) ?? [];
+    return response.Items?.sort(a,b) => b.data_connection_id.localeCompare(a.data_connection_id).map((item) => item as DataConnection) ? [];
   } catch (e) {
     logger.error(e);
     throw e;
