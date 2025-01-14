@@ -1,5 +1,9 @@
 Changelog
 =========
+Version 0.1.4
+-------------
+* Fixed the default selection of Ap-South-1 in the source coop UI during new repository creation.
+
 
 Version 0.1.3
 -------------
