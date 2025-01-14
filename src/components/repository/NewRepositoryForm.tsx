@@ -203,6 +203,7 @@ export function NewRepositoryForm({ account_id }: { account_id: string }) {
             <Box variant="formField" sx={{ gridColumn: [1, 2, 2, 2] }}>
               <Text variant="formLabel">Data Location</Text>
               <Select {...register("data_connection_id")}>
+                <option>Select Region</option>
                 {availableDataConnections[currentDataMode].map(
                   (dataConnection, i) => {
                     return (
