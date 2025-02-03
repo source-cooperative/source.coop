@@ -10,7 +10,7 @@ This repository contains the Next.JS application which hosts the Source Cooperat
 - NPM installed on your local machine
 - AWS CLI installed on your local machine
 
-Ensure the AWS CLI is configured (even in the values don't matter) by running, e.g.:
+Ensure the AWS CLI is configured (even if the values don't matter) by running, e.g.:
 
 ```bash
 $ aws configure
@@ -39,7 +39,7 @@ npm run install-cli
 ### Setting up Ory
 
 To set up Ory, create an [Ory](https://ory.sh) account and create a new project in the [console](https://console.ory.sh).
-After creating the project, navigate to the project settings and create a new API key.
+After creating the project, navigate to Ory Project settings tab and create a new API key within the API Keys section.
 Copy the API key and set it as the `ORY_ACCESS_TOKEN` environment variable.
 Next, copy the `API endpoint` URL and set it as the `ORY_SDK_URL` environment variable.
 
@@ -52,8 +52,10 @@ vi .env
 
 ```bash
 ORY_ACCESS_TOKEN=ory_pat_xxxxx
-ORY_SDK_URL=https://xxxxx.projects.oryapis.com%
+ORY_SDK_URL=https://[PROJECT_SLUG].projects.oryapis.com
 ```
+
+The `PROJECT_SLUG` for your Ory project can be found on the main "Project settings" page in the Ory console.
 
 ### Run Locally
 
