@@ -228,29 +228,10 @@ export function Layout({
           </Container>
         </Box>
 
-        <Grid
-          sx={{
-            gridTemplateColumns: [
-              null,
-              null,
-              sideNavLinks ? "1fr 5fr" : "1fr 5fr 1fr",
-              "1fr 3fr 1fr",
-            ],
-            gridTemplateRows: ["1fr", "1fr", null, null],
-            height: "max-content",
-            gridGap: [0, 0, 3, 3],
-          }}
-        >
-          <Box
-            sx={{
-              gridColumnStart: [null, null, "1", "2"],
-              gridColumnEnd: [null, null, "4", "3"],
-              mx: [0, 0, 0, 2],
-            }}
-          >
-            <Footer />
-          </Box>
-        </Grid>
+        <Box as="footer" sx={{ width: "100%", margin: "3 auto", py: 3, }}>
+          <Footer />
+        </Box>
+
       </Flex>
     </>
   );
