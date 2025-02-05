@@ -23,17 +23,32 @@ interface Props {
 }
 
 async function getRepository(account_id: string, repository_id: string) {
-  // Use NEXT_PUBLIC_API_URL or fall back to relative URL
   const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
-  const response = await fetch(
-    `${baseUrl}/api/v1/repositories/${account_id}/${repository_id}`
-  );
+  const url = `${baseUrl}/api/v1/repositories/${account_id}/${repository_id}`;
+  
+  console.log('Fetching repository from:', url); // Debug log
+  
+  const response = await fetch(url, {
+    credentials: 'include', // Include cookies for authentication
+    headers: {
+      'Accept': 'application/json',
+    }
+  });
 
   if (!response.ok) {
+    console.error('Repository fetch failed:', {
+      status: response.status,
+      statusText: response.statusText,
+      url: response.url
+    });
+    
     if (response.status === 404) {
       throw new Error('Repository not found');
     }
-    throw new Error('Failed to fetch repository');
+    if (response.status === 401) {
+      throw new Error('Unauthorized - Please log in');
+    }
+    throw new Error(`Failed to fetch repository: ${response.statusText}`);
   }
 
   return response.json();
@@ -55,7 +70,18 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
       },
     };
   } catch (error) {
-    console.error('Error fetching repository:', error);
+    console.error('Error in getServerSideProps:', error);
+    
+    // Handle different error types
+    if (error instanceof Error && error.message.includes('Unauthorized')) {
+      return {
+        redirect: {
+          destination: '/login',
+          permanent: false,
+        },
+      };
+    }
+    
     return { notFound: true };
   }
 };
