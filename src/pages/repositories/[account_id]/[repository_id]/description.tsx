@@ -26,14 +26,22 @@ async function getRepository(account_id: string, repository_id: string) {
   const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
   const url = `${baseUrl}/api/v1/repositories/${account_id}/${repository_id}`;
   
-  console.log('Fetching repository from:', url); // Debug log
-  
-  const response = await fetch(url, {
-    credentials: 'include', // Include cookies for authentication
+  // First try without credentials for public access
+  let response = await fetch(url, {
     headers: {
       'Accept': 'application/json',
     }
   });
+
+  // If that fails, try with credentials
+  if (!response.ok && response.status === 401) {
+    response = await fetch(url, {
+      credentials: 'include',
+      headers: {
+        'Accept': 'application/json',
+      }
+    });
+  }
 
   if (!response.ok) {
     console.error('Repository fetch failed:', {
@@ -41,13 +49,6 @@ async function getRepository(account_id: string, repository_id: string) {
       statusText: response.statusText,
       url: response.url
     });
-    
-    if (response.status === 404) {
-      throw new Error('Repository not found');
-    }
-    if (response.status === 401) {
-      throw new Error('Unauthorized - Please log in');
-    }
     throw new Error(`Failed to fetch repository: ${response.statusText}`);
   }
 
