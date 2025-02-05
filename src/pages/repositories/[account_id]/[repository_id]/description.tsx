@@ -23,8 +23,10 @@ interface Props {
 }
 
 async function getRepository(account_id: string, repository_id: string) {
+  // Use NEXT_PUBLIC_API_URL or fall back to relative URL
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
   const response = await fetch(
-    `http://localhost:3000/api/v1/repositories/${account_id}/${repository_id}`
+    `${baseUrl}/api/v1/repositories/${account_id}/${repository_id}`
   );
 
   if (!response.ok) {
