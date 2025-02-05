@@ -1,9 +1,8 @@
 /** @jsxImportSource theme-ui */
 
 import { useState, useEffect } from "react";
-
 import { SourceComponents } from "@/lib/provider";
-import provider from "@mdx-js/react";
+import { MDXProvider } from "@mdx-js/react";
 
 import * as runtime from "react/jsx-runtime";
 import { evaluate } from "@mdx-js/mdx";
@@ -26,7 +25,6 @@ export function Markdown({ url }) {
       if (res.ok) {
         res.text().then((text) => {
           evaluate(text, {
-            ...provider,
             ...runtime,
             useMDXComponents: SourceComponents,
             ...mdxOptions,
@@ -66,7 +64,14 @@ export function Markdown({ url }) {
 
   if (mdxModule) {
     return (
-      <Box>
+      <Box sx={{ 
+        width: '100%',
+        '& img': {  // Target all images within the markdown
+          maxWidth: '100%',
+          height: 'auto',
+          display: 'block'
+        }
+      }}>
         <Content />
       </Box>
     );
