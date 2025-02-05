@@ -27,21 +27,7 @@ async function getRepository(account_id: string, repository_id: string) {
   const url = `${baseUrl}/api/v1/repositories/${account_id}/${repository_id}`;
   
   // First try without credentials for public access
-  let response = await fetch(url, {
-    headers: {
-      'Accept': 'application/json',
-    }
-  });
-
-  // If that fails, try with credentials
-  if (!response.ok && response.status === 401) {
-    response = await fetch(url, {
-      credentials: 'include',
-      headers: {
-        'Accept': 'application/json',
-      }
-    });
-  }
+  let response = await fetch(url);
 
   if (!response.ok) {
     console.error('Repository fetch failed:', {
