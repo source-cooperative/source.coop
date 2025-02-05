@@ -1,6 +1,6 @@
 /** @jsxImportSource theme-ui */
 
-import { ThemeProvider, Heading, Paragraph, Card, Image } from "theme-ui";
+import { ThemeProvider, Heading, Paragraph, Card } from "theme-ui";
 import Prism from "@theme-ui/prism";
 import { useThemedStylesWithMdx } from "@theme-ui/mdx";
 import type { ComponentPropsWithoutRef } from "react";
@@ -41,19 +41,6 @@ export const components = {
       </CodeBlock>
     );
   },
-  img: (props) => (
-    <Image
-      {...props}
-      sx={{
-        maxWidth: '100%',
-        height: 'auto',
-        display: 'block',
-        margin: '0 auto',
-        objectFit: 'contain',
-        position: 'relative'
-      }}
-    />
-  ),
 };
 
 export function SourceComponents() {
