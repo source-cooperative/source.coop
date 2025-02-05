@@ -73,49 +73,25 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   }
 };
 
-export default function Description({ repository }: Props) {
+export default function RepositoryDescription() {
   const router = useRouter();
-
   const { account_id, repository_id } = router.query;
-  const [accountId, setAccountId] = useState<string>(account_id as string);
-  const [repositoryId, setRepositoryId] = useState<string>(
-    repository_id as string
+  const { data: repository } = useSWR<Repository>(
+    account_id && repository_id 
+      ? `/api/repositories/${account_id}/${repository_id}`
+      : null
   );
 
-  useEffect(() => {
-    setAccountId(account_id as string);
-    setRepositoryId(repository_id as string);
-  }, [account_id, repository_id]);
-
-  const {
-    data: repositoryData,
-    mutate: refreshRepository,
-    isLoading: repositoryIsLoading,
-    error: repositoryError,
-  } = useSWR<Repository, ClientError>(
-    account_id && repository_id
-      ? { path: `/api/v1/repositories/${account_id}/${repository_id}` }
-      : null,
-    {
-      refreshInterval: 0,
-    }
-  );
-
-  const sideNavLinks = RepositorySideNavLinks({
-    account_id: accountId,
-    repository_id: repositoryId,
-  });
+  const sideNavLinks = repository 
+    ? RepositorySideNavLinks({ repository })
+    : [];
 
   return (
-    <>
-      <RepositoryMeta repository={repository} />
-      <Layout
-        notFound={repositoryError && repositoryError.status === 404}
-        sideNavLinks={sideNavLinks}
-        title={repository.meta?.title || repository_id}
-      >
-        <RepositoryListing repository={repository || repositoryData} truncate={false} />
-      </Layout>
-    </>
+    <Layout 
+      title={repository?.name || 'Loading...'}
+      sideNavLinks={sideNavLinks}
+    >
+      {repository && <RepositoryMeta repository={repository} />}
+    </Layout>
   );
 }
