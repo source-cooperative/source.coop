@@ -1,6 +1,7 @@
 import { Layout } from "../components/Layout";
 import { Paragraph, Box, Heading, Card } from "theme-ui";
 import { RepositoryList } from "@/components/repository/RepositoryList";
+import SourceLink from "@/components/SourceLink";
 
 export default function Home() {
   return (
@@ -9,11 +10,7 @@ export default function Home() {
         <Layout>
           <Card variant="code">
             <Paragraph>
-              Source Cooperative is a neutral, non-profit data-sharing utility
-              that allows trusted organizations to share data without purchasing
-              a data portal SaaS subscription or managing infrastructure. Source
-              allows organizations to share data using standard HTTP methods
-              rather than requiring proprietary APIs or SaaS interfaces.
+              Source Cooperative is a data publishing utility that allows trusted organizations and individuals to share data using standard HTTP methods. Learn more in <SourceLink href="https://docs.source.coop">our documentation</SourceLink>.
             </Paragraph>
           </Card>
           <Box sx={{ mt: 4 }}>

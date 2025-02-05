@@ -76,7 +76,7 @@ export function Layout({
     <>
       <Meta
         description={
-          "Source Cooperative is a neutral, non-profit data-sharing utility that allows trusted organizations to share data without purchasing a data portal SaaS subscription or managing infrastructure. Source allows organizations to share data using standard HTTP methods rather than requiring proprietary APIs or SaaS interfaces. It is currently in private beta."
+          "Source Cooperative is a data publishing utility that allows trusted organizations and individuals to share data using standard HTTP methods."
         }
         title={title ? title : "Source Cooperative"}
         card=""
@@ -158,7 +158,7 @@ export function Layout({
                         height: ["45px", "45px", "55px", "55px"],
                         fill: "background",
                         backgroundColor: "primary",
-                        p: 2,
+                        p: 0,
                         "&:hover": {
                           fill: "highlight",
                         },
