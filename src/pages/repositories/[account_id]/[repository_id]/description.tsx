@@ -2,15 +2,63 @@ import { useRouter } from "next/router";
 import { Layout } from "@/components/Layout";
 import { Markdown } from "@/components/viewers/Markdown";
 import { RepositoryListing } from "@/components/repository/RepositoryListing";
-import { getRepository } from "@/lib/client/repositories";
 import { RepositorySideNavLinks } from "@/components/RepositorySideNav";
 import { useState, useEffect } from "react";
 import useSWR from "swr";
 import { Repository } from "@/api/types";
 import { ClientError } from "@/lib/client/accounts";
 import { Grid, Box } from "theme-ui";
+import { Meta } from "@/components/Meta";
+import { GetServerSideProps } from 'next'
+import Head from "next/head";
+import { RepositoryMeta } from '@/components/RepositoryMeta';
 
-export default function RepositoryDetail() {
+interface Props {
+  repository: {
+    meta?: {
+      title?: string;
+      description?: string;
+    };
+  };
+}
+
+async function getRepository(account_id: string, repository_id: string) {
+  const response = await fetch(
+    `http://localhost:3000/api/v1/repositories/${account_id}/${repository_id}`
+  );
+
+  if (!response.ok) {
+    if (response.status === 404) {
+      throw new Error('Repository not found');
+    }
+    throw new Error('Failed to fetch repository');
+  }
+
+  return response.json();
+}
+
+export const getServerSideProps: GetServerSideProps = async (context) => {
+  const { account_id, repository_id } = context.params || {};
+  
+  if (!account_id || !repository_id) {
+    return { notFound: true };
+  }
+
+  try {
+    const repository = await getRepository(account_id as string, repository_id as string);
+
+    return {
+      props: {
+        repository,
+      },
+    };
+  } catch (error) {
+    console.error('Error fetching repository:', error);
+    return { notFound: true };
+  }
+};
+
+export default function Description({ repository }: Props) {
   const router = useRouter();
 
   const { account_id, repository_id } = router.query;
@@ -25,7 +73,7 @@ export default function RepositoryDetail() {
   }, [account_id, repository_id]);
 
   const {
-    data: repository,
+    data: repositoryData,
     mutate: refreshRepository,
     isLoading: repositoryIsLoading,
     error: repositoryError,
@@ -44,26 +92,15 @@ export default function RepositoryDetail() {
   });
 
   return (
-    <Layout
-      notFound={repositoryError && repositoryError.status === 404}
-      sideNavLinks={sideNavLinks}
-    >
-      <Grid
-        sx={{
-          gap: 4,
-        }}
+    <>
+      <RepositoryMeta repository={repository} />
+      <Layout
+        notFound={repositoryError && repositoryError.status === 404}
+        sideNavLinks={sideNavLinks}
+        title={repository.meta?.title || repository_id}
       >
-        <Box sx={{ gridColumn: "1 / -1" }}>
-          <RepositoryListing repository={repository} truncate={false} />
-        </Box>
-        {repository ? (
-          <Markdown
-            url={`${process.env.NEXT_PUBLIC_S3_ENDPOINT}/${accountId}/${repositoryId}/README.md`}
-          />
-        ) : (
-          <></>
-        )}
-      </Grid>
-    </Layout>
+        <RepositoryListing repository={repository || repositoryData} truncate={false} />
+      </Layout>
+    </>
   );
 }
