@@ -46,7 +46,11 @@ export const components = {
       {...props}
       sx={{
         maxWidth: '100%',
-        height: 'auto'
+        height: 'auto',
+        display: 'block',
+        margin: '0 auto',
+        objectFit: 'contain',
+        position: 'relative'
       }}
     />
   ),
