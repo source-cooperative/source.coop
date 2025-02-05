@@ -81,13 +81,15 @@ export default function RepositoryDescription() {
       ? `/api/repositories/${account_id}/${repository_id}`
       : null
   );
-
   const sideNavLinks = repository 
-    ? RepositorySideNavLinks({ repository })
+    ? RepositorySideNavLinks({
+        account_id: repository.account_id,
+        repository_id: repository.repository_id
+      })
     : [];
 
   return (
-    <Layout 
+    <Layout
       title={repository?.name || 'Loading...'}
       sideNavLinks={sideNavLinks}
     >
