@@ -1,6 +1,7 @@
 /** @jsxImportSource theme-ui */
 
 import { Container, Text, Grid, Box } from "theme-ui";
+import type { ThemeUIStyleObject } from "theme-ui";
 import SourceLink from "@/components/SourceLink";
 
 // Move this to a separate constants file if used elsewhere
@@ -11,7 +12,7 @@ const footerLinks = [
 ] as const; // Add type safety
 
 // Extract reusable styles
-const styles = {
+const styles: Record<string, ThemeUIStyleObject> = {
   hr: {
     border: "none",
     borderBottom: "1px solid",
@@ -20,7 +21,7 @@ const styles = {
     width: "100%",
   },
   container: {
-    width: ["100%", "100%", "100%", "70%"],
+    width: ["100%", "100%", "100%", "70%"] as const,
     margin: "0 auto",
     px: 3,
   },
