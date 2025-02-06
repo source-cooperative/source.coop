@@ -74,13 +74,12 @@ export function Layout({
 
   return (
     <>
-      <Meta
-        description={
-          "Source Cooperative is a neutral, non-profit data-sharing utility that allows trusted organizations to share data without purchasing a data portal SaaS subscription or managing infrastructure. Source allows organizations to share data using standard HTTP methods rather than requiring proprietary APIs or SaaS interfaces. It is currently in private beta."
-        }
-        title={title ? title : "Source Cooperative"}
-        card=""
-      />
+      {!title ? (
+        <Meta
+          description="Source Cooperative is a data publishing utility that allows trusted organizations and individuals to share data using standard HTTP methods."
+          title="Source Cooperative"
+        />
+      ) : null}
       <Flex
         sx={{
           minHeight: "100vh;",
@@ -156,9 +155,9 @@ export function Layout({
                     <Logo
                       sx={{
                         height: ["45px", "45px", "55px", "55px"],
-                        fill: "background",
-                        backgroundColor: "primary",
-                        p: 2,
+                        fill: "text",
+                        backgroundColor: "background",
+                        p: 0,
                         "&:hover": {
                           fill: "highlight",
                         },
