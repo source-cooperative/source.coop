@@ -1,6 +1,19 @@
 import Head from "next/head";
 import { useThemeUI } from "theme-ui";
-import { Repository } from '@/api/types';
+
+// Define the Meta interface for repository metadata
+interface Meta {
+  title?: string;
+  description?: string;
+  image?: string;
+  tags?: string[];
+}
+
+// Update Repository type to include the Meta interface
+interface Repository {
+  meta?: Meta;
+  // ... other repository properties ...
+}
 
 // Export the interface so it can be used elsewhere
 export interface MetaProps {
@@ -27,11 +40,21 @@ export function Meta({
 }: MetaProps) {
   const { theme, colorMode } = useThemeUI();
 
+  // Debug logging
+  console.log('Meta component received repository:', {
+    title: repository?.meta?.title,
+    description: repository?.meta?.description,
+    fullRepository: repository
+  });
+
   // Use either repository title or direct title
   const title = repository?.meta?.title || directTitle || siteName;
   const description = repository?.meta?.description || directDescription || '';
   const fullTitle = title ? `${title} - ${siteName}` : siteName;
   const cardProp = image || repository?.meta?.image || null;
+
+  // Debug logging
+  console.log('Meta component using:', { title, description });
 
   return (
     <Head>
