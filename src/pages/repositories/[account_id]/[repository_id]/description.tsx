@@ -18,16 +18,26 @@ interface Props {
 export const getServerSideProps: GetServerSideProps<Props> = async (context) => {
   const { account_id, repository_id } = context.params || {};
   
+  if (!account_id || !repository_id) {
+    return { notFound: true };
+  }
+
   try {
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL || ''}/api/v1/repositories/${account_id}/${repository_id}`
-    );
+    const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || ''}/api/v1/repositories/${account_id}/${repository_id}`;
+    console.log('Fetching repository from:', apiUrl); // Debug log
+    
+    const res = await fetch(apiUrl);
     
     if (!res.ok) {
-      throw new Error('Failed to fetch');
+      console.error('API response error:', res.status, await res.text()); // Debug log
+      return { notFound: true };
     }
 
     const repository = await res.json();
+
+    if (!repository) {
+      return { notFound: true };
+    }
     
     return {
       props: {
