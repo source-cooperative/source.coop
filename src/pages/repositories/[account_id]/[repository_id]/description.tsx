@@ -19,25 +19,37 @@ export const getServerSideProps: GetServerSideProps<Props> = async (context) => 
   const { account_id, repository_id } = context.params || {};
   
   if (!account_id || !repository_id) {
+    console.log('Missing required parameters:', { account_id, repository_id });
     return { notFound: true };
   }
 
   try {
     const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || ''}/api/v1/repositories/${account_id}/${repository_id}`;
-    console.log('Fetching repository from:', apiUrl); // Debug log
+    console.log('Fetching repository:', { apiUrl, account_id, repository_id });
     
-    const res = await fetch(apiUrl);
+    const res = await fetch(apiUrl, {
+      headers: {
+        'Accept': 'application/json'
+      }
+    });
     
     if (!res.ok) {
-      console.error('API response error:', res.status, await res.text()); // Debug log
+      console.error('API response error:', {
+        status: res.status,
+        statusText: res.statusText,
+        url: apiUrl
+      });
       return { notFound: true };
     }
 
     const repository = await res.json();
 
     if (!repository) {
+      console.error('No repository data returned');
       return { notFound: true };
     }
+    
+    console.log('Successfully fetched repository:', repository);
     
     return {
       props: {
@@ -45,7 +57,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async (context) => 
       },
     };
   } catch (error) {
-    console.error('Error fetching repository:', error);
+    console.error('Error in getServerSideProps:', error);
     return { notFound: true };
   }
 };
