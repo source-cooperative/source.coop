@@ -14,86 +14,75 @@ import Head from "next/head";
 import { RepositoryMeta } from '@/components/RepositoryMeta';
 
 interface Props {
-  repository: {
-    meta?: {
-      title?: string;
-      description?: string;
-    };
-  };
+  initialData?: Repository;
 }
 
-async function getRepository(account_id: string, repository_id: string) {
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
-  const url = `${baseUrl}/api/v1/repositories/${account_id}/${repository_id}`;
-  
-  // First try without credentials for public access
-  let response = await fetch(url);
-
-  if (!response.ok) {
-    console.error('Repository fetch failed:', {
-      status: response.status,
-      statusText: response.statusText,
-      url: response.url
-    });
-    throw new Error(`Failed to fetch repository: ${response.statusText}`);
-  }
-
-  return response.json();
-}
-
-export const getServerSideProps: GetServerSideProps = async (context) => {
+export const getServerSideProps: GetServerSideProps<Props> = async (context) => {
   const { account_id, repository_id } = context.params || {};
   
-  if (!account_id || !repository_id) {
-    return { notFound: true };
-  }
-
   try {
-    const repository = await getRepository(account_id as string, repository_id as string);
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL || ''}/api/v1/repositories/${account_id}/${repository_id}`
+    );
+    
+    if (!res.ok) {
+      throw new Error('Failed to fetch');
+    }
 
+    const repository = await res.json();
+    
     return {
       props: {
-        repository,
+        initialData: repository,
       },
     };
   } catch (error) {
-    console.error('Error in getServerSideProps:', error);
-    
-    // Handle different error types
-    if (error instanceof Error && error.message.includes('Unauthorized')) {
-      return {
-        redirect: {
-          destination: '/login',
-          permanent: false,
-        },
-      };
-    }
-    
-    return { notFound: true };
+    console.error('Error fetching repository:', error);
+    return {
+      props: {
+        initialData: null,
+      },
+    };
   }
 };
 
-export default function RepositoryDescription() {
+export default function Description({ initialData }: Props) {
   const router = useRouter();
-  const { account_id, repository_id } = router.query;
-  const { data: repository } = useSWR<Repository>(
-    account_id && repository_id 
-      ? `/api/repositories/${account_id}/${repository_id}`
-      : null
+  const [accountId, setAccountId] = useState<string>(null);
+  const [repositoryId, setRepositoryId] = useState<string>(null);
+
+  useEffect(() => {
+    if (router.isReady) {
+      const { account_id, repository_id } = router.query;
+      setAccountId(account_id as string);
+      setRepositoryId(repository_id as string);
+    }
+  }, [router.isReady, router.query]);
+
+  const { data: repository, error: repositoryError } = useSWR<Repository, ClientError>(
+    accountId && repositoryId
+      ? { path: `/api/v1/repositories/${accountId}/${repositoryId}` }
+      : null,
+    {
+      refreshInterval: 0,
+    }
   );
-  const sideNavLinks = repository 
-    ? RepositorySideNavLinks({
-        account_id: repository.account_id,
-        repository_id: repository.repository_id
-      })
-    : [];
+
+  const sideNavLinks = RepositorySideNavLinks({
+    account_id: accountId,
+    repository_id: repositoryId,
+  });
+
+  if (!accountId || !repositoryId) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <Layout
-      title={repository?.name || 'Loading...'}
+      notFound={repositoryError && repositoryError.status === 404}
       sideNavLinks={sideNavLinks}
     >
-      {repository && <RepositoryMeta repository={repository} />}
+      {/* Your description page content here */}
     </Layout>
   );
 }
