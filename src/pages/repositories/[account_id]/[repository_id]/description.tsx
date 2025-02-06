@@ -46,22 +46,28 @@ export const getServerSideProps: GetServerSideProps<Props> = async (context) => 
   }
 };
 
-export default function Description({ initialData }: Props) {
+export default function Description({ repository }: Props) {
   const router = useRouter();
-  const [accountId, setAccountId] = useState<string>(null);
-  const [repositoryId, setRepositoryId] = useState<string>(null);
+
+  const { account_id, repository_id } = router.query;
+  const [accountId, setAccountId] = useState<string>(account_id as string);
+  const [repositoryId, setRepositoryId] = useState<string>(
+    repository_id as string
+  );
 
   useEffect(() => {
-    if (router.isReady) {
-      const { account_id, repository_id } = router.query;
-      setAccountId(account_id as string);
-      setRepositoryId(repository_id as string);
-    }
-  }, [router.isReady, router.query]);
+    setAccountId(account_id as string);
+    setRepositoryId(repository_id as string);
+  }, [account_id, repository_id]);
 
-  const { data: repository, error: repositoryError } = useSWR<Repository, ClientError>(
-    accountId && repositoryId
-      ? { path: `/api/v1/repositories/${accountId}/${repositoryId}` }
+  const {
+    data: repositoryData,
+    mutate: refreshRepository,
+    isLoading: repositoryIsLoading,
+    error: repositoryError,
+  } = useSWR<Repository, ClientError>(
+    account_id && repository_id
+      ? { path: `/api/v1/repositories/${account_id}/${repository_id}` }
       : null,
     {
       refreshInterval: 0,
@@ -73,16 +79,16 @@ export default function Description({ initialData }: Props) {
     repository_id: repositoryId,
   });
 
-  if (!accountId || !repositoryId) {
-    return <div>Loading...</div>;
-  }
-
   return (
-    <Layout
-      notFound={repositoryError && repositoryError.status === 404}
-      sideNavLinks={sideNavLinks}
-    >
-      {/* Your description page content here */}
-    </Layout>
+    <>
+      <RepositoryMeta repository={repository} />
+      <Layout
+        notFound={repositoryError && repositoryError.status === 404}
+        sideNavLinks={sideNavLinks}
+        title={repository.meta?.title || repository_id}
+      >
+        <RepositoryListing repository={repository || repositoryData} truncate={false} />
+      </Layout>
+    </>
   );
 }
