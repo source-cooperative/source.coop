@@ -64,7 +64,7 @@ export default function RepositoryDetail({ initialData }: Props) {
       : null,
     {
       refreshInterval: 0,
-      fallbackData: initialData, // Use initial data while loading
+      fallbackData: initialData,
     }
   );
 
