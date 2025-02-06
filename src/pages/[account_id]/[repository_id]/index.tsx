@@ -64,22 +64,9 @@ export default function RepositoryDetail({ initialData }: Props) {
       : null,
     {
       refreshInterval: 0,
-      fallbackData: initialData, // Use initial data while loading
+      fallbackData: initialData,
     }
   );
-
-  // Add detailed debug logging
-  console.log('Description page state:', {
-    accountId,
-    repositoryId,
-    isLoading: repositoryIsLoading,
-    hasError: !!repositoryError,
-    repository: repository,
-    meta: repository?.meta
-  });
-
-  // Debug logging to verify repository data
-  console.log('Description page repository data:', repository);
 
   const sideNavLinks = RepositorySideNavLinks({
     account_id: accountId,
@@ -112,4 +99,4 @@ export default function RepositoryDetail({ initialData }: Props) {
       </Grid>
     </Layout>
   );
-}
+} 

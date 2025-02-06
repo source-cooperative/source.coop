@@ -1,40 +1,44 @@
 import Head from "next/head";
 import { useThemeUI } from "theme-ui";
+import { Repository } from '@/api/types';
 
-interface MetaProps {
+// Export the interface so it can be used elsewhere
+export interface MetaProps {
+  // Direct props for non-repository pages
   title?: string;
   description?: string;
+  image?: string;
+  tags?: string[];
+  // Repository prop for repository pages
+  repository?: Repository;
+  // Common props
   siteName?: string;
   baseUrl?: string;
-  image?: string;
 }
 
 export function Meta({ 
-  title, 
-  description,
+  title: directTitle,
+  description: directDescription,
+  image,
+  tags,
+  repository,
   siteName = 'Source Cooperative',
-  baseUrl = 'https://source.coop',
-  image = '' // default image URL could go here
+  baseUrl = 'https://source.coop'
 }: MetaProps) {
   const { theme, colorMode } = useThemeUI();
-  if (!description) {
-    console.warn(
-      "a custom description should be used for search engine optimization"
-    );
-  }
-  if (!title) {
-    console.warn(
-      "a custom title should be used for search engine optimization"
-    );
-  }
+
+  // Use either repository title or direct title
+  const title = repository?.meta?.title || directTitle || siteName;
+  const description = repository?.meta?.description || directDescription || '';
   const fullTitle = title ? `${title} - ${siteName}` : siteName;
-  const descriptionProp = description || null;
-  const cardProp = image || null;
+  const cardProp = image || repository?.meta?.image || null;
 
   return (
     <Head>
       <title key="title">{fullTitle}</title>
-      <meta key="description" name="description" content={description} />
+      {description && (
+        <meta key="description" name="description" content={description} />
+      )}
       <meta name="viewport" content="initial-scale=1.0, width=device-width, maximum-scale=1" />
       <link rel="icon" href="/favicon.ico" sizes="any" />
       <link rel="icon" href="/icon.svg" type="image/svg+xml" />
@@ -47,14 +51,18 @@ export function Meta({
         content={colorMode === "light" ? "light" : "dark"}
       />
       <meta key="og:title" property="og:title" content={fullTitle} />
-      <meta key="og:description" property="og:description" content={description} />
+      {description && (
+        <meta key="og:description" property="og:description" content={description} />
+      )}
       <meta key="og:site_name" property="og:site_name" content={siteName} />
       <meta key="og:url" property="og:url" content={baseUrl} />
-      {image && <meta key="og:image" property="og:image" content={image} />}
+      {cardProp && <meta key="og:image" property="og:image" content={cardProp} />}
       <meta key="twitter:title" name="twitter:title" content={fullTitle} />
-      <meta key="twitter:description" name="twitter:description" content={description} />
+      {description && (
+        <meta key="twitter:description" name="twitter:description" content={description} />
+      )}
       <meta key="twitter:card" name="twitter:card" content="summary_large_image" />
-      {image && <meta key="twitter:image" name="twitter:image" content={image} />}
+      {cardProp && <meta key="twitter:image" name="twitter:image" content={cardProp} />}
       <meta name="format-detection" content="telephone=no" />
     </Head>
   );
