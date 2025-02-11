@@ -209,6 +209,12 @@ export function AccessData({
               specify the Endpoint URL parameter in requests.
             </Paragraph>
             <Box>
+              <Text color="Red">Users with AWS CLI version 2.23+, please run below command before you upload</Text>
+              <Card variant="code" color="Red">
+                  export AWS_REQUEST_CHECKSUM_CALCULATION=WHEN_REQUIRED
+              </Card>
+            </Box>
+            <Box>
               <Text>Copy a single file to the repository</Text>
               <Card variant="code">
                 aws s3 cp {"<PATH_TO_FILE>"} s3://{account_id}/{repository_id}/ --endpoint-url=
