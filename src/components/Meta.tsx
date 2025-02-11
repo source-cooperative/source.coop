@@ -1,7 +1,21 @@
 import Head from "next/head";
 import { useThemeUI } from "theme-ui";
 
-export function Meta({ title, description, card }) {
+interface MetaProps {
+  title?: string;
+  description?: string;
+  siteName?: string;
+  baseUrl?: string;
+  image?: string;
+}
+
+export function Meta({ 
+  title, 
+  description,
+  siteName = 'Source Cooperative',
+  baseUrl = 'https://source.coop',
+  image = '' // default image URL could go here
+}: MetaProps) {
   const { theme, colorMode } = useThemeUI();
   if (!description) {
     console.warn(
@@ -13,14 +27,14 @@ export function Meta({ title, description, card }) {
       "a custom title should be used for search engine optimization"
     );
   }
-  const titleProp = title || "Source Cooperative";
+  const fullTitle = title ? `${title} - ${siteName}` : siteName;
   const descriptionProp = description || null;
-  const cardProp = card || null;
+  const cardProp = image || null;
 
   return (
     <Head>
-      <title>{titleProp}</title>
-      <meta name="description" content={descriptionProp} />
+      <title key="title">{fullTitle}</title>
+      <meta key="description" name="description" content={description} />
       <meta name="viewport" content="initial-scale=1.0, width=device-width, maximum-scale=1" />
       <link rel="icon" href="/favicon.ico" sizes="any" />
       <link rel="icon" href="/icon.svg" type="image/svg+xml" />
@@ -32,14 +46,15 @@ export function Meta({ title, description, card }) {
         name="color-scheme"
         content={colorMode === "light" ? "light" : "dark"}
       />
-      <meta property="og:title" content={titleProp} />
-      <meta property="og:description" content={descriptionProp} />
-      <meta property="og:image" content={cardProp} />
-      <meta property="og:url" content="https://source.coop" />
-      <meta name="twitter:title" content={titleProp} />
-      <meta name="twitter:description" content={descriptionProp} />
-      <meta name="twitter:image" content={cardProp} />
-      <meta name="twitter:card" content="summary_large_image" />
+      <meta key="og:title" property="og:title" content={fullTitle} />
+      <meta key="og:description" property="og:description" content={description} />
+      <meta key="og:site_name" property="og:site_name" content={siteName} />
+      <meta key="og:url" property="og:url" content={baseUrl} />
+      {image && <meta key="og:image" property="og:image" content={image} />}
+      <meta key="twitter:title" name="twitter:title" content={fullTitle} />
+      <meta key="twitter:description" name="twitter:description" content={description} />
+      <meta key="twitter:card" name="twitter:card" content="summary_large_image" />
+      {image && <meta key="twitter:image" name="twitter:image" content={image} />}
       <meta name="format-detection" content="telephone=no" />
     </Head>
   );
