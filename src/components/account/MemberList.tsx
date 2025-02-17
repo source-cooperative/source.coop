@@ -1,5 +1,3 @@
-import { Box, Text, Grid, Select, Button, Paragraph, Alert } from "theme-ui";
-import SourceLink from "../SourceLink";
 import {
   AccountFlags,
   Membership,
@@ -8,8 +6,10 @@ import {
   UserSession,
 } from "@/api/types";
 import { ClientError } from "@/lib/client/accounts";
-import useSWR from "swr";
+import { Link as SourceLink } from '@source-cooperative/components';
 import { useState } from "react";
+import useSWR from "swr";
+import { Alert, Box, Button, Grid, Paragraph, Select, Text } from "theme-ui";
 
 export function MemberList({
   account_id,

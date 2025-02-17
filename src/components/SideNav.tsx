@@ -1,9 +1,8 @@
-import { Box, Grid, Select } from "theme-ui";
-import SourceLink from "./SourceLink";
-import Skeleton from "react-loading-skeleton";
-import { useRouter } from "next/router";
 import { SideNavLink } from "@/lib/types";
-import { NextRouter } from "next/router";
+import { Link as SourceLink } from '@source-cooperative/components';
+import { NextRouter, useRouter } from "next/router";
+import Skeleton from "react-loading-skeleton";
+import { Box, Grid, Select } from "theme-ui";
 
 function onSelectChange(
   e: React.ChangeEvent<HTMLSelectElement>,

@@ -1,10 +1,3 @@
-import { Box, useColorMode } from "theme-ui";
-import Button from "./Button";
-import { useEffect, useState } from "react";
-import SVG from "./SVG";
-import { useRouter } from "next/router";
-import useSWR from "swr";
-import { ClientError } from "@/lib/client/accounts";
 import {
   AccountFlags,
   APIKey,
@@ -12,9 +5,15 @@ import {
   MembershipState,
   UserSession,
 } from "@/api/types";
+import { ClientError } from "@/lib/client/accounts";
 import { edgeConfig } from "@ory/integrations/next";
+import { Button, SVG } from '@source-cooperative/components';
+import { useRouter } from "next/router";
+import { useEffect, useState } from "react";
+import useSWR from "swr";
+import { Box, useColorMode } from "theme-ui";
 
-import { Configuration, FrontendApi, Session, Identity } from "@ory/client";
+import { Configuration, FrontendApi } from "@ory/client";
 
 const baseUrl: string = process.env.NEXT_PUBLIC_IS_PROD
   ? process.env.NEXT_PUBLIC_ORY_SDK_URL

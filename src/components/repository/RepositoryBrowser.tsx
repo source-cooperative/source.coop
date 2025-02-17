@@ -1,20 +1,18 @@
-import { AzureDataConnectionSchema, DataConnection, DataConnectionDetails, Repository, S3DataConnectionSchema } from "@/api/types";
-import { default as Button, default as SourceButton } from "@/components/Button";
-import SVG from "@/components/SVG";
-import SourceLink from "@/components/SourceLink";
+import { AzureDataConnectionSchema, DataConnection, Repository, S3DataConnectionSchema } from "@/api/types";
 import { ClientError } from "@/lib/client/accounts";
 import {
   HeadObjectCommand,
   ListObjectsV2Command,
   S3Client,
 } from "@aws-sdk/client-s3";
+import { Button as SourceButton, Link as SourceLink, SVG } from '@source-cooperative/components';
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import Skeleton from "react-loading-skeleton";
 import useSWR from "swr";
-import { Box, Card, Flex, Grid, Heading, Paragraph, Text } from "theme-ui";
+import { Box, Button, Card, Flex, Grid, Heading, Paragraph, Text } from "theme-ui";
 
 const s3Client = new S3Client({
   endpoint: process.env.NEXT_PUBLIC_S3_ENDPOINT,
@@ -327,22 +325,15 @@ export default function RepositoryBrowser({ account_id, repository_id }) {
 
     var viewer = null;
 
-    if (objectFilename.endsWith(".pmtiles")) {
-      const PMTilesViewer = dynamic(
-        () => import("@/components/PMTilesViewer"),
+    if (objectFilename.endsWith('.pmtiles') || objectFilename.endsWith('.geojson')) {
+      const MapViewer = dynamic(
+        // TODO(SL): directly import the viewer from the package (using the 'exports' field in package.json)
+        () => import('@source-cooperative/components').then((components) => components.MapViewer),
         {
           ssr: false,
         }
       );
-      viewer = <PMTilesViewer url={objectUrl} />;
-    } else if (objectFilename.endsWith(".geojson")) {
-      const GeoJSONViewer = dynamic(
-        () => import("@/components/GeoJSONViewer"),
-        {
-          ssr: false,
-        }
-      );
-      viewer = <GeoJSONViewer url={objectUrl} />;
+      viewer = <MapViewer url={objectUrl} filename={objectFilename} />
     }
     return (
       <Box>

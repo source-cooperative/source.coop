@@ -1,9 +1,9 @@
-import { Box, Heading, Image, Grid, Text } from "theme-ui";
 import { Account, AccountProfileResponse } from "@/api/types";
 import { ClientError } from "@/lib/client/accounts";
+import { Link as SourceLink } from '@source-cooperative/components';
+import { GoInfo, GoLink, GoLocation } from "react-icons/go";
 import useSWR from "swr";
-import { GoLocation, GoLink, GoInfo } from "react-icons/go";
-import SourceLink from "../SourceLink";
+import { Box, Grid, Heading, Image, Text } from "theme-ui";
 
 export function AccountObject({ account_id }: { account_id: string }) {
   const { data: profile, isLoading: _profileIsLoading } = useSWR<
