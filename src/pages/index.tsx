@@ -1,7 +1,7 @@
-import { Layout } from "../components/Layout";
-import { Paragraph, Box, Heading, Card } from "theme-ui";
 import { RepositoryList } from "@/components/repository/RepositoryList";
-import SourceLink from "@/components/SourceLink";
+import { Link as SourceLink } from '@source-cooperative/components';
+import { Box, Card, Paragraph } from "theme-ui";
+import { Layout } from "../components/Layout";
 
 export default function Home() {
   return (

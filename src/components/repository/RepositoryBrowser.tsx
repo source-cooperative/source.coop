@@ -12,7 +12,7 @@ import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import Skeleton from "react-loading-skeleton";
 import useSWR from "swr";
-import { Box, Button, Card, Flex, Grid, Heading, Paragraph, Text } from "theme-ui";
+import { Box, Card, Flex, Grid, Heading, Paragraph, Text } from "theme-ui";
 
 const s3Client = new S3Client({
   endpoint: process.env.NEXT_PUBLIC_S3_ENDPOINT,
@@ -397,9 +397,9 @@ export default function RepositoryBrowser({ account_id, repository_id }) {
             </Text>
           </Grid>
           <Box sx={{ textAlign: "right" }}>
-            <Button variant="primary" href={objectUrl} sx={{ mt: 2 }}>
+            <SourceButton variant="primary" href={objectUrl} sx={{ mt: 2 }}>
               Download
-            </Button>
+            </SourceButton>
           </Box>
         </Card>
         {viewer ? (

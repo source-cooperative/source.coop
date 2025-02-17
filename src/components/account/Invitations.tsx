@@ -1,9 +1,9 @@
-import useSWR from "swr";
-import { UserSession, MembershipState, Membership } from "@/api/types";
+import { Membership, MembershipState, UserSession } from "@/api/types";
 import { ClientError } from "@/lib/client/accounts";
-import { Box, Text, Grid, Button, Alert } from "theme-ui";
-import SourceLink from "../SourceLink";
+import { Link as SourceLink } from '@source-cooperative/components';
 import { useState } from "react";
+import useSWR from "swr";
+import { Alert, Box, Button, Grid, Text } from "theme-ui";
 
 export function Invitations({ account_id }: { account_id: string }) {
   const [submitting, setSubmitting] = useState(false);
