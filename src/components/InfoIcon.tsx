@@ -1,4 +1,4 @@
-import SVG from "./SVG";
+import SVG from '@source-cooperative/components/SVG.js';
 
 export default function InfoIcon({ ...props }) {
     return (

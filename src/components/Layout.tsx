@@ -1,16 +1,16 @@
-import { UserSession, MembershipState } from "@/api/types";
+import { MembershipState, UserSession } from "@/api/types";
 import { ClientError } from "@/lib/client/accounts";
+import SourceLink from '@source-cooperative/components/Link.js';
+import Logo from '@source-cooperative/components/Logo.js';
+import Meta from '@source-cooperative/components/Meta.js';
 import Link from "next/link";
-import { Alert, Box, Container, Flex, Grid, Spinner } from "theme-ui";
 import useSWR from "swr";
+import { Alert, Box, Container, Flex, Grid, Spinner } from "theme-ui";
 import Error from "./Error";
 import { Footer } from "./Footer";
-import { Logo } from "./Logo";
-import { Meta } from "./Meta";
 import NotFound from "./NotFound";
 import { SearchBar } from "./SearchBar";
 import SideNav from "./SideNav";
-import SourceLink from "./SourceLink";
 import UserNavButton from "./UserNavButton";
 
 const alerts = [

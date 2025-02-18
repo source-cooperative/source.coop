@@ -1,14 +1,14 @@
-import { AzureDataConnectionSchema, DataConnection, DataConnectionDetails, Repository, S3DataConnectionSchema } from "@/api/types";
-import { default as Button, default as SourceButton } from "@/components/Button";
-import SVG from "@/components/SVG";
-import SourceLink from "@/components/SourceLink";
+import { AzureDataConnectionSchema, DataConnection, Repository, S3DataConnectionSchema } from "@/api/types";
 import { ClientError } from "@/lib/client/accounts";
 import {
   HeadObjectCommand,
   ListObjectsV2Command,
   S3Client,
 } from "@aws-sdk/client-s3";
-import dynamic from "next/dynamic";
+import SourceButton from '@source-cooperative/components/Button.js';
+import SourceLink from '@source-cooperative/components/Link.js';
+import SVG from '@source-cooperative/components/SVG.js';
+import dynamic from 'next/dynamic';
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
@@ -325,24 +325,15 @@ export default function RepositoryBrowser({ account_id, repository_id }) {
     const objectUrl = `${process.env.NEXT_PUBLIC_S3_ENDPOINT}/${account_id}/${resultState.key}`;
     const objectFilename = resultState.key.split("/").at(-1);
 
-    var viewer = null;
-
-    if (objectFilename.endsWith(".pmtiles")) {
-      const PMTilesViewer = dynamic(
-        () => import("@/components/PMTilesViewer"),
+    let viewer = null;
+    if (objectFilename.endsWith('.pmtiles') || objectFilename.endsWith('.geojson')) {
+      const MapViewer = dynamic(
+        () => import('@source-cooperative/components/map/viewer.js'),
         {
           ssr: false,
         }
       );
-      viewer = <PMTilesViewer url={objectUrl} />;
-    } else if (objectFilename.endsWith(".geojson")) {
-      const GeoJSONViewer = dynamic(
-        () => import("@/components/GeoJSONViewer"),
-        {
-          ssr: false,
-        }
-      );
-      viewer = <GeoJSONViewer url={objectUrl} />;
+      viewer = <MapViewer url={objectUrl} filename={objectFilename} />
     }
     return (
       <Box>
@@ -406,9 +397,9 @@ export default function RepositoryBrowser({ account_id, repository_id }) {
             </Text>
           </Grid>
           <Box sx={{ textAlign: "right" }}>
-            <Button variant="primary" href={objectUrl} sx={{ mt: 2 }}>
+            <SourceButton variant="primary" href={objectUrl} sx={{ mt: 2 }}>
               Download
-            </Button>
+            </SourceButton>
           </Box>
         </Card>
         {viewer ? (

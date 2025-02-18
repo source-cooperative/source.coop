@@ -1,31 +1,31 @@
 import {
-  Box,
-  Container,
-  Grid,
-  Heading,
-  Paragraph,
-  Input,
-  Select,
-  Text,
-  Alert,
-} from "theme-ui";
-import SourceButton from "@/components/Button";
-import { useRouter } from "next/router";
-import { useForm, SubmitHandler } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import Link from "next/link";
-import { Dimmer } from "@carbonplan/components";
-import { Logo } from "@/components/Logo";
-import { Configuration, FrontendApi } from "@ory/client";
-import { useState, useEffect } from "react";
-import {
-  AccountCreationRequest,
-  AccountCreationRequestSchema,
-  AccountType,
+    AccountCreationRequest,
+    AccountCreationRequestSchema,
+    AccountType,
+    UserSession,
 } from "@/api/types";
-import useSWR from "swr";
-import { UserSession } from "@/api/types";
 import { ClientError } from "@/lib/client/accounts";
+import { Dimmer } from "@carbonplan/components";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Configuration, FrontendApi } from "@ory/client";
+import SourceButton from '@source-cooperative/components/Button.js';
+import Logo from '@source-cooperative/components/Logo.js';
+import Link from "next/link";
+import { useRouter } from "next/router";
+import { useEffect, useState } from "react";
+import { SubmitHandler, useForm } from "react-hook-form";
+import useSWR from "swr";
+import {
+    Alert,
+    Box,
+    Container,
+    Grid,
+    Heading,
+    Input,
+    Paragraph,
+    Select,
+    Text,
+} from "theme-ui";
 
 import { COUNTRIES } from "@/lib/constants";
 import { edgeConfig } from "@ory/integrations/next";

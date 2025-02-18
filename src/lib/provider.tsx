@@ -1,11 +1,11 @@
 /** @jsxImportSource theme-ui */
 
-import { ThemeProvider, Heading, Paragraph, Card } from "theme-ui";
-import Prism from "@theme-ui/prism";
+import CodeBlock, { InlineCode } from '@source-cooperative/components/CodeBlock.js';
+import SourceLink from '@source-cooperative/components/Link.js';
 import { useThemedStylesWithMdx } from "@theme-ui/mdx";
+import Prism from "@theme-ui/prism";
 import type { ComponentPropsWithoutRef } from "react";
-import SourceLink from "@/components/SourceLink";
-import { CodeBlock, InlineCode } from "@/components/CodeBlock";
+import { Card, Heading, Paragraph, ThemeProvider } from "theme-ui";
 
 function createLinks({ ...props }) {
   return <SourceLink href={props.href}>{props.children}</SourceLink>;

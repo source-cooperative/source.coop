@@ -1,10 +1,10 @@
-import { Box, Paragraph, Heading, Flex, Text, Card, Link } from "theme-ui";
-import SourceLink from "@/components/SourceLink";
-import RepositoryTag from "@/components/repository/RepositoryTag";
-import { useState } from "react";
-import moment from "moment";
-import Skeleton from "react-loading-skeleton";
 import { Repository, RepositoryDataMode, RepositoryState } from "@/api/types";
+import RepositoryTag from "@/components/repository/RepositoryTag";
+import SourceLink from '@source-cooperative/components/Link.js';
+import moment from "moment";
+import { useState } from "react";
+import Skeleton from "react-loading-skeleton";
+import { Card, Flex, Heading, Paragraph, Text } from "theme-ui";
 
 export function RepositoryListing({
   repository,
