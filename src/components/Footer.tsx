@@ -1,6 +1,6 @@
 /** @jsxImportSource theme-ui */
 
-import { Link as SourceLink } from '@source-cooperative/components';
+import SourceLink from '@source-cooperative/components/Link.js';
 import { Box, Container, Grid, Text } from "theme-ui";
 
 const footerLinks = [

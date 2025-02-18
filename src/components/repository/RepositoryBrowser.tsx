@@ -5,8 +5,10 @@ import {
   ListObjectsV2Command,
   S3Client,
 } from "@aws-sdk/client-s3";
-import { Button as SourceButton, Link as SourceLink, SVG } from '@source-cooperative/components';
-import dynamic from "next/dynamic";
+import SourceButton from '@source-cooperative/components/Button.js';
+import SourceLink from '@source-cooperative/components/Link.js';
+import SVG from '@source-cooperative/components/SVG.js';
+import dynamic from 'next/dynamic';
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
@@ -323,12 +325,10 @@ export default function RepositoryBrowser({ account_id, repository_id }) {
     const objectUrl = `${process.env.NEXT_PUBLIC_S3_ENDPOINT}/${account_id}/${resultState.key}`;
     const objectFilename = resultState.key.split("/").at(-1);
 
-    var viewer = null;
-
+    let viewer = null;
     if (objectFilename.endsWith('.pmtiles') || objectFilename.endsWith('.geojson')) {
       const MapViewer = dynamic(
-        // TODO(SL): directly import the viewer from the package (using the 'exports' field in package.json)
-        () => import('@source-cooperative/components').then((components) => components.MapViewer),
+        () => import('@source-cooperative/components/map/viewer.js'),
         {
           ssr: false,
         }

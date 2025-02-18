@@ -1,12 +1,12 @@
 import {
-  AccountFlags,
-  Membership,
-  MembershipRole,
-  MembershipState,
-  UserSession,
+    AccountFlags,
+    Membership,
+    MembershipRole,
+    MembershipState,
+    UserSession,
 } from "@/api/types";
 import { ClientError } from "@/lib/client/accounts";
-import { Link as SourceLink } from '@source-cooperative/components';
+import SourceLink from '@source-cooperative/components/Link.js';
 import { useState } from "react";
 import useSWR from "swr";
 import { Alert, Box, Button, Grid, Paragraph, Select, Text } from "theme-ui";

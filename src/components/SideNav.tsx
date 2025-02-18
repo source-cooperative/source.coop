@@ -1,5 +1,5 @@
 import { SideNavLink } from "@/lib/types";
-import { Link as SourceLink } from '@source-cooperative/components';
+import SourceLink from '@source-cooperative/components/Link.js';
 import { NextRouter, useRouter } from "next/router";
 import Skeleton from "react-loading-skeleton";
 import { Box, Grid, Select } from "theme-ui";

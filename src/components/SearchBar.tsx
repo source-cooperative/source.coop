@@ -1,4 +1,4 @@
-import { Button } from '@source-cooperative/components';
+import Button from '@source-cooperative/components/Button.js';
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import { Box, Grid, Input } from "theme-ui";

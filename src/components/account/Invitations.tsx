@@ -1,6 +1,6 @@
 import { Membership, MembershipState, UserSession } from "@/api/types";
 import { ClientError } from "@/lib/client/accounts";
-import { Link as SourceLink } from '@source-cooperative/components';
+import SourceLink from '@source-cooperative/components/Link.js';
 import { useState } from "react";
 import useSWR from "swr";
 import { Alert, Box, Button, Grid, Text } from "theme-ui";

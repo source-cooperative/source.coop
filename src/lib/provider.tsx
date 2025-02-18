@@ -1,6 +1,7 @@
 /** @jsxImportSource theme-ui */
 
-import { CodeBlock, InlineCode, Link as SourceLink } from '@source-cooperative/components';
+import CodeBlock, { InlineCode } from '@source-cooperative/components/CodeBlock.js';
+import SourceLink from '@source-cooperative/components/Link.js';
 import { useThemedStylesWithMdx } from "@theme-ui/mdx";
 import Prism from "@theme-ui/prism";
 import type { ComponentPropsWithoutRef } from "react";

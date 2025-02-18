@@ -1,6 +1,6 @@
 import { Repository, RepositoryDataMode, RepositoryState } from "@/api/types";
 import RepositoryTag from "@/components/repository/RepositoryTag";
-import { Link as SourceLink } from '@source-cooperative/components';
+import SourceLink from '@source-cooperative/components/Link.js';
 import moment from "moment";
 import { useState } from "react";
 import Skeleton from "react-loading-skeleton";

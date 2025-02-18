@@ -1,6 +1,6 @@
 import { Account, AccountProfileResponse } from "@/api/types";
 import { ClientError } from "@/lib/client/accounts";
-import { Link as SourceLink } from '@source-cooperative/components';
+import SourceLink from '@source-cooperative/components/Link.js';
 import { GoInfo, GoLink, GoLocation } from "react-icons/go";
 import useSWR from "swr";
 import { Box, Grid, Heading, Image, Text } from "theme-ui";

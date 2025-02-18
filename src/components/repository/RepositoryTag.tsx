@@ -1,4 +1,4 @@
-import { Link as SourceLink } from '@source-cooperative/components';
+import SourceLink from '@source-cooperative/components/Link.js';
 import { transparentize } from "@theme-ui/color";
 import { Card, Text } from "theme-ui";
 

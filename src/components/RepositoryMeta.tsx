@@ -1,4 +1,4 @@
-import { Meta } from '@source-cooperative/components';
+import Meta from '@source-cooperative/components/Meta.js';
 
 interface RepositoryMetaProps {
   repository: {

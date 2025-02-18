@@ -1,6 +1,8 @@
 import { MembershipState, UserSession } from "@/api/types";
 import { ClientError } from "@/lib/client/accounts";
-import { Logo, Meta, Link as SourceLink } from '@source-cooperative/components';
+import SourceLink from '@source-cooperative/components/Link.js';
+import Logo from '@source-cooperative/components/Logo.js';
+import Meta from '@source-cooperative/components/Meta.js';
 import Link from "next/link";
 import useSWR from "swr";
 import { Alert, Box, Container, Flex, Grid, Spinner } from "theme-ui";

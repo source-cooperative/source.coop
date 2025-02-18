@@ -1,20 +1,20 @@
 import {
-  AccountFlags,
-  MembershipRole,
-  MembershipState,
-  Repository,
-  RepositoryDataMode,
-  UserSession
+    AccountFlags,
+    MembershipRole,
+    MembershipState,
+    Repository,
+    RepositoryDataMode,
+    UserSession
 } from "@/api/types";
 import { ClientError } from "@/lib/client/accounts";
-import { Link as SourceLink } from '@source-cooperative/components';
+import SourceLink from '@source-cooperative/components/Link.js';
 import useSWR from "swr";
 import {
-  Box,
-  Card,
-  Grid,
-  Paragraph,
-  Text
+    Box,
+    Card,
+    Grid,
+    Paragraph,
+    Text
 } from "theme-ui";
 
 export function AccessData({

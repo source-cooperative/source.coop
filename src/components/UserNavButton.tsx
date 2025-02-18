@@ -1,13 +1,14 @@
 import {
-  AccountFlags,
-  APIKey,
-  APIKeyRequest,
-  MembershipState,
-  UserSession,
+    AccountFlags,
+    APIKey,
+    APIKeyRequest,
+    MembershipState,
+    UserSession,
 } from "@/api/types";
 import { ClientError } from "@/lib/client/accounts";
 import { edgeConfig } from "@ory/integrations/next";
-import { Button, SVG } from '@source-cooperative/components';
+import Button from '@source-cooperative/components/Button.js';
+import SVG from '@source-cooperative/components/SVG.js';
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import useSWR from "swr";

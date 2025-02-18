@@ -20,6 +20,7 @@ const nextConfig = {
       },
     ],
   },
+  transpilePackages: ["@source-cooperative/components"],
 };
 
 module.exports = nextConfig;

@@ -1,5 +1,5 @@
 import { RepositoryList } from "@/components/repository/RepositoryList";
-import { Link as SourceLink } from '@source-cooperative/components';
+import SourceLink from '@source-cooperative/components/Link.js';
 import { Box, Card, Paragraph } from "theme-ui";
 import { Layout } from "../components/Layout";
 
