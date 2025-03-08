@@ -1,60 +1,89 @@
-import { useRouter } from "next/router";
-import { Layout } from "@/components/Layout";
-import { Markdown } from "@/components/viewers/Markdown";
-import { RepositoryListing } from "@/components/repository/RepositoryListing";
-import { getRepository } from "@/lib/client/repositories";
-import { RepositorySideNavLinks } from "@/components/RepositorySideNav";
-import { useState, useEffect } from "react";
-import useSWR from "swr";
-import { Repository } from "@/api/types";
-import { ClientError } from "@/lib/client/accounts";
+import { useRouter } from 'next/router';
+import { Container, Heading, Text, Flex, Card, Box } from '@radix-ui/themes';
+import { exampleRepositories } from '@/fixtures/example-data';
+import { Repository } from '@/types';
+
+function DataCiteSection({ repository }: { repository: Repository }) {
+  if (!repository.meta.dataCite) return null;
+
+  const { dataCite } = repository.meta;
+
+  return (
+    <Card>
+      <Heading size="4" mb="4">Dataset Information</Heading>
+      
+      {dataCite.doi && (
+        <Flex direction="column" mb="4">
+          <Text weight="bold">DOI</Text>
+          <Text>{dataCite.doi}</Text>
+        </Flex>
+      )}
+
+      <Flex direction="column" mb="4">
+        <Text weight="bold">Creators</Text>
+        {dataCite.creators.map((creator, index) => (
+          <Text key={index}>
+            {creator.name} ({creator.nameType})
+          </Text>
+        ))}
+      </Flex>
+
+      <Flex direction="column" mb="4">
+        <Text weight="bold">Publication Details</Text>
+        <Text>Published by {dataCite.publisher} in {dataCite.publicationYear}</Text>
+        <Text>Type: {dataCite.resourceType.resourceTypeGeneral} - {dataCite.resourceType.resourceType}</Text>
+      </Flex>
+
+      {dataCite.subjects && (
+        <Flex direction="column" mb="4">
+          <Text weight="bold">Subjects</Text>
+          {dataCite.subjects.map((subject, index) => (
+            <Text key={index}>{subject.subject}</Text>
+          ))}
+        </Flex>
+      )}
+
+      {dataCite.contributors && (
+        <Flex direction="column" mb="4">
+          <Text weight="bold">Contributors</Text>
+          {dataCite.contributors.map((contributor, index) => (
+            <Text key={index}>
+              {contributor.name} - {contributor.contributorType}
+            </Text>
+          ))}
+        </Flex>
+      )}
+    </Card>
+  );
+}
 
 export default function RepositoryDetail() {
   const router = useRouter();
-
   const { account_id, repository_id } = router.query;
-  const [accountId, setAccountId] = useState<string>(account_id as string);
-  const [repositoryId, setRepositoryId] = useState<string>(
-    repository_id as string
+
+  // In production, this would be an API call
+  const repository = exampleRepositories.find(
+    repo => repo.accountId === account_id && repo.id === repository_id
   );
 
-  useEffect(() => {
-    setAccountId(account_id as string);
-    setRepositoryId(repository_id as string);
-  }, [account_id, repository_id]);
-
-  const {
-    data: repository,
-    mutate: refreshRepository,
-    isLoading: repositoryIsLoading,
-    error: repositoryError,
-  } = useSWR<Repository, ClientError>(
-    account_id && repository_id
-      ? { path: `/api/v1/repositories/${account_id}/${repository_id}` }
-      : null,
-    {
-      refreshInterval: 0,
-    }
-  );
-
-  const sideNavLinks = RepositorySideNavLinks({
-    account_id: accountId,
-    repository_id: repositoryId,
-  });
+  if (!repository) {
+    return (
+      <Container size="4" py="6">
+        <Text>Repository not found</Text>
+      </Container>
+    );
+  }
 
   return (
-    <Layout
-      notFound={repositoryError && repositoryError.status === 404}
-      sideNavLinks={sideNavLinks}
-    >
-      <RepositoryListing repository={repository} truncate={false} />
-      {repository ? (
-        <Markdown
-          url={`${process.env.NEXT_PUBLIC_S3_ENDPOINT}/${accountId}/${repositoryId}/README.md`}
-        />
-      ) : (
-        <></>
-      )}
-    </Layout>
+    <Container size="4" py="6">
+      <Flex direction="column" gap="6">
+        <Box>
+          <Heading size="8" mb="2">{repository.meta.title}</Heading>
+          <Text size="4" color="gray">{repository.meta.description}</Text>
+        </Box>
+
+        {repository.meta.dataCite && <DataCiteSection repository={repository} />}
+      </Flex>
+    </Container>
   );
 }
