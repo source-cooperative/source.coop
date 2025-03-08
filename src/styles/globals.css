@@ -15,43 +15,37 @@
 }
 
 @font-face {
-    font-family: 'Berkeley Mono';
-    src: url('/fonts/BerkeleyMono-Italic.woff2') format('woff2');
-    font-weight: 400;
-    font-style: italic;
-    font-display: swap;
-  }
+  font-family: 'Berkeley Mono';
+  src: url('/fonts/BerkeleyMono-Italic.woff2') format('woff2');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
 
 @font-face {
-    font-family: 'Berkeley Mono';
-    src: url('/fonts/BerkeleyMono-BoldItalic.woff2') format('woff2');
-    font-weight: 700;
-    font-style: italic;
-    font-display: swap;
-  }
+  font-family: 'Berkeley Mono';
+  src: url('/fonts/BerkeleyMono-BoldItalic.woff2') format('woff2');
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+
+:root .radix-themes {
+  --default-font-family: var(--font-ibm-plex);
+  --code-font-family: 'Berkeley Mono', Menlo, Consolas, monospace;
+}
 
 .repository-listing {
-  padding: 1.5rem 1rem;
-  border-bottom: 1px solid var(--gray-a4);
-  transition: background-color 0.2s ease-in-out;
-  color: var(--accent-12);
+  color: var(--accent-13);
+  display: block;
+  text-decoration: none;
+  margin: 0;
 }
 
-.repository-listing:hover {
-  background-color: var(--gray-a2);
+.repository-title {
+  text-decoration: underline;
 }
 
-.repository-listing:hover .arrow-icon {
-  transform: translateX(4px);
-  opacity: 1;
-  transition: all 0.2s ease-in-out;
-}
-
-.mono {
-  font-family: 'Berkeley Mono', monospace;
-}
-
-:root {
-  --font-default: var(--font-ibm-plex-sans), -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-mono: 'Berkeley Mono', monospace;
+.repository-title:hover {
+  text-decoration: none;
 }

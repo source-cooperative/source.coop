@@ -84,10 +84,60 @@ interface Repository {
   stats?: RepositoryStats;
 }
 
+/**
+ * Account types
+ */
+type AccountType = 'individual' | 'organization';
+
+/**
+ * Base account interface with common properties
+ */
+interface BaseAccount {
+  id: string;          // The accountId used in URLs
+  type: AccountType;   // Whether this is an individual or organization
+  name: string;        // Display name
+  description?: string;
+  avatarUrl?: string;
+  websiteUrl?: string;
+  location?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Individual account type
+ */
+interface IndividualAccount extends BaseAccount {
+  type: 'individual';
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+}
+
+/**
+ * Organization account type
+ */
+interface OrganizationAccount extends BaseAccount {
+  type: 'organization';
+  orgType?: 'academic' | 'government' | 'nonprofit' | 'commercial';
+  parentOrg?: string;    // ID of parent organization
+  subOrgs?: string[];    // IDs of child organizations
+  members?: string[];    // IDs of individual members
+}
+
+/**
+ * Union type for any kind of account
+ */
+type Account = IndividualAccount | OrganizationAccount;
+
 export type {
   Repository,
   RepositoryMeta,
   RepositoryStats,
   RepositoryVisibility,
   DataCiteMeta,  // Export the new type
+  Account,
+  AccountType,
+  IndividualAccount,
+  OrganizationAccount,
 };

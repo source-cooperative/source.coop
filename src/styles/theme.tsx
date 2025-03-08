@@ -7,7 +7,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       accentColor="gray"
       grayColor="gray"
       radius="small"
-      scaling="95%"
+      scaling="110%"
     >
       {children}
     </Theme>

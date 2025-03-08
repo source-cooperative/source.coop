@@ -1,5 +1,4 @@
 import { Container, Heading, Flex } from '@radix-ui/themes';
-import { Repository } from '@/types';
 import { exampleRepositories } from '@/fixtures/example-data';
 import { RepositoryCard } from '@/components/RepositoryCard';
 
@@ -16,6 +15,8 @@ export default function Home() {
           <RepositoryCard key={repo.id} repository={repo} />
         ))}
       </Flex>
+
+      
     </Container>
   );
 } 

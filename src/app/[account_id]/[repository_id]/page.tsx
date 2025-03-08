@@ -1,7 +1,6 @@
-import { useRouter } from 'next/router';
 import { Container, Heading, Text, Flex, Card, Box } from '@radix-ui/themes';
 import { exampleRepositories } from '@/fixtures/example-data';
-import { Repository } from '@/types';
+import { Repository } from '@/types/index';
 
 function DataCiteSection({ repository }: { repository: Repository }) {
   if (!repository.meta.dataCite) return null;
@@ -57,13 +56,17 @@ function DataCiteSection({ repository }: { repository: Repository }) {
   );
 }
 
-export default function RepositoryDetail() {
-  const router = useRouter();
-  const { account_id, repository_id } = router.query;
-
+export default function RepositoryPage({ 
+  params 
+}: { 
+  params: { 
+    account_id: string;
+    repository_id: string;
+  }
+}) {
   // In production, this would be an API call
   const repository = exampleRepositories.find(
-    repo => repo.accountId === account_id && repo.id === repository_id
+    repo => repo.accountId === params.account_id && repo.id === params.repository_id
   );
 
   if (!repository) {
@@ -86,4 +89,4 @@ export default function RepositoryDetail() {
       </Flex>
     </Container>
   );
-}
+} 
