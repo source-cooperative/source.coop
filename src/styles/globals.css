@@ -34,6 +34,7 @@
   padding: 1.5rem 1rem;
   border-bottom: 1px solid var(--gray-a4);
   transition: background-color 0.2s ease-in-out;
+  color: var(--accent-12);
 }
 
 .repository-listing:hover {
@@ -48,4 +49,9 @@
 
 .mono {
   font-family: 'Berkeley Mono', monospace;
+}
+
+:root {
+  --font-default: var(--font-ibm-plex-sans), -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'Berkeley Mono', monospace;
 }

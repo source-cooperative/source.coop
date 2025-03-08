@@ -8,10 +8,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       grayColor="gray"
       radius="small"
       scaling="95%"
-      fonts={{
-        default: 'IBM Plex Sans, -apple-system, BlinkMacSystemFont, sans-serif',
-        mono: 'Berkeley Mono, monospace',
-      }}
     >
       {children}
     </Theme>
