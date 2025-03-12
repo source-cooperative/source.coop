@@ -14,7 +14,7 @@ export function useMetadata<T>(repository: Repository, metadataType: string, fil
 
       try {
         const response = await fetch(
-          `/api/repositories/${repository.account_id}/${repository.repository_id}/files/${fileName}`
+          `/api/${repository.account_id}/${repository.repository_id}/objects/${fileName}`
         );
         const data = await response.json();
         setMetadata(data);

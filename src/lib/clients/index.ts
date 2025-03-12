@@ -1,7 +1,7 @@
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb';
-import { CONFIG } from './config';
-import { getStorageClient } from './storage/config';
+import { CONFIG } from '../config';
+import { createStorageClient } from './storage';
 import type { StorageClient } from '@/types/storage';
 
 // Singleton instances
@@ -18,7 +18,7 @@ export function getDynamoDb() {
 
 export function getStorage() {
   if (!storage) {
-    storage = getStorageClient();
+    storage = createStorageClient();
   }
   return storage;
 } 

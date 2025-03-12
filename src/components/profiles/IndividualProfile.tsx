@@ -1,4 +1,4 @@
-import { ProfileLayout } from './profiles/ProfileLayout';
+import { ProfileLayout } from './ProfileLayout';
 import type { Account } from '@/types/account';
 
 export function IndividualProfile({ account }: { account: Account }) {

@@ -1,21 +1,20 @@
 'use client';
 
-import { Text, Card, Flex, Box, Button } from '@radix-ui/themes';
+import { Text, Card, Flex, Box, Button, DataList } from '@radix-ui/themes';
 import { MonoText } from '@/components/MonoText';
 import { ChevronRightIcon, ChevronLeftIcon, FileIcon, SlashIcon } from '@radix-ui/react-icons';
 import Link from 'next/link';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import type { RepositoryObject } from '@/types/repository_object';
+import { BreadcrumbNav } from '@/components/BreadcrumbNav';
 
-interface ObjectBrowserProps {
+export interface ObjectBrowserProps {
   account_id: string;
   repository_id: string;
-  objects: Array<{
-    path: string;
-    size: number;
-    updated_at: string;
-  }>;
+  objects: RepositoryObject[];
   initialPath?: string;
+  selectedObject?: RepositoryObject;
 }
 
 interface FileNode {
@@ -25,10 +24,10 @@ interface FileNode {
   updated_at: string;
   isDirectory: boolean;
   children?: { [key: string]: FileNode };
-  object?: Object;  // Reference to the actual object if this is a file
+  object?: RepositoryObject;
 }
 
-export function ObjectBrowser({ account_id, repository_id, objects, initialPath = '' }: ObjectBrowserProps) {
+export function ObjectBrowser({ account_id, repository_id, objects, initialPath = '', selectedObject }: ObjectBrowserProps) {
   const router = useRouter();
   const [currentPath, setCurrentPath] = useState<string[]>(
     initialPath ? initialPath.split('/').filter(Boolean) : []
@@ -37,7 +36,11 @@ export function ObjectBrowser({ account_id, repository_id, objects, initialPath 
   const navigateToPath = (newPath: string[]) => {
     setCurrentPath(newPath);
     const pathString = newPath.length > 0 ? '/' + newPath.join('/') : '';
-    router.push(`/${account_id}/${repository_id}/browse${pathString}`);
+    router.push(`/${account_id}/${repository_id}${pathString}`);
+  };
+
+  const navigateToFile = (path: string) => {
+    router.push(`/${account_id}/${repository_id}/${path}`);
   };
 
   // Build directory tree
@@ -56,7 +59,7 @@ export function ObjectBrowser({ account_id, repository_id, objects, initialPath 
           name: part,
           path: fullPath,
           size: 0,
-          updated_at: obj.updated_at, // Directory takes latest update time of any child
+          updated_at: obj.updated_at,
           isDirectory: true,
           children: {}
         };
@@ -71,7 +74,7 @@ export function ObjectBrowser({ account_id, repository_id, objects, initialPath 
       path: obj.path,
       size: obj.size,
       updated_at: obj.updated_at,
-      isDirectory: false,
+      isDirectory: obj.type === 'directory',
       object: obj
     };
   });
@@ -101,94 +104,134 @@ export function ObjectBrowser({ account_id, repository_id, objects, initialPath 
     return a.name.localeCompare(b.name);
   });
 
+  // If a specific file is selected, display its details
+  if (selectedObject && selectedObject.type !== 'directory') {
+    return (
+      <Card>
+        <Flex direction="column" gap="3">
+          {/* Breadcrumb navigation */}
+          <BreadcrumbNav 
+            account_id={account_id}
+            repository_id={repository_id}
+            path={selectedObject.path.split('/').slice(0, -1).filter(Boolean)}
+            fileName={selectedObject.path.split('/').pop()}
+            onNavigate={navigateToPath}
+          />
+          
+          {/* Horizontal separator */}
+          <Box 
+            style={{ 
+              height: '1px', 
+              background: 'var(--gray-5)', 
+              width: '100%',
+              margin: '4px 0 8px'
+            }} 
+          />
+          
+          {/* File details */}
+          <DataList.Root>
+            <DataList.Item>
+              <DataList.Label minWidth="120px">Name</DataList.Label>
+              <DataList.Value>{selectedObject.path.split('/').pop()}</DataList.Value>
+            </DataList.Item>
+            
+            <DataList.Item>
+              <DataList.Label minWidth="120px">Path</DataList.Label>
+              <DataList.Value><MonoText>{selectedObject.path}</MonoText></DataList.Value>
+            </DataList.Item>
+            
+            <DataList.Item>
+              <DataList.Label minWidth="120px">Size</DataList.Label>
+              <DataList.Value>{formatFileSize(selectedObject.size)}</DataList.Value>
+            </DataList.Item>
+            
+            <DataList.Item>
+              <DataList.Label minWidth="120px">Last Updated</DataList.Label>
+              <DataList.Value>{new Date(selectedObject.updated_at).toLocaleString()}</DataList.Value>
+            </DataList.Item>
+            
+            <DataList.Item>
+              <DataList.Label minWidth="120px">Type</DataList.Label>
+              <DataList.Value>{selectedObject.type}</DataList.Value>
+            </DataList.Item>
+
+            {(selectedObject as any).contentType && (
+              <DataList.Item>
+                <DataList.Label minWidth="120px">Content Type</DataList.Label>
+                <DataList.Value>{(selectedObject as any).contentType}</DataList.Value>
+              </DataList.Item>
+            )}
+          </DataList.Root>
+        </Flex>
+      </Card>
+    );
+  }
+
   return (
     <Card>
       <Flex direction="column" gap="2">
         {/* Breadcrumb navigation */}
-        <Flex align="center" gap="1" mb="2">
-          <MonoText size="2">
-            {currentPath.length > 0 ? (
-              <Link
-                href={`/${account_id}/${repository_id}/browse`}
-                onClick={(e) => {
-                  e.preventDefault();
-                  navigateToPath([]);
-                }}
-                style={{ textDecoration: 'underline' }}
-              >
-                root
-              </Link>
-            ) : (
-              <span>root</span>
-            )}
-            {currentPath.map((part, index) => (
-              <span key={index}>
-                <Text> / </Text>
-                {index === currentPath.length - 1 ? (
-                  <span>{part}</span>
-                ) : (
-                  <Link
-                    href={`/${account_id}/${repository_id}/browse/${currentPath.slice(0, index + 1).join('/')}`}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      navigateToPath(currentPath.slice(0, index + 1));
-                    }}
-                    style={{ textDecoration: 'underline' }}
-                  >
-                    {part}
-                  </Link>
-                )}
-              </span>
-            ))}
-          </MonoText>
-        </Flex>
+        <BreadcrumbNav 
+          account_id={account_id}
+          repository_id={repository_id}
+          path={currentPath}
+          onNavigate={navigateToPath}
+        />
 
-        {/* Files and directories */}
-        {items.map((item) => (
-          <Box key={item.path} p="2">
-            <Flex justify="between" align="center">
-              <Flex align="center" gap="2" style={{ flex: 1 }}>
-                {item.isDirectory ? <SlashIcon /> : <FileIcon />}
+        {/* Horizontal separator */}
+        <Box 
+            style={{ 
+              height: '1px', 
+              background: 'var(--gray-5)', 
+              width: '100%',
+              margin: '4px 0 8px'
+            }} 
+          />
+
+        {/* Directory contents */}
+        {items.length === 0 ? (
+          <Text color="gray">This directory is empty.</Text>
+        ) : (
+          <Box>
+            {items.map((item) => (
+              <Flex 
+                key={item.path} 
+                align="center" 
+                gap="2" 
+                py="2" 
+                style={{ 
+                  cursor: 'pointer',
+                  borderBottom: '1px solid var(--gray-4)'
+                }}
+                onClick={() => {
+                  if (item.isDirectory) {
+                    navigateToPath([...currentPath, item.name]);
+                  } else {
+                    navigateToFile(item.path);
+                  }
+                }}
+              >
                 {item.isDirectory ? (
-                  <Button 
-                    variant="ghost" 
-                    onClick={() => navigateToPath([...currentPath, item.name])}
-                  >
-                    <MonoText size="2">{item.name}/</MonoText>
-                  </Button>
+                  <SlashIcon />
                 ) : (
-                  <Link 
-                    href={`/${account_id}/${repository_id}/objects/${item.path}`}
-                    style={{ textDecoration: 'none' }}
-                  >
-                    <MonoText size="2">{item.name}</MonoText>
-                  </Link>
+                  <FileIcon />
                 )}
+                <MonoText weight="regular">{item.name}</MonoText>
+                {item.isDirectory && <ChevronRightIcon />}
               </Flex>
-              <Flex gap="4" align="center">
-                {!item.isDirectory && (
-                  <>
-                    <Text size="2" color="gray">
-                      {formatBytes(item.size)}
-                    </Text>
-                    <Text size="2" color="gray">
-                      {new Date(item.updated_at).toLocaleDateString()}
-                    </Text>
-                  </>
-                )}
-              </Flex>
-            </Flex>
+            ))}
           </Box>
-        ))}
+        )}
       </Flex>
     </Card>
   );
 }
 
-function formatBytes(bytes: number): string {
-  if (bytes === 0) return '0 B';
+// Helper function to format file size
+function formatFileSize(bytes: number): string {
+  if (bytes === 0) return '0 Bytes';
   const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
-} 
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}

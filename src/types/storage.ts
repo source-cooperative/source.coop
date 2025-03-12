@@ -1,3 +1,4 @@
+import { Object } from './object';
 export type StorageType = 'LOCAL' | 'S3';
 
 // The storage provider entity
@@ -60,21 +61,12 @@ export interface StorageClient {
   listObjects(params: {
     account_id: string;
     repository_id: string;
-  }): Promise<Array<{
-    path: string;
-    size: number;
-    updated_at: string;
-  }>>;
+    prefix?: string;
+  }): Promise<Array<Partial<Object>>>;  // Or Array<Object> if all fields are available
 
   getObjectInfo(params: {
     account_id: string;
     repository_id: string;
     object_path: string;
-  }): Promise<{
-    id?: string;
-    size: number;
-    created_at?: string;
-    updated_at?: string;
-    checksum?: string;
-  }>;
-} 
+  }): Promise<Partial<Object>>;  // Or Object if all fields are required
+}

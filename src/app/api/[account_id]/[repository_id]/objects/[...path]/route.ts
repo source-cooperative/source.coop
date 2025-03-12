@@ -1,21 +1,8 @@
 import { NextResponse } from 'next/server';
-import { LocalStorageClient } from '@/lib/storage/local';
+import { getStorage } from '@/lib/clients';
 
 const getStorageClient = () => {
-  const provider = {
-    provider_id: 'local',
-    type: 'LOCAL' as const,
-    endpoint: './test-storage',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  };
-
-  const config = {
-    type: 'LOCAL' as const,
-    endpoint: './test-storage',
-  };
-
-  return new LocalStorageClient(provider, config);
+  return getStorage();
 };
 
 export async function GET(
@@ -28,9 +15,14 @@ export async function GET(
     } 
   }
 ) {
+  console.log('API route handler:', { params });
+  
   try {
-    const storage = getStorageClient();
+    const storage = getStorage();
+    console.log('Got storage client');
+    
     const objectPath = params.path.join('/');
+    console.log('Getting object info for path:', objectPath);
     
     // Get object info using the storage client
     const objectInfo = await storage.getObjectInfo({
@@ -50,14 +42,14 @@ export async function GET(
       id: `${params.account_id}/${params.repository_id}/${objectPath}`,
       repository_id: params.repository_id,
       path: objectPath,
-      size: objectInfo.size,
-      updated_at: objectInfo.updated_at,
-      created_at: new Date().toISOString(),
-      checksum: ''
+      size: objectInfo.size || 0,
+      updated_at: objectInfo.updated_at || new Date().toISOString(),
+      created_at: objectInfo.created_at || new Date().toISOString(),
+      checksum: objectInfo.checksum || ''
     });
 
   } catch (error) {
-    console.error('Error getting object:', error);
+    console.error('Error in API route:', error);
     return NextResponse.json(
       { error: 'Failed to get object' },
       { status: 500 }

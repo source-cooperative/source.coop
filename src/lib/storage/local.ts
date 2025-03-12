@@ -1,16 +1,24 @@
 import fs from 'fs/promises';
 import path from 'path';
-import { StorageProvider, StorageProviderConfig, ObjectPath } from '@/types/storage';
-import { Object } from '@/types/object';
-import { StorageClient } from '@/types/storage';
+import { StorageClient, StorageProvider, StorageConfig, ObjectPath } from '@/types/storage';
+import { RepositoryObject } from '@/types/repository_object';
 
 export class LocalStorageClient implements StorageClient {
   private baseDir: string;
   private provider: StorageProvider;
 
-  constructor(provider: StorageProvider, config: StorageProviderConfig) {
-    // For local storage, endpoint should be a filesystem path
-    this.baseDir = config.endpoint;
+  constructor(provider: StorageProvider, config: StorageConfig) {
+    console.log('LocalStorageClient constructor:', { provider, config });
+    
+    if (!config?.endpoint) {
+      console.error('Missing endpoint in config:', config);
+      throw new Error('Storage endpoint is required for LocalStorageClient');
+    }
+    
+    // Ensure the path is absolute
+    this.baseDir = path.resolve(process.cwd(), config.endpoint);
+    console.log('Resolved baseDir:', this.baseDir);
+    
     this.provider = provider;
   }
 
@@ -19,7 +27,7 @@ export class LocalStorageClient implements StorageClient {
     return path.join(this.baseDir, relativePath);
   }
 
-  async putObject(objectPath: ObjectPath, data: Buffer): Promise<Object> {
+  async putObject(objectPath: ObjectPath, data: Buffer): Promise<RepositoryObject> {
     const fullPath = this.getFullPath(objectPath);
     
     // Ensure directory exists
@@ -53,6 +61,12 @@ export class LocalStorageClient implements StorageClient {
   }
 
   async listObjects(prefix: { account_id: string, repository_id: string }): Promise<Array<{ path: string, size: number, updated_at: string }>> {
+    // Add validation to handle undefined values
+    if (!prefix || !prefix.account_id || !prefix.repository_id) {
+      console.error('Invalid prefix for listObjects:', prefix);
+      return [];
+    }
+    
     const basePath = path.join(this.baseDir, prefix.account_id, prefix.repository_id);
     
     try {
@@ -89,27 +103,38 @@ export class LocalStorageClient implements StorageClient {
     return files;
   }
 
-  async getObjectInfo(objectPath: ObjectPath): Promise<{
+  async getObjectInfo(params: {
+    account_id: string;
+    repository_id: string;
+    object_path: string;
+  }): Promise<{
     id?: string;
     size: number;
     created_at?: string;
-    updated_at: string;
+    updated_at?: string;
     checksum?: string;
   }> {
-    const fullPath = this.getFullPath(objectPath);
+    const fullPath = this.getFullPath({
+      account_id: params.account_id,
+      repository_id: params.repository_id,
+      object_path: params.object_path
+    });
     
     try {
       const stats = await fs.stat(fullPath);
       return {
-        id: objectPath.object_path, // Using path as ID
+        id: params.object_path,
         size: stats.size,
         created_at: stats.birthtime.toISOString(),
         updated_at: stats.mtime.toISOString(),
-        checksum: undefined // Optional
+        checksum: undefined
       };
     } catch (error) {
       console.error('Error getting object info:', error);
-      return null;
+      return {
+        size: 0,
+        updated_at: new Date().toISOString()
+      };
     }
   }
 } 

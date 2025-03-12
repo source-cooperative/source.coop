@@ -1,15 +1,25 @@
+// Helper to ensure we don't get undefined values
+const getEnvVar = (key: string, defaultValue: string): string => {
+  const value = process.env[key];
+  console.log(`Reading env var ${key}:`, { value, defaultValue });
+  if (!value) {
+    console.warn(`Environment variable ${key} not found, using default: ${defaultValue}`);
+    return defaultValue;
+  }
+  return value;
+};
+
 export const CONFIG = {
   storage: {
-    type: process.env.STORAGE_TYPE as 'LOCAL' | 'S3',
-    endpoint: process.env.STORAGE_ENDPOINT,
-    region: process.env.AWS_REGION,
+    type: getEnvVar('STORAGE_TYPE', 'LOCAL'),
+    endpoint: getEnvVar('STORAGE_ENDPOINT', './test-storage'),
+    region: getEnvVar('AWS_REGION', 'us-east-1'),
   },
   database: {
-    endpoint: process.env.DYNAMODB_ENDPOINT || 'http://localhost:8000',
-    region: process.env.AWS_REGION || 'us-east-1',
-    credentials: {
-      accessKeyId: process.env.AWS_ACCESS_KEY_ID || 'local',
-      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || 'local',
-    },
+    endpoint: getEnvVar('DYNAMODB_ENDPOINT', 'http://localhost:8000'),
+    region: getEnvVar('AWS_REGION', 'us-east-1'),
   },
-} as const; 
+} as const;
+
+// Add debug logging
+console.log('Loaded CONFIG:', CONFIG); 

@@ -1,9 +1,7 @@
-import { Repository } from '@/types/repository';
+import { Repository, RepositoryStatistics } from '@/types/repository';
 import { Account } from '@/types/account';
-import { Object } from '@/types/object';
-import { RepositoryStatistics } from '@/types/repository_statistics';
+import { RepositoryObject } from '@/types/repository_object';
 
-// Core repositories
 export const exampleRepositories: Repository[] = [
   {
     repository_id: "global-building-footprints",
@@ -152,7 +150,7 @@ export const exampleRepositories: Repository[] = [
 ];
 
 // Example objects
-export const exampleObjects: Object[] = [
+export const exampleObjects: RepositoryObject[] = [
   {
     id: "buildings-2024-01.geojson",
     repository_id: "global-building-footprints",

@@ -20,6 +20,11 @@ const nextConfig = {
       },
     ],
   },
+  env: {
+    STORAGE_TYPE: process.env.STORAGE_TYPE,
+    STORAGE_ENDPOINT: process.env.STORAGE_ENDPOINT,
+    AWS_REGION: process.env.AWS_REGION,
+  },
 };
 
 module.exports = nextConfig;

@@ -1,4 +1,4 @@
-import { LinkCard } from './common/LinkCard';
+import { LinkCard } from './LinkCard';
 import type { Repository } from '@/types/repository';
 import type { Account } from '@/types/account';
 import { Text } from '@radix-ui/themes';

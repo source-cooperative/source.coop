@@ -1,26 +1,15 @@
 import { Repository } from '@/types/repository';
+import { RepositoryObject } from '@/types/repository_object';
 import { Container, Heading, Text, Flex, Card, Box } from '@radix-ui/themes';
 import { useState, useEffect } from 'react';
 import { notFound } from 'next/navigation';
-import { fetchRepositories, fetchAccounts } from '@/lib/dynamodb';
+import { fetchRepositories } from '@/lib/db/operations';
+import { createStorageClient } from '@/lib/clients/storage';
 import { ObjectBrowser } from '@/components/ObjectBrowser';
-import { LocalStorageClient } from '@/lib/storage/local';
+import Link from 'next/link';
 
 // Define valid metadata types
 type MetadataType = keyof NonNullable<Repository['metadata_files']>;
-
-// Helper function to fetch and type metadata
-async function fetchMetadata<T>(
-  repository: Repository, 
-  metadataType: MetadataType,
-  index = 0
-): Promise<T | null> {
-  const files = repository.metadata_files?.[metadataType];
-  if (!files || !files[index]) return null;
-  
-  const response = await fetch(`/api/repositories/${repository.account_id}/${repository.repository_id}/files/${files[index]}`);
-  return response.json();
-}
 
 interface PageProps {
   params: {
@@ -42,42 +31,24 @@ async function getRepository(accountId: string, repositoryId: string): Promise<R
   }
 }
 
-async function listObjects(accountId: string, repositoryId: string) {
-  // Create storage client with local config
-  const provider = {
-    provider_id: 'local',
-    type: 'LOCAL' as const,
-    endpoint: './test-storage',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  };
-
-  const config = {
-    type: 'LOCAL' as const,
-    endpoint: './test-storage',
-  };
-
-  const storage = new LocalStorageClient(provider, config);
+// Add a function to get objects
+async function getObjects(accountId: string, repositoryId: string): Promise<RepositoryObject[]> {
+  const client = createStorageClient();
+  const rawObjects = await client.listObjects({ account_id: accountId, repository_id: repositoryId });
   
-  try {
-    // TODO: Implement listObjects in LocalStorageClient
-    // For now, return the test data we created
-    return [
-      {
-        path: 'README.md',
-        size: 1024, // This will be actual size once implemented
-        updated_at: new Date().toISOString()
-      },
-      {
-        path: 'metadata/stac-catalog.json',
-        size: 2048,
-        updated_at: new Date().toISOString()
-      }
-    ];
-  } catch (error) {
-    console.error('Error listing objects:', error);
-    return [];
-  }
+  return rawObjects.map(obj => {
+    const path = obj.path || '';
+    return {
+      id: path,
+      path,
+      name: path.split('/').pop() || path,
+      size: obj.size,
+      updated_at: obj.updated_at,
+      repository_id: repositoryId,
+      created_at: obj.updated_at ?? new Date().toISOString(),
+      checksum: obj.checksum ?? '',
+    } as RepositoryObject;
+  });
 }
 
 export default async function RepositoryPage({
@@ -89,7 +60,7 @@ export default async function RepositoryPage({
     notFound();
   }
 
-  const objects = await listObjects(params.account_id, params.repository_id);
+  const objects: RepositoryObject[] = await getObjects(params.account_id, params.repository_id);
 
   return (
     <Container>
@@ -99,9 +70,10 @@ export default async function RepositoryPage({
       <Flex direction="column" gap="4">
         <Heading size="4">Repository Contents</Heading>
         <ObjectBrowser 
-          account_id={params.account_id}
-          repository_id={params.repository_id}
+          account_id={params.account_id} 
+          repository_id={params.repository_id} 
           objects={objects}
+          initialPath=""
         />
       </Flex>
     </Container>
