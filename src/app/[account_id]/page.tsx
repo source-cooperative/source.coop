@@ -1,32 +1,48 @@
-import { notFound } from 'next/navigation';
-import { Heading, Text, Flex } from '@radix-ui/themes';
-import { exampleAccounts } from '@/fixtures/example-accounts';
-import { OrganizationProfile } from '@/components/profiles/OrganizationProfile';
-import { IndividualProfile } from '@/components/profiles/IndividualProfile';
+import { Container, Heading, Text, Flex, Box } from '@radix-ui/themes';
+import { RepositoryCard } from '@/components/RepositoryCard';
+import { fetchRepositories, fetchAccounts } from '@/lib/dynamodb';
+import { Repository } from '@/types/repository';
 
-// Add this export to generate static paths
-export function generateStaticParams() {
-  return exampleAccounts.map((account) => ({
-    account_id: account.id,
-  }));
-}
+export default async function AccountPage({ 
+  params 
+}: { 
+  params: { 
+    account_id: string;
+  }
+}) {
+  console.log('Account page params:', params);
 
-export default function AccountPage({ params }: { params: { account_id: string } }) {
-  const account = exampleAccounts.find(a => a.id === params.account_id);
+  // Get repositories from DynamoDB instead of example data
+  const repositories = await fetchRepositories();
   
-  if (!account) {
-    notFound();
+  // Find all repositories owned by this account
+  const accountRepositories = repositories.filter(
+    repo => repo.account_id === params.account_id
+  );
+
+  if (accountRepositories.length === 0) {
+    return (
+      <Container size="4" py="6">
+        <Text>No repositories found for account: {params.account_id}</Text>
+      </Container>
+    );
   }
 
   return (
-    <Flex direction="column" gap="4">
-      <Heading size="8">{account.name}</Heading>
-      
-      {account.type === 'organization' ? (
-        <OrganizationProfile org={account} />
-      ) : (
-        <IndividualProfile individual={account} />
-      )}
-    </Flex>
+    <Container size="4" py="6">
+      <Flex direction="column" gap="6">
+        <Box>
+          <Heading size="8" mb="2">{params.account_id}</Heading>
+          <Text size="4" color="gray">Repositories</Text>
+        </Box>
+
+        {accountRepositories.map(repository => (
+          <RepositoryCard 
+            key={`${repository.account_id}/${repository.repository_id}`}
+            repository={repository}
+          />
+        ))}
+      </Flex>
+    </Container>
   );
 } 

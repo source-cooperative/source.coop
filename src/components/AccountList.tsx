@@ -1,25 +1,19 @@
-import { Card, Flex, Text, Link as RadixLink } from '@radix-ui/themes';
-import Link from 'next/link';
-import { exampleAccounts } from '@/fixtures/example-accounts';
+import { LinkCard } from './common/LinkCard';
+import type { Account } from '@/types/account';
+import { Text } from '@radix-ui/themes';
 
-export function AccountList() {
+export function AccountList({ accounts }: { accounts: Account[] }) {
   return (
-    <Flex direction="column" gap="3">
-      {exampleAccounts.map(account => (
-        <Link key={account.id} href={`/${account.id}`} style={{ textDecoration: 'none' }}>
-          <Card>
-            <Flex direction="column" gap="2">
-              <Text size="5" weight="bold">{account.name}</Text>
-              <Text color="gray">{account.description}</Text>
-              <Text size="2">
-                {account.type === 'organization' 
-                  ? `${account.orgType} organization` 
-                  : 'Individual account'}
-              </Text>
-            </Flex>
-          </Card>
-        </Link>
+    <div>
+      {accounts.map((account) => (
+        <LinkCard 
+          key={account.account_id}
+          href={`/accounts/${account.account_id}`}
+          title={account.name}
+        >
+          <Text>{account.type || 'No description available'}</Text>
+        </LinkCard>
       ))}
-    </Flex>
+    </div>
   );
 } 

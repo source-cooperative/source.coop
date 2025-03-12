@@ -1,0 +1,139 @@
+{
+  "Accounts": [
+    {
+      "PutRequest": {
+        "Item": {
+          "account_id": {"S": "jed"},
+          "type": {"S": "individual"},
+          "name": {"S": "Jed Sundwall"},
+          "description": {"S": "Executive Director at Radiant Earth"},
+          "email": {"S": "jed@example.com"},
+          "website": {"S": "https://jed.co"},
+          "orcid": {"S": "0000-0001-9681-230X"},
+          "created_at": {"S": "2024-01-01T00:00:00Z"},
+          "updated_at": {"S": "2024-02-08T00:00:00Z"}
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "account_id": {"S": "microsoft"},
+          "type": {"S": "organization"},
+          "name": {"S": "Microsoft"},
+          "description": {"S": "Building technology that creates opportunities. Home to the Planetary Computer, providing global environmental data and computing resources."},
+          "website": {"S": "https://microsoft.com"},
+          "owner_account_id": {"S": "jed"},
+          "admin_account_ids": {"SS": ["jed"]},
+          "created_at": {"S": "2024-01-01T00:00:00Z"},
+          "updated_at": {"S": "2024-02-08T00:00:00Z"}
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "account_id": {"S": "noaa"},
+          "type": {"S": "organization"},
+          "name": {"S": "National Oceanic and Atmospheric Administration"},
+          "description": {"S": "Science, Service, and Stewardship. NOAA is an American scientific and regulatory agency that forecasts weather, monitors oceanic and atmospheric conditions, charts the seas, and protects ocean and coastal resources."},
+          "website": {"S": "https://noaa.gov"},
+          "owner_account_id": {"S": "jed"},
+          "admin_account_ids": {"SS": ["jed"]},
+          "created_at": {"S": "2024-01-01T00:00:00Z"},
+          "updated_at": {"S": "2024-02-08T00:00:00Z"}
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "account_id": {"S": "usgs"},
+          "type": {"S": "organization"},
+          "name": {"S": "United States Geological Survey"},
+          "description": {"S": "Science for a changing world. USGS provides science about the natural hazards that threaten lives and livelihoods, the water, energy, minerals, and other natural resources, and the impacts of climate and land-use change."},
+          "website": {"S": "https://www.usgs.gov"},
+          "owner_account_id": {"S": "jed"},
+          "admin_account_ids": {"SS": ["jed"]},
+          "created_at": {"S": "2024-01-01T00:00:00Z"},
+          "updated_at": {"S": "2024-02-08T00:00:00Z"}
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "account_id": {"S": "esa"},
+          "type": {"S": "organization"},
+          "name": {"S": "European Space Agency"},
+          "description": {"S": "Europe's gateway to space. ESA is Europe's space agency, working to unite space exploration efforts across European nations and provide Earth observation, navigation, and space science missions."},
+          "website": {"S": "https://www.esa.int"},
+          "owner_account_id": {"S": "jed"},
+          "admin_account_ids": {"SS": ["jed"]},
+          "created_at": {"S": "2024-01-01T00:00:00Z"},
+          "updated_at": {"S": "2024-02-08T00:00:00Z"}
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "account_id": {"S": "usda"},
+          "type": {"S": "organization"},
+          "name": {"S": "United States Department of Agriculture"},
+          "description": {"S": "Agriculture, food, natural resources, rural development, nutrition, and related issues. USDA provides leadership on food, agriculture, natural resources, rural development, and nutrition."},
+          "website": {"S": "https://www.usda.gov"},
+          "owner_account_id": {"S": "jed"},
+          "admin_account_ids": {"SS": ["jed"]},
+          "created_at": {"S": "2024-01-01T00:00:00Z"},
+          "updated_at": {"S": "2024-02-08T00:00:00Z"}
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "account_id": {"S": "ecmwf"},
+          "type": {"S": "organization"},
+          "name": {"S": "European Centre for Medium-Range Weather Forecasts"},
+          "description": {"S": "Independent intergovernmental organization producing global numerical weather predictions. ECMWF operates two services from the EU's Copernicus Earth observation programme and provides numerical weather predictions to its member states."},
+          "website": {"S": "https://www.ecmwf.int"},
+          "owner_account_id": {"S": "jed"},
+          "admin_account_ids": {"SS": ["jed"]},
+          "created_at": {"S": "2024-01-01T00:00:00Z"},
+          "updated_at": {"S": "2024-02-08T00:00:00Z"}
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "account_id": {"S": "nasa"},
+          "type": {"S": "organization"},
+          "name": {"S": "National Aeronautics and Space Administration"},
+          "description": {"S": "Leading space exploration and scientific discovery. NASA's vision is to discover and expand knowledge for the benefit of humanity, pioneering the future in space exploration, scientific discovery, and aeronautics research."},
+          "website": {"S": "https://www.nasa.gov"},
+          "owner_account_id": {"S": "jed"},
+          "admin_account_ids": {"SS": ["jed"]},
+          "created_at": {"S": "2024-01-01T00:00:00Z"},
+          "updated_at": {"S": "2024-02-08T00:00:00Z"}
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "account_id": {"S": "planetary-computer"},
+          "type": {"S": "organization"},
+          "name": {"S": "Microsoft Planetary Computer"},
+          "description": {"S": "A platform for global environmental data. The Planetary Computer combines a multi-petabyte catalog of global environmental data with intuitive APIs, a flexible scientific computing environment, and the power of AI."},
+          "website": {"S": "https://planetarycomputer.microsoft.com"},
+          "owner_account_id": {"S": "jed"},
+          "admin_account_ids": {"SS": ["jed"]},
+          "created_at": {"S": "2024-01-01T00:00:00Z"},
+          "updated_at": {"S": "2024-02-08T00:00:00Z"}
+        }
+      }
+    }
+  ]
+} 
