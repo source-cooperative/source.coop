@@ -6,7 +6,10 @@ import { notFound } from 'next/navigation';
 import { fetchRepositories } from '@/lib/db/operations';
 import { createStorageClient } from '@/lib/clients/storage';
 import { ObjectBrowser } from '@/components/ObjectBrowser';
+import { MarkdownViewer } from '@/components/MarkdownViewer';
 import Link from 'next/link';
+import { RepositoryCard } from '@/components/RepositoryCard';
+import { RepositoryMetaCard } from '@/components/RepositoryMetaCard';
 
 // Define valid metadata types
 type MetadataType = keyof NonNullable<Repository['metadata_files']>;
@@ -51,6 +54,44 @@ async function getObjects(accountId: string, repositoryId: string): Promise<Repo
   });
 }
 
+// Function to get the README content
+async function getReadmeContent(accountId: string, repositoryId: string, path?: string): Promise<string | null> {
+  try {
+    const client = createStorageClient();
+    const prefix = path ? `${path}/` : '';
+    const readmePath = `${prefix}README.md`;
+    
+    // Check if README.md exists
+    const objects = await client.listObjects({ 
+      account_id: accountId, 
+      repository_id: repositoryId,
+      prefix: readmePath
+    });
+    
+    if (objects.length === 0) {
+      // If no README in current path and we're not at root, try root
+      if (path) {
+        return getReadmeContent(accountId, repositoryId);
+      }
+      return null;
+    }
+    
+    // Fetch README.md content
+    const readmeObject = await client.getObject({
+      account_id: accountId,
+      repository_id: repositoryId,
+      path: readmePath
+    });
+    
+    // Convert the content to string based on the actual return type
+    // Adjust this based on what getObject actually returns
+    return readmeObject.content?.toString() || null;
+  } catch (error) {
+    console.error("Error fetching README:", error);
+    return null;
+  }
+}
+
 export default async function RepositoryPage({
   params
 }: PageProps) {
@@ -61,21 +102,42 @@ export default async function RepositoryPage({
   }
 
   const objects: RepositoryObject[] = await getObjects(params.account_id, params.repository_id);
+  const readmeContent = await getReadmeContent(params.account_id, params.repository_id);
 
   return (
     <Container>
-      <Heading size="8" mb="4">{repository.title}</Heading>
-      <Text mb="4">{repository.description}</Text>
-      
-      <Flex direction="column" gap="4">
-        <Heading size="4">Repository Contents</Heading>
+      <Flex gap="4" mb="4">
+        <Box style={{ flex: 1 }}>
+          <RepositoryCard 
+            repository={repository} 
+            hideLink 
+            titleAsH1
+          />
+        </Box>
+        <Box style={{ flex: 1 }}>
+          <RepositoryMetaCard repository={repository} />
+        </Box>
+      </Flex>
+
+      <Flex direction="column">
         <ObjectBrowser 
           account_id={params.account_id} 
           repository_id={params.repository_id} 
           objects={objects}
           initialPath=""
+          repository_title={repository.title}
         />
       </Flex>
+
+      {readmeContent && (
+        <Card mb="4">
+          <Heading size="4" mb="2">README</Heading>
+          <Box>
+            <MarkdownViewer content={readmeContent} />
+          </Box>
+        </Card>
+      )}
+      
     </Container>
   );
 } 

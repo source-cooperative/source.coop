@@ -69,4 +69,14 @@ export interface StorageClient {
     repository_id: string;
     object_path: string;
   }): Promise<Partial<Object>>;  // Or Object if all fields are required
+  
+  // Add the getObject method to fetch the actual content
+  getObject(params: {
+    account_id: string;
+    repository_id: string;
+    path: string;
+  }): Promise<{
+    metadata?: Partial<Object>;
+    content?: Buffer | string;
+  }>;
 }

@@ -91,13 +91,13 @@ export default async function RepositoryPathPage({
       <Text mb="4">{repository.description}</Text>
       
       <Flex direction="column" gap="4">
-        <Heading size="4">Repository Contents</Heading>
         <ObjectBrowser 
           account_id={params.account_id} 
           repository_id={params.repository_id} 
           objects={objects}
           initialPath={directory ? path : path.split('/').slice(0, -1).join('/')}
           selectedObject={selectedObject}
+          repository_title={repository.title}
         />
       </Flex>
     </Container>

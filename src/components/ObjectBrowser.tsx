@@ -15,6 +15,7 @@ export interface ObjectBrowserProps {
   objects: RepositoryObject[];
   initialPath?: string;
   selectedObject?: RepositoryObject;
+  repository_title: string;
 }
 
 interface FileNode {
@@ -27,7 +28,7 @@ interface FileNode {
   object?: RepositoryObject;
 }
 
-export function ObjectBrowser({ account_id, repository_id, objects, initialPath = '', selectedObject }: ObjectBrowserProps) {
+export function ObjectBrowser({ account_id, repository_id, objects, initialPath = '', selectedObject, repository_title = 'Repository' }: ObjectBrowserProps) {
   const router = useRouter();
   const [currentPath, setCurrentPath] = useState<string[]>(
     initialPath ? initialPath.split('/').filter(Boolean) : []
@@ -104,112 +105,127 @@ export function ObjectBrowser({ account_id, repository_id, objects, initialPath 
     return a.name.localeCompare(b.name);
   });
 
+  // Extract common layout elements
+  const HeaderSection = ({ children }: { children: React.ReactNode }) => (
+    <Flex direction="column" gap="3">
+      <Text size="2" weight="bold">
+        {repository_title ? `${repository_title} contents` : 'contents'}
+      </Text>
+      {children}
+      <Box 
+        style={{ 
+          height: '1px', 
+          background: 'var(--gray-5)', 
+          width: '100%',
+          margin: '4px 0 8px'
+        }} 
+      />
+    </Flex>
+  );
+
   // If a specific file is selected, display its details
   if (selectedObject && selectedObject.type !== 'directory') {
+    // Calculate path consistently with directory view
+    const pathParts = selectedObject.path.split('/').filter(Boolean);
+    const fileName = pathParts.pop();
+    
     return (
       <Card>
-        <Flex direction="column" gap="3">
-          {/* Breadcrumb navigation */}
+        <HeaderSection>
           <BreadcrumbNav 
             account_id={account_id}
             repository_id={repository_id}
-            path={selectedObject.path.split('/').slice(0, -1).filter(Boolean)}
-            fileName={selectedObject.path.split('/').pop()}
+            path={pathParts}
+            fileName={fileName}
             onNavigate={navigateToPath}
           />
+        </HeaderSection>
+        
+        {/* File details */}
+        <DataList.Root>
+          <DataList.Item>
+            <DataList.Label minWidth="120px">Name</DataList.Label>
+            <DataList.Value>{selectedObject.path.split('/').pop()}</DataList.Value>
+          </DataList.Item>
           
-          {/* Horizontal separator */}
-          <Box 
-            style={{ 
-              height: '1px', 
-              background: 'var(--gray-5)', 
-              width: '100%',
-              margin: '4px 0 8px'
-            }} 
-          />
+          <DataList.Item>
+            <DataList.Label minWidth="120px">Path</DataList.Label>
+            <DataList.Value><MonoText>{selectedObject.path}</MonoText></DataList.Value>
+          </DataList.Item>
           
-          {/* File details */}
-          <DataList.Root>
-            <DataList.Item>
-              <DataList.Label minWidth="120px">Name</DataList.Label>
-              <DataList.Value>{selectedObject.path.split('/').pop()}</DataList.Value>
-            </DataList.Item>
-            
-            <DataList.Item>
-              <DataList.Label minWidth="120px">Path</DataList.Label>
-              <DataList.Value><MonoText>{selectedObject.path}</MonoText></DataList.Value>
-            </DataList.Item>
-            
-            <DataList.Item>
-              <DataList.Label minWidth="120px">Size</DataList.Label>
-              <DataList.Value>{formatFileSize(selectedObject.size)}</DataList.Value>
-            </DataList.Item>
-            
-            <DataList.Item>
-              <DataList.Label minWidth="120px">Last Updated</DataList.Label>
-              <DataList.Value>{new Date(selectedObject.updated_at).toLocaleString()}</DataList.Value>
-            </DataList.Item>
-            
-            <DataList.Item>
-              <DataList.Label minWidth="120px">Type</DataList.Label>
-              <DataList.Value>{selectedObject.type}</DataList.Value>
-            </DataList.Item>
+          <DataList.Item>
+            <DataList.Label minWidth="120px">Size</DataList.Label>
+            <DataList.Value>{formatFileSize(selectedObject.size)}</DataList.Value>
+          </DataList.Item>
+          
+          <DataList.Item>
+            <DataList.Label minWidth="120px">Last Updated</DataList.Label>
+            <DataList.Value>{new Date(selectedObject.updated_at).toLocaleString()}</DataList.Value>
+          </DataList.Item>
+          
+          <DataList.Item>
+            <DataList.Label minWidth="120px">Type</DataList.Label>
+            <DataList.Value>{selectedObject.type}</DataList.Value>
+          </DataList.Item>
 
-            {(selectedObject as any).contentType && (
-              <DataList.Item>
-                <DataList.Label minWidth="120px">Content Type</DataList.Label>
-                <DataList.Value>{(selectedObject as any).contentType}</DataList.Value>
-              </DataList.Item>
-            )}
-          </DataList.Root>
-        </Flex>
+          {(selectedObject as any).contentType && (
+            <DataList.Item>
+              <DataList.Label minWidth="120px">Content Type</DataList.Label>
+              <DataList.Value>{(selectedObject as any).contentType}</DataList.Value>
+            </DataList.Item>
+          )}
+        </DataList.Root>
       </Card>
     );
   }
 
   return (
     <Card>
-      <Flex direction="column" gap="2">
-        {/* Breadcrumb navigation */}
+      <HeaderSection>
         <BreadcrumbNav 
           account_id={account_id}
           repository_id={repository_id}
           path={currentPath}
           onNavigate={navigateToPath}
         />
-
-        {/* Horizontal separator */}
-        <Box 
-            style={{ 
-              height: '1px', 
-              background: 'var(--gray-5)', 
-              width: '100%',
-              margin: '4px 0 8px'
-            }} 
-          />
-
-        {/* Directory contents */}
-        {items.length === 0 ? (
-          <Text color="gray">This directory is empty.</Text>
-        ) : (
-          <Box>
-            {items.map((item) => (
+      </HeaderSection>
+      
+      {/* Directory contents */}
+      {items.length === 0 ? (
+        <Text color="gray">This directory is empty.</Text>
+      ) : (
+        <Box>
+          {items.map((item) => (
+            <Link
+              key={item.path}
+              href="#"
+              onClick={(e) => {
+                e.preventDefault();
+                if (item.isDirectory) {
+                  navigateToPath([...currentPath, item.name]);
+                } else {
+                  navigateToFile(item.path);
+                }
+              }}
+              style={{
+                display: 'block',
+                borderBottom: '1px solid var(--gray-4)',
+                transition: 'background-color 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 
+                  document.documentElement.classList.contains('dark') 
+                    ? 'var(--gray-6)' 
+                    : 'var(--gray-3)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '';
+              }}
+            >
               <Flex 
-                key={item.path} 
                 align="center" 
                 gap="2" 
-                py="2" 
-                style={{ 
-                  cursor: 'pointer',
-                  borderBottom: '1px solid var(--gray-4)'
-                }}
-                onClick={() => {
-                  if (item.isDirectory) {
-                    navigateToPath([...currentPath, item.name]);
-                  } else {
-                    navigateToFile(item.path);
-                  }
-                }}
+                py="2"
               >
                 {item.isDirectory ? (
                   <SlashIcon />
@@ -219,10 +235,10 @@ export function ObjectBrowser({ account_id, repository_id, objects, initialPath 
                 <MonoText weight="regular">{item.name}</MonoText>
                 {item.isDirectory && <ChevronRightIcon />}
               </Flex>
-            ))}
-          </Box>
-        )}
-      </Flex>
+            </Link>
+          ))}
+        </Box>
+      )}
     </Card>
   );
 }

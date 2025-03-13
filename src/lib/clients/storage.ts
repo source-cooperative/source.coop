@@ -1,6 +1,6 @@
 import { LocalStorageClient } from '../storage/local';
 import { CONFIG } from '../config';
-import type { StorageClient, StorageProvider, StorageConfig, StorageType } from '@/types/storage';
+import type { StorageClient, StorageProvider, StorageConfig, StorageType, ObjectPath } from '@/types/storage';
 
 export function createStorageClient(): StorageClient {
   console.log('Creating storage client with config:', CONFIG);
@@ -26,5 +26,39 @@ export function createStorageClient(): StorageClient {
   };
 
   console.log('Creating LocalStorageClient with:', { provider, config });
-  return new LocalStorageClient(provider, config);
+  
+  // Create the LocalStorageClient
+  const localClient = new LocalStorageClient(provider, config);
+  
+  // Return an adapter that implements the full StorageClient interface
+  return {
+    // Implement the listObjects method
+    listObjects: async (params: { account_id: string; repository_id: string; prefix?: string }) => {
+      return localClient.listObjects(params);
+    },
+    
+    // Implement the getObjectInfo method
+    getObjectInfo: async (params: { account_id: string; repository_id: string; object_path: string }) => {
+      return localClient.getObjectInfo(params);
+    },
+    
+    // Implement the getObject method with the expected signature
+    getObject: async (params: { account_id: string; repository_id: string; path: string }) => {
+      // Convert from StorageClient params to ObjectPath format
+      const objectPath: ObjectPath = {
+        object_path: params.path,
+        account_id: params.account_id,
+        repository_id: params.repository_id
+      };
+      
+      // Call the LocalStorageClient's getObject method
+      const result = await localClient.getObject(objectPath);
+      
+      // Return in the format expected by StorageClient interface
+      return {
+        content: result,
+        metadata: {}  // Include empty metadata object to match interface
+      };
+    }
+  };
 } 

@@ -35,6 +35,27 @@
   --code-font-family: 'Berkeley Mono', Menlo, Consolas, monospace;
 }
 
+/* Global link styling */
+a {
+  text-decoration: underline;
+  color: var(--accent-11);
+  transition: all 0.2s ease;
+}
+
+a:hover {
+  text-decoration: none;
+}
+
+/* Light mode hover */
+:root:not([class~="dark"]) a:hover {
+  color: black !important;
+}
+
+/* Dark mode hover */
+:root[class~="dark"] a:hover {
+  color: white !important;
+}
+
 .repository-listing {
   color: var(--accent-13);
   display: block;

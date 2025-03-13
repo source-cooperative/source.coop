@@ -1,0 +1,68 @@
+.markdown-viewer {
+  /* Base markdown styling */
+  line-height: 1.6;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.markdown-viewer h1,
+.markdown-viewer h2,
+.markdown-viewer h3,
+.markdown-viewer h4,
+.markdown-viewer h5,
+.markdown-viewer h6 {
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  font-weight: 600;
+}
+
+.markdown-viewer code {
+  background-color: rgba(175, 184, 193, 0.2);
+  padding: 0.2em 0.4em;
+  border-radius: 3px;
+  font-family: ui-monospace, monospace;
+}
+
+.markdown-viewer pre {
+  background-color: rgba(175, 184, 193, 0.2);
+  padding: 1em;
+  border-radius: 6px;
+  overflow-x: auto;
+}
+
+.markdown-viewer blockquote {
+  padding: 0 1em;
+  color: #6e7781;
+  border-left: 0.25em solid #d0d7de;
+  margin: 1em 0;
+}
+
+/* Styles for MyST admonitions */
+.markdown-viewer .admonition {
+  border-left: 4px solid #448aff;
+  padding: 0.5em 1em;
+  margin: 1em 0;
+  background-color: rgba(68, 138, 255, 0.1);
+  border-radius: 0 3px 3px 0;
+}
+
+.markdown-viewer .admonition.warning {
+  border-left-color: #ff9100;
+  background-color: rgba(255, 145, 0, 0.1);
+}
+
+.markdown-viewer .admonition.error {
+  border-left-color: #ff5252;
+  background-color: rgba(255, 82, 82, 0.1);
+}
+
+.markdown-viewer .admonition.hint,
+.markdown-viewer .admonition.tip {
+  border-left-color: #00c853;
+  background-color: rgba(0, 200, 83, 0.1);
+}
+
+.markdown-viewer .admonition.important {
+  border-left-color: #9c27b0;
+  background-color: rgba(156, 39, 176, 0.1);
+} 

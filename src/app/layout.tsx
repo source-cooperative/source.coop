@@ -1,7 +1,6 @@
 import '@radix-ui/themes/styles.css';
 import '@/styles/globals.css';
-import { Theme } from '@radix-ui/themes';
-import { ThemeProvider } from 'next-themes';
+import { ThemeProvider } from '@/styles/theme';
 import { IBM_Plex_Sans } from 'next/font/google';
 import { metadata } from './metadata';
 import { Navigation } from '@/components/Navigation';
@@ -28,12 +27,10 @@ export default function RootLayout({
           defaultTheme="system"
           storageKey="source-theme"
         >
-          <Theme>
-            <Navigation />
-            <main>
-              {children}
-            </main>
-          </Theme>
+          <Navigation />
+          <main>
+            {children}
+          </main>
         </ThemeProvider>
       </body>
     </html>
