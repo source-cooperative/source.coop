@@ -8,8 +8,9 @@ import { createStorageClient } from '@/lib/clients/storage';
 import { ObjectBrowser } from '@/components/ObjectBrowser';
 import { MarkdownViewer } from '@/components/MarkdownViewer';
 import Link from 'next/link';
-import { RepositoryCard } from '@/components/RepositoryCard';
+import { RepositoryCard } from '@/components/common/RepositoryCard';
 import { RepositoryMetaCard } from '@/components/RepositoryMetaCard';
+import { RepositoryHeader, RepositorySchemaMetadata } from '@/components/repositories';
 
 // Define valid metadata types
 type MetadataType = keyof NonNullable<Repository['metadata_files']>;
@@ -92,52 +93,48 @@ async function getReadmeContent(accountId: string, repositoryId: string, path?: 
   }
 }
 
-export default async function RepositoryPage({
-  params
-}: PageProps) {
-  const repository = await getRepository(params.account_id, params.repository_id);
-
-  if (!repository) {
-    notFound();
-  }
-
-  const objects: RepositoryObject[] = await getObjects(params.account_id, params.repository_id);
-  const readmeContent = await getReadmeContent(params.account_id, params.repository_id);
-
+export default async function RepositoryPage({ params }) {
+  const { repository, account } = await getData(params);
+  
   return (
-    <Container>
-      <Flex gap="4" mb="4">
-        <Box style={{ flex: 1 }}>
-          <RepositoryCard 
-            repository={repository} 
-            hideLink 
-            titleAsH1
-          />
-        </Box>
-        <Box style={{ flex: 1 }}>
-          <RepositoryMetaCard repository={repository} />
-        </Box>
-      </Flex>
+    <>
+      <RepositorySchemaMetadata repository={repository} account={account} />
+      <Container>
+        <Flex direction="column" gap="6">
+          <RepositoryHeader repository={repository} account={account} />
+          <Flex gap="4" mb="4">
+            <Box style={{ flex: 1 }}>
+              <RepositoryCard 
+                repository={repository} 
+                hideLink 
+                titleAsH1
+              />
+            </Box>
+            <Box style={{ flex: 1 }}>
+              <RepositoryMetaCard repository={repository} />
+            </Box>
+          </Flex>
 
-      <Flex direction="column">
-        <ObjectBrowser 
-          account_id={params.account_id} 
-          repository_id={params.repository_id} 
-          objects={objects}
-          initialPath=""
-          repository_title={repository.title}
-        />
-      </Flex>
+          <Flex direction="column" gap="4">
+            <ObjectBrowser 
+              account_id={params.account_id} 
+              repository_id={params.repository_id} 
+              objects={await getObjects(params.account_id, params.repository_id)}
+              initialPath=""
+              repository_title={repository.title}
+            />
 
-      {readmeContent && (
-        <Card mb="4">
-          <Heading size="4" mb="2">README</Heading>
-          <Box>
-            <MarkdownViewer content={readmeContent} />
-          </Box>
-        </Card>
-      )}
-      
-    </Container>
+            {await getReadmeContent(params.account_id, params.repository_id) && (
+              <Card>
+                <Heading size="4" mb="2">README</Heading>
+                <Box>
+                  <MarkdownViewer content={await getReadmeContent(params.account_id, params.repository_id)} />
+                </Box>
+              </Card>
+            )}
+          </Flex>
+        </Flex>
+      </Container>
+    </>
   );
 } 

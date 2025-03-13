@@ -15,10 +15,10 @@ function RadixTheme({ children }: { children: React.ReactNode }) {
   
   // Common theme properties
   const themeProps = {
-    accentColor: "gray",
-    grayColor: "gray",
-    radius: "none",
-    scaling: "110%"
+    accentColor: "gray" as const,
+    grayColor: "gray" as const,
+    radius: "none" as const,
+    scaling: "110%" as const
   };
   
   // During SSR or before hydration, render with a default theme to prevent flicker

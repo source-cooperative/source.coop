@@ -25,9 +25,9 @@ function NavText({
   isLink: boolean; 
   onClick?: () => void;
 }) {
-  const style = {
+  const style: React.CSSProperties = {
     display: 'inline-block',
-    position: 'relative',
+    position: 'relative' as const,
     top: 0,
     lineHeight: '22px',
     color: isLink ? 'var(--gray-11)' : 'var(--gray-9)'
