@@ -1,7 +1,7 @@
 import { Container, Heading, Text, Flex, Box } from '@radix-ui/themes';
-import { RepositoryCard } from '@/components/common/RepositoryCard';
+import { RepositoryListItem } from '@/components';
 import { fetchRepositories, fetchAccounts } from '@/lib/db/operations';
-import { Repository } from '@/types/repository';
+import { Repository } from '@/types';
 
 export default async function AccountPage({ 
   params 
@@ -37,7 +37,7 @@ export default async function AccountPage({
         </Box>
 
         {accountRepositories.map(repository => (
-          <RepositoryCard 
+          <RepositoryListItem 
             key={`${repository.account_id}/${repository.repository_id}`}
             repository={repository}
           />

@@ -3,7 +3,7 @@ import '@/styles/globals.css';
 import { ThemeProvider } from '@/styles/theme';
 import { IBM_Plex_Sans } from 'next/font/google';
 import { metadata } from './metadata';
-import { Navigation } from '@/components/Navigation';
+import { Navigation } from '@/components';
 
 const ibmPlexSans = IBM_Plex_Sans({
   subsets: ['latin'],

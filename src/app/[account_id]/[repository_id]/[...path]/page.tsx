@@ -4,7 +4,7 @@ import { Container, Heading, Text, Flex, Card, Box, Button } from '@radix-ui/the
 import { notFound } from 'next/navigation';
 import { fetchRepositories } from '@/lib/db/operations';
 import { createStorageClient } from '@/lib/clients/storage';
-import { ObjectBrowser } from '@/components/ObjectBrowser';
+import { ObjectBrowser } from '@/components';
 import Link from 'next/link';
 import { FileIcon, DownloadIcon } from '@radix-ui/react-icons';
 

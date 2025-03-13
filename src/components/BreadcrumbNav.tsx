@@ -1,10 +1,10 @@
 'use client';
 
 import { Flex } from '@radix-ui/themes';
-import { MonoText } from '@/components/MonoText';
 import Link from 'next/link';
 import { ChevronRightIcon } from '@radix-ui/react-icons';
 import { useState, useEffect } from 'react';
+import { MonoText } from '@/components';
 
 interface BreadcrumbNavProps {
   account_id: string;

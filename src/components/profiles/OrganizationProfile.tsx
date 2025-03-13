@@ -1,4 +1,4 @@
-import { ProfileLayout } from './profiles/ProfileLayout';
+import { ProfileLayout } from '@/components/profiles/ProfileLayout';
 import type { Account, OrganizationalAccount } from '@/types/account';
 
 export function OrganizationProfile({ account }: { account: OrganizationalAccount }) {

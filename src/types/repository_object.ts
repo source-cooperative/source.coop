@@ -13,4 +13,5 @@ export interface RepositoryObject {
   created_at: string;
   updated_at: string;
   checksum: string;
+  content?: Buffer | string; // Added for storage client responses
 } 

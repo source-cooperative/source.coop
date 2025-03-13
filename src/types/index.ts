@@ -1,4 +1,4 @@
 export * from './account';
 export * from './repository';
-export * from './object';
+export * from './repository_object';
 export * from './storage'; 

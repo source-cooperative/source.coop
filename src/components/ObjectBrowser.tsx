@@ -1,13 +1,12 @@
 'use client';
 
 import { Text, Card, Flex, Box, Button, DataList } from '@radix-ui/themes';
-import { MonoText } from '@/components/MonoText';
-import { ChevronRightIcon, ChevronLeftIcon, FileIcon, SlashIcon } from '@radix-ui/react-icons';
+import { ChevronRightIcon, FileIcon, SlashIcon } from '@radix-ui/react-icons';
 import Link from 'next/link';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { RepositoryObject } from '@/types/repository_object';
-import { BreadcrumbNav } from '@/components/BreadcrumbNav';
+import { MonoText, BreadcrumbNav } from '@/components';
 
 export interface ObjectBrowserProps {
   account_id: string;
@@ -109,9 +108,8 @@ export function ObjectBrowser({ account_id, repository_id, objects, initialPath 
   const HeaderSection = ({ children }: { children: React.ReactNode }) => (
     <Flex direction="column" gap="3">
       <Text size="2" weight="bold">
-        {repository_title ? `${repository_title} contents` : 'contents'}
+        Repository contents
       </Text>
-      {children}
       <Box 
         style={{ 
           height: '1px', 
@@ -120,6 +118,7 @@ export function ObjectBrowser({ account_id, repository_id, objects, initialPath 
           margin: '4px 0 8px'
         }} 
       />
+      {children}
     </Flex>
   );
 

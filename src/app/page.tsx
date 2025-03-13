@@ -1,9 +1,8 @@
 // src/app/page.tsx
 import { Container, Heading, Text, Flex, Box } from '@radix-ui/themes';
-import { RepositoryCard } from '@/components/common/RepositoryCard';
+import { RepositoryListItem } from '@/components';
+import { Repository, Account } from '@/types';
 import { fetchRepositories, fetchAccounts } from '@/lib/db/operations';
-import { Repository } from '@/types/repository';
-import { Account } from '@/types/account';
 
 async function getData() {
   try {
@@ -35,7 +34,7 @@ export default async function HomePage() {
         {repositories.map((repository: Repository) => {
           const account = accounts.find((acc): acc is Account => acc.account_id === repository.account_id);
           return (
-            <RepositoryCard 
+            <RepositoryListItem 
               key={`${repository.account_id}/${repository.repository_id}`}
               repository={repository}
               account={account}
