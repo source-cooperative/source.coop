@@ -4,19 +4,18 @@ import type { Account } from '@/types/account';
 // For injecting schema.org metadata
 export function RepositorySchemaMetadata({ 
   repository, 
-  account,
   statistics 
 }: { 
-  repository: Repository; 
-  account?: Account;
+  repository: Repository;
   statistics?: RepositoryStatistics;
 }) {
+  const account = repository.account;
   const schemaData = {
     "@context": "https://schema.org/",
     "@type": "Dataset",
     "name": repository.title,
     "description": repository.description,
-    "url": `https://yourdomain.com/${repository.account_id}/${repository.repository_id}`,
+    "url": account ? `https://yourdomain.com/${account.account_id}/${repository.repository_id}` : '',
     "dateModified": repository.updated_at,
     "dateCreated": repository.created_at,
     "isAccessibleForFree": !repository.private,

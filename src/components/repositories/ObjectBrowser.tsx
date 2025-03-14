@@ -1,20 +1,18 @@
 'use client';
 
-import { Text, Card, Flex, Box, Button, DataList } from '@radix-ui/themes';
+import { Text, Card, Flex, Box, Button, DataList, Container } from '@radix-ui/themes';
 import { ChevronRightIcon, FileIcon, SlashIcon } from '@radix-ui/react-icons';
 import Link from 'next/link';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import type { RepositoryObject } from '@/types/repository_object';
-import { MonoText, BreadcrumbNav } from '@/components';
+import type { Repository, RepositoryObject } from '@/types';
+import { MonoText, DateText, BreadcrumbNav, SectionHeader } from '@/components';
 
 export interface ObjectBrowserProps {
-  account_id: string;
-  repository_id: string;
+  repository: Repository;
   objects: RepositoryObject[];
   initialPath?: string;
   selectedObject?: RepositoryObject;
-  repository_title: string;
 }
 
 interface FileNode {
@@ -27,7 +25,7 @@ interface FileNode {
   object?: RepositoryObject;
 }
 
-export function ObjectBrowser({ account_id, repository_id, objects, initialPath = '', selectedObject, repository_title = 'Repository' }: ObjectBrowserProps) {
+export function ObjectBrowser({ repository, objects, initialPath = '', selectedObject }: ObjectBrowserProps) {
   const router = useRouter();
   const [currentPath, setCurrentPath] = useState<string[]>(
     initialPath ? initialPath.split('/').filter(Boolean) : []
@@ -36,11 +34,11 @@ export function ObjectBrowser({ account_id, repository_id, objects, initialPath 
   const navigateToPath = (newPath: string[]) => {
     setCurrentPath(newPath);
     const pathString = newPath.length > 0 ? '/' + newPath.join('/') : '';
-    router.push(`/${account_id}/${repository_id}${pathString}`);
+    router.push(`/${repository.account.account_id}/${repository.repository_id}${pathString}`);
   };
 
   const navigateToFile = (path: string) => {
-    router.push(`/${account_id}/${repository_id}/${path}`);
+    router.push(`/${repository.account.account_id}/${repository.repository_id}/${path}`);
   };
 
   // Build directory tree
@@ -104,24 +102,6 @@ export function ObjectBrowser({ account_id, repository_id, objects, initialPath 
     return a.name.localeCompare(b.name);
   });
 
-  // Extract common layout elements
-  const HeaderSection = ({ children }: { children: React.ReactNode }) => (
-    <Flex direction="column" gap="3">
-      <Text size="2" weight="bold">
-        Repository contents
-      </Text>
-      <Box 
-        style={{ 
-          height: '1px', 
-          background: 'var(--gray-5)', 
-          width: '100%',
-          margin: '4px 0 8px'
-        }} 
-      />
-      {children}
-    </Flex>
-  );
-
   // If a specific file is selected, display its details
   if (selectedObject && selectedObject.type !== 'directory') {
     // Calculate path consistently with directory view
@@ -130,21 +110,21 @@ export function ObjectBrowser({ account_id, repository_id, objects, initialPath 
     
     return (
       <Card>
-        <HeaderSection>
+        <SectionHeader title="Repository Contents">
           <BreadcrumbNav 
-            account_id={account_id}
-            repository_id={repository_id}
+            account_id={repository.account.account_id}
+            repository_id={repository.repository_id}
             path={pathParts}
             fileName={fileName}
             onNavigate={navigateToPath}
           />
-        </HeaderSection>
+        </SectionHeader>
         
         {/* File details */}
         <DataList.Root>
           <DataList.Item>
             <DataList.Label minWidth="120px">Name</DataList.Label>
-            <DataList.Value>{selectedObject.path.split('/').pop()}</DataList.Value>
+            <DataList.Value><MonoText>{selectedObject.path.split('/').pop()}</MonoText></DataList.Value>
           </DataList.Item>
           
           <DataList.Item>
@@ -154,23 +134,25 @@ export function ObjectBrowser({ account_id, repository_id, objects, initialPath 
           
           <DataList.Item>
             <DataList.Label minWidth="120px">Size</DataList.Label>
-            <DataList.Value>{formatFileSize(selectedObject.size)}</DataList.Value>
+            <DataList.Value><MonoText>{formatFileSize(selectedObject.size)}</MonoText></DataList.Value>
           </DataList.Item>
           
           <DataList.Item>
             <DataList.Label minWidth="120px">Last Updated</DataList.Label>
-            <DataList.Value>{new Date(selectedObject.updated_at).toLocaleString()}</DataList.Value>
+            <DataList.Value>
+              <MonoText><DateText date={selectedObject.updated_at} includeTime={true} /></MonoText>
+            </DataList.Value>
           </DataList.Item>
           
           <DataList.Item>
             <DataList.Label minWidth="120px">Type</DataList.Label>
-            <DataList.Value>{selectedObject.type}</DataList.Value>
+            <DataList.Value><MonoText>{selectedObject.type}</MonoText></DataList.Value>
           </DataList.Item>
 
           {(selectedObject as any).contentType && (
             <DataList.Item>
               <DataList.Label minWidth="120px">Content Type</DataList.Label>
-              <DataList.Value>{(selectedObject as any).contentType}</DataList.Value>
+              <DataList.Value><MonoText>{(selectedObject as any).contentType}</MonoText></DataList.Value>
             </DataList.Item>
           )}
         </DataList.Root>
@@ -180,14 +162,14 @@ export function ObjectBrowser({ account_id, repository_id, objects, initialPath 
 
   return (
     <Card>
-      <HeaderSection>
+      <SectionHeader title="Repository Contents">
         <BreadcrumbNav 
-          account_id={account_id}
-          repository_id={repository_id}
+          account_id={repository.account.account_id}
+          repository_id={repository.repository_id}
           path={currentPath}
           onNavigate={navigateToPath}
         />
-      </HeaderSection>
+      </SectionHeader>
       
       {/* Directory contents */}
       {items.length === 0 ? (
@@ -231,7 +213,7 @@ export function ObjectBrowser({ account_id, repository_id, objects, initialPath 
                 ) : (
                   <FileIcon />
                 )}
-                <MonoText weight="regular">{item.name}</MonoText>
+                <MonoText weight="regular" size="2">{item.name}</MonoText>
                 {item.isDirectory && <ChevronRightIcon />}
               </Flex>
             </Link>

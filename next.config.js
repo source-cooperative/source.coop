@@ -19,6 +19,7 @@ const nextConfig = {
         pathname: "/**",
       },
     ],
+    domains: ['localhost'],
   },
   env: {
     STORAGE_TYPE: process.env.STORAGE_TYPE,

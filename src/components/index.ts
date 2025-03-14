@@ -1,17 +1,14 @@
 // Common components
 export * from './common';
 
-// Core components
-export { ObjectBrowser } from './ObjectBrowser';
-export { MarkdownViewer } from './MarkdownViewer';
-export { Logo } from './Logo';
-export { Navigation } from './Navigation';
-export { BreadcrumbNav } from './BreadcrumbNav';
-export { AccountList } from './AccountList';
+// Layout components
+export * from './layout';
 
-// Re-export repository components
+// Feature components
+export * from './markdown';
+export * from './metadata';
+export * from './profiles';
 export * from './repositories';
 
-// Feature-specific exports
-export * from './profiles';
-export * from './metadata'; 
+// Core components
+export { MarkdownViewer } from './MarkdownViewer'; 

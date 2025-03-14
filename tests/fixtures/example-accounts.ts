@@ -1,4 +1,4 @@
-import type { Account } from '../types/account';
+import type { Account } from '../../src/types/account';
 
 export const exampleAccounts: Account[] = [
   {

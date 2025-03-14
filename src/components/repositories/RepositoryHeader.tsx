@@ -1,30 +1,33 @@
 // For repository detail page header
-import { Heading, Text, Flex, Box } from '@radix-ui/themes';
-import type { Repository } from '@/types/repository';
-import type { Account } from '@/types/account';
+import { Grid, Box } from '@radix-ui/themes';
+import type { Repository, RepositoryStatistics } from '@/types';
+import { RepositorySummaryCard } from './RepositorySummaryCard';
+import { RepositoryMetaCard } from './RepositoryMetaCard';
 
 interface RepositoryHeaderProps {
   repository: Repository;
-  account?: Account;
+  statistics?: RepositoryStatistics;
 }
 
-export function RepositoryHeader({ repository, account }: RepositoryHeaderProps) {
+export function RepositoryHeader({ repository, statistics }: RepositoryHeaderProps) {
   return (
-    <Box>
-      <Heading size="8" mb="2">{repository.title}</Heading>
-      {repository.description && (
-        <Text color="gray" size="4" mb="4">{repository.description}</Text>
-      )}
-      <Flex gap="3" align="center">
-        <Text size="2" color="gray">
-          Updated {new Date(repository.updated_at).toLocaleDateString()}
-        </Text>
-        {account && (
-          <Text size="2" color="blue">
-            Owned by: {account.name}
-          </Text>
-        )}
-      </Flex>
-    </Box>
+    <Grid 
+      columns={{ initial: '1', md: '3' }} 
+      gap={{ initial: '0', md: '6' }}
+      px={{ initial: '0' }}
+    >
+      <Box 
+        width="100%" 
+        className="repository-summary" 
+        style={{ gridColumn: 'span 2' }}
+        px={{ initial: '4', md: '0' }}
+        mb={{ initial: '4', md: '0' }}
+      >
+        <RepositorySummaryCard repository={repository} />
+      </Box>
+      <Box width="100%" className="repository-meta">
+        <RepositoryMetaCard repository={repository} statistics={statistics} />
+      </Box>
+    </Grid>
   );
 } 

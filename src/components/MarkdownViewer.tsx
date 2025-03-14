@@ -1,7 +1,9 @@
 import { Marked } from 'marked';
 import { markedHighlight } from 'marked-highlight';
 import hljs from 'highlight.js';
-import './MarkdownViewer.css';
+import '@/styles/MarkdownViewer.css';
+import { Card, Box } from '@radix-ui/themes';
+import { SectionHeader } from '@/components/common/SectionHeader';
 
 interface MarkdownViewerProps {
   content: string;
@@ -24,9 +26,13 @@ export function MarkdownViewer({ content, className = '' }: MarkdownViewerProps)
   const html = marked.parse(content);
   
   return (
-    <div 
-      className={`markdown-viewer ${className}`}
-      dangerouslySetInnerHTML={{ __html: html }}
-    />
+    <Card>
+      <SectionHeader title="README">
+        <Box 
+          className={`markdown-viewer ${className}`}
+          dangerouslySetInnerHTML={{ __html: html }}
+        />
+      </SectionHeader>
+    </Card>
   );
 } 

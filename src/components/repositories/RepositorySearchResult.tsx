@@ -3,6 +3,7 @@ import { Card, Text, Flex, Badge } from '@radix-ui/themes';
 import Link from 'next/link';
 import type { Repository } from '@/types/repository';
 import type { Account } from '@/types/account';
+import { DateText } from '@/components';
 
 interface RepositorySearchResultProps {
   repository: Repository;
@@ -30,7 +31,7 @@ export function RepositorySearchResult({ repository, account, highlight }: Repos
           )}
           <Flex gap="3" align="center">
             <Text size="2" color="gray">
-              Updated {new Date(repository.updated_at).toLocaleDateString()}
+              Updated <DateText date={repository.updated_at} />
             </Text>
             {account && (
               <Text size="2" color="blue">

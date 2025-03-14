@@ -1,12 +1,19 @@
-import { Repository } from '@/types/repository';
-import { RepositoryObject, RepositoryObjectType } from '@/types/repository_object';
-import { Container, Heading, Text, Flex, Card, Box, Button } from '@radix-ui/themes';
+// External packages
+import { Container, Flex, Box, Grid } from '@radix-ui/themes';
 import { notFound } from 'next/navigation';
+
+// Internal components
+import { 
+  ObjectBrowser, 
+  RepositoryHeader 
+} from '@/components';
+
+// Types
+import type { Repository, RepositoryObject } from '@/types';
+
+// Utilities
 import { fetchRepositories } from '@/lib/db/operations';
 import { createStorageClient } from '@/lib/clients/storage';
-import { ObjectBrowser } from '@/components';
-import Link from 'next/link';
-import { FileIcon, DownloadIcon } from '@radix-ui/react-icons';
 
 interface PageProps {
   params: {
@@ -17,23 +24,29 @@ interface PageProps {
 }
 
 async function getRepository(accountId: string, repositoryId: string): Promise<Repository | null> {
-  const repositories = await fetchRepositories();
-  return repositories.find(repo => 
-    repo.account_id === accountId && repo.repository_id === repositoryId
-  ) || null;
+  try {
+    const repositories = await fetchRepositories();
+    return repositories.find(repo => 
+      repo.repository_id === repositoryId && 
+      repo.account.account_id === accountId
+    ) || null;
+  } catch (error) {
+    console.error("Error fetching repository:", error);
+    return null;
+  }
 }
 
 async function getObjects(accountId: string, repositoryId: string): Promise<RepositoryObject[]> {
   const client = createStorageClient();
   
-  // Need to handle the potential for partial objects
-  const objects = await client.listObjects({ account_id: accountId, repository_id: repositoryId });
+  const objects = await client.listObjects({ 
+    account_id: accountId,  // Storage client still uses account_id
+    repository_id: repositoryId 
+  });
   
-  // Convert partial objects to full repository objects
-  // This ensures all required properties are present
   return objects.map(obj => ({
-    id: obj.id || '',
-    repository_id: obj.repository_id || '',
+    id: obj.path || '',
+    repository_id: repositoryId,
     path: obj.path || '',
     size: obj.size || 0,
     type: obj.type || 'file',
@@ -70,34 +83,29 @@ function formatFileSize(bytes: number): string {
 export default async function RepositoryPathPage({
   params
 }: PageProps) {
-  const repository = await getRepository(params.account_id, params.repository_id);
+  const { account_id, repository_id, path } = await Promise.resolve(params);
+  const repository = await getRepository(account_id, repository_id);
   
   if (!repository) {
     notFound();
   }
   
-  const objects: RepositoryObject[] = await getObjects(params.account_id, params.repository_id);
-  const path = params.path.join('/');
+  const objects = await getObjects(account_id, repository_id);
+  const currentPath = Array.isArray(path) ? path.join('/') : '';
   
-  // Check if the path is a directory or a file
-  const directory = await isDirectory(objects, path);
-  
-  // Find the selected object if we're viewing a file
-  const selectedObject = !directory ? objects.find(obj => obj.path === path) : undefined;
+  const directory = await isDirectory(objects, currentPath);
+  const selectedObject = !directory ? objects.find(obj => obj.path === currentPath) : undefined;
   
   return (
     <Container>
-      <Heading size="8" mb="4">{repository.title}</Heading>
-      <Text mb="4">{repository.description}</Text>
-      
       <Flex direction="column" gap="4">
+        <RepositoryHeader repository={repository} />
+
         <ObjectBrowser 
-          account_id={params.account_id} 
-          repository_id={params.repository_id} 
+          repository={repository}
           objects={objects}
-          initialPath={directory ? path : path.split('/').slice(0, -1).join('/')}
+          initialPath={directory ? currentPath : currentPath.split('/').slice(0, -1).join('/')}
           selectedObject={selectedObject}
-          repository_title={repository.title}
         />
       </Flex>
     </Container>

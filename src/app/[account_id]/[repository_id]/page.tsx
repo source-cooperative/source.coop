@@ -1,16 +1,19 @@
-import { Container, Heading, Flex, Card, Box } from '@radix-ui/themes';
+import { Container, Flex, Box } from '@radix-ui/themes';
 import { notFound } from 'next/navigation';
-import { fetchRepositories, fetchAccounts } from '@/lib/db/operations';
-import { createStorageClient } from '@/lib/clients/storage';
+import { Metadata } from 'next';
+
 import { 
   ObjectBrowser, 
   MarkdownViewer, 
-  RepositoryHeader, 
-  RepositoryMetaCard, 
+  RepositoryHeader,
   RepositorySchemaMetadata 
 } from '@/components';
-import type { Repository } from '@/types/repository';
-import type { RepositoryObject } from '@/types/repository_object';
+
+import type { Repository, RepositoryObject } from '@/types';
+
+import { fetchRepositories } from '@/lib/db/operations';
+import { createStorageClient } from '@/lib/clients/storage';
+import { generateRepositoryMetadata, RepositorySchema } from '@/components/metadata';
 
 // Define valid metadata types
 type MetadataType = keyof NonNullable<Repository['metadata_files']>;
@@ -24,14 +27,14 @@ interface PageProps {
 
 async function getRepository(accountId: string, repositoryId: string): Promise<Repository | null> {
   try {
-    const repositories: Repository[] = await fetchRepositories();
-    const repository = repositories.find(
-      repo => repo.repository_id === repositoryId && repo.account_id === accountId
-    );
-    return repository || null;
+    const repositories = await fetchRepositories();
+    return repositories.find(repo => 
+      repo.repository_id === repositoryId && 
+      repo.account.account_id === accountId
+    ) || null;
   } catch (error) {
     console.error("Error fetching repository:", error);
-    throw error;
+    return null;
   }
 }
 
@@ -99,49 +102,77 @@ async function getData(params: PageProps['params']) {
     notFound();
   }
 
-  const accounts = await fetchAccounts();
-  const account = accounts.find(acc => acc.account_id === repository.account_id);
+  return { repository };  // No need to fetch account separately anymore
+}
 
+// Generate metadata for the page
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const repository = await getRepository(params.account_id, params.repository_id);
+  if (!repository) {
+    notFound();
+  }
+
+  // Generate basic metadata
+  const metadata = generateRepositoryMetadata({ repository });
+
+  // Add JSON-LD schema
   return {
-    repository,
-    account
+    ...metadata,
+    openGraph: metadata.openGraph,
+    twitter: metadata.twitter,
+    other: {
+      schema: JSON.stringify({
+        "@context": "https://schema.org/",
+        "@type": "Dataset",
+        "name": repository.title,
+        "description": repository.description,
+        "url": `https://source.coop/${repository.account.account_id}/${repository.repository_id}`,
+        "dateModified": repository.updated_at,
+        "dateCreated": repository.created_at,
+        "isAccessibleForFree": !repository.private,
+        ...(repository.root_metadata?.license && {
+          "license": repository.root_metadata.license
+        }),
+        "creator": {
+          "@type": repository.account.type === 'organization' ? "Organization" : "Person",
+          "name": repository.account.name,
+          ...(repository.account.website && { "url": repository.account.website })
+        }
+      })
+    }
   };
 }
 
 export default async function RepositoryPage({ params }: PageProps) {
-  const { repository, account } = await getData(params);
+  const repository = await getRepository(params.account_id, params.repository_id);
+  if (!repository) {
+    notFound();
+  }
+
   const readmeContent = await getReadmeContent(params.account_id, params.repository_id);
   const objects = await getObjects(params.account_id, params.repository_id);
 
   return (
     <>
-      <RepositorySchemaMetadata repository={repository} account={account} />
+      <RepositorySchema repository={repository} />
       <Container>
-        <Flex direction="column" gap="6">
-          <RepositoryHeader repository={repository} account={account} />
-          <Box>
-            <RepositoryMetaCard repository={repository} />
+        <Box>
+          <RepositoryHeader repository={repository} />
+        </Box>
+
+        <Box mt="4">
+          <ObjectBrowser 
+            repository={repository}
+            objects={objects}
+            initialPath=""
+          />
+        </Box>
+
+        {readmeContent && (
+          <Box mt="4">
+            <MarkdownViewer content={readmeContent} />
           </Box>
-
-          <Flex direction="column" gap="4">
-            <ObjectBrowser 
-              account_id={params.account_id} 
-              repository_id={params.repository_id} 
-              objects={objects}
-              initialPath=""
-              repository_title={repository.title}
-            />
-
-            {readmeContent && (
-              <Card>
-                <Heading size="4" mb="2">README</Heading>
-                <Box>
-                  <MarkdownViewer content={readmeContent} />
-                </Box>
-              </Card>
-            )}
-          </Flex>
-        </Flex>
+        )}
       </Container>
     </>
   );

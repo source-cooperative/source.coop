@@ -1,7 +1,9 @@
+import type { Account } from './account';
+
 export interface Repository {
   // Essential fields only
   repository_id: string;
-  account_id: string;
+  account: Account;
   title: string;
   description: string;
   private: boolean;

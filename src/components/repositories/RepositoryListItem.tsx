@@ -3,6 +3,7 @@ import { Card, Text, Flex } from '@radix-ui/themes';
 import Link from 'next/link';
 import type { Repository } from '@/types/repository';
 import type { Account } from '@/types/account';
+import { DateText } from '@/components';
 
 interface RepositoryListItemProps {
   repository: Repository;
@@ -11,7 +12,7 @@ interface RepositoryListItemProps {
 
 export function RepositoryListItem({ repository, account }: RepositoryListItemProps) {
   return (
-    <Link href={`/${repository.account_id}/${repository.repository_id}`}>
+    <Link href={`/${repository.account.account_id}/${repository.repository_id}`}>
       <Card>
         <Flex direction="column" gap="2">
           <Text size="5" weight="bold">{repository.title}</Text>
@@ -20,7 +21,7 @@ export function RepositoryListItem({ repository, account }: RepositoryListItemPr
           )}
           <Flex gap="3">
             <Text size="2" color="gray">
-              Updated {new Date(repository.updated_at).toLocaleDateString()}
+              Updated <DateText date={repository.updated_at} />
             </Text>
             {account && (
               <Text size="2" color="blue">
