@@ -1,6 +1,17 @@
+/**
+ * Home Page - Lists all repositories
+ * 
+ * KEEP IT SIMPLE:
+ * 1. No URL params needed (root route /)
+ * 2. Get data -> Transform if needed -> Render
+ * 3. Trust your types, avoid complex validation
+ * 4. Let Next.js handle errors (404, 500, etc.)
+ * 5. No helper functions unless truly needed
+ */
+
 // src/app/page.tsx
 import { Container, Heading, Text, Flex, Box } from '@radix-ui/themes';
-import { RepositoryListItem } from '@/components';
+import { RepositoryList } from '@/components/features/repositories/RepositoryList';
 import type { Repository } from '@/types';
 import { fetchRepositories } from '@/lib/db/operations';
 
@@ -22,12 +33,7 @@ export default async function HomePage() {
           </Text>
         </Box>
 
-        {repositories.map((repository: Repository) => (
-          <RepositoryListItem 
-            key={`${repository.account.account_id}/${repository.repository_id}`}
-            repository={repository}
-          />
-        ))}
+        <RepositoryList repositories={repositories} />
       </Flex>
     </Container>
   );

@@ -22,6 +22,9 @@ export interface Repository {
     license?: string; // Path to LICENSE file if exists
     // ... other special files
   };
+
+  // Contributors
+  contributors?: string[];  // Array of account_ids who contribute to this repository
 }
 
 export interface RepositoryStatistics {

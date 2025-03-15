@@ -3,6 +3,12 @@ export type RepositoryObjectType =
   | 'file'
   | string; // For MIME types or other custom types
 
+export interface RepositoryObjectMetadata {
+  sha256?: string;
+  sha1?: string;
+  [key: string]: any; // Allow for other metadata fields
+}
+
 export interface RepositoryObject {
   id: string;
   repository_id: string;
@@ -14,4 +20,5 @@ export interface RepositoryObject {
   updated_at: string;
   checksum: string;
   content?: Buffer | string; // Added for storage client responses
+  metadata?: RepositoryObjectMetadata;
 } 

@@ -1,30 +1,39 @@
 import { useState, useEffect } from 'react';
-import { Repository } from '@/types/repository';
+import { Repository } from '@/types';
 
 export function useMetadata<T>(repository: Repository, metadataType: string, fileName: string | undefined) {
-  const [metadata, setMetadata] = useState<T | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [data, setData] = useState<T | null>(null);
+  const [error, setError] = useState<Error | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function loadMetadata() {
+    async function fetchMetadata() {
       if (!fileName) {
-        setError(`No ${metadataType} metadata file found`);
+        setData(null);
+        setLoading(false);
         return;
       }
 
       try {
         const response = await fetch(
-          `/api/${repository.account_id}/${repository.repository_id}/objects/${fileName}`
+          `/api/repositories/${repository.account.account_id}/${repository.repository_id}/metadata/${metadataType}/${fileName}`
         );
-        const data = await response.json();
-        setMetadata(data);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const result = await response.json();
+        setData(result);
+        setError(null);
       } catch (e) {
-        setError(`Failed to load ${metadataType} metadata`);
+        setError(e instanceof Error ? e : new Error('An error occurred'));
+        setData(null);
+      } finally {
+        setLoading(false);
       }
     }
 
-    loadMetadata();
-  }, [repository, fileName, metadataType]);
+    fetchMetadata();
+  }, [repository, metadataType, fileName]);
 
-  return { metadata, error };
+  return { data, error, loading };
 } 

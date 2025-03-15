@@ -1,12 +1,26 @@
-import { Container, Heading, Text, Flex, Box, Table } from '@radix-ui/themes';
+/**
+ * Account Page - Displays account details and repositories
+ * 
+ * KEEP IT SIMPLE:
+ * 1. URL params are known values (/[account_id])
+ * 2. Get data -> Transform if needed -> Render
+ * 3. Trust your types, avoid complex validation
+ * 4. Let Next.js handle errors (404, 500, etc.)
+ * 5. No helper functions unless truly needed
+ */
 
-import { RepositoryListItem } from '@/components';
-
-import type { Repository } from '@/types';
-import type { Account } from '@/types/account';
-
-import { fetchRepositories, fetchAccounts } from '@/lib/db/operations';
+// External packages
 import { notFound } from 'next/navigation';
+import { Container } from '@radix-ui/themes';
+
+// Internal components
+import { IndividualProfile, OrganizationProfile } from '@/components/features/profiles';
+
+// Types
+import type { Repository, Account } from '@/types';
+
+// Utilities
+import { fetchRepositories, fetchAccounts } from '@/lib/db/operations';
 
 export default async function AccountPage({ 
   params 
@@ -26,81 +40,56 @@ export default async function AccountPage({
     notFound();
   }
 
-  const accountRepositories = repositories.filter(
+  // Get repositories owned by this account
+  const ownedRepositories = repositories.filter(
     repo => repo.account.account_id === account_id
   );
 
-  return (
-    <Container size="4" py="6">
-      <Flex direction="column" gap="6">
-        <Box>
-          <Heading size="8" mb="2">{account.name}</Heading>
-          <Text size="4" color="gray" mb="4">Account Details</Text>
-          
-          <Table.Root mb="6">
-            <Table.Body>
-              <Table.Row>
-                <Table.Cell>Type</Table.Cell>
-                <Table.Cell>{account.type}</Table.Cell>
-              </Table.Row>
-              <Table.Row>
-                <Table.Cell>Created</Table.Cell>
-                <Table.Cell>{new Date(account.created_at).toLocaleDateString()}</Table.Cell>
-              </Table.Row>
-              {account.description && (
-                <Table.Row>
-                  <Table.Cell>Description</Table.Cell>
-                  <Table.Cell>{account.description}</Table.Cell>
-                </Table.Row>
-              )}
-              {account.type === 'individual' && (
-                <>
-                  <Table.Row>
-                    <Table.Cell>Email</Table.Cell>
-                    <Table.Cell>{account.email}</Table.Cell>
-                  </Table.Row>
-                  {account.orcid && (
-                    <Table.Row>
-                      <Table.Cell>ORCID</Table.Cell>
-                      <Table.Cell>{account.orcid}</Table.Cell>
-                    </Table.Row>
-                  )}
-                </>
-              )}
-              {account.type === 'organization' && (
-                <>
-                  {account.ror_id && (
-                    <Table.Row>
-                      <Table.Cell>ROR ID</Table.Cell>
-                      <Table.Cell>{account.ror_id}</Table.Cell>
-                    </Table.Row>
-                  )}
-                  <Table.Row>
-                    <Table.Cell>Owner ID</Table.Cell>
-                    <Table.Cell>{account.owner_account_id}</Table.Cell>
-                  </Table.Row>
-                </>
-              )}
-              {account.website && (
-                <Table.Row>
-                  <Table.Cell>Website</Table.Cell>
-                  <Table.Cell>{account.website}</Table.Cell>
-                </Table.Row>
-              )}
-            </Table.Body>
-          </Table.Root>
+  if (account.type === 'individual') {
+    // Get organizations this individual belongs to
+    const organizations = accounts.filter(acc => 
+      acc.type === 'organization' && 
+      (acc.owner_account_id === account_id || acc.admin_account_ids.includes(account_id))
+    );
 
-          <Text size="4" color="gray" mb="4">Repositories ({accountRepositories.length})</Text>
-        </Box>
+    // Get repositories this individual contributes to
+    const contributedRepositories = repositories.filter(repo => 
+      repo.account.account_id !== account_id && // Not owned by this user
+      repo.contributors?.includes(account_id) // User is a contributor
+    );
 
-        {accountRepositories.map(repository => (
-          <RepositoryListItem 
-            key={`${repository.account.account_id}/${repository.repository_id}`}
-            repository={repository}
-            account={account}
-          />
-        ))}
-      </Flex>
-    </Container>
-  );
+    return (
+      <Container size="4" py="6">
+        <IndividualProfile
+          account={account}
+          ownedRepositories={ownedRepositories}
+          contributedRepositories={contributedRepositories}
+          organizations={organizations}
+        />
+      </Container>
+    );
+  } else {
+    // Get owner account
+    const owner = accounts.find(acc => acc.account_id === account.owner_account_id);
+    if (!owner) {
+      notFound();
+    }
+
+    // Get all members (admins + regular members)
+    const members = accounts.filter(acc => 
+      acc.type === 'individual' && 
+      (acc.account_id === account.owner_account_id || account.admin_account_ids.includes(acc.account_id))
+    );
+
+    return (
+      <Container size="4" py="6">
+        <OrganizationProfile
+          account={account}
+          repositories={ownedRepositories}
+          members={members}
+          owner={owner}
+        />
+      </Container>
+    );
+  }
 } 

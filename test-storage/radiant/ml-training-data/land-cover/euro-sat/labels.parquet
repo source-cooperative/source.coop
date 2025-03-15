@@ -1,0 +1,35 @@
+PAR1
+L�  
+   EU_2023_001
+   EU_2023_002
+   EU_2023_003
+   EU_2023_004
+   EU_2023_005 ,6 (
+EU_2023_005
+EU_2023_001   (   �F &�5 tile_id��&�&6 (
+EU_2023_005
+EU_2023_001 ,     L�  4
+   2023-06-15
+   2023-06-15
+   2023-06-15
+   2023-06-15
+   2023-06-15 ,6 (
+2023-06-15
+2023-06-15   (   �F &�5 acquisition_date��&�&�6 (
+2023-06-15
+2023-06-15 ,     L�  4   
+AnnualCrop   Forest   Highway
+   Industrial   Pasture ,6 (Pasture
+AnnualCrop   (   �F &�5 
+class_name��&�&�6 (Pasture
+AnnualCrop ,     L   0,1,3,4,5 ,6 (50   	     &�5 class_id��&�&�6 (50 ,     L�  4   0.95   0.92   0.88   0.91   0.89 ,6 (0.950.88   (   �F &�5 
+confidence��&�&�6 (0.950.88 ,     L�  4   45.6789   46.7890   47.8901   48.9012   49.0123 ,6 (49.012345.6789   (   �F &�5 latitude��&�&�6 (49.012345.6789 ,     L�  4   5.6789   6.7890   7.8901   8.9012   9.0123 ,6 (9.01235.6789   (   �F &�5 	longitude��&�&�6 (9.01235.6789 ,     L�  4   10000   15000   8000   12000   18000 ,6 (1800010000   (   �F &�5 area_m2��&�&�6 (1800010000 ,     |5 schema %tile_id% L   %acquisition_date% L   %
+class_name% L   %class_id% L   %
+confidence% L   %latitude% L   %	longitude% L   %area_m2% L   l&�5 tile_id��&�&6 (
+EU_2023_005
+EU_2023_001 ,     &�5 acquisition_date��&�&�6 (
+2023-06-15
+2023-06-15 ,     &�5 
+class_name��&�&�6 (Pasture
+AnnualCrop ,     &�5 class_id��&�&�6 (50 ,     &�5 
+confidence��&�&�6 (0.950.88 ,     &�5 latitude��&�&�6 (49.012345.6789 ,     &�5 	longitude��&�&�6 (9.01235.6789 ,     &�5 area_m2��&�&�6 (1800010000 ,     �&�  ,pandas�{"index_columns": [], "column_indexes": [], "columns": [{"name": "tile_id", "field_name": "tile_id", "pandas_type": "unicode", "numpy_type": "object", "metadata": null}, {"name": "acquisition_date", "field_name": "acquisition_date", "pandas_type": "unicode", "numpy_type": "object", "metadata": null}, {"name": "class_name", "field_name": "class_name", "pandas_type": "unicode", "numpy_type": "object", "metadata": null}, {"name": "class_id", "field_name": "class_id", "pandas_type": "unicode", "numpy_type": "object", "metadata": null}, {"name": "confidence", "field_name": "confidence", "pandas_type": "unicode", "numpy_type": "object", "metadata": null}, {"name": "latitude", "field_name": "latitude", "pandas_type": "unicode", "numpy_type": "object", "metadata": null}, {"name": "longitude", "field_name": "longitude", "pandas_type": "unicode", "numpy_type": "object", "metadata": null}, {"name": "area_m2", "field_name": "area_m2", "pandas_type": "unicode", "numpy_type": "object", "metadata": null}], "creator": {"library": "pyarrow", "version": "11.0.0"}, "pandas_version": "2.0.0"} ARROW:schema�/////7gEAAAQAAAAAAAKAA4ABgAFAAgACgAAAAABBAAQAAAAAAAKAAwAAAAEAAgACgAAANwDAAAEAAAAAQAAAAwAAAAIAAwABAAIAAgAAAAIAAAAEAAAAAYAAABwYW5kYXMAAKYDAAB7ImluZGV4X2NvbHVtbnMiOiBbXSwgImNvbHVtbl9pbmRleGVzIjogW10sICJjb2x1bW5zIjogW3sibmFtZSI6ICJ0aWxlX2lkIiwgImZpZWxkX25hbWUiOiAidGlsZV9pZCIsICJwYW5kYXNfdHlwZSI6ICJ1bmljb2RlIiwgIm51bXB5X3R5cGUiOiAib2JqZWN0IiwgIm1ldGFkYXRhIjogbnVsbH0sIHsibmFtZSI6ICJhY3F1aXNpdGlvbl9kYXRlIiwgImZpZWxkX25hbWUiOiAiYWNxdWlzaXRpb25fZGF0ZSIsICJwYW5kYXNfdHlwZSI6ICJ1bmljb2RlIiwgIm51bXB5X3R5cGUiOiAib2JqZWN0IiwgIm1ldGFkYXRhIjogbnVsbH0sIHsibmFtZSI6ICJjbGFzc19uYW1lIiwgImZpZWxkX25hbWUiOiAiY2xhc3NfbmFtZSIsICJwYW5kYXNfdHlwZSI6ICJ1bmljb2RlIiwgIm51bXB5X3R5cGUiOiAib2JqZWN0IiwgIm1ldGFkYXRhIjogbnVsbH0sIHsibmFtZSI6ICJjbGFzc19pZCIsICJmaWVsZF9uYW1lIjogImNsYXNzX2lkIiwgInBhbmRhc190eXBlIjogInVuaWNvZGUiLCAibnVtcHlfdHlwZSI6ICJvYmplY3QiLCAibWV0YWRhdGEiOiBudWxsfSwgeyJuYW1lIjogImNvbmZpZGVuY2UiLCAiZmllbGRfbmFtZSI6ICJjb25maWRlbmNlIiwgInBhbmRhc190eXBlIjogInVuaWNvZGUiLCAibnVtcHlfdHlwZSI6ICJvYmplY3QiLCAibWV0YWRhdGEiOiBudWxsfSwgeyJuYW1lIjogImxhdGl0dWRlIiwgImZpZWxkX25hbWUiOiAibGF0aXR1ZGUiLCAicGFuZGFzX3R5cGUiOiAidW5pY29kZSIsICJudW1weV90eXBlIjogIm9iamVjdCIsICJtZXRhZGF0YSI6IG51bGx9LCB7Im5hbWUiOiAibG9uZ2l0dWRlIiwgImZpZWxkX25hbWUiOiAibG9uZ2l0dWRlIiwgInBhbmRhc190eXBlIjogInVuaWNvZGUiLCAibnVtcHlfdHlwZSI6ICJvYmplY3QiLCAibWV0YWRhdGEiOiBudWxsfSwgeyJuYW1lIjogImFyZWFfbTIiLCAiZmllbGRfbmFtZSI6ICJhcmVhX21fMiIsICJwYW5kYXNfdHlwZSI6ICJ1bmljb2RlIiwgIm51bXB5X3R5cGUiOiAib2JqZWN0IiwgIm1ldGFkYXRhIjogbnVsbH1dLCAiY3JlYXRvciI6IHsibGlicmFyeSI6ICJweWFycm93IiwgInZlcnNpb24iOiAiMTEuMC4wIn0sICJwYW5kYXNfdmVyc2lvbiI6ICIyLjAuMCJ9AAAACAAAAAQCAAAIAQAAxAAAAHgAAABEAAAAEAAAAAQAAADM/v//AAABBRAAAAAYAAAABAAAAAAAAAAHAAAAYXJlYV9tMgAU////AAAAAUAAAABE////AAABBRAAAAAcAAAABAAAAAAAAAAJAAAAbG9uZ2l0dWRlAAAAAEz///8AAAABQAAAAH7///8AAAEFEAAAABwAAAAEAAAAAAAAAAgAAABsYXRpdHVkZQAAAACI////AAAAAUAAAACw////AAABBRAAAAAcAAAABAAAAAAAAAAKAAAAY29uZmlkZW5jZQAAALj///8AAAABQAAAAOj///8AAAEFEAAAABwAAAAEAAAAAAAAAAgAAABjbGFzc19pZAAAAADw////AAAAAUAAAAD4////AAABBRAAAAAcAAAABAAAAAAAAAAKAAAAY2xhc3NfbmFtZQAAAAAgAAAAEAAAAAQAAAAAAAAADwAAAGFjcXVpc2l0aW9uX2RhdGUAGAAAABgAAAAEAAAAAAAAAAcAAAB0aWxlX2lkAAAAAA== parquet-cpp-arrow version 11.0.0 

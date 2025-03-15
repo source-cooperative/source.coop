@@ -3,7 +3,7 @@
 import { Container, Text, Box, Link as RadixLink, Flex } from '@radix-ui/themes';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { MonoText } from '@/components';
+import { MonoText } from '@/components/core';
 
 export function Footer() {
   const pathname = usePathname();

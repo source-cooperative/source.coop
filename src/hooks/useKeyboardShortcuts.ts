@@ -1,0 +1,68 @@
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+
+interface UseKeyboardShortcutsProps {
+  onShowHelp?: () => void;
+}
+
+export function useKeyboardShortcuts({ onShowHelp }: UseKeyboardShortcutsProps = {}) {
+  const router = useRouter();
+  const [awaitingSecondKey, setAwaitingSecondKey] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if there's any text selected
+      const selection = window.getSelection();
+      if (selection && selection.toString().length > 0) {
+        return;
+      }
+
+      // Ignore key events if they're in an input field
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+
+      // Ignore if any modifier keys are pressed (except for ?)
+      if (e.key !== '?' && (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey)) {
+        return;
+      }
+
+      // Handle help dialog first - ensure it works in all views
+      if (e.key === '?' && !e.shiftKey && !e.ctrlKey && !e.altKey && !awaitingSecondKey) {
+        e.preventDefault();
+        e.stopPropagation();
+        onShowHelp?.();
+        return;
+      }
+
+      // Handle the first key of a sequence
+      if (e.key === 'g' && !awaitingSecondKey) {
+        e.preventDefault();
+        setAwaitingSecondKey('g');
+        return;
+      }
+
+      // Handle the second key of a sequence
+      if (awaitingSecondKey === 'g') {
+        e.preventDefault();
+        if (e.key === 'h' || e.key === 'H') {
+          router.push('/');
+        }
+        setAwaitingSecondKey(null);
+        return;
+      }
+
+      // Clear awaiting state if any other key is pressed
+      if (awaitingSecondKey) {
+        setAwaitingSecondKey(null);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [router, awaitingSecondKey, onShowHelp]);
+
+  return {
+    awaitingSecondKey
+  };
+} 

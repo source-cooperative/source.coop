@@ -1,179 +1,112 @@
-import { Container, Flex, Box } from '@radix-ui/themes';
+/**
+ * Repository Page - Displays a repository and its contents
+ * 
+ * KEEP IT SIMPLE:
+ * 1. URL params are known values (/[account_id]/[repository_id])
+ * 2. Get data -> Transform if needed -> Render
+ * 3. Trust your types, avoid complex validation
+ * 4. Let Next.js handle errors (404, 500, etc.)
+ * 5. No helper functions unless truly needed
+ */
+
+// External packages
+import { Container, Box } from '@radix-ui/themes';
 import { notFound } from 'next/navigation';
 import { Metadata } from 'next';
 
-import { 
-  ObjectBrowser, 
-  MarkdownViewer, 
-  RepositoryHeader,
-  RepositorySchemaMetadata 
-} from '@/components';
+// Internal components
+import { RepositoryHeader, ObjectBrowser } from '@/components/features/repositories';
+import { MarkdownViewer } from '@/components/features/markdown/MarkdownViewer';
 
-import type { Repository, RepositoryObject } from '@/types';
-
+// Types and utilities
+import type { Repository } from '@/types';
 import { fetchRepositories } from '@/lib/db/operations';
 import { createStorageClient } from '@/lib/clients/storage';
-import { generateRepositoryMetadata, RepositorySchema } from '@/components/metadata';
-
-// Define valid metadata types
-type MetadataType = keyof NonNullable<Repository['metadata_files']>;
 
 interface PageProps {
-  params: {
-    account_id: string;
-    repository_id: string;
+  params: { account_id: string; repository_id: string }
+}
+
+interface StorageResult {
+  content?: {
+    content?: string;
+    metadata?: Record<string, unknown>;
   };
-}
-
-async function getRepository(accountId: string, repositoryId: string): Promise<Repository | null> {
-  try {
-    const repositories = await fetchRepositories();
-    return repositories.find(repo => 
-      repo.repository_id === repositoryId && 
-      repo.account.account_id === accountId
-    ) || null;
-  } catch (error) {
-    console.error("Error fetching repository:", error);
-    return null;
-  }
-}
-
-// Add a function to get objects
-async function getObjects(accountId: string, repositoryId: string): Promise<RepositoryObject[]> {
-  const client = createStorageClient();
-  const rawObjects = await client.listObjects({ account_id: accountId, repository_id: repositoryId });
-  
-  return rawObjects.map(obj => {
-    const path = obj.path || '';
-    return {
-      id: path,
-      path,
-      name: path.split('/').pop() || path,
-      size: obj.size,
-      updated_at: obj.updated_at,
-      repository_id: repositoryId,
-      created_at: obj.updated_at ?? new Date().toISOString(),
-      checksum: obj.checksum ?? '',
-    } as RepositoryObject;
-  });
-}
-
-// Function to get the README content
-async function getReadmeContent(accountId: string, repositoryId: string, path?: string): Promise<string | null> {
-  try {
-    const client = createStorageClient();
-    const prefix = path ? `${path}/` : '';
-    const readmePath = `${prefix}README.md`;
-    
-    // Check if README.md exists
-    const objects = await client.listObjects({ 
-      account_id: accountId, 
-      repository_id: repositoryId,
-      prefix: readmePath
-    });
-    
-    if (objects.length === 0) {
-      // If no README in current path and we're not at root, try root
-      if (path) {
-        return getReadmeContent(accountId, repositoryId);
-      }
-      return null;
-    }
-    
-    // Fetch README.md content
-    const readmeObject = await client.getObject({
-      account_id: accountId,
-      repository_id: repositoryId,
-      path: readmePath
-    });
-    
-    // Convert the content to string based on the actual return type
-    // Adjust this based on what getObject actually returns
-    return readmeObject.content?.toString() || null;
-  } catch (error) {
-    console.error("Error fetching README:", error);
-    return null;
-  }
-}
-
-async function getData(params: PageProps['params']) {
-  const repository = await getRepository(params.account_id, params.repository_id);
-  if (!repository) {
-    notFound();
-  }
-
-  return { repository };  // No need to fetch account separately anymore
-}
-
-// Generate metadata for the page
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const repository = await getRepository(params.account_id, params.repository_id);
-  if (!repository) {
-    notFound();
-  }
-
-  // Generate basic metadata
-  const metadata = generateRepositoryMetadata({ repository });
-
-  // Add JSON-LD schema
-  return {
-    ...metadata,
-    openGraph: metadata.openGraph,
-    twitter: metadata.twitter,
-    other: {
-      schema: JSON.stringify({
-        "@context": "https://schema.org/",
-        "@type": "Dataset",
-        "name": repository.title,
-        "description": repository.description,
-        "url": `https://source.coop/${repository.account.account_id}/${repository.repository_id}`,
-        "dateModified": repository.updated_at,
-        "dateCreated": repository.created_at,
-        "isAccessibleForFree": !repository.private,
-        ...(repository.root_metadata?.license && {
-          "license": repository.root_metadata.license
-        }),
-        "creator": {
-          "@type": repository.account.type === 'organization' ? "Organization" : "Person",
-          "name": repository.account.name,
-          ...(repository.account.website && { "url": repository.account.website })
-        }
-      })
-    }
-  };
+  metadata?: Record<string, unknown>;
 }
 
 export default async function RepositoryPage({ params }: PageProps) {
-  const repository = await getRepository(params.account_id, params.repository_id);
-  if (!repository) {
-    notFound();
+  // 1. Await params and destructure
+  const { account_id, repository_id } = await Promise.resolve(params);
+
+  // 2. Find the repository or 404
+  const repository = (await fetchRepositories()).find(repo => 
+    repo.repository_id === repository_id && 
+    repo.account.account_id === account_id
+  );
+
+  if (!repository) notFound();
+
+  // 3. Get the repository contents
+  const storage = createStorageClient();
+  const objects = await storage.listObjects({
+    account_id,
+    repository_id
+  });
+
+  // 4. Get README content if it exists
+  let readmeContent: string | undefined;
+  const hasReadme = objects.some(obj => obj.path === 'README.md');
+  
+  if (hasReadme) {
+    const result = await storage.getObject({
+      account_id,
+      repository_id,
+      path: 'README.md'
+    }) as StorageResult;
+    
+    if (result?.content?.content && typeof result.content.content === 'string') {
+      readmeContent = result.content.content;
+    }
   }
 
-  const readmeContent = await getReadmeContent(params.account_id, params.repository_id);
-  const objects = await getObjects(params.account_id, params.repository_id);
-
+  // 5. Render the page
   return (
-    <>
-      <RepositorySchema repository={repository} />
-      <Container>
-        <Box>
-          <RepositoryHeader repository={repository} />
-        </Box>
+    <Container>
+      <RepositoryHeader repository={repository} />
+      
+      <Box mt="4">
+        <ObjectBrowser 
+          repository={repository}
+          objects={objects.map(obj => ({
+            id: obj.path || '',
+            repository_id,
+            path: obj.path || '',
+            size: obj.size || 0,
+            type: obj.type || 'file',
+            mime_type: obj.mime_type,
+            created_at: obj.created_at || new Date().toISOString(),
+            updated_at: obj.updated_at || new Date().toISOString(),
+            checksum: obj.checksum || ''
+          }))}
+          initialPath=""
+        />
+      </Box>
 
+      {readmeContent && (
         <Box mt="4">
-          <ObjectBrowser 
-            repository={repository}
-            objects={objects}
-            initialPath=""
-          />
+          <MarkdownViewer content={readmeContent} />
         </Box>
-
-        {readmeContent && (
-          <Box mt="4">
-            <MarkdownViewer content={readmeContent} />
-          </Box>
-        )}
-      </Container>
-    </>
+      )}
+    </Container>
   );
+}
+
+// Basic metadata
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { account_id, repository_id } = await Promise.resolve(params);
+  return {
+    title: `${account_id}/${repository_id}`,
+    description: `Repository ${account_id}/${repository_id}`
+  };
 } 

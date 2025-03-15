@@ -1,14 +1,24 @@
-// Common components
-export * from './common';
-
-// Layout components
+// Core UI components
+export * from './core';
+export * from './display';
 export * from './layout';
 
 // Feature components
-export * from './markdown';
-export * from './metadata';
-export * from './profiles';
-export * from './repositories';
+export { MarkdownViewer } from './features/markdown/MarkdownViewer';
 
-// Core components
-export { MarkdownViewer } from './MarkdownViewer'; 
+// Metadata components
+export { DataCiteSection, STACSection, RepositorySchema, generateRepositoryMetadata } from './features/metadata';
+
+// Profile components
+export { AccountList, IndividualProfile, OrganizationProfile, ProfileLayout } from './features/profiles';
+
+// Repository components
+export { 
+  RepositoryHeader,
+  RepositoryListItem,
+  RepositoryMetaCard,
+  RepositorySchemaMetadata,
+  RepositorySearchResult,
+  RepositorySummaryCard,
+  ObjectBrowser
+} from './features/repositories'; 

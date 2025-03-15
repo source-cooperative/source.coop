@@ -1,5 +1,5 @@
 import { apiFetch } from './fetch';
-import type { RepositoryObject } from '@/types/repository_object';
+import type { RepositoryObject } from '@/types';
 
 export function fetchObjects(account_id: string, repository_id: string, path: string = '') {
   const endpoint = path 

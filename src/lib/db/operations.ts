@@ -1,7 +1,7 @@
 import { getDynamoDb } from '../clients';
 import { ScanCommand, GetCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
 import type { Account } from '@/types/account';
-import type { Repository } from '@/types/repository';
+import type { Repository } from '@/types';
 
 export async function scanTable<T>(tableName: string): Promise<T[]> {
   const db = getDynamoDb();

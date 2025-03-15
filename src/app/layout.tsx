@@ -3,9 +3,9 @@ import '@/styles/globals.css';
 import { ThemeProvider } from '@/styles/theme';
 import { IBM_Plex_Sans } from 'next/font/google';
 import { metadata } from './metadata';
-import { Navigation } from '@/components';
-import { Container, Text, Box, Link } from '@radix-ui/themes';
-import { Footer } from '@/components/layout/Footer';
+import { Navigation, Footer } from '@/components/layout';
+import { Box } from '@radix-ui/themes';
+import { Theme } from '@radix-ui/themes';
 
 const ibmPlexSans = IBM_Plex_Sans({
   subsets: ['latin'],
@@ -29,18 +29,17 @@ export default function RootLayout({
           defaultTheme="system"
           storageKey="source-theme"
         >
-          <div style={{ 
-            display: 'flex', 
-            flexDirection: 'column',
-          }}>
-            <Navigation />
-            <main style={{ 
-              width: '100%',
-            }}>
-              {children}
-            </main>
-            <Footer />
-          </div>
+          <Box>
+            <Box>
+              <Navigation />
+            </Box>
+            <Box asChild>
+              <main>{children}</main>
+            </Box>
+            <Box>
+              <Footer />
+            </Box>
+          </Box>
         </ThemeProvider>
       </body>
     </html>

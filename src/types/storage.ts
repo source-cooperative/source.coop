@@ -1,4 +1,4 @@
-import { Object } from './object';
+import { RepositoryObject } from './repository_object';
 export type StorageType = 'LOCAL' | 'S3';
 
 // The storage provider entity
@@ -62,21 +62,25 @@ export interface StorageClient {
     account_id: string;
     repository_id: string;
     prefix?: string;
-  }): Promise<Array<Partial<Object>>>;  // Or Array<Object> if all fields are available
+  }): Promise<Array<Partial<RepositoryObject>>>;
 
   getObjectInfo(params: {
     account_id: string;
     repository_id: string;
     object_path: string;
-  }): Promise<Partial<Object>>;  // Or Object if all fields are required
+  }): Promise<Partial<RepositoryObject>>;
   
-  // Add the getObject method to fetch the actual content
   getObject(params: {
     account_id: string;
     repository_id: string;
     path: string;
   }): Promise<{
-    metadata?: Partial<Object>;
-    content?: Buffer | string;
+    metadata?: Partial<RepositoryObject>;
+    content?: string;
+    headers?: Record<string, string>;
   }>;
+
+  putObject(objectPath: ObjectPath, data: Buffer): Promise<RepositoryObject>;
+  
+  deleteObject(objectPath: ObjectPath): Promise<void>;
 }
