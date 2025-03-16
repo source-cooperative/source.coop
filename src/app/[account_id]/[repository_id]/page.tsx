@@ -40,7 +40,7 @@ export default async function RepositoryPage({ params }: PageProps) {
   const { account_id, repository_id } = await params;
 
   // 2. Find the repository or 404
-  const repository = await fetchRepositories().then(repos => {
+  const repository: Repository = await fetchRepositories().then(repos => {
     const repo = repos.find(r => 
       r.account.account_id === account_id && 
       r.repository_id === repository_id
@@ -50,7 +50,7 @@ export default async function RepositoryPage({ params }: PageProps) {
   });
 
   // 3. Get objects from storage
-  const objects = await createStorageClient().listObjects({ account_id, repository_id })
+  const objects: RepositoryObject[] = await createStorageClient().listObjects({ account_id, repository_id })
     .then(objects => objects
       .filter(obj => obj.path)
       .map(obj => ({

@@ -26,11 +26,11 @@ import { createStorageClient } from '@/lib/clients/storage';
 
 // Page Props Type
 type PageProps = {
-  params: Promise<{
+  params: {
     account_id: string;
     repository_id: string;
     path: string[];
-  }>;
+  };
 };
 
 /**
@@ -61,17 +61,17 @@ function isDirectory(objects: RepositoryObject[], path: string): boolean {
 export default async function RepositoryPathPage({
   params
 }: PageProps) {
-  const { account_id, repository_id, path } = await params;
+  const { account_id, repository_id, path } = params;
   const pathString = path?.join('/') || '';
 
   // Parallel data fetching
   const [repository, objects] = await Promise.all([
     // Get repository
-    fetchRepositories().then(repos => {
-      const repo = repos.find(r => 
+    fetchRepositories().then((repos) => {
+      const repo: Repository = repos.find(r => 
         r.account.account_id === account_id && 
         r.repository_id === repository_id
-      );
+      )!;
       if (!repo) notFound();
       return repo;
     }),

@@ -5,7 +5,6 @@ import { IBM_Plex_Sans } from 'next/font/google';
 import { metadata } from './metadata';
 import { Navigation, Footer } from '@/components/layout';
 import { Box } from '@radix-ui/themes';
-import { Theme } from '@radix-ui/themes';
 
 const ibmPlexSans = IBM_Plex_Sans({
   subsets: ['latin'],

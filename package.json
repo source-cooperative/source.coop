@@ -26,6 +26,7 @@
     "bright": "^1.0.0",
     "date-fns": "^4.1.0",
     "highlight.js": "^11.11.1",
+    "isomorphic-dompurify": "^2.22.0",
     "marked": "^15.0.7",
     "marked-highlight": "^2.2.1",
     "md5": "^2.3.0",

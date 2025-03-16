@@ -1,11 +1,10 @@
-import type { Repository, RepositoryStatistics } from '@/types';
+import type { Repository } from '@/types';
 
 interface RepositorySchemaProps {
   repository: Repository;
-  statistics?: RepositoryStatistics;
 }
 
-export function RepositorySchema({ repository, statistics }: RepositorySchemaProps) {
+export function RepositorySchema({ repository }: RepositorySchemaProps) {
   const schemaData = {
     "@context": "https://schema.org/",
     "@type": "Dataset",

@@ -7,9 +7,10 @@ import { useState, useEffect } from 'react';
 interface ThemeAwareImageProps extends Omit<ImageProps, 'src'> {
   lightSrc: string;
   darkSrc: string;
+  alt: string;
 }
 
-export function ThemeAwareImage({ lightSrc, darkSrc, ...props }: ThemeAwareImageProps) {
+export function ThemeAwareImage({ lightSrc, darkSrc, alt, ...props }: ThemeAwareImageProps) {
   const [mounted, setMounted] = useState(false);
   const { resolvedTheme } = useTheme();
   
@@ -25,6 +26,7 @@ export function ThemeAwareImage({ lightSrc, darkSrc, ...props }: ThemeAwareImage
     <Image
       {...props}
       src={src}
+      alt={alt}
     />
   );
 } 

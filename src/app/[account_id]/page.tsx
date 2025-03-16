@@ -30,18 +30,18 @@ export default async function AccountPage({
   }
 }) {
   const { account_id } = await Promise.resolve(params);
-  const [repositories, accounts] = await Promise.all([
+  const [repositories, accounts]: [Repository[], Account[]] = await Promise.all([
     fetchRepositories(),
     fetchAccounts()
   ]);
   
-  const account = accounts.find(acc => acc.account_id === account_id);
+  const account: Account = accounts.find(acc => acc.account_id === account_id)!;
   if (!account) {
     notFound();
   }
 
   // Get repositories owned by this account
-  const ownedRepositories = repositories.filter(
+  const ownedRepositories: Repository[] = repositories.filter(
     repo => repo.account.account_id === account_id
   );
 

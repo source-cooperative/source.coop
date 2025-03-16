@@ -1,69 +1,22 @@
 'use client';
 
-import { Flex, Box, Text } from '@radix-ui/themes';
+import { Flex } from '@radix-ui/themes';
 import Link from 'next/link';
 import { ChevronRightIcon } from '@radix-ui/react-icons';
-import { useState, useEffect } from 'react';
 import { MonoText } from '@/components/core';
 
 interface BreadcrumbNavProps {
-  account_id: string;
-  repository_id: string;
   path: string[];
   fileName?: string;
   onNavigate: (path: string[]) => void;
 }
 
-function NavText({ 
-  children, 
-  isLink, 
-  onClick 
-}: { 
-  children: React.ReactNode; 
-  isLink: boolean; 
-  onClick?: () => void;
-}) {
-  if (isLink) {
-    return (
-      <Box asChild>
-        <Link href="#" onClick={(e) => { e.preventDefault(); onClick?.(); }}>
-          <MonoText size="2" color="gray" highContrast>
-            {children}
-          </MonoText>
-        </Link>
-      </Box>
-    );
-  }
-  
-  return (
-    <Box>
-      <MonoText size="2" color="gray">
-        {children}
-      </MonoText>
-    </Box>
-  );
-}
-
 export function BreadcrumbNav({ 
-  account_id, 
-  repository_id, 
   path, 
   fileName, 
   onNavigate 
 }: BreadcrumbNavProps) {
   const isRoot = path.length === 0 && !fileName;
-  
-  // Store previous path in state to prevent jitter when navigating
-  const [prevPathLength, setPrevPathLength] = useState(path.length);
-  const [prevFileName, setPrevFileName] = useState(fileName);
-  
-  useEffect(() => {
-    setPrevPathLength(path.length);
-    setPrevFileName(fileName);
-  }, [path.length, fileName]);
-  
-  const hasFile = fileName || prevFileName;
-  const maxPathLength = Math.max(path.length, prevPathLength);
   
   // Create link styling that doesn't affect layout
   const linkStyle = { 

@@ -32,7 +32,7 @@ export default function RepositoryNotFound({ params }: NotFoundProps) {
         </Heading>
         
         <Text size="4" color="gray" align="center" mt="2">
-          We couldn't find this path in the repository.
+          We couldn&apos;t find this path in the repository.
         </Text>
 
         <Flex gap="3" mt="5">

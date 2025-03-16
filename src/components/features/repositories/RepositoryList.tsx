@@ -22,7 +22,11 @@ export function RepositoryList({ repositories }: RepositoryListProps) {
     <nav aria-label="Repository list">
       <ul className={styles.list} role="listbox">
         {repositories.map((repository, index) => (
-          <li key={`${repository.account.account_id}/${repository.repository_id}`} role="option">
+          <li 
+            key={`${repository.account.account_id}/${repository.repository_id}`} 
+            role="option"
+            aria-selected={index === selectedIndex}
+          >
             <RepositoryListItem
               repository={repository}
               isSelected={index === selectedIndex}

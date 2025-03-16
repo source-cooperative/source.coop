@@ -1,16 +1,9 @@
 import { Box, Text, Heading, Link as RadixLink } from '@radix-ui/themes';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Code } from 'bright';
+import { Code } from './codeConfig';
 import { SectionHeader } from '@/components/core';
 import '@/styles/MarkdownViewer.css';
-
-// Configure Bright once at module level
-Code.theme = {
-  dark: 'github-dark',
-  light: 'github-light'
-};
-Code.lineNumbers = true;
 
 interface MarkdownViewerProps {
   content: string;

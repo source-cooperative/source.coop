@@ -67,7 +67,33 @@
    npm run test:perf  # Save baseline
    ```
 
-2. **During Change**
+2. **Test Organization**
+   - Group related tests using descriptive `describe` blocks
+   - Keep test data close to tests (in test file or dedicated fixtures)
+   - Reset environment using `beforeEach`
+   - Use consistent naming for mocks (e.g. `mockRouter`, `mockRepository`)
+   - Mock global objects using `Object.defineProperty`
+   - For stateful components, verify both initial state and state changes
+
+3. **Component Testing**
+   - Mock routing modules (e.g. `next/navigation`) at test file level
+   - Match text content exactly, including punctuation
+   - For navigation components:
+     - Test both file and directory paths
+     - Verify exact router URLs
+     - Test empty states and edge cases
+   - Use specific item matching over array indices
+   - Include all production-required fields in test data
+
+4. **Keyboard Testing**
+   - Attach event listeners to `document`, not `window`
+   - Clear mocks before each test with `jest.clearAllMocks()`
+   - Test both single-key ('j', 'k', '?') and multi-key sequences
+   - Verify modifier key handling (ctrl, meta, alt, shift)
+   - Mock `navigator.clipboard` for clipboard operations
+   - Test navigation boundaries and edge cases
+
+5. **During Change**
    - Make ONE focused change
    - Run affected tests
    - Check build status
@@ -79,7 +105,7 @@
      - Search
      - Keyboard shortcuts
 
-3. **Post-Change**
+6. **Post-Change**
    - Run full test suite
    - Compare with baseline
    - Document changes:

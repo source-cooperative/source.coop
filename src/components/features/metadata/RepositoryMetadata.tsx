@@ -1,14 +1,12 @@
 import type { Metadata } from 'next';
-import type { Repository, RepositoryStatistics } from '@/types';
+import type { Repository } from '@/types';
 
 interface RepositoryMetadataProps {
   repository: Repository;
-  statistics?: RepositoryStatistics;
 }
 
 export function generateRepositoryMetadata({ 
-  repository, 
-  statistics 
+  repository 
 }: RepositoryMetadataProps): Metadata {
   const title = `${repository.title} · ${repository.account.name} · Source Cooperative`;
   const description = repository.description || `A data repository by ${repository.account.name}`;

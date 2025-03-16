@@ -1,5 +1,3 @@
-import { format, formatDistanceToNow } from 'date-fns';
-
 /**
  * Format a number of bytes into a human-readable string
  * @param bytes The number of bytes to format

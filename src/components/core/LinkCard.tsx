@@ -1,4 +1,4 @@
-import { Card, Flex, Text, Link as RadixLink } from '@radix-ui/themes';
+import { Card, Flex, Text } from '@radix-ui/themes';
 import Link from 'next/link';
 
 interface LinkCardProps {

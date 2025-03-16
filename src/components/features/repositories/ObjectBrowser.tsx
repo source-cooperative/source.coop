@@ -1,9 +1,9 @@
 'use client';
 
-import { Text, Card, Grid, Box, DataList } from '@radix-ui/themes';
-import { ChevronRightIcon, FileIcon, SlashIcon, UpdateIcon } from '@radix-ui/react-icons';
+import { Text, Card, Box, DataList } from '@radix-ui/themes';
+import { ChevronRightIcon, FileIcon, SlashIcon } from '@radix-ui/react-icons';
 import Link from 'next/link';
-import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+import { useState, useMemo, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Repository, RepositoryObject } from '@/types';
 import { MonoText, SectionHeader } from '@/components/core';
@@ -71,13 +71,11 @@ function buildDirectoryTree(objects: RepositoryObject[], currentPath: string[] =
 function ObjectDetails({ 
   repository, 
   selectedObject, 
-  currentPath, 
   selectedDataItem,
   onNavigate 
 }: { 
   repository: Repository;
   selectedObject: RepositoryObject;
-  currentPath: string[];
   selectedDataItem: string | null;
   onNavigate: (path: string[]) => void;
 }) {
@@ -93,8 +91,6 @@ function ObjectDetails({
           marginBottom: 'var(--space-3)'
         }}>
           <BreadcrumbNav 
-            account_id={repository.account.account_id}
-            repository_id={repository.repository_id}
             path={pathParts}
             fileName={fileName}
             onNavigate={onNavigate}
@@ -194,16 +190,6 @@ function ObjectDetails({
   );
 }
 
-// Add loading progress indicator
-function LoadingProgress({ current, total }: { current: number; total: number }) {
-  const percentage = Math.round((current / total) * 100);
-  return (
-    <Text size="1" color="gray">
-      Loading {percentage}% ({current} of {total} items)
-    </Text>
-  );
-}
-
 // Memoize container height calculation
 const getContainerHeight = (itemCount: number, itemHeight: number, maxItems: number) => {
   return Math.min(
@@ -285,7 +271,6 @@ export function ObjectBrowser({ repository, objects, initialPath = '', selectedO
         <ObjectDetails
           repository={repository}
           selectedObject={selectedObject}
-          currentPath={currentPath}
           selectedDataItem={selectedDataItem}
           onNavigate={navigateToPath}
         />
@@ -308,8 +293,6 @@ export function ObjectBrowser({ repository, objects, initialPath = '', selectedO
             marginBottom: 'var(--space-3)'
           }}>
             <BreadcrumbNav 
-              account_id={repository.account.account_id}
-              repository_id={repository.repository_id}
               path={currentPath}
               onNavigate={navigateToPath}
             />

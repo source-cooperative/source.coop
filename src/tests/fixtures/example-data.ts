@@ -75,6 +75,18 @@ export const exampleRepositories: Repository[] = [
 
 export const exampleObjects: RepositoryObject[] = [
   {
+    id: 'data',
+    repository_id: 'global-building-footprints',
+    path: 'data',
+    size: 0,
+    type: 'directory',
+    created_at: '2024-01-01T00:00:00Z',
+    updated_at: '2024-01-02T00:00:00Z',
+    checksum: '',
+    name: 'data',
+    isDirectory: true
+  },
+  {
     id: 'file1.txt',
     repository_id: 'global-building-footprints',
     path: 'file1.txt',
@@ -83,17 +95,41 @@ export const exampleObjects: RepositoryObject[] = [
     mime_type: 'text/plain',
     created_at: '2024-01-01T00:00:00Z',
     updated_at: '2024-01-02T00:00:00Z',
-    checksum: 'abc123'
-  },
+    checksum: 'abc123',
+    name: 'file1.txt',
+    isDirectory: false
+  }
+];
+
+export const exampleSubdirectoryObjects: RepositoryObject[] = [
   {
-    id: 'data',
+    id: 'data/file1.txt',
     repository_id: 'global-building-footprints',
-    path: 'data',
-    size: 0,
-    type: 'directory',
+    path: 'data/file1.txt',
+    size: 1024,
+    type: 'file',
+    mime_type: 'text/plain',
     created_at: '2024-01-01T00:00:00Z',
     updated_at: '2024-01-02T00:00:00Z',
-    checksum: ''
+    checksum: 'def456',
+    name: 'file1.txt',
+    isDirectory: false
+  }
+];
+
+export const exampleDeepPathObjects: RepositoryObject[] = [
+  {
+    id: 'data/subdir/file.txt',
+    repository_id: 'global-building-footprints',
+    path: 'data/subdir/file.txt',
+    size: 1024,
+    type: 'file',
+    mime_type: 'text/plain',
+    created_at: '2024-01-01T00:00:00Z',
+    updated_at: '2024-01-02T00:00:00Z',
+    checksum: 'ghi789',
+    name: 'file.txt',
+    isDirectory: false
   }
 ];
 

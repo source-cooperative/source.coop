@@ -1,5 +1,4 @@
 import type { Repository, RepositoryStatistics } from '@/types';
-import type { Account } from '@/types/account';
 
 // For injecting schema.org metadata
 export function RepositorySchemaMetadata({ 

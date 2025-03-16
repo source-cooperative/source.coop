@@ -23,7 +23,7 @@ export default function NotFound() {
         </Heading>
         
         <Text size="4" color="gray" align="center" mt="2">
-          We couldn't find what you're looking for.
+          We couldn&apos;t find what you&apos;re looking for.
           <br />
           The path may have been moved or no longer exists.
         </Text>

@@ -1,5 +1,4 @@
 import { render, screen, fireEvent } from '@testing-library/react';
-import { useRouter } from 'next/navigation';
 import { RepositoryList } from '../RepositoryList';
 import type { Repository } from '@/types';
 import type { IndividualAccount } from '@/types';
@@ -11,9 +10,11 @@ const mockRouter = {
   prefetch: jest.fn(),
 };
 
+const mockPathname = jest.fn().mockReturnValue('/');
+
 jest.mock('next/navigation', () => ({
   useRouter: () => mockRouter,
-  usePathname: () => '/',
+  usePathname: () => mockPathname(),
 }));
 
 describe('RepositoryList', () => {
@@ -49,6 +50,7 @@ describe('RepositoryList', () => {
 
   beforeEach(() => {
     mockRouter.push.mockClear();
+    mockPathname.mockReturnValue('/');
   });
 
   it('renders repository list', () => {
@@ -188,7 +190,7 @@ describe('RepositoryList', () => {
   describe('path navigation', () => {
     it('navigates to home on backtick from repository page', () => {
       // Mock being on a repository page
-      jest.spyOn(require('next/navigation'), 'usePathname').mockReturnValue('/test-account/repo1');
+      mockPathname.mockReturnValue('/test-account/repo1');
       
       render(<RepositoryList repositories={mockRepositories} />);
       
@@ -199,7 +201,7 @@ describe('RepositoryList', () => {
 
     it('navigates to root from profile page', () => {
       // Mock being on a profile page
-      jest.spyOn(require('next/navigation'), 'usePathname').mockReturnValue('/test-account');
+      mockPathname.mockReturnValue('/test-account');
       
       render(<RepositoryList repositories={mockRepositories} />);
       
@@ -210,8 +212,7 @@ describe('RepositoryList', () => {
 
     it('navigates up one level in object browser', () => {
       // Mock being in object browser
-      jest.spyOn(require('next/navigation'), 'usePathname')
-        .mockReturnValue('/test-account/repo1/path/to/object');
+      mockPathname.mockReturnValue('/test-account/repo1/path/to/object');
       
       render(<RepositoryList repositories={mockRepositories} />);
       
@@ -222,7 +223,7 @@ describe('RepositoryList', () => {
 
     it('does nothing on backtick at root', () => {
       // Mock being at root
-      jest.spyOn(require('next/navigation'), 'usePathname').mockReturnValue('/');
+      mockPathname.mockReturnValue('/');
       
       render(<RepositoryList repositories={mockRepositories} />);
       

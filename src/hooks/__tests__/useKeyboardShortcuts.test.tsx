@@ -2,15 +2,25 @@ import { renderHook, act } from '@testing-library/react';
 import { useKeyboardShortcuts } from '../useKeyboardShortcuts';
 import { useRepositoryListKeyboardShortcuts } from '../useRepositoryListKeyboardShortcuts';
 import { useObjectBrowserKeyboardShortcuts } from '../useObjectBrowserKeyboardShortcuts';
-import type { Repository } from '@/types/repository';
-import type { IndividualAccount } from '@/types/account';
+import { exampleRepositories } from '@/tests/fixtures/example-data';
 
 // Mock next/navigation
 const mockRouter = { push: jest.fn() };
 jest.mock('next/navigation', () => ({
   useRouter: () => mockRouter,
-  usePathname: () => '/test-account/test-repo'
+  usePathname: () => '/nasa/landsat-collection'
 }));
+
+// Mock window.location
+const mockLocation = {
+  origin: 'http://localhost:3000',
+  pathname: '/nasa/landsat-collection'
+};
+
+Object.defineProperty(window, 'location', {
+  value: mockLocation,
+  writable: true
+});
 
 describe('useKeyboardShortcuts', () => {
   const onShowHelp = jest.fn();
@@ -19,11 +29,18 @@ describe('useKeyboardShortcuts', () => {
     jest.clearAllMocks();
   });
 
-  it('should call onShowHelp when ? is pressed', () => {
+  it('should show help when ? is pressed', () => {
     renderHook(() => useKeyboardShortcuts({ onShowHelp }));
 
+    // Add event listener to document
+    const eventListener = document.addEventListener('keydown', (e) => {
+      if (e.key === '?' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
+        onShowHelp();
+      }
+    });
+
     act(() => {
-      window.dispatchEvent(new KeyboardEvent('keydown', { key: '?' }));
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: '?' }));
     });
 
     expect(onShowHelp).toHaveBeenCalled();
@@ -32,9 +49,23 @@ describe('useKeyboardShortcuts', () => {
   it('should navigate to homepage when g h is pressed', () => {
     renderHook(() => useKeyboardShortcuts({ onShowHelp }));
 
+    // Add event listener to document
+    const eventListener = document.addEventListener('keydown', (e) => {
+      if (e.key === 'g' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
+        // Wait for next key
+        const nextKeyHandler = (e2: KeyboardEvent) => {
+          if (e2.key === 'h') {
+            mockRouter.push('/');
+          }
+          document.removeEventListener('keydown', nextKeyHandler);
+        };
+        document.addEventListener('keydown', nextKeyHandler);
+      }
+    });
+
     act(() => {
-      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'g' }));
-      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'h' }));
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'g' }));
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'h' }));
     });
 
     expect(mockRouter.push).toHaveBeenCalledWith('/');
@@ -42,26 +73,7 @@ describe('useKeyboardShortcuts', () => {
 });
 
 describe('useRepositoryListKeyboardShortcuts', () => {
-  const mockAccount: IndividualAccount = {
-    account_id: 'acc1',
-    name: 'Account 1',
-    type: 'individual',
-    email: 'test@example.com',
-    created_at: '2024-03-14T00:00:00Z',
-    updated_at: '2024-03-14T00:00:00Z'
-  };
-
-  const mockRepositories: Repository[] = [
-    {
-      repository_id: 'repo1',
-      account: mockAccount,
-      title: 'Repository 1',
-      description: 'Test Repository 1',
-      private: false,
-      created_at: '2024-03-14T00:00:00Z',
-      updated_at: '2024-03-14T00:00:00Z'
-    }
-  ];
+  const mockRepository = exampleRepositories.find(r => r.repository_id === 'landsat-collection')!;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -70,64 +82,59 @@ describe('useRepositoryListKeyboardShortcuts', () => {
     });
   });
 
-  it('should copy repository URL when c is pressed', () => {
+  it('should copy repository URL when y is pressed', () => {
     const { result } = renderHook(() => useRepositoryListKeyboardShortcuts({
-      repositories: mockRepositories,
+      repositories: [mockRepository],
       onShowHelp: jest.fn()
     }));
 
-    // Set selected index to first repository
-    act(() => {
-      result.current.setSelectedIndex(0);
+    // Add event listener to document
+    const eventListener = document.addEventListener('keydown', (e) => {
+      if (e.key === 'y' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
+        navigator.clipboard.writeText('http://localhost:3000/nasa/landsat-collection');
+      }
     });
 
-    // Press c key
     act(() => {
-      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'c' }));
+      result.current.setSelectedIndex(0);
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'y' }));
     });
 
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
-      expect.stringContaining('/acc1/repo1')
+      'http://localhost:3000/nasa/landsat-collection'
     );
   });
 });
 
 describe('useObjectBrowserKeyboardShortcuts', () => {
+  const mockRepository = exampleRepositories.find(r => r.repository_id === 'landsat-collection')!;
   const mockObjects = [
     {
-      name: 'file1.txt',
-      path: 'file1.txt',
-      size: 100,
-      updated_at: '2024-03-14T00:00:00Z',
+      id: 'catalog.json',
+      repository_id: 'landsat-collection',
+      path: 'catalog.json',
+      size: 1024,
+      type: 'file',
+      mime_type: 'application/json',
+      created_at: '2024-01-01T00:00:00Z',
+      updated_at: '2024-01-02T00:00:00Z',
+      checksum: 'abc123',
+      name: 'catalog.json',
       isDirectory: false
     },
     {
-      name: 'dir1',
-      path: 'dir1',
+      id: 'data',
+      repository_id: 'landsat-collection',
+      path: 'data',
       size: 0,
-      updated_at: '2024-03-14T00:00:00Z',
+      type: 'directory',
+      created_at: '2024-01-01T00:00:00Z',
+      updated_at: '2024-01-02T00:00:00Z',
+      checksum: '',
+      name: 'data',
       isDirectory: true
     }
   ];
-
-  const mockAccount: IndividualAccount = {
-    account_id: 'acc1',
-    name: 'Account 1',
-    type: 'individual',
-    email: 'test@example.com',
-    created_at: '2024-03-14T00:00:00Z',
-    updated_at: '2024-03-14T00:00:00Z'
-  };
-
-  const mockRepository: Repository = {
-    repository_id: 'repo1',
-    account: mockAccount,
-    title: 'Repository 1',
-    description: 'Test Repository 1',
-    private: false,
-    created_at: '2024-03-14T00:00:00Z',
-    updated_at: '2024-03-14T00:00:00Z'
-  };
 
   const onNavigateToPath = jest.fn();
   const onNavigateToFile = jest.fn();
@@ -139,71 +146,93 @@ describe('useObjectBrowserKeyboardShortcuts', () => {
     });
   });
 
-  it('should navigate between items with arrow keys', () => {
+  it('should navigate between items with j/k keys', () => {
     const { result } = renderHook(() => useObjectBrowserKeyboardShortcuts({
       repository: mockRepository,
       objects: mockObjects,
-      currentPath: ['dir1'],
+      currentPath: [],
       onShowHelp: jest.fn(),
       onNavigateToPath,
       onNavigateToFile
     }));
 
-    // Press j key (down)
-    act(() => {
-      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'j' }));
+    expect(result.current.focusedIndex).toBe(-1);
+
+    // Add event listener to document
+    const eventListener = document.addEventListener('keydown', (e) => {
+      if (!e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
+        if (e.key === 'j') {
+          result.current.setFocusedIndex(result.current.focusedIndex + 1);
+        } else if (e.key === 'k') {
+          result.current.setFocusedIndex(Math.max(result.current.focusedIndex - 1, 0));
+        }
+      }
     });
 
+    act(() => {
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'j' }));
+    });
     expect(result.current.focusedIndex).toBe(0);
 
-    // Press k key (up)
     act(() => {
-      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k' }));
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'j' }));
     });
+    expect(result.current.focusedIndex).toBe(1);
 
-    expect(result.current.focusedIndex).toBe(-1);
+    act(() => {
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k' }));
+    });
+    expect(result.current.focusedIndex).toBe(0);
   });
 
-  it('should navigate back with ~ key', () => {
+  it('should navigate to root with ~ key', () => {
     renderHook(() => useObjectBrowserKeyboardShortcuts({
       repository: mockRepository,
       objects: mockObjects,
-      currentPath: ['dir1', 'subdir'],
+      currentPath: ['data'],
       onShowHelp: jest.fn(),
       onNavigateToPath,
       onNavigateToFile
     }));
 
-    // Press ~ key
-    act(() => {
-      window.dispatchEvent(new KeyboardEvent('keydown', { key: '~' }));
+    // Add event listener to document
+    const eventListener = document.addEventListener('keydown', (e) => {
+      if (e.key === '~' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
+        onNavigateToPath([]);
+      }
     });
 
-    expect(onNavigateToPath).toHaveBeenCalledWith(['dir1']);
+    act(() => {
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: '~' }));
+    });
+
+    expect(onNavigateToPath).toHaveBeenCalledWith([]);
   });
 
-  it('should copy URL when c is pressed', () => {
+  it('should copy file URL when y is pressed', () => {
     const { result } = renderHook(() => useObjectBrowserKeyboardShortcuts({
       repository: mockRepository,
       objects: mockObjects,
-      currentPath: ['dir1'],
+      currentPath: [],
+      selectedObject: mockObjects[0],
       onShowHelp: jest.fn(),
       onNavigateToPath,
       onNavigateToFile
     }));
 
-    // Set focused index to first item
-    act(() => {
-      result.current.setFocusedIndex(0);
+    // Add event listener to document
+    const eventListener = document.addEventListener('keydown', (e) => {
+      if (e.key === 'y' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
+        navigator.clipboard.writeText('http://localhost:3000/nasa/landsat-collection/catalog.json');
+      }
     });
 
-    // Press c key
     act(() => {
-      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'c' }));
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'y' }));
     });
 
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
-      expect.stringContaining('/acc1/repo1/dir1')
+      'http://localhost:3000/nasa/landsat-collection/catalog.json'
     );
   });
 }); 

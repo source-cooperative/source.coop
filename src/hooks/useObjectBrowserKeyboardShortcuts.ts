@@ -1,5 +1,4 @@
 import { useEffect, useState, useRef } from 'react';
-import { useRouter } from 'next/navigation';
 import type { Repository, RepositoryObject } from '@/types';
 import { useKeyboardShortcuts } from './useKeyboardShortcuts';
 
@@ -32,11 +31,10 @@ export function useObjectBrowserKeyboardShortcuts({
   onNavigateToPath,
   onNavigateToFile
 }: UseObjectBrowserKeyboardShortcutsProps) {
-  const router = useRouter();
   const [focusedIndex, setFocusedIndex] = useState<number>(-1);
   const [selectedDataItem, setSelectedDataItem] = useState<string | null>(null);
   const itemRefs = useRef<(HTMLAnchorElement | null)[]>([]);
-  const { awaitingSecondKey } = useKeyboardShortcuts({ onShowHelp });
+  useKeyboardShortcuts({ onShowHelp });
 
   // Add click handler to clear selection
   useEffect(() => {

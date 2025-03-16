@@ -1,5 +1,5 @@
 import { Logo } from './Logo';
-import { Container, Box, Flex } from '@radix-ui/themes';
+import { Container, Flex } from '@radix-ui/themes';
 
 export function Navigation() {
   return (

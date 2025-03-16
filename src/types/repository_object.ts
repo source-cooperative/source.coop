@@ -6,7 +6,7 @@ export type RepositoryObjectType =
 export interface RepositoryObjectMetadata {
   sha256?: string;
   sha1?: string;
-  [key: string]: any; // Allow for other metadata fields
+  [key: string]: string | number | boolean | null | undefined; // More specific types for metadata values
 }
 
 export interface RepositoryObject {
@@ -21,4 +21,6 @@ export interface RepositoryObject {
   checksum: string;
   content?: Buffer | string; // Added for storage client responses
   metadata?: RepositoryObjectMetadata;
+  name?: string; // Name of the file or directory
+  isDirectory?: boolean; // Whether this is a directory
 } 

@@ -3,21 +3,11 @@ import { NextRequest } from 'next/server';
 
 export const runtime = 'edge';
 
-// Load and cache the Berkeley Mono font
-const berkeleyMonoRegular = fetch(
-  new URL('/fonts/BerkeleyMono-Regular.woff2', process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000')
-).then((res) => res.arrayBuffer());
-
-const berkeleyMonoBold = fetch(
-  new URL('/fonts/BerkeleyMono-Bold.woff2', process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000')
-).then((res) => res.arrayBuffer());
-
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     
     const title = searchParams.get('title');
-    const type = searchParams.get('type') || 'repository';
     const author = searchParams.get('author');
 
     return new ImageResponse(
