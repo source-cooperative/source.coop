@@ -12,22 +12,43 @@ export function formatBytes(bytes: number): string {
 }
 
 /**
- * Format a date string into a human-readable format
+ * Format a date string into a human-readable format that's safe for SSR
+ * @param date The date string to format
+ * @returns A formatted date string like "5 Feb 2024"
+ */
+export function formatDateSSR(date: string): string {
+  const dateObj = new Date(date);
+  const day = dateObj.getUTCDate();
+  const month = dateObj.toLocaleString('en-US', { month: 'short', timeZone: 'UTC' });
+  const year = dateObj.getUTCFullYear();
+  return `${day} ${month} ${year}`;
+}
+
+/**
+ * Format a date string into a human-readable format with optional time
  * @param date The date string to format
  * @param includeTime Whether to include the time in the output
  * @returns A formatted date string
  */
 export function formatDate(date: string, includeTime: boolean = false): string {
   const dateObj = new Date(date);
-  const options: Intl.DateTimeFormatOptions = {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    ...(includeTime ? {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true
-    } : {})
-  };
-  return new Intl.DateTimeFormat('en-US', options).format(dateObj);
+  
+  if (!includeTime) {
+    // Match the SSR format exactly
+    return formatDateSSR(date);
+  }
+
+  // For timestamps, use Intl.DateTimeFormat but maintain consistent date format
+  const day = dateObj.getUTCDate();
+  const month = dateObj.toLocaleString('en-US', { month: 'short', timeZone: 'UTC' });
+  const year = dateObj.getUTCFullYear();
+  const time = new Intl.DateTimeFormat('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+    timeZone: 'UTC',
+    timeZoneName: 'short'
+  }).format(dateObj);
+
+  return `${day} ${month} ${year} ${time}`;
 } 

@@ -1,4 +1,7 @@
-import { formatDate } from '@/lib';
+'use client';
+
+import { useState, useEffect } from 'react';
+import { formatDate, formatDateSSR } from '@/lib';
 
 interface DateTextProps {
   date: string;
@@ -6,5 +9,16 @@ interface DateTextProps {
 }
 
 export function DateText({ date, includeTime = false }: DateTextProps) {
-  return formatDate(date, includeTime);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Use SSR-safe format for initial render to avoid jitter
+  if (!mounted) {
+    return <span>{formatDateSSR(date)}</span>;
+  }
+
+  return <span>{formatDate(date, includeTime)}</span>;
 } 
