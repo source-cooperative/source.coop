@@ -1,6 +1,6 @@
 'use client';
 
-import { Container, Text, Box, Link as RadixLink, Flex } from '@radix-ui/themes';
+import { Container, Text, Box, Link as RadixLink } from '@radix-ui/themes';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { MonoText } from '@/components/core';
@@ -11,27 +11,33 @@ export function Footer() {
   return (
     <Box py="4" mt="6" style={{ borderTop: '1px solid var(--gray-5)' }}>
       <Container size="4">
-        <Flex direction="column" gap="3">
-          <Flex direction="column" gap="2">
+        <Box>
+          <Box mb="3">
             {pathname !== '/' && (
-              <Link href="/" passHref legacyBehavior>
+              <Box mb="2">
+                <Link href="/" passHref legacyBehavior>
+                  <RadixLink color="gray" underline="always">
+                    <MonoText size="2">Home</MonoText>
+                  </RadixLink>
+                </Link>
+              </Box>
+            )}
+            <Box mb="2">
+              <Link href="/repositories" passHref legacyBehavior>
                 <RadixLink color="gray" underline="always">
-                  <MonoText size="2">Home</MonoText>
+                  <MonoText size="2">All Repositories</MonoText>
                 </RadixLink>
               </Link>
-            )}
-            <Link href="/repositories" passHref legacyBehavior>
-              <RadixLink color="gray" underline="always">
-                <MonoText size="2">All Repositories</MonoText>
+            </Box>
+            <Box>
+              <RadixLink href="https://docs.source.coop" color="gray" underline="always">
+                <MonoText size="2">Docs</MonoText>
               </RadixLink>
-            </Link>
-            <RadixLink href="https://docs.source.coop" color="gray" underline="always">
-              <MonoText size="2">Docs</MonoText>
-            </RadixLink>
-          </Flex>
+            </Box>
+          </Box>
           
-          <Flex direction="column" gap="3" align="start">
-            <Box style={{ 
+          <Box>
+            <Box mb="3" style={{ 
               height: '1px', 
               background: 'var(--gray-5)', 
               width: '100%'
@@ -47,10 +53,10 @@ export function Footer() {
                   Radiant Earth
                 </MonoText>
               </RadixLink>
-              {' '}initiative
+              {' '}project
             </MonoText>
-          </Flex>
-        </Flex>
+          </Box>
+        </Box>
       </Container>
     </Box>
   );

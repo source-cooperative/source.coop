@@ -29,16 +29,12 @@ export default function RootLayout({
           defaultTheme="system"
           storageKey="source-theme"
         >
-          <Box>
-            <Box>
-              <Navigation />
-            </Box>
-            <Box asChild>
+          <Box style={{ minHeight: '100vh' }}>
+            <Navigation />
+            <Box asChild my="6">
               <main>{children}</main>
             </Box>
-            <Box>
-              <Footer />
-            </Box>
+            <Footer />
           </Box>
         </ThemeProvider>
       </body>

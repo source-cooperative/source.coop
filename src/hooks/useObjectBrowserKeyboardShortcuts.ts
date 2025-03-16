@@ -53,11 +53,30 @@ export function useObjectBrowserKeyboardShortcuts({
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Ignore if text is selected or if we're in an input/textarea
       const selection = window.getSelection();
       const hasSelection = selection && selection.toString().length > 0;
       const isInput = e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement;
+
+      // Handle copy of selected data first
+      if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
+        if (hasSelection) {
+          // Let browser handle selected text copy
+          return;
+        }
+        if (selectedDataItem) {
+          // Only handle our custom copy if no text is selected but we have a data item selected
+          e.preventDefault();
+          // Find the specific element that matches our selectedDataItem
+          const element = document.querySelector(`[data-selectable="true"][data-item="${selectedDataItem}"]`);
+          if (element) {
+            const text = element.textContent || '';
+            navigator.clipboard.writeText(text);
+          }
+        }
+        return;
+      }
       
+      // Ignore other shortcuts if text is selected or if we're in an input/textarea
       if (hasSelection || isInput) {
         return;
       }
@@ -78,21 +97,31 @@ export function useObjectBrowserKeyboardShortcuts({
             }
             // In file view
             else {
-              const dataItems = [
-                'name',
-                'path',
-                'size',
-                'type',
-                'updated_at',
-                'mime_type',
-                'sha256',
-                'sha1'
-              ];
-              const currentIndex = dataItems.indexOf(selectedDataItem || dataItems[0]);
-              const newIndex = e.key === 'j'
-                ? Math.min(currentIndex + 1, dataItems.length - 1)
-                : Math.max(currentIndex - 1, 0);
-              setSelectedDataItem(dataItems[newIndex]);
+              // Build dataItems array based on available metadata
+              const dataItems = ['name', 'path', 'size', 'updated_at', 'type'];
+              
+              if (selectedObject.mime_type) {
+                dataItems.push('mime_type');
+              }
+              
+              if (selectedObject.metadata?.sha256) {
+                dataItems.push('sha256');
+              }
+              
+              if (selectedObject.metadata?.sha1) {
+                dataItems.push('sha1');
+              }
+
+              // If no item is selected, j selects first item, k selects last item
+              if (selectedDataItem === null) {
+                setSelectedDataItem(e.key === 'j' ? dataItems[0] : dataItems[dataItems.length - 1]);
+              } else {
+                const currentIndex = dataItems.indexOf(selectedDataItem);
+                const newIndex = e.key === 'j'
+                  ? Math.min(currentIndex + 1, dataItems.length - 1)
+                  : Math.max(currentIndex - 1, 0);
+                setSelectedDataItem(dataItems[newIndex]);
+              }
             }
             break;
 
@@ -124,16 +153,6 @@ export function useObjectBrowserKeyboardShortcuts({
             break;
         }
         return;
-      }
-
-      // Handle copy of selected data
-      if ((e.ctrlKey || e.metaKey) && e.key === 'c' && selectedDataItem) {
-        e.preventDefault();
-        const element = document.querySelector(`[data-selectable="true"]`);
-        if (element) {
-          const text = element.textContent || '';
-          navigator.clipboard.writeText(text);
-        }
       }
     };
 

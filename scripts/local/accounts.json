@@ -7,7 +7,7 @@
           "type": {"S": "individual"},
           "name": {"S": "Jed Sundwall"},
           "description": {"S": "Executive Director at Radiant Earth"},
-          "email": {"S": "jed@example.com"},
+          "email": {"S": "jedsundwall@gmail.com"},
           "website": {"S": "https://jed.co"},
           "orcid": {"S": "0000-0001-9681-230X"},
           "created_at": {"S": "2024-01-01T00:00:00Z"},
@@ -116,7 +116,9 @@
           "owner_account_id": {"S": "jed"},
           "admin_account_ids": {"SS": ["jed"]},
           "created_at": {"S": "2024-01-01T00:00:00Z"},
-          "updated_at": {"S": "2024-02-08T00:00:00Z"}
+          "updated_at": {"S": "2024-02-08T00:00:00Z"},
+          "logo_svg": {"S": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M50 20a30 30 0 1 0 0 60 30 30 0 0 0 0-60zm0 8a22 22 0 1 1 0 44 22 22 0 0 1 0-44z' fill='currentColor'/><path d='M35 50h40m-8-12l8 12-8 12' stroke='currentColor' stroke-width='6' stroke-linecap='round' fill='none'/></svg>"},
+          "logo_dark_mode_svg": {"S": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M50 20a30 30 0 1 0 0 60 30 30 0 0 0 0-60zm0 8a22 22 0 1 1 0 44 22 22 0 0 1 0-44z' fill='white'/><path d='M35 50h40m-8-12l8 12-8 12' stroke='white' stroke-width='6' stroke-linecap='round' fill='none'/></svg>"}
         }
       }
     },

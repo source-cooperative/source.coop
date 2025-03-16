@@ -28,6 +28,8 @@ export interface OrganizationalAccount extends BaseAccount, ContactInfo {
   owner_account_id: string;  // References the IndividualAccount that owns this org
   admin_account_ids: string[];  // Array of IndividualAccount IDs who can administer
   ror_id?: string;  // Optional ROR identifier (e.g., "03yrm5c26")
+  logo_svg?: string;  // Optional inline SVG string for the organization's logo
+  logo_dark_mode_svg?: string;  // Optional dark mode variant of the logo
 }
 
 // Union type for any kind of account

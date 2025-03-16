@@ -19,50 +19,54 @@ export function OrganizationProfile({
   owner
 }: OrganizationProfileProps) {
   return (
-    <Grid columns="1" gap="6">
+    <Box>
       {/* Profile Header */}
-      <Flex gap="4" align="center">
-        <ProfileAvatar account={account} size="6" />
-        <Box>
-          <Heading size="8">{account.name}</Heading>
-          {account.description && (
-            <Text size="3" color="gray">{account.description}</Text>
-          )}
-        </Box>
-      </Flex>
+      <Box mb="6">
+        <Flex gap="4" align="center">
+          <ProfileAvatar account={account} size="6" />
+          <Box>
+            <Heading size="8">{account.name}</Heading>
+            {account.description && (
+              <Text size="3" color="gray">{account.description}</Text>
+            )}
+          </Box>
+        </Flex>
+      </Box>
 
       {/* Profile Details */}
-      <Grid columns="3" gap="4">
-        {account.email && (
-          <Box>
-            <Text as="div" size="2" color="gray" mb="2">Contact Email</Text>
-            <Text>{account.email}</Text>
-          </Box>
-        )}
-        {account.website && (
-          <Box>
-            <Text as="div" size="2" color="gray" mb="2">Website</Text>
-            <RadixLink asChild>
-              <a href={account.website} target="_blank" rel="noopener noreferrer">
-                {account.website}
-              </a>
-            </RadixLink>
-          </Box>
-        )}
-        {account.ror_id && (
-          <Box>
-            <Text as="div" size="2" color="gray" mb="2">ROR ID</Text>
-            <RadixLink asChild>
-              <a href={`https://ror.org/${account.ror_id}`} target="_blank" rel="noopener noreferrer">
-                {account.ror_id}
-              </a>
-            </RadixLink>
-          </Box>
-        )}
-      </Grid>
+      <Box mb="6">
+        <Grid columns="3" gap="4">
+          {account.email && (
+            <Box>
+              <Text as="div" size="2" color="gray" mb="2">Contact Email</Text>
+              <Text>{account.email}</Text>
+            </Box>
+          )}
+          {account.website && (
+            <Box>
+              <Text as="div" size="2" color="gray" mb="2">Website</Text>
+              <RadixLink asChild>
+                <a href={account.website} target="_blank" rel="noopener noreferrer">
+                  {account.website}
+                </a>
+              </RadixLink>
+            </Box>
+          )}
+          {account.ror_id && (
+            <Box>
+              <Text as="div" size="2" color="gray" mb="2">ROR ID</Text>
+              <RadixLink asChild>
+                <a href={`https://ror.org/${account.ror_id}`} target="_blank" rel="noopener noreferrer">
+                  {account.ror_id}
+                </a>
+              </RadixLink>
+            </Box>
+          )}
+        </Grid>
+      </Box>
 
       {/* Members */}
-      <Box>
+      <Box mb="6">
         <Heading size="4" mb="4">Members</Heading>
         <Grid columns="3" gap="4">
           {/* Owner */}
@@ -88,9 +92,7 @@ export function OrganizationProfile({
                     <ProfileAvatar account={member} size="2" />
                     <Box>
                       <Text>{member.name}</Text>
-                      <Text size="1" color="gray">
-                        {account.admin_account_ids.includes(member.account_id) ? 'Admin' : 'Member'}
-                      </Text>
+                      <Text size="1" color="gray">Member</Text>
                     </Box>
                   </Flex>
                 </RadixLink>
@@ -106,6 +108,6 @@ export function OrganizationProfile({
           <RepositoryList repositories={repositories} />
         </Box>
       )}
-    </Grid>
+    </Box>
   );
 } 

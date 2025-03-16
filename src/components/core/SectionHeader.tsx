@@ -1,4 +1,4 @@
-import { Text, Box, Flex } from '@radix-ui/themes';
+import { Text, Box, Separator } from '@radix-ui/themes';
 
 interface SectionHeaderProps {
   title: string;
@@ -7,18 +7,14 @@ interface SectionHeaderProps {
 
 export function SectionHeader({ title, children }: SectionHeaderProps) {
   return (
-    <Flex direction="column" gap="3">
+    <Box>
       <Text size="2" weight="bold">
         {title}
       </Text>
-      <Box 
-        style={{ 
-          height: '1px', 
-          background: 'var(--gray-5)', 
-          width: '100%',
-        }} 
-      />
-      {children}
-    </Flex>
+      <Box my="3">
+        <Separator size="4" color="gray" />
+      </Box>
+      {children && <Box>{children}</Box>}
+    </Box>
   );
 } 

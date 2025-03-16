@@ -1,7 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import type { Repository } from '@/types';
-import { useKeyboardShortcuts } from './useKeyboardShortcuts';
 
 interface UseRepositoryListKeyboardShortcutsProps {
   repositories: Repository[];
@@ -13,62 +12,89 @@ export function useRepositoryListKeyboardShortcuts({
   onShowHelp
 }: UseRepositoryListKeyboardShortcutsProps) {
   const router = useRouter();
-  const [focusedIndex, setFocusedIndex] = useState<number>(-1);
+  const pathname = usePathname();
+  const [selectedIndex, setSelectedIndex] = useState<number>(-1);
   const itemRefs = useRef<(HTMLAnchorElement | null)[]>([]);
-  const { awaitingSecondKey } = useKeyboardShortcuts({ onShowHelp });
+
+  // Focus the selected item when selection changes
+  useEffect(() => {
+    if (selectedIndex >= 0 && itemRefs.current[selectedIndex]) {
+      itemRefs.current[selectedIndex]?.focus();
+    }
+  }, [selectedIndex]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Ignore key events if they're in an input field
+      // Ignore if in input/textarea
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
         return;
       }
 
-      // Handle copy URL sequence
-      if (e.key === 'c' && !awaitingSecondKey) {
-        e.preventDefault();
-        if (focusedIndex >= 0) {
-          const repository = repositories[focusedIndex];
-          if (repository) {
-            const url = window.location.origin + `/${repository.account.account_id}/${repository.repository_id}`;
-            navigator.clipboard.writeText(url);
-          }
-        }
+      // Ignore if any modifier keys are pressed (except for ?)
+      if (e.key !== '?' && (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey)) {
         return;
       }
 
-      // Navigation
-      if (e.key === 'ArrowUp' || e.key === 'k') {
-        e.preventDefault();
-        if (repositories.length === 0) return;
-        const newIndex = focusedIndex <= 0 ? repositories.length - 1 : focusedIndex - 1;
-        setFocusedIndex(newIndex);
-        itemRefs.current[newIndex]?.focus();
-      } else if (e.key === 'ArrowDown' || e.key === 'j') {
-        e.preventDefault();
-        if (repositories.length === 0) return;
-        const newIndex = focusedIndex >= repositories.length - 1 ? 0 : focusedIndex + 1;
-        setFocusedIndex(newIndex);
-        itemRefs.current[newIndex]?.focus();
-      } else if ((e.key === 'Enter' || e.key === 'o') && focusedIndex >= 0) {
-        e.preventDefault();
-        const repository = repositories[focusedIndex];
-        if (repository) {
-          router.push(`/${repository.account.account_id}/${repository.repository_id}`);
+      switch (e.key) {
+        case 'j':
+        case 'ArrowDown': {
+          e.preventDefault();
+          const newIndex = selectedIndex === -1 ? 0 : Math.min(selectedIndex + 1, repositories.length - 1);
+          setSelectedIndex(newIndex);
+          break;
         }
-      } else if (e.key === 'Escape' && e.shiftKey) {
-        e.preventDefault();
-        setFocusedIndex(-1);
+        case 'k':
+        case 'ArrowUp': {
+          e.preventDefault();
+          const newIndex = selectedIndex === -1 ? 0 : Math.max(selectedIndex - 1, 0);
+          setSelectedIndex(newIndex);
+          break;
+        }
+        case 'Enter':
+        case 'o':
+          e.preventDefault();
+          if (selectedIndex >= 0 && selectedIndex < repositories.length) {
+            const repo = repositories[selectedIndex];
+            router.push(`/${repo.account.account_id}/${repo.repository_id}`);
+          }
+          break;
+        case 'Escape':
+          e.preventDefault();
+          setSelectedIndex(-1);
+          break;
+        case '?':
+          e.preventDefault();
+          onShowHelp();
+          break;
+        case '`':
+          e.preventDefault();
+          // Split path into segments
+          const segments = pathname.split('/').filter(Boolean);
+          
+          if (segments.length === 0) {
+            // At root - do nothing
+            return;
+          } else if (segments.length === 1) {
+            // On profile page - go to root
+            router.push('/');
+          } else if (segments.length === 2) {
+            // On repository page - go to profile
+            router.push(`/${segments[0]}`);
+          } else {
+            // In object browser - go up one level
+            router.push(`/${segments[0]}/${segments[1]}/${segments.slice(2, -1).join('/')}`);
+          }
+          break;
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [focusedIndex, repositories, router, awaitingSecondKey]);
+  }, [repositories, selectedIndex, router, onShowHelp, pathname]);
 
   return {
-    focusedIndex,
-    setFocusedIndex,
+    selectedIndex,
+    setSelectedIndex,
     itemRefs
   };
 } 

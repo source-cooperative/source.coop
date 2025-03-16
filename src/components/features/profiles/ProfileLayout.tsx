@@ -1,4 +1,4 @@
-import { Text, Flex, Link } from '@radix-ui/themes';
+import { Text, Box, Link } from '@radix-ui/themes';
 
 interface ProfileField {
   label: string;
@@ -15,18 +15,22 @@ interface ProfileLayoutProps {
 
 export function ProfileLayout({ description, fields, children }: ProfileLayoutProps) {
   return (
-    <Flex direction="column" gap="4">
-      <Text size="5">{description}</Text>
+    <Box>
+      <Box mb="4">
+        <Text size="5">{description}</Text>
+      </Box>
       
-      <Flex direction="column" gap="2">
+      <Box mb="4">
         {fields.map(({ label, value, isLink, href }, index) => (
-          <Text key={index}>
-            {label}: {isLink ? <Link href={href || value}>{value}</Link> : value}
-          </Text>
+          <Box key={index} mb={index < fields.length - 1 ? "2" : "0"}>
+            <Text>
+              {label}: {isLink ? <Link href={href || value}>{value}</Link> : value}
+            </Text>
+          </Box>
         ))}
-      </Flex>
+      </Box>
 
       {children}
-    </Flex>
+    </Box>
   );
 } 

@@ -19,12 +19,12 @@ import { RepositoryHeader, ObjectBrowser } from '@/components/features/repositor
 import { MarkdownViewer } from '@/components/features/markdown/MarkdownViewer';
 
 // Types and utilities
-import type { Repository } from '@/types';
+import type { Repository, RepositoryObject } from '@/types';
 import { fetchRepositories } from '@/lib/db/operations';
 import { createStorageClient } from '@/lib/clients/storage';
 
 interface PageProps {
-  params: { account_id: string; repository_id: string }
+  params: Promise<{ account_id: string; repository_id: string }>
 }
 
 interface StorageResult {
@@ -36,38 +36,56 @@ interface StorageResult {
 }
 
 export default async function RepositoryPage({ params }: PageProps) {
-  // 1. Await params and destructure
-  const { account_id, repository_id } = await Promise.resolve(params);
+  // 1. Get params
+  const { account_id, repository_id } = await params;
 
   // 2. Find the repository or 404
-  const repository = (await fetchRepositories()).find(repo => 
-    repo.repository_id === repository_id && 
-    repo.account.account_id === account_id
-  );
-
-  if (!repository) notFound();
-
-  // 3. Get the repository contents
-  const storage = createStorageClient();
-  const objects = await storage.listObjects({
-    account_id,
-    repository_id
+  const repository = await fetchRepositories().then(repos => {
+    const repo = repos.find(r => 
+      r.account.account_id === account_id && 
+      r.repository_id === repository_id
+    );
+    if (!repo) notFound();
+    return repo;
   });
 
-  // 4. Get README content if it exists
+  // 3. Get objects from storage
+  const objects = await createStorageClient().listObjects({ account_id, repository_id })
+    .then(objects => objects
+      .filter(obj => obj.path)
+      .map(obj => ({
+        id: obj.path!, // We know path exists from filter
+        repository_id,
+        path: obj.path!,
+        size: obj.size || 0,
+        type: obj.type || 'file',
+        mime_type: obj.mime_type || '',
+        created_at: new Date().toISOString(), // Default to now
+        updated_at: new Date().toISOString(),
+        checksum: obj.checksum || '', // Default to empty string
+      }))
+    );
+
+  // 4. Get README if it exists
+  const storage = createStorageClient();
   let readmeContent: string | undefined;
-  const hasReadme = objects.some(obj => obj.path === 'README.md');
-  
-  if (hasReadme) {
-    const result = await storage.getObject({
-      account_id,
-      repository_id,
-      path: 'README.md'
-    }) as StorageResult;
-    
-    if (result?.content?.content && typeof result.content.content === 'string') {
-      readmeContent = result.content.content;
+
+  try {
+    const hasReadme = objects.some(obj => obj.path === 'README.md');
+    if (hasReadme) {
+      const result = await storage.getObject({
+        account_id,
+        repository_id,
+        path: 'README.md'
+      }) as StorageResult;
+      
+      if (result?.content?.content && typeof result.content.content === 'string') {
+        readmeContent = result.content.content;
+      }
     }
+  } catch (error) {
+    console.error('Error fetching repository contents:', error);
+    // Still show the page but with empty contents
   }
 
   // 5. Render the page
@@ -78,17 +96,7 @@ export default async function RepositoryPage({ params }: PageProps) {
       <Box mt="4">
         <ObjectBrowser 
           repository={repository}
-          objects={objects.map(obj => ({
-            id: obj.path || '',
-            repository_id,
-            path: obj.path || '',
-            size: obj.size || 0,
-            type: obj.type || 'file',
-            mime_type: obj.mime_type,
-            created_at: obj.created_at || new Date().toISOString(),
-            updated_at: obj.updated_at || new Date().toISOString(),
-            checksum: obj.checksum || ''
-          }))}
+          objects={objects}
           initialPath=""
         />
       </Box>

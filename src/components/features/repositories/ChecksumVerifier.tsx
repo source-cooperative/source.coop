@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Text, Flex, Button } from '@radix-ui/themes';
+import { Text, Flex, Button, Box } from '@radix-ui/themes';
 import { CheckCircledIcon, CrossCircledIcon, UpdateIcon } from '@radix-ui/react-icons';
 
 interface ChecksumVerifierProps {
@@ -61,15 +61,19 @@ export function ChecksumVerifier({
         </Flex>
       )}
       {status === 'match' && (
-        <Flex align="center" gap="1" style={{ color: 'var(--green-9)' }}>
-          <CheckCircledIcon />
-          <Text size="1">Checksum verified</Text>
+        <Flex align="center" gap="1">
+          <Box style={{ color: 'var(--green-9)' }}>
+            <CheckCircledIcon />
+          </Box>
+          <Text size="1" color="green">Checksum verified</Text>
         </Flex>
       )}
       {status === 'mismatch' && (
-        <Flex align="center" gap="1" style={{ color: 'var(--red-9)' }}>
-          <CrossCircledIcon />
-          <Text size="1">Checksum mismatch</Text>
+        <Flex align="center" gap="1">
+          <Box style={{ color: 'var(--red-9)' }}>
+            <CrossCircledIcon />
+          </Box>
+          <Text size="1" color="red">Checksum mismatch</Text>
         </Flex>
       )}
       {status === 'error' && (

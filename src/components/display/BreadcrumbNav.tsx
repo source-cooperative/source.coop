@@ -1,6 +1,6 @@
 'use client';
 
-import { Flex } from '@radix-ui/themes';
+import { Flex, Box, Text } from '@radix-ui/themes';
 import Link from 'next/link';
 import { ChevronRightIcon } from '@radix-ui/react-icons';
 import { useState, useEffect } from 'react';
@@ -14,8 +14,6 @@ interface BreadcrumbNavProps {
   onNavigate: (path: string[]) => void;
 }
 
-// Create a custom text component that works for both links and regular text
-// with consistent vertical alignment
 function NavText({ 
   children, 
   isLink, 
@@ -25,33 +23,24 @@ function NavText({
   isLink: boolean; 
   onClick?: () => void;
 }) {
-  const style: React.CSSProperties = {
-    display: 'inline-block',
-    position: 'relative' as const,
-    top: 0,
-    lineHeight: '22px',
-    color: isLink ? 'var(--gray-11)' : 'var(--gray-9)'
-  };
-  
   if (isLink) {
     return (
-      <Link 
-        href="#" 
-        onClick={(e) => { 
-          e.preventDefault(); 
-          onClick?.(); 
-        }}
-        style={style}
-      >
-        <MonoText size="2">{children}</MonoText>
-      </Link>
+      <Box asChild>
+        <Link href="#" onClick={(e) => { e.preventDefault(); onClick?.(); }}>
+          <MonoText size="2" color="gray" highContrast>
+            {children}
+          </MonoText>
+        </Link>
+      </Box>
     );
   }
   
   return (
-    <span style={style}>
-      <MonoText size="2" color="gray">{children}</MonoText>
-    </span>
+    <Box>
+      <MonoText size="2" color="gray">
+        {children}
+      </MonoText>
+    </Box>
   );
 }
 

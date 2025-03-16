@@ -10,23 +10,24 @@
  */
 
 // src/app/page.tsx
-import { Container, Heading, Text, Flex, Box } from '@radix-ui/themes';
+import { Container, Heading, Text, Box } from '@radix-ui/themes';
 import { RepositoryList } from '@/components/features/repositories/RepositoryList';
 import type { Repository } from '@/types';
 import { fetchRepositories } from '@/lib/db/operations';
 
-async function getData() {
-  const repositories = await fetchRepositories();
-  return { repositories };
+// Server action for data fetching
+export async function getRepositories(): Promise<Repository[]> {
+  'use server';
+  return fetchRepositories();
 }
 
 export default async function HomePage() {
-  const { repositories } = await getData();
+  const repositories = await getRepositories();
 
   return (
     <Container size="4" py="6">
-      <Flex direction="column" gap="6">
-        <Box>
+      <Box>
+        <Box mb="6">
           <Heading size="8" mb="2">Repositories</Heading>
           <Text size="4" color="gray">
             Discover and explore data repositories
@@ -34,7 +35,7 @@ export default async function HomePage() {
         </Box>
 
         <RepositoryList repositories={repositories} />
-      </Flex>
+      </Box>
     </Container>
   );
 }

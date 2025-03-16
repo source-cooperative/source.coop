@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 
 interface UseKeyboardShortcutsProps {
   onShowHelp?: () => void;
@@ -7,6 +7,7 @@ interface UseKeyboardShortcutsProps {
 
 export function useKeyboardShortcuts({ onShowHelp }: UseKeyboardShortcutsProps = {}) {
   const router = useRouter();
+  const pathname = usePathname();
   const [awaitingSecondKey, setAwaitingSecondKey] = useState<string | null>(null);
 
   useEffect(() => {
@@ -35,6 +36,29 @@ export function useKeyboardShortcuts({ onShowHelp }: UseKeyboardShortcutsProps =
         return;
       }
 
+      // Handle backtick for navigation
+      if (e.key === '`' && !awaitingSecondKey) {
+        e.preventDefault();
+        
+        // Split path into segments
+        const segments = pathname.split('/').filter(Boolean);
+        
+        if (segments.length === 0) {
+          // At root - do nothing
+          return;
+        } else if (segments.length === 1) {
+          // On profile page - go to root
+          router.push('/');
+        } else if (segments.length === 2) {
+          // On repository page - go to profile
+          router.push(`/${segments[0]}`);
+        } else {
+          // In object browser - go up one level
+          router.push(`/${segments[0]}/${segments[1]}/${segments.slice(2, -1).join('/')}`);
+        }
+        return;
+      }
+
       // Handle the first key of a sequence
       if (e.key === 'g' && !awaitingSecondKey) {
         e.preventDefault();
@@ -60,7 +84,7 @@ export function useKeyboardShortcuts({ onShowHelp }: UseKeyboardShortcutsProps =
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [router, awaitingSecondKey, onShowHelp]);
+  }, [router, awaitingSecondKey, onShowHelp, pathname]);
 
   return {
     awaitingSecondKey

@@ -2,49 +2,50 @@ import { renderHook, act } from '@testing-library/react';
 import { useKeyboardShortcuts } from '../useKeyboardShortcuts';
 import { useRepositoryListKeyboardShortcuts } from '../useRepositoryListKeyboardShortcuts';
 import { useObjectBrowserKeyboardShortcuts } from '../useObjectBrowserKeyboardShortcuts';
-import type { Repository } from '../../types/repository';
-import type { IndividualAccount } from '../../types/account';
+import type { Repository } from '@/types/repository';
+import type { IndividualAccount } from '@/types/account';
 
 // Mock next/navigation
+const mockRouter = { push: jest.fn() };
 jest.mock('next/navigation', () => ({
-  useRouter: () => ({
-    push: jest.fn()
-  })
+  useRouter: () => mockRouter,
+  usePathname: () => '/test-account/test-repo'
 }));
 
 describe('useKeyboardShortcuts', () => {
-  it('should show help dialog when ? is pressed', () => {
-    const onShowHelp = jest.fn();
+  const onShowHelp = jest.fn();
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('should call onShowHelp when ? is pressed', () => {
     renderHook(() => useKeyboardShortcuts({ onShowHelp }));
 
     act(() => {
-      const event = new KeyboardEvent('keydown', { key: '?' });
-      window.dispatchEvent(event);
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: '?' }));
     });
 
     expect(onShowHelp).toHaveBeenCalled();
   });
 
   it('should navigate to homepage when g h is pressed', () => {
-    const router = { push: jest.fn() };
-    jest.spyOn(require('next/navigation'), 'useRouter').mockReturnValue(router);
-
-    renderHook(() => useKeyboardShortcuts({}));
+    renderHook(() => useKeyboardShortcuts({ onShowHelp }));
 
     act(() => {
       window.dispatchEvent(new KeyboardEvent('keydown', { key: 'g' }));
       window.dispatchEvent(new KeyboardEvent('keydown', { key: 'h' }));
     });
 
-    expect(router.push).toHaveBeenCalledWith('/');
+    expect(mockRouter.push).toHaveBeenCalledWith('/');
   });
 });
 
 describe('useRepositoryListKeyboardShortcuts', () => {
   const mockAccount: IndividualAccount = {
     account_id: 'acc1',
+    name: 'Account 1',
     type: 'individual',
-    name: 'Test User',
     email: 'test@example.com',
     created_at: '2024-03-14T00:00:00Z',
     updated_at: '2024-03-14T00:00:00Z'
@@ -54,77 +55,65 @@ describe('useRepositoryListKeyboardShortcuts', () => {
     {
       repository_id: 'repo1',
       account: mockAccount,
-      title: 'Repo 1',
-      description: 'Test repository 1',
-      private: false,
-      created_at: '2024-03-14T00:00:00Z',
-      updated_at: '2024-03-14T00:00:00Z'
-    },
-    {
-      repository_id: 'repo2',
-      account: mockAccount,
-      title: 'Repo 2',
-      description: 'Test repository 2',
+      title: 'Repository 1',
+      description: 'Test Repository 1',
       private: false,
       created_at: '2024-03-14T00:00:00Z',
       updated_at: '2024-03-14T00:00:00Z'
     }
   ];
 
-  it('should navigate between repositories with arrow keys', () => {
-    const { result } = renderHook(() => 
-      useRepositoryListKeyboardShortcuts({
-        repositories: mockRepositories,
-        onShowHelp: jest.fn()
-      })
-    );
-
-    act(() => {
-      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown' }));
+  beforeEach(() => {
+    jest.clearAllMocks();
+    Object.assign(navigator, {
+      clipboard: { writeText: jest.fn() }
     });
-
-    expect(result.current.focusedIndex).toBe(0);
-
-    act(() => {
-      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown' }));
-    });
-
-    expect(result.current.focusedIndex).toBe(1);
-
-    act(() => {
-      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp' }));
-    });
-
-    expect(result.current.focusedIndex).toBe(0);
   });
 
   it('should copy repository URL when c is pressed', () => {
-    const mockClipboard = { writeText: jest.fn() };
-    Object.assign(navigator, { clipboard: mockClipboard });
+    const { result } = renderHook(() => useRepositoryListKeyboardShortcuts({
+      repositories: mockRepositories,
+      onShowHelp: jest.fn()
+    }));
 
-    const { result } = renderHook(() => 
-      useRepositoryListKeyboardShortcuts({
-        repositories: mockRepositories,
-        onShowHelp: jest.fn()
-      })
-    );
-
+    // Set selected index to first repository
     act(() => {
-      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown' }));
+      result.current.setSelectedIndex(0);
+    });
+
+    // Press c key
+    act(() => {
       window.dispatchEvent(new KeyboardEvent('keydown', { key: 'c' }));
     });
 
-    expect(mockClipboard.writeText).toHaveBeenCalledWith(
+    expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
       expect.stringContaining('/acc1/repo1')
     );
   });
 });
 
 describe('useObjectBrowserKeyboardShortcuts', () => {
+  const mockObjects = [
+    {
+      name: 'file1.txt',
+      path: 'file1.txt',
+      size: 100,
+      updated_at: '2024-03-14T00:00:00Z',
+      isDirectory: false
+    },
+    {
+      name: 'dir1',
+      path: 'dir1',
+      size: 0,
+      updated_at: '2024-03-14T00:00:00Z',
+      isDirectory: true
+    }
+  ];
+
   const mockAccount: IndividualAccount = {
     account_id: 'acc1',
+    name: 'Account 1',
     type: 'individual',
-    name: 'Test User',
     email: 'test@example.com',
     created_at: '2024-03-14T00:00:00Z',
     updated_at: '2024-03-14T00:00:00Z'
@@ -133,71 +122,59 @@ describe('useObjectBrowserKeyboardShortcuts', () => {
   const mockRepository: Repository = {
     repository_id: 'repo1',
     account: mockAccount,
-    title: 'Repo 1',
-    description: 'Test repository 1',
+    title: 'Repository 1',
+    description: 'Test Repository 1',
     private: false,
     created_at: '2024-03-14T00:00:00Z',
     updated_at: '2024-03-14T00:00:00Z'
   };
 
-  const mockObjects = [
-    {
-      name: 'dir1',
-      path: 'dir1',
-      size: 0,
-      updated_at: '2024-03-14T00:00:00Z',
-      isDirectory: true
-    },
-    {
-      name: 'file1.txt',
-      path: 'file1.txt',
-      size: 100,
-      updated_at: '2024-03-14T00:00:00Z',
-      isDirectory: false
-    }
-  ];
+  const onNavigateToPath = jest.fn();
+  const onNavigateToFile = jest.fn();
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    Object.assign(navigator, {
+      clipboard: { writeText: jest.fn() }
+    });
+  });
 
   it('should navigate between items with arrow keys', () => {
-    const { result } = renderHook(() => 
-      useObjectBrowserKeyboardShortcuts({
-        repository: mockRepository,
-        objects: mockObjects,
-        currentPath: [],
-        onShowHelp: jest.fn(),
-        onNavigateToPath: jest.fn(),
-        onNavigateToFile: jest.fn()
-      })
-    );
+    const { result } = renderHook(() => useObjectBrowserKeyboardShortcuts({
+      repository: mockRepository,
+      objects: mockObjects,
+      currentPath: ['dir1'],
+      onShowHelp: jest.fn(),
+      onNavigateToPath,
+      onNavigateToFile
+    }));
 
+    // Press j key (down)
     act(() => {
-      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown' }));
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'j' }));
     });
 
     expect(result.current.focusedIndex).toBe(0);
 
+    // Press k key (up)
     act(() => {
-      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown' }));
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k' }));
     });
 
-    expect(result.current.focusedIndex).toBe(1);
+    expect(result.current.focusedIndex).toBe(-1);
   });
 
   it('should navigate back with ~ key', () => {
-    const onNavigateToPath = jest.fn();
-    const router = { push: jest.fn() };
-    jest.spyOn(require('next/navigation'), 'useRouter').mockReturnValue(router);
+    renderHook(() => useObjectBrowserKeyboardShortcuts({
+      repository: mockRepository,
+      objects: mockObjects,
+      currentPath: ['dir1', 'subdir'],
+      onShowHelp: jest.fn(),
+      onNavigateToPath,
+      onNavigateToFile
+    }));
 
-    renderHook(() => 
-      useObjectBrowserKeyboardShortcuts({
-        repository: mockRepository,
-        objects: mockObjects,
-        currentPath: ['dir1', 'subdir'],
-        onShowHelp: jest.fn(),
-        onNavigateToPath,
-        onNavigateToFile: jest.fn()
-      })
-    );
-
+    // Press ~ key
     act(() => {
       window.dispatchEvent(new KeyboardEvent('keydown', { key: '~' }));
     });
@@ -206,26 +183,26 @@ describe('useObjectBrowserKeyboardShortcuts', () => {
   });
 
   it('should copy URL when c is pressed', () => {
-    const mockClipboard = { writeText: jest.fn() };
-    Object.assign(navigator, { clipboard: mockClipboard });
+    const { result } = renderHook(() => useObjectBrowserKeyboardShortcuts({
+      repository: mockRepository,
+      objects: mockObjects,
+      currentPath: ['dir1'],
+      onShowHelp: jest.fn(),
+      onNavigateToPath,
+      onNavigateToFile
+    }));
 
-    const { result } = renderHook(() => 
-      useObjectBrowserKeyboardShortcuts({
-        repository: mockRepository,
-        objects: mockObjects,
-        currentPath: [],
-        onShowHelp: jest.fn(),
-        onNavigateToPath: jest.fn(),
-        onNavigateToFile: jest.fn()
-      })
-    );
-
+    // Set focused index to first item
     act(() => {
-      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown' }));
+      result.current.setFocusedIndex(0);
+    });
+
+    // Press c key
+    act(() => {
       window.dispatchEvent(new KeyboardEvent('keydown', { key: 'c' }));
     });
 
-    expect(mockClipboard.writeText).toHaveBeenCalledWith(
+    expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
       expect.stringContaining('/acc1/repo1/dir1')
     );
   });

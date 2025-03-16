@@ -1,10 +1,10 @@
 import { Logo } from './Logo';
-import { Container, Flex } from '@radix-ui/themes';
+import { Container, Box, Flex } from '@radix-ui/themes';
 
 export function Navigation() {
   return (
     <Container>
-      <Flex align="center" justify="between" py="4">
+      <Flex py="4" justify="between" align="center">
         <Logo />
         {/* Add navigation items here */}
       </Flex>

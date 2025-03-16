@@ -2,7 +2,7 @@ import { DataList, Badge, Link } from '@radix-ui/themes';
 import type { Repository, RepositoryStatistics } from '@/types';
 import { MonoText } from '@/components/core';
 import { formatBytes } from '@/lib';
-import { DateContent } from '@/components/display';
+import { DateText } from '@/components/display';
 
 interface RepositoryMetaContentProps {
   repository: Repository;
@@ -62,13 +62,13 @@ export function RepositoryMetaContent({ repository, statistics }: RepositoryMeta
       <DataList.Item>
         <DataList.Label>Created</DataList.Label>
         <DataList.Value>
-          <MonoText><DateContent date={repository.created_at} /></MonoText>
+          <MonoText><DateText date={repository.created_at} /></MonoText>
         </DataList.Value>
       </DataList.Item>          
       <DataList.Item>
         <DataList.Label>Last Updated</DataList.Label>
         <DataList.Value>
-          <MonoText><DateContent date={repository.updated_at} /></MonoText>
+          <MonoText><DateText date={repository.updated_at} /></MonoText>
         </DataList.Value>
       </DataList.Item>
     </DataList.Root>

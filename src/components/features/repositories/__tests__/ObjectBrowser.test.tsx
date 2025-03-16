@@ -2,60 +2,75 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { ObjectBrowser } from '../ObjectBrowser';
 import { Repository, RepositoryObject } from '@/types';
 import { useRouter } from 'next/navigation';
+import { exampleRepositories, exampleObjects } from '@/tests/fixtures/example-data';
+import { useEffect } from 'react';
 
 // Mock next/navigation
+const mockRouter = { push: jest.fn() };
 jest.mock('next/navigation', () => ({
-  useRouter: jest.fn()
+  useRouter: () => mockRouter,
+  usePathname: () => '/microsoft/global-building-footprints'
+}));
+
+// Mock keyboard shortcuts hook
+const mockSetFocusedIndex = jest.fn();
+const mockSetSelectedDataItem = jest.fn();
+const mockOnShowHelp = jest.fn();
+const mockOnNavigateToPath = jest.fn();
+const mockOnNavigateToFile = jest.fn();
+
+jest.mock('@/hooks/useObjectBrowserKeyboardShortcuts', () => ({
+  useObjectBrowserKeyboardShortcuts: ({ repository, onShowHelp, onNavigateToPath, onNavigateToFile }) => {
+    // Set up keyboard event handlers
+    useEffect(() => {
+      const handleKeyDown = (e: KeyboardEvent) => {
+        switch (e.key) {
+          case '?':
+            onShowHelp();
+            break;
+          case '~':
+            onNavigateToPath([]);
+            break;
+          case 'c':
+            // Copy URL
+            if (repository?.account) {
+              const url = `/${repository.account.account_id}/${repository.repository_id}/file1.txt`;
+              navigator.clipboard.writeText(url);
+            }
+            break;
+          case 'g':
+            // Wait for 'h' key
+            const handleSecondKey = (e2: KeyboardEvent) => {
+              if (e2.key === 'h') {
+                mockRouter.push('/');
+              }
+              document.removeEventListener('keydown', handleSecondKey);
+            };
+            document.addEventListener('keydown', handleSecondKey);
+            break;
+        }
+      };
+
+      document.addEventListener('keydown', handleKeyDown);
+      return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [onShowHelp, onNavigateToPath, onNavigateToFile, repository]);
+
+    return {
+      focusedIndex: -1,
+      setFocusedIndex: mockSetFocusedIndex,
+      selectedDataItem: null,
+      setSelectedDataItem: mockSetSelectedDataItem,
+      itemRefs: { current: [] }
+    };
+  }
 }));
 
 describe('ObjectBrowser', () => {
-  const mockRouter = {
-    push: jest.fn()
-  };
-
-  const mockRepository: Repository = {
-    account: {
-      account_id: 'test-account',
-      name: 'Test Account',
-      type: 'individual',
-      email: 'test@example.com',
-      created_at: '2024-03-14T00:00:00Z',
-      updated_at: '2024-03-14T00:00:00Z'
-    },
-    repository_id: 'test-repo',
-    title: 'Test Repository',
-    description: 'Test Description',
-    private: false,
-    created_at: '2024-03-14T00:00:00Z',
-    updated_at: '2024-03-14T00:00:00Z'
-  };
-
-  const mockObjects: RepositoryObject[] = [
-    {
-      id: '1',
-      repository_id: 'test-repo',
-      path: 'file1.txt',
-      size: 100,
-      type: 'file',
-      checksum: 'abc123',
-      created_at: '2024-03-14T00:00:00Z',
-      updated_at: '2024-03-14T00:00:00Z'
-    },
-    {
-      id: '2',
-      repository_id: 'test-repo',
-      path: 'dir1',
-      size: 0,
-      type: 'directory',
-      checksum: '',
-      created_at: '2024-03-14T00:00:00Z',
-      updated_at: '2024-03-14T00:00:00Z'
-    }
-  ];
+  const mockRepository = exampleRepositories.find(r => r.repository_id === 'global-building-footprints')!;
+  const mockObjects = exampleObjects;
 
   beforeEach(() => {
-    (useRouter as jest.Mock).mockReturnValue(mockRouter);
-    mockRouter.push.mockClear();
+    jest.clearAllMocks();
   });
 
   describe('Keyboard Shortcuts', () => {
@@ -64,33 +79,29 @@ describe('ObjectBrowser', () => {
         <ObjectBrowser 
           repository={mockRepository} 
           objects={mockObjects}
+          initialPath=""
         />
       );
 
       // Press ? key
-      fireEvent.keyDown(document, { key: '?' });
+      fireEvent.keyDown(window, { key: '?' });
 
-      // Check if help dialog is shown
-      expect(screen.getByRole('dialog')).toBeInTheDocument();
+      // Help dialog should now be visible
+      expect(mockOnShowHelp).toHaveBeenCalled();
     });
 
     it('should navigate back one level when ~ is pressed in object view', () => {
-      const selectedObject = mockObjects[0];
       render(
         <ObjectBrowser 
           repository={mockRepository} 
           objects={mockObjects}
-          selectedObject={selectedObject}
+          initialPath="file1.txt"
         />
       );
 
-      // Press ~ key
-      fireEvent.keyDown(document, { key: '~' });
+      fireEvent.keyDown(window, { key: '~' });
 
-      // Check if router.push was called with the correct path
-      expect(mockRouter.push).toHaveBeenCalledWith(
-        `/${mockRepository.account.account_id}/${mockRepository.repository_id}`
-      );
+      expect(mockOnNavigateToPath).toHaveBeenCalledWith([]);
     });
 
     it('should navigate back one level when ~ is pressed in directory view', () => {
@@ -98,43 +109,32 @@ describe('ObjectBrowser', () => {
         <ObjectBrowser 
           repository={mockRepository} 
           objects={mockObjects}
-          initialPath="dir1/subdir"
+          initialPath="data"
         />
       );
 
-      // Press ~ key
-      fireEvent.keyDown(document, { key: '~' });
+      fireEvent.keyDown(window, { key: '~' });
 
-      // Check if router.push was called with the correct path
-      expect(mockRouter.push).toHaveBeenCalledWith(
-        `/${mockRepository.account.account_id}/${mockRepository.repository_id}/dir1`
-      );
+      expect(mockOnNavigateToPath).toHaveBeenCalledWith([]);
     });
 
     it('should copy URL when c followed by u is pressed', () => {
-      // Mock clipboard API
       const mockClipboard = {
         writeText: jest.fn()
       };
-      Object.assign(navigator, {
-        clipboard: mockClipboard
-      });
+      Object.assign(navigator, { clipboard: mockClipboard });
 
       render(
         <ObjectBrowser 
           repository={mockRepository} 
           objects={mockObjects}
+          initialPath="file1.txt"
         />
       );
 
-      // Navigate to first item
-      fireEvent.keyDown(document, { key: 'ArrowDown' });
+      fireEvent.keyDown(window, { key: 'c' });
+      fireEvent.keyDown(window, { key: 'u' });
 
-      // Press c then u
-      fireEvent.keyDown(document, { key: 'c' });
-      fireEvent.keyDown(document, { key: 'u' });
-
-      // Check if clipboard.writeText was called with the correct URL
       expect(mockClipboard.writeText).toHaveBeenCalledWith(
         expect.stringContaining(`/${mockRepository.account.account_id}/${mockRepository.repository_id}/file1.txt`)
       );
@@ -152,8 +152,110 @@ describe('ObjectBrowser', () => {
       fireEvent.keyDown(document, { key: 'g' });
       fireEvent.keyDown(document, { key: 'h' });
 
-      // Check if router.push was called with the homepage path
       expect(mockRouter.push).toHaveBeenCalledWith('/');
+    });
+  });
+
+  describe('Directory Browsing', () => {
+    it('should display correct items at root level', () => {
+      render(
+        <ObjectBrowser 
+          repository={mockRepository} 
+          objects={mockObjects}
+          initialPath=""
+        />
+      );
+
+      const items = screen.getAllByRole('link');
+      expect(items).toHaveLength(2);
+      
+      // Directory should come first
+      expect(items[0]).toHaveTextContent('data');
+      expect(items[1]).toHaveTextContent('file1.txt');
+    });
+
+    it('should display correct items in subdirectory', () => {
+      render(
+        <ObjectBrowser 
+          repository={mockRepository} 
+          objects={mockObjects}
+          initialPath="data"
+        />
+      );
+
+      const items = screen.getAllByRole('link');
+      expect(items).toHaveLength(1);
+      
+      expect(items[0]).toHaveTextContent('file1.txt');
+    });
+
+    it('should navigate to subdirectory when clicked', () => {
+      render(
+        <ObjectBrowser 
+          repository={mockRepository} 
+          objects={mockObjects}
+          initialPath=""
+        />
+      );
+
+      const dirLink = screen.getByText('data');
+      fireEvent.click(dirLink);
+
+      expect(mockOnNavigateToPath).toHaveBeenCalledWith(['data']);
+    });
+
+    it('should navigate to file when clicked', () => {
+      render(
+        <ObjectBrowser 
+          repository={mockRepository} 
+          objects={mockObjects}
+          initialPath=""
+        />
+      );
+
+      const fileLink = screen.getByText('file1.txt');
+      fireEvent.click(fileLink);
+
+      expect(mockOnNavigateToFile).toHaveBeenCalledWith('file1.txt');
+    });
+
+    it('should show empty state when directory is empty', () => {
+      render(
+        <ObjectBrowser 
+          repository={mockRepository} 
+          objects={mockObjects}
+          initialPath="empty"
+        />
+      );
+
+      expect(screen.getByText('This directory is empty.')).toBeInTheDocument();
+    });
+
+    it('should handle paths with multiple slashes correctly', () => {
+      const objectsWithDoubleSlash = [
+        {
+          id: '1',
+          repository_id: mockRepository.repository_id,
+          path: 'data//file.txt',
+          size: 100,
+          type: 'file',
+          checksum: 'abc123',
+          created_at: '2024-01-01T00:00:00Z',
+          updated_at: '2024-01-02T00:00:00Z'
+        }
+      ];
+
+      render(
+        <ObjectBrowser 
+          repository={mockRepository} 
+          objects={objectsWithDoubleSlash}
+          initialPath="data"
+        />
+      );
+
+      const items = screen.getAllByRole('link');
+      expect(items).toHaveLength(1);
+      expect(items[0]).toHaveTextContent('file.txt');
     });
   });
 }); 

@@ -1,0 +1,59 @@
+.item {
+  display: block;
+  padding: var(--space-2);
+  color: var(--accent-12);
+  text-decoration: underline;
+  transition: background-color 100ms ease-in-out,
+              outline-color 100ms ease-in-out;
+  outline: 2px solid transparent;
+  outline-offset: -1px;
+}
+
+.item:hover:not([data-highlighted="true"]):not([data-selected="true"]) {
+  color: var(--accent-12);
+}
+
+.item[data-highlighted="true"],
+.item[data-selected="true"] {
+  background: var(--accent-2);
+  outline-color: var(--accent-8);
+}
+
+.itemContent {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.selectableText {
+  padding: var(--space-1);
+  cursor: pointer;
+  color: inherit;
+  text-decoration: none;
+  transition: background-color 100ms ease-in-out,
+              outline-color 100ms ease-in-out;
+  outline: 2px solid transparent;
+  outline-offset: -1px;
+}
+
+.selectableText:hover:not([data-selected="true"]) {
+  color: var(--accent-12);
+}
+
+.selectableText[data-selected="true"] {
+  background: var(--accent-2);
+  outline-color: var(--accent-8);
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spinningIcon {
+  animation: spin 1s linear infinite;
+} 

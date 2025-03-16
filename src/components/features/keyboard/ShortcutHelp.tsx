@@ -56,10 +56,15 @@ export function ShortcutHelp({ open, onOpenChange, context }: ShortcutHelpProps)
     }
   })();
 
+  const description = `Keyboard shortcuts for ${context.replace('-', ' ')}. Use these shortcuts to navigate and interact with the interface.`;
+
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Content size="3">
         <Dialog.Title>Keyboard Shortcuts</Dialog.Title>
+        <Dialog.Description>
+          {description}
+        </Dialog.Description>
         <Box py="4">
           <Table.Root>
             <Table.Header>

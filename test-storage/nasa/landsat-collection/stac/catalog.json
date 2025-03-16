@@ -7,24 +7,24 @@
   "links": [
     {
       "rel": "self",
-      "href": "./catalog.json",
+      "href": "catalog.json",
       "type": "application/json"
     },
     {
       "rel": "child",
-      "href": "./landsat-4-5.json",
+      "href": "landsat-4-5.json",
       "title": "Landsat 4-5 Collection",
       "type": "application/json"
     },
     {
       "rel": "child",
-      "href": "./landsat-7.json",
+      "href": "landsat-7.json",
       "title": "Landsat 7 Collection",
       "type": "application/json"
     },
     {
       "rel": "child",
-      "href": "./landsat-8-9.json",
+      "href": "landsat-8-9.json",
       "title": "Landsat 8-9 Collection",
       "type": "application/json"
     }

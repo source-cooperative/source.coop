@@ -10,7 +10,7 @@
  */
 
 // External packages
-import { Container, Flex, Box, Grid } from '@radix-ui/themes';
+import { Container, Box } from '@radix-ui/themes';
 import { notFound } from 'next/navigation';
 
 // Internal components
@@ -24,144 +24,99 @@ import type { Repository, RepositoryObject } from '@/types';
 import { fetchRepositories } from '@/lib/db/operations';
 import { createStorageClient } from '@/lib/clients/storage';
 
-interface PageProps {
-  params: {
+// Page Props Type
+type PageProps = {
+  params: Promise<{
     account_id: string;
     repository_id: string;
     path: string[];
-  };
-}
+  }>;
+};
 
-async function getRepository(accountId: string, repositoryId: string): Promise<Repository | null> {
-  try {
-    const repositories = await fetchRepositories();
-    return repositories.find(repo => 
-      repo.repository_id === repositoryId && 
-      repo.account.account_id === accountId
-    ) || null;
-  } catch (error) {
-    console.error("Error fetching repository:", error);
-    return null;
-  }
-}
-
-async function getObjects(accountId: string, repositoryId: string): Promise<RepositoryObject[]> {
-  const client = createStorageClient();
+/**
+ * Detect if a path represents a directory by:
+ * 1. Checking if it has an explicit directory type
+ * 2. Checking if any objects exist under this path
+ * This handles cases like:
+ * - /climate.zarr/ (directory with file-like name)
+ * - /path.with.dots/nested/files (paths with dots)
+ * - /path/with/trailing/slash/ (normalize slashes)
+ */
+function isDirectory(objects: RepositoryObject[], path: string): boolean {
+  // Normalize path to not end with slash for comparison
+  const normalizedPath = path.endsWith('/') ? path.slice(0, -1) : path;
   
-  const objects = await client.listObjects({ 
-    account_id: accountId,  // Storage client still uses account_id
-    repository_id: repositoryId 
+  // First check if we have an explicit directory type
+  const exactMatch = objects.find(obj => {
+    const objPath = obj.path.endsWith('/') ? obj.path.slice(0, -1) : obj.path;
+    return objPath === normalizedPath;
   });
+  if (exactMatch?.type === 'directory') return true;
   
-  return objects.map(obj => ({
-    id: obj.path || '',
-    repository_id: repositoryId,
-    path: obj.path || '',
-    size: obj.size || 0,
-    type: obj.type || 'file',
-    mime_type: obj.mime_type,
-    created_at: obj.created_at || new Date().toISOString(),
-    updated_at: obj.updated_at || new Date().toISOString(),
-    checksum: obj.checksum || '',
-    metadata: obj.metadata
-  }));
-}
-
-async function getObjectWithMetadata(accountId: string, repositoryId: string, objectPath: string): Promise<RepositoryObject | undefined> {
-  const client = createStorageClient();
-  
-  try {
-    const response = await fetch(
-      `http://localhost:3000/api/${accountId}/${repositoryId}/objects/${objectPath}`
-    );
-    
-    if (!response.ok) {
-      console.error('Failed to fetch object metadata:', response.status);
-      return undefined;
-    }
-    
-    const data = await response.json();
-    return {
-      id: data.id,
-      repository_id: data.repository_id,
-      path: data.path,
-      size: data.size,
-      type: data.type,
-      mime_type: data.mime_type,
-      created_at: data.created_at,
-      updated_at: data.updated_at,
-      checksum: data.checksum || '',
-      metadata: data.metadata
-    };
-  } catch (error) {
-    console.error('Error fetching object metadata:', error);
-    return undefined;
-  }
-}
-
-async function isDirectory(objects: RepositoryObject[], path: string): Promise<boolean> {
-  // First check if there's an object with this exact path that has type 'directory'
-  const exactMatch = objects.find(obj => obj.path === path);
-  if (exactMatch) {
-    return exactMatch.type === 'directory';
-  }
-
-  // If no exact match or type is not available, check if any objects are "inside" this path
-  const fullPath = path.endsWith('/') ? path : path + '/';
-  return objects.some(obj => obj.path.startsWith(fullPath));
-}
-
-function formatFileSize(bytes: number): string {
-  if (bytes === 0) return '0 Bytes';
-  
-  const k = 1024;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
-  
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  // Then check if any objects exist under this path
+  const prefix = normalizedPath + '/';
+  return objects.some(obj => obj.path.startsWith(prefix));
 }
 
 export default async function RepositoryPathPage({
   params
 }: PageProps) {
-  const { account_id, repository_id, path } = await Promise.resolve(params);
-  console.log('Page params:', { account_id, repository_id, path });
-  
-  const repository = await getRepository(account_id, repository_id);
-  
-  if (!repository) {
-    notFound();
+  const { account_id, repository_id, path } = await params;
+  const pathString = path?.join('/') || '';
+
+  // Parallel data fetching
+  const [repository, objects] = await Promise.all([
+    // Get repository
+    fetchRepositories().then(repos => {
+      const repo = repos.find(r => 
+        r.account.account_id === account_id && 
+        r.repository_id === repository_id
+      );
+      if (!repo) notFound();
+      return repo;
+    }),
+
+    // Get objects
+    createStorageClient().listObjects({ account_id, repository_id })
+      .then(objects => objects
+        .filter(obj => obj.path)
+        .map(obj => ({
+          id: obj.path!,
+          repository_id,
+          path: obj.path!,
+          size: obj.size || 0,
+          type: obj.type || 'file',
+          mime_type: obj.mime_type || '',
+          created_at: obj.created_at || new Date().toISOString(),
+          updated_at: obj.updated_at || new Date().toISOString(),
+          checksum: obj.checksum || '',
+          metadata: obj.metadata || {}
+        }))
+      )
+  ]);
+
+  // If we have a path, verify it exists
+  if (pathString) {
+    const object = objects.find(obj => obj.path === pathString);
+    const isDir = isDirectory(objects, pathString);
+    
+    // Only 404 if it's not a directory and we can't find the file
+    if (!isDir && !object) {
+      notFound();
+    }
   }
-  
-  const objects = await getObjects(account_id, repository_id);
-  console.log('Found objects:', objects);
-  
-  const currentPath = Array.isArray(path) ? path.join('/') : '';
-  console.log('Current path:', currentPath);
-  
-  const directory = await isDirectory(objects, currentPath);
-  console.log('Is directory:', directory);
-  
-  let selectedObject;
-  if (!directory) {
-    // Fetch full object metadata when viewing a specific file
-    selectedObject = await getObjectWithMetadata(account_id, repository_id, currentPath);
-    console.log('Selected object with metadata:', selectedObject);
-  }
-  
+
   return (
     <Container>
-      <Flex direction="column" gap="4">
-        <RepositoryHeader repository={repository} />
-
-        <ObjectBrowser 
+      <RepositoryHeader repository={repository} />
+      <Box mt="4">
+        <ObjectBrowser
           repository={repository}
           objects={objects}
-          initialPath={directory ? currentPath : currentPath.split('/').slice(0, -1).join('/')}
-          selectedObject={selectedObject}
+          initialPath={pathString}
+          selectedObject={objects.find(obj => obj.path === pathString)}
         />
-      </Flex>
+      </Box>
     </Container>
   );
 } 
