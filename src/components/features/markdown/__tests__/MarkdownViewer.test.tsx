@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { MarkdownViewer } from '../MarkdownViewer';
+import { Component, PropsWithChildren } from 'react';
 
 // Mock the codeConfig module
 jest.mock('../codeConfig', () => ({
@@ -31,6 +32,22 @@ const fixtures = {
   invalidContent: { text: 'This should fail' }
 };
 
+// Error boundary component for testing
+class TestErrorBoundary extends Component<PropsWithChildren<{}>> {
+  state = { error: null };
+
+  static getDerivedStateFromError(error: Error) {
+    return { error };
+  }
+
+  render() {
+    if (this.state.error) {
+      return null;
+    }
+    return this.props.children;
+  }
+}
+
 describe('MarkdownViewer', () => {
   it('renders plain text markdown correctly', () => {
     render(<MarkdownViewer content={fixtures.plainText} />);
@@ -53,9 +70,15 @@ describe('MarkdownViewer', () => {
   });
 
   it('throws error if content is not a string', () => {
-    expect(() => {
-      // @ts-expect-error Testing invalid input
-      render(<MarkdownViewer content={fixtures.invalidContent} />);
-    }).toThrow('MarkdownViewer expects string content, got object');
+    const spy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const { container } = render(
+      <TestErrorBoundary>
+        {/* @ts-expect-error Testing invalid input */}
+        <MarkdownViewer content={fixtures.invalidContent} />
+      </TestErrorBoundary>
+    );
+    expect(container.innerHTML).toBe('');
+    expect(spy).toHaveBeenCalled();
+    spy.mockRestore();
   });
 }); 

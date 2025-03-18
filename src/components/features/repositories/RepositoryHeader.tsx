@@ -1,5 +1,5 @@
 // For repository detail page header
-import { Grid, Box } from '@radix-ui/themes';
+import { Grid, Box, Flex } from '@radix-ui/themes';
 import type { Repository, RepositoryStatistics } from '@/types';
 import { RepositorySummaryCard } from './RepositorySummaryCard';
 import { RepositoryMetaCard } from './RepositoryMetaCard';
@@ -23,7 +23,9 @@ export function RepositoryHeader({ repository, statistics }: RepositoryHeaderPro
         px={{ initial: '4', md: '0' }}
         mb={{ initial: '4', md: '0' }}
       >
-        <RepositorySummaryCard repository={repository} />
+        <Flex justify="between" align="center" mb="4">
+          <RepositorySummaryCard repository={repository} />
+        </Flex>
       </Box>
       <Box width="100%" className="repository-meta">
         <RepositoryMetaCard repository={repository} statistics={statistics} />

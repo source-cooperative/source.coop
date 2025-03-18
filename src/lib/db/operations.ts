@@ -79,38 +79,31 @@ function extractDynamoStringSet(attr: DynamoDBAttribute): string[] {
 
 export async function fetchAccounts(): Promise<Account[]> {
   const accounts = await scanTable<any>('Accounts');
-  console.log('Raw accounts from DynamoDB:', accounts);
   
-  return accounts.map(account => {
-    console.log('Processing account:', account.account_id);
-    return {
-      ...account,
-      // Transform DynamoDB StringSet to array if it exists
-      admin_account_ids: account.admin_account_ids?.SS || [],
-      // Extract string values from DynamoDB format
-      account_id: account.account_id?.S || account.account_id,
-      name: account.name?.S || account.name,
-      type: account.type?.S || account.type,
-      description: account.description?.S || account.description,
-      email: account.email?.S || account.email,
-      website: account.website?.S || account.website,
-      created_at: account.created_at?.S || account.created_at,
-      updated_at: account.updated_at?.S || account.updated_at,
-      owner_account_id: account.owner_account_id?.S || account.owner_account_id,
-      ror_id: account.ror_id?.S || account.ror_id,
-      logo_svg: account.logo_svg?.S || account.logo_svg,
-      logo_dark_mode_svg: account.logo_dark_mode_svg?.S || account.logo_dark_mode_svg,
-    };
-  });
+  return accounts.map(account => ({
+    ...account,
+    // Transform DynamoDB StringSet to array if it exists
+    admin_account_ids: account.admin_account_ids?.SS || [],
+    // Extract string values from DynamoDB format
+    account_id: account.account_id?.S || account.account_id,
+    name: account.name?.S || account.name,
+    type: account.type?.S || account.type,
+    description: account.description?.S || account.description,
+    email: account.email?.S || account.email,
+    website: account.website?.S || account.website,
+    created_at: account.created_at?.S || account.created_at,
+    updated_at: account.updated_at?.S || account.updated_at,
+    owner_account_id: account.owner_account_id?.S || account.owner_account_id,
+    ror_id: account.ror_id?.S || account.ror_id,
+    logo_svg: account.logo_svg?.S || account.logo_svg,
+    logo_dark_mode_svg: account.logo_dark_mode_svg?.S || account.logo_dark_mode_svg,
+  }));
 }
 
 export async function fetchRepositories(): Promise<Repository[]> {
   try {
     const repositories = await scanTable<DynamoDBRepository>('Repositories');
     const accounts = await scanTable<DynamoDBAccount>('Accounts');
-    
-    console.log('Raw repositories:', repositories);
-    console.log('Raw accounts:', accounts);
     
     // Create a map of account_id to Account for easy lookup
     const entries: [string, Account][] = accounts.map(account => {
@@ -157,13 +150,11 @@ export async function fetchRepositories(): Promise<Repository[]> {
         const repoId = extractDynamoString(repo.repository_id);
         
         if (!repo || !repoId || !accountId) {
-          console.warn('Missing required fields in repository:', repo);
           return false;
         }
         
         // Ensure account exists for this repository
         if (!accountMap.get(accountId)) {
-          console.warn(`Account not found for account_id: ${accountId}`);
           return false;
         }
         
@@ -188,7 +179,6 @@ export async function fetchRepositories(): Promise<Repository[]> {
         };
       });
   } catch (error) {
-    console.error('Error fetching repositories:', error);
     return [];
   }
 } 

@@ -9,4 +9,14 @@ jest.mock('next/navigation', () => ({
     prefetch: jest.fn(),
   }),
   usePathname: () => '/',
-})); 
+}));
+
+// Mock ResizeObserver
+global.ResizeObserver = class ResizeObserver {
+  constructor(callback) {
+    this.callback = callback;
+  }
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}; 

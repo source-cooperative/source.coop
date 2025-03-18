@@ -84,6 +84,105 @@
      - Test empty states and edge cases
    - Use specific item matching over array indices
    - Include all production-required fields in test data
+   - Match Radix UI component structure:
+     - Use `Text` component with `as="p"` for paragraphs
+     - Use `color="red"` for error states
+     - Use `color="gray"` for secondary text
+     - Use `Box` with margins for layout
+     - Use `Button` with `variant="solid"` for primary actions
+     - Use `variant="ghost"` for secondary actions
+   - Test both light and dark themes
+   - Verify component hierarchy matches Radix UI patterns
+   - Use `renderWithTheme` for themed components
+   - Test accessibility (ARIA roles, labels)
+   - Use `waitFor` for async operations
+
+4. **Server Component Testing**
+   - Always test loading states first
+   - Mock server-side data fetching
+   - Use `act()` for state updates
+   - Test both client and server hydration
+   - Handle async operations properly
+   - Mock Next.js Request/Response objects
+   - Test both success and error paths
+   - Verify correct status codes
+   - Test edge cases (invalid data, missing fields)
+   - Mock external services consistently
+
+5. **Error Testing**
+   - Test all error paths
+   - Verify error messages are displayed
+   - Test error recovery flows
+   - Mock error conditions consistently
+   - Test both client and server errors
+   - Use proper error roles and ARIA attributes
+   - Test error state transitions
+   - Verify error logging
+   - Test error boundary behavior
+
+6. **Test Data Management**
+   - Use consistent mock data structures
+   - Keep test data close to tests
+   - Use realistic data values
+   - Test edge cases in data
+   - Mock external data sources
+   - Use type-safe test data
+   - Document test data assumptions
+   - Clean up test data after tests
+   - Use factories for complex test data
+
+7. **Performance Testing**
+   - Test component render times
+   - Verify bundle sizes
+   - Test memory usage
+   - Monitor re-renders
+   - Test with large datasets
+   - Measure time to interactive
+   - Test lazy loading
+   - Verify code splitting
+   - Monitor network requests
+   - Test under load
+
+8. **API Testing**
+   - Mock Next.js Request/Response objects
+   - Test both success and error paths
+   - Verify correct status codes
+   - Test edge cases (invalid data, missing fields)
+   - Mock external services consistently
+   - Test rate limiting
+   - Verify authentication
+   - Test request validation
+   - Test response formatting
+   - Monitor API performance
+
+## Testing Protocol
+
+1. **Pre-Change**
+   ```bash
+   npm run lint
+   next build
+   npm run test
+   npm run test-pages
+   npm run test:perf  # Save baseline
+   ```
+
+2. **Test Organization**
+   - Group related tests using descriptive `describe` blocks
+   - Keep test data close to tests (in test file or dedicated fixtures)
+   - Reset environment using `beforeEach`
+   - Use consistent naming for mocks (e.g. `mockRouter`, `mockRepository`)
+   - Mock global objects using `Object.defineProperty`
+   - For stateful components, verify both initial state and state changes
+
+3. **Component Testing**
+   - Mock routing modules (e.g. `next/navigation`) at test file level
+   - Match text content exactly, including punctuation
+   - For navigation components:
+     - Test both file and directory paths
+     - Verify exact router URLs
+     - Test empty states and edge cases
+   - Use specific item matching over array indices
+   - Include all production-required fields in test data
 
 4. **Keyboard Testing**
    - Attach event listeners to `document`, not `window`

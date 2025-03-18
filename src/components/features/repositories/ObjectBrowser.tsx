@@ -1,6 +1,6 @@
 'use client';
 
-import { Text, Card, Box, DataList } from '@radix-ui/themes';
+import { Text, Card, Box, DataList, Flex, Button } from '@radix-ui/themes';
 import { ChevronRightIcon, FileIcon, SlashIcon } from '@radix-ui/react-icons';
 import Link from 'next/link';
 import { useState, useMemo, useCallback, useRef } from 'react';
@@ -90,11 +90,13 @@ function ObjectDetails({
           paddingBottom: 'var(--space-3)',
           marginBottom: 'var(--space-3)'
         }}>
-          <BreadcrumbNav 
-            path={pathParts}
-            fileName={fileName}
-            onNavigate={onNavigate}
-          />
+          <Flex justify="between" align="center">
+            <BreadcrumbNav 
+              path={pathParts}
+              fileName={fileName}
+              onNavigate={onNavigate}
+            />
+          </Flex>
         </Box>
       </SectionHeader>
       

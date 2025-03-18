@@ -1,0 +1,64 @@
+version: v0.1.0
+services:
+  identity:
+    ports:
+      - name: public
+        port: 4433
+        target_port: 4433
+    environment:
+      - name: SERVE_PUBLIC_BASE_URL
+        value: http://localhost:4433/
+      - name: SERVE_ADMIN_BASE_URL
+        value: http://localhost:4434/
+      - name: LOG_LEVEL
+        value: debug
+      - name: DSN
+        value: sqlite:///var/lib/sqlite/db.sqlite?_fk_constraints=true
+      - name: CORS_ENABLED
+        value: "true"
+      - name: CORS_ALLOWED_ORIGINS
+        value: http://localhost:3000
+      - name: CORS_ALLOWED_METHODS
+        value: POST,GET,PUT,PATCH,DELETE
+      - name: CORS_ALLOWED_HEADERS
+        value: Authorization,Content-Type,Session-Token,X-Session-Token,X-Session-Token-Required
+      - name: CORS_EXPOSED_HEADERS
+        value: Content-Type,Set-Cookie
+      - name: CORS_ALLOW_CREDENTIALS
+        value: "true"
+      - name: CORS_MAX_AGE
+        value: "3600"
+      - name: SESSION_LIFESPAN
+        value: 1h
+      - name: SESSION_PERSISTENCE
+        value: "true"
+      - name: SESSION_ISSUER
+        value: "http://localhost:4433/"
+      - name: SESSION_COOKIE_NAME
+        value: "ory_kratos_session"
+      - name: SESSION_COOKIE_PATH
+        value: "/"
+      - name: SESSION_COOKIE_DOMAIN
+        value: "localhost"
+      - name: SESSION_COOKIE_SAME_SITE
+        value: "Lax"
+      - name: SESSION_COOKIE_PERSISTENCE
+        value: "true"
+      - name: SESSION_COOKIE_SECURE
+        value: "false"
+      - name: SESSION_COOKIE_HTTP_ONLY
+        value: "true"
+      - name: SESSION_COOKIE_CSRF
+        value: "true"
+      - name: SESSION_COOKIE_CSRF_SAME_SITE
+        value: "Lax"
+      - name: SESSION_COOKIE_CSRF_SECURE
+        value: "false"
+      - name: SESSION_COOKIE_CSRF_HTTP_ONLY
+        value: "true"
+      - name: SESSION_COOKIE_CSRF_PATH
+        value: "/"
+      - name: SESSION_COOKIE_CSRF_DOMAIN
+        value: "localhost"
+      - name: SESSION_COOKIE_CSRF_PERSISTENCE
+        value: "true"

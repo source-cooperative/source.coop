@@ -1,32 +1,21 @@
 import { RepositoryObject } from './repository_object';
-export type StorageType = 'LOCAL' | 'S3';
+export type StorageType = 'LOCAL' | 'S3' | 'GCS' | 'AZURE';
 
 // The storage provider entity
 export interface StorageProvider {
   provider_id: string;
   type: StorageType;
   endpoint: string;
-  bucket?: string;
   created_at: string;
   updated_at: string;
-  credentials_id?: string;
 }
 
 // Configuration for connecting to the provider
 export interface StorageConfig {
   type: StorageType;
   endpoint: string;
-  bucket?: string;
-  region?: string;  // Required for S3
-  credentials?: {
-    access_key_id: string;
-    secret_access_key: string;
-  };
-  options?: {
-    force_path_style?: boolean;
-    ssl_enabled?: boolean;
-    custom_endpoint?: string;
-  };
+  region?: string;
+  options?: Record<string, unknown>;
 }
 
 // Path construction types and utilities
@@ -37,50 +26,56 @@ export interface ObjectPath {
 }
 
 export interface StorageLocation {
-  provider_id: string;    // References StorageProvider
-  full_path: string;     // Complete path including account/repo/object structure
+  provider: StorageProvider;
+  path: string;
 }
 
-// Helper function to construct the full object path
-export function buildObjectPath(path: ObjectPath): string {
-  return `${path.account_id}/${path.repository_id}/objects/${path.object_path}`;
+export interface ListObjectsParams extends ObjectPath {
+  prefix?: string;
+  delimiter?: string;
+  maxKeys?: number;
+  continuationToken?: string;
 }
 
-// Helper to construct complete storage location
-export function buildStorageLocation(
-  provider: StorageProvider, 
-  path: ObjectPath
-): StorageLocation {
-  return {
-    provider_id: provider.provider_id,
-    full_path: buildObjectPath(path)
-  };
+export interface ListObjectsResult {
+  objects: RepositoryObject[];
+  commonPrefixes: string[];
+  nextContinuationToken?: string;
+  isTruncated: boolean;
+}
+
+export interface GetObjectParams extends ObjectPath {
+  versionId?: string;
+}
+
+export interface GetObjectResult {
+  object: RepositoryObject;
+  data: Buffer | ReadableStream;
+  contentType: string;
+  contentLength: number;
+  etag: string;
+  lastModified: Date;
+}
+
+export interface PutObjectParams extends ObjectPath {
+  data: Buffer | ReadableStream;
+  contentType: string;
+  metadata?: Record<string, string>;
+}
+
+export interface PutObjectResult {
+  etag: string;
+  versionId?: string;
+}
+
+export interface DeleteObjectParams extends ObjectPath {
+  versionId?: string;
 }
 
 export interface StorageClient {
-  listObjects(params: {
-    account_id: string;
-    repository_id: string;
-    prefix?: string;
-  }): Promise<Array<Partial<RepositoryObject>>>;
-
-  getObjectInfo(params: {
-    account_id: string;
-    repository_id: string;
-    object_path: string;
-  }): Promise<Partial<RepositoryObject>>;
-  
-  getObject(params: {
-    account_id: string;
-    repository_id: string;
-    path: string;
-  }): Promise<{
-    metadata?: Partial<RepositoryObject>;
-    content?: string;
-    headers?: Record<string, string>;
-  }>;
-
-  putObject(objectPath: ObjectPath, data: Buffer): Promise<RepositoryObject>;
-  
-  deleteObject(objectPath: ObjectPath): Promise<void>;
+  listObjects(params: ListObjectsParams): Promise<ListObjectsResult>;
+  getObject(params: GetObjectParams): Promise<GetObjectResult>;
+  putObject(params: PutObjectParams): Promise<PutObjectResult>;
+  deleteObject(params: DeleteObjectParams): Promise<void>;
+  getObjectInfo(params: GetObjectParams): Promise<RepositoryObject>;
 }
