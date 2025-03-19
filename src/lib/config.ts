@@ -1,12 +1,6 @@
 // Helper to ensure we don't get undefined values
 const getEnvVar = (key: string, defaultValue: string): string => {
-  const value = process.env[key];
-  console.log(`Reading env var ${key}:`, { value, defaultValue });
-  if (!value) {
-    console.warn(`Environment variable ${key} not found, using default: ${defaultValue}`);
-    return defaultValue;
-  }
-  return value;
+  return process.env[key] || defaultValue;
 };
 
 export const CONFIG = {
@@ -18,6 +12,11 @@ export const CONFIG = {
   database: {
     endpoint: getEnvVar('DYNAMODB_ENDPOINT', 'http://localhost:8000'),
     region: getEnvVar('AWS_REGION', 'us-east-1'),
+  },
+  auth: {
+    kratosUrl: getEnvVar('NEXT_PUBLIC_KRATOS_URL', 'http://localhost:4000'),
+    orySdkUrl: getEnvVar('NEXT_PUBLIC_ORY_SDK_URL', 'http://localhost:4000'),
+    apiUrl: getEnvVar('NEXT_PUBLIC_API_URL', 'http://localhost:3000'),
   },
 } as const;
 

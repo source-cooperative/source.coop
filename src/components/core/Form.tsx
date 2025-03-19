@@ -1,11 +1,11 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Box, Button, Text } from '@radix-ui/themes';
+import * as Form from '@radix-ui/react-form';
 import { FormField, FormProps } from '@/types/form';
 import { logger } from '@/lib/logger';
 
-export const Form: React.FC<FormProps> = ({
+export const FormWrapper: React.FC<FormProps> = ({
   fields,
   onSubmit,
   submitLabel = 'Submit',
@@ -31,7 +31,7 @@ export const Form: React.FC<FormProps> = ({
     setErrors(prev => ({ ...prev, [name]: '' }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
     setIsSubmitting(true);
@@ -60,10 +60,18 @@ export const Form: React.FC<FormProps> = ({
     }
 
     try {
+      // Create a safe copy of form data with sensitive fields redacted
+      const safeFormData = { ...formData };
+      Object.keys(safeFormData).forEach(key => {
+        if (key.toLowerCase().includes('password')) {
+          safeFormData[key] = '[REDACTED]';
+        }
+      });
+
       logger.info('Form submission started', {
         operation: 'form_submit',
         context: 'Form component',
-        metadata: { formData }
+        metadata: { formData: safeFormData }
       });
 
       await onSubmit(formData);
@@ -73,7 +81,7 @@ export const Form: React.FC<FormProps> = ({
       logger.error('Form submission failed', {
         operation: 'form_submit',
         context: 'Form component',
-        error: err
+        error: err instanceof Error ? err.message : 'Unknown error'
       });
     } finally {
       setIsSubmitting(false);
@@ -81,58 +89,58 @@ export const Form: React.FC<FormProps> = ({
   };
 
   return (
-    <form role="form" onSubmit={handleSubmit}>
+    <Form.Root onSubmit={handleSubmit}>
       {description && (
-        <Text as="p" mb="4" color="gray">
-          {description}
-        </Text>
+        <div>{description}</div>
       )}
 
       {error && (
-        <Text as="p" mb="4" color="red" role="status" aria-live="polite">
-          {error}
-        </Text>
+        <Form.Field name="form-error">
+          <Form.Message>{error}</Form.Message>
+        </Form.Field>
       )}
 
       {fields.map(field => (
-        <Box key={field.name} mb="4">
-          <Box mb="2">
-            <Text as="label" htmlFor={field.name}>
+        <Form.Field key={field.name} name={field.name}>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+            <Form.Label>
               {field.label}
-              {field.required && (
-                <Text as="span" color="red" ml="1">
-                  *
-                </Text>
-              )}
-            </Text>
-          </Box>
+              {field.required && <span aria-hidden="true">*</span>}
+            </Form.Label>
 
-          <input
-            id={field.name}
-            name={field.name}
-            type={field.type}
-            value={formData[field.name] || ''}
-            onChange={handleChange}
-            placeholder={field.placeholder}
-            required={field.required}
-            disabled={isLoading || isSubmitting}
-          />
+            {errors[field.name] && (
+              <Form.Message match="valueMissing">
+                {errors[field.name]}
+              </Form.Message>
+            )}
+          </div>
 
-          {errors[field.name] && (
-            <Text as="p" color="red" size="2" mt="1" role="status" aria-live="polite">
-              {errors[field.name]}
-            </Text>
-          )}
-        </Box>
+          <Form.Control asChild>
+            {field.type === 'textarea' ? (
+              <textarea
+                placeholder={field.placeholder}
+                required={field.required}
+                disabled={isLoading || isSubmitting}
+                onChange={handleChange}
+              />
+            ) : (
+              <input
+                type={field.type}
+                placeholder={field.placeholder}
+                required={field.required}
+                disabled={isLoading || isSubmitting}
+                onChange={handleChange}
+              />
+            )}
+          </Form.Control>
+        </Form.Field>
       ))}
 
-      <Button 
-        type="submit" 
-        disabled={isLoading || isSubmitting}
-        data-state={isLoading || isSubmitting ? 'loading' : 'idle'}
-      >
-        {isLoading || isSubmitting ? 'Submitting...' : submitLabel}
-      </Button>
-    </form>
+      <Form.Submit asChild>
+        <button disabled={isLoading || isSubmitting}>
+          {isLoading || isSubmitting ? 'Submitting...' : submitLabel}
+        </button>
+      </Form.Submit>
+    </Form.Root>
   );
 }; 
