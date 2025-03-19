@@ -2,10 +2,13 @@
 export interface BaseAccount {
   account_id: string;
   name: string;
+  type: 'individual' | 'organization';
+  ory_id: string;
   created_at: string;
   updated_at: string;
-  type: 'individual' | 'organization';
   description?: string;  // Optional description for any account type
+  website?: string;
+  contact_email?: string;
 }
 
 // Contact information interface for shared optional fields
@@ -27,9 +30,8 @@ export interface OrganizationalAccount extends BaseAccount, ContactInfo {
   type: 'organization';
   owner_account_id: string;  // References the IndividualAccount that owns this org
   admin_account_ids: string[];  // Array of IndividualAccount IDs who can administer
+  member_account_ids?: string[];  // Array of IndividualAccount IDs who are members
   ror_id?: string;  // Optional ROR identifier (e.g., "03yrm5c26")
-  logo_svg?: string;  // Optional inline SVG string for the organization's logo
-  logo_dark_mode_svg?: string;  // Optional dark mode variant of the logo
 }
 
 // Union type for any kind of account

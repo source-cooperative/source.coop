@@ -1,113 +1,117 @@
-import { Flex, Box, Text, Grid, Heading, Link as RadixLink } from '@radix-ui/themes';
+import { Box, Heading, Text, Avatar, Link as RadixLink, Flex, Grid } from '@radix-ui/themes';
 import Link from 'next/link';
-import type { Account, OrganizationalAccount } from '@/types/account';
-import type { Repository } from '@/types';
-import { ProfileAvatar } from './ProfileAvatar';
-import { RepositoryList } from '../repositories/RepositoryList';
+import type { OrganizationalAccount, IndividualAccount, Repository } from '@/types';
+import { RepositoryList } from '@/components/features/repositories/RepositoryList';
 
 interface OrganizationProfileProps {
   account: OrganizationalAccount;
   repositories: Repository[];
-  members: Account[];
-  owner: Account;
+  owner: IndividualAccount | null;
+  admins: IndividualAccount[];
+  members: IndividualAccount[];
 }
 
 export function OrganizationProfile({ 
   account, 
   repositories,
-  members,
-  owner
+  owner,
+  admins,
+  members 
 }: OrganizationProfileProps) {
   return (
     <Box>
-      {/* Profile Header */}
-      <Box mb="6">
-        <Flex gap="4" align="center">
-          <ProfileAvatar account={account} size="6" />
-          <Box>
-            <Heading size="8">{account.name}</Heading>
-            {account.description && (
-              <Text size="3" color="gray">{account.description}</Text>
-            )}
-          </Box>
-        </Flex>
-      </Box>
+      <Flex gap="4" mb="6">
+        {account.logo_svg && (
+          <Avatar
+            size="8"
+            src={account.logo_svg}
+            fallback={account.name[0]}
+            radius="full"
+          />
+        )}
+        <Box>
+          <Heading as="h1" size="8">{account.name}</Heading>
+          <Text as="p" size="3" color="gray" mt="1">
+            {account.description}
+          </Text>
+        </Box>
+      </Flex>
 
-      {/* Profile Details */}
-      <Box mb="6">
-        <Grid columns="3" gap="4">
-          {account.email && (
-            <Box>
-              <Text as="div" size="2" color="gray" mb="2">Contact Email</Text>
-              <Text>{account.email}</Text>
-            </Box>
-          )}
+      <Grid columns="2" gap="6" mb="6">
+        <Box>
+          <Heading as="h2" size="4" mb="2">Organization Details</Heading>
           {account.website && (
-            <Box>
-              <Text as="div" size="2" color="gray" mb="2">Website</Text>
-              <RadixLink asChild>
-                <a href={account.website} target="_blank" rel="noopener noreferrer">
-                  {account.website}
-                </a>
-              </RadixLink>
-            </Box>
+            <Text as="p" size="2">
+              Website: <RadixLink href={account.website}>{account.website}</RadixLink>
+            </Text>
+          )}
+          {account.email && (
+            <Text as="p" size="2">
+              Email: <RadixLink href={`mailto:${account.email}`}>{account.email}</RadixLink>
+            </Text>
           )}
           {account.ror_id && (
-            <Box>
-              <Text as="div" size="2" color="gray" mb="2">ROR ID</Text>
-              <RadixLink asChild>
-                <a href={`https://ror.org/${account.ror_id}`} target="_blank" rel="noopener noreferrer">
-                  {account.ror_id}
-                </a>
-              </RadixLink>
+            <Text as="p" size="2">
+              ROR ID: <RadixLink href={`https://ror.org/${account.ror_id}`}>{account.ror_id}</RadixLink>
+            </Text>
+          )}
+        </Box>
+
+        <Box>
+          <Heading as="h2" size="4" mb="2">Members</Heading>
+
+          {admins.length > 0 && (
+            <Box mb="2">
+              <Text as="p" size="2" weight="bold">Administrators</Text>
+              <Flex direction="column" gap="1">
+                {admins.map(admin => (
+                  <Link key={admin.account_id} href={`/${admin.account_id}`} passHref legacyBehavior>
+                    <RadixLink size="2">
+                      <Flex gap="2" align="center">
+                        <Avatar
+                          size="1"
+                          src={admin.logo_svg}
+                          fallback={admin.name[0]}
+                          radius="full"
+                        />
+                        {admin.name} (admin)
+                      </Flex>
+                    </RadixLink>
+                  </Link>
+                ))}
+              </Flex>
             </Box>
           )}
-        </Grid>
-      </Box>
 
-      {/* Members */}
-      <Box mb="6">
-        <Heading size="4" mb="4">Members</Heading>
-        <Grid columns="3" gap="4">
-          {/* Owner */}
-          <Link href={`/${owner.account_id}`} passHref legacyBehavior>
-            <RadixLink>
-              <Flex gap="2" align="center">
-                <ProfileAvatar account={owner} size="2" />
-                <Box>
-                  <Text>{owner.name}</Text>
-                  <Text size="1" color="gray">Owner</Text>
-                </Box>
+          {members.length > 0 && (
+            <Box>
+              <Text as="p" size="2" weight="bold">Members</Text>
+              <Flex direction="column" gap="1">
+                {members.map(member => (
+                  <Link key={member.account_id} href={`/${member.account_id}`} passHref legacyBehavior>
+                    <RadixLink size="2">
+                      <Flex gap="2" align="center">
+                        <Avatar
+                          size="1"
+                          src={member.logo_svg}
+                          fallback={member.name[0]}
+                          radius="full"
+                        />
+                        {member.name}
+                      </Flex>
+                    </RadixLink>
+                  </Link>
+                ))}
               </Flex>
-            </RadixLink>
-          </Link>
-          
-          {/* Other Members */}
-          {members
-            .filter(member => member.account_id !== owner.account_id)
-            .map(member => (
-              <Link key={member.account_id} href={`/${member.account_id}`} passHref legacyBehavior>
-                <RadixLink>
-                  <Flex gap="2" align="center">
-                    <ProfileAvatar account={member} size="2" />
-                    <Box>
-                      <Text>{member.name}</Text>
-                      <Text size="1" color="gray">Member</Text>
-                    </Box>
-                  </Flex>
-                </RadixLink>
-              </Link>
-            ))}
-        </Grid>
-      </Box>
-
-      {/* Repositories */}
-      {repositories.length > 0 && (
-        <Box>
-          <Heading size="4" mb="4">Repositories</Heading>
-          <RepositoryList repositories={repositories} />
+            </Box>
+          )}
         </Box>
-      )}
+      </Grid>
+
+      <Box>
+        <Heading as="h2" size="4" mb="4">Repositories</Heading>
+        <RepositoryList repositories={repositories} />
+      </Box>
     </Box>
   );
 } 

@@ -11,7 +11,7 @@
 
 // src/app/page.tsx
 import { Container, Heading, Text, Box } from '@radix-ui/themes';
-import { RepositoryList } from '@/components/features/repositories/RepositoryList';
+import { RepositoryList } from '@/components/features/repositories';
 import type { Repository } from '@/types';
 import { fetchRepositories } from '@/lib/db/operations';
 

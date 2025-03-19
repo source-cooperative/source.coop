@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+Progress towards 0.2.0:
+- [x] Authentication system using Ory Kratos
+- [x] Basic user session management
+- [ ] Local DynamoDB setup for development
+- [ ] Complete user profile management
+- [ ] Repository management interfaces
+- [ ] Organization creation and management
+- [ ] User-organization relationship management
+
 ### Added
 - Authentication system using Ory Kratos
   - Login and registration flows

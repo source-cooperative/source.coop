@@ -2,48 +2,129 @@
 
 ## Core Principles
 
-1. **Trust the Platform**
-   - Let Next.js handle routing and errors
-   - Let the browser handle native behaviors
-   - Let Radix UI manage component states
-   - Trust TypeScript types and user data as-is
-
-2. **Server-First Architecture**
+1. **Server-First Architecture**
    - Start with Server Components
    - Convert to Client Components only for:
      - Interactivity
      - Browser APIs
      - React hooks
+   - Keep client components as small as possible
+   - Move data fetching to server components
+   - Use server actions for mutations
 
-3. **Data Integrity**
+2. **UI/UX Preservation**
+   - Never modify existing UI components, layouts, or styling unless explicitly requested
+   - When working on backend issues, focus only on backend-related changes
+   - If UI changes are needed, they must be:
+     - Explicitly requested by the user
+     - Limited to the specific component/area mentioned
+     - Preserve existing functionality and behavior
+     - Maintain current accessibility features
+     - Keep existing keyboard shortcuts and navigation
+   - Any UI changes must be reversible and maintain the exact same user experience
+
+3. **Trust the Platform**
+   - Let Next.js handle routing and errors
+   - Let the browser handle native behaviors
+   - Let Radix UI manage component states
+   - Trust TypeScript types and user data as-is
+   - Use built-in Next.js features over custom solutions
+
+4. **Data Integrity**
    - Display data exactly as stored
    - Preserve all path structures
    - Progressive metadata handling
    - Defer to data proxy service
+   - Validate data at the source
+   - Use type-safe data operations
 
-## Implementation
+5. **Efficient Data Fetching**
+   - Fetch only the data needed for the current view
+   - Use precise queries instead of scanning entire tables
+   - Transform data as close to the source as possible
+   - Cache transformed data when appropriate
+   - Avoid client-side filtering of large datasets
+   - Use server-side pagination
 
-1. **Component Structure**
+## Component Structure
+
+1. **Directory Organization**
    ```
-   src/components/
-   ├── core/      # UI primitives
-   ├── display/   # Formatting
-   ├── layout/    # Page structure
-   └── features/  # Domain logic
+   src/
+   ├── app/           # Next.js app router pages
+   ├── components/    # React components
+   │   ├── core/     # UI primitives
+   │   ├── display/  # Formatting
+   │   ├── layout/   # Page structure
+   │   └── features/ # Domain logic
+   ├── lib/          # Utilities and helpers
+   └── types/        # TypeScript types
    ```
+
+2. **Component Guidelines**
    - One component per file
    - Co-locate tests
    - Use semantic HTML
    - Prefer `Box` with margins over Flex
+   - Keep components focused and single-purpose
+   - Use composition over inheritance
 
-2. **Styling**
+3. **Styling**
    - Use Radix UI theme tokens
    - Use CSS variables for colors
    - Single visual state for focus/selection
    - Test both light/dark modes
+   - Follow Radix UI component patterns
+   - Use consistent spacing and sizing
 
-3. **Performance**
-   Thresholds:
+## Testing Protocol
+
+1. **Pre-Change**
+   ```bash
+   npm run lint
+   next build
+   npm run test
+   npm run test-pages
+   npm run test:perf  # Save baseline
+   ```
+
+2. **Test Organization**
+   - Group related tests using descriptive `describe` blocks
+   - Keep test data close to tests
+   - Reset environment using `beforeEach`
+   - Use consistent naming for mocks
+   - Mock global objects using `Object.defineProperty`
+   - Test both initial state and state changes
+
+3. **Component Testing**
+   - Mock routing modules at test file level
+   - Match text content exactly
+   - Test navigation components thoroughly
+   - Use specific item matching over array indices
+   - Include all production-required fields
+   - Test accessibility features
+   - Use `renderWithTheme` for themed components
+
+4. **Server Component Testing**
+   - Test loading states first
+   - Mock server-side data fetching
+   - Use `act()` for state updates
+   - Test both client and server hydration
+   - Handle async operations properly
+   - Mock Next.js Request/Response objects
+   - Test both success and error paths
+
+5. **Error Testing**
+   - Test all error paths
+   - Verify error messages
+   - Test error recovery flows
+   - Mock error conditions consistently
+   - Test both client and server errors
+   - Use proper error roles and ARIA attributes
+
+## Performance Guidelines
+
+1. **Thresholds**
    ```typescript
    const THRESHOLDS = {
      build: { time: 1500, size: 5000000 },
@@ -56,198 +137,97 @@
    };
    ```
 
-## Testing Protocol
+2. **Optimization**
+   - Use server components for static content
+   - Implement proper code splitting
+   - Optimize images and assets
+   - Use proper caching strategies
+   - Monitor bundle sizes
+   - Test performance regressions
 
-1. **Pre-Change**
-   ```bash
-   npm run lint
-   next build
-   npm run test
-   npm run test-pages
-   npm run test:perf  # Save baseline
-   ```
-
-2. **Test Organization**
-   - Group related tests using descriptive `describe` blocks
-   - Keep test data close to tests (in test file or dedicated fixtures)
-   - Reset environment using `beforeEach`
-   - Use consistent naming for mocks (e.g. `mockRouter`, `mockRepository`)
-   - Mock global objects using `Object.defineProperty`
-   - For stateful components, verify both initial state and state changes
-
-3. **Component Testing**
-   - Mock routing modules (e.g. `next/navigation`) at test file level
-   - Match text content exactly, including punctuation
-   - For navigation components:
-     - Test both file and directory paths
-     - Verify exact router URLs
-     - Test empty states and edge cases
-   - Use specific item matching over array indices
-   - Include all production-required fields in test data
-   - Match Radix UI component structure:
-     - Use `Text` component with `as="p"` for paragraphs
-     - Use `color="red"` for error states
-     - Use `color="gray"` for secondary text
-     - Use `Box` with margins for layout
-     - Use `Button` with `variant="solid"` for primary actions
-     - Use `variant="ghost"` for secondary actions
-   - Test both light and dark themes
-   - Verify component hierarchy matches Radix UI patterns
-   - Use `renderWithTheme` for themed components
-   - Test accessibility (ARIA roles, labels)
-   - Use `waitFor` for async operations
-
-4. **Server Component Testing**
-   - Always test loading states first
-   - Mock server-side data fetching
-   - Use `act()` for state updates
-   - Test both client and server hydration
-   - Handle async operations properly
-   - Mock Next.js Request/Response objects
-   - Test both success and error paths
-   - Verify correct status codes
-   - Test edge cases (invalid data, missing fields)
-   - Mock external services consistently
-
-5. **Error Testing**
-   - Test all error paths
-   - Verify error messages are displayed
-   - Test error recovery flows
-   - Mock error conditions consistently
-   - Test both client and server errors
-   - Use proper error roles and ARIA attributes
-   - Test error state transitions
-   - Verify error logging
-   - Test error boundary behavior
-
-6. **Test Data Management**
-   - Use consistent mock data structures
-   - Keep test data close to tests
-   - Use realistic data values
-   - Test edge cases in data
-   - Mock external data sources
-   - Use type-safe test data
-   - Document test data assumptions
-   - Clean up test data after tests
-   - Use factories for complex test data
-
-7. **Performance Testing**
-   - Test component render times
-   - Verify bundle sizes
-   - Test memory usage
-   - Monitor re-renders
-   - Test with large datasets
-   - Measure time to interactive
-   - Test lazy loading
-   - Verify code splitting
-   - Monitor network requests
-   - Test under load
-
-8. **API Testing**
-   - Mock Next.js Request/Response objects
-   - Test both success and error paths
-   - Verify correct status codes
-   - Test edge cases (invalid data, missing fields)
-   - Mock external services consistently
-   - Test rate limiting
-   - Verify authentication
-   - Test request validation
-   - Test response formatting
-   - Monitor API performance
-
-## Testing Protocol
-
-1. **Pre-Change**
-   ```bash
-   npm run lint
-   next build
-   npm run test
-   npm run test-pages
-   npm run test:perf  # Save baseline
-   ```
-
-2. **Test Organization**
-   - Group related tests using descriptive `describe` blocks
-   - Keep test data close to tests (in test file or dedicated fixtures)
-   - Reset environment using `beforeEach`
-   - Use consistent naming for mocks (e.g. `mockRouter`, `mockRepository`)
-   - Mock global objects using `Object.defineProperty`
-   - For stateful components, verify both initial state and state changes
-
-3. **Component Testing**
-   - Mock routing modules (e.g. `next/navigation`) at test file level
-   - Match text content exactly, including punctuation
-   - For navigation components:
-     - Test both file and directory paths
-     - Verify exact router URLs
-     - Test empty states and edge cases
-   - Use specific item matching over array indices
-   - Include all production-required fields in test data
-
-4. **Keyboard Testing**
-   - Attach event listeners to `document`, not `window`
-   - Clear mocks before each test with `jest.clearAllMocks()`
-   - Test both single-key ('j', 'k', '?') and multi-key sequences
-   - Verify modifier key handling (ctrl, meta, alt, shift)
-   - Mock `navigator.clipboard` for clipboard operations
-   - Test navigation boundaries and edge cases
-
-5. **During Change**
-   - Make ONE focused change
-   - Run affected tests
-   - Check build status
-   - Verify critical paths:
-     - Homepage
-     - Account pages
-     - Repository pages
-     - Object browser
-     - Search
-     - Keyboard shortcuts
-
-6. **Post-Change**
-   - Run full test suite
-   - Compare with baseline
-   - Document changes:
-   ```json
-   {
-     "change": {
-       "description": "",
-       "files": [],
-       "type": ""
-     },
-     "testing": {
-       "preMetrics": {},
-       "postMetrics": {},
-       "verifiedPaths": []
-     }
-   }
-   ```
-
-## Optimization Guidelines
-
-1. **Large Directories**
+3. **Large Directories**
    - Progressive loading (depth=1 first)
    - Virtual lists for >20 items
    - Cache structures and paths
    - GPU acceleration for scrolling
 
-2. **Components**
-   - Memoize expensive computations
-   - Cache state for transitions
-   - Handle SSR differences
-   - Progressive data loading
+## Error Handling
 
-3. **Error Handling**
-   BLOCKING:
+1. **Blocking Issues**
    - Build failures
    - Test failures
    - TypeScript errors
    - 500 errors
    - Hydration issues
 
-   WARNING:
+2. **Warnings**
    - Performance regressions
    - Console errors
    - Non-critical warnings
 
+## Documentation
+
+1. **Code Comments**
+   - Document complex logic
+   - Explain non-obvious decisions
+   - Keep comments up to date
+   - Use JSDoc for public APIs
+
+2. **Type Definitions**
+   - Use precise types
+   - Document type parameters
+   - Keep types DRY
+   - Use discriminated unions for complex types
+
 Remember: Never skip testing steps. Trust the platform. Keep changes minimal.
+
+
+## Account System and Authentication
+
+### 1. Account ID Usage
+- Always use `account_id` for:
+  - Database queries
+  - URL parameters
+  - API endpoints
+  - Business logic
+  - Frontend routing
+  - State management
+
+### 2. Ory Integration
+- Ory is for authentication only
+- Never use Ory IDs for:
+  - Database lookups
+  - URL parameters
+  - API endpoints
+  - Business logic
+- Store Ory ID only in `metadata_public.ory_id` for reference
+
+### 3. Session Management
+- Get `account_id` from session metadata
+- Use `account_id` for all operations
+- Never rely on Ory ID for access control
+
+### 4. Code Examples
+
+```typescript
+// ✅ Correct: Using account_id
+const account = await fetchAccount(accountId);
+const repositories = await fetchRepositoriesByAccount(accountId);
+
+// ❌ Incorrect: Using Ory ID
+const account = await fetchAccountByOryId(oryId);
+```
+
+```typescript
+// ✅ Correct: URL structure
+/{account_id}/repositories
+/{account_id}/settings
+
+// ❌ Incorrect: Using Ory ID in URLs
+/{ory_id}/repositories
+```
+
+### 5. Testing
+- Mock Ory responses with `account_id` in metadata
+- Test account system independently of auth
+- Verify proper separation of concerns 

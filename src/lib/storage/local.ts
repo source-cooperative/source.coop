@@ -1,4 +1,4 @@
-import { StorageClient, StorageProvider, StorageConfig, ObjectPath } from '@/types/storage';
+import { StorageClient, StorageProvider, StorageConfig, ObjectPath, ListObjectsParams, ListObjectsResult, GetObjectParams, GetObjectResult, PutObjectParams, PutObjectResult, DeleteObjectParams } from '@/types/storage';
 import { RepositoryObject } from '@/types';
 import { promises as fs } from 'fs';
 import path from 'path';
@@ -28,32 +28,26 @@ export class LocalStorageClient implements StorageClient {
     return path.join(this.baseDir, relativePath);
   }
 
-  async putObject(objectPath: ObjectPath, data: Buffer): Promise<RepositoryObject> {
+  async putObject(params: PutObjectParams): Promise<PutObjectResult> {
     const fullPath = this.getFullPath({
-      account_id: objectPath.account_id,
-      repository_id: objectPath.repository_id,
-      object_path: objectPath.object_path
+      account_id: params.account_id,
+      repository_id: params.repository_id,
+      object_path: params.object_path
     });
     
-    // Ensure directory exists
-    await fs.mkdir(path.dirname(fullPath), { recursive: true });
-    
-    // Write file
-    await fs.writeFile(fullPath, data);
-    
-    // Get file stats
-    const stats = await fs.stat(fullPath);
-    
-    return {
-      id: objectPath.object_path,
-      repository_id: objectPath.repository_id,
-      path: objectPath.object_path,
-      size: stats.size,
-      created_at: stats.birthtime.toISOString(),
-      updated_at: stats.mtime.toISOString(),
-      checksum: '',
-      type: 'file'
-    };
+    try {
+      await fs.mkdir(path.dirname(fullPath), { recursive: true });
+      await fs.writeFile(fullPath, params.data as Buffer);
+      
+      const stats = await fs.stat(fullPath);
+      return {
+        etag: stats.mtime.getTime().toString(),
+        versionId: undefined
+      };
+    } catch (error) {
+      console.error('Error putting object:', error);
+      throw error;
+    }
   }
 
   private async getObjectMetadata(params: { account_id: string; repository_id: string; object_path: string }): Promise<any> {
@@ -76,50 +70,49 @@ export class LocalStorageClient implements StorageClient {
     }
   }
 
-  async getObject(params: { account_id: string; repository_id: string; path: string }): Promise<{ metadata?: Partial<RepositoryObject>; content?: string }> {
+  async getObject(params: GetObjectParams): Promise<GetObjectResult> {
     const fullPath = this.getFullPath(params);
+    
     try {
-      // Read file content
-      const content = await fs.readFile(fullPath, 'utf-8');
       const stats = await fs.stat(fullPath);
+      const content = await fs.readFile(fullPath);
       
       // Get metadata from .source-metadata.json
       const objectMetadata = await this.getObjectMetadata({
         account_id: params.account_id,
         repository_id: params.repository_id,
-        object_path: params.path
+        object_path: params.object_path
       });
-
-      const metadata: Partial<RepositoryObject> = {
-        id: params.path,
-        repository_id: params.repository_id,
-        path: params.path,
-        size: stats.size,
-        created_at: stats.birthtime.toISOString(),
-        updated_at: stats.mtime.toISOString(),
-        type: 'file',
-        metadata: objectMetadata
-      };
       
       return {
-        content,
-        metadata
+        object: {
+          id: params.object_path,
+          repository_id: params.repository_id,
+          path: params.object_path,
+          size: stats.size,
+          type: 'file',
+          created_at: stats.birthtime.toISOString(),
+          updated_at: stats.mtime.toISOString(),
+          checksum: '',
+          metadata: objectMetadata || {}
+        },
+        data: content,
+        contentType: 'application/octet-stream',
+        contentLength: stats.size,
+        etag: stats.mtime.getTime().toString(),
+        lastModified: stats.mtime
       };
     } catch (error) {
-      if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-        console.error(`File not found: ${fullPath}`);
-      } else {
-        console.error('Error reading file:', error);
-      }
-      return {};
+      console.error('Error getting object:', error);
+      throw error;
     }
   }
 
-  async deleteObject(objectPath: ObjectPath): Promise<void> {
+  async deleteObject(params: DeleteObjectParams): Promise<void> {
     const fullPath = this.getFullPath({
-      account_id: objectPath.account_id,
-      repository_id: objectPath.repository_id,
-      object_path: objectPath.object_path
+      account_id: params.account_id,
+      repository_id: params.repository_id,
+      object_path: params.object_path
     });
     await fs.unlink(fullPath);
   }
@@ -163,10 +156,10 @@ export class LocalStorageClient implements StorageClient {
     return files;
   }
 
-  async listObjects(params: { account_id: string; repository_id: string; prefix?: string }): Promise<Partial<RepositoryObject>[]> {
+  async listObjects(params: ListObjectsParams): Promise<ListObjectsResult> {
     if (!params.account_id || !params.repository_id) {
       console.error('Invalid params for listObjects:', params);
-      return [];
+      return { objects: [], commonPrefixes: [], isTruncated: false };
     }
     
     const basePath = path.join(this.baseDir, params.account_id, params.repository_id);
@@ -176,36 +169,50 @@ export class LocalStorageClient implements StorageClient {
       const files = await this.walkDirectory(basePath);
       console.log('Found files:', files);
       
-      const objects = files.map(file => ({
+      // Filter by prefix if provided
+      const filteredFiles = params.prefix 
+        ? files.filter(file => file.path.startsWith(params.prefix!))
+        : files;
+      
+      const objects = filteredFiles.map(file => ({
         id: file.path,
         repository_id: params.repository_id,
         path: file.path,
         size: file.size,
-        type: 'file',
+        type: file.path.endsWith('/') ? 'directory' : 'file',
         updated_at: file.updated_at,
-        metadata: file.metadata
-      }));
+        metadata: file.metadata || {}
+      } as RepositoryObject));
+      
+      // Extract common prefixes (directories)
+      const commonPrefixes = objects
+        .filter(obj => obj.type === 'directory')
+        .map(obj => obj.path);
       
       console.log('Returning objects:', objects);
-      return objects;
+      return {
+        objects: objects || [],
+        commonPrefixes: commonPrefixes || [],
+        isTruncated: false
+      };
     } catch (error) {
       console.error('Error listing objects:', error);
-      return [];
+      return { objects: [], commonPrefixes: [], isTruncated: false };
     }
   }
 
-  async getObjectInfo(params: {
-    account_id: string;
-    repository_id: string;
-    object_path: string;
-  }): Promise<Partial<RepositoryObject>> {
+  async getObjectInfo(params: GetObjectParams): Promise<RepositoryObject> {
     const fullPath = this.getFullPath(params);
     
     try {
       const stats = await fs.stat(fullPath);
       
       // Get metadata from .source-metadata.json
-      const objectMetadata = await this.getObjectMetadata(params);
+      const objectMetadata = await this.getObjectMetadata({
+        account_id: params.account_id,
+        repository_id: params.repository_id,
+        object_path: params.object_path
+      });
 
       return {
         id: params.object_path,
@@ -215,15 +222,12 @@ export class LocalStorageClient implements StorageClient {
         type: 'file',
         created_at: stats.birthtime.toISOString(),
         updated_at: stats.mtime.toISOString(),
-        metadata: objectMetadata
+        checksum: '',
+        metadata: objectMetadata || {}
       };
     } catch (error) {
       console.error('Error getting object info:', error);
-      return {
-        size: 0,
-        type: 'file',
-        updated_at: new Date().toISOString()
-      };
+      throw error;
     }
   }
 } 

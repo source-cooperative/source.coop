@@ -1,0 +1,14 @@
+.nav {
+  border-bottom: 1px solid var(--gray-5);
+  background: var(--gray-1);
+}
+
+.logo {
+  text-decoration: none;
+  color: inherit;
+}
+
+.rotate {
+  transform: rotate(180deg);
+  transition: transform 0.2s ease;
+} 

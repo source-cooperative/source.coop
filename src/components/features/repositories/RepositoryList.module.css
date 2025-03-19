@@ -46,11 +46,11 @@
 }
 
 .item h2 {
-  margin: 0 0 0.5rem 0;
-  font-size: 1.25rem;
-  font-weight: 600;
+  margin: 0;
+  font-size: var(--font-size-5);
+  line-height: var(--line-height-5);
+  font-weight: var(--font-weight-7);
   color: var(--gray-12);
-  contain: content;
 }
 
 .item .description {
@@ -80,4 +80,12 @@
 .item .badge.private {
   background: var(--red-3);
   color: var(--red-11);
+}
+
+.empty {
+  text-align: center;
+  padding: var(--space-8);
+  color: var(--gray-11);
+  font-size: var(--font-size-2);
+  line-height: var(--line-height-2);
 } 

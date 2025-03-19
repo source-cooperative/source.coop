@@ -3,139 +3,401 @@
     {
       "PutRequest": {
         "Item": {
-          "account_id": {"S": "jed"},
-          "type": {"S": "individual"},
-          "name": {"S": "Jed Sundwall"},
-          "description": {"S": "Executive Director at Radiant Earth"},
-          "email": {"S": "jedsundwall@gmail.com"},
-          "website": {"S": "https://jed.co"},
-          "orcid": {"S": "0000-0001-9681-230X"},
-          "created_at": {"S": "2024-01-01T00:00:00Z"},
-          "updated_at": {"S": "2024-02-08T00:00:00Z"}
+          "account_id": {
+            "S": "jed"
+          },
+          "ory_id": {
+            "S": "ory_b10286da6bed4ca490aaff78b243268e"
+          },
+          "name": {
+            "S": "Jed Sundwall"
+          },
+          "type": {
+            "S": "individual"
+          },
+          "email": {
+            "S": "jed@example.com"
+          },
+          "website": {
+            "S": "https://example.com"
+          },
+          "description": {
+            "S": "System administrator"
+          },
+          "orcid": {
+            "S": "0000-0000-0000-0000"
+          },
+          "created_at": {
+            "S": "2025-03-19T03:13:12.943Z"
+          },
+          "updated_at": {
+            "S": "2025-03-19T03:13:12.944Z"
+          }
         }
       }
     },
     {
       "PutRequest": {
         "Item": {
-          "account_id": {"S": "microsoft"},
-          "type": {"S": "organization"},
-          "name": {"S": "Microsoft"},
-          "description": {"S": "Building technology that creates opportunities. Home to the Planetary Computer, providing global environmental data and computing resources."},
-          "website": {"S": "https://microsoft.com"},
-          "owner_account_id": {"S": "jed"},
-          "admin_account_ids": {"SS": ["jed"]},
-          "created_at": {"S": "2024-01-01T00:00:00Z"},
-          "updated_at": {"S": "2024-02-08T00:00:00Z"}
+          "account_id": {
+            "S": "jane"
+          },
+          "ory_id": {
+            "S": "ory_2f140e8a5d7946c09b2c7f0a7e106d7f"
+          },
+          "name": {
+            "S": "Jane Smith"
+          },
+          "type": {
+            "S": "individual"
+          },
+          "email": {
+            "S": "jane@example.com"
+          },
+          "website": {
+            "S": "https://janesmith.com"
+          },
+          "description": {
+            "S": "Data scientist and researcher"
+          },
+          "orcid": {
+            "S": "0000-0000-0000-0001"
+          },
+          "created_at": {
+            "S": "2025-03-19T03:13:12.944Z"
+          },
+          "updated_at": {
+            "S": "2025-03-19T03:13:12.944Z"
+          }
         }
       }
     },
     {
       "PutRequest": {
         "Item": {
-          "account_id": {"S": "noaa"},
-          "type": {"S": "organization"},
-          "name": {"S": "National Oceanic and Atmospheric Administration"},
-          "description": {"S": "Science, Service, and Stewardship. NOAA is an American scientific and regulatory agency that forecasts weather, monitors oceanic and atmospheric conditions, charts the seas, and protects ocean and coastal resources."},
-          "website": {"S": "https://noaa.gov"},
-          "owner_account_id": {"S": "jed"},
-          "admin_account_ids": {"SS": ["jed"]},
-          "created_at": {"S": "2024-01-01T00:00:00Z"},
-          "updated_at": {"S": "2024-02-08T00:00:00Z"}
+          "account_id": {
+            "S": "john"
+          },
+          "ory_id": {
+            "S": "ory_cd66eb6b6a8845e88657334f76ddb780"
+          },
+          "name": {
+            "S": "John Doe"
+          },
+          "type": {
+            "S": "individual"
+          },
+          "email": {
+            "S": "john@example.com"
+          },
+          "website": {
+            "S": "https://johndoe.com"
+          },
+          "description": {
+            "S": "Software engineer"
+          },
+          "orcid": {
+            "S": "0000-0000-0000-0002"
+          },
+          "created_at": {
+            "S": "2025-03-19T03:13:12.944Z"
+          },
+          "updated_at": {
+            "S": "2025-03-19T03:13:12.944Z"
+          }
         }
       }
     },
     {
       "PutRequest": {
         "Item": {
-          "account_id": {"S": "usgs"},
-          "type": {"S": "organization"},
-          "name": {"S": "United States Geological Survey"},
-          "description": {"S": "Science for a changing world. USGS provides science about the natural hazards that threaten lives and livelihoods, the water, energy, minerals, and other natural resources, and the impacts of climate and land-use change."},
-          "website": {"S": "https://www.usgs.gov"},
-          "owner_account_id": {"S": "jed"},
-          "admin_account_ids": {"SS": ["jed"]},
-          "created_at": {"S": "2024-01-01T00:00:00Z"},
-          "updated_at": {"S": "2024-02-08T00:00:00Z"}
+          "account_id": {
+            "S": "nasa"
+          },
+          "ory_id": {
+            "S": "ory_85b3969631b8430cb28748053b2c2862"
+          },
+          "name": {
+            "S": "NASA"
+          },
+          "type": {
+            "S": "organization"
+          },
+          "owner_account_id": {
+            "S": "jed"
+          },
+          "admin_account_ids": {
+            "SS": [
+              "jed",
+              "jane"
+            ]
+          },
+          "created_at": {
+            "S": "2025-03-19T03:13:12.944Z"
+          },
+          "updated_at": {
+            "S": "2025-03-19T03:13:12.944Z"
+          }
         }
       }
     },
     {
       "PutRequest": {
         "Item": {
-          "account_id": {"S": "esa"},
-          "type": {"S": "organization"},
-          "name": {"S": "European Space Agency"},
-          "description": {"S": "Europe's gateway to space. ESA is Europe's space agency, working to unite space exploration efforts across European nations and provide Earth observation, navigation, and space science missions."},
-          "website": {"S": "https://www.esa.int"},
-          "owner_account_id": {"S": "jed"},
-          "admin_account_ids": {"SS": ["jed"]},
-          "created_at": {"S": "2024-01-01T00:00:00Z"},
-          "updated_at": {"S": "2024-02-08T00:00:00Z"}
+          "account_id": {
+            "S": "esa"
+          },
+          "ory_id": {
+            "S": "ory_4fd3e9114b5c4b1ab5cc173efa2ba507"
+          },
+          "name": {
+            "S": "European Space Agency"
+          },
+          "type": {
+            "S": "organization"
+          },
+          "owner_account_id": {
+            "S": "jane"
+          },
+          "admin_account_ids": {
+            "SS": [
+              "jane",
+              "john"
+            ]
+          },
+          "created_at": {
+            "S": "2025-03-19T03:13:12.944Z"
+          },
+          "updated_at": {
+            "S": "2025-03-19T03:13:12.944Z"
+          }
         }
       }
     },
     {
       "PutRequest": {
         "Item": {
-          "account_id": {"S": "usda"},
-          "type": {"S": "organization"},
-          "name": {"S": "United States Department of Agriculture"},
-          "description": {"S": "Agriculture, food, natural resources, rural development, nutrition, and related issues. USDA provides leadership on food, agriculture, natural resources, rural development, and nutrition."},
-          "website": {"S": "https://www.usda.gov"},
-          "owner_account_id": {"S": "jed"},
-          "admin_account_ids": {"SS": ["jed"]},
-          "created_at": {"S": "2024-01-01T00:00:00Z"},
-          "updated_at": {"S": "2024-02-08T00:00:00Z"}
+          "account_id": {
+            "S": "jpl"
+          },
+          "ory_id": {
+            "S": "ory_0f02ebd557c84a67a38e6bdc014ba5c2"
+          },
+          "name": {
+            "S": "Jet Propulsion Laboratory"
+          },
+          "type": {
+            "S": "organization"
+          },
+          "owner_account_id": {
+            "S": "nasa"
+          },
+          "admin_account_ids": {
+            "SS": [
+              "nasa",
+              "jed"
+            ]
+          },
+          "created_at": {
+            "S": "2025-03-19T03:13:12.944Z"
+          },
+          "updated_at": {
+            "S": "2025-03-19T03:13:12.944Z"
+          }
         }
       }
     },
     {
       "PutRequest": {
         "Item": {
-          "account_id": {"S": "ecmwf"},
-          "type": {"S": "organization"},
-          "name": {"S": "European Centre for Medium-Range Weather Forecasts"},
-          "description": {"S": "Independent intergovernmental organization producing global numerical weather predictions. ECMWF operates two services from the EU's Copernicus Earth observation programme and provides numerical weather predictions to its member states."},
-          "website": {"S": "https://www.ecmwf.int"},
-          "owner_account_id": {"S": "jed"},
-          "admin_account_ids": {"SS": ["jed"]},
-          "created_at": {"S": "2024-01-01T00:00:00Z"},
-          "updated_at": {"S": "2024-02-08T00:00:00Z"}
+          "account_id": {
+            "S": "microsoft"
+          },
+          "ory_id": {
+            "S": "ory_c817d153860a49189827b32d2151ad39"
+          },
+          "name": {
+            "S": "Microsoft"
+          },
+          "type": {
+            "S": "organization"
+          },
+          "owner_account_id": {
+            "S": "jed"
+          },
+          "admin_account_ids": {
+            "SS": [
+              "jed"
+            ]
+          },
+          "created_at": {
+            "S": "2025-03-19T03:13:12.944Z"
+          },
+          "updated_at": {
+            "S": "2025-03-19T03:13:12.944Z"
+          }
         }
       }
     },
     {
       "PutRequest": {
         "Item": {
-          "account_id": {"S": "nasa"},
-          "type": {"S": "organization"},
-          "name": {"S": "National Aeronautics and Space Administration"},
-          "description": {"S": "Leading space exploration and scientific discovery. NASA's vision is to discover and expand knowledge for the benefit of humanity, pioneering the future in space exploration, scientific discovery, and aeronautics research."},
-          "website": {"S": "https://www.nasa.gov"},
-          "owner_account_id": {"S": "jed"},
-          "admin_account_ids": {"SS": ["jed"]},
-          "created_at": {"S": "2024-01-01T00:00:00Z"},
-          "updated_at": {"S": "2024-02-08T00:00:00Z"},
-          "logo_svg": {"S": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M50 20a30 30 0 1 0 0 60 30 30 0 0 0 0-60zm0 8a22 22 0 1 1 0 44 22 22 0 0 1 0-44z' fill='currentColor'/><path d='M35 50h40m-8-12l8 12-8 12' stroke='currentColor' stroke-width='6' stroke-linecap='round' fill='none'/></svg>"},
-          "logo_dark_mode_svg": {"S": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M50 20a30 30 0 1 0 0 60 30 30 0 0 0 0-60zm0 8a22 22 0 1 1 0 44 22 22 0 0 1 0-44z' fill='white'/><path d='M35 50h40m-8-12l8 12-8 12' stroke='white' stroke-width='6' stroke-linecap='round' fill='none'/></svg>"}
+          "account_id": {
+            "S": "noaa"
+          },
+          "ory_id": {
+            "S": "ory_1ba18d6ee53a449a9bfb0c25d15f4857"
+          },
+          "name": {
+            "S": "National Oceanic and Atmospheric Administration"
+          },
+          "type": {
+            "S": "organization"
+          },
+          "owner_account_id": {
+            "S": "jed"
+          },
+          "admin_account_ids": {
+            "SS": [
+              "jed"
+            ]
+          },
+          "created_at": {
+            "S": "2025-03-19T03:13:12.944Z"
+          },
+          "updated_at": {
+            "S": "2025-03-19T03:13:12.944Z"
+          }
         }
       }
     },
     {
       "PutRequest": {
         "Item": {
-          "account_id": {"S": "planetary-computer"},
-          "type": {"S": "organization"},
-          "name": {"S": "Microsoft Planetary Computer"},
-          "description": {"S": "A platform for global environmental data. The Planetary Computer combines a multi-petabyte catalog of global environmental data with intuitive APIs, a flexible scientific computing environment, and the power of AI."},
-          "website": {"S": "https://planetarycomputer.microsoft.com"},
-          "owner_account_id": {"S": "jed"},
-          "admin_account_ids": {"SS": ["jed"]},
-          "created_at": {"S": "2024-01-01T00:00:00Z"},
-          "updated_at": {"S": "2024-02-08T00:00:00Z"}
+          "account_id": {
+            "S": "usgs"
+          },
+          "ory_id": {
+            "S": "ory_fba5681211ce4dbe849b79ead6bed025"
+          },
+          "name": {
+            "S": "United States Geological Survey"
+          },
+          "type": {
+            "S": "organization"
+          },
+          "owner_account_id": {
+            "S": "jed"
+          },
+          "admin_account_ids": {
+            "SS": [
+              "jed"
+            ]
+          },
+          "created_at": {
+            "S": "2025-03-19T03:13:12.944Z"
+          },
+          "updated_at": {
+            "S": "2025-03-19T03:13:12.944Z"
+          }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "account_id": {
+            "S": "usda"
+          },
+          "ory_id": {
+            "S": "ory_7b340fa784e040c6a718d83cda37f693"
+          },
+          "name": {
+            "S": "United States Department of Agriculture"
+          },
+          "type": {
+            "S": "organization"
+          },
+          "owner_account_id": {
+            "S": "jed"
+          },
+          "admin_account_ids": {
+            "SS": [
+              "jed"
+            ]
+          },
+          "created_at": {
+            "S": "2025-03-19T03:13:12.944Z"
+          },
+          "updated_at": {
+            "S": "2025-03-19T03:13:12.944Z"
+          }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "account_id": {
+            "S": "ecmwf"
+          },
+          "ory_id": {
+            "S": "ory_7a012ade617a4df8b3548dacf7262efa"
+          },
+          "name": {
+            "S": "European Centre for Medium-Range Weather Forecasts"
+          },
+          "type": {
+            "S": "organization"
+          },
+          "owner_account_id": {
+            "S": "jed"
+          },
+          "admin_account_ids": {
+            "SS": [
+              "jed"
+            ]
+          },
+          "created_at": {
+            "S": "2025-03-19T03:13:12.944Z"
+          },
+          "updated_at": {
+            "S": "2025-03-19T03:13:12.944Z"
+          }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "account_id": {
+            "S": "radiant"
+          },
+          "ory_id": {
+            "S": "ory_4e441c5fa8f24b9c983d797f2cddeada"
+          },
+          "name": {
+            "S": "Radiant Earth Foundation"
+          },
+          "type": {
+            "S": "organization"
+          },
+          "owner_account_id": {
+            "S": "jed"
+          },
+          "admin_account_ids": {
+            "SS": [
+              "jed"
+            ]
+          },
+          "created_at": {
+            "S": "2025-03-19T03:13:12.944Z"
+          },
+          "updated_at": {
+            "S": "2025-03-19T03:13:12.944Z"
+          }
         }
       }
     }
   ]
-} 
+}

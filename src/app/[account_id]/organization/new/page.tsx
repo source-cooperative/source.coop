@@ -1,5 +1,6 @@
 import { Container, Box, Heading } from '@radix-ui/themes';
-import { Form } from '@/components/core/Form';
+import { FormWrapper } from '@/components/core';
+import type { FormField } from '@/types/form';
 import { redirect } from 'next/navigation';
 import { notFound } from 'next/navigation';
 import type { Account } from '@/types';
@@ -52,27 +53,27 @@ export default async function NewOrganizationPage({ params }: PageProps) {
     {
       label: 'Organization Name',
       name: 'name',
-      type: 'text',
+      type: 'text' as const,
       required: true,
       description: 'The name of your organization',
     },
     {
       label: 'Description',
       name: 'description',
-      type: 'textarea',
+      type: 'textarea' as const,
       required: true,
       description: 'A brief description of your organization',
     },
     {
       label: 'Website',
       name: 'website',
-      type: 'url',
+      type: 'url' as const,
       description: 'Your organization\'s website (optional)',
     },
     {
       label: 'Email',
       name: 'email',
-      type: 'email',
+      type: 'email' as const,
       description: 'Contact email for your organization (optional)',
     },
   ];
@@ -81,7 +82,7 @@ export default async function NewOrganizationPage({ params }: PageProps) {
     <Container>
       <Box py="9">
         <Heading size="8" mb="6">Create New Organization</Heading>
-        <Form
+        <FormWrapper
           fields={fields}
           onSubmit={handleSubmit}
           submitLabel="Create Organization"

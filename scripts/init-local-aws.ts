@@ -1,7 +1,6 @@
-import { DynamoDBClient, CreateTableCommand } from "@aws-sdk/client-dynamodb";
+import { DynamoDBClient, CreateTableCommand, DeleteTableCommand } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocument } from "@aws-sdk/lib-dynamodb";
-import { exampleAccounts } from "../src/fixtures/example-accounts";
-import { exampleRepositories } from "../src/fixtures/example-data";
+import { accounts, repositories } from '../src/fixtures/test-data';
 
 const client = new DynamoDBClient({
   endpoint: "http://localhost:8000",
@@ -14,7 +13,29 @@ const client = new DynamoDBClient({
 
 const docClient = DynamoDBDocument.from(client);
 
+async function deleteTable(tableName: string) {
+  try {
+    await client.send(new DeleteTableCommand({
+      TableName: tableName
+    }));
+    console.log(`✓ Deleted ${tableName} table`);
+  } catch (e) {
+    if ((e as any).name === 'ResourceNotFoundException') {
+      console.log(`→ ${tableName} table does not exist`);
+    } else {
+      console.error(`✗ Error deleting ${tableName} table:`, e);
+    }
+  }
+}
+
 async function initializeLocalDB() {
+  // Delete existing tables
+  await deleteTable("Repositories");
+  await deleteTable("Accounts");
+  
+  // Wait for tables to be fully deleted
+  await new Promise(resolve => setTimeout(resolve, 2000));
+
   // Create tables
   try {
     await client.send(new CreateTableCommand({
@@ -29,38 +50,47 @@ async function initializeLocalDB() {
     }));
     console.log("✓ Created Accounts table");
   } catch (e) {
-    if ((e as any).name === 'ResourceInUseException') {
-      console.log("→ Accounts table already exists");
-    } else {
-      console.error("✗ Error creating Accounts table:", e);
-    }
+    console.error("✗ Error creating Accounts table:", e);
+    throw e;
   }
 
   try {
     await client.send(new CreateTableCommand({
       TableName: "Repositories",
       AttributeDefinitions: [
-        { AttributeName: "repository_id", AttributeType: "S" }
+        { AttributeName: "repository_id", AttributeType: "S" },
+        { AttributeName: "account_id", AttributeType: "S" }
       ],
       KeySchema: [
         { AttributeName: "repository_id", KeyType: "HASH" }
       ],
+      GlobalSecondaryIndexes: [
+        {
+          IndexName: "account_id-index",
+          KeySchema: [
+            { AttributeName: "account_id", KeyType: "HASH" }
+          ],
+          Projection: {
+            ProjectionType: "ALL"
+          }
+        }
+      ],
       BillingMode: "PAY_PER_REQUEST"
     }));
-    console.log("✓ Created Repositories table");
+    console.log("✓ Created Repositories table with account_id GSI");
   } catch (e) {
-    if ((e as any).name === 'ResourceInUseException') {
-      console.log("→ Repositories table already exists");
-    } else {
-      console.error("✗ Error creating Repositories table:", e);
-    }
+    console.error("✗ Error creating Repositories table:", e);
+    throw e;
   }
+
+  // Wait for tables to be fully created
+  await new Promise(resolve => setTimeout(resolve, 2000));
 
   // Load example data
   try {
     console.log("\nLoading example data...");
     
-    for (const account of exampleAccounts) {
+    for (const account of accounts) {
       await docClient.put({
         TableName: "Accounts",
         Item: account
@@ -68,16 +98,20 @@ async function initializeLocalDB() {
     }
     console.log("✓ Loaded example accounts");
 
-    for (const repository of exampleRepositories) {
+    for (const repository of repositories) {
       await docClient.put({
         TableName: "Repositories",
-        Item: repository
+        Item: {
+          ...repository,
+          account_id: repository.account.account_id // Add account_id field for GSI
+        }
       });
     }
     console.log("✓ Loaded example repositories");
   } catch (e) {
     console.error("✗ Error loading example data:", e);
+    throw e;
   }
 }
 
-initializeLocalDB(); 
+initializeLocalDB().catch(console.error); 

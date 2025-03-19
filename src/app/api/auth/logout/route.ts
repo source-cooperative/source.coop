@@ -2,6 +2,9 @@ import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 
+// Use the Ory tunnel URL for local development
+const KRATOS_URL = process.env.ORY_API_URL || 'http://localhost:4000';
+
 export async function POST() {
   try {
     logger.info('Logout attempt', {
@@ -21,7 +24,7 @@ export async function POST() {
     }
 
     // Try to logout from Ory Kratos
-    const response = await fetch(`${process.env.ORY_API_URL}/self-service/logout/browser`, {
+    const response = await fetch(`${KRATOS_URL}/self-service/logout/browser`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

@@ -9,87 +9,54 @@
  * 5. No helper functions unless truly needed
  */
 
-// External packages
 import { notFound } from 'next/navigation';
 import { Container } from '@radix-ui/themes';
+import { IndividualProfile } from '@/components/features/profiles';
+import { OrganizationProfile } from '@/components/features/profiles';
+import { fetchAccount, fetchRepositoriesByAccount, fetchOrganizationMembers } from '@/lib/db';
+import type { Account, OrganizationalAccount } from '@/types';
 
-// Internal components
-import { IndividualProfile, OrganizationProfile } from '@/components/features/profiles';
+interface PageProps {
+  params: Promise<{ account_id: string }>;
+}
 
-// Types
-import type { Repository, Account } from '@/types';
+export default async function AccountPage({ params }: PageProps) {
+  const { account_id } = await params;
 
-// Utilities
-import { fetchRepositories, fetchAccounts } from '@/lib/db/operations';
-
-export default async function AccountPage({ 
-  params 
-}: { 
-  params: { 
-    account_id: string;
-  }
-}) {
-  const { account_id } = await Promise.resolve(params);
-  const [repositories, accounts]: [Repository[], Account[]] = await Promise.all([
-    fetchRepositories(),
-    fetchAccounts()
-  ]);
-  
-  const account: Account = accounts.find(acc => acc.account_id === account_id)!;
+  // Get account data
+  const account = await fetchAccount(account_id);
   if (!account) {
     notFound();
   }
 
-  // Get repositories owned by this account
-  const ownedRepositories: Repository[] = repositories.filter(
-    repo => repo.account.account_id === account_id
-  );
+  // Get repositories for this account
+  const repositories = await fetchRepositoriesByAccount(account_id);
 
-  if (account.type === 'individual') {
-    // Get organizations this individual belongs to
-    const organizations = accounts.filter(acc => 
-      acc.type === 'organization' && 
-      (acc.owner_account_id === account_id || acc.admin_account_ids.includes(account_id))
-    );
-
-    // Get repositories this individual contributes to
-    const contributedRepositories = repositories.filter(repo => 
-      repo.account.account_id !== account_id && // Not owned by this user
-      repo.contributors?.includes(account_id) // User is a contributor
-    );
-
-    return (
-      <Container size="4" py="6">
-        <IndividualProfile
-          account={account}
-          ownedRepositories={ownedRepositories}
-          contributedRepositories={contributedRepositories}
-          organizations={organizations}
-        />
-      </Container>
-    );
-  } else {
-    // Get owner account
-    const owner = accounts.find(acc => acc.account_id === account.owner_account_id);
-    if (!owner) {
-      notFound();
-    }
-
-    // Get all members (admins + regular members)
-    const members = accounts.filter(acc => 
-      acc.type === 'individual' && 
-      (acc.account_id === account.owner_account_id || account.admin_account_ids.includes(acc.account_id))
-    );
-
+  // If this is an organization, get member details
+  if (account.type === 'organization') {
+    const { owner, admins, members } = await fetchOrganizationMembers(account as OrganizationalAccount);
     return (
       <Container size="4" py="6">
         <OrganizationProfile
-          account={account}
-          repositories={ownedRepositories}
-          members={members}
+          account={account as OrganizationalAccount}
+          repositories={repositories}
           owner={owner}
+          admins={admins}
+          members={members}
         />
       </Container>
     );
   }
+
+  // For individual accounts
+  return (
+    <Container size="4" py="6">
+      <IndividualProfile
+        account={account}
+        ownedRepositories={repositories}
+        contributedRepositories={[]}
+        organizations={[]}
+      />
+    </Container>
+  );
 } 

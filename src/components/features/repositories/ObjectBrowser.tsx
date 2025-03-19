@@ -48,18 +48,33 @@ function buildDirectoryTree(objects: RepositoryObject[], currentPath: string[] =
     const parts = relativePath.split('/');
     if (!parts[0]) return;
     
-    const nodeName = parts[0];
-    const isDirectory = parts.length > 1 || obj.type === 'directory';
+    // If we have more than one part, this is a nested path
+    // We only want to show direct children of the current directory
+    if (parts.length > 1) {
+      const nodeName = parts[0];
+      if (!root[nodeName]) {
+        root[nodeName] = {
+          name: nodeName,
+          path: prefix + nodeName,
+          size: 0,
+          updated_at: new Date().toISOString(),
+          isDirectory: true
+        };
+      }
+      return;
+    }
     
-    // Only add if it's a direct child of current path
-    if (!root[nodeName]) {
+    // This is a direct child of the current directory
+    const nodeName = parts[0];
+    // Only add if we haven't seen this name before or if it's a file (files take precedence)
+    if (!root[nodeName] || !root[nodeName].isDirectory) {
       root[nodeName] = {
         name: nodeName,
         path: obj.path,
         size: obj.size,
         updated_at: obj.updated_at,
-        isDirectory,
-        object: parts.length === 1 ? obj : undefined
+        isDirectory: obj.type === 'directory',
+        object: obj
       };
     }
   });
@@ -266,8 +281,10 @@ export function ObjectBrowser({ repository, objects, initialPath = '', selectedO
     onNavigateToFile: navigateToFile
   });
 
-  // If a specific file is selected, show file details
-  if (selectedObject && selectedObject.type !== 'directory') {
+  // If we have a selected object and it's a file, show file details
+  // Only show file details if the file exists in our objects list
+  if (selectedObject && selectedObject.type !== 'directory' && 
+      objects.some(obj => obj.path === selectedObject.path)) {
     return (
       <>
         <ObjectDetails
@@ -285,6 +302,7 @@ export function ObjectBrowser({ repository, objects, initialPath = '', selectedO
     );
   }
 
+  // For directory view, show the contents of the current directory
   return (
     <>
       <Card>

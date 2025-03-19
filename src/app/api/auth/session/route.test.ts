@@ -50,18 +50,12 @@ describe('Session API', () => {
   });
 
   it('returns user data when session is valid', async () => {
-    const mockKratosResponse = {
-      identity: {
-        id: 'test-id',
-        traits: {
-          email: 'test@example.com',
-          name: 'Test User',
-        },
+    const mockUser = {
+      id: 'test-id',
+      traits: {
+        email: 'test@example.com',
+        name: 'Test User',
       },
-      // Include other Kratos session data that we pass through
-      active: true,
-      authenticated_at: '2024-03-18T05:25:22.469Z',
-      expires_at: '2024-03-19T05:25:22.469Z',
     };
 
     (cookies as jest.Mock).mockReturnValue({
@@ -70,13 +64,13 @@ describe('Session API', () => {
 
     (global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
-      json: () => Promise.resolve(mockKratosResponse),
+      json: () => Promise.resolve({ identity: mockUser }),
     });
 
     const response = await GET();
     const data = await response.json();
 
-    expect(data).toEqual({ user: mockKratosResponse });
+    expect(data).toEqual({ user: mockUser });
   });
 
   it('handles errors gracefully', async () => {

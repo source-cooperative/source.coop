@@ -1,3 +1,76 @@
+# Source Cooperative 
+
+A data publishing utility that allows trusted organizations and individuals to share data using standard HTTP methods.
+
+## Project Status
+
+Source Cooperative is operational and available at [https://source.coop](https://source.coop), providing access to over 800TB of data. 
+
+A new version of the Source Cooperative web app called *S2* is under active development. It is currently only available to be deployed locallt and is not yet available in staging or production environments.
+
+### Development Stages
+- **Current**: Local Development (v0.1.0 - v0.3.0)
+- **Planned**: Staging Environment (v0.4.0)
+- **Planned**: Production Release (v0.6.0)
+
+## Documentation
+
+The project documentation is organized in the `docs/` directory with the following structure:
+
+```
+docs/
+├── architecture/           # System architecture and design
+│   ├── overview.md        # High-level system overview
+│   ├── data-model.md      # Data structures and relationships
+│   ├── storage.md         # Storage architecture details
+│   └── authentication.md  # Authentication and authorization
+├── development/           # Development guidelines
+│   ├── setup.md          # Development environment setup
+│   ├── coding-standards.md # Coding standards and practices
+│   ├── testing.md        # Testing guidelines and protocols
+│   └── performance.md    # Performance optimization guidelines
+├── roadmap/              # Project roadmap and planning
+│   ├── overview.md       # High-level roadmap
+│   ├── current.md        # Current sprint and priorities
+│   └── future.md         # Future considerations
+└── releases/             # Release information
+    └── changelog.md      # Detailed changelog
+```
+
+### Key Documentation Sections
+
+- **Architecture**: System design, data models, and technical decisions
+- **Development**: Guidelines for contributing and development practices
+- **Roadmap**: Project planning and future development stages
+- **Releases**: Version history and changelog
+
+## Development Setup
+
+### Prerequisites
+- Node.js 18+
+- Docker and Docker Compose
+- Git
+
+### Local Development
+1. Clone the repository
+2. Copy `.env.example` to `.env.local`
+3. Install dependencies: `npm install`
+4. Start development server: `npm run dev`
+
+### Development Environment
+- Local DynamoDB running on port 8000
+- Local file storage in `./test-storage`
+- Ory Kratos for authentication
+- Environment variables in `.env.local`
+
+## Contributing
+
+See [Development Guidelines](docs/development/coding-standards.md) for detailed information about contributing to the project.
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
 ### Key Features
 
 - Repository browsing and discovery
@@ -22,12 +95,6 @@ npm run start      # Start production server
 npm run lint       # Run ESLint
 npm run type-check # Run TypeScript checks
 ```
-
-### Contributing
-
-1. Create a new branch for your feature
-2. Make your changes following the project conventions
-3. Submit a pull request with a clear description of your changes
 
 ### Troubleshooting
 
@@ -54,9 +121,5 @@ npm run type-check # Run TypeScript checks
 - [Next.js Documentation](https://nextjs.org/docs)
 - [Radix UI Documentation](https://www.radix-ui.com/docs/primitives/overview/introduction)
 - [TypeScript Documentation](https://www.typescriptlang.org/docs/)
-
-### License
-
-Source Cooperative is licensed under the Apache License, Version 2.0. See the [LICENSE](LICENSE) file for details.
 
 Copyright 2024 Radiant Earth 

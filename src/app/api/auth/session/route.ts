@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { logger } from '@/lib/logger';
 
+// Use the Ory tunnel URL for local development
+const KRATOS_URL = process.env.ORY_API_URL || 'http://localhost:4000';
+
 export async function GET() {
   try {
     logger.info('Session check', {
@@ -16,7 +19,7 @@ export async function GET() {
     }
 
     // Try to validate the session
-    const response = await fetch(`${process.env.ORY_API_URL}/sessions/whoami`, {
+    const response = await fetch(`${KRATOS_URL}/sessions/whoami`, {
       headers: {
         Cookie: `ory_kratos_session=${sessionCookie.value}`,
       },

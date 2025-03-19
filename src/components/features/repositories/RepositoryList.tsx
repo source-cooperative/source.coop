@@ -18,6 +18,14 @@ export function RepositoryList({ repositories }: RepositoryListProps) {
     onShowHelp: () => setShowHelp(true)
   });
 
+  if (!repositories.length) {
+    return (
+      <p className={styles.empty}>
+        No repositories found.
+      </p>
+    );
+  }
+
   return (
     <nav aria-label="Repository list">
       <ul className={styles.list} role="listbox">

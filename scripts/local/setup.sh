@@ -28,16 +28,27 @@ else
     echo -e "${GREEN}${CHECK} DynamoDB Local is already running${NC}"
 fi
 
+# Generate test data
+echo -e "\n${YELLOW}=== Generating Test Data ===${NC}"
+echo -e "${YELLOW}${ARROW} Generating test data...${NC}"
+npx tsx scripts/local/generate-test-data.ts
+
 # Create tables
 echo -e "\n${YELLOW}=== Creating Tables ===${NC}"
 
 echo -e "\n${YELLOW}${ARROW} Creating Accounts table...${NC}"
 if aws dynamodb create-table \
-    --table-name Accounts \
-    --attribute-definitions AttributeName=account_id,AttributeType=S \
-    --key-schema AttributeName=account_id,KeyType=HASH \
-    --billing-mode PAY_PER_REQUEST \
     --endpoint-url http://localhost:8000 \
+    --table-name Accounts \
+    --attribute-definitions \
+        AttributeName=account_id,AttributeType=S \
+        AttributeName=ory_id,AttributeType=S \
+    --key-schema \
+        AttributeName=account_id,KeyType=HASH \
+    --global-secondary-indexes \
+        "[{\"IndexName\": \"OryIdIndex\",\"KeySchema\":[{\"AttributeName\":\"ory_id\",\"KeyType\":\"HASH\"}],\"Projection\":{\"ProjectionType\":\"ALL\"},\"ProvisionedThroughput\":{\"ReadCapacityUnits\":5,\"WriteCapacityUnits\":5}}]" \
+    --provisioned-throughput \
+        ReadCapacityUnits=5,WriteCapacityUnits=5 \
     > /dev/null 2>&1; then
     echo -e "${GREEN}${CHECK} Created Accounts table${NC}"
 else
@@ -46,11 +57,18 @@ fi
 
 echo -e "\n${YELLOW}${ARROW} Creating Repositories table...${NC}"
 if aws dynamodb create-table \
-    --table-name Repositories \
-    --attribute-definitions AttributeName=repository_id,AttributeType=S \
-    --key-schema AttributeName=repository_id,KeyType=HASH \
-    --billing-mode PAY_PER_REQUEST \
     --endpoint-url http://localhost:8000 \
+    --table-name Repositories \
+    --attribute-definitions \
+        AttributeName=repository_id,AttributeType=S \
+        AttributeName=account_id,AttributeType=S \
+    --key-schema \
+        AttributeName=repository_id,KeyType=HASH \
+        AttributeName=account_id,KeyType=RANGE \
+    --global-secondary-indexes \
+        "[{\"IndexName\": \"AccountIdIndex\",\"KeySchema\":[{\"AttributeName\":\"account_id\",\"KeyType\":\"HASH\"}],\"Projection\":{\"ProjectionType\":\"ALL\"},\"ProvisionedThroughput\":{\"ReadCapacityUnits\":5,\"WriteCapacityUnits\":5}}]" \
+    --provisioned-throughput \
+        ReadCapacityUnits=5,WriteCapacityUnits=5 \
     > /dev/null 2>&1; then
     echo -e "${GREEN}${CHECK} Created Repositories table${NC}"
 else
@@ -88,10 +106,19 @@ fi
 echo -e "\n${YELLOW}=== Verifying Data ===${NC}"
 
 # Get counts directly
-ACCOUNT_COUNT=$(aws dynamodb scan --table-name Accounts --endpoint-url http://localhost:8000 --query "length(Items)" --output text)
+ACCOUNT_COUNT=$(aws dynamodb scan \
+    --endpoint-url http://localhost:8000 \
+    --table-name Accounts \
+    --select COUNT \
+    --output text)
 echo -e "\n${YELLOW}${ARROW} Accounts loaded: ${GREEN}${CHECK} ${ACCOUNT_COUNT} accounts found${NC}"
 
-REPO_COUNT=$(aws dynamodb scan --table-name Repositories --endpoint-url http://localhost:8000 --query "length(Items)" --output text)
+REPO_COUNT=$(aws dynamodb scan \
+    --endpoint-url http://localhost:8000 \
+    --table-name Repositories \
+    --select COUNT \
+    --output text)
 echo -e "${YELLOW}${ARROW} Repositories loaded: ${GREEN}${CHECK} ${REPO_COUNT} repositories found${NC}"
 
-echo -e "\n${GREEN}${CHECK} Setup complete!${NC}\n" 
+echo -e "\n${GREEN}${CHECK} Setup complete!${NC}\n"
+echo "Loaded $ACCOUNT_COUNT accounts and $REPO_COUNT repositories" 

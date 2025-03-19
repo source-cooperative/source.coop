@@ -16,7 +16,7 @@ import { Metadata } from 'next';
 
 // Internal components
 import { RepositoryHeader, ObjectBrowser } from '@/components/features/repositories';
-import { MarkdownViewer } from '@/components/features/markdown/MarkdownViewer';
+import { MarkdownViewer } from '@/components/features/markdown';
 
 // Types and utilities
 import type { Repository, RepositoryObject } from '@/types';
@@ -50,8 +50,12 @@ export default async function RepositoryPage({ params }: PageProps) {
   });
 
   // 3. Get objects from storage
-  const objects: RepositoryObject[] = await createStorageClient().listObjects({ account_id, repository_id })
-    .then(objects => objects
+  const objects: RepositoryObject[] = await createStorageClient().listObjects({ 
+    account_id, 
+    repository_id,
+    object_path: ''
+  })
+    .then(result => (result.objects || [])
       .filter(obj => obj.path)
       .map(obj => ({
         id: obj.path!, // We know path exists from filter
@@ -76,7 +80,7 @@ export default async function RepositoryPage({ params }: PageProps) {
       const result = await storage.getObject({
         account_id,
         repository_id,
-        path: 'README.md'
+        object_path: 'README.md'
       }) as StorageResult;
       
       if (result?.content?.content && typeof result.content.content === 'string') {
