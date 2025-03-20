@@ -151,71 +151,107 @@ export function RegistrationForm() {
   // Registration form
   return (
     <Form.Root onSubmit={handleSubmit}>
-      {/* Hidden CSRF token field */}
-      {csrfToken && (
-        <input type="hidden" name="csrf_token" value={csrfToken} />
+      {error && (
+        <Box mb="4">
+          <Text color="red" size="2">{error}</Text>
+          <Flex gap="2" mt="2">
+            <Button 
+              size="1" 
+              variant="soft" 
+              color="gray" 
+              onClick={() => window.location.reload()}
+            >
+              Retry
+            </Button>
+          </Flex>
+        </Box>
       )}
-      
-      {/* Email field */}
-      <Form.Field name="traits.email">
-        <Form.Label>Email</Form.Label>
-        <Form.Control asChild>
-          <input
-            type="email"
-            required
-            className="w-full p-2 border rounded"
-          />
-        </Form.Control>
-        <Form.Message match="valueMissing">
-          Please enter your email
-        </Form.Message>
-        <Form.Message match="typeMismatch">
-          Please enter a valid email
-        </Form.Message>
-      </Form.Field>
-      
-      {/* Password field */}
-      <Form.Field name="password" className="mt-3">
-        <Form.Label>Password</Form.Label>
-        <Form.Control asChild>
-          <input
-            type="password"
-            required
-            minLength={8}
-            className="w-full p-2 border rounded"
-          />
-        </Form.Control>
-        <Form.Message match="valueMissing">
-          Please enter a password
-        </Form.Message>
-        <Form.Message match="tooShort">
-          Password must be at least 8 characters
-        </Form.Message>
-      </Form.Field>
-      
-      {/* Confirm Password field (client-side only) */}
-      <Form.Field name="password_confirm" className="mt-3">
-        <Form.Label>Confirm Password</Form.Label>
-        <Form.Control asChild>
-          <input
-            type="password"
-            required
-            className="w-full p-2 border rounded"
-          />
-        </Form.Control>
-        {!passwordsMatch && (
-          <Text size="1" color="red" className="mt-1">
-            Passwords do not match
-          </Text>
-        )}
-      </Form.Field>
-      
-      {/* Submit button */}
-      <Form.Submit asChild>
-        <Button className="mt-4 w-full" disabled={submitLoading}>
-          {submitLoading ? 'Registering...' : 'Register'}
-        </Button>
-      </Form.Submit>
+
+      <Flex direction="column" gap="4">
+        <Form.Field name="traits.email">
+          <Flex direction="column" gap="1">
+            <Form.Label>
+              <Text size="3" weight="medium">Email</Text>
+            </Form.Label>
+            <Form.Control asChild>
+              <input 
+                type="email" 
+                name="traits.email"
+                placeholder="you@example.com"
+                required
+                className="px-4 py-3 text-lg rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:border-blue-500 focus:ring-blue-200 font-mono"
+                style={{ fontSize: 'var(--font-size-3)' }}
+              />
+            </Form.Control>
+            <Form.Message className="FormMessage" match="valueMissing">
+              <Text color="red" size="1">Please enter your email</Text>
+            </Form.Message>
+            <Form.Message className="FormMessage" match="typeMismatch">
+              <Text color="red" size="1">Please enter a valid email address</Text>
+            </Form.Message>
+          </Flex>
+        </Form.Field>
+
+        <Form.Field name="password">
+          <Flex direction="column" gap="1">
+            <Form.Label>
+              <Text size="3" weight="medium">Password</Text>
+            </Form.Label>
+            <Form.Control asChild>
+              <input 
+                type="password" 
+                name="password"
+                placeholder="********"
+                required
+                minLength={8}
+                className="px-4 py-3 text-lg rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:border-blue-500 focus:ring-blue-200 font-mono"
+                style={{ fontSize: 'var(--font-size-3)' }}
+              />
+            </Form.Control>
+            <Form.Message className="FormMessage" match="valueMissing">
+              <Text color="red" size="1">Please enter a password</Text>
+            </Form.Message>
+            <Form.Message className="FormMessage" match="tooShort">
+              <Text color="red" size="1">Password must be at least 8 characters</Text>
+            </Form.Message>
+          </Flex>
+        </Form.Field>
+
+        <Form.Field name="password_confirm">
+          <Flex direction="column" gap="1">
+            <Form.Label>
+              <Text size="3" weight="medium">Confirm Password</Text>
+            </Form.Label>
+            <Form.Control asChild>
+              <input 
+                type="password" 
+                name="password_confirm"
+                placeholder="********"
+                required
+                className="px-4 py-3 text-lg rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:border-blue-500 focus:ring-blue-200 font-mono"
+                style={{ fontSize: 'var(--font-size-3)' }}
+              />
+            </Form.Control>
+            {!passwordsMatch && (
+              <Text color="red" size="1">Passwords do not match</Text>
+            )}
+          </Flex>
+        </Form.Field>
+
+        {/* Add method as hidden input */}
+        <input type="hidden" name="method" value="password" />
+        
+        {/* Add CSRF token if available */}
+        {csrfToken && <input type="hidden" name="csrf_token" value={csrfToken} />}
+
+        <Flex mt="4" justify="end">
+          <Form.Submit asChild>
+            <Button size="3" type="submit" disabled={submitLoading}>
+              {submitLoading ? 'Registering...' : 'Register'}
+            </Button>
+          </Form.Submit>
+        </Flex>
+      </Flex>
     </Form.Root>
   );
 } 
