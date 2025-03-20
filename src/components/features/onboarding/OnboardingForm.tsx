@@ -10,20 +10,30 @@ export function OnboardingForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
+  const [isCheckingUsername, setIsCheckingUsername] = useState(false);
 
   const checkUsernameAvailability = async (username: string) => {
     if (!username || username.length < 3) {
       setUsernameAvailable(null);
       return;
     }
-
+    
+    setIsCheckingUsername(true);
     try {
       const response = await fetch(`/api/accounts/check-username?username=${encodeURIComponent(username)}`);
       const data = await response.json();
       setUsernameAvailable(data.available);
+      
+      if (!data.available && data.error) {
+        setError(data.error);
+      } else {
+        setError(null);
+      }
     } catch (err) {
       console.error('Error checking username:', err);
       setUsernameAvailable(null);
+    } finally {
+      setIsCheckingUsername(false);
     }
   };
 
@@ -46,6 +56,11 @@ export function OnboardingForm() {
         throw new Error('Name is required');
       }
 
+      // Final username availability check before submission
+      if (usernameAvailable === false) {
+        throw new Error('Username is not available. Please choose another one.');
+      }
+
       // Submit to API
       const response = await fetch('/api/accounts/onboarding', {
         method: 'POST',
@@ -58,13 +73,20 @@ export function OnboardingForm() {
         }),
       });
 
+      const data = await response.json();
+      
       if (!response.ok) {
-        const data = await response.json();
         throw new Error(data.error || 'Failed to complete onboarding');
       }
 
       // On success, redirect to profile page
-      router.push(`/${accountId}`);
+      console.log('Onboarding successful:', data);
+      
+      // Add a slight delay to ensure state updates are complete
+      setTimeout(() => {
+        router.push(`/${accountId}`);
+        router.refresh();
+      }, 300);
     } catch (err: any) {
       console.error('Onboarding error:', err);
       setError(err.message || 'An error occurred. Please try again.');
@@ -109,10 +131,13 @@ export function OnboardingForm() {
             <Form.Message className="FormMessage" match="patternMismatch">
               <Text color="red" size="1">Username can only contain letters, numbers, underscores, and hyphens</Text>
             </Form.Message>
-            {usernameAvailable === false && (
+            {isCheckingUsername && (
+              <Text color="gray" size="1">Checking availability...</Text>
+            )}
+            {!isCheckingUsername && usernameAvailable === false && (
               <Text color="red" size="1">This username is already taken</Text>
             )}
-            {usernameAvailable === true && (
+            {!isCheckingUsername && usernameAvailable === true && (
               <Text color="green" size="1">Username is available</Text>
             )}
             <Text size="1" color="gray">
@@ -147,7 +172,7 @@ export function OnboardingForm() {
 
         <Flex mt="4" justify="end">
           <Form.Submit asChild>
-            <Button size="3" type="submit" disabled={loading || usernameAvailable === false}>
+            <Button size="3" type="submit" disabled={loading || usernameAvailable === false || isCheckingUsername}>
               {loading ? 'Saving...' : 'Complete Profile'}
             </Button>
           </Form.Submit>

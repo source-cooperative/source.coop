@@ -16,7 +16,7 @@ sleep 2
 # Check if the tunnel is already running
 if ! check_port 4000; then
     echo "Starting Ory tunnel..."
-    ory tunnel http://localhost:3000 --project ff8f07bb-adb7-4399-af07-20e633a105f6
+    ory tunnel --dev --debug http://localhost:3000 --project ff8f07bb-adb7-4399-af07-20e633a105f6
 else
     echo "Ory tunnel is already running on port 4000"
 fi

@@ -1,43 +1,25 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { logger } from '@/lib/logger';
+import { getSession } from '@/lib/auth';
 
-// Use the Ory tunnel URL for local development
-const KRATOS_URL = process.env.ORY_API_URL || 'http://localhost:4000';
+const ORY_BASE_URL = process.env.ORY_BASE_URL || "http://localhost:4000";
 
 export async function GET() {
   try {
-    logger.info('Session check', {
-      operation: 'auth_session',
-      context: 'api'
-    });
-
-    const cookieStore = await cookies();
-    const sessionCookie = cookieStore.get('ory_kratos_session');
-    if (!sessionCookie) {
-      return NextResponse.json({ user: null });
+    // Use our existing getSession utility
+    const session = await getSession();
+    
+    if (!session) {
+      return NextResponse.json({ authenticated: false }, { status: 401 });
     }
-
-    // Try to validate the session
-    const response = await fetch(`${KRATOS_URL}/sessions/whoami`, {
-      headers: {
-        Cookie: `ory_kratos_session=${sessionCookie.value}`,
-      },
-    });
-
-    if (!response.ok) {
-      return NextResponse.json({ user: null });
-    }
-
-    const data = await response.json();
-    return NextResponse.json({ user: data });
+    
+    // Return the session data
+    return NextResponse.json(session);
   } catch (error) {
-    logger.error('Session check failed', {
-      operation: 'auth_session',
-      context: 'api',
-      error
-    });
-
-    return NextResponse.json({ user: null });
+    console.error('Session check failed:', error);
+    return NextResponse.json(
+      { error: 'Failed to get session' },
+      { status: 500 }
+    );
   }
 } 

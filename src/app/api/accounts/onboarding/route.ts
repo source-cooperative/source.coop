@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { IndividualAccount } from '@/types/account';
 
-const ORY_BASE_URL = process.env.ORY_BASE_URL || "https://playground.projects.oryapis.com";
+const ORY_BASE_URL = process.env.ORY_BASE_URL || "http://localhost:4000";
 
 export async function POST(request: NextRequest) {
   try {
@@ -79,6 +79,9 @@ export async function POST(request: NextRequest) {
     // In a real implementation, you would save this to your database
     console.log('Creating new account:', newAccount);
     
+    // TODO: Save to DynamoDB
+    // For demonstration, we'll just log the account creation
+    
     // Now update Ory identity to include account_id in the metadata
     const updateResponse = await fetch(`${ORY_BASE_URL}/admin/identities/${oryId}`, {
       method: 'PUT',
@@ -94,10 +97,16 @@ export async function POST(request: NextRequest) {
           ...session.identity.metadata_public,
           account_id,
         },
+        metadata_admin: {
+          ...session.identity.metadata_admin,
+          completed_onboarding: true,
+          onboarding_date: new Date().toISOString(),
+        },
       }),
     });
     
     if (!updateResponse.ok) {
+      console.error('Failed to update Ory identity:', await updateResponse.text());
       return NextResponse.json(
         { error: 'Failed to update user profile' },
         { status: 500 }
@@ -107,7 +116,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ 
       success: true, 
       account_id, 
-      message: 'Onboarding completed successfully' 
+      message: 'Welcome to Source! Your account has been created successfully.',
+      notification: {
+        type: 'success',
+        title: 'Welcome to Source',
+        message: 'Your account has been set up successfully.'
+      }
     });
   } catch (error) {
     console.error('Onboarding error:', error);

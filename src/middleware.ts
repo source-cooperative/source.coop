@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
-const ORY_BASE_URL = process.env.ORY_BASE_URL || "https://playground.projects.oryapis.com";
+const ORY_BASE_URL = process.env.ORY_BASE_URL || "http://localhost:4000";
 
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
