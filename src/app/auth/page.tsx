@@ -13,6 +13,9 @@ export default async function AuthPage({
 }: { 
   searchParams: { [key: string]: string | string[] | undefined } 
 }) {
+  // Await the search params to satisfy Next.js 15+ requirements
+  const awaitedParams = await Promise.resolve(searchParams);
+  
   // Check if user is already logged in
   const account_id = await get_account_id();
   
@@ -22,7 +25,7 @@ export default async function AuthPage({
   }
   
   // Default to login tab unless registration is specified
-  const flowParam = typeof searchParams.flow === 'string' ? searchParams.flow : undefined;
+  const flowParam = typeof awaitedParams.flow === 'string' ? awaitedParams.flow : undefined;
   const defaultTab = flowParam === 'registration' ? 'register' : 'login';
   
   return (

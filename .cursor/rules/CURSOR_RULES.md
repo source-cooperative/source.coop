@@ -11,6 +11,20 @@
    - Keep client components as small as possible
    - Move data fetching to server components
    - Use server actions for mutations
+   - Always await route parameters in Next.js 15+:
+     ```typescript
+     // ✅ Correct: Await params before destructuring
+     export default async function Page({ params }) {
+       const { slug } = await Promise.resolve(params);
+       // ...
+     }
+     
+     // ❌ Incorrect: Using params synchronously
+     export default function Page({ params }) {
+       const { slug } = params; // Error in Next.js 15+
+       // ...
+     }
+     ```
 
 2. **UI/UX Preservation**
    - Never modify existing UI components, layouts, or styling unless explicitly requested
@@ -231,3 +245,101 @@ const account = await fetchAccountByOryId(oryId);
 - Mock Ory responses with `account_id` in metadata
 - Test account system independently of auth
 - Verify proper separation of concerns 
+
+### 6. Ory Authentication Flow Design
+- Always create new authentication flows via API endpoints
+- Never try to fetch existing flows directly from Ory (avoids CSRF issues)
+- Pass both flow ID and complete flow data from API to client
+- Use minimal cookie options when forwarding cookies:
+  ```typescript
+  const safeOptions = {
+    path: '/',
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax' as const
+  };
+  ```
+- Keep cookie handling code simple to avoid `toUTCString` errors
+- Add proper error handling and logging for all cookie operations
+- Use API routes as proxies for all Ory interactions to handle CSRF correctly 
+
+## Ory Authentication - Simplified Approach
+
+### 1. Direct SDK Usage
+- Use Ory SDK directly in client components:
+  ```typescript
+  const ory = new FrontendApi(
+    new Configuration({
+      basePath: process.env.NEXT_PUBLIC_ORY_SDK_URL || 'http://localhost:4000',
+      baseOptions: {
+        withCredentials: true,
+      }
+    })
+  );
+  ```
+- Let the SDK handle cookies, CSRF tokens, and form submission
+- Avoid custom proxies or middleware for authentication flows
+
+### 2. Form Submission
+- **NEVER modify form action URLs**
+- Keep original Ory endpoint URLs (http://localhost:4000/...)
+- Do not redirect submissions to your Next.js app (http://localhost:3000/...)
+- Do not manipulate DOM elements to change form attributes
+
+### 3. Flow Initialization
+- Initialize flows directly using the SDK:
+  ```typescript
+  // Login flow
+  ory.createBrowserLoginFlow().then(({ data }) => setFlow(data));
+  
+  // Registration flow
+  ory.createBrowserRegistrationFlow().then(({ data }) => setFlow(data));
+  ```
+- Initialize flows only when components mount or when needed
+- Use proper state management to prevent duplicate initializations
+
+### 4. Session Management
+- Use the SDK for session verification:
+  ```typescript
+  ory.toSession().then(({ data }) => setSession(data));
+  ```
+- Extract account ID from session metadata as per Account System rules
+- Handle authentication errors gracefully with proper redirects
+
+### 5. Next.js Integration
+- Always await searchParams in page components:
+  ```typescript
+  export default async function AuthPage({ 
+    searchParams 
+  }: {
+    searchParams: { flow?: string }
+  }) {
+    const flow = searchParams.flow;
+    // ...
+  }
+  ```
+- Use proper error boundaries for authentication failures
+- Keep Ory tunnel running during development
+
+### 6. Authentication Components
+- Keep components simple and focused:
+  ```typescript
+  export function LoginForm() {
+    const [flow, setFlow] = useState(null);
+    
+    useEffect(() => {
+      ory.createBrowserLoginFlow()
+        .then(({ data }) => setFlow(data))
+        .catch(console.error);
+    }, []);
+    
+    if (!flow) return <div>Loading...</div>;
+    
+    return (
+      <div>
+        {/* Render form using flow data */}
+      </div>
+    );
+  }
+  ```
+- Only render the authentication form when flow data is available
+- Handle errors and loading states appropriately 

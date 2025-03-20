@@ -54,6 +54,11 @@ Progress towards 0.2.0:
 - Added graceful fallbacks for authentication API failures
 - Improved error handling in auth forms with better user feedback
 - Optimized authentication form performance with conditional mounting
+- Simplified authentication implementation:
+  - Switched to direct Ory SDK usage in client components
+  - Removed unnecessary API proxy routes for authentication
+  - Updated authentication documentation with new best practices
+  - Improved Next.js 15+ compatibility by properly awaiting searchParams
 
 ### Fixed
 - NextResponse handling in auth route tests
@@ -96,6 +101,11 @@ Progress towards 0.2.0:
   - Implemented conditional rendering to only load active form components
   - Added initialization state tracking to prevent duplicate calls in React Strict Mode
   - Improved performance by eliminating unnecessary API calls
+- Fixed registration form submission issues:
+  - Removed code that modified form action URLs from localhost:4000 to localhost:3000
+  - Ensured forms submit directly to Ory endpoints without modification
+  - Used the Ory SDK directly for all authentication operations
+  - Simplified the authentication flow by removing unnecessary proxies
 
 ## [0.1.0] - 2024-03-18
 
