@@ -1,31 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
 
-const ORY_BASE_URL = process.env.ORY_BASE_URL || "http://localhost:4000";
+const ORY_BASE_URL = process.env.ORY_SDK_URL || "http://localhost:4000";
 
 export async function GET(request: NextRequest) {
-  // Log that we're starting a new login flow via the API
   console.log("API: Initializing new login flow");
   
-  // Log the request cookies for debugging
-  console.log(`API: Current cookies in request:`);
-  request.cookies.getAll().forEach(c => 
-    console.log(`- ${c.name}: [length: ${c.value.length}]`)
-  );
-  
   try {
-    // Explicitly clear out any existing Ory cookies to prevent CSRF issues
-    const cookieHeader = request.headers.get("cookie") || "";
-    console.log(`API: Incoming cookie header length: ${cookieHeader.length}`);
-    
-    // Make the request to initialize a new login flow
+    // Initialize a new login flow via the Ory CLI tunnel
     const response = await fetch(`${ORY_BASE_URL}/self-service/login/browser`, {
       method: "GET",
       redirect: "manual",
       headers: {
         Accept: "application/json",
-        // Either don't send cookies or explicitly clear problematic ones
-        // Cookie: cookieHeader,
         "Cache-Control": "no-cache, no-store, max-age=0",
         "Pragma": "no-cache"
       },
@@ -41,8 +27,7 @@ export async function GET(request: NextRequest) {
     if (location) {
       console.log(`API: Found location header: ${location}`);
       try {
-        // Parse the URL to get the flow ID
-        const url = new URL(location.startsWith("http") ? location : `${ORY_BASE_URL}${location}`);
+        const url = new URL(location, ORY_BASE_URL);
         flowId = url.searchParams.get("flow");
         console.log(`API: Extracted flow ID from location: ${flowId}`);
       } catch (err) {
@@ -69,36 +54,43 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Failed to initialize login flow" }, { status: 500 });
     }
     
-    // Create a response with the flow ID
-    const jsonResponse = NextResponse.json({ flowId });
+    // Get the complete flow data
+    let flowData;
+    try {
+      const flowResponse = await fetch(`${ORY_BASE_URL}/self-service/login/flows?id=${flowId}`, {
+        method: "GET",
+        headers: {
+          'Accept': 'application/json',
+          // Forward all cookies that we've received from Ory
+          'Cookie': response.headers.get('set-cookie') || '',
+        },
+      });
+      
+      if (flowResponse.ok) {
+        flowData = await flowResponse.json();
+        console.log("API: Successfully fetched flow data");
+      } else {
+        console.error("API: Failed to fetch flow data:", flowResponse.status);
+      }
+    } catch (err) {
+      console.error("API: Error fetching flow data:", err);
+    }
+    
+    // Create a response with the flow ID and flow data
+    const jsonResponse = NextResponse.json({ 
+      flowId,
+      flow: flowData  // Include the complete flow data
+    });
     
     // Forward all cookies from Ory's response
     const setCookieHeaders = response.headers.getSetCookie();
     if (setCookieHeaders.length > 0) {
       console.log(`API: Forwarding ${setCookieHeaders.length} cookies from Ory response`);
       setCookieHeaders.forEach(cookieHeader => {
-        const cookieParts = cookieHeader.split(';')[0].split('=');
-        if (cookieParts.length >= 2) {
-          const name = cookieParts[0].trim();
-          const value = cookieParts.slice(1).join('=');
-          console.log(`API: Setting cookie ${name} with length ${value.length}`);
-          
-          // Parse and set the cookie with all its original parameters
-          const cookieOptions: any = {};
-          
-          cookieHeader.split(';').slice(1).forEach(part => {
-            const [key, value] = part.trim().split('=');
-            if (key.toLowerCase() === 'expires') cookieOptions.expires = value;
-            if (key.toLowerCase() === 'max-age') cookieOptions.maxAge = Number(value);
-            if (key.toLowerCase() === 'domain') cookieOptions.domain = value;
-            if (key.toLowerCase() === 'path') cookieOptions.path = value;
-            if (key.toLowerCase() === 'secure') cookieOptions.secure = true;
-            if (key.toLowerCase() === 'httponly') cookieOptions.httpOnly = true;
-            if (key.toLowerCase() === 'samesite') cookieOptions.sameSite = value;
-          });
-          
-          // Apply all cookie options exactly as they were sent
-          jsonResponse.cookies.set(name, value, cookieOptions);
+        try {
+          jsonResponse.headers.append('Set-Cookie', cookieHeader);
+        } catch (err) {
+          console.error(`API: Failed to forward cookie:`, err);
         }
       });
     }

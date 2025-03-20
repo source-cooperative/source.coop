@@ -2,7 +2,8 @@
 
 import { cookies } from "next/headers";
 
-const ORY_BASE_URL = process.env.ORY_BASE_URL || "http://localhost:4000";
+// Use the environment variable for the Ory URL
+const ORY_BASE_URL = process.env.ORY_SDK_URL || "http://localhost:4000";
 
 export async function getSession() {
   const cookieStore = await cookies();
@@ -95,16 +96,15 @@ export async function initLoginFlow() {
       return null;
     }
     
-    // Check if the location is an absolute URL or relative path
-    let url;
+    // Extract the flow ID from the location URL
+    let flowId;
     try {
-      url = new URL(location);
+      const url = new URL(location, ORY_BASE_URL);
+      flowId = url.searchParams.get("flow");
     } catch (err) {
-      // If it's not a valid URL, it might be a relative path
-      url = new URL(location, ORY_BASE_URL);
+      console.error("Failed to parse location URL:", err);
+      return null;
     }
-    
-    const flowId = url.searchParams.get("flow");
     
     if (!flowId) {
       console.error("No flow ID in location header");
@@ -162,16 +162,15 @@ export async function initRegistrationFlow() {
       return null;
     }
     
-    // Check if the location is an absolute URL or relative path
-    let url;
+    // Extract the flow ID from the location URL
+    let flowId;
     try {
-      url = new URL(location);
+      const url = new URL(location, ORY_BASE_URL);
+      flowId = url.searchParams.get("flow");
     } catch (err) {
-      // If it's not a valid URL, it might be a relative path
-      url = new URL(location, ORY_BASE_URL);
+      console.error("Failed to parse location URL:", err);
+      return null;
     }
-    
-    const flowId = url.searchParams.get("flow");
     
     if (!flowId) {
       console.error("No flow ID in location header");
@@ -205,216 +204,74 @@ function getApiBaseUrl() {
 
 export async function getLoginFlow(flowId: string) {
   try {
-    console.log("Fetching login flow:", flowId);
+    console.log("Getting login flow...");
     
-    // Check if flowId is valid
-    if (!flowId || typeof flowId !== 'string' || flowId.trim() === '') {
-      console.error("Invalid flow ID:", flowId);
+    // Always create a new flow via the API endpoint
+    // Get proper base URL based on context
+    const baseUrl = getApiBaseUrl();
+    const apiUrl = `${baseUrl}/api/auth/login`;
+    
+    console.log("Using API URL for login flow:", apiUrl);
+    
+    const response = await fetch(apiUrl, {
+      method: 'GET',
+      credentials: 'include',
+      cache: 'no-store',
+      headers: {
+        'Cache-Control': 'no-cache, no-store, max-age=0',
+        'Pragma': 'no-cache'
+      },
+    });
+    
+    if (!response.ok) {
+      console.error("API endpoint failed:", await response.text());
       return null;
     }
     
-    // Try server-side method first
-    let result = await getLoginFlowServerSide(flowId);
+    const data = await response.json();
+    console.log("Got login flow with ID:", data.flowId);
     
-    // If server-side method fails due to CSRF or other issues, try client-side API
-    if (!result) {
-      console.log("Server-side flow fetch failed, trying API endpoint...");
-      try {
-        // Create a new flow via the API endpoint which handles cookie issues
-        // Get proper base URL based on context
-        const baseUrl = getApiBaseUrl();
-        const apiUrl = `${baseUrl}/api/auth/login`;
-        
-        console.log("Using API URL:", apiUrl);
-        
-        const initResponse = await fetch(apiUrl, {
-          method: 'GET',
-          credentials: 'include',
-          cache: 'no-store',
-          headers: {
-            'Cache-Control': 'no-cache, no-store, max-age=0',
-            'Pragma': 'no-cache'
-          },
-        });
-        
-        if (!initResponse.ok) {
-          console.error("API endpoint failed:", await initResponse.text());
-          return null;
-        }
-        
-        const initData = await initResponse.json();
-        const newFlowId = initData.flowId;
-        
-        if (!newFlowId) {
-          console.error("No flow ID received from API");
-          return null;
-        }
-        
-        console.log("Got new flow ID from API:", newFlowId);
-        
-        // Now try to get the flow details with the new flow ID
-        result = await getLoginFlowServerSide(newFlowId);
-      } catch (apiErr) {
-        console.error("Error using API endpoint fallback:", apiErr);
-      }
-    }
-    
-    return result;
+    // Return the UI data directly from the API response
+    return data.flow;
   } catch (error) {
     console.error("Error in getLoginFlow:", error);
     return null;
   }
 }
 
-// Internal function that performs the actual server-side flow fetch
-async function getLoginFlowServerSide(flowId: string) {
-  try {
-    const cookieStore = await cookies();
-    const cookieHeader = cookieStore.toString();
-    
-    console.log(`Cookie header length for getLoginFlowServerSide: ${cookieHeader.length}`);
-    
-    const response = await fetch(`${ORY_BASE_URL}/self-service/login/flows?id=${flowId}`, {
-      method: "GET",
-      headers: {
-        Cookie: cookieHeader,
-        'Accept': 'application/json',
-        'Cache-Control': 'no-cache, no-store, max-age=0',
-        'Pragma': 'no-cache'
-      },
-      cache: 'no-store', // Ensure we don't use cached responses
-    });
-    
-    console.log("Login flow fetch status:", response.status);
-    
-    if (!response.ok) {
-      console.error("Failed to fetch login flow:", response.status, response.statusText);
-      
-      try {
-        // Try to get error details
-        const errorData = await response.json();
-        console.error("Error details:", JSON.stringify(errorData, null, 2));
-      } catch (e) {
-        console.error("Could not parse error response");
-      }
-      
-      return null;
-    }
-    
-    const data = await response.json();
-    console.log("Login flow fetched successfully, action URL:", data.ui?.action);
-    return data;
-  } catch (error) {
-    console.error("Error in getLoginFlowServerSide:", error);
-    return null;
-  }
-}
-
 export async function getRegistrationFlow(flowId: string) {
   try {
-    console.log("Fetching registration flow:", flowId);
+    console.log("Getting registration flow...");
     
-    // Check if flowId is valid
-    if (!flowId || typeof flowId !== 'string' || flowId.trim() === '') {
-      console.error("Invalid flow ID:", flowId);
-      return null;
-    }
+    // Always create a new flow via the API endpoint
+    // Get proper base URL based on context
+    const baseUrl = getApiBaseUrl();
+    const apiUrl = `${baseUrl}/api/auth/register`;
     
-    // Try server-side method first
-    let result = await getRegistrationFlowServerSide(flowId);
+    console.log("Using API URL for registration flow:", apiUrl);
     
-    // If server-side method fails due to CSRF or other issues, try client-side API
-    if (!result) {
-      console.log("Server-side flow fetch failed, trying API endpoint...");
-      try {
-        // Create a new flow via the API endpoint which handles cookie issues
-        // Get proper base URL based on context
-        const baseUrl = getApiBaseUrl();
-        const apiUrl = `${baseUrl}/api/auth/register`;
-        
-        console.log("Using API URL:", apiUrl);
-        
-        const initResponse = await fetch(apiUrl, {
-          method: 'GET',
-          credentials: 'include',
-          cache: 'no-store',
-          headers: {
-            'Cache-Control': 'no-cache, no-store, max-age=0',
-            'Pragma': 'no-cache'
-          },
-        });
-        
-        if (!initResponse.ok) {
-          console.error("API endpoint failed:", await initResponse.text());
-          return null;
-        }
-        
-        const initData = await initResponse.json();
-        const newFlowId = initData.flowId;
-        
-        if (!newFlowId) {
-          console.error("No flow ID received from API");
-          return null;
-        }
-        
-        console.log("Got new flow ID from API:", newFlowId);
-        
-        // Now try to get the flow details with the new flow ID
-        result = await getRegistrationFlowServerSide(newFlowId);
-      } catch (apiErr) {
-        console.error("Error using API endpoint fallback:", apiErr);
-      }
-    }
-    
-    return result;
-  } catch (error) {
-    console.error("Error in getRegistrationFlow:", error);
-    return null;
-  }
-}
-
-// Internal function that performs the actual server-side flow fetch
-async function getRegistrationFlowServerSide(flowId: string) {
-  try {
-    // Get cookies for server-side request
-    const cookieStore = await cookies();
-    const cookieHeader = cookieStore.toString();
-    
-    console.log("Cookie header length for getRegistrationFlowServerSide:", cookieHeader?.length || 0);
-    
-    const response = await fetch(`${ORY_BASE_URL}/self-service/registration/flows?id=${flowId}`, {
-      method: "GET",
+    const response = await fetch(apiUrl, {
+      method: 'GET',
+      credentials: 'include',
+      cache: 'no-store',
       headers: {
-        Cookie: cookieHeader,
-        'Accept': 'application/json',
         'Cache-Control': 'no-cache, no-store, max-age=0',
         'Pragma': 'no-cache'
       },
-      cache: 'no-store', // Ensure we don't use cached responses
     });
     
-    // Log response status for debugging
-    console.log("Registration flow fetch status:", response.status);
-    
     if (!response.ok) {
-      console.error("Failed to fetch registration flow:", response.status, response.statusText);
-      
-      try {
-        // Try to get error details
-        const errorData = await response.json();
-        console.error("Error details:", JSON.stringify(errorData, null, 2));
-      } catch (e) {
-        console.error("Could not parse error response");
-      }
-      
+      console.error("API endpoint failed:", await response.text());
       return null;
     }
     
     const data = await response.json();
-    console.log("Registration flow fetched successfully, action URL:", data.ui?.action);
-    return data;
+    console.log("Got registration flow with ID:", data.flowId);
+    
+    // Return the UI data directly from the API response
+    return data.flow;
   } catch (error) {
-    console.error("Error in getRegistrationFlowServerSide:", error);
+    console.error("Error in getRegistrationFlow:", error);
     return null;
   }
 } 

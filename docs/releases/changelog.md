@@ -72,6 +72,21 @@ Progress towards 0.2.0:
   - Fixed server/client context detection for proper URL construction
   - Added cache control headers to prevent stale responses
 - Next.js searchParams handling in auth page component
+- Resolved Ory authentication CSRF token violations:
+  - Simplified authentication flow to always create new flows via API endpoints
+  - Implemented safe cookie handling to avoid toUTCString errors
+  - Combined flow creation and data fetching in API routes
+  - Added detailed documentation in docs/development/ory-authentication.md
+- Fixed CORS issues with authentication flows:
+  - Added URL proxy mechanism to redirect Ory API requests through localhost:4000
+  - Updated registration and login forms to use local proxy for form submissions
+  - Modified API routes to properly handle and rewrite Ory URLs
+  - Ensured all communication with Ory happens exclusively through the local tunnel
+- Authentication error recovery:
+  - Added clearer error messages for authentication failures
+  - Implemented automatic retry mechanisms with backoff
+  - Added self-healing for common authentication issues
+  - Improved form state preservation during error recovery
 
 ## [0.1.0] - 2024-03-18
 

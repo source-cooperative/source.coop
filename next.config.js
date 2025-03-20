@@ -8,6 +8,14 @@ const nextConfig = {
         source: "/auth/:path*",
         destination: "https://*",
       },
+      {
+        source: "/self-service/:path*",
+        destination: "http://localhost:4000/self-service/:path*",
+      },
+      {
+        source: "/sessions/:path*",
+        destination: "http://localhost:4000/sessions/:path*",
+      },
     ];
   },
   images: {

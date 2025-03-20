@@ -6,6 +6,9 @@ import { Button, Flex, Text, Box } from '@radix-ui/themes';
 import * as Form from '@radix-ui/react-form';
 import { initRegistrationFlow, getRegistrationFlow } from '@/lib/auth';
 
+// The Ory service URL (using the environment variable)
+const ORY_URL = process.env.NEXT_PUBLIC_ORY_SDK_URL || 'http://localhost:4000';
+
 // Helper to get absolute URLs for API calls if needed
 function getApiUrl(path: string) {
   return path; // In client components, relative URLs work fine
@@ -126,60 +129,23 @@ export function RegistrationForm() {
     
     try {
       console.log("Getting registration flow for submission, ID:", flowId);
-      // Always try to get a fresh flow with updated CSRF token right before submission
+      // Always try to get a fresh flow before submission
       let flow;
-      let retryCount = 0;
-      const maxRetries = 2;
       
-      while (!flow && retryCount <= maxRetries) {
-        try {
-          // If we're retrying, attempt to get a completely new flow via API
-          if (retryCount > 0) {
-            console.log(`Retry attempt ${retryCount}: Creating a new registration flow`);
-            const apiUrl = getApiUrl('/api/auth/register');
-            console.log("Using API URL:", apiUrl);
-            
-            const response = await fetch(apiUrl, {
-              method: 'GET', 
-              credentials: 'include',
-              cache: 'no-store',
-              headers: {
-                'Cache-Control': 'no-cache, no-store, max-age=0'
-              }
-            });
-            
-            if (response.ok) {
-              const data = await response.json();
-              const newFlowId = data.flowId;
-              if (newFlowId) {
-                console.log(`Using new flow ID: ${newFlowId}`);
-                setFlowId(newFlowId);
-                flow = await getRegistrationFlow(newFlowId);
-              }
-            }
-          } else {
-            // First attempt: try with existing flowId
-            flow = await getRegistrationFlow(flowId);
-          }
-        } catch (flowErr) {
-          console.error(`Error fetching flow (attempt ${retryCount + 1}):`, flowErr);
-        }
-        
-        retryCount++;
-        
-        if (!flow && retryCount <= maxRetries) {
-          // Wait briefly before retrying
-          await new Promise(resolve => setTimeout(resolve, 500));
-        }
-      }
-      
-      if (!flow || !flow.ui?.action) {
-        setError('Could not get flow details after multiple attempts. Please try again.');
+      try {
+        flow = await getRegistrationFlow(flowId);
+      } catch (flowErr) {
+        console.error("Error fetching flow:", flowErr);
+        setError('Could not get flow details. Please try again.');
         setSubmitLoading(false);
         return;
       }
       
-      console.log("Submitting to:", flow.ui.action, "with method:", flow.ui.method);
+      if (!flow || !flow.ui?.action) {
+        setError('Could not get flow details. Please try again.');
+        setSubmitLoading(false);
+        return;
+      }
       
       // Remove password_confirm as Ory doesn't need it
       formData.delete('password_confirm');
@@ -190,22 +156,37 @@ export function RegistrationForm() {
       // Always get a fresh CSRF token from the flow
       const csrfToken = flow.ui.nodes?.find(node => node.attributes?.name === 'csrf_token')?.attributes?.value;
       if (csrfToken) {
-        console.log("Found CSRF token, adding to form data:", csrfToken.substring(0, 8) + '...');
+        console.log("Found CSRF token, adding to form data");
         formData.set('csrf_token', csrfToken);
       } else {
         console.warn("No CSRF token found in flow");
       }
       
-      // Use the specific action URL from the flow
-      const response = await fetch(flow.ui.action, {
+      // Use the action URL provided by Ory, which should point to our local tunnel
+      console.log("Original action URL:", flow.ui.action);
+      
+      // Modify the action URL to use the current origin instead of localhost:4000
+      // This keeps all requests on the same origin
+      let actionUrl = flow.ui.action;
+      try {
+        // Parse the original URL
+        const actionUrlObj = new URL(flow.ui.action);
+        
+        // Create a new URL with the current origin but keep the path and search params
+        // This will replace localhost:4000 with localhost:3000
+        actionUrl = `${window.location.origin}${actionUrlObj.pathname}${actionUrlObj.search}`;
+        console.log("Modified action URL to use same origin:", actionUrl);
+      } catch (err) {
+        console.warn("Could not modify action URL, using original:", err);
+      }
+      
+      console.log("Submitting to:", actionUrl);
+      const response = await fetch(actionUrl, {
         method: flow.ui.method,
         body: formData,
         credentials: 'include',
         redirect: 'manual',
         headers: {
-          // Add CSRF token as a header too in case it helps
-          ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
-          // Prevent caching
           'Cache-Control': 'no-cache, no-store, max-age=0',
           'Pragma': 'no-cache'
         }

@@ -6,6 +6,9 @@ import { Button, Flex, Text, Box } from '@radix-ui/themes';
 import * as Form from '@radix-ui/react-form';
 import { initLoginFlow, getLoginFlow } from '@/lib/auth';
 
+// The Ory service URL (using the environment variable)
+const ORY_URL = process.env.NEXT_PUBLIC_ORY_SDK_URL || 'http://localhost:4000';
+
 // Helper to get absolute URLs for API calls if needed
 function getApiUrl(path: string) {
   return path; // In client components, relative URLs work fine
@@ -114,60 +117,23 @@ export function LoginForm() {
     
     try {
       console.log("Getting login flow for submission, ID:", flowId);
-      // Always try to get a fresh flow with updated CSRF token right before submission
+      // Get the flow data for the current flow ID
       let flow;
-      let retryCount = 0;
-      const maxRetries = 2;
       
-      while (!flow && retryCount <= maxRetries) {
-        try {
-          // If we're retrying, attempt to get a completely new flow via API
-          if (retryCount > 0) {
-            console.log(`Retry attempt ${retryCount}: Creating a new login flow`);
-            const apiUrl = getApiUrl('/api/auth/login');
-            console.log("Using API URL:", apiUrl);
-            
-            const response = await fetch(apiUrl, {
-              method: 'GET', 
-              credentials: 'include',
-              cache: 'no-store',
-              headers: {
-                'Cache-Control': 'no-cache, no-store, max-age=0'
-              }
-            });
-            
-            if (response.ok) {
-              const data = await response.json();
-              const newFlowId = data.flowId;
-              if (newFlowId) {
-                console.log(`Using new flow ID: ${newFlowId}`);
-                setFlowId(newFlowId);
-                flow = await getLoginFlow(newFlowId);
-              }
-            }
-          } else {
-            // First attempt: try with existing flowId
-            flow = await getLoginFlow(flowId);
-          }
-        } catch (flowErr) {
-          console.error(`Error fetching flow (attempt ${retryCount + 1}):`, flowErr);
-        }
-        
-        retryCount++;
-        
-        if (!flow && retryCount <= maxRetries) {
-          // Wait briefly before retrying
-          await new Promise(resolve => setTimeout(resolve, 500));
-        }
-      }
-      
-      if (!flow || !flow.ui?.action) {
-        setError('Could not get flow details after multiple attempts. Please try again.');
+      try {
+        flow = await getLoginFlow(flowId);
+      } catch (flowErr) {
+        console.error("Error fetching flow:", flowErr);
+        setError('Could not get flow details. Please try again.');
         setSubmitLoading(false);
         return;
       }
       
-      console.log("Submitting to:", flow.ui.action, "with method:", flow.ui.method);
+      if (!flow || !flow.ui?.action) {
+        setError('Could not get flow details. Please try again.');
+        setSubmitLoading(false);
+        return;
+      }
       
       const formData = new FormData(event.currentTarget);
       
@@ -177,22 +143,20 @@ export function LoginForm() {
       // Always get a fresh CSRF token from the flow
       const csrfToken = flow.ui.nodes?.find(node => node.attributes?.name === 'csrf_token')?.attributes?.value;
       if (csrfToken) {
-        console.log("Found CSRF token, adding to form data:", csrfToken.substring(0, 8) + '...');
+        console.log("Found CSRF token, adding to form data");
         formData.set('csrf_token', csrfToken);
       } else {
         console.warn("No CSRF token found in flow");
       }
       
-      // Use the specific action URL from the flow
+      // Use the action URL provided by Ory, which should point to our local tunnel
+      console.log("Submitting to:", flow.ui.action);
       const response = await fetch(flow.ui.action, {
         method: flow.ui.method,
         body: formData,
         credentials: 'include',
         redirect: 'manual',
         headers: {
-          // Add CSRF token as a header too in case it helps
-          ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
-          // Prevent caching
           'Cache-Control': 'no-cache, no-store, max-age=0',
           'Pragma': 'no-cache'
         }
