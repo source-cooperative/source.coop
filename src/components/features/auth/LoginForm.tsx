@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Button, Flex, Text, Box } from '@radix-ui/themes';
+import { Button, Flex, Text, Box, TextField } from '@radix-ui/themes';
 import * as Form from '@radix-ui/react-form';
 import { Configuration, FrontendApi } from '@ory/client';
 
@@ -181,13 +181,15 @@ export function LoginForm() {
               <Text size="3" weight="medium">Email</Text>
             </Form.Label>
             <Form.Control asChild>
-              <input 
+              <TextField.Root 
                 type="email" 
                 name="identifier" 
                 placeholder="you@example.com"
                 required
-                className="px-4 py-3 text-lg rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:border-blue-500 focus:ring-blue-200 font-mono"
-                style={{ fontSize: 'var(--font-size-3)' }}
+                size="3"
+                variant="surface"
+                style={{ fontFamily: 'var(--code-font-family)' }}
+                autoFocus
               />
             </Form.Control>
             <Form.Message className="FormMessage" match="valueMissing">
@@ -205,13 +207,14 @@ export function LoginForm() {
               <Text size="3" weight="medium">Password</Text>
             </Form.Label>
             <Form.Control asChild>
-              <input 
+              <TextField.Root 
                 type="password" 
                 name="password"
                 placeholder="********"
                 required
-                className="px-4 py-3 text-lg rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:border-blue-500 focus:ring-blue-200 font-mono"
-                style={{ fontSize: 'var(--font-size-3)' }}
+                size="3"
+                variant="surface"
+                style={{ fontFamily: 'var(--code-font-family)' }}
               />
             </Form.Control>
             <Form.Message className="FormMessage" match="valueMissing">

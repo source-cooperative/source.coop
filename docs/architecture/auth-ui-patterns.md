@@ -80,7 +80,7 @@ export function AuthForm() {
             required
             size="3"
             variant="surface"
-            style={{ fontFamily: 'Berkeley Mono' }}
+            style={{ fontFamily: 'var(--code-font-family)' }}
             autoFocus
           />
           <Form.Message match="valueMissing">
@@ -129,7 +129,7 @@ export function AuthForm() {
 
 2. **Input Fields**
    - Use `TextField.Root` for consistent styling
-   - Berkeley Mono font for better readability
+   - Use `var(--code-font-family)` CSS variable for monospace font
    - Proper size and variant props for visual consistency
    - Auto-focus on primary input field
 
