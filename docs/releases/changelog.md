@@ -21,6 +21,7 @@ Progress towards 0.2.0:
   - Login and registration flows
   - Session management
   - Protected routes and auth middleware
+  - Onboarding flow after registration
 - Core components
   - Form component with validation
   - Navigation component with auth state
@@ -45,6 +46,10 @@ Progress towards 0.2.0:
 - Improved error handling in auth forms
 - Enhanced security by removing sensitive data from logs
 - Streamlined registration flow to follow Ory best practices
+- Improved form styling using Radix UI best practices
+- Updated form components with larger text and better spacing
+- Renamed functions to follow consistent snake_case naming convention for account identifiers
+- Added graceful fallbacks for authentication API failures
 
 ### Fixed
 - NextResponse handling in auth route tests
@@ -53,6 +58,11 @@ Progress towards 0.2.0:
 - Registration flow redirection issues
 - CSRF token handling in auth forms
 - Form validation and error display
+- Error handling during registration and login flow initialization
+- Flow verification failures with improved fallback mechanisms
+- Ory API connectivity issues with direct form submission fallback
+- Layout issues with authentication forms
+- Proper form text sizing and input field styling
 
 ## [0.1.0] - 2024-03-18
 

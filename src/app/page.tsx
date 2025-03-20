@@ -16,7 +16,7 @@ import type { Repository } from '@/types';
 import { fetchRepositories } from '@/lib/db/operations';
 
 // Server action for data fetching
-export async function getRepositories(): Promise<Repository[]> {
+async function getRepositories(): Promise<Repository[]> {
   'use server';
   return fetchRepositories();
 }

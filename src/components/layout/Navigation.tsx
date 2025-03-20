@@ -1,56 +1,41 @@
 'use client';
 
-import { Box, Container, Flex, Button, DropdownMenu, Avatar, Text } from '@radix-ui/themes';
+import { Box, Container, Flex, Button, DropdownMenu, Text } from '@radix-ui/themes';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { Logo } from '../core/Logo';
 import { ProfileAvatar } from '@/components/features/profiles/ProfileAvatar';
 import type { IndividualAccount } from '@/types/account';
 import { ChevronDownIcon } from '@radix-ui/react-icons';
 import styles from './Navigation.module.css';
-
-// Use the Ory tunnel URL for local development
-const KRATOS_URL = process.env.NEXT_PUBLIC_KRATOS_URL || 'http://localhost:4000';
+import { getSession } from '@/lib/auth';
 
 export function Navigation() {
-  const router = useRouter();
   const [user, setUser] = useState<IndividualAccount | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     const checkSession = async () => {
       try {
-        const response = await fetch(`${KRATOS_URL}/sessions/whoami`, {
-          credentials: 'include',
-          headers: {
-            Accept: 'application/json',
-          },
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          // Get the account_id from the user's metadata
-          const accountId = data.identity.metadata_public?.account_id;
-          if (accountId) {
-            // Fetch the account details from our database
-            const accountResponse = await fetch(`/api/accounts/${accountId}`);
-            if (accountResponse.ok) {
-              const account = await accountResponse.json();
-              setUser(account);
-            }
+        const session = await getSession();
+        
+        if (session?.identity?.metadata_public?.account_id) {
+          const accountId = session.identity.metadata_public.account_id;
+          // Fetch user account details
+          const response = await fetch(`/api/accounts/${accountId}`);
+          if (response.ok) {
+            const account = await response.json();
+            setUser(account);
+          } else {
+            setUser(null);
           }
         } else {
-          // Not logged in - this is an expected state
           setUser(null);
         }
       } catch (error) {
-        // Network or other error - log but don't throw
-        console.error('Error checking session:', error);
+        console.error('Session check failed:', error);
         setUser(null);
-        // Don't set error state for connection issues - just treat as not logged in
       } finally {
         setIsLoading(false);
       }
@@ -61,17 +46,9 @@ export function Navigation() {
 
   const handleLogout = async () => {
     try {
-      const response = await fetch(`${KRATOS_URL}/self-service/logout/browser`, {
-        method: 'GET',
-        credentials: 'include',
-        headers: {
-          Accept: 'application/json',
-        },
-      });
-
+      const response = await fetch('/api/auth/logout', { method: 'POST' });
       if (response.ok) {
-        const data = await response.json();
-        window.location.href = data.logout_url;
+        window.location.href = '/';
       }
     } catch (error) {
       console.error('Logout failed:', error);
@@ -118,7 +95,7 @@ export function Navigation() {
               </DropdownMenu.Root>
             ) : (
               <Link href="/auth">
-                <Button>Register / Log in</Button>
+                <Button>Log In / Register</Button>
               </Link>
             )}
           </Flex>

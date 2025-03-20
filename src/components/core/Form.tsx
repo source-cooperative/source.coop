@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import * as Form from '@radix-ui/react-form';
+import { Button, Text } from '@radix-ui/themes';
 import { FormField, FormProps } from '@/types/form';
 import { logger } from '@/lib/logger';
 
@@ -13,55 +14,14 @@ export const FormWrapper: React.FC<FormProps> = ({
   error: initialError,
   isLoading = false,
 }) => {
-  const [formData, setFormData] = useState<Record<string, any>>({});
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(initialError || null);
-
-  const validateField = (field: FormField, value: any): string | null => {
-    if (field.required && !value) {
-      return `${field.label} is required`;
-    }
-    return null;
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    setErrors(prev => ({ ...prev, [name]: '' }));
-  };
-
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setError(null);
-    setIsSubmitting(true);
-
-    // Validate all fields
-    const newErrors: Record<string, string> = {};
-    let hasErrors = false;
-
-    fields.forEach(field => {
-      const error = validateField(field, formData[field.name]);
-      if (error) {
-        newErrors[field.name] = error;
-        hasErrors = true;
-      }
-    });
-
-    if (hasErrors) {
-      setErrors(newErrors);
-      logger.error('Form validation failed', {
-        operation: 'form_validation',
-        context: 'Form component',
-        error: new Error('Validation failed')
-      });
-      setIsSubmitting(false);
-      return;
-    }
+    const formData = new FormData(e.currentTarget);
+    const data = Object.fromEntries(formData.entries());
 
     try {
       // Create a safe copy of form data with sensitive fields redacted
-      const safeFormData = { ...formData };
+      const safeFormData = { ...data };
       Object.keys(safeFormData).forEach(key => {
         if (key.toLowerCase().includes('password')) {
           safeFormData[key] = '[REDACTED]';
@@ -74,29 +34,26 @@ export const FormWrapper: React.FC<FormProps> = ({
         metadata: { formData: safeFormData }
       });
 
-      await onSubmit(formData);
+      await onSubmit(data);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'An error occurred';
-      setError(errorMessage);
       logger.error('Form submission failed', {
         operation: 'form_submit',
         context: 'Form component',
-        error: err instanceof Error ? err.message : 'Unknown error'
+        error: err instanceof Error ? err : new Error('Unknown error')
       });
-    } finally {
-      setIsSubmitting(false);
+      throw err;
     }
   };
 
   return (
     <Form.Root onSubmit={handleSubmit}>
       {description && (
-        <div>{description}</div>
+        <Text size="2" color="gray" mb="4">{description}</Text>
       )}
 
-      {error && (
+      {initialError && (
         <Form.Field name="form-error">
-          <Form.Message>{error}</Form.Message>
+          <Form.Message>{initialError}</Form.Message>
         </Form.Field>
       )}
 
@@ -107,12 +64,6 @@ export const FormWrapper: React.FC<FormProps> = ({
               {field.label}
               {field.required && <span aria-hidden="true">*</span>}
             </Form.Label>
-
-            {errors[field.name] && (
-              <Form.Message match="valueMissing">
-                {errors[field.name]}
-              </Form.Message>
-            )}
           </div>
 
           <Form.Control asChild>
@@ -120,26 +71,40 @@ export const FormWrapper: React.FC<FormProps> = ({
               <textarea
                 placeholder={field.placeholder}
                 required={field.required}
-                disabled={isLoading || isSubmitting}
-                onChange={handleChange}
+                disabled={isLoading}
+                {...field.validation}
               />
             ) : (
               <input
                 type={field.type}
                 placeholder={field.placeholder}
                 required={field.required}
-                disabled={isLoading || isSubmitting}
-                onChange={handleChange}
+                disabled={isLoading}
+                {...field.validation}
               />
             )}
           </Form.Control>
+
+          {field.description && (
+            <Text size="2" color="gray" mt="1">{field.description}</Text>
+          )}
+
+          <Form.Message match="valueMissing">
+            {field.label} is required
+          </Form.Message>
+
+          {field.validation?.pattern && (
+            <Form.Message match="patternMismatch">
+              Please enter a valid {field.label.toLowerCase()}
+            </Form.Message>
+          )}
         </Form.Field>
       ))}
 
       <Form.Submit asChild>
-        <button disabled={isLoading || isSubmitting}>
-          {isLoading || isSubmitting ? 'Submitting...' : submitLabel}
-        </button>
+        <Button type="submit" disabled={isLoading}>
+          {isLoading ? 'Submitting...' : submitLabel}
+        </Button>
       </Form.Submit>
     </Form.Root>
   );

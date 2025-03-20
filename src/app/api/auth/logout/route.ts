@@ -1,53 +1,65 @@
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
-import { logger } from '@/lib/logger';
 
-// Use the Ory tunnel URL for local development
-const KRATOS_URL = process.env.ORY_API_URL || 'http://localhost:4000';
+const ORY_BASE_URL = process.env.ORY_BASE_URL || "https://playground.projects.oryapis.com";
 
 export async function POST() {
   try {
-    logger.info('Logout attempt', {
-      operation: 'auth_logout',
-      context: 'api'
-    });
-
+    // Get the session cookie
     const cookieStore = await cookies();
-    const sessionCookie = cookieStore.get('ory_kratos_session');
-
-    // Always delete the session cookie
-    cookieStore.delete('ory_kratos_session');
-
-    // If there's no session cookie, just return success
-    if (!sessionCookie) {
-      return NextResponse.json({ success: true });
-    }
-
-    // Try to logout from Ory Kratos
-    const response = await fetch(`${KRATOS_URL}/self-service/logout/browser`, {
-      method: 'POST',
+    const cookieHeader = cookieStore.toString();
+    
+    // Create a logout flow
+    const response = await fetch(`${ORY_BASE_URL}/self-service/logout/browser`, {
+      method: 'GET',
       headers: {
-        'Content-Type': 'application/json',
+        Cookie: cookieHeader,
       },
-      body: JSON.stringify({
-        session_token: sessionCookie.value,
-      }),
     });
-
+    
     if (!response.ok) {
-      throw new Error('Failed to logout from Ory Kratos');
+      return NextResponse.json(
+        { error: 'Failed to initiate logout' },
+        { status: response.status }
+      );
     }
-
-    return NextResponse.json({ success: true });
+    
+    const data = await response.json();
+    
+    // Execute the logout
+    if (data.logout_url) {
+      const logoutResponse = await fetch(data.logout_url, {
+        method: 'GET',
+        redirect: 'manual',
+      });
+      
+      // Clear cookies
+      const responseCookies = logoutResponse.headers.getSetCookie();
+      
+      // Create a response with cleared cookies
+      const responseObj = NextResponse.json({ success: true });
+      
+      // Apply the cookies from Ory to our response
+      responseCookies.forEach(cookie => {
+        const [name, ...rest] = cookie.split('=');
+        const value = rest.join('=').split(';')[0];
+        responseObj.cookies.set(name, value, { 
+          path: '/',
+          httpOnly: true,
+          sameSite: 'lax',
+          secure: process.env.NODE_ENV === 'production',
+          maxAge: 0 // Expire immediately
+        });
+      });
+      
+      return responseObj;
+    }
+    
+    return NextResponse.json({ success: false, error: 'No logout URL found' }, { status: 400 });
   } catch (error) {
-    logger.error('Logout failed', {
-      operation: 'auth_logout',
-      context: 'api',
-      error
-    });
-
+    console.error('Logout error:', error);
     return NextResponse.json(
-      { error: 'An error occurred during logout' },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }
