@@ -1,7 +1,5 @@
-import { Suspense } from 'react';
-import { Tabs, Box, Flex, Text, Container } from '@radix-ui/themes';
-import { LoginForm } from '@/components/features/auth/LoginForm';
-import { RegistrationForm } from '@/components/features/auth/RegistrationForm';
+import { Container } from '@radix-ui/themes';
+import { AuthTabs } from '@/components/features/auth/AuthTabs';
 import { redirect } from 'next/navigation';
 import { get_account_id } from '@/lib/auth';
 
@@ -10,11 +8,11 @@ export const metadata = {
   description: 'Log in to your account or register for a new account',
 };
 
-type AuthPageProps = {
-  searchParams: { [key: string]: string | string[] | undefined };
-};
-
-export default async function AuthPage({ searchParams }: AuthPageProps) {
+export default async function AuthPage({ 
+  searchParams 
+}: { 
+  searchParams: { [key: string]: string | string[] | undefined } 
+}) {
   // Check if user is already logged in
   const account_id = await get_account_id();
   
@@ -24,39 +22,12 @@ export default async function AuthPage({ searchParams }: AuthPageProps) {
   }
   
   // Default to login tab unless registration is specified
-  // Use searchParams safely with proper typing
-  const params = await Promise.resolve(searchParams);
-  const flowParam = typeof params.flow === 'string' ? params.flow : undefined;
+  const flowParam = typeof searchParams.flow === 'string' ? searchParams.flow : undefined;
   const defaultTab = flowParam === 'registration' ? 'register' : 'login';
   
   return (
     <Container size="2" pt="8" pb="9">
-      <Box className="mx-auto max-w-md">
-        <Flex mb="5" justify="center">
-          <Text size="6" weight="bold">Welcome</Text>
-        </Flex>
-        
-        <Tabs.Root defaultValue={defaultTab}>
-          <Tabs.List>
-            <Tabs.Trigger value="login">Login</Tabs.Trigger>
-            <Tabs.Trigger value="register">Register</Tabs.Trigger>
-          </Tabs.List>
-          
-          <Box pt="4">
-            <Tabs.Content value="login">
-              <Suspense fallback={<Text>Loading login form...</Text>}>
-                <LoginForm />
-              </Suspense>
-            </Tabs.Content>
-            
-            <Tabs.Content value="register">
-              <Suspense fallback={<Text>Loading registration form...</Text>}>
-                <RegistrationForm />
-              </Suspense>
-            </Tabs.Content>
-          </Box>
-        </Tabs.Root>
-      </Box>
+      <AuthTabs defaultTab={defaultTab} />
     </Container>
   );
 } 

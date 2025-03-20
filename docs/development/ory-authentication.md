@@ -18,6 +18,17 @@ Our authentication flow follows these principles:
 2. **Use API routes as proxies**: All Ory interactions go through our API routes to handle CSRF correctly
 3. **Pass complete data**: API routes return both flow ID and complete flow data to minimize client-side requests
 4. **Simplified cookie handling**: Use minimal, safe cookie options to avoid errors
+5. **Lazy flow initialization**: Each form is only initialized when visible to the user
+6. **Server-side page, client-side interactions**: Auth page is a server component with a client-side tab interface
+
+## Performance Optimizations
+
+To improve performance and prevent duplicate flow initializations:
+
+1. **Server Component Architecture**: The main auth page is a server component that handles metadata and initial authentication state
+2. **Conditional Rendering**: Only the active tab's form component is mounted, preventing unnecessary API calls
+3. **Flow Initialization Guards**: Added initialization state tracking with useRef to prevent duplicate flow initializations in React Strict Mode
+4. **Clean Separation of Concerns**: Logic is divided between server and client components for optimal performance
 
 ## CSRF Issue Solution
 
@@ -63,6 +74,8 @@ try {
 1. Auth forms use flow data directly from API responses
 2. No direct interaction with Ory endpoints from client components
 3. All requests include credentials to ensure cookies are sent
+4. Forms are only mounted when their tab is active
+5. Flow initialization includes guards against duplicate calls in Strict Mode
 
 ## Debugging Tips
 
@@ -74,6 +87,7 @@ If authentication issues occur:
 4. Ensure consistent use of either `localhost` or `127.0.0.1` (don't mix them)
 5. Check API route logs for cookie processing errors
 6. Verify that cookies are being forwarded correctly
+7. Check for duplicate flow initializations in the console logs
 
 ## References
 

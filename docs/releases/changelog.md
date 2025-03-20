@@ -43,13 +43,17 @@ Progress towards 0.2.0:
 - Updated project structure for Next.js 13+ conventions
 - Enhanced test coverage for auth components and routes
 - Refactored auth page into server and client components
-- Improved error handling in auth forms
+  - Improved architecture with server components for initial rendering
+  - Added client components for interactive elements
+  - Implemented optimized tab interface with conditional rendering
 - Enhanced security by removing sensitive data from logs
 - Streamlined registration flow to follow Ory best practices
 - Improved form styling using Radix UI best practices
 - Updated form components with larger text and better spacing
 - Renamed functions to follow consistent snake_case naming convention for account identifiers
 - Added graceful fallbacks for authentication API failures
+- Improved error handling in auth forms with better user feedback
+- Optimized authentication form performance with conditional mounting
 
 ### Fixed
 - NextResponse handling in auth route tests
@@ -87,6 +91,11 @@ Progress towards 0.2.0:
   - Implemented automatic retry mechanisms with backoff
   - Added self-healing for common authentication issues
   - Improved form state preservation during error recovery
+- Fixed duplicate authentication flow initializations:
+  - Converted auth page to a server component with client-side tab interface
+  - Implemented conditional rendering to only load active form components
+  - Added initialization state tracking to prevent duplicate calls in React Strict Mode
+  - Improved performance by eliminating unnecessary API calls
 
 ## [0.1.0] - 2024-03-18
 

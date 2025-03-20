@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button, Flex, Text, Box } from '@radix-ui/themes';
 import * as Form from '@radix-ui/react-form';
@@ -22,10 +22,20 @@ export function LoginForm() {
   const [error, setError] = useState<string | null>(null);
   const [submitLoading, setSubmitLoading] = useState(false);
   const [isCsrfError, setIsCsrfError] = useState(false);
+  // Add ref to track initialization status
+  const isInitializing = useRef(false);
 
   useEffect(() => {
     const initFlow = async () => {
+      // Prevent duplicate initializations
+      if (isInitializing.current) {
+        console.log("Login flow initialization already in progress, skipping");
+        return;
+      }
+      
+      isInitializing.current = true;
       setLoading(true);
+      
       try {
         console.log("Starting login flow initialization");
         
@@ -77,10 +87,16 @@ export function LoginForm() {
         setError('Could not initialize login. Please try again or contact support if the issue persists.');
       } finally {
         setLoading(false);
+        isInitializing.current = false;
       }
     };
 
     initFlow();
+    
+    // Cleanup function
+    return () => {
+      isInitializing.current = false;
+    };
   }, []);
 
   // Fallback method to handle login issues

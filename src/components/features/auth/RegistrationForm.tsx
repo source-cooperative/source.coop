@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button, Flex, Text, Box } from '@radix-ui/themes';
 import * as Form from '@radix-ui/react-form';
@@ -23,10 +23,20 @@ export function RegistrationForm() {
   const [passwordsMatch, setPasswordsMatch] = useState(true);
   const [submitLoading, setSubmitLoading] = useState(false);
   const [isCsrfError, setIsCsrfError] = useState(false);
+  // Add ref to track initialization status
+  const isInitializing = useRef(false);
 
   useEffect(() => {
     const initFlow = async () => {
+      // Prevent duplicate initializations
+      if (isInitializing.current) {
+        console.log("Registration flow initialization already in progress, skipping");
+        return;
+      }
+      
+      isInitializing.current = true;
       setLoading(true);
+      
       try {
         console.log("Starting registration flow initialization");
         
@@ -78,10 +88,16 @@ export function RegistrationForm() {
         setError('Could not initialize registration. Please try again or contact support if the issue persists.');
       } finally {
         setLoading(false);
+        isInitializing.current = false;
       }
     };
 
     initFlow();
+    
+    // Cleanup function
+    return () => {
+      isInitializing.current = false;
+    };
   }, []);
 
   // Fallback method to handle registration issues
