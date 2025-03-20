@@ -63,6 +63,15 @@ Progress towards 0.2.0:
 - Ory API connectivity issues with direct form submission fallback
 - Layout issues with authentication forms
 - Proper form text sizing and input field styling
+- Authentication CSRF token issues:
+  - Rewrote API routes for login and registration with proper cookie handling
+  - Added multi-layer fallback mechanisms with automatic retries
+  - Implemented smart cookie forwarding to preserve authentication state
+  - Added "Clear Cookies" button for manual recovery from CSRF issues
+  - Improved error logging and user-friendly error messages
+  - Fixed server/client context detection for proper URL construction
+  - Added cache control headers to prevent stale responses
+- Next.js searchParams handling in auth page component
 
 ## [0.1.0] - 2024-03-18
 

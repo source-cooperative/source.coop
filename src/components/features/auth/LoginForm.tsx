@@ -6,61 +6,46 @@ import { Button, Flex, Text, Box } from '@radix-ui/themes';
 import * as Form from '@radix-ui/react-form';
 import { initLoginFlow, getLoginFlow } from '@/lib/auth';
 
-// Use the environment variable if available, otherwise fallback to default
-const ORY_URL = process.env.NEXT_PUBLIC_ORY_BASE_URL || "https://playground.projects.oryapis.com";
+// Helper to get absolute URLs for API calls if needed
+function getApiUrl(path: string) {
+  return path; // In client components, relative URLs work fine
+}
 
+// Use the server-side API routes instead of direct Ory access
 export function LoginForm() {
   const router = useRouter();
   const [flowId, setFlowId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [submitLoading, setSubmitLoading] = useState(false);
+  const [isCsrfError, setIsCsrfError] = useState(false);
 
   useEffect(() => {
     const initFlow = async () => {
       setLoading(true);
       try {
-        console.log("Starting login flow initialization from client");
+        console.log("Starting login flow initialization");
         
-        // Try to initialize flow directly via Ory if in client
-        if (typeof window !== 'undefined') {
+        // First try the server-side method
+        let newFlowId = await initLoginFlow();
+        console.log("Login flow ID received from server:", newFlowId);
+        
+        // If server-side method fails, try the API endpoint
+        if (!newFlowId) {
+          console.log("Server-side method failed, trying API endpoint");
           try {
-            console.log("Attempting direct Ory login flow initialization");
-            const response = await fetch(`${ORY_URL}/self-service/login/browser`, {
-              method: "GET",
-              redirect: "manual",
-              credentials: 'include',
-              headers: {
-                'Accept': 'application/json',
-              }
-            });
-            
-            // Check for redirect response
-            if (response.status === 302 || response.status === 303) {
-              const location = response.headers.get('location');
-              if (location) {
-                const url = new URL(location);
-                const directFlowId = url.searchParams.get("flow");
-                if (directFlowId) {
-                  console.log("Directly obtained flow ID:", directFlowId);
-                  setFlowId(directFlowId);
-                  setError(null);
-                  setLoading(false);
-                  return;
-                }
-              }
+            const response = await fetch('/api/auth/login');
+            if (response.ok) {
+              const data = await response.json();
+              newFlowId = data.flowId;
+              console.log("Login flow ID received from API:", newFlowId);
+            } else {
+              console.error("API endpoint failed:", await response.text());
             }
-            
-            console.log("Direct initialization didn't return usable flow ID, falling back to server method");
-          } catch (directErr) {
-            console.warn("Direct initialization attempt failed:", directErr);
-            // Continue with server method
+          } catch (apiErr) {
+            console.error("Error calling API endpoint:", apiErr);
           }
         }
-        
-        // Fall back to server method
-        const newFlowId = await initLoginFlow();
-        console.log("Login flow ID received from server:", newFlowId);
         
         if (!newFlowId) {
           throw new Error('Failed to initialize login flow - no flow ID received');
@@ -95,47 +80,26 @@ export function LoginForm() {
     initFlow();
   }, []);
 
-  // Fallback method to directly handle Ory browser flow
+  // Fallback method to handle login issues
   const handleRetryLogin = () => {
-    // Use Ory's official browser flow that handles redirects automatically
-    window.location.href = `${ORY_URL}/self-service/login/browser`;
+    // Refresh the page to restart the flow
+    window.location.reload();
   };
 
-  const handleDirectSubmit = (formData: FormData) => {
-    // Direct form submission by creating a form and submitting it
-    if (!flowId) {
-      handleRetryLogin();
-      return;
-    }
+  // Function to clear cookies for the domain
+  const clearCookies = () => {
+    // Clear cookies for localhost and the current domain
+    document.cookie.split(';').forEach(cookie => {
+      const [name] = cookie.trim().split('=');
+      if (name) {
+        // Set expiration to past date to delete the cookie
+        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
+      }
+    });
     
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = `${ORY_URL}/self-service/login?flow=${flowId}`;
-    
-    // Add method
-    const methodInput = document.createElement('input');
-    methodInput.type = 'hidden';
-    methodInput.name = 'method';
-    methodInput.value = 'password';
-    form.appendChild(methodInput);
-    
-    // Add email
-    const emailInput = document.createElement('input');
-    emailInput.type = 'hidden';
-    emailInput.name = 'identifier';
-    emailInput.value = formData.get('identifier') as string;
-    form.appendChild(emailInput);
-    
-    // Add password
-    const passwordInput = document.createElement('input');
-    passwordInput.type = 'hidden';
-    passwordInput.name = 'password';
-    passwordInput.value = formData.get('password') as string;
-    form.appendChild(passwordInput);
-    
-    // Submit the form
-    document.body.appendChild(form);
-    form.submit();
+    console.log("Cookies cleared, reloading page");
+    // Reload the page to start fresh
+    window.location.reload();
   };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -150,19 +114,56 @@ export function LoginForm() {
     
     try {
       console.log("Getting login flow for submission, ID:", flowId);
-      // Get flow data to find the action URL
-      const flow = await getLoginFlow(flowId);
+      // Always try to get a fresh flow with updated CSRF token right before submission
+      let flow;
+      let retryCount = 0;
+      const maxRetries = 2;
       
-      if (!flow) {
-        console.log("Could not get flow details, trying direct submission");
-        handleDirectSubmit(new FormData(event.currentTarget));
-        return;
+      while (!flow && retryCount <= maxRetries) {
+        try {
+          // If we're retrying, attempt to get a completely new flow via API
+          if (retryCount > 0) {
+            console.log(`Retry attempt ${retryCount}: Creating a new login flow`);
+            const apiUrl = getApiUrl('/api/auth/login');
+            console.log("Using API URL:", apiUrl);
+            
+            const response = await fetch(apiUrl, {
+              method: 'GET', 
+              credentials: 'include',
+              cache: 'no-store',
+              headers: {
+                'Cache-Control': 'no-cache, no-store, max-age=0'
+              }
+            });
+            
+            if (response.ok) {
+              const data = await response.json();
+              const newFlowId = data.flowId;
+              if (newFlowId) {
+                console.log(`Using new flow ID: ${newFlowId}`);
+                setFlowId(newFlowId);
+                flow = await getLoginFlow(newFlowId);
+              }
+            }
+          } else {
+            // First attempt: try with existing flowId
+            flow = await getLoginFlow(flowId);
+          }
+        } catch (flowErr) {
+          console.error(`Error fetching flow (attempt ${retryCount + 1}):`, flowErr);
+        }
+        
+        retryCount++;
+        
+        if (!flow && retryCount <= maxRetries) {
+          // Wait briefly before retrying
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
       }
       
-      // Ensure we have a valid action URL
-      if (!flow.ui?.action) {
-        console.log("No action URL found, trying direct submission");
-        handleDirectSubmit(new FormData(event.currentTarget));
+      if (!flow || !flow.ui?.action) {
+        setError('Could not get flow details after multiple attempts. Please try again.');
+        setSubmitLoading(false);
         return;
       }
       
@@ -170,11 +171,31 @@ export function LoginForm() {
       
       const formData = new FormData(event.currentTarget);
       
+      // Add method explicitly
+      formData.set('method', 'password');
+      
+      // Always get a fresh CSRF token from the flow
+      const csrfToken = flow.ui.nodes?.find(node => node.attributes?.name === 'csrf_token')?.attributes?.value;
+      if (csrfToken) {
+        console.log("Found CSRF token, adding to form data:", csrfToken.substring(0, 8) + '...');
+        formData.set('csrf_token', csrfToken);
+      } else {
+        console.warn("No CSRF token found in flow");
+      }
+      
+      // Use the specific action URL from the flow
       const response = await fetch(flow.ui.action, {
         method: flow.ui.method,
         body: formData,
         credentials: 'include',
         redirect: 'manual',
+        headers: {
+          // Add CSRF token as a header too in case it helps
+          ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
+          // Prevent caching
+          'Cache-Control': 'no-cache, no-store, max-age=0',
+          'Pragma': 'no-cache'
+        }
       });
       
       // Log response status for debugging
@@ -182,26 +203,66 @@ export function LoginForm() {
       
       // Check for different response types
       if (response.status >= 400) {
-        // If there's an error, get the updated flow with error messages
-        console.log("Error response received, getting flow for error details");
-        const updatedFlow = await getLoginFlow(flowId);
-        
-        if (updatedFlow?.ui?.messages?.length > 0) {
-          const errorMessage = updatedFlow.ui.messages[0].text;
-          console.error("Login error message:", errorMessage);
-          setError(errorMessage);
-        } else {
-          console.error("Login failed with status:", response.status);
-          setError('Login failed. Please check your credentials and try again.');
+        // If there's an error, check if it's a CSRF error
+        let errorText = '';
+        try {
+          const errorData = await response.json();
+          console.error("Login error data:", errorData);
+          
+          // Check for CSRF error specifically
+          if (errorData.error?.id === 'security_csrf_violation') {
+            setError('Security verification failed. Please clear your cookies and try again.');
+            setIsCsrfError(true);
+            return;
+          }
+          
+          errorText = errorData.error?.message || 'Login failed. Please try again.';
+        } catch (e) {
+          errorText = 'Login failed. Please try again.';
         }
-      } else {
-        // Check location header for redirect
-        const location = response.headers.get('location');
-        console.log("Successful login, redirect to:", location);
         
-        // Redirect to home page after successful login
-        router.push('/');
-        router.refresh();
+        setError(errorText);
+      } else {
+        // For successful login (usually 200, 201, or 302 status codes)
+        console.log("Successful login detected");
+        
+        // Add delay to ensure Ory session is properly established
+        setTimeout(async () => {
+          try {
+            // Check if the user needs to complete onboarding
+            const sessionApiUrl = getApiUrl('/api/auth/session');
+            const sessionResponse = await fetch(sessionApiUrl, {
+              method: 'GET',
+              credentials: 'include',
+            });
+            
+            if (sessionResponse.ok) {
+              const sessionData = await sessionResponse.json();
+              
+              // If the user has no account_id in metadata, they need to complete onboarding
+              if (!sessionData?.identity?.metadata_public?.account_id) {
+                console.log("User needs to complete onboarding");
+                router.push('/onboarding');
+              } else {
+                // User has completed onboarding, redirect to their profile
+                const accountId = sessionData.identity.metadata_public.account_id;
+                console.log("User has completed onboarding, redirecting to profile");
+                router.push(`/${accountId}`);
+              }
+            } else {
+              // If we can't determine onboarding status, go to home page
+              console.log("Could not determine onboarding status, redirecting to home");
+              router.push('/');
+            }
+            
+            router.refresh();
+          } catch (redirectErr) {
+            console.error("Error during redirect after login:", redirectErr);
+            // Fallback to home page
+            router.push('/');
+            router.refresh();
+          }
+        }, 500);
       }
     } catch (err) {
       console.error('Login error:', err);
@@ -220,15 +281,26 @@ export function LoginForm() {
       {error && (
         <Box mb="4">
           <Text color="red" size="2">{error}</Text>
-          <Button 
-            size="1" 
-            variant="soft" 
-            color="gray" 
-            mt="2" 
-            onClick={handleRetryLogin}
-          >
-            Try alternative login method
-          </Button>
+          <Flex gap="2" mt="2">
+            <Button 
+              size="1" 
+              variant="soft" 
+              color="gray" 
+              onClick={handleRetryLogin}
+            >
+              Retry
+            </Button>
+            {isCsrfError && (
+              <Button 
+                size="1" 
+                variant="soft" 
+                color="red" 
+                onClick={clearCookies}
+              >
+                Clear Cookies
+              </Button>
+            )}
+          </Flex>
         </Box>
       )}
       
@@ -278,12 +350,15 @@ export function LoginForm() {
           </Flex>
         </Form.Field>
         
+        {/* Add method as hidden input */}
         <input type="hidden" name="method" value="password" />
-        <input type="hidden" name="csrf_token" value={flowId || ''} />
+        
+        {/* Add CSRF token if available */}
+        {flowId && <CsrfTokenField flowId={flowId} />}
         
         <Flex mt="4" justify="end">
           <Form.Submit asChild>
-            <Button size="3" type="submit" disabled={loading || submitLoading}>
+            <Button size="3" type="submit" disabled={submitLoading}>
               {submitLoading ? 'Logging in...' : 'Log in'}
             </Button>
           </Form.Submit>
@@ -291,4 +366,30 @@ export function LoginForm() {
       </Flex>
     </Form.Root>
   );
+}
+
+// Helper component to fetch and include CSRF token
+function CsrfTokenField({ flowId }: { flowId: string }) {
+  const [csrfToken, setCsrfToken] = useState<string | null>(null);
+  
+  useEffect(() => {
+    const fetchCsrfToken = async () => {
+      try {
+        const flow = await getLoginFlow(flowId);
+        const token = flow?.ui.nodes?.find(node => node.attributes?.name === 'csrf_token')?.attributes?.value;
+        if (token) {
+          console.log("CSRF token fetched for form field");
+          setCsrfToken(token);
+        }
+      } catch (err) {
+        console.error("Failed to fetch CSRF token for form field:", err);
+      }
+    };
+    
+    fetchCsrfToken();
+  }, [flowId]);
+  
+  if (!csrfToken) return null;
+  
+  return <input type="hidden" name="csrf_token" value={csrfToken} />;
 } 

@@ -24,7 +24,9 @@ export default async function AuthPage({ searchParams }: AuthPageProps) {
   }
   
   // Default to login tab unless registration is specified
-  const flowParam = searchParams.flow;
+  // Use searchParams safely with proper typing
+  const params = await Promise.resolve(searchParams);
+  const flowParam = typeof params.flow === 'string' ? params.flow : undefined;
   const defaultTab = flowParam === 'registration' ? 'register' : 'login';
   
   return (

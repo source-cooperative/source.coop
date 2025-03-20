@@ -6,9 +6,12 @@ import { Button, Flex, Text, Box } from '@radix-ui/themes';
 import * as Form from '@radix-ui/react-form';
 import { initRegistrationFlow, getRegistrationFlow } from '@/lib/auth';
 
-// Use the environment variable if available, otherwise fallback to default
-const ORY_URL = process.env.NEXT_PUBLIC_ORY_BASE_URL || "https://playground.projects.oryapis.com";
+// Helper to get absolute URLs for API calls if needed
+function getApiUrl(path: string) {
+  return path; // In client components, relative URLs work fine
+}
 
+// Use the server-side API routes instead of direct Ory access
 export function RegistrationForm() {
   const router = useRouter();
   const [flowId, setFlowId] = useState<string | null>(null);
@@ -16,14 +19,34 @@ export function RegistrationForm() {
   const [error, setError] = useState<string | null>(null);
   const [passwordsMatch, setPasswordsMatch] = useState(true);
   const [submitLoading, setSubmitLoading] = useState(false);
+  const [isCsrfError, setIsCsrfError] = useState(false);
 
   useEffect(() => {
     const initFlow = async () => {
       setLoading(true);
       try {
         console.log("Starting registration flow initialization");
-        const newFlowId = await initRegistrationFlow();
-        console.log("Registration flow ID received:", newFlowId);
+        
+        // First try the server-side method
+        let newFlowId = await initRegistrationFlow();
+        console.log("Registration flow ID received from server:", newFlowId);
+        
+        // If server-side method fails, try the API endpoint
+        if (!newFlowId) {
+          console.log("Server-side method failed, trying API endpoint");
+          try {
+            const response = await fetch('/api/auth/register');
+            if (response.ok) {
+              const data = await response.json();
+              newFlowId = data.flowId;
+              console.log("Registration flow ID received from API:", newFlowId);
+            } else {
+              console.error("API endpoint failed:", await response.text());
+            }
+          } catch (apiErr) {
+            console.error("Error calling API endpoint:", apiErr);
+          }
+        }
         
         if (!newFlowId) {
           throw new Error('Failed to initialize registration flow - no flow ID received');
@@ -58,44 +81,26 @@ export function RegistrationForm() {
     initFlow();
   }, []);
 
-  // Fallback method to directly handle Ory browser flow
+  // Fallback method to handle registration issues
   const handleRetryRegistration = () => {
-    // Use Ory's official browser flow that handles redirects automatically
-    window.location.href = `${ORY_URL}/self-service/registration/browser`;
+    // Refresh the page to restart the flow
+    window.location.reload();
   };
 
-  const handleDirectSubmit = (formData: FormData) => {
-    // Direct form submission by creating a form and submitting it
-    if (!flowId) return;
+  // Function to clear cookies for the domain
+  const clearCookies = () => {
+    // Clear cookies for localhost and the current domain
+    document.cookie.split(';').forEach(cookie => {
+      const [name] = cookie.trim().split('=');
+      if (name) {
+        // Set expiration to past date to delete the cookie
+        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
+      }
+    });
     
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = `${ORY_URL}/self-service/registration?flow=${flowId}`;
-    
-    // Add method
-    const methodInput = document.createElement('input');
-    methodInput.type = 'hidden';
-    methodInput.name = 'method';
-    methodInput.value = 'password';
-    form.appendChild(methodInput);
-    
-    // Add email
-    const emailInput = document.createElement('input');
-    emailInput.type = 'hidden';
-    emailInput.name = 'traits.email';
-    emailInput.value = formData.get('traits.email') as string;
-    form.appendChild(emailInput);
-    
-    // Add password
-    const passwordInput = document.createElement('input');
-    passwordInput.type = 'hidden';
-    passwordInput.name = 'password';
-    passwordInput.value = formData.get('password') as string;
-    form.appendChild(passwordInput);
-    
-    // Submit the form
-    document.body.appendChild(form);
-    form.submit();
+    console.log("Cookies cleared, reloading page");
+    // Reload the page to start fresh
+    window.location.reload();
   };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -121,19 +126,56 @@ export function RegistrationForm() {
     
     try {
       console.log("Getting registration flow for submission, ID:", flowId);
-      // Get flow data to find the action URL
-      const flow = await getRegistrationFlow(flowId);
+      // Always try to get a fresh flow with updated CSRF token right before submission
+      let flow;
+      let retryCount = 0;
+      const maxRetries = 2;
       
-      if (!flow) {
-        console.log("Could not get flow details, trying direct submission");
-        handleDirectSubmit(formData);
-        return;
+      while (!flow && retryCount <= maxRetries) {
+        try {
+          // If we're retrying, attempt to get a completely new flow via API
+          if (retryCount > 0) {
+            console.log(`Retry attempt ${retryCount}: Creating a new registration flow`);
+            const apiUrl = getApiUrl('/api/auth/register');
+            console.log("Using API URL:", apiUrl);
+            
+            const response = await fetch(apiUrl, {
+              method: 'GET', 
+              credentials: 'include',
+              cache: 'no-store',
+              headers: {
+                'Cache-Control': 'no-cache, no-store, max-age=0'
+              }
+            });
+            
+            if (response.ok) {
+              const data = await response.json();
+              const newFlowId = data.flowId;
+              if (newFlowId) {
+                console.log(`Using new flow ID: ${newFlowId}`);
+                setFlowId(newFlowId);
+                flow = await getRegistrationFlow(newFlowId);
+              }
+            }
+          } else {
+            // First attempt: try with existing flowId
+            flow = await getRegistrationFlow(flowId);
+          }
+        } catch (flowErr) {
+          console.error(`Error fetching flow (attempt ${retryCount + 1}):`, flowErr);
+        }
+        
+        retryCount++;
+        
+        if (!flow && retryCount <= maxRetries) {
+          // Wait briefly before retrying
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
       }
       
-      // Ensure we have a valid action URL
-      if (!flow.ui?.action) {
-        console.log("No action URL found, trying direct submission");
-        handleDirectSubmit(formData);
+      if (!flow || !flow.ui?.action) {
+        setError('Could not get flow details after multiple attempts. Please try again.');
+        setSubmitLoading(false);
         return;
       }
       
@@ -142,11 +184,31 @@ export function RegistrationForm() {
       // Remove password_confirm as Ory doesn't need it
       formData.delete('password_confirm');
       
+      // Add method explicitly
+      formData.set('method', 'password');
+      
+      // Always get a fresh CSRF token from the flow
+      const csrfToken = flow.ui.nodes?.find(node => node.attributes?.name === 'csrf_token')?.attributes?.value;
+      if (csrfToken) {
+        console.log("Found CSRF token, adding to form data:", csrfToken.substring(0, 8) + '...');
+        formData.set('csrf_token', csrfToken);
+      } else {
+        console.warn("No CSRF token found in flow");
+      }
+      
+      // Use the specific action URL from the flow
       const response = await fetch(flow.ui.action, {
         method: flow.ui.method,
         body: formData,
         credentials: 'include',
         redirect: 'manual',
+        headers: {
+          // Add CSRF token as a header too in case it helps
+          ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
+          // Prevent caching
+          'Cache-Control': 'no-cache, no-store, max-age=0',
+          'Pragma': 'no-cache'
+        }
       });
       
       // Log response status for debugging
@@ -154,26 +216,36 @@ export function RegistrationForm() {
       
       // Check for different response types
       if (response.status >= 400) {
-        // If there's an error, get the updated flow with error messages
-        console.log("Error response received, getting flow for error details");
-        const updatedFlow = await getRegistrationFlow(flowId);
-        
-        if (updatedFlow?.ui?.messages?.length > 0) {
-          const errorMessage = updatedFlow.ui.messages[0].text;
-          console.error("Registration error message:", errorMessage);
-          setError(errorMessage);
-        } else {
-          console.error("Registration failed with status:", response.status);
-          setError('Registration failed. Please check your information and try again.');
+        // If there's an error, check if it's a CSRF error
+        let errorText = '';
+        try {
+          const errorData = await response.json();
+          console.error("Registration error data:", errorData);
+          
+          // Check for CSRF error specifically
+          if (errorData.error?.id === 'security_csrf_violation') {
+            setError('Security verification failed. Please clear your cookies and try again.');
+            setIsCsrfError(true);
+            return;
+          }
+          
+          errorText = errorData.error?.message || 'Registration failed. Please try again.';
+        } catch (e) {
+          errorText = 'Registration failed. Please try again.';
         }
-      } else {
-        // Check location header for redirect
-        const location = response.headers.get('location');
-        console.log("Successful registration, redirect to:", location);
         
-        // Successful registration - redirect to onboarding
-        router.push('/onboarding');
-        router.refresh();
+        setError(errorText);
+      } else {
+        // For successful registration (usually 200, 201, or 302 status codes)
+        console.log("Successful registration detected");
+        
+        // Add delay to ensure Ory session is properly established
+        setTimeout(() => {
+          // Redirect to onboarding page
+          console.log("Redirecting to onboarding page");
+          router.push('/onboarding');
+          router.refresh();
+        }, 500);
       }
     } catch (err) {
       console.error('Registration error:', err);
@@ -192,15 +264,26 @@ export function RegistrationForm() {
       {error && (
         <Box mb="4">
           <Text color="red" size="2">{error}</Text>
-          <Button 
-            size="1" 
-            variant="soft" 
-            color="gray" 
-            mt="2" 
-            onClick={handleRetryRegistration}
-          >
-            Try alternative registration method
-          </Button>
+          <Flex gap="2" mt="2">
+            <Button 
+              size="1" 
+              variant="soft" 
+              color="gray" 
+              onClick={handleRetryRegistration}
+            >
+              Retry
+            </Button>
+            {isCsrfError && (
+              <Button 
+                size="1" 
+                variant="soft" 
+                color="red" 
+                onClick={clearCookies}
+              >
+                Clear Cookies
+              </Button>
+            )}
+          </Flex>
         </Box>
       )}
       
@@ -278,17 +361,46 @@ export function RegistrationForm() {
           </Flex>
         </Form.Field>
         
+        {/* Add method as hidden input */}
         <input type="hidden" name="method" value="password" />
-        <input type="hidden" name="csrf_token" value={flowId || ''} />
+        
+        {/* Add CSRF token if available */}
+        {flowId && <CsrfTokenField flowId={flowId} />}
         
         <Flex mt="4" justify="end">
           <Form.Submit asChild>
-            <Button size="3" type="submit" disabled={loading || submitLoading}>
-              {submitLoading ? 'Registering...' : 'Register'}
+            <Button size="3" type="submit" disabled={submitLoading}>
+              {submitLoading ? 'Registering...' : 'Create Account'}
             </Button>
           </Form.Submit>
         </Flex>
       </Flex>
     </Form.Root>
   );
+}
+
+// Helper component to fetch and include CSRF token
+function CsrfTokenField({ flowId }: { flowId: string }) {
+  const [csrfToken, setCsrfToken] = useState<string | null>(null);
+  
+  useEffect(() => {
+    const fetchCsrfToken = async () => {
+      try {
+        const flow = await getRegistrationFlow(flowId);
+        const token = flow?.ui.nodes?.find(node => node.attributes?.name === 'csrf_token')?.attributes?.value;
+        if (token) {
+          console.log("CSRF token fetched for form field");
+          setCsrfToken(token);
+        }
+      } catch (err) {
+        console.error("Failed to fetch CSRF token for form field:", err);
+      }
+    };
+    
+    fetchCsrfToken();
+  }, [flowId]);
+  
+  if (!csrfToken) return null;
+  
+  return <input type="hidden" name="csrf_token" value={csrfToken} />;
 } 
