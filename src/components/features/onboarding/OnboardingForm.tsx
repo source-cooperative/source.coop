@@ -2,8 +2,9 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Button, Flex, Text, Box } from '@radix-ui/themes';
+import { Button, Flex, Text, Box, TextField } from '@radix-ui/themes';
 import * as Form from '@radix-ui/react-form';
+import { MonoText } from '@/components/core/MonoText';
 
 export function OnboardingForm() {
   const router = useRouter();
@@ -11,6 +12,7 @@ export function OnboardingForm() {
   const [error, setError] = useState<string | null>(null);
   const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
   const [isCheckingUsername, setIsCheckingUsername] = useState(false);
+  const [username, setUsername] = useState('unique_username');
 
   const checkUsernameAvailability = async (username: string) => {
     if (!username || username.length < 3) {
@@ -118,8 +120,12 @@ export function OnboardingForm() {
                 minLength={3}
                 pattern="^[a-zA-Z0-9_-]+$"
                 className="px-4 py-3 text-lg rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:border-blue-500 focus:ring-blue-200"
-                style={{ fontSize: 'var(--font-size-3)' }}
-                onChange={(e) => checkUsernameAvailability(e.target.value)}
+                style={{ fontSize: 'var(--font-size-3)', fontFamily: 'var(--code-font-family)' }}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setUsername(value || 'unique_username');
+                  checkUsernameAvailability(value);
+                }}
               />
             </Form.Control>
             <Form.Message className="FormMessage" match="valueMissing">
@@ -134,15 +140,16 @@ export function OnboardingForm() {
             {isCheckingUsername && (
               <Text color="gray" size="1">Checking availability...</Text>
             )}
-            {!isCheckingUsername && usernameAvailable === false && (
-              <Text color="red" size="1">This username is already taken</Text>
-            )}
-            {!isCheckingUsername && usernameAvailable === true && (
-              <Text color="green" size="1">Username is available</Text>
-            )}
-            <Text size="1" color="gray">
-              This will be your profile URL: source.coop/<span className="font-mono">username</span>
-            </Text>
+            <Flex gap="1" align="center">
+              <MonoText size="1" color="gray">
+                This will be your profile URL: source.coop/{username}
+              </MonoText>
+              {!isCheckingUsername && usernameAvailable !== null && (
+                <Text size="1" color={usernameAvailable ? 'green' : 'red'}>
+                  ({usernameAvailable ? 'Username is available' : 'This username is already taken'})
+                </Text>
+              )}
+            </Flex>
           </Flex>
         </Form.Field>
 
