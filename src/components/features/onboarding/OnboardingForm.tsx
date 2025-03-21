@@ -2,9 +2,10 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Button, Flex, Text, Box, TextField } from '@radix-ui/themes';
-import * as Form from '@radix-ui/react-form';
+import { Flex, Text, Box } from '@radix-ui/themes';
 import { MonoText } from '@/components/core/MonoText';
+import { FormWrapper } from '@/components/core/Form';
+import { FormField } from '@/types/form';
 
 export function OnboardingForm() {
   const router = useRouter();
@@ -39,15 +40,13 @@ export function OnboardingForm() {
     }
   };
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const handleSubmit = async (data: Record<string, any>) => {
     setLoading(true);
     setError(null);
 
     try {
-      const formData = new FormData(event.currentTarget);
-      const accountId = formData.get('account_id') as string;
-      const name = formData.get('name') as string;
+      const accountId = data.account_id;
+      const name = data.name;
 
       // Basic validation
       if (!accountId || accountId.length < 3) {
@@ -75,14 +74,14 @@ export function OnboardingForm() {
         }),
       });
 
-      const data = await response.json();
+      const responseData = await response.json();
       
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to complete onboarding');
+        throw new Error(responseData.error || 'Failed to complete onboarding');
       }
 
       // On success, redirect to profile page
-      console.log('Onboarding successful:', data);
+      console.log('Onboarding successful:', responseData);
       
       // Add a slight delay to ensure state updates are complete
       setTimeout(() => {
@@ -97,98 +96,63 @@ export function OnboardingForm() {
     }
   };
 
-  return (
-    <Form.Root onSubmit={handleSubmit}>
-      {error && (
-        <Box mb="4">
-          <Text color="red" size="2">{error}</Text>
-        </Box>
-      )}
+  const handleUsernameChange = (value: string) => {
+    setUsername(value || 'unique_username');
+    checkUsernameAvailability(value);
+  };
 
-      <Flex direction="column" gap="4">
-        <Form.Field name="account_id">
-          <Flex direction="column" gap="1">
-            <Form.Label>
-              <Text size="3" weight="medium">Username</Text>
-            </Form.Label>
-            <Form.Control asChild>
-              <input
-                type="text"
-                name="account_id"
-                placeholder="unique_username"
-                required
-                minLength={3}
-                pattern="^[a-zA-Z0-9_-]+$"
-                className="px-4 py-3 text-lg rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:border-blue-500 focus:ring-blue-200"
-                style={{ fontSize: 'var(--font-size-3)', fontFamily: 'var(--code-font-family)' }}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  setUsername(value || 'unique_username');
-                  checkUsernameAvailability(value);
-                }}
-              />
-            </Form.Control>
-            <Form.Message className="FormMessage" match="valueMissing">
-              <Text color="red" size="1">Please choose a username</Text>
-            </Form.Message>
-            <Form.Message className="FormMessage" match="tooShort">
-              <Text color="red" size="1">Username must be at least 3 characters</Text>
-            </Form.Message>
-            <Form.Message className="FormMessage" match="patternMismatch">
-              <Text color="red" size="1">Username can only contain letters, numbers, underscores, and hyphens</Text>
-            </Form.Message>
-            <Flex direction="column" gap="1" style={{ minHeight: '24px' }}>
-              <Flex gap="1" align="center">
-                <MonoText size="1" color="gray">
-                  This will be your profile URL: source.coop/{username}
-                </MonoText>
-                {!isCheckingUsername && usernameAvailable !== null && (
-                  <Text size="1" color={usernameAvailable ? 'green' : 'red'}>
-                    ({usernameAvailable ? 'Username is available' : 'This username is already taken'})
-                  </Text>
-                )}
-              </Flex>
-              <div style={{ height: '16px' }}>
-                {isCheckingUsername && (
-                  <Text size="1" color="gray">Checking availability...</Text>
-                )}
-              </div>
-            </Flex>
+  const fields: FormField[] = [
+    {
+      name: 'account_id',
+      label: 'Username',
+      type: 'text',
+      required: true,
+      placeholder: 'unique_username',
+      validation: {
+        minLength: 3,
+        pattern: '^[a-zA-Z0-9_-]+$'
+      },
+      onChange: handleUsernameChange,
+      description: (
+        <Flex direction="column" gap="1" style={{ minHeight: '24px' }}>
+          <Flex gap="1" align="center">
+            <MonoText size="1" color="gray">
+              This will be your profile URL: source.coop/{username}
+            </MonoText>
+            {!isCheckingUsername && usernameAvailable !== null && (
+              <Text size="1" color={usernameAvailable ? 'green' : 'red'}>
+                ({usernameAvailable ? 'Username is available' : 'This username is already taken'})
+              </Text>
+            )}
           </Flex>
-        </Form.Field>
-
-        <Form.Field name="name">
-          <Flex direction="column" gap="1">
-            <Form.Label>
-              <Text size="3" weight="medium">Full Name</Text>
-            </Form.Label>
-            <Form.Control asChild>
-              <input
-                type="text"
-                name="name"
-                placeholder="Your Name"
-                required
-                className="px-4 py-3 text-lg rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:border-blue-500 focus:ring-blue-200"
-                style={{ fontSize: 'var(--font-size-3)' }}
-              />
-            </Form.Control>
-            <Form.Message className="FormMessage" match="valueMissing">
-              <Text color="red" size="1">Please enter your name</Text>
-            </Form.Message>
-            <Text size="1" color="gray">
-              This is the name that will be displayed on your profile
-            </Text>
-          </Flex>
-        </Form.Field>
-
-        <Flex mt="4" justify="end">
-          <Form.Submit asChild>
-            <Button size="3" type="submit" disabled={loading || usernameAvailable === false || isCheckingUsername}>
-              {loading ? 'Saving...' : 'Complete Profile'}
-            </Button>
-          </Form.Submit>
+          <div style={{ height: '16px' }}>
+            {isCheckingUsername && (
+              <Text size="1" color="gray">Checking availability...</Text>
+            )}
+          </div>
         </Flex>
-      </Flex>
-    </Form.Root>
+      )
+    },
+    {
+      name: 'name',
+      label: 'Full Name',
+      type: 'text',
+      required: true,
+      placeholder: 'Your Name',
+      validation: {
+        minLength: 2
+      },
+      description: 'This is the name that will be displayed on your profile'
+    }
+  ];
+
+  return (
+    <FormWrapper
+      fields={fields}
+      onSubmit={handleSubmit}
+      submitLabel="Complete Profile"
+      error={error}
+      isLoading={loading || usernameAvailable === false || isCheckingUsername}
+    />
   );
 } 
