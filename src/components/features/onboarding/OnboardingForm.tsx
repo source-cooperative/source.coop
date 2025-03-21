@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Flex, Text, Box } from '@radix-ui/themes';
 import { MonoText } from '@/components/core/MonoText';
 import { FormWrapper } from '@/components/core/Form';
 import { FormField } from '@/types/form';
+import debounce from 'lodash/debounce';
 
 export function OnboardingForm() {
   const router = useRouter();
@@ -15,30 +16,34 @@ export function OnboardingForm() {
   const [isCheckingUsername, setIsCheckingUsername] = useState(false);
   const [username, setUsername] = useState('unique_username');
 
-  const checkUsernameAvailability = async (username: string) => {
-    if (!username || username.length < 3) {
-      setUsernameAvailable(null);
-      return;
-    }
-    
-    setIsCheckingUsername(true);
-    try {
-      const response = await fetch(`/api/accounts/check-username?username=${encodeURIComponent(username)}`);
-      const data = await response.json();
-      setUsernameAvailable(data.available);
-      
-      if (!data.available && data.error) {
-        setError(data.error);
-      } else {
-        setError(null);
+  // Debounced username check
+  const debouncedCheckUsername = useCallback(
+    debounce(async (username: string) => {
+      if (!username || username.length < 3) {
+        setUsernameAvailable(null);
+        return;
       }
-    } catch (err) {
-      console.error('Error checking username:', err);
-      setUsernameAvailable(null);
-    } finally {
-      setIsCheckingUsername(false);
-    }
-  };
+      
+      setIsCheckingUsername(true);
+      try {
+        const response = await fetch(`/api/accounts/check-username?username=${encodeURIComponent(username)}`);
+        const data = await response.json();
+        setUsernameAvailable(data.available);
+        
+        if (!data.available && data.error) {
+          setError(data.error);
+        } else {
+          setError(null);
+        }
+      } catch (err) {
+        console.error('Error checking username:', err);
+        setUsernameAvailable(null);
+      } finally {
+        setIsCheckingUsername(false);
+      }
+    }, 500),
+    []
+  );
 
   const handleSubmit = async (data: Record<string, any>) => {
     setLoading(true);
@@ -98,7 +103,7 @@ export function OnboardingForm() {
 
   const handleUsernameChange = (value: string) => {
     setUsername(value || 'unique_username');
-    checkUsernameAvailability(value);
+    debouncedCheckUsername(value);
   };
 
   const fields: FormField[] = [
@@ -115,19 +120,32 @@ export function OnboardingForm() {
       onChange: handleUsernameChange,
       description: (
         <Flex direction="column" gap="1" style={{ minHeight: '24px' }}>
-          <Flex gap="1" align="center">
+          <Flex gap="0" align="center">
             <MonoText size="1" color="gray">
-              This will be your profile URL: source.coop/{username}
+              This will be your profile URL: source.coop/
             </MonoText>
-            {!isCheckingUsername && usernameAvailable !== null && (
-              <Text size="1" color={usernameAvailable ? 'green' : 'red'}>
-                ({usernameAvailable ? 'Username is available' : 'This username is already taken'})
-              </Text>
-            )}
+            <MonoText 
+              size="1" 
+              color={
+                isCheckingUsername 
+                  ? 'gray' 
+                  : usernameAvailable === null 
+                    ? 'gray' 
+                    : usernameAvailable 
+                      ? 'green' 
+                      : 'red'
+              }
+            >
+              {username}
+            </MonoText>
           </Flex>
           <div style={{ height: '16px' }}>
-            {isCheckingUsername && (
-              <Text size="1" color="gray">Checking availability...</Text>
+            {isCheckingUsername ? (
+              <Text size="1" color="gray">Checking availability…</Text>
+            ) : usernameAvailable !== null && (
+              <Text size="1" color={usernameAvailable ? 'green' : 'red'}>
+                {usernameAvailable ? 'Username is available' : 'This username is already taken'}
+              </Text>
             )}
           </div>
         </Flex>
