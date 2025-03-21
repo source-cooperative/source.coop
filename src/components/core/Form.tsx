@@ -14,6 +14,7 @@ export const FormWrapper: React.FC<FormProps> = ({
   description,
   error: initialError,
   isLoading = false,
+  submitDisabled = false,
 }) => {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -101,7 +102,7 @@ export const FormWrapper: React.FC<FormProps> = ({
 
         <Flex mt="4" justify="end">
           <Form.Submit asChild>
-            <Button size="3" type="submit" disabled={isLoading}>
+            <Button size="3" type="submit" disabled={isLoading || submitDisabled}>
               {isLoading ? 'Submitting...' : submitLabel}
             </Button>
           </Form.Submit>

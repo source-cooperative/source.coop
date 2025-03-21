@@ -24,4 +24,5 @@ export interface FormProps {
   description?: string;
   error?: string | null;
   isLoading?: boolean;
+  submitDisabled?: boolean;
 } 

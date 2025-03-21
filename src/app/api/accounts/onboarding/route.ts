@@ -1,71 +1,41 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import { IndividualAccount } from '@/types/account';
+import { getDynamoDb } from '@/lib/clients';
+import { PutCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
+import type { IndividualAccount } from '@/types';
 
 const ORY_BASE_URL = process.env.ORY_BASE_URL || "http://localhost:4000";
 
 export async function POST(request: NextRequest) {
   try {
-    // Get the current session to get Ory ID
-    const cookieStore = await cookies();
-    const cookieHeader = cookieStore.toString();
-    
-    const sessionResponse = await fetch(`${ORY_BASE_URL}/sessions/whoami`, {
-      method: 'GET',
-      headers: {
-        Cookie: cookieHeader,
-      },
-    });
-    
-    if (!sessionResponse.ok) {
+    const { account_id, name } = await request.json();
+
+    // Get session from cookie
+    const sessionCookie = request.cookies.get('ory_kratos_session');
+    if (!sessionCookie) {
       return NextResponse.json(
-        { error: 'Authentication required' },
+        { error: 'No session found' },
         { status: 401 }
       );
     }
-    
-    const session = await sessionResponse.json();
-    const oryId = session.identity.id;
-    
-    if (!oryId) {
+
+    // Get session data from Ory
+    const sessionResponse = await fetch(`${ORY_BASE_URL}/sessions/whoami`, {
+      headers: {
+        Cookie: `ory_kratos_session=${sessionCookie.value}`,
+      },
+    });
+
+    if (!sessionResponse.ok) {
       return NextResponse.json(
         { error: 'Invalid session' },
-        { status: 400 }
+        { status: 401 }
       );
     }
-    
-    // Get the submitted account data
-    const body = await request.json();
-    const { account_id, name } = body;
-    
-    // Validate the input
-    if (!account_id || account_id.length < 3) {
-      return NextResponse.json(
-        { error: 'Username must be at least 3 characters' },
-        { status: 400 }
-      );
-    }
-    
-    if (!name || name.length < 2) {
-      return NextResponse.json(
-        { error: 'Name is required' },
-        { status: 400 }
-      );
-    }
-    
-    // Check username availability
-    // In a real implementation, this would check against your database
-    const checkResponse = await fetch(`${request.nextUrl.origin}/api/accounts/check-username?username=${encodeURIComponent(account_id)}`);
-    const checkData = await checkResponse.json();
-    
-    if (!checkData.available) {
-      return NextResponse.json(
-        { error: 'Username is not available' },
-        { status: 400 }
-      );
-    }
-    
-    // Create the account in your database
+
+    const session = await sessionResponse.json();
+    const oryId = session.identity.id;
+
+    // Create the account in DynamoDB
     const newAccount: IndividualAccount = {
       account_id,
       name,
@@ -76,18 +46,19 @@ export async function POST(request: NextRequest) {
       updated_at: new Date().toISOString(),
     };
     
-    // In a real implementation, you would save this to your database
-    console.log('Creating new account:', newAccount);
-    
-    // TODO: Save to DynamoDB
-    // For demonstration, we'll just log the account creation
+    // Save to DynamoDB
+    const dynamoDb = getDynamoDb();
+    await dynamoDb.send(new PutCommand({
+      TableName: "Accounts",
+      Item: newAccount,
+      ConditionExpression: "attribute_not_exists(account_id)",
+    }));
     
     // Now update Ory identity to include account_id in the metadata
     const updateResponse = await fetch(`${ORY_BASE_URL}/admin/identities/${oryId}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
-        // In production, you'd need proper authorization for admin APIs
         'Authorization': `Bearer ${process.env.ORY_ADMIN_API_KEY || 'test'}`,
       },
       body: JSON.stringify({
@@ -106,6 +77,12 @@ export async function POST(request: NextRequest) {
     });
     
     if (!updateResponse.ok) {
+      // If Ory update fails, delete the account from DynamoDB
+      await dynamoDb.send(new DeleteCommand({
+        TableName: "Accounts",
+        Key: { account_id }
+      }));
+      
       console.error('Failed to update Ory identity:', await updateResponse.text());
       return NextResponse.json(
         { error: 'Failed to update user profile' },
@@ -124,7 +101,7 @@ export async function POST(request: NextRequest) {
       }
     });
   } catch (error) {
-    console.error('Onboarding error:', error);
+    console.error('Error in onboarding:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

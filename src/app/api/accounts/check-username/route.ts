@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { fetchAccount } from '@/lib/db/operations';
+import { getDynamoDb } from '@/lib/clients';
+import { GetCommand } from '@aws-sdk/lib-dynamodb';
 
 // Reserved usernames that cannot be used
-const RESERVED_USERNAMES = ['admin', 'moderator', 'root', 'superuser', 'system'];
+const RESERVED_USERNAMES = [
+  'admin', 'moderator', 'root', 'superuser', 'system',
+  'api', 'auth', 'login', 'logout', 'register', 'settings',
+  'profile', 'account', 'help', 'support', 'about', 'terms',
+  'privacy', 'security', 'contact', 'feedback', 'status'
+];
 
 export async function GET(request: NextRequest) {
   try {
@@ -40,8 +46,13 @@ export async function GET(request: NextRequest) {
     }
 
     // Check if username exists in DynamoDB
-    const existingAccount = await fetchAccount(username);
-    const isAvailable = existingAccount === null;
+    const dynamoDb = getDynamoDb();
+    const result = await dynamoDb.send(new GetCommand({
+      TableName: "Accounts",
+      Key: { account_id: username }
+    }));
+
+    const isAvailable = !result.Item;
 
     return NextResponse.json({ 
       available: isAvailable,
