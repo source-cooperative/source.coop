@@ -13,81 +13,38 @@ interface OnboardingFormData {
   name: string;
 }
 
-interface UsernameCheckResponse {
-  available: boolean;
-  error?: string;
-}
-
-interface OnboardingResponse {
-  success: boolean;
-  error?: string;
-}
-
-interface UseUsernameCheck {
-  username: string;
-  usernameAvailable: boolean | null;
-  isCheckingUsername: boolean;
-  error: string | null;
-  checkUsername: (username: string) => void;
-  setUsername: (username: string) => void;
-}
-
-function useUsernameCheck(): UseUsernameCheck {
-  const [username, setUsername] = useState('');
-  const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
-  const [isCheckingUsername, setIsCheckingUsername] = useState(false);
+export function OnboardingForm() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [username, setUsername] = useState('');
+  const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken'>('idle');
 
   const checkUsername = useCallback(
-    debounce(async (username: string) => {
-      if (!username || username.length < 3) {
-        setUsernameAvailable(null);
+    debounce(async (value: string) => {
+      if (!value || value.length < 3) {
+        setUsernameStatus('idle');
         return;
       }
-      
-      setIsCheckingUsername(true);
+
+      setUsernameStatus('checking');
       try {
-        const response = await fetch(`/api/accounts/check-username?username=${encodeURIComponent(username)}`);
-        const data: UsernameCheckResponse = await response.json();
-        setUsernameAvailable(data.available);
-        
-        if (!data.available && data.error) {
-          setError(data.error);
-        } else {
-          setError(null);
-        }
+        const response = await fetch(`/api/accounts/check-username?username=${encodeURIComponent(value)}`);
+        const data = await response.json();
+        setUsernameStatus(data.available ? 'available' : 'taken');
       } catch (err) {
         console.error('Error checking username:', err);
-        setUsernameAvailable(null);
-        setError('Failed to check username availability');
-      } finally {
-        setIsCheckingUsername(false);
+        setUsernameStatus('idle');
       }
     }, 500),
     []
   );
 
-  return {
-    username,
-    usernameAvailable,
-    isCheckingUsername,
-    error,
-    checkUsername,
-    setUsername,
+  const handleUsernameChange = (value: string) => {
+    const lowercaseValue = value.toLowerCase().replace(/\s+/g, '');
+    setUsername(lowercaseValue);
+    checkUsername(lowercaseValue);
   };
-}
-
-export function OnboardingForm() {
-  const router = useRouter();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const {
-    username,
-    usernameAvailable,
-    isCheckingUsername,
-    checkUsername,
-    setUsername,
-  } = useUsernameCheck();
 
   const handleSubmit = async (data: OnboardingFormData) => {
     setLoading(true);
@@ -105,11 +62,6 @@ export function OnboardingForm() {
         throw new Error('Name is required');
       }
 
-      // Final username availability check before submission
-      if (usernameAvailable === false) {
-        throw new Error('Username is not available. Please choose another one.');
-      }
-
       // Submit to API
       const response = await fetch('/api/accounts/onboarding', {
         method: 'POST',
@@ -122,7 +74,7 @@ export function OnboardingForm() {
         }),
       });
 
-      const responseData: OnboardingResponse = await response.json();
+      const responseData = await response.json();
       
       if (!response.ok) {
         throw new Error(responseData.error || 'Failed to complete onboarding');
@@ -139,11 +91,6 @@ export function OnboardingForm() {
     }
   };
 
-  const handleUsernameChange = (value: string) => {
-    setUsername(value);
-    checkUsername(value);
-  };
-
   const fields: FormField[] = [
     {
       name: 'account_id',
@@ -153,7 +100,7 @@ export function OnboardingForm() {
       placeholder: 'Choose a username',
       validation: {
         minLength: 3,
-        pattern: '^[a-zA-Z0-9_-]+$'
+        pattern: '^[a-z0-9_-]+$'
       },
       onChange: handleUsernameChange,
       description: (
@@ -165,24 +112,24 @@ export function OnboardingForm() {
             <MonoText 
               size="1" 
               color={
-                isCheckingUsername 
+                usernameStatus === 'checking' 
                   ? 'gray' 
-                  : usernameAvailable === null 
-                    ? 'gray' 
-                    : usernameAvailable 
-                      ? 'green' 
-                      : 'red'
+                  : usernameStatus === 'available'
+                    ? 'green'
+                    : usernameStatus === 'taken'
+                      ? 'red'
+                      : 'gray'
               }
             >
               {username}
             </MonoText>
           </Flex>
           <div style={{ height: '16px' }}>
-            {isCheckingUsername ? (
+            {usernameStatus === 'checking' ? (
               <Text size="1" color="gray">Checking availability…</Text>
-            ) : usernameAvailable !== null && (
-              <Text size="1" color={usernameAvailable ? 'green' : 'red'}>
-                {usernameAvailable ? 'Username is available' : 'This username is already taken'}
+            ) : usernameStatus !== 'idle' && (
+              <Text size="1" color={usernameStatus === 'available' ? 'green' : 'red'}>
+                {usernameStatus === 'available' ? 'Username is available' : 'This username is already taken'}
               </Text>
             )}
           </div>
@@ -209,7 +156,8 @@ export function OnboardingForm() {
         onSubmit={handleSubmit}
         submitLabel="Complete Profile"
         error={error}
-        isLoading={loading || usernameAvailable === false || isCheckingUsername}
+        isLoading={loading}
+        submitDisabled={usernameStatus === 'taken' || usernameStatus === 'checking'}
       />
     </Box>
   );
