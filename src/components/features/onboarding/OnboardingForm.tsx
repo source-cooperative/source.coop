@@ -137,18 +137,22 @@ export function OnboardingForm() {
             <Form.Message className="FormMessage" match="patternMismatch">
               <Text color="red" size="1">Username can only contain letters, numbers, underscores, and hyphens</Text>
             </Form.Message>
-            {isCheckingUsername && (
-              <Text color="gray" size="1">Checking availability...</Text>
-            )}
-            <Flex gap="1" align="center">
-              <MonoText size="1" color="gray">
-                This will be your profile URL: source.coop/{username}
-              </MonoText>
-              {!isCheckingUsername && usernameAvailable !== null && (
-                <Text size="1" color={usernameAvailable ? 'green' : 'red'}>
-                  ({usernameAvailable ? 'Username is available' : 'This username is already taken'})
-                </Text>
-              )}
+            <Flex direction="column" gap="1" style={{ minHeight: '24px' }}>
+              <Flex gap="1" align="center">
+                <MonoText size="1" color="gray">
+                  This will be your profile URL: source.coop/{username}
+                </MonoText>
+                {!isCheckingUsername && usernameAvailable !== null && (
+                  <Text size="1" color={usernameAvailable ? 'green' : 'red'}>
+                    ({usernameAvailable ? 'Username is available' : 'This username is already taken'})
+                  </Text>
+                )}
+              </Flex>
+              <div style={{ height: '16px' }}>
+                {isCheckingUsername && (
+                  <Text size="1" color="gray">Checking availability...</Text>
+                )}
+              </div>
             </Flex>
           </Flex>
         </Form.Field>
