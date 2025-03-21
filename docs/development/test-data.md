@@ -1,122 +1,115 @@
-# Test Data Setup
+# Test Data Structure
 
-This document describes how test data is managed in the Source Cooperative project.
+This document describes the test data structure used for local development and testing.
 
 ## Overview
 
-The project uses a structured approach to manage test data for local development:
+The test data consists of a combination of DynamoDB tables and a local file storage structure that mirrors the production environment. This setup allows for realistic testing of the application's features without requiring external services.
 
-1. Test data files are stored in the `test-storage` directory
-2. A script (`scripts/setup-test-data.ts`) reads this structure and populates DynamoDB
-3. The setup process is automated through npm scripts
+## DynamoDB Tables
 
-## Directory Structure
+### Accounts Table
+- Contains both individual user accounts and organization accounts
+- Primary key: `id` (string)
+- Attributes:
+  - `type`: "individual" or "organization"
+  - `name`: Display name
+  - `email`: Contact email
+  - `description`: Account description
+  - `created_at`: Timestamp
+  - `updated_at`: Timestamp
 
-The `test-storage` directory follows this structure:
+### Repositories Table
+- Stores repository metadata and relationships
+- Primary key: `id` (string)
+- Global Secondary Index: `account_id` (string)
+- Attributes:
+  - `name`: Repository name
+  - `account_id`: Owner's account ID
+  - `description`: Repository description
+  - `visibility`: "public" or "private"
+  - `created_at`: Timestamp
+  - `updated_at`: Timestamp
+
+## Test Storage Structure
+
+The test storage is organized in a hierarchical structure that mirrors the repository ownership:
 
 ```
 test-storage/
-├── account_id_1/
-│   ├── repository_id_1/
-│   │   └── stac/
-│   │       └── catalog.json
-│   └── repository_id_2/
-│       └── stac/
-│           └── catalog.json
-└── account_id_2/
-    └── repository_id_3/
-        └── stac/
-            └── catalog.json
+├── individual_users/
+│   ├── sarah/
+│   │   ├── arctic-sea-ice/
+│   │   └── climate-analytics/
+│   ├── michael/
+│   │   ├── open-geo-tools/
+│   │   └── vector-tile-renderer/
+│   └── ...
+├── organizations/
+│   ├── nasa/
+│   │   └── nasa-repo-1/
+│   ├── noaa/
+│   │   └── noaa-repo-1/
+│   └── ...
+└── ...
 ```
 
-## Setup Process
+## Test Data Generation
 
-### 1. Initialize Local Environment
+The test data is generated and initialized using the `init-local.ts` script, which:
 
-Run the local setup script to start DynamoDB and create tables:
+1. Creates necessary DynamoDB tables if they don't exist
+2. Generates test accounts (individual users and organizations)
+3. Creates test repositories with realistic metadata
+4. Sets up the corresponding directory structure in test storage
+5. Initializes repository content with README files
+
+## Usage
+
+To initialize the test environment:
 
 ```bash
-npm run init-local
+npx tsx scripts/init-local.ts
 ```
 
-This script will:
-1. Start DynamoDB Local in Docker
-2. Create the necessary tables (Accounts and Repositories)
-3. Load test data from the test-storage directory
+This will:
+- Set up DynamoDB tables
+- Create test accounts and repositories
+- Generate the test storage structure
+- Populate repository content
 
-### 2. Test Data Generation
+## Test Data Relationships
 
-The `setup-test-data.ts` script:
+The test data includes various relationships to test different scenarios:
 
-1. Reads the test-storage directory structure
-2. Creates accounts based on top-level directories
-3. Creates repositories based on subdirectories containing STAC catalogs
-4. Generates appropriate metadata and relationships
-5. Populates DynamoDB with the generated data
+1. Individual Users
+   - Personal repositories
+   - Organization memberships
+   - Repository access levels
 
-### 3. Manual Test Data Updates
+2. Organizations
+   - Team repositories
+   - Member relationships
+   - Repository ownership
 
-To update test data:
+3. Repositories
+   - Public and private visibility
+   - Different types of content
+   - Various metadata configurations
 
-1. Add or modify files in the `test-storage` directory
-2. Run the setup script to regenerate DynamoDB data:
+## Maintenance
 
-```bash
-npm run setup-test-data
-```
+When adding new features or modifying existing ones:
 
-## Data Model
-
-### Accounts
-
-Each account in the test data includes:
-- `account_id`: Derived from the directory name
-- `ory_id`: Generated unique identifier
-- `name`: Formatted from the account_id
-- `type`: Set to 'organization' for test accounts
-- `owner_account_id`: Set to 'admin'
-- `admin_account_ids`: Includes 'admin'
-- `created_at` and `updated_at`: Timestamps
-
-### Repositories
-
-Each repository includes:
-- `repository_id`: Derived from the directory name
-- `account`: Reference to the parent account
-- `title`: Formatted from the repository_id
-- `description`: Generated description
-- `private`: Set to false
-- `metadata_files`: Includes STAC catalog reference
-- `created_at` and `updated_at`: Timestamps
+1. Update the test data structure in `init-local.ts`
+2. Add new test cases to the storage structure
+3. Update this documentation to reflect changes
+4. Ensure the test data covers all relevant scenarios
 
 ## Best Practices
 
-1. Keep test data minimal and focused on testing specific features
-2. Use meaningful names for accounts and repositories
-3. Include necessary STAC catalogs for repository testing
-4. Document any special test data requirements in this file
-
-## Troubleshooting
-
-If you encounter issues with test data:
-
-1. Check that DynamoDB Local is running:
-```bash
-docker ps | grep dynamodb-local
-```
-
-2. Verify table creation:
-```bash
-aws dynamodb list-tables --endpoint-url http://localhost:8000
-```
-
-3. Check data counts:
-```bash
-aws dynamodb scan --endpoint-url http://localhost:8000 --table-name Accounts --select COUNT
-aws dynamodb scan --endpoint-url http://localhost:8000 --table-name Repositories --select COUNT
-```
-
-4. If needed, restart the setup process:
-```bash
-npm run init-local
-``` 
+1. Keep test data realistic but minimal
+2. Use consistent naming conventions
+3. Include a variety of edge cases
+4. Document any special test scenarios
+5. Maintain the relationship between DynamoDB and storage data 

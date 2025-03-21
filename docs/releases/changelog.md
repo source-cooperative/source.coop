@@ -57,6 +57,11 @@ Progress towards 0.2.0:
   - Test infrastructure setup
   - DynamoDB initialization script with test data
   - Test storage structure for development
+    - Individual user accounts with personal repositories
+    - Organization accounts with team repositories
+    - Hierarchical relationships between organizations and users
+    - Rich repository metadata and descriptions
+    - Automatic test data generation and storage setup
 - Documentation
   - Data proxy requirements
   - Project improvements roadmap
@@ -64,6 +69,11 @@ Progress towards 0.2.0:
   - DynamoDB development guide
   - Enhanced storage architecture documentation
   - Clear separation of DynamoDB and object storage concerns
+  - Test data structure documentation
+    - Account types and relationships
+    - Repository organization and metadata
+    - Test storage directory structure
+    - Data initialization process
 
 ### Changed
 - Updated project structure for Next.js 13+ conventions
