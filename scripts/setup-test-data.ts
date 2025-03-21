@@ -29,7 +29,7 @@ function getDirectories(path: string): string[] {
 
 // Helper to check if a directory contains a repository
 function isRepository(dir: string): boolean {
-  return fs.existsSync(path.join(dir, 'stac'));
+  return true; // Any directory is a repository
 }
 
 async function setupTestData() {
