@@ -15,6 +15,7 @@ import { notFound } from 'next/navigation';
 
 // Internal components
 import { ObjectBrowser, RepositoryHeader } from '@/components/features/repositories';
+import { isDirectory } from '@/components/features/repositories/object-browser/utils';
 
 // Types
 import type { Repository, RepositoryObject } from '@/types';
@@ -29,31 +30,6 @@ interface PageProps {
     repository_id: string;
     path?: string[];
   };
-}
-
-/**
- * Detect if a path represents a directory by:
- * 1. Checking if it has an explicit directory type
- * 2. Checking if any objects exist under this path
- * This handles cases like:
- * - /climate.zarr/ (directory with file-like name)
- * - /path.with.dots/nested/files (paths with dots)
- * - /path/with/trailing/slash/ (normalize slashes)
- */
-function isDirectory(objects: RepositoryObject[], path: string): boolean {
-  // Normalize path to not end with slash for comparison
-  const normalizedPath = path.endsWith('/') ? path.slice(0, -1) : path;
-  
-  // First check if we have an explicit directory type
-  const exactMatch = objects.find(obj => {
-    const objPath = obj.path.endsWith('/') ? obj.path.slice(0, -1) : obj.path;
-    return objPath === normalizedPath;
-  });
-  if (exactMatch?.type === 'directory') return true;
-  
-  // Then check if any objects exist under this path
-  const prefix = normalizedPath + '/';
-  return objects.some(obj => obj.path.startsWith(prefix));
 }
 
 export default async function RepositoryPathPage({
