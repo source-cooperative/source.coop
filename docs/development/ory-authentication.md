@@ -1,91 +1,134 @@
 # Ory Authentication Implementation
 
-This document describes how Source Cooperative implements authentication using Ory Kratos, including solutions to common challenges like CSRF token handling.
+This document describes how Source Cooperative implements authentication using Ory Kratos, following a simplified and direct approach that avoids common pitfalls.
 
 ## Architecture Overview
 
 Source Cooperative uses Ory Kratos for identity management and authentication. Our implementation:
 
-1. Uses the Ory tunnel in development (`ory tunnel http://localhost:3000 --project [project-id]`)
-2. Implements custom login and registration flows
-3. Uses direct Ory SDK calls for all authentication operations
+1. Uses direct SDK calls from client components
+2. Avoids custom middleware or routing complexity
+3. Maintains proper CORS and cookie handling
+4. Follows Ory's recommended best practices
 
-## Simplified Authentication Approach
-
-Our authentication implementation follows these principles:
+## Core Implementation Principles
 
 1. **Direct SDK Usage**: We use the Ory SDK directly in client components:
    ```typescript
    const ory = new FrontendApi(
      new Configuration({
        basePath: process.env.NEXT_PUBLIC_ORY_SDK_URL || 'http://localhost:4000',
-       baseOptions: { withCredentials: true }
+       baseOptions: {
+         withCredentials: true,
+         headers: {
+           Accept: "application/json"
+         }
+       }
      })
    );
    ```
 
-2. **Form Submission**: We keep original Ory endpoint URLs:
-   - Never modify form action URLs from localhost:4000 to localhost:3000
-   - Submit forms directly to Ory endpoints
-   - Include CSRF tokens from the flow data
-
-3. **Flow Initialization**: Authentication flows are initialized directly with the SDK:
+2. **Flow Initialization**: Authentication flows are initialized directly using the SDK:
    ```typescript
    // Login flow initialization
-   ory.createBrowserLoginFlow().then(({ data }) => setFlow(data));
+   const { data } = await ory.createBrowserLoginFlow();
+   setFlow(data);
    
    // Registration flow initialization
-   ory.createBrowserRegistrationFlow().then(({ data }) => setFlow(data));
+   const { data } = await ory.createBrowserRegistrationFlow();
+   setFlow(data);
    ```
 
-4. **Session Management**: We use the SDK for session verification:
+3. **Form Submission**: Forms submit directly to Ory endpoints:
    ```typescript
-   ory.toSession().then(({ data }) => setSession(data));
+   await ory.updateRegistrationFlow({
+     flow: flow.id,
+     updateRegistrationFlowBody: {
+       method: 'password',
+       password: password,
+       traits: { email },
+       csrf_token: flow.ui.nodes.find(
+         (n) => n.attributes?.name === 'csrf_token'
+       )?.attributes?.value,
+     },
+   });
    ```
 
-## Implementation Details
+## Key Requirements
 
-### Form Components
+1. **CORS Configuration**:
+   - Ory tunnel must be configured with proper CORS settings
+   - Use `--allowed-cors-origins="http://localhost:3000"` in development
+   - Ensure `withCredentials: true` in SDK configuration
 
-Login and registration forms are implemented as client components:
-- `src/components/features/auth/LoginForm.tsx`
-- `src/components/features/auth/RegistrationForm.tsx`
+2. **Cookie Handling**:
+   - Use consistent domains (always `localhost`, never `127.0.0.1`)
+   - Ensure browser allows third-party cookies
+   - Cookie settings are handled automatically by the SDK
 
-These forms:
-1. Initialize flows on component mount
-2. Display proper loading and error states
-3. Submit directly to Ory endpoints without URL modification
+3. **CSRF Protection**:
+   - CSRF tokens are included automatically in flow data
+   - Extract and include tokens in form submissions
+   - No manual CSRF handling required
 
-### Auth Page Component
+## Development Setup
 
-The main auth page (`src/app/auth/page.tsx`) is a server component that:
-1. Properly awaits search parameters (required in Next.js 15+)
-2. Checks if the user is already authenticated
-3. Renders the appropriate authentication tab (login or register)
+1. **Environment Variables**:
+   ```env
+   NEXT_PUBLIC_ORY_SDK_URL=http://localhost:4000
+   NEXT_PUBLIC_KRATOS_URL=http://localhost:4000
+   ORY_SDK_URL=http://localhost:4000
+   ORY_PROJECT_ID=your-project-id
+   ```
+
+2. **Ory Tunnel**:
+   ```bash
+   ory tunnel --dev --debug \
+     --allowed-cors-origins="http://localhost:3000" \
+     http://localhost:3000 \
+     --project your-project-id
+   ```
 
 ## Common Issues and Solutions
 
-1. **Registration Form Not Working**
-   - Symptom: Form submission redirects to localhost:3000 instead of localhost:4000
-   - Solution: Make sure forms submit to original Ory endpoint URLs (localhost:4000)
+1. **403 Forbidden Errors**:
+   - Verify CORS configuration in tunnel settings
+   - Check CSRF token extraction from flow data
+   - Ensure consistent domain usage
+   - Confirm `withCredentials: true` in SDK config
 
-2. **CSRF Errors**
-   - Symptom: "CSRF token missing" errors in the console
-   - Solution: Ensure CSRF tokens are properly included from the flow data
+2. **Cookie Issues**:
+   - Use `localhost` consistently
+   - Enable third-party cookies in browser
+   - Check cookie settings in Ory configuration
 
-3. **Cookie Issues**
-   - Be consistent with domain usage (use either localhost or 127.0.0.1, not both)
-   - Ensure cookies from Ory responses are properly forwarded
+3. **Flow Initialization Failures**:
+   - Verify Ory tunnel is running
+   - Check SDK URL configuration
+   - Ensure proper error handling in components
 
-## Testing Notes
+## Testing Authentication
 
-When testing authentication:
-1. Make sure the Ory tunnel is running (`npm run dev:tunnel`)
-2. Use consistent domains (always `localhost`, not `127.0.0.1`)
-3. Ensure browser allows third-party cookies
+1. Start the development environment:
+   ```bash
+   npm run dev
+   ```
+
+2. Verify tunnel logs show proper CORS headers:
+   ```
+   Access-Control-Allow-Credentials:[true]
+   Access-Control-Allow-Origin:[http://localhost:3000]
+   ```
+
+3. Monitor network requests for proper flow:
+   ```
+   GET [/self-service/registration/browser] => 200
+   POST [/self-service/registration?flow=<id>] => 200
+   GET [/sessions/whoami] => 200
+   ```
 
 ## References
 
 - [Ory Kratos Documentation](https://www.ory.sh/docs/kratos)
-- [Ory CSRF Troubleshooting](https://www.ory.sh/docs/kratos/debug/csrf)
-- [Ory React Integration](https://www.ory.sh/docs/getting-started/integrate-auth/react) 
+- [Ory SDK Reference](https://www.ory.sh/docs/reference/api)
+- [CORS Configuration Guide](https://www.ory.sh/docs/ecosystem/configuring-cors) 
