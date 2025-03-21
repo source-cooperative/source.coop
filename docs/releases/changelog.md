@@ -65,6 +65,7 @@ Progress towards 0.2.0:
   - Enhanced visual feedback for username availability
   - Prevented layout shifts during validation
   - Consolidated status messages in a stable location
+  - Attempted to fix layout shifts for authentication errors (pending further investigation)
 
 ### Fixed
 - NextResponse handling in auth route tests
@@ -79,7 +80,7 @@ Progress towards 0.2.0:
 - Layout issues with authentication forms
 - Proper form text sizing and input field styling
 - Authentication CSRF token issues:
-  - Rewrote API routes for login and registration with proper cookie handling
+  - Rewritten API routes for login and registration with proper cookie handling
   - Added multi-layer fallback mechanisms with automatic retries
   - Implemented smart cookie forwarding to preserve authentication state
   - Added "Clear Cookies" button for manual recovery from CSRF issues

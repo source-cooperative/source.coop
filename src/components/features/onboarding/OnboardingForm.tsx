@@ -8,16 +8,37 @@ import { FormWrapper } from '@/components/core/Form';
 import { FormField } from '@/types/form';
 import debounce from 'lodash/debounce';
 
-export function OnboardingForm() {
-  const router = useRouter();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+interface OnboardingFormData {
+  account_id: string;
+  name: string;
+}
+
+interface UsernameCheckResponse {
+  available: boolean;
+  error?: string;
+}
+
+interface OnboardingResponse {
+  success: boolean;
+  error?: string;
+}
+
+interface UseUsernameCheck {
+  username: string;
+  usernameAvailable: boolean | null;
+  isCheckingUsername: boolean;
+  error: string | null;
+  checkUsername: (username: string) => void;
+  setUsername: (username: string) => void;
+}
+
+function useUsernameCheck(): UseUsernameCheck {
+  const [username, setUsername] = useState('');
   const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
   const [isCheckingUsername, setIsCheckingUsername] = useState(false);
-  const [username, setUsername] = useState('unique_username');
+  const [error, setError] = useState<string | null>(null);
 
-  // Debounced username check
-  const debouncedCheckUsername = useCallback(
+  const checkUsername = useCallback(
     debounce(async (username: string) => {
       if (!username || username.length < 3) {
         setUsernameAvailable(null);
@@ -27,7 +48,7 @@ export function OnboardingForm() {
       setIsCheckingUsername(true);
       try {
         const response = await fetch(`/api/accounts/check-username?username=${encodeURIComponent(username)}`);
-        const data = await response.json();
+        const data: UsernameCheckResponse = await response.json();
         setUsernameAvailable(data.available);
         
         if (!data.available && data.error) {
@@ -38,6 +59,7 @@ export function OnboardingForm() {
       } catch (err) {
         console.error('Error checking username:', err);
         setUsernameAvailable(null);
+        setError('Failed to check username availability');
       } finally {
         setIsCheckingUsername(false);
       }
@@ -45,16 +67,37 @@ export function OnboardingForm() {
     []
   );
 
-  const handleSubmit = async (data: Record<string, any>) => {
+  return {
+    username,
+    usernameAvailable,
+    isCheckingUsername,
+    error,
+    checkUsername,
+    setUsername,
+  };
+}
+
+export function OnboardingForm() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const {
+    username,
+    usernameAvailable,
+    isCheckingUsername,
+    checkUsername,
+    setUsername,
+  } = useUsernameCheck();
+
+  const handleSubmit = async (data: OnboardingFormData) => {
     setLoading(true);
     setError(null);
 
     try {
-      const accountId = data.account_id;
-      const name = data.name;
+      const { account_id, name } = data;
 
       // Basic validation
-      if (!accountId || accountId.length < 3) {
+      if (!account_id || account_id.length < 3) {
         throw new Error('Username must be at least 3 characters long');
       }
 
@@ -74,25 +117,20 @@ export function OnboardingForm() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          account_id: accountId,
+          account_id,
           name,
         }),
       });
 
-      const responseData = await response.json();
+      const responseData: OnboardingResponse = await response.json();
       
       if (!response.ok) {
         throw new Error(responseData.error || 'Failed to complete onboarding');
       }
 
       // On success, redirect to profile page
-      console.log('Onboarding successful:', responseData);
-      
-      // Add a slight delay to ensure state updates are complete
-      setTimeout(() => {
-        router.push(`/${accountId}`);
-        router.refresh();
-      }, 300);
+      router.push(`/${account_id}`);
+      router.refresh();
     } catch (err: any) {
       console.error('Onboarding error:', err);
       setError(err.message || 'An error occurred. Please try again.');
@@ -102,8 +140,8 @@ export function OnboardingForm() {
   };
 
   const handleUsernameChange = (value: string) => {
-    setUsername(value || 'unique_username');
-    debouncedCheckUsername(value);
+    setUsername(value);
+    checkUsername(value);
   };
 
   const fields: FormField[] = [
@@ -112,7 +150,7 @@ export function OnboardingForm() {
       label: 'Username',
       type: 'text',
       required: true,
-      placeholder: 'unique_username',
+      placeholder: 'Choose a username',
       validation: {
         minLength: 3,
         pattern: '^[a-zA-Z0-9_-]+$'
@@ -165,12 +203,14 @@ export function OnboardingForm() {
   ];
 
   return (
-    <FormWrapper
-      fields={fields}
-      onSubmit={handleSubmit}
-      submitLabel="Complete Profile"
-      error={error}
-      isLoading={loading || usernameAvailable === false || isCheckingUsername}
-    />
+    <Box style={{ paddingTop: '32px' }}>
+      <FormWrapper
+        fields={fields}
+        onSubmit={handleSubmit}
+        submitLabel="Complete Profile"
+        error={error}
+        isLoading={loading || usernameAvailable === false || isCheckingUsername}
+      />
+    </Box>
   );
 } 
