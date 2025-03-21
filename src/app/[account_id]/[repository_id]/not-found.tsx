@@ -9,8 +9,8 @@ interface NotFoundProps {
   };
 }
 
-export default function RepositoryNotFound({ params }: NotFoundProps) {
-  const { account_id, repository_id } = params;
+export default async function RepositoryNotFound({ params }: NotFoundProps) {
+  const { account_id, repository_id } = await Promise.resolve(params);
   
   return (
     <Container>

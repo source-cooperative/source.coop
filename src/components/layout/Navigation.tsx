@@ -3,7 +3,7 @@
 import { Box, Container, Flex, Button, DropdownMenu, Text } from '@radix-ui/themes';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
-import { Logo } from '../core/Logo';
+import { Logo } from './Logo';
 import { ProfileAvatar } from '@/components/features/profiles/ProfileAvatar';
 import type { IndividualAccount } from '@/types/account';
 import { ChevronDownIcon } from '@radix-ui/react-icons';

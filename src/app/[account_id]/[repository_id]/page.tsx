@@ -81,10 +81,10 @@ export default async function RepositoryPage({ params }: PageProps) {
         account_id,
         repository_id,
         object_path: 'README.md'
-      }) as StorageResult;
+      });
       
-      if (result?.content?.content && typeof result.content.content === 'string') {
-        readmeContent = result.content.content;
+      if (result.data) {
+        readmeContent = result.data.toString();
       }
     }
   } catch (error) {

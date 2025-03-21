@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Tabs, Box, Flex, Text } from '@radix-ui/themes';
+import { Tabs, Box, Text } from '@radix-ui/themes';
 import { LoginForm } from './LoginForm';
 import { RegistrationForm } from './RegistrationForm';
 
@@ -14,9 +14,9 @@ export function AuthTabs({ defaultTab }: AuthTabsProps) {
   
   return (
     <Box className="mx-auto max-w-md">
-      <Flex mb="5" justify="center">
+      <Box mb="5">
         <Text size="6" weight="bold">Welcome</Text>
-      </Flex>
+      </Box>
       
       <Tabs.Root 
         defaultValue={defaultTab} 

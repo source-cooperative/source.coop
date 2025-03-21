@@ -6,6 +6,24 @@ import { Button, Flex, Text, Box, TextField } from '@radix-ui/themes';
 import * as Form from '@radix-ui/react-form';
 import { Configuration, FrontendApi } from '@ory/client';
 
+// Type definitions for session data
+interface IdentityMetadataPublic {
+  account_id?: string;
+  is_admin?: boolean;
+}
+
+interface Identity {
+  id: string;
+  metadata_public?: IdentityMetadataPublic;
+  traits: {
+    email: string;
+  };
+}
+
+interface Session {
+  identity: Identity;
+}
+
 // Initialize the Ory client with the correct basePath
 const ory = new FrontendApi(
   new Configuration({
@@ -88,7 +106,7 @@ export function LoginForm() {
         
         // Use Ory SDK to check session and redirect accordingly
         try {
-          const { data: session } = await ory.toSession();
+          const { data: session } = await ory.toSession() as { data: Session };
           
           // Check if the user has completed onboarding
           if (!session?.identity?.metadata_public?.account_id) {

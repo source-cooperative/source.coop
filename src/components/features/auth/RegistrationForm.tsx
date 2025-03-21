@@ -4,17 +4,8 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button, Flex, Text, Box, TextField } from '@radix-ui/themes';
 import * as Form from '@radix-ui/react-form';
-import { Configuration, FrontendApi } from '@ory/client';
-
-// Initialize the Ory client with the correct basePath
-const ory = new FrontendApi(
-  new Configuration({
-    basePath: process.env.NEXT_PUBLIC_ORY_SDK_URL || 'http://localhost:4000',
-    baseOptions: {
-      withCredentials: true,
-    }
-  })
-);
+import { Configuration, FrontendApi, UpdateRegistrationFlowBody } from '@ory/client';
+import { oryBrowserClient } from '@/lib/ory';
 
 export function RegistrationForm() {
   const router = useRouter();
@@ -29,9 +20,7 @@ export function RegistrationForm() {
     const initFlow = async () => {
       setLoading(true);
       try {
-        console.log("Initializing registration flow...");
-        const { data } = await ory.createBrowserRegistrationFlow();
-        console.log("Registration flow initialized:", data.id);
+        const { data } = await oryBrowserClient.createBrowserRegistrationFlow();
         setFlow(data);
         setError(null);
       } catch (err) {
@@ -67,44 +56,42 @@ export function RegistrationForm() {
     setSubmitLoading(true);
     
     try {
-      // Remove password_confirm as Ory doesn't need it
-      formData.delete('password_confirm');
-      
-      // Add method explicitly
-      formData.set('method', 'password');
-      
-      // Important: Use the action URL directly from the flow
-      // DO NOT modify the URL - this is the key fix
-      const actionUrl = flow.ui.action;
-      console.log("Submitting to:", actionUrl);
-      
-      const response = await fetch(actionUrl, {
-        method: flow.ui.method,
-        body: formData,
-        credentials: 'include',
-        redirect: 'manual'
+      // Convert FormData to the format Ory expects
+      const body: UpdateRegistrationFlowBody = {
+        method: 'password' as const,
+        password: password,
+        traits: {
+          email: formData.get('traits.email') as string,
+        },
+        csrf_token: flow.ui.nodes.find(
+          (n: any) => n.attributes?.name === 'csrf_token'
+        )?.attributes?.value,
+      };
+
+      await oryBrowserClient.updateRegistrationFlow({
+        flow: flow.id,
+        updateRegistrationFlowBody: body,
       });
-      
-      console.log("Registration submission response status:", response.status);
-      
-      if (response.status >= 400) {
-        let errorText = 'Registration failed. Please try again.';
-        try {
-          const errorData = await response.json();
-          errorText = errorData.error?.message || errorText;
-        } catch (e) {
-          // Use default error message
-        }
-        setError(errorText);
-      } else {
-        console.log("Successful registration detected");
-        console.log("Redirecting to onboarding page");
-        router.push('/onboarding');
-        router.refresh();
-      }
+
+      router.push('/onboarding');
     } catch (err) {
-      console.error('Registration error:', err);
-      setError('An error occurred during registration. Please try again later.');
+      console.error('Registration error details:', {
+        error: err,
+        status: err.response?.status,
+        statusText: err.response?.statusText,
+        data: err.response?.data,
+        flowId: flow?.id,
+        hasCSRFToken: !!flow?.ui?.nodes?.find(
+          (n: any) => n.attributes?.name === 'csrf_token'
+        )?.attributes?.value
+      });
+   
+      // Refresh the flow if it expired
+      if (err.response?.status === 410) {
+        const { data } = await oryBrowserClient.createBrowserRegistrationFlow();
+        setFlow(data);
+      }
+      setError('An error occurred during registration. Please try again.');
     } finally {
       setSubmitLoading(false);
     }
@@ -143,12 +130,6 @@ export function RegistrationForm() {
     );
   }
 
-  // Find the CSRF token and important input fields
-  const csrfToken = flow.ui.nodes?.find(
-    (node: any) => node.attributes?.name === 'csrf_token'
-  )?.attributes?.value;
-
-  // Registration form
   return (
     <Form.Root onSubmit={handleSubmit}>
       {error && (
@@ -241,12 +222,6 @@ export function RegistrationForm() {
             )}
           </Flex>
         </Form.Field>
-
-        {/* Add method as hidden input */}
-        <input type="hidden" name="method" value="password" />
-        
-        {/* Add CSRF token if available */}
-        {csrfToken && <input type="hidden" name="csrf_token" value={csrfToken} />}
 
         <Flex mt="4" justify="end">
           <Form.Submit asChild>

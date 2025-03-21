@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { fetchAccount } from '@/lib/db/operations';
 
-// In a real implementation, this would query your database
-// Mock data for demonstration
+// Reserved usernames that cannot be used
 const RESERVED_USERNAMES = ['admin', 'moderator', 'root', 'superuser', 'system'];
 
 export async function GET(request: NextRequest) {
@@ -39,14 +39,14 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // In a real implementation, check against database
-    // For now, randomly return available or not for demonstration
-    // const isAvailable = await db.accounts.findUnique({ where: { account_id: username } }) === null;
-    
-    // Simulate database check with 80% chance of username being available
-    const isAvailable = Math.random() > 0.2;
+    // Check if username exists in DynamoDB
+    const existingAccount = await fetchAccount(username);
+    const isAvailable = existingAccount === null;
 
-    return NextResponse.json({ available: isAvailable });
+    return NextResponse.json({ 
+      available: isAvailable,
+      error: isAvailable ? undefined : 'This username is already taken'
+    });
   } catch (error) {
     console.error('Error checking username availability:', error);
     return NextResponse.json(

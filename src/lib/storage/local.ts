@@ -126,6 +126,14 @@ export class LocalStorageClient implements StorageClient {
     const files: Array<{ path: string; size: number; updated_at: string; metadata?: any }> = [];
     
     try {
+      // Check if directory exists
+      try {
+        await fs.access(dirPath);
+      } catch (error) {
+        console.log('Directory does not exist:', dirPath);
+        return files;
+      }
+
       const entries = await fs.readdir(dirPath, { withFileTypes: true });
       
       for (const entry of entries) {
@@ -166,6 +174,14 @@ export class LocalStorageClient implements StorageClient {
     console.log('Listing objects in directory:', basePath);
     
     try {
+      // Create the directory if it doesn't exist
+      try {
+        await fs.mkdir(basePath, { recursive: true });
+      } catch (error) {
+        console.error('Error creating directory:', error);
+        return { objects: [], commonPrefixes: [], isTruncated: false };
+      }
+
       const files = await this.walkDirectory(basePath);
       console.log('Found files:', files);
       

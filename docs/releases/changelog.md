@@ -11,10 +11,30 @@ Progress towards 0.2.0:
 - [x] Authentication system using Ory Kratos
 - [x] Basic user session management
 - [ ] Local DynamoDB setup for development
+  - [ ] Local DynamoDB configuration
+  - [ ] Development environment setup
+  - [ ] Database migration scripts
 - [ ] Complete user profile management
+  - [ ] Profile editing functionality
+  - [ ] Avatar upload and management
+  - [ ] Profile settings page
+  - [ ] Profile data validation
 - [ ] Repository management interfaces
+  - [ ] Repository creation flow
+  - [ ] Repository settings and configuration
+  - [ ] Repository access control
+  - [ ] Repository metadata management
+  - [ ] File upload and management interface
 - [ ] Organization creation and management
+  - [ ] Organization creation flow
+  - [ ] Organization settings
+  - [ ] Member management interface
+  - [ ] Organization permissions system
 - [ ] User-organization relationship management
+  - [ ] Member invitation system
+  - [ ] Role management (owner, admin, member)
+  - [ ] Organization access control
+  - [ ] Organization membership requests
 
 ### Added
 - Authentication system using Ory Kratos

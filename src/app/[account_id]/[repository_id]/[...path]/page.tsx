@@ -59,7 +59,7 @@ function isDirectory(objects: RepositoryObject[], path: string): boolean {
 export default async function RepositoryPathPage({
   params
 }: PageProps) {
-  const { account_id, repository_id, path } = params;
+  const { account_id, repository_id, path } = await Promise.resolve(params);
   const pathString = path?.join('/') || '';
 
   // Fetch repository first since we need it for both success and error states
