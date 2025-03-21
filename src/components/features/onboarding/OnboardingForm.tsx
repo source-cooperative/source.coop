@@ -1,16 +1,28 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Flex, Text, Box } from '@radix-ui/themes';
 import { MonoText } from '@/components/core/MonoText';
 import { FormWrapper } from '@/components/core/Form';
 import { FormField } from '@/types/form';
 import debounce from 'lodash/debounce';
+import { FrontendApi, Configuration, Session, Identity } from '@ory/client';
 
 interface OnboardingFormData {
   account_id: string;
   name: string;
+}
+
+type UsernameStatus = 'idle' | 'checking' | 'available' | 'taken';
+
+interface UsernameCheckResponse {
+  available: boolean;
+}
+
+interface OnboardingResponse {
+  success: boolean;
+  error?: string;
 }
 
 export function OnboardingForm() {
@@ -18,7 +30,34 @@ export function OnboardingForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [username, setUsername] = useState('');
-  const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken'>('idle');
+  const [usernameStatus, setUsernameStatus] = useState<UsernameStatus>('idle');
+  const [session, setSession] = useState<Session | null>(null);
+
+  // Initialize Ory client
+  const ory = new FrontendApi(
+    new Configuration({
+      basePath: process.env.NEXT_PUBLIC_ORY_SDK_URL || 'http://localhost:4000',
+      baseOptions: {
+        withCredentials: true,
+      }
+    })
+  );
+
+  // Check session on mount
+  useEffect(() => {
+    ory.toSession()
+      .then(({ data }) => {
+        setSession(data);
+        // If no session, redirect to login
+        if (!data) {
+          router.push('/login');
+        }
+      })
+      .catch((err) => {
+        console.error('Session error:', err);
+        router.push('/login');
+      });
+  }, [router]);
 
   const checkUsername = useCallback(
     debounce(async (value: string) => {
@@ -30,7 +69,7 @@ export function OnboardingForm() {
       setUsernameStatus('checking');
       try {
         const response = await fetch(`/api/accounts/check-username?username=${encodeURIComponent(value)}`);
-        const data = await response.json();
+        const data: UsernameCheckResponse = await response.json();
         setUsernameStatus(data.available ? 'available' : 'taken');
       } catch (err) {
         console.error('Error checking username:', err);
@@ -62,30 +101,39 @@ export function OnboardingForm() {
         throw new Error('Name is required');
       }
 
-      // Submit to API
-      const response = await fetch('/api/accounts/onboarding', {
+      // Get the current session to ensure we have the Ory ID
+      const { data: sessionData } = await ory.toSession();
+      
+      if (!sessionData?.identity?.id) {
+        throw new Error('No active session found');
+      }
+
+      // Submit to API with Ory ID from session
+      const responseData = await fetch('/api/accounts/onboarding', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({
           account_id,
           name,
+          ory_id: sessionData.identity.id
         }),
       });
 
-      const responseData = await response.json();
+      const responseJson: OnboardingResponse = await responseData.json();
       
-      if (!response.ok) {
-        throw new Error(responseData.error || 'Failed to complete onboarding');
+      if (!responseData.ok) {
+        throw new Error(responseJson.error || 'Failed to complete onboarding');
       }
 
       // On success, redirect to profile page
       router.push(`/${account_id}`);
       router.refresh();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Onboarding error:', err);
-      setError(err.message || 'An error occurred. Please try again.');
+      setError(err instanceof Error ? err.message : 'An error occurred. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -106,8 +154,11 @@ export function OnboardingForm() {
       description: (
         <Flex direction="column" gap="1" style={{ minHeight: '24px' }}>
           <Flex gap="0" align="center">
+            <Text size="1" color="gray">
+              This will be your profile URL: 
+            </Text>
             <MonoText size="1" color="gray">
-              This will be your profile URL: source.coop/
+              source.coop/
             </MonoText>
             <MonoText 
               size="1" 

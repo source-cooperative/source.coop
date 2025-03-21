@@ -1,6 +1,6 @@
 import { Container, Heading, Text, Flex, Link as RadixLink } from '@radix-ui/themes';
 import Link from 'next/link';
-import { FileIcon } from '@radix-ui/react-icons';
+import { LinkBreak2Icon } from '@radix-ui/react-icons';
 
 export default function NotFound() {
   return (
@@ -12,7 +12,7 @@ export default function NotFound() {
         py="9"
         style={{ minHeight: 'calc(100vh - 160px)' }}
       >
-        <FileIcon 
+        <LinkBreak2Icon 
           width={48} 
           height={48} 
           style={{ color: 'var(--gray-8)' }}

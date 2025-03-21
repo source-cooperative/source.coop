@@ -28,11 +28,6 @@ else
     echo -e "${GREEN}${CHECK} DynamoDB Local is already running${NC}"
 fi
 
-# Generate test data
-echo -e "\n${YELLOW}=== Generating Test Data ===${NC}"
-echo -e "${YELLOW}${ARROW} Generating test data...${NC}"
-npx tsx scripts/local/generate-test-data.ts
-
 # Create tables
 echo -e "\n${YELLOW}=== Creating Tables ===${NC}"
 
@@ -79,28 +74,10 @@ fi
 echo -e "\n${YELLOW}${ARROW} Waiting for tables to be active...${NC}"
 sleep 2
 
-# Load example data
-echo -e "\n${YELLOW}=== Loading Example Data ===${NC}"
-
-echo -e "\n${YELLOW}${ARROW} Loading example accounts...${NC}"
-if aws dynamodb batch-write-item \
-    --endpoint-url http://localhost:8000 \
-    --request-items file://scripts/local/accounts.json \
-    > /dev/null 2>&1; then
-    echo -e "${GREEN}${CHECK} Loaded example accounts${NC}"
-else
-    echo -e "${RED}${CROSS} Failed to load example accounts${NC}"
-fi
-
-echo -e "\n${YELLOW}${ARROW} Loading example repositories...${NC}"
-if aws dynamodb batch-write-item \
-    --endpoint-url http://localhost:8000 \
-    --request-items file://scripts/local/repositories.json \
-    > /dev/null 2>&1; then
-    echo -e "${GREEN}${CHECK} Loaded example repositories${NC}"
-else
-    echo -e "${RED}${CROSS} Failed to load example repositories${NC}"
-fi
+# Load test data
+echo -e "\n${YELLOW}=== Loading Test Data ===${NC}"
+echo -e "${YELLOW}${ARROW} Loading test data from test-storage...${NC}"
+npm run setup-test-data
 
 # Verify data
 echo -e "\n${YELLOW}=== Verifying Data ===${NC}"

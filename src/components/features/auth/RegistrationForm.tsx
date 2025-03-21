@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Button, Flex, Text, Box, TextField } from '@radix-ui/themes';
 import * as Form from '@radix-ui/react-form';
 import { Configuration, FrontendApi, UpdateRegistrationFlowBody } from '@ory/client';
-import { oryBrowserClient } from '@/lib/ory';
+import { ory } from '@/lib/ory';
 
 export function RegistrationForm() {
   const router = useRouter();
@@ -20,7 +20,7 @@ export function RegistrationForm() {
     const initFlow = async () => {
       setLoading(true);
       try {
-        const { data } = await oryBrowserClient.createBrowserRegistrationFlow();
+        const { data } = await ory.createBrowserRegistrationFlow();
         setFlow(data);
         setError(null);
       } catch (err) {
@@ -56,42 +56,45 @@ export function RegistrationForm() {
     setSubmitLoading(true);
     
     try {
-      // Convert FormData to the format Ory expects
-      const body: UpdateRegistrationFlowBody = {
-        method: 'password' as const,
-        password: password,
-        traits: {
-          email: formData.get('traits.email') as string,
-        },
-        csrf_token: flow.ui.nodes.find(
-          (n: any) => n.attributes?.name === 'csrf_token'
-        )?.attributes?.value,
-      };
+      // Get the CSRF token from the flow
+      const csrfToken = flow.ui.nodes?.find(
+        (node: any) => node.attributes?.name === 'csrf_token'
+      )?.attributes?.value;
 
-      await oryBrowserClient.updateRegistrationFlow({
+      // Use Ory SDK to update the registration flow
+      const { data: updatedFlow } = await ory.updateRegistrationFlow({
         flow: flow.id,
-        updateRegistrationFlowBody: body,
+        updateRegistrationFlowBody: {
+          method: 'password',
+          password: password,
+          traits: {
+            email: formData.get('traits.email') as string,
+          },
+          csrf_token: csrfToken,
+        },
       });
 
-      router.push('/onboarding');
-    } catch (err) {
-      console.error('Registration error details:', {
-        error: err,
-        status: err.response?.status,
-        statusText: err.response?.statusText,
-        data: err.response?.data,
-        flowId: flow?.id,
-        hasCSRFToken: !!flow?.ui?.nodes?.find(
-          (n: any) => n.attributes?.name === 'csrf_token'
-        )?.attributes?.value
-      });
-   
-      // Refresh the flow if it expired
-      if (err.response?.status === 410) {
-        const { data } = await oryBrowserClient.createBrowserRegistrationFlow();
-        setFlow(data);
+      console.log("Registration flow updated:", updatedFlow);
+
+      // Check if the registration was successful
+      if (updatedFlow?.session) {
+        console.log("Registration successful, session established");
+        router.push('/onboarding');
+        router.refresh();
+      } else {
+        // If no session was established, redirect to login
+        console.log("Registration successful but no session established, redirecting to login");
+        router.push('/auth?flow=login');
       }
-      setError('An error occurred during registration. Please try again.');
+    } catch (err: any) {
+      console.error('Registration error:', err);
+      if (err.response?.data?.ui?.messages) {
+        // Handle Ory UI messages
+        const messages = err.response.data.ui.messages;
+        setError(messages[0]?.text || 'Registration failed. Please try again.');
+      } else {
+        setError('An error occurred during registration. Please try again.');
+      }
     } finally {
       setSubmitLoading(false);
     }

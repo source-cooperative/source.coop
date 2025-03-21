@@ -2,38 +2,51 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDynamoDb } from '@/lib/clients';
 import { PutCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
 import type { IndividualAccount } from '@/types';
+import { Configuration, FrontendApi } from '@ory/client';
+import { CONFIG } from '@/lib/config';
+import { updateOryIdentity } from '@/lib/ory';
 
-const ORY_BASE_URL = process.env.ORY_BASE_URL || "http://localhost:4000";
+// Initialize Ory client
+const ory = new FrontendApi(
+  new Configuration({
+    basePath: process.env.NEXT_PUBLIC_ORY_SDK_URL || 'http://localhost:4000',
+    baseOptions: {
+      withCredentials: true,
+    }
+  })
+);
 
 export async function POST(request: NextRequest) {
   try {
     const { account_id, name } = await request.json();
 
-    // Get session from cookie
-    const sessionCookie = request.cookies.get('ory_kratos_session');
-    if (!sessionCookie) {
+    // Get session using Ory client with cookie from request
+    const sessionResponse = await fetch(`${process.env.NEXT_PUBLIC_ORY_SDK_URL || 'http://localhost:4000'}/sessions/whoami`, {
+      method: 'GET',
+      headers: {
+        Cookie: request.headers.get('cookie') || '',
+        'Accept': 'application/json',
+      },
+      credentials: 'include',
+    });
+
+    if (!sessionResponse.ok) {
       return NextResponse.json(
         { error: 'No session found' },
         { status: 401 }
       );
     }
 
-    // Get session data from Ory
-    const sessionResponse = await fetch(`${ORY_BASE_URL}/sessions/whoami`, {
-      headers: {
-        Cookie: `ory_kratos_session=${sessionCookie.value}`,
-      },
-    });
-
-    if (!sessionResponse.ok) {
+    const session = await sessionResponse.json();
+    if (!session?.identity) {
       return NextResponse.json(
-        { error: 'Invalid session' },
+        { error: 'No session found' },
         { status: 401 }
       );
     }
 
-    const session = await sessionResponse.json();
     const oryId = session.identity.id;
+    const email = session.identity.traits.email || '';
 
     // Create the account in DynamoDB
     const newAccount: IndividualAccount = {
@@ -41,7 +54,7 @@ export async function POST(request: NextRequest) {
       name,
       type: 'individual',
       ory_id: oryId,
-      email: session.identity.traits.email || '',
+      email,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
@@ -54,38 +67,26 @@ export async function POST(request: NextRequest) {
       ConditionExpression: "attribute_not_exists(account_id)",
     }));
     
-    // Now update Ory identity to include account_id in the metadata
-    const updateResponse = await fetch(`${ORY_BASE_URL}/admin/identities/${oryId}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.ORY_ADMIN_API_KEY || 'test'}`,
-      },
-      body: JSON.stringify({
-        schema_id: 'default',
-        traits: session.identity.traits,
+    try {
+      // Update Ory identity using the admin API
+      await updateOryIdentity(oryId, {
         metadata_public: {
-          ...session.identity.metadata_public,
-          account_id,
-        },
-        metadata_admin: {
-          ...session.identity.metadata_admin,
-          completed_onboarding: true,
-          onboarding_date: new Date().toISOString(),
-        },
-      }),
-    });
-    
-    if (!updateResponse.ok) {
+          account_id: account_id
+        }
+      });
+    } catch (oryError) {
       // If Ory update fails, delete the account from DynamoDB
       await dynamoDb.send(new DeleteCommand({
         TableName: "Accounts",
         Key: { account_id }
       }));
       
-      console.error('Failed to update Ory identity:', await updateResponse.text());
+      console.error('Failed to update Ory identity:', oryError);
       return NextResponse.json(
-        { error: 'Failed to update user profile' },
+        { 
+          error: 'Failed to update user profile',
+          details: oryError instanceof Error ? oryError.message : 'Unknown Ory error'
+        },
         { status: 500 }
       );
     }
@@ -103,7 +104,10 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error in onboarding:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { 
+        error: 'Internal server error',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     );
   }
