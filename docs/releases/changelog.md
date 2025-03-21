@@ -10,10 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Progress towards 0.2.0:
 - [x] Authentication system using Ory Kratos
 - [x] Basic user session management
-- [ ] Local DynamoDB setup for development
+- [x] Local DynamoDB setup for development
   - [x] Local DynamoDB configuration
   - [x] Development environment setup
-  - [ ] Database migration scripts
+  - [x] Database migration scripts
 - [ ] Complete user profile management
   - [ ] Profile editing functionality
   - [ ] Avatar upload and management
@@ -55,6 +55,8 @@ Progress towards 0.2.0:
   - Error handling system
   - Type definitions for forms and storage
   - Test infrastructure setup
+  - DynamoDB initialization script with test data
+  - Test storage structure for development
 - Documentation
   - Data proxy requirements
   - Project improvements roadmap
