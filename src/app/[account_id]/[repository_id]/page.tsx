@@ -20,11 +20,11 @@ import { MarkdownViewer } from '@/components/features/markdown';
 
 // Types and utilities
 import type { Repository, RepositoryObject } from '@/types';
-import { fetchRepositories } from '@/lib/db/operations';
+import { fetchRepositories, fetchRepository } from '@/lib/db/operations';
 import { createStorageClient } from '@/lib/clients/storage';
 
 interface PageProps {
-  params: Promise<{ account_id: string; repository_id: string }>
+  params: { account_id: string; repository_id: string }
 }
 
 interface StorageResult {
@@ -36,18 +36,12 @@ interface StorageResult {
 }
 
 export default async function RepositoryPage({ params }: PageProps) {
-  // 1. Get params
-  const { account_id, repository_id } = await params;
+  // 1. Get and await params
+  const { account_id, repository_id } = await Promise.resolve(params);
 
   // 2. Find the repository or 404
-  const repository: Repository = await fetchRepositories().then(repos => {
-    const repo = repos.find(r => 
-      r.account.account_id === account_id && 
-      r.repository_id === repository_id
-    );
-    if (!repo) notFound();
-    return repo;
-  });
+  const repository = await fetchRepository(repository_id, account_id);
+  if (!repository) notFound();
 
   // 3. Get objects from storage
   const objects: RepositoryObject[] = await createStorageClient().listObjects({ 

@@ -1,24 +1,10 @@
-import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocument } from "@aws-sdk/lib-dynamodb";
+import { exec } from 'child_process';
+import { promisify } from 'util';
 import fs from 'fs';
 import path from 'path';
-import type { Account, Repository } from '@/types';
+import type { Account, Repository, OrganizationalAccount } from '@/types';
 
-const client = new DynamoDBClient({
-  endpoint: "http://localhost:8000",
-  region: "local",
-  credentials: {
-    accessKeyId: "local",
-    secretAccessKey: "local"
-  }
-});
-
-const docClient = DynamoDBDocument.from(client);
-
-// Helper to generate a fake Ory ID
-function generateFakeOryId(): string {
-  return `ory_${Math.random().toString(36).substring(2, 15)}`;
-}
+const execAsync = promisify(exec);
 
 // Helper to get all directories in a path
 function getDirectories(path: string): string[] {
@@ -30,6 +16,39 @@ function getDirectories(path: string): string[] {
 // Helper to check if a directory contains a repository
 function isRepository(dir: string): boolean {
   return true; // Any directory is a repository
+}
+
+const organizationNames: Record<string, string> = {
+  'noaa': 'National Oceanic and Atmospheric Administration',
+  'nasa': 'NASA',
+  'usgs': 'United States Geological Survey',
+  'esa': 'European Space Agency',
+  'ecmwf': 'European Centre for Medium-Range Weather Forecasts',
+  'planetary-computer': 'Microsoft Planetary Computer',
+  'usda': 'United States Department of Agriculture',
+  'radiant': 'Radiant Earth Foundation',
+  'microsoft': 'Microsoft Corporation'
+};
+
+// Helper to generate a fake Ory ID
+function generateFakeOryId(): string {
+  return `ory_${Math.random().toString(36).substring(2, 15)}`;
+}
+
+// Helper to format DynamoDB item
+function formatDynamoDBItem(item: Record<string, any>): string {
+  const formattedItem: Record<string, any> = {};
+  for (const [key, value] of Object.entries(item)) {
+    if (value === undefined || value === null) continue;
+    if (Array.isArray(value)) {
+      formattedItem[key] = { L: value.map(v => ({ S: v })) };
+    } else if (typeof value === 'boolean') {
+      formattedItem[key] = { BOOL: value };
+    } else {
+      formattedItem[key] = { S: value.toString() };
+    }
+  }
+  return JSON.stringify(formattedItem);
 }
 
 async function setupTestData() {
@@ -51,7 +70,7 @@ async function setupTestData() {
     const account: Account = {
       account_id: accountId,
       ory_id: generateFakeOryId(),
-      name: accountId.charAt(0).toUpperCase() + accountId.slice(1).replace(/-/g, ' '),
+      name: organizationNames[accountId] || accountId.charAt(0).toUpperCase() + accountId.slice(1).replace(/-/g, ' '),
       type: 'organization',
       owner_account_id: 'admin',
       admin_account_ids: ['admin'],
@@ -98,23 +117,39 @@ async function setupTestData() {
   // Write to DynamoDB
   console.log('Writing accounts to DynamoDB...');
   for (const account of accounts) {
-    await docClient.put({
-      TableName: "Accounts",
-      Item: account
-    });
+    const item = {
+      account_id: account.account_id,
+      type: account.type,
+      name: account.name,
+      created_at: account.created_at,
+      updated_at: account.updated_at,
+      ...(account.email && { email: account.email }),
+      ...(account.type === 'organization' && {
+        owner_account_id: (account as OrganizationalAccount).owner_account_id,
+        admin_account_ids: (account as OrganizationalAccount).admin_account_ids
+      })
+    };
+    
+    await execAsync(`aws dynamodb put-item --endpoint-url http://localhost:8000 --table-name Accounts --item '${formatDynamoDBItem(item)}'`);
   }
 
   console.log('Writing repositories to DynamoDB...');
   for (const repository of repositories) {
-    await docClient.put({
-      TableName: "Repositories",
-      Item: repository
-    });
+    const item = {
+      repository_id: repository.repository_id,
+      account_id: repository.account.account_id,
+      title: repository.title,
+      description: repository.description,
+      created_at: repository.created_at,
+      updated_at: repository.updated_at,
+      private: repository.private
+    };
+    
+    await execAsync(`aws dynamodb put-item --endpoint-url http://localhost:8000 --table-name Repositories --item '${formatDynamoDBItem(item)}'`);
   }
 
   console.log('Test data setup complete!');
   console.log(`Created ${accounts.length} accounts and ${repositories.length} repositories`);
 }
 
-// Run the setup
 setupTestData().catch(console.error); 

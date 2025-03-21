@@ -54,9 +54,13 @@ export function RepositoryMetaContent({ repository, statistics }: RepositoryMeta
       <DataList.Item>
         <DataList.Label>Publisher</DataList.Label>
         <DataList.Value>
-          <Link href={`/${repository.account.account_id}`} underline="always">
-            <MonoText>{repository.account.name}</MonoText>
-          </Link>
+          {repository.account ? (
+            <Link href={`/${repository.account.account_id}`} underline="always">
+              <MonoText>{repository.account.name}</MonoText>
+            </Link>
+          ) : (
+            <MonoText>Unknown</MonoText>
+          )}
         </DataList.Value>
       </DataList.Item>          
       <DataList.Item>

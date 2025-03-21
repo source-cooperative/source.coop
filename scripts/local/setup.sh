@@ -37,11 +37,13 @@ if aws dynamodb create-table \
     --table-name Accounts \
     --attribute-definitions \
         AttributeName=account_id,AttributeType=S \
-        AttributeName=ory_id,AttributeType=S \
+        AttributeName=type,AttributeType=S \
+        AttributeName=email,AttributeType=S \
     --key-schema \
         AttributeName=account_id,KeyType=HASH \
+        AttributeName=type,KeyType=RANGE \
     --global-secondary-indexes \
-        "[{\"IndexName\": \"OryIdIndex\",\"KeySchema\":[{\"AttributeName\":\"ory_id\",\"KeyType\":\"HASH\"}],\"Projection\":{\"ProjectionType\":\"ALL\"},\"ProvisionedThroughput\":{\"ReadCapacityUnits\":5,\"WriteCapacityUnits\":5}}]" \
+        "[{\"IndexName\": \"GSI1\",\"KeySchema\":[{\"AttributeName\":\"type\",\"KeyType\":\"HASH\"},{\"AttributeName\":\"account_id\",\"KeyType\":\"RANGE\"}],\"Projection\":{\"ProjectionType\":\"ALL\"},\"ProvisionedThroughput\":{\"ReadCapacityUnits\":5,\"WriteCapacityUnits\":5}},{\"IndexName\": \"GSI2\",\"KeySchema\":[{\"AttributeName\":\"email\",\"KeyType\":\"HASH\"},{\"AttributeName\":\"account_id\",\"KeyType\":\"RANGE\"}],\"Projection\":{\"ProjectionType\":\"ALL\"},\"ProvisionedThroughput\":{\"ReadCapacityUnits\":5,\"WriteCapacityUnits\":5}}]" \
     --provisioned-throughput \
         ReadCapacityUnits=5,WriteCapacityUnits=5 \
     > /dev/null 2>&1; then
@@ -57,11 +59,12 @@ if aws dynamodb create-table \
     --attribute-definitions \
         AttributeName=repository_id,AttributeType=S \
         AttributeName=account_id,AttributeType=S \
+        AttributeName=created_at,AttributeType=S \
     --key-schema \
         AttributeName=repository_id,KeyType=HASH \
         AttributeName=account_id,KeyType=RANGE \
     --global-secondary-indexes \
-        "[{\"IndexName\": \"AccountIdIndex\",\"KeySchema\":[{\"AttributeName\":\"account_id\",\"KeyType\":\"HASH\"}],\"Projection\":{\"ProjectionType\":\"ALL\"},\"ProvisionedThroughput\":{\"ReadCapacityUnits\":5,\"WriteCapacityUnits\":5}}]" \
+        "[{\"IndexName\": \"GSI1\",\"KeySchema\":[{\"AttributeName\":\"account_id\",\"KeyType\":\"HASH\"},{\"AttributeName\":\"created_at\",\"KeyType\":\"RANGE\"}],\"Projection\":{\"ProjectionType\":\"ALL\"},\"ProvisionedThroughput\":{\"ReadCapacityUnits\":5,\"WriteCapacityUnits\":5}}]" \
     --provisioned-throughput \
         ReadCapacityUnits=5,WriteCapacityUnits=5 \
     > /dev/null 2>&1; then
@@ -72,7 +75,19 @@ fi
 
 # Wait for tables to be active
 echo -e "\n${YELLOW}${ARROW} Waiting for tables to be active...${NC}"
-sleep 2
+sleep 5
+
+# Verify table status
+echo -e "\n${YELLOW}${ARROW} Verifying table status...${NC}"
+ACCOUNTS_STATUS=$(aws dynamodb describe-table --endpoint-url http://localhost:8000 --table-name Accounts --query 'Table.TableStatus' --output text)
+REPOS_STATUS=$(aws dynamodb describe-table --endpoint-url http://localhost:8000 --table-name Repositories --query 'Table.TableStatus' --output text)
+
+if [ "$ACCOUNTS_STATUS" != "ACTIVE" ] || [ "$REPOS_STATUS" != "ACTIVE" ]; then
+  echo -e "${RED}${CROSS} Tables are not active yet. Please try again.${NC}"
+  exit 1
+fi
+
+echo -e "${GREEN}${CHECK} Tables are active${NC}"
 
 # Load test data
 echo -e "\n${YELLOW}=== Loading Test Data ===${NC}"

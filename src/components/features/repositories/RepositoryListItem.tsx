@@ -41,10 +41,10 @@ export const RepositoryListItem = forwardRef<HTMLAnchorElement, RepositoryListIt
 
             <Flex gap="3" align="center">
               <Text size="1" color="gray">
-                Updated <DateText date={repository.updated_at} />
+                {repository.account.name}
               </Text>
               <Text size="1" color="gray">
-                {repository.account.name}
+                Updated <DateText date={repository.updated_at} />
               </Text>
               <Badge 
                 size="1" 
