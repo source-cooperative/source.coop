@@ -5,12 +5,24 @@ This document describes the storage architecture of the Source.coop platform, in
 
 ## Database Storage (DynamoDB)
 
+### Data Model Overview
+The platform uses DynamoDB for storing metadata about accounts and repositories. The actual contents of repositories (files, directories) are stored in the object store, not in DynamoDB.
+
 ### Tables
 
 #### Accounts Table
 - **Partition Key**: `account_id` (string)
 - **Sort Key**: `type` (string)
 - **Purpose**: Store user and organization profiles
+- **Attributes**:
+  - `account_id`: Unique identifier
+  - `type`: Either 'user' or 'organization'
+  - `name`: Display name
+  - `email`: Contact email
+  - `created_at`: ISO timestamp
+  - `updated_at`: ISO timestamp
+  - `metadata_public`: Public profile data
+  - `metadata_private`: Private account data
 - **Indexes**:
   - GSI1: `type` (partition key) + `account_id` (sort key)
   - GSI2: `email` (partition key) + `account_id` (sort key)
@@ -19,6 +31,15 @@ This document describes the storage architecture of the Source.coop platform, in
 - **Partition Key**: `repository_id` (string)
 - **Sort Key**: `account_id` (string)
 - **Purpose**: Store repository metadata and ownership
+- **Attributes**:
+  - `repository_id`: Unique identifier
+  - `account_id`: Owner's account ID
+  - `title`: Repository name
+  - `description`: Repository description
+  - `created_at`: ISO timestamp
+  - `updated_at`: ISO timestamp
+  - `visibility`: 'public' or 'private'
+  - `metadata`: Additional repository metadata
 - **Indexes**:
   - GSI1: `account_id` (partition key) + `created_at` (sort key)
 
@@ -61,6 +82,9 @@ const repositories = await dynamodb.query({
 
 ## File Storage
 
+### Overview
+Repository contents (files, directories) are stored in the object store, not in DynamoDB. Each repository has its own prefix in the object store: `[account_id]/[repository_id]/`.
+
 ### Local Development Storage
 
 #### Directory Structure
@@ -73,6 +97,8 @@ const repositories = await dynamodb.query({
 ```
 
 #### Metadata File
+The `.source-metadata.json` file in each repository directory stores metadata about the files within that repository. This is separate from the repository metadata stored in DynamoDB.
+
 ```typescript
 interface SourceMetadata {
   repository_id: string;

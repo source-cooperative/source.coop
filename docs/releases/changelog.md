@@ -11,8 +11,8 @@ Progress towards 0.2.0:
 - [x] Authentication system using Ory Kratos
 - [x] Basic user session management
 - [ ] Local DynamoDB setup for development
-  - [ ] Local DynamoDB configuration
-  - [ ] Development environment setup
+  - [x] Local DynamoDB configuration
+  - [x] Development environment setup
   - [ ] Database migration scripts
 - [ ] Complete user profile management
   - [ ] Profile editing functionality
@@ -59,6 +59,9 @@ Progress towards 0.2.0:
   - Data proxy requirements
   - Project improvements roadmap
   - Ory configuration guide
+  - DynamoDB development guide
+  - Enhanced storage architecture documentation
+  - Clear separation of DynamoDB and object storage concerns
 
 ### Changed
 - Updated project structure for Next.js 13+ conventions
@@ -86,6 +89,11 @@ Progress towards 0.2.0:
   - Prevented layout shifts during validation
   - Consolidated status messages in a stable location
   - Attempted to fix layout shifts for authentication errors (pending further investigation)
+- Clarified storage architecture documentation:
+  - Added detailed DynamoDB table schemas
+  - Documented all table attributes and indexes
+  - Explained separation between DynamoDB and object storage
+  - Added clear context for `.source-metadata.json` usage
 
 ### Fixed
 - NextResponse handling in auth route tests
