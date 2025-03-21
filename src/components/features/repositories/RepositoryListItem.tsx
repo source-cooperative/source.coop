@@ -5,7 +5,7 @@ import { forwardRef } from 'react';
 import Link from 'next/link';
 import type { Repository } from '@/types';
 import { DateText } from '@/components/display';
-import { Box, Text, Flex, Badge, Heading } from '@radix-ui/themes';
+import { Box, Text, Badge, Heading } from '@radix-ui/themes';
 import styles from './RepositoryList.module.css';
 
 interface RepositoryListItemProps {
@@ -19,40 +19,37 @@ export const RepositoryListItem = forwardRef<HTMLAnchorElement, RepositoryListIt
       <Link 
         href={`/${repository.account.account_id}/${repository.repository_id}`}
         className={styles.item}
-        data-highlighted={isSelected}
         data-selected={isSelected}
         ref={ref}
+        aria-current={isSelected ? 'page' : undefined}
       >
         <Box asChild>
           <article>
-            <Box mb="2">
-              <Heading size="5" weight="bold" color="gray">
-                {repository.title}
-              </Heading>
-            </Box>
-            
+            <Heading size="5" weight="bold" color="gray" mb="2">
+              {repository.title}
+            </Heading>
+              
             {repository.description && (
-              <Box mb="4">
-                <Text as="p" size="2" color="gray">
-                  {repository.description}
-                </Text>
-              </Box>
+              <Text as="p" size="2" color="gray" mb="4">
+                {repository.description}
+              </Text>
             )}
 
-            <Flex gap="3" align="center">
-              <Text size="1" color="gray">
+            <Box>
+              <Text size="1" color="gray" mb="2">
                 {repository.account.name}
               </Text>
-              <Text size="1" color="gray">
+              <Text size="1" color="gray" mb="2">
                 Updated <DateText date={repository.updated_at} />
               </Text>
               <Badge 
                 size="1" 
                 color={repository.private ? "red" : "green"}
+                aria-label={repository.private ? "Private repository" : "Public repository"}
               >
                 {repository.private ? "Private" : "Public"}
               </Badge>
-            </Flex>
+            </Box>
           </article>
         </Box>
       </Link>

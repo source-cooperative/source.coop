@@ -5,6 +5,7 @@ import type { Repository } from '@/types';
 import { RepositoryListItem } from './RepositoryListItem';
 import { ShortcutHelp } from '@/components/features/keyboard/ShortcutHelp';
 import { useRepositoryListKeyboardShortcuts } from '@/hooks/useRepositoryListKeyboardShortcuts';
+import { Box, Text } from '@radix-ui/themes';
 import styles from './RepositoryList.module.css';
 
 interface RepositoryListProps {
@@ -20,9 +21,9 @@ export function RepositoryList({ repositories }: RepositoryListProps) {
 
   if (!repositories.length) {
     return (
-      <p className={styles.empty}>
+      <Text as="p" className={styles.empty}>
         No repositories found.
-      </p>
+      </Text>
     );
   }
 

@@ -60,17 +60,20 @@ export async function fetchAccountsByIds(account_ids: string[]): Promise<Account
   for (let i = 0; i < uniqueIds.length; i += batchSize) {
     const batch = uniqueIds.slice(i, i + batchSize);
     try {
-      const result = await docClient.send(new BatchGetCommand({
-        RequestItems: {
-          "Accounts": {
-            Keys: batch.map(id => ({ account_id: id }))
+      // Query for each account_id with both individual and organization types
+      const queries = batch.map(async (id) => {
+        const result = await docClient.send(new QueryCommand({
+          TableName: "Accounts",
+          KeyConditionExpression: "account_id = :account_id",
+          ExpressionAttributeValues: {
+            ":account_id": id
           }
-        }
-      }));
+        }));
+        return result.Items || [];
+      });
 
-      if (result.Responses?.Accounts) {
-        results.push(...result.Responses.Accounts as Account[]);
-      }
+      const batchResults = await Promise.all(queries);
+      results.push(...batchResults.flat() as Account[]);
     } catch (e) {
       console.error("Error fetching accounts batch:", e);
       // Continue with other batches even if one fails
