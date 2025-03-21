@@ -6,10 +6,13 @@ interface NotFoundProps {
   params?: {
     account_id?: string;
     repository_id?: string;
+    path?: string[];
   };
 }
 
-export default function RepositoryNotFound({ params }: NotFoundProps) {
+export default function ObjectNotFound({ params }: NotFoundProps) {
+  const pathString = params?.path?.join('/') || '';
+  
   return (
     <Container>
       <Flex 
@@ -20,18 +23,14 @@ export default function RepositoryNotFound({ params }: NotFoundProps) {
         style={{ minHeight: '60vh' }}
       >
         <FileIcon width="32" height="32" />
-        <Heading as="h1" size="6">Repository Not Found</Heading>
+        <Heading as="h1" size="6">Object Not Found</Heading>
         <Text as="p" size="3" color="gray">
           {params?.account_id && params?.repository_id ? (
             <>
-              The repository <strong>{params.repository_id}</strong> was not found in the account <strong>{params.account_id}</strong>.
-            </>
-          ) : params?.account_id ? (
-            <>
-              The repository could not be found in the account <strong>{params.account_id}</strong>.
+              The object <strong>{pathString}</strong> was not found in the repository <strong>{params.repository_id}</strong>.
             </>
           ) : (
-            'The requested repository could not be found.'
+            'The requested object could not be found.'
           )}
         </Text>
         <RadixLink asChild>
