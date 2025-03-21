@@ -29,6 +29,7 @@ Progress towards 0.2.0:
 - API routes
   - Session management endpoint
   - Logout endpoint
+  - RSS feed endpoint for public repositories
 - Infrastructure
   - Logger implementation with structured logging
   - Error handling system
@@ -59,6 +60,11 @@ Progress towards 0.2.0:
   - Removed unnecessary API proxy routes for authentication
   - Updated authentication documentation with new best practices
   - Improved Next.js 15+ compatibility by properly awaiting searchParams
+- Improved onboarding form UX:
+  - Added debounced username validation to reduce API calls
+  - Enhanced visual feedback for username availability
+  - Prevented layout shifts during validation
+  - Consolidated status messages in a stable location
 
 ### Fixed
 - NextResponse handling in auth route tests
