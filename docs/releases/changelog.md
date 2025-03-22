@@ -217,6 +217,10 @@ Progress towards 0.2.0:
   - Fixed account display in navigation
   - Improved session state management
   - Added proper error handling for session verification
+- Fixed email field population in profile edit form:
+  - Corrected field mapping to use proper email property for individual accounts
+  - Added fallback to contact_email for organizational accounts
+  - Improved type safety with proper type assertions
 
 ## [0.1.0] - 2024-03-18
 

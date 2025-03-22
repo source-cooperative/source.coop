@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Account } from '@/types/account';
+import { Account, IndividualAccount } from '@/types/account';
 import { Button, Flex, Text, Box, Container } from '@radix-ui/themes';
 import { FormWrapper } from '@/components/core/Form';
 import { WebsiteForm } from '@/components/features/profiles/WebsiteForm';
@@ -58,6 +58,7 @@ export function EditProfileForm({ account: initialAccount }: EditProfileFormProp
       type: 'text' as FormFieldType,
       required: true,
       placeholder: 'Your Name',
+      defaultValue: account.name,
       validation: {
         minLength: 2
       },
@@ -69,6 +70,7 @@ export function EditProfileForm({ account: initialAccount }: EditProfileFormProp
       type: 'email' as FormFieldType,
       required: true,
       placeholder: 'you@example.com',
+      defaultValue: account.type === 'individual' ? (account as IndividualAccount).email : account.contact_email,
       validation: {
         pattern: '^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}$'
       }
@@ -78,16 +80,21 @@ export function EditProfileForm({ account: initialAccount }: EditProfileFormProp
       label: 'Bio',
       type: 'textarea' as FormFieldType,
       placeholder: 'Tell us about yourself',
+      defaultValue: account.description,
       description: 'A brief description of yourself or your work (220 characters maximum)',
       validation: {
         maxLength: 220
+      },
+      style: {
+        height: '7.4rem'
       }
     },
     ...(account.type === 'individual' ? [{
       name: 'orcid',
       label: 'ORCID ID',
       type: 'text' as FormFieldType,
-      placeholder: '0000-0002-1825-0097'
+      placeholder: '0000-0002-1825-0097',
+      defaultValue: (account as IndividualAccount).orcid
     }] : [])
   ];
 
