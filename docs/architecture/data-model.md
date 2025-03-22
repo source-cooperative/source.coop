@@ -34,7 +34,6 @@ interface OrganizationalAccount extends BaseAccount {
   admin_account_ids: string[];
   member_account_ids?: string[];
   ror_id?: string;
-  logo_svg?: string;
 }
 ```
 
@@ -107,7 +106,6 @@ interface AccountsTable {
   admin_account_ids?: string[];
   member_account_ids?: string[];
   ror_id?: string;
-  logo_svg?: string;
   created_at: string;
   updated_at: string;
 }

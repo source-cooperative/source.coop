@@ -1,8 +1,9 @@
-import { Box, Heading, Text, Avatar, Link as RadixLink, Flex, Grid } from '@radix-ui/themes';
+import { Box, Heading, Text, Link as RadixLink, Flex, Grid } from '@radix-ui/themes';
 import Link from 'next/link';
 import type { OrganizationalAccount, IndividualAccount, Repository } from '@/types';
 import { RepositoryList } from '@/components/features/repositories/RepositoryList';
 import { OrganizationMembers } from './OrganizationMembers';
+import { ProfileAvatar } from './ProfileAvatar';
 
 interface OrganizationProfileProps {
   account: OrganizationalAccount;
@@ -22,14 +23,7 @@ export function OrganizationProfile({
   return (
     <Box>
       <Flex gap="4" mb="6">
-        {account.logo_svg && (
-          <Avatar
-            size="8"
-            src={account.logo_svg}
-            fallback={account.name[0]}
-            radius="full"
-          />
-        )}
+        <ProfileAvatar account={account} size="8" />
         <Box>
           <Heading as="h1" size="8">{account.name}</Heading>
           <Text as="p" size="3" color="gray" mt="1">

@@ -1,6 +1,7 @@
-import { Box, Text, Avatar, Link as RadixLink, Flex } from '@radix-ui/themes';
+import { Box, Text, Link as RadixLink, Flex } from '@radix-ui/themes';
 import Link from 'next/link';
 import type { IndividualAccount } from '@/types';
+import { ProfileAvatar } from './ProfileAvatar';
 
 interface OrganizationMembersProps {
   owner: IndividualAccount | null;
@@ -70,12 +71,7 @@ function MemberLink({ member, role }: MemberLinkProps) {
     <Link href={`/${member.account_id}`} passHref legacyBehavior>
       <RadixLink size="2">
         <Flex gap="2" align="center">
-          <Avatar
-            size="1"
-            src={member.logo_svg}
-            fallback={member.name[0]}
-            radius="full"
-          />
+          <ProfileAvatar account={member} size="1" />
           <Text>{member.name}</Text>
           {role !== 'member' && (
             <Text size="1" color="gray">({role})</Text>
