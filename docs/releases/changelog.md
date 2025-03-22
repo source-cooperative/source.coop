@@ -126,6 +126,11 @@ Progress towards 0.2.0:
   - Standardized return types for better predictability
   - Reduced code duplication with type-safe helper functions
   - Added comprehensive documentation in development guides
+- Improved session management with server-first architecture
+  - Moved session fetching to server component
+  - Added client-side session hook for UI components
+  - Reduced duplicate session fetches
+  - Fixed client component hydration issues
 
 ### Fixed
 - Email verification status updates:

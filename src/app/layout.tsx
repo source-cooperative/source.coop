@@ -5,6 +5,8 @@ import { IBM_Plex_Sans } from 'next/font/google';
 import { metadata } from './metadata';
 import { Navigation, Footer } from '@/components/layout';
 import { Box } from '@radix-ui/themes';
+import { Theme } from '@radix-ui/themes';
+import { SessionProvider } from '@/components/providers/SessionProvider';
 
 const ibmPlexSans = IBM_Plex_Sans({
   subsets: ['latin'],
@@ -28,13 +30,15 @@ export default function RootLayout({
           defaultTheme="system"
           storageKey="source-theme"
         >
-          <Box style={{ minHeight: '100vh' }}>
-            <Navigation />
-            <Box asChild my="6">
-              <main>{children}</main>
+          <SessionProvider>
+            <Box style={{ minHeight: '100vh' }}>
+              <Navigation />
+              <Box asChild my="6">
+                <main>{children}</main>
+              </Box>
+              <Footer />
             </Box>
-            <Footer />
-          </Box>
+          </SessionProvider>
         </ThemeProvider>
       </body>
     </html>

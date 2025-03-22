@@ -2,47 +2,18 @@
 
 import { Box, Container, Flex, Button, DropdownMenu, Text } from '@radix-ui/themes';
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Logo } from './Logo';
 import { ProfileAvatar } from '@/components/features/profiles/ProfileAvatar';
 import type { IndividualAccount } from '@/types/account';
 import { ChevronDownIcon } from '@radix-ui/react-icons';
 import styles from './Navigation.module.css';
-import { getSession } from '@/lib/auth';
+import { useSession } from '@/hooks/useSession';
 
 export function Navigation() {
-  const [user, setUser] = useState<IndividualAccount | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { session, isLoading } = useSession();
   const [isOpen, setIsOpen] = useState(false);
-
-  useEffect(() => {
-    const checkSession = async () => {
-      try {
-        const session = await getSession();
-        
-        if (session?.identity?.metadata_public?.account_id) {
-          const accountId = session.identity.metadata_public.account_id;
-          // Fetch user account details
-          const response = await fetch(`/api/accounts/${accountId}`);
-          if (response.ok) {
-            const account = await response.json();
-            setUser(account);
-          } else {
-            setUser(null);
-          }
-        } else {
-          setUser(null);
-        }
-      } catch (error) {
-        console.error('Session check failed:', error);
-        setUser(null);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    checkSession();
-  }, []);
+  const user = session?.identity?.traits as IndividualAccount | null;
 
   const handleLogout = async () => {
     try {
