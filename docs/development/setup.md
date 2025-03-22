@@ -8,6 +8,7 @@ This guide will help you set up your local development environment for Source.co
 - Node.js 18 or higher
 - Docker and Docker Compose
 - Git
+- AWS CLI (for DynamoDB operations)
 - VS Code (recommended)
 
 ### System Requirements
@@ -47,6 +48,53 @@ This guide will help you set up your local development environment for Source.co
    docker-compose up -d
    ```
 
+## DynamoDB Setup
+
+The application uses DynamoDB for data storage. We've created several scripts to make working with local DynamoDB easier.
+
+### Managing DynamoDB
+
+```bash
+# Start DynamoDB and initialize if needed
+npm run start-dynamodb
+
+# Check if DynamoDB is running
+npm run check-dynamodb
+
+# Initialize tables and sample data
+npm run init-local
+```
+
+### Automatic Setup
+
+When you run `npm run dev`, the following happens automatically:
+
+1. The system checks if DynamoDB is running (`npm run check-dynamodb`)
+2. If DynamoDB isn't running, it starts it automatically (`npm run start-dynamodb`)
+3. If tables don't exist, you'll be prompted to initialize them
+4. If tables already exist, initialization is skipped
+
+### DynamoDB Tables
+
+The application uses two main tables:
+- `Accounts` - Stores user and organization account information
+- `Repositories` - Stores repository metadata
+
+### Manual DynamoDB Operations
+
+If you need to interact with DynamoDB directly:
+
+```bash
+# List tables
+aws dynamodb list-tables --endpoint-url http://localhost:8000
+
+# Scan table contents (view data)
+aws dynamodb scan --table-name Accounts --endpoint-url http://localhost:8000
+
+# Delete a table (reset data)
+aws dynamodb delete-table --table-name Accounts --endpoint-url http://localhost:8000
+```
+
 ## Development Workflow
 
 ### Starting the Development Server
@@ -69,6 +117,11 @@ npm run test:watch # Run tests in watch mode
 # Code Quality
 npm run format     # Format code with Prettier
 npm run lint:fix   # Fix ESLint issues
+
+# Database
+npm run start-dynamodb  # Start local DynamoDB
+npm run check-dynamodb  # Check if DynamoDB is running
+npm run init-local      # Initialize database tables
 ```
 
 ### Local Storage
@@ -124,6 +177,32 @@ Recommended extensions for development:
    # Clear TypeScript cache
    rm -rf .next
    npm run type-check
+   ```
+
+5. **DynamoDB Connection Issues**
+   ```bash
+   # Check if DynamoDB is running
+   docker ps | grep dynamodb
+
+   # Stop existing container and restart
+   docker stop dynamodb-local
+   docker rm dynamodb-local
+   npm run start-dynamodb
+
+   # Verify table structure
+   aws dynamodb describe-table --table-name Accounts --endpoint-url http://localhost:8000
+   ```
+
+6. **DynamoDB Reset**
+   If you need to completely reset your database:
+   ```bash
+   # Remove existing container
+   docker stop dynamodb-local
+   docker rm dynamodb-local
+
+   # Start fresh and initialize
+   npm run start-dynamodb
+   # Answer 'y' when prompted to initialize tables
    ```
 
 ## Getting Help

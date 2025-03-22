@@ -162,7 +162,7 @@ const individualUsers: Omit<IndividualAccount, 'ory_id' | 'created_at' | 'update
     name: 'Sarah Johnson',
     type: 'individual',
     email: 'sarah.johnson@example.com',
-    website: 'https://sarahjohnson.dev',
+    websites: [{ url: 'https://sarahjohnson.dev' }],
     description: 'Earth scientist specializing in climate data analysis'
   },
   {
@@ -186,7 +186,7 @@ const individualUsers: Omit<IndividualAccount, 'ory_id' | 'created_at' | 'update
     name: 'Aisha Patel',
     type: 'individual',
     email: 'aisha.patel@example.com',
-    website: 'https://aishapatel.net',
+    websites: [{ url: 'https://aishapatel.net' }],
     description: 'GIS specialist focusing on urban development'
   },
   {
