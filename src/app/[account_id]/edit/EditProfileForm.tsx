@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Account, Website } from '@/types/account';
+import { Account } from '@/types/account';
 import { Button, Flex, Text, Box, Container } from '@radix-ui/themes';
-import { Plus, Trash2 } from 'lucide-react';
 import { FormWrapper } from '@/components/core/Form';
+import { WebsiteForm } from '@/components/features/profiles/WebsiteForm';
 import type { FormField, FormFieldType } from '@/types/form';
 
 interface EditProfileFormProps {
@@ -16,6 +16,7 @@ export function EditProfileForm({ account: initialAccount }: EditProfileFormProp
   const router = useRouter();
   const [account, setAccount] = useState<Account>(initialAccount);
   const [saving, setSaving] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
 
   const handleSubmit = async (data: Record<string, any>) => {
     setSaving(true);
@@ -44,41 +45,16 @@ export function EditProfileForm({ account: initialAccount }: EditProfileFormProp
     }
   };
 
-  const addWebsite = () => {
-    const newWebsite: Website = {
-      url: '',
-      type: 'personal',
-      is_primary: false,
-    };
-    setAccount({
-      ...account,
-      websites: [...(account.websites || []), newWebsite],
-    });
-  };
-
-  const removeWebsite = (index: number) => {
-    setAccount({
-      ...account,
-      websites: account.websites?.filter((_, i) => i !== index),
-    });
-  };
-
-  const updateWebsite = (index: number, field: keyof Website, value: any) => {
-    const updatedWebsites = [...(account.websites || [])];
-    updatedWebsites[index] = {
-      ...updatedWebsites[index],
-      [field]: value,
-    };
-    setAccount({
-      ...account,
-      websites: updatedWebsites,
-    });
+  const handleFormSubmit = () => {
+    if (formRef.current) {
+      formRef.current.requestSubmit();
+    }
   };
 
   const fields: FormField[] = [
     {
       name: 'name',
-      label: 'Name',
+      label: 'Name (Required)',
       type: 'text' as FormFieldType,
       required: true,
       placeholder: 'Your Name',
@@ -89,7 +65,7 @@ export function EditProfileForm({ account: initialAccount }: EditProfileFormProp
     },
     {
       name: 'email',
-      label: 'Email',
+      label: 'Email (Required)',
       type: 'email' as FormFieldType,
       required: true,
       placeholder: 'you@example.com',
@@ -100,46 +76,20 @@ export function EditProfileForm({ account: initialAccount }: EditProfileFormProp
     {
       name: 'description',
       label: 'Bio',
-      type: 'text' as FormFieldType,
+      type: 'textarea' as FormFieldType,
       placeholder: 'Tell us about yourself',
-      description: 'A brief description of yourself or your work'
+      description: 'A brief description of yourself or your work (220 characters maximum)',
+      validation: {
+        maxLength: 220
+      }
     },
     ...(account.type === 'individual' ? [{
       name: 'orcid',
       label: 'ORCID ID',
       type: 'text' as FormFieldType,
-      placeholder: '0000-0002-1825-0097',
-      description: 'Your ORCID identifier (optional)'
+      placeholder: '0000-0002-1825-0097'
     }] : [])
   ];
-
-  const getWebsiteFields = (index: number): FormField[] => {
-    return [
-      {
-        name: `website-${index}-url`,
-        label: 'Website URL',
-        type: 'url' as FormFieldType,
-        placeholder: 'https://example.com',
-        validation: {
-          pattern: '^https?:\\/\\/.+'
-        }
-      },
-      {
-        name: `website-${index}-type`,
-        label: 'Website Type',
-        type: 'text' as FormFieldType,
-        placeholder: 'Select type',
-        description: 'Choose the type of website'
-      },
-      {
-        name: `website-${index}-display-name`,
-        label: 'Display Name',
-        type: 'text' as FormFieldType,
-        placeholder: 'Display Name (optional)',
-        description: 'A friendly name for this website'
-      }
-    ];
-  };
 
   return (
     <Container size="2">
@@ -149,61 +99,35 @@ export function EditProfileForm({ account: initialAccount }: EditProfileFormProp
         </Box>
 
         <FormWrapper
+          ref={formRef}
           fields={fields}
           onSubmit={handleSubmit}
           submitLabel="Save Changes"
           isLoading={saving}
+          hideSubmit
         />
 
         <Box mt="4">
-          <Flex justify="between" align="center" mb="2">
-            <Text size="3" weight="medium">Websites</Text>
-            <Button 
-              type="button" 
-              variant="soft" 
-              size="2" 
-              onClick={addWebsite}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Website
-            </Button>
-          </Flex>
-
-          {account.websites?.map((website, index) => (
-            <Box key={index} mb="4">
-              <Flex gap="2" align="start">
-                <Flex direction="column" gap="2" style={{ flex: 1 }}>
-                  <FormWrapper
-                    fields={getWebsiteFields(index)}
-                    onSubmit={async (data) => {
-                      updateWebsite(index, 'url', data[`website-${index}-url`]);
-                      updateWebsite(index, 'type', data[`website-${index}-type`]);
-                      updateWebsite(index, 'display_name', data[`website-${index}-display-name`]);
-                    }}
-                    submitLabel=""
-                    submitDisabled
-                  />
-                </Flex>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="2"
-                  onClick={() => removeWebsite(index)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </Flex>
-            </Box>
-          ))}
+          <WebsiteForm
+            websites={account.websites || []}
+            onWebsitesChange={(websites) => setAccount({ ...account, websites })}
+          />
         </Box>
 
-        <Flex justify="end" mt="4">
+        <Flex justify="end" gap="2" mt="4">
           <Button
             type="button"
             variant="soft"
             onClick={() => router.push(`/${account.account_id}`)}
           >
             Cancel
+          </Button>
+          <Button
+            type="button"
+            onClick={handleFormSubmit}
+            disabled={saving}
+          >
+            {saving ? 'Saving...' : 'Save Changes'}
           </Button>
         </Flex>
       </Box>
