@@ -150,12 +150,11 @@ Progress towards 0.2.0:
   - Enhanced validation feedback
   - Improved error handling
 - Enhanced profile editing form:
-  - Added textarea for bio field with 220-character limit
-  - Added character counter with color indicators (amber at 200, red at 220)
-  - Improved website field layout with centered trashcan icon
-  - Added "(Required)" labels for mandatory fields
-  - Removed redundant description from ORCID field
-  - Made form fields consistent in width and styling
+  - Integrated website fields directly into main form for better state management
+  - Added automatic https:// prefix for website URLs
+  - Removed redundant website field descriptions
+  - Fixed website data transformation in form submission
+  - Improved form state handling to prevent data loss
 
 ### Fixed
 - Email verification status updates:
@@ -221,6 +220,11 @@ Progress towards 0.2.0:
   - Corrected field mapping to use proper email property for individual accounts
   - Added fallback to contact_email for organizational accounts
   - Improved type safety with proper type assertions
+- Fixed website data handling in profile edit form:
+  - Corrected website array transformation in form submission
+  - Fixed state management to prevent data loss when editing websites
+  - Improved website field validation and error handling
+  - Fixed 400 Bad Request errors in profile updates
 
 ## [0.1.0] - 2024-03-18
 
