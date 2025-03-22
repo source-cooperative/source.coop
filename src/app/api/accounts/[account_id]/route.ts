@@ -4,6 +4,8 @@ import { fetchAccount } from '@/lib/db';
 import { getDynamoDb } from '@/lib/clients';
 import { DeleteCommand } from '@aws-sdk/lib-dynamodb';
 import type { Session, Identity } from '@ory/client';
+import type { Account } from '@/types/account';
+import type { SessionWithMetadata } from '@/types/session';
 
 interface SessionMetadata {
   account_id?: string;
@@ -17,11 +19,9 @@ interface SessionWithMetadata extends Session {
 }
 
 export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ account_id: string }> }
+  request: Request,
+  { params }: { params: { account_id: string } }
 ) {
-  const { account_id } = await params;
-  
   try {
     // Get all cookies from the request
     const cookieHeader = request.headers.get('cookie');
@@ -61,10 +61,10 @@ export async function GET(
     // Check if the user is authorized to access this account
     const sessionAccountId = session.identity?.metadata_public?.account_id;
     
-    if (sessionAccountId !== account_id && !session.identity?.metadata_public?.is_admin) {
+    if (sessionAccountId !== params.account_id && !session.identity?.metadata_public?.is_admin) {
       console.error('User not authorized to access account:', {
         sessionAccountId,
-        requestedAccountId: account_id,
+        requestedAccountId: params.account_id,
         isAdmin: session.identity?.metadata_public?.is_admin
       });
       return NextResponse.json(
@@ -74,10 +74,10 @@ export async function GET(
     }
     
     // Fetch account from DynamoDB
-    const account = await fetchAccount(account_id);
+    const account = await fetchAccount(params.account_id);
     
     if (!account) {
-      console.error('Account not found:', account_id);
+      console.error('Account not found:', params.account_id);
       return NextResponse.json(
         { error: 'Account not found' },
         { status: 404 }
@@ -87,6 +87,80 @@ export async function GET(
     return NextResponse.json(account);
   } catch (error) {
     console.error('Error fetching account:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PUT(
+  request: Request,
+  { params }: { params: { account_id: string } }
+) {
+  try {
+    // Get all cookies from the request
+    const cookieHeader = request.headers.get('cookie');
+    if (!cookieHeader) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    // Verify session with Ory
+    const response = await fetch(`${process.env.NEXT_PUBLIC_ORY_SDK_URL}/sessions/whoami`, {
+      headers: {
+        Cookie: cookieHeader,
+        'Accept': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    const session = await response.json() as SessionWithMetadata;
+    
+    if (!session?.active) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+    
+    // Check if the user is authorized to update this account
+    const sessionAccountId = session.identity?.metadata_public?.account_id;
+    
+    if (sessionAccountId !== params.account_id && !session.identity?.metadata_public?.is_admin) {
+      return NextResponse.json(
+        { error: 'Forbidden' },
+        { status: 403 }
+      );
+    }
+
+    const account: Account = await request.json();
+    
+    // TODO: Replace with actual database update
+    const updateResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/accounts/${params.account_id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(account),
+    });
+
+    if (!updateResponse.ok) {
+      return NextResponse.json({ error: 'Failed to update account' }, { status: 400 });
+    }
+
+    const updatedAccount = await updateResponse.json();
+    return NextResponse.json(updatedAccount);
+  } catch (error) {
+    console.error('Error updating account:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
