@@ -8,7 +8,10 @@
   color: inherit;
 }
 
-.rotate {
+.chevron {
+  transition: transform 0.3s ease;
+}
+
+.chevron[data-state="open"] {
   transform: rotate(180deg);
-  transition: transform 0.2s ease;
 } 

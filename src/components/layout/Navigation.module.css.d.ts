@@ -1,7 +1,7 @@
 declare const styles: {
   readonly nav: string;
   readonly logo: string;
-  readonly rotate: string;
+  readonly chevron: string;
 };
 
 export default styles; 

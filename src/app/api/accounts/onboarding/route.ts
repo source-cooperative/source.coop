@@ -55,6 +55,7 @@ export async function POST(request: NextRequest) {
       type: 'individual',
       ory_id: oryId,
       email,
+      email_verified: false,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };

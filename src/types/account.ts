@@ -22,6 +22,7 @@ export interface IndividualAccount extends BaseAccount, ContactInfo {
   type: 'individual';
   email: string;  // Note: email is required for individuals, overriding the optional in ContactInfo
   orcid?: string;  // Optional ORCID identifier (e.g., "0000-0002-1825-0097")
+  email_verified?: boolean;  // Whether the user's email has been verified
   // Login-related fields could go here if needed
 }
 

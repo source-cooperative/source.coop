@@ -1,6 +1,6 @@
 import { Container, Heading, Text, Flex, Link as RadixLink } from '@radix-ui/themes';
 import Link from 'next/link';
-import { FileIcon } from '@radix-ui/react-icons';
+import { LinkBreak2Icon } from '@radix-ui/react-icons';
 
 interface NotFoundProps {
   params?: {
@@ -19,7 +19,7 @@ export default function RepositoryNotFound({ params }: NotFoundProps) {
         gap="4"
         style={{ minHeight: '60vh' }}
       >
-        <FileIcon width="32" height="32" />
+        <LinkBreak2Icon width="32" height="32" />
         <Heading as="h1" size="6">Repository Not Found</Heading>
         <Text as="p" size="3" color="gray">
           {params?.account_id && params?.repository_id ? (

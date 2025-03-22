@@ -1,12 +1,13 @@
 /**
  * Account Page - Displays account details and repositories
  * 
- * KEEP IT SIMPLE:
- * 1. URL params are known values (/[account_id])
- * 2. Get data -> Transform if needed -> Render
- * 3. Trust your types, avoid complex validation
- * 4. Let Next.js handle errors (404, 500, etc.)
- * 5. No helper functions unless truly needed
+ * This server component handles both individual and organizational accounts.
+ * It fetches account data, repositories, and organization members (if applicable).
+ * 
+ * @param params - Route parameters containing account_id
+ * @param searchParams - URL search parameters, including welcome flag for onboarding
+ * @returns Rendered profile component based on account type
+ * @throws {notFound} If account does not exist
  */
 
 import { notFound } from 'next/navigation';
@@ -14,14 +15,20 @@ import { Container } from '@radix-ui/themes';
 import { IndividualProfile } from '@/components/features/profiles';
 import { OrganizationProfile } from '@/components/features/profiles';
 import { fetchAccount, fetchRepositoriesByAccount, fetchOrganizationMembers } from '@/lib/db';
-import type { Account, OrganizationalAccount } from '@/types';
+import type { Account, OrganizationalAccount, Repository } from '@/types';
 
-interface PageProps {
+type PageProps = {
   params: Promise<{ account_id: string }>;
-}
+  searchParams: Promise<{ welcome?: string }>;
+};
 
-export default async function AccountPage({ params }: PageProps) {
+export default async function AccountPage({ 
+  params,
+  searchParams 
+}: PageProps) {
   const { account_id } = await params;
+  const { welcome } = await searchParams;
+  const showWelcome = welcome === 'true';
 
   // Get account data
   const account = await fetchAccount(account_id);
@@ -30,15 +37,16 @@ export default async function AccountPage({ params }: PageProps) {
   }
 
   // Get repositories for this account
-  const repositories = await fetchRepositoriesByAccount(account_id);
+  const repositories: Repository[] = await fetchRepositoriesByAccount(account_id);
 
   // If this is an organization, get member details
   if (account.type === 'organization') {
-    const { owner, admins, members } = await fetchOrganizationMembers(account as OrganizationalAccount);
+    const orgAccount = account as OrganizationalAccount;
+    const { owner, admins, members } = await fetchOrganizationMembers(orgAccount);
     return (
       <Container size="4" py="6">
         <OrganizationProfile
-          account={account as OrganizationalAccount}
+          account={orgAccount}
           repositories={repositories}
           owner={owner}
           admins={admins}
@@ -56,6 +64,7 @@ export default async function AccountPage({ params }: PageProps) {
         ownedRepositories={repositories}
         contributedRepositories={[]}
         organizations={[]}
+        showWelcome={showWelcome}
       />
     </Container>
   );

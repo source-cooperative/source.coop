@@ -1,18 +1,57 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSession } from '@/lib/auth';
+import { ory } from '@/lib/ory';
 import { fetchAccount } from '@/lib/db';
+import { getDynamoDb } from '@/lib/clients';
+import { DeleteCommand } from '@aws-sdk/lib-dynamodb';
+import type { Session, Identity } from '@ory/client';
+
+interface SessionMetadata {
+  account_id?: string;
+  is_admin?: boolean;
+}
+
+interface SessionWithMetadata extends Session {
+  identity?: Identity & {
+    metadata_public?: SessionMetadata;
+  };
+}
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { account_id: string } }
+  { params }: { params: Promise<{ account_id: string }> }
 ) {
-  const accountId = params.account_id;
+  const { account_id } = await params;
   
   try {
-    // Verify session
-    const session = await getSession();
+    // Get all cookies from the request
+    const cookieHeader = request.headers.get('cookie');
+    if (!cookieHeader) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    // Verify session with Ory by making a direct request with all cookies
+    const response = await fetch(`${process.env.NEXT_PUBLIC_ORY_SDK_URL}/sessions/whoami`, {
+      headers: {
+        Cookie: cookieHeader,
+        'Accept': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      console.error('Session verification failed:', response.status, response.statusText);
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    const session = await response.json() as SessionWithMetadata;
     
-    if (!session) {
+    if (!session?.active) {
+      console.error('Session is not active');
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -22,7 +61,12 @@ export async function GET(
     // Check if the user is authorized to access this account
     const sessionAccountId = session.identity?.metadata_public?.account_id;
     
-    if (sessionAccountId !== accountId && !session.identity?.metadata_public?.is_admin) {
+    if (sessionAccountId !== account_id && !session.identity?.metadata_public?.is_admin) {
+      console.error('User not authorized to access account:', {
+        sessionAccountId,
+        requestedAccountId: account_id,
+        isAdmin: session.identity?.metadata_public?.is_admin
+      });
       return NextResponse.json(
         { error: 'Forbidden' },
         { status: 403 }
@@ -30,9 +74,10 @@ export async function GET(
     }
     
     // Fetch account from DynamoDB
-    const account = await fetchAccount(accountId);
+    const account = await fetchAccount(account_id);
     
     if (!account) {
+      console.error('Account not found:', account_id);
       return NextResponse.json(
         { error: 'Account not found' },
         { status: 404 }
@@ -44,6 +89,100 @@ export async function GET(
     console.error('Error fetching account:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ account_id: string }> }
+) {
+  try {
+    const { account_id } = await params;
+
+    // Get the session cookie from the request
+    const sessionCookie = request.cookies.get('ory_kratos_session');
+    if (!sessionCookie) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    // Verify session with Ory
+    const { data: session } = await ory.toSession() as { data: SessionWithMetadata };
+    if (!session?.active) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    // Get user data from session
+    if (!session?.identity) {
+      return NextResponse.json(
+        { error: 'No identity found in session' },
+        { status: 400 }
+      );
+    }
+
+    // Verify the user is authorized (either deleting their own account or is an admin)
+    const sessionAccountId = session.identity.metadata_public?.account_id;
+    const isAdmin = session.identity.metadata_public?.is_admin === true;
+    
+    if (!sessionAccountId || (!isAdmin && sessionAccountId !== account_id)) {
+      return NextResponse.json(
+        { error: 'You can only delete your own account' },
+        { status: 403 }
+      );
+    }
+
+    // Verify CSRF token if not an API request
+    const csrfToken = request.headers.get('x-csrf-token');
+    if (!request.headers.get('authorization') && !csrfToken) {
+      return NextResponse.json(
+        { error: 'CSRF token missing' },
+        { status: 403 }
+      );
+    }
+
+    // Fetch the account first to verify it exists and get its type
+    const account = await fetchAccount(account_id);
+    if (!account) {
+      return NextResponse.json(
+        { error: 'Account not found' },
+        { status: 404 }
+      );
+    }
+
+    // Delete the account from DynamoDB
+    const dynamoDb = getDynamoDb();
+    await dynamoDb.send(new DeleteCommand({
+      TableName: "Accounts",
+      Key: { 
+        account_id,
+        type: account.type
+      }
+    }));
+
+    // Log out the user if they're deleting their own account
+    if (sessionAccountId === account_id) {
+      await ory.createBrowserLogoutFlow();
+    }
+    
+    return NextResponse.json({ 
+      success: true, 
+      message: 'Account deleted successfully',
+      deleted_by: isAdmin ? 'admin' : 'self'
+    });
+  } catch (error) {
+    console.error('Account deletion error:', error);
+    return NextResponse.json(
+      { 
+        error: 'Failed to delete account',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     );
   }

@@ -13,7 +13,7 @@ type ExtendedIdentity = Identity & {
 };
 
 // Extend the Ory Session type
-type ExtendedSession = Session & {
+export type ExtendedSession = Session & {
   identity?: ExtendedIdentity;
 };
 
@@ -31,11 +31,16 @@ export const ory = new FrontendApi(
 );
 
 // Helper to get session data using the SDK
-export async function getSession(): Promise<Session | null> {
+export async function getSession(): Promise<ExtendedSession | null> {
   try {
     const { data: session } = await ory.toSession();
-    return session as Session;
+    if (!session?.active || !session?.identity) {
+      console.error('Invalid session:', session);
+      return null;
+    }
+    return session as ExtendedSession;
   } catch (error) {
+    console.error('Error getting session:', error);
     return null;
   }
 }

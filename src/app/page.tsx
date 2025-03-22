@@ -18,7 +18,8 @@ import { fetchRepositories } from '@/lib/db/operations';
 // Server action for data fetching
 async function getRepositories(): Promise<Repository[]> {
   'use server';
-  return fetchRepositories();
+  const { repositories } = await fetchRepositories();
+  return repositories;
 }
 
 export default async function HomePage() {

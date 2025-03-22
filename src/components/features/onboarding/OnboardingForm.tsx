@@ -153,27 +153,29 @@ export function OnboardingForm() {
       onChange: handleUsernameChange,
       description: (
         <Flex direction="column" gap="1" style={{ minHeight: '24px' }}>
-          <Flex gap="0" align="center">
+          <Flex gap="1" align="center">
             <Text size="1" color="gray">
-              This will be your profile URL: 
+              This will be your profile URL:
             </Text>
-            <MonoText size="1" color="gray">
-              source.coop/
-            </MonoText>
-            <MonoText 
-              size="1" 
-              color={
-                usernameStatus === 'checking' 
-                  ? 'gray' 
-                  : usernameStatus === 'available'
-                    ? 'green'
-                    : usernameStatus === 'taken'
-                      ? 'red'
-                      : 'gray'
-              }
-            >
-              {username}
-            </MonoText>
+            <Flex gap="0" align="center">
+              <MonoText size="1" color="gray">
+                source.coop/
+              </MonoText>
+              <MonoText 
+                size="1" 
+                color={
+                  usernameStatus === 'checking' 
+                    ? 'gray' 
+                    : usernameStatus === 'available'
+                      ? 'green'
+                      : usernameStatus === 'taken'
+                        ? 'red'
+                        : 'gray'
+                }
+              >
+                {username}
+              </MonoText>
+            </Flex>
           </Flex>
           <div style={{ height: '16px' }}>
             {usernameStatus === 'checking' ? (

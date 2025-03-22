@@ -1,6 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getDynamoDb } from '@/lib/clients';
-import { GetCommand } from '@aws-sdk/lib-dynamodb';
+import { fetchAccount } from '@/lib/db/operations';
+import { NextResponse } from 'next/server';
 
 // Reserved usernames that cannot be used
 const RESERVED_USERNAMES = [
@@ -10,10 +9,11 @@ const RESERVED_USERNAMES = [
   'privacy', 'security', 'contact', 'feedback', 'status'
 ];
 
-export async function GET(request: NextRequest) {
+export async function GET(request: Request) {
   try {
+    // Get username from query parameters
     const { searchParams } = new URL(request.url);
-    const username = searchParams.get('username')?.toLowerCase();
+    const username = searchParams.get('username');
 
     if (!username) {
       return NextResponse.json(
@@ -22,47 +22,30 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Basic username validation
+    // Basic validation
     if (username.length < 3) {
       return NextResponse.json(
         { available: false, error: 'Username must be at least 3 characters' },
-        { status: 200 }
+        { status: 400 }
       );
     }
 
-    if (!/^[a-zA-Z0-9_-]+$/.test(username)) {
+    // Only allow lowercase alphanumeric characters, hyphens, and underscores
+    if (!/^[a-z0-9_-]+$/.test(username)) {
       return NextResponse.json(
-        { available: false, error: 'Username can only contain letters, numbers, underscores, and hyphens' },
-        { status: 200 }
+        { available: false, error: 'Invalid username format' },
+        { status: 400 }
       );
     }
 
-    // Check against reserved names
-    if (RESERVED_USERNAMES.includes(username)) {
-      return NextResponse.json(
-        { available: false, error: 'This username is reserved' },
-        { status: 200 }
-      );
-    }
-
-    // Check if username exists in DynamoDB
-    const dynamoDb = getDynamoDb();
-    const result = await dynamoDb.send(new GetCommand({
-      TableName: "Accounts",
-      Key: { account_id: username }
-    }));
-
-    const isAvailable = !result.Item;
-
-    return NextResponse.json({ 
-      available: isAvailable,
-      error: isAvailable ? undefined : 'This username is already taken'
+    // Check if an account with this ID already exists
+    const account = await fetchAccount(username);
+    
+    return NextResponse.json({
+      available: account === null
     });
   } catch (error) {
-    console.error('Error checking username availability:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    console.error('Error checking username:', error);
+    return NextResponse.json({ error: 'Failed to check username' }, { status: 500 });
   }
 } 

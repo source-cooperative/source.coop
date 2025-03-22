@@ -1,6 +1,6 @@
 import { Container, Heading, Text, Flex, Link as RadixLink } from '@radix-ui/themes';
 import Link from 'next/link';
-import { CubeIcon } from '@radix-ui/react-icons';
+import { LinkBreak2Icon } from '@radix-ui/react-icons';
 
 interface NotFoundProps {
   params?: {
@@ -22,7 +22,7 @@ export default function ObjectNotFound({ params }: NotFoundProps) {
         gap="4"
         style={{ minHeight: '60vh' }}
       >
-        <CubeIcon width="32" height="32" />
+        <LinkBreak2Icon width="32" height="32" />
         <Heading as="h1" size="6">Object Not Found</Heading>
         <Text as="p" size="3" color="gray">
           {params?.account_id && params?.repository_id ? (

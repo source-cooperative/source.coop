@@ -4,7 +4,7 @@ import { fetchRepositories } from '@/lib/db/operations';
 export async function GET() {
   try {
     // Fetch repositories for the feed
-    const repositories = await fetchRepositories();
+    const { repositories } = await fetchRepositories();
     
     // Generate RSS feed
     const feed = `<?xml version="1.0" encoding="UTF-8"?>

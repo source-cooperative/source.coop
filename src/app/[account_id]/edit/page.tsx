@@ -20,7 +20,7 @@ export default async function EditAccountPage({ params }: PageProps) {
   }
 
   const account: Account = await response.json();
-  const allRepositories = await fetchRepositories();
+  const { repositories: allRepositories } = await fetchRepositories();
   const repositories = allRepositories.filter(repo => repo.account.account_id === account_id);
 
   return (

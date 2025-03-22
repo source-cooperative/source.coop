@@ -184,6 +184,14 @@ Progress towards 0.2.0:
   - Ensured forms submit directly to Ory endpoints without modification
   - Used the Ory SDK directly for all authentication operations
   - Simplified the authentication flow by removing unnecessary proxies
+- Session cookie handling in API routes
+  - Properly forwarding session cookies to Ory
+  - Improved session verification
+  - Better error logging for session issues
+- Navigation component authentication state
+  - Fixed account display in navigation
+  - Improved session state management
+  - Added proper error handling for session verification
 
 ## [0.1.0] - 2024-03-18
 

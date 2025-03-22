@@ -27,6 +27,7 @@ describe('HomePage', () => {
     created_at: '2024-01-01T00:00:00Z',
     updated_at: '2024-01-01T00:00:00Z',
     email: 'test@example.com',
+    ory_id: 'test-ory-id',
   };
 
   const mockRepositories: Repository[] = [
@@ -44,7 +45,7 @@ describe('HomePage', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    (fetchRepositories as jest.Mock).mockResolvedValue(mockRepositories);
+    (fetchRepositories as jest.Mock).mockResolvedValue({ repositories: mockRepositories, lastEvaluatedKey: null });
   });
 
   it('renders the repositories list', async () => {
@@ -55,7 +56,7 @@ describe('HomePage', () => {
   });
 
   it('fetches repositories correctly', async () => {
-    const repositories = await fetchRepositories();
+    const { repositories } = await fetchRepositories();
     expect(repositories).toEqual(mockRepositories);
     expect(fetchRepositories).toHaveBeenCalledTimes(1);
   });

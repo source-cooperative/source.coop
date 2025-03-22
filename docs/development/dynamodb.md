@@ -168,6 +168,95 @@ await dynamodb.delete({
    - Verify GSIs are created correctly
    - Check provisioned throughput settings
 
+## Database Operations Framework
+
+The application uses an optimized database operations framework in `src/lib/db/operations.ts` with standardized patterns for accessing DynamoDB data.
+
+### Helper Functions
+
+```typescript
+// Fetch a single entity by a field value
+async function getEntityByField<T>(
+  tableName: string, 
+  fieldName: string, 
+  fieldValue: string, 
+  indexName?: string
+): Promise<T | null>
+
+// Query for a collection of entities
+async function queryEntities<T>(
+  tableName: string,
+  keyCondition: string,
+  expressionValues: Record<string, any>,
+  indexName?: string,
+  limit?: number,
+  expressionNames?: Record<string, string>
+): Promise<T[]>
+
+// Batch fetch entities by IDs (when applicable)
+async function batchGetEntitiesByIds<T>(
+  tableName: string,
+  idField: string,
+  ids: string[]
+): Promise<T[]>
+```
+
+### Account Operations
+
+```typescript
+// Get account by ID
+const account = await fetchAccount('account123');
+
+// Get account by Ory ID
+const account = await fetchAccountByOryId('ory-id-123');
+
+// Get account by email
+const account = await fetchAccountByEmail('user@example.com');
+
+// Get multiple accounts by IDs
+const accounts = await fetchAccountsByIds(['account1', 'account2']);
+
+// Get accounts by type
+const organizations = await fetchAccountsByType('organization');
+```
+
+### Repository Operations
+
+```typescript
+// Get repositories for an account
+const repositories = await fetchRepositoriesByAccount('account123');
+
+// Get single repository
+const repository = await fetchRepository('repo123', 'account123');
+
+// Get all repositories with pagination
+const { repositories, lastEvaluatedKey } = await fetchRepositories(50);
+// Get next page
+const nextPage = await fetchRepositories(50, lastEvaluatedKey);
+```
+
+### Update Operations
+
+All update operations return a boolean success indicator:
+
+```typescript
+// Update an account
+const success = await updateAccount(account);
+
+// Update an organization
+const success = await updateOrganization(orgAccount);
+
+// Update a repository
+const success = await updateRepository(repository);
+```
+
+### Error Handling Strategy
+
+- All retrieval operations return `null` or empty arrays on error
+- All update operations return a boolean success indicator
+- Errors are logged with context but not propagated to avoid crashes
+- Consistent error patterns make error handling more predictable
+
 3. **Query Issues**
    - Verify key schema matches query
    - Check expression attribute names/values

@@ -19,7 +19,7 @@ export function OnboardingPageContent() {
       } else {
         const accountId = getAccountId(session);
         if (accountId) {
-          router.push(`/${accountId}`);
+          router.push(`/${accountId}?welcome=true`);
         }
       }
     }

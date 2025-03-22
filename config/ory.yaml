@@ -18,6 +18,8 @@ services:
         value: "true"
       - name: CORS_ALLOWED_ORIGINS
         value: http://localhost:3000
+      - name: ALLOWED_RETURN_TO_URLS
+        value: '["http://localhost:3000", "http://localhost:3000/"]'
       - name: CORS_ALLOWED_METHODS
         value: POST,GET,PUT,PATCH,DELETE
       - name: CORS_ALLOWED_HEADERS

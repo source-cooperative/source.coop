@@ -8,41 +8,126 @@ import { getDynamoDb } from '../clients';
 
 const docClient = getDynamoDb();
 
-export async function fetchAccount(account_id: string): Promise<Account | null> {
+/**
+ * Generic helper to fetch an entity by a field value
+ */
+async function getEntityByField<T>(
+  tableName: string, 
+  fieldName: string, 
+  fieldValue: string, 
+  indexName?: string
+): Promise<T | null> {
   try {
-    const result = await docClient.send(new QueryCommand({
-      TableName: "Accounts",
-      KeyConditionExpression: "account_id = :account_id",
-      ExpressionAttributeValues: {
-        ":account_id": account_id
-      },
+    const queryParams: any = {
+      TableName: tableName,
+      KeyConditionExpression: `${fieldName} = :value`,
+      ExpressionAttributeValues: { ":value": fieldValue },
       Limit: 1
-    }));
-
+    };
+    
+    if (indexName) {
+      queryParams.IndexName = indexName;
+    }
+        
+    const result = await docClient.send(new QueryCommand(queryParams));
+    
     if (!result.Items || result.Items.length === 0) return null;
-    return result.Items[0] as Account;
+    return result.Items[0] as T;
   } catch (e) {
-    console.error("Error fetching account:", e);
+    console.error(`Error fetching ${tableName} by ${fieldName}:`, e);
     return null;
   }
 }
 
-export async function fetchRepositoriesByAccount(account_id: string): Promise<Repository[]> {
-  try {
-    const result = await docClient.send(new QueryCommand({
-      TableName: "Repositories",
-      IndexName: "GSI1",
-      KeyConditionExpression: "account_id = :account_id",
-      ExpressionAttributeValues: {
-        ":account_id": account_id
+/**
+ * Generic helper for batch fetching entities by IDs
+ */
+async function batchGetEntitiesByIds<T>(
+  tableName: string,
+  idField: string,
+  ids: string[]
+): Promise<T[]> {
+  if (!ids.length) return [];
+  
+  const uniqueIds = Array.from(new Set(ids));
+  const batchSize = 100; // DynamoDB batch limit
+  const results: T[] = [];
+  
+  for (let i = 0; i < uniqueIds.length; i += batchSize) {
+    const batch = uniqueIds.slice(i, i + batchSize);
+    try {
+      // Create a BatchGetItem request
+      const batchParams = {
+        RequestItems: {
+          [tableName]: {
+            Keys: batch.map(id => ({ [idField]: id }))
+          }
+        }
+      };
+      
+      const result = await docClient.send(new BatchGetCommand(batchParams));
+      
+      if (result.Responses && result.Responses[tableName]) {
+        results.push(...result.Responses[tableName] as T[]);
       }
-    }));
+    } catch (e) {
+      console.error(`Error batch fetching ${tableName}:`, e);
+      // Continue with other batches even if one fails
+    }
+  }
+  
+  return results;
+}
 
-    return result.Items as Repository[] || [];
+/**
+ * Generic helper to query a collection of entities
+ */
+async function queryEntities<T>(
+  tableName: string,
+  keyCondition: string,
+  expressionValues: Record<string, any>,
+  indexName?: string,
+  limit?: number,
+  expressionNames?: Record<string, string>
+): Promise<T[]> {
+  try {
+    const queryParams: any = {
+      TableName: tableName,
+      KeyConditionExpression: keyCondition,
+      ExpressionAttributeValues: expressionValues
+    };
+    
+    if (indexName) {
+      queryParams.IndexName = indexName;
+    }
+    
+    if (limit) {
+      queryParams.Limit = limit;
+    }
+    
+    if (expressionNames) {
+      queryParams.ExpressionAttributeNames = expressionNames;
+    }
+    
+    const result = await docClient.send(new QueryCommand(queryParams));
+    return (result.Items || []) as T[];
   } catch (e) {
-    console.error("Error fetching repositories:", e);
+    console.error(`Error querying ${tableName}:`, e);
     return [];
   }
+}
+
+export async function fetchAccount(account_id: string): Promise<Account | null> {
+  return getEntityByField<Account>("Accounts", "account_id", account_id);
+}
+
+export async function fetchRepositoriesByAccount(account_id: string): Promise<Repository[]> {
+  return queryEntities<Repository>(
+    "Repositories",
+    "account_id = :account_id",
+    { ":account_id": account_id },
+    "GSI1"
+  );
 }
 
 export async function fetchAccountsByIds(account_ids: string[]): Promise<Account[]> {
@@ -51,29 +136,36 @@ export async function fetchAccountsByIds(account_ids: string[]): Promise<Account
     return [];
   }
 
-  const batchSize = 100; // DynamoDB batch limit
+  const batchSize = 25; // Smaller batch for better parallelization
   const results: Account[] = [];
 
   // Remove duplicates while preserving order
   const uniqueIds = Array.from(new Set(account_ids));
 
+  // Process in smaller batches for better parallelization
   for (let i = 0; i < uniqueIds.length; i += batchSize) {
     const batch = uniqueIds.slice(i, i + batchSize);
     try {
-      // Query for each account_id with both individual and organization types
-      const queries = batch.map(async (id) => {
-        const result = await docClient.send(new QueryCommand({
+      // Query for each account_id in parallel
+      const queries = batch.map(id => 
+        docClient.send(new QueryCommand({
           TableName: "Accounts",
           KeyConditionExpression: "account_id = :account_id",
           ExpressionAttributeValues: {
             ":account_id": id
           }
-        }));
-        return result.Items || [];
-      });
+        }))
+      );
 
+      // Wait for all queries in this batch to complete
       const batchResults = await Promise.all(queries);
-      results.push(...batchResults.flat() as Account[]);
+      
+      // Extract and flatten the results
+      const accounts = batchResults
+        .map(result => result.Items || [])
+        .flat() as Account[];
+      
+      results.push(...accounts);
     } catch (e) {
       console.error("Error fetching accounts batch:", e);
       // Continue with other batches even if one fails
@@ -124,12 +216,25 @@ export async function fetchOrganizationMembers(organization: OrganizationalAccou
   return { owner, admins, members };
 }
 
-export async function fetchRepositories(): Promise<Repository[]> {
+export async function fetchRepositories(
+  limit = 50,
+  lastEvaluatedKey?: any
+): Promise<{
+  repositories: Repository[];
+  lastEvaluatedKey: any;
+}> {
   try {
-    const result = await docClient.send(new ScanCommand({
-      TableName: "Repositories"
-    }));
+    // Use a scan but with pagination to avoid loading everything at once
+    const scanParams: any = {
+      TableName: "Repositories",
+      Limit: limit
+    };
     
+    if (lastEvaluatedKey) {
+      scanParams.ExclusiveStartKey = lastEvaluatedKey;
+    }
+    
+    const result = await docClient.send(new ScanCommand(scanParams));
     const repositories = result.Items || [];
     
     // Collect all account IDs to fetch
@@ -148,61 +253,48 @@ export async function fetchRepositories(): Promise<Repository[]> {
     });
     
     // Attach real account data to repositories
-    const repositoriesWithAccounts = await Promise.all(
-      repositories.map(async repo => {
-        if (repo.account_id) {
-          const account = accountsMap.get(repo.account_id);
-          if (account) {
-            repo.account = account;
-          } else {
-            // If account not found, fetch it individually
-            const account = await fetchAccount(repo.account_id);
-            if (account) {
-              repo.account = account;
-            } else {
-              // Only create placeholder if account truly doesn't exist
-              repo.account = {
-                account_id: repo.account_id,
-                name: repo.account_id, // Use the account_id as the name instead of a placeholder
-                type: 'individual' as const,
-                ory_id: '',
-                created_at: '',
-                updated_at: ''
-              } as Account;
-            }
-          }
+    const repositoriesWithAccounts = repositories.map(repo => {
+      if (repo.account_id) {
+        const account = accountsMap.get(repo.account_id);
+        if (account) {
+          repo.account = account;
+        } else {
+          // Use a basic account placeholder if not found
+          repo.account = {
+            account_id: repo.account_id,
+            name: repo.account_id, // Use the account_id as the name
+            type: 'individual' as const,
+            ory_id: '',
+            created_at: '',
+            updated_at: ''
+          } as Account;
         }
-        
-        return repo as Repository;
-      })
-    );
+      }
+      return repo as Repository;
+    });
     
-    return repositoriesWithAccounts;
+    return {
+      repositories: repositoriesWithAccounts,
+      lastEvaluatedKey: result.LastEvaluatedKey
+    };
   } catch (e) {
     console.error("Error fetching repositories:", e);
-    return [];
+    return { repositories: [], lastEvaluatedKey: null };
   }
 }
 
 export async function fetchRepositoriesByAccountId(account_id: string): Promise<Repository[]> {
-  try {
-    const result = await docClient.send(new QueryCommand({
-      TableName: "Repositories",
-      IndexName: "GSI1",
-      KeyConditionExpression: "account_id = :account_id",
-      ExpressionAttributeValues: {
-        ":account_id": account_id
-      }
-    }));
-    return result.Items as Repository[] || [];
-  } catch (e) {
-    console.error("Error fetching repositories by account:", e);
-    return [];
-  }
+  return queryEntities<Repository>(
+    "Repositories",
+    "account_id = :account_id",
+    { ":account_id": account_id },
+    "GSI1"
+  );
 }
 
 export async function fetchRepository(repository_id: string, account_id: string): Promise<Repository | null> {
   try {
+    // Use GetCommand directly as this uses a primary key lookup
     const result = await docClient.send(new GetCommand({
       TableName: "Repositories",
       Key: { repository_id, account_id }
@@ -214,9 +306,11 @@ export async function fetchRepository(repository_id: string, account_id: string)
     const repository = result.Item as Repository;
     
     // Fetch and add account information
-    const account = await fetchAccount(account_id);
-    if (account) {
-      repository.account = account;
+    if (account_id) {
+      const account = await fetchAccount(account_id);
+      if (account) {
+        repository.account = account;
+      }
     }
     
     return repository;
@@ -226,7 +320,7 @@ export async function fetchRepository(repository_id: string, account_id: string)
   }
 }
 
-export async function updateOrganization(organization: OrganizationalAccount): Promise<void> {
+export async function updateOrganization(organization: OrganizationalAccount): Promise<boolean> {
   try {
     await docClient.send(new UpdateCommand({
       TableName: "Accounts",
@@ -243,13 +337,14 @@ export async function updateOrganization(organization: OrganizationalAccount): P
         ":updated_at": new Date().toISOString()
       }
     }));
+    return true;
   } catch (e) {
     console.error("Error updating organization:", e);
-    throw e;
+    return false;
   }
 }
 
-export async function updateAccount(account: Account): Promise<void> {
+export async function updateAccount(account: Account): Promise<boolean> {
   try {
     await docClient.send(new UpdateCommand({
       TableName: "Accounts",
@@ -264,35 +359,18 @@ export async function updateAccount(account: Account): Promise<void> {
         ":updated_at": new Date().toISOString()
       }
     }));
+    return true;
   } catch (e) {
     console.error("Error updating account:", e);
-    throw e;
+    return false;
   }
 }
 
 export async function fetchAccountByOryId(ory_id: string): Promise<Account | null> {
-  try {
-    const command = new QueryCommand({
-      TableName: "Accounts",
-      IndexName: "OryIdIndex",
-      KeyConditionExpression: "ory_id = :ory_id",
-      ExpressionAttributeValues: {
-        ":ory_id": ory_id
-      }
-    });
-
-    const result = await docClient.send(command);
-    if (result.Items && result.Items.length > 0) {
-      return result.Items[0] as Account;
-    }
-    return null;
-  } catch (error) {
-    console.error('Error fetching account by Ory ID:', error);
-    return null;
-  }
+  return getEntityByField<Account>("Accounts", "ory_id", ory_id, "OryIdIndex");
 }
 
-export async function updateRepository(repository: Repository): Promise<void> {
+export async function updateRepository(repository: Repository): Promise<boolean> {
   try {
     await docClient.send(new UpdateCommand({
       TableName: "Repositories",
@@ -305,48 +383,24 @@ export async function updateRepository(repository: Repository): Promise<void> {
         ":updated_at": new Date().toISOString()
       }
     }));
+    return true;
   } catch (e) {
     console.error("Error updating repository:", e);
-    throw e;
+    return false;
   }
 }
 
 export async function fetchAccountsByType(type: string): Promise<Account[]> {
-  try {
-    const result = await docClient.send(new QueryCommand({
-      TableName: "Accounts",
-      IndexName: "GSI1",
-      KeyConditionExpression: "#type = :type",
-      ExpressionAttributeNames: {
-        "#type": "type"
-      },
-      ExpressionAttributeValues: {
-        ":type": type
-      }
-    }));
-    return result.Items as Account[] || [];
-  } catch (e) {
-    console.error("Error fetching accounts by type:", e);
-    return [];
-  }
+  return queryEntities<Account>(
+    "Accounts",
+    "#type = :type",
+    { ":type": type },
+    "GSI1",
+    undefined,
+    { "#type": "type" } // type is a reserved word in DynamoDB
+  );
 }
 
 export async function fetchAccountByEmail(email: string): Promise<Account | null> {
-  try {
-    const result = await docClient.send(new QueryCommand({
-      TableName: "Accounts",
-      IndexName: "GSI2",
-      KeyConditionExpression: "email = :email",
-      ExpressionAttributeValues: {
-        ":email": email
-      },
-      Limit: 1
-    }));
-
-    if (!result.Items || result.Items.length === 0) return null;
-    return result.Items[0] as Account;
-  } catch (e) {
-    console.error("Error fetching account by email:", e);
-    return null;
-  }
+  return getEntityByField<Account>("Accounts", "email", email, "GSI2");
 } 
