@@ -106,6 +106,11 @@ Progress towards 0.2.0:
   - Documented all table attributes and indexes
   - Explained separation between DynamoDB and object storage
   - Added clear context for `.source-metadata.json` usage
+- Fixed organization member display:
+  - Created new OrganizationMembers component for cleaner implementation
+  - Resolved duplicate key issues in member lists
+  - Added logic to ensure each user appears only once in their highest role
+  - Improved error handling in repository components to handle missing data
 
 ### Fixed
 - NextResponse handling in auth route tests

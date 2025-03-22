@@ -19,7 +19,10 @@ export function RepositoryList({ repositories }: RepositoryListProps) {
     onShowHelp: () => setShowHelp(true)
   });
 
-  if (!repositories.length) {
+  // Filter out repositories without valid account information
+  const validRepositories = repositories.filter(repo => repo.account && repo.account.account_id);
+
+  if (!validRepositories.length) {
     return (
       <Text as="p" className={styles.empty}>
         No repositories found.
@@ -30,7 +33,7 @@ export function RepositoryList({ repositories }: RepositoryListProps) {
   return (
     <nav aria-label="Repository list">
       <ul className={styles.list} role="listbox">
-        {repositories.map((repository, index) => (
+        {validRepositories.map((repository, index) => (
           <li 
             key={`${repository.account.account_id}/${repository.repository_id}`} 
             role="option"

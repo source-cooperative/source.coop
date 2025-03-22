@@ -31,7 +31,7 @@ export async function fetchRepositoriesByAccount(account_id: string): Promise<Re
   try {
     const result = await docClient.send(new QueryCommand({
       TableName: "Repositories",
-      IndexName: "account_id-index",
+      IndexName: "GSI1",
       KeyConditionExpression: "account_id = :account_id",
       ExpressionAttributeValues: {
         ":account_id": account_id
@@ -84,23 +84,44 @@ export async function fetchAccountsByIds(account_ids: string[]): Promise<Account
 }
 
 export async function fetchOrganizationMembers(organization: OrganizationalAccount): Promise<{
+  owner: IndividualAccount | null;
   admins: IndividualAccount[];
   members: IndividualAccount[];
-  owner: IndividualAccount | null;
 }> {
-  const allAccountIds = [
+  // Get all account IDs for this organization
+  const allAccountIds = Array.from(new Set([
     organization.owner_account_id,
     ...organization.admin_account_ids,
     ...(organization.member_account_ids || [])
-  ];
+  ]));
   
   const accounts = await fetchAccountsByIds(allAccountIds);
   
-  return {
-    owner: accounts.find(a => a.account_id === organization.owner_account_id) as IndividualAccount || null,
-    admins: accounts.filter(a => organization.admin_account_ids.includes(a.account_id)) as IndividualAccount[],
-    members: accounts.filter(a => organization.member_account_ids?.includes(a.account_id)) as IndividualAccount[]
-  };
+  // Get the owner account
+  const owner = accounts.find(a => a.account_id === organization.owner_account_id) as IndividualAccount || null;
+  
+  // Create a Set of accounts that are already handled to prevent duplicates
+  const handledAccounts = new Set<string>();
+  if (owner) {
+    handledAccounts.add(owner.account_id);
+  }
+  
+  // Get admin accounts (excluding the owner)
+  const admins = accounts.filter(a => 
+    organization.admin_account_ids.includes(a.account_id) && 
+    !handledAccounts.has(a.account_id)
+  ) as IndividualAccount[];
+  
+  // Add all admin accounts to the handled set
+  admins.forEach(admin => handledAccounts.add(admin.account_id));
+  
+  // Get member accounts (excluding admins and owner)
+  const members = accounts.filter(a => 
+    (organization.member_account_ids || []).includes(a.account_id) && 
+    !handledAccounts.has(a.account_id)
+  ) as IndividualAccount[];
+  
+  return { owner, admins, members };
 }
 
 export async function fetchRepositories(): Promise<Repository[]> {

@@ -15,9 +15,13 @@ interface RepositoryListItemProps {
 
 export const RepositoryListItem = forwardRef<HTMLAnchorElement, RepositoryListItemProps>(
   function RepositoryListItem({ repository, isSelected }, ref) {
+    // Ensure account info exists
+    const accountId = repository.account?.account_id || '';
+    const accountName = repository.account?.name || 'Unknown';
+    
     return (
       <Link 
-        href={`/${repository.account.account_id}/${repository.repository_id}`}
+        href={`/${accountId}/${repository.repository_id}`}
         className={styles.item}
         data-selected={isSelected}
         ref={ref}
@@ -37,7 +41,7 @@ export const RepositoryListItem = forwardRef<HTMLAnchorElement, RepositoryListIt
 
             <Box>
               <Text size="1" color="gray" mb="2">
-                {repository.account.name}
+                {accountName}
               </Text>
               <Text size="1" color="gray" mb="2">
                 Updated <DateText date={repository.updated_at} />

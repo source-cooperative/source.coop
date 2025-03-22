@@ -2,6 +2,7 @@ import { Box, Heading, Text, Avatar, Link as RadixLink, Flex, Grid } from '@radi
 import Link from 'next/link';
 import type { OrganizationalAccount, IndividualAccount, Repository } from '@/types';
 import { RepositoryList } from '@/components/features/repositories/RepositoryList';
+import { OrganizationMembers } from './OrganizationMembers';
 
 interface OrganizationProfileProps {
   account: OrganizationalAccount;
@@ -59,52 +60,11 @@ export function OrganizationProfile({
 
         <Box>
           <Heading as="h2" size="4" mb="2">Members</Heading>
-
-          {admins.length > 0 && (
-            <Box mb="2">
-              <Text as="p" size="2" weight="bold">Administrators</Text>
-              <Flex direction="column" gap="1">
-                {admins.map(admin => (
-                  <Link key={admin.account_id} href={`/${admin.account_id}`} passHref legacyBehavior>
-                    <RadixLink size="2">
-                      <Flex gap="2" align="center">
-                        <Avatar
-                          size="1"
-                          src={admin.logo_svg}
-                          fallback={admin.name[0]}
-                          radius="full"
-                        />
-                        {admin.name} (admin)
-                      </Flex>
-                    </RadixLink>
-                  </Link>
-                ))}
-              </Flex>
-            </Box>
-          )}
-
-          {members.length > 0 && (
-            <Box>
-              <Text as="p" size="2" weight="bold">Members</Text>
-              <Flex direction="column" gap="1">
-                {members.map(member => (
-                  <Link key={member.account_id} href={`/${member.account_id}`} passHref legacyBehavior>
-                    <RadixLink size="2">
-                      <Flex gap="2" align="center">
-                        <Avatar
-                          size="1"
-                          src={member.logo_svg}
-                          fallback={member.name[0]}
-                          radius="full"
-                        />
-                        {member.name}
-                      </Flex>
-                    </RadixLink>
-                  </Link>
-                ))}
-              </Flex>
-            </Box>
-          )}
+          <OrganizationMembers 
+            owner={owner}
+            admins={admins}
+            members={members}
+          />
         </Box>
       </Grid>
 
