@@ -4,22 +4,30 @@ import type { Account, IndividualAccount } from '@/types/account';
 import type { Repository } from '@/types';
 import { ProfileAvatar } from './ProfileAvatar';
 import { RepositoryList } from '../repositories/RepositoryList';
+import { WelcomeDialog } from './WelcomeDialog';
+import { EmailVerificationStatus } from './EmailVerificationStatus';
+import { EmailVerificationIcon } from './EmailVerificationIcon';
 
 interface IndividualProfileProps {
   account: IndividualAccount;
   ownedRepositories: Repository[];
   contributedRepositories: Repository[];
   organizations: Account[];
+  showWelcome?: boolean;
 }
 
 export function IndividualProfile({ 
   account, 
   ownedRepositories, 
   contributedRepositories,
-  organizations 
+  organizations,
+  showWelcome = false
 }: IndividualProfileProps) {
   return (
     <Box>
+      {/* Welcome Dialog */}
+      <WelcomeDialog show={showWelcome} />
+
       {/* Profile Header */}
       <Box mb="6">
         <Flex gap="4" align="center">
@@ -29,6 +37,7 @@ export function IndividualProfile({
             {account.description && (
               <Text size="3" color="gray">{account.description}</Text>
             )}
+            <EmailVerificationStatus account={account} />
           </Box>
         </Flex>
       </Box>
@@ -38,7 +47,10 @@ export function IndividualProfile({
         <Grid columns="3" gap="4">
           <Box>
             <Text as="div" size="2" color="gray" mb="2">Email</Text>
-            <Text>{account.email}</Text>
+            <Flex gap="2" align="center">
+              <Text>{account.email}</Text>
+              <EmailVerificationIcon initialVerified={account.email_verified || false} />
+            </Flex>
           </Box>
           {account.website && (
             <Box>

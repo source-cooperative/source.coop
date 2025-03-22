@@ -15,6 +15,7 @@ Progress towards 0.2.0:
   - [x] Development environment setup
   - [x] Database migration scripts
 - [ ] Complete user profile management
+  - [x] Simplified avatar system using Radix primitives
   - [ ] Profile editing functionality
   - [ ] Avatar upload and management
   - [ ] Profile settings page
@@ -90,6 +91,12 @@ Progress towards 0.2.0:
 - Added graceful fallbacks for authentication API failures
 - Improved error handling in auth forms with better user feedback
 - Optimized authentication form performance with conditional mounting
+- Simplified avatar management system:
+  - Removed SVG avatar support for more standard approach
+  - Updated ProfileAvatar component to use Radix Avatar and Gravatar
+  - Improved consistency across profile-related components
+  - Simplified avatar implementation with better fallbacks
+  - Removed dark mode logo support for unified branding
 - Simplified authentication implementation:
   - Switched to direct Ory SDK usage in client components
   - Removed unnecessary API proxy routes for authentication
@@ -111,8 +118,22 @@ Progress towards 0.2.0:
   - Resolved duplicate key issues in member lists
   - Added logic to ensure each user appears only once in their highest role
   - Improved error handling in repository components to handle missing data
+- Optimized database operations:
+  - Refactored database operations to use generic helper functions
+  - Implemented consistent error handling across all functions
+  - Added pagination support for repository listings
+  - Improved parallelization for batch operations
+  - Standardized return types for better predictability
+  - Reduced code duplication with type-safe helper functions
+  - Added comprehensive documentation in development guides
 
 ### Fixed
+- Email verification status updates:
+  - Created dedicated client component for email verification icon
+  - Fixed React hooks errors by properly separating client/server components
+  - Improved verification status checking with periodic updates
+  - Added proper return URL handling for verification flows
+  - Ensured consistent UI state between verification status and icon
 - NextResponse handling in auth route tests
 - Session management edge cases
 - React hooks dependency warnings in auth forms
