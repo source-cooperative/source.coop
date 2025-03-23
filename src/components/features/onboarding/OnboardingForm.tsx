@@ -30,6 +30,10 @@ export function OnboardingForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [username, setUsername] = useState('');
+  const [formData, setFormData] = useState<OnboardingFormData>({
+    account_id: '',
+    name: ''
+  });
   const [usernameStatus, setUsernameStatus] = useState<UsernameStatus>('idle');
   const [session, setSession] = useState<Session | null>(null);
 
@@ -79,11 +83,13 @@ export function OnboardingForm() {
     []
   );
 
-  const handleUsernameChange = (value: string) => {
-    const lowercaseValue = value.toLowerCase().replace(/\s+/g, '');
-    setUsername(lowercaseValue);
-    checkUsername(lowercaseValue);
-  };
+  // Update username display and trigger check
+  useEffect(() => {
+    if (formData.account_id) {
+      setUsername(formData.account_id);
+      checkUsername(formData.account_id);
+    }
+  }, [formData.account_id, checkUsername]);
 
   const handleSubmit = async (data: OnboardingFormData) => {
     setLoading(true);
@@ -150,7 +156,15 @@ export function OnboardingForm() {
         minLength: 3,
         pattern: '^[a-z0-9_-]+$'
       },
-      onChange: handleUsernameChange,
+      defaultValue: formData.account_id,
+      onChange: (value) => {
+        // Process the username value (lowercase and remove spaces)
+        const processedValue = value.toLowerCase().replace(/\s+/g, '');
+        setFormData(prev => ({
+          ...prev,
+          account_id: processedValue
+        }));
+      },
       description: (
         <Flex direction="column" gap="1" style={{ minHeight: '24px' }}>
           <Flex gap="1" align="center">
@@ -197,6 +211,13 @@ export function OnboardingForm() {
       placeholder: 'Your Name',
       validation: {
         minLength: 2
+      },
+      defaultValue: formData.name,
+      onChange: (value) => {
+        setFormData(prev => ({
+          ...prev,
+          name: value
+        }));
       },
       description: 'This is the name that will be displayed on your profile'
     }
