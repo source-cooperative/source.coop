@@ -11,25 +11,19 @@ export function useSession() {
   useEffect(() => {
     const initSession = async () => {
       try {
-        // First try to get session from data attribute
-        const sessionElement = document.querySelector('[data-session]');
-        if (sessionElement) {
-          const sessionData = sessionElement.getAttribute('data-session');
-          if (sessionData) {
-            setSession(JSON.parse(sessionData));
-          }
-        }
-
-        // Then verify session with Ory
-        const { data: orySession } = await ory.toSession();
+        // First check if we have session data in API response
+        const response = await fetch('/api/auth/session');
+        const data = await response.json();
         
-        // Verify the session is active and has an identity
-        if (orySession?.active && orySession?.identity) {
-          setSession(orySession as ExtendedSession);
-        } else {
-          console.error('Invalid session:', orySession);
-          setSession(null);
+        if (data && data.authenticated !== false) {
+          // We have a valid session from our API
+          setSession(data as ExtendedSession);
+          setIsLoading(false);
+          return;
         }
+        
+        // No valid session from API, client is unauthenticated
+        setSession(null);
       } catch (error) {
         console.error('Session initialization error:', error);
         setSession(null);

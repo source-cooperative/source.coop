@@ -1,16 +1,18 @@
+'use client';
+
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ory } from '@/lib/ory';
-import { Session } from '@ory/client';
+import { Session, Identity } from '@ory/client';
 
 interface UseAuthResult {
   isLoading: boolean;
   error: Error | null;
-  session: ExtendedSession | null;
+  session: SessionWithMetadata | null;
 }
 
 interface SessionWithMetadata extends Session {
-  identity?: {
+  identity?: Identity & {
     metadata_public?: {
       account_id?: string;
       is_admin?: boolean;
@@ -21,17 +23,15 @@ interface SessionWithMetadata extends Session {
 export function useAuth(): UseAuthResult {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const [session, setSession] = useState<ExtendedSession | null>(null);
+  const [session, setSession] = useState<SessionWithMetadata | null>(null);
 
   useEffect(() => {
     async function checkAuth() {
       try {
         const { data } = await ory.toSession();
-        setSession(data as ExtendedSession);
-        setError(null);
+        setSession(data as SessionWithMetadata);
       } catch (err) {
-        setError(err instanceof Error ? err : new Error('Failed to get session'));
-        setSession(null);
+        setError(err instanceof Error ? err : new Error('Failed to check auth'));
       } finally {
         setIsLoading(false);
       }
@@ -79,8 +79,16 @@ export function useSession() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    ory.toSession()
-      .then(({ data }) => setSession(data))
+    // Use the API endpoint instead of direct SDK call
+    fetch('/api/auth/session')
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.authenticated !== false) {
+          setSession(data);
+        } else {
+          setSession(null);
+        }
+      })
       .catch(() => setSession(null))
       .finally(() => setIsLoading(false));
   }, []);
