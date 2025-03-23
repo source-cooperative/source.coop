@@ -1,45 +1,67 @@
 # Ory Authentication Implementation
 
-This document describes how Source Cooperative implements authentication using Ory Kratos, following a simplified and direct approach that avoids common pitfalls.
+This document describes how Source Cooperative implements authentication using Ory Kratos, following a server-first architecture that minimizes client-side auth checks.
 
 ## Architecture Overview
 
 Source Cooperative uses Ory Kratos for identity management and authentication. Our implementation:
 
-1. Uses direct SDK calls from client components
-2. Avoids custom middleware or routing complexity
-3. Maintains proper CORS and cookie handling
-4. Follows Ory's recommended best practices
+1. Uses server-side auth checks by default
+2. Minimizes client-side auth checks
+3. Follows Next.js 13+ best practices
+4. Maintains proper CORS and cookie handling
 
 ## Core Implementation Principles
 
-1. **Direct SDK Usage**: We use the Ory SDK directly in client components:
+1. **Server-Side Auth Checks**: We check authentication status on the server:
    ```typescript
-   const ory = new FrontendApi(
-     new Configuration({
-       basePath: process.env.NEXT_PUBLIC_ORY_SDK_URL || 'http://localhost:4000',
-       baseOptions: {
-         withCredentials: true,
-         headers: {
-           Accept: "application/json"
-         }
-       }
-     })
-   );
-   ```
-
-2. **Flow Initialization**: Authentication flows are initialized directly using the SDK without extra parameters:
-   ```typescript
-   // Login flow initialization - keep it simple
-   const { data } = await ory.createBrowserLoginFlow();
-   setFlow(data);
+   // In server components
+   import { requireServerAuth } from '@/lib/auth';
    
-   // Registration flow initialization - keep it simple
-   const { data } = await ory.createBrowserRegistrationFlow();
-   setFlow(data);
+   export default async function ProtectedPage() {
+     const session = await requireServerAuth();
+     if (!session) {
+       redirect('/auth?flow=login');
+     }
+     // ... render protected content
+   }
    ```
 
-3. **Form Submission**: Forms submit directly to Ory endpoints:
+2. **Client-Side Auth Hook**: Use the `useAuth` hook only when necessary:
+   ```typescript
+   // In client components that need auth state
+   import { useAuth } from '@/hooks/useAuth';
+   
+   export function AuthAwareComponent() {
+     const { session, isLoading } = useAuth();
+     if (isLoading) return <Loading />;
+     if (!session) return <LoginPrompt />;
+     return <AuthenticatedContent />;
+   }
+   ```
+
+3. **Flow Initialization**: Authentication flows are initialized via server actions:
+   ```typescript
+   // Server action
+   export async function initLoginFlow() {
+     const flowId = await getLoginFlow();
+     return flowId;
+   }
+   
+   // Client component
+   export function LoginForm() {
+     const [flowId, setFlowId] = useState<string | null>(null);
+     
+     useEffect(() => {
+       initLoginFlow().then(setFlowId);
+     }, []);
+     
+     if (!flowId) return <Loading />;
+     return <LoginFormContent flowId={flowId} />;
+   }
+   ```
+
+4. **Form Submission**: Forms submit directly to Ory endpoints:
    ```typescript
    await ory.updateLoginFlow({
      flow: flow.id,
@@ -52,29 +74,25 @@ Source Cooperative uses Ory Kratos for identity management and authentication. O
    });
    ```
 
-4. **Session Handling**: Get session information directly from Ory:
-   ```typescript
-   try {
-     const { data: session } = await ory.toSession();
-     // Handle session data
-   } catch (err) {
-     // No active session or error
-   }
-   ```
-
 ## Key Requirements
 
-1. **CORS Configuration**:
+1. **Server-First Architecture**:
+   - Check auth status on the server by default
+   - Use client-side auth checks only when necessary
+   - Keep client components as small as possible
+   - Move data fetching to server components
+
+2. **CORS Configuration**:
    - Ory tunnel must be configured with proper CORS settings
    - Use `--allowed-cors-origins="http://localhost:3000"` in development
    - Ensure `withCredentials: true` in SDK configuration
 
-2. **Cookie Handling**:
+3. **Cookie Handling**:
    - Use consistent domains (always `localhost`, never `127.0.0.1`)
    - Ensure browser allows third-party cookies
    - Cookie settings are handled automatically by the SDK
 
-3. **CSRF Protection**:
+4. **CSRF Protection**:
    - CSRF tokens are included automatically in flow data
    - Extract and include tokens in form submissions
    - No manual CSRF handling required
@@ -99,18 +117,24 @@ Source Cooperative uses Ory Kratos for identity management and authentication. O
 
 ## Common Issues and Solutions
 
-1. **400 Bad Request Errors**:
-   - **Solution**: Initialize flows without extra parameters like `returnTo`
-   - **Problem**: Adding extra parameters can cause validation errors
-   - **Fix**: Use simple flow initialization:
+1. **Duplicate Auth Checks**:
+   - **Problem**: Multiple 401 errors in console
+   - **Solution**: Use server-side auth checks by default
+   - **Fix**: Move auth checks to server components:
      ```typescript
-     // ✅ Correct: Simple initialization
-     const { data } = await ory.createBrowserLoginFlow();
+     // ✅ Correct: Server-side auth check
+     export default async function Page() {
+       const session = await requireServerAuth();
+       if (!session) redirect('/auth');
+       return <Content />;
+     }
      
-     // ❌ Incorrect: Extra parameters that may cause errors
-     const { data } = await ory.createBrowserLoginFlow({
-       returnTo: '/onboarding'
-     });
+     // ❌ Incorrect: Client-side auth check
+     export default function Page() {
+       const { session } = useAuth();
+       if (!session) return <LoginPrompt />;
+       return <Content />;
+     }
      ```
 
 2. **Cookie Issues**:
@@ -119,18 +143,24 @@ Source Cooperative uses Ory Kratos for identity management and authentication. O
    - Check cookie settings in Ory configuration
 
 3. **Session API Implementation**:
-   - Use direct forwarding of cookies in API routes:
+   - Use server-side session checks:
      ```typescript
-     // Forward cookies to Ory
-     const cookieHeader = request.headers.get('cookie') || '';
-     
-     // Make a direct request to Ory with cookies
-     const sessionResponse = await fetch(`${ORY_BASE_URL}/sessions/whoami`, {
-       headers: {
-         Cookie: cookieHeader,
-         Accept: 'application/json',
-       },
-     });
+     // Server-side session check
+     export async function getServerSession() {
+       try {
+         const cookieStore = cookies();
+         const { data } = await ory.toSession({
+           cookie: cookieStore.toString()
+         });
+         return data;
+       } catch (error) {
+         // 401 is expected for non-logged in users
+         if (error instanceof Error && error.message.includes('401')) {
+           return null;
+         }
+         throw error;
+       }
+     }
      ```
 
 ## Testing Authentication

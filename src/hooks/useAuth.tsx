@@ -20,29 +20,49 @@ interface SessionWithMetadata extends Session {
   };
 }
 
+// Consolidated auth hook that uses Ory SDK directly
 export function useAuth(): UseAuthResult {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [session, setSession] = useState<SessionWithMetadata | null>(null);
 
   useEffect(() => {
+    let isMounted = true;
+
     async function checkAuth() {
       try {
         const { data } = await ory.toSession();
-        setSession(data as SessionWithMetadata);
+        if (isMounted) {
+          setSession(data as SessionWithMetadata);
+        }
       } catch (err) {
-        setError(err instanceof Error ? err : new Error('Failed to check auth'));
+        // Only set error for non-401 responses
+        if (!(err instanceof Error && err.message.includes('401'))) {
+          if (isMounted) {
+            setError(err instanceof Error ? err : new Error('Failed to check auth'));
+          }
+        }
+        if (isMounted) {
+          setSession(null);
+        }
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     }
 
     checkAuth();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   return { isLoading, error, session };
 }
 
+// Hook for protected routes
 export function useRequireAuth() {
   const router = useRouter();
   const { isLoading, session } = useAuth();
@@ -60,6 +80,7 @@ export function useRequireAuth() {
   return { isLoading, session };
 }
 
+// Hook for auth pages (login/register)
 export function useRedirectIfAuthed() {
   const router = useRouter();
   const { isLoading, session } = useAuth();
@@ -73,30 +94,7 @@ export function useRedirectIfAuthed() {
   return { isLoading, session };
 }
 
-// Simple hook to get session state
-export function useSession() {
-  const [session, setSession] = useState<Session | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    // Use the API endpoint instead of direct SDK call
-    fetch('/api/auth/session')
-      .then(res => res.json())
-      .then(data => {
-        if (data && data.authenticated !== false) {
-          setSession(data);
-        } else {
-          setSession(null);
-        }
-      })
-      .catch(() => setSession(null))
-      .finally(() => setIsLoading(false));
-  }, []);
-
-  return { session, isLoading };
-}
-
 // Helper to get account_id from session
-export function getAccountId(session: Session | null): string | null {
-  return session?.identity?.metadata_public?.['account_id'] as string || null;
+export function getAccountId(session: SessionWithMetadata | null): string | null {
+  return session?.identity?.metadata_public?.account_id || null;
 } 

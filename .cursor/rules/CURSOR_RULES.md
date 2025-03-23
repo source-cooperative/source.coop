@@ -343,3 +343,46 @@ const account = await fetchAccountByOryId(oryId);
   ```
 - Only render the authentication form when flow data is available
 - Handle errors and loading states appropriately 
+
+## Authentication State Management
+
+1. **Server-First Auth Checks**
+   - Always check auth status on the server by default
+   - Use `requireServerAuth()` in server components
+   - Only use client-side auth checks when necessary
+   - Keep client components as small as possible
+
+2. **Auth Hook Usage**
+   - Use `useAuth` hook only in client components
+   - Prefer server-side auth checks over client-side
+   - Handle loading states gracefully
+   - Minimize auth-related re-renders
+
+3. **Protected Routes**
+   ```typescript
+   // ✅ Correct: Server-side auth check
+   export default async function ProtectedPage() {
+     const session = await requireServerAuth();
+     if (!session) redirect('/auth');
+     return <Content />;
+   }
+   
+   // ❌ Incorrect: Client-side auth check
+   export default function ProtectedPage() {
+     const { session } = useAuth();
+     if (!session) return <LoginPrompt />;
+     return <Content />;
+   }
+   ```
+
+4. **Auth State Dependencies**
+   - Keep auth state dependencies minimal
+   - Use `session?.identity?.metadata_public?.account_id` for account checks
+   - Avoid storing sensitive data in client state
+   - Trust server-side auth checks
+
+5. **Error Handling**
+   - Handle 401s gracefully (expected for non-authenticated users)
+   - Log only unexpected auth errors
+   - Use proper error boundaries
+   - Maintain consistent error states 
