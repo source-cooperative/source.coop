@@ -20,6 +20,27 @@ export function RegistrationForm() {
     const initFlow = async () => {
       setLoading(true);
       try {
+        // First check if user is already logged in
+        try {
+          const sessionResponse = await fetch('/api/auth/session');
+          const sessionData = await sessionResponse.json();
+          
+          if (sessionData && sessionData.authenticated !== false) {
+            console.log("User already logged in, redirecting");
+            // Check if the user has completed onboarding
+            if (!sessionData?.identity?.metadata_public?.account_id) {
+              router.push('/onboarding');
+            } else {
+              // User has completed onboarding, redirect to their profile
+              const accountId = sessionData.identity.metadata_public.account_id;
+              router.push(`/${accountId}`);
+            }
+            return;
+          }
+        } catch (sessionErr) {
+          console.log("Session check failed, proceeding with registration flow", sessionErr);
+        }
+        
         const { data } = await ory.createBrowserRegistrationFlow();
         setFlow(data);
         setError(null);
@@ -32,7 +53,7 @@ export function RegistrationForm() {
     };
 
     initFlow();
-  }, []);
+  }, [router]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
