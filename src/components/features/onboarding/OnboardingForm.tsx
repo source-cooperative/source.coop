@@ -2,12 +2,13 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Flex, Text, Box } from '@radix-ui/themes';
+import { Flex, Text, Box, Button, TextField, Callout } from '@radix-ui/themes';
 import { MonoText } from '@/components/core/MonoText';
 import { FormWrapper } from '@/components/core/Form';
 import { FormField } from '@/types/form';
 import debounce from 'lodash/debounce';
 import { FrontendApi, Configuration, Session, Identity } from '@ory/client';
+import { InfoCircledIcon, CheckCircledIcon, ExclamationTriangleIcon, ReloadIcon } from '@radix-ui/react-icons';
 
 interface OnboardingFormData {
   account_id: string;
@@ -25,6 +26,15 @@ interface OnboardingResponse {
   error?: string;
 }
 
+interface VerifiableAddress {
+  id: string;
+  value: string;
+  verified: boolean;
+  via: string;
+  status: string;
+  verified_at?: string;
+}
+
 export function OnboardingForm() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -36,6 +46,7 @@ export function OnboardingForm() {
   });
   const [usernameStatus, setUsernameStatus] = useState<UsernameStatus>('idle');
   const [session, setSession] = useState<Session | null>(null);
+  const [verificationStatus, setVerificationStatus] = useState<'pending' | 'verified'>('pending');
 
   // Initialize Ory client
   const ory = new FrontendApi(
@@ -55,6 +66,22 @@ export function OnboardingForm() {
         // If no session, redirect to login
         if (!data) {
           router.push('/login');
+        } else {
+          // Check email verification status
+          const identity = data.identity;
+          if (identity?.verifiable_addresses) {
+            const emailAddress = identity.verifiable_addresses.find(
+              (addr: any) => addr.via === 'email'
+            );
+            if (emailAddress?.verified) {
+              setVerificationStatus('verified');
+            }
+          }
+          
+          // Pre-fill email if available
+          if (identity?.traits?.email) {
+            console.log('Session found, email:', identity.traits.email);
+          }
         }
       })
       .catch((err) => {
@@ -119,12 +146,14 @@ export function OnboardingForm() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
         },
         credentials: 'include',
         body: JSON.stringify({
           account_id,
           name,
-          ory_id: sessionData.identity.id
+          ory_id: sessionData.identity.id,
+          email: sessionData.identity.traits.email
         }),
       });
 
@@ -224,7 +253,28 @@ export function OnboardingForm() {
   ];
 
   return (
-    <Box style={{ paddingTop: '32px' }}>
+    <Box pt="6">
+      <Box mb="4">
+        {verificationStatus === 'verified' ? (
+          <Callout.Root color="green">
+            <Callout.Icon>
+              <CheckCircledIcon />
+            </Callout.Icon>
+            <Callout.Text>
+              Your email has been verified successfully!
+            </Callout.Text>
+          </Callout.Root>
+        ) : (
+          <Callout.Root color="blue">
+            <Callout.Icon>
+              <InfoCircledIcon />
+            </Callout.Icon>
+            <Callout.Text>
+              Please check your email. We've sent you a code to verify your email address.
+            </Callout.Text>
+          </Callout.Root>
+        )}
+      </Box>
       <FormWrapper
         fields={fields}
         onSubmit={handleSubmit}
