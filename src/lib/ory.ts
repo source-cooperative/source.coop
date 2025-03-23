@@ -17,30 +17,56 @@ export type ExtendedSession = Session & {
   identity?: ExtendedIdentity;
 };
 
-// Initialize the Ory client with the correct basePath
+// Create a new Ory SDK instance
 export const ory = new FrontendApi(
   new Configuration({
     basePath: process.env.NEXT_PUBLIC_ORY_SDK_URL || 'http://localhost:4000',
     baseOptions: {
       withCredentials: true,
       headers: {
-        'Accept': 'application/json'
-      }
-    }
+        'Accept': 'application/json',
+      },
+    },
   })
 );
 
 // Helper to get session data using the SDK
 export async function getSession(): Promise<ExtendedSession | null> {
   try {
-    const { data: session } = await ory.toSession();
-    if (!session?.active || !session?.identity) {
-      console.error('Invalid session:', session);
+    // Use the same basePath as the Ory client
+    const basePath = process.env.NEXT_PUBLIC_ORY_SDK_URL || 'http://localhost:4000';
+    // Directly call the whoami endpoint with fetch for more control
+    const response = await fetch(`${basePath}/sessions/whoami`, {
+      method: 'GET',
+      credentials: 'include',
+      headers: {
+        'Accept': 'application/json',
+      }
+    });
+    
+    // 401 is expected for non-logged in users, not an error
+    if (response.status === 401) {
       return null;
     }
+    
+    if (!response.ok) {
+      console.log(`Session check failed with status: ${response.status}`);
+      return null;
+    }
+    
+    const session = await response.json();
+    if (!session?.active || !session?.identity) {
+      return null;
+    }
+    
     return session as ExtendedSession;
   } catch (error) {
-    console.error('Error getting session:', error);
+    // Only log connection errors, not auth errors
+    if (error.code === 'ECONNREFUSED') {
+      console.error("Connection refused - Ory tunnel is not running");
+    } else if (!(error instanceof Response && error.status === 401)) {
+      console.error('Error getting session:', error);
+    }
     return null;
   }
 }

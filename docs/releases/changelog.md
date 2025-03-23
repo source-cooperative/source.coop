@@ -208,6 +208,14 @@ Progress towards 0.2.0:
   - Ensured forms submit directly to Ory endpoints without modification
   - Used the Ory SDK directly for all authentication operations
   - Simplified the authentication flow by removing unnecessary proxies
+- Fixed 400 Bad Request errors in login and registration flows:
+  - Simplified Ory SDK usage by removing unnecessary parameters
+  - Updated session management to use direct SDK calls
+  - Removed unnecessary API routes and proxies
+  - Created consistent session handling approach across the application
+  - Updated documentation with best practices to avoid common pitfalls
+  - Removed unused self-hosted Ory configuration to avoid port conflicts
+  - Improved error handling and recovery for authentication failures
 - Session cookie handling in API routes
   - Properly forwarding session cookies to Ory
   - Improved session verification

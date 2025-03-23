@@ -1,24 +1,44 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { getSession } from '@/lib/auth';
+import { Configuration, FrontendApi } from '@ory/client';
 
 const ORY_BASE_URL = process.env.ORY_BASE_URL || "http://localhost:4000";
 
-export async function GET() {
+// Initialize Ory SDK for server-side usage
+const ory = new FrontendApi(
+  new Configuration({
+    basePath: ORY_BASE_URL,
+    baseOptions: {
+      withCredentials: true,
+    },
+  })
+);
+
+export async function GET(request: Request) {
   try {
-    // Use our existing getSession utility
-    const session = await getSession();
+    // Forward the cookies to Ory
+    const cookieHeader = request.headers.get('cookie') || '';
     
-    if (!session) {
-      return NextResponse.json({ authenticated: false }, { status: 401 });
+    // Make a direct request to Ory with cookies
+    const sessionResponse = await fetch(`${ORY_BASE_URL}/sessions/whoami`, {
+      headers: {
+        Cookie: cookieHeader,
+        Accept: 'application/json',
+      },
+    });
+    
+    // Return the response data
+    if (sessionResponse.ok) {
+      const session = await sessionResponse.json();
+      return NextResponse.json(session);
     }
     
-    // Return the session data
-    return NextResponse.json(session);
+    // Return unauthenticated response for 401/403
+    return NextResponse.json({ authenticated: false });
   } catch (error) {
     console.error('Session check failed:', error);
     return NextResponse.json(
-      { error: 'Failed to get session' },
+      { authenticated: false },
       { status: 500 }
     );
   }

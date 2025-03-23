@@ -4,36 +4,16 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button, Flex, Text, Box, TextField } from '@radix-ui/themes';
 import * as Form from '@radix-ui/react-form';
-import { Configuration, FrontendApi } from '@ory/client';
+import { ory } from '@/lib/ory';
+import { Session } from '@ory/client';
 
-// Type definitions for session data
+// Type definitions for custom metadata
 interface IdentityMetadataPublic {
   account_id?: string;
   is_admin?: boolean;
 }
 
-interface Identity {
-  id: string;
-  metadata_public?: IdentityMetadataPublic;
-  traits: {
-    email: string;
-  };
-}
-
-interface Session {
-  identity: Identity;
-}
-
-// Initialize the Ory client with the correct basePath
-const ory = new FrontendApi(
-  new Configuration({
-    basePath: process.env.NEXT_PUBLIC_ORY_SDK_URL || 'http://localhost:4000',
-    baseOptions: {
-      withCredentials: true,
-    }
-  })
-);
-
+// Initialize login flow on component mount
 export function LoginForm() {
   const router = useRouter();
   const [flow, setFlow] = useState<any>(null);
@@ -41,33 +21,33 @@ export function LoginForm() {
   const [error, setError] = useState<string | null>(null);
   const [submitLoading, setSubmitLoading] = useState(false);
 
-  // Initialize login flow on component mount
   useEffect(() => {
     const initFlow = async () => {
       setLoading(true);
       try {
         // First check if user is already logged in
         try {
-          const sessionResponse = await fetch('/api/auth/session');
-          const sessionData = await sessionResponse.json();
+          const { data: session } = await ory.toSession();
           
-          if (sessionData && sessionData.authenticated !== false) {
+          if (session) {
             console.log("User already logged in, redirecting");
             // Check if the user has completed onboarding
-            if (!sessionData?.identity?.metadata_public?.account_id) {
+            const metadata = session.identity?.metadata_public as IdentityMetadataPublic || {};
+            if (!metadata.account_id) {
               router.push('/onboarding');
             } else {
               // User has completed onboarding, redirect to their profile
-              const accountId = sessionData.identity.metadata_public.account_id;
-              router.push(`/${accountId}`);
+              router.push(`/${metadata.account_id}`);
             }
             return;
           }
         } catch (sessionErr) {
-          console.log("Session check failed, proceeding with login flow", sessionErr);
+          // This is expected if the user is not logged in
+          console.log("No active session, proceeding with login flow");
         }
         
         console.log("Initializing login flow...");
+        // Simple login flow initialization
         const { data } = await ory.createBrowserLoginFlow();
         console.log("Login flow initialized:", data.id);
         setFlow(data);
@@ -96,61 +76,51 @@ export function LoginForm() {
     try {
       const formData = new FormData(event.currentTarget);
       
-      // Add method explicitly
-      formData.set('method', 'password');
-      
-      // Important: Use the action URL directly from the flow
-      // DO NOT modify the URL - this is the key fix
-      const actionUrl = flow.ui.action;
-      console.log("Submitting to:", actionUrl);
-      
-      const response = await fetch(actionUrl, {
-        method: flow.ui.method,
-        body: formData,
-        credentials: 'include',
-        redirect: 'manual'
+      // Get the CSRF token from the flow
+      const csrfToken = flow.ui.nodes?.find(
+        (node: any) => node.attributes?.name === 'csrf_token'
+      )?.attributes?.value;
+
+      // Use Ory SDK to update the login flow
+      const { data: updatedFlow } = await ory.updateLoginFlow({
+        flow: flow.id,
+        updateLoginFlowBody: {
+          method: 'password',
+          identifier: formData.get('identifier') as string,
+          password: formData.get('password') as string,
+          csrf_token: csrfToken,
+        },
       });
+
+      console.log("Login flow updated:", updatedFlow);
       
-      console.log("Login submission response status:", response.status);
-      
-      if (response.status >= 400) {
-        let errorText = 'Login failed. Please try again.';
-        try {
-          const errorData = await response.json();
-          errorText = errorData.error?.message || errorText;
-        } catch (e) {
-          // Use default error message
-        }
-        setError(errorText);
-      } else {
+      if (updatedFlow?.session) {
         console.log("Successful login detected");
         
-        // Use Ory SDK to check session and redirect accordingly
-        try {
-          const { data: session } = await ory.toSession() as { data: Session };
-          
-          // Check if the user has completed onboarding
-          if (!session?.identity?.metadata_public?.account_id) {
-            console.log("User needs to complete onboarding");
-            router.push('/onboarding');
-          } else {
-            // User has completed onboarding, redirect to their profile
-            const accountId = session.identity.metadata_public.account_id;
-            console.log("User has completed onboarding, redirecting to profile");
-            router.push(`/${accountId}`);
-          }
-          
-          router.refresh();
-        } catch (sessionErr) {
-          console.error("Error getting session after login:", sessionErr);
-          // Default to home page on error
-          router.push('/');
-          router.refresh();
+        // Check if the user has completed onboarding
+        const metadata = updatedFlow.session.identity?.metadata_public as IdentityMetadataPublic || {};
+        if (!metadata.account_id) {
+          console.log("User needs to complete onboarding");
+          router.push('/onboarding');
+        } else {
+          // User has completed onboarding, redirect to their profile
+          console.log("User has completed onboarding, redirecting to profile");
+          router.push(`/${metadata.account_id}`);
         }
+        
+        router.refresh();
+      } else {
+        throw new Error('No session established after login');
       }
     } catch (err) {
       console.error('Login error:', err);
-      setError('An error occurred during login. Please try again later.');
+      if (err.response?.data?.ui?.messages) {
+        // Handle Ory UI messages
+        const messages = err.response.data.ui.messages;
+        setError(messages[0]?.text || 'Login failed. Please try again.');
+      } else {
+        setError('An error occurred during login. Please try again later.');
+      }
     } finally {
       setSubmitLoading(false);
     }

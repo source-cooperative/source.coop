@@ -28,30 +28,38 @@ Source Cooperative uses Ory Kratos for identity management and authentication. O
    );
    ```
 
-2. **Flow Initialization**: Authentication flows are initialized directly using the SDK:
+2. **Flow Initialization**: Authentication flows are initialized directly using the SDK without extra parameters:
    ```typescript
-   // Login flow initialization
+   // Login flow initialization - keep it simple
    const { data } = await ory.createBrowserLoginFlow();
    setFlow(data);
    
-   // Registration flow initialization
+   // Registration flow initialization - keep it simple
    const { data } = await ory.createBrowserRegistrationFlow();
    setFlow(data);
    ```
 
 3. **Form Submission**: Forms submit directly to Ory endpoints:
    ```typescript
-   await ory.updateRegistrationFlow({
+   await ory.updateLoginFlow({
      flow: flow.id,
-     updateRegistrationFlowBody: {
+     updateLoginFlowBody: {
        method: 'password',
+       identifier: identifier,
        password: password,
-       traits: { email },
-       csrf_token: flow.ui.nodes.find(
-         (n) => n.attributes?.name === 'csrf_token'
-       )?.attributes?.value,
+       csrf_token: csrfToken,
      },
    });
+   ```
+
+4. **Session Handling**: Get session information directly from Ory:
+   ```typescript
+   try {
+     const { data: session } = await ory.toSession();
+     // Handle session data
+   } catch (err) {
+     // No active session or error
+   }
    ```
 
 ## Key Requirements
@@ -77,7 +85,7 @@ Source Cooperative uses Ory Kratos for identity management and authentication. O
    ```env
    NEXT_PUBLIC_ORY_SDK_URL=http://localhost:4000
    NEXT_PUBLIC_KRATOS_URL=http://localhost:4000
-   ORY_SDK_URL=http://localhost:4000
+   ORY_BASE_URL=http://localhost:4000
    ORY_PROJECT_ID=your-project-id
    ```
 
@@ -91,21 +99,39 @@ Source Cooperative uses Ory Kratos for identity management and authentication. O
 
 ## Common Issues and Solutions
 
-1. **403 Forbidden Errors**:
-   - Verify CORS configuration in tunnel settings
-   - Check CSRF token extraction from flow data
-   - Ensure consistent domain usage
-   - Confirm `withCredentials: true` in SDK config
+1. **400 Bad Request Errors**:
+   - **Solution**: Initialize flows without extra parameters like `returnTo`
+   - **Problem**: Adding extra parameters can cause validation errors
+   - **Fix**: Use simple flow initialization:
+     ```typescript
+     // ✅ Correct: Simple initialization
+     const { data } = await ory.createBrowserLoginFlow();
+     
+     // ❌ Incorrect: Extra parameters that may cause errors
+     const { data } = await ory.createBrowserLoginFlow({
+       returnTo: '/onboarding'
+     });
+     ```
 
 2. **Cookie Issues**:
    - Use `localhost` consistently
    - Enable third-party cookies in browser
    - Check cookie settings in Ory configuration
 
-3. **Flow Initialization Failures**:
-   - Verify Ory tunnel is running
-   - Check SDK URL configuration
-   - Ensure proper error handling in components
+3. **Session API Implementation**:
+   - Use direct forwarding of cookies in API routes:
+     ```typescript
+     // Forward cookies to Ory
+     const cookieHeader = request.headers.get('cookie') || '';
+     
+     // Make a direct request to Ory with cookies
+     const sessionResponse = await fetch(`${ORY_BASE_URL}/sessions/whoami`, {
+       headers: {
+         Cookie: cookieHeader,
+         Accept: 'application/json',
+       },
+     });
+     ```
 
 ## Testing Authentication
 
@@ -114,16 +140,21 @@ Source Cooperative uses Ory Kratos for identity management and authentication. O
    npm run dev
    ```
 
-2. Verify tunnel logs show proper CORS headers:
+2. Run the Ory tunnel in a separate terminal:
+   ```bash
+   npx @ory/cli tunnel --dev http://localhost:3000
+   ```
+
+3. Verify tunnel logs show proper CORS headers:
    ```
    Access-Control-Allow-Credentials:[true]
    Access-Control-Allow-Origin:[http://localhost:3000]
    ```
 
-3. Monitor network requests for proper flow:
+4. Monitor network requests for proper flow:
    ```
-   GET [/self-service/registration/browser] => 200
-   POST [/self-service/registration?flow=<id>] => 200
+   GET [/self-service/login/browser] => 200
+   POST [/self-service/login?flow=<id>] => 200
    GET [/sessions/whoami] => 200
    ```
 
