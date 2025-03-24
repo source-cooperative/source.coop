@@ -1,150 +1,107 @@
 'use client';
 
-import { Text, Flex, Link as RadixLink } from '@radix-ui/themes';
+import { Tooltip, Callout } from '@radix-ui/themes';
+import { MinusCircledIcon, CheckCircledIcon } from '@radix-ui/react-icons';
 import type { IndividualAccount } from '@/types/account';
-import { useState, useEffect } from 'react';
-import { UiNode, UiNodeInputAttributes } from '@ory/client';
 import { ory } from '@/lib/ory';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import type { UiNode, UiNodeInputAttributes } from '@ory/client';
 
 interface EmailVerificationStatusProps {
   account: IndividualAccount;
+  showCallout?: boolean;
 }
 
-export function EmailVerificationStatus({ account }: EmailVerificationStatusProps) {
-  const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
+export function EmailVerificationStatus({ account, showCallout = false }: EmailVerificationStatusProps) {
   const [isVerified, setIsVerified] = useState(account.email_verified);
-  const router = useRouter();
+  const [isSending, setIsSending] = useState(false);
 
-  // Check verification status periodically
   useEffect(() => {
-    const checkVerificationStatus = async () => {
+    const checkStatus = async () => {
       try {
         const { data: session } = await ory.toSession();
-        if (session.identity?.verifiable_addresses?.some(addr => addr.verified)) {
-          setIsVerified(true);
-        }
+        setIsVerified(session.identity?.verifiable_addresses?.some(addr => addr.verified) ?? false);
       } catch (error) {
         console.error('Failed to check verification status:', error);
       }
     };
 
-    // Check immediately and then every 5 seconds
-    checkVerificationStatus();
-    const interval = setInterval(checkVerificationStatus, 5000);
-
+    checkStatus();
+    const interval = setInterval(checkStatus, 5000);
     return () => clearInterval(interval);
   }, []);
 
-  if (!isVerified) {
-    const handleResendVerification = async () => {
-      try {
-        setStatus('sending');
-        
-        // Create a new browser verification flow with return URL to profile
-        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-        const { data: flow } = await ory.createBrowserVerificationFlow({
-          returnTo: `${baseUrl}/profile`
-        });
-        
-        console.log('Verification flow created:', JSON.stringify(flow, null, 2));
-        
-        if (!flow.id) {
-          throw new Error('No flow ID received from Ory');
-        }
-        
-        // Get the CSRF token from the flow
-        const csrfNode = flow.ui.nodes?.find(
-          (node: UiNode) => 
-            node.attributes && 
-            'name' in node.attributes && 
-            node.attributes.name === 'csrf_token'
-        ) as UiNode & { attributes: UiNodeInputAttributes } | undefined;
+  const handleResendVerification = async () => {
+    try {
+      setIsSending(true);
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+      const { data: flow } = await ory.createBrowserVerificationFlow({
+        returnTo: `${baseUrl}/${account.account_id}`
+      });
+      
+      const csrfNode = flow.ui.nodes?.find(
+        node => node.attributes && 'name' in node.attributes && node.attributes.name === 'csrf_token'
+      ) as (UiNode & { attributes: UiNodeInputAttributes }) | undefined;
 
-        const csrfToken = csrfNode?.attributes?.value;
-        console.log('CSRF token:', csrfToken);
+      const csrfToken = csrfNode?.attributes?.value;
 
-        if (!csrfToken) {
-          throw new Error('No CSRF token found in flow');
-        }
+      if (!csrfToken) throw new Error('No CSRF token found');
 
-        // Submit the verification flow with the user's email
-        const updateBody = {
+      await ory.updateVerificationFlow({
+        flow: flow.id,
+        updateVerificationFlowBody: {
           email: account.email,
-          method: 'code' as const,
+          method: 'code',
           csrf_token: csrfToken,
-        };
-        console.log('Sending verification update with body:', JSON.stringify(updateBody, null, 2));
+        },
+      });
+    } catch (error) {
+      console.error('Failed to send verification email:', error);
+    } finally {
+      setIsSending(false);
+    }
+  };
 
-        const { data: result } = await ory.updateVerificationFlow({
-          flow: flow.id,
-          updateVerificationFlowBody: updateBody,
-        });
-
-        console.log('Verification flow result:', JSON.stringify(result, null, 2));
-
-        setStatus('sent');
-        
-        // Reset status after 5 seconds
-        setTimeout(() => {
-          setStatus('idle');
-        }, 5000);
-      } catch (error: any) {
-        console.error('Failed to send verification email:', error);
-        if (error.response) {
-          console.error('Error response data:', JSON.stringify(error.response.data, null, 2));
-          console.error('Error response status:', error.response.status);
-          console.error('Error response headers:', JSON.stringify(error.response.headers, null, 2));
-        }
-        setStatus('error');
-      }
-    };
-
-    return (
-      <Flex direction="column" gap="2" mt="2">
-        <Text size="2" color="orange">
-          Please verify your email address to access all features
-        </Text>
-        {status === 'idle' && (
-          <RadixLink 
-            size="2" 
-            onClick={handleResendVerification}
-            style={{ cursor: 'pointer', textDecoration: 'underline' }}
-          >
-            Resend verification email
-          </RadixLink>
-        )}
-        {status === 'sending' && (
-          <Text size="2" color="gray">
-            Sending...
-          </Text>
-        )}
-        {status === 'sent' && (
-          <Text size="2" color="green">
-            Verification email sent. Please check your inbox.
-          </Text>
-        )}
-        {status === 'error' && (
-          <Flex direction="column" gap="2">
-            <Text size="2" color="red">
-              Failed to send verification email. Please try again.
-            </Text>
-            <RadixLink 
-              size="2" 
-              onClick={handleResendVerification}
-              style={{ cursor: 'pointer', textDecoration: 'underline' }}
-            >
-              Resend verification email
-            </RadixLink>
-          </Flex>
-        )}
-      </Flex>
-    );
-  }
+  const domain = account.email.split('@')[1];
+  const tooltipText = isVerified 
+    ? `${domain} email verified`
+    : 'Email not verified';
 
   return (
-    <Text size="2" color="green" mt="2">
-      Email verified successfully
-    </Text>
+    <>
+      <Tooltip content={tooltipText}>
+        {isVerified ? (
+          <CheckCircledIcon style={{ color: 'var(--green-9)' }} />
+        ) : (
+          <MinusCircledIcon style={{ color: 'var(--amber-9)' }} />
+        )}
+      </Tooltip>
+
+      {!isVerified && showCallout && (
+        <Callout.Root color="orange" mt="4">
+          <Callout.Text>
+            Please verify your email address to access all features.
+            {isSending ? (
+              ' Sending verification email...'
+            ) : (
+              <button 
+                onClick={handleResendVerification}
+                style={{ 
+                  background: 'none', 
+                  border: 'none', 
+                  color: 'var(--orange-11)',
+                  textDecoration: 'underline',
+                  cursor: 'pointer',
+                  padding: 0,
+                  marginLeft: '0.5rem'
+                }}
+              >
+                Resend verification email
+              </button>
+            )}
+          </Callout.Text>
+        </Callout.Root>
+      )}
+    </>
   );
 } 

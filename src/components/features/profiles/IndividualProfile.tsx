@@ -8,6 +8,7 @@ import { WelcomeCallout } from './WelcomeCallout';
 import { WebsiteLink } from './WebsiteLink';
 import { MinusCircledIcon, CheckCircledIcon } from '@radix-ui/react-icons';
 import { VerificationCallout } from './VerificationCallout';
+import { EmailVerificationStatus } from './EmailVerificationStatus';
 import { getServerSession } from '@/lib/auth';
 import { cookies } from 'next/headers';
 
@@ -53,11 +54,7 @@ export async function IndividualProfile({
             <Box>
               <Flex gap="2" align="center">
                 <Heading size="8">{account.name}</Heading>
-                {account.email_verified ? (
-                  <CheckCircledIcon color="green" width="20" height="20" />
-                ) : (
-                  <MinusCircledIcon color="amber" width="20" height="20" />
-                )}
+                <EmailVerificationStatus account={account} showCallout={isOwnProfile} />
               </Flex>
               {account.description && (
                 <Text size="3" color="gray">{account.description}</Text>
