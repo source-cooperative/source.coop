@@ -25,7 +25,7 @@ export function EmailVerificationStatus({ account }: EmailVerificationStatusProp
   }
 
   const individualAccount = account as IndividualAccount;
-  const [isVerified, setIsVerified] = useState(individualAccount.email_verified);
+  const [isVerified, setIsVerified] = useState<boolean | null>(null); // null means loading
   const [verifiedAt, setVerifiedAt] = useState<string | null>(null);
   
   useEffect(() => {
@@ -41,15 +41,26 @@ export function EmailVerificationStatus({ account }: EmailVerificationStatusProp
         
         if (verifiedTimestamp) {
           const date = new Date(verifiedTimestamp);
-          setVerifiedAt(date.toLocaleDateString());
+          // Format date as DD MMM YYYY
+          const day = date.getDate().toString().padStart(2, '0');
+          const month = date.toLocaleString('en-US', { month: 'short' });
+          const year = date.getFullYear();
+          setVerifiedAt(`${day} ${month} ${year}`);
         }
       } catch (error) {
         console.error('Failed to check verification status:', error);
+        // If check fails, fall back to account value
+        setIsVerified(individualAccount.email_verified || false);
       }
     };
     
     checkVerificationStatus();
-  }, []);
+  }, [individualAccount.email_verified]);
+  
+  // Show nothing while checking verification status
+  if (isVerified === null) {
+    return null;
+  }
   
   if (!isVerified) {
     return <MinusCircledIcon color="var(--amber-9)" />;
@@ -59,7 +70,7 @@ export function EmailVerificationStatus({ account }: EmailVerificationStatusProp
   const emailDomain = individualAccount.email.split('@')[1];
   
   return (
-    <Tooltip content={`${emailDomain} email verified${verifiedAt ? ` on ${verifiedAt}` : ''}.`}>
+    <Tooltip content={`${emailDomain} email verified${verifiedAt ? ` on ${verifiedAt}` : ''}`}>
       <CheckCircledIcon color="var(--green-9)" />
     </Tooltip>
   );
