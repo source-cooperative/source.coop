@@ -3,7 +3,7 @@
 import { Button, Callout } from '@radix-ui/themes';
 import Link from 'next/link';
 import { WelcomeCallout } from './WelcomeCallout';
-import { VerificationCallout } from './VerificationCallout';
+import { VerificationSuccessCallout } from '@/components/features/auth/VerificationSuccessCallout';
 import { useAuth } from '@/hooks/useAuth';
 import type { IndividualAccount } from '@/types/account';
 
@@ -19,10 +19,7 @@ export function IndividualProfileActions({ account, showWelcome = false }: Indiv
 
   return (
     <>
-      {isOwnProfile && !account.email_verified && (
-        <VerificationCallout accountId={account.account_id} email={account.email} />
-      )}
-
+      <VerificationSuccessCallout />
       <WelcomeCallout show={showWelcome} accountId={account.account_id} />
     </>
   );
