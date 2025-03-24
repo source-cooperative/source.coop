@@ -164,7 +164,7 @@ export function OnboardingForm() {
       }
 
       // On success, redirect to profile page
-      router.push(`/${account_id}`);
+      router.push(`/${account_id}?welcome=true`);
       router.refresh();
     } catch (err: unknown) {
       console.error('Onboarding error:', err);

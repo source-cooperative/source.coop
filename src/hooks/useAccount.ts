@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type { Account } from '@/types/account';
 import { useAuth } from './useAuth';
 import type { Session, Identity } from '@ory/client';
@@ -18,6 +18,11 @@ export function useAccount(initialAccountId?: string | null) {
   const { session, isLoading: isAuthLoading } = useAuth();
   const [account, setAccount] = useState<Account | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [refreshCounter, setRefreshCounter] = useState(0);
+
+  const refresh = useCallback(() => {
+    setRefreshCounter(prev => prev + 1);
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -35,10 +40,12 @@ export function useAccount(initialAccountId?: string | null) {
       }
 
       try {
+        console.log('Fetching account for ID:', accountId);
         const response = await fetch(`/api/accounts/${accountId}`, {
           credentials: 'include',
           headers: {
-            'Accept': 'application/json'
+            'Accept': 'application/json',
+            'Cache-Control': 'no-cache'
           }
         });
         
@@ -47,10 +54,12 @@ export function useAccount(initialAccountId?: string | null) {
         }
         
         const data = await response.json();
+        console.log('Account data fetched:', data);
         if (isMounted) {
           setAccount(data);
         }
       } catch (error) {
+        console.error('Error fetching account:', error);
         if (isMounted) {
           setAccount(null);
         }
@@ -66,7 +75,7 @@ export function useAccount(initialAccountId?: string | null) {
     return () => {
       isMounted = false;
     };
-  }, [initialAccountId, session?.identity?.metadata_public?.account_id, isAuthLoading]);
+  }, [initialAccountId, session?.identity?.metadata_public?.account_id, isAuthLoading, refreshCounter]);
 
-  return { account, isLoading };
+  return { account, isLoading, refresh };
 } 

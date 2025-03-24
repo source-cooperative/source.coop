@@ -92,7 +92,10 @@ export async function POST(request: NextRequest) {
         try {
           await dynamoDb.send(new DeleteCommand({
             TableName: "Accounts",
-            Key: { account_id }
+            Key: { 
+              account_id,
+              type: 'individual'
+            }
           }));
           console.log('Cleaned up DynamoDB account after Ory update failure');
         } catch (cleanupError) {

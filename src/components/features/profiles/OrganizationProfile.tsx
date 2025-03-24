@@ -6,7 +6,8 @@ import type { OrganizationalAccount, IndividualAccount, Repository } from '@/typ
 import { RepositoryList } from '@/components/features/repositories/RepositoryList';
 import { OrganizationMembers } from './OrganizationMembers';
 import { ProfileAvatar } from './ProfileAvatar';
-import { useSession } from '@/hooks/useSession';
+import { useAuth } from '@/hooks/useAuth';
+import { WebsiteLink } from './WebsiteLink';
 
 interface OrganizationProfileProps {
   account: OrganizationalAccount;
@@ -23,7 +24,7 @@ export function OrganizationProfile({
   admins,
   members 
 }: OrganizationProfileProps) {
-  const { session } = useSession();
+  const { session } = useAuth();
   const currentUserId = session?.identity?.metadata_public?.account_id;
   const isAdmin = admins.some(admin => admin.account_id === currentUserId);
   const isOwner = owner?.account_id === currentUserId;
@@ -51,11 +52,11 @@ export function OrganizationProfile({
       <Grid columns="2" gap="6" mb="6">
         <Box>
           <Heading as="h2" size="4" mb="2">Organization Details</Heading>
-          {account.website && (
-            <Text as="p" size="2">
-              Website: <RadixLink href={account.website}>{account.website}</RadixLink>
+          {account.websites?.map((website, index) => (
+            <Text as="p" size="2" key={index}>
+              <WebsiteLink website={website} />
             </Text>
-          )}
+          ))}
           {account.email && (
             <Text as="p" size="2">
               Email: <RadixLink href={`mailto:${account.email}`}>{account.email}</RadixLink>

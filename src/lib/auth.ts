@@ -165,6 +165,23 @@ export async function getServerSession(): Promise<ExtendedSession | null> {
     const cookieStore = await cookies();
     const cookieHeader = cookieStore.toString();
     
+    // Debug configuration
+    console.log('Server-side Ory config:', {
+      kratosUrl: CONFIG.auth.kratosUrl,
+      cookieHeader: cookieHeader.substring(0, 100) + '...'
+    });
+    
+    // Debug cookie details
+    const cookieList = cookieStore.getAll();
+    const cookieNames = cookieList.map(c => c.name);
+    console.log('Debug cookies:', {
+      hasCookies: !!cookieHeader,
+      cookieLength: cookieHeader.length,
+      kratosUrl: CONFIG.auth.kratosUrl,
+      cookieNames,
+      cookieHeader: cookieHeader.substring(0, 100) + '...' // Show first 100 chars of header
+    });
+    
     // Don't use a simulated session - either get a real session or return null
     // This ensures proper security by validating credentials
     try {
@@ -172,7 +189,14 @@ export async function getServerSession(): Promise<ExtendedSession | null> {
         cookie: cookieHeader
       });
       return response.data as ExtendedSession;
-    } catch (error) {
+    } catch (error: any) {
+      // Log all errors for debugging
+      console.log('Ory session error:', {
+        status: error.response?.status,
+        message: error.message,
+        data: error.response?.data
+      });
+      
       // 401 is normal for unauthenticated users
       if (error.response?.status === 401) {
         return null;

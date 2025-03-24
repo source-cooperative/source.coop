@@ -2,12 +2,12 @@
 
 import { Container, Box, Heading, Text } from '@radix-ui/themes';
 import { OnboardingForm } from '@/components/features/onboarding/OnboardingForm';
-import { useSession, getAccountId } from '@/hooks/useAuth';
+import { useAuth, getAccountId } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
 export function OnboardingPageContent() {
-  const { session, isLoading } = useSession();
+  const { session, isLoading } = useAuth();
   const router = useRouter();
 
   // If not authenticated, redirect to login

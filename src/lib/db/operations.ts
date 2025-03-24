@@ -45,7 +45,9 @@ async function getEntityByField<T>(
 async function batchGetEntitiesByIds<T>(
   tableName: string,
   idField: string,
-  ids: string[]
+  ids: string[],
+  typeField?: string,
+  defaultType?: string
 ): Promise<T[]> {
   if (!ids.length) return [];
   
@@ -56,11 +58,21 @@ async function batchGetEntitiesByIds<T>(
   for (let i = 0; i < uniqueIds.length; i += batchSize) {
     const batch = uniqueIds.slice(i, i + batchSize);
     try {
-      // Create a BatchGetItem request
+      // Create a BatchGetItem request with support for composite keys
       const batchParams = {
         RequestItems: {
           [tableName]: {
-            Keys: batch.map(id => ({ [idField]: id }))
+            Keys: batch.map(id => {
+              // If typeField is provided, use composite key
+              if (typeField && defaultType) {
+                return { 
+                  [idField]: id,
+                  [typeField]: defaultType
+                };
+              }
+              // Otherwise use single key
+              return { [idField]: id };
+            })
           }
         }
       };
@@ -118,7 +130,29 @@ async function queryEntities<T>(
 }
 
 export async function fetchAccount(account_id: string): Promise<Account | null> {
-  return getEntityByField<Account>("Accounts", "account_id", account_id);
+  try {
+    // Try both individual and organization types
+    const types = ['individual', 'organization'];
+    
+    for (const type of types) {
+      const result = await docClient.send(new GetCommand({
+        TableName: "Accounts",
+        Key: {
+          account_id,
+          type
+        }
+      }));
+      
+      if (result.Item) {
+        return result.Item as Account;
+      }
+    }
+    
+    return null;
+  } catch (e) {
+    console.error(`Error fetching account with account_id ${account_id}:`, e);
+    return null;
+  }
 }
 
 export async function fetchRepositoriesByAccount(account_id: string): Promise<Repository[]> {
@@ -136,43 +170,39 @@ export async function fetchAccountsByIds(account_ids: string[]): Promise<Account
     return [];
   }
 
-  const batchSize = 25; // Smaller batch for better parallelization
-  const results: Account[] = [];
-
   // Remove duplicates while preserving order
   const uniqueIds = Array.from(new Set(account_ids));
-
-  // Process in smaller batches for better parallelization
-  for (let i = 0; i < uniqueIds.length; i += batchSize) {
-    const batch = uniqueIds.slice(i, i + batchSize);
-    try {
-      // Query for each account_id in parallel
-      const queries = batch.map(id => 
-        docClient.send(new QueryCommand({
-          TableName: "Accounts",
-          KeyConditionExpression: "account_id = :account_id",
-          ExpressionAttributeValues: {
-            ":account_id": id
-          }
-        }))
-      );
-
-      // Wait for all queries in this batch to complete
-      const batchResults = await Promise.all(queries);
+  
+  try {
+    // Run parallel scans for each account ID
+    const scanPromises = uniqueIds.map(id => {
+      const scanParams = {
+        TableName: "Accounts",
+        FilterExpression: "account_id = :account_id",
+        ExpressionAttributeValues: { 
+          ":account_id": id
+        }
+      };
       
-      // Extract and flatten the results
-      const accounts = batchResults
-        .map(result => result.Items || [])
-        .flat() as Account[];
-      
-      results.push(...accounts);
-    } catch (e) {
-      console.error("Error fetching accounts batch:", e);
-      // Continue with other batches even if one fails
+      return docClient.send(new ScanCommand(scanParams));
+    });
+    
+    // Wait for all scans to complete
+    const results = await Promise.all(scanPromises);
+    
+    // Combine and flatten results
+    const accounts: Account[] = [];
+    for (const result of results) {
+      if (result.Items && result.Items.length > 0) {
+        accounts.push(...result.Items as Account[]);
+      }
     }
+    
+    return accounts;
+  } catch (e) {
+    console.error(`Error fetching accounts by IDs:`, e);
+    return [];
   }
-
-  return results;
 }
 
 export async function fetchOrganizationMembers(organization: OrganizationalAccount): Promise<{
@@ -227,7 +257,8 @@ export async function fetchRepositories(
     // Use a scan but with pagination to avoid loading everything at once
     const scanParams: any = {
       TableName: "Repositories",
-      Limit: limit
+      Limit: limit,
+      FilterExpression: "attribute_exists(account_id)" // Only get valid repositories
     };
     
     if (lastEvaluatedKey) {
@@ -247,39 +278,38 @@ export async function fetchRepositories(
     
     // Fetch all accounts in a single batch operation
     const accounts = await fetchAccountsByIds(Array.from(accountIds));
-    const accountsMap = new Map<string, Account>();
-    accounts.forEach(account => {
-      accountsMap.set(account.account_id, account);
-    });
+    const accountsMap = new Map(accounts.map(acc => [acc.account_id, acc]));
     
-    // Attach real account data to repositories
+    // Attach account data to repositories with proper type checking
     const repositoriesWithAccounts = repositories.map(repo => {
-      if (repo.account_id) {
-        const account = accountsMap.get(repo.account_id);
-        if (account) {
-          repo.account = account;
-        } else {
-          // Use a basic account placeholder if not found
-          repo.account = {
-            account_id: repo.account_id,
-            name: repo.account_id, // Use the account_id as the name
-            type: 'individual' as const,
-            ory_id: '',
-            created_at: '',
-            updated_at: ''
-          } as Account;
-        }
+      const account = accountsMap.get(repo.account_id);
+      if (!account) {
+        console.warn(`Account not found for repository ${repo.repository_id}`);
+        return null;
       }
-      return repo as Repository;
-    });
+      
+      return {
+        ...repo,
+        account,
+        repository_id: repo.repository_id,
+        title: repo.title,
+        description: repo.description,
+        private: repo.private,
+        created_at: repo.created_at,
+        updated_at: repo.updated_at
+      } as Repository;
+    }).filter((repo): repo is Repository => repo !== null);
     
     return {
       repositories: repositoriesWithAccounts,
       lastEvaluatedKey: result.LastEvaluatedKey
     };
   } catch (e) {
-    console.error("Error fetching repositories:", e);
-    return { repositories: [], lastEvaluatedKey: null };
+    console.error('Error fetching repositories:', e);
+    return {
+      repositories: [],
+      lastEvaluatedKey: null
+    };
   }
 }
 
@@ -325,13 +355,12 @@ export async function updateOrganization(organization: OrganizationalAccount): P
     await docClient.send(new UpdateCommand({
       TableName: "Accounts",
       Key: { account_id: organization.account_id },
-      UpdateExpression: "SET #name = :name, website = :website, contact_email = :contact_email, ror_id = :ror_id, updated_at = :updated_at",
+      UpdateExpression: "SET #name = :name, contact_email = :contact_email, ror_id = :ror_id, updated_at = :updated_at",
       ExpressionAttributeNames: {
         "#name": "name" // name is a reserved word in DynamoDB
       },
       ExpressionAttributeValues: {
         ":name": organization.name,
-        ":website": organization.website || null,
         ":contact_email": organization.contact_email || null,
         ":ror_id": organization.ror_id || null,
         ":updated_at": new Date().toISOString()
@@ -346,28 +375,115 @@ export async function updateOrganization(organization: OrganizationalAccount): P
 
 export async function updateAccount(account: Account): Promise<boolean> {
   try {
+    // Validate required fields
+    if (!account.account_id || !account.type || !account.name) {
+      console.error('Missing required fields for account update:', {
+        account_id: account.account_id,
+        type: account.type,
+        name: account.name
+      });
+      return false;
+    }
+
+    // Type guard for individual accounts
+    const isIndividualAccount = (acc: Account): acc is IndividualAccount => 
+      acc.type === 'individual';
+
+    // Type guard for organizational accounts
+    const isOrganizationalAccount = (acc: Account): acc is OrganizationalAccount => 
+      acc.type === 'organization';
+
+    let updateExpression = "SET #name = :name, updated_at = :updated_at";
+    const expressionAttributeNames: Record<string, string> = {
+      "#name": "name" // name is a reserved word in DynamoDB
+    };
+    const expressionAttributeValues: Record<string, any> = {
+      ":name": account.name,
+      ":updated_at": new Date().toISOString()
+    };
+
+    // Handle email/contact_email based on account type with type safety
+    if (isIndividualAccount(account)) {
+      updateExpression += ", email = :email";
+      expressionAttributeValues[":email"] = account.email || null;
+      
+      // Handle ORCID for individual accounts
+      if (account.orcid !== undefined) {
+        updateExpression += ", orcid = :orcid";
+        expressionAttributeValues[":orcid"] = account.orcid || null;
+      }
+    } else if (isOrganizationalAccount(account)) {
+      updateExpression += ", contact_email = :contact_email";
+      expressionAttributeValues[":contact_email"] = account.contact_email || null;
+      
+      // Handle ROR ID for organizational accounts
+      if (account.ror_id !== undefined) {
+        updateExpression += ", ror_id = :ror_id";
+        expressionAttributeValues[":ror_id"] = account.ror_id || null;
+      }
+    }
+
+    // Handle description
+    if (account.description !== undefined) {
+      updateExpression += ", description = :description";
+      expressionAttributeValues[":description"] = account.description || null;
+    }
+
+    // Handle websites
+    if (account.websites !== undefined) {
+      updateExpression += ", websites = :websites";
+      expressionAttributeValues[":websites"] = account.websites || null;
+    }
+
+    console.log('Updating account with:', {
+      account_id: account.account_id,
+      type: account.type,
+      updateExpression,
+      expressionAttributeNames,
+      expressionAttributeValues
+    });
+
     await docClient.send(new UpdateCommand({
       TableName: "Accounts",
-      Key: { account_id: account.account_id },
-      UpdateExpression: "SET #name = :name, email = :email, updated_at = :updated_at",
-      ExpressionAttributeNames: {
-        "#name": "name"
+      Key: { 
+        account_id: account.account_id,
+        type: account.type // Include type in the key
       },
-      ExpressionAttributeValues: {
-        ":name": account.name,
-        ":email": account.email || null,
-        ":updated_at": new Date().toISOString()
-      }
+      UpdateExpression: updateExpression,
+      ExpressionAttributeNames: expressionAttributeNames,
+      ExpressionAttributeValues: expressionAttributeValues,
+      ConditionExpression: "attribute_exists(account_id)" // Ensure account exists
     }));
     return true;
   } catch (e) {
-    console.error("Error updating account:", e);
+    console.error("Error updating account:", {
+      error: e,
+      account_id: account.account_id,
+      type: account.type,
+      message: e instanceof Error ? e.message : 'Unknown error'
+    });
     return false;
   }
 }
 
 export async function fetchAccountByOryId(ory_id: string): Promise<Account | null> {
-  return getEntityByField<Account>("Accounts", "ory_id", ory_id, "OryIdIndex");
+  try {
+    // Use scan with filter as the most reliable approach
+    const scanParams = {
+      TableName: "Accounts",
+      FilterExpression: "ory_id = :ory_id",
+      ExpressionAttributeValues: { ":ory_id": ory_id },
+      Limit: 1
+    };
+    
+    const result = await docClient.send(new ScanCommand(scanParams));
+    
+    if (!result.Items || result.Items.length === 0) return null;
+    return result.Items[0] as Account;
+  } catch (e) {
+    console.error(`Error fetching account by ory_id ${ory_id}:`, e);
+    return null;
+  }
 }
 
 export async function updateRepository(repository: Repository): Promise<boolean> {
@@ -402,5 +518,21 @@ export async function fetchAccountsByType(type: string): Promise<Account[]> {
 }
 
 export async function fetchAccountByEmail(email: string): Promise<Account | null> {
-  return getEntityByField<Account>("Accounts", "email", email, "GSI2");
+  try {
+    // Use scan with filter as the most reliable approach
+    const scanParams = {
+      TableName: "Accounts",
+      FilterExpression: "email = :email",
+      ExpressionAttributeValues: { ":email": email },
+      Limit: 1
+    };
+    
+    const result = await docClient.send(new ScanCommand(scanParams));
+    
+    if (!result.Items || result.Items.length === 0) return null;
+    return result.Items[0] as Account;
+  } catch (e) {
+    console.error(`Error fetching account by email ${email}:`, e);
+    return null;
+  }
 } 

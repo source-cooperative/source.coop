@@ -5,7 +5,7 @@ export interface SessionMetadata {
   is_admin?: boolean;
 }
 
-export interface SessionWithMetadata extends Session {
+export interface ExtendedSession extends Session {
   identity?: Identity & {
     metadata_public?: SessionMetadata;
   };

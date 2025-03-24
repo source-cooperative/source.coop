@@ -14,9 +14,6 @@ export interface BaseAccount {
 // Website interface for managing multiple websites and social profiles
 export interface Website {
   url: string;
-  type: 'personal' | 'github' | 'linkedin' | 'twitter' | 'other';
-  display_name?: string;  // Optional display name for the website
-  is_primary?: boolean;  // Whether this is the primary website
 }
 
 // Contact information interface for shared optional fields

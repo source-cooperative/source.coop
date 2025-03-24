@@ -25,7 +25,7 @@ export const ory = new FrontendApi(
       withCredentials: true,
       headers: {
         'Accept': 'application/json',
-      },
+      }
     },
   })
 );
@@ -73,6 +73,8 @@ export async function updateOryIdentity(oryId: string, data: any) {
       statusText: getResponse.statusText,
       error: errorText,
       url: getResponse.url,
+      hasApiUrl: !!process.env.ORY_API_URL,
+      hasAccessToken: !!process.env.ORY_ACCESS_TOKEN
     });
     throw new Error(errorText);
   }
@@ -88,7 +90,7 @@ export async function updateOryIdentity(oryId: string, data: any) {
     traits: currentIdentity.traits,
     metadata_public: {
       ...currentIdentity.metadata_public,
-      account_id: data.metadata_public?.account_id
+      ...data.metadata_public
     },
     metadata_admin: currentIdentity.metadata_admin || {}
   };
@@ -114,6 +116,8 @@ export async function updateOryIdentity(oryId: string, data: any) {
       statusText: response.statusText,
       error: errorText,
       url: response.url,
+      hasApiUrl: !!process.env.ORY_API_URL,
+      hasAccessToken: !!process.env.ORY_ACCESS_TOKEN
     });
     throw new Error(errorText);
   }

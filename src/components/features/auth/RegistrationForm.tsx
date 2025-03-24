@@ -4,11 +4,12 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button, Flex, Text, Box, TextField } from '@radix-ui/themes';
 import * as Form from '@radix-ui/react-form';
-import { Configuration, FrontendApi, UpdateRegistrationFlowBody } from '@ory/client';
 import { ory } from '@/lib/ory';
+import { useAuth } from '@/hooks/useAuth';
 
 export function RegistrationForm() {
   const router = useRouter();
+  const { session } = useAuth();
   const [flow, setFlow] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -20,25 +21,15 @@ export function RegistrationForm() {
     const initFlow = async () => {
       setLoading(true);
       try {
-        // First check if user is already logged in
-        try {
-          const sessionResponse = await fetch('/api/auth/session');
-          const sessionData = await sessionResponse.json();
-          
-          if (sessionData && sessionData.authenticated !== false) {
-            console.log("User already logged in, redirecting");
-            // Check if the user has completed onboarding
-            if (!sessionData?.identity?.metadata_public?.account_id) {
-              router.push('/onboarding');
-            } else {
-              // User has completed onboarding, redirect to their profile
-              const accountId = sessionData.identity.metadata_public.account_id;
-              router.push(`/${accountId}`);
-            }
-            return;
+        // If user is already logged in, redirect to appropriate page
+        if (session?.identity) {
+          const accountId = session.identity.metadata_public?.account_id;
+          if (!accountId) {
+            router.push('/onboarding');
+          } else {
+            router.push(`/${accountId}`);
           }
-        } catch (sessionErr) {
-          console.log("Session check failed, proceeding with registration flow", sessionErr);
+          return;
         }
         
         const { data } = await ory.createBrowserRegistrationFlow();
@@ -53,7 +44,7 @@ export function RegistrationForm() {
     };
 
     initFlow();
-  }, [router]);
+  }, [router, session]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -95,17 +86,12 @@ export function RegistrationForm() {
         },
       });
 
-      console.log("Registration flow updated:", updatedFlow);
-
       // Check if the registration was successful
       if (updatedFlow?.session) {
-        console.log("Registration successful, session established");
+        // Registration successful, proceed to onboarding
         router.push('/onboarding');
-        router.refresh();
       } else {
-        // If no session was established, redirect to login
-        console.log("Registration successful but no session established, redirecting to login");
-        router.push('/auth?flow=login');
+        throw new Error('No session established after registration');
       }
     } catch (err: any) {
       console.error('Registration error:', err);

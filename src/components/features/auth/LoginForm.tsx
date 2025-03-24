@@ -4,8 +4,8 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button, Flex, Text, Box, TextField } from '@radix-ui/themes';
 import * as Form from '@radix-ui/react-form';
-import { ory } from '@/lib/ory';
-import { Session } from '@ory/client';
+import { ory, ExtendedSession } from '@/lib/ory';
+import { useAuth } from '@/hooks/useAuth';
 
 // Type definitions for custom metadata
 interface IdentityMetadataPublic {
@@ -16,6 +16,7 @@ interface IdentityMetadataPublic {
 // Initialize login flow on component mount
 export function LoginForm() {
   const router = useRouter();
+  const { session } = useAuth();
   const [flow, setFlow] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -25,31 +26,19 @@ export function LoginForm() {
     const initFlow = async () => {
       setLoading(true);
       try {
-        // First check if user is already logged in
-        try {
-          const { data: session } = await ory.toSession();
-          
-          if (session) {
-            console.log("User already logged in, redirecting");
-            // Check if the user has completed onboarding
-            const metadata = session.identity?.metadata_public as IdentityMetadataPublic || {};
-            if (!metadata.account_id) {
-              router.push('/onboarding');
-            } else {
-              // User has completed onboarding, redirect to their profile
-              router.push(`/${metadata.account_id}`);
-            }
-            return;
+        // If user is already logged in, redirect to appropriate page
+        if (session?.identity) {
+          const accountId = session.identity.metadata_public?.account_id;
+          if (!accountId) {
+            router.push('/onboarding');
+          } else {
+            router.push(`/${accountId}`);
           }
-        } catch (sessionErr) {
-          // This is expected if the user is not logged in
-          console.log("No active session, proceeding with login flow");
+          return;
         }
         
-        console.log("Initializing login flow...");
-        // Simple login flow initialization
+        // Simple flow initialization with no additional parameters
         const { data } = await ory.createBrowserLoginFlow();
-        console.log("Login flow initialized:", data.id);
         setFlow(data);
         setError(null);
       } catch (err) {
@@ -61,7 +50,7 @@ export function LoginForm() {
     };
 
     initFlow();
-  }, [router]);
+  }, [router, session]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -92,34 +81,27 @@ export function LoginForm() {
         },
       });
 
-      console.log("Login flow updated:", updatedFlow);
-      
+      // Check if the login was successful
       if (updatedFlow?.session) {
-        console.log("Successful login detected");
-        
-        // Check if the user has completed onboarding
-        const metadata = updatedFlow.session.identity?.metadata_public as IdentityMetadataPublic || {};
-        if (!metadata.account_id) {
-          console.log("User needs to complete onboarding");
+        const session = updatedFlow.session as ExtendedSession;
+        const accountId = session.identity?.metadata_public?.account_id;
+        if (!accountId) {
           router.push('/onboarding');
         } else {
-          // User has completed onboarding, redirect to their profile
-          console.log("User has completed onboarding, redirecting to profile");
-          router.push(`/${metadata.account_id}`);
+          router.push(`/${accountId}`);
         }
-        
         router.refresh();
       } else {
         throw new Error('No session established after login');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Login error:', err);
       if (err.response?.data?.ui?.messages) {
         // Handle Ory UI messages
         const messages = err.response.data.ui.messages;
         setError(messages[0]?.text || 'Login failed. Please try again.');
       } else {
-        setError('An error occurred during login. Please try again later.');
+        setError('An error occurred during login. Please try again.');
       }
     } finally {
       setSubmitLoading(false);

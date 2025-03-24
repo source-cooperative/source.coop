@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { ory } from '@/lib/ory';
 import { Session, Identity } from '@ory/client';
 
@@ -25,24 +25,29 @@ export function useAuth(): UseAuthResult {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [session, setSession] = useState<SessionWithMetadata | null>(null);
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     let isMounted = true;
 
     async function checkAuth() {
       try {
+        // Use Ory SDK directly per CURSOR_RULES
         const { data } = await ory.toSession();
+        
         if (isMounted) {
           setSession(data as SessionWithMetadata);
         }
       } catch (err) {
-        // Only set error for non-401 responses
+        // Don't log 401 errors - they're expected for unauthenticated users
         if (!(err instanceof Error && err.message.includes('401'))) {
-          if (isMounted) {
-            setError(err instanceof Error ? err : new Error('Failed to check auth'));
-          }
+          console.error('Auth check error:', err);
         }
+        
         if (isMounted) {
+          setError(err instanceof Error ? err : new Error('Failed to check auth'));
           setSession(null);
         }
       } finally {
@@ -57,7 +62,7 @@ export function useAuth(): UseAuthResult {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [router, pathname, searchParams]); // Re-run when URL changes
 
   return { isLoading, error, session };
 }

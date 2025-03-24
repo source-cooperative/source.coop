@@ -5,9 +5,10 @@ import { EditProfileForm } from './EditProfileForm';
 export default async function EditProfilePage({ 
   params 
 }: { 
-  params: { account_id: string } 
+  params: Promise<{ account_id: string }> 
 }) {
-  const account = await fetchAccount(params.account_id);
+  const { account_id } = await params;
+  const account = await fetchAccount(account_id);
   
   if (!account) {
     notFound();

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { forwardRef, useState } from 'react';
+import React, { forwardRef, useState, useEffect } from 'react';
 import * as Form from '@radix-ui/react-form';
 import { Button, Text, Flex, Box, Select } from '@radix-ui/themes';
 import { TextField } from '@radix-ui/themes';
@@ -17,7 +17,26 @@ export const FormWrapper = forwardRef<HTMLFormElement, FormProps>(({
   submitDisabled = false,
   hideSubmit = false,
 }, ref) => {
-  const [fieldValues, setFieldValues] = useState<Record<string, string>>({});
+  const [fieldValues, setFieldValues] = useState<Record<string, string>>(() => {
+    // Initialize field values with defaultValues
+    return fields.reduce((acc, field) => {
+      if (field.defaultValue !== undefined) {
+        acc[field.name] = field.defaultValue;
+      }
+      return acc;
+    }, {} as Record<string, string>);
+  });
+
+  // Update field values when fields change
+  useEffect(() => {
+    const newValues = fields.reduce((acc, field) => {
+      if (field.defaultValue !== undefined) {
+        acc[field.name] = field.defaultValue;
+      }
+      return acc;
+    }, {} as Record<string, string>);
+    setFieldValues(newValues);
+  }, [fields]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -61,6 +80,7 @@ export const FormWrapper = forwardRef<HTMLFormElement, FormProps>(({
           name={field.name}
           required={field.required}
           disabled={isLoading}
+          defaultValue={field.defaultValue}
           onValueChange={(value) => {
             handleFieldChange(field.name, value);
             field.onChange?.(value);
@@ -89,7 +109,7 @@ export const FormWrapper = forwardRef<HTMLFormElement, FormProps>(({
           style={{
             fontFamily: 'var(--code-font-family)',
             width: '100%',
-            height: '7rem',
+            height: field.style?.height || '7rem',
             resize: 'none',
             padding: '8px 12px',
             borderRadius: '0',

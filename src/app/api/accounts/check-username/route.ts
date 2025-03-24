@@ -30,6 +30,14 @@ export async function GET(request: Request) {
       );
     }
 
+    // Check if username is reserved
+    if (RESERVED_USERNAMES.includes(username.toLowerCase())) {
+      return NextResponse.json(
+        { available: false, error: 'This username is reserved and cannot be used' },
+        { status: 400 }
+      );
+    }
+
     // Only allow lowercase alphanumeric characters, hyphens, and underscores
     if (!/^[a-z0-9_-]+$/.test(username)) {
       return NextResponse.json(

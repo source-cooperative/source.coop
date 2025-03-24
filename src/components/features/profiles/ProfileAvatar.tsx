@@ -12,10 +12,13 @@ interface ProfileAvatarProps {
 export function ProfileAvatar({ account, size = '6' }: ProfileAvatarProps) {
   // Get avatar source URL
   const getAvatarSrc = () => {
-    if (account.type === 'individual' && account.email) {
+    if (account.type === 'individual') {
       // Use Gravatar for individuals
-      const hash = md5(account.email.toLowerCase().trim());
-      return `https://www.gravatar.com/avatar/${hash}?d=identicon&s=200`;
+      const email = account.email?.toLowerCase().trim();
+      if (email) {
+        const hash = md5(email);
+        return `https://www.gravatar.com/avatar/${hash}?d=identicon&s=200`;
+      }
     }
     
     // Use default organization icon for organizations
