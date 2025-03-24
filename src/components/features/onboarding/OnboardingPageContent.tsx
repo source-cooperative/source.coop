@@ -39,7 +39,7 @@ export function OnboardingPageContent() {
         <Heading size="6" mb="3">Complete Your Profile</Heading>
         
         <Text size="2" color="gray" mb="6">
-          You're almost done! Choose a username for your account and tell us your name.
+          You&apos;re almost done! Choose a username for your account and tell us your name.
         </Text>
 
         <OnboardingForm />

@@ -1,14 +1,14 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { Flex, Text, Box, Button, TextField, Callout } from '@radix-ui/themes';
+import { Flex, Text, Box, Callout } from '@radix-ui/themes';
 import { MonoText } from '@/components/core/MonoText';
 import { FormWrapper } from '@/components/core/Form';
 import { FormField } from '@/types/form';
 import debounce from 'lodash/debounce';
-import { FrontendApi, Configuration, Session, Identity } from '@ory/client';
-import { InfoCircledIcon, CheckCircledIcon, ExclamationTriangleIcon, ReloadIcon } from '@radix-ui/react-icons';
+import { FrontendApi, Configuration } from '@ory/client';
+import { InfoCircledIcon, CheckCircledIcon } from '@radix-ui/react-icons';
 import { VerificationSuccessCallout } from '@/components/features/auth/VerificationSuccessCallout';
 
 interface OnboardingFormData {
@@ -27,15 +27,6 @@ interface OnboardingResponse {
   error?: string;
 }
 
-interface VerifiableAddress {
-  id: string;
-  value: string;
-  verified: boolean;
-  via: string;
-  status: string;
-  verified_at?: string;
-}
-
 export function OnboardingForm() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -46,24 +37,22 @@ export function OnboardingForm() {
     name: ''
   });
   const [usernameStatus, setUsernameStatus] = useState<UsernameStatus>('idle');
-  const [session, setSession] = useState<Session | null>(null);
   const [verificationStatus, setVerificationStatus] = useState<'pending' | 'verified'>('pending');
 
-  // Initialize Ory client
-  const ory = new FrontendApi(
+  // Initialize Ory client with useMemo to prevent recreation on each render
+  const ory = useMemo(() => new FrontendApi(
     new Configuration({
       basePath: process.env.NEXT_PUBLIC_ORY_SDK_URL || 'http://localhost:4000',
       baseOptions: {
         withCredentials: true,
       }
     })
-  );
+  ), []);
 
   // Check session on mount
   useEffect(() => {
     ory.toSession()
       .then(({ data }) => {
-        setSession(data);
         // If no session, redirect to login
         if (!data) {
           router.push('/login');
@@ -72,7 +61,7 @@ export function OnboardingForm() {
           const identity = data.identity;
           if (identity?.verifiable_addresses) {
             const emailAddress = identity.verifiable_addresses.find(
-              (addr: any) => addr.via === 'email'
+              (addr) => addr.via === 'email'
             );
             if (emailAddress?.verified) {
               setVerificationStatus('verified');
@@ -116,10 +105,10 @@ export function OnboardingForm() {
         console.error('Session error:', err);
         router.push('/login');
       });
-  }, [router]);
+  }, [router, ory]);
 
   const checkUsername = useCallback(
-    debounce(async (value: string) => {
+    async (value: string) => {
       if (!value || value.length < 3) {
         setUsernameStatus('idle');
         return;
@@ -134,17 +123,23 @@ export function OnboardingForm() {
         console.error('Error checking username:', err);
         setUsernameStatus('idle');
       }
-    }, 500),
+    },
     []
+  );
+
+  // Use the debounced version
+  const debouncedCheckUsername = useMemo(() => 
+    debounce((value: string) => checkUsername(value), 500),
+    [checkUsername]
   );
 
   // Update username display and trigger check
   useEffect(() => {
     if (formData.account_id) {
       setUsername(formData.account_id);
-      checkUsername(formData.account_id);
+      debouncedCheckUsername(formData.account_id);
     }
-  }, [formData.account_id, checkUsername]);
+  }, [formData.account_id, debouncedCheckUsername]);
 
   const handleSubmit = async (data: OnboardingFormData) => {
     setLoading(true);
@@ -302,7 +297,7 @@ export function OnboardingForm() {
               <InfoCircledIcon />
             </Callout.Icon>
             <Callout.Text>
-              Please check your email. We've sent you a code to verify your email address.
+              Please check your email. We&apos;ve sent you a code to verify your email address.
             </Callout.Text>
           </Callout.Root>
         )}
