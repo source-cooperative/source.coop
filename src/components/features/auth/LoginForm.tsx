@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button, Flex, Text, Box, TextField } from '@radix-ui/themes';
 import * as Form from '@radix-ui/react-form';
 import { ory, ExtendedSession } from '@/lib/ory';
@@ -16,6 +16,7 @@ interface IdentityMetadataPublic {
 // Initialize login flow on component mount
 export function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { session } = useAuth();
   const [flow, setFlow] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -26,18 +27,6 @@ export function LoginForm() {
     const initFlow = async () => {
       setLoading(true);
       try {
-        // If user is already logged in, redirect to appropriate page
-        if (session?.identity) {
-          const accountId = session.identity.metadata_public?.account_id;
-          if (!accountId) {
-            router.push('/onboarding');
-          } else {
-            router.push(`/${accountId}`);
-          }
-          return;
-        }
-        
-        // Simple flow initialization with no additional parameters
         const { data } = await ory.createBrowserLoginFlow();
         setFlow(data);
         setError(null);
@@ -50,7 +39,7 @@ export function LoginForm() {
     };
 
     initFlow();
-  }, [router, session]);
+  }, []);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -65,13 +54,21 @@ export function LoginForm() {
     try {
       const formData = new FormData(event.currentTarget);
       
-      // Get the CSRF token from the flow
-      const csrfToken = flow.ui.nodes?.find(
+      // Get the CSRF token with proper null checks
+      const csrfNode = flow.ui?.nodes?.find(
         (node: any) => node.attributes?.name === 'csrf_token'
-      )?.attributes?.value;
-
-      // Use Ory SDK to update the login flow
-      const { data: updatedFlow } = await ory.updateLoginFlow({
+      );
+      const csrfToken = csrfNode?.attributes?.value;
+      
+      if (!csrfToken) {
+        console.error('Missing CSRF token in flow:', {
+          hasNodes: !!flow.ui?.nodes,
+          nodeCount: flow.ui?.nodes?.length
+        });
+        throw new Error('Missing CSRF token');
+      }
+      
+      await ory.updateLoginFlow({
         flow: flow.id,
         updateLoginFlowBody: {
           method: 'password',
@@ -80,24 +77,33 @@ export function LoginForm() {
           csrf_token: csrfToken,
         },
       });
-
-      // Check if the login was successful
-      if (updatedFlow?.session) {
-        const session = updatedFlow.session as ExtendedSession;
-        const accountId = session.identity?.metadata_public?.account_id;
-        if (!accountId) {
-          router.push('/onboarding');
-        } else {
-          router.push(`/${accountId}`);
+      
+      // Check if login was successful and get account ID for redirect
+      try {
+        const { data: sessionData } = await ory.toSession();
+        const accountId = (sessionData as ExtendedSession)?.identity?.metadata_public?.account_id;
+        
+        if (accountId) {
+          // Check if this is a registration/onboarding completion
+          const isRegistration = searchParams?.get('flow') === 'registration' || 
+                                searchParams?.get('after_verification_return_to')?.includes('registration');
+          
+          if (isRegistration) {
+            // After registration, redirect to account page
+            console.log('Registration completed, redirecting to account page:', `/${accountId}`);
+            router.push(`/${accountId}`);
+          } else {
+            // Normal login, redirect to home
+            console.log('Login successful, redirecting to home');
+            router.push('/');
+          }
         }
-        router.refresh();
-      } else {
-        throw new Error('No session established after login');
+      } catch (sessionError) {
+        console.error('Failed to get session after login:', sessionError);
       }
     } catch (err: any) {
       console.error('Login error:', err);
       if (err.response?.data?.ui?.messages) {
-        // Handle Ory UI messages
         const messages = err.response.data.ui.messages;
         setError(messages[0]?.text || 'Login failed. Please try again.');
       } else {
@@ -141,11 +147,6 @@ export function LoginForm() {
     );
   }
 
-  // Find the CSRF token
-  const csrfToken = flow.ui.nodes?.find(
-    (node: any) => node.attributes?.name === 'csrf_token'
-  )?.attributes?.value;
-
   // Login form
   return (
     <Form.Root onSubmit={handleSubmit}>
@@ -173,8 +174,8 @@ export function LoginForm() {
             </Form.Label>
             <Form.Control asChild>
               <TextField.Root 
-                type="email" 
-                name="identifier" 
+                type="text" 
+                name="identifier"
                 placeholder="you@example.com"
                 required
                 size="3"
@@ -185,9 +186,6 @@ export function LoginForm() {
             </Form.Control>
             <Form.Message className="FormMessage" match="valueMissing">
               <Text color="red" size="1">Please enter your email</Text>
-            </Form.Message>
-            <Form.Message className="FormMessage" match="typeMismatch">
-              <Text color="red" size="1">Please enter a valid email address</Text>
             </Form.Message>
           </Flex>
         </Form.Field>
@@ -213,12 +211,19 @@ export function LoginForm() {
             </Form.Message>
           </Flex>
         </Form.Field>
-
-        {/* Add method as hidden input */}
-        <input type="hidden" name="method" value="password" />
         
-        {/* Add CSRF token if available */}
-        {csrfToken && <input type="hidden" name="csrf_token" value={csrfToken} />}
+        {/* Add the CSRF token with proper null checks */}
+        {flow.ui?.nodes?.find(
+          (node: any) => node.attributes?.name === 'csrf_token'
+        )?.attributes?.value && (
+          <input 
+            type="hidden" 
+            name="csrf_token" 
+            value={flow.ui.nodes.find(
+              (node: any) => node.attributes?.name === 'csrf_token'
+            )?.attributes?.value} 
+          />
+        )}
 
         <Flex mt="4" justify="end">
           <Form.Submit asChild>

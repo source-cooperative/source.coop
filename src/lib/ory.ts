@@ -17,14 +17,37 @@ export type ExtendedSession = Session & {
   identity?: ExtendedIdentity;
 };
 
-// Create a new Ory SDK instance
+// Create a new Ory SDK instance for client-side use
 export const ory = new FrontendApi(
   new Configuration({
-    basePath: process.env.NEXT_PUBLIC_ORY_SDK_URL || 'http://localhost:4000',
+    basePath: CONFIG.auth.publicBaseUrl,
     baseOptions: {
       withCredentials: true,
       headers: {
         'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      validateStatus: (status) => {
+        // Accept any status code to handle redirects
+        return true;
+      }
+    },
+  })
+);
+
+// Create a server-side instance of the Ory SDK
+export const serverOry = new FrontendApi(
+  new Configuration({
+    basePath: CONFIG.auth.privateBaseUrl,
+    baseOptions: {
+      withCredentials: true,
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      validateStatus: (status) => {
+        // Accept any status code to handle redirects
+        return true;
       }
     },
   })
@@ -54,13 +77,21 @@ export async function getAccountId(): Promise<string | null> {
 
 // Helper to update Ory identity (admin operation)
 export async function updateOryIdentity(oryId: string, data: any) {
+  if (!CONFIG.auth.privateBaseUrl) {
+    throw new Error('No Ory private base URL configured');
+  }
+
+  if (!CONFIG.auth.accessToken) {
+    throw new Error('No Ory access token configured');
+  }
+
   // First, get the current identity to understand its structure
   const getResponse = await fetch(
-    `${process.env.ORY_API_URL}/admin/identities/${oryId}`,
+    `${CONFIG.auth.privateBaseUrl}/admin/identities/${oryId}`,
     {
       method: 'GET',
       headers: {
-        Authorization: `Bearer ${process.env.ORY_ACCESS_TOKEN}`,
+        Authorization: `Bearer ${CONFIG.auth.accessToken}`,
         Accept: 'application/json'
       }
     }
@@ -73,8 +104,8 @@ export async function updateOryIdentity(oryId: string, data: any) {
       statusText: getResponse.statusText,
       error: errorText,
       url: getResponse.url,
-      hasApiUrl: !!process.env.ORY_API_URL,
-      hasAccessToken: !!process.env.ORY_ACCESS_TOKEN
+      baseUrl: CONFIG.auth.privateBaseUrl,
+      hasAccessToken: !!CONFIG.auth.accessToken
     });
     throw new Error(errorText);
   }
@@ -83,7 +114,6 @@ export async function updateOryIdentity(oryId: string, data: any) {
   const currentIdentity = await getResponse.json();
   
   // Create a new update object with ONLY the fields that Ory expects
-  // This explicitly EXCLUDES credentials/password information
   const updateData = {
     schema_id: currentIdentity.schema_id,
     state: currentIdentity.state,
@@ -97,12 +127,12 @@ export async function updateOryIdentity(oryId: string, data: any) {
 
   // Now update with the properly structured data
   const response = await fetch(
-    `${process.env.ORY_API_URL}/admin/identities/${oryId}`,
+    `${CONFIG.auth.privateBaseUrl}/admin/identities/${oryId}`,
     {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${process.env.ORY_ACCESS_TOKEN}`,
+        Authorization: `Bearer ${CONFIG.auth.accessToken}`,
         Accept: 'application/json'
       },
       body: JSON.stringify(updateData)
@@ -116,8 +146,8 @@ export async function updateOryIdentity(oryId: string, data: any) {
       statusText: response.statusText,
       error: errorText,
       url: response.url,
-      hasApiUrl: !!process.env.ORY_API_URL,
-      hasAccessToken: !!process.env.ORY_ACCESS_TOKEN
+      baseUrl: CONFIG.auth.privateBaseUrl,
+      hasAccessToken: !!CONFIG.auth.accessToken
     });
     throw new Error(errorText);
   }

@@ -14,11 +14,26 @@ export const CONFIG = {
     region: getEnvVar('AWS_REGION', 'us-east-1'),
   },
   auth: {
-    kratosUrl: getEnvVar('NEXT_PUBLIC_KRATOS_URL', 'http://localhost:4000'),
-    orySdkUrl: getEnvVar('NEXT_PUBLIC_ORY_SDK_URL', 'http://localhost:4000'),
-    apiUrl: getEnvVar('NEXT_PUBLIC_API_URL', 'http://localhost:3000'),
+    // Public URLs for client-side
+    publicBaseUrl: getEnvVar('NEXT_PUBLIC_ORY_BASE_URL', 'http://localhost:4000'),
+    // Private URLs for server-side
+    privateBaseUrl: getEnvVar('ORY_BASE_URL', 'http://localhost:4000'),
+    // Admin configuration
+    projectId: getEnvVar('ORY_PROJECT_ID', ''),
+    projectSlug: getEnvVar('ORY_PROJECT_SLUG', ''),
+    apiUrl: getEnvVar('ORY_API_URL', ''),
+    workspaceId: getEnvVar('ORY_WORKSPACE_ID', ''),
+    accessToken: getEnvVar('ORY_ACCESS_TOKEN', ''),
+    // API configuration
+    apiBaseUrl: getEnvVar('NEXT_PUBLIC_API_URL', 'http://localhost:3000'),
   },
 } as const;
 
 // Add debug logging
-console.log('Loaded CONFIG:', CONFIG); 
+console.log('Loaded CONFIG:', {
+  ...CONFIG,
+  auth: {
+    ...CONFIG.auth,
+    accessToken: CONFIG.auth.accessToken ? '[REDACTED]' : undefined,
+  },
+}); 

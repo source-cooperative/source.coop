@@ -1,27 +1,16 @@
 "use server";
 
 import { cookies } from "next/headers";
-import { ory } from './ory';
+import { serverOry } from './ory';
 import type { ExtendedSession } from '@/types/session';
 import { CONFIG } from './config';
-import { FrontendApi, Configuration } from '@ory/client';
-
-// Create a server-side instance of the Ory SDK
-const serverSideOry = new FrontendApi(
-  new Configuration({
-    basePath: CONFIG.auth.kratosUrl,
-    baseOptions: {
-      withCredentials: true,
-    }
-  })
-);
 
 export async function getSession(): Promise<ExtendedSession | null> {
   const cookieStore = await cookies();
   const cookieHeader = cookieStore.toString();
   
   try {
-    const response = await serverSideOry.toSession({
+    const response = await serverOry.toSession({
       cookie: cookieHeader
     });
     
@@ -53,8 +42,6 @@ export async function getAccountId(): Promise<string | null> {
   return session.identity.metadata_public.account_id;
 }
 
-// Remove deprecated function to maintain consistent naming
-
 export async function isAuthenticated(): Promise<boolean> {
   const session = await getSession();
   return !!session;
@@ -62,7 +49,7 @@ export async function isAuthenticated(): Promise<boolean> {
 
 export async function initLoginFlow() {
   try {
-    const response = await serverSideOry.createBrowserLoginFlow();
+    const response = await serverOry.createBrowserLoginFlow();
     return response.data.id;
   } catch (error) {
     if (error.response?.status !== 401) {
@@ -74,7 +61,7 @@ export async function initLoginFlow() {
 
 export async function initRegistrationFlow() {
   try {
-    const response = await serverSideOry.createBrowserRegistrationFlow();
+    const response = await serverOry.createBrowserRegistrationFlow();
     return response.data.id;
   } catch (error) {
     if (error.response?.status !== 401) {
@@ -96,7 +83,7 @@ function getApiBaseUrl() {
     return '';
   } else {
     // In server context, we need absolute URLs
-    return process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    return CONFIG.auth.apiBaseUrl;
   }
 }
 
@@ -121,8 +108,6 @@ export async function getLoginFlow(flowId: string) {
     }
     
     const data = await response.json();
-    
-    // Return the UI data directly from the API response
     return data.flow;
   } catch (error) {
     console.error("Error in getLoginFlow:", error);
@@ -151,8 +136,6 @@ export async function getRegistrationFlow(flowId: string) {
     }
     
     const data = await response.json();
-    
-    // Return the UI data directly from the API response
     return data.flow;
   } catch (error) {
     console.error("Error in getRegistrationFlow:", error);
@@ -167,7 +150,7 @@ export async function getServerSession(): Promise<ExtendedSession | null> {
     
     // Debug configuration
     console.log('Server-side Ory config:', {
-      kratosUrl: CONFIG.auth.kratosUrl,
+      privateBaseUrl: CONFIG.auth.privateBaseUrl,
       cookieHeader: cookieHeader.substring(0, 100) + '...'
     });
     
@@ -177,15 +160,13 @@ export async function getServerSession(): Promise<ExtendedSession | null> {
     console.log('Debug cookies:', {
       hasCookies: !!cookieHeader,
       cookieLength: cookieHeader.length,
-      kratosUrl: CONFIG.auth.kratosUrl,
+      privateBaseUrl: CONFIG.auth.privateBaseUrl,
       cookieNames,
-      cookieHeader: cookieHeader.substring(0, 100) + '...' // Show first 100 chars of header
+      cookieHeader: cookieHeader.substring(0, 100) + '...'
     });
     
-    // Don't use a simulated session - either get a real session or return null
-    // This ensures proper security by validating credentials
     try {
-      const response = await serverSideOry.toSession({
+      const response = await serverOry.toSession({
         cookie: cookieHeader
       });
       return response.data as ExtendedSession;

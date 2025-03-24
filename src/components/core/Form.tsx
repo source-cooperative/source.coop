@@ -219,4 +219,6 @@ export const FormWrapper = forwardRef<HTMLFormElement, FormProps>(({
       </Flex>
     </Form.Root>
   );
-}); 
+});
+
+FormWrapper.displayName = 'FormWrapper'; 

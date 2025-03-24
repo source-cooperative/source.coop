@@ -16,23 +16,19 @@ export function RegistrationForm() {
   const [passwordsMatch, setPasswordsMatch] = useState(true);
   const [submitLoading, setSubmitLoading] = useState(false);
 
-  // Initialize registration flow on component mount
   useEffect(() => {
     const initFlow = async () => {
       setLoading(true);
       try {
-        // If user is already logged in, redirect to appropriate page
-        if (session?.identity) {
-          const accountId = session.identity.metadata_public?.account_id;
-          if (!accountId) {
-            router.push('/onboarding');
-          } else {
-            router.push(`/${accountId}`);
-          }
-          return;
-        }
-        
-        const { data } = await ory.createBrowserRegistrationFlow();
+        console.log('Initializing registration flow...');
+        const { data } = await ory.createBrowserRegistrationFlow({
+          returnTo: 'http://localhost:3000/email-verified'
+        });
+        console.log('Registration flow initialized:', {
+          flowId: data.id,
+          hasNodes: !!data.ui?.nodes,
+          nodeCount: data.ui?.nodes?.length
+        });
         setFlow(data);
         setError(null);
       } catch (err) {
@@ -44,12 +40,13 @@ export function RegistrationForm() {
     };
 
     initFlow();
-  }, [router, session]);
+  }, []);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     
     if (!flow) {
+      console.error('No flow data available');
       setError('Registration flow not initialized. Please refresh the page and try again.');
       return;
     }
@@ -57,9 +54,18 @@ export function RegistrationForm() {
     const formData = new FormData(event.currentTarget);
     const password = formData.get('password') as string;
     const passwordConfirm = formData.get('password_confirm') as string;
+    const email = formData.get('traits.email') as string;
+
+    console.log('Form submission started:', {
+      hasEmail: !!email,
+      hasPassword: !!password,
+      hasPasswordConfirm: !!passwordConfirm,
+      flowId: flow.id
+    });
 
     // Check if passwords match
     if (password !== passwordConfirm) {
+      console.log('Passwords do not match');
       setPasswordsMatch(false);
       return;
     }
@@ -73,30 +79,58 @@ export function RegistrationForm() {
         (node: any) => node.attributes?.name === 'csrf_token'
       )?.attributes?.value;
 
-      // Use Ory SDK to update the registration flow
-      const { data: updatedFlow } = await ory.updateRegistrationFlow({
+      console.log('CSRF token:', {
+        found: !!csrfToken,
+        flowNodes: flow.ui?.nodes?.length
+      });
+
+      if (!csrfToken) {
+        console.error('Missing CSRF token in flow');
+        throw new Error('Missing CSRF token');
+      }
+
+      console.log('Submitting registration to Ory...');
+      // Submit registration with all required fields
+      const response = await ory.updateRegistrationFlow({
         flow: flow.id,
         updateRegistrationFlowBody: {
           method: 'password',
           password: password,
           traits: {
-            email: formData.get('traits.email') as string,
+            email: email,
           },
           csrf_token: csrfToken,
         },
       });
 
-      // Check if the registration was successful
-      if (updatedFlow?.session) {
-        // Registration successful, proceed to onboarding
+      console.log('Registration response:', {
+        success: true,
+        hasData: !!response.data,
+        status: response.status,
+        headers: response.headers
+      });
+
+      // Check if we have a session after successful registration
+      if (response.data?.session) {
+        console.log('Registration successful, redirecting to onboarding...');
         router.push('/onboarding');
+      } else if (response.data?.return_to) {
+        console.log('Registration successful with return_to URL:', response.data.return_to);
+        // Don't use the return_to URL directly, as it might point to localhost:4000
+        router.push('/email-verified');
       } else {
-        throw new Error('No session established after registration');
+        console.log('Registration successful but no session, redirecting to email verification...');
+        router.push('/email-verified');
       }
     } catch (err: any) {
-      console.error('Registration error:', err);
+      console.error('Registration error:', {
+        message: err.message,
+        status: err.response?.status,
+        data: err.response?.data,
+        stack: err.stack
+      });
+      
       if (err.response?.data?.ui?.messages) {
-        // Handle Ory UI messages
         const messages = err.response.data.ui.messages;
         setError(messages[0]?.text || 'Registration failed. Please try again.');
       } else {
