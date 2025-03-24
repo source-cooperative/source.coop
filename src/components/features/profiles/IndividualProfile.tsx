@@ -1,20 +1,13 @@
-import { Flex, Box, Text, Grid, Heading, Link as RadixLink, Button, Callout } from '@radix-ui/themes';
+// Server Component
+import { Box, Text, Grid, Heading, Flex, Link as RadixLink } from '@radix-ui/themes';
 import Link from 'next/link';
 import type { Account, IndividualAccount } from '@/types/account';
 import type { Repository } from '@/types';
 import { ProfileAvatar } from './ProfileAvatar';
 import { RepositoryList } from '../repositories/RepositoryList';
-import { WelcomeCallout } from './WelcomeCallout';
 import { WebsiteLink } from './WebsiteLink';
-import { MinusCircledIcon, CheckCircledIcon } from '@radix-ui/react-icons';
-import { VerificationCallout } from './VerificationCallout';
 import { EmailVerificationStatus } from './EmailVerificationStatus';
-import { getServerSession } from '@/lib/auth';
-import { cookies } from 'next/headers';
-
-interface SessionMetadata {
-  account_id: string;
-}
+import { IndividualProfileActions } from './IndividualProfileActions';
 
 interface IndividualProfileProps {
   account: IndividualAccount;
@@ -24,28 +17,19 @@ interface IndividualProfileProps {
   showWelcome?: boolean;
 }
 
-export async function IndividualProfile({ 
+export function IndividualProfile({ 
   account, 
   ownedRepositories, 
   contributedRepositories,
   organizations,
   showWelcome = false
 }: IndividualProfileProps) {
-  const session = await getServerSession();
-  
-  // Get account ID from session if available
-  const currentUserId = session?.identity?.metadata_public?.account_id;
-  
-  // Determine if this is the user's own profile
-  const isOwnProfile = currentUserId === account.account_id;
-
   return (
     <Box>
-      {!account.email_verified && isOwnProfile && (
-        <VerificationCallout accountId={account.account_id} email={account.email} />
-      )}
-
-      <WelcomeCallout show={showWelcome} accountId={account.account_id} />
+      <IndividualProfileActions 
+        account={account}
+        showWelcome={showWelcome}
+      />
 
       <Box mb="6">
         <Flex gap="4" align="center" justify="between">
@@ -54,18 +38,13 @@ export async function IndividualProfile({
             <Box>
               <Flex gap="2" align="center">
                 <Heading size="8">{account.name}</Heading>
-                <EmailVerificationStatus account={account} showCallout={isOwnProfile} />
+                <EmailVerificationStatus account={account} />
               </Flex>
               {account.description && (
                 <Text size="3" color="gray">{account.description}</Text>
               )}
             </Box>
           </Flex>
-          {isOwnProfile && (
-            <Link href={`/${account.account_id}/edit`}>
-              <Button>Edit Profile</Button>
-            </Link>
-          )}
         </Flex>
       </Box>
 
