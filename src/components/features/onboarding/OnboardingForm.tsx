@@ -9,6 +9,7 @@ import { FormField } from '@/types/form';
 import debounce from 'lodash/debounce';
 import { FrontendApi, Configuration, Session, Identity } from '@ory/client';
 import { InfoCircledIcon, CheckCircledIcon, ExclamationTriangleIcon, ReloadIcon } from '@radix-ui/react-icons';
+import { VerificationSuccessCallout } from '@/components/features/auth/VerificationSuccessCallout';
 
 interface OnboardingFormData {
   account_id: string;
@@ -75,6 +76,33 @@ export function OnboardingForm() {
             );
             if (emailAddress?.verified) {
               setVerificationStatus('verified');
+              
+              // Record verification timestamp if coming from email-verified page
+              const isFromVerification = window.location.search.includes('verified=true');
+              if (isFromVerification && identity.id) {
+                console.log('Recording verification timestamp for identity:', identity.id);
+                
+                // Update the verification timestamp via API
+                fetch('/api/accounts/record-verification', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    identity_id: identity.id
+                  })
+                })
+                .then(response => {
+                  if (response.ok) {
+                    console.log('Successfully recorded verification timestamp');
+                  } else {
+                    console.error('Failed to record verification timestamp');
+                  }
+                })
+                .catch(err => {
+                  console.error('Error recording verification timestamp:', err);
+                });
+              }
             }
           }
           
@@ -255,15 +283,19 @@ export function OnboardingForm() {
   return (
     <Box pt="6">
       <Box mb="4">
+        <VerificationSuccessCallout />
         {verificationStatus === 'verified' ? (
-          <Callout.Root color="green">
-            <Callout.Icon>
-              <CheckCircledIcon />
-            </Callout.Icon>
-            <Callout.Text>
-              Your email has been verified successfully!
-            </Callout.Text>
-          </Callout.Root>
+          // Don't show a second verification message if VerificationSuccessCallout is displayed
+          window.location.search.includes('verified=true') ? null : (
+            <Callout.Root color="green">
+              <Callout.Icon>
+                <CheckCircledIcon />
+              </Callout.Icon>
+              <Callout.Text>
+                Your email has been verified successfully!
+              </Callout.Text>
+            </Callout.Root>
+          )
         ) : (
           <Callout.Root color="blue">
             <Callout.Icon>
