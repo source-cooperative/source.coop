@@ -1,14 +1,19 @@
-import { Flex, Box, Text, Grid, Heading, Link as RadixLink, Button } from '@radix-ui/themes';
+import { Flex, Box, Text, Grid, Heading, Link as RadixLink, Button, Callout } from '@radix-ui/themes';
 import Link from 'next/link';
 import type { Account, IndividualAccount } from '@/types/account';
 import type { Repository } from '@/types';
 import { ProfileAvatar } from './ProfileAvatar';
 import { RepositoryList } from '../repositories/RepositoryList';
-import { WelcomeDialog } from './WelcomeDialog';
-import { EmailVerificationStatus } from './EmailVerificationStatus';
-import { EmailVerificationIcon } from './EmailVerificationIcon';
-import { useSession } from '@/hooks/useAuth';
-import type { ExtendedSession } from '@/lib/ory';
+import { WelcomeCallout } from './WelcomeCallout';
+import { WebsiteLink } from './WebsiteLink';
+import { MinusCircledIcon, CheckCircledIcon } from '@radix-ui/react-icons';
+import { VerificationCallout } from './VerificationCallout';
+import { getServerSession } from '@/lib/auth';
+import { cookies } from 'next/headers';
+
+interface SessionMetadata {
+  account_id: string;
+}
 
 interface IndividualProfileProps {
   account: IndividualAccount;
@@ -18,36 +23,48 @@ interface IndividualProfileProps {
   showWelcome?: boolean;
 }
 
-export function IndividualProfile({ 
+export async function IndividualProfile({ 
   account, 
   ownedRepositories, 
   contributedRepositories,
   organizations,
   showWelcome = false
 }: IndividualProfileProps) {
-  const { session } = useSession() as { session: ExtendedSession | null };
+  const session = await getServerSession();
+  
+  // Get account ID from session if available
   const currentUserId = session?.identity?.metadata_public?.account_id;
-  const canEdit = currentUserId === account.account_id;
+  
+  // Determine if this is the user's own profile
+  const isOwnProfile = currentUserId === account.account_id;
 
   return (
     <Box>
-      {/* Welcome Dialog */}
-      <WelcomeDialog show={showWelcome} />
+      {!account.email_verified && isOwnProfile && (
+        <VerificationCallout accountId={account.account_id} email={account.email} />
+      )}
 
-      {/* Profile Header */}
+      <WelcomeCallout show={showWelcome} accountId={account.account_id} />
+
       <Box mb="6">
         <Flex gap="4" align="center" justify="between">
           <Flex gap="4" align="center">
             <ProfileAvatar account={account} size="6" />
             <Box>
-              <Heading size="8">{account.name}</Heading>
+              <Flex gap="2" align="center">
+                <Heading size="8">{account.name}</Heading>
+                {account.email_verified ? (
+                  <CheckCircledIcon color="green" width="20" height="20" />
+                ) : (
+                  <MinusCircledIcon color="amber" width="20" height="20" />
+                )}
+              </Flex>
               {account.description && (
                 <Text size="3" color="gray">{account.description}</Text>
               )}
-              <EmailVerificationStatus account={account} />
             </Box>
           </Flex>
-          {canEdit && (
+          {isOwnProfile && (
             <Link href={`/${account.account_id}/edit`}>
               <Button>Edit Profile</Button>
             </Link>
@@ -55,31 +72,20 @@ export function IndividualProfile({
         </Flex>
       </Box>
 
-      {/* Profile Details */}
       <Box mb="6">
         <Grid columns="3" gap="4">
-          <Box>
-            <Text as="div" size="2" color="gray" mb="2">Email</Text>
-            <Flex gap="2" align="center">
-              <Text>{account.email}</Text>
-              <EmailVerificationIcon initialVerified={account.email_verified || false} />
-            </Flex>
-          </Box>
-          {account.websites?.map((website, index) => (
-            <Box key={index}>
+          {account.websites && account.websites.length > 0 && (
+            <Box>
               <Text as="div" size="2" color="gray" mb="2">
-                {website.type === 'personal' ? 'Website' : 
-                 website.type === 'github' ? 'GitHub' :
-                 website.type === 'linkedin' ? 'LinkedIn' :
-                 website.type === 'twitter' ? 'Twitter' : 'Website'}
+                {account.websites.length === 1 ? 'Website' : 'Websites'}
               </Text>
-              <RadixLink asChild>
-                <a href={website.url} target="_blank" rel="noopener noreferrer">
-                  {website.display_name || website.url}
-                </a>
-              </RadixLink>
+              {account.websites.map((website, index) => (
+                <Box key={index} mb={index < (account.websites?.length ?? 0) - 1 ? "2" : "0"}>
+                  <WebsiteLink website={website} />
+                </Box>
+              ))}
             </Box>
-          ))}
+          )}
           {account.orcid && (
             <Box>
               <Text as="div" size="2" color="gray" mb="2">ORCID</Text>
@@ -93,7 +99,6 @@ export function IndividualProfile({
         </Grid>
       </Box>
 
-      {/* Organizations */}
       {organizations.length > 0 && (
         <Box mb="6">
           <Heading size="4" mb="2">Organizations</Heading>
@@ -112,7 +117,6 @@ export function IndividualProfile({
         </Box>
       )}
 
-      {/* Owned Repositories */}
       {ownedRepositories.length > 0 && (
         <Box mb="6">
           <Heading size="4" mb="2">Repositories</Heading>
@@ -120,7 +124,6 @@ export function IndividualProfile({
         </Box>
       )}
 
-      {/* Contributed Repositories */}
       {contributedRepositories.length > 0 && (
         <Box>
           <Heading size="4" mb="2">Contributions</Heading>
