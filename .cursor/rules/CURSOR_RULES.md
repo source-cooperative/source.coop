@@ -1,5 +1,7 @@
 # Cursor Rules
 
+We are working in dev. Our environment variables are set in `.env.local`. Do not look anywhere else for environment variables unless explicitly instructed to.
+
 ## Core Principles
 
 1. **Server-First Architecture**
@@ -27,7 +29,7 @@
      ```
 
 2. **UI/UX Preservation**
-   - Never modify existing UI components, layouts, or styling unless explicitly requested
+   - **NEVER EVER modify existing UI components, layouts, or styling** unless explicitly requested
    - When working on backend issues, focus only on backend-related changes
    - If UI changes are needed, they must be:
      - Explicitly requested by the user
@@ -59,6 +61,25 @@
    - Cache transformed data when appropriate
    - Avoid client-side filtering of large datasets
    - Use server-side pagination
+
+## Infrastructure and Development Environment
+
+1. **Infrastructure Rules**
+   - **NEVER EVER run any database initialization or reset scripts** unless explicitly requested
+   - Do not attempt to recreate, reset, or modify database tables
+   - Do not execute `init-local.ts`, `start-dynamodb.sh` or any script that could reset databases
+   - All database management is handled by the user in the terminal
+   - Do not run or restart the development server - the user maintains control of servers
+   - Do not run `npm run dev` or equivalent commands
+   - Assume all servers (Next.js, DynamoDB, Ory) are already running correctly
+   - Never suggest server port changes unless specifically asked to troubleshoot connection issues
+  
+2. **Development Flow**
+   - The user controls when to start and stop services
+   - Make code changes only, not infrastructure changes
+   - Focus on fixing application code, not environment setup
+   - Assume any required services are already running
+   - For database issues, suggest code fixes rather than data resets
 
 ## Component Structure
 
@@ -208,18 +229,21 @@ Remember: Never skip testing steps. Trust the platform. Keep changes minimal.
   - State management
 
 ### 2. Ory Integration
-- Ory is for authentication only
-- Never use Ory IDs for:
-  - Database lookups
-  - URL parameters
-  - API endpoints
-  - Business logic
+- We use Ory for authentication. See `docs/development/ory-authentication.md` for details.
+- Never use Ory IDs for application logic
 - Store Ory ID only in `metadata_public.ory_id` for reference
+- All environment variables are in `.env.local`
+- Use the centralized `CONFIG` object from `@/lib/config` for all configuration values
+- Never access environment variables directly in components
 
-### 3. Session Management
-- Get `account_id` from session metadata
-- Use `account_id` for all operations
-- Never rely on Ory ID for access control
+### 3. Authentication Rules
+- Use server components for auth checks by default
+- Only use client-side auth when necessary
+- Keep auth-aware client components minimal
+- Let the SDK handle all auth flows
+- Use `serverOry` for server-side operations
+- Use `ory` for client-side operations
+- Always use the proper base URL for the context (public vs private)
 
 ### 4. Code Examples
 
@@ -241,66 +265,62 @@ const account = await fetchAccountByOryId(oryId);
 /{ory_id}/repositories
 ```
 
+```typescript
+// ✅ Correct: Using CONFIG
+import { CONFIG } from '@/lib/config';
+const baseUrl = CONFIG.auth.publicBaseUrl;
+
+// ❌ Incorrect: Direct env access
+const baseUrl = process.env.NEXT_PUBLIC_ORY_BASE_URL;
+```
+
 ### 5. Testing
 - Mock Ory responses with `account_id` in metadata
 - Test account system independently of auth
-- Verify proper separation of concerns 
-
-### 6. Ory Authentication Flow Design
-- Always create new authentication flows via API endpoints
-- Never try to fetch existing flows directly from Ory (avoids CSRF issues)
-- Pass both flow ID and complete flow data from API to client
-- Use minimal cookie options when forwarding cookies:
-  ```typescript
-  const safeOptions = {
-    path: '/',
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax' as const
-  };
-  ```
-- Keep cookie handling code simple to avoid `toUTCString` errors
-- Add proper error handling and logging for all cookie operations
-- Use API routes as proxies for all Ory interactions to handle CSRF correctly 
+- Verify proper separation of concerns
+- Test both client and server-side auth flows
+- Verify proper URL usage in auth flows
 
 ## Ory Authentication - Simplified Approach
 
-### 1. Direct SDK Usage
-- Use Ory SDK directly in client components:
+### 1. SDK Usage
+- Use the pre-configured SDK instances:
   ```typescript
-  const ory = new FrontendApi(
-    new Configuration({
-      basePath: process.env.NEXT_PUBLIC_ORY_SDK_URL || 'http://localhost:4000',
-      baseOptions: {
-        withCredentials: true,
-      }
-    })
-  );
+  // Client-side operations
+  import { ory } from '@/lib/ory';
+  
+  // Server-side operations
+  import { serverOry } from '@/lib/ory';
   ```
 - Let the SDK handle cookies, CSRF tokens, and form submission
 - Avoid custom proxies or middleware for authentication flows
 
 ### 2. Form Submission
 - **NEVER modify form action URLs**
-- Keep original Ory endpoint URLs (http://localhost:4000/...)
-- Do not redirect submissions to your Next.js app (http://localhost:3000/...)
+- Keep original Ory endpoint URLs
+- Do not redirect submissions to your Next.js app
 - Do not manipulate DOM elements to change form attributes
 
 ### 3. Flow Initialization
-- Initialize flows directly using the SDK:
+- Initialize flows using the appropriate SDK instance:
   ```typescript
-  // Login flow
+  // Client-side flow
   ory.createBrowserLoginFlow().then(({ data }) => setFlow(data));
   
-  // Registration flow
-  ory.createBrowserRegistrationFlow().then(({ data }) => setFlow(data));
+  // Server-side flow
+  serverOry.createBrowserLoginFlow().then(({ data }) => setFlow(data));
   ```
 - Initialize flows only when components mount or when needed
 - Use proper state management to prevent duplicate initializations
 
 ### 4. Session Management
-- Use the SDK for session verification:
+- Use the appropriate SDK instance for session verification:
   ```typescript
+  // Client-side
   ory.toSession().then(({ data }) => setSession(data));
+  
+  // Server-side
+  serverOry.toSession().then(({ data }) => setSession(data));
   ```
 - Extract account ID from session metadata as per Account System rules
 - Handle authentication errors gracefully with proper redirects
@@ -342,7 +362,7 @@ const account = await fetchAccountByOryId(oryId);
   }
   ```
 - Only render the authentication form when flow data is available
-- Handle errors and loading states appropriately 
+- Handle errors and loading states appropriately
 
 ## Authentication State Management
 

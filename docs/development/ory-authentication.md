@@ -1,192 +1,184 @@
 # Ory Authentication Implementation
 
-This document describes how Source Cooperative implements authentication using Ory Kratos, following a server-first architecture that minimizes client-side auth checks.
+Source Cooperative uses Ory Kratos for authentication, following a server-first architecture with minimal client-side auth.
 
-## Architecture Overview
 
-Source Cooperative uses Ory Kratos for identity management and authentication. Our implementation:
+## Local Development Setup
 
-1. Uses server-side auth checks by default
-2. Minimizes client-side auth checks
-3. Follows Next.js 13+ best practices
-4. Maintains proper CORS and cookie handling
+1. **Environment Variables** (in `.env.local`):
+```env
+# Ory URLs for local development
+NEXT_PUBLIC_ORY_BASE_URL=http://localhost:4000  # Client-side operations
+ORY_BASE_URL=http://localhost:4000              # Server-side operations
 
-## Core Implementation Principles
+# Ory project configuration
+ORY_PROJECT_ID=your-project-id
+ORY_PROJECT_SLUG=your-project-slug
+ORY_API_URL=your-project-api-url
+ORY_WORKSPACE_ID=your-workspace-id
+ORY_ACCESS_TOKEN=your-access-token
+```
 
-1. **Server-Side Auth Checks**: We check authentication status on the server:
-   ```typescript
-   // In server components
-   import { requireServerAuth } from '@/lib/auth';
-   
-   export default async function ProtectedPage() {
-     const session = await requireServerAuth();
-     if (!session) {
-       redirect('/auth?flow=login');
-     }
-     // ... render protected content
-   }
-   ```
+2. **Start Ory Tunnel**:
+```bash
+ory tunnel --dev --debug \
+  --allowed-cors-origins="http://localhost:3000" \
+  http://localhost:3000 \
+  --project your-project-id
+```
 
-2. **Client-Side Auth Hook**: Use the `useAuth` hook only when necessary:
-   ```typescript
-   // In client components that need auth state
-   import { useAuth } from '@/hooks/useAuth';
-   
-   export function AuthAwareComponent() {
-     const { session, isLoading } = useAuth();
-     if (isLoading) return <Loading />;
-     if (!session) return <LoginPrompt />;
-     return <AuthenticatedContent />;
-   }
-   ```
+## Core Principles
 
-3. **Flow Initialization**: Authentication flows are initialized via server actions:
-   ```typescript
-   // Server action
-   export async function initLoginFlow() {
-     const flowId = await getLoginFlow();
-     return flowId;
-   }
-   
-   // Client component
-   export function LoginForm() {
-     const [flowId, setFlowId] = useState<string | null>(null);
-     
-     useEffect(() => {
-       initLoginFlow().then(setFlowId);
-     }, []);
-     
-     if (!flowId) return <Loading />;
-     return <LoginFormContent flowId={flowId} />;
-   }
-   ```
+1. **Server-First Authentication**
+   - Always check auth on the server first
+   - Use client-side auth only when necessary
+   - Keep auth-aware client components minimal
 
-4. **Form Submission**: Forms submit directly to Ory endpoints:
-   ```typescript
-   await ory.updateLoginFlow({
-     flow: flow.id,
-     updateLoginFlowBody: {
-       method: 'password',
-       identifier: identifier,
-       password: password,
-       csrf_token: csrfToken,
-     },
-   });
-   ```
+2. **Identity Management**
+   - Use `account_id` for all business logic and URLs
+   - Store `account_id` in Ory's `metadata_public`
+   - Never use Ory IDs for application logic
 
-## Key Requirements
-
-1. **Server-First Architecture**:
-   - Check auth status on the server by default
-   - Use client-side auth checks only when necessary
-   - Keep client components as small as possible
-   - Move data fetching to server components
-
-2. **CORS Configuration**:
-   - Ory tunnel must be configured with proper CORS settings
-   - Use `--allowed-cors-origins="http://localhost:3000"` in development
-   - Ensure `withCredentials: true` in SDK configuration
-
-3. **Cookie Handling**:
-   - Use consistent domains (always `localhost`, never `127.0.0.1`)
+3. **Local Development**
+   - Always use `localhost` (never `127.0.0.1`)
+   - Keep Ory tunnel running during development
    - Ensure browser allows third-party cookies
-   - Cookie settings are handled automatically by the SDK
 
-4. **CSRF Protection**:
-   - CSRF tokens are included automatically in flow data
-   - Extract and include tokens in form submissions
-   - No manual CSRF handling required
+## Registration Flow
 
-## Development Setup
+The registration process follows these steps:
 
-1. **Environment Variables**:
-   ```env
-   NEXT_PUBLIC_ORY_SDK_URL=http://localhost:4000
-   NEXT_PUBLIC_KRATOS_URL=http://localhost:4000
-   ORY_BASE_URL=http://localhost:4000
-   ORY_PROJECT_ID=your-project-id
+1. **Initial Registration**
+   ```typescript
+   // Initialize the registration flow
+   const { data } = await ory.createBrowserRegistrationFlow();
    ```
 
-2. **Ory Tunnel**:
-   ```bash
-   ory tunnel --dev --debug \
-     --allowed-cors-origins="http://localhost:3000" \
-     http://localhost:3000 \
-     --project your-project-id
-   ```
+2. **Email Verification**
+   - User submits registration form
+   - Ory sends verification email
+   - User clicks verification link
+   - Ory verifies email and redirects based on configuration
 
-## Common Issues and Solutions
+3. **Post-Verification**
+   - User is redirected to configured return URL
+   - Complete profile setup
+   - Set up account details
 
-1. **Duplicate Auth Checks**:
-   - **Problem**: Multiple 401 errors in console
-   - **Solution**: Use server-side auth checks by default
-   - **Fix**: Move auth checks to server components:
-     ```typescript
-     // ✅ Correct: Server-side auth check
-     export default async function Page() {
-       const session = await requireServerAuth();
-       if (!session) redirect('/auth');
-       return <Content />;
-     }
-     
-     // ❌ Incorrect: Client-side auth check
-     export default function Page() {
-       const { session } = useAuth();
-       if (!session) return <LoginPrompt />;
-       return <Content />;
-     }
-     ```
+Note: Return URLs for registration and verification should be configured in your Ory project settings, not passed in the flow initialization.
 
-2. **Cookie Issues**:
-   - Use `localhost` consistently
-   - Enable third-party cookies in browser
-   - Check cookie settings in Ory configuration
+## Redirect Configuration
 
-3. **Session API Implementation**:
-   - Use server-side session checks:
-     ```typescript
-     // Server-side session check
-     export async function getServerSession() {
-       try {
-         const cookieStore = cookies();
-         const { data } = await ory.toSession({
-           cookie: cookieStore.toString()
-         });
-         return data;
-       } catch (error) {
-         // 401 is expected for non-logged in users
-         if (error instanceof Error && error.message.includes('401')) {
-           return null;
-         }
-         throw error;
-       }
-     }
-     ```
+Source Cooperative configures Ory redirects to handle authentication flows appropriately. These redirects are configured in the Ory Console under Project Settings > Redirects.
 
-## Testing Authentication
+### Global Settings
+- **Default Redirect URL**: `/` (homepage)
+- **Allowed URLs**: 
+  ```
+  http://localhost:3000    # Development
+  https://your-domain.com  # Production
+  ```
 
-1. Start the development environment:
-   ```bash
-   npm run dev
-   ```
+### Flow-Specific Redirects
+- **Post-Login**: `/` (homepage)
+- **Post-Registration**: `/email-verified`
+- **Post-Verification**: `/email-verified`
+- **Post-Logout**: `/auth?flow=login`
+- **Post-Settings**: (uses global default)
+- **Post-Recovery**: (uses global default)
 
-2. Run the Ory tunnel in a separate terminal:
-   ```bash
-   npx @ory/cli tunnel --dev http://localhost:3000
-   ```
+The `/email-verified` page handles both registration and verification completions by:
+1. Verifying the user's session
+2. Updating the verification timestamp in metadata
+3. Redirecting to either:
+   - `/{accountId}?verified=true` for existing accounts
+   - `/onboarding?verified=true` for new registrations
 
-3. Verify tunnel logs show proper CORS headers:
-   ```
-   Access-Control-Allow-Credentials:[true]
-   Access-Control-Allow-Origin:[http://localhost:3000]
-   ```
+Note: All redirect URLs should be relative paths. Ory will combine them with the allowed domains to prevent open redirect vulnerabilities.
 
-4. Monitor network requests for proper flow:
-   ```
-   GET [/self-service/login/browser] => 200
-   POST [/self-service/login?flow=<id>] => 200
-   GET [/sessions/whoami] => 200
-   ```
+## Code Examples
+
+### Server-Side Auth (Preferred)
+```typescript
+// In server components
+import { requireServerAuth } from '@/lib/auth';
+
+export default async function ProtectedPage() {
+  const session = await requireServerAuth();
+  if (!session) {
+    redirect('/auth?flow=login');
+  }
+  return <ProtectedContent />;
+}
+```
+
+### Client-Side Auth (When Needed)
+```typescript
+// In client components
+import { useAuth } from '@/hooks/useAuth';
+
+export function AuthAwareComponent() {
+  const { session, isLoading } = useAuth();
+  if (isLoading) return <Loading />;
+  if (!session) return <LoginPrompt />;
+  return <AuthenticatedContent />;
+}
+```
+
+### Form Submission
+```typescript
+// Let the SDK handle all auth flows
+import { ory } from '@/lib/ory';
+
+// Submit directly to Ory
+await ory.updateLoginFlow({
+  flow: flow.id,
+  updateLoginFlowBody: {
+    method: 'password',
+    identifier,
+    password,
+    csrf_token: flow.csrf_token,
+  },
+});
+```
+
+## Important Rules
+
+1. **Never**:
+   - Use Ory IDs in URLs or business logic
+   - Modify form action URLs
+   - Create custom auth proxies
+   - Store sensitive data in client state
+
+2. **Always**:
+   - Use server components for auth checks
+   - Let the SDK handle CSRF and cookies
+   - Use `account_id` for application logic
+   - Follow the server-first pattern
+
+3. **Auth Flow**:
+   - Initialize flows via SDK
+   - Submit forms directly to Ory
+   - Handle redirects properly
+   - Check auth status server-side
+
+## Troubleshooting
+
+1. **401 Errors**
+   - Expected for non-authenticated users
+   - Only log unexpected auth errors
+   - Check API token if admin operations fail
+
+2. **Cookie Issues**
+   - Verify using `localhost`
+   - Check third-party cookie settings
+   - Ensure tunnel is running
+   - Verify CORS configuration
+
+3. **Email Verification**
+   - Configure SMTP settings in Ory
+   - Test with development email server
+   - Check verification flow configuration
 
 ## References
 
