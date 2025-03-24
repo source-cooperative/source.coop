@@ -131,10 +131,12 @@ async function queryEntities<T>(
 
 export async function fetchAccount(account_id: string): Promise<Account | null> {
   try {
+    console.log('DB: Fetching account with ID:', account_id);
     // Try both individual and organization types
     const types = ['individual', 'organization'];
     
     for (const type of types) {
+      console.log(`DB: Trying to fetch account of type ${type} for ID:`, account_id);
       const result = await docClient.send(new GetCommand({
         TableName: "Accounts",
         Key: {
@@ -144,10 +146,12 @@ export async function fetchAccount(account_id: string): Promise<Account | null> 
       }));
       
       if (result.Item) {
+        console.log(`DB: Found account of type ${type} for ID:`, account_id);
         return result.Item as Account;
       }
     }
     
+    console.log('DB: No account found for ID:', account_id);
     return null;
   } catch (e) {
     console.error(`Error fetching account with account_id ${account_id}:`, e);

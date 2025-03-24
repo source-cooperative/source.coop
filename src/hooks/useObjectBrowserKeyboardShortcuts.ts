@@ -20,6 +20,7 @@ interface UseObjectBrowserKeyboardShortcutsProps {
   onShowHelp: () => void;
   onNavigateToPath: (path: string[]) => void;
   onNavigateToFile: (path: string) => void;
+  onCopy?: (fieldName: string) => void;
 }
 
 export function useObjectBrowserKeyboardShortcuts({
@@ -29,12 +30,24 @@ export function useObjectBrowserKeyboardShortcuts({
   selectedObject,
   onShowHelp,
   onNavigateToPath,
-  onNavigateToFile
+  onNavigateToFile,
+  onCopy
 }: UseObjectBrowserKeyboardShortcutsProps) {
   const [focusedIndex, setFocusedIndex] = useState<number>(-1);
   const [selectedDataItem, setSelectedDataItem] = useState<string | null>(null);
+  const [lastCopiedField, setLastCopiedField] = useState<string | null>(null);
   const itemRefs = useRef<(HTMLAnchorElement | null)[]>([]);
   useKeyboardShortcuts({ onShowHelp });
+
+  // Reset copied field after delay
+  useEffect(() => {
+    if (lastCopiedField) {
+      const timer = setTimeout(() => {
+        setLastCopiedField(null);
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [lastCopiedField]);
 
   // Add click handler to clear selection
   useEffect(() => {
@@ -69,6 +82,8 @@ export function useObjectBrowserKeyboardShortcuts({
           if (element) {
             const text = element.textContent || '';
             navigator.clipboard.writeText(text);
+            setLastCopiedField(selectedDataItem);
+            onCopy?.(selectedDataItem);
           }
         }
         return;
@@ -134,7 +149,18 @@ export function useObjectBrowserKeyboardShortcuts({
 
           case 'Enter':
             e.preventDefault();
-            if (focusedIndex >= 0 && objects[focusedIndex]) {
+            // If a data item is selected in the details view, copy it
+            if (selectedDataItem) {
+              const element = document.querySelector(`[data-selectable="true"][data-item="${selectedDataItem}"]`);
+              if (element) {
+                const text = element.textContent || '';
+                navigator.clipboard.writeText(text);
+                setLastCopiedField(selectedDataItem);
+                onCopy?.(selectedDataItem);
+              }
+            } 
+            // Otherwise handle navigation in directory listing
+            else if (focusedIndex >= 0 && objects[focusedIndex]) {
               const item = objects[focusedIndex];
               if (item.isDirectory) {
                 onNavigateToPath([...currentPath, item.name]);
@@ -156,13 +182,14 @@ export function useObjectBrowserKeyboardShortcuts({
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [selectedDataItem, focusedIndex, objects, currentPath, repository, selectedObject, onNavigateToPath, onNavigateToFile]);
+  }, [selectedDataItem, focusedIndex, objects, currentPath, repository, selectedObject, onNavigateToPath, onNavigateToFile, onCopy]);
 
   return {
     focusedIndex,
     setFocusedIndex,
     selectedDataItem,
     setSelectedDataItem,
+    lastCopiedField,
     itemRefs
   };
 } 

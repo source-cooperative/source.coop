@@ -27,7 +27,7 @@
 
 .selectableText {
   padding: var(--space-1);
-  cursor: pointer;
+  cursor: text;
   color: inherit;
   text-decoration: none;
   transition: background-color 100ms ease-in-out,
