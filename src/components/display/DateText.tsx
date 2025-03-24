@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { formatDate, formatDateSSR } from '@/lib';
+import { formatDate, formatDateSSR } from '@/lib/format';
 
 interface DateTextProps {
   date: string;

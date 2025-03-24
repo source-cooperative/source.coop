@@ -1,7 +1,7 @@
 import { DataList, Badge, Link } from '@radix-ui/themes';
 import type { Repository, RepositoryStatistics } from '@/types';
 import { MonoText } from '@/components/core';
-import { formatBytes } from '@/lib';
+import { formatBytes } from '@/lib/format';
 import { DateText } from '@/components/display';
 
 interface RepositoryMetaContentProps {

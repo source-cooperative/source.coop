@@ -1,10 +1,14 @@
 import { logger } from './logger';
 
 describe('logger', () => {
-  const originalConsole = { ...console };
+  // Store original console methods
+  const originalLog = console.log;
+  const originalError = console.error;
+  const originalWarn = console.warn;
+  const originalInfo = console.info;
 
   beforeEach(() => {
-    // Reset console methods before each test
+    // Mock console methods before each test
     console.log = jest.fn();
     console.error = jest.fn();
     console.warn = jest.fn();
@@ -13,7 +17,10 @@ describe('logger', () => {
 
   afterEach(() => {
     // Restore original console methods after each test
-    console = { ...originalConsole };
+    console.log = originalLog;
+    console.error = originalError;
+    console.warn = originalWarn;
+    console.info = originalInfo;
   });
 
   describe('error', () => {

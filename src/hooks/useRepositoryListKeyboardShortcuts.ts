@@ -69,20 +69,22 @@ export function useRepositoryListKeyboardShortcuts({
         case '`':
           e.preventDefault();
           // Split path into segments
-          const segments = pathname.split('/').filter(Boolean);
-          
-          if (segments.length === 0) {
-            // At root - do nothing
-            return;
-          } else if (segments.length === 1) {
-            // On profile page - go to root
-            router.push('/');
-          } else if (segments.length === 2) {
-            // On repository page - go to profile
-            router.push(`/${segments[0]}`);
-          } else {
-            // In object browser - go up one level
-            router.push(`/${segments[0]}/${segments[1]}/${segments.slice(2, -1).join('/')}`);
+          {
+            const segments = pathname.split('/').filter(Boolean);
+            
+            if (segments.length === 0) {
+              // At root - do nothing
+              return;
+            } else if (segments.length === 1) {
+              // On profile page - go to root
+              router.push('/');
+            } else if (segments.length === 2) {
+              // On repository page - go to profile
+              router.push(`/${segments[0]}`);
+            } else {
+              // In object browser - go up one level
+              router.push(`/${segments[0]}/${segments[1]}/${segments.slice(2, -1).join('/')}`);
+            }
           }
           break;
       }

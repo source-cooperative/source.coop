@@ -1,7 +1,6 @@
 import { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { AuthPageContent } from '@/components/features/auth/AuthPageContent';
-import { VerificationForm } from '@/components/features/auth/VerificationForm';
 import { getSession } from '@/lib/auth';
 
 export const metadata: Metadata = {
@@ -27,7 +26,9 @@ export default async function AuthPage({
   
   // Handle verification flow
   if (flow === 'verification') {
-    return <VerificationForm />;
+    // Redirect to onboarding with verified flag instead of showing verification form
+    console.log('Email verification flow, redirecting to onboarding');
+    redirect('/onboarding?verified=true');
   }
   
   // Default to login tab unless register is specified
