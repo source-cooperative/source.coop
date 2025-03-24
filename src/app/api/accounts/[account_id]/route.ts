@@ -7,19 +7,26 @@ import type { ExtendedSession } from '@/lib/ory';
 
 export async function GET(
   request: Request,
-  { params }: { params: { account_id: string } }
+  { params }: { params: Promise<{ account_id: string }> }
 ) {
   try {
-    // Await params before using them
-    const { account_id } = await Promise.resolve(params);
+    // Await params before using, per Next.js 15+ requirements
+    const { account_id } = await params;
+    
+    console.log('API: Fetching account for ID:', account_id);
     
     // Fetch account from DynamoDB
     const account = await fetchAccount(account_id);
+    console.log('API: Account fetch result:', {
+      found: !!account,
+      accountId: account_id,
+      accountType: account?.type
+    });
     
     if (!account) {
-      console.error('Account not found:', account_id);
+      console.log('API: Account not found:', account_id);
       return NextResponse.json(
-        { error: 'Account not found' },
+        { error: { code: '404', message: 'Account not found', status: 'Not Found' } },
         { status: 404 }
       );
     }
@@ -98,87 +105,103 @@ export async function GET(
 
 export async function PUT(
   request: Request,
-  { params }: { params: { account_id: string } }
+  { params }: { params: Promise<{ account_id: string }> }
 ) {
   try {
-    // Get all cookies from the request
+    // Await params before using, per Next.js 15+ requirements
+    const { account_id } = await params;
+    
+    console.log('API: Updating account:', account_id);
+    
+    // Get the authenticated session from cookie
     const cookieHeader = request.headers.get('cookie');
     if (!cookieHeader) {
       return NextResponse.json(
-        { error: 'Unauthorized' },
+        { error: { code: '401', message: 'Unauthorized: No cookie header', status: 'Unauthorized' } },
         { status: 401 }
       );
     }
-
-    // Verify session with Ory
-    const response = await fetch(`${process.env.NEXT_PUBLIC_ORY_SDK_URL}/sessions/whoami`, {
-      headers: {
-        Cookie: cookieHeader,
-        'Accept': 'application/json'
+    
+    // Try to verify authentication
+    try {
+      const { data: session } = await ory.toSession({ cookie: cookieHeader }) as { data: ExtendedSession };
+      
+      // Only allow the user to update their own account
+      const sessionAccountId = session?.identity?.metadata_public?.account_id;
+      
+      if (!session.active) {
+        return NextResponse.json(
+          { error: { code: '401', message: 'Unauthorized: Session inactive', status: 'Unauthorized' } },
+          { status: 401 }
+        );
       }
-    });
+      
+      if (!sessionAccountId) {
+        return NextResponse.json(
+          { error: { code: '401', message: 'Unauthorized: No account linked to identity', status: 'Unauthorized' } },
+          { status: 401 }
+        );
+      }
+      
+      // Check if user is updating their own account or is an admin
+      const isAdmin = !!session.identity?.metadata_public?.is_admin;
+      const isAuthenticatedUser = sessionAccountId === account_id;
+      
+      if (!isAuthenticatedUser && !isAdmin) {
+        console.log('API: Unauthorized account update attempt:', {
+          sessionAccountId,
+          targetAccountId: account_id,
+          isAdmin
+        });
+        
+        return NextResponse.json(
+          { error: { code: '403', message: 'Forbidden: Cannot update other accounts', status: 'Forbidden' } },
+          { status: 403 }
+        );
+      }
 
-    if (!response.ok) {
+      const account = await request.json();
+      
+      // Verify the account_id matches the URL parameter
+      if (account.account_id !== account_id) {
+        return NextResponse.json(
+          { error: 'Account ID mismatch' },
+          { status: 400 }
+        );
+      }
+
+      // Update the account in DynamoDB
+      const success = await updateAccount(account);
+      
+      if (!success) {
+        console.error('Failed to update account:', {
+          account_id: account_id,
+          account_type: account.type,
+          account_data: account
+        });
+        return NextResponse.json(
+          { error: 'Failed to update account in database' },
+          { status: 400 }
+        );
+      }
+
+      // Fetch and return the updated account
+      const updatedAccount = await fetchAccount(account_id);
+      if (!updatedAccount) {
+        return NextResponse.json(
+          { error: 'Account not found after update' },
+          { status: 404 }
+        );
+      }
+
+      return NextResponse.json(updatedAccount);
+    } catch (error) {
+      console.error('Error verifying session:', error);
       return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
+        { error: 'Failed to verify session' },
+        { status: 500 }
       );
     }
-
-    const session = await response.json() as ExtendedSession;
-    
-    if (!session?.active) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-    
-    // Check if the user is authorized to update this account
-    const sessionAccountId = session.identity?.metadata_public?.account_id;
-    
-    if (sessionAccountId !== params.account_id && !session.identity?.metadata_public?.is_admin) {
-      return NextResponse.json(
-        { error: 'Forbidden' },
-        { status: 403 }
-      );
-    }
-
-    const account = await request.json();
-    
-    // Verify the account_id matches the URL parameter
-    if (account.account_id !== params.account_id) {
-      return NextResponse.json(
-        { error: 'Account ID mismatch' },
-        { status: 400 }
-      );
-    }
-
-    // Update the account in DynamoDB
-    const success = await updateAccount(account);
-    
-    if (!success) {
-      console.error('Failed to update account:', {
-        account_id: params.account_id,
-        account_type: account.type,
-        account_data: account
-      });
-      return NextResponse.json(
-        { error: 'Failed to update account in database' },
-        { status: 400 }
-      );
-    }
-
-    // Fetch and return the updated account
-    const updatedAccount = await fetchAccount(params.account_id);
-    if (!updatedAccount) {
-      return NextResponse.json(
-        { error: 'Account not found after update' },
-        { status: 404 }
-      );
-    }
-
-    return NextResponse.json(updatedAccount);
   } catch (error) {
     console.error('Error updating account:', error);
     return NextResponse.json(

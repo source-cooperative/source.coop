@@ -5,24 +5,16 @@ import { useState, useEffect } from 'react';
 import { ory } from '@/lib/ory';
 
 interface VerificationCalloutProps {
-  accountId: string;
   email: string;
 }
 
-// Define interfaces to help with type safety
-interface NodeAttributes {
-  name?: string;
-  value?: string;
-  [key: string]: any;
+interface CsrfAttributes {
+  name: string;
+  value: string;
+  [key: string]: unknown;
 }
 
-interface UiNode {
-  attributes: NodeAttributes;
-  type?: string;
-  [key: string]: any;
-}
-
-export function VerificationCallout({ accountId, email }: VerificationCalloutProps) {
+export function VerificationCallout({ email }: VerificationCalloutProps) {
   const [isVerified, setIsVerified] = useState(false);
   const [verificationStatus, setVerificationStatus] = useState<'idle' | 'sending' | 'sent'>('idle');
 
@@ -50,24 +42,25 @@ export function VerificationCallout({ accountId, email }: VerificationCalloutPro
       // Create a browser verification flow
       const { data } = await ory.createBrowserVerificationFlow();
       
-      // Prepare the verification request object with properly typed fields
+      // Prepare the verification request object
       const updateBody = {
         email,
-        method: 'code' as const  // Using 'as const' to ensure TypeScript sees this as a literal
+        method: 'code' as const
       };
       
       // Find and add CSRF token if present
       if (data.ui && Array.isArray(data.ui.nodes)) {
-        const nodes = data.ui.nodes as UiNode[];
-        const csrfNode = nodes.find(node => 
-          node.attributes && node.attributes.name === 'csrf_token'
-        );
+        const csrfNode = data.ui.nodes.find(node => {
+          const attrs = node.attributes as unknown as CsrfAttributes;
+          return attrs && attrs.name === 'csrf_token';
+        });
         
-        if (csrfNode && csrfNode.attributes && csrfNode.attributes.value) {
+        if (csrfNode) {
+          const attrs = csrfNode.attributes as unknown as CsrfAttributes;
           // Add CSRF token to the request
           const bodyWithCsrf = {
             ...updateBody,
-            csrf_token: csrfNode.attributes.value
+            csrf_token: attrs.value
           };
           
           // Submit the verification request
@@ -107,11 +100,11 @@ export function VerificationCallout({ accountId, email }: VerificationCalloutPro
   return (
     <Callout.Root color="amber" mb="6">
       <Callout.Text>
-        A verification link has been sent to <strong>{email}</strong>.
+        <strong>{email}</strong> needs to be verified. 
         Check your inbox and click the verification link to complete the process.
       </Callout.Text>
       <Callout.Text>
-        Didn't receive the email?{' '}
+        Didn&apos;t receive the email?{' '}
         {verificationStatus === 'sent' ? (
           <span>Email sent! Please check your inbox.</span>
         ) : (

@@ -19,7 +19,7 @@ export async function GET(request: Request) {
     const cookieHeader = request.headers.get('cookie') || '';
     
     // Initialize a new verification flow
-    const response = await fetch(`${ORY_BASE_URL}/self-service/verification/flows?return_to=`, {
+    const response = await fetch(`${ORY_BASE_URL}/self-service/verification/flows?return_to=http://localhost:3000/onboarding`, {
       method: 'GET',
       headers: {
         Cookie: cookieHeader,

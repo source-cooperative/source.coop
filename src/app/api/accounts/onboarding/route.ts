@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
       updated_at: new Date().toISOString(),
     };
     
-    console.log('Attempting to create account in DynamoDB:', { account_id });
+    console.log('Attempting to create account in DynamoDB:', newAccount);
     
     // Save to DynamoDB
     const dynamoDb = getDynamoDb();
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
         TableName: "Accounts",
         Item: newAccount
       }));
-      console.log('Successfully created account in DynamoDB');
+      console.log('Successfully created account in DynamoDB:', { account_id, type: 'individual' });
     } catch (dbError) {
       console.error('DynamoDB error:', dbError);
       throw dbError;

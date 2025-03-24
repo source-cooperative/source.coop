@@ -1,11 +1,10 @@
 'use client';
 
-import { Tooltip, Callout } from '@radix-ui/themes';
+import { Tooltip } from '@radix-ui/themes';
 import { MinusCircledIcon, CheckCircledIcon } from '@radix-ui/react-icons';
 import type { Account, IndividualAccount } from '@/types/account';
 import { ory } from '@/lib/ory';
 import { useState, useEffect } from 'react';
-import type { UiNode, UiNodeInputAttributes } from '@ory/client';
 
 interface EmailVerificationStatusProps {
   account: Account;
@@ -19,16 +18,17 @@ interface IdentityMetadataPublic {
 }
 
 export function EmailVerificationStatus({ account }: EmailVerificationStatusProps) {
-  // Only show verification status for individual accounts
-  if (account.type !== 'individual') {
-    return null;
-  }
-
-  const individualAccount = account as IndividualAccount;
   const [isVerified, setIsVerified] = useState<boolean | null>(null); // null means loading
   const [verifiedAt, setVerifiedAt] = useState<string | null>(null);
   
   useEffect(() => {
+    // Only proceed with verification if account is individual
+    if (account.type !== 'individual') {
+      return;
+    }
+    
+    const individualAccount = account as IndividualAccount;
+    
     const checkVerificationStatus = async () => {
       try {
         const { data: session } = await ory.toSession();
@@ -55,7 +55,12 @@ export function EmailVerificationStatus({ account }: EmailVerificationStatusProp
     };
     
     checkVerificationStatus();
-  }, [individualAccount.email_verified]);
+  }, [account]);
+  
+  // Show nothing for non-individual accounts
+  if (account.type !== 'individual') {
+    return null;
+  }
   
   // Show nothing while checking verification status
   if (isVerified === null) {
@@ -63,10 +68,15 @@ export function EmailVerificationStatus({ account }: EmailVerificationStatusProp
   }
   
   if (!isVerified) {
-    return <MinusCircledIcon color="var(--amber-9)" />;
+    return (
+      <Tooltip content="Email not verified">
+        <MinusCircledIcon color="var(--amber-9)" />
+      </Tooltip>
+    );
   }
   
   // Extract domain from email
+  const individualAccount = account as IndividualAccount;
   const emailDomain = individualAccount.email.split('@')[1];
   
   return (
