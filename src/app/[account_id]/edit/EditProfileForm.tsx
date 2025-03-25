@@ -3,7 +3,8 @@
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Account, IndividualAccount } from '@/types/account';
-import { Button, Flex, Text, Box, Container } from '@radix-ui/themes';
+import { Button, Flex, Text, Box, Container, TextField, Tooltip } from '@radix-ui/themes';
+import { TrashIcon } from '@radix-ui/react-icons';
 import { FormWrapper } from '@/components/core/Form';
 import type { FormField, FormFieldType } from '@/types/form';
 
@@ -25,6 +26,54 @@ interface EditProfileFormProps {
   account: Account;
 }
 
+// Custom component for website input with inline remove button
+function WebsiteInputField({ 
+  value, 
+  onChange, 
+  onRemove, 
+  showRemoveButton 
+}: { 
+  value: string; 
+  onChange: (value: string) => void; 
+  onRemove?: () => void; 
+  showRemoveButton: boolean;
+}) {
+  const [isHovering, setIsHovering] = useState(false);
+  
+  return (
+    <Flex align="center" gap="2">
+      <Box style={{ flexGrow: 1 }}>
+        <TextField.Root
+          type="url"
+          value={value}
+          placeholder="example.com"
+          onChange={(e) => onChange(e.target.value)}
+          size="3"
+          variant="surface"
+          style={{ width: '100%' }}
+        />
+      </Box>
+      {showRemoveButton && onRemove && (
+        <Tooltip content="Remove website">
+          <Box 
+            style={{ 
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              padding: '6px'
+            }} 
+            onClick={onRemove}
+            onMouseEnter={() => setIsHovering(true)}
+            onMouseLeave={() => setIsHovering(false)}
+          >
+            <TrashIcon color={isHovering ? "tomato" : "gray"} width="24" height="24" />
+          </Box>
+        </Tooltip>
+      )}
+    </Flex>
+  );
+}
+
 export function EditProfileForm({ account: initialAccount }: EditProfileFormProps) {
   const router = useRouter();
   const [account, _setAccount] = useState<Account>(initialAccount);
@@ -37,36 +86,49 @@ export function EditProfileForm({ account: initialAccount }: EditProfileFormProp
       : initialAccount.contact_email || '',
     description: initialAccount.description,
     orcid: initialAccount.type === 'individual' ? (initialAccount as IndividualAccount).orcid : undefined,
-    websites: initialAccount.websites || [{ url: '' }]
+    websites: initialAccount.websites?.length ? initialAccount.websites : [{ url: '' }]
   });
 
   const handleSubmit = async (data: AccountFormData) => {
     setSaving(true);
     try {
-      // Transform website fields back into websites array
-      const websites = Object.entries(data)
-        .filter(([key]) => key.startsWith('website-'))
-        .map(([_, url]) => ({ url: url as string }))
-        .filter(website => website.url); // Remove empty websites
+      // Process websites: add https:// prefix if needed and filter out empty ones
+      const validWebsites = formData.websites
+        .map(website => {
+          // Skip empty URLs
+          if (!website.url || website.url.trim() === '') {
+            return null;
+          }
+          
+          // Add https:// prefix if missing
+          let processedUrl = website.url;
+          if (!processedUrl.startsWith('http://') && !processedUrl.startsWith('https://')) {
+            processedUrl = `https://${processedUrl}`;
+          }
+          
+          return { url: processedUrl };
+        })
+        .filter(Boolean) as Website[]; // Filter out null entries
 
-      // Ensure we're sending all required fields from the original account
+      // Create update data with conditionally included websites field
       const updateData = {
         ...account,  // Keep all original account data
         ...data,     // Override with form data
-        websites,    // Add the properly formatted websites array
-        type: account.type,  // Ensure type is preserved
-        account_id: account.account_id,  // Ensure account_id is preserved
-        ory_id: account.ory_id,  // Ensure ory_id is preserved
-        created_at: account.created_at,  // Ensure created_at is preserved
-        updated_at: new Date().toISOString()  // Update the updated_at timestamp
+        type: account.type,
+        account_id: account.account_id,
+        ory_id: account.ory_id,
+        created_at: account.created_at,
+        updated_at: new Date().toISOString()
       };
 
-      // Remove the individual website fields since we've transformed them
-      Object.keys(updateData).forEach(key => {
-        if (key.startsWith('website-')) {
-          delete updateData[key as keyof typeof updateData];
-        }
-      });
+      // Only include websites if there are valid ones, otherwise explicitly set to empty array
+      // This ensures the field is properly updated in DynamoDB
+      if (validWebsites.length > 0) {
+        updateData.websites = validWebsites;
+      } else {
+        // Empty array will remove the field in DynamoDB
+        updateData.websites = [];
+      }
 
       console.log('Submitting account update:', updateData);
 
@@ -106,7 +168,7 @@ export function EditProfileForm({ account: initialAccount }: EditProfileFormProp
     }));
   };
 
-  const _removeWebsite = (index: number) => {
+  const removeWebsite = (index: number) => {
     setFormData(prev => ({
       ...prev,
       websites: prev.websites.filter((_, i) => i !== index)
@@ -114,15 +176,11 @@ export function EditProfileForm({ account: initialAccount }: EditProfileFormProp
   };
 
   const updateWebsite = (index: number, url: string) => {
-    // Add https:// prefix if missing
-    const urlWithProtocol = url.startsWith('http://') || url.startsWith('https://') 
-      ? url 
-      : `https://${url}`;
-
+    // Store the URL exactly as entered by the user
     setFormData(prev => ({
       ...prev,
       websites: prev.websites.map((website, i) => 
-        i === index ? { url: urlWithProtocol } : website
+        i === index ? { url } : website
       )
     }));
   };
@@ -180,18 +238,7 @@ export function EditProfileForm({ account: initialAccount }: EditProfileFormProp
       placeholder: '0000-0002-1825-0097',
       defaultValue: formData.orcid,
       onChange: (value) => setFormData(prev => ({ ...prev, orcid: value }))
-    }] : []),
-    ...(formData.websites || []).map((website, index) => ({
-      name: `website-${index}`,
-      label: 'Website',
-      type: 'url' as FormFieldType,
-      placeholder: 'example.com',
-      defaultValue: website.url,
-      onChange: (value) => updateWebsite(index, value),
-      validation: {
-        pattern: '^https?://.+'
-      }
-    }))
+    }] : [])
   ];
 
   return (
@@ -210,7 +257,27 @@ export function EditProfileForm({ account: initialAccount }: EditProfileFormProp
           hideSubmit
         />
 
-        <Box mt="4">
+        {/* Custom website fields section */}
+        <Box mt="5" mb="4">
+          <Text size="3" weight="medium" mb="2">Websites</Text>
+          <Flex direction="column" gap="3">
+            {formData.websites.map((website, index) => (
+              <Box key={`website-${index}`}>
+                <WebsiteInputField
+                  value={website.url}
+                  onChange={(value) => updateWebsite(index, value)}
+                  onRemove={() => removeWebsite(index)}
+                  showRemoveButton={formData.websites.length > 1}
+                />
+                <Text size="1" color="gray" mt="1">
+                  Website URL
+                </Text>
+              </Box>
+            ))}
+          </Flex>
+        </Box>
+
+        <Box mb="4">
           <Button
             type="button"
             variant="soft"
