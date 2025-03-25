@@ -7,30 +7,46 @@ import { Button, Flex, Text, Box, Container } from '@radix-ui/themes';
 import { FormWrapper } from '@/components/core/Form';
 import type { FormField, FormFieldType } from '@/types/form';
 
+// Define types for website and form data
+interface Website {
+  url: string;
+}
+
+interface AccountFormData {
+  name: string;
+  email: string;
+  description?: string;
+  orcid?: string;
+  websites: Website[];
+  [key: string]: string | string[] | Website[] | undefined;
+}
+
 interface EditProfileFormProps {
   account: Account;
 }
 
 export function EditProfileForm({ account: initialAccount }: EditProfileFormProps) {
   const router = useRouter();
-  const [account, setAccount] = useState<Account>(initialAccount);
+  const [account, _setAccount] = useState<Account>(initialAccount);
   const [saving, setSaving] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
-  const [formData, setFormData] = useState<Record<string, any>>({
+  const [formData, setFormData] = useState<AccountFormData>({
     name: initialAccount.name,
-    email: initialAccount.type === 'individual' ? (initialAccount as IndividualAccount).email : initialAccount.contact_email,
+    email: initialAccount.type === 'individual' 
+      ? (initialAccount as IndividualAccount).email 
+      : initialAccount.contact_email || '',
     description: initialAccount.description,
     orcid: initialAccount.type === 'individual' ? (initialAccount as IndividualAccount).orcid : undefined,
     websites: initialAccount.websites || [{ url: '' }]
   });
 
-  const handleSubmit = async (data: Record<string, any>) => {
+  const handleSubmit = async (data: AccountFormData) => {
     setSaving(true);
     try {
       // Transform website fields back into websites array
       const websites = Object.entries(data)
         .filter(([key]) => key.startsWith('website-'))
-        .map(([_, url]) => ({ url }))
+        .map(([_, url]) => ({ url: url as string }))
         .filter(website => website.url); // Remove empty websites
 
       // Ensure we're sending all required fields from the original account
@@ -48,7 +64,7 @@ export function EditProfileForm({ account: initialAccount }: EditProfileFormProp
       // Remove the individual website fields since we've transformed them
       Object.keys(updateData).forEach(key => {
         if (key.startsWith('website-')) {
-          delete updateData[key];
+          delete updateData[key as keyof typeof updateData];
         }
       });
 
@@ -90,7 +106,7 @@ export function EditProfileForm({ account: initialAccount }: EditProfileFormProp
     }));
   };
 
-  const removeWebsite = (index: number) => {
+  const _removeWebsite = (index: number) => {
     setFormData(prev => ({
       ...prev,
       websites: prev.websites.filter((_, i) => i !== index)

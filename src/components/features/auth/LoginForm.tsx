@@ -6,9 +6,11 @@ import { Button, Flex, Text, Box, TextField } from '@radix-ui/themes';
 import * as Form from '@radix-ui/react-form';
 import { ory, ExtendedSession } from '@/lib/ory';
 import { useAuth } from '@/hooks/useAuth';
+import { LoginFlow, UiNodeInputAttributes } from '@ory/client';
+import { isApiError } from '@/types/auth';
 
 // Type definitions for custom metadata
-interface IdentityMetadataPublic {
+interface _IdentityMetadataPublic {
   account_id?: string;
   is_admin?: boolean;
 }
@@ -17,8 +19,8 @@ interface IdentityMetadataPublic {
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { session } = useAuth();
-  const [flow, setFlow] = useState<any>(null);
+  const { session: _session } = useAuth(); // Prefixed with _ to mark as intentionally unused
+  const [flow, setFlow] = useState<LoginFlow | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [submitLoading, setSubmitLoading] = useState(false);
@@ -54,11 +56,17 @@ export function LoginForm() {
     try {
       const formData = new FormData(event.currentTarget);
       
-      // Get the CSRF token with proper null checks
+      // Find the CSRF token input node
       const csrfNode = flow.ui?.nodes?.find(
-        (node: any) => node.attributes?.name === 'csrf_token'
+        (node) => 
+          node.type === 'input' && 
+          (node.attributes as UiNodeInputAttributes)?.name === 'csrf_token'
       );
-      const csrfToken = csrfNode?.attributes?.value;
+      
+      const csrfToken = csrfNode && 
+                        csrfNode.attributes.node_type === 'input' ? 
+                        (csrfNode.attributes as UiNodeInputAttributes).value : 
+                        undefined;
       
       if (!csrfToken) {
         console.error('Missing CSRF token in flow:', {
@@ -101,9 +109,9 @@ export function LoginForm() {
       } catch (sessionError) {
         console.error('Failed to get session after login:', sessionError);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Login error:', err);
-      if (err.response?.data?.ui?.messages) {
+      if (isApiError(err) && err.response?.data?.ui?.messages) {
         const messages = err.response.data.ui.messages;
         setError(messages[0]?.text || 'Login failed. Please try again.');
       } else {
@@ -146,6 +154,18 @@ export function LoginForm() {
       </Flex>
     );
   }
+
+  // Get CSRF token for the form
+  // Using any type here because of incompatibility between LoginFlow type and the actual flow data structure
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const csrfInputNode = (flow as any).ui?.nodes?.find(
+    (node) => 
+      node.type === 'input' && 
+      (node.attributes as UiNodeInputAttributes)?.name === 'csrf_token'
+  );
+  const csrfValue = csrfInputNode && csrfInputNode.attributes.node_type === 'input' 
+                  ? (csrfInputNode.attributes as UiNodeInputAttributes).value 
+                  : undefined;
 
   // Login form
   return (
@@ -213,15 +233,11 @@ export function LoginForm() {
         </Form.Field>
         
         {/* Add the CSRF token with proper null checks */}
-        {flow.ui?.nodes?.find(
-          (node: any) => node.attributes?.name === 'csrf_token'
-        )?.attributes?.value && (
+        {csrfValue && (
           <input 
             type="hidden" 
             name="csrf_token" 
-            value={flow.ui.nodes.find(
-              (node: any) => node.attributes?.name === 'csrf_token'
-            )?.attributes?.value} 
+            value={csrfValue} 
           />
         )}
 
