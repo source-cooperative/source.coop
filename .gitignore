@@ -4,6 +4,7 @@
 # Edit at https://www.toptal.com/developers/gitignore?templates=osx,windows,linux,nextjs,react,node
 dump/
 migration/
+dynamodownload/
 ### Linux ###
 *~
 
