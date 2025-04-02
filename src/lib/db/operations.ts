@@ -1,7 +1,7 @@
-import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocument, GetCommand, QueryCommand, BatchGetCommand, ScanCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
+import { _DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import { _DynamoDBDocument, GetCommand, QueryCommand, BatchGetCommand, ScanCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import type { Account, IndividualAccount, OrganizationalAccount, Repository } from '@/types';
-import { CONFIG } from '../config';
+import { _CONFIG } from '../config';
 
 // Use the singleton client from clients/index.ts
 import { getDynamoDb } from '../clients';
@@ -11,7 +11,7 @@ const docClient = getDynamoDb();
 /**
  * Generic helper to fetch an entity by a field value
  */
-async function getEntityByField<T>(
+async function _getEntityByField<T>(
   tableName: string, 
   fieldName: string, 
   fieldValue: string, 
@@ -42,7 +42,7 @@ async function getEntityByField<T>(
 /**
  * Generic helper for batch fetching entities by IDs
  */
-async function batchGetEntitiesByIds<T>(
+async function _batchGetEntitiesByIds<T>(
   tableName: string,
   idField: string,
   ids: string[],

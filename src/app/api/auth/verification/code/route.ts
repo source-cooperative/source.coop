@@ -4,7 +4,7 @@ import { Configuration, FrontendApi } from '@ory/client';
 const ORY_BASE_URL = process.env.ORY_BASE_URL || "http://localhost:4000";
 
 // Initialize Ory SDK for server-side usage
-const ory = new FrontendApi(
+const _ory = new FrontendApi(
   new Configuration({
     basePath: ORY_BASE_URL,
     baseOptions: {
@@ -66,7 +66,7 @@ export async function POST(request: Request) {
     
     try {
       responseData = JSON.parse(responseText);
-    } catch (e) {
+    } catch {
       console.log('Response could not be parsed as JSON, using raw text');
       responseData = { text: responseText };
     }

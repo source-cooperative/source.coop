@@ -1,6 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ObjectBrowser } from '../ObjectBrowser';
-import { exampleRepositories, exampleObjects } from '@/tests/fixtures/example-data';
+import { exampleRepositories, _exampleObjects } from '@/tests/fixtures/example-data';
 
 // Mock next/navigation
 const mockRouter = { push: jest.fn() };

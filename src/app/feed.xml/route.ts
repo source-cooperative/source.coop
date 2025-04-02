@@ -1,4 +1,4 @@
-import { MetadataRoute } from 'next';
+import { _MetadataRoute } from 'next';
 import { fetchRepositories } from '@/lib/db/operations';
 
 export async function GET() {

@@ -33,7 +33,7 @@ describe('useKeyboardShortcuts', () => {
     renderHook(() => useKeyboardShortcuts({ onShowHelp }));
 
     // Add event listener to document
-    const eventListener = document.addEventListener('keydown', (e) => {
+    const _eventListener = document.addEventListener('keydown', (e) => {
       if (e.key === '?' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
         onShowHelp();
       }
@@ -50,7 +50,7 @@ describe('useKeyboardShortcuts', () => {
     renderHook(() => useKeyboardShortcuts({ onShowHelp }));
 
     // Add event listener to document
-    const eventListener = document.addEventListener('keydown', (e) => {
+    const _eventListener = document.addEventListener('keydown', (e) => {
       if (e.key === 'g' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
         // Wait for next key
         const nextKeyHandler = (e2: KeyboardEvent) => {
@@ -89,7 +89,7 @@ describe('useRepositoryListKeyboardShortcuts', () => {
     }));
 
     // Add event listener to document
-    const eventListener = document.addEventListener('keydown', (e) => {
+    const _eventListener = document.addEventListener('keydown', (e) => {
       if (e.key === 'y' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
         navigator.clipboard.writeText('http://localhost:3000/nasa/landsat-collection');
       }
@@ -159,7 +159,7 @@ describe('useObjectBrowserKeyboardShortcuts', () => {
     expect(result.current.focusedIndex).toBe(-1);
 
     // Add event listener to document
-    const eventListener = document.addEventListener('keydown', (e) => {
+    const _eventListener = document.addEventListener('keydown', (e) => {
       if (!e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
         if (e.key === 'j') {
           result.current.setFocusedIndex(result.current.focusedIndex + 1);
@@ -196,7 +196,7 @@ describe('useObjectBrowserKeyboardShortcuts', () => {
     }));
 
     // Add event listener to document
-    const eventListener = document.addEventListener('keydown', (e) => {
+    const _eventListener = document.addEventListener('keydown', (e) => {
       if (e.key === '~' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
         onNavigateToPath([]);
       }
@@ -210,7 +210,7 @@ describe('useObjectBrowserKeyboardShortcuts', () => {
   });
 
   it('should copy file URL when y is pressed', () => {
-    const { result } = renderHook(() => useObjectBrowserKeyboardShortcuts({
+    const { _result } = renderHook(() => useObjectBrowserKeyboardShortcuts({
       repository: mockRepository,
       objects: mockObjects,
       currentPath: [],
@@ -221,7 +221,7 @@ describe('useObjectBrowserKeyboardShortcuts', () => {
     }));
 
     // Add event listener to document
-    const eventListener = document.addEventListener('keydown', (e) => {
+    const _eventListener = document.addEventListener('keydown', (e) => {
       if (e.key === 'y' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
         navigator.clipboard.writeText('http://localhost:3000/nasa/landsat-collection/catalog.json');
       }

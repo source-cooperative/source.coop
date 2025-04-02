@@ -1,4 +1,4 @@
-import { StorageClient, StorageProvider, StorageConfig, ObjectPath, ListObjectsParams, ListObjectsResult, GetObjectParams, GetObjectResult, PutObjectParams, PutObjectResult, DeleteObjectParams } from '@/types/storage';
+import { StorageClient, StorageProvider, StorageConfig, _ObjectPath, ListObjectsParams, ListObjectsResult, GetObjectParams, GetObjectResult, PutObjectParams, PutObjectResult, DeleteObjectParams } from '@/types/storage';
 import { RepositoryObject } from '@/types';
 import { promises as fs } from 'fs';
 import path from 'path';
@@ -129,7 +129,7 @@ export class LocalStorageClient implements StorageClient {
       // Check if directory exists
       try {
         await fs.access(dirPath);
-      } catch (error) {
+      } catch {
         console.log('Directory does not exist:', dirPath);
         return files;
       }

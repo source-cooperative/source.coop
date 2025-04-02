@@ -87,7 +87,7 @@ function getApiBaseUrl() {
   }
 }
 
-export async function getLoginFlow(flowId: string) {
+export async function getLoginFlow(_flowId: string) {
   try {
     // Get proper base URL based on context
     const baseUrl = getApiBaseUrl();
@@ -115,7 +115,7 @@ export async function getLoginFlow(flowId: string) {
   }
 }
 
-export async function getRegistrationFlow(flowId: string) {
+export async function getRegistrationFlow(_flowId: string) {
   try {
     // Get proper base URL based on context
     const baseUrl = getApiBaseUrl();

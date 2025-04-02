@@ -1,6 +1,6 @@
 'use client';
 
-import { Card, Box, Flex } from '@radix-ui/themes';
+import { Card, Box, _Flex } from '@radix-ui/themes';
 import { useState, useMemo, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Repository, RepositoryObject } from '@/types';
@@ -11,7 +11,7 @@ import { useObjectBrowserKeyboardShortcuts } from '@/hooks/useObjectBrowserKeybo
 import { ObjectDetails } from './object-browser/ObjectDetails';
 import { DirectoryList } from './object-browser/DirectoryList';
 import { buildDirectoryTree } from './object-browser/utils';
-import styles from './ObjectBrowser.module.css';
+import _styles from './ObjectBrowser.module.css';
 
 export interface ObjectBrowserProps {
   repository: Repository;

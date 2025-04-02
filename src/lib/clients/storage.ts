@@ -1,6 +1,6 @@
 import { LocalStorageClient } from '../storage/local';
 import { CONFIG } from '../config';
-import type { StorageClient, StorageProvider, StorageConfig, StorageType, ObjectPath, ListObjectsParams, GetObjectParams, PutObjectParams, DeleteObjectParams } from '@/types/storage';
+import type { StorageClient, StorageProvider, StorageConfig, StorageType, _ObjectPath, ListObjectsParams, GetObjectParams, PutObjectParams, DeleteObjectParams } from '@/types/storage';
 
 export function createStorageClient(): StorageClient {
   console.log('Creating storage client with config:', CONFIG);

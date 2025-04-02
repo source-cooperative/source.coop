@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, _waitFor } from '@testing-library/react';
 import { RepositoryList } from '@/components/features/repositories';
 import { fetchRepositories } from '@/lib/db/operations';
 import type { Repository, IndividualAccount } from '@/types';

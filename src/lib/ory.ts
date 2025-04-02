@@ -27,7 +27,7 @@ export const ory = new FrontendApi(
         'Accept': 'application/json',
         'Content-Type': 'application/json',
       },
-      validateStatus: (status) => {
+      validateStatus: (_status) => {
         // Accept any status code to handle redirects
         return true;
       }
@@ -45,7 +45,7 @@ export const serverOry = new FrontendApi(
         'Accept': 'application/json',
         'Content-Type': 'application/json',
       },
-      validateStatus: (status) => {
+      validateStatus: (_status) => {
         // Accept any status code to handle redirects
         return true;
       }

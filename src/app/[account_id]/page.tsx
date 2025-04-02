@@ -15,7 +15,7 @@ import { Container } from '@radix-ui/themes';
 import { IndividualProfile } from '@/components/features/profiles';
 import { OrganizationProfile } from '@/components/features/profiles';
 import { fetchAccount, fetchRepositoriesByAccount, fetchOrganizationMembers } from '@/lib/db';
-import type { Account, OrganizationalAccount, Repository } from '@/types';
+import type { _Account, OrganizationalAccount, Repository } from '@/types';
 
 type PageProps = {
   params: Promise<{ account_id: string }>;

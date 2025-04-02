@@ -5,7 +5,7 @@ import type { Repository } from '@/types';
 import { RepositoryListItem } from './RepositoryListItem';
 import { ShortcutHelp } from '@/components/features/keyboard/ShortcutHelp';
 import { useRepositoryListKeyboardShortcuts } from '@/hooks/useRepositoryListKeyboardShortcuts';
-import { Box, Text } from '@radix-ui/themes';
+import { _Box, Text } from '@radix-ui/themes';
 import styles from './RepositoryList.module.css';
 
 interface RepositoryListProps {

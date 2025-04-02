@@ -17,7 +17,7 @@ import { notFound } from 'next/navigation';
 import { ObjectBrowser, RepositoryHeader } from '@/components/features/repositories';
 
 // Types
-import type { Repository, RepositoryObject } from '@/types';
+import type { _Repository, RepositoryObject } from '@/types';
 
 // Utilities
 import { fetchRepository } from '@/lib/db';

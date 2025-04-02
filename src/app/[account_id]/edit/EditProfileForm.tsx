@@ -76,7 +76,6 @@ function WebsiteInputField({
 
 export function EditProfileForm({ account: initialAccount }: EditProfileFormProps) {
   const router = useRouter();
-  const [account, _setAccount] = useState<Account>(initialAccount);
   const [saving, setSaving] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
   const [formData, setFormData] = useState<AccountFormData>({
@@ -95,12 +94,8 @@ export function EditProfileForm({ account: initialAccount }: EditProfileFormProp
       // Process websites: add https:// prefix if needed and filter out empty ones
       const validWebsites = formData.websites
         .map(website => {
-          // Skip empty URLs
-          if (!website.url || website.url.trim() === '') {
-            return null;
-          }
+          if (!website.url || website.url.trim() === '') return null;
           
-          // Add https:// prefix if missing
           let processedUrl = website.url;
           if (!processedUrl.startsWith('http://') && !processedUrl.startsWith('https://')) {
             processedUrl = `https://${processedUrl}`;
@@ -108,45 +103,27 @@ export function EditProfileForm({ account: initialAccount }: EditProfileFormProp
           
           return { url: processedUrl };
         })
-        .filter(Boolean) as Website[]; // Filter out null entries
+        .filter(Boolean) as Website[];
 
-      // Create update data with conditionally included websites field
       const updateData = {
-        ...account,  // Keep all original account data
-        ...data,     // Override with form data
-        type: account.type,
-        account_id: account.account_id,
-        ory_id: account.ory_id,
-        created_at: account.created_at,
+        ...initialAccount,
+        ...data,
+        websites: validWebsites.length > 0 ? validWebsites : [],
         updated_at: new Date().toISOString()
       };
 
-      // Only include websites if there are valid ones, otherwise explicitly set to empty array
-      // This ensures the field is properly updated in DynamoDB
-      if (validWebsites.length > 0) {
-        updateData.websites = validWebsites;
-      } else {
-        // Empty array will remove the field in DynamoDB
-        updateData.websites = [];
-      }
-
-      console.log('Submitting account update:', updateData);
-
-      const response = await fetch(`/api/accounts/${account.account_id}`, {
+      const response = await fetch(`/api/accounts/${initialAccount.account_id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updateData),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        console.error('Update failed:', errorData);
         throw new Error(errorData.error || 'Failed to update profile');
       }
 
-      router.push(`/${account.account_id}`);
+      router.push(`/${initialAccount.account_id}`);
     } catch (error) {
       console.error('Error updating profile:', error);
       throw new Error('Failed to update profile. Please try again.');
@@ -155,16 +132,17 @@ export function EditProfileForm({ account: initialAccount }: EditProfileFormProp
     }
   };
 
-  const handleFormSubmit = () => {
-    if (formRef.current) {
-      formRef.current.requestSubmit();
-    }
+  const handleWebsiteChange = (index: number, url: string) => {
+    setFormData(prev => ({
+      ...prev,
+      websites: prev.websites.map((website, i) => i === index ? { url } : website)
+    }));
   };
 
   const addWebsite = () => {
     setFormData(prev => ({
       ...prev,
-      websites: [...(prev.websites || []), { url: '' }]
+      websites: [...prev.websites, { url: '' }]
     }));
   };
 
@@ -172,16 +150,6 @@ export function EditProfileForm({ account: initialAccount }: EditProfileFormProp
     setFormData(prev => ({
       ...prev,
       websites: prev.websites.filter((_, i) => i !== index)
-    }));
-  };
-
-  const updateWebsite = (index: number, url: string) => {
-    // Store the URL exactly as entered by the user
-    setFormData(prev => ({
-      ...prev,
-      websites: prev.websites.map((website, i) => 
-        i === index ? { url } : website
-      )
     }));
   };
 
@@ -193,9 +161,7 @@ export function EditProfileForm({ account: initialAccount }: EditProfileFormProp
       required: true,
       placeholder: 'Your Name',
       defaultValue: formData.name,
-      validation: {
-        minLength: 2
-      },
+      validation: { minLength: 2 },
       description: 'This is the name that will be displayed on your profile',
       onChange: (value) => setFormData(prev => ({ ...prev, name: value }))
     },
@@ -209,29 +175,25 @@ export function EditProfileForm({ account: initialAccount }: EditProfileFormProp
       validation: {
         pattern: '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$'
       },
-      description: account.type === 'individual' 
+      description: initialAccount.type === 'individual' 
         ? 'Your primary email address'
         : 'Contact email for your organization',
       onChange: (value) => setFormData(prev => ({ ...prev, email: value }))
     },
     {
       name: 'description',
-      label: account.type === 'individual' ? 'Bio' : 'Description',
+      label: initialAccount.type === 'individual' ? 'Bio' : 'Description',
       type: 'textarea' as FormFieldType,
-      placeholder: account.type === 'individual' ? 'Tell us about yourself' : 'Tell us about your organization',
+      placeholder: initialAccount.type === 'individual' ? 'Tell us about yourself' : 'Tell us about your organization',
       defaultValue: formData.description,
-      description: account.type === 'individual' 
+      description: initialAccount.type === 'individual' 
         ? 'A brief description of yourself or your work (220 characters maximum)'
         : 'A brief description of your organization (220 characters maximum)',
-      validation: {
-        maxLength: 220
-      },
-      style: {
-        height: '7.4rem'
-      },
+      validation: { maxLength: 220 },
+      style: { height: '7.4rem' },
       onChange: (value) => setFormData(prev => ({ ...prev, description: value }))
     },
-    ...(account.type === 'individual' ? [{
+    ...(initialAccount.type === 'individual' ? [{
       name: 'orcid',
       label: 'ORCID ID',
       type: 'text' as FormFieldType,
@@ -257,7 +219,6 @@ export function EditProfileForm({ account: initialAccount }: EditProfileFormProp
           hideSubmit
         />
 
-        {/* Custom website fields section */}
         <Box mt="5" mb="4">
           <Text size="3" weight="medium" mb="2">Websites</Text>
           <Flex direction="column" gap="3">
@@ -265,7 +226,7 @@ export function EditProfileForm({ account: initialAccount }: EditProfileFormProp
               <Box key={`website-${index}`}>
                 <WebsiteInputField
                   value={website.url}
-                  onChange={(value) => updateWebsite(index, value)}
+                  onChange={(value) => handleWebsiteChange(index, value)}
                   onRemove={() => removeWebsite(index)}
                   showRemoveButton={formData.websites.length > 1}
                 />
@@ -292,13 +253,13 @@ export function EditProfileForm({ account: initialAccount }: EditProfileFormProp
           <Button
             type="button"
             variant="soft"
-            onClick={() => router.push(`/${account.account_id}`)}
+            onClick={() => router.push(`/${initialAccount.account_id}`)}
           >
             Cancel
           </Button>
           <Button
             type="button"
-            onClick={handleFormSubmit}
+            onClick={() => formRef.current?.requestSubmit()}
             disabled={saving}
           >
             {saving ? 'Saving...' : 'Save Changes'}

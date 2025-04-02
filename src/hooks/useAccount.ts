@@ -10,7 +10,7 @@ interface ExtendedIdentity extends Identity {
   };
 }
 
-interface SessionWithMetadata extends Session {
+interface _SessionWithMetadata extends Session {
   identity?: ExtendedIdentity;
 }
 

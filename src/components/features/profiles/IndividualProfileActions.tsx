@@ -1,7 +1,7 @@
 'use client';
 
-import { Button, Callout } from '@radix-ui/themes';
-import Link from 'next/link';
+import { _Button, _Callout } from '@radix-ui/themes';
+import _Link from 'next/link';
 import { WelcomeCallout } from './WelcomeCallout';
 import { VerificationSuccessCallout } from '@/components/features/auth/VerificationSuccessCallout';
 import { useAuth } from '@/hooks/useAuth';
@@ -15,7 +15,7 @@ interface IndividualProfileActionsProps {
 export function IndividualProfileActions({ account, showWelcome = false }: IndividualProfileActionsProps) {
   const { session } = useAuth();
   const currentUserId = session?.identity?.metadata_public?.account_id;
-  const isOwnProfile = currentUserId === account.account_id;
+  const _isOwnProfile = currentUserId === account.account_id;
 
   return (
     <>

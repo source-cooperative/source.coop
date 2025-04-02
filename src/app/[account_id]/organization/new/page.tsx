@@ -1,6 +1,6 @@
 import { Container, Box, Heading } from '@radix-ui/themes';
 import { FormWrapper } from '@/components/core';
-import type { FormField } from '@/types/form';
+import type { _FormField } from '@/types/form';
 import { redirect } from 'next/navigation';
 import { notFound } from 'next/navigation';
 import type { Account } from '@/types';
@@ -20,7 +20,7 @@ export default async function NewOrganizationPage({ params }: PageProps) {
     notFound();
   }
 
-  const account: Account = await response.json();
+  const _account: Account = await response.json();
 
   async function handleSubmit(data: Record<string, string>) {
     'use server';

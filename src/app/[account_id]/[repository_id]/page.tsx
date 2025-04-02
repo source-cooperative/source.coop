@@ -19,15 +19,15 @@ import { RepositoryHeader, ObjectBrowser } from '@/components/features/repositor
 import { MarkdownViewer } from '@/components/features/markdown';
 
 // Types and utilities
-import type { Repository, RepositoryObject } from '@/types';
-import { fetchRepositories, fetchRepository } from '@/lib/db/operations';
+import type { _Repository, RepositoryObject } from '@/types';
+import { _fetchRepositories, fetchRepository } from '@/lib/db/operations';
 import { createStorageClient } from '@/lib/clients/storage';
 
 interface PageProps {
   params: { account_id: string; repository_id: string }
 }
 
-interface StorageResult {
+interface _StorageResult {
   content?: {
     content?: string;
     metadata?: Record<string, unknown>;

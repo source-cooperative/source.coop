@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ory } from '@/lib/ory';
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const { data: session } = await ory.toSession();
     

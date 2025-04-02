@@ -1,11 +1,11 @@
 'use client';
 
-import { Box, Container, Flex, Button, DropdownMenu, Text } from '@radix-ui/themes';
+import { _Box, Container, Flex, Button, DropdownMenu, Text } from '@radix-ui/themes';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { Logo } from './Logo';
 import { ProfileAvatar } from '@/components/features/profiles/ProfileAvatar';
-import type { IndividualAccount } from '@/types/account';
+import type { _IndividualAccount } from '@/types/account';
 import { ChevronDownIcon } from '@radix-ui/react-icons';
 import styles from './Navigation.module.css';
 import { useAccount } from '@/hooks/useAccount';
@@ -36,13 +36,13 @@ interface ExtendedSession extends Session {
   identity?: ExtendedIdentity;
 }
 
-export function Navigation({ initialSession }: NavigationProps) {
+export function Navigation({ _initialSession }: NavigationProps) {
   const { session, isLoading: isSessionLoading } = useAuth();
   const accountId = session?.identity?.metadata_public?.account_id;
   const [isOpen, setIsOpen] = useState(false);
   const [directSession, setDirectSession] = useState<ExtendedSession | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
-  const router = useRouter();
+  const _router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   

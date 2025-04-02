@@ -89,4 +89,4 @@ export function isApiError(error: unknown): error is AxiosError {
 }
 
 // For compatibility with Ory UiNode
-export type OryCompatibleFlowNode = UiNode; 
+export type OryCompatibleFlowNode = FlowNode; 
