@@ -13,9 +13,10 @@
 import { notFound } from 'next/navigation';
 import { Container } from '@radix-ui/themes';
 import { IndividualProfile } from '@/components/features/profiles';
-import { OrganizationProfile } from '@/components/features/profiles';
-import { fetchAccount, fetchRepositoriesByAccount, fetchOrganizationMembers } from '@/lib/db';
-import type { _Account, OrganizationalAccount, Repository } from '@/types';
+import { OrganizationProfilePage } from '@/components/features/profiles/OrganizationProfilePage';
+import { fetchAccount, fetchRepositoriesByAccount } from '@/lib/db';
+import type { Account, IndividualAccount } from '@/types/account_v2';
+import type { Repository_v2 } from '@/types/repository_v2';
 
 type PageProps = {
   params: Promise<{ account_id: string }>;
@@ -36,31 +37,19 @@ export default async function AccountPage({
     notFound();
   }
 
-  // Get repositories for this account
-  const repositories: Repository[] = await fetchRepositoriesByAccount(account_id);
-
-  // If this is an organization, get member details
+  // If this is an organization, use the organization profile page
   if (account.type === 'organization') {
-    const orgAccount = account as OrganizationalAccount;
-    const { owner, admins, members } = await fetchOrganizationMembers(orgAccount);
-    return (
-      <Container size="4" py="6">
-        <OrganizationProfile
-          account={orgAccount}
-          repositories={repositories}
-          owner={owner}
-          admins={admins}
-          members={members}
-        />
-      </Container>
-    );
+    return <OrganizationProfilePage account_id={account_id} />;
   }
+
+  // Get repositories for individual account
+  const repositories: Repository_v2[] = await fetchRepositoriesByAccount(account_id);
 
   // For individual accounts
   return (
     <Container size="4" py="6">
       <IndividualProfile
-        account={account}
+        account={account as IndividualAccount}
         ownedRepositories={repositories}
         contributedRepositories={[]}
         organizations={[]}

@@ -2,7 +2,7 @@
 
 import { Tooltip } from '@radix-ui/themes';
 import { MinusCircledIcon, CheckCircledIcon } from '@radix-ui/react-icons';
-import type { Account, IndividualAccount } from '@/types/account';
+import type { Account, IndividualAccount } from '@/types/account_v2';
 import { ory } from '@/lib/ory';
 import { useState, useEffect } from 'react';
 
@@ -48,40 +48,36 @@ export function EmailVerificationStatus({ account }: EmailVerificationStatusProp
           setVerifiedAt(`${day} ${month} ${year}`);
         }
       } catch (error) {
-        console.error('Failed to check verification status:', error);
-        // If check fails, fall back to account value
-        setIsVerified(individualAccount.email_verified || false);
+        console.error('Error checking email verification status:', error);
+        setIsVerified(false);
       }
     };
     
     checkVerificationStatus();
   }, [account]);
   
-  // Show nothing for non-individual accounts
+  // Don't show anything for organizations
   if (account.type !== 'individual') {
     return null;
   }
   
-  // Show nothing while checking verification status
+  // Show loading state
   if (isVerified === null) {
-    return null;
-  }
-  
-  if (!isVerified) {
     return (
-      <Tooltip content="Email not verified">
-        <MinusCircledIcon color="var(--amber-9)" />
+      <Tooltip content="Checking email verification status...">
+        <MinusCircledIcon width="16" height="16" />
       </Tooltip>
     );
   }
   
-  // Extract domain from email
-  const individualAccount = account as IndividualAccount;
-  const emailDomain = individualAccount.email.split('@')[1];
-  
+  // Show verification status
   return (
-    <Tooltip content={`${emailDomain} email verified${verifiedAt ? ` on ${verifiedAt}` : ''}`}>
-      <CheckCircledIcon color="var(--green-9)" />
+    <Tooltip content={isVerified ? `Email verified on ${verifiedAt}` : 'Email not verified'}>
+      {isVerified ? (
+        <CheckCircledIcon color="green" width="16" height="16" />
+      ) : (
+        <MinusCircledIcon color="gray" width="16" height="16" />
+      )}
     </Tooltip>
   );
 } 

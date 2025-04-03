@@ -43,7 +43,7 @@ export async function GET(request: Request) {
     }
 
     const account = await fetchAccount(username);
-    return NextResponse.json({ exists: !!account });
+    return NextResponse.json({ available: !account });
   } catch (error) {
     console.error('Error checking username:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

@@ -1,8 +1,8 @@
 // Server Component
 import { Box, Text, Grid, Heading, Flex, Link as RadixLink } from '@radix-ui/themes';
 import Link from 'next/link';
-import type { Account, IndividualAccount } from '@/types/account';
-import type { Repository } from '@/types';
+import type { Account, IndividualAccount } from '@/types/account_v2';
+import type { Repository_v2 } from '@/types/repository_v2';
 import { ProfileAvatar } from './ProfileAvatar';
 import { RepositoryList } from '../repositories/RepositoryList';
 import { WebsiteLink } from './WebsiteLink';
@@ -11,8 +11,8 @@ import { IndividualProfileActions } from './IndividualProfileActions';
 
 interface IndividualProfileProps {
   account: IndividualAccount;
-  ownedRepositories: Repository[];
-  contributedRepositories: Repository[];
+  ownedRepositories: Repository_v2[];
+  contributedRepositories: Repository_v2[];
   organizations: Account[];
   showWelcome?: boolean;
 }
@@ -40,8 +40,8 @@ export function IndividualProfile({
                 <Heading size="8">{account.name}</Heading>
                 <EmailVerificationStatus account={account} />
               </Flex>
-              {account.description && (
-                <Text size="3" color="gray">{account.description}</Text>
+              {account.metadata_public.bio && (
+                <Text size="3" color="gray">{account.metadata_public.bio}</Text>
               )}
             </Box>
           </Flex>
@@ -50,24 +50,24 @@ export function IndividualProfile({
 
       <Box mb="6">
         <Grid columns="3" gap="4">
-          {account.websites && account.websites.length > 0 && (
+          {account.metadata_public.domains && account.metadata_public.domains.length > 0 && (
             <Box>
               <Text as="div" size="2" color="gray" mb="2">
-                {account.websites.length === 1 ? 'Website' : 'Websites'}
+                {account.metadata_public.domains.length === 1 ? 'Website' : 'Websites'}
               </Text>
-              {account.websites.map((website, index) => (
-                <Box key={index} mb={index < (account.websites?.length ?? 0) - 1 ? "2" : "0"}>
-                  <WebsiteLink website={website} />
+              {account.metadata_public.domains.map((domain, index) => (
+                <Box key={index} mb={index < (account.metadata_public.domains?.length ?? 0) - 1 ? "2" : "0"}>
+                  <WebsiteLink website={{ url: `https://${domain.domain}` }} />
                 </Box>
               ))}
             </Box>
           )}
-          {account.orcid && (
+          {account.metadata_public.orcid && (
             <Box>
               <Text as="div" size="2" color="gray" mb="2">ORCID</Text>
               <RadixLink asChild>
-                <a href={`https://orcid.org/${account.orcid}`} target="_blank" rel="noopener noreferrer">
-                  {account.orcid}
+                <a href={`https://orcid.org/${account.metadata_public.orcid}`} target="_blank" rel="noopener noreferrer">
+                  {account.metadata_public.orcid}
                 </a>
               </RadixLink>
             </Box>

@@ -10,6 +10,7 @@ import debounce from 'lodash/debounce';
 import { FrontendApi, Configuration } from '@ory/client';
 import { InfoCircledIcon, CheckCircledIcon } from '@radix-ui/react-icons';
 import { VerificationSuccessCallout } from '@/components/features/auth/VerificationSuccessCallout';
+import { recordVerificationTimestamp } from '@/app/actions/account';
 
 interface OnboardingFormData {
   account_id: string;
@@ -51,8 +52,9 @@ export function OnboardingForm() {
 
   // Check session on mount
   useEffect(() => {
-    ory.toSession()
-      .then(({ data }) => {
+    const checkSession = async () => {
+      try {
+        const { data } = await ory.toSession();
         // If no session, redirect to login
         if (!data) {
           router.push('/login');
@@ -71,26 +73,12 @@ export function OnboardingForm() {
               if (isFromVerification && identity.id) {
                 console.log('Recording verification timestamp for identity:', identity.id);
                 
-                // Update the verification timestamp via API
-                fetch('/api/accounts/record-verification', {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                  },
-                  body: JSON.stringify({
-                    identity_id: identity.id
-                  })
-                })
-                .then(response => {
-                  if (response.ok) {
-                    console.log('Successfully recorded verification timestamp');
-                  } else {
-                    console.error('Failed to record verification timestamp');
-                  }
-                })
-                .catch(err => {
+                try {
+                  await recordVerificationTimestamp(identity.id);
+                  console.log('Successfully recorded verification timestamp');
+                } catch (err) {
                   console.error('Error recording verification timestamp:', err);
-                });
+                }
               }
             }
           }
@@ -100,11 +88,13 @@ export function OnboardingForm() {
             console.log('Session found, email:', identity.traits.email);
           }
         }
-      })
-      .catch((err) => {
+      } catch (err) {
         console.error('Session error:', err);
         router.push('/login');
-      });
+      }
+    };
+
+    checkSession();
   }, [router, ory]);
 
   const checkUsername = useCallback(

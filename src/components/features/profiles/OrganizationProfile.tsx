@@ -2,7 +2,8 @@
 
 import { Box, Heading, Text, Link as RadixLink, Flex, Grid, Button } from '@radix-ui/themes';
 import Link from 'next/link';
-import type { OrganizationalAccount, IndividualAccount, Repository } from '@/types';
+import type { Account, IndividualAccount, OrganizationalAccount } from '@/types/account_v2';
+import type { Repository_v2 } from '@/types/repository_v2';
 import { RepositoryList } from '@/components/features/repositories/RepositoryList';
 import { OrganizationMembers } from './OrganizationMembers';
 import { ProfileAvatar } from './ProfileAvatar';
@@ -11,7 +12,7 @@ import { WebsiteLink } from './WebsiteLink';
 
 interface OrganizationProfileProps {
   account: OrganizationalAccount;
-  repositories: Repository[];
+  repositories: Repository_v2[];
   owner: IndividualAccount | null;
   admins: IndividualAccount[];
   members: IndividualAccount[];
@@ -38,7 +39,7 @@ export function OrganizationProfile({
           <Box>
             <Heading as="h1" size="8">{account.name}</Heading>
             <Text as="p" size="3" color="gray" mt="1">
-              {account.description}
+              {account.metadata_public.bio}
             </Text>
           </Box>
         </Flex>
@@ -52,19 +53,23 @@ export function OrganizationProfile({
       <Grid columns="2" gap="6" mb="6">
         <Box>
           <Heading as="h2" size="4" mb="2">Organization Details</Heading>
-          {account.websites?.map((website, index) => (
+          {account.metadata_public.domains?.map((domain, index) => (
             <Text as="p" size="2" key={index}>
-              <WebsiteLink website={website} />
+              <WebsiteLink website={{ url: `https://${domain.domain}` }} />
             </Text>
           ))}
-          {account.email && (
+          {account.emails.find(email => email.is_primary)?.address && (
             <Text as="p" size="2">
-              Email: <RadixLink href={`mailto:${account.email}`}>{account.email}</RadixLink>
+              Email: <RadixLink href={`mailto:${account.emails.find(email => email.is_primary)?.address}`}>
+                {account.emails.find(email => email.is_primary)?.address}
+              </RadixLink>
             </Text>
           )}
-          {account.ror_id && (
+          {account.metadata_public.ror_id && (
             <Text as="p" size="2">
-              ROR ID: <RadixLink href={`https://ror.org/${account.ror_id}`}>{account.ror_id}</RadixLink>
+              ROR ID: <RadixLink href={`https://ror.org/${account.metadata_public.ror_id}`}>
+                {account.metadata_public.ror_id}
+              </RadixLink>
             </Text>
           )}
         </Box>
@@ -79,10 +84,12 @@ export function OrganizationProfile({
         </Box>
       </Grid>
 
-      <Box>
-        <Heading as="h2" size="4" mb="4">Repositories</Heading>
-        <RepositoryList repositories={repositories} />
-      </Box>
+      {repositories.length > 0 && (
+        <Box>
+          <Heading as="h2" size="4" mb="2">Repositories</Heading>
+          <RepositoryList repositories={repositories} />
+        </Box>
+      )}
     </Box>
   );
 } 

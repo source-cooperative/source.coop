@@ -1,6 +1,6 @@
 import { Box, Text, Link as RadixLink, Flex } from '@radix-ui/themes';
 import Link from 'next/link';
-import type { IndividualAccount } from '@/types';
+import type { IndividualAccount } from '@/types/account_v2';
 import { ProfileAvatar } from './ProfileAvatar';
 
 interface OrganizationMembersProps {
@@ -48,11 +48,7 @@ export function OrganizationMembers({ owner, admins, members }: OrganizationMemb
           <Text as="p" size="2" weight="bold" mb="1">{group.title}</Text>
           <Flex direction="column" gap="1">
             {group.members.map(member => (
-              <MemberLink 
-                key={`${group.role}-${member.account_id}`} 
-                member={member} 
-                role={group.role as 'owner' | 'admin' | 'member'} 
-              />
+              <MemberLink key={member.account_id} member={member} role={group.role as 'owner' | 'admin' | 'member'} />
             ))}
           </Flex>
         </Box>
@@ -69,13 +65,10 @@ interface MemberLinkProps {
 function MemberLink({ member, role }: MemberLinkProps) {
   return (
     <Link href={`/${member.account_id}`} passHref legacyBehavior>
-      <RadixLink size="2">
+      <RadixLink>
         <Flex gap="2" align="center">
-          <ProfileAvatar account={member} size="1" />
-          <Text>{member.name}</Text>
-          {role !== 'member' && (
-            <Text size="1" color="gray">({role})</Text>
-          )}
+          <ProfileAvatar account={member} size="2" />
+          <Text size="2">{member.name}</Text>
         </Flex>
       </RadixLink>
     </Link>

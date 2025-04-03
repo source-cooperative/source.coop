@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Account, IndividualAccount } from '@/types/account';
+import { Account, IndividualAccount } from '@/types/account_v2';
 import { Button, Flex, Text, Box, Container, TextField, Tooltip } from '@radix-ui/themes';
 import { TrashIcon } from '@radix-ui/react-icons';
 import { FormWrapper } from '@/components/core/Form';
@@ -80,12 +80,10 @@ export function EditProfileForm({ account: initialAccount }: EditProfileFormProp
   const formRef = useRef<HTMLFormElement>(null);
   const [formData, setFormData] = useState<AccountFormData>({
     name: initialAccount.name,
-    email: initialAccount.type === 'individual' 
-      ? (initialAccount as IndividualAccount).email 
-      : initialAccount.contact_email || '',
-    description: initialAccount.description,
-    orcid: initialAccount.type === 'individual' ? (initialAccount as IndividualAccount).orcid : undefined,
-    websites: initialAccount.websites?.length ? initialAccount.websites : [{ url: '' }]
+    email: initialAccount.emails.find(email => email.is_primary)?.address || '',
+    description: initialAccount.metadata_public.bio,
+    orcid: initialAccount.type === 'individual' ? (initialAccount as IndividualAccount).metadata_public.orcid : undefined,
+    websites: initialAccount.metadata_public.domains?.map(domain => ({ url: domain.domain })) || [{ url: '' }]
   });
 
   const handleSubmit = async (data: AccountFormData) => {
@@ -107,8 +105,17 @@ export function EditProfileForm({ account: initialAccount }: EditProfileFormProp
 
       const updateData = {
         ...initialAccount,
-        ...data,
-        websites: validWebsites.length > 0 ? validWebsites : [],
+        name: data.name,
+        metadata_public: {
+          ...initialAccount.metadata_public,
+          bio: data.description,
+          orcid: data.orcid,
+          domains: validWebsites.map(website => ({
+            domain: new URL(website.url).hostname,
+            status: 'unverified',
+            created_at: new Date().toISOString()
+          }))
+        },
         updated_at: new Date().toISOString()
       };
 

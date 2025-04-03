@@ -1,9 +1,10 @@
 import { Link, Flex } from '@radix-ui/themes';
 import { Link2Icon, GitHubLogoIcon, LinkedInLogoIcon } from '@radix-ui/react-icons';
-import { Website } from '@/types/account';
 
 interface WebsiteLinkProps {
-  website: Website;
+  website: {
+    url: string;
+  };
 }
 
 export function WebsiteLink({ website }: WebsiteLinkProps) {
