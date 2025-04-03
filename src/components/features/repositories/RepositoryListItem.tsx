@@ -46,10 +46,20 @@ export const RepositoryListItem = forwardRef<HTMLAnchorElement, RepositoryListIt
               </Text>
               <Badge 
                 size="1" 
-                color={repository.visibility === 'private' ? "red" : "green"}
-                aria-label={repository.visibility === 'private' ? "Private repository" : "Public repository"}
+                color={
+                  repository.visibility === 'public' ? "green" : 
+                  repository.visibility === 'unlisted' ? "yellow" : 
+                  "red"
+                }
+                aria-label={
+                  repository.visibility === 'public' ? "Public repository" : 
+                  repository.visibility === 'unlisted' ? "Unlisted repository" : 
+                  "Restricted repository"
+                }
               >
-                {repository.visibility === 'private' ? "Private" : "Public"}
+                {repository.visibility === 'public' ? "Public" : 
+                 repository.visibility === 'unlisted' ? "Unlisted" : 
+                 "Restricted"}
               </Badge>
             </Box>
           </article>

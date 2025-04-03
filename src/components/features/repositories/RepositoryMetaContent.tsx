@@ -16,8 +16,14 @@ export function RepositoryMetaContent({ repository, statistics }: RepositoryMeta
       <DataList.Item>
         <DataList.Label>Visibility</DataList.Label>
         <DataList.Value>
-          <Badge color={repository.visibility === 'private' ? "red" : "green"}>
-            {repository.visibility === 'private' ? "Private" : "Public"}
+          <Badge color={
+            repository.visibility === 'public' ? "green" : 
+            repository.visibility === 'unlisted' ? "yellow" : 
+            "red"
+          }>
+            {repository.visibility === 'public' ? "Public" : 
+             repository.visibility === 'unlisted' ? "Unlisted" : 
+             "Restricted"}
           </Badge>
         </DataList.Value>
       </DataList.Item>

@@ -2,19 +2,38 @@ import type { Account } from './account_v2';
 
 // Mirror configuration and status tracking
 export interface RepositoryMirror {
-  url: string;
-  type: 'git' | 'http';
-  sync_status: 'pending' | 'syncing' | 'synced' | 'failed';
-  last_sync_at?: string;
-  error?: string;
+  storage_type: 's3' | 'azure' | 'gcs' | 'minio' | 'ceph';
+  connection_id: string;     // Reference to storage connection config
+  prefix: string;           // Format: "{account_id}/{repository_id}/"
+  config: {
+    region?: string;        // For S3/GCS
+    bucket?: string;        // For S3/GCS
+    container?: string;     // For Azure
+    endpoint?: string;      // For MinIO/Ceph
+  };
+  
+  // Mirror-specific settings
+  is_primary: boolean;      // Is this the primary mirror?
+  sync_status: {
+    last_sync_at: string;
+    is_synced: boolean;
+    error?: string;
+  };
+  
+  // Monitoring
+  stats: {
+    total_objects: number;
+    total_size: number;
+    last_verified_at: string;
+  };
 }
 
 // Role assignment for repository access
 export interface RepositoryRole {
   account_id: string;
-  role: 'admin' | 'write' | 'read';
+  role: 'admin' | 'contributor' | 'viewer';
   granted_at: string;
-  granted_by: string;
+  granted_by: string;      // account_id of who granted the role
 }
 
 // Main repository interface matching new schema
@@ -25,16 +44,14 @@ export interface Repository_v2 {
   description: string;
   created_at: string;
   updated_at: string;
-  visibility: 'public' | 'private';
+  visibility: 'public' | 'unlisted' | 'restricted';
   metadata: {
     mirrors: Record<string, RepositoryMirror>;
-    primary_mirror: string;
-    tags: string[];
+    primary_mirror: string;      // Key of the primary mirror (e.g., "aws-us-east-1")
+    tags?: string[];
     roles: Record<string, RepositoryRole>;
   };
   account?: Account;
-  mirrors: RepositoryMirror[];
-  roles: RepositoryRole[];
 }
 
 // Index interfaces for GSIs

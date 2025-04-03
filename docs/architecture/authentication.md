@@ -103,19 +103,13 @@ type UserRole =
 #### Permission Matrix
 ```typescript
 const PERMISSIONS = {
-  owner: {
+  admin: {
     read: true,
     write: true,
     delete: true,
     manage: true
   },
-  admin: {
-    read: true,
-    write: true,
-    delete: false,
-    manage: true
-  },
-  member: {
+  contributor: {
     read: true,
     write: true,
     delete: false,
@@ -205,4 +199,9 @@ export function ProtectedComponent({ children }: { children: React.ReactNode }) 
 - SSO support
 - LDAP integration
 - SAML support
-- Custom identity providers 
+- Custom identity providers
+
+// Helper function to check permissions
+function hasPermission(role: 'admin' | 'contributor' | 'viewer', permission: 'read' | 'write' | 'delete' | 'manage'): boolean {
+  return PERMISSIONS[role][permission] || false;
+} 

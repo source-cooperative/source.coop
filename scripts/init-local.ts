@@ -696,10 +696,23 @@ async function setupTestData() {
       
       // Create a default mirror
       const defaultMirror: RepositoryMirror = {
-        url: `https://example.com/${accountId}/${repoId}`,
-        type: 'git',
-        sync_status: 'synced',
-        last_sync_at: now
+        storage_type: 's3',
+        connection_id: 'default-connection',
+        prefix: `${accountId}/${repoId}/`,
+        config: {
+          region: 'us-east-1',
+          bucket: 'source-coop-data'
+        },
+        is_primary: true,
+        sync_status: {
+          last_sync_at: now,
+          is_synced: true
+        },
+        stats: {
+          total_objects: 0,
+          total_size: 0,
+          last_verified_at: now
+        }
       };
       
       // Create a default role
@@ -733,9 +746,7 @@ async function setupTestData() {
               granted_by: relationships.owner
             }
           }
-        },
-        mirrors: [defaultMirror],
-        roles: [defaultRole]
+        }
       };
       repositories.push(repository);
     }
@@ -771,10 +782,23 @@ async function setupTestData() {
       
       // Create a default mirror
       const defaultMirror: RepositoryMirror = {
-        url: `https://example.com/${userId}/${repo.id}`,
-        type: 'git',
-        sync_status: 'synced',
-        last_sync_at: now
+        storage_type: 's3',
+        connection_id: 'default-connection',
+        prefix: `${userId}/${repo.id}/`,
+        config: {
+          region: 'us-east-1',
+          bucket: 'source-coop-data'
+        },
+        is_primary: true,
+        sync_status: {
+          last_sync_at: now,
+          is_synced: true
+        },
+        stats: {
+          total_objects: 0,
+          total_size: 0,
+          last_verified_at: now
+        }
       };
       
       // Create a default role
@@ -808,9 +832,7 @@ async function setupTestData() {
               granted_by: userAccount.account_id
             }
           }
-        },
-        mirrors: [defaultMirror],
-        roles: [defaultRole]
+        }
       };
       repositories.push(repository);
     }
