@@ -156,15 +156,15 @@ export function Navigation({ _initialSession }: NavigationProps) {
 
                 <DropdownMenu.Content>
                   <DropdownMenu.Label>Account</DropdownMenu.Label>
-                  <DropdownMenu.Item asChild>
+                  <DropdownMenu.Item>
                     <Link href={`/${account.account_id}`}>View Profile</Link>
                   </DropdownMenu.Item>
-                  <DropdownMenu.Item asChild>
+                  <DropdownMenu.Item>
                     <Link href={`/${account.account_id}/edit`}>Edit Profile</Link>
                   </DropdownMenu.Item>
                   <DropdownMenu.Separator />
                   <DropdownMenu.Label>Organizations</DropdownMenu.Label>
-                  <DropdownMenu.Item asChild>
+                  <DropdownMenu.Item>
                     <Link href={`/${account.account_id}/organization/new`}>Create Organization</Link>
                   </DropdownMenu.Item>
                   <DropdownMenu.Separator />
