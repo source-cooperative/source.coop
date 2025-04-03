@@ -1,7 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { RepositoryList } from '../RepositoryList';
-import type { Repository } from '@/types';
-import type { IndividualAccount } from '@/types';
+import type { Repository_v2 } from '@/types/repository_v2';
+import type { Account } from '@/types/account_v2';
 
 // Mock next/navigation
 const mockRouter = {
@@ -18,33 +18,54 @@ jest.mock('next/navigation', () => ({
 }));
 
 describe('RepositoryList', () => {
-  const mockAccount: IndividualAccount = {
+  const mockAccount: Account = {
     account_id: 'test-account',
     type: 'individual',
     name: 'Test User',
-    email: 'test@example.com',
+    emails: [{
+      address: 'test@example.com',
+      verified: true,
+      is_primary: true,
+      added_at: '2024-03-14T00:00:00Z'
+    }],
     created_at: '2024-03-14T00:00:00Z',
-    updated_at: '2024-03-14T00:00:00Z'
+    updated_at: '2024-03-14T00:00:00Z',
+    disabled: false,
+    flags: [],
+    metadata_public: {},
+    metadata_private: {
+      identity_id: 'test-identity'
+    }
   };
 
-  const mockRepositories: Repository[] = [
+  const mockRepositories: Repository_v2[] = [
     {
       repository_id: 'repo1',
-      account: mockAccount,
+      account_id: 'test-account',
       title: 'Repository 1',
       description: 'Test repository 1',
-      private: false,
+      visibility: 'public',
       created_at: '2024-03-14T00:00:00Z',
-      updated_at: '2024-03-14T00:00:00Z'
+      updated_at: '2024-03-14T00:00:00Z',
+      metadata: {
+        mirrors: {},
+        primary_mirror: '',
+        roles: {}
+      }
     },
     {
       repository_id: 'repo2',
-      account: mockAccount,
+      account_id: 'test-account',
       title: 'Repository 2',
       description: 'Test repository 2',
-      private: false,
+      visibility: 'public',
       created_at: '2024-03-14T00:00:00Z',
-      updated_at: '2024-03-14T00:00:00Z'
+      updated_at: '2024-03-14T00:00:00Z',
+      metadata: {
+        mirrors: {},
+        primary_mirror: '',
+        roles: {}
+      }
     }
   ];
 

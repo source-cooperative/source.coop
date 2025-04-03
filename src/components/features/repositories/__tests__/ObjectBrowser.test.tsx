@@ -6,15 +6,15 @@ import { exampleRepositories, _exampleObjects } from '@/tests/fixtures/example-d
 const mockRouter = { push: jest.fn() };
 jest.mock('next/navigation', () => ({
   useRouter: () => mockRouter,
-  usePathname: () => '/nasa/landsat-collection'
+  usePathname: () => '/test-account/repo1'
 }));
 
 describe('ObjectBrowser', () => {
-  const mockRepository = exampleRepositories.find(r => r.repository_id === 'landsat-collection')!;
+  const mockRepository = exampleRepositories.find(r => r.repository_id === 'repo1')!;
   const mockObjects = [
     {
       id: 'catalog.json',
-      repository_id: 'landsat-collection',
+      repository_id: 'repo1',
       path: 'catalog.json',
       size: 1024,
       type: 'file',
@@ -27,7 +27,7 @@ describe('ObjectBrowser', () => {
     },
     {
       id: 'data',
-      repository_id: 'landsat-collection',
+      repository_id: 'repo1',
       path: 'data',
       size: 0,
       type: 'directory',
@@ -66,7 +66,7 @@ describe('ObjectBrowser', () => {
     );
 
     fireEvent.click(screen.getByText('data'));
-    expect(mockRouter.push).toHaveBeenCalledWith('/nasa/landsat-collection/data');
+    expect(mockRouter.push).toHaveBeenCalledWith('/test-account/repo1/data');
   });
 
   it('should navigate to file when clicked', () => {
@@ -79,7 +79,7 @@ describe('ObjectBrowser', () => {
     );
 
     fireEvent.click(screen.getByText('catalog.json'));
-    expect(mockRouter.push).toHaveBeenCalledWith('/nasa/landsat-collection/catalog.json');
+    expect(mockRouter.push).toHaveBeenCalledWith('/test-account/repo1/catalog.json');
   });
 
   it('should show empty state when no objects', () => {

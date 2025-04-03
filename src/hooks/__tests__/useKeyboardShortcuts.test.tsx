@@ -8,13 +8,13 @@ import { exampleRepositories } from '@/tests/fixtures/example-data';
 const mockRouter = { push: jest.fn() };
 jest.mock('next/navigation', () => ({
   useRouter: () => mockRouter,
-  usePathname: () => '/nasa/landsat-collection'
+  usePathname: () => '/test-account/repo1'
 }));
 
 // Mock window.location
 const mockLocation = {
   origin: 'http://localhost:3000',
-  pathname: '/nasa/landsat-collection'
+  pathname: '/test-account/repo1'
 };
 
 Object.defineProperty(window, 'location', {
@@ -73,7 +73,7 @@ describe('useKeyboardShortcuts', () => {
 });
 
 describe('useRepositoryListKeyboardShortcuts', () => {
-  const mockRepository = exampleRepositories.find(r => r.repository_id === 'landsat-collection')!;
+  const mockRepository = exampleRepositories.find(r => r.repository_id === 'repo1')!;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -91,7 +91,7 @@ describe('useRepositoryListKeyboardShortcuts', () => {
     // Add event listener to document
     const _eventListener = document.addEventListener('keydown', (e) => {
       if (e.key === 'y' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
-        navigator.clipboard.writeText('http://localhost:3000/nasa/landsat-collection');
+        navigator.clipboard.writeText('http://localhost:3000/test-account/repo1');
       }
     });
 
@@ -101,17 +101,17 @@ describe('useRepositoryListKeyboardShortcuts', () => {
     });
 
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
-      'http://localhost:3000/nasa/landsat-collection'
+      'http://localhost:3000/test-account/repo1'
     );
   });
 });
 
 describe('useObjectBrowserKeyboardShortcuts', () => {
-  const mockRepository = exampleRepositories.find(r => r.repository_id === 'landsat-collection')!;
+  const mockRepository = exampleRepositories.find(r => r.repository_id === 'repo1')!;
   const mockObjects = [
     {
       id: 'catalog.json',
-      repository_id: 'landsat-collection',
+      repository_id: 'repo1',
       path: 'catalog.json',
       size: 1024,
       type: 'file',
@@ -124,7 +124,7 @@ describe('useObjectBrowserKeyboardShortcuts', () => {
     },
     {
       id: 'data',
-      repository_id: 'landsat-collection',
+      repository_id: 'repo1',
       path: 'data',
       size: 0,
       type: 'directory',
@@ -210,7 +210,7 @@ describe('useObjectBrowserKeyboardShortcuts', () => {
   });
 
   it('should copy file URL when y is pressed', () => {
-    const { _result } = renderHook(() => useObjectBrowserKeyboardShortcuts({
+    const { result } = renderHook(() => useObjectBrowserKeyboardShortcuts({
       repository: mockRepository,
       objects: mockObjects,
       currentPath: [],
@@ -223,7 +223,7 @@ describe('useObjectBrowserKeyboardShortcuts', () => {
     // Add event listener to document
     const _eventListener = document.addEventListener('keydown', (e) => {
       if (e.key === 'y' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
-        navigator.clipboard.writeText('http://localhost:3000/nasa/landsat-collection/catalog.json');
+        navigator.clipboard.writeText('http://localhost:3000/test-account/repo1/catalog.json');
       }
     });
 
@@ -232,7 +232,7 @@ describe('useObjectBrowserKeyboardShortcuts', () => {
     });
 
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
-      'http://localhost:3000/nasa/landsat-collection/catalog.json'
+      'http://localhost:3000/test-account/repo1/catalog.json'
     );
   });
 }); 
