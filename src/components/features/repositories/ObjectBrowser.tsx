@@ -1,9 +1,10 @@
 'use client';
 
-import { Card, Box, _Flex } from '@radix-ui/themes';
+import { Card, Box, Flex } from '@radix-ui/themes';
 import { useState, useMemo, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import type { Repository, RepositoryObject } from '@/types';
+import type { Repository_v2 } from '@/types/repository_v2';
+import type { RepositoryObject } from '@/types/repository_object';
 import { SectionHeader } from '@/components/core';
 import { BreadcrumbNav } from '@/components/display';
 import { ShortcutHelp } from '@/components/features/keyboard/ShortcutHelp';
@@ -14,7 +15,7 @@ import { buildDirectoryTree } from './object-browser/utils';
 import _styles from './ObjectBrowser.module.css';
 
 export interface ObjectBrowserProps {
-  repository: Repository;
+  repository: Repository_v2;
   objects: RepositoryObject[];
   initialPath?: string;
   selectedObject?: RepositoryObject;
@@ -43,11 +44,11 @@ export function ObjectBrowser({ repository, objects, initialPath = '', selectedO
   const navigateToPath = useCallback(async (newPath: string[]) => {
     setCurrentPath(newPath);
     const urlPath = newPath.length > 0 ? '/' + newPath.join('/') : '';
-    router.push(`/${repository.account.account_id}/${repository.repository_id}${urlPath}`);
+    router.push(`/${repository.account_id}/${repository.repository_id}${urlPath}`);
   }, [repository, router]);
 
   const navigateToFile = useCallback((path: string) => {
-    router.push(`/${repository.account.account_id}/${repository.repository_id}/${path}`);
+    router.push(`/${repository.account_id}/${repository.repository_id}/${path}`);
   }, [repository, router]);
 
   const { 

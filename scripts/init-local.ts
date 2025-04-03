@@ -1,174 +1,71 @@
-import { DynamoDBClient, CreateTableCommand, DeleteTableCommand } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocument } from "@aws-sdk/lib-dynamodb";
+// AWS SDK imports
+import { DynamoDBClient, CreateTableCommand, DeleteTableCommand } from '@aws-sdk/client-dynamodb';
+import { DynamoDBDocumentClient, PutCommand } from '@aws-sdk/lib-dynamodb';
+
+// Node.js built-in imports
+import path from 'path';
+import fs from 'fs';
 import { exec } from 'child_process';
 import { promisify } from 'util';
-import fs from 'fs';
-import path from 'path';
-import type { Account, Repository, OrganizationalAccount, IndividualAccount } from '@/types';
+
+// Import new types
+import type { Account, IndividualAccount, OrganizationalAccount, AccountEmail, AccountDomain } from '../src/types/account_v2';
+import type { Repository_v2 as Repository, RepositoryMirror, RepositoryRole } from '../src/types/repository_v2';
 
 const execAsync = promisify(exec);
+
+// Helper to generate a fake Ory ID
+function generateFakeOryId(): string {
+  return 'ory_' + Math.random().toString(36).substring(2, 15);
+}
+
+// Configure DynamoDB client
 const client = new DynamoDBClient({
-  endpoint: "http://localhost:8000",
-  region: "us-east-1",
+  region: 'us-east-1',
+  endpoint: 'http://localhost:8000',
   credentials: {
-    accessKeyId: "local",
-    secretAccessKey: "local"
+    accessKeyId: 'local',
+    secretAccessKey: 'local'
   }
 });
 
-const docClient = DynamoDBDocument.from(client, {
+const docClient = DynamoDBDocumentClient.from(client, {
   marshallOptions: {
     removeUndefinedValues: true
   }
 });
 
-async function deleteTable(tableName: string) {
-  try {
-    await client.send(new DeleteTableCommand({
-      TableName: tableName
-    }));
-    console.log(`✓ Deleted ${tableName} table`);
-  } catch (e) {
-    if ((e as any).name === 'ResourceNotFoundException') {
-      console.log(`→ ${tableName} table does not exist`);
-    } else {
-      console.error(`✗ Error deleting ${tableName} table:`, e);
-    }
-  }
-}
-
-async function createTables() {
-  // Delete existing tables
-  await deleteTable("Repositories");
-  await deleteTable("Accounts");
-  
-  // Wait for tables to be fully deleted
-  await new Promise(resolve => setTimeout(resolve, 2000));
-
-  // Create tables
-  try {
-    await client.send(new CreateTableCommand({
-      TableName: "Accounts",
-      AttributeDefinitions: [
-        { AttributeName: "account_id", AttributeType: "S" },
-        { AttributeName: "type", AttributeType: "S" },
-        { AttributeName: "email", AttributeType: "S" }
-      ],
-      KeySchema: [
-        { AttributeName: "account_id", KeyType: "HASH" },
-        { AttributeName: "type", KeyType: "RANGE" }
-      ],
-      GlobalSecondaryIndexes: [
-        {
-          IndexName: "GSI1",
-          KeySchema: [
-            { AttributeName: "type", KeyType: "HASH" },
-            { AttributeName: "account_id", KeyType: "RANGE" }
-          ],
-          Projection: {
-            ProjectionType: "ALL"
-          },
-          ProvisionedThroughput: {
-            ReadCapacityUnits: 5,
-            WriteCapacityUnits: 5
-          }
-        },
-        {
-          IndexName: "GSI2",
-          KeySchema: [
-            { AttributeName: "email", KeyType: "HASH" },
-            { AttributeName: "account_id", KeyType: "RANGE" }
-          ],
-          Projection: {
-            ProjectionType: "ALL"
-          },
-          ProvisionedThroughput: {
-            ReadCapacityUnits: 5,
-            WriteCapacityUnits: 5
-          }
-        }
-      ],
-      ProvisionedThroughput: {
-        ReadCapacityUnits: 5,
-        WriteCapacityUnits: 5
-      }
-    }));
-    console.log("✓ Created Accounts table");
-  } catch (e) {
-    console.error("✗ Error creating Accounts table:", e);
-    throw e;
-  }
-
-  try {
-    await client.send(new CreateTableCommand({
-      TableName: "Repositories",
-      AttributeDefinitions: [
-        { AttributeName: "repository_id", AttributeType: "S" },
-        { AttributeName: "account_id", AttributeType: "S" },
-        { AttributeName: "created_at", AttributeType: "S" }
-      ],
-      KeySchema: [
-        { AttributeName: "repository_id", KeyType: "HASH" },
-        { AttributeName: "account_id", KeyType: "RANGE" }
-      ],
-      GlobalSecondaryIndexes: [
-        {
-          IndexName: "GSI1",
-          KeySchema: [
-            { AttributeName: "account_id", KeyType: "HASH" },
-            { AttributeName: "created_at", KeyType: "RANGE" }
-          ],
-          Projection: {
-            ProjectionType: "ALL"
-          },
-          ProvisionedThroughput: {
-            ReadCapacityUnits: 5,
-            WriteCapacityUnits: 5
-          }
-        }
-      ],
-      ProvisionedThroughput: {
-        ReadCapacityUnits: 5,
-        WriteCapacityUnits: 5
-      }
-    }));
-    console.log("✓ Created Repositories table with account_id GSI");
-  } catch (e) {
-    console.error("✗ Error creating Repositories table:", e);
-    throw e;
-  }
-
-  // Wait for tables to be fully created
-  await new Promise(resolve => setTimeout(resolve, 2000));
-}
-
-// Helper to get all directories in a path
-function getDirectories(path: string): string[] {
-  return fs.readdirSync(path, { withFileTypes: true })
+// Helper function to get directories
+function getDirectories(source: string): string[] {
+  return fs.readdirSync(source, { withFileTypes: true })
     .filter(dirent => dirent.isDirectory())
     .map(dirent => dirent.name);
 }
 
-// Define individual user accounts
-const individualUsers: Omit<IndividualAccount, 'ory_id' | 'created_at' | 'updated_at'>[] = [
+// Test data
+const individualUsers: {
+  account_id: string;
+  name: string;
+  email?: string;
+  website?: string;
+  orcid?: string;
+  description?: string;
+}[] = [
   {
     account_id: 'admin',
     name: 'Admin User',
-    type: 'individual',
     email: 'admin@example.com'
   },
   {
     account_id: 'sarah',
     name: 'Sarah Johnson',
-    type: 'individual',
     email: 'sarah.johnson@example.com',
-    websites: [{ url: 'https://sarahjohnson.dev' }],
+    website: 'https://sarahjohnson.dev',
     description: 'Earth scientist specializing in climate data analysis'
   },
   {
     account_id: 'carlos',
     name: 'Carlos Rodriguez',
-    type: 'individual',
     email: 'carlos.rodriguez@example.com',
     orcid: '0000-0002-1825-0097',
     description: 'Marine biologist researching coral reef ecosystems'
@@ -176,7 +73,6 @@ const individualUsers: Omit<IndividualAccount, 'ory_id' | 'created_at' | 'update
   {
     account_id: 'wei',
     name: 'Wei Zhang',
-    type: 'individual',
     email: 'wei.zhang@example.com',
     orcid: '0000-0001-5909-4358',
     description: 'Data scientist working on remote sensing applications'
@@ -184,30 +80,37 @@ const individualUsers: Omit<IndividualAccount, 'ory_id' | 'created_at' | 'update
   {
     account_id: 'aisha',
     name: 'Aisha Patel',
-    type: 'individual',
     email: 'aisha.patel@example.com',
-    websites: [{ url: 'https://aishapatel.net' }],
+    website: 'https://aishapatel.net',
     description: 'GIS specialist focusing on urban development'
   },
   {
     account_id: 'michael',
     name: 'Michael Thompson',
-    type: 'individual',
     email: 'michael.thompson@example.com',
     description: 'Software engineer developing open-source geospatial tools'
   }
 ];
 
-// Organization-to-Individual relationships
-type OrgRelationships = {
-  [orgId: string]: {
-    owner: string;
-    admins: string[];
-    members?: string[];
-  }
+const organizationNames: Record<string, string> = {
+  'noaa': 'National Oceanic and Atmospheric Administration',
+  'nasa': 'NASA',
+  'usgs': 'United States Geological Survey',
+  'esa': 'European Space Agency',
+  'ecmwf': 'European Centre for Medium-Range Weather Forecasts',
+  'planetary-computer': 'Microsoft Planetary Computer',
+  'usda': 'United States Department of Agriculture',
+  'radiant': 'Radiant Earth Foundation',
+  'microsoft': 'Microsoft Corporation'
 };
 
-const orgRelationships: OrgRelationships = {
+interface OrgRelationship {
+  owner: string;
+  admins: string[];
+  members?: string[];
+}
+
+const orgRelationships: Record<string, OrgRelationship> = {
   'noaa': {
     owner: 'sarah',
     admins: ['sarah', 'admin'],
@@ -255,27 +158,32 @@ const orgRelationships: OrgRelationships = {
   }
 };
 
-const organizationNames: Record<string, string> = {
-  'noaa': 'National Oceanic and Atmospheric Administration',
-  'nasa': 'NASA',
-  'usgs': 'United States Geological Survey',
-  'esa': 'European Space Agency',
-  'ecmwf': 'European Centre for Medium-Range Weather Forecasts',
-  'planetary-computer': 'Microsoft Planetary Computer',
-  'usda': 'United States Department of Agriculture',
-  'radiant': 'Radiant Earth Foundation',
-  'microsoft': 'Microsoft Corporation'
-};
-
-// Repository information by organization - more descriptive names and IDs
-type RepositoryInfo = {
+const repositoryTemplates: Record<string, {
   id: string;
   title: string;
   description: string;
-};
-
-const repositoryTemplates: Record<string, RepositoryInfo[]> = {
+}[]> = {
   'noaa': [
+    {
+      id: 'goes-18',
+      title: 'GOES-18 Satellite Data',
+      description: "A collection of data products from the GOES-18 geostationary weather satellite, providing real-time imagery and atmospheric measurements for weather forecasting and climate monitoring."
+    },
+    {
+      id: 'noaa-repo-1',
+      title: 'NOAA Repository 1',
+      description: "A collection of NOAA environmental data products and analysis tools, supporting research in oceanography, atmospheric science, and climate studies."
+    },
+    {
+      id: 'goes-collection',
+      title: 'GOES Satellite Collection',
+      description: "A comprehensive archive of data from the Geostationary Operational Environmental Satellite (GOES) series, featuring imagery and derived products for weather monitoring and forecasting."
+    },
+    {
+      id: 'ghcn',
+      title: 'Global Historical Climatology Network',
+      description: "A collection of temperature, precipitation, and pressure data from the Global Historical Climatology Network, supporting climate research and analysis."
+    },
     {
       id: 'goes-r-imagery',
       title: 'GOES-R Satellite Imagery',
@@ -294,6 +202,21 @@ const repositoryTemplates: Record<string, RepositoryInfo[]> = {
   ],
   'nasa': [
     {
+      id: 'landsat-collection',
+      title: 'Landsat Collection',
+      description: "A comprehensive collection of Landsat satellite data products, including surface reflectance, surface temperature, and analysis-ready data. This repository provides tools for accessing and analyzing multi-temporal Earth observation data from the Landsat satellite program."
+    },
+    {
+      id: 'nasa-repo-1',
+      title: 'NASA Repository 1',
+      description: "A collection of NASA Earth science data products and analysis tools, supporting research in various domains of Earth system science."
+    },
+    {
+      id: 'srtm-dem',
+      title: 'SRTM Digital Elevation Model',
+      description: "A collection of Shuttle Radar Topography Mission (SRTM) digital elevation data, providing high-resolution topographic information for Earth's land surface."
+    },
+    {
       id: 'landsat-collection-2',
       title: 'Landsat Collection 2',
       description: "A curated collection of Landsat Collection 2 data products, including surface reflectance, surface temperature, and analysis-ready data. This repository provides tools for accessing and analyzing multi-temporal Earth observation data from the Landsat satellite program."
@@ -310,6 +233,11 @@ const repositoryTemplates: Record<string, RepositoryInfo[]> = {
     }
   ],
   'usgs': [
+    {
+      id: 'landsat-c2-l2',
+      title: 'Landsat Collection 2 Level-2',
+      description: "A comprehensive collection of Landsat Collection 2 Level-2 surface reflectance and surface temperature products. This repository provides access to atmospherically corrected surface reflectance and surface temperature data from the Landsat satellite program."
+    },
     {
       id: 'national-geologic-map',
       title: 'National Geologic Map Database',
@@ -328,6 +256,11 @@ const repositoryTemplates: Record<string, RepositoryInfo[]> = {
   ],
   'esa': [
     {
+      id: 'sentinel-2',
+      title: 'Sentinel-2 Satellite Data',
+      description: "A collection of multispectral imagery from the Sentinel-2 satellites, providing high-resolution data for land monitoring, agriculture, and environmental assessment."
+    },
+    {
       id: 'sentinel-hub',
       title: 'Sentinel Hub - Copernicus Data',
       description: "A comprehensive collection of Earth observation data from ESA's Copernicus program, including Sentinel satellite imagery and derived products. This repository provides tools for accessing and processing European space data for environmental monitoring."
@@ -344,6 +277,11 @@ const repositoryTemplates: Record<string, RepositoryInfo[]> = {
     }
   ],
   'ecmwf': [
+    {
+      id: 'era5',
+      title: 'ERA5 Climate Reanalysis',
+      description: "A comprehensive collection of ERA5 climate reanalysis data, providing a complete and consistent dataset of the global atmosphere, land surface, and ocean waves from 1950 onwards."
+    },
     {
       id: 'era5-reanalysis',
       title: 'ERA5 Reanalysis',
@@ -362,6 +300,11 @@ const repositoryTemplates: Record<string, RepositoryInfo[]> = {
   ],
   'planetary-computer': [
     {
+      id: 'planetary-computer-reference',
+      title: 'Planetary Computer Reference Data',
+      description: "A collection of reference datasets and tools for the Microsoft Planetary Computer platform, supporting geospatial analysis and machine learning applications."
+    },
+    {
       id: 'global-land-cover',
       title: 'Global Land Cover Mapping',
       description: "A curated collection of global land cover data products and analysis tools, featuring high-resolution imagery and derived classification products. This repository provides access to Microsoft's planetary-scale land cover mapping resources."
@@ -378,6 +321,11 @@ const repositoryTemplates: Record<string, RepositoryInfo[]> = {
     }
   ],
   'usda': [
+    {
+      id: 'naip',
+      title: 'National Agriculture Imagery Program',
+      description: "A collection of high-resolution aerial imagery from the National Agriculture Imagery Program, supporting agricultural assessment, land use planning, and environmental monitoring."
+    },
     {
       id: 'cropland-data-layer',
       title: 'Cropland Data Layer',
@@ -396,6 +344,11 @@ const repositoryTemplates: Record<string, RepositoryInfo[]> = {
   ],
   'radiant': [
     {
+      id: 'ml-training-data',
+      title: 'Machine Learning Training Data',
+      description: "A collection of geospatial training data for machine learning applications, supporting research in remote sensing, Earth observation, and environmental monitoring."
+    },
+    {
       id: 'geospatial-ml',
       title: 'Geospatial Machine Learning Resources',
       description: "A curated collection of Earth observation data products and machine learning tools, focusing on sustainable development applications. This repository provides access to Radiant's geospatial machine learning resources."
@@ -412,6 +365,11 @@ const repositoryTemplates: Record<string, RepositoryInfo[]> = {
     }
   ],
   'microsoft': [
+    {
+      id: 'global-building-footprints',
+      title: 'Global Building Footprints',
+      description: "A collection of building footprint data derived from satellite imagery using AI techniques, providing detailed information about global building locations and characteristics."
+    },
     {
       id: 'building-footprints',
       title: 'Global Building Footprints',
@@ -430,8 +388,11 @@ const repositoryTemplates: Record<string, RepositoryInfo[]> = {
   ]
 };
 
-// Repositories owned by individual users
-const individualRepositories: Record<string, RepositoryInfo[]> = {
+const individualRepositories: Record<string, {
+  id: string;
+  title: string;
+  description: string;
+}[]> = {
   'sarah': [
     {
       id: 'climate-analytics',
@@ -484,9 +445,124 @@ const individualRepositories: Record<string, RepositoryInfo[]> = {
   ]
 };
 
-// Helper to generate a fake Ory ID
-function generateFakeOryId(): string {
-  return `ory_${Math.random().toString(36).substring(2, 15)}`;
+async function deleteTable(tableName: string) {
+  try {
+    await client.send(new DeleteTableCommand({
+      TableName: tableName
+    }));
+    console.log(`✓ Deleted ${tableName} table`);
+  } catch (e) {
+    if ((e as any).name === 'ResourceNotFoundException') {
+      console.log(`→ ${tableName} table does not exist`);
+    } else {
+      console.error(`✗ Error deleting ${tableName} table:`, e);
+    }
+  }
+}
+
+async function createTables() {
+  // Delete existing tables
+  await deleteTable("sc-repositories");
+  await deleteTable("sc-accounts");
+  
+  // Wait for tables to be fully deleted
+  await new Promise(resolve => setTimeout(resolve, 2000));
+
+  // Create tables
+  try {
+    await client.send(new CreateTableCommand({
+      TableName: "sc-accounts",
+      AttributeDefinitions: [
+        { AttributeName: "account_id", AttributeType: "S" },
+        { AttributeName: "type", AttributeType: "S" }
+      ],
+      KeySchema: [
+        { AttributeName: "account_id", KeyType: "HASH" },
+        { AttributeName: "type", KeyType: "RANGE" }
+      ],
+      GlobalSecondaryIndexes: [
+        {
+          IndexName: "AccountTypeIndex",
+          KeySchema: [
+            { AttributeName: "type", KeyType: "HASH" },
+            { AttributeName: "account_id", KeyType: "RANGE" }
+          ],
+          Projection: {
+            ProjectionType: "ALL"
+          },
+          ProvisionedThroughput: {
+            ReadCapacityUnits: 5,
+            WriteCapacityUnits: 5
+          }
+        }
+      ],
+      ProvisionedThroughput: {
+        ReadCapacityUnits: 5,
+        WriteCapacityUnits: 5
+      }
+    }));
+    console.log("✓ Created sc-accounts table");
+  } catch (e) {
+    console.error("✗ Error creating sc-accounts table:", e);
+    throw e;
+  }
+
+  try {
+    await client.send(new CreateTableCommand({
+      TableName: "sc-repositories",
+      AttributeDefinitions: [
+        { AttributeName: "repository_id", AttributeType: "S" },
+        { AttributeName: "account_id", AttributeType: "S" },
+        { AttributeName: "created_at", AttributeType: "S" },
+        { AttributeName: "visibility", AttributeType: "S" }
+      ],
+      KeySchema: [
+        { AttributeName: "repository_id", KeyType: "HASH" },
+        { AttributeName: "account_id", KeyType: "RANGE" }
+      ],
+      GlobalSecondaryIndexes: [
+        {
+          IndexName: "AccountRepositoriesIndex",
+          KeySchema: [
+            { AttributeName: "account_id", KeyType: "HASH" },
+            { AttributeName: "created_at", KeyType: "RANGE" }
+          ],
+          Projection: {
+            ProjectionType: "ALL"
+          },
+          ProvisionedThroughput: {
+            ReadCapacityUnits: 5,
+            WriteCapacityUnits: 5
+          }
+        },
+        {
+          IndexName: "PublicRepositoriesIndex",
+          KeySchema: [
+            { AttributeName: "visibility", KeyType: "HASH" },
+            { AttributeName: "created_at", KeyType: "RANGE" }
+          ],
+          Projection: {
+            ProjectionType: "ALL"
+          },
+          ProvisionedThroughput: {
+            ReadCapacityUnits: 5,
+            WriteCapacityUnits: 5
+          }
+        }
+      ],
+      ProvisionedThroughput: {
+        ReadCapacityUnits: 5,
+        WriteCapacityUnits: 5
+      }
+    }));
+    console.log("✓ Created sc-repositories table");
+  } catch (e) {
+    console.error("✗ Error creating sc-repositories table:", e);
+    throw e;
+  }
+
+  // Wait for tables to be fully created
+  await new Promise(resolve => setTimeout(resolve, 2000));
 }
 
 async function setupTestData() {
@@ -507,11 +583,29 @@ async function setupTestData() {
 
   // First create individual user accounts
   const individualAccounts = individualUsers.map(user => {
+    const now = new Date().toISOString();
     const account: IndividualAccount = {
-      ...user,
-      ory_id: generateFakeOryId(),
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      account_id: user.account_id,
+      type: 'individual',
+      name: user.name,
+      emails: user.email ? [{
+        address: user.email,
+        verified: false,
+        is_primary: true,
+        added_at: now
+      }] : [],
+      created_at: now,
+      updated_at: now,
+      disabled: false,
+      flags: [],
+      metadata_public: {
+        bio: user.description,
+        orcid: user.orcid,
+        domains: []
+      },
+      metadata_private: {
+        identity_id: generateFakeOryId()
+      }
     };
     return account;
   });
@@ -529,17 +623,24 @@ async function setupTestData() {
       admins: ['admin'] 
     };
 
+    const now = new Date().toISOString();
+
     // Create organization account
     const orgAccount: OrganizationalAccount = {
       account_id: accountId,
-      ory_id: generateFakeOryId(),
-      name: organizationNames[accountId] || accountId.charAt(0).toUpperCase() + accountId.slice(1).replace(/-/g, ' '),
       type: 'organization',
-      owner_account_id: relationships.owner,
-      admin_account_ids: relationships.admins,
-      member_account_ids: relationships.members,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      name: organizationNames[accountId] || accountId.charAt(0).toUpperCase() + accountId.slice(1).replace(/-/g, ' '),
+      emails: [],
+      created_at: now,
+      updated_at: now,
+      disabled: false,
+      flags: [],
+      metadata_public: {
+        domains: []
+      },
+      metadata_private: {
+        identity_id: generateFakeOryId()
+      }
     };
     accounts.push(orgAccount);
 
@@ -561,7 +662,7 @@ async function setupTestData() {
           // Create README.md with basic content
           fs.writeFileSync(
             path.join(repoPath, 'README.md'),
-            `# ${template.title}\n\nBasic repository information.\n`
+            `# ${template.title}\n\n${template.description}\n`
           );
           
           existingRepoDirs.push(template.id);
@@ -591,16 +692,50 @@ async function setupTestData() {
     for (const repoId of existingRepoDirs) {
       // Find matching template if it exists
       const template = (repositoryTemplates[accountId] || []).find(t => t.id === repoId);
+      const now = new Date().toISOString();
+      
+      // Create a default mirror
+      const defaultMirror: RepositoryMirror = {
+        url: `https://example.com/${accountId}/${repoId}`,
+        type: 'git',
+        sync_status: 'synced',
+        last_sync_at: now
+      };
+      
+      // Create a default role
+      const defaultRole: RepositoryRole = {
+        account_id: relationships.owner,
+        role: 'admin',
+        granted_at: now,
+        granted_by: relationships.owner
+      };
       
       const repository: Repository = {
         repository_id: repoId,
-        account: orgAccount,
+        account_id: orgAccount.account_id,
         title: template ? template.title : `${orgAccount.name} - ${repoId}`,
         description: template ? template.description : 
                    `A comprehensive collection of data products and analysis tools from ${orgAccount.name}, supporting research and operational applications in various domains.`,
-        private: false,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        created_at: now,
+        updated_at: now,
+        visibility: 'public',
+        metadata: {
+          mirrors: {
+            'default': defaultMirror
+          },
+          primary_mirror: 'default',
+          tags: [],
+          roles: {
+            [relationships.owner]: {
+              account_id: relationships.owner,
+              role: 'admin',
+              granted_at: now,
+              granted_by: relationships.owner
+            }
+          }
+        },
+        mirrors: [defaultMirror],
+        roles: [defaultRole]
       };
       repositories.push(repository);
     }
@@ -632,15 +767,50 @@ async function setupTestData() {
         );
       }
       
+      const now = new Date().toISOString();
+      
+      // Create a default mirror
+      const defaultMirror: RepositoryMirror = {
+        url: `https://example.com/${userId}/${repo.id}`,
+        type: 'git',
+        sync_status: 'synced',
+        last_sync_at: now
+      };
+      
+      // Create a default role
+      const defaultRole: RepositoryRole = {
+        account_id: userId,
+        role: 'admin',
+        granted_at: now,
+        granted_by: userId
+      };
+      
       // Create repository object
       const repository: Repository = {
         repository_id: repo.id,
-        account: userAccount,
+        account_id: userAccount.account_id,
         title: repo.title,
         description: repo.description,
-        private: false, // could randomly set some to private
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        created_at: now,
+        updated_at: now,
+        visibility: 'public',
+        metadata: {
+          mirrors: {
+            'default': defaultMirror
+          },
+          primary_mirror: 'default',
+          tags: [],
+          roles: {
+            [userAccount.account_id]: {
+              account_id: userAccount.account_id,
+              role: 'admin',
+              granted_at: now,
+              granted_by: userAccount.account_id
+            }
+          }
+        },
+        mirrors: [defaultMirror],
+        roles: [defaultRole]
       };
       repositories.push(repository);
     }
@@ -649,36 +819,19 @@ async function setupTestData() {
   // Write to DynamoDB
   console.log('Writing accounts to DynamoDB...');
   for (const account of accounts) {
-    // Add type field based on account type
-    const accountItem = {
-      ...account,
-      type: account.type || 'individual' // Default to individual if not specified
-    };
-    
-    await docClient.put({
-      TableName: "Accounts",
-      Item: accountItem
-    });
+    await docClient.send(new PutCommand({
+      TableName: "sc-accounts",
+      Item: account
+    }));
   }
   console.log(`✓ Created ${accounts.length} accounts`);
 
   console.log('Writing repositories to DynamoDB...');
   for (const repository of repositories) {
-    // Prepare Repository for DynamoDB (can't store the full account object)
-    const repoItem = {
-      repository_id: repository.repository_id,
-      account_id: repository.account.account_id,
-      title: repository.title,
-      description: repository.description,
-      private: repository.private,
-      created_at: repository.created_at,
-      updated_at: repository.updated_at
-    };
-    
-    await docClient.put({
-      TableName: "Repositories",
-      Item: repoItem
-    });
+    await docClient.send(new PutCommand({
+      TableName: "sc-repositories",
+      Item: repository
+    }));
   }
   console.log(`✓ Created ${repositories.length} repositories`);
 }

@@ -1,51 +1,55 @@
-// Mirror configuration interface
+import type { Account } from './account_v2';
+
+// Mirror configuration and status tracking
 export interface RepositoryMirror {
-  storage_type: 's3' | 'azure' | 'gcs' | 'minio' | 'ceph';
-  connection_id: string;
-  prefix: string;
-  config: {
-    region?: string;
-    bucket?: string;
-    container?: string;
-    endpoint?: string;
-  };
-  is_primary: boolean;
-  sync_status: {
-    last_sync_at: string;
-    is_synced: boolean;
-    error?: string;
-  };
-  stats: {
-    total_objects: number;
-    total_size: number;
-    last_verified_at: string;
-  };
+  url: string;
+  type: 'git' | 'http';
+  sync_status: 'pending' | 'syncing' | 'synced' | 'failed';
+  last_sync_at?: string;
+  error?: string;
 }
 
-// Role configuration interface
+// Role assignment for repository access
 export interface RepositoryRole {
-  role: 'admin' | 'contributor' | 'viewer';
+  account_id: string;
+  role: 'admin' | 'write' | 'read';
   granted_at: string;
   granted_by: string;
 }
 
-// Repository interface
-export interface Repository {
-  repository_id: string;
-  account_id: string;
+// Main repository interface matching new schema
+export interface Repository_v2 {
+  repository_id: string;    // Partition Key
+  account_id: string;       // Sort Key
   title: string;
-  description?: string;
+  description: string;
   created_at: string;
   updated_at: string;
-  visibility: 'public' | 'unlisted' | 'restricted';
+  visibility: 'public' | 'private';
   metadata: {
-    mirrors: {
-      [key: string]: RepositoryMirror;  // key format: "{provider}-{region}" e.g., "aws-us-east-1"
-    };
-    primary_mirror: string;  // Key of the primary mirror
-    tags?: string[];
-    roles: {
-      [account_id: string]: RepositoryRole;
-    };
+    mirrors: Record<string, RepositoryMirror>;
+    primary_mirror: string;
+    tags: string[];
+    roles: Record<string, RepositoryRole>;
   };
+  account?: Account;
+  mirrors: RepositoryMirror[];
+  roles: RepositoryRole[];
+}
+
+// Index interfaces for GSIs
+export interface AccountRepositoriesIndex {
+  account_id: string;      // PK
+  created_at: string;      // SK
+  repository_id: string;   // Projected attribute
+  title: string;          // Projected attribute
+  visibility: string;     // Projected attribute
+}
+
+export interface PublicRepositoriesIndex {
+  visibility: string;     // PK
+  created_at: string;    // SK
+  repository_id: string; // Projected attribute
+  account_id: string;    // Projected attribute
+  title: string;        // Projected attribute
 } 

@@ -17,10 +17,11 @@ import { notFound } from 'next/navigation';
 import { ObjectBrowser, RepositoryHeader } from '@/components/features/repositories';
 
 // Types
-import type { _Repository, RepositoryObject } from '@/types';
+import type { Repository_v2 } from '@/types/repository_v2';
+import type { RepositoryObject } from '@/types/repository_object';
 
 // Utilities
-import { fetchRepository } from '@/lib/db';
+import { fetchRepository } from '@/lib/db/operations_v2';
 import { createStorageClient } from '@/lib/clients/storage';
 
 interface PageProps {
@@ -41,7 +42,7 @@ export default async function RepositoryPathPage({
   console.log('Debug - Page params:', { account_id, repository_id, path, pathString });
 
   // 2. Find the repository or 404
-  const repository = await fetchRepository(repository_id, account_id);
+  const repository = await fetchRepository(account_id, repository_id);
   console.log('Debug - Repository:', repository);
   
   if (!repository) {

@@ -1,7 +1,8 @@
-import { _DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { _DynamoDBDocument, GetCommand, QueryCommand, BatchGetCommand, ScanCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
-import type { Account, IndividualAccount, OrganizationalAccount, Repository } from '@/types';
-import { _CONFIG } from '../config';
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import { DynamoDBDocument, GetCommand, QueryCommand, BatchGetCommand, ScanCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
+import type { Account, IndividualAccount, OrganizationalAccount } from '@/types/account_v2';
+import type { Repository_v2 as Repository, RepositoryMirror, RepositoryRole } from '@/types/repository_v2';
+import { CONFIG } from '../config';
 
 // Use the singleton client from clients/index.ts
 import { getDynamoDb } from '../clients';
@@ -116,7 +117,7 @@ export async function updateAccount(account: Account): Promise<boolean> {
  * Core repository operations
  */
 
-export async function fetchRepository(repository_id: string, account_id: string): Promise<Repository | null> {
+export async function fetchRepository(account_id: string, repository_id: string): Promise<Repository | null> {
   try {
     const result = await docClient.send(new GetCommand({
       TableName: "sc-repositories",
@@ -126,7 +127,15 @@ export async function fetchRepository(repository_id: string, account_id: string)
       }
     }));
 
-    return result.Item as Repository || null;
+    if (!result.Item) return null;
+
+    // Get the account for this repository
+    const account = await fetchAccount(account_id);
+    
+    return {
+      ...result.Item as Repository,
+      account: account || undefined
+    };
   } catch (e) {
     console.error(`Error fetching repository ${repository_id}:`, e);
     return null;
@@ -144,16 +153,76 @@ export async function fetchRepositoriesByAccount(account_id: string): Promise<Re
       }
     }));
 
-    return (result.Items || []) as Repository[];
+    // Get the account for these repositories
+    const account = await fetchAccount(account_id);
+
+    return (result.Items || []).map(item => ({
+      ...item as Repository,
+      account: account || undefined
+    }));
   } catch (e) {
     console.error(`Error fetching repositories for account ${account_id}:`, e);
     return [];
   }
 }
 
-export async function fetchPublicRepositories(limit = 50): Promise<Repository[]> {
+export async function fetchRepositories(
+  limit = 50,
+  lastEvaluatedKey?: any
+): Promise<{
+  repositories: Repository[];
+  lastEvaluatedKey: any;
+}> {
   try {
-    const result = await docClient.send(new QueryCommand({
+    // Use a scan but with pagination to avoid loading everything at once
+    const scanParams: any = {
+      TableName: "sc-repositories",
+      Limit: limit,
+      FilterExpression: "attribute_exists(account_id)" // Only get valid repositories
+    };
+    
+    if (lastEvaluatedKey) {
+      scanParams.ExclusiveStartKey = lastEvaluatedKey;
+    }
+    
+    const result = await docClient.send(new ScanCommand(scanParams));
+    
+    // Get all unique account IDs
+    const accountIds = new Set((result.Items || []).map(repo => repo.account_id));
+    
+    // Fetch all accounts in parallel
+    const accountPromises = Array.from(accountIds).map(id => fetchAccount(id));
+    const accounts = await Promise.all(accountPromises);
+    const accountMap = new Map(accounts.filter(Boolean).map(acc => [acc!.account_id, acc]));
+    
+    // Attach accounts to repositories
+    const repositories = (result.Items || []).map(item => ({
+      ...item as Repository,
+      account: accountMap.get(item.account_id) || undefined
+    }));
+    
+    return {
+      repositories,
+      lastEvaluatedKey: result.LastEvaluatedKey
+    };
+  } catch (e) {
+    console.error('Error fetching repositories:', e);
+    return {
+      repositories: [],
+      lastEvaluatedKey: undefined
+    };
+  }
+}
+
+export async function fetchPublicRepositories(
+  limit = 50,
+  lastEvaluatedKey?: any
+): Promise<{
+  repositories: Repository[];
+  lastEvaluatedKey: any;
+}> {
+  try {
+    const queryParams: any = {
       TableName: "sc-repositories",
       IndexName: "PublicRepositoriesIndex",
       KeyConditionExpression: "visibility = :visibility",
@@ -161,12 +230,24 @@ export async function fetchPublicRepositories(limit = 50): Promise<Repository[]>
         ":visibility": "public"
       },
       Limit: limit
-    }));
+    };
 
-    return (result.Items || []) as Repository[];
+    if (lastEvaluatedKey) {
+      queryParams.ExclusiveStartKey = lastEvaluatedKey;
+    }
+
+    const result = await docClient.send(new QueryCommand(queryParams));
+
+    return {
+      repositories: (result.Items || []) as Repository[],
+      lastEvaluatedKey: result.LastEvaluatedKey
+    };
   } catch (e) {
-    console.error(`Error fetching public repositories:`, e);
-    return [];
+    console.error('Error fetching public repositories:', e);
+    return {
+      repositories: [],
+      lastEvaluatedKey: null
+    };
   }
 }
 
@@ -190,6 +271,62 @@ export async function updateRepository(repository: Repository): Promise<boolean>
     return true;
   } catch (e) {
     console.error(`Error updating repository ${repository.repository_id}:`, e);
+    return false;
+  }
+}
+
+export async function updateRepositoryRole(
+  repository_id: string,
+  account_id: string,
+  target_account_id: string,
+  role: RepositoryRole
+): Promise<boolean> {
+  try {
+    await docClient.send(new UpdateCommand({
+      TableName: "sc-repositories",
+      Key: {
+        repository_id,
+        account_id
+      },
+      UpdateExpression: "SET metadata.roles.#account = :role",
+      ExpressionAttributeNames: {
+        "#account": target_account_id
+      },
+      ExpressionAttributeValues: {
+        ":role": role
+      }
+    }));
+    return true;
+  } catch (e) {
+    console.error(`Error updating role for repository ${repository_id}:`, e);
+    return false;
+  }
+}
+
+export async function updateRepositoryMirror(
+  repository_id: string,
+  account_id: string,
+  mirror_key: string,
+  mirror: RepositoryMirror
+): Promise<boolean> {
+  try {
+    await docClient.send(new UpdateCommand({
+      TableName: "sc-repositories",
+      Key: {
+        repository_id,
+        account_id
+      },
+      UpdateExpression: "SET metadata.mirrors.#mirror = :mirror",
+      ExpressionAttributeNames: {
+        "#mirror": mirror_key
+      },
+      ExpressionAttributeValues: {
+        ":mirror": mirror
+      }
+    }));
+    return true;
+  } catch (e) {
+    console.error(`Error updating mirror for repository ${repository_id}:`, e);
     return false;
   }
 }

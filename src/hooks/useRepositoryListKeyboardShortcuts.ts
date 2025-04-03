@@ -1,9 +1,9 @@
 import { useEffect, useState, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import type { Repository } from '@/types';
+import type { Repository_v2 } from '@/types/repository_v2';
 
 interface UseRepositoryListKeyboardShortcutsProps {
-  repositories: Repository[];
+  repositories: Repository_v2[];
   onShowHelp: () => void;
 }
 
@@ -55,7 +55,7 @@ export function useRepositoryListKeyboardShortcuts({
           e.preventDefault();
           if (selectedIndex >= 0 && selectedIndex < repositories.length) {
             const repo = repositories[selectedIndex];
-            router.push(`/${repo.account.account_id}/${repo.repository_id}`);
+            router.push(`/${repo.account_id}/${repo.repository_id}`);
           }
           break;
         case 'Escape':

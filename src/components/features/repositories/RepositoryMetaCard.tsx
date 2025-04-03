@@ -1,10 +1,11 @@
 import { Card } from '@radix-ui/themes';
-import type { Repository, RepositoryStatistics } from '@/types';
+import type { Repository_v2 } from '@/types/repository_v2';
+import type { RepositoryStatistics } from '@/types/repository';
 import { SectionHeader } from '@/components/core';
 import { RepositoryMetaContent } from './RepositoryMetaContent';
 
 interface RepositoryMetaCardProps {
-  repository: Repository;
+  repository: Repository_v2;
   statistics?: RepositoryStatistics;
 }
 

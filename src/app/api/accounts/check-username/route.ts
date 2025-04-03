@@ -1,5 +1,5 @@
-import { fetchAccount } from '@/lib/db/operations';
 import { NextResponse } from 'next/server';
+import { fetchAccount } from '@/lib/db/operations_v2';
 
 // Reserved usernames that cannot be used
 const RESERVED_USERNAMES = [
@@ -10,18 +10,14 @@ const RESERVED_USERNAMES = [
 ];
 
 export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const username = searchParams.get('username');
+
+  if (!username) {
+    return NextResponse.json({ error: 'Username is required' }, { status: 400 });
+  }
+
   try {
-    // Get username from query parameters
-    const { searchParams } = new URL(request.url);
-    const username = searchParams.get('username');
-
-    if (!username) {
-      return NextResponse.json(
-        { error: 'Username parameter is required' },
-        { status: 400 }
-      );
-    }
-
     // Basic validation
     if (username.length < 3) {
       return NextResponse.json(
@@ -46,14 +42,10 @@ export async function GET(request: Request) {
       );
     }
 
-    // Check if an account with this ID already exists
     const account = await fetchAccount(username);
-    
-    return NextResponse.json({
-      available: account === null
-    });
+    return NextResponse.json({ exists: !!account });
   } catch (error) {
     console.error('Error checking username:', error);
-    return NextResponse.json({ error: 'Failed to check username' }, { status: 500 });
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 } 

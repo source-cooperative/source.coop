@@ -1,10 +1,10 @@
-import { render, screen, _waitFor } from '@testing-library/react';
-import { RepositoryList } from '@/components/features/repositories';
-import { fetchRepositories } from '@/lib/db/operations';
-import type { Repository, IndividualAccount } from '@/types';
+import { render, screen } from '@testing-library/react';
+import { fetchRepositories } from '@/lib/db/operations_v2';
+import HomePage from './page';
+import { Repository_v2 } from '@/types/repository_v2';
 
 // Mock the db operations
-jest.mock('@/lib/db/operations', () => ({
+jest.mock('@/lib/db/operations_v2', () => ({
   fetchRepositories: jest.fn(),
 }));
 
@@ -19,45 +19,34 @@ jest.mock('next/navigation', () => ({
 }));
 
 describe('HomePage', () => {
-  const mockAccount: IndividualAccount = {
-    account_id: 'test-user',
-    name: 'Test User',
-    type: 'individual',
-    description: 'A test user',
-    created_at: '2024-01-01T00:00:00Z',
-    updated_at: '2024-01-01T00:00:00Z',
-    email: 'test@example.com',
-    ory_id: 'test-ory-id',
-  };
-
-  const mockRepositories: Repository[] = [
+  const mockRepositories: Repository_v2[] = [
     {
+      account_id: 'test-account',
       repository_id: 'test-repo',
       title: 'Test Repository',
       description: 'A test repository',
-      account: mockAccount,
       created_at: '2024-01-01T00:00:00Z',
       updated_at: '2024-01-01T00:00:00Z',
-      private: false,
-      metadata_files: {},
-    },
+      visibility: 'public',
+      metadata: {
+        mirrors: {},
+        primary_mirror: '',
+        tags: [],
+        roles: {}
+      },
+      mirrors: [],
+      roles: []
+    }
   ];
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    (fetchRepositories as jest.Mock).mockResolvedValue({ repositories: mockRepositories, lastEvaluatedKey: null });
+    (fetchRepositories as jest.Mock).mockResolvedValue({ repositories: mockRepositories });
   });
 
-  it('renders the repositories list', async () => {
-    render(<RepositoryList repositories={mockRepositories} />);
+  it('renders repositories list', async () => {
+    render(await HomePage());
     
-    // Verify that the repository title is rendered
+    expect(screen.getByText('Repositories')).toBeInTheDocument();
     expect(screen.getByText('Test Repository')).toBeInTheDocument();
-  });
-
-  it('fetches repositories correctly', async () => {
-    const { repositories } = await fetchRepositories();
-    expect(repositories).toEqual(mockRepositories);
-    expect(fetchRepositories).toHaveBeenCalledTimes(1);
   });
 }); 

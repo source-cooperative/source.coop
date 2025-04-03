@@ -1,4 +1,4 @@
-import { fetchAccount } from '@/lib/db/operations';
+import { fetchAccount } from '@/lib/db/operations_v2';
 import { NextResponse } from 'next/server';
 
 export async function GET(request: Request) {

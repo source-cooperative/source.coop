@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ory } from '@/lib/ory';
-import { fetchAccount, updateAccount } from '@/lib/db/operations';
+import { fetchAccount, updateAccount } from '@/lib/db/operations_v2';
 import { getDynamoDb } from '@/lib/clients';
 import { DeleteCommand } from '@aws-sdk/lib-dynamodb';
 import type { ExtendedSession } from '@/lib/ory';
@@ -86,10 +86,9 @@ export async function GET(
       account_id: account.account_id,
       name: account.name,
       type: account.type,
-      description: account.description,
-      websites: account.websites,
       created_at: account.created_at,
-      updated_at: account.updated_at
+      updated_at: account.updated_at,
+      metadata_public: account.metadata_public
     };
     
     console.log('API: Returning public account data:', publicAccountData);

@@ -10,10 +10,10 @@
  */
 
 // src/app/page.tsx
-import { Container, Heading, Text, Box } from '@radix-ui/themes';
+import { Container, Box, Heading } from '@radix-ui/themes';
 import { RepositoryList } from '@/components/features/repositories';
-import type { Repository } from '@/types';
-import { fetchRepositories } from '@/lib/db/operations';
+import type { Repository_v2 as Repository } from '@/types/repository_v2';
+import { fetchRepositories } from '@/lib/db/operations_v2';
 
 // Server action for data fetching
 async function getRepositories(): Promise<Repository[]> {
@@ -24,17 +24,11 @@ async function getRepositories(): Promise<Repository[]> {
 
 export default async function HomePage() {
   const repositories = await getRepositories();
-
+  
   return (
     <Container size="4" py="6">
       <Box>
-        <Box mb="6">
-          <Heading size="8" mb="2">Repositories</Heading>
-          <Text size="4" color="gray">
-            Discover and explore data repositories
-          </Text>
-        </Box>
-
+        <Heading size="6" mb="4">Repositories</Heading>
         <RepositoryList repositories={repositories} />
       </Box>
     </Container>

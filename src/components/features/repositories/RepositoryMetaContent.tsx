@@ -1,11 +1,12 @@
 import { DataList, Badge, Link } from '@radix-ui/themes';
-import type { Repository, RepositoryStatistics } from '@/types';
+import type { Repository_v2 } from '@/types/repository_v2';
+import type { RepositoryStatistics } from '@/types/repository';
 import { MonoText } from '@/components/core';
 import { formatBytes } from '@/lib/format';
 import { DateText } from '@/components/display';
 
 interface RepositoryMetaContentProps {
-  repository: Repository;
+  repository: Repository_v2;
   statistics?: RepositoryStatistics;
 }
 
@@ -15,30 +16,19 @@ export function RepositoryMetaContent({ repository, statistics }: RepositoryMeta
       <DataList.Item>
         <DataList.Label>Visibility</DataList.Label>
         <DataList.Value>
-          <Badge color={repository.private ? "red" : "green"}>
-            {repository.private ? "Private" : "Public"}
+          <Badge color={repository.visibility === 'private' ? "red" : "green"}>
+            {repository.visibility === 'private' ? "Private" : "Public"}
           </Badge>
         </DataList.Value>
       </DataList.Item>
       
-      {repository.default_branch && (
+      {repository.metadata?.primary_mirror && (
         <DataList.Item>
-          <DataList.Label>Default Branch</DataList.Label>
-          <DataList.Value><MonoText>{repository.default_branch}</MonoText></DataList.Value>
+          <DataList.Label>Primary Mirror</DataList.Label>
+          <DataList.Value><MonoText>{repository.metadata.primary_mirror}</MonoText></DataList.Value>
         </DataList.Item>
       )}
-      {repository.root_metadata?.readme && (
-        <DataList.Item>
-          <DataList.Label>README</DataList.Label>
-          <DataList.Value><MonoText>{repository.root_metadata.readme}</MonoText></DataList.Value>
-        </DataList.Item>
-      )}
-      {repository.root_metadata?.license && (
-        <DataList.Item>
-          <DataList.Label>License</DataList.Label>
-          <DataList.Value><MonoText>{repository.root_metadata.license}</MonoText></DataList.Value>
-        </DataList.Item>
-      )}
+      
       {statistics && (
         <>
           <DataList.Item>
@@ -51,29 +41,15 @@ export function RepositoryMetaContent({ repository, statistics }: RepositoryMeta
           </DataList.Item>
         </>
       )}
-      <DataList.Item>
-        <DataList.Label>Publisher</DataList.Label>
-        <DataList.Value>
-          {repository.account ? (
-            <Link href={`/${repository.account.account_id}`} underline="always">
-              <MonoText>{repository.account.name}</MonoText>
-            </Link>
-          ) : (
-            <MonoText>Unknown</MonoText>
-          )}
-        </DataList.Value>
-      </DataList.Item>          
+      
       <DataList.Item>
         <DataList.Label>Created</DataList.Label>
-        <DataList.Value>
-          <MonoText><DateText date={repository.created_at} /></MonoText>
-        </DataList.Value>
-      </DataList.Item>          
+        <DataList.Value><DateText date={repository.created_at} /></DataList.Value>
+      </DataList.Item>
+      
       <DataList.Item>
         <DataList.Label>Last Updated</DataList.Label>
-        <DataList.Value>
-          <MonoText><DateText date={repository.updated_at} /></MonoText>
-        </DataList.Value>
+        <DataList.Value><DateText date={repository.updated_at} /></DataList.Value>
       </DataList.Item>
     </DataList.Root>
   );

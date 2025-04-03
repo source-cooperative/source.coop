@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDynamoDb } from '@/lib/clients';
 import { PutCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
-import type { IndividualAccount } from '@/types';
+import type { IndividualAccount } from '@/types/account_v2';
 import { updateOryIdentity } from '@/lib/ory';
-import { fetchAccount } from '@/lib/db';
+import { fetchAccount } from '@/lib/db/operations_v2';
 
 export async function POST(request: NextRequest) {
   try {
@@ -45,13 +45,24 @@ export async function POST(request: NextRequest) {
     // Create the account in DynamoDB
     const newAccount: IndividualAccount = {
       account_id,
-      name,
       type: 'individual',
-      ory_id,
-      email,
-      email_verified: false,
+      name,
+      emails: [{
+        address: email,
+        verified: false,
+        is_primary: true,
+        added_at: new Date().toISOString()
+      }],
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
+      disabled: false,
+      flags: [],
+      metadata_public: {
+        domains: []
+      },
+      metadata_private: {
+        identity_id: ory_id
+      }
     };
     
     console.log('Attempting to create account in DynamoDB:', newAccount);
@@ -60,7 +71,7 @@ export async function POST(request: NextRequest) {
     const dynamoDb = getDynamoDb();
     try {
       await dynamoDb.send(new PutCommand({
-        TableName: "Accounts",
+        TableName: "sc-accounts",
         Item: newAccount
       }));
       console.log('Successfully created account in DynamoDB:', { account_id, type: 'individual' });
@@ -91,7 +102,7 @@ export async function POST(request: NextRequest) {
         // If Ory update fails, delete the account from DynamoDB
         try {
           await dynamoDb.send(new DeleteCommand({
-            TableName: "Accounts",
+            TableName: "sc-accounts",
             Key: { 
               account_id,
               type: 'individual'

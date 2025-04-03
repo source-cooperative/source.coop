@@ -1,11 +1,12 @@
 // For repository detail page header
 import { Grid, Box } from '@radix-ui/themes';
-import type { Repository, RepositoryStatistics } from '@/types';
+import type { Repository_v2 } from '@/types/repository_v2';
+import type { RepositoryStatistics } from '@/types/repository';
 import { RepositorySummaryCard } from './RepositorySummaryCard';
 import { RepositoryMetaCard } from './RepositoryMetaCard';
 
 interface RepositoryHeaderProps {
-  repository: Repository;
+  repository: Repository_v2;
   statistics?: RepositoryStatistics;
 }
 

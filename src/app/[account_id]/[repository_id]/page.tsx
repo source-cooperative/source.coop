@@ -9,110 +9,97 @@
  * 5. No helper functions unless truly needed
  */
 
-// External packages
-import { Container, Box } from '@radix-ui/themes';
 import { notFound } from 'next/navigation';
-import { Metadata } from 'next';
-
-// Internal components
-import { RepositoryHeader, ObjectBrowser } from '@/components/features/repositories';
-import { MarkdownViewer } from '@/components/features/markdown';
-
-// Types and utilities
-import type { _Repository, RepositoryObject } from '@/types';
-import { _fetchRepositories, fetchRepository } from '@/lib/db/operations';
+import type { Metadata } from 'next';
+import { Container, Box } from '@radix-ui/themes';
+import { fetchRepository } from '@/lib/db/operations_v2';
+import { Repository_v2 } from '@/types/repository_v2';
+import { RepositoryHeader } from '@/components/features/repositories';
+import { ObjectBrowser } from '@/components/features/repositories';
 import { createStorageClient } from '@/lib/clients/storage';
+import type { RepositoryObject } from '@/types/repository_object';
 
-interface PageProps {
-  params: { account_id: string; repository_id: string }
-}
-
-interface _StorageResult {
-  content?: {
-    content?: string;
-    metadata?: Record<string, unknown>;
+interface RepositoryPageProps {
+  params: {
+    account_id: string;
+    repository_id: string;
   };
-  metadata?: Record<string, unknown>;
 }
 
-export default async function RepositoryPage({ params }: PageProps) {
-  // 1. Get and await params
+export default async function RepositoryPage({ params }: RepositoryPageProps) {
+  // Await params before destructuring as required by Next.js 15+
   const { account_id, repository_id } = await Promise.resolve(params);
+  
+  try {
+    const repository = await fetchRepository(account_id, repository_id);
+    if (!repository) {
+      return notFound();
+    }
 
-  // 2. Find the repository or 404
-  const repository = await fetchRepository(repository_id, account_id);
-  if (!repository) notFound();
+    // Get objects from storage
+    const result = await createStorageClient().listObjects({
+      account_id,
+      repository_id,
+      object_path: '',
+      prefix: ''
+    });
 
-  // 3. Get objects from storage
-  const objects: RepositoryObject[] = await createStorageClient().listObjects({ 
-    account_id, 
-    repository_id,
-    object_path: ''
-  })
-    .then(result => (result.objects || [])
-      .filter(obj => obj.path)
+    // Transform storage objects to repository objects
+    const repositoryObjects: RepositoryObject[] = (result?.objects || [])
+      .filter(obj => obj?.path)
       .map(obj => ({
-        id: obj.path!, // We know path exists from filter
+        id: obj.path!,
         repository_id,
         path: obj.path!,
         size: obj.size || 0,
         type: obj.type || 'file',
         mime_type: obj.mime_type || '',
-        created_at: new Date().toISOString(), // Default to now
-        updated_at: new Date().toISOString(),
-        checksum: obj.checksum || '', // Default to empty string
-      }))
-    );
+        created_at: obj.created_at || new Date().toISOString(),
+        updated_at: obj.updated_at || new Date().toISOString(),
+        checksum: obj.checksum || '',
+        metadata: obj.metadata || {}
+      }));
 
-  // 4. Get README if it exists
-  const storage = createStorageClient();
-  let readmeContent: string | undefined;
-
-  try {
-    const hasReadme = objects.some(obj => obj.path === 'README.md');
-    if (hasReadme) {
-      const result = await storage.getObject({
-        account_id,
-        repository_id,
-        object_path: 'README.md'
-      });
-      
-      if (result.data) {
-        readmeContent = result.data.toString();
-      }
-    }
-  } catch (error) {
-    console.error('Error fetching repository contents:', error);
-    // Still show the page but with empty contents
-  }
-
-  // 5. Render the page
-  return (
-    <Container>
-      <RepositoryHeader repository={repository} />
-      
-      <Box mt="4">
-        <ObjectBrowser 
-          repository={repository}
-          objects={objects}
-          initialPath=""
-        />
-      </Box>
-
-      {readmeContent && (
+    return (
+      <Container>
+        <RepositoryHeader repository={repository} />
         <Box mt="4">
-          <MarkdownViewer content={readmeContent} />
+          <ObjectBrowser
+            repository={repository}
+            objects={repositoryObjects}
+            initialPath=""
+          />
         </Box>
-      )}
-    </Container>
-  );
+      </Container>
+    );
+  } catch (error) {
+    console.error('Error fetching repository:', error);
+    return notFound();
+  }
 }
 
 // Basic metadata
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+export async function generateMetadata({ params }: RepositoryPageProps): Promise<Metadata> {
+  // Await params before destructuring as required by Next.js 15+
   const { account_id, repository_id } = await Promise.resolve(params);
-  return {
-    title: `${account_id}/${repository_id}`,
-    description: `Repository ${account_id}/${repository_id}`
-  };
+  
+  try {
+    const repository = await fetchRepository(account_id, repository_id);
+    if (!repository) {
+      return {
+        title: 'Repository Not Found',
+        description: 'The requested repository could not be found.'
+      };
+    }
+    
+    return {
+      title: repository.title,
+      description: repository.description || `Repository: ${repository.title}`
+    };
+  } catch (error) {
+    return {
+      title: 'Error',
+      description: 'An error occurred while fetching the repository.'
+    };
+  }
 } 

@@ -1,15 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import type { Repository } from '@/types';
+import type { Repository_v2 } from '@/types/repository_v2';
 import { RepositoryListItem } from './RepositoryListItem';
 import { ShortcutHelp } from '@/components/features/keyboard/ShortcutHelp';
 import { useRepositoryListKeyboardShortcuts } from '@/hooks/useRepositoryListKeyboardShortcuts';
-import { _Box, Text } from '@radix-ui/themes';
+import { Text } from '@radix-ui/themes';
 import styles from './RepositoryList.module.css';
 
 interface RepositoryListProps {
-  repositories: Repository[];
+  repositories: Repository_v2[];
 }
 
 export function RepositoryList({ repositories }: RepositoryListProps) {
@@ -19,10 +19,7 @@ export function RepositoryList({ repositories }: RepositoryListProps) {
     onShowHelp: () => setShowHelp(true)
   });
 
-  // Filter out repositories without valid account information
-  const validRepositories = repositories.filter(repo => repo.account && repo.account.account_id);
-
-  if (!validRepositories.length) {
+  if (!repositories.length) {
     return (
       <Text as="p" className={styles.empty}>
         No repositories found.
@@ -33,9 +30,9 @@ export function RepositoryList({ repositories }: RepositoryListProps) {
   return (
     <nav aria-label="Repository list">
       <ul className={styles.list} role="listbox">
-        {validRepositories.map((repository, index) => (
+        {repositories.map((repository, index) => (
           <li 
-            key={`${repository.account.account_id}/${repository.repository_id}`} 
+            key={`${repository.account_id}/${repository.repository_id}`} 
             role="option"
             aria-selected={index === selectedIndex}
           >

@@ -3,25 +3,21 @@
 // For homepage and general listing
 import { forwardRef } from 'react';
 import Link from 'next/link';
-import type { Repository } from '@/types';
+import type { Repository_v2 } from '@/types/repository_v2';
 import { DateText } from '@/components/display';
 import { Box, Text, Badge, Heading } from '@radix-ui/themes';
 import styles from './RepositoryList.module.css';
 
 interface RepositoryListItemProps {
-  repository: Repository;
+  repository: Repository_v2;
   isSelected?: boolean;
 }
 
 export const RepositoryListItem = forwardRef<HTMLAnchorElement, RepositoryListItemProps>(
   function RepositoryListItem({ repository, isSelected }, ref) {
-    // Ensure account info exists
-    const accountId = repository.account?.account_id || '';
-    const accountName = repository.account?.name || 'Unknown';
-    
     return (
       <Link 
-        href={`/${accountId}/${repository.repository_id}`}
+        href={`/${repository.account_id}/${repository.repository_id}`}
         className={styles.item}
         data-selected={isSelected}
         ref={ref}
@@ -40,18 +36,20 @@ export const RepositoryListItem = forwardRef<HTMLAnchorElement, RepositoryListIt
             )}
 
             <Box>
-              <Text size="1" color="gray" mb="2">
-                {accountName}
-              </Text>
+              {repository.account?.name && (
+                <Text size="1" color="gray" mb="2">
+                  {repository.account.name}
+                </Text>
+              )}
               <Text size="1" color="gray" mb="2">
                 Updated <DateText date={repository.updated_at} />
               </Text>
               <Badge 
                 size="1" 
-                color={repository.private ? "red" : "green"}
-                aria-label={repository.private ? "Private repository" : "Public repository"}
+                color={repository.visibility === 'private' ? "red" : "green"}
+                aria-label={repository.visibility === 'private' ? "Private repository" : "Public repository"}
               >
-                {repository.private ? "Private" : "Public"}
+                {repository.visibility === 'private' ? "Private" : "Public"}
               </Badge>
             </Box>
           </article>

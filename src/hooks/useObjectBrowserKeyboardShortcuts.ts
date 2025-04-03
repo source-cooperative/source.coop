@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
-import type { Repository, RepositoryObject } from '@/types';
+import type { Repository_v2 } from '@/types/repository_v2';
+import type { RepositoryObject } from '@/types/repository_object';
 import { useKeyboardShortcuts } from './useKeyboardShortcuts';
 
 interface FileNode {
@@ -13,7 +14,7 @@ interface FileNode {
 }
 
 interface UseObjectBrowserKeyboardShortcutsProps {
-  repository: Repository;
+  repository: Repository_v2;
   objects: FileNode[];
   currentPath: string[];
   selectedObject?: RepositoryObject;
@@ -142,7 +143,7 @@ export function useObjectBrowserKeyboardShortcuts({
             e.preventDefault();
             // Copy permanent link
             if (selectedObject) {
-              const url = window.location.origin + `/${repository.account.account_id}/${repository.repository_id}/${selectedObject.path}`;
+              const url = window.location.origin + `/${repository.account_id}/${repository.repository_id}/${selectedObject.path}`;
               navigator.clipboard.writeText(url);
             }
             break;
