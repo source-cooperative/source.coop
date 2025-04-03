@@ -331,6 +331,61 @@ export async function updateRepositoryMirror(
   }
 }
 
+/**
+ * Fetch members of an organization
+ * 
+ * @param orgAccount - The organizational account to fetch members for
+ * @returns Object containing owner, admins, and members of the organization
+ */
+export async function fetchOrganizationMembers(orgAccount: OrganizationalAccount): Promise<{
+  owner: IndividualAccount | null;
+  admins: IndividualAccount[];
+  members: IndividualAccount[];
+}> {
+  try {
+    // Extract member IDs from the account's metadata
+    const ownerId = orgAccount.metadata_public.owner_account_id;
+    const adminIds = orgAccount.metadata_public.admin_account_ids || [];
+    const memberIds = orgAccount.metadata_public.member_account_ids || [];
+    
+    // Fetch the owner account if available
+    let owner: IndividualAccount | null = null;
+    if (ownerId) {
+      const ownerAccount = await fetchAccount(ownerId);
+      if (ownerAccount && isIndividualAccount(ownerAccount)) {
+        owner = ownerAccount;
+      }
+    }
+    
+    // Fetch admin accounts
+    const adminPromises = adminIds.map(id => fetchAccount(id));
+    const adminAccounts = await Promise.all(adminPromises);
+    const admins = adminAccounts.filter((acc): acc is IndividualAccount => 
+      acc !== null && isIndividualAccount(acc)
+    );
+    
+    // Fetch member accounts
+    const memberPromises = memberIds.map(id => fetchAccount(id));
+    const memberAccounts = await Promise.all(memberPromises);
+    const members = memberAccounts.filter((acc): acc is IndividualAccount => 
+      acc !== null && isIndividualAccount(acc)
+    );
+    
+    return {
+      owner,
+      admins,
+      members
+    };
+  } catch (e) {
+    console.error(`Error fetching organization members for ${orgAccount.account_id}:`, e);
+    return {
+      owner: null,
+      admins: [],
+      members: []
+    };
+  }
+}
+
 // Type guards
 export const isIndividualAccount = (acc: Account): acc is IndividualAccount => 
   acc.type === 'individual';

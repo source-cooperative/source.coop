@@ -636,7 +636,10 @@ async function setupTestData() {
       disabled: false,
       flags: [],
       metadata_public: {
-        domains: []
+        domains: [],
+        owner_account_id: relationships.owner,
+        admin_account_ids: relationships.admins,
+        member_account_ids: relationships.members || []
       },
       metadata_private: {
         identity_id: generateFakeOryId()

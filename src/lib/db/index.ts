@@ -4,5 +4,6 @@ export {
   fetchAccountsByType,
   fetchRepository,
   fetchRepositoriesByAccount,
-  updateAccount
+  updateAccount,
+  fetchOrganizationMembers
 } from './operations_v2';

@@ -57,6 +57,9 @@ export interface OrganizationalAccount extends BaseAccount {
     bio?: string;
     ror_id?: string;
     domains?: AccountDomain[];
+    owner_account_id?: string;
+    admin_account_ids?: string[];
+    member_account_ids?: string[];
   };
 }
 
