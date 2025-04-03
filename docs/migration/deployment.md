@@ -83,35 +83,49 @@ npx tsx scripts/migration/validate.ts
 
 # Check for any errors
 # Verify data integrity
+
+# Verify mirror sync status
+npx tsx scripts/migration/verify-mirrors.ts
+
+# Check email verification status
+npx tsx scripts/migration/verify-emails.ts
 ```
 
 ### 6. Update Application Configuration
 1. Update DynamoDB table names
 2. Update environment variables
 3. Update application code
+4. Configure mirror sync settings
+5. Set up email verification system
 
 ### 7. Start Application
 ```bash
 # Start the application with new configuration
 # (Implementation depends on deployment method)
+
+# Start mirror sync service
+npx tsx scripts/migration/start-mirror-sync.ts
 ```
 
 ### 8. Monitor Application
 - Watch error rates
 - Monitor performance
 - Check user feedback
+- Monitor mirror sync status
+- Track email verification rates
 
 ## Rollback Procedure
 
 If issues occur during deployment:
 
 1. Stop application
-2. Run rollback script:
+2. Stop mirror sync service
+3. Run rollback script:
 ```bash
 npx tsx scripts/migration/rollback.ts
 ```
-3. Revert application configuration
-4. Start application with old configuration
+4. Revert application configuration
+5. Start application with old configuration
 
 ## Post-Deployment Tasks
 
@@ -119,17 +133,23 @@ npx tsx scripts/migration/rollback.ts
 - Check all features
 - Verify data access
 - Test user workflows
+- Verify mirror sync
+- Test email verification
 
 ### 2. Monitor Performance
 - Watch DynamoDB metrics
 - Monitor application performance
 - Check error rates
+- Monitor mirror sync performance
+- Track email verification success rates
 
 ### 3. Cleanup
 After successful deployment (1 week):
 1. Delete old tables
 2. Remove old backups
 3. Update documentation
+4. Archive old mirror configurations
+5. Clean up verification tokens
 
 ## Troubleshooting
 

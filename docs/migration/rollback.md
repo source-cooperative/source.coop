@@ -14,14 +14,17 @@ Rollback should be initiated if any of the following occur:
 3. Performance degradation
 4. User-reported issues
 5. Validation failures
+6. Mirror sync failures
+7. Email verification issues
 
 ## Rollback Procedures
 
 ### 1. Immediate Actions
 
 1. Stop the application
-2. Notify users of issues
-3. Begin rollback process
+2. Stop mirror sync service
+3. Notify users of issues
+4. Begin rollback process
 
 ### 2. Database Rollback
 
@@ -32,6 +35,9 @@ npx tsx scripts/migration/rollback.ts
 # Verify old tables are still intact
 aws dynamodb describe-table --table-name sc-accounts
 aws dynamodb describe-table --table-name sc-repositories
+
+# Verify mirror data
+npx tsx scripts/migration/verify-mirrors.ts --check-old
 ```
 
 ### 3. Application Rollback
@@ -43,6 +49,9 @@ cp .env.backup .env
 
 # Revert code changes
 git checkout <pre-migration-commit>
+
+# Stop mirror sync service
+npx tsx scripts/migration/stop-mirror-sync.ts
 ```
 
 2. Restart application with old configuration
@@ -53,6 +62,8 @@ git checkout <pre-migration-commit>
 2. Check data access
 3. Monitor error rates
 4. Test user workflows
+5. Verify mirror data integrity
+6. Check email verification status
 
 ## Rollback Timeline
 
@@ -70,12 +81,16 @@ git checkout <pre-migration-commit>
 - Keep old tables for 1 week
 - Maintain export backups
 - Document all changes
+- Preserve mirror configurations
+- Keep email verification records
 
 ### 2. Data Recovery
 If needed, we can recover data from:
 - Point-in-time exports
 - S3 backups
 - Old table snapshots
+- Mirror backups
+- Email verification logs
 
 ## Communication Plan
 
@@ -115,6 +130,8 @@ Rollback is considered successful when:
 4. Users can use the system normally
 5. Performance is restored
 6. Error rates are normal
+7. Mirror data is consistent
+8. Email verification is working
 
 ## Support Contacts
 

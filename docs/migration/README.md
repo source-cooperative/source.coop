@@ -5,8 +5,8 @@ This documentation describes the migration process from the old DynamoDB schema 
 ## Overview
 
 The migration involves updating two main DynamoDB tables:
-1. `sc-accounts` → `Accounts_v2`
-2. `sc-repositories` → `Repositories_v2`
+1. `sc-accounts` → `sc-accounts` (schema update only)
+2. `sc-repositories` → `sc-repositories` (schema update only)
 
 The new schema provides:
 - Better type safety and validation

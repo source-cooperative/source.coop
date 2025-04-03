@@ -39,8 +39,7 @@ async function createTables() {
     TableName: "Accounts_v2",
     AttributeDefinitions: [
       { AttributeName: "account_id", AttributeType: "S" },
-      { AttributeName: "type", AttributeType: "S" },
-      { AttributeName: "email", AttributeType: "S" }
+      { AttributeName: "type", AttributeType: "S" }
     ],
     KeySchema: [
       { AttributeName: "account_id", KeyType: "HASH" },
@@ -51,18 +50,6 @@ async function createTables() {
         IndexName: "GSI1",
         KeySchema: [
           { AttributeName: "type", KeyType: "HASH" },
-          { AttributeName: "account_id", KeyType: "RANGE" }
-        ],
-        Projection: { ProjectionType: "ALL" },
-        ProvisionedThroughput: {
-          ReadCapacityUnits: 5,
-          WriteCapacityUnits: 5
-        }
-      },
-      {
-        IndexName: "GSI2",
-        KeySchema: [
-          { AttributeName: "email", KeyType: "HASH" },
           { AttributeName: "account_id", KeyType: "RANGE" }
         ],
         Projection: { ProjectionType: "ALL" },
@@ -84,7 +71,8 @@ async function createTables() {
     AttributeDefinitions: [
       { AttributeName: "repository_id", AttributeType: "S" },
       { AttributeName: "account_id", AttributeType: "S" },
-      { AttributeName: "created_at", AttributeType: "S" }
+      { AttributeName: "created_at", AttributeType: "S" },
+      { AttributeName: "visibility", AttributeType: "S" }
     ],
     KeySchema: [
       { AttributeName: "repository_id", KeyType: "HASH" },
@@ -95,6 +83,18 @@ async function createTables() {
         IndexName: "GSI1",
         KeySchema: [
           { AttributeName: "account_id", KeyType: "HASH" },
+          { AttributeName: "created_at", KeyType: "RANGE" }
+        ],
+        Projection: { ProjectionType: "ALL" },
+        ProvisionedThroughput: {
+          ReadCapacityUnits: 5,
+          WriteCapacityUnits: 5
+        }
+      },
+      {
+        IndexName: "GSI2",
+        KeySchema: [
+          { AttributeName: "visibility", KeyType: "HASH" },
           { AttributeName: "created_at", KeyType: "RANGE" }
         ],
         Projection: { ProjectionType: "ALL" },
@@ -177,6 +177,18 @@ async function validateMigration() {
   // Validate each account
   for (const account of newAccounts.Items) {
     validateAccount(account);
+    
+    // Validate email structure
+    if (account.emails) {
+      for (const email of account.emails) {
+        if (!email.address || !email.added_at) {
+          throw new Error(`Invalid email structure for account ${account.account_id}`);
+        }
+        if (email.verified && !email.verified_at) {
+          throw new Error(`Verified email missing verified_at for account ${account.account_id}`);
+        }
+      }
+    }
   }
 
   // Validate repositories
@@ -196,6 +208,31 @@ async function validateMigration() {
   // Validate each repository
   for (const repo of newRepos.Items) {
     validateRepository(repo);
+    
+    // Validate mirror structure
+    if (repo.metadata.mirrors) {
+      for (const [key, mirror] of Object.entries(repo.metadata.mirrors)) {
+        // Validate mirror key format
+        if (!/^[a-z]+-[a-z0-9-]+$/.test(key)) {
+          throw new Error(`Invalid mirror key format: ${key}`);
+        }
+        
+        // Validate mirror configuration
+        if (!mirror.storage_type || !mirror.connection_id || !mirror.prefix) {
+          throw new Error(`Invalid mirror configuration for key: ${key}`);
+        }
+        
+        // Validate prefix format
+        if (!mirror.prefix.match(/^[a-z0-9-]+\/[a-z0-9-]+\/$/)) {
+          throw new Error(`Invalid prefix format: ${mirror.prefix}`);
+        }
+        
+        // Validate sync status
+        if (!mirror.sync_status || !mirror.sync_status.last_sync_at) {
+          throw new Error(`Missing sync status for mirror: ${key}`);
+        }
+      }
+    }
   }
 }
 ```
