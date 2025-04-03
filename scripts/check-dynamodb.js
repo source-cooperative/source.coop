@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-const http = require('http');
+import http from 'http';
 
 // Function to check if DynamoDB is running
 function checkDynamoDB() {
@@ -48,22 +48,8 @@ function checkDynamoDB() {
 }
 
 // Run the check
-async function run() {
-  try {
-    const isRunning = await checkDynamoDB();
-    
-    if (isRunning) {
-      console.log('✓ DynamoDB is running on port 8000');
-      process.exit(0);
-    } else {
-      console.error('✗ DynamoDB is not running properly on port 8000.');
-      console.error('  Please run: npm run start-dynamodb');
-      process.exit(1);
-    }
-  } catch (error) {
-    console.error('Error checking DynamoDB:', error);
+checkDynamoDB().then(isRunning => {
+  if (!isRunning) {
     process.exit(1);
   }
-}
-
-run(); 
+}); 

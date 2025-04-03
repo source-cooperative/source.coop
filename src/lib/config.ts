@@ -12,6 +12,8 @@ export const CONFIG = {
   database: {
     endpoint: getEnvVar('DYNAMODB_ENDPOINT', 'http://localhost:8000'),
     region: getEnvVar('AWS_REGION', 'us-east-1'),
+    accessKeyId: getEnvVar('DYNAMODB_ACCESS_KEY_ID', 'local'),
+    secretAccessKey: getEnvVar('DYNAMODB_SECRET_ACCESS_KEY', 'local')
   },
   auth: {
     // Public URLs for client-side

@@ -39,7 +39,12 @@ export default async function RepositoryPathPage({
   const { account_id, repository_id, path } = await Promise.resolve(params);
   const pathString = path?.join('/') || '';
   
-  console.log('Debug - Page params:', { account_id, repository_id, path, pathString });
+  // Check if this is a file path (ends with a file extension)
+  const isFilePath = pathString && /\.\w+$/.test(pathString);
+  const prefix = isFilePath ? pathString.slice(0, pathString.lastIndexOf('/') + 1) : 
+                (pathString ? (pathString.endsWith('/') ? pathString : pathString + '/') : '');
+  
+  console.log('Debug - Page params:', { account_id, repository_id, path, pathString, prefix, isFilePath });
 
   // 2. Find the repository or 404
   const repository = await fetchRepository(account_id, repository_id);
@@ -52,12 +57,13 @@ export default async function RepositoryPathPage({
 
   try {
     // 3. Get objects from storage
-    console.log('Debug - Fetching objects with:', { account_id, repository_id, object_path: pathString, prefix: pathString });
+    console.log('Debug - Fetching objects with:', { account_id, repository_id, object_path: pathString, prefix });
     const result = await createStorageClient().listObjects({
       account_id,
       repository_id,
-      object_path: pathString, // Required by interface but not used by local storage
-      prefix: pathString // Used for filtering files
+      object_path: pathString,
+      prefix,
+      delimiter: '/'
     });
     console.log('Debug - Storage result:', result);
 
@@ -83,9 +89,9 @@ export default async function RepositoryPathPage({
     console.log('Debug - Selected object:', selectedObject);
 
     // 6. Determine if we're viewing a file or directory
-    const isFile = selectedObject && selectedObject.type === 'file';
+    const isFile = isFilePath || (selectedObject && selectedObject.type === 'file');
     const parentPath = isFile ? pathString.slice(0, pathString.lastIndexOf('/')) : pathString;
-    console.log('Debug - Path info:', { isFile, parentPath });
+    console.log('Debug - Path info:', { isFile, parentPath, isFilePath });
 
     // 7. Render the page
     return (

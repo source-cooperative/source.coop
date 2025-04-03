@@ -10,7 +10,14 @@ let storage: StorageClient;
 
 export function getDynamoDb() {
   if (!dynamoDb) {
-    const client = new DynamoDBClient(CONFIG.database);
+    // Use local credentials for development
+    const client = new DynamoDBClient({
+      ...CONFIG.database,
+      credentials: {
+        accessKeyId: process.env.DYNAMODB_ACCESS_KEY_ID || 'local',
+        secretAccessKey: process.env.DYNAMODB_SECRET_ACCESS_KEY || 'local'
+      }
+    });
     dynamoDb = DynamoDBDocumentClient.from(client);
   }
   return dynamoDb;

@@ -15,6 +15,10 @@ export interface StorageConfig {
   type: StorageType;
   endpoint: string;
   region?: string;
+  credentials?: {
+    access_key_id: string;
+    secret_access_key: string;
+  };
   options?: Record<string, unknown>;
 }
 

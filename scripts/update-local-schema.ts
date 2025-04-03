@@ -8,8 +8,8 @@ const client = new DynamoDBClient({
   endpoint: "http://localhost:8000",
   region: "us-east-1",
   credentials: {
-    accessKeyId: "local",
-    secretAccessKey: "local"
+    accessKeyId: process.env.DYNAMODB_ACCESS_KEY_ID || "local",
+    secretAccessKey: process.env.DYNAMODB_SECRET_ACCESS_KEY || "local"
   }
 });
 
