@@ -28,6 +28,8 @@ services:
     image: oryd/ory:latest
     volumes:
       - ~/.ory-cloud.json:/home/ory/.ory-cloud.json
+    ports:
+      - "4000:4000"
     command: |
       tunnel 
         http://nextjs:3000
