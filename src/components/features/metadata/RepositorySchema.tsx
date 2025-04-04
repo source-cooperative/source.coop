@@ -20,7 +20,7 @@ export function RepositorySchema({ repository }: RepositorySchemaProps) {
     "creator": {
       "@type": repository.account.type === 'organization' ? "Organization" : "Person",
       "name": repository.account.name,
-      ...(repository.account.website && { "url": repository.account.website })
+      ...(repository.account.websites && { "url": repository.account.websites[0] })
     }
   };
 
