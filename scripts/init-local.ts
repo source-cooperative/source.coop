@@ -1,34 +1,51 @@
 // AWS SDK imports
-import { DynamoDBClient, CreateTableCommand, DeleteTableCommand } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, PutCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
+import {
+  DynamoDBClient,
+  CreateTableCommand,
+  DeleteTableCommand,
+  ListTablesCommand,
+} from "@aws-sdk/client-dynamodb";
+import {
+  DynamoDBDocumentClient,
+  PutCommand,
+  QueryCommand,
+} from "@aws-sdk/lib-dynamodb";
 
 // Node.js built-in imports
-import { readFileSync } from 'fs';
-import { join } from 'path';
-import { promisify } from 'util';
-import { exec } from 'child_process';
+import { readFileSync } from "fs";
+import { join } from "path";
 
 // Import types
-import type { Repository_v2, RepositoryMirror, RepositoryRole } from '../src/types/repository_v2.js';
-import type { Account, IndividualAccount, OrganizationalAccount } from '../src/types/account_v2.js';
+import type { Repository_v2 } from "../src/types/repository_v2.js";
+import type { Account } from "../src/types/account_v2.js";
 
-const execAsync = promisify(exec);
+const DYNAMODB_ENDPOINT =
+  process.env.DYNAMODB_ENDPOINT || "http://localhost:8000";
+const RESET_TABLES = Boolean(process.env.RESET_TABLES);
 
 // Configure DynamoDB client
 const client = new DynamoDBClient({
-  region: 'local',
-  endpoint: 'http://localhost:8000',
+  region: "local",
+  endpoint: DYNAMODB_ENDPOINT,
   credentials: {
-    accessKeyId: 'local',
-    secretAccessKey: 'local'
-  }
+    accessKeyId: "local",
+    secretAccessKey: "local",
+  },
 });
 
 const docClient = DynamoDBDocumentClient.from(client, {
   marshallOptions: {
-    removeUndefinedValues: true
-  }
+    removeUndefinedValues: true,
+  },
 });
+
+async function tablesExist() {
+  const tables = await client.send(new ListTablesCommand({}));
+  return (
+    tables.TableNames?.includes("sc-accounts") &&
+    tables.TableNames?.includes("sc-repositories")
+  );
+}
 
 async function deleteTable(tableName: string) {
   try {
@@ -241,17 +258,24 @@ async function loadConvertedData() {
 
 async function main() {
   try {
-    console.log('Initializing local development environment...');
-    
+    if (await tablesExist() && !RESET_TABLES) {
+      console.log(
+        "✅ Tables already exist and RESET_TABLES environment variable is not set, skipping initialization..."
+      );
+      return;
+    }
+
+    console.log("Initializing local development environment...");
+
     // Create DynamoDB tables
     await createTables();
-    
+
     // Load converted data
     await loadConvertedData();
-    
-    console.log('\nLocal development environment setup complete!');
+
+    console.log("\n🚀 Local development environment setup complete!");
   } catch (error) {
-    console.error('Error setting up local environment:', error);
+    console.error('❌ Error setting up local environment:', error);
     process.exit(1);
   }
 }
