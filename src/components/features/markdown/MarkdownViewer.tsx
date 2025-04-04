@@ -1,4 +1,4 @@
-import { Box, Text, Heading, Link as RadixLink } from '@radix-ui/themes';
+import { Box, Text, Heading, Link as RadixLink, Card } from '@radix-ui/themes';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Code } from './codeConfig';
@@ -15,7 +15,7 @@ export function MarkdownViewer({ content }: MarkdownViewerProps) {
   }
 
   return (
-    <Box>
+    <Card>
       <SectionHeader title="README">
         <ReactMarkdown
           remarkPlugins={[remarkGfm]}
@@ -49,6 +49,6 @@ export function MarkdownViewer({ content }: MarkdownViewerProps) {
           {content}
         </ReactMarkdown>
       </SectionHeader>
-    </Box>
+    </Card>
   );
 } 

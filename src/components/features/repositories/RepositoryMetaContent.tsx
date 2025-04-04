@@ -1,9 +1,12 @@
-import { DataList, Badge, Link } from '@radix-ui/themes';
+import { DataList, Badge, Link as RadixLink } from '@radix-ui/themes';
 import type { Repository_v2 } from '@/types/repository_v2';
 import type { RepositoryStatistics } from '@/types/repository';
 import { MonoText } from '@/components/core';
 import { formatBytes } from '@/lib/format';
 import { DateText } from '@/components/display';
+import Link from 'next/link';
+import { Flex } from '@radix-ui/themes';
+import { ProfileAvatar } from '@/components/features/profiles/ProfileAvatar';
 
 interface RepositoryMetaContentProps {
   repository: Repository_v2;
@@ -28,12 +31,19 @@ export function RepositoryMetaContent({ repository, statistics }: RepositoryMeta
         </DataList.Value>
       </DataList.Item>
       
-      {repository.metadata?.primary_mirror && (
-        <DataList.Item>
-          <DataList.Label>Primary Mirror</DataList.Label>
-          <DataList.Value><MonoText>{repository.metadata.primary_mirror}</MonoText></DataList.Value>
-        </DataList.Item>
-      )}
+      <DataList.Item>
+        <DataList.Label>Owner</DataList.Label>
+        <DataList.Value>
+          <Link href={`/${repository.account_id}`} passHref legacyBehavior>
+            <RadixLink>
+              <Flex gap="2" align="center">
+                {repository.account && <ProfileAvatar account={repository.account} size="2" />}
+                <MonoText>{repository.account?.name || repository.account_id}</MonoText>
+              </Flex>
+            </RadixLink>
+          </Link>
+        </DataList.Value>
+      </DataList.Item>
       
       {statistics && (
         <>

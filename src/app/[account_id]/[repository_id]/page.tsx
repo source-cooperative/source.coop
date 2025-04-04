@@ -18,6 +18,7 @@ import { RepositoryHeader } from '@/components/features/repositories';
 import { ObjectBrowser } from '@/components/features/repositories';
 import { createStorageClient } from '@/lib/clients/storage';
 import type { RepositoryObject } from '@/types/repository_object';
+import { MarkdownViewer } from '@/components/features/markdown/MarkdownViewer';
 
 interface RepositoryPageProps {
   params: {
@@ -60,9 +61,36 @@ export default async function RepositoryPage({ params }: RepositoryPageProps) {
         metadata: obj.metadata || {}
       }));
 
+    // Check for README.md file
+    const readmeFile = repositoryObjects.find(obj => 
+      obj.path.toLowerCase() === 'readme.md' || 
+      obj.path.toLowerCase() === 'readme'
+    );
+
+    let readmeContent = '';
+    
+    // If README.md exists, fetch its content
+    if (readmeFile) {
+      try {
+        const storageClient = createStorageClient();
+        const readmeResult = await storageClient.getObject({
+          account_id,
+          repository_id,
+          object_path: readmeFile.path
+        });
+        
+        // Convert buffer to string
+        readmeContent = readmeResult.data.toString('utf-8');
+      } catch (error) {
+        console.error('Error fetching README content:', error);
+        // Continue without README if there's an error
+      }
+    }
+
     return (
       <Container>
         <RepositoryHeader repository={repository} />
+        
         <Box mt="4">
           <ObjectBrowser
             repository={repository}
@@ -70,6 +98,13 @@ export default async function RepositoryPage({ params }: RepositoryPageProps) {
             initialPath=""
           />
         </Box>
+
+        {/* Display README if available */}
+        {readmeContent && (
+          <Box mt="4">
+            <MarkdownViewer content={readmeContent} />
+          </Box>
+        )}
       </Container>
     );
   } catch (error) {
