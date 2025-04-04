@@ -1,9 +1,6 @@
 import { Container, Box, Heading } from '@radix-ui/themes';
 import { FormWrapper } from '@/components/core';
-import type { _FormField } from '@/types/form';
 import { redirect } from 'next/navigation';
-import { notFound } from 'next/navigation';
-import type { Account } from '@/types';
 
 interface PageProps {
   params: Promise<{

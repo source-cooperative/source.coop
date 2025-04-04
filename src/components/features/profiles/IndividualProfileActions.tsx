@@ -1,11 +1,9 @@
 'use client';
 
-import { _Button, _Callout } from '@radix-ui/themes';
-import _Link from 'next/link';
 import { WelcomeCallout } from './WelcomeCallout';
 import { VerificationSuccessCallout } from '@/components/features/auth/VerificationSuccessCallout';
 import { useAuth } from '@/hooks/useAuth';
-import type { IndividualAccount } from '@/types/account';
+import type { IndividualAccount } from '@/types/account_v2';
 
 interface IndividualProfileActionsProps {
   account: IndividualAccount;
