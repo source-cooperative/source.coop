@@ -25,7 +25,7 @@ export const CONFIG = {
     projectSlug: getEnvVar('ORY_PROJECT_SLUG', ''),
     apiUrl: getEnvVar('ORY_API_URL', ''),
     workspaceId: getEnvVar('ORY_WORKSPACE_ID', ''),
-    accessToken: getEnvVar('ORY_ACCESS_TOKEN', ''),
+    accessToken: getEnvVar('ORY_PROJECT_API_KEY', ''),
     // API configuration
     apiBaseUrl: getEnvVar('NEXT_PUBLIC_API_URL', 'http://localhost:3000'),
   },

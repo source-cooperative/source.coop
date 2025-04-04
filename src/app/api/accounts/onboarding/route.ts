@@ -81,10 +81,10 @@ export async function POST(request: NextRequest) {
     }
     
     // Only try to update Ory identity if we have the required environment variables
-    if (process.env.ORY_API_URL && process.env.ORY_ACCESS_TOKEN) {
+    if (process.env.ORY_API_URL && process.env.ORY_PROJECT_API_KEY) {
       console.log('Attempting to update Ory identity:', { 
         hasApiUrl: !!process.env.ORY_API_URL,
-        hasAccessToken: !!process.env.ORY_ACCESS_TOKEN,
+        hasAccessToken: !!process.env.ORY_PROJECT_API_KEY,
         oryId: ory_id 
       });
       
