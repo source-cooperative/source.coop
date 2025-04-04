@@ -40,5 +40,24 @@ services:
         --allowed-cors-origins=http://localhost:3000
         --debug
         --config=/home/ory/.ory-cloud.json
-        http://host.docker.internal:3000
+        http://nextjs:3000
         --project ff8f07bb-adb7-4399-af07-20e633a105f6
+
+  nextjs:
+    image: node:23-alpine
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+    working_dir: /app
+    environment:
+      - ORY_BASE_URL=http://ory-tunnel:4000
+      - DYNAMODB_ENDPOINT=http://dynamodb:8000
+    env_file:
+      - .env.local
+    command: sh -c "npm install && npm run dev"
+    depends_on:
+      - dynamodb
+      - ory-tunnel
