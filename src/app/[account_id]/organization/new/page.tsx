@@ -11,14 +11,6 @@ interface PageProps {
 export default async function NewOrganizationPage({ params }: PageProps) {
   const { account_id } = await params;
 
-  // TODO: Replace with actual Ory.sh session check and account fetch
-  // const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/accounts/${account_id}`);
-  // if (!response.ok) {
-  //   notFound();
-  // }
-
-  // const _account: Account = await response.json();
-
   async function handleSubmit(data: Record<string, string>) {
     'use server';
     
