@@ -25,10 +25,7 @@ export function createStorageClient(): StorageClient {
     type: storageType,
     endpoint: CONFIG.storage.endpoint,
     region: CONFIG.storage.region,
-    credentials: {
-      access_key_id: process.env.AWS_ACCESS_KEY_ID || '',
-      secret_access_key: process.env.AWS_SECRET_ACCESS_KEY || '',
-    }
+    credentials: CONFIG.storage.credentials,
   };
 
   console.log('Creating storage client with:', { provider, config });

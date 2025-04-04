@@ -1,22 +1,20 @@
 import { LocalStorageClient } from './local';
 import type { StorageClient, StorageProvider, StorageConfig, StorageType } from '@/types/storage';
+import { CONFIG } from "../config";
 
 export function getStorageClient(): StorageClient {
-  const storageType = (process.env.STORAGE_TYPE || 'LOCAL') as StorageType;
-  const endpoint = process.env.STORAGE_ENDPOINT;
+  const storageType = CONFIG.storage.type as StorageType;
+  const endpoint = CONFIG.storage.endpoint;
 
   if (!endpoint) {
-    throw new Error('Storage endpoint is required');
+    throw new Error("Storage endpoint is required");
   }
 
   const config: StorageConfig = {
     type: storageType,
     endpoint,
-    region: process.env.AWS_REGION,
-    credentials: {
-      access_key_id: process.env.AWS_ACCESS_KEY_ID || '',
-      secret_access_key: process.env.AWS_SECRET_ACCESS_KEY || '',
-    },
+    region: CONFIG.storage.region,
+    credentials: CONFIG.storage.credentials,
   };
 
   // For now, we only support local storage

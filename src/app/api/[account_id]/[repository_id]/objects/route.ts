@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getStorageClient } from '@/lib/storage/config';
+import { CONFIG } from '@/lib/config';
 
 export async function GET(
   request: Request,
@@ -19,7 +20,7 @@ export async function GET(
   } catch (error) {
     console.error('Error listing objects:', error);
     return NextResponse.json(
-      { error: process.env.NODE_ENV === 'development' 
+      { error: CONFIG.environment.isDevelopment
           ? (error as Error).message 
           : 'Failed to list objects' },
       { status: 500 }

@@ -1,6 +1,7 @@
 import { Container, Box, Heading } from '@radix-ui/themes';
 import { FormWrapper } from '@/components/core';
 import { redirect } from 'next/navigation';
+import { CONFIG } from '@/lib/config';
 
 interface PageProps {
   params: Promise<{
@@ -16,7 +17,7 @@ export default async function NewOrganizationPage({ params }: PageProps) {
     
     try {
       // TODO: Replace with actual organization creation
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/accounts`, {
+      const response = await fetch(`${CONFIG.auth.apiBaseUrl}/accounts`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

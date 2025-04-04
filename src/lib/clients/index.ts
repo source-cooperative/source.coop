@@ -14,9 +14,9 @@ export function getDynamoDb() {
     const client = new DynamoDBClient({
       ...CONFIG.database,
       credentials: {
-        accessKeyId: process.env.DYNAMODB_ACCESS_KEY_ID || 'local',
-        secretAccessKey: process.env.DYNAMODB_SECRET_ACCESS_KEY || 'local'
-      }
+        accessKeyId: CONFIG.database.accessKeyId,
+        secretAccessKey: CONFIG.database.secretAccessKey,
+      },
     });
     dynamoDb = DynamoDBDocumentClient.from(client);
   }

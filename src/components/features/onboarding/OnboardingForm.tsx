@@ -11,6 +11,7 @@ import { FrontendApi, Configuration } from '@ory/client';
 import { InfoCircledIcon, CheckCircledIcon } from '@radix-ui/react-icons';
 import { VerificationSuccessCallout } from '@/components/features/auth/VerificationSuccessCallout';
 import { recordVerificationTimestamp } from '@/app/actions/account';
+import { CONFIG } from "@/lib/config";
 
 interface OnboardingFormData {
   account_id: string;
@@ -41,14 +42,18 @@ export function OnboardingForm() {
   const [verificationStatus, setVerificationStatus] = useState<'pending' | 'verified'>('pending');
 
   // Initialize Ory client with useMemo to prevent recreation on each render
-  const ory = useMemo(() => new FrontendApi(
-    new Configuration({
-      basePath: process.env.NEXT_PUBLIC_ORY_SDK_URL || 'http://localhost:4000',
-      baseOptions: {
-        withCredentials: true,
-      }
-    })
-  ), []);
+  const ory = useMemo(
+    () =>
+      new FrontendApi(
+        new Configuration({
+          basePath: CONFIG.auth.publicBaseUrl,
+          baseOptions: {
+            withCredentials: true,
+          },
+        })
+      ),
+    []
+  );
 
   // Check session on mount
   useEffect(() => {

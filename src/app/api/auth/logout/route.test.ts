@@ -1,5 +1,6 @@
 import { POST } from './route';
 import { cookies } from 'next/headers';
+import { CONFIG } from '@/lib/config';
 
 // Mock next/headers
 jest.mock('next/headers', () => ({
@@ -43,7 +44,7 @@ describe('Logout API', () => {
     
     expect(data).toEqual({ success: true });
     expect(global.fetch).toHaveBeenCalledWith(
-      `${process.env.ORY_API_URL}/self-service/logout/browser`,
+      `${CONFIG.auth.apiUrl}/self-service/logout/browser`,
       {
         method: 'POST',
         headers: {

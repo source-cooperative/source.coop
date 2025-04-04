@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { CONFIG } from '@/lib/config';
 
 export const metadata: Metadata = {
   title: {
@@ -35,6 +36,6 @@ export const metadata: Metadata = {
     },
   },
   verification: {
-    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION,
+    google: CONFIG.google.siteVerification,
   },
 }; 

@@ -1,17 +1,6 @@
 import { NextResponse } from 'next/server';
 import { Configuration, FrontendApi } from '@ory/client';
-
-const ORY_BASE_URL = process.env.ORY_BASE_URL || "http://localhost:4000";
-
-// Initialize Ory SDK for server-side usage
-const _ory = new FrontendApi(
-  new Configuration({
-    basePath: ORY_BASE_URL,
-    baseOptions: {
-      withCredentials: true,
-    },
-  })
-);
+import { CONFIG } from "@/lib/config";
 
 export async function POST(request: Request) {
   try {
@@ -38,7 +27,7 @@ export async function POST(request: Request) {
     }
     
     // Construct the correct endpoint with the flow ID as a query parameter
-    const completeUrl = `${ORY_BASE_URL}/self-service/verification?flow=${flow}`;
+    const completeUrl = `${CONFIG.auth.privateBaseUrl}/self-service/verification?flow=${flow}`;
     
     console.log('Sending verification request to Ory:', {
       url: completeUrl,
@@ -102,7 +91,7 @@ export async function POST(request: Request) {
     
     // Check if we need to make an additional call to verify the identity
     try {
-      const sessionResponse = await fetch(`${ORY_BASE_URL}/sessions/whoami`, {
+      const sessionResponse = await fetch(`${CONFIG.auth.privateBaseUrl}/sessions/whoami`, {
         headers: {
           Cookie: cookieHeader,
           Accept: 'application/json',

@@ -4,6 +4,7 @@ import { PutCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
 import type { IndividualAccount } from '@/types/account_v2';
 import { updateOryIdentity } from '@/lib/ory';
 import { fetchAccount } from '@/lib/db/operations_v2';
+import { CONFIG } from '@/lib/config';
 
 export async function POST(request: NextRequest) {
   try {
@@ -81,10 +82,10 @@ export async function POST(request: NextRequest) {
     }
     
     // Only try to update Ory identity if we have the required environment variables
-    if (process.env.ORY_API_URL && process.env.ORY_PROJECT_API_KEY) {
+    if (CONFIG.auth.apiUrl && CONFIG.auth.accessToken) {
       console.log('Attempting to update Ory identity:', { 
-        hasApiUrl: !!process.env.ORY_API_URL,
-        hasAccessToken: !!process.env.ORY_PROJECT_API_KEY,
+        hasApiUrl: !!CONFIG.auth.apiUrl,
+        hasAccessToken: !!CONFIG.auth.accessToken,
         oryId: ory_id 
       });
       
