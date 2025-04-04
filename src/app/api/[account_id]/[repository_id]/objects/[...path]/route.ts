@@ -4,23 +4,23 @@ import { getStorage } from '@/lib/clients';
 export async function GET(
   request: Request,
   { params }: { 
-    params: { 
+    params: Promise<{ 
       account_id: string; 
       repository_id: string;
       path: string[];
-    } 
+    }>
   }
 ) {
   console.log('API route handler:', { params, method: request.method });
-  
+  const { account_id, repository_id, path } = await params;
   try {
     const storage = getStorage();
-    const objectPath = params.path.join('/');
+    const objectPath = path.join('/');
     
     // Get object info and metadata
     const objectInfo = await storage.getObjectInfo({
-      account_id: params.account_id,
-      repository_id: params.repository_id,
+      account_id,
+      repository_id,
       object_path: objectPath
     });
 
@@ -35,7 +35,7 @@ export async function GET(
     if (request.method === 'HEAD') {
       const headers: Record<string, string> = {
         'Content-Length': objectInfo.size?.toString() || '0',
-        'Content-Type': objectInfo.metadata?.content_type || 'application/octet-stream'
+        'Content-Type': objectInfo.metadata?.content_type as string || 'application/octet-stream'
       };
 
       // Add checksum headers if available
@@ -56,8 +56,8 @@ export async function GET(
 
     // For GET requests, return full object info
     return NextResponse.json({
-      id: `${params.account_id}/${params.repository_id}/${objectPath}`,
-      repository_id: params.repository_id,
+      id: `${account_id}/${repository_id}/${objectPath}`,
+      repository_id,
       path: objectPath,
       size: objectInfo.size || 0,
       type: objectInfo.type || 'file',

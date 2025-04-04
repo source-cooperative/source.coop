@@ -3,11 +3,12 @@ import { CONFIG } from '@/lib/config';
 
 export async function GET(
   request: Request,
-  { params }: { params: { email: string } }
+  { params }: { params: Promise<{ email: string }> }
 ) {
+  let { email } = await params;
   try {
-    const email = decodeURIComponent(params.email);
-    
+    email = decodeURIComponent(email);
+      
     // Call our database API to look up the account by email
     const response = await fetch(`${CONFIG.auth.apiUrl}/api/accounts/email/${email}`, {
       headers: {

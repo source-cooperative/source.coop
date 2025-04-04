@@ -17,7 +17,6 @@ import { notFound } from 'next/navigation';
 import { ObjectBrowser, RepositoryHeader } from '@/components/features/repositories';
 
 // Types
-import type { Repository_v2 } from '@/types/repository_v2';
 import type { RepositoryObject } from '@/types/repository_object';
 
 // Utilities
@@ -25,11 +24,11 @@ import { fetchRepository } from '@/lib/db/operations_v2';
 import { createStorageClient } from '@/lib/clients/storage';
 
 interface PageProps {
-  params: {
+  params: Promise<{
     account_id: string;
     repository_id: string;
     path?: string[];
-  };
+  }>;
 }
 
 export default async function RepositoryPathPage({
