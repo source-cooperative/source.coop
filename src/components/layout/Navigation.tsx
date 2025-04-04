@@ -97,11 +97,11 @@ export function Navigation(props: NavigationProps) {
     
     // Debug specifically for avatar issues
     if (account) {
-      console.log('Avatar debug:', {
+      console.log("Avatar debug:", {
         hasAccount: !!account,
         accountType: account.type,
-        email: account.emails[0].address,
-        name: account.name
+        email: account.emails[0]?.address,
+        name: account.name,
       });
     }
   }, [session, accountId, account, directSession, effectiveAccountId]);
