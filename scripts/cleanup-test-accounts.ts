@@ -11,7 +11,7 @@ async function cleanupTestAccounts() {
   // Get list of test accounts
   const response = await fetch('/api/accounts', {
     headers: {
-      'x-csrf-token': session.csrf_token
+      // 'x-csrf-token': session.csrf_token
     },
     credentials: 'include'
   });
@@ -26,7 +26,7 @@ async function cleanupTestAccounts() {
       await fetch(`/api/accounts/${account.account_id}`, {
         method: 'DELETE',
         headers: {
-          'x-csrf-token': session.csrf_token
+          // 'x-csrf-token': session.csrf_token
         },
         credentials: 'include'
       });

@@ -77,10 +77,7 @@ export function RegistrationForm() {
     
     try {
       // Get the CSRF token from the flow
-      // Use a type assertion for flow.ui since the SDK types don't match the runtime structure
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const flowWithUI = flow as any;
-      const csrfNode = flowWithUI.ui?.nodes?.find(
+      const csrfNode = flow.ui?.nodes?.find(
         (node) => 
           node.type === 'input' && 
           (node.attributes as UiNodeInputAttributes)?.name === 'csrf_token'
@@ -93,7 +90,7 @@ export function RegistrationForm() {
 
       console.log('CSRF token:', {
         found: !!csrfToken,
-        flowNodes: flowWithUI.ui?.nodes?.length
+        flowNodes: flow.ui?.nodes?.length
       });
 
       if (!csrfToken) {

@@ -100,7 +100,7 @@ export function Navigation(props: NavigationProps) {
       console.log('Avatar debug:', {
         hasAccount: !!account,
         accountType: account.type,
-        email: account.email,
+        email: account.emails[0].address,
         name: account.name
       });
     }

@@ -131,7 +131,8 @@ export function OnboardingForm() {
     }
   }, [formData.account_id, debouncedCheckUsername]);
 
-  const handleSubmit = async (data: OnboardingFormData) => {
+  const handleSubmit = async (_data: Record<string, any>) => {
+    const data = _data as OnboardingFormData; // TODO: Find more elegant way to do this
     setLoading(true);
     setError(null);
 

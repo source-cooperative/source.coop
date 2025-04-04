@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 export default async function AuthPage({ 
   searchParams 
 }: { 
-  searchParams: { [key: string]: string | string[] | undefined } 
+  searchParams: Promise<{ [key: string]: string | string[] | undefined } >
 }) {
   // Check auth status on the server
   const session = await getSession();
@@ -22,7 +22,7 @@ export default async function AuthPage({
   }
   
   // Await the search params to satisfy Next.js 15+ requirements
-  const { flow } = await Promise.resolve(searchParams);
+  const { flow } = await searchParams;
   
   // Handle verification flow
   if (flow === 'verification') {

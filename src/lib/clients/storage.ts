@@ -1,7 +1,7 @@
 import { LocalStorageClient } from '../storage/local';
 import { S3StorageClient } from '../storage/s3';
 import { CONFIG } from '../config';
-import type { StorageClient, StorageProvider, StorageConfig, StorageType, _ObjectPath, ListObjectsParams, GetObjectParams, PutObjectParams, DeleteObjectParams } from '@/types/storage';
+import type { StorageClient, StorageProvider, StorageConfig, StorageType } from '@/types/storage';
 
 export function createStorageClient(): StorageClient {
   console.log('Creating storage client with config:', CONFIG);
@@ -34,7 +34,7 @@ export function createStorageClient(): StorageClient {
   console.log('Creating storage client with:', { provider, config });
   
   // Create the appropriate storage client based on type
-  if (storageType === 's3') {
+  if (storageType === 'S3') {
     return new S3StorageClient(provider, config);
   } else {
     return new LocalStorageClient(provider, config);

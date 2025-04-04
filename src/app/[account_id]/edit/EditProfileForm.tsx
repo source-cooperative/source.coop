@@ -86,7 +86,8 @@ export function EditProfileForm({ account: initialAccount }: EditProfileFormProp
     websites: initialAccount.metadata_public.domains?.map(domain => ({ url: domain.domain })) || [{ url: '' }]
   });
 
-  const handleSubmit = async (data: AccountFormData) => {
+  const handleSubmit = async (_data: Record<string, any>) => {
+    const data = _data as AccountFormData; // TODO: Find more elegant way to do this
     setSaving(true);
     try {
       // Process websites: add https:// prefix if needed and filter out empty ones
@@ -206,7 +207,7 @@ export function EditProfileForm({ account: initialAccount }: EditProfileFormProp
       type: 'text' as FormFieldType,
       placeholder: '0000-0002-1825-0097',
       defaultValue: formData.orcid,
-      onChange: (value) => setFormData(prev => ({ ...prev, orcid: value }))
+      onChange: (value: string) => setFormData(prev => ({ ...prev, orcid: value }))
     }] : [])
   ];
 
