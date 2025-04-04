@@ -1,5 +1,5 @@
 import { LocalStorageClient } from '../../src/lib/storage';
-import { StorageProvider, StorageProviderConfig } from '../../src/types/storage';
+import { StorageProvider, StorageConfig } from '../../src/types/storage';
 
 async function main() {
   // Set up provider and config
@@ -11,7 +11,7 @@ async function main() {
     updated_at: new Date().toISOString(),
   };
 
-  const config: StorageProviderConfig = {
+  const config: StorageConfig = {
     type: 'LOCAL',
     endpoint: './data/storage',
   };
@@ -29,7 +29,11 @@ async function main() {
   try {
     // Store a file
     const content = Buffer.from('Hello, World!');
-    const objectInfo = await storage.putObject(testPath, content);
+    const objectInfo = await storage.putObject({
+      ...testPath,
+      data: content,
+      contentType: 'text/plain'
+    });
     console.log('Stored object:', objectInfo);
 
     // Read it back
