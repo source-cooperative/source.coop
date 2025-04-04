@@ -20,17 +20,17 @@ export type ExtendedSession = Session & {
 // Create a new Ory SDK instance for client-side use
 export const ory = new FrontendApi(
   new Configuration({
-    basePath: CONFIG.auth.publicBaseUrl,
+    basePath: CONFIG.auth.apiUrl,
     baseOptions: {
       withCredentials: true,
       headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
+        Accept: "application/json",
+        "Content-Type": "application/json",
       },
       validateStatus: () => {
         // Accept any status code to handle redirects
         return true;
-      }
+      },
     },
   })
 );
@@ -38,7 +38,7 @@ export const ory = new FrontendApi(
 // Create a server-side instance of the Ory SDK
 export const serverOry = new FrontendApi(
   new Configuration({
-    basePath: CONFIG.auth.privateBaseUrl,
+    basePath: CONFIG.auth.apiUrl,
     baseOptions: {
       withCredentials: true,
       headers: {
@@ -77,7 +77,7 @@ export async function getAccountId(): Promise<string | null> {
 
 // Helper to update Ory identity (admin operation)
 export async function updateOryIdentity(oryId: string, data: any) {
-  if (!CONFIG.auth.privateBaseUrl) {
+  if (!CONFIG.auth.apiUrl) {
     throw new Error('No Ory private base URL configured');
   }
 
@@ -87,7 +87,7 @@ export async function updateOryIdentity(oryId: string, data: any) {
 
   // First, get the current identity to understand its structure
   const getResponse = await fetch(
-    `${CONFIG.auth.privateBaseUrl}/admin/identities/${oryId}`,
+    `${CONFIG.auth.apiUrl}/admin/identities/${oryId}`,
     {
       method: 'GET',
       headers: {
@@ -104,7 +104,7 @@ export async function updateOryIdentity(oryId: string, data: any) {
       statusText: getResponse.statusText,
       error: errorText,
       url: getResponse.url,
-      baseUrl: CONFIG.auth.privateBaseUrl,
+      baseUrl: CONFIG.auth.apiUrl,
       hasAccessToken: !!CONFIG.auth.accessToken
     });
     throw new Error(errorText);
@@ -127,7 +127,7 @@ export async function updateOryIdentity(oryId: string, data: any) {
 
   // Now update with the properly structured data
   const response = await fetch(
-    `${CONFIG.auth.privateBaseUrl}/admin/identities/${oryId}`,
+    `${CONFIG.auth.apiUrl}/admin/identities/${oryId}`,
     {
       method: 'PUT',
       headers: {
@@ -146,7 +146,7 @@ export async function updateOryIdentity(oryId: string, data: any) {
       statusText: response.statusText,
       error: errorText,
       url: response.url,
-      baseUrl: CONFIG.auth.privateBaseUrl,
+      baseUrl: CONFIG.auth.apiUrl,
       hasAccessToken: !!CONFIG.auth.accessToken
     });
     throw new Error(errorText);

@@ -268,7 +268,7 @@ const account = await fetchAccountByOryId(oryId);
 ```typescript
 // ✅ Correct: Using CONFIG
 import { CONFIG } from '@/lib/config';
-const baseUrl = CONFIG.auth.publicBaseUrl;
+const baseUrl = CONFIG.auth.apiUrl;
 
 // ❌ Incorrect: Direct env access
 const baseUrl = process.env.NEXT_PUBLIC_ORY_BASE_URL;
