@@ -14,7 +14,9 @@ export function ProfileAvatar({ account, size = '6' }: ProfileAvatarProps) {
   const getAvatarSrc = () => {
     if (account.type === 'individual') {
       // Use Gravatar for individuals
-      const primaryEmail = account.emails.find(email => email.is_primary)?.address;
+      const primaryEmail = account.emails?.find(
+        (email) => email.is_primary
+      )?.address;
       if (primaryEmail) {
         const hash = md5(primaryEmail.toLowerCase().trim());
         return `https://www.gravatar.com/avatar/${hash}?d=identicon&s=200`;

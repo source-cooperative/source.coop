@@ -23,7 +23,7 @@ interface BaseAccount {
   account_id: string;
   type: 'individual' | 'organization';
   name: string;
-  emails: AccountEmail[];
+  emails?: AccountEmail[];
   created_at: string;
   updated_at: string;
   disabled: boolean;

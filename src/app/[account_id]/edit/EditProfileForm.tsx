@@ -80,7 +80,7 @@ export function EditProfileForm({ account: initialAccount }: EditProfileFormProp
   const formRef = useRef<HTMLFormElement>(null);
   const [formData, setFormData] = useState<AccountFormData>({
     name: initialAccount.name,
-    email: initialAccount.emails.find(email => email.is_primary)?.address || '',
+    email: initialAccount.emails?.find(email => email.is_primary)?.address || '',
     description: initialAccount.metadata_public.bio,
     orcid: initialAccount.type === 'individual' ? (initialAccount as IndividualAccount).metadata_public.orcid : undefined,
     websites: initialAccount.metadata_public.domains?.map(domain => ({ url: domain.domain })) || [{ url: '' }]

@@ -58,10 +58,10 @@ export function OrganizationProfile({
               <WebsiteLink website={{ url: `https://${domain.domain}` }} />
             </Text>
           ))}
-          {account.emails.find(email => email.is_primary)?.address && (
+          {account.emails?.find(email => email.is_primary)?.address && (
             <Text as="p" size="2">
-              Email: <RadixLink href={`mailto:${account.emails.find(email => email.is_primary)?.address}`}>
-                {account.emails.find(email => email.is_primary)?.address}
+              Email: <RadixLink href={`mailto:${account.emails?.find(email => email.is_primary)?.address}`}>
+                {account.emails?.find(email => email.is_primary)?.address}
               </RadixLink>
             </Text>
           )}

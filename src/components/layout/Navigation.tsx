@@ -87,25 +87,6 @@ export function Navigation(props: NavigationProps) {
       });
   }, [refreshTrigger]);
 
-  // Debug logging
-  useEffect(() => {
-    console.log('Auth session from useAuth:', session);
-    console.log('Account ID from useAuth:', accountId);
-    console.log('Account ID from direct session:', directSession?.identity?.metadata_public?.account_id);
-    console.log('Effective account ID:', effectiveAccountId);
-    console.log('Account data:', account);
-    
-    // Debug specifically for avatar issues
-    if (account) {
-      console.log("Avatar debug:", {
-        hasAccount: !!account,
-        accountType: account.type,
-        email: account.emails[0]?.address,
-        name: account.name,
-      });
-    }
-  }, [session, accountId, account, directSession, effectiveAccountId]);
-
   const handleLogout = async () => {
     try {
       // Use Ory SDK directly as recommended in the CURSOR_RULES
