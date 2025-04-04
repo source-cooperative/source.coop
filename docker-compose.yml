@@ -26,19 +26,17 @@ services:
 
   ory-tunnel:
     image: oryd/ory:latest
-    user: "1000:1000"
-    ports:
-      - "4000:4000"
     volumes:
       - ~/.ory-cloud.json:/home/ory/.ory-cloud.json
     command: |
       tunnel 
-        --dev
-        --allowed-cors-origins=http://localhost:3000
-        --debug
-        --config=/home/ory/.ory-cloud.json
         http://nextjs:3000
-        --project ff8f07bb-adb7-4399-af07-20e633a105f6
+        --allowed-cors-origins=http://localhost:3000
+        --config /home/ory/.ory-cloud.json
+        --debug
+    env_file:
+      # Needs ORY_PROJECT_ID & ORY_PROJECT_API_KEY to be set
+      - .env.local
 
   nextjs:
     image: node:23-alpine
