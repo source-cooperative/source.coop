@@ -1,4 +1,5 @@
 import { APIError } from './errors';
+import { CONFIG } from "./config";
 
 type LogLevel = 'error' | 'warn' | 'info' | 'debug';
 
@@ -13,7 +14,7 @@ class Logger {
   private isDevelopment: boolean;
 
   private constructor() {
-    this.isDevelopment = process.env.NODE_ENV === 'development';
+    this.isDevelopment = CONFIG.environment.isDevelopment;
   }
 
   static getInstance(): Logger {

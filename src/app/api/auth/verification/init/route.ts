@@ -1,17 +1,6 @@
 import { NextResponse } from 'next/server';
 import { Configuration, FrontendApi } from '@ory/client';
-
-const ORY_BASE_URL = process.env.ORY_BASE_URL || "http://localhost:4000";
-
-// Initialize Ory SDK for server-side usage
-const _ory = new FrontendApi(
-  new Configuration({
-    basePath: ORY_BASE_URL,
-    baseOptions: {
-      withCredentials: true,
-    },
-  })
-);
+import { CONFIG } from "@/lib/config";
 
 export async function GET(request: Request) {
   try {
@@ -19,7 +8,7 @@ export async function GET(request: Request) {
     const cookieHeader = request.headers.get('cookie') || '';
     
     // Initialize a new verification flow
-    const response = await fetch(`${ORY_BASE_URL}/self-service/verification/flows?return_to=http://localhost:3000/onboarding`, {
+    const response = await fetch(`${CONFIG.auth.privateBaseUrl}/self-service/verification/flows?return_to=http://localhost:3000/onboarding`, {
       method: 'GET',
       headers: {
         Cookie: cookieHeader,

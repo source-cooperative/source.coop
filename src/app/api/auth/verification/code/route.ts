@@ -1,17 +1,5 @@
 import { NextResponse } from 'next/server';
-import { Configuration, FrontendApi } from '@ory/client';
-
-const ORY_BASE_URL = process.env.ORY_BASE_URL || "http://localhost:4000";
-
-// Initialize Ory SDK for server-side usage
-const _ory = new FrontendApi(
-  new Configuration({
-    basePath: ORY_BASE_URL,
-    baseOptions: {
-      withCredentials: true,
-    },
-  })
-);
+import { CONFIG } from "@/lib/config";
 
 export async function POST(request: Request) {
   try {
@@ -36,7 +24,7 @@ export async function POST(request: Request) {
     
     // When a code is sent during registration, Ory provides a specific endpoint
     // to verify that code without needing to create a new flow
-    const verifyResponse = await fetch(`${ORY_BASE_URL}/self-service/verification/methods/code/confirm`, {
+    const verifyResponse = await fetch(`${CONFIG.auth.privateBaseUrl}/self-service/verification/methods/code/confirm`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
