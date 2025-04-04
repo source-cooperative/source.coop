@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { Account } from '@/types/account';
+import type { Account } from '@/types/account_v2';
 import { useAuth } from './useAuth';
 import type { Session, Identity } from '@ory/client';
 

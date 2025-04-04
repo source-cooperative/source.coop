@@ -3,14 +3,16 @@ import { getStorageClient } from '@/lib/storage/config';
 
 export async function GET(
   request: Request,
-  { params }: { params: { account_id: string; repository_id: string; } }
+  { params }: { params: Promise<{ account_id: string; repository_id: string; }> }
 ) {
+  const { account_id, repository_id } = await params;
   try {
     const storage = getStorageClient();
     
     const objects = await storage.listObjects({
-      account_id: params.account_id,
-      repository_id: params.repository_id,
+      account_id,
+      repository_id,
+      object_path: '',
     });
 
     return NextResponse.json(objects);
@@ -18,7 +20,7 @@ export async function GET(
     console.error('Error listing objects:', error);
     return NextResponse.json(
       { error: process.env.NODE_ENV === 'development' 
-          ? error.message 
+          ? (error as Error).message 
           : 'Failed to list objects' },
       { status: 500 }
     );

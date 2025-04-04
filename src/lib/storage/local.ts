@@ -1,4 +1,4 @@
-import { StorageClient, StorageProvider, StorageConfig, _ObjectPath, ListObjectsParams, ListObjectsResult, GetObjectParams, GetObjectResult, PutObjectParams, PutObjectResult, DeleteObjectParams } from '@/types/storage';
+import { StorageClient, StorageProvider, StorageConfig, ListObjectsParams, ListObjectsResult, GetObjectParams, GetObjectResult, PutObjectParams, PutObjectResult, DeleteObjectParams } from '@/types/storage';
 import { RepositoryObject } from '@/types';
 import { promises as fs } from 'fs';
 import path from 'path';

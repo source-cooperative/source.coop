@@ -1,6 +1,5 @@
 import { GET } from './route';
 import { cookies } from 'next/headers';
-import { _NextResponse } from 'next/server';
 
 // Mock next/headers
 jest.mock('next/headers', () => ({

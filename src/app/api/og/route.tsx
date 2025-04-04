@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
         height: 630
       }
     );
-  } catch (e) {
+  } catch (e: any) {
     console.error('Failed to generate image:', e);
     return new Response(`Failed to generate image: ${e.message}`, { 
       status: 500,

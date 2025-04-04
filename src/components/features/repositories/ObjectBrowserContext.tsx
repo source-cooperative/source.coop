@@ -17,7 +17,6 @@ const ObjectBrowserContext = createContext<ObjectBrowserContextType | null>(null
 
 export function ObjectBrowserProvider({ 
   children, 
-  _repository, 
   initialPath = '', 
   initialObject 
 }: { 

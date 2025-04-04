@@ -13,7 +13,6 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { Container, Box } from '@radix-ui/themes';
 import { fetchRepository } from '@/lib/db/operations_v2';
-import { Repository_v2 } from '@/types/repository_v2';
 import { RepositoryHeader } from '@/components/features/repositories';
 import { ObjectBrowser } from '@/components/features/repositories';
 import { createStorageClient } from '@/lib/clients/storage';
@@ -21,10 +20,10 @@ import type { RepositoryObject } from '@/types/repository_object';
 import { MarkdownViewer } from '@/components/features/markdown/MarkdownViewer';
 
 interface RepositoryPageProps {
-  params: {
+  params: Promise<{
     account_id: string;
     repository_id: string;
-  };
+  }>;
 }
 
 export default async function RepositoryPage({ params }: RepositoryPageProps) {

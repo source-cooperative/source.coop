@@ -1,5 +1,6 @@
 import { Metadata } from 'next';
 import { OnboardingPageContent } from '@/components/features/onboarding';
+import { Suspense } from 'react';
 
 export const metadata: Metadata = {
   title: 'Complete Your Profile',
@@ -7,5 +8,9 @@ export const metadata: Metadata = {
 };
 
 export default async function OnboardingPage() {
-  return <OnboardingPageContent />;
+  return (
+    <Suspense>
+      <OnboardingPageContent />
+    </Suspense>
+  );
 } 

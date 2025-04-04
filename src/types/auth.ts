@@ -79,7 +79,7 @@ export interface ApiError {
 /**
  * Type guard to check if an error is an API error with response data
  */
-export function isApiError(error: unknown): error is AxiosError {
+export function isApiError<T>(error: unknown): error is AxiosError<T> {
   return (
     error !== null &&
     typeof error === 'object' &&

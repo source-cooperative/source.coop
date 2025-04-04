@@ -27,7 +27,7 @@ export const ory = new FrontendApi(
         'Accept': 'application/json',
         'Content-Type': 'application/json',
       },
-      validateStatus: (_status) => {
+      validateStatus: () => {
         // Accept any status code to handle redirects
         return true;
       }
@@ -45,7 +45,7 @@ export const serverOry = new FrontendApi(
         'Accept': 'application/json',
         'Content-Type': 'application/json',
       },
-      validateStatus: (_status) => {
+      validateStatus: () => {
         // Accept any status code to handle redirects
         return true;
       }
@@ -58,7 +58,7 @@ export async function getSession(): Promise<ExtendedSession | null> {
   try {
     const { data } = await ory.toSession();
     return data as ExtendedSession;
-  } catch (error) {
+  } catch (error: any) {
     // Only log connection errors, not auth errors
     if (error.code === 'ECONNREFUSED') {
       console.error("Connection refused - Ory tunnel is not running");

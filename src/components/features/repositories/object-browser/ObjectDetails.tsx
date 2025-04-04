@@ -2,7 +2,8 @@
 
 import { Card, Box, DataList, Flex, IconButton, Tooltip } from '@radix-ui/themes';
 import { CopyIcon, CheckIcon } from '@radix-ui/react-icons';
-import type { Repository, RepositoryObject } from '@/types';
+import type { RepositoryObject } from '@/types';
+import type { Repository_v2 } from '@/types/repository_v2';
 import { MonoText, SectionHeader } from '@/components/core';
 import { DateText, BreadcrumbNav } from '@/components/display';
 import { ChecksumVerifier } from '../ChecksumVerifier';
@@ -11,7 +12,7 @@ import styles from '../ObjectBrowser.module.css';
 import { useState, useEffect } from 'react';
 
 interface ObjectDetailsProps {
-  repository: Repository;
+  repository: Repository_v2;
   selectedObject: RepositoryObject;
   selectedDataItem: string | null;
   onNavigate: (path: string[]) => void;
@@ -250,7 +251,7 @@ export function ObjectDetails({
           </DataList.Item>
         )}
 
-        {selectedObject.metadata && selectedObject.metadata.sha256 && (
+        {selectedObject.metadata && selectedObject.metadata.sha256 && repository.account && (
           <DataList.Item>
             <DataList.Label minWidth="120px">Checksum</DataList.Label>
             <DataList.Value>

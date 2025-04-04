@@ -29,7 +29,7 @@ export function RepositorySchemaMetadata({
       "creator": {
         "@type": account.type === 'organization' ? "Organization" : "Person",
         "name": account.name,
-        ...(account.website && { "url": account.website })
+        ...(account.websites && { "url": account.websites[0] })
       }
     })
   };

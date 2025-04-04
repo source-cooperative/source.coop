@@ -111,7 +111,7 @@ export function LoginForm() {
       }
     } catch (err: unknown) {
       console.error('Login error:', err);
-      if (isApiError(err) && err.response?.data?.ui?.messages) {
+      if (isApiError<{ui: {messages: {text: string}[]}}>(err) && err.response?.data?.ui?.messages) {
         const messages = err.response.data.ui.messages;
         setError(messages[0]?.text || 'Login failed. Please try again.');
       } else {
@@ -156,9 +156,7 @@ export function LoginForm() {
   }
 
   // Get CSRF token for the form
-  // Using any type here because of incompatibility between LoginFlow type and the actual flow data structure
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const csrfInputNode = (flow as any).ui?.nodes?.find(
+  const csrfInputNode = flow.ui?.nodes?.find(
     (node) => 
       node.type === 'input' && 
       (node.attributes as UiNodeInputAttributes)?.name === 'csrf_token'

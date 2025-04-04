@@ -15,7 +15,7 @@ export async function getSession(): Promise<ExtendedSession | null> {
     });
     
     return response.data as ExtendedSession;
-  } catch (error) {
+  } catch (error: any) {
     // 401 is normal for unauthenticated users - not an error
     if (error.response?.status === 401) {
       return null;
@@ -51,7 +51,7 @@ export async function initLoginFlow() {
   try {
     const response = await serverOry.createBrowserLoginFlow();
     return response.data.id;
-  } catch (error) {
+  } catch (error: any) {
     if (error.response?.status !== 401) {
       console.error("Error initializing login flow:", error);
     }
@@ -63,7 +63,7 @@ export async function initRegistrationFlow() {
   try {
     const response = await serverOry.createBrowserRegistrationFlow();
     return response.data.id;
-  } catch (error) {
+  } catch (error: any) {
     if (error.response?.status !== 401) {
       console.error("Error initializing registration flow:", error);
     }

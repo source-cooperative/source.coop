@@ -8,7 +8,7 @@ export async function POST(request: Request) {
     
     // Verify the user is authenticated
     const session = await ory.toSession();
-    if (!session.active) {
+    if (!session.data.active) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -16,15 +16,15 @@ export async function POST(request: Request) {
     }
 
     // Get user data from session
-    if (!session.identity) {
+    if (!session.data.identity) {
       return NextResponse.json(
         { error: 'No identity found in session' },
         { status: 400 }
       );
     }
 
-    const userId = session.identity.id;
-    const email = session.identity.traits.email;
+    const userId = session.data.identity.id;
+    const email = session.data.identity.traits.email;
 
     // Create the account in our database
     const accountData = {

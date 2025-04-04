@@ -1,11 +1,10 @@
 'use client';
 
-import { _Box, Container, Flex, Button, DropdownMenu, Text } from '@radix-ui/themes';
+import { Container, Flex, Button, DropdownMenu, Text } from '@radix-ui/themes';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { Logo } from './Logo';
 import { ProfileAvatar } from '@/components/features/profiles/ProfileAvatar';
-import type { _IndividualAccount } from '@/types/account';
 import { ChevronDownIcon } from '@radix-ui/react-icons';
 import styles from './Navigation.module.css';
 import { useAccount } from '@/hooks/useAccount';
@@ -36,13 +35,12 @@ interface ExtendedSession extends Session {
   identity?: ExtendedIdentity;
 }
 
-export function Navigation({ _initialSession }: NavigationProps) {
+export function Navigation(props: NavigationProps) {
   const { session, isLoading: isSessionLoading } = useAuth();
   const accountId = session?.identity?.metadata_public?.account_id;
   const [isOpen, setIsOpen] = useState(false);
   const [directSession, setDirectSession] = useState<ExtendedSession | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
-  const _router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   
@@ -102,7 +100,7 @@ export function Navigation({ _initialSession }: NavigationProps) {
       console.log('Avatar debug:', {
         hasAccount: !!account,
         accountType: account.type,
-        email: account.email,
+        email: account.emails[0].address,
         name: account.name
       });
     }

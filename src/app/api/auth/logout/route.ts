@@ -1,8 +1,4 @@
-import { _cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
-import { CONFIG } from '@/lib/config';
-
-const _ORY_BASE_URL = CONFIG.auth.kratosUrl;
 
 export async function POST() {
   console.log('DEPRECATED: /api/auth/logout endpoint is no longer used. The Ory SDK is now used directly for logout per CURSOR_RULES guidelines.');
