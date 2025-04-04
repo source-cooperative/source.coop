@@ -44,7 +44,7 @@ describe('Logout API', () => {
     
     expect(data).toEqual({ success: true });
     expect(global.fetch).toHaveBeenCalledWith(
-      `${CONFIG.auth.apiUrl}/self-service/logout/browser`,
+      `${CONFIG.auth.api.frontendUrl}/self-service/logout/browser`,
       {
         method: 'POST',
         headers: {

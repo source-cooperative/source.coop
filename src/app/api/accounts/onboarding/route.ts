@@ -82,9 +82,9 @@ export async function POST(request: NextRequest) {
     }
     
     // Only try to update Ory identity if we have the required environment variables
-    if (CONFIG.auth.apiUrl && CONFIG.auth.accessToken) {
+    if (CONFIG.auth.api.backendUrl && CONFIG.auth.accessToken) {
       console.log('Attempting to update Ory identity:', { 
-        hasApiUrl: !!CONFIG.auth.apiUrl,
+        hasApiUrl: !!CONFIG.auth.api.backendUrl,
         hasAccessToken: !!CONFIG.auth.accessToken,
         oryId: ory_id 
       });

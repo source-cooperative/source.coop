@@ -150,7 +150,7 @@ export async function getServerSession(): Promise<ExtendedSession | null> {
     
     // Debug configuration
     console.log("Server-side Ory config:", {
-      apiUrl: CONFIG.auth.apiUrl,
+      backendApiUrl: CONFIG.auth.api.backendUrl,
       cookieHeader: cookieHeader.substring(0, 100) + "...",
     });
     
@@ -160,7 +160,7 @@ export async function getServerSession(): Promise<ExtendedSession | null> {
     console.log("Debug cookies:", {
       hasCookies: !!cookieHeader,
       cookieLength: cookieHeader.length,
-      apiUrl: CONFIG.auth.apiUrl,
+      backendApiUrl: CONFIG.auth.api.backendUrl,
       cookieNames,
       cookieHeader: cookieHeader.substring(0, 100) + "...",
     });

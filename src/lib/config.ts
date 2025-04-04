@@ -21,8 +21,10 @@ export const CONFIG = {
   },
   auth: {
     // Admin configuration
-    apiUrl: process.env.NEXT_PUBLIC_ORY_BASE_URL || '',
-    internalApiUrl: process.env.ORY_BASE_URL || process.env.NEXT_PUBLIC_ORY_BASE_URL || '',
+    api: {
+      frontendUrl: process.env.NEXT_PUBLIC_ORY_BASE_URL || '',
+      backendUrl: process.env.ORY_BASE_URL || '',
+    },
     accessToken: process.env.ORY_PROJECT_API_KEY || '',
     projectId: process.env.ORY_PROJECT_ID || '',
     projectSlug: process.env.ORY_PROJECT_SLUG || '',

@@ -10,7 +10,7 @@ export async function GET(
     email = decodeURIComponent(email);
       
     // Call our database API to look up the account by email
-    const response = await fetch(`${CONFIG.auth.apiUrl}/api/accounts/email/${email}`, {
+    const response = await fetch(`${CONFIG.auth.api.backendUrl}/api/accounts/email/${email}`, {
       headers: {
         'Accept': 'application/json',
       },
