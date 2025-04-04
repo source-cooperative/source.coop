@@ -5,7 +5,6 @@
   "scripts": {
     "dev": "./scripts/dev.sh",
     "dev:next": "next dev",
-    "dev:tunnel": "ory tunnel --dev --allowed-cors-origins=\"http://localhost:3000\" --debug --project ff8f07bb-adb7-4399-af07-20e633a105f6 http://localhost:3000",
     "build": "next build",
     "start": "next start",
     "lint": "ESLINT_USE_FLAT_CONFIG=false next lint",
