@@ -1,4 +1,6 @@
 import '@testing-library/jest-dom';
+import { jest } from "@jest/globals";
+import React from "react";
 
 // This file is used to set up the test environment
 // It runs before each test file
@@ -51,11 +53,20 @@ jest.mock('next/image', () => ({
 // Mock next/link
 jest.mock('next/link', () => {
   const React = require('react');
+  const Link = React.forwardRef(function Link(
+    {
+      href,
+      children,
+      ...props
+    }: { href?: string; children?: React.ReactNode; [key: string]: any },
+    ref: React.ForwardedRef<HTMLAnchorElement>
+  ) {
+    return React.createElement("a", { href, ref, ...props }, children);
+  });
+  Link.displayName = "Link";
   return {
     __esModule: true,
-    default: React.forwardRef(({ href, children, ...props }, ref) => {
-      return React.createElement('a', { href, ref, ...props }, children);
-    })
+    default: Link,
   };
 });
 
