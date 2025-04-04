@@ -19,11 +19,7 @@
     "test:coverage": "jest --coverage",
     "test:ci": "jest --ci --coverage --runInBand",
     "test-pages": "node scripts/test-pages.js",
-    "test:perf": "node scripts/test-perf.js",
-    "setup-test-data": "ts-node scripts/setup-test-data.ts",
-    "start-dynamodb": "./scripts/start-dynamodb.sh",
-    "check-dynamodb": "node scripts/check-dynamodb.js",
-    "predev": "npm run check-dynamodb || (echo 'DynamoDB not running. Starting DynamoDB...' && npm run start-dynamodb -- --no-init)"
+    "test:perf": "node scripts/test-perf.js"
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.767.0",
