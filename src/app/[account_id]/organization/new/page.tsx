@@ -17,7 +17,7 @@ export default async function NewOrganizationPage({ params }: PageProps) {
     
     try {
       // TODO: Replace with actual organization creation
-      const response = await fetch(`${CONFIG.api.baseUrl}/accounts`, {
+      const response = await fetch(`${CONFIG.api.baseUrl}/api/accounts`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
