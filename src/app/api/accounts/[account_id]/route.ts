@@ -123,7 +123,7 @@ export async function PUT(
     
     // Try to verify authentication
     try {
-      const { data: session } = await ory.toSession({ cookie: cookieHeader }) as { data: ExtendedSession };
+      const { data: session } = await serverOry.toSession({ cookie: cookieHeader }) as { data: ExtendedSession };
       
       // Only allow the user to update their own account
       const sessionAccountId = session?.identity?.metadata_public?.account_id;
@@ -227,7 +227,7 @@ export async function DELETE(
     }
 
     // Verify session with Ory
-    const { data: session } = await ory.toSession() as { data: ExtendedSession };
+    const { data: session } = await serverOry.toSession() as { data: ExtendedSession };
     if (!session?.active) {
       return NextResponse.json(
         { error: 'Unauthorized' },
@@ -284,7 +284,7 @@ export async function DELETE(
 
     // Log out the user if they're deleting their own account
     if (sessionAccountId === account_id) {
-      await ory.createBrowserLogoutFlow();
+      await serverOry.createBrowserLogoutFlow();
     }
     
     return NextResponse.json({ 
