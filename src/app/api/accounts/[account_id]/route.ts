@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ory } from '@/lib/ory';
+import { serverOry } from "@/lib/ory";
 import { fetchAccount, updateAccount } from '@/lib/db/operations_v2';
 import { getDynamoDb } from '@/lib/clients';
 import { DeleteCommand } from '@aws-sdk/lib-dynamodb';
@@ -41,9 +41,9 @@ export async function GET(
       const cookieHeader = request.headers.get('cookie');
       if (cookieHeader) {
         // Use the cookie header for session verification
-        const { data: session } = await ory.toSession({
-          cookie: cookieHeader
-        }) as { data: ExtendedSession };
+        const { data: session } = (await serverOry.toSession({
+          cookie: cookieHeader,
+        })) as { data: ExtendedSession };
         
         console.log('API: Session check:', {
           hasSession: !!session,
