@@ -31,9 +31,6 @@ services:
       - "4000:4000"
     volumes:
       - ~/.ory-cloud.json:/home/ory/.ory-cloud.json
-    environment:
-      - ORY_TUNNEL_DEV=true
-      - ORY_TUNNEL_DEBUG=true
     command: |
       tunnel 
         --dev
@@ -49,8 +46,6 @@ services:
       - "3000:3000"
     volumes:
       - .:/app
-      - /app/node_modules
-      - /app/.next
     working_dir: /app
     environment:
       - ORY_BASE_URL=http://ory-tunnel:4000
