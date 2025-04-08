@@ -1,6 +1,6 @@
 import { S3Client, ListObjectsV2Command, GetObjectCommand, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { StorageClient, StorageProvider, StorageConfig, ListObjectsParams, ListObjectsResult, GetObjectParams, GetObjectResult, PutObjectParams, PutObjectResult, DeleteObjectParams } from '@/types/storage';
-import { RepositoryObject } from '@/types';
+import { ProductObject } from '@/types';
 import { Readable } from 'stream';
 
 export class S3StorageClient implements StorageClient {
@@ -21,7 +21,7 @@ export class S3StorageClient implements StorageClient {
   }
 
   async listObjects(params: ListObjectsParams): Promise<ListObjectsResult> {
-    if (!params.account_id || !params.repository_id) {
+    if (!params.account_id || !params.product_id) {
       console.error('Invalid params for listObjects:', params);
       return { objects: [], commonPrefixes: [], isTruncated: false };
     }
@@ -32,7 +32,7 @@ export class S3StorageClient implements StorageClient {
       
       const command = new ListObjectsV2Command({
         Bucket: this.provider.endpoint,
-        Prefix: `${params.account_id}/${params.repository_id}/${prefix}`,
+        Prefix: `${params.account_id}/${params.product_id}/${prefix}`,
         Delimiter: params.delimiter || '/',
         MaxKeys: params.maxKeys,
         ContinuationToken: params.continuationToken,
@@ -40,7 +40,7 @@ export class S3StorageClient implements StorageClient {
 
       console.log('S3 listObjects command:', {
         Bucket: this.provider.endpoint,
-        Prefix: `${params.account_id}/${params.repository_id}/${prefix}`,
+        Prefix: `${params.account_id}/${params.product_id}/${prefix}`,
         Delimiter: params.delimiter || '/'
       });
 
@@ -49,22 +49,22 @@ export class S3StorageClient implements StorageClient {
       // Handle files (Contents)
       const objects = (response.Contents || []).map(item => ({
         id: item.Key!,
-        repository_id: params.repository_id,
-        path: item.Key!.replace(`${params.account_id}/${params.repository_id}/`, ''),
+        product_id: params.product_id,
+        path: item.Key!.replace(`${params.account_id}/${params.product_id}/`, ''),
         size: item.Size || 0,
         type: 'file',
         created_at: item.LastModified?.toISOString() || new Date().toISOString(),
         updated_at: item.LastModified?.toISOString() || new Date().toISOString(),
         checksum: item.ETag || '',
         metadata: {}
-      } as RepositoryObject));
+      } as ProductObject));
 
       // Handle directories (CommonPrefixes)
       const directories = (response.CommonPrefixes || []).map(prefix => {
-        const path = prefix.Prefix!.replace(`${params.account_id}/${params.repository_id}/`, '');
+        const path = prefix.Prefix!.replace(`${params.account_id}/${params.product_id}/`, '');
         return {
           id: path,
-          repository_id: params.repository_id,
+          product_id: params.product_id,
           path: path,
           size: 0,
           type: 'directory',
@@ -73,7 +73,7 @@ export class S3StorageClient implements StorageClient {
           checksum: '',
           metadata: {},
           isDirectory: true
-        } as RepositoryObject;
+        } as ProductObject;
       });
 
       // Combine files and directories
@@ -88,7 +88,7 @@ export class S3StorageClient implements StorageClient {
       return {
         objects: allObjects,
         commonPrefixes: response.CommonPrefixes?.map(prefix => 
-          prefix.Prefix!.replace(`${params.account_id}/${params.repository_id}/`, '')
+          prefix.Prefix!.replace(`${params.account_id}/${params.product_id}/`, '')
         ) || [],
         isTruncated: response.IsTruncated || false,
         nextContinuationToken: response.NextContinuationToken
@@ -103,7 +103,7 @@ export class S3StorageClient implements StorageClient {
     try {
       const command = new GetObjectCommand({
         Bucket: this.provider.endpoint,
-        Key: `${params.account_id}/${params.repository_id}/${params.object_path}`,
+        Key: `${params.account_id}/${params.product_id}/${params.object_path}`,
       });
 
       const response = await this.s3Client.send(command);
@@ -118,7 +118,7 @@ export class S3StorageClient implements StorageClient {
       return {
         object: {
           id: params.object_path,
-          repository_id: params.repository_id,
+          product_id: params.product_id,
           path: params.object_path,
           size: buffer.length,
           type: 'file',
@@ -139,18 +139,18 @@ export class S3StorageClient implements StorageClient {
     }
   }
 
-  async getObjectInfo(params: GetObjectParams): Promise<RepositoryObject> {
+  async getObjectInfo(params: GetObjectParams): Promise<ProductObject> {
     try {
       const command = new GetObjectCommand({
         Bucket: this.provider.endpoint,
-        Key: `${params.account_id}/${params.repository_id}/${params.object_path}`,
+        Key: `${params.account_id}/${params.product_id}/${params.object_path}`,
       });
 
       const response = await this.s3Client.send(command);
 
       return {
         id: params.object_path,
-        repository_id: params.repository_id,
+        product_id: params.product_id,
         path: params.object_path,
         size: response.ContentLength || 0,
         type: 'file',
@@ -169,7 +169,7 @@ export class S3StorageClient implements StorageClient {
     try {
       const command = new PutObjectCommand({
         Bucket: this.provider.endpoint,
-        Key: `${params.account_id}/${params.repository_id}/${params.object_path}`,
+        Key: `${params.account_id}/${params.product_id}/${params.object_path}`,
         Body: params.data,
         ContentType: params.contentType,
         Metadata: params.metadata
@@ -191,7 +191,7 @@ export class S3StorageClient implements StorageClient {
     try {
       const command = new DeleteObjectCommand({
         Bucket: this.provider.endpoint,
-        Key: `${params.account_id}/${params.repository_id}/${params.object_path}`,
+        Key: `${params.account_id}/${params.product_id}/${params.object_path}`,
         VersionId: params.versionId
       });
 

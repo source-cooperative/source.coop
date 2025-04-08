@@ -6,7 +6,7 @@ A data publishing utility that allows trusted organizations and individuals to s
 
 Source Cooperative is operational and available at [https://source.coop](https://source.coop), providing access to over 800TB of data. 
 
-A new version of the Source Cooperative web app called *S2* is under active development. It is currently only available to be deployed locallt and is not yet available in staging or production environments.
+A new version of the Source Cooperative web app called *S2* is under active development. It is currently only available to be deployed locally and is not yet available in staging or production environments.
 
 ### Development Stages
 - **Current**: Local Development (v0.1.0 - v0.3.0)
@@ -91,13 +91,6 @@ See [Development Guidelines](docs/development/coding-standards.md) for detailed 
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-### Key Features
-
-- Repository browsing and discovery
-- Dataset previews and metadata
-- OpenGraph image generation
-- Dark/light theme support
-
 ### Development Guidelines
 
 - Follow the patterns outlined in `CURSOR_RULES.md`
@@ -110,8 +103,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ```bash
 # Development
 npm run dev         # Start development server
-npm run build       # Build production bundle
-npm run start      # Start production server
+# npm run build       # Build production bundle
+# npm run start      # Start production server
 npm run lint       # Run ESLint
 npm run type-check # Run TypeScript checks
 ```

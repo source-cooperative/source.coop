@@ -1,9 +1,9 @@
 // Export account types
 export * from './account';
 
-// Export repository types
-export * from './repository';
-export * from './repository_object';
+// Export product types
+export * from './product_v2';
+export * from './product_object';
 
 // Export storage types
 export * from './storage';
