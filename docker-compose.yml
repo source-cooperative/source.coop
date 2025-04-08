@@ -56,3 +56,4 @@ services:
     depends_on:
       - dynamodb
       - ory-tunnel
+    restart: always
