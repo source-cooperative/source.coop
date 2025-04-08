@@ -75,16 +75,21 @@ export function LoginForm() {
         });
         throw new Error('Missing CSRF token');
       }
-      
-      await ory.updateLoginFlow({
-        flow: flow.id,
-        updateLoginFlowBody: {
-          method: 'password',
-          identifier: formData.get('identifier') as string,
-          password: formData.get('password') as string,
-          csrf_token: csrfToken,
+
+      await ory.updateLoginFlow(
+        {
+          flow: flow.id,
+          updateLoginFlowBody: {
+            method: "password",
+            identifier: formData.get("identifier") as string,
+            password: formData.get("password") as string,
+            csrf_token: csrfToken,
+          },
         },
-      });
+        {
+          withCredentials: true,
+        }
+      );
       
       // Check if login was successful and get account ID for redirect
       try {
