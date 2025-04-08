@@ -11,7 +11,7 @@ export function createStorageClient(): StorageClient {
     throw new Error('Storage endpoint is not configured');
   }
 
-  const storageType = CONFIG.storage.type.toLowerCase() as StorageType;
+  const storageType = CONFIG.storage.type.toUpperCase() as StorageType;
 
   const provider: StorageProvider = {
     provider_id: CONFIG.storage.type.toLowerCase(),
