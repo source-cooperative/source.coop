@@ -1,14 +1,14 @@
 'use client';
 
 import { createContext, useContext, useState, useCallback } from 'react';
-import type { Repository, RepositoryObject } from '@/types';
+import type { Product_v2, ProductObject } from '@/types';
 
 interface ObjectBrowserContextType {
   currentPath: string[];
-  selectedObject: RepositoryObject | null;
+  selectedObject: ProductObject | null;
   selectedDataItem: string | null;
   setCurrentPath: (path: string[]) => void;
-  setSelectedObject: (object: RepositoryObject | null) => void;
+  setSelectedObject: (object: ProductObject | null) => void;
   setSelectedDataItem: (item: string | null) => void;
   navigateTo: (path: string[]) => void;
 }
@@ -21,14 +21,14 @@ export function ObjectBrowserProvider({
   initialObject 
 }: { 
   children: React.ReactNode;
-  repository: Repository;
+  product: Product_v2;
   initialPath?: string;
-  initialObject?: RepositoryObject;
+  initialObject?: ProductObject;
 }) {
   const [currentPath, setCurrentPath] = useState<string[]>(
     initialPath ? initialPath.split('/').filter(Boolean) : []
   );
-  const [selectedObject, setSelectedObject] = useState<RepositoryObject | null>(initialObject || null);
+  const [selectedObject, setSelectedObject] = useState<ProductObject | null>(initialObject || null);
   const [selectedDataItem, setSelectedDataItem] = useState<string | null>(null);
 
   const navigateTo = useCallback((path: string[]) => {
