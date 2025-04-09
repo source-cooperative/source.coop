@@ -46,7 +46,7 @@ export function OnboardingForm() {
     () =>
       new FrontendApi(
         new Configuration({
-          basePath: CONFIG.auth.publicBaseUrl,
+          basePath: CONFIG.auth.api.frontendUrl,
           baseOptions: {
             withCredentials: true,
           },

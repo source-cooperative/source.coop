@@ -1,13 +1,12 @@
 import { NextResponse } from 'next/server';
-import { ory } from '@/lib/ory';
+import { serverOry } from '@/lib/ory';
 import { CONFIG } from '@/lib/config';
 
 export async function POST(request: Request) {
   try {
     const data = await request.json();
-    
     // Verify the user is authenticated
-    const session = await ory.toSession();
+    const session = await serverOry.toSession();
     if (!session.data.active) {
       return NextResponse.json(
         { error: 'Unauthorized' },
@@ -34,7 +33,7 @@ export async function POST(request: Request) {
       type: 'individual' as const,
     };
 
-    const response = await fetch(`${CONFIG.auth.apiUrl}/api/accounts`, {
+    const response = await fetch(`${CONFIG.auth.api.backendUrl}/api/accounts`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
