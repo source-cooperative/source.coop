@@ -46,7 +46,7 @@ export default async function ProductPathPage({
   
   console.log('Debug - Page params:', { account_id, product_id, path, pathString, prefix, isFilePath });
 
-  // 2. Find the repository or 404
+  // 2. Find the product or 404
   const product = await fetchProduct(account_id, product_id);
   console.log('Debug - Product:', product);
   
@@ -67,8 +67,8 @@ export default async function ProductPathPage({
     });
     console.log('Debug - Storage result:', result);
 
-    // 4. Transform storage objects to repository objects
-    const repositoryObjects: ProductObject[] = (result?.objects || [])
+    // 4. Transform storage objects to product objects
+    const productObjects: ProductObject[] = (result?.objects || [])
       .filter(obj => obj?.path)
       .map(obj => ({
         id: obj.path!,
@@ -82,10 +82,10 @@ export default async function ProductPathPage({
         checksum: obj.checksum || '',
         metadata: obj.metadata || {}
       }));
-    console.log('Debug - Transformed objects:', repositoryObjects);
+    console.log('Debug - Transformed objects:', productObjects);
 
     // 5. Find the selected object if we have a path
-    const selectedObject = pathString ? repositoryObjects.find(obj => obj.path === pathString) : undefined;
+    const selectedObject = pathString ? productObjects.find(obj => obj.path === pathString) : undefined;
     console.log('Debug - Selected object:', selectedObject);
 
     // 6. Determine if we're viewing a file or directory
@@ -100,7 +100,7 @@ export default async function ProductPathPage({
         <Box mt="4">
           <ObjectBrowser
             product={product}
-            objects={repositoryObjects}
+            objects={productObjects}
             initialPath={parentPath}
             selectedObject={selectedObject}
           />
@@ -115,7 +115,7 @@ export default async function ProductPathPage({
         <ProductHeader product={product} />
         <Box mt="4">
           <Text role="alert" color="red" size="3">
-            {error instanceof Error ? error.message : 'An error occurred while loading repository contents'}
+            {error instanceof Error ? error.message : 'An error occurred while loading product contents'}
           </Text>
         </Box>
       </Container>

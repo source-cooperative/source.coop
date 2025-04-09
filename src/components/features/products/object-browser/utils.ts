@@ -1,4 +1,4 @@
-import type { RepositoryObject } from '@/types';
+import type { ProductObject } from '@/types';
 
 export interface FileNode {
   name: string;
@@ -6,7 +6,7 @@ export interface FileNode {
   size: number;
   updated_at: string;
   isDirectory: boolean;
-  object?: RepositoryObject;
+  object?: ProductObject;
 }
 
 /**
@@ -18,7 +18,7 @@ export interface FileNode {
  * - /path.with.dots/nested/files (paths with dots)
  * - /path/with/trailing/slash/ (normalize slashes)
  */
-export function isDirectory(objects: RepositoryObject[], path: string): boolean {
+export function isDirectory(objects: ProductObject[], path: string): boolean {
   // Normalize path to not end with slash for comparison
   const normalizedPath = path.endsWith('/') ? path.slice(0, -1) : path;
   
@@ -34,7 +34,7 @@ export function isDirectory(objects: RepositoryObject[], path: string): boolean 
   return objects.some(obj => obj.path.startsWith(prefix));
 }
 
-export function buildDirectoryTree(objects: RepositoryObject[], currentPath: string[] = []) {
+export function buildDirectoryTree(objects: ProductObject[], currentPath: string[] = []) {
   const root: { [key: string]: FileNode } = {};
   const prefix = currentPath.length > 0 ? currentPath.join('/') + '/' : '';
   

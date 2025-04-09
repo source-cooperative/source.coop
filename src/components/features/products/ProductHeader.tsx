@@ -1,4 +1,4 @@
-// For repository detail page header
+// For product detail page header
 import { Grid, Box } from '@radix-ui/themes';
 import type { Product_v2 } from '@/types/product_v2';
 import { ProductSummaryCard } from './ProductSummaryCard';

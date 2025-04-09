@@ -79,7 +79,7 @@ export function ObjectDetails({
 
   return (
     <Card>
-      <SectionHeader title="Repository Contents">
+      <SectionHeader title="Contents">
         <Box style={{ 
           borderBottom: '1px solid var(--gray-5)',
           paddingBottom: 'var(--space-3)',
