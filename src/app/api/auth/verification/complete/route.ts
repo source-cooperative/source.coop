@@ -27,7 +27,7 @@ export async function POST(request: Request) {
     }
     
     // Construct the correct endpoint with the flow ID as a query parameter
-    const completeUrl = `${CONFIG.auth.privateBaseUrl}/self-service/verification?flow=${flow}`;
+    const completeUrl = `${CONFIG.auth.api.backendUrl}/self-service/verification?flow=${flow}`;
     
     console.log('Sending verification request to Ory:', {
       url: completeUrl,
@@ -91,12 +91,15 @@ export async function POST(request: Request) {
     
     // Check if we need to make an additional call to verify the identity
     try {
-      const sessionResponse = await fetch(`${CONFIG.auth.privateBaseUrl}/sessions/whoami`, {
-        headers: {
-          Cookie: cookieHeader,
-          Accept: 'application/json',
-        },
-      });
+      const sessionResponse = await fetch(
+        `${CONFIG.auth.api.backendUrl}/sessions/whoami`,
+        {
+          headers: {
+            Cookie: cookieHeader,
+            Accept: "application/json",
+          },
+        }
+      );
       
       if (sessionResponse.ok) {
         const session = await sessionResponse.json();

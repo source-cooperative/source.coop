@@ -8,7 +8,7 @@ export async function GET(request: Request) {
     const cookieHeader = request.headers.get('cookie') || '';
     
     // Initialize a new verification flow
-    const response = await fetch(`${CONFIG.auth.privateBaseUrl}/self-service/verification/flows?return_to=http://localhost:3000/onboarding`, {
+    const response = await fetch(`${CONFIG.auth.api.backendUrl}/self-service/verification/flows?return_to=http://localhost:3000/onboarding`, {
       method: 'GET',
       headers: {
         Cookie: cookieHeader,
