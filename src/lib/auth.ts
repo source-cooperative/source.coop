@@ -83,7 +83,7 @@ function getApiBaseUrl() {
     return '';
   } else {
     // In server context, we need absolute URLs
-    return CONFIG.auth.apiBaseUrl;
+    return CONFIG.api.baseUrl;
   }
 }
 
@@ -149,20 +149,20 @@ export async function getServerSession(): Promise<ExtendedSession | null> {
     const cookieHeader = cookieStore.toString();
     
     // Debug configuration
-    console.log('Server-side Ory config:', {
-      privateBaseUrl: CONFIG.auth.privateBaseUrl,
-      cookieHeader: cookieHeader.substring(0, 100) + '...'
+    console.log("Server-side Ory config:", {
+      backendApiUrl: CONFIG.auth.api.backendUrl,
+      cookieHeader: cookieHeader.substring(0, 100) + "...",
     });
     
     // Debug cookie details
     const cookieList = cookieStore.getAll();
     const cookieNames = cookieList.map(c => c.name);
-    console.log('Debug cookies:', {
+    console.log("Debug cookies:", {
       hasCookies: !!cookieHeader,
       cookieLength: cookieHeader.length,
-      privateBaseUrl: CONFIG.auth.privateBaseUrl,
+      backendApiUrl: CONFIG.auth.api.backendUrl,
       cookieNames,
-      cookieHeader: cookieHeader.substring(0, 100) + '...'
+      cookieHeader: cookieHeader.substring(0, 100) + "...",
     });
     
     try {

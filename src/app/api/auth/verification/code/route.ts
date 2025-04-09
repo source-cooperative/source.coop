@@ -24,7 +24,7 @@ export async function POST(request: Request) {
     
     // When a code is sent during registration, Ory provides a specific endpoint
     // to verify that code without needing to create a new flow
-    const verifyResponse = await fetch(`${CONFIG.auth.privateBaseUrl}/self-service/verification/methods/code/confirm`, {
+    const verifyResponse = await fetch(`${CONFIG.auth.api.backendUrl}/self-service/verification/methods/code/confirm`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

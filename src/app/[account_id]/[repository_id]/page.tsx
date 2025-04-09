@@ -28,7 +28,7 @@ interface RepositoryPageProps {
 
 export default async function RepositoryPage({ params }: RepositoryPageProps) {
   // Await params before destructuring as required by Next.js 15+
-  const { account_id, repository_id } = await Promise.resolve(params);
+  const { account_id, repository_id } = await params;
   
   try {
     const repository = await fetchRepository(account_id, repository_id);

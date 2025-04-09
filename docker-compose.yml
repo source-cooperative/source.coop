@@ -48,6 +48,7 @@ services:
       - .:/app
     working_dir: /app
     environment:
+      - NEXT_PUBLIC_ORY_BASE_URL=http://localhost:4000
       - ORY_BASE_URL=http://ory-tunnel:4000
       - DYNAMODB_ENDPOINT=http://dynamodb:8000
     env_file:
