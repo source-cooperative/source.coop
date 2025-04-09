@@ -1,5 +1,5 @@
 // Export account types
-export * from './account';
+export * from './account_v2';
 
 // Export product types
 export * from './product_v2';

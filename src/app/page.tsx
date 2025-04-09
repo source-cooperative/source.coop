@@ -11,25 +11,25 @@
 
 // src/app/page.tsx
 import { Container, Box, Heading } from '@radix-ui/themes';
-import { RepositoryList } from '@/components/features/repositories';
-import type { Repository_v2 as Repository } from '@/types/repository_v2';
-import { fetchRepositories } from '@/lib/db/operations_v2';
+import { ProductList } from '@/components/features/products';
+import type { Product_v2 as Product } from '@/types/product_v2';
+import { fetchProducts } from '@/lib/db/operations_v2';
 
 // Server action for data fetching
-async function getRepositories(): Promise<Repository[]> {
+async function getProducts(): Promise<Product[]> {
   'use server';
-  const { repositories } = await fetchRepositories();
-  return repositories;
+  const { products } = await fetchProducts();
+  return products;
 }
 
 export default async function HomePage() {
-  const repositories = await getRepositories();
+  const products = await getProducts();
   
   return (
     <Container size="4" py="6">
       <Box>
-        <Heading size="6" mb="4">Repositories</Heading>
-        <RepositoryList repositories={repositories} />
+        <Heading size="6" mb="4">Products</Heading>
+        <ProductList products={products} />
       </Box>
     </Container>
   );

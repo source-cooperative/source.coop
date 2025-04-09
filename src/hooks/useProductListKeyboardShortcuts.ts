@@ -1,16 +1,16 @@
 import { useEffect, useState, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import type { Repository_v2 } from '@/types/repository_v2';
+import type { Product_v2 } from '@/types/product_v2';
 
-interface UseRepositoryListKeyboardShortcutsProps {
-  repositories: Repository_v2[];
+interface UseProductListKeyboardShortcutsProps {
+  products: Product_v2[];
   onShowHelp: () => void;
 }
 
-export function useRepositoryListKeyboardShortcuts({
-  repositories,
+export function useProductListKeyboardShortcuts({
+  products,
   onShowHelp
-}: UseRepositoryListKeyboardShortcutsProps) {
+}: UseProductListKeyboardShortcutsProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [selectedIndex, setSelectedIndex] = useState<number>(-1);
@@ -39,7 +39,7 @@ export function useRepositoryListKeyboardShortcuts({
         case 'j':
         case 'ArrowDown': {
           e.preventDefault();
-          const newIndex = selectedIndex === -1 ? 0 : Math.min(selectedIndex + 1, repositories.length - 1);
+          const newIndex = selectedIndex === -1 ? 0 : Math.min(selectedIndex + 1, products.length - 1);
           setSelectedIndex(newIndex);
           break;
         }
@@ -53,9 +53,9 @@ export function useRepositoryListKeyboardShortcuts({
         case 'Enter':
         case 'o':
           e.preventDefault();
-          if (selectedIndex >= 0 && selectedIndex < repositories.length) {
-            const repo = repositories[selectedIndex];
-            router.push(`/${repo.account_id}/${repo.repository_id}`);
+          if (selectedIndex >= 0 && selectedIndex < products.length) {
+            const product = products[selectedIndex];
+            router.push(`/${product.account_id}/${product.product_id}`);
           }
           break;
         case 'Escape':
@@ -92,7 +92,7 @@ export function useRepositoryListKeyboardShortcuts({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [repositories, selectedIndex, router, onShowHelp, pathname]);
+  }, [products, selectedIndex, router, onShowHelp, pathname]);
 
   return {
     selectedIndex,

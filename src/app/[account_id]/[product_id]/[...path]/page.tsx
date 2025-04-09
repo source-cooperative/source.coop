@@ -1,8 +1,8 @@
 /**
- * Repository Path Page - Displays repository contents at a specific path
+ * Product Path Page - Displays product contents at a specific path
  * 
  * KEEP IT SIMPLE:
- * 1. URL params are known values (/[account_id]/[repository_id]/[...path])
+ * 1. URL params are known values (/[account_id]/[product_id]/[...path])
  * 2. Get data -> Transform if needed -> Render
  * 3. Trust your types, avoid complex validation
  * 4. Let Next.js handle errors (404, 500, etc.)
@@ -14,28 +14,29 @@ import { Container, Box, Text } from '@radix-ui/themes';
 import { notFound } from 'next/navigation';
 
 // Internal components
-import { ObjectBrowser, RepositoryHeader } from '@/components/features/repositories';
+import { ObjectBrowser, ProductHeader } from '@/components/features/products';
 
 // Types
-import type { RepositoryObject } from '@/types/repository_object';
+import type { Product_v2 } from '@/types/product_v2';
 
 // Utilities
-import { fetchRepository } from '@/lib/db/operations_v2';
+import { fetchProduct } from '@/lib/db/operations_v2';
 import { createStorageClient } from '@/lib/clients/storage';
+import { ProductObject } from '@/types/product_object';
 
 interface PageProps {
   params: Promise<{
     account_id: string;
-    repository_id: string;
+    product_id: string;
     path?: string[];
   }>;
 }
 
-export default async function RepositoryPathPage({
+export default async function ProductPathPage({
   params
 }: PageProps) {
   // 1. Get and await params
-  const { account_id, repository_id, path } = await Promise.resolve(params);
+  const { account_id, product_id, path } = await Promise.resolve(params);
   const pathString = path?.join('/') || '';
   
   // Check if this is a file path (ends with a file extension)
@@ -43,23 +44,23 @@ export default async function RepositoryPathPage({
   const prefix = isFilePath ? pathString.slice(0, pathString.lastIndexOf('/') + 1) : 
                 (pathString ? (pathString.endsWith('/') ? pathString : pathString + '/') : '');
   
-  console.log('Debug - Page params:', { account_id, repository_id, path, pathString, prefix, isFilePath });
+  console.log('Debug - Page params:', { account_id, product_id, path, pathString, prefix, isFilePath });
 
   // 2. Find the repository or 404
-  const repository = await fetchRepository(account_id, repository_id);
-  console.log('Debug - Repository:', repository);
+  const product = await fetchProduct(account_id, product_id);
+  console.log('Debug - Product:', product);
   
-  if (!repository) {
-    console.log('Debug - Repository not found, returning 404');
+  if (!product) {
+    console.log('Debug - Product not found, returning 404');
     return notFound();
   }
 
   try {
     // 3. Get objects from storage
-    console.log('Debug - Fetching objects with:', { account_id, repository_id, object_path: pathString, prefix });
+    console.log('Debug - Fetching objects with:', { account_id, product_id, object_path: pathString, prefix });
     const result = await createStorageClient().listObjects({
       account_id,
-      repository_id,
+      product_id,
       object_path: pathString,
       prefix,
       delimiter: '/'
@@ -67,11 +68,11 @@ export default async function RepositoryPathPage({
     console.log('Debug - Storage result:', result);
 
     // 4. Transform storage objects to repository objects
-    const repositoryObjects: RepositoryObject[] = (result?.objects || [])
+    const repositoryObjects: ProductObject[] = (result?.objects || [])
       .filter(obj => obj?.path)
       .map(obj => ({
         id: obj.path!,
-        repository_id,
+        product_id,
         path: obj.path!,
         size: obj.size || 0,
         type: obj.type || 'file',
@@ -95,10 +96,10 @@ export default async function RepositoryPathPage({
     // 7. Render the page
     return (
       <Container>
-        <RepositoryHeader repository={repository} />
+        <ProductHeader product={product} />
         <Box mt="4">
           <ObjectBrowser
-            repository={repository}
+            product={product}
             objects={repositoryObjects}
             initialPath={parentPath}
             selectedObject={selectedObject}
@@ -111,7 +112,7 @@ export default async function RepositoryPathPage({
     // Handle errors by showing an error message
     return (
       <Container>
-        <RepositoryHeader repository={repository} />
+        <ProductHeader product={product} />
         <Box mt="4">
           <Text role="alert" color="red" size="3">
             {error instanceof Error ? error.message : 'An error occurred while loading repository contents'}

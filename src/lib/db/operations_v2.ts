@@ -174,11 +174,14 @@ export async function fetchProducts(
   lastEvaluatedKey: any;
 }> {
   try {
-    // Use a scan but with pagination to avoid loading everything at once
+    // Only use the products table now
+    const tableName = "sc-products";
+    let allItems: any[] = [];
+    
     const scanParams: any = {
-      TableName: "sc-products",
+      TableName: tableName,
       Limit: limit,
-      FilterExpression: "attribute_exists(account_id)" // Only get valid products
+      FilterExpression: "attribute_exists(account_id)" // Only get valid items
     };
     
     if (lastEvaluatedKey) {
@@ -186,9 +189,12 @@ export async function fetchProducts(
     }
     
     const result = await docClient.send(new ScanCommand(scanParams));
+    if (result.Items) {
+      allItems = [...allItems, ...result.Items];
+    }
     
     // Get all unique account IDs
-    const accountIds = new Set((result.Items || []).map(prod => prod.account_id));
+    const accountIds = new Set(allItems.map(item => item.account_id));
     
     // Fetch all accounts in parallel
     const accountPromises = Array.from(accountIds).map(id => fetchAccount(id));
@@ -196,14 +202,14 @@ export async function fetchProducts(
     const accountMap = new Map(accounts.filter(Boolean).map(acc => [acc!.account_id, acc]));
     
     // Attach accounts to products
-    const products = (result.Items || []).map(item => ({
+    const products = allItems.map(item => ({
       ...item as Product,
       account: accountMap.get(item.account_id) || undefined
     }));
     
     return {
       products,
-      lastEvaluatedKey: result.LastEvaluatedKey
+      lastEvaluatedKey: undefined // Reset pagination since we're combining results
     };
   } catch (e) {
     console.error('Error fetching products:', e);

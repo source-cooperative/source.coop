@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
-import type { Repository_v2 } from '@/types/repository_v2';
-import type { RepositoryObject } from '@/types/repository_object';
+import type { Product_v2 } from '@/types/product_v2';
+import type { ProductObject } from '@/types/product_object';
 import { useKeyboardShortcuts } from './useKeyboardShortcuts';
 
 interface FileNode {
@@ -10,14 +10,14 @@ interface FileNode {
   updated_at: string;
   isDirectory: boolean;
   children?: { [key: string]: FileNode };
-  object?: RepositoryObject;
+  object?: ProductObject;
 }
 
 interface UseObjectBrowserKeyboardShortcutsProps {
-  repository: Repository_v2;
+  product: Product_v2;
   objects: FileNode[];
   currentPath: string[];
-  selectedObject?: RepositoryObject;
+  selectedObject?: ProductObject;
   onShowHelp: () => void;
   onNavigateToPath: (path: string[]) => void;
   onNavigateToFile: (path: string) => void;
@@ -25,7 +25,7 @@ interface UseObjectBrowserKeyboardShortcutsProps {
 }
 
 export function useObjectBrowserKeyboardShortcuts({
-  repository,
+  product,
   objects,
   currentPath,
   selectedObject,
@@ -143,7 +143,7 @@ export function useObjectBrowserKeyboardShortcuts({
             e.preventDefault();
             // Copy permanent link
             if (selectedObject) {
-              const url = window.location.origin + `/${repository.account_id}/${repository.repository_id}/${selectedObject.path}`;
+              const url = window.location.origin + `/${product.account_id}/${product.product_id}/${selectedObject.path}`;
               navigator.clipboard.writeText(url);
             }
             break;
@@ -183,7 +183,7 @@ export function useObjectBrowserKeyboardShortcuts({
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [selectedDataItem, focusedIndex, objects, currentPath, repository, selectedObject, onNavigateToPath, onNavigateToFile, onCopy]);
+  }, [selectedDataItem, focusedIndex, objects, currentPath, product, selectedObject, onNavigateToPath, onNavigateToFile, onCopy]);
 
   return {
     focusedIndex,

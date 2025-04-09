@@ -1,8 +1,8 @@
 /**
- * Repository Page - Displays a repository and its contents
+ * Product Page - Displays a product and its contents
  * 
  * KEEP IT SIMPLE:
- * 1. URL params are known values (/[account_id]/[repository_id])
+ * 1. URL params are known values (/[account_id]/[product_id])
  * 2. Get data -> Transform if needed -> Render
  * 3. Trust your types, avoid complex validation
  * 4. Let Next.js handle errors (404, 500, etc.)
@@ -12,44 +12,44 @@
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { Container, Box } from '@radix-ui/themes';
-import { fetchRepository } from '@/lib/db/operations_v2';
-import { RepositoryHeader } from '@/components/features/repositories';
-import { ObjectBrowser } from '@/components/features/repositories';
+import { fetchProduct } from '@/lib/db/operations_v2';
+import { ProductHeader } from '@/components/features/products';
+import { ObjectBrowser } from '@/components/features/products';
 import { createStorageClient } from '@/lib/clients/storage';
-import type { RepositoryObject } from '@/types/repository_object';
+import type { ProductObject } from '@/types/product_object';
 import { MarkdownViewer } from '@/components/features/markdown/MarkdownViewer';
 
-interface RepositoryPageProps {
+interface ProductPageProps {
   params: Promise<{
     account_id: string;
-    repository_id: string;
+    product_id: string;
   }>;
 }
 
-export default async function RepositoryPage({ params }: RepositoryPageProps) {
+export default async function ProductPage({ params }: ProductPageProps) {
   // Await params before destructuring as required by Next.js 15+
-  const { account_id, repository_id } = await Promise.resolve(params);
+  const { account_id, product_id } = await Promise.resolve(params);
   
   try {
-    const repository = await fetchRepository(account_id, repository_id);
-    if (!repository) {
+    const product = await fetchProduct(account_id, product_id);
+    if (!product) {
       return notFound();
     }
 
     // Get objects from storage
     const result = await createStorageClient().listObjects({
       account_id,
-      repository_id,
+      product_id, // Use product_id instead of repository_id
       object_path: '',
       prefix: ''
     });
 
-    // Transform storage objects to repository objects
-    const repositoryObjects: RepositoryObject[] = (result?.objects || [])
+    // Transform storage objects to product objects
+    const productObjects: ProductObject[] = (result?.objects || [])
       .filter(obj => obj?.path)
       .map(obj => ({
         id: obj.path!,
-        repository_id,
+        product_id,
         path: obj.path!,
         size: obj.size || 0,
         type: obj.type || 'file',
@@ -61,7 +61,7 @@ export default async function RepositoryPage({ params }: RepositoryPageProps) {
       }));
 
     // Check for README.md file
-    const readmeFile = repositoryObjects.find(obj => 
+    const readmeFile = productObjects.find(obj => 
       obj.path.toLowerCase() === 'readme.md' || 
       obj.path.toLowerCase() === 'readme'
     );
@@ -74,7 +74,7 @@ export default async function RepositoryPage({ params }: RepositoryPageProps) {
         const storageClient = createStorageClient();
         const readmeResult = await storageClient.getObject({
           account_id,
-          repository_id,
+          product_id, // Use product_id instead of repository_id
           object_path: readmeFile.path
         });
         
@@ -88,12 +88,12 @@ export default async function RepositoryPage({ params }: RepositoryPageProps) {
 
     return (
       <Container>
-        <RepositoryHeader repository={repository} />
+        <ProductHeader product={product} />
         
         <Box mt="4">
           <ObjectBrowser
-            repository={repository}
-            objects={repositoryObjects}
+            product={product}
+            objects={productObjects}
             initialPath=""
           />
         </Box>
@@ -107,33 +107,33 @@ export default async function RepositoryPage({ params }: RepositoryPageProps) {
       </Container>
     );
   } catch (error) {
-    console.error('Error fetching repository:', error);
+    console.error('Error fetching product:', error);
     return notFound();
   }
 }
 
 // Basic metadata
-export async function generateMetadata({ params }: RepositoryPageProps): Promise<Metadata> {
+export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
   // Await params before destructuring as required by Next.js 15+
-  const { account_id, repository_id } = await Promise.resolve(params);
+  const { account_id, product_id } = await Promise.resolve(params);
   
   try {
-    const repository = await fetchRepository(account_id, repository_id);
-    if (!repository) {
+    const product = await fetchProduct(account_id, product_id);
+    if (!product) {
       return {
-        title: 'Repository Not Found',
-        description: 'The requested repository could not be found.'
+        title: 'Product Not Found',
+        description: 'The requested product could not be found.'
       };
     }
     
     return {
-      title: repository.title,
-      description: repository.description || `Repository: ${repository.title}`
+      title: product.title,
+      description: product.description || `Product: ${product.title}`
     };
   } catch (error) {
     return {
       title: 'Error',
-      description: 'An error occurred while fetching the repository.'
+      description: 'An error occurred while fetching the product.'
     };
   }
 } 

@@ -1,28 +1,31 @@
 'use client';
 
-import { Card, Box } from '@radix-ui/themes';
-import { useState, useMemo, useCallback, useRef } from 'react';
-import { useRouter } from 'next/navigation';
-import type { Repository_v2 } from '@/types/repository_v2';
-import type { RepositoryObject } from '@/types/repository_object';
-import { SectionHeader } from '@/components/core';
-import { BreadcrumbNav } from '@/components/display';
 import { ShortcutHelp } from '@/components/features/keyboard/ShortcutHelp';
 import { useObjectBrowserKeyboardShortcuts } from '@/hooks/useObjectBrowserKeyboardShortcuts';
 import { ObjectDetails } from './object-browser/ObjectDetails';
 import { DirectoryList } from './object-browser/DirectoryList';
 import { buildDirectoryTree } from './object-browser/utils';
 import './ObjectBrowser.module.css';
+import { ProductObject } from '@/types/product_object';
+import { Product_v2 } from '@/types/product_v2';
+import { useRouter } from 'next/navigation';
+import { useCallback } from 'react';
+import { useMemo } from 'react';
+import { useRef } from 'react';
+import { useState } from 'react';
+import { Card, Box } from '@radix-ui/themes';
+import { SectionHeader } from '@/components/core';
+import { BreadcrumbNav } from '@/components/display';
 
 export interface ObjectBrowserProps {
-  repository: Repository_v2;
-  objects: RepositoryObject[];
+  product: Product_v2;
+  objects: ProductObject[];
   initialPath?: string;
-  selectedObject?: RepositoryObject;
+  selectedObject?: ProductObject;
 }
 
-export function ObjectBrowser({ repository, objects, initialPath = '', selectedObject }: ObjectBrowserProps) {
-  const router = useRouter();
+export function ObjectBrowser({ product, objects, initialPath = '', selectedObject }: ObjectBrowserProps) {
+  const router = useRouter(); 
   const [currentPath, setCurrentPath] = useState<string[]>(
     initialPath ? initialPath.split('/').filter(Boolean) : []
   );
@@ -44,19 +47,19 @@ export function ObjectBrowser({ repository, objects, initialPath = '', selectedO
   const navigateToPath = useCallback(async (newPath: string[]) => {
     setCurrentPath(newPath);
     const urlPath = newPath.length > 0 ? '/' + newPath.join('/') : '';
-    router.push(`/${repository.account_id}/${repository.repository_id}${urlPath}`);
-  }, [repository, router]);
+    router.push(`/${product.account_id}/${product.product_id}${urlPath}`);
+  }, [product, router]);
 
   const navigateToFile = useCallback((path: string) => {
-    router.push(`/${repository.account_id}/${repository.repository_id}/${path}`);
-  }, [repository, router]);
+    router.push(`/${product.account_id}/${product.product_id}/${path}`);
+  }, [product, router]);
 
   const { 
     focusedIndex, 
     setFocusedIndex, 
     selectedDataItem
   } = useObjectBrowserKeyboardShortcuts({
-    repository,
+    product,
     objects: items,
     currentPath,
     selectedObject,
@@ -72,7 +75,7 @@ export function ObjectBrowser({ repository, objects, initialPath = '', selectedO
     return (
       <>
         <ObjectDetails
-          repository={repository}
+          product={product}
           selectedObject={selectedObject}
           selectedDataItem={selectedDataItem}
           onNavigate={navigateToPath}
@@ -90,7 +93,7 @@ export function ObjectBrowser({ repository, objects, initialPath = '', selectedO
   return (
     <>
       <Card>
-        <SectionHeader title="Repository Contents">
+        <SectionHeader title="Product Contents">
           <Box style={{ 
             borderBottom: '1px solid var(--gray-5)',
             paddingBottom: 'var(--space-3)',

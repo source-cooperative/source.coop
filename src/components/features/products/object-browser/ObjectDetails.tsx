@@ -2,8 +2,8 @@
 
 import { Card, Box, DataList, Flex, IconButton, Tooltip } from '@radix-ui/themes';
 import { CopyIcon, CheckIcon } from '@radix-ui/react-icons';
-import type { RepositoryObject } from '@/types';
-import type { Repository_v2 } from '@/types/repository_v2';
+import type { ProductObject } from '@/types/product_object';
+import type { Product_v2 } from '@/types/product_v2';
 import { MonoText, SectionHeader } from '@/components/core';
 import { DateText, BreadcrumbNav } from '@/components/display';
 import { ChecksumVerifier } from '../ChecksumVerifier';
@@ -12,14 +12,14 @@ import styles from '../ObjectBrowser.module.css';
 import { useState, useEffect } from 'react';
 
 interface ObjectDetailsProps {
-  repository: Repository_v2;
-  selectedObject: RepositoryObject;
+  product: Product_v2;
+  selectedObject: ProductObject;
   selectedDataItem: string | null;
   onNavigate: (path: string[]) => void;
 }
 
 export function ObjectDetails({ 
-  repository, 
+  product, 
   selectedObject, 
   selectedDataItem,
   onNavigate
@@ -251,13 +251,13 @@ export function ObjectDetails({
           </DataList.Item>
         )}
 
-        {selectedObject.metadata && selectedObject.metadata.sha256 && repository.account && (
+        {selectedObject.metadata && selectedObject.metadata.sha256 && product.account && (
           <DataList.Item>
             <DataList.Label minWidth="120px">Checksum</DataList.Label>
             <DataList.Value>
               <Flex align="center" gap="2">
                 <ChecksumVerifier 
-                  objectUrl={`/api/${repository.account.account_id}/${repository.repository_id}/objects/${selectedObject.path}`}
+                  objectUrl={`/api/${product.account.account_id}/${product.product_id}/objects/${selectedObject.path}`}
                   expectedHash={selectedObject.metadata.sha256}
                   algorithm="SHA-256"
                 />
