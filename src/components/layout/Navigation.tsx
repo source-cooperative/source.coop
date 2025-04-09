@@ -93,6 +93,7 @@ export function Navigation(props: NavigationProps) {
       const { data } = await ory.createBrowserLogoutFlow();
       
       if (data.logout_url) {
+        console.log(JSON.stringify({ data }));
         window.location.href = data.logout_url;
       } else {
         throw new Error('No logout URL returned from Ory');
