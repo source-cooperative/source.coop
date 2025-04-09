@@ -69,12 +69,6 @@ export async function getSession(): Promise<ExtendedSession | null> {
   }
 }
 
-// Helper to get account_id from session
-export async function getAccountId(): Promise<string | null> {
-  const session = await getSession() as ExtendedSession;
-  return session?.identity?.metadata_public?.account_id || null;
-}
-
 // Helper to update Ory identity (admin operation)
 export async function updateOryIdentity(oryId: string, data: any) {
   if (!CONFIG.auth.privateBaseUrl) {
