@@ -17,4 +17,4 @@ export function SectionHeader({ title, children }: SectionHeaderProps) {
       {children && <Box>{children}</Box>}
     </Box>
   );
-} 
+}

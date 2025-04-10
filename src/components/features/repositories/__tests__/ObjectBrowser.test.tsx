@@ -6,7 +6,7 @@ import { exampleRepositories, _exampleObjects } from '@/tests/fixtures/example-d
 const mockRouter = { push: jest.fn() };
 jest.mock('next/navigation', () => ({
   useRouter: () => mockRouter,
-  usePathname: () => '/test-account/repo1'
+  usePathname: () => '/test-account/repo1',
 }));
 
 describe('ObjectBrowser', () => {
@@ -23,7 +23,7 @@ describe('ObjectBrowser', () => {
       updated_at: '2024-01-02T00:00:00Z',
       checksum: 'abc123',
       name: 'catalog.json',
-      isDirectory: false
+      isDirectory: false,
     },
     {
       id: 'data',
@@ -35,8 +35,8 @@ describe('ObjectBrowser', () => {
       updated_at: '2024-01-02T00:00:00Z',
       checksum: '',
       name: 'data',
-      isDirectory: true
-    }
+      isDirectory: true,
+    },
   ];
 
   beforeEach(() => {
@@ -44,53 +44,29 @@ describe('ObjectBrowser', () => {
   });
 
   it('should render files and directories', () => {
-    render(
-      <ObjectBrowser
-        repository={mockRepository}
-        objects={mockObjects}
-        initialPath=""
-      />
-    );
+    render(<ObjectBrowser repository={mockRepository} objects={mockObjects} initialPath="" />);
 
     expect(screen.getByText('catalog.json')).toBeInTheDocument();
     expect(screen.getByText('data')).toBeInTheDocument();
   });
 
   it('should navigate to directory when clicked', () => {
-    render(
-      <ObjectBrowser
-        repository={mockRepository}
-        objects={mockObjects}
-        initialPath=""
-      />
-    );
+    render(<ObjectBrowser repository={mockRepository} objects={mockObjects} initialPath="" />);
 
     fireEvent.click(screen.getByText('data'));
     expect(mockRouter.push).toHaveBeenCalledWith('/test-account/repo1/data');
   });
 
   it('should navigate to file when clicked', () => {
-    render(
-      <ObjectBrowser
-        repository={mockRepository}
-        objects={mockObjects}
-        initialPath=""
-      />
-    );
+    render(<ObjectBrowser repository={mockRepository} objects={mockObjects} initialPath="" />);
 
     fireEvent.click(screen.getByText('catalog.json'));
     expect(mockRouter.push).toHaveBeenCalledWith('/test-account/repo1/catalog.json');
   });
 
   it('should show empty state when no objects', () => {
-    render(
-      <ObjectBrowser
-        repository={mockRepository}
-        objects={[]}
-        initialPath=""
-      />
-    );
+    render(<ObjectBrowser repository={mockRepository} objects={[]} initialPath="" />);
 
     expect(screen.getByText('This directory is empty.')).toBeInTheDocument();
   });
-}); 
+});

@@ -40,4 +40,4 @@ This directory contains documentation for developers working on the Source Coope
 
 - [Project Roadmap](../roadmap/README.md)
 - [Architecture Overview](../architecture/README.md)
-- [Release Notes](../releases/README.md) 
+- [Release Notes](../releases/README.md)

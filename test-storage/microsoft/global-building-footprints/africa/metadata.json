@@ -43,7 +43,7 @@
       "rural": {
         "precision": 0.91,
         "recall": 0.89,
-        "f1_score": 0.90
+        "f1_score": 0.9
       }
     }
   },
@@ -79,4 +79,4 @@
     "email": "buildings@microsoft.com",
     "website": "https://microsoft.com/buildings"
   }
-} 
+}

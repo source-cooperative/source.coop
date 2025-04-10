@@ -1,9 +1,5 @@
 export {
   fetchAccount,
-  fetchAccountByEmail,
-  fetchAccountsByType,
-  fetchRepository,
   fetchRepositoriesByAccount,
-  updateAccount,
-  fetchOrganizationMembers
+  fetchOrganizationMembers,
 } from './operations_v2';

@@ -10,15 +10,15 @@ interface WebsiteLinkProps {
 export function WebsiteLink({ website }: WebsiteLinkProps) {
   const getIcon = (url: string) => {
     const hostname = new URL(url).hostname.toLowerCase();
-    
+
     if (hostname.includes('github.com')) {
       return <GitHubLogoIcon width="16" height="16" />;
     }
-    
+
     if (hostname.includes('linkedin.com')) {
       return <LinkedInLogoIcon width="16" height="16" />;
     }
-    
+
     return <Link2Icon width="16" height="16" />;
   };
 
@@ -30,4 +30,4 @@ export function WebsiteLink({ website }: WebsiteLinkProps) {
       </Link>
     </Flex>
   );
-} 
+}

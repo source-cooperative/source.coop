@@ -12,19 +12,22 @@ interface NotFoundProps {
 export default function RepositoryNotFound({ params }: NotFoundProps) {
   return (
     <Container>
-      <Flex 
-        direction="column" 
-        align="center" 
-        justify="center" 
+      <Flex
+        direction="column"
+        align="center"
+        justify="center"
         gap="4"
         style={{ minHeight: '60vh' }}
       >
         <LinkBreak2Icon width="32" height="32" />
-        <Heading as="h1" size="6">Repository Not Found</Heading>
+        <Heading as="h1" size="6">
+          Repository Not Found
+        </Heading>
         <Text as="p" size="3" color="gray">
           {params?.account_id && params?.repository_id ? (
             <>
-              The repository <strong>{params.repository_id}</strong> was not found in the account <strong>{params.account_id}</strong>.
+              The repository <strong>{params.repository_id}</strong> was not found in the account{' '}
+              <strong>{params.account_id}</strong>.
             </>
           ) : params?.account_id ? (
             <>
@@ -40,4 +43,4 @@ export default function RepositoryNotFound({ params }: NotFoundProps) {
       </Flex>
     </Container>
   );
-} 
+}

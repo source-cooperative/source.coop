@@ -6,13 +6,13 @@ This repository contains satellite imagery and derived data products from NASA E
 
 ## Data Products
 
-| Dataset | Resolution | Coverage | Update Frequency |
-|---------|------------|----------|------------------|
-| MODIS Land Surface Temperature | 1km | Global | Daily |
-| Landsat Surface Reflectance | 30m | Global | 16 days |
-| GPM Precipitation | 10km | 60°N-60°S | 3 hours |
-| SMAP Soil Moisture | 9km | Global Land | 3 days |
-| SRTM Digital Elevation | 30m | 60°N-60°S | Static |
+| Dataset                        | Resolution | Coverage    | Update Frequency |
+| ------------------------------ | ---------- | ----------- | ---------------- |
+| MODIS Land Surface Temperature | 1km        | Global      | Daily            |
+| Landsat Surface Reflectance    | 30m        | Global      | 16 days          |
+| GPM Precipitation              | 10km       | 60°N-60°S   | 3 hours          |
+| SMAP Soil Moisture             | 9km        | Global Land | 3 days           |
+| SRTM Digital Elevation         | 30m        | 60°N-60°S   | Static           |
 
 ## Access Methods
 
@@ -33,10 +33,10 @@ import numpy as np
 with rasterio.open('LC08_L1TP_044034_20230615_20230703_02_T1_B4.TIF') as src:
     # Read the raster band as a numpy array
     red_band = src.read(1)
-    
+
     # Get metadata
     metadata = src.meta
-    
+
     # Print statistics
     print(f"Min: {np.min(red_band)}, Max: {np.max(red_band)}")
 ```
@@ -44,16 +44,19 @@ with rasterio.open('LC08_L1TP_044034_20230615_20230703_02_T1_B4.TIF') as src:
 ## Data Processing Workflow
 
 1. **Data Acquisition**
+
    - Satellite raw data collection
    - Downlink to ground stations
    - Initial quality checks
 
 2. **Pre-processing**
+
    - Radiometric calibration
    - Geometric correction
    - Atmospheric correction
 
 3. **Product Generation**
+
    - Apply science algorithms
    - Create Level 2+ products
    - Quality assurance
@@ -71,4 +74,4 @@ When using this data in your research, please cite:
 
 ## License
 
-This data is available under the [NASA Open Data Policy](https://www.nasa.gov/open-data/). 
+This data is available under the [NASA Open Data Policy](https://www.nasa.gov/open-data/).

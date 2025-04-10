@@ -9,12 +9,12 @@ import type { Repository_v2, RepositoryMirror, RepositoryRole } from '../src/typ
 // Utility function to extract value from DynamoDB attribute format
 function extractValue(attr: any): any {
   if (!attr) return null;
-  
+
   if (attr.S !== undefined) return attr.S;
   if (attr.N !== undefined) return Number(attr.N);
   if (attr.BOOL !== undefined) return attr.BOOL;
   if (attr.NULL !== undefined) return null;
-  
+
   if (attr.M) {
     const obj: Record<string, any> = {};
     Object.entries(attr.M).forEach(([key, value]) => {
@@ -22,11 +22,11 @@ function extractValue(attr: any): any {
     });
     return obj;
   }
-  
+
   if (attr.L) {
     return attr.L.map((item: any) => extractValue(item));
   }
-  
+
   return attr; // Default fallback
 }
 
@@ -37,7 +37,7 @@ async function readGzippedJson(filePath: string): Promise<any[]> {
   const fileStream = createReadStream(filePath).pipe(createGunzip());
   const rl = createInterface({
     input: fileStream,
-    crlfDelay: Infinity
+    crlfDelay: Infinity,
   });
 
   for await (const line of rl) {
@@ -47,11 +47,11 @@ async function readGzippedJson(filePath: string): Promise<any[]> {
         // Extract the item and normalize the DynamoDB attribute format
         const item = rawItem.Item || rawItem;
         const normalizedItem: Record<string, any> = {};
-        
+
         Object.entries(item).forEach(([key, value]) => {
           normalizedItem[key] = extractValue(value);
         });
-        
+
         items.push(normalizedItem);
       } catch (e) {
         console.warn('Failed to parse line:', line.substring(0, 100) + '...');
@@ -66,17 +66,17 @@ async function readGzippedJson(filePath: string): Promise<any[]> {
 // Convert old account format to new account schema
 function convertAccount(oldAccount: any): Account | null {
   const now = new Date().toISOString();
-  
+
   try {
     // Basic validation
     if (!oldAccount.account_id) {
       console.warn('Account missing account_id, skipping');
       return null;
     }
-    
+
     // Determine account type
     const accountType = oldAccount.account_type === 'organization' ? 'organization' : 'individual';
-    
+
     const baseAccount = {
       account_id: oldAccount.account_id,
       type: accountType as 'individual' | 'organization',
@@ -87,10 +87,10 @@ function convertAccount(oldAccount: any): Account | null {
       disabled: oldAccount.disabled || false,
       flags: Array.isArray(oldAccount.flags) ? oldAccount.flags : [],
       metadata_private: {
-        identity_id: oldAccount.identity_id || `ory_${Math.random().toString(36).substring(2, 15)}`
-      }
+        identity_id: oldAccount.identity_id || `ory_${Math.random().toString(36).substring(2, 15)}`,
+      },
     };
-    
+
     if (accountType === 'individual') {
       const account: IndividualAccount = {
         ...baseAccount,
@@ -99,8 +99,8 @@ function convertAccount(oldAccount: any): Account | null {
           bio: oldAccount.profile?.bio || '',
           location: oldAccount.profile?.location || '',
           orcid: oldAccount.profile?.orcid || '',
-          domains: []
-        }
+          domains: [],
+        },
       };
       return account;
     } else {
@@ -113,8 +113,8 @@ function convertAccount(oldAccount: any): Account | null {
           domains: [],
           owner_account_id: oldAccount.profile?.owner_id || '',
           admin_account_ids: oldAccount.profile?.admin_ids || [],
-          member_account_ids: oldAccount.profile?.member_ids || []
-        }
+          member_account_ids: oldAccount.profile?.member_ids || [],
+        },
       };
       return account;
     }
@@ -127,14 +127,14 @@ function convertAccount(oldAccount: any): Account | null {
 // Convert old repository format to new repository schema
 function convertRepository(oldRepo: any): Repository_v2 | null {
   const now = new Date().toISOString();
-  
+
   try {
     // Basic validation
     if (!oldRepo.repository_id || !oldRepo.account_id) {
       console.warn('Repository missing required fields, skipping');
       return null;
     }
-    
+
     // Map visibility from old state field
     let visibility: 'public' | 'unlisted' | 'restricted' = 'restricted';
     if (oldRepo.state === 'listed') {
@@ -142,35 +142,35 @@ function convertRepository(oldRepo: any): Repository_v2 | null {
     } else if (oldRepo.state === 'unlisted') {
       visibility = 'unlisted';
     }
-    
+
     // Create mirrors record
     const mirrors: Record<string, RepositoryMirror> = {};
     const oldMirrors = oldRepo.data?.mirrors || {};
-    
+
     Object.entries(oldMirrors).forEach(([key, value]: [string, any]) => {
       const mirrorPrefix = value.prefix || `${oldRepo.account_id}/${oldRepo.repository_id}/`;
-      
+
       mirrors[key] = {
         storage_type: 's3',
         connection_id: value.data_connection_id || 'default-connection',
         prefix: mirrorPrefix,
         config: {
           region: 'us-west-2',
-          bucket: 'opendata.source.coop'
+          bucket: 'opendata.source.coop',
         },
         is_primary: key === oldRepo.data?.primary_mirror,
         sync_status: {
           last_sync_at: now,
-          is_synced: true
+          is_synced: true,
         },
         stats: {
           total_objects: 0,
           total_size: 0,
-          last_verified_at: now
-        }
+          last_verified_at: now,
+        },
       };
     });
-    
+
     // If no mirrors were found, create a default one
     if (Object.keys(mirrors).length === 0) {
       const defaultMirrorKey = 'default-mirror';
@@ -180,34 +180,34 @@ function convertRepository(oldRepo: any): Repository_v2 | null {
         prefix: `${oldRepo.account_id}/${oldRepo.repository_id}/`,
         config: {
           region: 'us-west-2',
-          bucket: 'opendata.source.coop'
+          bucket: 'opendata.source.coop',
         },
         is_primary: true,
         sync_status: {
           last_sync_at: now,
-          is_synced: true
+          is_synced: true,
         },
         stats: {
           total_objects: 0,
           total_size: 0,
-          last_verified_at: now
-        }
+          last_verified_at: now,
+        },
       };
     }
-    
+
     // Extract tags
     const tags = oldRepo.meta?.tags || [];
-    
+
     // Create roles (default to owner as admin)
     const roles: Record<string, RepositoryRole> = {
       [oldRepo.account_id]: {
         account_id: oldRepo.account_id,
         role: 'admin',
         granted_at: now,
-        granted_by: oldRepo.account_id
-      }
+        granted_by: oldRepo.account_id,
+      },
     };
-    
+
     return {
       repository_id: oldRepo.repository_id,
       account_id: oldRepo.account_id,
@@ -220,8 +220,8 @@ function convertRepository(oldRepo: any): Repository_v2 | null {
         mirrors,
         primary_mirror: oldRepo.data?.primary_mirror || Object.keys(mirrors)[0],
         tags,
-        roles
-      }
+        roles,
+      },
     };
   } catch (error) {
     console.error(`Error converting repository ${oldRepo.repository_id}:`, error);
@@ -232,15 +232,27 @@ function convertRepository(oldRepo: any): Repository_v2 | null {
 async function main() {
   try {
     console.log('Starting conversion of DynamoDB dump data...');
-    
+
     // Read accounts data
-    const accountsPath = join(process.cwd(), 'dynamodownload', '01743449552341-6d28931b', 'data', 'eivyxj3smi2mpc3mtpbtvl6cfm.json.gz');
+    const accountsPath = join(
+      process.cwd(),
+      'dynamodownload',
+      '01743449552341-6d28931b',
+      'data',
+      'eivyxj3smi2mpc3mtpbtvl6cfm.json.gz'
+    );
     const oldAccounts = await readGzippedJson(accountsPath);
-    
+
     // Read repositories data
-    const reposPath = join(process.cwd(), 'dynamodownload', '01743449800394-e8d5e1a3', 'data', 'avi2syzkru2hfcoizz7kzdfin4.json.gz');
+    const reposPath = join(
+      process.cwd(),
+      'dynamodownload',
+      '01743449800394-e8d5e1a3',
+      'data',
+      'avi2syzkru2hfcoizz7kzdfin4.json.gz'
+    );
     const oldRepositories = await readGzippedJson(reposPath);
-    
+
     console.log(`Converting ${oldAccounts.length} accounts...`);
     const convertedAccounts: Account[] = [];
     for (const oldAccount of oldAccounts) {
@@ -250,7 +262,7 @@ async function main() {
       }
     }
     console.log(`Successfully converted ${convertedAccounts.length} accounts`);
-    
+
     console.log(`Converting ${oldRepositories.length} repositories...`);
     const convertedRepositories: Repository_v2[] = [];
     for (const oldRepo of oldRepositories) {
@@ -260,21 +272,18 @@ async function main() {
       }
     }
     console.log(`Successfully converted ${convertedRepositories.length} repositories`);
-    
+
     // Save converted data to JSON files
     const outputDir = join(process.cwd(), 'scripts', 'converted-data');
-    
+
     console.log(`Saving converted data to ${outputDir}...`);
+    writeFileSync(join(outputDir, 'accounts.json'), JSON.stringify(convertedAccounts, null, 2));
+
     writeFileSync(
-      join(outputDir, 'accounts.json'), 
-      JSON.stringify(convertedAccounts, null, 2)
-    );
-    
-    writeFileSync(
-      join(outputDir, 'repositories.json'), 
+      join(outputDir, 'repositories.json'),
       JSON.stringify(convertedRepositories, null, 2)
     );
-    
+
     console.log('Conversion complete!');
   } catch (error) {
     console.error('Error converting data:', error);
@@ -282,4 +291,4 @@ async function main() {
   }
 }
 
-main(); 
+main();

@@ -14,7 +14,7 @@ export default async function NewOrganizationPage({ params }: PageProps) {
 
   async function handleSubmit(data: Record<string, string>) {
     'use server';
-    
+
     try {
       // TODO: Replace with actual organization creation
       const response = await fetch(`${CONFIG.api.baseUrl}/api/accounts`, {
@@ -58,7 +58,7 @@ export default async function NewOrganizationPage({ params }: PageProps) {
       label: 'Website',
       name: 'website',
       type: 'url' as const,
-      description: 'Your organization\'s website (optional)',
+      description: "Your organization's website (optional)",
     },
     {
       label: 'Email',
@@ -71,7 +71,9 @@ export default async function NewOrganizationPage({ params }: PageProps) {
   return (
     <Container>
       <Box py="9">
-        <Heading size="8" mb="6">Create New Organization</Heading>
+        <Heading size="8" mb="6">
+          Create New Organization
+        </Heading>
         <FormWrapper
           fields={fields}
           onSubmit={handleSubmit}
@@ -81,4 +83,4 @@ export default async function NewOrganizationPage({ params }: PageProps) {
       </Box>
     </Container>
   );
-} 
+}

@@ -1,12 +1,12 @@
-version: "3.8"
+version: '3.8'
 services:
   dynamodb:
     image: amazon/dynamodb-local:latest
     ports:
-      - "8000:8000"
+      - '8000:8000'
     volumes:
       - .dynamodb:/opt/dynamodblocal
-    command: "-jar DynamoDBLocal.jar -sharedDb -dbPath /opt/dynamodblocal"
+    command: '-jar DynamoDBLocal.jar -sharedDb -dbPath /opt/dynamodblocal'
 
   init-db:
     image: node:23-alpine
@@ -29,7 +29,7 @@ services:
     volumes:
       - ~/.ory-cloud.json:/home/ory/.ory-cloud.json
     ports:
-      - "4000:4000"
+      - '4000:4000'
     command: |
       tunnel 
         http://nextjs:3000
@@ -43,7 +43,7 @@ services:
   nextjs:
     image: node:23-alpine
     ports:
-      - "3000:3000"
+      - '3000:3000'
     volumes:
       - .:/app
     working_dir: /app

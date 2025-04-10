@@ -17,18 +17,18 @@ describe('RepositoryMetaContent', () => {
       metadata: {
         mirrors: {},
         primary_mirror: 'default',
-        roles: {}
-      }
+        roles: {},
+      },
     };
 
     render(<RepositoryMetaContent repository={mockRepository} />);
 
     // Check visibility badge
     expect(screen.getByText('Public')).toBeInTheDocument();
-    
+
     // Check created date
     expect(screen.getByText('Created')).toBeInTheDocument();
-    
+
     // Check updated date
     expect(screen.getByText('Last Updated')).toBeInTheDocument();
   });
@@ -45,8 +45,8 @@ describe('RepositoryMetaContent', () => {
       metadata: {
         mirrors: {},
         primary_mirror: 's3-bucket',
-        roles: {}
-      }
+        roles: {},
+      },
     };
 
     render(<RepositoryMetaContent repository={mockRepository} />);
@@ -68,8 +68,8 @@ describe('RepositoryMetaContent', () => {
       metadata: {
         mirrors: {},
         primary_mirror: 'default',
-        roles: {}
-      }
+        roles: {},
+      },
     };
 
     const mockStatistics: RepositoryStatistics = {
@@ -77,7 +77,7 @@ describe('RepositoryMetaContent', () => {
       total_objects: 100,
       total_bytes: 1024 * 1024, // 1 MB
       first_object_at: '2023-01-01T00:00:00Z',
-      last_object_at: '2023-01-02T00:00:00Z'
+      last_object_at: '2023-01-02T00:00:00Z',
     };
 
     render(<RepositoryMetaContent repository={mockRepository} statistics={mockStatistics} />);
@@ -85,7 +85,7 @@ describe('RepositoryMetaContent', () => {
     // Check statistics
     expect(screen.getByText('Total Objects')).toBeInTheDocument();
     expect(screen.getByText('100')).toBeInTheDocument();
-    
+
     expect(screen.getByText('Total Size')).toBeInTheDocument();
     expect(screen.getByText('1 MB')).toBeInTheDocument();
   });
@@ -102,31 +102,31 @@ describe('RepositoryMetaContent', () => {
       metadata: {
         mirrors: {},
         primary_mirror: 'default',
-        roles: {}
-      }
+        roles: {},
+      },
     };
 
     const unlistedRepo: Repository_v2 = {
       ...publicRepo,
       repository_id: 'repo456',
       title: 'Unlisted Repository',
-      visibility: 'unlisted'
+      visibility: 'unlisted',
     };
 
     const restrictedRepo: Repository_v2 = {
       ...publicRepo,
       repository_id: 'repo789',
       title: 'Restricted Repository',
-      visibility: 'restricted'
+      visibility: 'restricted',
     };
 
     const { rerender } = render(<RepositoryMetaContent repository={publicRepo} />);
     expect(screen.getByText('Public')).toBeInTheDocument();
-    
+
     rerender(<RepositoryMetaContent repository={unlistedRepo} />);
     expect(screen.getByText('Unlisted')).toBeInTheDocument();
-    
+
     rerender(<RepositoryMetaContent repository={restrictedRepo} />);
     expect(screen.getByText('Restricted')).toBeInTheDocument();
   });
-}); 
+});

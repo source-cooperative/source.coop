@@ -4,4 +4,4 @@ declare const styles: {
   readonly chevron: string;
 };
 
-export default styles; 
+export default styles;

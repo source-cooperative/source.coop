@@ -32,7 +32,7 @@ export function useObjectBrowserKeyboardShortcuts({
   onShowHelp,
   onNavigateToPath,
   onNavigateToFile,
-  onCopy
+  onCopy,
 }: UseObjectBrowserKeyboardShortcutsProps) {
   const [focusedIndex, setFocusedIndex] = useState<number>(-1);
   const [selectedDataItem, setSelectedDataItem] = useState<string | null>(null);
@@ -67,7 +67,8 @@ export function useObjectBrowserKeyboardShortcuts({
     const handleKeyDown = (e: KeyboardEvent) => {
       const selection = window.getSelection();
       const hasSelection = selection && selection.toString().length > 0;
-      const isInput = e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement;
+      const isInput =
+        e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement;
 
       // Handle copy of selected data first
       if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
@@ -79,7 +80,9 @@ export function useObjectBrowserKeyboardShortcuts({
           // Only handle our custom copy if no text is selected but we have a data item selected
           e.preventDefault();
           // Find the specific element that matches our selectedDataItem
-          const element = document.querySelector(`[data-selectable="true"][data-item="${selectedDataItem}"]`);
+          const element = document.querySelector(
+            `[data-selectable="true"][data-item="${selectedDataItem}"]`
+          );
           if (element) {
             const text = element.textContent || '';
             navigator.clipboard.writeText(text);
@@ -89,7 +92,7 @@ export function useObjectBrowserKeyboardShortcuts({
         }
         return;
       }
-      
+
       // Ignore other shortcuts if text is selected or if we're in an input/textarea
       if (hasSelection || isInput) {
         return;
@@ -103,9 +106,10 @@ export function useObjectBrowserKeyboardShortcuts({
             e.preventDefault();
             // In directory view
             if (!selectedObject || selectedObject.type === 'directory') {
-              const newIndex = e.key === 'j' 
-                ? Math.min(focusedIndex + 1, objects.length - 1)
-                : Math.max(focusedIndex - 1, 0);
+              const newIndex =
+                e.key === 'j'
+                  ? Math.min(focusedIndex + 1, objects.length - 1)
+                  : Math.max(focusedIndex - 1, 0);
               setFocusedIndex(newIndex);
               itemRefs.current[newIndex]?.focus();
             }
@@ -113,15 +117,15 @@ export function useObjectBrowserKeyboardShortcuts({
             else {
               // Build dataItems array based on available metadata
               const dataItems = ['name', 'path', 'size', 'updated_at', 'type'];
-              
+
               if (selectedObject.mime_type) {
                 dataItems.push('mime_type');
               }
-              
+
               if (selectedObject.metadata?.sha256) {
                 dataItems.push('sha256');
               }
-              
+
               if (selectedObject.metadata?.sha1) {
                 dataItems.push('sha1');
               }
@@ -131,9 +135,10 @@ export function useObjectBrowserKeyboardShortcuts({
                 setSelectedDataItem(e.key === 'j' ? dataItems[0] : dataItems[dataItems.length - 1]);
               } else {
                 const currentIndex = dataItems.indexOf(selectedDataItem);
-                const newIndex = e.key === 'j'
-                  ? Math.min(currentIndex + 1, dataItems.length - 1)
-                  : Math.max(currentIndex - 1, 0);
+                const newIndex =
+                  e.key === 'j'
+                    ? Math.min(currentIndex + 1, dataItems.length - 1)
+                    : Math.max(currentIndex - 1, 0);
                 setSelectedDataItem(dataItems[newIndex]);
               }
             }
@@ -143,7 +148,9 @@ export function useObjectBrowserKeyboardShortcuts({
             e.preventDefault();
             // Copy permanent link
             if (selectedObject) {
-              const url = window.location.origin + `/${repository.account_id}/${repository.repository_id}/${selectedObject.path}`;
+              const url =
+                window.location.origin +
+                `/${repository.account_id}/${repository.repository_id}/${selectedObject.path}`;
               navigator.clipboard.writeText(url);
             }
             break;
@@ -152,14 +159,16 @@ export function useObjectBrowserKeyboardShortcuts({
             e.preventDefault();
             // If a data item is selected in the details view, copy it
             if (selectedDataItem) {
-              const element = document.querySelector(`[data-selectable="true"][data-item="${selectedDataItem}"]`);
+              const element = document.querySelector(
+                `[data-selectable="true"][data-item="${selectedDataItem}"]`
+              );
               if (element) {
                 const text = element.textContent || '';
                 navigator.clipboard.writeText(text);
                 setLastCopiedField(selectedDataItem);
                 onCopy?.(selectedDataItem);
               }
-            } 
+            }
             // Otherwise handle navigation in directory listing
             else if (focusedIndex >= 0 && objects[focusedIndex]) {
               const item = objects[focusedIndex];
@@ -183,7 +192,17 @@ export function useObjectBrowserKeyboardShortcuts({
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [selectedDataItem, focusedIndex, objects, currentPath, repository, selectedObject, onNavigateToPath, onNavigateToFile, onCopy]);
+  }, [
+    selectedDataItem,
+    focusedIndex,
+    objects,
+    currentPath,
+    repository,
+    selectedObject,
+    onNavigateToPath,
+    onNavigateToFile,
+    onCopy,
+  ]);
 
   return {
     focusedIndex,
@@ -191,6 +210,6 @@ export function useObjectBrowserKeyboardShortcuts({
     selectedDataItem,
     setSelectedDataItem,
     lastCopiedField,
-    itemRefs
+    itemRefs,
   };
-} 
+}

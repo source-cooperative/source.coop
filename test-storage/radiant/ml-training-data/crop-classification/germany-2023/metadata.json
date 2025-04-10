@@ -8,28 +8,36 @@
   "license": "CC BY-NC-SA 4.0",
   "spatial_coverage": {
     "type": "Polygon",
-    "coordinates": [[[5.98865807458, 47.3024876979], [15.0169958839, 47.3024876979], [15.0169958839, 54.983104153], [5.98865807458, 54.983104153], [5.98865807458, 47.3024876979]]]
+    "coordinates": [
+      [
+        [5.98865807458, 47.3024876979],
+        [15.0169958839, 47.3024876979],
+        [15.0169958839, 54.983104153],
+        [5.98865807458, 54.983104153],
+        [5.98865807458, 47.3024876979]
+      ]
+    ]
   },
   "temporal_coverage": {
     "start": "2023-03-01T00:00:00Z",
     "end": "2023-10-31T23:59:59Z"
   },
   "classes": {
-    "1": {"name": "wheat", "color": "#FFD700"},
-    "2": {"name": "corn", "color": "#228B22"},
-    "3": {"name": "barley", "color": "#DAA520"},
-    "4": {"name": "rapeseed", "color": "#FFFF00"},
-    "5": {"name": "potato", "color": "#8B4513"},
-    "6": {"name": "sugar_beet", "color": "#FF4500"},
-    "7": {"name": "rye", "color": "#CD853F"},
-    "8": {"name": "meadow", "color": "#90EE90"},
-    "9": {"name": "fallow", "color": "#A0522D"},
-    "10": {"name": "soy", "color": "#32CD32"},
-    "11": {"name": "oats", "color": "#F4A460"},
-    "12": {"name": "triticale", "color": "#BDB76B"},
-    "13": {"name": "peas", "color": "#556B2F"},
-    "14": {"name": "sunflower", "color": "#FFB6C1"},
-    "15": {"name": "hemp", "color": "#006400"}
+    "1": { "name": "wheat", "color": "#FFD700" },
+    "2": { "name": "corn", "color": "#228B22" },
+    "3": { "name": "barley", "color": "#DAA520" },
+    "4": { "name": "rapeseed", "color": "#FFFF00" },
+    "5": { "name": "potato", "color": "#8B4513" },
+    "6": { "name": "sugar_beet", "color": "#FF4500" },
+    "7": { "name": "rye", "color": "#CD853F" },
+    "8": { "name": "meadow", "color": "#90EE90" },
+    "9": { "name": "fallow", "color": "#A0522D" },
+    "10": { "name": "soy", "color": "#32CD32" },
+    "11": { "name": "oats", "color": "#F4A460" },
+    "12": { "name": "triticale", "color": "#BDB76B" },
+    "13": { "name": "peas", "color": "#556B2F" },
+    "14": { "name": "sunflower", "color": "#FFB6C1" },
+    "15": { "name": "hemp", "color": "#006400" }
   },
   "statistics": {
     "total_samples": 125000,
@@ -38,7 +46,7 @@
       "wheat": 0.25,
       "corn": 0.15,
       "barley": 0.12,
-      "rapeseed": 0.10,
+      "rapeseed": 0.1,
       "potato": 0.08,
       "sugar_beet": 0.07,
       "rye": 0.06,
@@ -96,4 +104,4 @@
     "email": "ml@radiant.earth",
     "website": "https://radiant.earth"
   }
-} 
+}

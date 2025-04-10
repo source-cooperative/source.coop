@@ -12,6 +12,6 @@
   transition: transform 0.3s ease;
 }
 
-.chevron[data-state="open"] {
+.chevron[data-state='open'] {
   transform: rotate(180deg);
-} 
+}

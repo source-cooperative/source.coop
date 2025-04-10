@@ -50,23 +50,21 @@
       "quality_criteria": {
         "min_confidence": 0.85,
         "max_vertex_error": 1.0,
-        "topology_rules": [
-          "no_self_intersections",
-          "no_overlaps",
-          "no_gaps"
-        ]
+        "topology_rules": ["no_self_intersections", "no_overlaps", "no_gaps"]
       }
     }
   },
   "geometry": {
     "type": "Polygon",
-    "coordinates": [[
-      [-3.25, 4.75],
-      [1.20, 4.75],
-      [1.20, 11.17],
-      [-3.25, 11.17],
-      [-3.25, 4.75]
-    ]]
+    "coordinates": [
+      [
+        [-3.25, 4.75],
+        [1.2, 4.75],
+        [1.2, 11.17],
+        [-3.25, 11.17],
+        [-3.25, 4.75]
+      ]
+    ]
   },
   "links": [
     {
@@ -116,4 +114,4 @@
       "roles": ["metadata"]
     }
   }
-} 
+}

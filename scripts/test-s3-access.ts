@@ -36,4 +36,4 @@ async function testS3Access() {
   }
 }
 
-testS3Access(); 
+testS3Access();

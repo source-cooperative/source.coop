@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom';
-import { jest } from "@jest/globals";
-import React from "react";
+import { jest } from '@jest/globals';
+import React from 'react';
 
 // This file is used to set up the test environment
 // It runs before each test file
@@ -32,12 +32,12 @@ jest.mock('next/navigation', () => ({
 // Create a mock component factory
 const mockComponent = (name: string) => {
   const component = (props: any) => {
-    return { 
+    return {
       $$typeof: Symbol.for('react.element'),
       type: name,
       props: { ...props },
       _owner: null,
-      _store: {}
+      _store: {},
     };
   };
   component.displayName = name;
@@ -54,20 +54,16 @@ jest.mock('next/image', () => ({
 jest.mock('next/link', () => {
   const React = require('react');
   const Link = React.forwardRef(function Link(
-    {
-      href,
-      children,
-      ...props
-    }: { href?: string; children?: React.ReactNode; [key: string]: any },
+    { href, children, ...props }: { href?: string; children?: React.ReactNode; [key: string]: any },
     ref: React.ForwardedRef<HTMLAnchorElement>
   ) {
-    return React.createElement("a", { href, ref, ...props }, children);
+    return React.createElement('a', { href, ref, ...props }, children);
   });
-  Link.displayName = "Link";
+  Link.displayName = 'Link';
   return {
     __esModule: true,
     default: Link,
   };
 });
 
-// Add any global test setup here 
+// Add any global test setup here

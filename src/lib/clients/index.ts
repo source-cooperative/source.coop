@@ -23,9 +23,9 @@ export function getDynamoDb() {
   return dynamoDb;
 }
 
-export function getStorage() {
+function getStorage() {
   if (!storage) {
     storage = createStorageClient();
   }
   return storage;
-} 
+}

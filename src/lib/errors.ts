@@ -22,30 +22,21 @@ export class StorageError extends APIError {
 }
 
 export class ValidationError extends APIError {
-  constructor(
-    message: string,
-    details?: Record<string, unknown>
-  ) {
+  constructor(message: string, details?: Record<string, unknown>) {
     super(message, 'VALIDATION_ERROR', 400, details);
     this.name = 'ValidationError';
   }
 }
 
 export class AuthenticationError extends APIError {
-  constructor(
-    message: string,
-    details?: Record<string, unknown>
-  ) {
+  constructor(message: string, details?: Record<string, unknown>) {
     super(message, 'AUTHENTICATION_ERROR', 401, details);
     this.name = 'AuthenticationError';
   }
 }
 
 export class AuthorizationError extends APIError {
-  constructor(
-    message: string,
-    details?: Record<string, unknown>
-  ) {
+  constructor(message: string, details?: Record<string, unknown>) {
     super(message, 'AUTHORIZATION_ERROR', 403, details);
     this.name = 'AuthorizationError';
   }
@@ -63,4 +54,4 @@ function getStatusCode(code: string): number {
     default:
       return 500;
   }
-} 
+}

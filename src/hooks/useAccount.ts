@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { Account } from '@/types/account_v2';
 import type { Session, Identity } from '@ory/client';
-import { useSession } from "@ory/elements-react/client";
+import { useSession } from '@ory/elements-react/client';
 interface ExtendedIdentity extends Identity {
   metadata_public?: {
     account_id?: string;
@@ -28,7 +28,7 @@ export function useAccount(initialAccountId?: string | null) {
 
     async function fetchAccount() {
       const accountId = initialAccountId || session?.identity?.metadata_public?.account_id;
-      
+
       // If we're still loading auth or there's no account ID, don't make the API call
       if (isAuthLoading || !accountId) {
         if (isMounted) {
@@ -43,15 +43,15 @@ export function useAccount(initialAccountId?: string | null) {
         const response = await fetch(`/api/accounts/${accountId}`, {
           credentials: 'include',
           headers: {
-            'Accept': 'application/json',
-            'Cache-Control': 'no-cache'
-          }
+            Accept: 'application/json',
+            'Cache-Control': 'no-cache',
+          },
         });
-        
+
         if (!response.ok) {
           throw new Error('Failed to fetch account');
         }
-        
+
         const data = await response.json();
         console.log('Account data fetched:', data);
         if (isMounted) {
@@ -74,10 +74,15 @@ export function useAccount(initialAccountId?: string | null) {
     return () => {
       isMounted = false;
     };
-  }, [initialAccountId, session?.identity?.metadata_public?.account_id, isAuthLoading, refreshCounter]);
+  }, [
+    initialAccountId,
+    session?.identity?.metadata_public?.account_id,
+    isAuthLoading,
+    refreshCounter,
+  ]);
 
   return { account, isLoading, refresh };
-} 
+}
 
 interface SessionWithMetadata extends Session {
   identity?: Identity & {
@@ -91,4 +96,4 @@ interface SessionWithMetadata extends Session {
 // Helper to get account_id from session
 export function getAccountId(session: SessionWithMetadata | null): string | null {
   return session?.identity?.metadata_public?.account_id || null;
-} 
+}

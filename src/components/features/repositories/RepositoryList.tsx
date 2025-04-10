@@ -16,7 +16,7 @@ export function RepositoryList({ repositories }: RepositoryListProps) {
   const [showHelp, setShowHelp] = useState(false);
   const { itemRefs, selectedIndex } = useRepositoryListKeyboardShortcuts({
     repositories,
-    onShowHelp: () => setShowHelp(true)
+    onShowHelp: () => setShowHelp(true),
   });
 
   if (!repositories.length) {
@@ -31,26 +31,22 @@ export function RepositoryList({ repositories }: RepositoryListProps) {
     <nav aria-label="Repository list">
       <ul className={styles.list} role="listbox">
         {repositories.map((repository, index) => (
-          <li 
-            key={`${repository.account_id}/${repository.repository_id}`} 
+          <li
+            key={`${repository.account_id}/${repository.repository_id}`}
             role="option"
             aria-selected={index === selectedIndex}
           >
             <RepositoryListItem
               repository={repository}
               isSelected={index === selectedIndex}
-              ref={(el) => {
+              ref={el => {
                 itemRefs.current[index] = el;
               }}
             />
           </li>
         ))}
       </ul>
-      <ShortcutHelp 
-        open={showHelp} 
-        onOpenChange={setShowHelp} 
-        context="repository-list" 
-      />
+      <ShortcutHelp open={showHelp} onOpenChange={setShowHelp} context="repository-list" />
     </nav>
   );
-} 
+}

@@ -47,12 +47,12 @@ a:hover {
 }
 
 /* Light mode hover */
-:root:not([class~="dark"]) a:hover {
+:root:not([class~='dark']) a:hover {
   color: black !important;
 }
 
 /* Dark mode hover */
-:root[class~="dark"] a:hover {
+:root[class~='dark'] a:hover {
   color: white !important;
 }
 
@@ -84,6 +84,6 @@ a:hover {
 }
 
 /* Dark mode override */
-:root[class~="dark"] {
+:root[class~='dark'] {
   --color-page-background: var(--gray-4) !important;
 }

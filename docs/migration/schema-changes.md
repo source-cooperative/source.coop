@@ -5,9 +5,10 @@ This document details the changes between the old and new DynamoDB schemas.
 ## Accounts Table
 
 ### Old Schema (`sc-accounts`)
+
 ```typescript
 interface OldAccount {
-  account_id: string;        // Partition Key
+  account_id: string; // Partition Key
   identity_id: string;
   account_type: 'user' | 'organization';
   disabled: boolean;
@@ -22,16 +23,18 @@ interface OldAccount {
 ```
 
 ### New Schema (Production table will remain as `sc-accounts`)
+
 ```typescript
 interface NewAccount {
-  account_id: string;        // Partition Key
-  type: 'individual' | 'organization';  // Sort Key - strictly typed
+  account_id: string; // Partition Key
+  type: 'individual' | 'organization'; // Sort Key - strictly typed
   name: string;
-  emails: {                  // Structured email data
+  emails: {
+    // Structured email data
     address: string;
     verified: boolean;
     verified_at?: string;
-    is_primary: boolean;     // One must be true
+    is_primary: boolean; // One must be true
     added_at: string;
   }[];
   created_at: string;
@@ -41,9 +44,10 @@ interface NewAccount {
   metadata_public: {
     location?: string;
     bio?: string;
-    orcid?: string;        // New field for individual accounts
-    ror_id?: string;       // New field for organization accounts
-    domains?: {            // New field
+    orcid?: string; // New field for individual accounts
+    ror_id?: string; // New field for organization accounts
+    domains?: {
+      // New field
       domain: string;
       status: 'unverified' | 'pending' | 'verified';
       verification_method?: 'dns' | 'html' | 'file';
@@ -60,17 +64,21 @@ interface NewAccount {
 ```
 
 ### Key Changes
+
 1. **Composite Key**:
+
    - Old: Single partition key (`account_id`)
    - New: Composite key (`account_id` + `type`)
 
 2. **Type Safety**:
+
    - Old: `account_type` as 'user' | 'organization'
    - New: `type` as sort key with strict values 'individual' | 'organization'
    - More precise terminology ('individual' instead of 'user')
    - Type as sort key enforces data integrity at database level
 
 3. **Email Management**:
+
    - Old: Single optional email in profile
    - New: Structured array of emails with:
      - Primary email designation
@@ -84,10 +92,12 @@ interface NewAccount {
      - Addition timestamp
 
 4. **Metadata Organization**:
+
    - Old: Single `profile` object
    - New: Split into `metadata_public` and `metadata_private`
 
 5. **New Fields**:
+
    - `created_at` and `updated_at` timestamps
    - `orcid` for individual accounts
    - `ror_id` for organizations
@@ -102,17 +112,18 @@ interface NewAccount {
 ## Repositories Table
 
 ### Old Schema (`sc-repositories`)
+
 ```typescript
 interface OldRepository {
-  account_id: string;       // Partition Key
-  repository_id: string;    // Sort Key
+  account_id: string; // Partition Key
+  repository_id: string; // Sort Key
   published: string;
   data: {
     mirrors: {
       [key: string]: {
         prefix: string;
         data_connection_id: string;
-      }
+      };
     };
     primary_mirror: string;
   };
@@ -129,10 +140,11 @@ interface OldRepository {
 ```
 
 ### New Schema (Production table will remain as `sc-repositories`)
+
 ```typescript
 interface NewRepository {
-  repository_id: string;    // Partition Key
-  account_id: string;       // Sort Key
+  repository_id: string; // Partition Key
+  account_id: string; // Sort Key
   title: string;
   description?: string;
   created_at: string;
@@ -140,52 +152,56 @@ interface NewRepository {
   visibility: 'public' | 'unlisted' | 'restricted';
   metadata: {
     mirrors: {
-      [key: string]: {      // key format: "{provider}-{region}" e.g., "aws-us-east-1"
+      [key: string]: {
+        // key format: "{provider}-{region}" e.g., "aws-us-east-1"
         storage_type: 's3' | 'azure' | 'gcs' | 'minio' | 'ceph';
-        connection_id: string;     // Reference to storage connection config
-        prefix: string;           // Format: "{account_id}/{repository_id}/"
+        connection_id: string; // Reference to storage connection config
+        prefix: string; // Format: "{account_id}/{repository_id}/"
         config: {
-          region?: string;        // For S3/GCS
-          bucket?: string;        // For S3/GCS
-          container?: string;     // For Azure
-          endpoint?: string;      // For MinIO/Ceph
+          region?: string; // For S3/GCS
+          bucket?: string; // For S3/GCS
+          container?: string; // For Azure
+          endpoint?: string; // For MinIO/Ceph
         };
-        
+
         // Mirror-specific settings
-        is_primary: boolean;      // Is this the primary mirror?
+        is_primary: boolean; // Is this the primary mirror?
         sync_status: {
           last_sync_at: string;
           is_synced: boolean;
           error?: string;
         };
-        
+
         // Monitoring
         stats: {
           total_objects: number;
           total_size: number;
           last_verified_at: string;
         };
-      }
+      };
     };
-    primary_mirror: string;      // Key of the primary mirror (e.g., "aws-us-east-1")
+    primary_mirror: string; // Key of the primary mirror (e.g., "aws-us-east-1")
     tags?: string[];
     roles: {
       [account_id: string]: {
         role: 'admin' | 'contributor' | 'viewer';
         granted_at: string;
-        granted_by: string;      // account_id of who granted the role
-      }
+        granted_by: string; // account_id of who granted the role
+      };
     };
   };
 }
 ```
 
 ### Key Changes
+
 1. **Key Order**:
+
    - Old: `account_id` (PK) + `repository_id` (SK)
    - New: `repository_id` (PK) + `account_id` (SK)
 
 2. **Visibility Control**:
+
    - Old: Simple `data_mode` and `state` fields
    - New: Single `visibility` field with three states:
      - `public`: Visible to everyone, listed in search/sitemap
@@ -193,6 +209,7 @@ interface NewRepository {
      - `restricted`: Only visible to explicitly granted users
 
 3. **Access Control**:
+
    - Added `roles` object to track permissions
    - Three role levels:
      - `admin`: Full control over repository settings and access
@@ -200,6 +217,7 @@ interface NewRepository {
      - `viewer`: Can view repository contents
 
 4. **Mirror Structure**:
+
    - Deterministic mirror keys based on provider and region
    - Standardized prefix format: "{account_id}/{repository_id}/"
    - Support for multiple storage backends
@@ -216,6 +234,7 @@ interface NewRepository {
 ## Migration Rules
 
 ### Account Migration
+
 ```typescript
 function migrateAccount(oldAccount: OldAccount): NewAccount {
   const now = new Date().toISOString();
@@ -223,12 +242,16 @@ function migrateAccount(oldAccount: OldAccount): NewAccount {
     account_id: oldAccount.account_id,
     type: oldAccount.account_type === 'user' ? 'individual' : 'organization',
     name: oldAccount.profile?.name || oldAccount.account_id,
-    emails: oldAccount.profile?.email ? [{
-      address: oldAccount.profile.email,
-      verified: false,  // Will need to be verified in new system
-      is_primary: true,
-      added_at: now
-    }] : [],
+    emails: oldAccount.profile?.email
+      ? [
+          {
+            address: oldAccount.profile.email,
+            verified: false, // Will need to be verified in new system
+            is_primary: true,
+            added_at: now,
+          },
+        ]
+      : [],
     created_at: now,
     updated_at: now,
     disabled: oldAccount.disabled,
@@ -236,16 +259,17 @@ function migrateAccount(oldAccount: OldAccount): NewAccount {
     metadata_public: {
       location: oldAccount.profile?.location,
       bio: oldAccount.profile?.bio,
-      domains: []  // Initialize empty array
+      domains: [], // Initialize empty array
     },
     metadata_private: {
-      identity_id: oldAccount.identity_id
-    }
+      identity_id: oldAccount.identity_id,
+    },
   };
 }
 ```
 
 ### Repository Migration
+
 ```typescript
 function migrateRepository(oldRepo: OldRepository): NewRepository {
   const now = new Date().toISOString();
@@ -256,42 +280,48 @@ function migrateRepository(oldRepo: OldRepository): NewRepository {
     description: oldRepo.meta?.description,
     created_at: oldRepo.published || now,
     updated_at: now,
-    visibility: oldRepo.data_mode === 'open' 
-      ? (oldRepo.state === 'listed' ? 'public' : 'unlisted')
-      : 'restricted',
+    visibility:
+      oldRepo.data_mode === 'open'
+        ? oldRepo.state === 'listed'
+          ? 'public'
+          : 'unlisted'
+        : 'restricted',
     metadata: {
-      mirrors: Object.entries(oldRepo.data?.mirrors || {}).reduce((acc, [key, mirror]) => ({
-        ...acc,
-        [key]: {
-          storage_type: 's3',  // Default to S3 for existing mirrors
-          connection_id: mirror.data_connection_id,
-          prefix: `${oldRepo.account_id}/${oldRepo.repository_id}/`,
-          config: {
-            region: 'us-east-1',  // Default region
-            bucket: 'source-coop-data'  // Default bucket
+      mirrors: Object.entries(oldRepo.data?.mirrors || {}).reduce(
+        (acc, [key, mirror]) => ({
+          ...acc,
+          [key]: {
+            storage_type: 's3', // Default to S3 for existing mirrors
+            connection_id: mirror.data_connection_id,
+            prefix: `${oldRepo.account_id}/${oldRepo.repository_id}/`,
+            config: {
+              region: 'us-east-1', // Default region
+              bucket: 'source-coop-data', // Default bucket
+            },
+            is_primary: key === oldRepo.data?.primary_mirror,
+            sync_status: {
+              last_sync_at: now,
+              is_synced: true,
+            },
+            stats: {
+              total_objects: 0,
+              total_size: 0,
+              last_verified_at: now,
+            },
           },
-          is_primary: key === oldRepo.data?.primary_mirror,
-          sync_status: {
-            last_sync_at: now,
-            is_synced: true
-          },
-          stats: {
-            total_objects: 0,
-            total_size: 0,
-            last_verified_at: now
-          }
-        }
-      }), {}),
+        }),
+        {}
+      ),
       primary_mirror: oldRepo.data?.primary_mirror,
       tags: oldRepo.meta?.tags,
       roles: {
         [oldRepo.account_id]: {
           role: 'admin',
           granted_at: now,
-          granted_by: oldRepo.account_id
-        }
-      }
-    }
+          granted_by: oldRepo.account_id,
+        },
+      },
+    },
   };
 }
 ```
@@ -299,22 +329,26 @@ function migrateRepository(oldRepo: OldRepository): NewRepository {
 ## Validation Rules
 
 1. **Required Fields**:
+
    - All accounts must have `account_id`, `type`, and `name`
    - All repositories must have `repository_id`, `account_id`, and `title`
 
 2. **Visibility Rules**:
+
    - Public repositories must be accessible to all users
    - Unlisted repositories must have at least one contributor
    - Restricted repositories must have at least one viewer
    - Only admins can change visibility
 
 3. **Role Rules**:
+
    - Every repository must have at least one admin
    - Admins can only be granted by other admins
    - Organization accounts can be admins
    - Individual accounts can be admins, contributors, or viewers
 
 4. **Mirror Rules**:
+
    - Each repository must have at least one mirror
    - One mirror must be designated as primary
    - Mirror keys must follow format: "{provider}-{region}"

@@ -12,14 +12,10 @@ interface RepositoryHeaderProps {
 
 export function RepositoryHeader({ repository, statistics }: RepositoryHeaderProps) {
   return (
-    <Grid 
-      columns={{ initial: '1', md: '3' }} 
-      gap={{ initial: '0', md: '6' }}
-      px={{ initial: '0' }}
-    >
-      <Box 
-        width="100%" 
-        className="repository-summary" 
+    <Grid columns={{ initial: '1', md: '3' }} gap={{ initial: '0', md: '6' }} px={{ initial: '0' }}>
+      <Box
+        width="100%"
+        className="repository-summary"
         style={{ gridColumn: 'span 2' }}
         px={{ initial: '4', md: '0' }}
         mb={{ initial: '4', md: '0' }}
@@ -33,4 +29,4 @@ export function RepositoryHeader({ repository, statistics }: RepositoryHeaderPro
       </Box>
     </Grid>
   );
-} 
+}

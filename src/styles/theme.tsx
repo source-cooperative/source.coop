@@ -7,34 +7,27 @@ import { useEffect, useState } from 'react';
 function RadixTheme({ children }: { children: React.ReactNode }) {
   const { resolvedTheme } = useTheme();
   const [isMounted, setIsMounted] = useState(false);
-  
+
   // Prevent hydration mismatch
   useEffect(() => {
     setIsMounted(true);
   }, []);
-  
+
   // Common theme properties
   const themeProps = {
-    accentColor: "gray" as const,
-    grayColor: "gray" as const,
-    radius: "none" as const,
-    scaling: "110%" as const
+    accentColor: 'gray' as const,
+    grayColor: 'gray' as const,
+    radius: 'none' as const,
+    scaling: '110%' as const,
   };
-  
+
   // During SSR or before hydration, render with a default theme to prevent flicker
   if (!isMounted) {
-    return (
-      <Theme {...themeProps}>
-        {children}
-      </Theme>
-    );
+    return <Theme {...themeProps}>{children}</Theme>;
   }
-  
+
   return (
-    <Theme
-      appearance={resolvedTheme as 'light' | 'dark'}
-      {...themeProps}
-    >
+    <Theme appearance={resolvedTheme as 'light' | 'dark'} {...themeProps}>
       {children}
     </Theme>
   );
@@ -48,12 +41,12 @@ interface ThemeProviderProps {
   storageKey?: string;
 }
 
-export function ThemeProvider({ 
+export function ThemeProvider({
   children,
   attribute = 'class',
   enableSystem = true,
   defaultTheme = 'system',
-  storageKey = 'source-theme'
+  storageKey = 'source-theme',
 }: ThemeProviderProps) {
   return (
     <NextThemeProvider
@@ -62,9 +55,7 @@ export function ThemeProvider({
       defaultTheme={defaultTheme}
       storageKey={storageKey}
     >
-      <RadixTheme>
-        {children}
-      </RadixTheme>
+      <RadixTheme>{children}</RadixTheme>
     </NextThemeProvider>
   );
 }

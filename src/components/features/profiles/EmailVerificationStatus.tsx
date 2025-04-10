@@ -57,7 +57,7 @@ export function EmailVerificationStatus({ account }: EmailVerificationStatusProp
   // }, [account]);
 
   // Don't show anything for organizations
-  if (account.type !== "individual") {
+  if (account.type !== 'individual') {
     return null;
   }
 
@@ -72,11 +72,7 @@ export function EmailVerificationStatus({ account }: EmailVerificationStatusProp
 
   // Show verification status
   return (
-    <Tooltip
-      content={
-        isVerified ? `Email verified on ${verifiedAt}` : "Email not verified"
-      }
-    >
+    <Tooltip content={isVerified ? `Email verified on ${verifiedAt}` : 'Email not verified'}>
       {isVerified ? (
         <CheckCircledIcon color="green" width="16" height="16" />
       ) : (
@@ -84,4 +80,4 @@ export function EmailVerificationStatus({ account }: EmailVerificationStatusProp
       )}
     </Tooltip>
   );
-} 
+}

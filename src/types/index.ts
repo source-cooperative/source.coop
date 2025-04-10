@@ -12,4 +12,4 @@ export * from './storage';
 export * from './session';
 
 // Export form types
-export * from './form'; 
+export * from './form';

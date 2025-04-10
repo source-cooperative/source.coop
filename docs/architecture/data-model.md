@@ -1,11 +1,13 @@
 # Data Model
 
 ## Overview
+
 This document describes the core data models used in the Source.coop platform.
 
 ## Accounts
 
 ### Base Account
+
 ```typescript
 interface BaseAccount {
   account_id: string;
@@ -18,6 +20,7 @@ interface BaseAccount {
 ```
 
 ### Individual Account
+
 ```typescript
 interface IndividualAccount extends BaseAccount {
   type: 'individual';
@@ -27,6 +30,7 @@ interface IndividualAccount extends BaseAccount {
 ```
 
 ### Organizational Account
+
 ```typescript
 interface OrganizationalAccount extends BaseAccount {
   type: 'organization';
@@ -40,6 +44,7 @@ interface OrganizationalAccount extends BaseAccount {
 ## Repositories
 
 ### Repository
+
 ```typescript
 interface Repository {
   repository_id: string;
@@ -54,6 +59,7 @@ interface Repository {
 ## Storage Objects
 
 ### Repository Object
+
 ```typescript
 interface RepositoryObject {
   id: string;
@@ -72,18 +78,21 @@ interface RepositoryObject {
 ## Relationships
 
 ### Account-Repository
+
 - One-to-many relationship
 - Account owns repositories
 - Repositories belong to one account
 - Account can be either individual or organization
 
 ### Repository-Object
+
 - One-to-many relationship
 - Repository contains objects
 - Objects belong to one repository
 - Objects can be files or directories
 
 ### Organization-Member
+
 - Many-to-many relationship
 - Organization has multiple members
 - Members can belong to multiple organizations
@@ -94,10 +103,11 @@ interface RepositoryObject {
 ### DynamoDB Tables
 
 #### Accounts Table
+
 ```typescript
 interface AccountsTable {
-  account_id: string;  // Partition Key
-  type: string;        // Sort Key
+  account_id: string; // Partition Key
+  type: string; // Sort Key
   name: string;
   description?: string;
   email?: string;
@@ -112,10 +122,11 @@ interface AccountsTable {
 ```
 
 #### Repositories Table
+
 ```typescript
 interface RepositoriesTable {
-  repository_id: string;  // Partition Key
-  account_id: string;     // Sort Key
+  repository_id: string; // Partition Key
+  account_id: string; // Sort Key
   title: string;
   description?: string;
   created_at: string;
@@ -126,6 +137,7 @@ interface RepositoriesTable {
 ## File Storage Structure
 
 ### Directory Layout
+
 ```
 /storage
   /{account_id}
@@ -135,6 +147,7 @@ interface RepositoriesTable {
 ```
 
 ### Metadata File
+
 ```typescript
 interface SourceMetadata {
   repository_id: string;
@@ -149,7 +162,7 @@ interface SourceMetadata {
       updated_at: string;
       checksum: string;
       metadata: Record<string, unknown>;
-    }
+    };
   };
   last_updated: string;
 }
@@ -158,6 +171,7 @@ interface SourceMetadata {
 ## Type Safety
 
 ### Type Guards
+
 ```typescript
 function isIndividualAccount(account: BaseAccount): account is IndividualAccount {
   return account.type === 'individual';
@@ -169,6 +183,7 @@ function isOrganizationalAccount(account: BaseAccount): account is Organizationa
 ```
 
 ### Const Assertions
+
 ```typescript
 const accountType = 'organization' as const;
 const account = {
@@ -182,12 +197,14 @@ const account = {
 ## Data Validation
 
 ### Required Fields
+
 - All IDs must be non-empty strings
 - Timestamps must be valid ISO 8601 strings
 - File sizes must be non-negative numbers
 - Checksums must be valid SHA-256 hashes
 
 ### Optional Fields
+
 - Descriptions can be empty strings
 - Metadata can be empty objects
 - Member lists can be empty arrays
@@ -195,19 +212,22 @@ const account = {
 ## Data Operations
 
 ### Create Operations
+
 - Generate unique IDs
 - Set creation timestamps
 - Initialize empty arrays/objects
 - Validate required fields
 
 ### Update Operations
+
 - Update timestamps
 - Validate field types
 - Maintain referential integrity
 - Handle optional fields
 
 ### Delete Operations
+
 - Cascade deletes where appropriate
 - Clean up file storage
 - Remove metadata entries
-- Update relationships 
+- Update relationships

@@ -63,17 +63,17 @@
       "water": {
         "precision": 0.92,
         "recall": 0.89,
-        "f1_score": 0.90
+        "f1_score": 0.9
       },
       "forest": {
         "precision": 0.88,
-        "recall": 0.90,
+        "recall": 0.9,
         "f1_score": 0.89
       },
       "wetland": {
         "precision": 0.82,
         "recall": 0.79,
-        "f1_score": 0.80
+        "f1_score": 0.8
       },
       "developed": {
         "precision": 0.85,
@@ -91,7 +91,7 @@
         "f1_score": 0.76
       },
       "shrubland": {
-        "precision": 0.80,
+        "precision": 0.8,
         "recall": 0.77,
         "f1_score": 0.78
       },
@@ -124,11 +124,7 @@
       "testing": 0.15
     },
     "data_augmentation": {
-      "techniques": [
-        "Random rotation",
-        "Random flip",
-        "Gaussian noise"
-      ],
+      "techniques": ["Random rotation", "Random flip", "Gaussian noise"],
       "probability": 0.5
     }
   },
@@ -140,12 +136,7 @@
   "spatial_coverage": {
     "bbox": [-77.5, 37.5, -75.5, 39.5],
     "area_km2": 15000,
-    "states": [
-      "Maryland",
-      "Virginia",
-      "Delaware",
-      "Pennsylvania"
-    ]
+    "states": ["Maryland", "Virginia", "Delaware", "Pennsylvania"]
   },
   "data_sources": {
     "imagery": {
@@ -176,4 +167,4 @@
     "qa_personnel": "Chesapeake Conservancy",
     "confidence_threshold": 0.85
   }
-} 
+}

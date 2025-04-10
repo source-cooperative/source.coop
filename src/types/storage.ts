@@ -24,9 +24,9 @@ export interface StorageConfig {
 
 // Path construction types and utilities
 export interface ObjectPath {
-  account_id: string;     // Matches Account interface
-  repository_id: string;  // Matches Repository interface
-  object_path: string;    // The actual path within the repository
+  account_id: string; // Matches Account interface
+  repository_id: string; // Matches Repository interface
+  object_path: string; // The actual path within the repository
 }
 
 export interface StorageLocation {

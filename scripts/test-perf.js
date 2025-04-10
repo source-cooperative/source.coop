@@ -1,13 +1,13 @@
 const { spawn, execSync } = require('child_process');
 const { performance } = require('perf_hooks');
-const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
+const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 
 // Test paths to check - we'll discover more dynamically
 const INITIAL_PATHS = [
   '/',
   '/microsoft',
   '/microsoft/global-building-footprints',
-  '/microsoft/global-building-footprints/README.md'
+  '/microsoft/global-building-footprints/README.md',
 ];
 
 async function measurePageLoad(path, baseUrl = 'http://localhost:3000') {
@@ -16,23 +16,24 @@ async function measurePageLoad(path, baseUrl = 'http://localhost:3000') {
     const response = await fetch(`${baseUrl}${path}`);
     const html = await response.text();
     const loadTime = performance.now() - start;
-    
+
     // Extract links from the HTML to discover more pages
     const links = html.match(/href="([^"]+)"/g) || [];
     const newPaths = links
       .map(link => link.match(/href="([^"]+)"/)[1])
-      .filter(link => 
-        link.startsWith('/') && 
-        !link.startsWith('/_next') && 
-        !link.includes('?') &&
-        !link.includes('#')
+      .filter(
+        link =>
+          link.startsWith('/') &&
+          !link.startsWith('/_next') &&
+          !link.includes('?') &&
+          !link.includes('#')
       );
-    
+
     return {
       path,
       loadTime,
       status: response.status,
-      newPaths: [...new Set(newPaths)] // Deduplicate
+      newPaths: [...new Set(newPaths)], // Deduplicate
     };
   } catch (e) {
     console.error(`Failed to load ${path}:`, e.message);
@@ -41,7 +42,7 @@ async function measurePageLoad(path, baseUrl = 'http://localhost:3000') {
       loadTime: performance.now() - start,
       status: 'error',
       error: e.message,
-      newPaths: []
+      newPaths: [],
     };
   }
 }
@@ -49,7 +50,7 @@ async function measurePageLoad(path, baseUrl = 'http://localhost:3000') {
 function startDevServer() {
   return new Promise((resolve, reject) => {
     console.log('\n=== Build Time Test ===');
-    
+
     // Kill any running dev server
     try {
       execSync('pkill -f "next dev"');
@@ -59,30 +60,30 @@ function startDevServer() {
 
     // Start timing
     const start = performance.now();
-    
+
     console.log('Starting dev server...');
-    const child = spawn('npm', ['run', 'dev'], { 
-      stdio: ['inherit', 'pipe', 'inherit']
+    const child = spawn('npm', ['run', 'dev'], {
+      stdio: ['inherit', 'pipe', 'inherit'],
     });
 
     let output = '';
-    child.stdout.on('data', (data) => {
+    child.stdout.on('data', data => {
       const chunk = data.toString();
       output += chunk;
       process.stdout.write(chunk);
-      
+
       // If we see the ready message, we're done
       if (chunk.includes('Ready in')) {
         const buildTime = performance.now() - start;
         const readyMatch = output.match(/Ready in (\d+)ms/);
         const readyTime = readyMatch ? parseInt(readyMatch[1]) : null;
-        
+
         // Return the server process and timing info
         resolve({ child, buildTime, readyTime });
       }
     });
 
-    child.on('error', (err) => {
+    child.on('error', err => {
       reject(err);
     });
   });
@@ -90,7 +91,7 @@ function startDevServer() {
 
 async function crawlSite() {
   console.log('\n=== Page Load Tests ===');
-  
+
   const visited = new Set();
   const toVisit = [...INITIAL_PATHS];
   const pageMetrics = [];
@@ -98,13 +99,13 @@ async function crawlSite() {
   while (toVisit.length > 0) {
     const path = toVisit.shift();
     if (visited.has(path)) continue;
-    
+
     console.log(`Testing ${path}...`);
     const result = await measurePageLoad(path);
     pageMetrics.push({
       path: result.path,
       loadTime: result.loadTime,
-      status: result.status
+      status: result.status,
     });
     visited.add(path);
 
@@ -125,10 +126,10 @@ async function runTests() {
   const results = {
     timestamp: new Date().toISOString(),
     metrics: {
-      pages: []
-    }
+      pages: [],
+    },
   };
-  
+
   try {
     // Start the dev server and get build metrics
     const { child, buildTime, readyTime } = await startDevServer();
@@ -145,16 +146,16 @@ async function runTests() {
   } catch (e) {
     console.error('Test failed:', e);
   }
-  
+
   // Kill any remaining dev server
   try {
     execSync('pkill -f "next dev"');
   } catch (e) {
     // Ignore if no process found
   }
-  
+
   console.log('\nTest Results:', JSON.stringify(results, null, 2));
   console.log('\nTests completed!');
 }
 
-runTests(); 
+runTests();

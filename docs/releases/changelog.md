@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 Progress towards 0.2.0:
+
 - [x] Authentication system using Ory Kratos
 - [x] Basic user session management
 - [x] Local DynamoDB setup for development
@@ -38,6 +39,7 @@ Progress towards 0.2.0:
   - [ ] Organization membership requests
 
 ### Added
+
 - Authentication system using Ory Kratos
   - Login and registration flows
   - Session management
@@ -89,6 +91,7 @@ Progress towards 0.2.0:
   - Session type definitions for better type safety
 
 ### Changed
+
 - Updated project structure for Next.js 13+ conventions
 - Enhanced test coverage for auth components and routes
 - Refactored auth page into server and client components
@@ -157,6 +160,7 @@ Progress towards 0.2.0:
   - Improved form state handling to prevent data loss
 
 ### Fixed
+
 - Email verification status updates:
   - Created dedicated client component for email verification icon
   - Fixed React hooks errors by properly separating client/server components
@@ -245,9 +249,10 @@ Progress towards 0.2.0:
 ## [0.1.0] - 2024-03-18
 
 ### Added
+
 - Initial project setup
 - Basic Next.js application structure
 - Development environment configuration
 
 [Unreleased]: https://github.com/source-cooperative/source.coop/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/source-cooperative/source.coop/releases/tag/v0.1.0 
+[0.1.0]: https://github.com/source-cooperative/source.coop/releases/tag/v0.1.0

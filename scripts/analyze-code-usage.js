@@ -10,33 +10,33 @@ const EXTENSIONS = ['.ts', '.tsx', '.js', '.jsx'];
 const EXCLUDE_PATTERNS = [
   /\.test\.(ts|tsx|js|jsx)$/,
   /\.d\.ts$/,
-  /\/app\/.*\/page\.tsx$/,  // Next.js pages
-  /\/app\/layout\.tsx$/,    // Next.js layout
-  /\/app\/(manifest|robots|sitemap)\.ts$/  // Next.js special files
+  /\/app\/.*\/page\.tsx$/, // Next.js pages
+  /\/app\/layout\.tsx$/, // Next.js layout
+  /\/app\/(manifest|robots|sitemap)\.ts$/, // Next.js special files
 ];
 
 // Utils
-const getExportedSymbols = (content) => {
+const getExportedSymbols = content => {
   const exportMatches = [];
-  
+
   // Match named exports: export { X, Y }
   const namedExportRegex = /export\s*{([^}]*)}/g;
   let match;
   while ((match = namedExportRegex.exec(content)) !== null) {
-    const exportedItems = match[1].split(',').map(item => 
-      item.trim().split(' as ')[0].trim()
-    );
+    const exportedItems = match[1].split(',').map(item => item.trim().split(' as ')[0].trim());
     exportMatches.push(...exportedItems);
   }
-  
+
   // Match direct exports: export const X = ... / export function Y(...) / export class Z ...
-  const directExportRegex = /export\s+(const|let|var|function|class|type|interface|enum)\s+([a-zA-Z0-9_$]+)/g;
+  const directExportRegex =
+    /export\s+(const|let|var|function|class|type|interface|enum)\s+([a-zA-Z0-9_$]+)/g;
   while ((match = directExportRegex.exec(content)) !== null) {
     exportMatches.push(match[2]);
   }
-  
+
   // Match default exports
-  const defaultExportRegex = /export\s+default\s+(function|class|const|let|var)?\s*([a-zA-Z0-9_$]+)?/g;
+  const defaultExportRegex =
+    /export\s+default\s+(function|class|const|let|var)?\s*([a-zA-Z0-9_$]+)?/g;
   while ((match = defaultExportRegex.exec(content)) !== null) {
     if (match[2]) {
       exportMatches.push('default: ' + match[2]);
@@ -44,52 +44,53 @@ const getExportedSymbols = (content) => {
       exportMatches.push('default: anonymous');
     }
   }
-  
+
   return exportMatches;
 };
 
-const findImportStatements = (content) => {
-  const importRegex = /import\s+(?:{([^}]*)}|\*\s+as\s+([a-zA-Z0-9_$]+)|([a-zA-Z0-9_$]+))?\s+from\s+['"]([^'"]+)['"]/g;
+const findImportStatements = content => {
+  const importRegex =
+    /import\s+(?:{([^}]*)}|\*\s+as\s+([a-zA-Z0-9_$]+)|([a-zA-Z0-9_$]+))?\s+from\s+['"]([^'"]+)['"]/g;
   const imports = [];
-  
+
   let match;
   while ((match = importRegex.exec(content)) !== null) {
     const namedImports = match[1] ? match[1].split(',').map(item => item.trim()) : [];
     const namespaceImport = match[2];
     const defaultImport = match[3];
     const fromPath = match[4];
-    
+
     imports.push({
       fromPath,
       namedImports: namedImports.filter(Boolean),
       namespaceImport: namespaceImport || null,
-      defaultImport: defaultImport || null
+      defaultImport: defaultImport || null,
     });
   }
-  
+
   return imports;
 };
 
 // Find all source files
-const findSourceFiles = (dir) => {
+const findSourceFiles = dir => {
   const results = [];
-  
+
   const files = fs.readdirSync(dir);
-  
+
   for (const file of files) {
     const filePath = path.join(dir, file);
     const stat = fs.statSync(filePath);
-    
+
     if (stat.isDirectory()) {
       results.push(...findSourceFiles(filePath));
     } else if (
-      EXTENSIONS.includes(path.extname(filePath)) && 
+      EXTENSIONS.includes(path.extname(filePath)) &&
       !EXCLUDE_PATTERNS.some(pattern => pattern.test(filePath))
     ) {
       results.push(filePath);
     }
   }
-  
+
   return results;
 };
 
@@ -108,7 +109,7 @@ for (const file of sourceFiles) {
   if (exportedSymbols.length > 0) {
     exportsMap.set(file, exportedSymbols);
   }
-  
+
   const imports = findImportStatements(content);
   importsMap.set(file, imports);
 }
@@ -120,10 +121,10 @@ const usedSymbols = new Map(); // file -> Set of used exported symbols
 for (const [file, imports] of importsMap.entries()) {
   for (const importInfo of imports) {
     const { fromPath, namedImports, namespaceImport, defaultImport } = importInfo;
-    
+
     // Resolve the imported file path (simplified)
     let resolvedPath = null;
-    
+
     // Check if it's a relative import
     if (fromPath.startsWith('.')) {
       const baseDir = path.dirname(file);
@@ -134,7 +135,7 @@ for (const [file, imports] of importsMap.entries()) {
           resolvedPath = candidate;
           break;
         }
-        
+
         // Try with /index extension
         const indexCandidate = path.resolve(baseDir, `${fromPath}/index${ext}`);
         if (fs.existsSync(indexCandidate)) {
@@ -151,7 +152,7 @@ for (const [file, imports] of importsMap.entries()) {
           resolvedPath = candidate;
           break;
         }
-        
+
         // Try with /index extension
         const indexCandidate = path.resolve(SRC_DIR, `${relativePath}/index${ext}`);
         if (fs.existsSync(indexCandidate)) {
@@ -160,21 +161,21 @@ for (const [file, imports] of importsMap.entries()) {
         }
       }
     }
-    
+
     if (resolvedPath) {
       importedFiles.add(resolvedPath);
-      
+
       // Track which symbols are used
       if (!usedSymbols.has(resolvedPath)) {
         usedSymbols.set(resolvedPath, new Set());
       }
-      
+
       if (defaultImport) {
         // Mark default export as used
         usedSymbols.get(resolvedPath).add('default: anonymous');
         usedSymbols.get(resolvedPath).add(`default: ${defaultImport}`);
       }
-      
+
       if (namespaceImport) {
         // Conservatively assume all exports are used with namespace imports
         const symbols = exportsMap.get(resolvedPath) || [];
@@ -182,7 +183,7 @@ for (const [file, imports] of importsMap.entries()) {
           usedSymbols.get(resolvedPath).add(symbol);
         });
       }
-      
+
       namedImports.forEach(namedImport => {
         usedSymbols.get(resolvedPath).add(namedImport.split(' as ')[0].trim());
       });
@@ -197,10 +198,10 @@ for (const [file, exportedSymbols] of exportsMap.entries()) {
     // Skip files that aren't imported at all
     continue;
   }
-  
+
   const usedExports = usedSymbols.get(file) || new Set();
   const unusedExports = exportedSymbols.filter(symbol => !usedExports.has(symbol));
-  
+
   if (unusedExports.length > 0 && exportedSymbols.length !== unusedExports.length) {
     console.log(`\n${file}`);
     console.log('  Used exports:', [...usedExports].join(', '));
@@ -215,13 +216,13 @@ const dependencyGraph = new Map();
 // Build the dependency graph
 for (const [file, imports] of importsMap.entries()) {
   dependencyGraph.set(file, new Set());
-  
+
   for (const importInfo of imports) {
     const { fromPath } = importInfo;
-    
+
     // Resolve the imported file path (simplified, reusing logic from above)
     let resolvedPath = null;
-    
+
     // Check if it's a relative import
     if (fromPath.startsWith('.')) {
       const baseDir = path.dirname(file);
@@ -232,7 +233,7 @@ for (const [file, imports] of importsMap.entries()) {
           resolvedPath = candidate;
           break;
         }
-        
+
         // Try with /index extension
         const indexCandidate = path.resolve(baseDir, `${fromPath}/index${ext}`);
         if (fs.existsSync(indexCandidate)) {
@@ -249,7 +250,7 @@ for (const [file, imports] of importsMap.entries()) {
           resolvedPath = candidate;
           break;
         }
-        
+
         // Try with /index extension
         const indexCandidate = path.resolve(SRC_DIR, `${relativePath}/index${ext}`);
         if (fs.existsSync(indexCandidate)) {
@@ -258,7 +259,7 @@ for (const [file, imports] of importsMap.entries()) {
         }
       }
     }
-    
+
     if (resolvedPath && resolvedPath !== file) {
       dependencyGraph.get(file).add(resolvedPath);
     }
@@ -270,7 +271,7 @@ const findCircularDependencies = () => {
   const visited = new Set();
   const recStack = new Set();
   const circularDeps = new Set();
-  
+
   const dfs = (node, path = []) => {
     if (recStack.has(node)) {
       // Found a cycle
@@ -279,26 +280,26 @@ const findCircularDependencies = () => {
       circularDeps.add(cycle.join(' -> '));
       return;
     }
-    
+
     if (visited.has(node)) {
       return;
     }
-    
+
     visited.add(node);
     recStack.add(node);
-    
+
     const dependencies = dependencyGraph.get(node) || new Set();
     for (const dep of dependencies) {
       dfs(dep, [...path, node]);
     }
-    
+
     recStack.delete(node);
   };
-  
+
   for (const node of dependencyGraph.keys()) {
     dfs(node);
   }
-  
+
   return circularDeps;
 };
 
@@ -317,12 +318,16 @@ console.log('\n--- Files not imported anywhere ---');
 for (const file of sourceFiles) {
   if (!importedFiles.has(file) && exportsMap.has(file)) {
     // Check if it's a page component or other special Next.js file
-    if (file.includes('/page.') || file.includes('/layout.') || 
-        file.includes('/error.') || file.includes('/loading.') ||
-        file.includes('/not-found.')) {
+    if (
+      file.includes('/page.') ||
+      file.includes('/layout.') ||
+      file.includes('/error.') ||
+      file.includes('/loading.') ||
+      file.includes('/not-found.')
+    ) {
       continue;
     }
-    
+
     console.log(`${file}`);
     console.log('  Exports:', exportsMap.get(file).join(', '));
   }
@@ -332,10 +337,12 @@ for (const file of sourceFiles) {
 console.log('\n--- Potential Redundant Wrappers ---');
 for (const [file, imports] of importsMap.entries()) {
   const content = fs.readFileSync(file, 'utf8');
-  const isSimpleReexport = content.trim().split('\n').filter(line => !line.trim().startsWith('//') && line.trim()).every(
-    line => line.startsWith('import ') || line.startsWith('export ') || line.trim() === ''
-  );
-  
+  const isSimpleReexport = content
+    .trim()
+    .split('\n')
+    .filter(line => !line.trim().startsWith('//') && line.trim())
+    .every(line => line.startsWith('import ') || line.startsWith('export ') || line.trim() === '');
+
   if (isSimpleReexport && content.includes('export * from')) {
     console.log(`${file} - Simple re-export file`);
   }
@@ -351,9 +358,9 @@ for (const file of sourceFiles) {
   const contentLength = content.length;
   const firstChars = content.substring(0, 100);
   const lastChars = content.substring(Math.max(0, contentLength - 100));
-  
+
   const simpleHash = `${contentLength}:${firstChars}:${lastChars}`;
-  
+
   if (!fileContentHashes.has(simpleHash)) {
     fileContentHashes.set(simpleHash, []);
   }
@@ -367,4 +374,4 @@ for (const [hash, files] of fileContentHashes.entries()) {
   }
 }
 
-console.log('\nAnalysis complete. Verify any suggested changes before removal.'); 
+console.log('\nAnalysis complete. Verify any suggested changes before removal.');

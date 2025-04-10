@@ -1,5 +1,5 @@
 import { APIError } from './errors';
-import { CONFIG } from "./config";
+import { CONFIG } from './config';
 
 type LogLevel = 'error' | 'warn' | 'info' | 'debug';
 
@@ -36,7 +36,7 @@ class Logger {
     }
 
     const formattedMessage = this.formatMessage(level, message, context);
-    
+
     switch (level) {
       case 'error':
         console.error(formattedMessage);
@@ -58,11 +58,13 @@ class Logger {
       ...context,
       metadata: {
         ...context.metadata,
-        error: context.error ? {
-          message: context.error.message,
-          stack: context.error.stack,
-          code: context.error instanceof APIError ? context.error.code : undefined,
-        } : undefined,
+        error: context.error
+          ? {
+              message: context.error.message,
+              stack: context.error.stack,
+              code: context.error instanceof APIError ? context.error.code : undefined,
+            }
+          : undefined,
       },
     };
     this.log('error', message, errorContext);
@@ -81,4 +83,4 @@ class Logger {
   }
 }
 
-export const logger = Logger.getInstance(); 
+export const logger = Logger.getInstance();

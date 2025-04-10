@@ -3,10 +3,28 @@ import { fetchAccount } from '@/lib/db/operations_v2';
 
 // Reserved usernames that cannot be used
 const RESERVED_USERNAMES = [
-  'admin', 'moderator', 'root', 'superuser', 'system',
-  'api', 'auth', 'login', 'logout', 'register', 'settings',
-  'profile', 'account', 'help', 'support', 'about', 'terms',
-  'privacy', 'security', 'contact', 'feedback', 'status'
+  'admin',
+  'moderator',
+  'root',
+  'superuser',
+  'system',
+  'api',
+  'auth',
+  'login',
+  'logout',
+  'register',
+  'settings',
+  'profile',
+  'account',
+  'help',
+  'support',
+  'about',
+  'terms',
+  'privacy',
+  'security',
+  'contact',
+  'feedback',
+  'status',
 ];
 
 export async function GET(request: Request) {
@@ -48,4 +66,4 @@ export async function GET(request: Request) {
     console.error('Error checking username:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-} 
+}

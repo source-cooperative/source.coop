@@ -8,8 +8,8 @@ const client = new DynamoDBClient({
   endpoint: 'http://localhost:8000',
   credentials: {
     accessKeyId: 'local',
-    secretAccessKey: 'local'
-  }
+    secretAccessKey: 'local',
+  },
 });
 
 const docClient = DynamoDBDocumentClient.from(client);
@@ -17,13 +17,15 @@ const docClient = DynamoDBDocumentClient.from(client);
 async function updateRepositoryS3Config() {
   try {
     // Get the repository
-    const getResult = await docClient.send(new GetCommand({
-      TableName: 'sc-repositories',
-      Key: {
-        repository_id: 'de-mv',
-        account_id: 'fiboa'
-      }
-    }));
+    const getResult = await docClient.send(
+      new GetCommand({
+        TableName: 'sc-repositories',
+        Key: {
+          repository_id: 'de-mv',
+          account_id: 'fiboa',
+        },
+      })
+    );
 
     if (!getResult.Item) {
       console.error('Repository not found');
@@ -45,29 +47,31 @@ async function updateRepositoryS3Config() {
             prefix: `${repo.account_id}/${repo.repository_id}/`,
             config: {
               region: 'us-west-2',
-              bucket: 'opendata.source.coop'
+              bucket: 'opendata.source.coop',
             },
             is_primary: true,
             sync_status: {
               last_sync_at: now,
-              is_synced: true
+              is_synced: true,
             },
             stats: {
               total_objects: 0,
               total_size: 0,
-              last_verified_at: now
-            }
-          }
+              last_verified_at: now,
+            },
+          },
         },
-        primary_mirror: 'aws-us-west-2'
-      }
+        primary_mirror: 'aws-us-west-2',
+      },
     };
 
     // Update the repository
-    await docClient.send(new PutCommand({
-      TableName: 'sc-repositories',
-      Item: updatedRepo
-    }));
+    await docClient.send(
+      new PutCommand({
+        TableName: 'sc-repositories',
+        Item: updatedRepo,
+      })
+    );
 
     console.log('Repository S3 configuration updated successfully');
   } catch (error) {
@@ -75,4 +79,4 @@ async function updateRepositoryS3Config() {
   }
 }
 
-updateRepositoryS3Config(); 
+updateRepositoryS3Config();

@@ -236,7 +236,7 @@ describe('Storage Types', () => {
           commonPrefixes: [],
           isTruncated: false,
         }),
-        getObjectInfo: async () => ({} as RepositoryObject),
+        getObjectInfo: async () => ({}) as RepositoryObject,
         getObject: async () => ({
           object: {} as RepositoryObject,
           data: Buffer.from(''),
@@ -253,4 +253,4 @@ describe('Storage Types', () => {
       expect(client).toBeDefined();
     });
   });
-}); 
+});

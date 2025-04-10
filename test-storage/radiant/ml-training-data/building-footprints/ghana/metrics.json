@@ -128,12 +128,7 @@
       "learning_rate": 0.001,
       "optimizer": "Adam",
       "loss_function": "Binary cross-entropy + Dice loss",
-      "augmentation": [
-        "Random rotation",
-        "Random flip",
-        "Random brightness",
-        "Random contrast"
-      ]
+      "augmentation": ["Random rotation", "Random flip", "Random brightness", "Random contrast"]
     },
     "hardware": {
       "gpu": "NVIDIA A100",
@@ -174,4 +169,4 @@
       "website": "https://radiant.earth"
     }
   }
-} 
+}

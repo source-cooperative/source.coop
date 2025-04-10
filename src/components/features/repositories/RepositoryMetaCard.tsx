@@ -17,4 +17,4 @@ export function RepositoryMetaCard({ repository, statistics }: RepositoryMetaCar
       </SectionHeader>
     </Card>
   );
-} 
+}

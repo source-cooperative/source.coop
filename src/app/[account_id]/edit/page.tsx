@@ -2,14 +2,14 @@ import { notFound } from 'next/navigation';
 import { fetchAccount } from '@/lib/db';
 import { EditProfileForm } from './EditProfileForm';
 
-export default async function EditProfilePage({ 
-  params 
-}: { 
-  params: Promise<{ account_id: string }> 
+export default async function EditProfilePage({
+  params,
+}: {
+  params: Promise<{ account_id: string }>;
 }) {
   const { account_id } = await params;
   const account = await fetchAccount(account_id);
-  
+
   if (!account) {
     notFound();
   }
@@ -19,4 +19,4 @@ export default async function EditProfilePage({
       <EditProfileForm account={account} />
     </div>
   );
-} 
+}

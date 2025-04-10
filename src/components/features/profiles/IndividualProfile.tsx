@@ -17,19 +17,16 @@ interface IndividualProfileProps {
   showWelcome?: boolean;
 }
 
-export function IndividualProfile({ 
-  account, 
-  ownedRepositories, 
+export function IndividualProfile({
+  account,
+  ownedRepositories,
   contributedRepositories,
   organizations,
-  showWelcome = false
+  showWelcome = false,
 }: IndividualProfileProps) {
   return (
     <Box>
-      <IndividualProfileActions 
-        account={account}
-        showWelcome={showWelcome}
-      />
+      <IndividualProfileActions account={account} showWelcome={showWelcome} />
 
       <Box mb="6">
         <Flex gap="4" align="center" justify="between">
@@ -41,7 +38,9 @@ export function IndividualProfile({
                 <EmailVerificationStatus account={account} />
               </Flex>
               {account.metadata_public.bio && (
-                <Text size="3" color="gray">{account.metadata_public.bio}</Text>
+                <Text size="3" color="gray">
+                  {account.metadata_public.bio}
+                </Text>
               )}
             </Box>
           </Flex>
@@ -56,7 +55,10 @@ export function IndividualProfile({
                 {account.metadata_public.domains.length === 1 ? 'Website' : 'Websites'}
               </Text>
               {account.metadata_public.domains.map((domain, index) => (
-                <Box key={index} mb={index < (account.metadata_public.domains?.length ?? 0) - 1 ? "2" : "0"}>
+                <Box
+                  key={index}
+                  mb={index < (account.metadata_public.domains?.length ?? 0) - 1 ? '2' : '0'}
+                >
                   <WebsiteLink website={{ url: `https://${domain.domain}` }} />
                 </Box>
               ))}
@@ -64,9 +66,15 @@ export function IndividualProfile({
           )}
           {account.metadata_public.orcid && (
             <Box>
-              <Text as="div" size="2" color="gray" mb="2">ORCID</Text>
+              <Text as="div" size="2" color="gray" mb="2">
+                ORCID
+              </Text>
               <RadixLink asChild>
-                <a href={`https://orcid.org/${account.metadata_public.orcid}`} target="_blank" rel="noopener noreferrer">
+                <a
+                  href={`https://orcid.org/${account.metadata_public.orcid}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   {account.metadata_public.orcid}
                 </a>
               </RadixLink>
@@ -77,7 +85,9 @@ export function IndividualProfile({
 
       {organizations.length > 0 && (
         <Box mb="6">
-          <Heading size="4" mb="2">Organizations</Heading>
+          <Heading size="4" mb="2">
+            Organizations
+          </Heading>
           <Grid columns="3" gap="4">
             {organizations.map(org => (
               <Link key={org.account_id} href={`/${org.account_id}`} passHref legacyBehavior>
@@ -95,17 +105,21 @@ export function IndividualProfile({
 
       {ownedRepositories.length > 0 && (
         <Box mb="6">
-          <Heading size="4" mb="2">Repositories</Heading>
+          <Heading size="4" mb="2">
+            Repositories
+          </Heading>
           <RepositoryList repositories={ownedRepositories} />
         </Box>
       )}
 
       {contributedRepositories.length > 0 && (
         <Box>
-          <Heading size="4" mb="2">Contributions</Heading>
+          <Heading size="4" mb="2">
+            Contributions
+          </Heading>
           <RepositoryList repositories={contributedRepositories} />
         </Box>
       )}
     </Box>
   );
-} 
+}

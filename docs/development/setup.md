@@ -5,6 +5,7 @@ This guide will help you set up your local development environment for Source.co
 ## Prerequisites
 
 ### Required Software
+
 - Node.js 18 or higher
 - Docker and Docker Compose
 - Git
@@ -12,6 +13,7 @@ This guide will help you set up your local development environment for Source.co
 - VS Code (recommended)
 
 ### System Requirements
+
 - 8GB RAM minimum
 - 20GB free disk space
 - macOS, Linux, or Windows 10/11
@@ -19,16 +21,18 @@ This guide will help you set up your local development environment for Source.co
 ## Initial Setup
 
 1. **Clone the Repository**
+
    ```bash
    git clone https://github.com/your-org/source.coop.git
    cd source.coop
    ```
 
 2. **Environment Configuration**
+
    ```bash
    # Copy the example environment file
    cp .env.example .env.local
-   
+
    # Edit .env.local with your configuration
    # Required variables:
    # - NEXT_PUBLIC_ORY_URL
@@ -38,6 +42,7 @@ This guide will help you set up your local development environment for Source.co
    ```
 
 3. **Install Dependencies**
+
    ```bash
    npm install
    ```
@@ -77,6 +82,7 @@ When you run `npm run dev`, the following happens automatically:
 ### DynamoDB Tables
 
 The application uses two main tables:
+
 - `Accounts` - Stores user and organization account information
 - `Repositories` - Stores repository metadata
 
@@ -98,12 +104,15 @@ aws dynamodb delete-table --table-name Accounts --endpoint-url http://localhost:
 ## Development Workflow
 
 ### Starting the Development Server
+
 ```bash
 npm run dev
 ```
+
 The application will be available at `http://localhost:3000`
 
 ### Available Scripts
+
 ```bash
 # Development
 npm run dev         # Start development server
@@ -125,6 +134,7 @@ npm run init-local      # Initialize database tables
 ```
 
 ### Local Storage
+
 - Local file storage is configured in `./test-storage`
 - DynamoDB runs locally on port 8000
 - Ory Kratos authentication service runs on port 4433
@@ -132,7 +142,9 @@ npm run init-local      # Initialize database tables
 ## IDE Setup
 
 ### VS Code Extensions
+
 Recommended extensions for development:
+
 - ESLint
 - Prettier
 - TypeScript and JavaScript Language Features
@@ -140,6 +152,7 @@ Recommended extensions for development:
 - Docker
 
 ### VS Code Settings
+
 ```json
 {
   "editor.formatOnSave": true,
@@ -155,24 +168,28 @@ Recommended extensions for development:
 ### Common Issues
 
 1. **Docker Services Not Starting**
+
    ```bash
    # Check Docker status
    docker ps
-   
+
    # Restart services
    docker-compose down
    docker-compose up -d
    ```
 
 2. **Port Conflicts**
+
    - Ensure ports 3000, 8000, and 4433 are available
    - Check for running instances of the development server
 
 3. **Environment Variables**
+
    - Verify `.env.local` exists and is properly configured
    - Restart the development server after changes
 
 4. **TypeScript Errors**
+
    ```bash
    # Clear TypeScript cache
    rm -rf .next
@@ -180,6 +197,7 @@ Recommended extensions for development:
    ```
 
 5. **DynamoDB Connection Issues**
+
    ```bash
    # Check if DynamoDB is running
    docker ps | grep dynamodb
@@ -195,6 +213,7 @@ Recommended extensions for development:
 
 6. **DynamoDB Reset**
    If you need to completely reset your database:
+
    ```bash
    # Remove existing container
    docker stop dynamodb-local
@@ -210,4 +229,4 @@ Recommended extensions for development:
 - Check the [Architecture Documentation](../architecture/overview.md)
 - Review the [Development Guidelines](coding-standards.md)
 - Consult the [Testing Guide](testing.md)
-- Review the [Performance Guidelines](performance.md) 
+- Review the [Performance Guidelines](performance.md)

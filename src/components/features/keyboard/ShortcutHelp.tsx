@@ -62,9 +62,7 @@ export function ShortcutHelp({ open, onOpenChange, context }: ShortcutHelpProps)
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Content size="3">
         <Dialog.Title>Keyboard Shortcuts</Dialog.Title>
-        <Dialog.Description>
-          {description}
-        </Dialog.Description>
+        <Dialog.Description>{description}</Dialog.Description>
         <Box py="4">
           <Table.Root>
             <Table.Header>
@@ -74,13 +72,13 @@ export function ShortcutHelp({ open, onOpenChange, context }: ShortcutHelpProps)
               </Table.Row>
             </Table.Header>
             <Table.Body>
-              {GLOBAL_SHORTCUTS.map((shortcut) => (
+              {GLOBAL_SHORTCUTS.map(shortcut => (
                 <Table.Row key={shortcut.key}>
                   <Table.Cell>{shortcut.key}</Table.Cell>
                   <Table.Cell>{shortcut.action}</Table.Cell>
                 </Table.Row>
               ))}
-              {contextShortcuts.map((shortcut) => (
+              {contextShortcuts.map(shortcut => (
                 <Table.Row key={shortcut.key}>
                   <Table.Cell>{shortcut.key}</Table.Cell>
                   <Table.Cell>{shortcut.action}</Table.Cell>
@@ -90,9 +88,11 @@ export function ShortcutHelp({ open, onOpenChange, context }: ShortcutHelpProps)
           </Table.Root>
         </Box>
         <Dialog.Close>
-          <Text size="2" color="gray">Press Escape to close</Text>
+          <Text size="2" color="gray">
+            Press Escape to close
+          </Text>
         </Dialog.Close>
       </Dialog.Content>
     </Dialog.Root>
   );
-} 
+}

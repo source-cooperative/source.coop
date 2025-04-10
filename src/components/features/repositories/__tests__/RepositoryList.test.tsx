@@ -22,20 +22,22 @@ describe('RepositoryList', () => {
     account_id: 'test-account',
     type: 'individual',
     name: 'Test User',
-    emails: [{
-      address: 'test@example.com',
-      verified: true,
-      is_primary: true,
-      added_at: '2024-03-14T00:00:00Z'
-    }],
+    emails: [
+      {
+        address: 'test@example.com',
+        verified: true,
+        is_primary: true,
+        added_at: '2024-03-14T00:00:00Z',
+      },
+    ],
     created_at: '2024-03-14T00:00:00Z',
     updated_at: '2024-03-14T00:00:00Z',
     disabled: false,
     flags: [],
     metadata_public: {},
     metadata_private: {
-      identity_id: 'test-identity'
-    }
+      identity_id: 'test-identity',
+    },
   };
 
   const mockRepositories: Repository_v2[] = [
@@ -50,8 +52,8 @@ describe('RepositoryList', () => {
       metadata: {
         mirrors: {},
         primary_mirror: '',
-        roles: {}
-      }
+        roles: {},
+      },
     },
     {
       repository_id: 'repo2',
@@ -64,9 +66,9 @@ describe('RepositoryList', () => {
       metadata: {
         mirrors: {},
         primary_mirror: '',
-        roles: {}
-      }
-    }
+        roles: {},
+      },
+    },
   ];
 
   beforeEach(() => {
@@ -83,64 +85,91 @@ describe('RepositoryList', () => {
   describe('keyboard navigation', () => {
     it('navigates with j/k keys', () => {
       render(<RepositoryList repositories={mockRepositories} />);
-      
+
       // Press j to select first repository
       fireEvent.keyDown(document, { key: 'j' });
-      expect(screen.getByText('Repository 1').closest('a')).toHaveAttribute('data-selected', 'true');
-      
+      expect(screen.getByText('Repository 1').closest('a')).toHaveAttribute(
+        'data-selected',
+        'true'
+      );
+
       // Press j again to select second repository
       fireEvent.keyDown(document, { key: 'j' });
-      expect(screen.getByText('Repository 2').closest('a')).toHaveAttribute('data-selected', 'true');
-      
+      expect(screen.getByText('Repository 2').closest('a')).toHaveAttribute(
+        'data-selected',
+        'true'
+      );
+
       // Press k to go back to first repository
       fireEvent.keyDown(document, { key: 'k' });
-      expect(screen.getByText('Repository 1').closest('a')).toHaveAttribute('data-selected', 'true');
+      expect(screen.getByText('Repository 1').closest('a')).toHaveAttribute(
+        'data-selected',
+        'true'
+      );
     });
 
     it('navigates with arrow keys', () => {
       render(<RepositoryList repositories={mockRepositories} />);
-      
+
       // Press ArrowDown to select first repository
       fireEvent.keyDown(document, { key: 'ArrowDown' });
-      expect(screen.getByText('Repository 1').closest('a')).toHaveAttribute('data-selected', 'true');
-      
+      expect(screen.getByText('Repository 1').closest('a')).toHaveAttribute(
+        'data-selected',
+        'true'
+      );
+
       // Press ArrowUp to go back
       fireEvent.keyDown(document, { key: 'ArrowUp' });
-      expect(screen.getByText('Repository 1').closest('a')).toHaveAttribute('data-selected', 'true');
+      expect(screen.getByText('Repository 1').closest('a')).toHaveAttribute(
+        'data-selected',
+        'true'
+      );
     });
 
     it('respects navigation boundaries', () => {
       render(<RepositoryList repositories={mockRepositories} />);
-      
+
       // Try to navigate up when no selection
       fireEvent.keyDown(document, { key: 'ArrowUp' });
-      expect(screen.getByText('Repository 1').closest('a')).toHaveAttribute('data-selected', 'true');
-      
+      expect(screen.getByText('Repository 1').closest('a')).toHaveAttribute(
+        'data-selected',
+        'true'
+      );
+
       // Try to navigate up at first item
       fireEvent.keyDown(document, { key: 'ArrowUp' });
-      expect(screen.getByText('Repository 1').closest('a')).toHaveAttribute('data-selected', 'true');
-      
+      expect(screen.getByText('Repository 1').closest('a')).toHaveAttribute(
+        'data-selected',
+        'true'
+      );
+
       // Navigate to last item
       fireEvent.keyDown(document, { key: 'j' });
-      expect(screen.getByText('Repository 2').closest('a')).toHaveAttribute('data-selected', 'true');
-      
+      expect(screen.getByText('Repository 2').closest('a')).toHaveAttribute(
+        'data-selected',
+        'true'
+      );
+
       // Try to navigate past last item
       fireEvent.keyDown(document, { key: 'j' });
-      expect(screen.getByText('Repository 2').closest('a')).toHaveAttribute('data-selected', 'true');
+      expect(screen.getByText('Repository 2').closest('a')).toHaveAttribute(
+        'data-selected',
+        'true'
+      );
     });
 
     it('opens repository with Enter or o key', () => {
       render(<RepositoryList repositories={mockRepositories} />);
-      
+
       // Select first repository
       fireEvent.keyDown(document, { key: 'j' });
-      
+
       // Press Enter
       fireEvent.keyDown(document, { key: 'Enter' });
       expect(mockRouter.push).toHaveBeenCalledWith('/test-account/repo1');
-      
+
       mockRouter.push.mockClear();
-      
+
       // Press o key
       fireEvent.keyDown(document, { key: 'o' });
       expect(mockRouter.push).toHaveBeenCalledWith('/test-account/repo1');
@@ -148,14 +177,20 @@ describe('RepositoryList', () => {
 
     it('clears selection with Escape', () => {
       render(<RepositoryList repositories={mockRepositories} />);
-      
+
       // Select first repository
       fireEvent.keyDown(document, { key: 'j' });
-      expect(screen.getByText('Repository 1').closest('a')).toHaveAttribute('data-selected', 'true');
-      
+      expect(screen.getByText('Repository 1').closest('a')).toHaveAttribute(
+        'data-selected',
+        'true'
+      );
+
       // Press Escape
       fireEvent.keyDown(document, { key: 'Escape' });
-      expect(screen.getByText('Repository 1').closest('a')).toHaveAttribute('data-selected', 'false');
+      expect(screen.getByText('Repository 1').closest('a')).toHaveAttribute(
+        'data-selected',
+        'false'
+      );
     });
 
     it('ignores keyboard shortcuts when input is focused', () => {
@@ -165,27 +200,36 @@ describe('RepositoryList', () => {
           <RepositoryList repositories={mockRepositories} />
         </>
       );
-      
+
       // Focus input
       const input = screen.getByTestId('test-input');
       input.focus();
-      
+
       // Try navigation
       fireEvent.keyDown(input, { key: 'j' });
-      expect(screen.getByText('Repository 1').closest('a')).toHaveAttribute('data-selected', 'false');
+      expect(screen.getByText('Repository 1').closest('a')).toHaveAttribute(
+        'data-selected',
+        'false'
+      );
     });
 
     it('ignores keyboard shortcuts with modifier keys (except ?)', () => {
       render(<RepositoryList repositories={mockRepositories} />);
-      
+
       // Try Ctrl+j
       fireEvent.keyDown(document, { key: 'j', ctrlKey: true });
-      expect(screen.getByText('Repository 1').closest('a')).toHaveAttribute('data-selected', 'false');
-      
+      expect(screen.getByText('Repository 1').closest('a')).toHaveAttribute(
+        'data-selected',
+        'false'
+      );
+
       // Try Meta+k
       fireEvent.keyDown(document, { key: 'k', metaKey: true });
-      expect(screen.getByText('Repository 1').closest('a')).toHaveAttribute('data-selected', 'false');
-      
+      expect(screen.getByText('Repository 1').closest('a')).toHaveAttribute(
+        'data-selected',
+        'false'
+      );
+
       // ? should work with shift
       fireEvent.keyDown(document, { key: '?', shiftKey: true });
       const dialog = screen.getByRole('dialog');
@@ -197,7 +241,7 @@ describe('RepositoryList', () => {
 
   it('shows help dialog on ? key', () => {
     render(<RepositoryList repositories={mockRepositories} />);
-    
+
     // Press ? key
     fireEvent.keyDown(document, { key: '?' });
     const dialog = screen.getByRole('dialog');
@@ -212,9 +256,9 @@ describe('RepositoryList', () => {
     it('navigates to home on backtick from repository page', () => {
       // Mock being on a repository page
       mockPathname.mockReturnValue('/test-account/repo1');
-      
+
       render(<RepositoryList repositories={mockRepositories} />);
-      
+
       // Press backtick key
       fireEvent.keyDown(document, { key: '`' });
       expect(mockRouter.push).toHaveBeenCalledWith('/test-account');
@@ -223,9 +267,9 @@ describe('RepositoryList', () => {
     it('navigates to root from profile page', () => {
       // Mock being on a profile page
       mockPathname.mockReturnValue('/test-account');
-      
+
       render(<RepositoryList repositories={mockRepositories} />);
-      
+
       // Press backtick key
       fireEvent.keyDown(document, { key: '`' });
       expect(mockRouter.push).toHaveBeenCalledWith('/');
@@ -234,9 +278,9 @@ describe('RepositoryList', () => {
     it('navigates up one level in object browser', () => {
       // Mock being in object browser
       mockPathname.mockReturnValue('/test-account/repo1/path/to/object');
-      
+
       render(<RepositoryList repositories={mockRepositories} />);
-      
+
       // Press backtick key
       fireEvent.keyDown(document, { key: '`' });
       expect(mockRouter.push).toHaveBeenCalledWith('/test-account/repo1/path/to');
@@ -245,12 +289,12 @@ describe('RepositoryList', () => {
     it('does nothing on backtick at root', () => {
       // Mock being at root
       mockPathname.mockReturnValue('/');
-      
+
       render(<RepositoryList repositories={mockRepositories} />);
-      
+
       // Press backtick key
       fireEvent.keyDown(document, { key: '`' });
       expect(mockRouter.push).not.toHaveBeenCalled();
     });
   });
-}); 
+});

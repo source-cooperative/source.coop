@@ -1,8 +1,4 @@
-import type {
-  FormFieldType,
-  FormField,
-  FormProps,
-} from './form';
+import type { FormFieldType, FormField, FormProps } from './form';
 
 describe('Form Types', () => {
   describe('FormFieldType', () => {
@@ -49,7 +45,7 @@ describe('Form Types', () => {
         validation: {
           minLength: 3,
           maxLength: 10,
-          custom: (value) => value.includes('test') ? undefined : 'Must include "test"',
+          custom: value => (value.includes('test') ? undefined : 'Must include "test"'),
         },
         useMonoFont: true,
         error: 'Test error message',
@@ -142,4 +138,4 @@ describe('Form Types', () => {
       expect(props).toBeDefined();
     });
   });
-}); 
+});

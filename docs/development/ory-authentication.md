@@ -2,10 +2,10 @@
 
 Source Cooperative uses Ory Kratos for authentication, following a server-first architecture with minimal client-side auth.
 
-
 ## Local Development Setup
 
 1. **Environment Variables** (in `.env.local`):
+
 ```env
 # Ory URLs for local development
 NEXT_PUBLIC_ORY_BASE_URL=http://localhost:4000  # Client-side operations
@@ -20,6 +20,7 @@ ORY_ACCESS_TOKEN=your-access-token
 ```
 
 2. **Start Ory Tunnel**:
+
 ```bash
 ory tunnel --dev --debug \
   --allowed-cors-origins="http://localhost:3000" \
@@ -30,11 +31,13 @@ ory tunnel --dev --debug \
 ## Core Principles
 
 1. **Server-First Authentication**
+
    - Always check auth on the server first
    - Use client-side auth only when necessary
    - Keep auth-aware client components minimal
 
 2. **Identity Management**
+
    - Use `account_id` for all business logic and URLs
    - Store `account_id` in Ory's `metadata_public`
    - Never use Ory IDs for application logic
@@ -49,12 +52,14 @@ ory tunnel --dev --debug \
 The registration process follows these steps:
 
 1. **Initial Registration**
+
    ```typescript
    // Initialize the registration flow
    const { data } = await ory.createBrowserRegistrationFlow();
    ```
 
 2. **Email Verification**
+
    - User submits registration form
    - Ory sends verification email
    - User clicks verification link
@@ -72,14 +77,16 @@ Note: Return URLs for registration and verification should be configured in your
 Source Cooperative configures Ory redirects to handle authentication flows appropriately. These redirects are configured in the Ory Console under Project Settings > Redirects.
 
 ### Global Settings
+
 - **Default Redirect URL**: `/` (homepage)
-- **Allowed URLs**: 
+- **Allowed URLs**:
   ```
   http://localhost:3000    # Development
   https://your-domain.com  # Production
   ```
 
 ### Flow-Specific Redirects
+
 - **Post-Login**: `/` (homepage)
 - **Post-Registration**: `/email-verified`
 - **Post-Verification**: `/email-verified`
@@ -88,6 +95,7 @@ Source Cooperative configures Ory redirects to handle authentication flows appro
 - **Post-Recovery**: (uses global default)
 
 The `/email-verified` page handles both registration and verification completions by:
+
 1. Verifying the user's session
 2. Updating the verification timestamp in metadata
 3. Redirecting to either:
@@ -99,6 +107,7 @@ Note: All redirect URLs should be relative paths. Ory will combine them with the
 ## Code Examples
 
 ### Server-Side Auth (Preferred)
+
 ```typescript
 // In server components
 import { requireServerAuth } from '@/lib/auth';
@@ -113,6 +122,7 @@ export default async function ProtectedPage() {
 ```
 
 ### Client-Side Auth (When Needed)
+
 ```typescript
 // In client components
 import { useAuth } from '@/hooks/useAuth';
@@ -126,6 +136,7 @@ export function AuthAwareComponent() {
 ```
 
 ### Form Submission
+
 ```typescript
 // Let the SDK handle all auth flows
 import { ory } from '@/lib/ory';
@@ -145,12 +156,14 @@ await ory.updateLoginFlow({
 ## Important Rules
 
 1. **Never**:
+
    - Use Ory IDs in URLs or business logic
    - Modify form action URLs
    - Create custom auth proxies
    - Store sensitive data in client state
 
 2. **Always**:
+
    - Use server components for auth checks
    - Let the SDK handle CSRF and cookies
    - Use `account_id` for application logic
@@ -165,11 +178,13 @@ await ory.updateLoginFlow({
 ## Troubleshooting
 
 1. **401 Errors**
+
    - Expected for non-authenticated users
    - Only log unexpected auth errors
    - Check API token if admin operations fail
 
 2. **Cookie Issues**
+
    - Verify using `localhost`
    - Check third-party cookie settings
    - Ensure tunnel is running
@@ -184,4 +199,4 @@ await ory.updateLoginFlow({
 
 - [Ory Kratos Documentation](https://www.ory.sh/docs/kratos)
 - [Ory SDK Reference](https://www.ory.sh/docs/reference/api)
-- [CORS Configuration Guide](https://www.ory.sh/docs/ecosystem/configuring-cors) 
+- [CORS Configuration Guide](https://www.ory.sh/docs/ecosystem/configuring-cors)

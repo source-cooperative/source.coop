@@ -22,4 +22,4 @@ export function VerificationSuccessCallout() {
       </Callout.Text>
     </Callout.Root>
   );
-} 
+}

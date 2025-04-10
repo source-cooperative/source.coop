@@ -41,12 +41,12 @@ describe('Form', () => {
   describe('Rendering', () => {
     it('renders form fields with required indicators', () => {
       renderWithTheme(<Form fields={mockFields} onSubmit={mockSubmit} />);
-      
+
       // Test accessibility
       expect(screen.getByRole('form')).toBeInTheDocument();
       expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
       expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
-      
+
       // Check for required indicators using Radix UI structure
       const requiredIndicators = screen.getAllByText('*');
       expect(requiredIndicators).toHaveLength(2);
@@ -73,11 +73,11 @@ describe('Form', () => {
 
     it('renders correctly in both light and dark themes', () => {
       const { rerender } = renderWithTheme(<Form fields={mockFields} onSubmit={mockSubmit} />);
-      
+
       // Check that the form is rendered within the light theme
       const lightThemeContainer = screen.getByRole('form').closest('.radix-themes');
       expect(lightThemeContainer).toHaveAttribute('data-theme', 'light');
-      
+
       rerender(
         <Theme appearance="dark" data-theme="dark">
           <Form fields={mockFields} onSubmit={mockSubmit} />
@@ -94,7 +94,7 @@ describe('Form', () => {
     it('shows validation errors for required fields on submit', async () => {
       renderWithTheme(<Form fields={mockFields} onSubmit={mockSubmit} />);
       const form = screen.getByRole('form');
-      
+
       fireEvent.submit(form);
 
       await waitFor(() => {
@@ -109,7 +109,7 @@ describe('Form', () => {
 
     it('clears validation errors when fields are filled', async () => {
       renderWithTheme(<Form fields={mockFields} onSubmit={mockSubmit} />);
-      
+
       // Submit empty form to trigger validation
       fireEvent.submit(screen.getByRole('form'));
 
@@ -119,10 +119,10 @@ describe('Form', () => {
 
       // Fill in the fields
       fireEvent.change(screen.getByLabelText(/email/i), {
-        target: { value: 'test@example.com' }
+        target: { value: 'test@example.com' },
       });
       fireEvent.change(screen.getByLabelText(/password/i), {
-        target: { value: 'password123' }
+        target: { value: 'password123' },
       });
 
       // Submit again
@@ -132,7 +132,7 @@ describe('Form', () => {
         expect(screen.queryByRole('status')).not.toBeInTheDocument();
         expect(mockSubmit).toHaveBeenCalledWith({
           email: 'test@example.com',
-          password: 'password123'
+          password: 'password123',
         });
       });
     });
@@ -141,7 +141,7 @@ describe('Form', () => {
   describe('Submission', () => {
     it('submits form with valid data', async () => {
       renderWithTheme(<Form fields={mockFields} onSubmit={mockSubmit} />);
-      
+
       // Get inputs using proper ARIA roles
       const emailInput = screen.getByRole('textbox', { name: /email/i });
       const passwordInput = screen.getByLabelText(/password/i);
@@ -173,17 +173,17 @@ describe('Form', () => {
     });
 
     it('shows loading state during submission', async () => {
-      const mockSubmitWithDelay = jest.fn().mockImplementation(
-        () => new Promise(resolve => setTimeout(resolve, 100))
-      );
+      const mockSubmitWithDelay = jest
+        .fn()
+        .mockImplementation(() => new Promise(resolve => setTimeout(resolve, 100)));
       renderWithTheme(<Form fields={mockFields} onSubmit={mockSubmitWithDelay} />);
-      
+
       // Fill in the fields
       fireEvent.change(screen.getByLabelText(/email/i), {
-        target: { value: 'test@example.com' }
+        target: { value: 'test@example.com' },
       });
       fireEvent.change(screen.getByLabelText(/password/i), {
-        target: { value: 'password123' }
+        target: { value: 'password123' },
       });
 
       // Submit the form
@@ -202,13 +202,13 @@ describe('Form', () => {
     it('displays error message when submission fails', async () => {
       const mockSubmitWithError = jest.fn().mockRejectedValue(new Error('Submission failed'));
       renderWithTheme(<Form fields={mockFields} onSubmit={mockSubmitWithError} />);
-      
+
       // Fill in the fields
       fireEvent.change(screen.getByLabelText(/email/i), {
-        target: { value: 'test@example.com' }
+        target: { value: 'test@example.com' },
       });
       fireEvent.change(screen.getByLabelText(/password/i), {
-        target: { value: 'password123' }
+        target: { value: 'password123' },
       });
 
       // Submit the form
@@ -225,16 +225,16 @@ describe('Form', () => {
   describe('Performance', () => {
     it('renders without performance issues', async () => {
       const startTime = performance.now();
-      
+
       renderWithTheme(<Form fields={mockFields} onSubmit={mockSubmit} />);
-      
+
       const endTime = performance.now();
       expect(endTime - startTime).toBeLessThan(100); // Should render in under 100ms
     });
 
     it('handles rapid state changes without performance issues', async () => {
       renderWithTheme(<Form fields={mockFields} onSubmit={mockSubmit} />);
-      
+
       const emailInput = screen.getByRole('textbox', { name: /email/i });
       const startTime = performance.now();
 

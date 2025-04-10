@@ -30,12 +30,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "field",
-        "farmland",
-        "polygon",
-        "Japan"
-      ],
+      "tags": ["field", "farmland", "polygon", "Japan"],
       "roles": {
         "pacificspatial": {
           "account_id": "pacificspatial",
@@ -77,12 +72,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "building footprints",
-        "geoparquet",
-        "geopackage",
-        "disaster risk"
-      ],
+      "tags": ["building footprints", "geoparquet", "geopackage", "disaster risk"],
       "roles": {
         "pacificspatial": {
           "account_id": "pacificspatial",
@@ -124,12 +114,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "vegetation",
-        "japan",
-        "land cover",
-        ""
-      ],
+      "tags": ["vegetation", "japan", "land cover", ""],
       "roles": {
         "pacificspatial": {
           "account_id": "pacificspatial",
@@ -224,9 +209,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "cboettig": {
           "account_id": "cboettig",
@@ -268,9 +251,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "cboettig": {
           "account_id": "cboettig",
@@ -312,11 +293,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "carbon",
-        "cog",
-        "tiles"
-      ],
+      "tags": ["carbon", "cog", "tiles"],
       "roles": {
         "cboettig": {
           "account_id": "cboettig",
@@ -358,12 +335,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "conservation",
-        "pmtiles",
-        "geoparquet",
-        "policy"
-      ],
+      "tags": ["conservation", "pmtiles", "geoparquet", "policy"],
       "roles": {
         "cboettig": {
           "account_id": "cboettig",
@@ -405,9 +377,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "cboettig": {
           "account_id": "cboettig",
@@ -449,12 +419,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "pmtiles",
-        "fire",
-        "parquet",
-        "united states"
-      ],
+      "tags": ["pmtiles", "fire", "parquet", "united states"],
       "roles": {
         "cboettig": {
           "account_id": "cboettig",
@@ -496,14 +461,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "fishbase",
-        "fish",
-        "ecology",
-        "fisheries",
-        "noaa",
-        "conservation"
-      ],
+      "tags": ["fishbase", "fish", "ecology", "fisheries", "noaa", "conservation"],
       "roles": {
         "cboettig": {
           "account_id": "cboettig",
@@ -545,12 +503,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "biodiversity",
-        "h3",
-        "geospatial",
-        "duckdb"
-      ],
+      "tags": ["biodiversity", "h3", "geospatial", "duckdb"],
       "roles": {
         "cboettig": {
           "account_id": "cboettig",
@@ -592,9 +545,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "cboettig": {
           "account_id": "cboettig",
@@ -636,13 +587,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "wildlife",
-        "corridors",
-        "pmtiles",
-        "geoparquet",
-        "vector"
-      ],
+      "tags": ["wildlife", "corridors", "pmtiles", "geoparquet", "vector"],
       "roles": {
         "cboettig": {
           "account_id": "cboettig",
@@ -684,12 +629,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "climate",
-        "justice",
-        "pmtiles",
-        "geoparquet"
-      ],
+      "tags": ["climate", "justice", "pmtiles", "geoparquet"],
       "roles": {
         "cboettig": {
           "account_id": "cboettig",
@@ -731,14 +671,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "raster",
-        "cog",
-        "tiles",
-        "static",
-        "biodiversity",
-        "gdal"
-      ],
+      "tags": ["raster", "cog", "tiles", "static", "biodiversity", "gdal"],
       "roles": {
         "cboettig": {
           "account_id": "cboettig",
@@ -780,9 +713,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "cboettig": {
           "account_id": "cboettig",
@@ -824,13 +755,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "biodiversity",
-        "conservation",
-        "protected areas",
-        "united states",
-        "vector"
-      ],
+      "tags": ["biodiversity", "conservation", "protected areas", "united states", "vector"],
       "roles": {
         "cboettig": {
           "account_id": "cboettig",
@@ -872,13 +797,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "carbon",
-        "trees",
-        "africa",
-        "sahara",
-        "ml"
-      ],
+      "tags": ["carbon", "trees", "africa", "sahara", "ml"],
       "roles": {
         "cboettig": {
           "account_id": "cboettig",
@@ -920,12 +839,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "census",
-        "equity",
-        "pmtiles",
-        "geoparquet"
-      ],
+      "tags": ["census", "equity", "pmtiles", "geoparquet"],
       "roles": {
         "cboettig": {
           "account_id": "cboettig",
@@ -967,9 +881,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "cboettig": {
           "account_id": "cboettig",
@@ -1011,11 +923,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "political boundaries",
-        "pmtiles",
-        "geoparquet"
-      ],
+      "tags": ["political boundaries", "pmtiles", "geoparquet"],
       "roles": {
         "cboettig": {
           "account_id": "cboettig",
@@ -1057,9 +965,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "cboettig": {
           "account_id": "cboettig",
@@ -1101,14 +1007,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "building footprints",
-        "google",
-        "microsoft",
-        "geoparquet",
-        "flatgeobuf",
-        "pmtiles"
-      ],
+      "tags": ["building footprints", "google", "microsoft", "geoparquet", "flatgeobuf", "pmtiles"],
       "roles": {
         "vida": {
           "account_id": "vida",
@@ -1201,12 +1100,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "geoparquet",
-        "building footprints",
-        "pmtiles",
-        "flatgeobuf"
-      ],
+      "tags": ["geoparquet", "building footprints", "pmtiles", "flatgeobuf"],
       "roles": {
         "vida": {
           "account_id": "vida",
@@ -1248,9 +1142,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "source": {
           "account_id": "source",
@@ -1292,9 +1184,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "source": {
           "account_id": "source",
@@ -1336,12 +1226,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "brazil",
-        "geoparquet",
-        "fiboa",
-        "field boundaries"
-      ],
+      "tags": ["brazil", "geoparquet", "fiboa", "field boundaries"],
       "roles": {
         "jonathanlinwustl": {
           "account_id": "jonathanlinwustl",
@@ -1383,10 +1268,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "karnatak",
-        "india"
-      ],
+      "tags": ["karnatak", "india"],
       "roles": {
         "krishnaglodha": {
           "account_id": "krishnaglodha",
@@ -1428,10 +1310,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "karnataka",
-        "india"
-      ],
+      "tags": ["karnataka", "india"],
       "roles": {
         "krishnaglodha": {
           "account_id": "krishnaglodha",
@@ -1473,10 +1352,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "ksrsac",
-        "blore"
-      ],
+      "tags": ["ksrsac", "blore"],
       "roles": {
         "krishnaglodha": {
           "account_id": "krishnaglodha",
@@ -1518,9 +1394,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "karnataka"
-      ],
+      "tags": ["karnataka"],
       "roles": {
         "krishnaglodha": {
           "account_id": "krishnaglodha",
@@ -1562,12 +1436,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "geoparquet",
-        "admin",
-        "countries",
-        "overture"
-      ],
+      "tags": ["geoparquet", "admin", "countries", "overture"],
       "roles": {
         "cholmes": {
           "account_id": "cholmes",
@@ -1609,9 +1478,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "cholmes": {
           "account_id": "cholmes",
@@ -1653,13 +1520,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "agriculture",
-        "vector",
-        "geoparquet",
-        "pmtiles",
-        "segmentation"
-      ],
+      "tags": ["agriculture", "vector", "geoparquet", "pmtiles", "segmentation"],
       "roles": {
         "cholmes": {
           "account_id": "cholmes",
@@ -1701,10 +1562,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "fiboa",
-        "geoparquet"
-      ],
+      "tags": ["fiboa", "geoparquet"],
       "roles": {
         "cholmes": {
           "account_id": "cholmes",
@@ -1746,13 +1604,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "building footprints",
-        "vector",
-        "geoparquet",
-        "pmtiles",
-        "segmentation"
-      ],
+      "tags": ["building footprints", "vector", "geoparquet", "pmtiles", "segmentation"],
       "roles": {
         "cholmes": {
           "account_id": "cholmes",
@@ -1794,11 +1646,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "geoparquet",
-        "hydrography",
-        "nhd"
-      ],
+      "tags": ["geoparquet", "hydrography", "nhd"],
       "roles": {
         "cholmes": {
           "account_id": "cholmes",
@@ -1840,13 +1688,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "geoparquet",
-        "pmtiles",
-        "vector",
-        "taxi zones",
-        "nyc"
-      ],
+      "tags": ["geoparquet", "pmtiles", "vector", "taxi zones", "nyc"],
       "roles": {
         "cholmes": {
           "account_id": "cholmes",
@@ -1888,11 +1730,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "geoparquet",
-        "fiboa",
-        "pmtiles"
-      ],
+      "tags": ["geoparquet", "fiboa", "pmtiles"],
       "roles": {
         "cholmes": {
           "account_id": "cholmes",
@@ -1934,13 +1772,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "vector",
-        "geoparquet",
-        "pmtiles",
-        "buildings",
-        "uk"
-      ],
+      "tags": ["vector", "geoparquet", "pmtiles", "buildings", "uk"],
       "roles": {
         "cholmes": {
           "account_id": "cholmes",
@@ -1982,12 +1814,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "building footprints",
-        "vector",
-        "geoparquet",
-        "pmtiles"
-      ],
+      "tags": ["building footprints", "vector", "geoparquet", "pmtiles"],
       "roles": {
         "cholmes": {
           "account_id": "cholmes",
@@ -2029,9 +1856,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "geoparquet"
-      ],
+      "tags": ["geoparquet"],
       "roles": {
         "cholmes": {
           "account_id": "cholmes",
@@ -2073,10 +1898,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "stac",
-        "geoparquet"
-      ],
+      "tags": ["stac", "geoparquet"],
       "roles": {
         "cholmes": {
           "account_id": "cholmes",
@@ -2118,12 +1940,7 @@
         }
       },
       "primary_mirror": "azure-opendata-west-europe",
-      "tags": [
-        "synthetic data",
-        "xai",
-        "regression",
-        "attribution benchmark"
-      ],
+      "tags": ["synthetic data", "xai", "regression", "attribution benchmark"],
       "roles": {
         "csu": {
           "account_id": "csu",
@@ -2165,9 +1982,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "aldenks": {
           "account_id": "aldenks",
@@ -2209,9 +2024,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "aldenks": {
           "account_id": "aldenks",
@@ -2253,9 +2066,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "aldenks": {
           "account_id": "aldenks",
@@ -2297,9 +2108,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "aldenks": {
           "account_id": "aldenks",
@@ -2341,9 +2150,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "aldenks": {
           "account_id": "aldenks",
@@ -2385,10 +2192,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "pmtiles",
-        "amx"
-      ],
+      "tags": ["pmtiles", "amx"],
       "roles": {
         "smartmaps": {
           "account_id": "smartmaps",
@@ -2430,9 +2234,7 @@
         }
       },
       "primary_mirror": "aws-opendata-ap-south-1",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "smartmaps": {
           "account_id": "smartmaps",
@@ -2474,9 +2276,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "pmtiles"
-      ],
+      "tags": ["pmtiles"],
       "roles": {
         "smartmaps": {
           "account_id": "smartmaps",
@@ -2518,9 +2318,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "pmtiles"
-      ],
+      "tags": ["pmtiles"],
       "roles": {
         "smartmaps": {
           "account_id": "smartmaps",
@@ -2562,9 +2360,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "pmtiles"
-      ],
+      "tags": ["pmtiles"],
       "roles": {
         "smartmaps": {
           "account_id": "smartmaps",
@@ -2606,9 +2402,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "pmtiles"
-      ],
+      "tags": ["pmtiles"],
       "roles": {
         "smartmaps": {
           "account_id": "smartmaps",
@@ -2650,9 +2444,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "PMTiles"
-      ],
+      "tags": ["PMTiles"],
       "roles": {
         "smartmaps": {
           "account_id": "smartmaps",
@@ -2694,9 +2486,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "pmtiles gtfs"
-      ],
+      "tags": ["pmtiles gtfs"],
       "roles": {
         "smartmaps": {
           "account_id": "smartmaps",
@@ -2738,9 +2528,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "lidar 3dtiles mago"
-      ],
+      "tags": ["lidar 3dtiles mago"],
       "roles": {
         "smartmaps": {
           "account_id": "smartmaps",
@@ -2782,9 +2570,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "PMTiles FlatGeobuf"
-      ],
+      "tags": ["PMTiles FlatGeobuf"],
       "roles": {
         "smartmaps": {
           "account_id": "smartmaps",
@@ -2826,10 +2612,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "3d tiles",
-        "lidar"
-      ],
+      "tags": ["3d tiles", "lidar"],
       "roles": {
         "smartmaps": {
           "account_id": "smartmaps",
@@ -2871,9 +2654,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "pmtiles"
-      ],
+      "tags": ["pmtiles"],
       "roles": {
         "smartmaps": {
           "account_id": "smartmaps",
@@ -2915,9 +2696,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "pmtiles"
-      ],
+      "tags": ["pmtiles"],
       "roles": {
         "smartmaps": {
           "account_id": "smartmaps",
@@ -2959,9 +2738,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "pmtiles"
-      ],
+      "tags": ["pmtiles"],
       "roles": {
         "smartmaps": {
           "account_id": "smartmaps",
@@ -3003,9 +2780,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "smartmaps": {
           "account_id": "smartmaps",
@@ -3047,9 +2822,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "pmtiles"
-      ],
+      "tags": ["pmtiles"],
       "roles": {
         "smartmaps": {
           "account_id": "smartmaps",
@@ -3091,9 +2864,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "pmtiles"
-      ],
+      "tags": ["pmtiles"],
       "roles": {
         "smartmaps": {
           "account_id": "smartmaps",
@@ -3135,9 +2906,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "smartmaps": {
           "account_id": "smartmaps",
@@ -3179,9 +2948,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "qjn": {
           "account_id": "qjn",
@@ -3223,10 +2990,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "geoparquet",
-        "sg"
-      ],
+      "tags": ["geoparquet", "sg"],
       "roles": {
         "qjn": {
           "account_id": "qjn",
@@ -3268,11 +3032,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "rwanda",
-        "crops",
-        "labels"
-      ],
+      "tags": ["rwanda", "crops", "labels"],
       "roles": {
         "rti-international": {
           "account_id": "rti-international",
@@ -3314,11 +3074,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "rwanda",
-        "crops",
-        "labels"
-      ],
+      "tags": ["rwanda", "crops", "labels"],
       "roles": {
         "rti-international": {
           "account_id": "rti-international",
@@ -3360,11 +3116,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "openstreetmap",
-        "vector",
-        "pmtiles"
-      ],
+      "tags": ["openstreetmap", "vector", "pmtiles"],
       "roles": {
         "protomaps": {
           "account_id": "protomaps",
@@ -3406,10 +3158,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "overture",
-        "pmtiles"
-      ],
+      "tags": ["overture", "pmtiles"],
       "roles": {
         "protomaps": {
           "account_id": "protomaps",
@@ -3451,9 +3200,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "remg1997": {
           "account_id": "remg1997",
@@ -3495,13 +3242,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "parquet",
-        "tiff",
-        "raster",
-        "vector",
-        "waterways"
-      ],
+      "tags": ["parquet", "tiff", "raster", "vector", "waterways"],
       "roles": {
         "fika": {
           "account_id": "fika",
@@ -3543,12 +3284,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "landcover",
-        "vector",
-        "landsat 8",
-        "agriculture"
-      ],
+      "tags": ["landcover", "vector", "landsat 8", "agriculture"],
       "roles": {
         "boston-university": {
           "account_id": "boston-university",
@@ -3590,11 +3326,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "geo spatial",
-        "self-supervised",
-        "eatch monitoring"
-      ],
+      "tags": ["geo spatial", "self-supervised", "eatch monitoring"],
       "roles": {
         "diegovd": {
           "account_id": "diegovd",
@@ -3636,9 +3368,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "#geoparquet #aois #places #dataset #riyadh #geospatial #overturemaps #saudiarabia"
-      ],
+      "tags": ["#geoparquet #aois #places #dataset #riyadh #geospatial #overturemaps #saudiarabia"],
       "roles": {
         "tabaqat": {
           "account_id": "tabaqat",
@@ -3680,9 +3410,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "#geoparquet #aois #places #dataset #riyadh #geospatial #overturemaps #saudiarabia"
-      ],
+      "tags": ["#geoparquet #aois #places #dataset #riyadh #geospatial #overturemaps #saudiarabia"],
       "roles": {
         "tabaqat": {
           "account_id": "tabaqat",
@@ -3724,9 +3452,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "#overturemaps #roads #riyadh #osm #pmtiles #cng #tabaqat"
-      ],
+      "tags": ["#overturemaps #roads #riyadh #osm #pmtiles #cng #tabaqat"],
       "roles": {
         "tabaqat": {
           "account_id": "tabaqat",
@@ -3768,9 +3494,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "#pmtiles #cng #saudiarabia #sentinel #tabaqat #aws"
-      ],
+      "tags": ["#pmtiles #cng #saudiarabia #sentinel #tabaqat #aws"],
       "roles": {
         "tabaqat": {
           "account_id": "tabaqat",
@@ -3812,9 +3536,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "--"
-      ],
+      "tags": ["--"],
       "roles": {
         "tabaqat": {
           "account_id": "tabaqat",
@@ -3856,9 +3578,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "#sentinel #satellite #imagery #cog #aws #remotesensing #saudiarabia #tabaqat"
-      ],
+      "tags": ["#sentinel #satellite #imagery #cog #aws #remotesensing #saudiarabia #tabaqat"],
       "roles": {
         "tabaqat": {
           "account_id": "tabaqat",
@@ -3900,9 +3620,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "#overturemaps #roads #pmtiles #cng #osm #tabaqat #saudiarabia"
-      ],
+      "tags": ["#overturemaps #roads #pmtiles #cng #osm #tabaqat #saudiarabia"],
       "roles": {
         "tabaqat": {
           "account_id": "tabaqat",
@@ -3944,9 +3662,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "zluo43": {
           "account_id": "zluo43",
@@ -3988,9 +3704,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "zluo43": {
           "account_id": "zluo43",
@@ -4032,9 +3746,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "zluo43": {
           "account_id": "zluo43",
@@ -4076,9 +3788,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "zluo43": {
           "account_id": "zluo43",
@@ -4120,12 +3830,7 @@
         }
       },
       "primary_mirror": "azure-opendata-west-europe",
-      "tags": [
-        "sentinel-1",
-        "sentinel-2",
-        "segmentation",
-        "land cover"
-      ],
+      "tags": ["sentinel-1", "sentinel-2", "segmentation", "land cover"],
       "roles": {
         "sen12ts": {
           "account_id": "sen12ts",
@@ -4167,12 +3872,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "youthmappers",
-        "crops",
-        "tanzania",
-        "ground-truthed"
-      ],
+      "tags": ["youthmappers", "crops", "tanzania", "ground-truthed"],
       "roles": {
         "youthmappers": {
           "account_id": "youthmappers",
@@ -4214,12 +3914,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "youthmappers",
-        "tanzania",
-        "ground-truth",
-        "crops"
-      ],
+      "tags": ["youthmappers", "tanzania", "ground-truth", "crops"],
       "roles": {
         "youthmappers": {
           "account_id": "youthmappers",
@@ -4261,9 +3956,7 @@
         }
       },
       "primary_mirror": "azure-opendata-west-europe",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "commoncrawl": {
           "account_id": "commoncrawl",
@@ -4305,12 +3998,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "youthmasppers",
-        "tanzania",
-        "crops",
-        "groundtruthed"
-      ],
+      "tags": ["youthmasppers", "tanzania", "crops", "groundtruthed"],
       "roles": {
         "notoncebut2x": {
           "account_id": "notoncebut2x",
@@ -4352,11 +4040,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "crops",
-        "youthmappers",
-        "tanzania"
-      ],
+      "tags": ["crops", "youthmappers", "tanzania"],
       "roles": {
         "notoncebut2x": {
           "account_id": "notoncebut2x",
@@ -4398,13 +4082,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "ecology",
-        "forecast",
-        "environment",
-        "parquet",
-        "stac"
-      ],
+      "tags": ["ecology", "forecast", "environment", "parquet", "stac"],
       "roles": {
         "eco4cast": {
           "account_id": "eco4cast",
@@ -4498,9 +4176,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "harvard-lil": {
           "account_id": "harvard-lil",
@@ -4542,9 +4218,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "harvard-lil": {
           "account_id": "harvard-lil",
@@ -4586,9 +4260,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "harvard-lil": {
           "account_id": "harvard-lil",
@@ -4630,9 +4302,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "harvard-lil": {
           "account_id": "harvard-lil",
@@ -4674,9 +4344,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "harvard-lil": {
           "account_id": "harvard-lil",
@@ -4718,9 +4386,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "#cbam #climate reanalysis"
-      ],
+      "tags": ["#cbam #climate reanalysis"],
       "roles": {
         "ksa": {
           "account_id": "ksa",
@@ -4762,11 +4428,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "field boundary",
-        "building footprint",
-        "sentinel-2"
-      ],
+      "tags": ["field boundary", "building footprint", "sentinel-2"],
       "roles": {
         "ksa": {
           "account_id": "ksa",
@@ -4808,11 +4470,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "snow",
-        "hydrology",
-        "weather"
-      ],
+      "tags": ["snow", "hydrology", "weather"],
       "roles": {
         "lyonwj": {
           "account_id": "lyonwj",
@@ -4854,12 +4512,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "field boundaries",
-        "satellite imagery",
-        "deep learning",
-        "geoparquet"
-      ],
+      "tags": ["field boundaries", "satellite imagery", "deep learning", "geoparquet"],
       "roles": {
         "planet": {
           "account_id": "planet",
@@ -4901,11 +4554,7 @@
         }
       },
       "primary_mirror": "azure-opendata-west-europe",
-      "tags": [
-        "land cover",
-        "sentinel-2",
-        "planet fusion"
-      ],
+      "tags": ["land cover", "sentinel-2", "planet fusion"],
       "roles": {
         "planet": {
           "account_id": "planet",
@@ -4999,11 +4648,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "ome",
-        "zarr",
-        "ngff"
-      ],
+      "tags": ["ome", "zarr", "ngff"],
       "roles": {
         "joshmoore": {
           "account_id": "joshmoore",
@@ -5045,10 +4690,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "sst",
-        "nasa"
-      ],
+      "tags": ["sst", "nasa"],
       "roles": {
         "ausantarctic": {
           "account_id": "ausantarctic",
@@ -5090,9 +4732,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "misc"
-      ],
+      "tags": ["misc"],
       "roles": {
         "ausantarctic": {
           "account_id": "ausantarctic",
@@ -5134,12 +4774,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "satellite imagery",
-        "geostationary",
-        "global",
-        "zarr"
-      ],
+      "tags": ["satellite imagery", "geostationary", "global", "zarr"],
       "roles": {
         "bkr": {
           "account_id": "bkr",
@@ -5181,12 +4816,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "zarr",
-        "precipitation",
-        "gpm",
-        "imerg"
-      ],
+      "tags": ["zarr", "precipitation", "gpm", "imerg"],
       "roles": {
         "bkr": {
           "account_id": "bkr",
@@ -5228,12 +4858,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "mrms",
-        "rainfall radar",
-        "radar",
-        "zarr"
-      ],
+      "tags": ["mrms", "rainfall radar", "radar", "zarr"],
       "roles": {
         "bkr": {
           "account_id": "bkr",
@@ -5275,12 +4900,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "aerosols",
-        "dust",
-        "nwp",
-        "forecast"
-      ],
+      "tags": ["aerosols", "dust", "nwp", "forecast"],
       "roles": {
         "bkr": {
           "account_id": "bkr",
@@ -5322,9 +4942,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "boundaries"
-      ],
+      "tags": ["boundaries"],
       "roles": {
         "tyler": {
           "account_id": "tyler",
@@ -5366,9 +4984,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "test unidata netcdf"
-      ],
+      "tags": ["test unidata netcdf"],
       "roles": {
         "tyler": {
           "account_id": "tyler",
@@ -5410,9 +5026,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "boundary vector agriculture"
-      ],
+      "tags": ["boundary vector agriculture"],
       "roles": {
         "tyler": {
           "account_id": "tyler",
@@ -5454,11 +5068,7 @@
         }
       },
       "primary_mirror": "azure-opendata-west-europe",
-      "tags": [
-        "crop type",
-        "agriculture",
-        "segmentation"
-      ],
+      "tags": ["crop type", "agriculture", "segmentation"],
       "roles": {
         "idiv": {
           "account_id": "idiv",
@@ -5500,14 +5110,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "#parquet",
-        "#tif",
-        "#raster",
-        "#vector",
-        "#stac",
-        "#waterways"
-      ],
+      "tags": ["#parquet", "#tif", "#raster", "#vector", "#stac", "#waterways"],
       "roles": {
         "camkruse": {
           "account_id": "camkruse",
@@ -5549,12 +5152,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "biomass",
-        "forest",
-        "height",
-        "lidar"
-      ],
+      "tags": ["biomass", "forest", "height", "lidar"],
       "roles": {
         "giswqs": {
           "account_id": "giswqs",
@@ -5596,12 +5194,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "geospatial",
-        "geoparquet",
-        "geopackage",
-        "building"
-      ],
+      "tags": ["geospatial", "geoparquet", "geopackage", "building"],
       "roles": {
         "giswqs": {
           "account_id": "giswqs",
@@ -5643,12 +5236,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "vector",
-        "parquet",
-        "geoparquet",
-        "dem"
-      ],
+      "tags": ["vector", "parquet", "geoparquet", "dem"],
       "roles": {
         "giswqs": {
           "account_id": "giswqs",
@@ -5690,13 +5278,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "wetlands",
-        "conservation",
-        "vector",
-        "parquet",
-        "geoparquet"
-      ],
+      "tags": ["wetlands", "conservation", "vector", "parquet", "geoparquet"],
       "roles": {
         "giswqs": {
           "account_id": "giswqs",
@@ -5738,14 +5320,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "geospatial",
-        "geoparquet",
-        "wetlands",
-        "vector",
-        "water",
-        "conservation"
-      ],
+      "tags": ["geospatial", "geoparquet", "wetlands", "vector", "water", "conservation"],
       "roles": {
         "giswqs": {
           "account_id": "giswqs",
@@ -5787,11 +5362,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "imagery",
-        "historical",
-        "COG"
-      ],
+      "tags": ["imagery", "historical", "COG"],
       "roles": {
         "giswqs": {
           "account_id": "giswqs",
@@ -5833,9 +5404,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "bollacker": {
           "account_id": "bollacker",
@@ -5926,9 +5495,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "kerner-lab": {
           "account_id": "kerner-lab",
@@ -5970,12 +5537,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "agriculture",
-        "field boundaries",
-        "ftw",
-        "fieldsoftheworld"
-      ],
+      "tags": ["agriculture", "field boundaries", "ftw", "fieldsoftheworld"],
       "roles": {
         "kerner-lab": {
           "account_id": "kerner-lab",
@@ -6017,12 +5579,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "agriculture",
-        "field boundaries",
-        "ftw",
-        "fieldsoftheworld"
-      ],
+      "tags": ["agriculture", "field boundaries", "ftw", "fieldsoftheworld"],
       "roles": {
         "kerner-lab": {
           "account_id": "kerner-lab",
@@ -6064,12 +5621,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "agriculture",
-        "field boundaries",
-        "ftw",
-        "fieldsoftheworld"
-      ],
+      "tags": ["agriculture", "field boundaries", "ftw", "fieldsoftheworld"],
       "roles": {
         "kerner-lab": {
           "account_id": "kerner-lab",
@@ -6111,12 +5663,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "agriculture",
-        "field boundaries",
-        "ftw",
-        "fieldsoftheworld"
-      ],
+      "tags": ["agriculture", "field boundaries", "ftw", "fieldsoftheworld"],
       "roles": {
         "kerner-lab": {
           "account_id": "kerner-lab",
@@ -6158,12 +5705,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "agriculture",
-        "field boundaries",
-        "ftw",
-        "fieldsoftheworld"
-      ],
+      "tags": ["agriculture", "field boundaries", "ftw", "fieldsoftheworld"],
       "roles": {
         "kerner-lab": {
           "account_id": "kerner-lab",
@@ -6205,12 +5747,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "agriculture",
-        "field boundaries",
-        "ftw",
-        "fieldsoftheworld"
-      ],
+      "tags": ["agriculture", "field boundaries", "ftw", "fieldsoftheworld"],
       "roles": {
         "kerner-lab": {
           "account_id": "kerner-lab",
@@ -6252,12 +5789,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "agriculture",
-        "field boundaries",
-        "ftw",
-        "fieldsoftheworld"
-      ],
+      "tags": ["agriculture", "field boundaries", "ftw", "fieldsoftheworld"],
       "roles": {
         "kerner-lab": {
           "account_id": "kerner-lab",
@@ -6299,12 +5831,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "agriculture",
-        "field boundaries",
-        "ftw",
-        "fieldsoftheworld"
-      ],
+      "tags": ["agriculture", "field boundaries", "ftw", "fieldsoftheworld"],
       "roles": {
         "kerner-lab": {
           "account_id": "kerner-lab",
@@ -6346,12 +5873,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "agriculture",
-        "field boundaries",
-        "ftw",
-        "fieldsoftheworld"
-      ],
+      "tags": ["agriculture", "field boundaries", "ftw", "fieldsoftheworld"],
       "roles": {
         "kerner-lab": {
           "account_id": "kerner-lab",
@@ -6393,12 +5915,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "agriculture",
-        "field boundaries",
-        "ftw",
-        "fieldsoftheworld"
-      ],
+      "tags": ["agriculture", "field boundaries", "ftw", "fieldsoftheworld"],
       "roles": {
         "kerner-lab": {
           "account_id": "kerner-lab",
@@ -6440,12 +5957,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "agriculture",
-        "field boundaries",
-        "ftw",
-        "fieldsoftheworld"
-      ],
+      "tags": ["agriculture", "field boundaries", "ftw", "fieldsoftheworld"],
       "roles": {
         "kerner-lab": {
           "account_id": "kerner-lab",
@@ -6487,12 +5999,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "agriculture",
-        "field boundaries",
-        "ftw",
-        "fieldsoftheworld"
-      ],
+      "tags": ["agriculture", "field boundaries", "ftw", "fieldsoftheworld"],
       "roles": {
         "kerner-lab": {
           "account_id": "kerner-lab",
@@ -6534,12 +6041,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "agriculture",
-        "field boundaries",
-        "ftw",
-        "fieldsoftheworld"
-      ],
+      "tags": ["agriculture", "field boundaries", "ftw", "fieldsoftheworld"],
       "roles": {
         "kerner-lab": {
           "account_id": "kerner-lab",
@@ -6581,12 +6083,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "agriculture",
-        "field boundaries",
-        "ftw",
-        "fieldsoftheworld"
-      ],
+      "tags": ["agriculture", "field boundaries", "ftw", "fieldsoftheworld"],
       "roles": {
         "kerner-lab": {
           "account_id": "kerner-lab",
@@ -6628,12 +6125,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "agriculture",
-        "field boundaries",
-        "ftw",
-        "fieldsoftheworld"
-      ],
+      "tags": ["agriculture", "field boundaries", "ftw", "fieldsoftheworld"],
       "roles": {
         "kerner-lab": {
           "account_id": "kerner-lab",
@@ -6675,12 +6167,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "agriculture",
-        "field boundaries",
-        "ftw",
-        "fieldsoftheworld"
-      ],
+      "tags": ["agriculture", "field boundaries", "ftw", "fieldsoftheworld"],
       "roles": {
         "kerner-lab": {
           "account_id": "kerner-lab",
@@ -6722,12 +6209,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "agriculture",
-        "field boundaries",
-        "ftw",
-        "fieldsoftheworld"
-      ],
+      "tags": ["agriculture", "field boundaries", "ftw", "fieldsoftheworld"],
       "roles": {
         "kerner-lab": {
           "account_id": "kerner-lab",
@@ -6769,12 +6251,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "agriculture",
-        "field boundaries",
-        "ftw",
-        "fieldsoftheworld"
-      ],
+      "tags": ["agriculture", "field boundaries", "ftw", "fieldsoftheworld"],
       "roles": {
         "kerner-lab": {
           "account_id": "kerner-lab",
@@ -6816,12 +6293,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "agriculture",
-        "field boundaries",
-        "ftw",
-        "fieldsoftheworld"
-      ],
+      "tags": ["agriculture", "field boundaries", "ftw", "fieldsoftheworld"],
       "roles": {
         "kerner-lab": {
           "account_id": "kerner-lab",
@@ -6863,12 +6335,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "agriculture",
-        "field boundaries",
-        "ftw",
-        "fieldsoftheworld"
-      ],
+      "tags": ["agriculture", "field boundaries", "ftw", "fieldsoftheworld"],
       "roles": {
         "kerner-lab": {
           "account_id": "kerner-lab",
@@ -6910,12 +6377,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "agriculture",
-        "field boundaries",
-        "ftw",
-        "fieldsoftheworld"
-      ],
+      "tags": ["agriculture", "field boundaries", "ftw", "fieldsoftheworld"],
       "roles": {
         "kerner-lab": {
           "account_id": "kerner-lab",
@@ -6957,12 +6419,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "agriculture",
-        "field boundaries",
-        "ftw",
-        "fieldsoftheworld"
-      ],
+      "tags": ["agriculture", "field boundaries", "ftw", "fieldsoftheworld"],
       "roles": {
         "kerner-lab": {
           "account_id": "kerner-lab",
@@ -7004,12 +6461,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "agriculture",
-        "field boundaries",
-        "ftw",
-        "fieldsoftheworld"
-      ],
+      "tags": ["agriculture", "field boundaries", "ftw", "fieldsoftheworld"],
       "roles": {
         "kerner-lab": {
           "account_id": "kerner-lab",
@@ -7051,12 +6503,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "agriculture",
-        "field boundaries",
-        "ftw",
-        "fieldsoftheworld"
-      ],
+      "tags": ["agriculture", "field boundaries", "ftw", "fieldsoftheworld"],
       "roles": {
         "kerner-lab": {
           "account_id": "kerner-lab",
@@ -7098,12 +6545,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "agriculture",
-        "field boundaries",
-        "ftw",
-        "fieldsoftheworld"
-      ],
+      "tags": ["agriculture", "field boundaries", "ftw", "fieldsoftheworld"],
       "roles": {
         "kerner-lab": {
           "account_id": "kerner-lab",
@@ -7145,12 +6587,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "agriculture",
-        "field boundaries",
-        "ftw",
-        "fieldsoftheworld"
-      ],
+      "tags": ["agriculture", "field boundaries", "ftw", "fieldsoftheworld"],
       "roles": {
         "kerner-lab": {
           "account_id": "kerner-lab",
@@ -7192,11 +6629,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "ftw",
-        "agriculture",
-        "field boundaries"
-      ],
+      "tags": ["ftw", "agriculture", "field boundaries"],
       "roles": {
         "kerner-lab": {
           "account_id": "kerner-lab",
@@ -7238,11 +6671,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "fieldscapes",
-        "agriculture",
-        "field boundaries"
-      ],
+      "tags": ["fieldscapes", "agriculture", "field boundaries"],
       "roles": {
         "kerner-lab": {
           "account_id": "kerner-lab",
@@ -7284,11 +6713,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "fieldscapes",
-        "field boundaries",
-        "agriculture"
-      ],
+      "tags": ["fieldscapes", "field boundaries", "agriculture"],
       "roles": {
         "kerner-lab": {
           "account_id": "kerner-lab",
@@ -7330,11 +6755,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "fieldscapes",
-        "agriculture",
-        "field boundaries"
-      ],
+      "tags": ["fieldscapes", "agriculture", "field boundaries"],
       "roles": {
         "kerner-lab": {
           "account_id": "kerner-lab",
@@ -7376,11 +6797,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "fieldscapes",
-        "agriculture",
-        "field boundaries"
-      ],
+      "tags": ["fieldscapes", "agriculture", "field boundaries"],
       "roles": {
         "kerner-lab": {
           "account_id": "kerner-lab",
@@ -7422,11 +6839,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "fieldscapes",
-        "field boundaries",
-        "agriculture"
-      ],
+      "tags": ["fieldscapes", "field boundaries", "agriculture"],
       "roles": {
         "kerner-lab": {
           "account_id": "kerner-lab",
@@ -7468,11 +6881,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "fieldscapes",
-        "field boundaries",
-        "agriculture"
-      ],
+      "tags": ["fieldscapes", "field boundaries", "agriculture"],
       "roles": {
         "kerner-lab": {
           "account_id": "kerner-lab",
@@ -7514,11 +6923,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "fieldscapes",
-        "agriculture",
-        "field boundaries"
-      ],
+      "tags": ["fieldscapes", "agriculture", "field boundaries"],
       "roles": {
         "kerner-lab": {
           "account_id": "kerner-lab",
@@ -7560,11 +6965,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "fieldscapes",
-        "field boundaries",
-        "agriculture"
-      ],
+      "tags": ["fieldscapes", "field boundaries", "agriculture"],
       "roles": {
         "kerner-lab": {
           "account_id": "kerner-lab",
@@ -7606,11 +7007,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "fieldscapes",
-        "field boundaries",
-        "agriculture"
-      ],
+      "tags": ["fieldscapes", "field boundaries", "agriculture"],
       "roles": {
         "kerner-lab": {
           "account_id": "kerner-lab",
@@ -7652,11 +7049,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "fieldscapes",
-        "field boundaries",
-        "agriculture"
-      ],
+      "tags": ["fieldscapes", "field boundaries", "agriculture"],
       "roles": {
         "kerner-lab": {
           "account_id": "kerner-lab",
@@ -7698,11 +7091,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "fieldscapes",
-        "field boundaries",
-        "agriculture"
-      ],
+      "tags": ["fieldscapes", "field boundaries", "agriculture"],
       "roles": {
         "kerner-lab": {
           "account_id": "kerner-lab",
@@ -7744,11 +7133,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "fieldscapes",
-        "agriculture",
-        "field boundaries"
-      ],
+      "tags": ["fieldscapes", "agriculture", "field boundaries"],
       "roles": {
         "kerner-lab": {
           "account_id": "kerner-lab",
@@ -7790,11 +7175,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "fieldscapes",
-        "field boundaries",
-        "agriculture"
-      ],
+      "tags": ["fieldscapes", "field boundaries", "agriculture"],
       "roles": {
         "kerner-lab": {
           "account_id": "kerner-lab",
@@ -7836,11 +7217,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "fieldscapes",
-        "field boundaries",
-        "agriculture"
-      ],
+      "tags": ["fieldscapes", "field boundaries", "agriculture"],
       "roles": {
         "kerner-lab": {
           "account_id": "kerner-lab",
@@ -7882,11 +7259,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "fieldscapes",
-        "field boundaries",
-        "agriculture"
-      ],
+      "tags": ["fieldscapes", "field boundaries", "agriculture"],
       "roles": {
         "kerner-lab": {
           "account_id": "kerner-lab",
@@ -7928,11 +7301,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "fieldscapes",
-        "field boundaries",
-        "agriculture"
-      ],
+      "tags": ["fieldscapes", "field boundaries", "agriculture"],
       "roles": {
         "kerner-lab": {
           "account_id": "kerner-lab",
@@ -7974,11 +7343,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "fieldscapes",
-        "field boundaries",
-        "agriculture"
-      ],
+      "tags": ["fieldscapes", "field boundaries", "agriculture"],
       "roles": {
         "kerner-lab": {
           "account_id": "kerner-lab",
@@ -8020,11 +7385,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "fieldscapes",
-        "field boundaries",
-        "agriculture"
-      ],
+      "tags": ["fieldscapes", "field boundaries", "agriculture"],
       "roles": {
         "kerner-lab": {
           "account_id": "kerner-lab",
@@ -8066,11 +7427,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "fieldscapes",
-        "field boundaries",
-        "agriculture"
-      ],
+      "tags": ["fieldscapes", "field boundaries", "agriculture"],
       "roles": {
         "kerner-lab": {
           "account_id": "kerner-lab",
@@ -8112,11 +7469,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "fieldscapes",
-        "field boundaries",
-        "agriculture"
-      ],
+      "tags": ["fieldscapes", "field boundaries", "agriculture"],
       "roles": {
         "kerner-lab": {
           "account_id": "kerner-lab",
@@ -8158,11 +7511,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "fieldscapes",
-        "field boundaries",
-        "agriculture"
-      ],
+      "tags": ["fieldscapes", "field boundaries", "agriculture"],
       "roles": {
         "kerner-lab": {
           "account_id": "kerner-lab",
@@ -8204,11 +7553,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "fieldscapes",
-        "field boundaries",
-        "agriculture"
-      ],
+      "tags": ["fieldscapes", "field boundaries", "agriculture"],
       "roles": {
         "kerner-lab": {
           "account_id": "kerner-lab",
@@ -8250,11 +7595,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "fieldscapes",
-        "field boundaries",
-        "agriculture"
-      ],
+      "tags": ["fieldscapes", "field boundaries", "agriculture"],
       "roles": {
         "kerner-lab": {
           "account_id": "kerner-lab",
@@ -8296,11 +7637,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "fieldscapes",
-        "field boundaries",
-        "agriculture"
-      ],
+      "tags": ["fieldscapes", "field boundaries", "agriculture"],
       "roles": {
         "kerner-lab": {
           "account_id": "kerner-lab",
@@ -8342,11 +7679,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "fieldscapes",
-        "field boundaries",
-        "agriculture"
-      ],
+      "tags": ["fieldscapes", "field boundaries", "agriculture"],
       "roles": {
         "kerner-lab": {
           "account_id": "kerner-lab",
@@ -8388,11 +7721,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "fieldscapes",
-        "field boundaries",
-        "agriculture"
-      ],
+      "tags": ["fieldscapes", "field boundaries", "agriculture"],
       "roles": {
         "kerner-lab": {
           "account_id": "kerner-lab",
@@ -8434,9 +7763,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "kerner-lab": {
           "account_id": "kerner-lab",
@@ -8478,12 +7805,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "vegetation",
-        "japan",
-        "land cover",
-        ""
-      ],
+      "tags": ["vegetation", "japan", "land cover", ""],
       "roles": {
         "hirooimaki": {
           "account_id": "hirooimaki",
@@ -8525,11 +7847,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "wbd",
-        "watershed boundaries",
-        "nhd"
-      ],
+      "tags": ["wbd", "watershed boundaries", "nhd"],
       "roles": {
         "avikertesz": {
           "account_id": "avikertesz",
@@ -8571,11 +7889,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "national hydrology dataset",
-        "nhd",
-        "usgs"
-      ],
+      "tags": ["national hydrology dataset", "nhd", "usgs"],
       "roles": {
         "avikertesz": {
           "account_id": "avikertesz",
@@ -8617,11 +7931,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "pmtiles",
-        "south fork eel river",
-        "flowlines"
-      ],
+      "tags": ["pmtiles", "south fork eel river", "flowlines"],
       "roles": {
         "avikertesz": {
           "account_id": "avikertesz",
@@ -8663,9 +7973,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "sfer"
-      ],
+      "tags": ["sfer"],
       "roles": {
         "avikertesz": {
           "account_id": "avikertesz",
@@ -8707,9 +8015,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "bdon": {
           "account_id": "bdon",
@@ -8751,11 +8057,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "human footprint",
-        "biodiversity",
-        "land use"
-      ],
+      "tags": ["human footprint", "biodiversity", "land use"],
       "roles": {
         "vizzuality": {
           "account_id": "vizzuality",
@@ -8797,12 +8099,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "deforestation",
-        "land use",
-        "carbon emissions",
-        "agriculture"
-      ],
+      "tags": ["deforestation", "land use", "carbon emissions", "agriculture"],
       "roles": {
         "vizzuality": {
           "account_id": "vizzuality",
@@ -8844,12 +8141,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "vegetation",
-        "modis",
-        "raster",
-        "gapfilled"
-      ],
+      "tags": ["vegetation", "modis", "raster", "gapfilled"],
       "roles": {
         "malariaatlas": {
           "account_id": "malariaatlas",
@@ -8891,12 +8183,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "modis",
-        "raster",
-        "temperature",
-        "gapfilled"
-      ],
+      "tags": ["modis", "raster", "temperature", "gapfilled"],
       "roles": {
         "malariaatlas": {
           "account_id": "malariaatlas",
@@ -8938,12 +8225,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "vegetation",
-        "modis",
-        "raster",
-        "gapfilled"
-      ],
+      "tags": ["vegetation", "modis", "raster", "gapfilled"],
       "roles": {
         "malariaatlas": {
           "account_id": "malariaatlas",
@@ -8985,12 +8267,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "vegetation",
-        "modis",
-        "raster",
-        "gapfilled"
-      ],
+      "tags": ["vegetation", "modis", "raster", "gapfilled"],
       "roles": {
         "malariaatlas": {
           "account_id": "malariaatlas",
@@ -9032,9 +8309,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "census"
-      ],
+      "tags": ["census"],
       "roles": {
         "konda": {
           "account_id": "konda",
@@ -9076,13 +8351,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "geoparquet",
-        "pmtiles",
-        "havasu",
-        "iceberg",
-        "buildings"
-      ],
+      "tags": ["geoparquet", "pmtiles", "havasu", "iceberg", "buildings"],
       "roles": {
         "wherobots": {
           "account_id": "wherobots",
@@ -9124,14 +8393,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "natural gas",
-        "canada",
-        "imports",
-        "exports",
-        "cer",
-        "neb"
-      ],
+      "tags": ["natural gas", "canada", "imports", "exports", "cer", "neb"],
       "roles": {
         "amitbajaj": {
           "account_id": "amitbajaj",
@@ -9173,9 +8435,7 @@
         }
       },
       "primary_mirror": "aws-opendata-ap-south-1",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "amitbajaj": {
           "account_id": "amitbajaj",
@@ -9217,9 +8477,7 @@
         }
       },
       "primary_mirror": "aws-opendata-ap-south-1",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "amitbajaj": {
           "account_id": "amitbajaj",
@@ -9261,9 +8519,7 @@
         }
       },
       "primary_mirror": "aws-opendata-ap-south-1",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "amitbajaj": {
           "account_id": "amitbajaj",
@@ -9305,9 +8561,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "testrepo12"
-      ],
+      "tags": ["testrepo12"],
       "roles": {
         "amitbajaj": {
           "account_id": "amitbajaj",
@@ -9349,9 +8603,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "amitbajaj": {
           "account_id": "amitbajaj",
@@ -9393,9 +8645,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "reanalysis data"
-      ],
+      "tags": ["reanalysis data"],
       "roles": {
         "pfrost": {
           "account_id": "pfrost",
@@ -9437,14 +8687,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "geoparquet",
-        "geospatial",
-        "places",
-        "poi",
-        "businesses",
-        "vector"
-      ],
+      "tags": ["geoparquet", "geospatial", "places", "poi", "businesses", "vector"],
       "roles": {
         "fused": {
           "account_id": "fused",
@@ -9591,14 +8834,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "canada",
-        "natural gas",
-        "imports",
-        "exports",
-        "cer",
-        "neb"
-      ],
+      "tags": ["canada", "natural gas", "imports", "exports", "cer", "neb"],
       "roles": {
         "ecovoice": {
           "account_id": "ecovoice",
@@ -9640,14 +8876,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "canada",
-        "solar maps",
-        "photovoltaic",
-        "insolation",
-        "solar",
-        ""
-      ],
+      "tags": ["canada", "solar maps", "photovoltaic", "insolation", "solar", ""],
       "roles": {
         "ecovoice": {
           "account_id": "ecovoice",
@@ -9689,9 +8918,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "ecovoice": {
           "account_id": "ecovoice",
@@ -9733,9 +8960,7 @@
         }
       },
       "primary_mirror": "aws-opendata-ap-south-1",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "ecovoice": {
           "account_id": "ecovoice",
@@ -9777,9 +9002,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "ecovoice": {
           "account_id": "ecovoice",
@@ -9821,11 +9044,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "nsta",
-        "open data",
-        "energy transition"
-      ],
+      "tags": ["nsta", "open data", "energy transition"],
       "roles": {
         "nsta": {
           "account_id": "nsta",
@@ -9867,9 +9086,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "maxar": {
           "account_id": "maxar",
@@ -9911,12 +9128,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "hls",
-        "multitemporal",
-        "cloud",
-        "imputation"
-      ],
+      "tags": ["hls", "multitemporal", "cloud", "imputation"],
       "roles": {
         "clarkcga": {
           "account_id": "clarkcga",
@@ -9958,13 +9170,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "crop type",
-        "land cover",
-        "segmentation",
-        "hls",
-        "agriculture"
-      ],
+      "tags": ["crop type", "land cover", "segmentation", "hls", "agriculture"],
       "roles": {
         "clarkcga": {
           "account_id": "clarkcga",
@@ -10056,10 +9262,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "geoparquet",
-        "weather"
-      ],
+      "tags": ["geoparquet", "weather"],
       "roles": {
         "ktyle": {
           "account_id": "ktyle",
@@ -10101,9 +9304,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "jbusecke": {
           "account_id": "jbusecke",
@@ -10145,9 +9346,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "jcushman": {
           "account_id": "jcushman",
@@ -10189,9 +9388,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "jcushman": {
           "account_id": "jcushman",
@@ -10233,11 +9430,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "ocean",
-        "bathymetry",
-        "cloud optimised geotiff"
-      ],
+      "tags": ["ocean", "bathymetry", "cloud optimised geotiff"],
       "roles": {
         "alexgleith": {
           "account_id": "alexgleith",
@@ -10279,10 +9472,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "dem",
-        "cloud optimised geotiff"
-      ],
+      "tags": ["dem", "cloud optimised geotiff"],
       "roles": {
         "alexgleith": {
           "account_id": "alexgleith",
@@ -10324,11 +9514,7 @@
         }
       },
       "primary_mirror": "aws-opendata-ap-south-1",
-      "tags": [
-        "Japan",
-        "Topographic Map",
-        "Meiji era"
-      ],
+      "tags": ["Japan", "Topographic Map", "Meiji era"],
       "roles": {
         "wata909": {
           "account_id": "wata909",
@@ -10370,12 +9556,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "weather",
-        "climate",
-        "atmosphere",
-        "zarr"
-      ],
+      "tags": ["weather", "climate", "atmosphere", "zarr"],
       "roles": {
         "dynamical": {
           "account_id": "dynamical",
@@ -10417,9 +9598,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "dynamical": {
           "account_id": "dynamical",
@@ -10461,12 +9640,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "weather",
-        "climate",
-        "atmosphere",
-        "zarr"
-      ],
+      "tags": ["weather", "climate", "atmosphere", "zarr"],
       "roles": {
         "dynamical": {
           "account_id": "dynamical",
@@ -10508,12 +9682,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "weather",
-        "climate",
-        "atmosphere",
-        "zarr"
-      ],
+      "tags": ["weather", "climate", "atmosphere", "zarr"],
       "roles": {
         "dynamical": {
           "account_id": "dynamical",
@@ -10555,12 +9724,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "weather",
-        "climate",
-        "atmosphere",
-        "zarr"
-      ],
+      "tags": ["weather", "climate", "atmosphere", "zarr"],
       "roles": {
         "dynamical": {
           "account_id": "dynamical",
@@ -10602,9 +9766,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "clay": {
           "account_id": "clay",
@@ -10646,13 +9808,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "remote sensing",
-        "earth",
-        "ai",
-        "foundational model",
-        "embedding"
-      ],
+      "tags": ["remote sensing", "earth", "ai", "foundational model", "embedding"],
       "roles": {
         "clay": {
           "account_id": "clay",
@@ -10694,12 +9850,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "clay",
-        "AI",
-        "naip",
-        "foundational model"
-      ],
+      "tags": ["clay", "AI", "naip", "foundational model"],
       "roles": {
         "clay": {
           "account_id": "clay",
@@ -10741,13 +9892,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "clay",
-        "AI",
-        "naip",
-        "foundational model",
-        "embeddings"
-      ],
+      "tags": ["clay", "AI", "naip", "foundational model", "embeddings"],
       "roles": {
         "clay": {
           "account_id": "clay",
@@ -10789,11 +9934,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "clay",
-        "Sentinel2",
-        "embeddings"
-      ],
+      "tags": ["clay", "Sentinel2", "embeddings"],
       "roles": {
         "clay": {
           "account_id": "clay",
@@ -11038,9 +10179,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "belgium wallonia fiboa field boundaries geoparquet vector pmtiles"
-      ],
+      "tags": ["belgium wallonia fiboa field boundaries geoparquet vector pmtiles"],
       "roles": {
         "fiboa": {
           "account_id": "fiboa",
@@ -11082,12 +10221,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "brazil",
-        "geoparquet",
-        "fiboa",
-        "field boundaries"
-      ],
+      "tags": ["brazil", "geoparquet", "fiboa", "field boundaries"],
       "roles": {
         "fiboa": {
           "account_id": "fiboa",
@@ -11129,14 +10263,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "croatia",
-        "fiboa",
-        "field boundaries",
-        "geoparquet",
-        "vector",
-        "pmtiles"
-      ],
+      "tags": ["croatia", "fiboa", "field boundaries", "geoparquet", "vector", "pmtiles"],
       "roles": {
         "fiboa": {
           "account_id": "fiboa",
@@ -11178,15 +10305,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "czech",
-        "fiboa",
-        "field boundaries",
-        "plodiny",
-        "geoparquet",
-        "vector",
-        "pmtiles"
-      ],
+      "tags": ["czech", "fiboa", "field boundaries", "plodiny", "geoparquet", "vector", "pmtiles"],
       "roles": {
         "fiboa": {
           "account_id": "fiboa",
@@ -11228,15 +10347,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "germany",
-        "bb",
-        "fiboa",
-        "field boundaries",
-        "geoparquet",
-        "vector",
-        "pmtiles"
-      ],
+      "tags": ["germany", "bb", "fiboa", "field boundaries", "geoparquet", "vector", "pmtiles"],
       "roles": {
         "fiboa": {
           "account_id": "fiboa",
@@ -11278,15 +10389,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "germany",
-        "mv",
-        "fiboa",
-        "field boundaries",
-        "geoparquet",
-        "vector",
-        "pmtiles"
-      ],
+      "tags": ["germany", "mv", "fiboa", "field boundaries", "geoparquet", "vector", "pmtiles"],
       "roles": {
         "fiboa": {
           "account_id": "fiboa",
@@ -11380,15 +10483,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "germany",
-        "nrw",
-        "fiboa",
-        "field boundaries",
-        "vector",
-        "geoparquet",
-        "pmtiles"
-      ],
+      "tags": ["germany", "nrw", "fiboa", "field boundaries", "vector", "geoparquet", "pmtiles"],
       "roles": {
         "fiboa": {
           "account_id": "fiboa",
@@ -11430,15 +10525,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "germany",
-        "sax",
-        "fiboa",
-        "field boundaries",
-        "geoparquet",
-        "vector",
-        "pmtiles"
-      ],
+      "tags": ["germany", "sax", "fiboa", "field boundaries", "geoparquet", "vector", "pmtiles"],
       "roles": {
         "fiboa": {
           "account_id": "fiboa",
@@ -11480,15 +10567,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "germany",
-        "sh",
-        "fiboa",
-        "field boundaries",
-        "vector",
-        "geoparquet",
-        "pmtiles"
-      ],
+      "tags": ["germany", "sh", "fiboa", "field boundaries", "vector", "geoparquet", "pmtiles"],
       "roles": {
         "fiboa": {
           "account_id": "fiboa",
@@ -11530,15 +10609,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "germany",
-        "sl",
-        "fiboa",
-        "field boundaries",
-        "geoparquet",
-        "vector",
-        "pmtiles"
-      ],
+      "tags": ["germany", "sl", "fiboa", "field boundaries", "geoparquet", "vector", "pmtiles"],
       "roles": {
         "fiboa": {
           "account_id": "fiboa",
@@ -11580,15 +10651,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "germany",
-        "th",
-        "fiboa",
-        "field boundaries",
-        "geoparquet",
-        "vector",
-        "pmtiles"
-      ],
+      "tags": ["germany", "th", "fiboa", "field boundaries", "geoparquet", "vector", "pmtiles"],
       "roles": {
         "fiboa": {
           "account_id": "fiboa",
@@ -11630,9 +10693,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "denmark\nfiboa\nfield boundaries\ngeoparquet\nvector\npmtiles"
-      ],
+      "tags": ["denmark\nfiboa\nfield boundaries\ngeoparquet\nvector\npmtiles"],
       "roles": {
         "fiboa": {
           "account_id": "fiboa",
@@ -11674,14 +10735,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "latvia",
-        "fiboa",
-        "field boundaries",
-        "geoparquet",
-        "pmtiles",
-        "eurocrops"
-      ],
+      "tags": ["latvia", "fiboa", "field boundaries", "geoparquet", "pmtiles", "eurocrops"],
       "roles": {
         "fiboa": {
           "account_id": "fiboa",
@@ -11775,15 +10829,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "aragon",
-        "spain",
-        "fiboa",
-        "field boundaries",
-        "geoparquet",
-        "vector",
-        "pmtiles"
-      ],
+      "tags": ["aragon", "spain", "fiboa", "field boundaries", "geoparquet", "vector", "pmtiles"],
       "roles": {
         "fiboa": {
           "account_id": "fiboa",
@@ -12436,14 +11482,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "estonia",
-        "fiboa",
-        "field boundaries",
-        "geoparquet",
-        "vector",
-        "pmtiles"
-      ],
+      "tags": ["estonia", "fiboa", "field boundaries", "geoparquet", "vector", "pmtiles"],
       "roles": {
         "fiboa": {
           "account_id": "fiboa",
@@ -12485,14 +11524,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "finland",
-        "fiboa",
-        "field boundaries",
-        "geoparquet",
-        "vector",
-        "pmtiles"
-      ],
+      "tags": ["finland", "fiboa", "field boundaries", "geoparquet", "vector", "pmtiles"],
       "roles": {
         "fiboa": {
           "account_id": "fiboa",
@@ -12534,13 +11566,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "france",
-        "fiboa",
-        "field boundaries",
-        "geoparquet",
-        "vector"
-      ],
+      "tags": ["france", "fiboa", "field boundaries", "geoparquet", "vector"],
       "roles": {
         "fiboa": {
           "account_id": "fiboa",
@@ -12582,9 +11608,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "ireland fiboa field boundarie geoparquet vector pmtiles"
-      ],
+      "tags": ["ireland fiboa field boundarie geoparquet vector pmtiles"],
       "roles": {
         "fiboa": {
           "account_id": "fiboa",
@@ -12728,14 +11752,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "latvia",
-        "fiboa",
-        "field boundaries",
-        "geoparquet",
-        "pmtiles",
-        "eurocrops"
-      ],
+      "tags": ["latvia", "fiboa", "field boundaries", "geoparquet", "pmtiles", "eurocrops"],
       "roles": {
         "fiboa": {
           "account_id": "fiboa",
@@ -12777,9 +11794,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "luxembourg fiboa field flik boundaries geoparquet vector pmtiles"
-      ],
+      "tags": ["luxembourg fiboa field flik boundaries geoparquet vector pmtiles"],
       "roles": {
         "fiboa": {
           "account_id": "fiboa",
@@ -12821,14 +11836,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "new zealand",
-        "fiboa",
-        "field boundaries",
-        "geoparquet",
-        "vector",
-        "pmtiles"
-      ],
+      "tags": ["new zealand", "fiboa", "field boundaries", "geoparquet", "vector", "pmtiles"],
       "roles": {
         "fiboa": {
           "account_id": "fiboa",
@@ -12920,13 +11928,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "netherlands",
-        "fiboa",
-        "field boundaries",
-        "geoparquet",
-        "vector"
-      ],
+      "tags": ["netherlands", "fiboa", "field boundaries", "geoparquet", "vector"],
       "roles": {
         "fiboa": {
           "account_id": "fiboa",
@@ -12968,14 +11970,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "portugal",
-        "fiboa",
-        "field boundaries",
-        "geoparquet",
-        "vector",
-        "pmtiles"
-      ],
+      "tags": ["portugal", "fiboa", "field boundaries", "geoparquet", "vector", "pmtiles"],
       "roles": {
         "fiboa": {
           "account_id": "fiboa",
@@ -13017,14 +12012,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "slovakia",
-        "fiboa",
-        "field boundaries",
-        "geoparquet",
-        "vector",
-        "pmtiles"
-      ],
+      "tags": ["slovakia", "fiboa", "field boundaries", "geoparquet", "vector", "pmtiles"],
       "roles": {
         "fiboa": {
           "account_id": "fiboa",
@@ -13066,9 +12054,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "slovenia fiboa field boundaries krms gerk geoparquet vector pmtiles"
-      ],
+      "tags": ["slovenia fiboa field boundaries krms gerk geoparquet vector pmtiles"],
       "roles": {
         "fiboa": {
           "account_id": "fiboa",
@@ -13110,13 +12096,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "slovenia",
-        "fiboa",
-        "field boundaries",
-        "geoparquet",
-        "vector"
-      ],
+      "tags": ["slovenia", "fiboa", "field boundaries", "geoparquet", "vector"],
       "roles": {
         "fiboa": {
           "account_id": "fiboa",
@@ -13158,15 +12138,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "spain",
-        "fiboa",
-        "field boundaries",
-        "sigpac",
-        "geoparquet",
-        "vector",
-        "pmtiles"
-      ],
+      "tags": ["spain", "fiboa", "field boundaries", "sigpac", "geoparquet", "vector", "pmtiles"],
       "roles": {
         "fiboa": {
           "account_id": "fiboa",
@@ -13208,14 +12180,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "sweden",
-        "fiboa",
-        "field boundaries",
-        "vector",
-        "geoparquet",
-        "pmtiles"
-      ],
+      "tags": ["sweden", "fiboa", "field boundaries", "vector", "geoparquet", "pmtiles"],
       "roles": {
         "fiboa": {
           "account_id": "fiboa",
@@ -13359,15 +12324,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "usa",
-        "fiboa",
-        "field boundaries",
-        "usda",
-        "geoparquet",
-        "vector",
-        "pmtiles"
-      ],
+      "tags": ["usa", "fiboa", "field boundaries", "usda", "geoparquet", "vector", "pmtiles"],
       "roles": {
         "fiboa": {
           "account_id": "fiboa",
@@ -13409,10 +12366,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "government",
-        "procurement"
-      ],
+      "tags": ["government", "procurement"],
       "roles": {
         "vdavez": {
           "account_id": "vdavez",
@@ -13454,9 +12408,7 @@
         }
       },
       "primary_mirror": "azure-opendata-west-europe",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "nasa": {
           "account_id": "nasa",
@@ -13498,11 +12450,7 @@
         }
       },
       "primary_mirror": "azure-opendata-west-europe",
-      "tags": [
-        "marine debris",
-        "planetscope",
-        "segmentation"
-      ],
+      "tags": ["marine debris", "planetscope", "segmentation"],
       "roles": {
         "nasa": {
           "account_id": "nasa",
@@ -13544,9 +12492,7 @@
         }
       },
       "primary_mirror": "azure-opendata-west-europe",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "nasa": {
           "account_id": "nasa",
@@ -13588,11 +12534,7 @@
         }
       },
       "primary_mirror": "azure-opendata-west-europe",
-      "tags": [
-        "tropical storm",
-        "regression",
-        "goes"
-      ],
+      "tags": ["tropical storm", "regression", "goes"],
       "roles": {
         "nasa": {
           "account_id": "nasa",
@@ -13634,13 +12576,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "property data",
-        "energy efficiency",
-        "vector",
-        "geoparquet",
-        "uk"
-      ],
+      "tags": ["property data", "energy efficiency", "vector", "geoparquet", "uk"],
       "roles": {
         "addresscloud": {
           "account_id": "addresscloud",
@@ -13682,9 +12618,7 @@
         }
       },
       "primary_mirror": "azure-opendata-west-europe",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "radiantearth": {
           "account_id": "radiantearth",
@@ -13726,9 +12660,7 @@
         }
       },
       "primary_mirror": "azure-opendata-west-europe",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "radiantearth": {
           "account_id": "radiantearth",
@@ -13770,9 +12702,7 @@
         }
       },
       "primary_mirror": "azure-opendata-west-europe",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "radiantearth": {
           "account_id": "radiantearth",
@@ -13814,9 +12744,7 @@
         }
       },
       "primary_mirror": "azure-opendata-west-europe",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "radiantearth": {
           "account_id": "radiantearth",
@@ -13858,12 +12786,7 @@
         }
       },
       "primary_mirror": "azure-opendata-west-europe",
-      "tags": [
-        "crop type",
-        "agriculture",
-        "segmentation",
-        "sentinel-2"
-      ],
+      "tags": ["crop type", "agriculture", "segmentation", "sentinel-2"],
       "roles": {
         "radiantearth": {
           "account_id": "radiantearth",
@@ -13905,11 +12828,7 @@
         }
       },
       "primary_mirror": "azure-opendata-west-europe",
-      "tags": [
-        "sentinel-2",
-        "segmentation",
-        "cloud"
-      ],
+      "tags": ["sentinel-2", "segmentation", "cloud"],
       "roles": {
         "radiantearth": {
           "account_id": "radiantearth",
@@ -13951,13 +12870,7 @@
         }
       },
       "primary_mirror": "azure-opendata-west-europe",
-      "tags": [
-        "land cover",
-        "segmentation",
-        "sentinel-1",
-        "sentinel-2",
-        "landsat 8"
-      ],
+      "tags": ["land cover", "segmentation", "sentinel-1", "sentinel-2", "landsat 8"],
       "roles": {
         "radiantearth": {
           "account_id": "radiantearth",
@@ -13999,13 +12912,7 @@
         }
       },
       "primary_mirror": "azure-opendata-west-europe",
-      "tags": [
-        "crop type",
-        "segmentation",
-        "sentinel-2",
-        "sentinel-1",
-        "agriculture"
-      ],
+      "tags": ["crop type", "segmentation", "sentinel-2", "sentinel-1", "agriculture"],
       "roles": {
         "radiantearth": {
           "account_id": "radiantearth",
@@ -14047,9 +12954,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "radiantearth": {
           "account_id": "radiantearth",
@@ -14091,11 +12996,7 @@
         }
       },
       "primary_mirror": "azure-opendata-west-europe",
-      "tags": [
-        "agriculture",
-        "planetscope",
-        "object detection"
-      ],
+      "tags": ["agriculture", "planetscope", "object detection"],
       "roles": {
         "cgiar": {
           "account_id": "cgiar",
@@ -14137,14 +13038,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "vector",
-        "agriculture",
-        "geoparquet",
-        "usda",
-        "county",
-        "state"
-      ],
+      "tags": ["vector", "agriculture", "geoparquet", "usda", "county", "state"],
       "roles": {
         "streambatch": {
           "account_id": "streambatch",
@@ -14238,10 +13132,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "geoparquet",
-        "overture"
-      ],
+      "tags": ["geoparquet", "overture"],
       "roles": {
         "jwasserman": {
           "account_id": "jwasserman",
@@ -14283,12 +13174,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "agriculture",
-        "field boundaries",
-        "ftw",
-        "fieldsoftheworld"
-      ],
+      "tags": ["agriculture", "field boundaries", "ftw", "fieldsoftheworld"],
       "roles": {
         "snehalchaudhari": {
           "account_id": "snehalchaudhari",
@@ -14330,9 +13216,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "snehalchaudhari": {
           "account_id": "snehalchaudhari",
@@ -14374,9 +13258,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "mdsumner": {
           "account_id": "mdsumner",
@@ -14418,9 +13300,7 @@
         }
       },
       "primary_mirror": "aws-opendata-ap-south-1",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "mdsumner": {
           "account_id": "mdsumner",
@@ -14462,9 +13342,7 @@
         }
       },
       "primary_mirror": "aws-opendata-ap-south-1",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "mdsumner": {
           "account_id": "mdsumner",
@@ -14506,9 +13384,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "earthgenome": {
           "account_id": "earthgenome",
@@ -14550,9 +13426,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "earthgenome": {
           "account_id": "earthgenome",
@@ -14594,9 +13468,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "earthgenome": {
           "account_id": "earthgenome",
@@ -14638,13 +13510,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "sentinel2",
-        "geospatial",
-        "raster",
-        "global",
-        "cog"
-      ],
+      "tags": ["sentinel2", "geospatial", "raster", "global", "cog"],
       "roles": {
         "earthgenome": {
           "account_id": "earthgenome",
@@ -14686,12 +13552,7 @@
         }
       },
       "primary_mirror": "azure-opendata-west-europe",
-      "tags": [
-        "crop type",
-        "segmentation",
-        "sentinel-2",
-        "agriculture"
-      ],
+      "tags": ["crop type", "segmentation", "sentinel-2", "agriculture"],
       "roles": {
         "technoserve": {
           "account_id": "technoserve",
@@ -14733,9 +13594,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "priyald17": {
           "account_id": "priyald17",
@@ -14777,9 +13636,7 @@
         }
       },
       "primary_mirror": "azure-opendata-west-europe",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "esa": {
           "account_id": "esa",
@@ -14821,13 +13678,7 @@
         }
       },
       "primary_mirror": "azure-opendata-west-europe",
-      "tags": [
-        "sentinel-1",
-        "sentinel-2",
-        "sar",
-        "flood detection",
-        "image classification"
-      ],
+      "tags": ["sentinel-1", "sentinel-2", "sar", "flood detection", "image classification"],
       "roles": {
         "esa": {
           "account_id": "esa",
@@ -14918,11 +13769,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "forest carbon",
-        "geoparquet",
-        "fiboa"
-      ],
+      "tags": ["forest carbon", "geoparquet", "fiboa"],
       "roles": {
         "cecil": {
           "account_id": "cecil",
@@ -14964,9 +13811,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "kbgg": {
           "account_id": "kbgg",
@@ -15008,9 +13853,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "kbgg": {
           "account_id": "kbgg",
@@ -15052,9 +13895,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "kbgg": {
           "account_id": "kbgg",
@@ -15096,10 +13937,7 @@
         }
       },
       "primary_mirror": "azure-opendata-west-europe",
-      "tags": [
-        "building footprints",
-        "segmentation"
-      ],
+      "tags": ["building footprints", "segmentation"],
       "roles": {
         "open-cities": {
           "account_id": "open-cities",
@@ -15141,9 +13979,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "fieldscapes"
-      ],
+      "tags": ["fieldscapes"],
       "roles": {
         "aghosh57": {
           "account_id": "aghosh57",
@@ -15185,11 +14021,7 @@
         }
       },
       "primary_mirror": "azure-opendata-west-europe",
-      "tags": [
-        "segmentation",
-        "sentinel-2",
-        "marine debris"
-      ],
+      "tags": ["segmentation", "sentinel-2", "marine debris"],
       "roles": {
         "ntua": {
           "account_id": "ntua",
@@ -15231,12 +14063,7 @@
         }
       },
       "primary_mirror": "azure-opendata-west-europe",
-      "tags": [
-        "agriculture",
-        "crop type",
-        "segmentation",
-        "sentinel-2"
-      ],
+      "tags": ["agriculture", "crop type", "segmentation", "sentinel-2"],
       "roles": {
         "umd": {
           "account_id": "umd",
@@ -15278,11 +14105,7 @@
         }
       },
       "primary_mirror": "azure-opendata-west-europe",
-      "tags": [
-        "building footprints",
-        "object detection",
-        "segmentation"
-      ],
+      "tags": ["building footprints", "object detection", "segmentation"],
       "roles": {
         "ramp": {
           "account_id": "ramp",
@@ -15324,9 +14147,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "lidar"
-      ],
+      "tags": ["lidar"],
       "roles": {
         "jed": {
           "account_id": "jed",
@@ -15368,9 +14189,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "jed": {
           "account_id": "jed",
@@ -15412,9 +14231,7 @@
         }
       },
       "primary_mirror": "aws-opendata-ap-south-1",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "jed": {
           "account_id": "jed",
@@ -15456,9 +14273,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "jed": {
           "account_id": "jed",
@@ -15500,9 +14315,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "zarr"
-      ],
+      "tags": ["zarr"],
       "roles": {
         "cworthy": {
           "account_id": "cworthy",
@@ -15644,13 +14457,7 @@
         }
       },
       "primary_mirror": "azure-opendata-west-europe",
-      "tags": [
-        "sentinel-1",
-        "landsat 8",
-        "sar",
-        "live fuel moisture",
-        "wildfire"
-      ],
+      "tags": ["sentinel-1", "landsat 8", "sar", "live fuel moisture", "wildfire"],
       "roles": {
         "stanford": {
           "account_id": "stanford",
@@ -15692,9 +14499,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "netherlands fiboa field boundaries aan geoparquet vector pmtiles"
-      ],
+      "tags": ["netherlands fiboa field boundaries aan geoparquet vector pmtiles"],
       "roles": {
         "ivor": {
           "account_id": "ivor",
@@ -15736,12 +14541,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "opendata",
-        "boundaries",
-        "admin",
-        "geoparquet"
-      ],
+      "tags": ["opendata", "boundaries", "admin", "geoparquet"],
       "roles": {
         "ordnancesurvey": {
           "account_id": "ordnancesurvey",
@@ -15783,14 +14583,7 @@
         }
       },
       "primary_mirror": "azure-opendata-west-europe",
-      "tags": [
-        "segmentation",
-        "sentinel-2",
-        "sentinel-1",
-        "sar",
-        "cloud",
-        "flood detection"
-      ],
+      "tags": ["segmentation", "sentinel-2", "sentinel-1", "sar", "cloud", "flood detection"],
       "roles": {
         "c2sms": {
           "account_id": "c2sms",
@@ -15832,12 +14625,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "remote sensing",
-        "earth",
-        "ai",
-        "foundational model"
-      ],
+      "tags": ["remote sensing", "earth", "ai", "foundational model"],
       "roles": {
         "brunosan": {
           "account_id": "brunosan",
@@ -15879,9 +14667,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "mlcommons": {
           "account_id": "mlcommons",
@@ -15974,9 +14760,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "#geospatial #ksa #riyadh #geoparquet #places #pois"
-      ],
+      "tags": ["#geospatial #ksa #riyadh #geoparquet #places #pois"],
       "roles": {
         "sarahgamal": {
           "account_id": "sarahgamal",
@@ -16018,9 +14802,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "#riyadh #satellite #rgb #cog #2024"
-      ],
+      "tags": ["#riyadh #satellite #rgb #cog #2024"],
       "roles": {
         "sarahgamal": {
           "account_id": "sarahgamal",
@@ -16062,9 +14844,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "idi": {
           "account_id": "idi",
@@ -16106,9 +14886,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "idi": {
           "account_id": "idi",
@@ -16150,10 +14928,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "groundwater quality",
-        "wildfire"
-      ],
+      "tags": ["groundwater quality", "wildfire"],
       "roles": {
         "saraka": {
           "account_id": "saraka",
@@ -16195,9 +14970,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "saraka": {
           "account_id": "saraka",
@@ -16239,10 +15012,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "geoparquet",
-        "euhvd"
-      ],
+      "tags": ["geoparquet", "euhvd"],
       "roles": {
         "sgeorg": {
           "account_id": "sgeorg",
@@ -16284,13 +15054,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "geoparquet",
-        "geocoding",
-        "cloud-native",
-        "duckdb",
-        "lowcoder"
-      ],
+      "tags": ["geoparquet", "geocoding", "cloud-native", "duckdb", "lowcoder"],
       "roles": {
         "youssef-harby": {
           "account_id": "youssef-harby",
@@ -16332,12 +15096,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "Copernicus",
-        "EU",
-        "EGMS",
-        "Cloud-Native"
-      ],
+      "tags": ["Copernicus", "EU", "EGMS", "Cloud-Native"],
       "roles": {
         "youssef-harby": {
           "account_id": "youssef-harby",
@@ -16379,13 +15138,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "overture maps",
-        "geoparquet",
-        "stac",
-        "catalog",
-        "metadata"
-      ],
+      "tags": ["overture maps", "geoparquet", "stac", "catalog", "metadata"],
       "roles": {
         "youssef-harby": {
           "account_id": "youssef-harby",
@@ -16427,13 +15180,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "weather",
-        "climate change",
-        "realtime",
-        "parquet",
-        "cloud native"
-      ],
+      "tags": ["weather", "climate change", "realtime", "parquet", "cloud native"],
       "roles": {
         "youssef-harby": {
           "account_id": "youssef-harby",
@@ -16529,9 +15276,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "geobharat": {
           "account_id": "geobharat",
@@ -16573,9 +15318,7 @@
         }
       },
       "primary_mirror": "azure-opendata-west-europe",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "microsoft": {
           "account_id": "microsoft",
@@ -16617,10 +15360,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "wildlife",
-        "conservation"
-      ],
+      "tags": ["wildlife", "conservation"],
       "roles": {
         "agentmorris": {
           "account_id": "agentmorris",
@@ -16662,11 +15402,7 @@
         }
       },
       "primary_mirror": "azure-opendata-west-europe",
-      "tags": [
-        "land cover",
-        "image classification",
-        "sentinel-2"
-      ],
+      "tags": ["land cover", "image classification", "sentinel-2"],
       "roles": {
         "tu-berlin": {
           "account_id": "tu-berlin",
@@ -16708,12 +15444,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "antarctica",
-        "southern ocean",
-        "species distribution model",
-        "bioregionalisation"
-      ],
+      "tags": ["antarctica", "southern ocean", "species distribution model", "bioregionalisation"],
       "roles": {
         "scar": {
           "account_id": "scar",
@@ -16755,13 +15486,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "sentinel2",
-        "rwanda",
-        "crops",
-        "land",
-        "labels"
-      ],
+      "tags": ["sentinel2", "rwanda", "crops", "land", "labels"],
       "roles": {
         "rti": {
           "account_id": "rti",
@@ -16803,12 +15528,7 @@
         }
       },
       "primary_mirror": "azure-opendata-west-europe",
-      "tags": [
-        "crop type",
-        "image classification",
-        "drone",
-        "agriculture"
-      ],
+      "tags": ["crop type", "image classification", "drone", "agriculture"],
       "roles": {
         "rti": {
           "account_id": "rti",
@@ -16850,11 +15570,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "field boundary",
-        "building footprint",
-        "sentinel-2"
-      ],
+      "tags": ["field boundary", "building footprint", "sentinel-2"],
       "roles": {
         "dnwaeze": {
           "account_id": "dnwaeze",
@@ -16896,9 +15612,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "geozarr"
-      ],
+      "tags": ["geozarr"],
       "roles": {
         "zarr": {
           "account_id": "zarr",
@@ -16940,14 +15654,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "land cover",
-        "segmentation",
-        "zarr",
-        "sentinel-1",
-        "sentinel-2",
-        "landsat 8"
-      ],
+      "tags": ["land cover", "segmentation", "zarr", "sentinel-1", "sentinel-2", "landsat 8"],
       "roles": {
         "zarr": {
           "account_id": "zarr",
@@ -16989,12 +15696,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "biodiversity",
-        "california",
-        "conservation",
-        "public-data"
-      ],
+      "tags": ["biodiversity", "california", "conservation", "public-data"],
       "roles": {
         "berkeley-dse": {
           "account_id": "berkeley-dse",
@@ -17036,10 +15738,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        "vegetation cover",
-        "COG"
-      ],
+      "tags": ["vegetation cover", "COG"],
       "roles": {
         "berkeley-dse": {
           "account_id": "berkeley-dse",
@@ -17081,9 +15780,7 @@
         }
       },
       "primary_mirror": "aws-opendata-us-west-2",
-      "tags": [
-        ""
-      ],
+      "tags": [""],
       "roles": {
         "michelle": {
           "account_id": "michelle",

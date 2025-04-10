@@ -4,7 +4,7 @@ import { CONFIG } from '@/lib/config';
 export const metadata: Metadata = {
   title: {
     default: 'Source Cooperative',
-    template: '%s | Source Cooperative'
+    template: '%s | Source Cooperative',
   },
   description: 'A platform for sharing and discovering open data',
   openGraph: {
@@ -38,4 +38,4 @@ export const metadata: Metadata = {
   verification: {
     google: CONFIG.google.siteVerification,
   },
-}; 
+};

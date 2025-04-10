@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import { Container, Box, Heading, Text } from "@radix-ui/themes";
-import { OnboardingForm } from "@/components/features/onboarding/OnboardingForm";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
-import { useSession } from "@ory/elements-react/client";
-import { getAccountId } from "@/hooks/useAccount";
+import { Container, Box, Heading, Text } from '@radix-ui/themes';
+import { OnboardingForm } from '@/components/features/onboarding/OnboardingForm';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
+import { useSession } from '@ory/elements-react/client';
+import { getAccountId } from '@/hooks/useAccount';
 
 export function OnboardingPageContent() {
   const { session, isLoading } = useSession();
@@ -16,7 +16,7 @@ export function OnboardingPageContent() {
   useEffect(() => {
     if (!isLoading) {
       if (!session) {
-        router.push("/auth?flow=login");
+        router.push('/auth?flow=login');
       } else {
         const accountId = getAccountId(session);
         if (accountId) {
@@ -42,8 +42,7 @@ export function OnboardingPageContent() {
         </Heading>
 
         <Text size="2" color="gray" mb="6">
-          You&apos;re almost done! Choose a username for your account and tell
-          us your name.
+          You&apos;re almost done! Choose a username for your account and tell us your name.
         </Text>
 
         <OnboardingForm />

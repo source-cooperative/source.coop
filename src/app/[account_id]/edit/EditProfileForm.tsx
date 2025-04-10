@@ -27,19 +27,19 @@ interface EditProfileFormProps {
 }
 
 // Custom component for website input with inline remove button
-function WebsiteInputField({ 
-  value, 
-  onChange, 
-  onRemove, 
-  showRemoveButton 
-}: { 
-  value: string; 
-  onChange: (value: string) => void; 
-  onRemove?: () => void; 
+function WebsiteInputField({
+  value,
+  onChange,
+  onRemove,
+  showRemoveButton,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  onRemove?: () => void;
   showRemoveButton: boolean;
 }) {
   const [isHovering, setIsHovering] = useState(false);
-  
+
   return (
     <Flex align="center" gap="2">
       <Box style={{ flexGrow: 1 }}>
@@ -47,7 +47,7 @@ function WebsiteInputField({
           type="url"
           value={value}
           placeholder="example.com"
-          onChange={(e) => onChange(e.target.value)}
+          onChange={e => onChange(e.target.value)}
           size="3"
           variant="surface"
           style={{ width: '100%' }}
@@ -55,18 +55,18 @@ function WebsiteInputField({
       </Box>
       {showRemoveButton && onRemove && (
         <Tooltip content="Remove website">
-          <Box 
-            style={{ 
+          <Box
+            style={{
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              padding: '6px'
-            }} 
+              padding: '6px',
+            }}
             onClick={onRemove}
             onMouseEnter={() => setIsHovering(true)}
             onMouseLeave={() => setIsHovering(false)}
           >
-            <TrashIcon color={isHovering ? "tomato" : "gray"} width="24" height="24" />
+            <TrashIcon color={isHovering ? 'tomato' : 'gray'} width="24" height="24" />
           </Box>
         </Tooltip>
       )}
@@ -82,8 +82,13 @@ export function EditProfileForm({ account: initialAccount }: EditProfileFormProp
     name: initialAccount.name,
     email: initialAccount.emails?.find(email => email.is_primary)?.address || '',
     description: initialAccount.metadata_public.bio,
-    orcid: initialAccount.type === 'individual' ? (initialAccount as IndividualAccount).metadata_public.orcid : undefined,
-    websites: initialAccount.metadata_public.domains?.map(domain => ({ url: domain.domain })) || [{ url: '' }]
+    orcid:
+      initialAccount.type === 'individual'
+        ? (initialAccount as IndividualAccount).metadata_public.orcid
+        : undefined,
+    websites: initialAccount.metadata_public.domains?.map(domain => ({ url: domain.domain })) || [
+      { url: '' },
+    ],
   });
 
   const handleSubmit = async (_data: Record<string, any>) => {
@@ -94,12 +99,12 @@ export function EditProfileForm({ account: initialAccount }: EditProfileFormProp
       const validWebsites = formData.websites
         .map(website => {
           if (!website.url || website.url.trim() === '') return null;
-          
+
           let processedUrl = website.url;
           if (!processedUrl.startsWith('http://') && !processedUrl.startsWith('https://')) {
             processedUrl = `https://${processedUrl}`;
           }
-          
+
           return { url: processedUrl };
         })
         .filter(Boolean) as Website[];
@@ -114,10 +119,10 @@ export function EditProfileForm({ account: initialAccount }: EditProfileFormProp
           domains: validWebsites.map(website => ({
             domain: new URL(website.url).hostname,
             status: 'unverified',
-            created_at: new Date().toISOString()
-          }))
+            created_at: new Date().toISOString(),
+          })),
         },
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       };
 
       const response = await fetch(`/api/accounts/${initialAccount.account_id}`, {
@@ -143,21 +148,21 @@ export function EditProfileForm({ account: initialAccount }: EditProfileFormProp
   const handleWebsiteChange = (index: number, url: string) => {
     setFormData(prev => ({
       ...prev,
-      websites: prev.websites.map((website, i) => i === index ? { url } : website)
+      websites: prev.websites.map((website, i) => (i === index ? { url } : website)),
     }));
   };
 
   const addWebsite = () => {
     setFormData(prev => ({
       ...prev,
-      websites: [...prev.websites, { url: '' }]
+      websites: [...prev.websites, { url: '' }],
     }));
   };
 
   const removeWebsite = (index: number) => {
     setFormData(prev => ({
       ...prev,
-      websites: prev.websites.filter((_, i) => i !== index)
+      websites: prev.websites.filter((_, i) => i !== index),
     }));
   };
 
@@ -171,7 +176,7 @@ export function EditProfileForm({ account: initialAccount }: EditProfileFormProp
       defaultValue: formData.name,
       validation: { minLength: 2 },
       description: 'This is the name that will be displayed on your profile',
-      onChange: (value) => setFormData(prev => ({ ...prev, name: value }))
+      onChange: value => setFormData(prev => ({ ...prev, name: value })),
     },
     {
       name: 'email',
@@ -181,41 +186,52 @@ export function EditProfileForm({ account: initialAccount }: EditProfileFormProp
       placeholder: 'you@example.com',
       defaultValue: formData.email,
       validation: {
-        pattern: '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$'
+        pattern: '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$',
       },
-      description: initialAccount.type === 'individual' 
-        ? 'Your primary email address'
-        : 'Contact email for your organization',
-      onChange: (value) => setFormData(prev => ({ ...prev, email: value }))
+      description:
+        initialAccount.type === 'individual'
+          ? 'Your primary email address'
+          : 'Contact email for your organization',
+      onChange: value => setFormData(prev => ({ ...prev, email: value })),
     },
     {
       name: 'description',
       label: initialAccount.type === 'individual' ? 'Bio' : 'Description',
       type: 'textarea' as FormFieldType,
-      placeholder: initialAccount.type === 'individual' ? 'Tell us about yourself' : 'Tell us about your organization',
+      placeholder:
+        initialAccount.type === 'individual'
+          ? 'Tell us about yourself'
+          : 'Tell us about your organization',
       defaultValue: formData.description,
-      description: initialAccount.type === 'individual' 
-        ? 'A brief description of yourself or your work (220 characters maximum)'
-        : 'A brief description of your organization (220 characters maximum)',
+      description:
+        initialAccount.type === 'individual'
+          ? 'A brief description of yourself or your work (220 characters maximum)'
+          : 'A brief description of your organization (220 characters maximum)',
       validation: { maxLength: 220 },
       style: { height: '7.4rem' },
-      onChange: (value) => setFormData(prev => ({ ...prev, description: value }))
+      onChange: value => setFormData(prev => ({ ...prev, description: value })),
     },
-    ...(initialAccount.type === 'individual' ? [{
-      name: 'orcid',
-      label: 'ORCID ID',
-      type: 'text' as FormFieldType,
-      placeholder: '0000-0002-1825-0097',
-      defaultValue: formData.orcid,
-      onChange: (value: string) => setFormData(prev => ({ ...prev, orcid: value }))
-    }] : [])
+    ...(initialAccount.type === 'individual'
+      ? [
+          {
+            name: 'orcid',
+            label: 'ORCID ID',
+            type: 'text' as FormFieldType,
+            placeholder: '0000-0002-1825-0097',
+            defaultValue: formData.orcid,
+            onChange: (value: string) => setFormData(prev => ({ ...prev, orcid: value })),
+          },
+        ]
+      : []),
   ];
 
   return (
     <Container size="2">
       <Box className="mx-auto max-w-md">
         <Box mb="5">
-          <Text size="6" weight="bold">Edit Profile</Text>
+          <Text size="6" weight="bold">
+            Edit Profile
+          </Text>
         </Box>
 
         <FormWrapper
@@ -228,13 +244,15 @@ export function EditProfileForm({ account: initialAccount }: EditProfileFormProp
         />
 
         <Box mt="5" mb="4">
-          <Text size="3" weight="medium" mb="2">Websites</Text>
+          <Text size="3" weight="medium" mb="2">
+            Websites
+          </Text>
           <Flex direction="column" gap="3">
             {formData.websites.map((website, index) => (
               <Box key={`website-${index}`}>
                 <WebsiteInputField
                   value={website.url}
-                  onChange={(value) => handleWebsiteChange(index, value)}
+                  onChange={value => handleWebsiteChange(index, value)}
                   onRemove={() => removeWebsite(index)}
                   showRemoveButton={formData.websites.length > 1}
                 />
@@ -247,12 +265,7 @@ export function EditProfileForm({ account: initialAccount }: EditProfileFormProp
         </Box>
 
         <Box mb="4">
-          <Button
-            type="button"
-            variant="soft"
-            onClick={addWebsite}
-            size="2"
-          >
+          <Button type="button" variant="soft" onClick={addWebsite} size="2">
             Add another website
           </Button>
         </Box>
@@ -265,15 +278,11 @@ export function EditProfileForm({ account: initialAccount }: EditProfileFormProp
           >
             Cancel
           </Button>
-          <Button
-            type="button"
-            onClick={() => formRef.current?.requestSubmit()}
-            disabled={saving}
-          >
+          <Button type="button" onClick={() => formRef.current?.requestSubmit()} disabled={saving}>
             {saving ? 'Saving...' : 'Save Changes'}
           </Button>
         </Flex>
       </Box>
     </Container>
   );
-} 
+}

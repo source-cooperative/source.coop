@@ -13,7 +13,7 @@ async function cleanupTestAccounts() {
     headers: {
       // 'x-csrf-token': session.csrf_token
     },
-    credentials: 'include'
+    credentials: 'include',
   });
 
   const accounts = await response.json();
@@ -22,13 +22,13 @@ async function cleanupTestAccounts() {
   for (const account of accounts) {
     if (account.email.includes('test-') || account.email.includes('@example.com')) {
       console.log(`Deleting test account: ${account.account_id}`);
-      
+
       await fetch(`/api/accounts/${account.account_id}`, {
         method: 'DELETE',
         headers: {
           // 'x-csrf-token': session.csrf_token
         },
-        credentials: 'include'
+        credentials: 'include',
       });
     }
   }

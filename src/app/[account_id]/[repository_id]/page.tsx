@@ -1,6 +1,6 @@
 /**
  * Repository Page - Displays a repository and its contents
- * 
+ *
  * KEEP IT SIMPLE:
  * 1. URL params are known values (/[account_id]/[repository_id])
  * 2. Get data -> Transform if needed -> Render
@@ -29,7 +29,7 @@ interface RepositoryPageProps {
 export default async function RepositoryPage({ params }: RepositoryPageProps) {
   // Await params before destructuring as required by Next.js 15+
   const { account_id, repository_id } = await params;
-  
+
   try {
     const repository = await fetchRepository(account_id, repository_id);
     if (!repository) {
@@ -41,7 +41,7 @@ export default async function RepositoryPage({ params }: RepositoryPageProps) {
       account_id,
       repository_id,
       object_path: '',
-      prefix: ''
+      prefix: '',
     });
 
     // Transform storage objects to repository objects
@@ -57,17 +57,16 @@ export default async function RepositoryPage({ params }: RepositoryPageProps) {
         created_at: obj.created_at || new Date().toISOString(),
         updated_at: obj.updated_at || new Date().toISOString(),
         checksum: obj.checksum || '',
-        metadata: obj.metadata || {}
+        metadata: obj.metadata || {},
       }));
 
     // Check for README.md file
-    const readmeFile = repositoryObjects.find(obj => 
-      obj.path.toLowerCase() === 'readme.md' || 
-      obj.path.toLowerCase() === 'readme'
+    const readmeFile = repositoryObjects.find(
+      obj => obj.path.toLowerCase() === 'readme.md' || obj.path.toLowerCase() === 'readme'
     );
 
     let readmeContent = '';
-    
+
     // If README.md exists, fetch its content
     if (readmeFile) {
       try {
@@ -75,9 +74,9 @@ export default async function RepositoryPage({ params }: RepositoryPageProps) {
         const readmeResult = await storageClient.getObject({
           account_id,
           repository_id,
-          object_path: readmeFile.path
+          object_path: readmeFile.path,
         });
-        
+
         // Convert buffer to string
         readmeContent = readmeResult.data.toString('utf-8');
       } catch (error) {
@@ -89,13 +88,9 @@ export default async function RepositoryPage({ params }: RepositoryPageProps) {
     return (
       <Container>
         <RepositoryHeader repository={repository} />
-        
+
         <Box mt="4">
-          <ObjectBrowser
-            repository={repository}
-            objects={repositoryObjects}
-            initialPath=""
-          />
+          <ObjectBrowser repository={repository} objects={repositoryObjects} initialPath="" />
         </Box>
 
         {/* Display README if available */}
@@ -116,24 +111,25 @@ export default async function RepositoryPage({ params }: RepositoryPageProps) {
 export async function generateMetadata({ params }: RepositoryPageProps): Promise<Metadata> {
   // Await params before destructuring as required by Next.js 15+
   const { account_id, repository_id } = await Promise.resolve(params);
-  
+
   try {
     const repository = await fetchRepository(account_id, repository_id);
     if (!repository) {
       return {
         title: 'Repository Not Found',
-        description: 'The requested repository could not be found.'
+        description: 'The requested repository could not be found.',
       };
     }
-    
+
     return {
       title: repository.title,
-      description: repository.description || `Repository: ${repository.title}`
+      description: repository.description || `Repository: ${repository.title}`,
     };
   } catch (error) {
+    console.error('Error fetching repository metadata:', error);
     return {
       title: 'Error',
-      description: 'An error occurred while fetching the repository.'
+      description: 'An error occurred while fetching the repository.',
     };
   }
-} 
+}

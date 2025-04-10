@@ -21,4 +21,4 @@ export function DateText({ date, includeTime = false }: DateTextProps) {
   }
 
   return <span>{formatDate(date, includeTime)}</span>;
-} 
+}

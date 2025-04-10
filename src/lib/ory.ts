@@ -1,6 +1,6 @@
-import { Configuration, FrontendApi, Session, Identity } from "@ory/client";
-import { edgeConfig } from "@ory/integrations/next";
-import { CONFIG } from "./config";
+import { Configuration, FrontendApi, Session, Identity } from '@ory/client';
+import { edgeConfig } from '@ory/integrations/next';
+import { CONFIG } from './config';
 
 // Define our metadata types
 interface IdentityMetadataPublic {
@@ -25,8 +25,8 @@ export const serverOry = new FrontendApi(
     baseOptions: {
       withCredentials: true,
       headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
       },
       validateStatus: () => {
         // Accept any status code to handle redirects
@@ -36,32 +36,28 @@ export const serverOry = new FrontendApi(
   })
 );
 
-
 // Helper to update Ory identity (admin operation)
 export async function updateOryIdentity(oryId: string, data: any) {
   if (!CONFIG.auth.api.backendUrl) {
-    throw new Error("No Ory private base URL configured");
+    throw new Error('No Ory private base URL configured');
   }
 
   if (!CONFIG.auth.accessToken) {
-    throw new Error("No Ory access token configured");
+    throw new Error('No Ory access token configured');
   }
 
   // First, get the current identity to understand its structure
-  const getResponse = await fetch(
-    `${CONFIG.auth.api.backendUrl}/admin/identities/${oryId}`,
-    {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${CONFIG.auth.accessToken}`,
-        Accept: "application/json",
-      },
-    }
-  );
+  const getResponse = await fetch(`${CONFIG.auth.api.backendUrl}/admin/identities/${oryId}`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${CONFIG.auth.accessToken}`,
+      Accept: 'application/json',
+    },
+  });
 
   if (!getResponse.ok) {
     const errorText = await getResponse.text();
-    console.error("Failed to get Ory identity:", {
+    console.error('Failed to get Ory identity:', {
       status: getResponse.status,
       statusText: getResponse.statusText,
       error: errorText,
@@ -88,22 +84,19 @@ export async function updateOryIdentity(oryId: string, data: any) {
   };
 
   // Now update with the properly structured data
-  const response = await fetch(
-    `${CONFIG.auth.api.backendUrl}/admin/identities/${oryId}`,
-    {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${CONFIG.auth.accessToken}`,
-        Accept: "application/json",
-      },
-      body: JSON.stringify(updateData),
-    }
-  );
+  const response = await fetch(`${CONFIG.auth.api.backendUrl}/admin/identities/${oryId}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${CONFIG.auth.accessToken}`,
+      Accept: 'application/json',
+    },
+    body: JSON.stringify(updateData),
+  });
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error("Failed to update Ory identity:", {
+    console.error('Failed to update Ory identity:', {
       status: response.status,
       statusText: response.statusText,
       error: errorText,

@@ -64,4 +64,4 @@ export const _exampleObjects = [
     size: 0,
     hash: 'def456',
   },
-]; 
+];

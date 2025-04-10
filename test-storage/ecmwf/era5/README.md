@@ -6,12 +6,12 @@ ERA5 is the fifth generation ECMWF atmospheric reanalysis of the global climate.
 
 ## 📊 Data Products
 
-| Variable Type | Examples | Resolution | Update Frequency |
-|--------------|----------|------------|------------------|
-| Atmospheric | Temperature, Wind, Humidity | 31km | Hourly |
-| Surface | Precipitation, Radiation | 31km | Hourly |
-| Soil | Temperature, Moisture | 31km | Hourly |
-| Ocean Wave | Height, Direction | 31km | Hourly |
+| Variable Type | Examples                    | Resolution | Update Frequency |
+| ------------- | --------------------------- | ---------- | ---------------- |
+| Atmospheric   | Temperature, Wind, Humidity | 31km       | Hourly           |
+| Surface       | Precipitation, Radiation    | 31km       | Hourly           |
+| Soil          | Temperature, Moisture       | 31km       | Hourly           |
+| Ocean Wave    | Height, Direction           | 31km       | Hourly           |
 
 ## 🗂️ Repository Structure
 
@@ -49,13 +49,13 @@ Calendar: Proleptic Gregorian
 
 ## 🌍 Coverage
 
-| Parameter | Value |
-|-----------|-------|
-| Spatial | Global |
-| Temporal | 1940-present |
+| Parameter  | Value         |
+| ---------- | ------------- |
+| Spatial    | Global        |
+| Temporal   | 1940-present  |
 | Horizontal | 0.25° (~31km) |
-| Vertical | 137 levels |
-| Time Step | Hourly |
+| Vertical   | 137 levels    |
+| Time Step  | Hourly        |
 
 ## 📊 Data Statistics
 
@@ -68,6 +68,7 @@ Calendar: Proleptic Gregorian
 ## 🛠️ Usage Examples
 
 ### Python with xarray
+
 ```python
 import xarray as xr
 
@@ -86,6 +87,7 @@ daily_mean = temp.resample(time='1D').mean()
 ```
 
 ### CDO Command Line
+
 ```bash
 # Extract temperature at 850hPa
 cdo -sellevel,85000 input.nc output.nc
@@ -107,11 +109,13 @@ cdo sellonlatbox,-10,0,50,60 input.nc output.nc
 ## 📦 Data Access
 
 ### Cloud Access
+
 - AWS: `s3://era5-pds`
 - Google Cloud: `gs://gcp-public-data-era5`
 - ECMWF API: CDS Web API
 
 ### Direct Access
+
 - Copernicus Climate Data Store
 - ECMWF MARS Archive
 - Web Coverage Service (WCS)
@@ -136,4 +140,3 @@ This data is released under the [Copernicus License](https://cds.climate.coperni
 
 - [ERA5 Documentation](https://confluence.ecmwf.int/display/CKB/ERA5%3A+data+documentation)
 - [Quality Assurance](https://confluence.ecmwf.int/display/CKB/ERA5%3A+quality+assurance)
- 

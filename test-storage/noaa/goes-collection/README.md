@@ -6,13 +6,13 @@ This repository contains Level 2 products from the Advanced Baseline Imager (ABI
 
 ## 📊 Products
 
-| Product | Description | Resolution | Update Frequency |
-|---------|------------|------------|------------------|
-| Cloud Mask | Binary cloud detection | 2km | 5 min |
-| Cloud Top Height | Cloud top height in meters | 2km | 15 min |
-| Land Surface Temperature | Surface skin temperature | 2km | 5 min |
-| Sea Surface Temperature | Ocean surface temperature | 2km | 15 min |
-| Aerosol Detection | Smoke and dust detection | 2km | 5 min |
+| Product                  | Description                | Resolution | Update Frequency |
+| ------------------------ | -------------------------- | ---------- | ---------------- |
+| Cloud Mask               | Binary cloud detection     | 2km        | 5 min            |
+| Cloud Top Height         | Cloud top height in meters | 2km        | 15 min           |
+| Land Surface Temperature | Surface skin temperature   | 2km        | 5 min            |
+| Sea Surface Temperature  | Ocean surface temperature  | 2km        | 15 min           |
+| Aerosol Detection        | Smoke and dust detection   | 2km        | 5 min            |
 
 ## 🗂️ Repository Structure
 
@@ -40,22 +40,24 @@ goes-collection/
 ## 📝 Data Format
 
 All products are provided in NetCDF-4 format with the following naming convention:
+
 ```
 OR_{platform}_ABI-L2-{product}_{domain}_{start_time}.nc
 ```
 
 Example:
+
 ```
 OR_GOES18-ABI-L2-LST-FD_G18_s20240215000000_e20240215000999_c20240215001234.nc
 ```
 
 ## 🛰️ Satellite Coverage
 
-| Satellite | Position | Primary Coverage |
-|-----------|----------|------------------|
-| GOES-16 (East) | 75.2°W | Atlantic, Americas |
-| GOES-17 (West) | 137.2°W | Pacific, Western US |
-| GOES-18 (West) | 137.2°W | Pacific, Western US |
+| Satellite      | Position | Primary Coverage    |
+| -------------- | -------- | ------------------- |
+| GOES-16 (East) | 75.2°W   | Atlantic, Americas  |
+| GOES-17 (West) | 137.2°W  | Pacific, Western US |
+| GOES-18 (West) | 137.2°W  | Pacific, Western US |
 
 ## 📊 Data Statistics
 
@@ -68,6 +70,7 @@ OR_GOES18-ABI-L2-LST-FD_G18_s20240215000000_e20240215000999_c20240215001234.nc
 ## 🛠️ Usage Examples
 
 ### Python with xarray
+
 ```python
 import xarray as xr
 
@@ -90,6 +93,7 @@ qc = ds['DQF'].data
 ## 📦 Data Access
 
 ### Direct Access
+
 - HTTPS: `https://noaa-goes18.s3.amazonaws.com/`
 - AWS S3: `s3://noaa-goes18/`
 - Google Cloud: `gs://gcp-public-data-goes-18/`
@@ -114,4 +118,4 @@ This data is released under the [U.S. Government Work](https://www.usa.gov/gover
 
 - [GOES-R Series Program](https://www.goes-r.gov/)
 - [NOAA Satellite Products](https://www.ospo.noaa.gov/Products/atmosphere/index.html)
-- [Algorithm Theoretical Basis Documents](https://www.star.nesdis.noaa.gov/goesr/documentation_ATBDs.php) 
+- [Algorithm Theoretical Basis Documents](https://www.star.nesdis.noaa.gov/goesr/documentation_ATBDs.php)

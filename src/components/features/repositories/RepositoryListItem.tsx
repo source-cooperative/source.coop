@@ -16,7 +16,7 @@ interface RepositoryListItemProps {
 export const RepositoryListItem = forwardRef<HTMLAnchorElement, RepositoryListItemProps>(
   function RepositoryListItem({ repository, isSelected }, ref) {
     return (
-      <Link 
+      <Link
         href={`/${repository.account_id}/${repository.repository_id}`}
         className={styles.item}
         data-selected={isSelected}
@@ -28,7 +28,7 @@ export const RepositoryListItem = forwardRef<HTMLAnchorElement, RepositoryListIt
             <Heading size="5" weight="bold" color="gray" mb="2">
               {repository.title}
             </Heading>
-              
+
             {repository.description && (
               <Text as="p" size="2" color="gray" mb="4">
                 {repository.description}
@@ -44,22 +44,28 @@ export const RepositoryListItem = forwardRef<HTMLAnchorElement, RepositoryListIt
               <Text size="1" color="gray" mb="2">
                 Updated <DateText date={repository.updated_at} />
               </Text>
-              <Badge 
-                size="1" 
+              <Badge
+                size="1"
                 color={
-                  repository.visibility === 'public' ? "green" : 
-                  repository.visibility === 'unlisted' ? "yellow" : 
-                  "red"
+                  repository.visibility === 'public'
+                    ? 'green'
+                    : repository.visibility === 'unlisted'
+                      ? 'yellow'
+                      : 'red'
                 }
                 aria-label={
-                  repository.visibility === 'public' ? "Public repository" : 
-                  repository.visibility === 'unlisted' ? "Unlisted repository" : 
-                  "Restricted repository"
+                  repository.visibility === 'public'
+                    ? 'Public repository'
+                    : repository.visibility === 'unlisted'
+                      ? 'Unlisted repository'
+                      : 'Restricted repository'
                 }
               >
-                {repository.visibility === 'public' ? "Public" : 
-                 repository.visibility === 'unlisted' ? "Unlisted" : 
-                 "Restricted"}
+                {repository.visibility === 'public'
+                  ? 'Public'
+                  : repository.visibility === 'unlisted'
+                    ? 'Unlisted'
+                    : 'Restricted'}
               </Badge>
             </Box>
           </article>
@@ -67,4 +73,4 @@ export const RepositoryListItem = forwardRef<HTMLAnchorElement, RepositoryListIt
       </Link>
     );
   }
-); 
+);

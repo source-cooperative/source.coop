@@ -13,30 +13,30 @@ export default function manifest(): MetadataRoute.Manifest {
       {
         src: '/favicon-16x16.png',
         sizes: '16x16',
-        type: 'image/png'
+        type: 'image/png',
       },
       {
         src: '/favicon-32x32.png',
         sizes: '32x32',
-        type: 'image/png'
+        type: 'image/png',
       },
       {
         src: '/icon-192.png',
         sizes: '192x192',
         type: 'image/png',
-        purpose: 'maskable'
+        purpose: 'maskable',
       },
       {
         src: '/icon-512.png',
         sizes: '512x512',
         type: 'image/png',
-        purpose: 'any'
+        purpose: 'any',
       },
       {
         src: '/favicon/light/icon.svg',
         sizes: 'any',
-        type: 'image/svg+xml'
-      }
-    ]
+        type: 'image/svg+xml',
+      },
+    ],
   };
-} 
+}

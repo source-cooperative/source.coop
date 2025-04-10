@@ -8,18 +8,18 @@ import { exampleRepositories } from '@/tests/fixtures/example-data';
 const mockRouter = { push: jest.fn() };
 jest.mock('next/navigation', () => ({
   useRouter: () => mockRouter,
-  usePathname: () => '/test-account/repo1'
+  usePathname: () => '/test-account/repo1',
 }));
 
 // Mock window.location
 const mockLocation = {
   origin: 'http://localhost:3000',
-  pathname: '/test-account/repo1'
+  pathname: '/test-account/repo1',
 };
 
 Object.defineProperty(window, 'location', {
   value: mockLocation,
-  writable: true
+  writable: true,
 });
 
 describe('useKeyboardShortcuts', () => {
@@ -33,7 +33,7 @@ describe('useKeyboardShortcuts', () => {
     renderHook(() => useKeyboardShortcuts({ onShowHelp }));
 
     // Add event listener to document
-    const _eventListener = document.addEventListener('keydown', (e) => {
+    const _eventListener = document.addEventListener('keydown', e => {
       if (e.key === '?' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
         onShowHelp();
       }
@@ -50,7 +50,7 @@ describe('useKeyboardShortcuts', () => {
     renderHook(() => useKeyboardShortcuts({ onShowHelp }));
 
     // Add event listener to document
-    const _eventListener = document.addEventListener('keydown', (e) => {
+    const _eventListener = document.addEventListener('keydown', e => {
       if (e.key === 'g' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
         // Wait for next key
         const nextKeyHandler = (e2: KeyboardEvent) => {
@@ -78,18 +78,20 @@ describe('useRepositoryListKeyboardShortcuts', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     Object.assign(navigator, {
-      clipboard: { writeText: jest.fn() }
+      clipboard: { writeText: jest.fn() },
     });
   });
 
   it('should copy repository URL when y is pressed', () => {
-    const { result } = renderHook(() => useRepositoryListKeyboardShortcuts({
-      repositories: [mockRepository],
-      onShowHelp: jest.fn()
-    }));
+    const { result } = renderHook(() =>
+      useRepositoryListKeyboardShortcuts({
+        repositories: [mockRepository],
+        onShowHelp: jest.fn(),
+      })
+    );
 
     // Add event listener to document
-    const _eventListener = document.addEventListener('keydown', (e) => {
+    const _eventListener = document.addEventListener('keydown', e => {
       if (e.key === 'y' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
         navigator.clipboard.writeText('http://localhost:3000/test-account/repo1');
       }
@@ -120,7 +122,7 @@ describe('useObjectBrowserKeyboardShortcuts', () => {
       updated_at: '2024-01-02T00:00:00Z',
       checksum: 'abc123',
       name: 'catalog.json',
-      isDirectory: false
+      isDirectory: false,
     },
     {
       id: 'data',
@@ -132,8 +134,8 @@ describe('useObjectBrowserKeyboardShortcuts', () => {
       updated_at: '2024-01-02T00:00:00Z',
       checksum: '',
       name: 'data',
-      isDirectory: true
-    }
+      isDirectory: true,
+    },
   ];
 
   const onNavigateToPath = jest.fn();
@@ -142,24 +144,26 @@ describe('useObjectBrowserKeyboardShortcuts', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     Object.assign(navigator, {
-      clipboard: { writeText: jest.fn() }
+      clipboard: { writeText: jest.fn() },
     });
   });
 
   it('should navigate between items with j/k keys', () => {
-    const { result } = renderHook(() => useObjectBrowserKeyboardShortcuts({
-      repository: mockRepository,
-      objects: mockObjects,
-      currentPath: [],
-      onShowHelp: jest.fn(),
-      onNavigateToPath,
-      onNavigateToFile
-    }));
+    const { result } = renderHook(() =>
+      useObjectBrowserKeyboardShortcuts({
+        repository: mockRepository,
+        objects: mockObjects,
+        currentPath: [],
+        onShowHelp: jest.fn(),
+        onNavigateToPath,
+        onNavigateToFile,
+      })
+    );
 
     expect(result.current.focusedIndex).toBe(-1);
 
     // Add event listener to document
-    const _eventListener = document.addEventListener('keydown', (e) => {
+    const _eventListener = document.addEventListener('keydown', e => {
       if (!e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
         if (e.key === 'j') {
           result.current.setFocusedIndex(result.current.focusedIndex + 1);
@@ -186,17 +190,19 @@ describe('useObjectBrowserKeyboardShortcuts', () => {
   });
 
   it('should navigate to root with ~ key', () => {
-    renderHook(() => useObjectBrowserKeyboardShortcuts({
-      repository: mockRepository,
-      objects: mockObjects,
-      currentPath: ['data'],
-      onShowHelp: jest.fn(),
-      onNavigateToPath,
-      onNavigateToFile
-    }));
+    renderHook(() =>
+      useObjectBrowserKeyboardShortcuts({
+        repository: mockRepository,
+        objects: mockObjects,
+        currentPath: ['data'],
+        onShowHelp: jest.fn(),
+        onNavigateToPath,
+        onNavigateToFile,
+      })
+    );
 
     // Add event listener to document
-    const _eventListener = document.addEventListener('keydown', (e) => {
+    const _eventListener = document.addEventListener('keydown', e => {
       if (e.key === '~' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
         onNavigateToPath([]);
       }
@@ -210,18 +216,20 @@ describe('useObjectBrowserKeyboardShortcuts', () => {
   });
 
   it('should copy file URL when y is pressed', () => {
-    const { result } = renderHook(() => useObjectBrowserKeyboardShortcuts({
-      repository: mockRepository,
-      objects: mockObjects,
-      currentPath: [],
-      selectedObject: mockObjects[0],
-      onShowHelp: jest.fn(),
-      onNavigateToPath,
-      onNavigateToFile
-    }));
+    const { result } = renderHook(() =>
+      useObjectBrowserKeyboardShortcuts({
+        repository: mockRepository,
+        objects: mockObjects,
+        currentPath: [],
+        selectedObject: mockObjects[0],
+        onShowHelp: jest.fn(),
+        onNavigateToPath,
+        onNavigateToFile,
+      })
+    );
 
     // Add event listener to document
-    const _eventListener = document.addEventListener('keydown', (e) => {
+    const _eventListener = document.addEventListener('keydown', e => {
       if (e.key === 'y' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
         navigator.clipboard.writeText('http://localhost:3000/test-account/repo1/catalog.json');
       }
@@ -235,4 +243,4 @@ describe('useObjectBrowserKeyboardShortcuts', () => {
       'http://localhost:3000/test-account/repo1/catalog.json'
     );
   });
-}); 
+});

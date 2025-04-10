@@ -34,7 +34,9 @@ describe('logger', () => {
       logger.error('Test message', context);
 
       expect(console.error).toHaveBeenCalledWith(
-        expect.stringMatching(/\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z\] ERROR - test_operation - Test message - test_context - {"key":"value","error":{"message":"Test error","stack":.*}}/)
+        expect.stringMatching(
+          /\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z\] ERROR - test_operation - Test message - test_context - {"key":"value","error":{"message":"Test error","stack":.*}}/
+        )
       );
     });
 
@@ -48,7 +50,9 @@ describe('logger', () => {
       logger.error('Test message', context);
 
       expect(console.error).toHaveBeenCalledWith(
-        expect.stringMatching(/\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z\] ERROR - test_operation - Test message - test_context - {"error":{"message":"Test error","stack":.*}}/)
+        expect.stringMatching(
+          /\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z\] ERROR - test_operation - Test message - test_context - {"error":{"message":"Test error","stack":.*}}/
+        )
       );
     });
 
@@ -62,7 +66,9 @@ describe('logger', () => {
       logger.error('Test message', context);
 
       expect(console.error).toHaveBeenCalledWith(
-        expect.stringMatching(/\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z\] ERROR - test_operation - Test message - test_context - {"key":"value"}/)
+        expect.stringMatching(
+          /\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z\] ERROR - test_operation - Test message - test_context - {"key":"value"}/
+        )
       );
     });
   });
@@ -78,7 +84,9 @@ describe('logger', () => {
       logger.warn('Test message', context);
 
       expect(console.warn).toHaveBeenCalledWith(
-        expect.stringMatching(/\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z\] WARN - test_operation - Test message - test_context - {"key":"value"}/)
+        expect.stringMatching(
+          /\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z\] WARN - test_operation - Test message - test_context - {"key":"value"}/
+        )
       );
     });
 
@@ -91,7 +99,9 @@ describe('logger', () => {
       logger.warn('Test message', context);
 
       expect(console.warn).toHaveBeenCalledWith(
-        expect.stringMatching(/\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z\] WARN - test_operation - Test message - test_context/)
+        expect.stringMatching(
+          /\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z\] WARN - test_operation - Test message - test_context/
+        )
       );
     });
   });
@@ -107,7 +117,9 @@ describe('logger', () => {
       logger.info('Test message', context);
 
       expect(console.info).toHaveBeenCalledWith(
-        expect.stringMatching(/\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z\] INFO - test_operation - Test message - test_context - {"key":"value"}/)
+        expect.stringMatching(
+          /\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z\] INFO - test_operation - Test message - test_context - {"key":"value"}/
+        )
       );
     });
 
@@ -120,7 +132,9 @@ describe('logger', () => {
       logger.info('Test message', context);
 
       expect(console.info).toHaveBeenCalledWith(
-        expect.stringMatching(/\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z\] INFO - test_operation - Test message - test_context/)
+        expect.stringMatching(
+          /\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z\] INFO - test_operation - Test message - test_context/
+        )
       );
     });
   });
@@ -136,7 +150,9 @@ describe('logger', () => {
       logger.debug('Test message', context);
 
       expect(console.log).toHaveBeenCalledWith(
-        expect.stringMatching(/\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z\] DEBUG - test_operation - Test message - test_context - {"key":"value"}/)
+        expect.stringMatching(
+          /\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z\] DEBUG - test_operation - Test message - test_context - {"key":"value"}/
+        )
       );
     });
 
@@ -149,7 +165,9 @@ describe('logger', () => {
       logger.debug('Test message', context);
 
       expect(console.log).toHaveBeenCalledWith(
-        expect.stringMatching(/\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z\] DEBUG - test_operation - Test message - test_context/)
+        expect.stringMatching(
+          /\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z\] DEBUG - test_operation - Test message - test_context/
+        )
       );
     });
   });
@@ -175,24 +193,16 @@ describe('logger', () => {
       };
 
       logger.error('Test message', context);
-      expect(console.error).toHaveBeenCalledWith(
-        expect.stringMatching(/ERROR/)
-      );
+      expect(console.error).toHaveBeenCalledWith(expect.stringMatching(/ERROR/));
 
       logger.warn('Test message', context);
-      expect(console.warn).toHaveBeenCalledWith(
-        expect.stringMatching(/WARN/)
-      );
+      expect(console.warn).toHaveBeenCalledWith(expect.stringMatching(/WARN/));
 
       logger.info('Test message', context);
-      expect(console.info).toHaveBeenCalledWith(
-        expect.stringMatching(/INFO/)
-      );
+      expect(console.info).toHaveBeenCalledWith(expect.stringMatching(/INFO/));
 
       logger.debug('Test message', context);
-      expect(console.log).toHaveBeenCalledWith(
-        expect.stringMatching(/DEBUG/)
-      );
+      expect(console.log).toHaveBeenCalledWith(expect.stringMatching(/DEBUG/));
     });
   });
-}); 
+});

@@ -1,29 +1,31 @@
-import { DynamoDBClient, CreateTableCommand, DeleteTableCommand } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocument } from "@aws-sdk/lib-dynamodb";
+import { DynamoDBClient, CreateTableCommand, DeleteTableCommand } from '@aws-sdk/client-dynamodb';
+import { DynamoDBDocument } from '@aws-sdk/lib-dynamodb';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 
 const execAsync = promisify(exec);
 const client = new DynamoDBClient({
-  endpoint: "http://localhost:8000",
-  region: "us-east-1",
+  endpoint: 'http://localhost:8000',
+  region: 'us-east-1',
   credentials: {
-    accessKeyId: process.env.DYNAMODB_ACCESS_KEY_ID || "local",
-    secretAccessKey: process.env.DYNAMODB_SECRET_ACCESS_KEY || "local"
-  }
+    accessKeyId: process.env.DYNAMODB_ACCESS_KEY_ID || 'local',
+    secretAccessKey: process.env.DYNAMODB_SECRET_ACCESS_KEY || 'local',
+  },
 });
 
 const docClient = DynamoDBDocument.from(client, {
   marshallOptions: {
-    removeUndefinedValues: true
-  }
+    removeUndefinedValues: true,
+  },
 });
 
 async function deleteTable(tableName: string) {
   try {
-    await client.send(new DeleteTableCommand({
-      TableName: tableName
-    }));
+    await client.send(
+      new DeleteTableCommand({
+        TableName: tableName,
+      })
+    );
     console.log(`✓ Deleted ${tableName} table`);
   } catch (e) {
     if ((e as any).name === 'ResourceNotFoundException') {
@@ -36,120 +38,124 @@ async function deleteTable(tableName: string) {
 
 async function createTables() {
   // Delete existing tables
-  await deleteTable("sc-accounts");
-  await deleteTable("sc-repositories");
-  
+  await deleteTable('sc-accounts');
+  await deleteTable('sc-repositories');
+
   // Wait for tables to be fully deleted
   await new Promise(resolve => setTimeout(resolve, 2000));
 
   // Create Accounts table
   try {
-    await client.send(new CreateTableCommand({
-      TableName: "sc-accounts",
-      KeySchema: [
-        { AttributeName: "account_id", KeyType: "HASH" },
-        { AttributeName: "type", KeyType: "RANGE" }
-      ],
-      AttributeDefinitions: [
-        { AttributeName: "account_id", AttributeType: "S" },
-        { AttributeName: "type", AttributeType: "S" },
-        { AttributeName: "emails", AttributeType: "S" }
-      ],
-      GlobalSecondaryIndexes: [
-        {
-          IndexName: "AccountTypeIndex",
-          KeySchema: [
-            { AttributeName: "type", KeyType: "HASH" },
-            { AttributeName: "account_id", KeyType: "RANGE" }
-          ],
-          Projection: { ProjectionType: "ALL" },
-          ProvisionedThroughput: {
-            ReadCapacityUnits: 5,
-            WriteCapacityUnits: 5
-          }
+    await client.send(
+      new CreateTableCommand({
+        TableName: 'sc-accounts',
+        KeySchema: [
+          { AttributeName: 'account_id', KeyType: 'HASH' },
+          { AttributeName: 'type', KeyType: 'RANGE' },
+        ],
+        AttributeDefinitions: [
+          { AttributeName: 'account_id', AttributeType: 'S' },
+          { AttributeName: 'type', AttributeType: 'S' },
+          { AttributeName: 'emails', AttributeType: 'S' },
+        ],
+        GlobalSecondaryIndexes: [
+          {
+            IndexName: 'AccountTypeIndex',
+            KeySchema: [
+              { AttributeName: 'type', KeyType: 'HASH' },
+              { AttributeName: 'account_id', KeyType: 'RANGE' },
+            ],
+            Projection: { ProjectionType: 'ALL' },
+            ProvisionedThroughput: {
+              ReadCapacityUnits: 5,
+              WriteCapacityUnits: 5,
+            },
+          },
+          {
+            IndexName: 'AccountEmailIndex',
+            KeySchema: [
+              { AttributeName: 'emails', KeyType: 'HASH' },
+              { AttributeName: 'account_id', KeyType: 'RANGE' },
+            ],
+            Projection: { ProjectionType: 'ALL' },
+            ProvisionedThroughput: {
+              ReadCapacityUnits: 5,
+              WriteCapacityUnits: 5,
+            },
+          },
+        ],
+        ProvisionedThroughput: {
+          ReadCapacityUnits: 5,
+          WriteCapacityUnits: 5,
         },
-        {
-          IndexName: "AccountEmailIndex",
-          KeySchema: [
-            { AttributeName: "emails", KeyType: "HASH" },
-            { AttributeName: "account_id", KeyType: "RANGE" }
-          ],
-          Projection: { ProjectionType: "ALL" },
-          ProvisionedThroughput: {
-            ReadCapacityUnits: 5,
-            WriteCapacityUnits: 5
-          }
-        }
-      ],
-      ProvisionedThroughput: {
-        ReadCapacityUnits: 5,
-        WriteCapacityUnits: 5
-      }
-    }));
-    console.log("✓ Created sc-accounts table");
+      })
+    );
+    console.log('✓ Created sc-accounts table');
   } catch (e) {
-    console.error("✗ Error creating sc-accounts table:", e);
+    console.error('✗ Error creating sc-accounts table:', e);
   }
 
   // Create Repositories table
   try {
-    await client.send(new CreateTableCommand({
-      TableName: "sc-repositories",
-      KeySchema: [
-        { AttributeName: "repository_id", KeyType: "HASH" },
-        { AttributeName: "account_id", KeyType: "RANGE" }
-      ],
-      AttributeDefinitions: [
-        { AttributeName: "repository_id", AttributeType: "S" },
-        { AttributeName: "account_id", AttributeType: "S" },
-        { AttributeName: "visibility", AttributeType: "S" },
-        { AttributeName: "created_at", AttributeType: "S" }
-      ],
-      GlobalSecondaryIndexes: [
-        {
-          IndexName: "AccountRepositoriesIndex",
-          KeySchema: [
-            { AttributeName: "account_id", KeyType: "HASH" },
-            { AttributeName: "created_at", KeyType: "RANGE" }
-          ],
-          Projection: { ProjectionType: "ALL" },
-          ProvisionedThroughput: {
-            ReadCapacityUnits: 5,
-            WriteCapacityUnits: 5
-          }
+    await client.send(
+      new CreateTableCommand({
+        TableName: 'sc-repositories',
+        KeySchema: [
+          { AttributeName: 'repository_id', KeyType: 'HASH' },
+          { AttributeName: 'account_id', KeyType: 'RANGE' },
+        ],
+        AttributeDefinitions: [
+          { AttributeName: 'repository_id', AttributeType: 'S' },
+          { AttributeName: 'account_id', AttributeType: 'S' },
+          { AttributeName: 'visibility', AttributeType: 'S' },
+          { AttributeName: 'created_at', AttributeType: 'S' },
+        ],
+        GlobalSecondaryIndexes: [
+          {
+            IndexName: 'AccountRepositoriesIndex',
+            KeySchema: [
+              { AttributeName: 'account_id', KeyType: 'HASH' },
+              { AttributeName: 'created_at', KeyType: 'RANGE' },
+            ],
+            Projection: { ProjectionType: 'ALL' },
+            ProvisionedThroughput: {
+              ReadCapacityUnits: 5,
+              WriteCapacityUnits: 5,
+            },
+          },
+          {
+            IndexName: 'PublicRepositoriesIndex',
+            KeySchema: [
+              { AttributeName: 'visibility', KeyType: 'HASH' },
+              { AttributeName: 'created_at', KeyType: 'RANGE' },
+            ],
+            Projection: { ProjectionType: 'ALL' },
+            ProvisionedThroughput: {
+              ReadCapacityUnits: 5,
+              WriteCapacityUnits: 5,
+            },
+          },
+        ],
+        ProvisionedThroughput: {
+          ReadCapacityUnits: 5,
+          WriteCapacityUnits: 5,
         },
-        {
-          IndexName: "PublicRepositoriesIndex",
-          KeySchema: [
-            { AttributeName: "visibility", KeyType: "HASH" },
-            { AttributeName: "created_at", KeyType: "RANGE" }
-          ],
-          Projection: { ProjectionType: "ALL" },
-          ProvisionedThroughput: {
-            ReadCapacityUnits: 5,
-            WriteCapacityUnits: 5
-          }
-        }
-      ],
-      ProvisionedThroughput: {
-        ReadCapacityUnits: 5,
-        WriteCapacityUnits: 5
-      }
-    }));
-    console.log("✓ Created sc-repositories table");
+      })
+    );
+    console.log('✓ Created sc-repositories table');
   } catch (e) {
-    console.error("✗ Error creating sc-repositories table:", e);
+    console.error('✗ Error creating sc-repositories table:', e);
   }
 }
 
 async function main() {
   try {
     await createTables();
-    console.log("✓ Schema update complete");
+    console.log('✓ Schema update complete');
   } catch (e) {
-    console.error("✗ Error updating schema:", e);
+    console.error('✗ Error updating schema:', e);
     process.exit(1);
   }
 }
 
-main(); 
+main();

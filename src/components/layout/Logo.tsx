@@ -14,4 +14,4 @@ export function Logo() {
   );
 
   return <LogoLink>{LogoImage}</LogoLink>;
-} 
+}

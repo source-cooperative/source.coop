@@ -1,5 +1,5 @@
-"use client";
-import { OryCardProps } from "@ory/elements-react";
+'use client';
+import { OryCardProps } from '@ory/elements-react';
 
 export function DefaultCard({ children }: OryCardProps) {
   return (

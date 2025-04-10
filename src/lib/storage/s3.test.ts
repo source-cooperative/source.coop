@@ -35,4 +35,4 @@ describe('S3StorageClient', () => {
     expect(result.commonPrefixes).toBeDefined();
     expect(Array.isArray(result.commonPrefixes)).toBe(true);
   }, 10000); // Increase timeout for S3 operations
-}); 
+});

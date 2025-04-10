@@ -1,17 +1,17 @@
-import { Settings } from "@ory/elements-react/theme"
-import { SessionProvider } from "@ory/elements-react/client"
-import { enhanceOryConfig } from "@ory/nextjs"
-import { getSettingsFlow, OryPageParams } from "@ory/nextjs/app"
-import "@ory/elements-react/theme/styles.css"
+import { Settings } from '@ory/elements-react/theme';
+import { SessionProvider } from '@ory/elements-react/client';
+import { enhanceOryConfig } from '@ory/nextjs';
+import { getSettingsFlow, OryPageParams } from '@ory/nextjs/app';
+import '@ory/elements-react/theme/styles.css';
 
-import { CONFIG } from "@/lib/config"
+import { CONFIG } from '@/lib/config';
 
 export default async function SettingsPage(props: OryPageParams) {
-  const config = enhanceOryConfig(CONFIG.auth.config)
-  const flow = await getSettingsFlow(config, props.searchParams)
+  const config = enhanceOryConfig(CONFIG.auth.config);
+  const flow = await getSettingsFlow(config, props.searchParams);
 
   if (!flow) {
-    return null
+    return null;
   }
 
   return (
@@ -26,5 +26,5 @@ export default async function SettingsPage(props: OryPageParams) {
         />
       </SessionProvider>
     </div>
-  )
+  );
 }

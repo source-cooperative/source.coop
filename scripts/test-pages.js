@@ -6,26 +6,26 @@ const { join } = require('path');
 const TEST_CONFIG = {
   account: {
     id: 'test-account',
-    name: 'Test User'
+    name: 'Test User',
   },
   repositories: [
     { id: 'repo1', title: 'Repository 1' },
-    { id: 'repo2', title: 'Repository 2' }
+    { id: 'repo2', title: 'Repository 2' },
   ],
   // Test paths for [...path] routes
-  paths: ['README.md', 'docs/index.md']
+  paths: ['README.md', 'docs/index.md'],
 };
 
 // Function to find all page.tsx files
 async function findPages(dir) {
   const pages = [];
-  
+
   async function scan(currentDir) {
     const entries = await readdir(currentDir, { withFileTypes: true });
-    
+
     for (const entry of entries) {
       const fullPath = join(currentDir, entry.name);
-      
+
       if (entry.isDirectory()) {
         await scan(fullPath);
       } else if (entry.name === 'page.tsx') {
@@ -35,7 +35,7 @@ async function findPages(dir) {
       }
     }
   }
-  
+
   await scan(dir);
   return pages;
 }
@@ -44,16 +44,16 @@ async function findPages(dir) {
 function getRouteDescription(testPath) {
   if (!testPath) return 'Home page';
   const parts = testPath.split('/');
-  
+
   if (parts.length === 1) {
     return `Account page for ${TEST_CONFIG.account.name}`;
   }
-  
+
   if (parts.length === 2) {
     const repo = TEST_CONFIG.repositories.find(r => r.id === parts[1]);
     return repo ? `Repository page for ${repo.title}` : 'Unknown repository';
   }
-  
+
   return `Object browser for ${parts.slice(2).join('/')}`;
 }
 
@@ -61,16 +61,16 @@ function getRouteDescription(testPath) {
 function startDevServer() {
   return new Promise((resolve, reject) => {
     const startTime = Date.now();
-    const server = spawn('npm', ['run', 'dev'], { 
+    const server = spawn('npm', ['run', 'dev'], {
       stdio: ['ignore', 'pipe', 'pipe'],
-      shell: true
+      shell: true,
     });
 
     let output = '';
-    server.stdout.on('data', (data) => {
+    server.stdout.on('data', data => {
       const chunk = data.toString();
       output += chunk;
-      
+
       // Next.js is ready when it shows the localhost URL
       if (chunk.includes('http://localhost')) {
         const port = chunk.match(/localhost:(\d+)/)[1];
@@ -79,7 +79,7 @@ function startDevServer() {
       }
     });
 
-    server.stderr.on('data', (data) => {
+    server.stderr.on('data', data => {
       output += data.toString();
     });
 
@@ -89,12 +89,12 @@ function startDevServer() {
       reject(new Error('Dev server startup timed out'));
     }, 30000);
 
-    server.on('error', (err) => {
+    server.on('error', err => {
       clearTimeout(timeout);
       reject(err);
     });
 
-    server.on('exit', (code) => {
+    server.on('exit', code => {
       if (code !== null && code !== 0) {
         clearTimeout(timeout);
         reject(new Error(`Dev server exited with code ${code}\nOutput: ${output}`));
@@ -107,11 +107,12 @@ function startDevServer() {
 async function discoverRepositories(port) {
   const response = await fetch(`http://localhost:${port}`);
   const html = await response.text();
-  
+
   // Match paths between quotes in hrefs, preserving all slashes
-  const repoRegex = /href="(\/[^"]*)"(?![^<>]*(?:css|js|ico|webmanifest|_next|favicon|repositories))/g;
+  const repoRegex =
+    /href="(\/[^"]*)"(?![^<>]*(?:css|js|ico|webmanifest|_next|favicon|repositories))/g;
   const repos = new Set();
-  
+
   let match;
   while ((match = repoRegex.exec(html)) !== null) {
     const path = match[1].substring(1); // Remove leading slash
@@ -120,7 +121,7 @@ async function discoverRepositories(port) {
       repos.add(path);
     }
   }
-  
+
   return Array.from(repos);
 }
 
@@ -128,22 +129,22 @@ async function discoverRepositories(port) {
 async function testPage(port, path, description) {
   const url = `http://localhost:${port}/${path}`;
   const startTime = Date.now();
-  
+
   try {
     const response = await fetch(url);
     const loadTime = Date.now() - startTime;
-    
+
     return {
       status: response.status,
       loadTime,
-      ok: response.ok
+      ok: response.ok,
     };
   } catch (error) {
     return {
       status: 0,
       loadTime: Date.now() - startTime,
       ok: false,
-      error: error.message
+      error: error.message,
     };
   }
 }
@@ -153,10 +154,10 @@ async function main() {
     // Find all page.tsx files
     const appDir = join(process.cwd(), 'src', 'app');
     const pages = await findPages(appDir);
-    
+
     console.log('Found page templates:');
     pages.forEach(page => console.log(`- ${page.file}`));
-    
+
     // Start dev server and measure startup time
     console.log('\nStarting dev server...');
     const { server, buildTime, port } = await startDevServer();
@@ -173,7 +174,7 @@ async function main() {
 
     // Test pages
     console.log('\nTesting pages:');
-    
+
     // Test home page
     const homeResult = await testPage(port, '', 'Home page');
     console.log(`\n${homeResult.ok ? '✓' : '✗'} Home page`);
@@ -184,7 +185,7 @@ async function main() {
     // Test each repository page
     for (const repo of repositories) {
       const [accountId, repoId] = repo.split('/');
-      
+
       // Test account page
       const accountResult = await testPage(port, accountId, `Account page for ${accountId}`);
       console.log(`\n${accountResult.ok ? '✓' : '✗'} Account page for ${accountId}`);
@@ -215,11 +216,10 @@ async function main() {
     console.log('\nShutting down dev server...');
     server.kill();
     console.log('Done!');
-    
   } catch (error) {
     console.error('Error:', error);
     process.exit(1);
   }
 }
 
-main(); 
+main();

@@ -18,12 +18,12 @@ interface OrganizationProfileProps {
   members: IndividualAccount[];
 }
 
-export function OrganizationProfile({ 
-  account, 
+export function OrganizationProfile({
+  account,
   repositories,
   owner,
   admins,
-  members 
+  members,
 }: OrganizationProfileProps) {
   const { session } = useSession();
   const currentUserId = session?.identity?.metadata_public?.account_id;
@@ -37,7 +37,9 @@ export function OrganizationProfile({
         <Flex gap="4">
           <ProfileAvatar account={account} size="8" />
           <Box>
-            <Heading as="h1" size="8">{account.name}</Heading>
+            <Heading as="h1" size="8">
+              {account.name}
+            </Heading>
             <Text as="p" size="3" color="gray" mt="1">
               {account.metadata_public.bio}
             </Text>
@@ -52,7 +54,9 @@ export function OrganizationProfile({
 
       <Grid columns="2" gap="6" mb="6">
         <Box>
-          <Heading as="h2" size="4" mb="2">Organization Details</Heading>
+          <Heading as="h2" size="4" mb="2">
+            Organization Details
+          </Heading>
           {account.metadata_public.domains?.map((domain, index) => (
             <Text as="p" size="2" key={index}>
               <WebsiteLink website={{ url: `https://${domain.domain}` }} />
@@ -60,14 +64,18 @@ export function OrganizationProfile({
           ))}
           {account.emails?.find(email => email.is_primary)?.address && (
             <Text as="p" size="2">
-              Email: <RadixLink href={`mailto:${account.emails?.find(email => email.is_primary)?.address}`}>
+              Email:{' '}
+              <RadixLink
+                href={`mailto:${account.emails?.find(email => email.is_primary)?.address}`}
+              >
                 {account.emails?.find(email => email.is_primary)?.address}
               </RadixLink>
             </Text>
           )}
           {account.metadata_public.ror_id && (
             <Text as="p" size="2">
-              ROR ID: <RadixLink href={`https://ror.org/${account.metadata_public.ror_id}`}>
+              ROR ID:{' '}
+              <RadixLink href={`https://ror.org/${account.metadata_public.ror_id}`}>
                 {account.metadata_public.ror_id}
               </RadixLink>
             </Text>
@@ -75,21 +83,21 @@ export function OrganizationProfile({
         </Box>
 
         <Box>
-          <Heading as="h2" size="4" mb="2">Members</Heading>
-          <OrganizationMembers 
-            owner={owner}
-            admins={admins}
-            members={members}
-          />
+          <Heading as="h2" size="4" mb="2">
+            Members
+          </Heading>
+          <OrganizationMembers owner={owner} admins={admins} members={members} />
         </Box>
       </Grid>
 
       {repositories.length > 0 && (
         <Box>
-          <Heading as="h2" size="4" mb="2">Repositories</Heading>
+          <Heading as="h2" size="4" mb="2">
+            Repositories
+          </Heading>
           <RepositoryList repositories={repositories} />
         </Box>
       )}
     </Box>
   );
-} 
+}

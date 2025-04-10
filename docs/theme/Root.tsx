@@ -9,4 +9,4 @@ export default function Root({ children }: { children: React.ReactNode }): JSX.E
       {children}
     </Theme>
   );
-} 
+}

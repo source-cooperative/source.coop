@@ -1,6 +1,6 @@
 /**
  * Repository Path Page - Displays repository contents at a specific path
- * 
+ *
  * KEEP IT SIMPLE:
  * 1. URL params are known values (/[account_id]/[repository_id]/[...path])
  * 2. Get data -> Transform if needed -> Render
@@ -31,24 +31,34 @@ interface PageProps {
   }>;
 }
 
-export default async function RepositoryPathPage({
-  params
-}: PageProps) {
+export default async function RepositoryPathPage({ params }: PageProps) {
   // 1. Get and await params
   const { account_id, repository_id, path } = await Promise.resolve(params);
   const pathString = path?.join('/') || '';
-  
+
   // Check if this is a file path (ends with a file extension)
   const isFilePath = pathString && /\.\w+$/.test(pathString);
-  const prefix = isFilePath ? pathString.slice(0, pathString.lastIndexOf('/') + 1) : 
-                (pathString ? (pathString.endsWith('/') ? pathString : pathString + '/') : '');
-  
-  console.log('Debug - Page params:', { account_id, repository_id, path, pathString, prefix, isFilePath });
+  const prefix = isFilePath
+    ? pathString.slice(0, pathString.lastIndexOf('/') + 1)
+    : pathString
+      ? pathString.endsWith('/')
+        ? pathString
+        : pathString + '/'
+      : '';
+
+  console.log('Debug - Page params:', {
+    account_id,
+    repository_id,
+    path,
+    pathString,
+    prefix,
+    isFilePath,
+  });
 
   // 2. Find the repository or 404
   const repository = await fetchRepository(account_id, repository_id);
   console.log('Debug - Repository:', repository);
-  
+
   if (!repository) {
     console.log('Debug - Repository not found, returning 404');
     return notFound();
@@ -56,13 +66,18 @@ export default async function RepositoryPathPage({
 
   try {
     // 3. Get objects from storage
-    console.log('Debug - Fetching objects with:', { account_id, repository_id, object_path: pathString, prefix });
+    console.log('Debug - Fetching objects with:', {
+      account_id,
+      repository_id,
+      object_path: pathString,
+      prefix,
+    });
     const result = await createStorageClient().listObjects({
       account_id,
       repository_id,
       object_path: pathString,
       prefix,
-      delimiter: '/'
+      delimiter: '/',
     });
     console.log('Debug - Storage result:', result);
 
@@ -79,12 +94,14 @@ export default async function RepositoryPathPage({
         created_at: obj.created_at || new Date().toISOString(),
         updated_at: obj.updated_at || new Date().toISOString(),
         checksum: obj.checksum || '',
-        metadata: obj.metadata || {}
+        metadata: obj.metadata || {},
       }));
     console.log('Debug - Transformed objects:', repositoryObjects);
 
     // 5. Find the selected object if we have a path
-    const selectedObject = pathString ? repositoryObjects.find(obj => obj.path === pathString) : undefined;
+    const selectedObject = pathString
+      ? repositoryObjects.find(obj => obj.path === pathString)
+      : undefined;
     console.log('Debug - Selected object:', selectedObject);
 
     // 6. Determine if we're viewing a file or directory
@@ -114,10 +131,12 @@ export default async function RepositoryPathPage({
         <RepositoryHeader repository={repository} />
         <Box mt="4">
           <Text role="alert" color="red" size="3">
-            {error instanceof Error ? error.message : 'An error occurred while loading repository contents'}
+            {error instanceof Error
+              ? error.message
+              : 'An error occurred while loading repository contents'}
           </Text>
         </Box>
       </Container>
     );
   }
-} 
+}

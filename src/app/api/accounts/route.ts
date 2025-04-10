@@ -8,18 +8,12 @@ export async function POST(request: Request) {
     // Verify the user is authenticated
     const session = await serverOry.toSession();
     if (!session.data.active) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Get user data from session
     if (!session.data.identity) {
-      return NextResponse.json(
-        { error: 'No identity found in session' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'No identity found in session' }, { status: 400 });
     }
 
     const userId = session.data.identity.id;
@@ -37,7 +31,7 @@ export async function POST(request: Request) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Accept': 'application/json',
+        Accept: 'application/json',
       },
       body: JSON.stringify(accountData),
     });
@@ -54,9 +48,6 @@ export async function POST(request: Request) {
     return NextResponse.json(account);
   } catch (error) {
     console.error('Account creation error:', error);
-    return NextResponse.json(
-      { error: 'Failed to create account' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to create account' }, { status: 500 });
   }
-} 
+}

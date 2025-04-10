@@ -1,5 +1,22 @@
-import { S3Client, ListObjectsV2Command, GetObjectCommand, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
-import { StorageClient, StorageProvider, StorageConfig, ListObjectsParams, ListObjectsResult, GetObjectParams, GetObjectResult, PutObjectParams, PutObjectResult, DeleteObjectParams } from '@/types/storage';
+import {
+  S3Client,
+  ListObjectsV2Command,
+  GetObjectCommand,
+  PutObjectCommand,
+  DeleteObjectCommand,
+} from '@aws-sdk/client-s3';
+import {
+  StorageClient,
+  StorageProvider,
+  StorageConfig,
+  ListObjectsParams,
+  ListObjectsResult,
+  GetObjectParams,
+  GetObjectResult,
+  PutObjectParams,
+  PutObjectResult,
+  DeleteObjectParams,
+} from '@/types/storage';
 import { RepositoryObject } from '@/types';
 import { Readable } from 'stream';
 
@@ -9,13 +26,13 @@ export class S3StorageClient implements StorageClient {
 
   constructor(provider: StorageProvider, config: StorageConfig) {
     console.log('S3StorageClient constructor:', { provider, config });
-    
+
     this.provider = provider;
-    
+
     // Initialize S3 client without request signing for public access
     this.s3Client = new S3Client({
       region: config.region || 'us-east-1',
-      signer: { sign: async (request) => request },
+      signer: { sign: async request => request },
       forcePathStyle: true,
     });
   }
@@ -28,8 +45,12 @@ export class S3StorageClient implements StorageClient {
 
     try {
       // Ensure prefix ends with a slash if it's not empty
-      const prefix = params.prefix ? (params.prefix.endsWith('/') ? params.prefix : params.prefix + '/') : '';
-      
+      const prefix = params.prefix
+        ? params.prefix.endsWith('/')
+          ? params.prefix
+          : params.prefix + '/'
+        : '';
+
       const command = new ListObjectsV2Command({
         Bucket: this.provider.endpoint,
         Prefix: `${params.account_id}/${params.repository_id}/${prefix}`,
@@ -41,23 +62,26 @@ export class S3StorageClient implements StorageClient {
       console.log('S3 listObjects command:', {
         Bucket: this.provider.endpoint,
         Prefix: `${params.account_id}/${params.repository_id}/${prefix}`,
-        Delimiter: params.delimiter || '/'
+        Delimiter: params.delimiter || '/',
       });
 
       const response = await this.s3Client.send(command);
-      
+
       // Handle files (Contents)
-      const objects = (response.Contents || []).map(item => ({
-        id: item.Key!,
-        repository_id: params.repository_id,
-        path: item.Key!.replace(`${params.account_id}/${params.repository_id}/`, ''),
-        size: item.Size || 0,
-        type: 'file',
-        created_at: item.LastModified?.toISOString() || new Date().toISOString(),
-        updated_at: item.LastModified?.toISOString() || new Date().toISOString(),
-        checksum: item.ETag || '',
-        metadata: {}
-      } as RepositoryObject));
+      const objects = (response.Contents || []).map(
+        item =>
+          ({
+            id: item.Key!,
+            repository_id: params.repository_id,
+            path: item.Key!.replace(`${params.account_id}/${params.repository_id}/`, ''),
+            size: item.Size || 0,
+            type: 'file',
+            created_at: item.LastModified?.toISOString() || new Date().toISOString(),
+            updated_at: item.LastModified?.toISOString() || new Date().toISOString(),
+            checksum: item.ETag || '',
+            metadata: {},
+          }) as RepositoryObject
+      );
 
       // Handle directories (CommonPrefixes)
       const directories = (response.CommonPrefixes || []).map(prefix => {
@@ -72,7 +96,7 @@ export class S3StorageClient implements StorageClient {
           updated_at: new Date().toISOString(),
           checksum: '',
           metadata: {},
-          isDirectory: true
+          isDirectory: true,
         } as RepositoryObject;
       });
 
@@ -82,16 +106,17 @@ export class S3StorageClient implements StorageClient {
       console.log('S3 listObjects response:', {
         objects: allObjects.length,
         commonPrefixes: response.CommonPrefixes?.length || 0,
-        isTruncated: response.IsTruncated
+        isTruncated: response.IsTruncated,
       });
 
       return {
         objects: allObjects,
-        commonPrefixes: response.CommonPrefixes?.map(prefix => 
-          prefix.Prefix!.replace(`${params.account_id}/${params.repository_id}/`, '')
-        ) || [],
+        commonPrefixes:
+          response.CommonPrefixes?.map(prefix =>
+            prefix.Prefix!.replace(`${params.account_id}/${params.repository_id}/`, '')
+          ) || [],
         isTruncated: response.IsTruncated || false,
-        nextContinuationToken: response.NextContinuationToken
+        nextContinuationToken: response.NextContinuationToken,
       };
     } catch (error) {
       console.error('Error listing objects:', error);
@@ -107,7 +132,7 @@ export class S3StorageClient implements StorageClient {
       });
 
       const response = await this.s3Client.send(command);
-      
+
       // Convert stream to buffer
       const chunks: Uint8Array[] = [];
       for await (const chunk of response.Body as Readable) {
@@ -125,13 +150,13 @@ export class S3StorageClient implements StorageClient {
           created_at: response.LastModified?.toISOString() || new Date().toISOString(),
           updated_at: response.LastModified?.toISOString() || new Date().toISOString(),
           checksum: response.ETag || '',
-          metadata: response.Metadata || {}
+          metadata: response.Metadata || {},
         },
         data: buffer,
         contentType: response.ContentType || 'application/octet-stream',
         contentLength: buffer.length,
         etag: response.ETag || '',
-        lastModified: response.LastModified || new Date()
+        lastModified: response.LastModified || new Date(),
       };
     } catch (error) {
       console.error('Error getting object:', error);
@@ -157,7 +182,7 @@ export class S3StorageClient implements StorageClient {
         created_at: response.LastModified?.toISOString() || new Date().toISOString(),
         updated_at: response.LastModified?.toISOString() || new Date().toISOString(),
         checksum: response.ETag || '',
-        metadata: response.Metadata || {}
+        metadata: response.Metadata || {},
       };
     } catch (error) {
       console.error('Error getting object info:', error);
@@ -172,14 +197,14 @@ export class S3StorageClient implements StorageClient {
         Key: `${params.account_id}/${params.repository_id}/${params.object_path}`,
         Body: params.data,
         ContentType: params.contentType,
-        Metadata: params.metadata
+        Metadata: params.metadata,
       });
 
       const response = await this.s3Client.send(command);
 
       return {
         etag: response.ETag || '',
-        versionId: response.VersionId
+        versionId: response.VersionId,
       };
     } catch (error) {
       console.error('Error putting object:', error);
@@ -192,7 +217,7 @@ export class S3StorageClient implements StorageClient {
       const command = new DeleteObjectCommand({
         Bucket: this.provider.endpoint,
         Key: `${params.account_id}/${params.repository_id}/${params.object_path}`,
-        VersionId: params.versionId
+        VersionId: params.versionId,
       });
 
       await this.s3Client.send(command);
@@ -201,4 +226,4 @@ export class S3StorageClient implements StorageClient {
       throw error;
     }
   }
-} 
+}

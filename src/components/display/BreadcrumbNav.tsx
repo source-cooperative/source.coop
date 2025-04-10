@@ -11,15 +11,11 @@ interface BreadcrumbNavProps {
   onNavigate: (path: string[]) => void;
 }
 
-export function BreadcrumbNav({ 
-  path, 
-  fileName, 
-  onNavigate 
-}: BreadcrumbNavProps) {
+export function BreadcrumbNav({ path, fileName, onNavigate }: BreadcrumbNavProps) {
   const isRoot = path.length === 0 && !fileName;
-  
+
   // Create link styling that doesn't affect layout
-  const linkStyle = { 
+  const linkStyle = {
     color: 'var(--gray-11)',
     textDecorationThickness: '1px',
   };
@@ -30,11 +26,13 @@ export function BreadcrumbNav({
       <ChevronRightIcon />
       <div style={{ lineHeight: '22px' }}>
         {!isClickable ? (
-          <MonoText size="2" color="gray">{segment}</MonoText>
+          <MonoText size="2" color="gray">
+            {segment}
+          </MonoText>
         ) : (
-          <Link 
-            href="#" 
-            onClick={(e) => {
+          <Link
+            href="#"
+            onClick={e => {
               e.preventDefault();
               onNavigate(path.slice(0, index + 1));
             }}
@@ -50,46 +48,50 @@ export function BreadcrumbNav({
   // Determine which segments to show
   const MAX_VISIBLE_SEGMENTS = 4; // Show at most 2 at start and 2 at end
   let visibleSegments: JSX.Element[] = [];
-  
+
   if (path.length > 0) {
     if (path.length <= MAX_VISIBLE_SEGMENTS) {
       // Show all segments if path is short enough
-      visibleSegments = path.map((segment, index) => 
+      visibleSegments = path.map((segment, index) =>
         renderSegment(segment, index, !(index === path.length - 1) || Boolean(fileName))
       );
     } else {
       // Show first 2 and last 2 segments with ellipsis
-      const firstSegments = path.slice(0, 2).map((segment, index) => 
-        renderSegment(segment, index)
-      );
-      
-      const lastSegments = path.slice(-2).map((segment, index) => 
-        renderSegment(segment, path.length - 2 + index, !(index === 1) || Boolean(fileName))
-      );
-      
+      const firstSegments = path.slice(0, 2).map((segment, index) => renderSegment(segment, index));
+
+      const lastSegments = path
+        .slice(-2)
+        .map((segment, index) =>
+          renderSegment(segment, path.length - 2 + index, !(index === 1) || Boolean(fileName))
+        );
+
       visibleSegments = [
         ...firstSegments,
         <Flex key="ellipsis" align="center" gap="1">
           <ChevronRightIcon />
           <div style={{ lineHeight: '22px' }}>
-            <MonoText size="2" color="gray">...</MonoText>
+            <MonoText size="2" color="gray">
+              ...
+            </MonoText>
           </div>
         </Flex>,
-        ...lastSegments
+        ...lastSegments,
       ];
     }
   }
-  
+
   return (
     <Flex>
       {/* Root link */}
       <div style={{ lineHeight: '22px' }}>
         {isRoot ? (
-          <MonoText size="2" color="gray">root</MonoText>
+          <MonoText size="2" color="gray">
+            root
+          </MonoText>
         ) : (
-          <Link 
-            href="#" 
-            onClick={(e) => {
+          <Link
+            href="#"
+            onClick={e => {
               e.preventDefault();
               onNavigate([]);
             }}
@@ -99,16 +101,18 @@ export function BreadcrumbNav({
           </Link>
         )}
       </div>
-      
+
       {/* Path segments with possible truncation */}
       {visibleSegments}
-      
+
       {/* File name */}
       {fileName && (
         <Flex align="center" gap="1">
           <ChevronRightIcon />
           <div style={{ lineHeight: '22px' }}>
-            <MonoText size="2" color="gray">{fileName}</MonoText>
+            <MonoText size="2" color="gray">
+              {fileName}
+            </MonoText>
           </div>
         </Flex>
       )}

@@ -9,7 +9,7 @@ interface UseRepositoryListKeyboardShortcutsProps {
 
 export function useRepositoryListKeyboardShortcuts({
   repositories,
-  onShowHelp
+  onShowHelp,
 }: UseRepositoryListKeyboardShortcutsProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -39,7 +39,8 @@ export function useRepositoryListKeyboardShortcuts({
         case 'j':
         case 'ArrowDown': {
           e.preventDefault();
-          const newIndex = selectedIndex === -1 ? 0 : Math.min(selectedIndex + 1, repositories.length - 1);
+          const newIndex =
+            selectedIndex === -1 ? 0 : Math.min(selectedIndex + 1, repositories.length - 1);
           setSelectedIndex(newIndex);
           break;
         }
@@ -71,7 +72,7 @@ export function useRepositoryListKeyboardShortcuts({
           // Split path into segments
           {
             const segments = pathname.split('/').filter(Boolean);
-            
+
             if (segments.length === 0) {
               // At root - do nothing
               return;
@@ -97,6 +98,6 @@ export function useRepositoryListKeyboardShortcuts({
   return {
     selectedIndex,
     setSelectedIndex,
-    itemRefs
+    itemRefs,
   };
-} 
+}

@@ -152,10 +152,10 @@ Mathematical expression: E = mc<sup>2</sup>
 2. Second item
    <details>
    <summary>Nested details in list</summary>
-   
+
    - Sub list
    - With markdown
-   
+
    </details>
 
 ### HTML Comments
@@ -173,8 +173,9 @@ Normal markdown continues here.
 ---
 
 This file tests the interaction between HTML and Markdown, including:
+
 1. Complex HTML structures
 2. Mixed content rendering
 3. Edge cases and special characters
 4. Interactive elements
-5. Accessibility features 
+5. Accessibility features

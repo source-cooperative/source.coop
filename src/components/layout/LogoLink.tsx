@@ -10,11 +10,13 @@ interface LogoLinkProps {
 
 export function LogoLink({ children }: LogoLinkProps) {
   const pathname = usePathname();
-  
+
   // Only wrap in Link if not on home page
   return pathname === '/' ? (
     <div className={styles.logo}>{children}</div>
   ) : (
-    <Link href="/" className={styles.logo}>{children}</Link>
+    <Link href="/" className={styles.logo}>
+      {children}
+    </Link>
   );
-} 
+}

@@ -3,7 +3,7 @@ import type {
   IndividualAccount,
   OrganizationalAccount,
   AccountEmail,
-  AccountDomain
+  AccountDomain,
 } from './account_v2';
 
 describe('Account v2 Types', () => {
@@ -13,7 +13,7 @@ describe('Account v2 Types', () => {
         address: 'test@example.com',
         verified: false,
         is_primary: true,
-        added_at: new Date().toISOString()
+        added_at: new Date().toISOString(),
       };
       expect(email).toBeDefined();
     });
@@ -24,7 +24,7 @@ describe('Account v2 Types', () => {
         verified: true,
         verified_at: new Date().toISOString(),
         is_primary: true,
-        added_at: new Date().toISOString()
+        added_at: new Date().toISOString(),
       };
       expect(email).toBeDefined();
     });
@@ -35,7 +35,7 @@ describe('Account v2 Types', () => {
       const domain: AccountDomain = {
         domain: 'example.com',
         status: 'unverified',
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
       };
       expect(domain).toBeDefined();
     });
@@ -48,7 +48,7 @@ describe('Account v2 Types', () => {
         verification_token: 'token123',
         verified_at: new Date().toISOString(),
         created_at: new Date().toISOString(),
-        expires_at: new Date(Date.now() + 86400000).toISOString() // 1 day from now
+        expires_at: new Date(Date.now() + 86400000).toISOString(), // 1 day from now
       };
       expect(domain).toBeDefined();
     });
@@ -60,20 +60,22 @@ describe('Account v2 Types', () => {
         account_id: 'acc123',
         type: 'individual',
         name: 'Test User',
-        emails: [{
-          address: 'test@example.com',
-          verified: false,
-          is_primary: true,
-          added_at: new Date().toISOString()
-        }],
+        emails: [
+          {
+            address: 'test@example.com',
+            verified: false,
+            is_primary: true,
+            added_at: new Date().toISOString(),
+          },
+        ],
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         disabled: false,
         flags: [],
         metadata_public: {},
         metadata_private: {
-          identity_id: 'id123'
-        }
+          identity_id: 'id123',
+        },
       };
       expect(account).toBeDefined();
     });
@@ -83,13 +85,15 @@ describe('Account v2 Types', () => {
         account_id: 'acc123',
         type: 'individual',
         name: 'Test User',
-        emails: [{
-          address: 'test@example.com',
-          verified: true,
-          verified_at: new Date().toISOString(),
-          is_primary: true,
-          added_at: new Date().toISOString()
-        }],
+        emails: [
+          {
+            address: 'test@example.com',
+            verified: true,
+            verified_at: new Date().toISOString(),
+            is_primary: true,
+            added_at: new Date().toISOString(),
+          },
+        ],
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         disabled: false,
@@ -98,17 +102,19 @@ describe('Account v2 Types', () => {
           location: 'New York',
           bio: 'Test bio',
           orcid: '0000-0002-1825-0097',
-          domains: [{
-            domain: 'example.com',
-            status: 'verified',
-            verification_method: 'dns',
-            verified_at: new Date().toISOString(),
-            created_at: new Date().toISOString()
-          }]
+          domains: [
+            {
+              domain: 'example.com',
+              status: 'verified',
+              verification_method: 'dns',
+              verified_at: new Date().toISOString(),
+              created_at: new Date().toISOString(),
+            },
+          ],
         },
         metadata_private: {
-          identity_id: 'id123'
-        }
+          identity_id: 'id123',
+        },
       };
       expect(account).toBeDefined();
     });
@@ -120,20 +126,22 @@ describe('Account v2 Types', () => {
         account_id: 'org123',
         type: 'organization',
         name: 'Test Org',
-        emails: [{
-          address: 'org@example.com',
-          verified: false,
-          is_primary: true,
-          added_at: new Date().toISOString()
-        }],
+        emails: [
+          {
+            address: 'org@example.com',
+            verified: false,
+            is_primary: true,
+            added_at: new Date().toISOString(),
+          },
+        ],
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         disabled: false,
         flags: [],
         metadata_public: {},
         metadata_private: {
-          identity_id: 'id123'
-        }
+          identity_id: 'id123',
+        },
       };
       expect(account).toBeDefined();
     });
@@ -143,13 +151,15 @@ describe('Account v2 Types', () => {
         account_id: 'org123',
         type: 'organization',
         name: 'Test Org',
-        emails: [{
-          address: 'org@example.com',
-          verified: true,
-          verified_at: new Date().toISOString(),
-          is_primary: true,
-          added_at: new Date().toISOString()
-        }],
+        emails: [
+          {
+            address: 'org@example.com',
+            verified: true,
+            verified_at: new Date().toISOString(),
+            is_primary: true,
+            added_at: new Date().toISOString(),
+          },
+        ],
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         disabled: false,
@@ -158,22 +168,24 @@ describe('Account v2 Types', () => {
           location: 'New York',
           bio: 'Test org bio',
           ror_id: '03yrm5c26',
-          domains: [{
-            domain: 'example.org',
-            status: 'verified',
-            verification_method: 'dns',
-            verified_at: new Date().toISOString(),
-            created_at: new Date().toISOString()
-          }],
+          domains: [
+            {
+              domain: 'example.org',
+              status: 'verified',
+              verification_method: 'dns',
+              verified_at: new Date().toISOString(),
+              created_at: new Date().toISOString(),
+            },
+          ],
           owner_account_id: 'acc123',
           admin_account_ids: ['acc123', 'acc456'],
-          member_account_ids: ['acc789']
+          member_account_ids: ['acc789'],
         },
         metadata_private: {
-          identity_id: 'id123'
-        }
+          identity_id: 'id123',
+        },
       };
       expect(account).toBeDefined();
     });
   });
-}); 
+});

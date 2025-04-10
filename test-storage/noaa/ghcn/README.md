@@ -37,6 +37,7 @@ ghcn/
 ## 📝 Data Format
 
 ### Daily Data Format
+
 ```csv
 ID,YEAR,MONTH,DAY,ELEMENT,VALUE,M-FLAG,Q-FLAG,S-FLAG
 USC00011084,2024,1,1,TMAX,289,,5,0
@@ -45,6 +46,7 @@ USC00011084,2024,1,1,PRCP,0,,5,0
 ```
 
 ### Station Metadata Format
+
 ```csv
 ID,LATITUDE,LONGITUDE,ELEVATION,STATE,NAME,GSN_FLAG,CRN_FLAG,WMO_ID
 USC00011084,33.9505,-87.3766,252.1,AL,ADDISON 2 NW,,,
@@ -52,21 +54,21 @@ USC00011084,33.9505,-87.3766,252.1,AL,ADDISON 2 NW,,,
 
 ## 🌡️ Climate Elements
 
-| Code | Description | Units | Precision |
-|------|-------------|-------|-----------|
-| TMAX | Maximum temperature | Celsius | 0.1 |
-| TMIN | Minimum temperature | Celsius | 0.1 |
-| PRCP | Precipitation | mm | 0.1 |
-| SNOW | Snowfall | mm | 1.0 |
-| SNWD | Snow depth | mm | 1.0 |
+| Code | Description         | Units   | Precision |
+| ---- | ------------------- | ------- | --------- |
+| TMAX | Maximum temperature | Celsius | 0.1       |
+| TMIN | Minimum temperature | Celsius | 0.1       |
+| PRCP | Precipitation       | mm      | 0.1       |
+| SNOW | Snowfall            | mm      | 1.0       |
+| SNWD | Snow depth          | mm      | 1.0       |
 
 ## 🔍 Quality Control Flags
 
-| Flag | Description |
-|------|-------------|
-| M | Measurement flag |
-| Q | Quality flag |
-| S | Source flag |
+| Flag | Description      |
+| ---- | ---------------- |
+| M    | Measurement flag |
+| Q    | Quality flag     |
+| S    | Source flag      |
 
 ## 📊 Data Statistics
 
@@ -78,6 +80,7 @@ USC00011084,33.9505,-87.3766,252.1,AL,ADDISON 2 NW,,,
 ## 🛠️ Usage Examples
 
 ### Python Example
+
 ```python
 import pandas as pd
 
@@ -92,6 +95,7 @@ temp_data['VALUE'] = temp_data['VALUE'] / 10.0
 ```
 
 ### R Example
+
 ```r
 library(tidyverse)
 
@@ -133,11 +137,13 @@ graph TD
 ## 📦 Data Access
 
 ### Direct Download
+
 - FTP: `ftp://ftp.ncdc.noaa.gov/pub/data/ghcn`
 - HTTP: `https://www1.ncdc.noaa.gov/pub/data/ghcn`
 - API: `https://www.ncdc.noaa.gov/cdo-web/api/v2`
 
 ### Cloud Access
+
 - AWS: `s3://noaa-ghcn-pds`
 - Google Cloud: `gs://public-datasets-noaa-ghcn`
 
@@ -154,6 +160,7 @@ This data is released under the [U.S. Government Work](https://www.usa.gov/gover
 ## 🤝 Contributing
 
 For questions about the data or to report issues:
+
 - Email: ncdc.ghcn@noaa.gov
 - Issue Tracker: [GHCN Issues](https://www.ncdc.noaa.gov/ghcn-daily-description)
 
@@ -167,4 +174,4 @@ For questions about the data or to report issues:
 
 - [NOAA Climate Data Online](https://www.ncdc.noaa.gov/cdo-web/)
 - [World Meteorological Organization](https://public.wmo.int/)
-- [GHCN Publications](https://www.ncdc.noaa.gov/ghcn-daily-references) 
+- [GHCN Publications](https://www.ncdc.noaa.gov/ghcn-daily-references)

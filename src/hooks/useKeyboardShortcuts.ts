@@ -39,10 +39,10 @@ export function useKeyboardShortcuts({ onShowHelp }: UseKeyboardShortcutsProps =
       // Handle backtick for navigation
       if (e.key === '`' && !awaitingSecondKey) {
         e.preventDefault();
-        
+
         // Split path into segments
         const segments = pathname.split('/').filter(Boolean);
-        
+
         if (segments.length === 0) {
           // At root - do nothing
           return;
@@ -87,6 +87,6 @@ export function useKeyboardShortcuts({ onShowHelp }: UseKeyboardShortcutsProps =
   }, [router, awaitingSecondKey, onShowHelp, pathname]);
 
   return {
-    awaitingSecondKey
+    awaitingSecondKey,
   };
-} 
+}

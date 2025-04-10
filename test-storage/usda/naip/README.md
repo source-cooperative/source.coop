@@ -6,14 +6,14 @@ The National Agriculture Imagery Program (NAIP) acquires aerial imagery during t
 
 ## 📊 Data Specifications
 
-| Parameter | Value |
-|-----------|-------|
-| Resolution | 1 meter |
-| Bands | 4 (RGB + NIR) |
-| Format | GeoTIFF/COG |
-| Projection | UTM/NAD83 |
-| Accuracy | ±6 meters |
-| Coverage | CONUS |
+| Parameter  | Value         |
+| ---------- | ------------- |
+| Resolution | 1 meter       |
+| Bands      | 4 (RGB + NIR) |
+| Format     | GeoTIFF/COG   |
+| Projection | UTM/NAD83     |
+| Accuracy   | ±6 meters     |
+| Coverage   | CONUS         |
 
 ## 🗂️ Repository Structure
 
@@ -73,6 +73,7 @@ graph TD
 ## 🛠️ Usage Examples
 
 ### Python with rasterio
+
 ```python
 import rasterio
 import numpy as np
@@ -81,16 +82,17 @@ import numpy as np
 with rasterio.open('naip_tile.tif') as src:
     # Read all bands
     red, green, blue, nir = src.read()
-    
+
     # Calculate NDVI
     ndvi = (nir - red) / (nir + red)
-    
+
     # Get metadata
     transform = src.transform
     crs = src.crs
 ```
 
 ### GDAL Command Line
+
 ```bash
 # Create overviews
 gdaladdo -r average naip_tile.tif 2 4 8 16
@@ -106,21 +108,23 @@ gdal_translate naip_tile.tif cog.tif \
 
 ## 🔄 Acquisition Schedule
 
-| Region | Typical Acquisition |
-|--------|-------------------|
-| Southeast | April-June |
-| Midwest | June-August |
-| Northeast | July-September |
-| West | July-September |
+| Region    | Typical Acquisition |
+| --------- | ------------------- |
+| Southeast | April-June          |
+| Midwest   | June-August         |
+| Northeast | July-September      |
+| West      | July-September      |
 
 ## 📦 Data Access
 
 ### Cloud Access
+
 - AWS: `s3://usda-naip`
 - Google Cloud: `gs://naip`
 - Azure: `https://naipeuwest.blob.core.windows.net`
 
 ### Direct Download
+
 - USDA Geospatial Data Gateway
 - EarthExplorer
 - Web Coverage Service (WCS)
@@ -145,4 +149,4 @@ This data is released under the [U.S. Government Work](https://www.usa.gov/gover
 
 - [USDA Aerial Photography Field Office](https://www.fsa.usda.gov/programs-and-services/aerial-photography/)
 - [NAIP Imagery Info Sheet](https://www.fsa.usda.gov/Assets/USDA-FSA-Public/usdafiles/APFO/naip_info_sheet_2020.pdf)
-- [Status Maps](https://www.fsa.usda.gov/programs-and-services/aerial-photography/status-maps/) 
+- [Status Maps](https://www.fsa.usda.gov/programs-and-services/aerial-photography/status-maps/)

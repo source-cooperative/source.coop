@@ -1,6 +1,6 @@
 // jest.setup.ts
 import '@testing-library/jest-dom';
-import { jest } from "@jest/globals";
+import { jest } from '@jest/globals';
 
 // Mock next/navigation
 jest.mock('next/navigation', () => ({
@@ -10,4 +10,4 @@ jest.mock('next/navigation', () => ({
     prefetch: jest.fn(),
   }),
   usePathname: () => '/',
-})); 
+}));

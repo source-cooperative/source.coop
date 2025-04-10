@@ -6,12 +6,12 @@ This repository contains building footprints derived from satellite imagery usin
 
 ## 📊 Repository Statistics
 
-| Region | Building Count | Coverage (km²) | Last Updated |
-|--------|---------------|----------------|--------------|
-| Africa | 123,456,789 | 2,500,000 | 2024-03-01 |
-| Asia | 234,567,890 | 3,750,000 | 2024-02-28 |
-| Europe | 145,678,901 | 1,800,000 | 2024-02-15 |
-| North America | 98,765,432 | 2,100,000 | 2024-03-10 |
+| Region        | Building Count | Coverage (km²) | Last Updated |
+| ------------- | -------------- | -------------- | ------------ |
+| Africa        | 123,456,789    | 2,500,000      | 2024-03-01   |
+| Asia          | 234,567,890    | 3,750,000      | 2024-02-28   |
+| Europe        | 145,678,901    | 1,800,000      | 2024-02-15   |
+| North America | 98,765,432     | 2,100,000      | 2024-03-10   |
 
 ## 🗂️ Data Organization
 
@@ -37,6 +37,7 @@ global-building-footprints/
 ## 📝 Data Format
 
 ### Parquet Schema
+
 ```sql
 CREATE TABLE buildings (
     building_id STRING,
@@ -50,6 +51,7 @@ CREATE TABLE buildings (
 ```
 
 ### GeoJSON Feature Example
+
 ```json
 {
   "type": "Feature",
@@ -86,6 +88,7 @@ CREATE TABLE buildings (
 ## 🛠️ Usage Examples
 
 ### Python with GeoPandas
+
 ```python
 import geopandas as gpd
 import pandas as pd
@@ -100,6 +103,7 @@ print(f"Total building area: {total_area:,.2f} m²")
 ```
 
 ### R with sf
+
 ```r
 library(sf)
 library(arrow)
@@ -113,32 +117,34 @@ plot(buildings["height_m"], main="Building Heights")
 ```
 
 ### SQL with DuckDB
+
 ```sql
 -- Load Parquet data
-CREATE TABLE buildings AS 
+CREATE TABLE buildings AS
 SELECT * FROM read_parquet('*.parquet');
 
 -- Calculate statistics by region
-SELECT 
+SELECT
   region,
   COUNT(*) as building_count,
   AVG(area_sqm) as avg_area,
   SUM(area_sqm) as total_area
-FROM buildings 
+FROM buildings
 GROUP BY region;
 ```
 
 ## 📊 Validation Results
 
-| Metric | Value | Description |
-|--------|-------|-------------|
-| IoU Score | 0.91 | Intersection over Union with ground truth |
-| F1 Score | 0.94 | Harmonic mean of precision and recall |
-| RMSE | 1.2m | Root Mean Square Error in position |
+| Metric    | Value | Description                               |
+| --------- | ----- | ----------------------------------------- |
+| IoU Score | 0.91  | Intersection over Union with ground truth |
+| F1 Score  | 0.94  | Harmonic mean of precision and recall     |
+| RMSE      | 1.2m  | Root Mean Square Error in position        |
 
 ## 🔄 Update Frequency
 
 > Data is updated monthly with new satellite imagery
+>
 > - Major regions: Monthly updates
 > - Rural areas: Quarterly updates
 > - Validation sets: Bi-annual updates
@@ -148,6 +154,7 @@ GROUP BY region;
 We welcome contributions! Please see our [contribution guidelines](CONTRIBUTING.md).
 
 ### Quality Requirements
+
 1. Minimum confidence score: 0.75
 2. Spatial accuracy: < 2m RMSE
 3. Complete metadata
@@ -167,6 +174,7 @@ This dataset is licensed under the Open Data Commons Open Database License (ODbL
 ## 📞 Contact
 
 For questions or support:
+
 - 📧 Email: buildings@microsoft.com
 - 🌐 Website: https://microsoft.com/buildings
 - 💬 Discord: [Join our community](https://discord.gg/microsoftbuildings)

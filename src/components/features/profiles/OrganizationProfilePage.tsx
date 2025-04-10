@@ -36,4 +36,4 @@ export async function OrganizationProfilePage({ account_id }: OrganizationProfil
       />
     </Container>
   );
-} 
+}

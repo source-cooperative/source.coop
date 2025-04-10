@@ -21,8 +21,9 @@ export function WelcomeCallout({ show, accountId }: WelcomeCalloutProps) {
         Welcome to Source Cooperative. This is your profile page.{' '}
         <Link href={`/${accountId}/edit`} style={{ textDecoration: 'underline' }}>
           Edit it to add more details
-        </Link>.
+        </Link>
+        .
       </Callout.Text>
     </Callout.Root>
   );
-} 
+}

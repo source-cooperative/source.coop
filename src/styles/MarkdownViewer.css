@@ -63,7 +63,7 @@ code.inline-code {
   font-size: 0.9em;
 }
 
-:root[class~="dark"] code.inline-code {
+:root[class~='dark'] code.inline-code {
   background-color: var(--gray-6);
 }
 
@@ -93,7 +93,7 @@ code.inline-code {
 }
 
 /* Dark mode for tables */
-:root[class~="dark"] .markdown-viewer th {
+:root[class~='dark'] .markdown-viewer th {
   background-color: var(--gray-4);
 }
 
@@ -138,23 +138,23 @@ code.inline-code {
 }
 
 /* Dark mode for admonitions */
-:root[class~="dark"] .admonition {
+:root[class~='dark'] .admonition {
   background-color: var(--blue-12);
 }
 
-:root[class~="dark"] .admonition.warning {
+:root[class~='dark'] .admonition.warning {
   background-color: var(--orange-12);
 }
 
-:root[class~="dark"] .admonition.error {
+:root[class~='dark'] .admonition.error {
   background-color: var(--red-12);
 }
 
-:root[class~="dark"] .admonition.hint,
-:root[class~="dark"] .admonition.tip {
+:root[class~='dark'] .admonition.hint,
+:root[class~='dark'] .admonition.tip {
   background-color: var(--green-12);
 }
 
-:root[class~="dark"] .admonition.important {
+:root[class~='dark'] .admonition.important {
   background-color: var(--purple-12);
-} 
+}

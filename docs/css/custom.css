@@ -11,16 +11,16 @@
   --ifm-color-primary-light: var(--blue-8);
   --ifm-color-primary-lighter: var(--blue-7);
   --ifm-color-primary-lightest: var(--blue-6);
-  
+
   --ifm-code-font-size: 95%;
   --docusaurus-highlighted-code-line-bg: var(--slate-3);
-  
+
   --ifm-navbar-background-color: var(--slate-1);
   --ifm-navbar-shadow: 0 1px 0 0 var(--slate-6);
-  
+
   --ifm-toc-border-color: var(--slate-6);
   --ifm-footer-background-color: var(--slate-1);
-  
+
   --ifm-menu-color: var(--slate-11);
   --ifm-menu-color-active: var(--blue-9);
   --ifm-menu-color-background-active: var(--blue-3);
@@ -34,15 +34,15 @@
   --ifm-color-primary-light: var(--blue-8);
   --ifm-color-primary-lighter: var(--blue-7);
   --ifm-color-primary-lightest: var(--blue-6);
-  
+
   --docusaurus-highlighted-code-line-bg: var(--slate-dark-3);
-  
+
   --ifm-navbar-background-color: var(--slate-dark-1);
   --ifm-navbar-shadow: 0 1px 0 0 var(--slate-dark-6);
-  
+
   --ifm-toc-border-color: var(--slate-dark-6);
   --ifm-footer-background-color: var(--slate-dark-1);
-  
+
   --ifm-menu-color: var(--slate-dark-11);
   --ifm-menu-color-active: var(--blue-9);
   --ifm-menu-color-background-active: var(--blue-dark-3);
@@ -78,4 +78,4 @@
 
 [data-theme='dark'] .table-of-contents {
   border-left: 1px solid var(--slate-dark-6);
-} 
+}

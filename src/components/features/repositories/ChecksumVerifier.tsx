@@ -10,12 +10,10 @@ interface ChecksumVerifierProps {
   algorithm: 'SHA-256' | 'SHA-1';
 }
 
-export function ChecksumVerifier({ 
-  objectUrl, 
-  expectedHash, 
-  algorithm
-}: ChecksumVerifierProps) {
-  const [status, setStatus] = useState<'idle' | 'checking' | 'match' | 'mismatch' | 'error'>('idle');
+export function ChecksumVerifier({ objectUrl, expectedHash, algorithm }: ChecksumVerifierProps) {
+  const [status, setStatus] = useState<'idle' | 'checking' | 'match' | 'mismatch' | 'error'>(
+    'idle'
+  );
   const [error, setError] = useState<string | null>(null);
 
   async function verifyChecksum() {
@@ -30,8 +28,10 @@ export function ChecksumVerifier({
       }
 
       // Get checksum from response headers
-      const headerHash = response.headers.get(algorithm === 'SHA-256' ? 'x-amz-checksum-sha256' : 'x-amz-checksum-sha1');
-      
+      const headerHash = response.headers.get(
+        algorithm === 'SHA-256' ? 'x-amz-checksum-sha256' : 'x-amz-checksum-sha1'
+      );
+
       if (!headerHash) {
         setError('Checksum not available in response headers');
         setStatus('error');
@@ -47,11 +47,7 @@ export function ChecksumVerifier({
 
   return (
     <Flex align="center" gap="2">
-      <Button 
-        size="1" 
-        onClick={verifyChecksum}
-        disabled={status === 'checking'}
-      >
+      <Button size="1" onClick={verifyChecksum} disabled={status === 'checking'}>
         Verify {algorithm}
       </Button>
       {status === 'checking' && (
@@ -65,7 +61,9 @@ export function ChecksumVerifier({
           <Box style={{ color: 'var(--green-9)' }}>
             <CheckCircledIcon />
           </Box>
-          <Text size="1" color="green">Checksum verified</Text>
+          <Text size="1" color="green">
+            Checksum verified
+          </Text>
         </Flex>
       )}
       {status === 'mismatch' && (
@@ -73,7 +71,9 @@ export function ChecksumVerifier({
           <Box style={{ color: 'var(--red-9)' }}>
             <CrossCircledIcon />
           </Box>
-          <Text size="1" color="red">Checksum mismatch</Text>
+          <Text size="1" color="red">
+            Checksum mismatch
+          </Text>
         </Flex>
       )}
       {status === 'error' && (
@@ -83,4 +83,4 @@ export function ChecksumVerifier({
       )}
     </Flex>
   );
-} 
+}

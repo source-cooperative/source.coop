@@ -6,21 +6,21 @@ This repository contains atmospherically corrected surface reflectance products 
 
 ## 📊 Products
 
-| Band | Description | Resolution | Wavelength (nm) |
-|------|-------------|------------|-----------------|
-| B02 | Blue | 10m | 490 |
-| B03 | Green | 10m | 560 |
-| B04 | Red | 10m | 665 |
-| B08 | NIR | 10m | 842 |
-| B05 | Red Edge 1 | 20m | 705 |
-| B06 | Red Edge 2 | 20m | 740 |
-| B07 | Red Edge 3 | 20m | 783 |
-| B8A | NIR Narrow | 20m | 865 |
-| B11 | SWIR 1 | 20m | 1610 |
-| B12 | SWIR 2 | 20m | 2190 |
-| B01 | Coastal Aerosol | 60m | 443 |
-| B09 | Water Vapor | 60m | 940 |
-| B10 | Cirrus | 60m | 1375 |
+| Band | Description     | Resolution | Wavelength (nm) |
+| ---- | --------------- | ---------- | --------------- |
+| B02  | Blue            | 10m        | 490             |
+| B03  | Green           | 10m        | 560             |
+| B04  | Red             | 10m        | 665             |
+| B08  | NIR             | 10m        | 842             |
+| B05  | Red Edge 1      | 20m        | 705             |
+| B06  | Red Edge 2      | 20m        | 740             |
+| B07  | Red Edge 3      | 20m        | 783             |
+| B8A  | NIR Narrow      | 20m        | 865             |
+| B11  | SWIR 1          | 20m        | 1610            |
+| B12  | SWIR 2          | 20m        | 2190            |
+| B01  | Coastal Aerosol | 60m        | 443             |
+| B09  | Water Vapor     | 60m        | 940             |
+| B10  | Cirrus          | 60m        | 1375            |
 
 ## 🗂️ Repository Structure
 
@@ -46,6 +46,7 @@ sentinel-2/
 ## 📝 Data Format
 
 Products are provided in JPEG2000 format within a SAFE container:
+
 ```
 S2A_MSIL2A_20240215T103021_N0509_R108_T31UFU_20240215T124356.SAFE/
 ├── MTD_MSIL2A.xml
@@ -63,11 +64,11 @@ S2A_MSIL2A_20240215T103021_N0509_R108_T31UFU_20240215T124356.SAFE/
 
 ## 🛰️ Mission Coverage
 
-| Satellite | Launch Date | Revisit Time | Coverage |
-|-----------|-------------|--------------|----------|
-| Sentinel-2A | June 23, 2015 | 10 days | Global |
-| Sentinel-2B | March 7, 2017 | 10 days | Global |
-| Combined | - | 5 days | Global |
+| Satellite   | Launch Date   | Revisit Time | Coverage |
+| ----------- | ------------- | ------------ | -------- |
+| Sentinel-2A | June 23, 2015 | 10 days      | Global   |
+| Sentinel-2B | March 7, 2017 | 10 days      | Global   |
+| Combined    | -             | 5 days       | Global   |
 
 ## 📊 Data Statistics
 
@@ -80,6 +81,7 @@ S2A_MSIL2A_20240215T103021_N0509_R108_T31UFU_20240215T124356.SAFE/
 ## 🛠️ Usage Examples
 
 ### Python with rasterio
+
 ```python
 import rasterio
 from rasterio.plot import show
@@ -87,7 +89,7 @@ from rasterio.plot import show
 # Read red and NIR bands
 with rasterio.open('B04.jp2') as red:
     red_img = red.read(1)
-    
+
 with rasterio.open('B08.jp2') as nir:
     nir_img = nir.read(1)
 
@@ -104,6 +106,7 @@ ndvi = (nir_img - red_img) / (nir_img + red_img)
 ## 📦 Data Access
 
 ### Cloud Access
+
 - AWS: `s3://sentinel-s2-l2a`
 - Google Cloud: `gs://gcp-public-data-sentinel-2`
 - Azure: `https://sentinel2l2a01.blob.core.windows.net`
@@ -128,4 +131,4 @@ This data is released under the [Copernicus License](https://scihub.copernicus.e
 
 - [Copernicus Open Access Hub](https://scihub.copernicus.eu/)
 - [Sentinel Online](https://sentinel.esa.int/web/sentinel/home)
-- [ESA Data Quality Reports](https://sentinels.copernicus.eu/web/sentinel/data-product-quality-reports) 
+- [ESA Data Quality Reports](https://sentinels.copernicus.eu/web/sentinel/data-product-quality-reports)

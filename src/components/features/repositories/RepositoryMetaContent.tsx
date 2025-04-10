@@ -19,18 +19,24 @@ export function RepositoryMetaContent({ repository, statistics }: RepositoryMeta
       <DataList.Item>
         <DataList.Label>Visibility</DataList.Label>
         <DataList.Value>
-          <Badge color={
-            repository.visibility === 'public' ? "green" : 
-            repository.visibility === 'unlisted' ? "yellow" : 
-            "red"
-          }>
-            {repository.visibility === 'public' ? "Public" : 
-             repository.visibility === 'unlisted' ? "Unlisted" : 
-             "Restricted"}
+          <Badge
+            color={
+              repository.visibility === 'public'
+                ? 'green'
+                : repository.visibility === 'unlisted'
+                  ? 'yellow'
+                  : 'red'
+            }
+          >
+            {repository.visibility === 'public'
+              ? 'Public'
+              : repository.visibility === 'unlisted'
+                ? 'Unlisted'
+                : 'Restricted'}
           </Badge>
         </DataList.Value>
       </DataList.Item>
-      
+
       <DataList.Item>
         <DataList.Label>Owner</DataList.Label>
         <DataList.Value>
@@ -44,29 +50,37 @@ export function RepositoryMetaContent({ repository, statistics }: RepositoryMeta
           </Link>
         </DataList.Value>
       </DataList.Item>
-      
+
       {statistics && (
         <>
           <DataList.Item>
             <DataList.Label>Total Objects</DataList.Label>
-            <DataList.Value><MonoText>{statistics.total_objects}</MonoText></DataList.Value>
+            <DataList.Value>
+              <MonoText>{statistics.total_objects}</MonoText>
+            </DataList.Value>
           </DataList.Item>
           <DataList.Item>
             <DataList.Label>Total Size</DataList.Label>
-            <DataList.Value><MonoText>{formatBytes(statistics.total_bytes)}</MonoText></DataList.Value>
+            <DataList.Value>
+              <MonoText>{formatBytes(statistics.total_bytes)}</MonoText>
+            </DataList.Value>
           </DataList.Item>
         </>
       )}
-      
+
       <DataList.Item>
         <DataList.Label>Created</DataList.Label>
-        <DataList.Value><DateText date={repository.created_at} /></DataList.Value>
+        <DataList.Value>
+          <DateText date={repository.created_at} />
+        </DataList.Value>
       </DataList.Item>
-      
+
       <DataList.Item>
         <DataList.Label>Last Updated</DataList.Label>
-        <DataList.Value><DateText date={repository.updated_at} /></DataList.Value>
+        <DataList.Value>
+          <DateText date={repository.updated_at} />
+        </DataList.Value>
       </DataList.Item>
     </DataList.Root>
   );
-} 
+}

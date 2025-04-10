@@ -14,33 +14,22 @@ describe('BreadcrumbNav', () => {
   });
 
   it('should render path segments correctly', () => {
-    render(
-      <BreadcrumbNav 
-        path={['folder1', 'folder2']} 
-        onNavigate={mockOnNavigate} 
-      />
-    );
+    render(<BreadcrumbNav path={['folder1', 'folder2']} onNavigate={mockOnNavigate} />);
     expect(screen.getByText('root')).toBeInTheDocument();
     expect(screen.getByText('folder1')).toBeInTheDocument();
     expect(screen.getByText('folder2')).toBeInTheDocument();
   });
 
   it('should render file name when provided', () => {
-    render(
-      <BreadcrumbNav 
-        path={['folder1']} 
-        fileName="test.txt"
-        onNavigate={mockOnNavigate} 
-      />
-    );
+    render(<BreadcrumbNav path={['folder1']} fileName="test.txt" onNavigate={mockOnNavigate} />);
     expect(screen.getByText('test.txt')).toBeInTheDocument();
   });
 
   it('should truncate long paths with ellipsis', () => {
     render(
-      <BreadcrumbNav 
-        path={['folder1', 'folder2', 'folder3', 'folder4', 'folder5']} 
-        onNavigate={mockOnNavigate} 
+      <BreadcrumbNav
+        path={['folder1', 'folder2', 'folder3', 'folder4', 'folder5']}
+        onNavigate={mockOnNavigate}
       />
     );
     expect(screen.getByText('...')).toBeInTheDocument();
@@ -51,13 +40,8 @@ describe('BreadcrumbNav', () => {
   });
 
   it('should navigate when clicking path segments', () => {
-    render(
-      <BreadcrumbNav 
-        path={['folder1', 'folder2']} 
-        onNavigate={mockOnNavigate} 
-      />
-    );
-    
+    render(<BreadcrumbNav path={['folder1', 'folder2']} onNavigate={mockOnNavigate} />);
+
     // Click first folder
     fireEvent.click(screen.getByText('folder1'));
     expect(mockOnNavigate).toHaveBeenCalledWith(['folder1']);
@@ -68,15 +52,10 @@ describe('BreadcrumbNav', () => {
   });
 
   it('should handle navigation prevention for current segment', () => {
-    render(
-      <BreadcrumbNav 
-        path={['folder1', 'folder2']} 
-        onNavigate={mockOnNavigate} 
-      />
-    );
-    
+    render(<BreadcrumbNav path={['folder1', 'folder2']} onNavigate={mockOnNavigate} />);
+
     // Last segment should not be clickable
     const lastSegment = screen.getByText('folder2');
     expect(lastSegment.closest('a')).toBeNull();
   });
-}); 
+});

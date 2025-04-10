@@ -1,9 +1,6 @@
-export type RepositoryObjectType = 
-  | 'directory'
-  | 'file'
-  | string; // For MIME types or other custom types
+type RepositoryObjectType = 'directory' | 'file' | string; // For MIME types or other custom types
 
-export interface RepositoryObjectMetadata {
+interface RepositoryObjectMetadata {
   sha256?: string;
   sha1?: string;
   [key: string]: string | number | boolean | null | undefined; // More specific types for metadata values
@@ -23,4 +20,4 @@ export interface RepositoryObject {
   metadata?: RepositoryObjectMetadata;
   name?: string; // Name of the file or directory
   isDirectory?: boolean; // Whether this is a directory
-} 
+}

@@ -3,6 +3,7 @@
 ## Phase 1: Local Development
 
 ### 1.1 Local Environment Setup
+
 1. Update local DynamoDB schema
 2. Update application code to work with new schema
 3. Update type definitions
@@ -10,6 +11,7 @@
 5. Manual testing of all features
 
 ### 1.2 Validation
+
 - [ ] All tests passing
 - [ ] All features working as expected
 - [ ] Performance metrics acceptable
@@ -18,6 +20,7 @@
 ## Phase 2: Production Preparation
 
 ### 2.1 Backup Current Data
+
 ```bash
 # Export current tables
 aws dynamodb export-table-to-point-in-time \
@@ -32,6 +35,7 @@ aws dynamodb export-table-to-point-in-time \
 ```
 
 ### 2.2 Migration Script Development
+
 1. Create data transformation scripts
 2. Test scripts against backup data
 3. Validate transformed data
@@ -40,6 +44,7 @@ aws dynamodb export-table-to-point-in-time \
 ## Phase 3: Production Migration
 
 ### 3.1 Pre-Deployment Checklist
+
 - [ ] Local environment fully tested
 - [ ] Backup current tables
 - [ ] Migration scripts tested against backup data
@@ -47,6 +52,7 @@ aws dynamodb export-table-to-point-in-time \
 - [ ] Schedule maintenance window
 
 ### 3.2 Deployment Steps
+
 1. Schedule maintenance window
 2. Stop application
 3. Run final backup
@@ -58,12 +64,14 @@ aws dynamodb export-table-to-point-in-time \
 ## Phase 4: Post-Migration
 
 ### 4.1 Monitoring
+
 - Application performance
 - Error rates
 - Database metrics
 - User feedback
 
 ### 4.2 Cleanup
+
 - Keep old backup data for 1 week
 - Update documentation
 - Archive migration scripts
@@ -71,12 +79,14 @@ aws dynamodb export-table-to-point-in-time \
 ## Risk Assessment
 
 ### Potential Risks
+
 1. Data loss during migration
 2. Application downtime
 3. Performance degradation
 4. Data inconsistency
 
 ### Mitigation Strategies
+
 1. Comprehensive backups
 2. Local testing first
 3. Rollback plan
@@ -94,14 +104,14 @@ aws dynamodb export-table-to-point-in-time \
 
 ## Timeline
 
-| Phase | Duration | Description |
-|-------|----------|-------------|
-| Local Development | 3-4 days | Schema updates and testing |
+| Phase                  | Duration | Description                   |
+| ---------------------- | -------- | ----------------------------- |
+| Local Development      | 3-4 days | Schema updates and testing    |
 | Production Preparation | 1-2 days | Backup and script development |
-| Testing | 2 days | Comprehensive testing |
-| Deployment | 1 day | Production deployment |
-| Monitoring | 1 week | Post-deployment monitoring |
-| Cleanup | 1 day | Final cleanup |
+| Testing                | 2 days   | Comprehensive testing         |
+| Deployment             | 1 day    | Production deployment         |
+| Monitoring             | 1 week   | Post-deployment monitoring    |
+| Cleanup                | 1 day    | Final cleanup                 |
 
 Total: ~2-3 weeks
 
@@ -110,4 +120,4 @@ Total: ~2-3 weeks
 1. Review [Schema Changes](./schema-changes.md)
 2. Update local DynamoDB schema
 3. Update application code
-4. Begin local testing process 
+4. Begin local testing process

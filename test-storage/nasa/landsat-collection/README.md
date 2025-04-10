@@ -6,11 +6,11 @@ This repository contains a comprehensive collection of Landsat satellite imagery
 
 ## 📊 Collections
 
-| Collection | Time Range | Resolution | Processing Levels | Bands |
-|------------|------------|------------|-------------------|-------|
-| Landsat 4-5 | 1982-2013 | 30m/120m | L1, L2 | MSS, TM |
-| Landsat 7 | 1999-2023 | 30m/60m | L1, L2 | ETM+ |
-| Landsat 8-9 | 2013-Present | 30m/100m | L1, L2 | OLI, TIRS |
+| Collection  | Time Range   | Resolution | Processing Levels | Bands     |
+| ----------- | ------------ | ---------- | ----------------- | --------- |
+| Landsat 4-5 | 1982-2013    | 30m/120m   | L1, L2            | MSS, TM   |
+| Landsat 7   | 1999-2023    | 30m/60m    | L1, L2            | ETM+      |
+| Landsat 8-9 | 2013-Present | 30m/100m   | L1, L2            | OLI, TIRS |
 
 ## 🗂️ Repository Structure
 
@@ -35,6 +35,7 @@ landsat-collection/
 ## 📝 Data Format
 
 ### Scene Metadata (Parquet Schema)
+
 ```sql
 CREATE TABLE scenes (
     scene_id STRING,
@@ -52,6 +53,7 @@ CREATE TABLE scenes (
 ```
 
 ### STAC Metadata
+
 ```json
 {
   "type": "Collection",
@@ -60,24 +62,25 @@ CREATE TABLE scenes (
   "description": "Landsat 8-9 Collection 2 Level-2 scenes",
   "license": "PDDL-1.0",
   "extent": {
-    "spatial": {"bbox": [[-180, -90, 180, 90]]},
-    "temporal": {"interval": [["2013-02-11", null]]}
+    "spatial": { "bbox": [[-180, -90, 180, 90]] },
+    "temporal": { "interval": [["2013-02-11", null]] }
   }
 }
 ```
 
 ## 📈 Collection Statistics
 
-| Metric | Landsat 4-5 | Landsat 7 | Landsat 8-9 |
-|--------|-------------|------------|-------------|
-| Total Scenes | 1.2M | 2.5M | 3.1M |
-| Daily Scenes | ~250 | ~450 | ~740 |
-| Coverage | Global | Global | Global |
-| Revisit | 16 days | 16 days | 8 days |
+| Metric       | Landsat 4-5 | Landsat 7 | Landsat 8-9 |
+| ------------ | ----------- | --------- | ----------- |
+| Total Scenes | 1.2M        | 2.5M      | 3.1M        |
+| Daily Scenes | ~250        | ~450      | ~740        |
+| Coverage     | Global      | Global    | Global      |
+| Revisit      | 16 days     | 16 days   | 8 days      |
 
 ## 🛠️ Usage Examples
 
 ### Python with Pandas
+
 ```python
 import pandas as pd
 
@@ -92,6 +95,7 @@ filtered = scenes[
 ```
 
 ### Python with STAC
+
 ```python
 from pystac_client import Client
 
@@ -121,9 +125,9 @@ graph TD
 ## 📊 Quality Metrics
 
 | Processing Level | Geometric Accuracy | Radiometric Accuracy | Cloud Detection |
-|-----------------|-------------------|---------------------|-----------------|
-| Level-1 | < 12m RMSE | 3% uncertainty | 88% accuracy |
-| Level-2 | < 12m RMSE | 5% uncertainty | 92% accuracy |
+| ---------------- | ------------------ | -------------------- | --------------- |
+| Level-1          | < 12m RMSE         | 3% uncertainty       | 88% accuracy    |
+| Level-2          | < 12m RMSE         | 5% uncertainty       | 92% accuracy    |
 
 ## 🔄 Update Schedule
 
@@ -135,11 +139,13 @@ graph TD
 ## 📦 Data Access
 
 ### Direct Download
+
 - Base URL: `https://landsatlook.usgs.gov/data/`
 - Authentication: Required (EarthData Login)
 - Rate Limits: 10 concurrent downloads
 
 ### Cloud Optimized GeoTIFF
+
 - AWS: `s3://usgs-landsat`
 - Google Cloud: `gs://gcp-public-data-landsat`
 - Azure: `https://landsateuwest.blob.core.windows.net`
@@ -147,6 +153,7 @@ graph TD
 ## 🛠️ Tools & Libraries
 
 Recommended software for working with Landsat data:
+
 - [landsat-util](https://github.com/developmentseed/landsat-util)
 - [rio-toa](https://github.com/mapbox/rio-toa)
 - [sat-search](https://github.com/sat-utils/sat-search)
@@ -169,4 +176,4 @@ We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guid
 
 - [Landsat Science](https://landsat.gsfc.nasa.gov/)
 - [USGS Earth Explorer](https://earthexplorer.usgs.gov/)
-- [Collection 2 Documentation](https://www.usgs.gov/landsat-missions/landsat-collection-2) 
+- [Collection 2 Documentation](https://www.usgs.gov/landsat-missions/landsat-collection-2)

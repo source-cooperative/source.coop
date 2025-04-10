@@ -9,6 +9,7 @@ The test data consists of a combination of DynamoDB tables and a local file stor
 ## DynamoDB Tables
 
 ### Accounts Table
+
 - Contains both individual user accounts and organization accounts
 - Primary key: `id` (string)
 - Attributes:
@@ -20,6 +21,7 @@ The test data consists of a combination of DynamoDB tables and a local file stor
   - `updated_at`: Timestamp
 
 ### Repositories Table
+
 - Stores repository metadata and relationships
 - Primary key: `id` (string)
 - Global Secondary Index: `account_id` (string)
@@ -73,6 +75,7 @@ npx tsx scripts/init-local.ts
 ```
 
 This will:
+
 - Set up DynamoDB tables
 - Create test accounts and repositories
 - Generate the test storage structure
@@ -83,11 +86,13 @@ This will:
 The test data includes various relationships to test different scenarios:
 
 1. Individual Users
+
    - Personal repositories
    - Organization memberships
    - Repository access levels
 
 2. Organizations
+
    - Team repositories
    - Member relationships
    - Repository ownership
@@ -121,11 +126,13 @@ This guide explains how to manage test accounts during development, including cr
 ## Creating Test Accounts
 
 ### Through the UI
+
 1. Visit `http://localhost:3000/register`
 2. Fill in the registration form with test data
 3. Verify your email using the link sent to your inbox
 
 ### Using the API
+
 ```bash
 # Register a new test account
 curl -X POST http://localhost:3000/api/auth/register \
@@ -136,9 +143,8 @@ curl -X POST http://localhost:3000/api/auth/register \
   }'
 ```
 
-
 ## Related Documentation
 
 - [API Testing Guide](api-testing.md)
 - [Authentication Guide](ory-authentication.md)
-- [DynamoDB Guide](dynamodb.md) 
+- [DynamoDB Guide](dynamodb.md)

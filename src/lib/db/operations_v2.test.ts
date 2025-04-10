@@ -12,7 +12,7 @@ import {
   updateRepositoryMirror,
   fetchOrganizationMembers,
   isIndividualAccount,
-  isOrganizationalAccount
+  isOrganizationalAccount,
 } from './operations_v2';
 
 import type { Account, IndividualAccount, OrganizationalAccount } from '@/types/account_v2';
@@ -21,8 +21,8 @@ import type { Repository_v2, RepositoryMirror, RepositoryRole } from '@/types/re
 // Mock the DynamoDB client
 jest.mock('@/lib/clients', () => ({
   getDynamoDb: jest.fn().mockReturnValue({
-    send: jest.fn()
-  })
+    send: jest.fn(),
+  }),
 }));
 
 // Import the mocked client
@@ -30,7 +30,7 @@ import { getDynamoDb } from '@/lib/clients';
 
 describe('Database Operations v2', () => {
   let mockDocClient: any;
-  
+
   beforeEach(() => {
     // Reset mocks before each test
     jest.clearAllMocks();
@@ -43,26 +43,28 @@ describe('Database Operations v2', () => {
         account_id: 'acc123',
         type: 'individual',
         name: 'Test User',
-        emails: [{
-          address: 'test@example.com',
-          verified: false,
-          is_primary: true,
-          added_at: new Date().toISOString()
-        }],
+        emails: [
+          {
+            address: 'test@example.com',
+            verified: false,
+            is_primary: true,
+            added_at: new Date().toISOString(),
+          },
+        ],
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         disabled: false,
         flags: [],
         metadata_public: {},
         metadata_private: {
-          identity_id: 'id123'
-        }
+          identity_id: 'id123',
+        },
       };
 
       mockDocClient.send.mockResolvedValueOnce({ Item: mockAccount });
 
       const result = await fetchAccount('acc123');
-      
+
       expect(result).toEqual(mockAccount);
       expect(mockDocClient.send).toHaveBeenCalledTimes(1);
     });
@@ -72,7 +74,7 @@ describe('Database Operations v2', () => {
       mockDocClient.send.mockResolvedValueOnce({ Item: null });
 
       const result = await fetchAccount('nonexistent');
-      
+
       expect(result).toBeNull();
       expect(mockDocClient.send).toHaveBeenCalledTimes(2);
     });
@@ -82,26 +84,28 @@ describe('Database Operations v2', () => {
         account_id: 'acc123',
         type: 'individual',
         name: 'Test User',
-        emails: [{
-          address: 'test@example.com',
-          verified: false,
-          is_primary: true,
-          added_at: new Date().toISOString()
-        }],
+        emails: [
+          {
+            address: 'test@example.com',
+            verified: false,
+            is_primary: true,
+            added_at: new Date().toISOString(),
+          },
+        ],
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         disabled: false,
         flags: [],
         metadata_public: {},
         metadata_private: {
-          identity_id: 'id123'
-        }
+          identity_id: 'id123',
+        },
       };
 
       mockDocClient.send.mockResolvedValueOnce({ Items: [mockAccount] });
 
       const result = await fetchAccountByEmail('test@example.com');
-      
+
       expect(result).toEqual(mockAccount);
       expect(mockDocClient.send).toHaveBeenCalledTimes(1);
     });
@@ -112,46 +116,50 @@ describe('Database Operations v2', () => {
           account_id: 'acc123',
           type: 'individual',
           name: 'Test User 1',
-          emails: [{
-            address: 'test1@example.com',
-            verified: false,
-            is_primary: true,
-            added_at: new Date().toISOString()
-          }],
+          emails: [
+            {
+              address: 'test1@example.com',
+              verified: false,
+              is_primary: true,
+              added_at: new Date().toISOString(),
+            },
+          ],
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
           disabled: false,
           flags: [],
           metadata_public: {},
           metadata_private: {
-            identity_id: 'id123'
-          }
+            identity_id: 'id123',
+          },
         },
         {
           account_id: 'acc456',
           type: 'individual',
           name: 'Test User 2',
-          emails: [{
-            address: 'test2@example.com',
-            verified: false,
-            is_primary: true,
-            added_at: new Date().toISOString()
-          }],
+          emails: [
+            {
+              address: 'test2@example.com',
+              verified: false,
+              is_primary: true,
+              added_at: new Date().toISOString(),
+            },
+          ],
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
           disabled: false,
           flags: [],
           metadata_public: {},
           metadata_private: {
-            identity_id: 'id456'
-          }
-        }
+            identity_id: 'id456',
+          },
+        },
       ];
 
       mockDocClient.send.mockResolvedValueOnce({ Items: mockAccounts });
 
       const result = await fetchAccountsByType('individual');
-      
+
       expect(result).toEqual(mockAccounts);
       expect(mockDocClient.send).toHaveBeenCalledTimes(1);
     });
@@ -163,24 +171,26 @@ describe('Database Operations v2', () => {
         account_id: 'acc123',
         type: 'individual',
         name: 'Test User',
-        emails: [{
-          address: 'test@example.com',
-          verified: false,
-          is_primary: true,
-          added_at: new Date().toISOString()
-        }],
+        emails: [
+          {
+            address: 'test@example.com',
+            verified: false,
+            is_primary: true,
+            added_at: new Date().toISOString(),
+          },
+        ],
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         disabled: false,
         flags: [],
         metadata_public: {},
         metadata_private: {
-          identity_id: 'id123'
-        }
+          identity_id: 'id123',
+        },
       };
 
       const result = await updateAccount(mockAccount);
-      
+
       expect(result).toBe(true);
       expect(mockDocClient.send).toHaveBeenCalledTimes(1);
     });
@@ -199,14 +209,14 @@ describe('Database Operations v2', () => {
         metadata: {
           mirrors: {},
           primary_mirror: 'default',
-          roles: {}
-        }
+          roles: {},
+        },
       };
 
       mockDocClient.send.mockResolvedValueOnce({ Item: mockRepo });
 
       const result = await fetchRepository('acc123', 'repo123');
-      
+
       expect(result).toEqual(mockRepo);
       expect(mockDocClient.send).toHaveBeenCalledTimes(1);
     });
@@ -224,8 +234,8 @@ describe('Database Operations v2', () => {
           metadata: {
             mirrors: {},
             primary_mirror: 'default',
-            roles: {}
-          }
+            roles: {},
+          },
         },
         {
           repository_id: 'repo456',
@@ -238,15 +248,15 @@ describe('Database Operations v2', () => {
           metadata: {
             mirrors: {},
             primary_mirror: 'default',
-            roles: {}
-          }
-        }
+            roles: {},
+          },
+        },
       ];
 
       mockDocClient.send.mockResolvedValueOnce({ Items: mockRepos });
 
       const result = await fetchRepositoriesByAccount('acc123');
-      
+
       expect(result).toEqual(mockRepos);
       expect(mockDocClient.send).toHaveBeenCalledTimes(1);
     });
@@ -264,8 +274,8 @@ describe('Database Operations v2', () => {
           metadata: {
             mirrors: {},
             primary_mirror: 'default',
-            roles: {}
-          }
+            roles: {},
+          },
         },
         {
           repository_id: 'repo456',
@@ -278,18 +288,18 @@ describe('Database Operations v2', () => {
           metadata: {
             mirrors: {},
             primary_mirror: 'default',
-            roles: {}
-          }
-        }
+            roles: {},
+          },
+        },
       ];
 
-      mockDocClient.send.mockResolvedValueOnce({ 
+      mockDocClient.send.mockResolvedValueOnce({
         Items: mockRepos,
-        LastEvaluatedKey: { visibility: 'public', created_at: mockRepos[1].created_at }
+        LastEvaluatedKey: { visibility: 'public', created_at: mockRepos[1].created_at },
       });
 
       const result = await fetchPublicRepositories(2);
-      
+
       expect(result.repositories).toEqual(mockRepos);
       expect(result.lastEvaluatedKey).toBeDefined();
       expect(mockDocClient.send).toHaveBeenCalledTimes(1);
@@ -309,12 +319,12 @@ describe('Database Operations v2', () => {
         metadata: {
           mirrors: {},
           primary_mirror: 'default',
-          roles: {}
-        }
+          roles: {},
+        },
       };
 
       const result = await updateRepository(mockRepo);
-      
+
       expect(result).toBe(true);
       expect(mockDocClient.send).toHaveBeenCalledTimes(1);
     });
@@ -327,12 +337,14 @@ describe('Database Operations v2', () => {
         account_id: 'org123',
         type: 'organization',
         name: 'Test Org',
-        emails: [{
-          address: 'org@example.com',
-          verified: false,
-          is_primary: true,
-          added_at: new Date().toISOString()
-        }],
+        emails: [
+          {
+            address: 'org@example.com',
+            verified: false,
+            is_primary: true,
+            added_at: new Date().toISOString(),
+          },
+        ],
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         disabled: false,
@@ -340,11 +352,11 @@ describe('Database Operations v2', () => {
         metadata_public: {
           owner_account_id: 'owner123',
           admin_account_ids: ['admin1', 'admin2'],
-          member_account_ids: ['member1', 'member2', 'member3']
+          member_account_ids: ['member1', 'member2', 'member3'],
         },
         metadata_private: {
-          identity_id: 'id123'
-        }
+          identity_id: 'id123',
+        },
       };
 
       // Create mock owner account
@@ -352,20 +364,22 @@ describe('Database Operations v2', () => {
         account_id: 'owner123',
         type: 'individual',
         name: 'Owner User',
-        emails: [{
-          address: 'owner@example.com',
-          verified: true,
-          is_primary: true,
-          added_at: new Date().toISOString()
-        }],
+        emails: [
+          {
+            address: 'owner@example.com',
+            verified: true,
+            is_primary: true,
+            added_at: new Date().toISOString(),
+          },
+        ],
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         disabled: false,
         flags: [],
         metadata_public: {},
         metadata_private: {
-          identity_id: 'id_owner'
-        }
+          identity_id: 'id_owner',
+        },
       };
 
       // Create mock admin accounts
@@ -374,40 +388,44 @@ describe('Database Operations v2', () => {
           account_id: 'admin1',
           type: 'individual',
           name: 'Admin User 1',
-          emails: [{
-            address: 'admin1@example.com',
-            verified: true,
-            is_primary: true,
-            added_at: new Date().toISOString()
-          }],
+          emails: [
+            {
+              address: 'admin1@example.com',
+              verified: true,
+              is_primary: true,
+              added_at: new Date().toISOString(),
+            },
+          ],
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
           disabled: false,
           flags: [],
           metadata_public: {},
           metadata_private: {
-            identity_id: 'id_admin1'
-          }
+            identity_id: 'id_admin1',
+          },
         },
         {
           account_id: 'admin2',
           type: 'individual',
           name: 'Admin User 2',
-          emails: [{
-            address: 'admin2@example.com',
-            verified: true,
-            is_primary: true,
-            added_at: new Date().toISOString()
-          }],
+          emails: [
+            {
+              address: 'admin2@example.com',
+              verified: true,
+              is_primary: true,
+              added_at: new Date().toISOString(),
+            },
+          ],
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
           disabled: false,
           flags: [],
           metadata_public: {},
           metadata_private: {
-            identity_id: 'id_admin2'
-          }
-        }
+            identity_id: 'id_admin2',
+          },
+        },
       ];
 
       // Create mock member accounts
@@ -416,59 +434,65 @@ describe('Database Operations v2', () => {
           account_id: 'member1',
           type: 'individual',
           name: 'Member User 1',
-          emails: [{
-            address: 'member1@example.com',
-            verified: true,
-            is_primary: true,
-            added_at: new Date().toISOString()
-          }],
+          emails: [
+            {
+              address: 'member1@example.com',
+              verified: true,
+              is_primary: true,
+              added_at: new Date().toISOString(),
+            },
+          ],
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
           disabled: false,
           flags: [],
           metadata_public: {},
           metadata_private: {
-            identity_id: 'id_member1'
-          }
+            identity_id: 'id_member1',
+          },
         },
         {
           account_id: 'member2',
           type: 'individual',
           name: 'Member User 2',
-          emails: [{
-            address: 'member2@example.com',
-            verified: true,
-            is_primary: true,
-            added_at: new Date().toISOString()
-          }],
+          emails: [
+            {
+              address: 'member2@example.com',
+              verified: true,
+              is_primary: true,
+              added_at: new Date().toISOString(),
+            },
+          ],
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
           disabled: false,
           flags: [],
           metadata_public: {},
           metadata_private: {
-            identity_id: 'id_member2'
-          }
+            identity_id: 'id_member2',
+          },
         },
         {
           account_id: 'member3',
           type: 'individual',
           name: 'Member User 3',
-          emails: [{
-            address: 'member3@example.com',
-            verified: true,
-            is_primary: true,
-            added_at: new Date().toISOString()
-          }],
+          emails: [
+            {
+              address: 'member3@example.com',
+              verified: true,
+              is_primary: true,
+              added_at: new Date().toISOString(),
+            },
+          ],
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
           disabled: false,
           flags: [],
           metadata_public: {},
           metadata_private: {
-            identity_id: 'id_member3'
-          }
-        }
+            identity_id: 'id_member3',
+          },
+        },
       ];
 
       // Mock the fetchAccount function to return the appropriate accounts
@@ -481,7 +505,7 @@ describe('Database Operations v2', () => {
         .mockResolvedValueOnce({ Item: mockMemberAccounts[2] }); // For member3
 
       const result = await fetchOrganizationMembers(mockOrgAccount);
-      
+
       expect(result.owner).toEqual(mockOwnerAccount);
       expect(result.admins).toEqual(mockAdminAccounts);
       expect(result.members).toEqual(mockMemberAccounts);
@@ -494,12 +518,14 @@ describe('Database Operations v2', () => {
         account_id: 'org123',
         type: 'organization',
         name: 'Test Org',
-        emails: [{
-          address: 'org@example.com',
-          verified: false,
-          is_primary: true,
-          added_at: new Date().toISOString()
-        }],
+        emails: [
+          {
+            address: 'org@example.com',
+            verified: false,
+            is_primary: true,
+            added_at: new Date().toISOString(),
+          },
+        ],
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         disabled: false,
@@ -507,11 +533,11 @@ describe('Database Operations v2', () => {
         metadata_public: {
           owner_account_id: 'owner123',
           admin_account_ids: ['admin1'],
-          member_account_ids: ['member1', 'nonexistent']
+          member_account_ids: ['member1', 'nonexistent'],
         },
         metadata_private: {
-          identity_id: 'id123'
-        }
+          identity_id: 'id123',
+        },
       };
 
       // Create mock owner account
@@ -519,20 +545,22 @@ describe('Database Operations v2', () => {
         account_id: 'owner123',
         type: 'individual',
         name: 'Owner User',
-        emails: [{
-          address: 'owner@example.com',
-          verified: true,
-          is_primary: true,
-          added_at: new Date().toISOString()
-        }],
+        emails: [
+          {
+            address: 'owner@example.com',
+            verified: true,
+            is_primary: true,
+            added_at: new Date().toISOString(),
+          },
+        ],
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         disabled: false,
         flags: [],
         metadata_public: {},
         metadata_private: {
-          identity_id: 'id_owner'
-        }
+          identity_id: 'id_owner',
+        },
       };
 
       // Create mock admin account
@@ -540,20 +568,22 @@ describe('Database Operations v2', () => {
         account_id: 'admin1',
         type: 'individual',
         name: 'Admin User 1',
-        emails: [{
-          address: 'admin1@example.com',
-          verified: true,
-          is_primary: true,
-          added_at: new Date().toISOString()
-        }],
+        emails: [
+          {
+            address: 'admin1@example.com',
+            verified: true,
+            is_primary: true,
+            added_at: new Date().toISOString(),
+          },
+        ],
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         disabled: false,
         flags: [],
         metadata_public: {},
         metadata_private: {
-          identity_id: 'id_admin1'
-        }
+          identity_id: 'id_admin1',
+        },
       };
 
       // Create mock member account
@@ -561,20 +591,22 @@ describe('Database Operations v2', () => {
         account_id: 'member1',
         type: 'individual',
         name: 'Member User 1',
-        emails: [{
-          address: 'member1@example.com',
-          verified: true,
-          is_primary: true,
-          added_at: new Date().toISOString()
-        }],
+        emails: [
+          {
+            address: 'member1@example.com',
+            verified: true,
+            is_primary: true,
+            added_at: new Date().toISOString(),
+          },
+        ],
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         disabled: false,
         flags: [],
         metadata_public: {},
         metadata_private: {
-          identity_id: 'id_member1'
-        }
+          identity_id: 'id_member1',
+        },
       };
 
       // Mock the fetchAccount function to return the appropriate accounts
@@ -585,7 +617,7 @@ describe('Database Operations v2', () => {
         .mockResolvedValueOnce({ Item: null }); // For nonexistent member
 
       const result = await fetchOrganizationMembers(mockOrgAccount);
-      
+
       expect(result.owner).toEqual(mockOwnerAccount);
       expect(result.admins).toEqual([mockAdminAccount]);
       expect(result.members).toEqual([mockMemberAccount]);
@@ -599,40 +631,44 @@ describe('Database Operations v2', () => {
         account_id: 'acc123',
         type: 'individual',
         name: 'Test User',
-        emails: [{
-          address: 'test@example.com',
-          verified: false,
-          is_primary: true,
-          added_at: new Date().toISOString()
-        }],
+        emails: [
+          {
+            address: 'test@example.com',
+            verified: false,
+            is_primary: true,
+            added_at: new Date().toISOString(),
+          },
+        ],
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         disabled: false,
         flags: [],
         metadata_public: {},
         metadata_private: {
-          identity_id: 'id123'
-        }
+          identity_id: 'id123',
+        },
       };
 
       const organizationalAccount: OrganizationalAccount = {
         account_id: 'org123',
         type: 'organization',
         name: 'Test Org',
-        emails: [{
-          address: 'org@example.com',
-          verified: false,
-          is_primary: true,
-          added_at: new Date().toISOString()
-        }],
+        emails: [
+          {
+            address: 'org@example.com',
+            verified: false,
+            is_primary: true,
+            added_at: new Date().toISOString(),
+          },
+        ],
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         disabled: false,
         flags: [],
         metadata_public: {},
         metadata_private: {
-          identity_id: 'id123'
-        }
+          identity_id: 'id123',
+        },
       };
 
       expect(isIndividualAccount(individualAccount)).toBe(true);
@@ -644,44 +680,48 @@ describe('Database Operations v2', () => {
         account_id: 'acc123',
         type: 'individual',
         name: 'Test User',
-        emails: [{
-          address: 'test@example.com',
-          verified: false,
-          is_primary: true,
-          added_at: new Date().toISOString()
-        }],
+        emails: [
+          {
+            address: 'test@example.com',
+            verified: false,
+            is_primary: true,
+            added_at: new Date().toISOString(),
+          },
+        ],
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         disabled: false,
         flags: [],
         metadata_public: {},
         metadata_private: {
-          identity_id: 'id123'
-        }
+          identity_id: 'id123',
+        },
       };
 
       const organizationalAccount: OrganizationalAccount = {
         account_id: 'org123',
         type: 'organization',
         name: 'Test Org',
-        emails: [{
-          address: 'org@example.com',
-          verified: false,
-          is_primary: true,
-          added_at: new Date().toISOString()
-        }],
+        emails: [
+          {
+            address: 'org@example.com',
+            verified: false,
+            is_primary: true,
+            added_at: new Date().toISOString(),
+          },
+        ],
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         disabled: false,
         flags: [],
         metadata_public: {},
         metadata_private: {
-          identity_id: 'id123'
-        }
+          identity_id: 'id123',
+        },
       };
 
       expect(isOrganizationalAccount(organizationalAccount)).toBe(true);
       expect(isOrganizationalAccount(individualAccount)).toBe(false);
     });
   });
-}); 
+});

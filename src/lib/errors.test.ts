@@ -99,4 +99,4 @@ describe('AuthorizationError', () => {
     expect(error.statusCode).toBe(403);
     expect(error.details).toEqual(details);
   });
-}); 
+});

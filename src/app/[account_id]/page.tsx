@@ -1,9 +1,9 @@
 /**
  * Account Page - Displays account details and repositories
- * 
+ *
  * This server component handles both individual and organizational accounts.
  * It fetches account data, repositories, and organization members (if applicable).
- * 
+ *
  * @param params - Route parameters containing account_id
  * @param searchParams - URL search parameters, including welcome flag for onboarding
  * @returns Rendered profile component based on account type
@@ -23,10 +23,7 @@ type PageProps = {
   searchParams: Promise<{ welcome?: string }>;
 };
 
-export default async function AccountPage({ 
-  params,
-  searchParams 
-}: PageProps) {
+export default async function AccountPage({ params, searchParams }: PageProps) {
   const { account_id } = await params;
   const { welcome } = await searchParams;
   const showWelcome = welcome === 'true';
@@ -57,4 +54,4 @@ export default async function AccountPage({
       />
     </Container>
   );
-} 
+}

@@ -11,7 +11,7 @@ import { FrontendApi, Configuration } from '@ory/client';
 import { InfoCircledIcon, CheckCircledIcon } from '@radix-ui/react-icons';
 import { VerificationSuccessCallout } from '@/components/features/auth/VerificationSuccessCallout';
 import { recordVerificationTimestamp } from '@/app/actions/account';
-import { CONFIG } from "@/lib/config";
+import { CONFIG } from '@/lib/config';
 
 interface OnboardingFormData {
   account_id: string;
@@ -36,7 +36,7 @@ export function OnboardingForm() {
   const [username, setUsername] = useState('');
   const [formData, setFormData] = useState<OnboardingFormData>({
     account_id: '',
-    name: ''
+    name: '',
   });
   const [usernameStatus, setUsernameStatus] = useState<UsernameStatus>('idle');
   const [verificationStatus, setVerificationStatus] = useState<'pending' | 'verified'>('pending');
@@ -67,17 +67,15 @@ export function OnboardingForm() {
           // Check email verification status
           const identity = data.identity;
           if (identity?.verifiable_addresses) {
-            const emailAddress = identity.verifiable_addresses.find(
-              (addr) => addr.via === 'email'
-            );
+            const emailAddress = identity.verifiable_addresses.find(addr => addr.via === 'email');
             if (emailAddress?.verified) {
               setVerificationStatus('verified');
-              
+
               // Record verification timestamp if coming from email-verified page
               const isFromVerification = window.location.search.includes('verified=true');
               if (isFromVerification && identity.id) {
                 console.log('Recording verification timestamp for identity:', identity.id);
-                
+
                 try {
                   await recordVerificationTimestamp(identity.id);
                   console.log('Successfully recorded verification timestamp');
@@ -87,7 +85,7 @@ export function OnboardingForm() {
               }
             }
           }
-          
+
           // Pre-fill email if available
           if (identity?.traits?.email) {
             console.log('Session found, email:', identity.traits.email);
@@ -102,29 +100,28 @@ export function OnboardingForm() {
     checkSession();
   }, [router, ory]);
 
-  const checkUsername = useCallback(
-    async (value: string) => {
-      if (!value || value.length < 3) {
-        setUsernameStatus('idle');
-        return;
-      }
+  const checkUsername = useCallback(async (value: string) => {
+    if (!value || value.length < 3) {
+      setUsernameStatus('idle');
+      return;
+    }
 
-      setUsernameStatus('checking');
-      try {
-        const response = await fetch(`/api/accounts/check-username?username=${encodeURIComponent(value)}`);
-        const data: UsernameCheckResponse = await response.json();
-        setUsernameStatus(data.available ? 'available' : 'taken');
-      } catch (err) {
-        console.error('Error checking username:', err);
-        setUsernameStatus('idle');
-      }
-    },
-    []
-  );
+    setUsernameStatus('checking');
+    try {
+      const response = await fetch(
+        `/api/accounts/check-username?username=${encodeURIComponent(value)}`
+      );
+      const data: UsernameCheckResponse = await response.json();
+      setUsernameStatus(data.available ? 'available' : 'taken');
+    } catch (err) {
+      console.error('Error checking username:', err);
+      setUsernameStatus('idle');
+    }
+  }, []);
 
   // Use the debounced version
-  const debouncedCheckUsername = useMemo(() => 
-    debounce((value: string) => checkUsername(value), 500),
+  const debouncedCheckUsername = useMemo(
+    () => debounce((value: string) => checkUsername(value), 500),
     [checkUsername]
   );
 
@@ -155,7 +152,7 @@ export function OnboardingForm() {
 
       // Get the current session to ensure we have the Ory ID
       const { data: sessionData } = await ory.toSession();
-      
+
       if (!sessionData?.identity?.id) {
         throw new Error('No active session found');
       }
@@ -165,19 +162,19 @@ export function OnboardingForm() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json',
+          Accept: 'application/json',
         },
         credentials: 'include',
         body: JSON.stringify({
           account_id,
           name,
           ory_id: sessionData.identity.id,
-          email: sessionData.identity.traits.email
+          email: sessionData.identity.traits.email,
         }),
       });
 
       const responseJson: OnboardingResponse = await responseData.json();
-      
+
       if (!responseData.ok) {
         throw new Error(responseJson.error || 'Failed to complete onboarding');
       }
@@ -202,15 +199,15 @@ export function OnboardingForm() {
       placeholder: 'Choose a username',
       validation: {
         minLength: 3,
-        pattern: '^[a-z0-9_-]+$'
+        pattern: '^[a-z0-9_-]+$',
       },
       defaultValue: formData.account_id,
-      onChange: (value) => {
+      onChange: value => {
         // Process the username value (lowercase and remove spaces)
         const processedValue = value.toLowerCase().replace(/\s+/g, '');
         setFormData(prev => ({
           ...prev,
-          account_id: processedValue
+          account_id: processedValue,
         }));
       },
       description: (
@@ -223,11 +220,11 @@ export function OnboardingForm() {
               <MonoText size="1" color="gray">
                 source.coop/
               </MonoText>
-              <MonoText 
-                size="1" 
+              <MonoText
+                size="1"
                 color={
-                  usernameStatus === 'checking' 
-                    ? 'gray' 
+                  usernameStatus === 'checking'
+                    ? 'gray'
                     : usernameStatus === 'available'
                       ? 'green'
                       : usernameStatus === 'taken'
@@ -241,15 +238,21 @@ export function OnboardingForm() {
           </Flex>
           <div style={{ height: '16px' }}>
             {usernameStatus === 'checking' ? (
-              <Text size="1" color="gray">Checking availability…</Text>
-            ) : usernameStatus !== 'idle' && (
-              <Text size="1" color={usernameStatus === 'available' ? 'green' : 'red'}>
-                {usernameStatus === 'available' ? 'Username is available' : 'This username is already taken'}
+              <Text size="1" color="gray">
+                Checking availability…
               </Text>
+            ) : (
+              usernameStatus !== 'idle' && (
+                <Text size="1" color={usernameStatus === 'available' ? 'green' : 'red'}>
+                  {usernameStatus === 'available'
+                    ? 'Username is available'
+                    : 'This username is already taken'}
+                </Text>
+              )
             )}
           </div>
         </Flex>
-      )
+      ),
     },
     {
       name: 'name',
@@ -258,17 +261,17 @@ export function OnboardingForm() {
       required: true,
       placeholder: 'Your Name',
       validation: {
-        minLength: 2
+        minLength: 2,
       },
       defaultValue: formData.name,
-      onChange: (value) => {
+      onChange: value => {
         setFormData(prev => ({
           ...prev,
-          name: value
+          name: value,
         }));
       },
-      description: 'This is the name that will be displayed on your profile'
-    }
+      description: 'This is the name that will be displayed on your profile',
+    },
   ];
 
   return (
@@ -282,9 +285,7 @@ export function OnboardingForm() {
               <Callout.Icon>
                 <CheckCircledIcon />
               </Callout.Icon>
-              <Callout.Text>
-                Your email has been verified successfully!
-              </Callout.Text>
+              <Callout.Text>Your email has been verified successfully!</Callout.Text>
             </Callout.Root>
           )
         ) : (
@@ -308,4 +309,4 @@ export function OnboardingForm() {
       />
     </Box>
   );
-} 
+}

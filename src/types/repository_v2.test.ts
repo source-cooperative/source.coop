@@ -3,7 +3,7 @@ import type {
   RepositoryMirror,
   RepositoryRole,
   AccountRepositoriesIndex,
-  PublicRepositoriesIndex
+  PublicRepositoriesIndex,
 } from './repository_v2';
 
 describe('Repository v2 Types', () => {
@@ -17,13 +17,13 @@ describe('Repository v2 Types', () => {
         is_primary: true,
         sync_status: {
           last_sync_at: new Date().toISOString(),
-          is_synced: true
+          is_synced: true,
         },
         stats: {
           total_objects: 100,
           total_size: 1024,
-          last_verified_at: new Date().toISOString()
-        }
+          last_verified_at: new Date().toISOString(),
+        },
       };
       expect(mirror).toBeDefined();
     });
@@ -35,19 +35,19 @@ describe('Repository v2 Types', () => {
         prefix: 'acc123/repo123/',
         config: {
           region: 'us-east-1',
-          bucket: 'my-bucket'
+          bucket: 'my-bucket',
         },
         is_primary: true,
         sync_status: {
           last_sync_at: new Date().toISOString(),
           is_synced: true,
-          error: 'No errors'
+          error: 'No errors',
         },
         stats: {
           total_objects: 100,
           total_size: 1024,
-          last_verified_at: new Date().toISOString()
-        }
+          last_verified_at: new Date().toISOString(),
+        },
       };
       expect(mirror).toBeDefined();
     });
@@ -59,7 +59,7 @@ describe('Repository v2 Types', () => {
         account_id: 'acc123',
         role: 'contributor',
         granted_at: new Date().toISOString(),
-        granted_by: 'admin123'
+        granted_by: 'admin123',
       };
       expect(role).toBeDefined();
     });
@@ -78,8 +78,8 @@ describe('Repository v2 Types', () => {
         metadata: {
           mirrors: {},
           primary_mirror: 'default',
-          roles: {}
-        }
+          roles: {},
+        },
       };
       expect(repo).toBeDefined();
     });
@@ -95,37 +95,37 @@ describe('Repository v2 Types', () => {
         visibility: 'public',
         metadata: {
           mirrors: {
-            'default': {
+            default: {
               storage_type: 's3',
               connection_id: 'conn123',
               prefix: 'acc123/repo123/',
               config: {
                 region: 'us-east-1',
-                bucket: 'my-bucket'
+                bucket: 'my-bucket',
               },
               is_primary: true,
               sync_status: {
                 last_sync_at: new Date().toISOString(),
-                is_synced: true
+                is_synced: true,
               },
               stats: {
                 total_objects: 100,
                 total_size: 1024,
-                last_verified_at: new Date().toISOString()
-              }
-            }
+                last_verified_at: new Date().toISOString(),
+              },
+            },
           },
           primary_mirror: 'default',
           tags: ['test', 'example'],
           roles: {
-            'acc123': {
+            acc123: {
               account_id: 'acc123',
               role: 'admin',
               granted_at: new Date().toISOString(),
-              granted_by: 'acc123'
-            }
-          }
-        }
+              granted_by: 'acc123',
+            },
+          },
+        },
       };
       expect(repo).toBeDefined();
     });
@@ -138,7 +138,7 @@ describe('Repository v2 Types', () => {
         created_at: new Date().toISOString(),
         repository_id: 'repo123',
         title: 'Test Repository',
-        visibility: 'public'
+        visibility: 'public',
       };
       expect(index).toBeDefined();
     });
@@ -151,9 +151,9 @@ describe('Repository v2 Types', () => {
         created_at: new Date().toISOString(),
         repository_id: 'repo123',
         account_id: 'acc123',
-        title: 'Test Repository'
+        title: 'Test Repository',
       };
       expect(index).toBeDefined();
     });
   });
-}); 
+});

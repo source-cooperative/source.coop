@@ -8,10 +8,14 @@ interface RepositorySummaryCardProps {
 export function RepositorySummaryCard({ repository }: RepositorySummaryCardProps) {
   return (
     <Box>
-      <Heading size="8" mb="2">{repository.title}</Heading>
+      <Heading size="8" mb="2">
+        {repository.title}
+      </Heading>
       {repository.description && (
-        <Text color="gray" size="4" mb="4">{repository.description}</Text>
+        <Text color="gray" size="4" mb="4">
+          {repository.description}
+        </Text>
       )}
     </Box>
   );
-} 
+}

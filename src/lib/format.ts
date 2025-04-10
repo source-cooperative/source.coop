@@ -32,7 +32,7 @@ export function formatDateSSR(date: string): string {
  */
 export function formatDate(date: string, includeTime: boolean = false): string {
   const dateObj = new Date(date);
-  
+
   if (!includeTime) {
     // Match the SSR format exactly
     return formatDateSSR(date);
@@ -47,8 +47,8 @@ export function formatDate(date: string, includeTime: boolean = false): string {
     minute: '2-digit',
     hour12: false,
     timeZone: 'UTC',
-    timeZoneName: 'short'
+    timeZoneName: 'short',
   }).format(dateObj);
 
   return `${day} ${month} ${year} ${time}`;
-} 
+}

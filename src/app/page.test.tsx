@@ -32,11 +32,11 @@ describe('HomePage', () => {
         mirrors: {},
         primary_mirror: '',
         tags: [],
-        roles: {}
+        roles: {},
       },
       mirrors: [],
-      roles: []
-    }
+      roles: [],
+    },
   ];
 
   beforeEach(() => {
@@ -45,8 +45,8 @@ describe('HomePage', () => {
 
   it('renders repositories list', async () => {
     render(await HomePage());
-    
+
     expect(screen.getByText('Repositories')).toBeInTheDocument();
     expect(screen.getByText('Test Repository')).toBeInTheDocument();
   });
-}); 
+});

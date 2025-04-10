@@ -2,8 +2,8 @@
 
 Founding principles of Source:
 
-1. *The data product* is the atomic unit of consumption for data. 
-2. *Data producers* are *data users* and vice versa.
+1. _The data product_ is the atomic unit of consumption for data.
+2. _Data producers_ are _data users_ and vice versa.
 3. The world needs a neutral trusted validator of data to ensure ethical data sharing and usage.
 
 This directory contains comprehensive documentation for the Source.coop platform.
@@ -35,4 +35,4 @@ docs/
 - [Architecture Overview](architecture/overview.md)
 - [Development Setup](development/setup.md)
 - [Project Roadmap](roadmap/overview.md)
-- [Changelog](releases/changelog.md) 
+- [Changelog](releases/changelog.md)

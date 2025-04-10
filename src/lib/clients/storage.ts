@@ -29,11 +29,11 @@ export function createStorageClient(): StorageClient {
   };
 
   console.log('Creating storage client with:', { provider, config });
-  
+
   // Create the appropriate storage client based on type
   if (storageType === 'S3') {
     return new S3StorageClient(provider, config);
   } else {
     return new LocalStorageClient(provider, config);
   }
-} 
+}

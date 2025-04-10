@@ -2,7 +2,7 @@ import { ReactNode } from 'react';
 
 export type FormFieldType = 'text' | 'email' | 'password' | 'url' | 'select' | 'textarea';
 
-export interface FormFieldOption {
+interface FormFieldOption {
   value: string;
   label: string;
 }
@@ -36,4 +36,4 @@ export interface FormProps {
   isLoading?: boolean;
   submitDisabled?: boolean;
   hideSubmit?: boolean;
-} 
+}

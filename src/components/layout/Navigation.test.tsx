@@ -30,18 +30,19 @@ describe('Navigation', () => {
     (useRouter as jest.Mock).mockReturnValue(mockRouter);
 
     // Mock fetch for session check
-    global.fetch = jest.fn().mockImplementation((url) => {
+    global.fetch = jest.fn().mockImplementation(url => {
       if (url.includes('/sessions/whoami')) {
         return Promise.resolve({
           ok: true,
-          json: () => Promise.resolve({
-            identity: {
-              id: mockUser.account_id,
-              traits: {
-                name: mockUser.name,
+          json: () =>
+            Promise.resolve({
+              identity: {
+                id: mockUser.account_id,
+                traits: {
+                  name: mockUser.name,
+                },
               },
-            },
-          }),
+            }),
         });
       }
       return Promise.resolve({
@@ -52,11 +53,7 @@ describe('Navigation', () => {
   });
 
   const renderWithTheme = (ui: React.ReactElement) => {
-    return render(
-      <Theme>
-        {ui}
-      </Theme>
-    );
+    return render(<Theme>{ui}</Theme>);
   };
 
   it('renders login button when user is not authenticated', async () => {
@@ -75,14 +72,15 @@ describe('Navigation', () => {
   it('renders user menu when user is authenticated', async () => {
     (global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
-      json: () => Promise.resolve({
-        identity: {
-          id: mockUser.account_id,
-          traits: {
-            name: mockUser.name,
+      json: () =>
+        Promise.resolve({
+          identity: {
+            id: mockUser.account_id,
+            traits: {
+              name: mockUser.name,
+            },
           },
-        },
-      }),
+        }),
     });
 
     renderWithTheme(<Navigation />);
@@ -98,7 +96,7 @@ describe('Navigation', () => {
 
     // Wait for user menu button to be visible
     const menuButton = await waitFor(() => screen.getByRole('button', { name: mockUser.name }));
-    
+
     // Click the menu button
     await user.click(menuButton);
 
@@ -118,7 +116,7 @@ describe('Navigation', () => {
 
     // Wait for user menu button to be visible
     const menuButton = await waitFor(() => screen.getByRole('button', { name: mockUser.name }));
-    
+
     // Click the menu button
     await user.click(menuButton);
 
@@ -128,4 +126,4 @@ describe('Navigation', () => {
       expect(adminLink).toHaveAttribute('href', `/admin/${mockUser.account_id}`);
     });
   });
-}); 
+});

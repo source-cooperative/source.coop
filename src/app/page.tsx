@@ -1,6 +1,6 @@
 /**
  * Home Page - Lists all repositories
- * 
+ *
  * KEEP IT SIMPLE:
  * 1. No URL params needed (root route /)
  * 2. Get data -> Transform if needed -> Render
@@ -24,11 +24,13 @@ async function getRepositories(): Promise<Repository[]> {
 
 export default async function HomePage() {
   const repositories = await getRepositories();
-  
+
   return (
     <Container size="4" py="6">
       <Box>
-        <Heading size="6" mb="4">Repositories</Heading>
+        <Heading size="6" mb="4">
+          Repositories
+        </Heading>
         <RepositoryList repositories={repositories} />
       </Box>
     </Container>

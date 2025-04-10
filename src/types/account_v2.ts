@@ -64,4 +64,4 @@ export interface OrganizationalAccount extends BaseAccount {
 }
 
 // Union type for any kind of account
-export type Account = IndividualAccount | OrganizationalAccount; 
+export type Account = IndividualAccount | OrganizationalAccount;

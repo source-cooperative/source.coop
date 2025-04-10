@@ -5,10 +5,12 @@ This documentation describes the migration process from the old DynamoDB schema 
 ## Overview
 
 The migration involves updating two main DynamoDB tables:
+
 1. `sc-accounts` → `sc-accounts` (schema update only)
 2. `sc-repositories` → `sc-repositories` (schema update only)
 
 The new schema provides:
+
 - Better type safety and validation
 - Improved indexing for common queries
 - Enhanced features for organization management
@@ -27,6 +29,7 @@ The new schema provides:
 ## Timeline
 
 Estimated timeline for the migration:
+
 1. Preparation: 1 day
 2. Migration Script Development: 2 days
 3. Testing: 2 days
@@ -49,4 +52,4 @@ Total: ~2 weeks
 1. Review the [Overview and Planning](./overview.md) document
 2. Understand the [Schema Changes](./schema-changes.md)
 3. Follow the [Deployment Guide](./deployment.md) for implementation
-4. Use the [Validation](./validation.md) procedures to ensure data integrity 
+4. Use the [Validation](./validation.md) procedures to ensure data integrity
