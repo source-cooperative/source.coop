@@ -22,22 +22,27 @@ export const CONFIG = {
   },
   auth: {
     // Admin configuration
+
+    // Remove this
     api: {
-      frontendUrl: process.env.NEXT_PUBLIC_ORY_BASE_URL || "",
+      frontendUrl: process.env.NEXT_PUBLIC_ORY_SDK_URL || "",
       backendUrl: process.env.ORY_BASE_URL || "",
     },
     accessToken: process.env.ORY_PROJECT_API_KEY || "",
     projectId: process.env.ORY_PROJECT_ID || "",
     projectSlug: process.env.ORY_PROJECT_SLUG || "",
     workspaceId: process.env.ORY_WORKSPACE_ID || "",
+    // /end Remove
+
+    // Override configuration
     config: {
       override: {
-        applicationName: "Ory Next.js App Router Example",
+        applicationName: "Source Cooperative",
         loginUiPath: "/auth/login",
         registrationUiPath: "/auth/registration",
         recoveryUiPath: "/auth/recovery",
         verificationUiPath: "/auth/verification",
-        settingsUiPath: "/settings",
+        settingsUiPath: "/auth/settings",
         defaultRedirectUri: "/",
       },
     } as OryConfig,

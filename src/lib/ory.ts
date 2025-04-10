@@ -18,42 +18,6 @@ export type ExtendedSession = Session & {
   identity?: ExtendedIdentity;
 };
 
-// Create a new Ory SDK instance for client-side use
-// export const ory = new FrontendApi(
-//   new Configuration({
-//     basePath: CONFIG.auth.api.frontendUrl,
-//     baseOptions: {
-//       withCredentials: true,
-//       headers: {
-//         Accept: "application/json",
-//         "Content-Type": "application/json",
-//       },
-//       validateStatus: () => {
-//         // Accept any status code to handle redirects
-//         return true;
-//       },
-//     },
-//   })
-// );
-
-const baseUrl: string = true
-  ? CONFIG.auth.api.frontendUrl
-  : "http://localhost:3000/api/.ory";
-
-export const ory = CONFIG.auth.api.backendUrl
-  ? new FrontendApi(
-      new Configuration({
-        // basePath: "http://localhost:3000/api/.ory",
-        accessToken: process.env.ORY_ACCESS_TOKEN,
-        baseOptions: {
-          withCredentials: true, // Important for CORS
-          timeout: 30000, // 30 seconds
-        },
-        basePath: "/api/.ory",
-      })
-    )
-  : new FrontendApi(new Configuration(edgeConfig));
-
 // Create a server-side instance of the Ory SDK
 export const serverOry = new FrontendApi(
   new Configuration({
@@ -72,21 +36,6 @@ export const serverOry = new FrontendApi(
   })
 );
 
-// Helper to get session data using the SDK
-export async function getSession(): Promise<ExtendedSession | null> {
-  try {
-    const { data } = await ory.toSession();
-    return data as ExtendedSession;
-  } catch (error: any) {
-    // Only log connection errors, not auth errors
-    if (error.code === "ECONNREFUSED") {
-      console.error("Connection refused - Ory tunnel is not running");
-    } else if (!(error instanceof Error && error.message.includes("401"))) {
-      console.error("Error getting session:", error);
-    }
-    return null;
-  }
-}
 
 // Helper to update Ory identity (admin operation)
 export async function updateOryIdentity(oryId: string, data: any) {

@@ -1,5 +1,10 @@
-import { DefaultCard } from "@ory/elements-react/theme";
+import { DefaultCardLayout } from "@ory/elements-react/theme";
 import "@ory/elements-react/theme/styles.css";
 
-// export default DefaultCardLayout;
-export default DefaultCard;
+export default ({ children }: { children: React.ReactNode }) => {
+  return (
+    <div className="flex flex-col items-center justify-center h-screen">
+      {children}
+    </div>
+  );
+};

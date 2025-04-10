@@ -7,8 +7,8 @@ import type { Repository_v2 } from '@/types/repository_v2';
 import { RepositoryList } from '@/components/features/repositories/RepositoryList';
 import { OrganizationMembers } from './OrganizationMembers';
 import { ProfileAvatar } from './ProfileAvatar';
-import { useAuth } from '@/hooks/useAuth';
 import { WebsiteLink } from './WebsiteLink';
+import { useSession } from '@ory/elements-react/client';
 
 interface OrganizationProfileProps {
   account: OrganizationalAccount;
@@ -25,7 +25,7 @@ export function OrganizationProfile({
   admins,
   members 
 }: OrganizationProfileProps) {
-  const { session } = useAuth();
+  const { session } = useSession();
   const currentUserId = session?.identity?.metadata_public?.account_id;
   const isAdmin = admins.some(admin => admin.account_id === currentUserId);
   const isOwner = owner?.account_id === currentUserId;

@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { Account } from '@/types/account_v2';
-import { useAuth } from './useAuth';
 import type { Session, Identity } from '@ory/client';
-
+import { useSession } from "@ory/elements-react/client";
 interface ExtendedIdentity extends Identity {
   metadata_public?: {
     account_id?: string;
@@ -15,7 +14,7 @@ interface _SessionWithMetadata extends Session {
 }
 
 export function useAccount(initialAccountId?: string | null) {
-  const { session, isLoading: isAuthLoading } = useAuth();
+  const { session, isLoading: isAuthLoading } = useSession();
   const [account, setAccount] = useState<Account | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshCounter, setRefreshCounter] = useState(0);
@@ -78,4 +77,18 @@ export function useAccount(initialAccountId?: string | null) {
   }, [initialAccountId, session?.identity?.metadata_public?.account_id, isAuthLoading, refreshCounter]);
 
   return { account, isLoading, refresh };
+} 
+
+interface SessionWithMetadata extends Session {
+  identity?: Identity & {
+    metadata_public?: {
+      account_id?: string;
+      is_admin?: boolean;
+    };
+  };
+}
+
+// Helper to get account_id from session
+export function getAccountId(session: SessionWithMetadata | null): string | null {
+  return session?.identity?.metadata_public?.account_id || null;
 } 

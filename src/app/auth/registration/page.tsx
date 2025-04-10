@@ -1,13 +1,13 @@
 import { Registration } from "@ory/elements-react/theme";
 import { enhanceOryConfig } from "@ory/nextjs";
 import { getRegistrationFlow, OryPageParams } from "@ory/nextjs/app";
-import type { RegistrationFlow } from "@ory/client-fetch";
 
 import { CONFIG } from "@/lib/config";
+import { DefaultCard } from "@/components/features/auth/DefaultCard";
 
 export default async function RegistrationPage(props: OryPageParams) {
   const config = enhanceOryConfig(CONFIG.auth.config);
-  const flow = await getRegistrationFlow(props.searchParams);
+  const flow = await getRegistrationFlow(config, props.searchParams);
 
   if (!flow) {
     return null;
@@ -15,21 +15,13 @@ export default async function RegistrationPage(props: OryPageParams) {
 
   return (
     <Registration
-      flow={flow as unknown as RegistrationFlow}
-      config={{
-        ...config,
-        project: {
-          ...config.project,
-          registrationEnabled: config.project.registration_enabled,
-          verificationEnabled: config.project.verification_enabled,
-          recoveryEnabled: config.project.recovery_enabled,
+      flow={flow}
+      config={config}
+      components={{
+        Card: {
+          Root: DefaultCard,
         },
       }}
-      components={
-        {
-          // Card: {},
-        }
-      }
     />
   );
 }
