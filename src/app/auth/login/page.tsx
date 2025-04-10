@@ -1,4 +1,4 @@
-import { Login } from "@ory/elements-react/theme";
+import { DefaultCard, Login } from "@ory/elements-react/theme";
 import { enhanceOryConfig } from "@ory/nextjs";
 import { getLoginFlow, OryPageParams } from "@ory/nextjs/app";
 
@@ -17,7 +17,9 @@ export default async function LoginPage(props: OryPageParams) {
       flow={flow}
       config={config}
       components={{
-        Card: {},
+        Card: {
+          Root: DefaultCard,
+        },
       }}
     />
   );
