@@ -29,9 +29,6 @@ export const CONFIG = {
       backendUrl: process.env.ORY_BASE_URL || "",
     },
     accessToken: process.env.ORY_PROJECT_API_KEY || "",
-    projectId: process.env.ORY_PROJECT_ID || "",
-    projectSlug: process.env.ORY_PROJECT_SLUG || "",
-    workspaceId: process.env.ORY_WORKSPACE_ID || "",
     // /end Remove
 
     // Override configuration

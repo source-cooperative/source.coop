@@ -24,22 +24,6 @@ services:
       DYNAMODB_ENDPOINT: http://dynamodb:8000
       # RESET_TABLES: 1
 
-  ory-tunnel:
-    image: oryd/ory:latest
-    volumes:
-      - ~/.ory-cloud.json:/home/ory/.ory-cloud.json
-    ports:
-      - "4000:4000"
-    command: |
-      tunnel 
-        http://nextjs:3000
-        --allowed-cors-origins=http://localhost:3000
-        --config /home/ory/.ory-cloud.json
-        --debug
-    env_file:
-      # Needs ORY_PROJECT_ID & ORY_PROJECT_API_KEY to be set
-      - .env.local
-
   nextjs:
     image: node:23-alpine
     ports:
