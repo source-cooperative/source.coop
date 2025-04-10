@@ -9,7 +9,7 @@ import { OrganizationMembers } from './OrganizationMembers';
 import { ProfileAvatar } from './ProfileAvatar';
 import { WebsiteLink } from './WebsiteLink';
 import { useSession } from '@ory/elements-react/client';
-
+import { getAccountId } from '@/hooks/useAccount';
 interface OrganizationProfileProps {
   account: OrganizationalAccount;
   repositories: Repository_v2[];
@@ -26,7 +26,7 @@ export function OrganizationProfile({
   members 
 }: OrganizationProfileProps) {
   const { session } = useSession();
-  const currentUserId = session?.identity?.metadata_public?.account_id;
+  const currentUserId = getAccountId(session);
   const isAdmin = admins.some(admin => admin.account_id === currentUserId);
   const isOwner = owner?.account_id === currentUserId;
   const canEdit = isAdmin || isOwner;

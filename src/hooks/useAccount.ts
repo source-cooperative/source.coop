@@ -1,12 +1,15 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { Account } from '@/types/account_v2';
-import type { Session, Identity } from '@ory/client';
 import { useSession } from "@ory/elements-react/client";
+import { Identity, Session } from '@ory/client-fetch';
+
+interface IdentityMetadata {
+  account_id?: string;
+  is_admin?: boolean;
+}
+
 interface ExtendedIdentity extends Identity {
-  metadata_public?: {
-    account_id?: string;
-    is_admin?: boolean;
-  };
+  metadata_public?: IdentityMetadata;
 }
 
 interface _SessionWithMetadata extends Session {
@@ -27,7 +30,7 @@ export function useAccount(initialAccountId?: string | null) {
     let isMounted = true;
 
     async function fetchAccount() {
-      const accountId = initialAccountId || session?.identity?.metadata_public?.account_id;
+      const accountId = initialAccountId || getAccountId(session);
       
       // If we're still loading auth or there's no account ID, don't make the API call
       if (isAuthLoading || !accountId) {
@@ -74,21 +77,14 @@ export function useAccount(initialAccountId?: string | null) {
     return () => {
       isMounted = false;
     };
-  }, [initialAccountId, session?.identity?.metadata_public?.account_id, isAuthLoading, refreshCounter]);
+  }, [initialAccountId, getAccountId(session), isAuthLoading, refreshCounter]);
 
   return { account, isLoading, refresh };
 } 
 
-interface SessionWithMetadata extends Session {
-  identity?: Identity & {
-    metadata_public?: {
-      account_id?: string;
-      is_admin?: boolean;
-    };
-  };
-}
-
 // Helper to get account_id from session
-export function getAccountId(session: SessionWithMetadata | null): string | null {
-  return session?.identity?.metadata_public?.account_id || null;
+export function getAccountId(session: Session | null): string | null {
+  return (
+    (session?.identity?.metadata_public as IdentityMetadata)?.account_id || null
+  );
 } 

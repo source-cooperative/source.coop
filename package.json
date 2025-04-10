@@ -36,7 +36,7 @@
     "@tanstack/react-virtual": "^3.13.4",
     "bright": "^1.0.0",
     "date-fns": "^4.1.0",
-    "isomorphic-dompurify": "^2.22.0",
+    "isomorphic-dompurify": "^2.23.0",
     "lodash": "^4.17.21",
     "lucide-react": "^0.483.0",
     "md5": "^2.3.0",

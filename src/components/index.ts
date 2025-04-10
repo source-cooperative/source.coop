@@ -8,7 +8,6 @@ export * from './features/markdown';
 export * from './features/metadata';
 export * from './features/profiles';
 export * from './features/repositories';
-export * from './features/auth';
 export * from './features/onboarding';
 export * from './features/keyboard';
 
