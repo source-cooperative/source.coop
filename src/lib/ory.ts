@@ -1,5 +1,4 @@
 import { Configuration, FrontendApi, Session, Identity } from "@ory/client";
-import { edgeConfig } from "@ory/integrations/next";
 import { CONFIG } from "./config";
 
 // Define our metadata types
@@ -35,7 +34,6 @@ export const serverOry = new FrontendApi(
     },
   })
 );
-
 
 // Helper to update Ory identity (admin operation)
 export async function updateOryIdentity(oryId: string, data: any) {
