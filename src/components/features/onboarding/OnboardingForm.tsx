@@ -10,7 +10,7 @@ import debounce from 'lodash/debounce';
 import { FrontendApi, Configuration } from '@ory/client';
 import { InfoCircledIcon, CheckCircledIcon } from '@radix-ui/react-icons';
 import { VerificationSuccessCallout } from '@/components/features/auth/VerificationSuccessCallout';
-import { recordVerificationTimestamp } from '@/app/actions/account';
+import { recordVerificationTimestamp } from "@/lib/actions/account";
 import { CONFIG } from "@/lib/config";
 
 interface OnboardingFormData {

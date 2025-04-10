@@ -5,9 +5,7 @@ import { SessionProvider } from "@ory/elements-react/client";
 import { getServerSession } from "@ory/nextjs/app";
 import { IBM_Plex_Sans } from "next/font/google";
 import { metadata } from "./metadata";
-import { Navigation, Footer } from "@/components/layout";
 import { Box } from "@radix-ui/themes";
-import { Suspense } from "react";
 
 const ibmPlexSans = IBM_Plex_Sans({
   subsets: ["latin"],
@@ -34,15 +32,7 @@ export default async function RootLayout({
           storageKey="source-theme"
         >
           <SessionProvider session={session}>
-            <Box style={{ minHeight: "100vh" }}>
-              <Suspense>
-                <Navigation />
-              </Suspense>
-              <Box asChild my="6">
-                <main>{children}</main>
-              </Box>
-              <Footer />
-            </Box>
+            <Box style={{ minHeight: "100vh" }}>{children}</Box>
           </SessionProvider>
         </ThemeProvider>
       </body>

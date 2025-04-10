@@ -1,5 +1,5 @@
-export { Logo } from './Logo';
-export { LogoLink } from './LogoLink';
-export { Navigation } from './Navigation';
-export { Footer } from './Footer';
-export { ThemeAwareImage } from './ThemeAwareImage'; 
+export * from "./Logo";
+export * from "./LogoLink";
+export * from "./Navigation";
+export * from "./Footer";
+export * from "./ThemeAwareImage";

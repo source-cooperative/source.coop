@@ -1,7 +1,7 @@
-import { DefaultCard, Recovery } from "@ory/elements-react/theme";
+import { Recovery } from "@ory/elements-react/theme";
 import { enhanceOryConfig } from "@ory/nextjs";
 import { getRecoveryFlow, OryPageParams } from "@ory/nextjs/app";
-
+import { DefaultCard } from "@/components/features/auth/DefaultCard";
 import { CONFIG } from "@/lib/config";
 
 export default async function RecoveryPage(props: OryPageParams) {

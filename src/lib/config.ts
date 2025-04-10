@@ -34,7 +34,7 @@ export const CONFIG = {
     // Override configuration
     config: {
       override: {
-        applicationName: "Source Cooperative",
+        applicationName: "",
         loginUiPath: "/auth/login",
         registrationUiPath: "/auth/registration",
         recoveryUiPath: "/auth/recovery",

@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { fetchRepositories } from '@/lib/db/operations_v2';
-import HomePage from './page';
+import HomePage from "./(main)/page";
 import { Repository_v2 } from '@/types/repository_v2';
 
 // Mock the db operations
