@@ -35,20 +35,8 @@ export const CONFIG = {
 // Add debug logging
 console.log('Loaded CONFIG:', {
   ...CONFIG,
-  database: {
-    ...CONFIG.database,
-    accessKeyId: CONFIG.database.accessKeyId ? '[REDACTED]' : undefined,
-    secretAccessKey: CONFIG.database.secretAccessKey ? '[REDACTED]' : undefined,
-  },
   auth: {
     ...CONFIG.auth,
     accessToken: CONFIG.auth.accessToken ? '[REDACTED]' : undefined,
-  },
-  storage: {
-    ...CONFIG.storage,
-    credentials: {
-      access_key_id: CONFIG.storage.credentials?.access_key_id ? '[REDACTED]' : undefined,
-      secret_access_key: CONFIG.storage.credentials?.secret_access_key ? '[REDACTED]' : undefined,
-    },
   },
 });
