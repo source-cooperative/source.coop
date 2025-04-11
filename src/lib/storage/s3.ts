@@ -14,8 +14,7 @@ export class S3StorageClient implements StorageClient {
     
     // Initialize S3 client without request signing for public access
     this.s3Client = new S3Client({
-      region: config.region || 'us-east-1',
-      signer: { sign: async (request) => request },
+      region: config.region || "us-east-1",
       forcePathStyle: true,
     });
   }
