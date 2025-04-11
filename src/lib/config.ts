@@ -7,8 +7,12 @@ export const CONFIG = {
   },
   storage: {
     type: process.env.STORAGE_TYPE || 'LOCAL',
-    endpoint: process.env.STORAGE_ENDPOINT || './test-storage',
-    region: process.env.AWS_REGION || 'us-east-1',
+    endpoint: process.env.NEXT_PUBLIC_S3_ENDPOINT,
+    region: "us-east-1",
+    credentials: {
+      accessKeyId: "anonymous",
+      secretAccessKey: "anonymous",
+    },
   } as StorageConfig,
   database: {
     endpoint: process.env.DYNAMODB_ENDPOINT || 'http://localhost:8000',
