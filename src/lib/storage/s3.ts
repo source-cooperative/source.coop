@@ -27,21 +27,18 @@ export class S3StorageClient implements StorageClient {
 
     try {
       // Ensure prefix ends with a slash if it's not empty
-      const prefix = params.prefix ? (params.prefix.endsWith('/') ? params.prefix : params.prefix + '/') : '';
+      const systemPrefix = params.repository_id;
+      const pathPrefix = params.prefix ? (params.prefix.endsWith('/') ? params.prefix : params.prefix + '/') : '';
       
       const command = new ListObjectsV2Command({
         Bucket: params.account_id,
-        Prefix: `${params.repository_id}/${prefix}`,
+        Prefix: `${systemPrefix}/${pathPrefix}`,
         Delimiter: params.delimiter || '/',
         MaxKeys: params.maxKeys,
         ContinuationToken: params.continuationToken,
       });
 
-      console.log('S3 listObjects command:', {
-        Bucket: params.account_id,
-        Prefix: `${params.account_id}/${params.repository_id}/${prefix}`,
-        Delimiter: params.delimiter || '/'
-      });
+      console.log("S3 listObjects command:", command.input);
 
       const response = await this.s3Client.send(command);
       
@@ -49,7 +46,7 @@ export class S3StorageClient implements StorageClient {
       const objects = (response.Contents || []).map(item => ({
         id: item.Key!,
         repository_id: params.repository_id,
-        path: item.Key!.replace(`${params.account_id}/${params.repository_id}/`, ''),
+        path: item.Key!.replace(`${systemPrefix}/`, ''),
         size: item.Size || 0,
         type: 'file',
         created_at: item.LastModified?.toISOString() || new Date().toISOString(),
@@ -60,7 +57,7 @@ export class S3StorageClient implements StorageClient {
 
       // Handle directories (CommonPrefixes)
       const directories = (response.CommonPrefixes || []).map(prefix => {
-        const path = prefix.Prefix!.replace(`${params.account_id}/${params.repository_id}/`, '');
+        const path = prefix.Prefix!.replace(`${systemPrefix}/`, '');
         return {
           id: path,
           repository_id: params.repository_id,
@@ -87,7 +84,7 @@ export class S3StorageClient implements StorageClient {
       return {
         objects: allObjects,
         commonPrefixes: response.CommonPrefixes?.map(prefix => 
-          prefix.Prefix!.replace(`${params.account_id}/${params.repository_id}/`, '')
+          prefix.Prefix!.replace(`${systemPrefix}/`, '')
         ) || [],
         isTruncated: response.IsTruncated || false,
         nextContinuationToken: response.NextContinuationToken
