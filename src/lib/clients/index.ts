@@ -10,9 +10,7 @@ let storage: StorageClient;
 
 export function getDynamoDb() {
   if (!dynamoDb) {
-    const client = new DynamoDBClient({
-      ...CONFIG.database,
-    });
+    const client = new DynamoDBClient(CONFIG.database);
     dynamoDb = DynamoDBDocumentClient.from(client);
   }
   return dynamoDb;
