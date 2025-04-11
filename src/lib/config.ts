@@ -8,16 +8,10 @@ export const CONFIG = {
     type: process.env.STORAGE_TYPE || 'LOCAL',
     endpoint: process.env.STORAGE_ENDPOINT || './test-storage',
     region: process.env.AWS_REGION || 'us-east-1',
-    credentials: {
-      access_key_id: process.env.AWS_ACCESS_KEY_ID || '',
-      secret_access_key: process.env.AWS_SECRET_ACCESS_KEY || '',
-    },
   } as StorageConfig,
   database: {
     endpoint: process.env.DYNAMODB_ENDPOINT || 'http://localhost:8000',
     region: process.env.AWS_REGION || 'us-east-1',
-    accessKeyId: process.env.DYNAMODB_ACCESS_KEY_ID || 'local',
-    secretAccessKey: process.env.DYNAMODB_SECRET_ACCESS_KEY || 'local',
   },
   auth: {
     // Admin configuration
