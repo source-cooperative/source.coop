@@ -6,7 +6,7 @@ export const CONFIG = {
     baseUrl: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000',
   },
   storage: {
-    type: process.env.STORAGE_TYPE || 'LOCAL',
+    type: process.env.STORAGE_TYPE || 'S3',
     endpoint: process.env.NEXT_PUBLIC_S3_ENDPOINT,
     region: "us-east-1",
     credentials: {
