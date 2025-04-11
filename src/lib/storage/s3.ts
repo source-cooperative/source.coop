@@ -30,15 +30,15 @@ export class S3StorageClient implements StorageClient {
       const prefix = params.prefix ? (params.prefix.endsWith('/') ? params.prefix : params.prefix + '/') : '';
       
       const command = new ListObjectsV2Command({
-        Bucket: this.provider.endpoint,
-        Prefix: `${params.account_id}/${params.repository_id}/${prefix}`,
+        Bucket: params.account_id,
+        Prefix: `${params.repository_id}/${prefix}`,
         Delimiter: params.delimiter || '/',
         MaxKeys: params.maxKeys,
         ContinuationToken: params.continuationToken,
       });
 
       console.log('S3 listObjects command:', {
-        Bucket: this.provider.endpoint,
+        Bucket: params.account_id,
         Prefix: `${params.account_id}/${params.repository_id}/${prefix}`,
         Delimiter: params.delimiter || '/'
       });
@@ -101,7 +101,7 @@ export class S3StorageClient implements StorageClient {
   async getObject(params: GetObjectParams): Promise<GetObjectResult> {
     try {
       const command = new GetObjectCommand({
-        Bucket: this.provider.endpoint,
+        Bucket: params.account_id,
         Key: `${params.account_id}/${params.repository_id}/${params.object_path}`,
       });
 
@@ -141,7 +141,7 @@ export class S3StorageClient implements StorageClient {
   async getObjectInfo(params: GetObjectParams): Promise<RepositoryObject> {
     try {
       const command = new GetObjectCommand({
-        Bucket: this.provider.endpoint,
+        Bucket: params.account_id,
         Key: `${params.account_id}/${params.repository_id}/${params.object_path}`,
       });
 
@@ -167,7 +167,7 @@ export class S3StorageClient implements StorageClient {
   async putObject(params: PutObjectParams): Promise<PutObjectResult> {
     try {
       const command = new PutObjectCommand({
-        Bucket: this.provider.endpoint,
+        Bucket: params.account_id,
         Key: `${params.account_id}/${params.repository_id}/${params.object_path}`,
         Body: params.data,
         ContentType: params.contentType,
@@ -189,7 +189,7 @@ export class S3StorageClient implements StorageClient {
   async deleteObject(params: DeleteObjectParams): Promise<void> {
     try {
       const command = new DeleteObjectCommand({
-        Bucket: this.provider.endpoint,
+        Bucket: params.account_id,
         Key: `${params.account_id}/${params.repository_id}/${params.object_path}`,
         VersionId: params.versionId
       });
