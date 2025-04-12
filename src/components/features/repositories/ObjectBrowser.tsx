@@ -67,8 +67,7 @@ export function ObjectBrowser({ repository, objects, initialPath = '', selectedO
 
   // If we have a selected object and it's a file, show file details
   // Only show file details if the file exists in our objects list
-  if (selectedObject && selectedObject.type !== 'directory' && 
-      objects.some(obj => obj.path === selectedObject.path)) {
+  if (selectedObject && selectedObject.type !== 'directory') {
     return (
       <>
         <ObjectDetails
