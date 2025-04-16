@@ -37,7 +37,7 @@ async function deleteTable(tableName: string) {
 async function createTables() {
   // Delete existing tables
   await deleteTable("sc-accounts");
-  await deleteTable("sc-repositories");
+  await deleteTable("sc-products");
   
   // Wait for tables to be fully deleted
   await new Promise(resolve => setTimeout(resolve, 2000));
@@ -91,23 +91,23 @@ async function createTables() {
     console.error("✗ Error creating sc-accounts table:", e);
   }
 
-  // Create Repositories table
+  // Create Products table
   try {
     await client.send(new CreateTableCommand({
-      TableName: "sc-repositories",
+      TableName: "sc-products",
       KeySchema: [
-        { AttributeName: "repository_id", KeyType: "HASH" },
+        { AttributeName: "product_id", KeyType: "HASH" },
         { AttributeName: "account_id", KeyType: "RANGE" }
       ],
       AttributeDefinitions: [
-        { AttributeName: "repository_id", AttributeType: "S" },
+        { AttributeName: "product_id", AttributeType: "S" },
         { AttributeName: "account_id", AttributeType: "S" },
         { AttributeName: "visibility", AttributeType: "S" },
         { AttributeName: "created_at", AttributeType: "S" }
       ],
       GlobalSecondaryIndexes: [
         {
-          IndexName: "AccountRepositoriesIndex",
+          IndexName: "AccountProductsIndex",
           KeySchema: [
             { AttributeName: "account_id", KeyType: "HASH" },
             { AttributeName: "created_at", KeyType: "RANGE" }
@@ -119,7 +119,7 @@ async function createTables() {
           }
         },
         {
-          IndexName: "PublicRepositoriesIndex",
+          IndexName: "PublicProductsIndex",
           KeySchema: [
             { AttributeName: "visibility", KeyType: "HASH" },
             { AttributeName: "created_at", KeyType: "RANGE" }
@@ -136,9 +136,9 @@ async function createTables() {
         WriteCapacityUnits: 5
       }
     }));
-    console.log("✓ Created sc-repositories table");
+    console.log("✓ Created sc-products table");
   } catch (e) {
-    console.error("✗ Error creating sc-repositories table:", e);
+    console.error("✗ Error creating sc-products table:", e);
   }
 }
 

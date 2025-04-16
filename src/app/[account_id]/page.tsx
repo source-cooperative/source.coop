@@ -1,8 +1,8 @@
 /**
- * Account Page - Displays account details and repositories
+ * Account Page - Displays account details and products
  * 
  * This server component handles both individual and organizational accounts.
- * It fetches account data, repositories, and organization members (if applicable).
+ * It fetches account data, products, and organization members (if applicable).
  * 
  * @param params - Route parameters containing account_id
  * @param searchParams - URL search parameters, including welcome flag for onboarding
@@ -14,9 +14,9 @@ import { notFound } from 'next/navigation';
 import { Container } from '@radix-ui/themes';
 import { IndividualProfile } from '@/components/features/profiles';
 import { OrganizationProfilePage } from '@/components/features/profiles/OrganizationProfilePage';
-import { fetchAccount, fetchRepositoriesByAccount } from '@/lib/db';
+import { fetchAccount, fetchProductsByAccount } from '@/lib/db';
 import type { Account, IndividualAccount } from '@/types/account_v2';
-import type { Repository_v2 } from '@/types/repository_v2';
+import type { Product_v2 } from '@/types/product_v2';
 
 type PageProps = {
   params: Promise<{ account_id: string }>;
@@ -43,15 +43,15 @@ export default async function AccountPage({
   }
 
   // Get repositories for individual account
-  const repositories: Repository_v2[] = await fetchRepositoriesByAccount(account_id);
+  const products: Product_v2[] = await fetchProductsByAccount(account_id);
 
   // For individual accounts
   return (
     <Container size="4" py="6">
       <IndividualProfile
         account={account as IndividualAccount}
-        ownedRepositories={repositories}
-        contributedRepositories={[]}
+        ownedProducts={products}
+        contributedProducts={[]}
         organizations={[]}
         showWelcome={showWelcome}
       />

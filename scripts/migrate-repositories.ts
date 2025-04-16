@@ -3,7 +3,7 @@ import { DynamoDBDocumentClient, PutCommand } from '@aws-sdk/lib-dynamodb';
 import { createGunzip } from 'zlib';
 import { createReadStream } from 'fs';
 import { pipeline } from 'stream/promises';
-import type { Repository_v2, RepositoryMirror, RepositoryRole } from '../src/types/repository_v2.js';
+import type { Product_v2, ProductMirror, ProductRole } from '../src/types/product_v2.js';
 
 // Initialize DynamoDB client with local credentials
 const client = new DynamoDBClient({
@@ -18,7 +18,7 @@ const client = new DynamoDBClient({
 const docClient = DynamoDBDocumentClient.from(client);
 
 // Old repository format from the dump
-interface OldRepository {
+interface OldProduct {
   account_id: string;
   repository_id: string;
   published: string;
@@ -53,12 +53,12 @@ function getAttributeValue(obj: any, path: string[]): any {
 }
 
 // Convert old repository format to new format
-function convertRepository(oldRepo: OldRepository): Repository_v2 {
+function convertProduct(oldProduct: OldProduct): Product_v2 {
   const now = new Date().toISOString();
   
   // Convert mirrors to new format
-  const mirrors: Record<string, RepositoryMirror> = {};
-  for (const [key, mirror] of Object.entries(oldRepo.data.mirrors)) {
+  const mirrors: Record<string, ProductMirror> = {};
+  for (const [key, mirror] of Object.entries(oldProduct.data.mirrors)) {
     mirrors[key] = {
       storage_type: 's3',
       connection_id: mirror.data_connection_id,
@@ -67,7 +67,7 @@ function convertRepository(oldRepo: OldRepository): Repository_v2 {
         region: 'us-west-2',
         bucket: 'aws-opendata-us-west-2'
       },
-      is_primary: key === oldRepo.data.primary_mirror,
+      is_primary: key === oldProduct.data.primary_mirror,
       sync_status: {
         last_sync_at: now,
         is_synced: true
@@ -81,39 +81,39 @@ function convertRepository(oldRepo: OldRepository): Repository_v2 {
   }
 
   // Create default role for the owner
-  const roles: Record<string, RepositoryRole> = {
-    [oldRepo.account_id]: {
-      account_id: oldRepo.account_id,
+  const roles: Record<string, ProductRole> = {
+    [oldProduct.account_id]: {
+      account_id: oldProduct.account_id,
       role: 'admin',
       granted_at: now,
-      granted_by: oldRepo.account_id
+      granted_by: oldProduct.account_id
     }
   };
 
   // Convert visibility based on old fields
-  const visibility = oldRepo.data_mode === 'open' 
-    ? (oldRepo.state === 'listed' ? 'public' : 'unlisted')
+  const visibility = oldProduct.data_mode === 'open' 
+    ? (oldProduct.state === 'listed' ? 'public' : 'unlisted')
     : 'restricted';
 
   return {
-    repository_id: oldRepo.repository_id,
-    account_id: oldRepo.account_id,
-    title: oldRepo.meta.title,
-    description: oldRepo.meta.description || '',
-    created_at: oldRepo.published,
+    product_id: oldProduct.repository_id,
+    account_id: oldProduct.account_id,
+    title: oldProduct.meta.title,
+    description: oldProduct.meta.description || '',
+    created_at: oldProduct.published,
     updated_at: now,
     visibility,
     metadata: {
       mirrors,
-      primary_mirror: oldRepo.data.primary_mirror,
-      tags: oldRepo.meta.tags || [],
+      primary_mirror: oldProduct.data.primary_mirror,
+      tags: oldProduct.meta.tags || [],
       roles
     }
   };
 }
 
 async function processDumpFile(filePath: string) {
-  const repositories: Repository_v2[] = [];
+  const products: Product_v2[] = [];
   
   // Create a pipeline to read and parse the gzipped JSON file
   await pipeline(
@@ -164,7 +164,7 @@ async function processDumpFile(filePath: string) {
                   .map((tag: any) => getAttributeValue(tag, ['S']))
                   .filter(Boolean);
 
-                const oldRepo: OldRepository = {
+                const oldProduct: OldProduct = {
                   account_id,
                   repository_id,
                   published,
@@ -183,7 +183,7 @@ async function processDumpFile(filePath: string) {
                   state: state || 'unlisted'
                 };
                 
-                repositories.push(convertRepository(oldRepo));
+                products.push(convertProduct(oldProduct));
               }
             } catch (e) {
               console.error('Error parsing line:', e);
@@ -195,33 +195,33 @@ async function processDumpFile(filePath: string) {
     }
   );
 
-  return repositories;
+  return products;
 }
 
-async function migrateRepositories() {
+async function migrateProducts() {
   try {
     // Process both dump files
     console.log('Processing first dump file...');
-    const repositories1 = await processDumpFile('dynamodownload/01743449552341-6d28931b/data/eivyxj3smi2mpc3mtpbtvl6cfm.json.gz');
-    console.log(`Found ${repositories1.length} repositories in first file`);
+    const products1 = await processDumpFile('dynamodownload/01743449552341-6d28931b/data/eivyxj3smi2mpc3mtpbtvl6cfm.json.gz');
+    console.log(`Found ${products1.length} products in first file`);
 
     console.log('Processing second dump file...');
-    const repositories2 = await processDumpFile('dynamodownload/01743449800394-e8d5e1a3/data/avi2syzkru2hfcoizz7kzdfin4.json.gz');
-    console.log(`Found ${repositories2.length} repositories in second file`);
+    const products2 = await processDumpFile('dynamodownload/01743449800394-e8d5e1a3/data/avi2syzkru2hfcoizz7kzdfin4.json.gz');
+    console.log(`Found ${products2.length} products in second file`);
     
-    const allRepositories = [...repositories1, ...repositories2];
-    console.log(`Total repositories to migrate: ${allRepositories.length}`);
+    const allProducts = [...products1, ...products2];
+    console.log(`Total products to migrate: ${allProducts.length}`);
 
-    // Insert repositories into local DynamoDB
-    for (const repo of allRepositories) {
+    // Insert products into local DynamoDB
+    for (const product of allProducts) {
       try {
         await docClient.send(new PutCommand({
-          TableName: 'sc-repositories',
-          Item: repo
+          TableName: 'sc-products',
+          Item: product
         }));
-        console.log(`Migrated repository: ${repo.account_id}/${repo.repository_id}`);
+        console.log(`Migrated product: ${product.account_id}/${product.product_id}`);
       } catch (e) {
-        console.error(`Error migrating repository ${repo.repository_id}:`, e);
+        console.error(`Error migrating product ${product.product_id}:`, e);
       }
     }
 
@@ -232,4 +232,4 @@ async function migrateRepositories() {
 }
 
 // Run the migration
-migrateRepositories().catch(console.error); 
+migrateProducts().catch(console.error); 
