@@ -141,42 +141,47 @@ export function ObjectDetails({
           }}
         />
 
-        {selectedObject.metadata && selectedObject.metadata.sha256 && repository.account && (
-          <DataList.Item>
-            <DataList.Label minWidth="120px">Checksum</DataList.Label>
-            <DataList.Value>
-              <Flex align="center" gap="2">
-                <ChecksumVerifier 
-                  objectUrl={`/api/${repository.account.account_id}/${repository.repository_id}/objects/${selectedObject.path}`}
-                  expectedHash={selectedObject.metadata.sha256}
-                  algorithm="SHA-256"
-                />
-                <Tooltip content="Copy to clipboard">
-                  <IconButton 
-                    size="1" 
-                    variant="ghost" 
-                    color={copiedField === 'sha256' ? 'green' : 'gray'}
-                    onClick={() => copyToClipboard(selectedObject.metadata?.sha256 || '', 'sha256')}
-                    aria-label="Copy SHA-256 checksum"
-                  >
-                    {copiedField === 'sha256' ? <CheckIcon /> : <CopyIcon />}
-                  </IconButton>
-                </Tooltip>
-              </Flex>
-            </DataList.Value>
-          </DataList.Item>
-        )}
+        {selectedObject.metadata &&
+          selectedObject.metadata.sha256 &&
+          repository.account && (
+            <DataList.Item>
+              <DataList.Label minWidth="120px">Checksum</DataList.Label>
+              <DataList.Value>
+                <Flex align="center" gap="2">
+                  <ChecksumVerifier
+                    objectUrl={`/api/${repository.account.account_id}/${repository.repository_id}/objects/${selectedObject.path}`}
+                    expectedHash={selectedObject.metadata.sha256}
+                    algorithm="SHA-256"
+                  />
+                  <Tooltip content="Copy to clipboard">
+                    <IconButton
+                      size="1"
+                      variant="ghost"
+                      color={copiedField === "sha256" ? "green" : "gray"}
+                      onClick={() =>
+                        copyToClipboard(
+                          selectedObject.metadata?.sha256 || "",
+                          "sha256"
+                        )
+                      }
+                      aria-label="Copy SHA-256 checksum"
+                    >
+                      {copiedField === "sha256" ? <CheckIcon /> : <CopyIcon />}
+                    </IconButton>
+                  </Tooltip>
+                </Flex>
+              </DataList.Value>
+            </DataList.Item>
+          )}
 
-        {repository.account && (
-          <DataListItem
-            label="Source URL"
-            value={`https://data.source.coop/${repository.account.account_id}/${repository.repository_id}/${selectedObject.path}`}
-            selectedDataItem={selectedDataItem}
-            itemKey="source_url"
-            copiedField={copiedField}
-            onCopy={copyToClipboard}
-          />
-        )}
+        <DataListItem
+          label="Source URL"
+          value={`https://data.source.coop/${repository.account?.account_id}/${repository.repository_id}/${selectedObject.path}`}
+          selectedDataItem={selectedDataItem}
+          itemKey="source_url"
+          copiedField={copiedField}
+          onCopy={copyToClipboard}
+        />
 
         {repository.metadata?.mirrors && repository.metadata.primary_mirror && (
           <DataListItem
