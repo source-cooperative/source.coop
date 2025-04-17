@@ -36,8 +36,8 @@ export default async function ProductPathPage({
   params
 }: PageProps) {
   // 1. Get and await params
-  const { account_id, product_id, path } = await Promise.resolve(params);
-  const pathString = path?.join('/') || '';
+  const { account_id, product_id, path } = await params;
+  const pathString = decodeURIComponent(path?.join('/') || '');
   
   // Check if this is a file path (ends with a file extension)
   const isFilePath = pathString && /\.\w+$/.test(pathString);

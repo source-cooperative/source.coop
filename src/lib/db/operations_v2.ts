@@ -1,7 +1,6 @@
 import { GetCommand, QueryCommand, ScanCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import type { Account, IndividualAccount, OrganizationalAccount } from '@/types/account_v2';
 import type { Product_v2 as Product, ProductMirror, ProductRole } from '@/types/product_v2';
-import { CONFIG } from '../config';
 
 // Use the singleton client from clients/index.ts
 import { getDynamoDb } from '../clients';
