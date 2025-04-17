@@ -31,7 +31,7 @@ export class S3StorageClient implements StorageClient {
       
       const command = new ListObjectsV2Command({
         Bucket: params.account_id,
-        Prefix: `${params.repository_id}/${pathPrefix}`,
+        Prefix: `${params.product_id}/${pathPrefix}`,
         Delimiter: params.delimiter || '/',
         MaxKeys: params.maxKeys,
         ContinuationToken: params.continuationToken,
@@ -44,8 +44,8 @@ export class S3StorageClient implements StorageClient {
       // Handle files (Contents)
       const objects = (response.Contents || []).map(item => ({
         id: item.Key!,
-        repository_id: params.repository_id,
-        path: item.Key!.replace(`${params.repository_id}/`, ''),
+        product_id: params.product_id,
+        path: item.Key!.replace(`${params.product_id}/`, ''),
         size: item.Size || 0,
         type: 'file',
         created_at: item.LastModified?.toISOString() || new Date().toISOString(),
@@ -56,7 +56,7 @@ export class S3StorageClient implements StorageClient {
 
       // Handle directories (CommonPrefixes)
       const directories = (response.CommonPrefixes || []).map(prefix => {
-        const path = prefix.Prefix!.replace(`${params.repository_id}/`, '');
+        const path = prefix.Prefix!.replace(`${params.product_id}/`, '');
         return {
           id: path,
           product_id: params.product_id,
@@ -83,7 +83,7 @@ export class S3StorageClient implements StorageClient {
       return {
         objects: allObjects,
         commonPrefixes: response.CommonPrefixes?.map(prefix => 
-          prefix.Prefix!.replace(`${params.repository_id}/`, '')
+          prefix.Prefix!.replace(`${params.product_id}/`, '')
         ) || [],
         isTruncated: response.IsTruncated || false,
         nextContinuationToken: response.NextContinuationToken
@@ -98,7 +98,7 @@ export class S3StorageClient implements StorageClient {
     try {
       const command = new GetObjectCommand({
         Bucket: params.account_id,
-        Key: `${params.repository_id}/${params.object_path}`,
+        Key: `${params.product_id}/${params.object_path}`,
       });
 
       const response = await this.s3Client.send(command);
@@ -138,7 +138,7 @@ export class S3StorageClient implements StorageClient {
     try {
       const command = new GetObjectCommand({
         Bucket: params.account_id,
-        Key: `${params.repository_id}/${params.object_path}`,
+        Key: `${params.product_id}/${params.object_path}`,
       });
 
       const response = await this.s3Client.send(command);
@@ -165,7 +165,7 @@ export class S3StorageClient implements StorageClient {
     try {
       const command = new PutObjectCommand({
         Bucket: params.account_id,
-        Key: `${params.repository_id}/${params.object_path}`,
+        Key: `${params.product_id}/${params.object_path}`,
         Body: params.data,
         ContentType: params.contentType,
         Metadata: params.metadata
@@ -187,7 +187,7 @@ export class S3StorageClient implements StorageClient {
     try {
       const command = new DeleteObjectCommand({
         Bucket: params.account_id,
-        Key: `${params.repository_id}/${params.object_path}`,
+        Key: `${params.product_id}/${params.object_path}`,
         VersionId: params.versionId
       });
 
