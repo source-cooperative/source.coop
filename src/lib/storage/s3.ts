@@ -14,8 +14,7 @@ export class S3StorageClient implements StorageClient {
     
     // Initialize S3 client without request signing for public access
     this.s3Client = new S3Client({
-      region: config.region || 'us-east-1',
-      signer: { sign: async (request) => request },
+      ...config,
       forcePathStyle: true,
     });
   }
@@ -28,29 +27,25 @@ export class S3StorageClient implements StorageClient {
 
     try {
       // Ensure prefix ends with a slash if it's not empty
-      const prefix = params.prefix ? (params.prefix.endsWith('/') ? params.prefix : params.prefix + '/') : '';
+      const pathPrefix = params.prefix ? (params.prefix.endsWith('/') ? params.prefix : params.prefix + '/') : '';
       
       const command = new ListObjectsV2Command({
-        Bucket: this.provider.endpoint,
-        Prefix: `${params.account_id}/${params.product_id}/${prefix}`,
+        Bucket: params.account_id,
+        Prefix: `${params.repository_id}/${pathPrefix}`,
         Delimiter: params.delimiter || '/',
         MaxKeys: params.maxKeys,
         ContinuationToken: params.continuationToken,
       });
 
-      console.log('S3 listObjects command:', {
-        Bucket: this.provider.endpoint,
-        Prefix: `${params.account_id}/${params.product_id}/${prefix}`,
-        Delimiter: params.delimiter || '/'
-      });
+      console.log("S3 listObjects command:", command.input);
 
       const response = await this.s3Client.send(command);
       
       // Handle files (Contents)
       const objects = (response.Contents || []).map(item => ({
         id: item.Key!,
-        product_id: params.product_id,
-        path: item.Key!.replace(`${params.account_id}/${params.product_id}/`, ''),
+        repository_id: params.repository_id,
+        path: item.Key!.replace(`${params.repository_id}/`, ''),
         size: item.Size || 0,
         type: 'file',
         created_at: item.LastModified?.toISOString() || new Date().toISOString(),
@@ -61,7 +56,7 @@ export class S3StorageClient implements StorageClient {
 
       // Handle directories (CommonPrefixes)
       const directories = (response.CommonPrefixes || []).map(prefix => {
-        const path = prefix.Prefix!.replace(`${params.account_id}/${params.product_id}/`, '');
+        const path = prefix.Prefix!.replace(`${params.repository_id}/`, '');
         return {
           id: path,
           product_id: params.product_id,
@@ -88,7 +83,7 @@ export class S3StorageClient implements StorageClient {
       return {
         objects: allObjects,
         commonPrefixes: response.CommonPrefixes?.map(prefix => 
-          prefix.Prefix!.replace(`${params.account_id}/${params.product_id}/`, '')
+          prefix.Prefix!.replace(`${params.repository_id}/`, '')
         ) || [],
         isTruncated: response.IsTruncated || false,
         nextContinuationToken: response.NextContinuationToken
@@ -102,8 +97,8 @@ export class S3StorageClient implements StorageClient {
   async getObject(params: GetObjectParams): Promise<GetObjectResult> {
     try {
       const command = new GetObjectCommand({
-        Bucket: this.provider.endpoint,
-        Key: `${params.account_id}/${params.product_id}/${params.object_path}`,
+        Bucket: params.account_id,
+        Key: `${params.repository_id}/${params.object_path}`,
       });
 
       const response = await this.s3Client.send(command);
@@ -142,8 +137,8 @@ export class S3StorageClient implements StorageClient {
   async getObjectInfo(params: GetObjectParams): Promise<ProductObject> {
     try {
       const command = new GetObjectCommand({
-        Bucket: this.provider.endpoint,
-        Key: `${params.account_id}/${params.product_id}/${params.object_path}`,
+        Bucket: params.account_id,
+        Key: `${params.repository_id}/${params.object_path}`,
       });
 
       const response = await this.s3Client.send(command);
@@ -153,6 +148,7 @@ export class S3StorageClient implements StorageClient {
         product_id: params.product_id,
         path: params.object_path,
         size: response.ContentLength || 0,
+        mime_type: response.ContentType || '',
         type: 'file',
         created_at: response.LastModified?.toISOString() || new Date().toISOString(),
         updated_at: response.LastModified?.toISOString() || new Date().toISOString(),
@@ -168,8 +164,8 @@ export class S3StorageClient implements StorageClient {
   async putObject(params: PutObjectParams): Promise<PutObjectResult> {
     try {
       const command = new PutObjectCommand({
-        Bucket: this.provider.endpoint,
-        Key: `${params.account_id}/${params.product_id}/${params.object_path}`,
+        Bucket: params.account_id,
+        Key: `${params.repository_id}/${params.object_path}`,
         Body: params.data,
         ContentType: params.contentType,
         Metadata: params.metadata
@@ -190,8 +186,8 @@ export class S3StorageClient implements StorageClient {
   async deleteObject(params: DeleteObjectParams): Promise<void> {
     try {
       const command = new DeleteObjectCommand({
-        Bucket: this.provider.endpoint,
-        Key: `${params.account_id}/${params.product_id}/${params.object_path}`,
+        Bucket: params.account_id,
+        Key: `${params.repository_id}/${params.object_path}`,
         VersionId: params.versionId
       });
 
