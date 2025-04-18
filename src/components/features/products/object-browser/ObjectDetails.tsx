@@ -183,7 +183,13 @@ export function ObjectDetails({
           onCopy={copyToClipboard}
         />
 
-        {product.metadata?.mirrors && product.metadata.primary_mirror && (
+        {/* 
+        TODO: On production, this is based on dataConnectionDetails, but we don't have that data here.
+  
+        {dataConnectionDetails.s3DataConnection ? `s3://${dataConnectionDetails.s3DataConnection.bucket}/${account_id}/${resultState.key}` : ""}
+        {dataConnectionDetails.azureDataConnection ? `https://${dataConnectionDetails.azureDataConnection.account_name}.blob.core.windows.net/${dataConnectionDetails.azureDataConnection.container_name}/${account_id}/${resultState.key}` : ""}
+        */}
+        {/* {product.metadata?.mirrors && product.metadata.primary_mirror && (
           <DataListItem
             label="Cloud URI"
             value={`s3://${
@@ -198,7 +204,7 @@ export function ObjectDetails({
             copiedField={copiedField}
             onCopy={copyToClipboard}
           />
-        )}
+        )} */}
       </DataList.Root>
     </Card>
   );
