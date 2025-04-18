@@ -16,9 +16,6 @@ import { notFound } from 'next/navigation';
 // Internal components
 import { ObjectBrowser, ProductHeader } from '@/components/features/products';
 
-// Types
-import type { Product_v2 } from '@/types/product_v2';
-
 // Utilities
 import { fetchProduct } from '@/lib/db/operations_v2';
 import { createStorageClient } from '@/lib/clients/storage';

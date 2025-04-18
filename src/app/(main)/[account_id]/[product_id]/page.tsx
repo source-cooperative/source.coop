@@ -131,6 +131,7 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
       description: product.description || `Product: ${product.title}`
     };
   } catch (error) {
+    console.error("Error fetching product metadata:", error);
     return {
       title: 'Error',
       description: 'An error occurred while fetching the product.'
