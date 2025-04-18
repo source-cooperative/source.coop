@@ -7,9 +7,9 @@ import type { Product_v2 } from '@/types/product_v2';
 import { ProductList } from '@/components/features/products/ProductList';
 import { OrganizationMembers } from './OrganizationMembers';
 import { ProfileAvatar } from './ProfileAvatar';
-import { useAuth } from '@/hooks/useAuth';
 import { WebsiteLink } from './WebsiteLink';
-
+import { useSession } from '@ory/elements-react/client';
+import { getAccountId } from '@/hooks/useAccount';
 interface OrganizationProfileProps {
   account: OrganizationalAccount;
   products: Product_v2[];
@@ -25,8 +25,8 @@ export function OrganizationProfile({
   admins,
   members 
 }: OrganizationProfileProps) {
-  const { session } = useAuth();
-  const currentUserId = session?.identity?.metadata_public?.account_id;
+  const { session } = useSession();
+  const currentUserId = getAccountId(session);
   const isAdmin = admins.some(admin => admin.account_id === currentUserId);
   const isOwner = owner?.account_id === currentUserId;
   const canEdit = isAdmin || isOwner;
