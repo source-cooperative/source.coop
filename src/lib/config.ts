@@ -25,8 +25,6 @@ export const CONFIG = {
       : undefined,
   },
   auth: {
-    // Admin configuration
-
     // Remove this
     api: {
       frontendUrl: process.env.NEXT_PUBLIC_ORY_SDK_URL || "",
