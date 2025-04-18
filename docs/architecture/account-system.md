@@ -18,7 +18,7 @@ Source.coop uses a hybrid authentication and account management system:
 - **Source.coop Account System**: Business logic and profiles
   - User profiles
   - Organization management
-  - Repository ownership
+  - Product ownership
   - Permissions and access control
 
 ### 2. Account ID System
@@ -64,7 +64,7 @@ if (response.ok) {
 ```typescript
 // Always use account_id for lookups
 const account = await fetchAccount(accountId);
-const repositories = await fetchRepositoriesByAccount(accountId);
+const products = await fetchProductsByAccount(accountId);
 ```
 
 ### 4. URL Structure
@@ -72,7 +72,7 @@ const repositories = await fetchRepositoriesByAccount(accountId);
 /{account_id}                    // Account profile
 /{account_id}/edit              // Account settings
 /{account_id}/organization/new  // Create organization
-/{account_id}/{repository_id}   // Repository view
+/{account_id}/{product_id}   // Product view
 ```
 
 ## Best Practices
@@ -102,7 +102,7 @@ const repositories = await fetchRepositoriesByAccount(accountId);
 ### 1. Access Control
 - Validate `account_id` ownership
 - Check organization membership
-- Verify repository access
+- Verify product access
 
 ### 2. Session Security
 - Rely on Ory for session validation

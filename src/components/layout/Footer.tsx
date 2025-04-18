@@ -25,7 +25,7 @@ export function Footer() {
             <Box mb="2">
               <Link href="/" passHref legacyBehavior>
                 <RadixLink color="gray" underline="always">
-                  <MonoText size="2">All Repositories</MonoText>
+                  <MonoText size="2">All Products</MonoText>
                 </RadixLink>
               </Link>
             </Box>

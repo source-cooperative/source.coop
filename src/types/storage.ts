@@ -1,4 +1,4 @@
-import { RepositoryObject } from './repository_object';
+import { ProductObject } from './product_object';
 export type StorageType = 'LOCAL' | 'S3' | 'GCS' | 'AZURE';
 
 // The storage provider entity
@@ -25,8 +25,8 @@ export interface StorageConfig {
 // Path construction types and utilities
 export interface ObjectPath {
   account_id: string;     // Matches Account interface
-  repository_id: string;  // Matches Repository interface
-  object_path: string;    // The actual path within the repository
+  product_id: string;  // Matches Product interface
+  object_path: string;    // The actual path within the product
 }
 
 export interface StorageLocation {
@@ -42,7 +42,7 @@ export interface ListObjectsParams extends ObjectPath {
 }
 
 export interface ListObjectsResult {
-  objects: RepositoryObject[];
+  objects: ProductObject[];
   commonPrefixes: string[];
   nextContinuationToken?: string;
   isTruncated: boolean;
@@ -53,7 +53,7 @@ export interface GetObjectParams extends ObjectPath {
 }
 
 export interface GetObjectResult {
-  object: RepositoryObject;
+  object: ProductObject;
   data: Buffer | ReadableStream;
   contentType: string;
   contentLength: number;
@@ -81,5 +81,5 @@ export interface StorageClient {
   getObject(params: GetObjectParams): Promise<GetObjectResult>;
   putObject(params: PutObjectParams): Promise<PutObjectResult>;
   deleteObject(params: DeleteObjectParams): Promise<void>;
-  getObjectInfo(params: GetObjectParams): Promise<RepositoryObject>;
+  getObjectInfo(params: GetObjectParams): Promise<ProductObject>;
 }

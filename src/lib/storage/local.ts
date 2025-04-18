@@ -1,5 +1,5 @@
 import { StorageClient, StorageProvider, StorageConfig, ListObjectsParams, ListObjectsResult, GetObjectParams, GetObjectResult, PutObjectParams, PutObjectResult, DeleteObjectParams } from '@/types/storage';
-import { RepositoryObject } from '@/types';
+import { ProductObject } from '@/types';
 import { promises as fs } from 'fs';
 import path from 'path';
 
@@ -22,16 +22,16 @@ export class LocalStorageClient implements StorageClient {
     this.provider = provider;
   }
 
-  private getFullPath(params: { account_id: string; repository_id: string; path?: string; object_path?: string }): string {
+  private getFullPath(params: { account_id: string; product_id: string; path?: string; object_path?: string }): string {
     const objectPath = params.path || params.object_path || '';
-    const relativePath = `${params.account_id}/${params.repository_id}/${objectPath}`;
+    const relativePath = `${params.account_id}/${params.product_id}/${objectPath}`;
     return path.join(this.baseDir, relativePath);
   }
 
   async putObject(params: PutObjectParams): Promise<PutObjectResult> {
     const fullPath = this.getFullPath({
       account_id: params.account_id,
-      repository_id: params.repository_id,
+      product_id: params.product_id,
       object_path: params.object_path
     });
     
@@ -50,10 +50,10 @@ export class LocalStorageClient implements StorageClient {
     }
   }
 
-  private async getObjectMetadata(params: { account_id: string; repository_id: string; object_path: string }): Promise<any> {
+  private async getObjectMetadata(params: { account_id: string; product_id: string; object_path: string }): Promise<any> {
     try {
-      const repoPath = path.join(this.baseDir, params.account_id, params.repository_id);
-      const metadataPath = path.join(repoPath, '.source-metadata.json');
+      const productPath = path.join(this.baseDir, params.account_id, params.product_id);
+      const metadataPath = path.join(productPath, '.source-metadata.json');
       
       console.log('Looking for metadata at:', metadataPath);
       console.log('For object path:', params.object_path);
@@ -80,14 +80,14 @@ export class LocalStorageClient implements StorageClient {
       // Get metadata from .source-metadata.json
       const objectMetadata = await this.getObjectMetadata({
         account_id: params.account_id,
-        repository_id: params.repository_id,
+        product_id: params.product_id,
         object_path: params.object_path
       });
       
       return {
         object: {
           id: params.object_path,
-          repository_id: params.repository_id,
+          product_id: params.product_id,
           path: params.object_path,
           size: stats.size,
           type: 'file',
@@ -111,7 +111,7 @@ export class LocalStorageClient implements StorageClient {
   async deleteObject(params: DeleteObjectParams): Promise<void> {
     const fullPath = this.getFullPath({
       account_id: params.account_id,
-      repository_id: params.repository_id,
+      product_id: params.product_id,
       object_path: params.object_path
     });
     await fs.unlink(fullPath);
@@ -120,7 +120,7 @@ export class LocalStorageClient implements StorageClient {
   private async walkDirectory(
     dirPath: string,
     basePath: string = dirPath,
-    repoMetadata: Record<string, any> = {}
+    productMetadata: Record<string, any> = {}
   ): Promise<Array<{ path: string; size: number; updated_at: string; metadata?: any }>> {
     console.log('Walking directory:', dirPath);
     const files: Array<{ path: string; size: number; updated_at: string; metadata?: any }> = [];
@@ -143,7 +143,7 @@ export class LocalStorageClient implements StorageClient {
         
         if (entry.isDirectory()) {
           console.log('Processing directory:', relativePath);
-          const subDirFiles = await this.walkDirectory(fullPath, basePath, repoMetadata);
+          const subDirFiles = await this.walkDirectory(fullPath, basePath, productMetadata);
           files.push(...subDirFiles);
         } else if (entry.name !== '.source-metadata.json') {
           console.log('Processing file:', relativePath);
@@ -153,7 +153,7 @@ export class LocalStorageClient implements StorageClient {
             path: relativePath,
             size: stats.size,
             updated_at: stats.mtime.toISOString(),
-            metadata: repoMetadata[relativePath] || null
+            metadata: productMetadata[relativePath] || null
           });
         }
       }
@@ -165,12 +165,12 @@ export class LocalStorageClient implements StorageClient {
   }
 
   async listObjects(params: ListObjectsParams): Promise<ListObjectsResult> {
-    if (!params.account_id || !params.repository_id) {
+    if (!params.account_id || !params.product_id) {
       console.error('Invalid params for listObjects:', params);
       return { objects: [], commonPrefixes: [], isTruncated: false };
     }
     
-    const basePath = path.join(this.baseDir, params.account_id, params.repository_id);
+    const basePath = path.join(this.baseDir, params.account_id, params.product_id);
     console.log('Listing objects in directory:', basePath);
     
     try {
@@ -192,13 +192,13 @@ export class LocalStorageClient implements StorageClient {
       
       const objects = filteredFiles.map(file => ({
         id: file.path,
-        repository_id: params.repository_id,
+        product_id: params.product_id,
         path: file.path,
         size: file.size,
         type: file.path.endsWith('/') ? 'directory' : 'file',
         updated_at: file.updated_at,
         metadata: file.metadata || {}
-      } as RepositoryObject));
+      } as ProductObject));
       
       // Extract common prefixes (directories)
       const commonPrefixes = objects
@@ -217,7 +217,7 @@ export class LocalStorageClient implements StorageClient {
     }
   }
 
-  async getObjectInfo(params: GetObjectParams): Promise<RepositoryObject> {
+  async getObjectInfo(params: GetObjectParams): Promise<ProductObject> {
     const fullPath = this.getFullPath(params);
     
     try {
@@ -226,13 +226,13 @@ export class LocalStorageClient implements StorageClient {
       // Get metadata from .source-metadata.json
       const objectMetadata = await this.getObjectMetadata({
         account_id: params.account_id,
-        repository_id: params.repository_id,
+        product_id: params.product_id,
         object_path: params.object_path
       });
 
       return {
         id: params.object_path,
-        repository_id: params.repository_id,
+        product_id: params.product_id,
         path: params.object_path,
         size: stats.size,
         type: 'file',
