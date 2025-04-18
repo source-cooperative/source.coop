@@ -18,7 +18,6 @@ export const CONFIG = {
   database: {
     endpoint: process.env.DYNAMODB_ENDPOINT || 'http://localhost:8000',
     region: process.env.AWS_REGION || 'us-east-1',
-    roleArn: process.env.AWS_ROLE_ARN || '',
     credentials: process.env.AWS_ROLE_ARN
       ? awsCredentialsProvider({
           roleArn: process.env.AWS_ROLE_ARN,
