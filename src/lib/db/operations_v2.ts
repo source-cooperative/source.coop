@@ -1,6 +1,6 @@
 import { GetCommand, QueryCommand, ScanCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import type { Account, IndividualAccount, OrganizationalAccount } from '@/types/account_v2';
-import type { Repository_v2 as Repository, RepositoryMirror, RepositoryRole } from '@/types/repository_v2';
+import type { Product_v2 as Product, ProductMirror, ProductRole } from '@/types/product_v2';
 
 // Use the singleton client from clients/index.ts
 import { getDynamoDb } from '../clients';
@@ -112,71 +112,74 @@ export async function updateAccount(account: Account): Promise<boolean> {
 }
 
 /**
- * Core repository operations
+ * Core product operations
  */
 
-export async function fetchRepository(account_id: string, repository_id: string): Promise<Repository | null> {
+export async function fetchProduct(account_id: string, product_id: string): Promise<Product | null> {
   try {
     const result = await docClient.send(new GetCommand({
-      TableName: "sc-repositories",
+      TableName: "sc-products",
       Key: {
-        repository_id,
+        product_id,
         account_id
       }
     }));
 
     if (!result.Item) return null;
 
-    // Get the account for this repository
+    // Get the account for this product
     const account = await fetchAccount(account_id);
     
     return {
-      ...result.Item as Repository,
+      ...result.Item as Product,
       account: account || undefined
     };
   } catch (e) {
-    console.error(`Error fetching repository ${repository_id}:`, e);
+    console.error(`Error fetching product ${product_id}:`, e);
     return null;
   }
 }
 
-export async function fetchRepositoriesByAccount(account_id: string): Promise<Repository[]> {
+export async function fetchProductsByAccount(account_id: string): Promise<Product[]> {
   try {
     const result = await docClient.send(new QueryCommand({
-      TableName: "sc-repositories",
-      IndexName: "AccountRepositoriesIndex",
+      TableName: "sc-products",
+      IndexName: "AccountProductsIndex",
       KeyConditionExpression: "account_id = :account_id",
       ExpressionAttributeValues: {
         ":account_id": account_id
       }
     }));
 
-    // Get the account for these repositories
+    // Get the account for these products
     const account = await fetchAccount(account_id);
 
     return (result.Items || []).map(item => ({
-      ...item as Repository,
+      ...item as Product,
       account: account || undefined
     }));
   } catch (e) {
-    console.error(`Error fetching repositories for account ${account_id}:`, e);
+    console.error(`Error fetching products for account ${account_id}:`, e);
     return [];
   }
 }
 
-export async function fetchRepositories(
+export async function fetchProducts(
   limit = 50,
   lastEvaluatedKey?: any
 ): Promise<{
-  repositories: Repository[];
+  products: Product[];
   lastEvaluatedKey: any;
 }> {
   try {
-    // Use a scan but with pagination to avoid loading everything at once
+    // Only use the products table now
+    const tableName = "sc-products";
+    let allItems: any[] = [];
+    
     const scanParams: any = {
-      TableName: "sc-repositories",
+      TableName: tableName,
       Limit: limit,
-      FilterExpression: "attribute_exists(account_id)" // Only get valid repositories
+      FilterExpression: "attribute_exists(account_id)" // Only get valid items
     };
     
     if (lastEvaluatedKey) {
@@ -184,45 +187,48 @@ export async function fetchRepositories(
     }
     
     const result = await docClient.send(new ScanCommand(scanParams));
+    if (result.Items) {
+      allItems = [...allItems, ...result.Items];
+    }
     
     // Get all unique account IDs
-    const accountIds = new Set((result.Items || []).map(repo => repo.account_id));
+    const accountIds = new Set(allItems.map(item => item.account_id));
     
     // Fetch all accounts in parallel
     const accountPromises = Array.from(accountIds).map(id => fetchAccount(id));
     const accounts = await Promise.all(accountPromises);
     const accountMap = new Map(accounts.filter(Boolean).map(acc => [acc!.account_id, acc]));
     
-    // Attach accounts to repositories
-    const repositories = (result.Items || []).map(item => ({
-      ...item as Repository,
+    // Attach accounts to products
+    const products = allItems.map(item => ({
+      ...item as Product,
       account: accountMap.get(item.account_id) || undefined
     }));
     
     return {
-      repositories,
-      lastEvaluatedKey: result.LastEvaluatedKey
+      products,
+      lastEvaluatedKey: undefined // Reset pagination since we're combining results
     };
   } catch (e) {
-    console.error('Error fetching repositories:', e);
+    console.error('Error fetching products:', e);
     return {
-      repositories: [],
+      products: [],
       lastEvaluatedKey: undefined
     };
   }
 }
 
-export async function fetchPublicRepositories(
+export async function fetchPublicProducts(
   limit = 50,
   lastEvaluatedKey?: any
 ): Promise<{
-  repositories: Repository[];
+  products: Product[];
   lastEvaluatedKey: any;
 }> {
   try {
     const queryParams: any = {
-      TableName: "sc-repositories",
-      IndexName: "PublicRepositoriesIndex",
+      TableName: "sc-products",
+      IndexName: "PublicProductsIndex",
       KeyConditionExpression: "visibility = :visibility",
       ExpressionAttributeValues: {
         ":visibility": "public"
@@ -237,58 +243,58 @@ export async function fetchPublicRepositories(
     const result = await docClient.send(new QueryCommand(queryParams));
 
     return {
-      repositories: (result.Items || []) as Repository[],
+      products: (result.Items || []) as Product[],
       lastEvaluatedKey: result.LastEvaluatedKey
     };
   } catch (e) {
-    console.error('Error fetching public repositories:', e);
+    console.error('Error fetching public products:', e);
     return {
-      repositories: [],
+      products: [],
       lastEvaluatedKey: null
     };
   }
 }
 
-export async function updateRepository(repository: Repository): Promise<boolean> {
+export async function updateProduct(product: Product): Promise<boolean> {
   try {
     await docClient.send(new UpdateCommand({
-      TableName: "sc-repositories",
+      TableName: "sc-products",
       Key: {
-        repository_id: repository.repository_id,
-        account_id: repository.account_id
+        product_id: product.product_id,
+        account_id: product.account_id
       },
       UpdateExpression: "SET title = :title, description = :description, updated_at = :updated_at, visibility = :visibility, metadata = :metadata",
       ExpressionAttributeValues: {
-        ":title": repository.title,
-        ":description": repository.description,
+        ":title": product.title,
+        ":description": product.description,
         ":updated_at": new Date().toISOString(),
-        ":visibility": repository.visibility,
-        ":metadata": repository.metadata
+        ":visibility": product.visibility,
+        ":metadata": product.metadata
       }
     }));
     return true;
   } catch (e) {
-    console.error(`Error updating repository ${repository.repository_id}:`, e);
+    console.error(`Error updating product ${product.product_id}:`, e);
     return false;
   }
 }
 
-export async function updateRepositoryRole(
-  repository_id: string,
+export async function updateProductRole(
+  product_id: string,
   account_id: string,
   target_account_id: string,
-  role: RepositoryRole
+  role: ProductRole
 ): Promise<boolean> {
   try {
     await docClient.send(new UpdateCommand({
-      TableName: "sc-repositories",
+      TableName: "sc-products",
       Key: {
-        repository_id,
+        product_id,
         account_id
       },
-      UpdateExpression: "SET metadata.roles.#account = :role",
+      UpdateExpression: "SET metadata.roles.#target = :role",
       ExpressionAttributeNames: {
-        "#account": target_account_id
+        "#target": target_account_id
       },
       ExpressionAttributeValues: {
         ":role": role
@@ -296,27 +302,27 @@ export async function updateRepositoryRole(
     }));
     return true;
   } catch (e) {
-    console.error(`Error updating role for repository ${repository_id}:`, e);
+    console.error(`Error updating product role for ${product_id}:`, e);
     return false;
   }
 }
 
-export async function updateRepositoryMirror(
-  repository_id: string,
+export async function updateProductMirror(
+  product_id: string,
   account_id: string,
   mirror_key: string,
-  mirror: RepositoryMirror
+  mirror: ProductMirror
 ): Promise<boolean> {
   try {
     await docClient.send(new UpdateCommand({
-      TableName: "sc-repositories",
+      TableName: "sc-products",
       Key: {
-        repository_id,
+        product_id,
         account_id
       },
-      UpdateExpression: "SET metadata.mirrors.#mirror = :mirror",
+      UpdateExpression: "SET metadata.mirrors.#key = :mirror",
       ExpressionAttributeNames: {
-        "#mirror": mirror_key
+        "#key": mirror_key
       },
       ExpressionAttributeValues: {
         ":mirror": mirror
@@ -324,7 +330,7 @@ export async function updateRepositoryMirror(
     }));
     return true;
   } catch (e) {
-    console.error(`Error updating mirror for repository ${repository_id}:`, e);
+    console.error(`Error updating product mirror for ${product_id}:`, e);
     return false;
   }
 }

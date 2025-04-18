@@ -112,51 +112,6 @@ We are working in dev. Our environment variables are set in `.env.local`. Do not
    - Follow Radix UI component patterns
    - Use consistent spacing and sizing
 
-## Testing Protocol
-
-1. **Pre-Change**
-   ```bash
-   npm run lint
-   next build
-   npm run test
-   npm run test-pages
-   npm run test:perf  # Save baseline
-   ```
-
-2. **Test Organization**
-   - Group related tests using descriptive `describe` blocks
-   - Keep test data close to tests
-   - Reset environment using `beforeEach`
-   - Use consistent naming for mocks
-   - Mock global objects using `Object.defineProperty`
-   - Test both initial state and state changes
-
-3. **Component Testing**
-   - Mock routing modules at test file level
-   - Match text content exactly
-   - Test navigation components thoroughly
-   - Use specific item matching over array indices
-   - Include all production-required fields
-   - Test accessibility features
-   - Use `renderWithTheme` for themed components
-
-4. **Server Component Testing**
-   - Test loading states first
-   - Mock server-side data fetching
-   - Use `act()` for state updates
-   - Test both client and server hydration
-   - Handle async operations properly
-   - Mock Next.js Request/Response objects
-   - Test both success and error paths
-
-5. **Error Testing**
-   - Test all error paths
-   - Verify error messages
-   - Test error recovery flows
-   - Mock error conditions consistently
-   - Test both client and server errors
-   - Use proper error roles and ARIA attributes
-
 ## Performance Guidelines
 
 1. **Thresholds**
@@ -166,7 +121,7 @@ We are working in dev. Our environment variables are set in `.env.local`. Do not
      pages: {
        home: 3000,
        account: 100,
-       repository: 3500,
+       product: 3500,
        objectBrowser: 2000
      }
    };
@@ -250,7 +205,7 @@ Remember: Never skip testing steps. Trust the platform. Keep changes minimal.
 ```typescript
 // ✅ Correct: Using account_id
 const account = await fetchAccount(accountId);
-const repositories = await fetchRepositoriesByAccount(accountId);
+const products = await fetchProductsByAccount(accountId);
 
 // ❌ Incorrect: Using Ory ID
 const account = await fetchAccountByOryId(oryId);
@@ -258,11 +213,11 @@ const account = await fetchAccountByOryId(oryId);
 
 ```typescript
 // ✅ Correct: URL structure
-/{account_id}/repositories
+/{account_id}/products
 /{account_id}/settings
 
 // ❌ Incorrect: Using Ory ID in URLs
-/{ory_id}/repositories
+/{ory_id}/products
 ```
 
 ```typescript

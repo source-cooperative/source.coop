@@ -13,8 +13,8 @@ Current focus on core platform features and local development environment.
 - [x] Core components and infrastructure
 
 #### v0.2.0 - Core Features
-- [ ] Local DynamoDB setup
-- [ ] User profile management
+- [x] Local DynamoDB setup
+- [x] User profile management
 - [ ] Repository management
 - [ ] Organization management
 - [ ] User-organization relationships

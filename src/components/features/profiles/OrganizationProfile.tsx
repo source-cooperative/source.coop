@@ -3,16 +3,16 @@
 import { Box, Heading, Text, Link as RadixLink, Flex, Grid, Button } from '@radix-ui/themes';
 import Link from 'next/link';
 import type { Account, IndividualAccount, OrganizationalAccount } from '@/types/account_v2';
-import type { Repository_v2 } from '@/types/repository_v2';
-import { RepositoryList } from '@/components/features/repositories/RepositoryList';
+import type { Product_v2 } from '@/types/product_v2';
+import { ProductList } from '@/components/features/products/ProductList';
 import { OrganizationMembers } from './OrganizationMembers';
 import { ProfileAvatar } from './ProfileAvatar';
-import { useAuth } from '@/hooks/useAuth';
 import { WebsiteLink } from './WebsiteLink';
-
+import { useSession } from '@ory/elements-react/client';
+import { getAccountId } from '@/hooks/useAccount';
 interface OrganizationProfileProps {
   account: OrganizationalAccount;
-  repositories: Repository_v2[];
+  products: Product_v2[];
   owner: IndividualAccount | null;
   admins: IndividualAccount[];
   members: IndividualAccount[];
@@ -20,13 +20,13 @@ interface OrganizationProfileProps {
 
 export function OrganizationProfile({ 
   account, 
-  repositories,
+  products,
   owner,
   admins,
   members 
 }: OrganizationProfileProps) {
-  const { session } = useAuth();
-  const currentUserId = session?.identity?.metadata_public?.account_id;
+  const { session } = useSession();
+  const currentUserId = getAccountId(session);
   const isAdmin = admins.some(admin => admin.account_id === currentUserId);
   const isOwner = owner?.account_id === currentUserId;
   const canEdit = isAdmin || isOwner;
@@ -84,10 +84,10 @@ export function OrganizationProfile({
         </Box>
       </Grid>
 
-      {repositories.length > 0 && (
+      {products.length > 0 && (
         <Box>
-          <Heading as="h2" size="4" mb="2">Repositories</Heading>
-          <RepositoryList repositories={repositories} />
+          <Heading as="h2" size="4" mb="2">Products</Heading>
+          <ProductList products={products} />
         </Box>
       )}
     </Box>

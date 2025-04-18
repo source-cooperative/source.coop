@@ -37,27 +37,75 @@ interface OrganizationalAccount extends BaseAccount {
 }
 ```
 
-## Repositories
+## Data Products
 
-### Repository
+### Product Mirror
 ```typescript
-interface Repository {
-  repository_id: string;
+interface ProductMirror {
+  storage_type: 's3' | 'azure' | 'gcs' | 'minio' | 'ceph';
+  connection_id: string;     // Reference to storage connection config
+  prefix: string;           // Format: "{account_id}/{product_id}/"
+  config: {
+    region?: string;        // For S3/GCS
+    bucket?: string;        // For S3/GCS
+    container?: string;     // For Azure
+    endpoint?: string;      // For MinIO/Ceph
+  };
+  
+  // Mirror-specific settings
+  is_primary: boolean;      // Is this the primary mirror?
+  sync_status: {
+    last_sync_at: string;
+    is_synced: boolean;
+    error?: string;
+  };
+  
+  // Monitoring
+  stats: {
+    total_objects: number;
+    total_size: number;
+    last_verified_at: string;
+  };
+}
+```
+
+### Product Role
+```typescript
+interface ProductRole {
   account_id: string;
+  role: 'admin' | 'contributor' | 'viewer';
+  granted_at: string;
+  granted_by: string;      // account_id of who granted the role
+}
+```
+
+### Product
+```typescript
+interface Product_v2 {
+  product_id: string;    // Partition Key
+  account_id: string;    // Sort Key
   title: string;
-  description?: string;
+  description: string;
   created_at: string;
   updated_at: string;
+  visibility: 'public' | 'unlisted' | 'restricted';
+  metadata: {
+    mirrors: Record<string, ProductMirror>;
+    primary_mirror: string;      // Key of the primary mirror (e.g., "aws-us-east-1")
+    tags?: string[];
+    roles: Record<string, ProductRole>;
+  };
+  account?: Account;
 }
 ```
 
 ## Storage Objects
 
-### Repository Object
+### Product Object
 ```typescript
-interface RepositoryObject {
+interface ProductObject {
   id: string;
-  repository_id: string;
+  product_id: string;
   path: string;
   size: number;
   type: 'file' | 'directory';
@@ -71,16 +119,16 @@ interface RepositoryObject {
 
 ## Relationships
 
-### Account-Repository
+### Account-Product
 - One-to-many relationship
-- Account owns repositories
-- Repositories belong to one account
+- Account owns products
+- Products belong to one account
 - Account can be either individual or organization
 
-### Repository-Object
+### Product-Object
 - One-to-many relationship
-- Repository contains objects
-- Objects belong to one repository
+- Product contains objects
+- Objects belong to one product
 - Objects can be files or directories
 
 ### Organization-Member
@@ -111,15 +159,44 @@ interface AccountsTable {
 }
 ```
 
-#### Repositories Table
+#### Products Table
 ```typescript
-interface RepositoriesTable {
-  repository_id: string;  // Partition Key
-  account_id: string;     // Sort Key
+interface ProductsTable {
+  product_id: string;  // Partition Key
+  account_id: string;  // Sort Key
   title: string;
-  description?: string;
+  description: string;
   created_at: string;
   updated_at: string;
+  visibility: string;
+  metadata: {
+    mirrors: Record<string, ProductMirror>;
+    primary_mirror: string;
+    tags?: string[];
+    roles: Record<string, ProductRole>;
+  };
+}
+```
+
+#### Account Products Index
+```typescript
+interface AccountProductsIndex {
+  account_id: string;      // PK
+  created_at: string;      // SK
+  product_id: string;      // Projected attribute
+  title: string;           // Projected attribute
+  visibility: string;      // Projected attribute
+}
+```
+
+#### Public Products Index
+```typescript
+interface PublicProductsIndex {
+  visibility: string;      // PK
+  created_at: string;      // SK
+  product_id: string;      // Projected attribute
+  account_id: string;      // Projected attribute
+  title: string;           // Projected attribute
 }
 ```
 
@@ -129,7 +206,7 @@ interface RepositoriesTable {
 ```
 /storage
   /{account_id}
-    /{repository_id}
+    /{product_id}
       /{files}
       /.source-metadata.json
 ```
@@ -137,7 +214,7 @@ interface RepositoriesTable {
 ### Metadata File
 ```typescript
 interface SourceMetadata {
-  repository_id: string;
+  product_id: string;
   account_id: string;
   objects: {
     [path: string]: {

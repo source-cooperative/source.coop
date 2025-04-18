@@ -3,7 +3,6 @@
 import { Tooltip } from '@radix-ui/themes';
 import { MinusCircledIcon, CheckCircledIcon } from '@radix-ui/react-icons';
 import type { Account, IndividualAccount } from '@/types/account_v2';
-import { ory } from '@/lib/ory';
 import { useState, useEffect } from 'react';
 
 interface EmailVerificationStatusProps {
@@ -20,47 +19,48 @@ interface IdentityMetadataPublic {
 export function EmailVerificationStatus({ account }: EmailVerificationStatusProps) {
   const [isVerified, setIsVerified] = useState<boolean | null>(null); // null means loading
   const [verifiedAt, setVerifiedAt] = useState<string | null>(null);
-  
-  useEffect(() => {
-    // Only proceed with verification if account is individual
-    if (account.type !== 'individual') {
-      return;
-    }
-    
-    const individualAccount = account as IndividualAccount;
-    
-    const checkVerificationStatus = async () => {
-      try {
-        const { data: session } = await ory.toSession();
-        const verified = session.identity?.verifiable_addresses?.some(addr => addr.verified) ?? false;
-        setIsVerified(verified);
-        
-        // Get verification timestamp from metadata
-        const metadata = session.identity?.metadata_public as IdentityMetadataPublic | undefined;
-        const verifiedTimestamp = metadata?.email_verified_at;
-        
-        if (verifiedTimestamp) {
-          const date = new Date(verifiedTimestamp);
-          // Format date as DD MMM YYYY
-          const day = date.getDate().toString().padStart(2, '0');
-          const month = date.toLocaleString('en-US', { month: 'short' });
-          const year = date.getFullYear();
-          setVerifiedAt(`${day} ${month} ${year}`);
-        }
-      } catch (error) {
-        console.error('Error checking email verification status:', error);
-        setIsVerified(false);
-      }
-    };
-    
-    checkVerificationStatus();
-  }, [account]);
-  
+  // const { session, isLoading } = useSession();
+
+  // useEffect(() => {
+  //   // Only proceed with verification if account is individual
+  //   if (account.type !== 'individual') {
+  //     return;
+  //   }
+
+  //   const individualAccount = account as IndividualAccount;
+
+  //   const checkVerificationStatus = async () => {
+  //     try {
+  //       const { data: session } = await ory.toSession();
+  //       const verified = session.identity?.verifiable_addresses?.some(addr => addr.verified) ?? false;
+  //       setIsVerified(verified);
+
+  //       // Get verification timestamp from metadata
+  //       const metadata = session.identity?.metadata_public as IdentityMetadataPublic | undefined;
+  //       const verifiedTimestamp = metadata?.email_verified_at;
+
+  //       if (verifiedTimestamp) {
+  //         const date = new Date(verifiedTimestamp);
+  //         // Format date as DD MMM YYYY
+  //         const day = date.getDate().toString().padStart(2, '0');
+  //         const month = date.toLocaleString('en-US', { month: 'short' });
+  //         const year = date.getFullYear();
+  //         setVerifiedAt(`${day} ${month} ${year}`);
+  //       }
+  //     } catch (error) {
+  //       console.error('Error checking email verification status:', error);
+  //       setIsVerified(false);
+  //     }
+  //   };
+
+  //   checkVerificationStatus();
+  // }, [account]);
+
   // Don't show anything for organizations
-  if (account.type !== 'individual') {
+  if (account.type !== "individual") {
     return null;
   }
-  
+
   // Show loading state
   if (isVerified === null) {
     return (
@@ -69,10 +69,14 @@ export function EmailVerificationStatus({ account }: EmailVerificationStatusProp
       </Tooltip>
     );
   }
-  
+
   // Show verification status
   return (
-    <Tooltip content={isVerified ? `Email verified on ${verifiedAt}` : 'Email not verified'}>
+    <Tooltip
+      content={
+        isVerified ? `Email verified on ${verifiedAt}` : "Email not verified"
+      }
+    >
       {isVerified ? (
         <CheckCircledIcon color="green" width="16" height="16" />
       ) : (

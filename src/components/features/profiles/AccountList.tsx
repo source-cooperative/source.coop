@@ -1,5 +1,5 @@
 import { LinkCard } from '@/components/core/LinkCard';
-import type { Account } from '@/types/account';
+import type { Account } from '@/types/account_v2';
 import { Text } from '@radix-ui/themes';
 
 export function AccountList({ accounts }: { accounts: Account[] }) {
