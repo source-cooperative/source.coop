@@ -1,17 +1,31 @@
 import { Box, Text, Heading, Link as RadixLink, Card } from '@radix-ui/themes';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Code } from './codeConfig';
-import { SectionHeader } from '@/components/core';
-import '@/styles/MarkdownViewer.css';
+import rehypeRaw from "rehype-raw";
+import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
+import { Code } from "./codeConfig";
+import { SectionHeader } from "@/components/core";
+import "@/styles/MarkdownViewer.css";
 
 interface MarkdownViewerProps {
   content: string;
 }
 
+// Sanitization schema that allows images while maintaining security
+const sanitizeSchema = {
+  ...defaultSchema,
+  attributes: {
+    ...defaultSchema.attributes,
+    img: ["src", "alt", "title", "width", "height"],
+  },
+  tagNames: [...(defaultSchema.tagNames || []), "img"],
+};
+
 export function MarkdownViewer({ content }: MarkdownViewerProps) {
-  if (typeof content !== 'string') {
-    throw new Error(`MarkdownViewer expects string content, got ${typeof content}`);
+  if (typeof content !== "string") {
+    throw new Error(
+      `MarkdownViewer expects string content, got ${typeof content}`
+    );
   }
 
   return (
@@ -19,6 +33,7 @@ export function MarkdownViewer({ content }: MarkdownViewerProps) {
       <SectionHeader title="README">
         <ReactMarkdown
           remarkPlugins={[remarkGfm]}
+          rehypePlugins={[rehypeRaw, [rehypeSanitize, sanitizeSchema]]}
           components={{
             h1: ({ children }) => <Heading size="8" mb="4">{children}</Heading>,
             h2: ({ children }) => <Heading size="7" mb="3">{children}</Heading>,

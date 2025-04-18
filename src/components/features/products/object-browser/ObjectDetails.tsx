@@ -2,14 +2,14 @@
 
 import { Card, Box, DataList, Flex, IconButton, Tooltip } from '@radix-ui/themes';
 import { CopyIcon, CheckIcon } from '@radix-ui/react-icons';
-import type { ProductObject } from '@/types/product_object';
+import type { ProductObject } from '@/types';
 import type { Product_v2 } from '@/types/product_v2';
-import { MonoText, SectionHeader } from '@/components/core';
+import { SectionHeader } from '@/components/core';
 import { DateText, BreadcrumbNav } from '@/components/display';
 import { ChecksumVerifier } from '../ChecksumVerifier';
 import { formatFileSize } from './utils';
-import styles from '../ObjectBrowser.module.css';
 import { useState, useEffect } from 'react';
+import { DataListItem } from "./DataListItem";
 
 interface ObjectDetailsProps {
   product: Product_v2;
@@ -79,14 +79,16 @@ export function ObjectDetails({
 
   return (
     <Card>
-      <SectionHeader title="Contents">
-        <Box style={{ 
-          borderBottom: '1px solid var(--gray-5)',
-          paddingBottom: 'var(--space-3)',
-          marginBottom: 'var(--space-3)'
-        }}>
+      <SectionHeader title="Product Contents">
+        <Box
+          style={{
+            borderBottom: "1px solid var(--gray-5)",
+            paddingBottom: "var(--space-3)",
+            marginBottom: "var(--space-3)",
+          }}
+        >
           <Flex justify="between" align="center">
-            <BreadcrumbNav 
+            <BreadcrumbNav
               path={pathParts}
               fileName={fileName}
               onNavigate={onNavigate}
@@ -94,188 +96,115 @@ export function ObjectDetails({
           </Flex>
         </Box>
       </SectionHeader>
-      
+
       <DataList.Root>
-        <DataList.Item>
-          <DataList.Label minWidth="120px">Name</DataList.Label>
-          <DataList.Value>
-            <Flex align="center" gap="2">
-              <MonoText className={styles.selectableText} 
-                data-selected={selectedDataItem === 'name'}
-                data-selectable="true" 
-                data-item="name">
-                {fileName}
-              </MonoText>
-              <Tooltip content="Copy to clipboard">
-                <IconButton 
-                  size="1" 
-                  variant="ghost" 
-                  color={copiedField === 'name' ? 'green' : 'gray'}
-                  onClick={() => copyToClipboard(fileName || '', 'name')}
-                  aria-label="Copy name"
-                >
-                  {copiedField === 'name' ? <CheckIcon /> : <CopyIcon />}
-                </IconButton>
-              </Tooltip>
-            </Flex>
-          </DataList.Value>
-        </DataList.Item>
-        
-        <DataList.Item>
-          <DataList.Label minWidth="120px">Path</DataList.Label>
-          <DataList.Value>
-            <Flex align="center" gap="2">
-              <MonoText className={styles.selectableText}
-                data-selected={selectedDataItem === 'path'}
-                data-selectable="true" 
-                data-item="path">
-                {selectedObject.path}
-              </MonoText>
-              <Tooltip content="Copy to clipboard">
-                <IconButton 
-                  size="1" 
-                  variant="ghost" 
-                  color={copiedField === 'path' ? 'green' : 'gray'}
-                  onClick={() => copyToClipboard(selectedObject.path, 'path')}
-                  aria-label="Copy path"
-                >
-                  {copiedField === 'path' ? <CheckIcon /> : <CopyIcon />}
-                </IconButton>
-              </Tooltip>
-            </Flex>
-          </DataList.Value>
-        </DataList.Item>
-        
-        <DataList.Item>
-          <DataList.Label minWidth="120px">Size</DataList.Label>
-          <DataList.Value>
-            <Flex align="center" gap="2">
-              <MonoText className={styles.selectableText}
-                data-selected={selectedDataItem === 'size'}
-                data-selectable="true" 
-                data-item="size">
-                {formatFileSize(selectedObject.size)}
-              </MonoText>
-              <Tooltip content="Copy to clipboard">
-                <IconButton 
-                  size="1" 
-                  variant="ghost" 
-                  color={copiedField === 'size' ? 'green' : 'gray'}
-                  onClick={() => copyToClipboard(formatFileSize(selectedObject.size), 'size')}
-                  aria-label="Copy size"
-                >
-                  {copiedField === 'size' ? <CheckIcon /> : <CopyIcon />}
-                </IconButton>
-              </Tooltip>
-            </Flex>
-          </DataList.Value>
-        </DataList.Item>
-        
-        <DataList.Item>
-          <DataList.Label minWidth="120px">Last Updated</DataList.Label>
-          <DataList.Value>
-            <Flex align="center" gap="2">
-              <MonoText className={styles.selectableText}
-                data-selected={selectedDataItem === 'updated_at'}
-                data-selectable="true" 
-                data-item="updated_at">
-                <DateText date={selectedObject.updated_at} includeTime={true} />
-              </MonoText>
-              <Tooltip content="Copy to clipboard">
-                <IconButton 
-                  size="1" 
-                  variant="ghost" 
-                  color={copiedField === 'updated_at' ? 'green' : 'gray'}
-                  onClick={() => {
-                    const dateStr = new Date(selectedObject.updated_at).toLocaleString();
-                    copyToClipboard(dateStr, 'updated_at');
-                  }}
-                  aria-label="Copy last updated date"
-                >
-                  {copiedField === 'updated_at' ? <CheckIcon /> : <CopyIcon />}
-                </IconButton>
-              </Tooltip>
-            </Flex>
-          </DataList.Value>
-        </DataList.Item>
-        
-        <DataList.Item>
-          <DataList.Label minWidth="120px">Type</DataList.Label>
-          <DataList.Value>
-            <Flex align="center" gap="2">
-              <MonoText className={styles.selectableText}
-                data-selected={selectedDataItem === 'type'}
-                data-selectable="true" 
-                data-item="type">
-                {selectedObject.type}
-              </MonoText>
-              <Tooltip content="Copy to clipboard">
-                <IconButton 
-                  size="1" 
-                  variant="ghost" 
-                  color={copiedField === 'type' ? 'green' : 'gray'}
-                  onClick={() => copyToClipboard(selectedObject.type, 'type')}
-                  aria-label="Copy type"
-                >
-                  {copiedField === 'type' ? <CheckIcon /> : <CopyIcon />}
-                </IconButton>
-              </Tooltip>
-            </Flex>
-          </DataList.Value>
-        </DataList.Item>
+        <DataListItem
+          label="Name"
+          value={fileName}
+          selectedDataItem={selectedDataItem}
+          itemKey="name"
+          copiedField={copiedField}
+          onCopy={copyToClipboard}
+        />
 
-        {selectedObject.mime_type && (
-          <DataList.Item>
-            <DataList.Label minWidth="120px">Content Type</DataList.Label>
-            <DataList.Value>
-              <Flex align="center" gap="2">
-                <MonoText className={styles.selectableText}
-                  data-selected={selectedDataItem === 'mime_type'}
-                  data-selectable="true" 
-                  data-item="mime_type">
-                  {selectedObject.mime_type}
-                </MonoText>
-                <Tooltip content="Copy to clipboard">
-                  <IconButton 
-                    size="1" 
-                    variant="ghost" 
-                    color={copiedField === 'mime_type' ? 'green' : 'gray'}
-                    onClick={() => copyToClipboard(selectedObject.mime_type || '', 'mime_type')}
-                    aria-label="Copy content type"
-                  >
-                    {copiedField === 'mime_type' ? <CheckIcon /> : <CopyIcon />}
-                  </IconButton>
-                </Tooltip>
-              </Flex>
-            </DataList.Value>
-          </DataList.Item>
-        )}
+        <DataListItem
+          label="Size"
+          value={formatFileSize(selectedObject.size)}
+          selectedDataItem={selectedDataItem}
+          itemKey="size"
+          copiedField={copiedField}
+          onCopy={copyToClipboard}
+        />
 
-        {selectedObject.metadata && selectedObject.metadata.sha256 && product.account && (
-          <DataList.Item>
-            <DataList.Label minWidth="120px">Checksum</DataList.Label>
-            <DataList.Value>
-              <Flex align="center" gap="2">
-                <ChecksumVerifier 
-                  objectUrl={`/api/${product.account.account_id}/${product.product_id}/objects/${selectedObject.path}`}
-                  expectedHash={selectedObject.metadata.sha256}
-                  algorithm="SHA-256"
-                />
-                <Tooltip content="Copy to clipboard">
-                  <IconButton 
-                    size="1" 
-                    variant="ghost" 
-                    color={copiedField === 'sha256' ? 'green' : 'gray'}
-                    onClick={() => copyToClipboard(selectedObject.metadata?.sha256 || '', 'sha256')}
-                    aria-label="Copy SHA-256 checksum"
-                  >
-                    {copiedField === 'sha256' ? <CheckIcon /> : <CopyIcon />}
-                  </IconButton>
-                </Tooltip>
-              </Flex>
-            </DataList.Value>
-          </DataList.Item>
-        )}
+        <DataListItem
+          label="Content Type"
+          value={selectedObject.mime_type}
+          selectedDataItem={selectedDataItem}
+          itemKey="content_type"
+          copiedField={copiedField}
+          onCopy={copyToClipboard}
+        />
+
+        <DataListItem
+          label="Last Modified"
+          value={
+            <DateText date={selectedObject.updated_at} includeTime={true} />
+          }
+          selectedDataItem={selectedDataItem}
+          itemKey="updated_at"
+          copiedField={copiedField}
+          onCopy={(_, field) => {
+            const dateStr = new Date(
+              selectedObject.updated_at
+            ).toLocaleString();
+            copyToClipboard(dateStr, field);
+          }}
+        />
+
+        {selectedObject.metadata &&
+          selectedObject.metadata.sha256 &&
+          product.account && (
+            <DataList.Item>
+              <DataList.Label minWidth="120px">Checksum</DataList.Label>
+              <DataList.Value>
+                <Flex align="center" gap="2">
+                  <ChecksumVerifier
+                    objectUrl={`/api/${product.account.account_id}/${product.product_id}/objects/${selectedObject.path}`}
+                    expectedHash={selectedObject.metadata.sha256}
+                    algorithm="SHA-256"
+                  />
+                  <Tooltip content="Copy to clipboard">
+                    <IconButton
+                      size="1"
+                      variant="ghost"
+                      color={copiedField === "sha256" ? "green" : "gray"}
+                      onClick={() =>
+                        copyToClipboard(
+                          selectedObject.metadata?.sha256 || "",
+                          "sha256"
+                        )
+                      }
+                      aria-label="Copy SHA-256 checksum"
+                    >
+                      {copiedField === "sha256" ? <CheckIcon /> : <CopyIcon />}
+                    </IconButton>
+                  </Tooltip>
+                </Flex>
+              </DataList.Value>
+            </DataList.Item>
+          )}
+
+        <DataListItem
+          label="Source URL"
+          value={`https://data.source.coop/${product.account?.account_id}/${product.product_id}/${selectedObject.path}`}
+          selectedDataItem={selectedDataItem}
+          itemKey="source_url"
+          copiedField={copiedField}
+          onCopy={copyToClipboard}
+        />
+
+        {/* 
+        TODO: On production, this is based on dataConnectionDetails, but we don't have that data here.
+  
+        {dataConnectionDetails.s3DataConnection ? `s3://${dataConnectionDetails.s3DataConnection.bucket}/${account_id}/${resultState.key}` : ""}
+        {dataConnectionDetails.azureDataConnection ? `https://${dataConnectionDetails.azureDataConnection.account_name}.blob.core.windows.net/${dataConnectionDetails.azureDataConnection.container_name}/${account_id}/${resultState.key}` : ""}
+        */}
+        {/* {product.metadata?.mirrors && product.metadata.primary_mirror && (
+          <DataListItem
+            label="Cloud URI"
+            value={`s3://${
+              product.metadata.mirrors[product.metadata.primary_mirror]
+                .config.bucket
+            }/${
+              product.metadata.mirrors[product.metadata.primary_mirror]
+                .prefix
+            }${selectedObject.path}`}
+            selectedDataItem={selectedDataItem}
+            itemKey="cloud_uri"
+            copiedField={copiedField}
+            onCopy={copyToClipboard}
+          />
+        )} */}
       </DataList.Root>
     </Card>
   );

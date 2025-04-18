@@ -1,4 +1,4 @@
-import { S3Client, ListObjectsV2Command, GetObjectCommand, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, ListObjectsV2Command, GetObjectCommand, PutObjectCommand, DeleteObjectCommand, HeadObjectCommand } from '@aws-sdk/client-s3';
 import { StorageClient, StorageProvider, StorageConfig, ListObjectsParams, ListObjectsResult, GetObjectParams, GetObjectResult, PutObjectParams, PutObjectResult, DeleteObjectParams } from '@/types/storage';
 import { ProductObject } from '@/types';
 import { Readable } from 'stream';
@@ -136,7 +136,7 @@ export class S3StorageClient implements StorageClient {
 
   async getObjectInfo(params: GetObjectParams): Promise<ProductObject> {
     try {
-      const command = new GetObjectCommand({
+      const command = new HeadObjectCommand({
         Bucket: params.account_id,
         Key: `${params.product_id}/${params.object_path}`,
       });

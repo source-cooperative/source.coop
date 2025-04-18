@@ -53,44 +53,66 @@ export default async function ProductPathPage({
   }
 
   try {
-    // 3. Get objects from storage
-    console.log('Debug - Fetching objects with:', { account_id, product_id, object_path: pathString, prefix });
-    const result = await createStorageClient().listObjects({
-      account_id,
-      product_id,
-      object_path: pathString,
-      prefix,
-      delimiter: '/'
-    });
-    console.log('Debug - Storage result:', result);
+    let selectedObject: ProductObject | undefined;
+    let productObjects: ProductObject[] = [];
 
-    // 4. Transform storage objects to product objects
-    const productObjects: ProductObject[] = (result?.objects || [])
-      .filter(obj => obj?.path)
-      .map(obj => ({
-        id: obj.path!,
+    // 3. If this is a file path, try to get the object metadata first
+    if (isFilePath) {
+      try {
+        selectedObject = await createStorageClient().getObjectInfo({
+          account_id,
+          product_id,
+          object_path: pathString,
+        });
+      } catch (error) {
+        console.log("Debug - Head object failed, falling back to list:", error);
+      }
+    }
+
+    // 4. If we don't have a selected object or this is a directory, list objects
+    if (!selectedObject) {
+      console.log("Debug - Fetching objects with:", {
+        account_id,
         product_id,
-        path: obj.path!,
-        size: obj.size || 0,
-        type: obj.type || 'file',
-        mime_type: obj.mime_type || '',
-        created_at: obj.created_at || new Date().toISOString(),
-        updated_at: obj.updated_at || new Date().toISOString(),
-        checksum: obj.checksum || '',
-        metadata: obj.metadata || {}
-      }));
-    console.log('Debug - Transformed objects:', productObjects);
+        object_path: pathString,
+        prefix,
+      });
+      const result = await createStorageClient().listObjects({
+        account_id,
+        product_id,
+        object_path: pathString,
+        prefix,
+        delimiter: "/",
+      });
 
-    // 5. Find the selected object if we have a path
-    const selectedObject = pathString ? productObjects.find(obj => obj.path === pathString) : undefined;
-    console.log('Debug - Selected object:', selectedObject);
+      // Transform storage objects to product objects
+      productObjects = (result?.objects || [])
+        .filter((obj) => obj?.path)
+        .map((obj) => ({
+          id: obj.path!,
+          product_id,
+          path: obj.path!,
+          size: obj.size || 0,
+          type: obj.type || "file",
+          mime_type: obj.mime_type || "",
+          created_at: obj.created_at || new Date().toISOString(),
+          updated_at: obj.updated_at || new Date().toISOString(),
+          checksum: obj.checksum || "",
+          metadata: obj.metadata || {},
+        }));
+    }
 
-    // 6. Determine if we're viewing a file or directory
-    const isFile = isFilePath || (selectedObject && selectedObject.type === 'file');
-    const parentPath = isFile ? pathString.slice(0, pathString.lastIndexOf('/')) : pathString;
-    console.log('Debug - Path info:', { isFile, parentPath, isFilePath });
+    console.log("Debug - Selected object:", selectedObject);
 
-    // 7. Render the page
+    // 5. Determine if we're viewing a file or directory
+    const isFile =
+      isFilePath || (selectedObject?.type === "file");
+    const parentPath = isFile
+      ? pathString.slice(0, pathString.lastIndexOf("/"))
+      : pathString;
+    console.log("Debug - Path info:", { isFile, parentPath, isFilePath });
+
+    // 6. Render the page
     return (
       <Container>
         <ProductHeader product={product} />
