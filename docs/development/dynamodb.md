@@ -38,15 +38,15 @@ aws dynamodb create-table \
         "[{\"IndexName\": \"GSI1\",\"KeySchema\":[{\"AttributeName\":\"type\",\"KeyType\":\"HASH\"},{\"AttributeName\":\"account_id\",\"KeyType\":\"RANGE\"}],\"Projection\":{\"ProjectionType\":\"ALL\"},\"ProvisionedThroughput\":{\"ReadCapacityUnits\":5,\"WriteCapacityUnits\":5}}]" \
     --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5
 
-# Create Repositories table
+# Create products table
 aws dynamodb create-table \
     --endpoint-url http://localhost:8000 \
-    --table-name Repositories \
+    --table-name products \
     --attribute-definitions \
-        AttributeName=repository_id,AttributeType=S \
+        AttributeName=product_id,AttributeType=S \
         AttributeName=account_id,AttributeType=S \
     --key-schema \
-        AttributeName=repository_id,KeyType=HASH \
+        AttributeName=product_id,KeyType=HASH \
         AttributeName=account_id,KeyType=RANGE \
     --global-secondary-indexes \
         "[{\"IndexName\": \"GSI1\",\"KeySchema\":[{\"AttributeName\":\"account_id\",\"KeyType\":\"HASH\"},{\"AttributeName\":\"created_at\",\"KeyType\":\"RANGE\"}],\"Projection\":{\"ProjectionType\":\"ALL\"},\"ProvisionedThroughput\":{\"ReadCapacityUnits\":5,\"WriteCapacityUnits\":5}}]" \
@@ -73,17 +73,17 @@ const accounts = await dynamodb.query({
 });
 ```
 
-### Repository Operations
+### product Operations
 ```typescript
-// Get repository by ID
-const repository = await dynamodb.get({
-  TableName: 'Repositories',
-  Key: { repository_id, account_id }
+// Get product by ID
+const product = await dynamodb.get({
+  TableName: 'products',
+  Key: { product_id, account_id }
 });
 
-// List repositories for account
-const repositories = await dynamodb.query({
-  TableName: 'Repositories',
+// List products for account
+const products = await dynamodb.query({
+  TableName: 'products',
   IndexName: 'GSI1',
   KeyConditionExpression: 'account_id = :account_id',
   ExpressionAttributeValues: { ':account_id': account_id }
@@ -106,13 +106,13 @@ await dynamodb.put({
   }
 });
 
-// Create test repository
+// Create test product
 await dynamodb.put({
-  TableName: 'Repositories',
+  TableName: 'products',
   Item: {
-    repository_id: 'test-repo',
+    product_id: 'test-repo',
     account_id: 'test-account',
-    title: 'Test Repository',
+    title: 'Test Product',
     description: 'Test Description',
     created_at: new Date().toISOString()
   }
@@ -127,10 +127,10 @@ await dynamodb.delete({
   Key: { account_id: 'test-account', type: 'user' }
 });
 
-// Delete test repository
+// Delete test product
 await dynamodb.delete({
-  TableName: 'Repositories',
-  Key: { repository_id: 'test-repo', account_id: 'test-account' }
+  TableName: 'products',
+  Key: { product_id: 'test-repo', account_id: 'test-account' }
 });
 ```
 
@@ -220,19 +220,19 @@ const accounts = await fetchAccountsByIds(['account1', 'account2']);
 const organizations = await fetchAccountsByType('organization');
 ```
 
-### Repository Operations
+### product Operations
 
 ```typescript
-// Get repositories for an account
-const repositories = await fetchRepositoriesByAccount('account123');
+// Get products for an account
+const products = await fetchProductsByAccount('account123');
 
-// Get single repository
-const repository = await fetchRepository('repo123', 'account123');
+// Get single product
+const product = await fetchProduct('repo123', 'account123');
 
-// Get all repositories with pagination
-const { repositories, lastEvaluatedKey } = await fetchRepositories(50);
+// Get all products with pagination
+const { products, lastEvaluatedKey } = await fetchProducts(50);
 // Get next page
-const nextPage = await fetchRepositories(50, lastEvaluatedKey);
+const nextPage = await fetchProducts(50, lastEvaluatedKey);
 ```
 
 ### Update Operations
@@ -246,8 +246,8 @@ const success = await updateAccount(account);
 // Update an organization
 const success = await updateOrganization(orgAccount);
 
-// Update a repository
-const success = await updateRepository(repository);
+// Update a product
+const success = await updateProduct(product);
 ```
 
 ### Error Handling Strategy

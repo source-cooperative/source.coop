@@ -111,9 +111,9 @@ export default async function AccountPage({ params }: PageProps) {
   const account = await fetchAccount(params.account_id);
   if (!account) notFound();
   
-  const repositories = await fetchRepositoriesByAccount(params.account_id);
+  const products = await fetchProductsByAccount(params.account_id);
   
-  return <AccountProfile account={account} repositories={repositories} />;
+  return <AccountProfile account={account} products={products} />;
 }
 ```
 

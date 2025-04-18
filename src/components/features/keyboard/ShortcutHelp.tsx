@@ -5,7 +5,7 @@ import { Dialog, Box, Text, Table } from '@radix-ui/themes';
 interface ShortcutHelpProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  context: 'repository-list' | 'object-browser' | 'object-details';
+  context: 'product-list' | 'object-browser' | 'object-details';
 }
 
 interface ShortcutItem {
@@ -18,11 +18,11 @@ const GLOBAL_SHORTCUTS: ShortcutItem[] = [
   { key: 'g h', action: 'Go to homepage' },
 ];
 
-const REPOSITORY_LIST_SHORTCUTS: ShortcutItem[] = [
+const PRODUCT_LIST_SHORTCUTS: ShortcutItem[] = [
   { key: '↑ / k', action: 'Navigate up' },
   { key: '↓ / j', action: 'Navigate down' },
-  { key: 'Enter / o', action: 'Open selected repository' },
-  { key: 'c', action: 'Copy URL of selected repository' },
+  { key: 'Enter / o', action: 'Open selected product' },
+  { key: 'c', action: 'Copy URL of selected product' },
   { key: 'Shift+Escape', action: 'Clear selection' },
 ];
 
@@ -45,8 +45,8 @@ const OBJECT_DETAILS_SHORTCUTS: ShortcutItem[] = [
 export function ShortcutHelp({ open, onOpenChange, context }: ShortcutHelpProps) {
   const contextShortcuts = (() => {
     switch (context) {
-      case 'repository-list':
-        return REPOSITORY_LIST_SHORTCUTS;
+      case 'product-list':
+        return PRODUCT_LIST_SHORTCUTS;
       case 'object-browser':
         return OBJECT_BROWSER_SHORTCUTS;
       case 'object-details':

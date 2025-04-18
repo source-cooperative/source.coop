@@ -1,31 +1,34 @@
 import { MetadataRoute } from 'next';
-import { fetchRepositories } from '@/lib/db/operations_v2';
+import { fetchProducts } from '@/lib/db/operations_v2';
+import { CONFIG } from '@/lib/config';
 
 export async function GET() {
   try {
-    // Fetch repositories for the feed
-    const { repositories } = await fetchRepositories();
+    // Fetch products for the feed
+    const { products } = await fetchProducts();
     
     // Generate RSS feed
-    const feed = `<?xml version="1.0" encoding="UTF-8" ?>
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0">
-<channel>
-  <title>Source.coop</title>
-  <link>https://source.coop</link>
-  <description>Latest repositories on Source.coop</description>
-  ${repositories.map(repo => `
-  <item>
-    <title>${repo.title}</title>
-    <link>https://source.coop/${repo.account_id}/${repo.repository_id}</link>
-    <description>${repo.description}</description>
-    <pubDate>${new Date(repo.created_at).toUTCString()}</pubDate>
-  </item>
-  `).join('\n')}
-</channel>
+  <channel>
+    <title>Source.coop Products</title>
+    <link>https://source.coop</link>
+    <description>Latest products on Source.coop</description>
+    <language>en-us</language>
+    ${products.map(product => `
+      <item>
+        <title>${product.title}</title>
+        <description>${product.description || ''}</description>
+        <link>https://source.coop/${product.account_id}/${product.product_id}</link>
+        <guid>https://source.coop/${product.account_id}/${product.product_id}</guid>
+        <pubDate>${new Date(product.created_at).toUTCString()}</pubDate>
+      </item>
+    `).join('')}
+  </channel>
 </rss>`;
 
     // Return feed with proper content type
-    return new Response(feed, {
+    return new Response(xml, {
       headers: {
         'Content-Type': 'application/xml',
         'Cache-Control': 'public, max-age=3600'

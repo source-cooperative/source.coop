@@ -16,7 +16,7 @@ import { readFileSync } from "fs";
 import { join } from "path";
 
 // Import types
-import type { Repository_v2 } from "../src/types/repository_v2.js";
+import type { Product_v2 } from "../src/types/product_v2.js";
 import type { Account } from "../src/types/account_v2.js";
 
 const DYNAMODB_ENDPOINT =
@@ -43,7 +43,7 @@ async function tablesExist() {
   const tables = await client.send(new ListTablesCommand({}));
   return (
     tables.TableNames?.includes("sc-accounts") &&
-    tables.TableNames?.includes("sc-repositories")
+    tables.TableNames?.includes("sc-products")
   );
 }
 
@@ -64,7 +64,7 @@ async function deleteTable(tableName: string) {
 
 async function createTables() {
   // Delete existing tables
-  await deleteTable("sc-repositories");
+  await deleteTable("sc-products");
   await deleteTable("sc-accounts");
   
   // Wait for tables to be fully deleted
@@ -111,20 +111,20 @@ async function createTables() {
 
   try {
     await client.send(new CreateTableCommand({
-      TableName: "sc-repositories",
+      TableName: "sc-products",
       AttributeDefinitions: [
-        { AttributeName: "repository_id", AttributeType: "S" },
+        { AttributeName: "product_id", AttributeType: "S" },
         { AttributeName: "account_id", AttributeType: "S" },
         { AttributeName: "created_at", AttributeType: "S" },
         { AttributeName: "visibility", AttributeType: "S" }
       ],
       KeySchema: [
-        { AttributeName: "repository_id", KeyType: "HASH" },
+        { AttributeName: "product_id", KeyType: "HASH" },
         { AttributeName: "account_id", KeyType: "RANGE" }
       ],
       GlobalSecondaryIndexes: [
         {
-          IndexName: "AccountRepositoriesIndex",
+          IndexName: "AccountProductsIndex",
           KeySchema: [
             { AttributeName: "account_id", KeyType: "HASH" },
             { AttributeName: "created_at", KeyType: "RANGE" }
@@ -138,7 +138,7 @@ async function createTables() {
           }
         },
         {
-          IndexName: "PublicRepositoriesIndex",
+          IndexName: "PublicProductsIndex",
           KeySchema: [
             { AttributeName: "visibility", KeyType: "HASH" },
             { AttributeName: "created_at", KeyType: "RANGE" }
@@ -157,9 +157,9 @@ async function createTables() {
         WriteCapacityUnits: 5
       }
     }));
-    console.log("✓ Created sc-repositories table");
+    console.log("✓ Created sc-products table");
   } catch (e) {
-    console.error("✗ Error creating sc-repositories table:", e);
+    console.error("✗ Error creating sc-products table:", e);
     throw e;
   }
 
@@ -173,13 +173,13 @@ async function loadConvertedData() {
   try {
     // Read the converted data files
     const accountsPath = join(process.cwd(), 'scripts', 'converted-data', 'accounts.json');
-    const reposPath = join(process.cwd(), 'scripts', 'converted-data', 'repositories.json');
+    const productsPath = join(process.cwd(), 'scripts', 'converted-data', 'products.json');
     
     console.log(`Reading accounts from ${accountsPath}`);
     const accounts: Account[] = JSON.parse(readFileSync(accountsPath, 'utf8'));
     
-    console.log(`Reading repositories from ${reposPath}`);
-    const repositories: Repository_v2[] = JSON.parse(readFileSync(reposPath, 'utf8'));
+    console.log(`Reading products from ${productsPath}`);
+    const products: Product_v2[] = JSON.parse(readFileSync(productsPath, 'utf8'));
     
     // Insert accounts into DynamoDB
     console.log(`Inserting ${accounts.length} accounts into sc-accounts table...`);
@@ -202,39 +202,39 @@ async function loadConvertedData() {
     }
     console.log(`Account insertion complete! Processed ${processedAccounts} accounts.`);
     
-    // Insert repositories into DynamoDB
-    console.log(`Inserting ${repositories.length} repositories into sc-repositories table...`);
-    let processedRepos = 0;
+    // Insert products into DynamoDB
+    console.log(`Inserting ${products.length} products into sc-products table...`);
+    let processedProducts = 0;
     
-    for (const repo of repositories) {
+    for (const product of products) {
       try {
         await docClient.send(new PutCommand({
-          TableName: 'sc-repositories',
-          Item: repo
+          TableName: 'sc-products',
+          Item: product
         }));
         
-        processedRepos++;
-        if (processedRepos % 50 === 0) {
-          console.log(`Processed ${processedRepos}/${repositories.length} repositories...`);
+        processedProducts++;
+        if (processedProducts % 50 === 0) {
+          console.log(`Processed ${processedProducts}/${products.length} products...`);
         }
       } catch (error) {
-        console.error(`Error inserting repository ${repo.repository_id}:`, error);
+        console.error(`Error inserting product ${product.product_id}:`, error);
       }
     }
-    console.log(`Repository insertion complete! Processed ${processedRepos} repositories.`);
+    console.log(`Product insertion complete! Processed ${processedProducts} products.`);
 
     // Verify the data was saved
     console.log('\nVerifying saved data...');
     try {
-      const { Items: savedRepos, Count: repoCount } = await docClient.send(new QueryCommand({
-        TableName: 'sc-repositories',
-        IndexName: 'PublicRepositoriesIndex',
+      const { Items: savedProducts, Count: productCount } = await docClient.send(new QueryCommand({
+        TableName: 'sc-products',
+        IndexName: 'PublicProductsIndex',
         KeyConditionExpression: 'visibility = :visibility',
         ExpressionAttributeValues: {
           ':visibility': 'public'
         }
       }));
-      console.log(`Found ${repoCount || 0} public repositories in DynamoDB`);
+      console.log(`Found ${productCount || 0} public products in DynamoDB`);
       
       const { Items: savedAccounts, Count: accountCount } = await docClient.send(new QueryCommand({
         TableName: 'sc-accounts',

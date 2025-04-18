@@ -2,25 +2,25 @@
 import { Box, Text, Grid, Heading, Flex, Link as RadixLink } from '@radix-ui/themes';
 import Link from 'next/link';
 import type { Account, IndividualAccount } from '@/types/account_v2';
-import type { Repository_v2 } from '@/types/repository_v2';
+import type { Product_v2 } from '@/types/product_v2';
 import { ProfileAvatar } from './ProfileAvatar';
-import { RepositoryList } from '../repositories/RepositoryList';
+import { ProductList } from '../products/ProductList';
 import { WebsiteLink } from './WebsiteLink';
 import { EmailVerificationStatus } from './EmailVerificationStatus';
 import { IndividualProfileActions } from './IndividualProfileActions';
 
 interface IndividualProfileProps {
   account: IndividualAccount;
-  ownedRepositories: Repository_v2[];
-  contributedRepositories: Repository_v2[];
+  ownedProducts: Product_v2[];
+  contributedProducts: Product_v2[];
   organizations: Account[];
   showWelcome?: boolean;
 }
 
 export function IndividualProfile({ 
   account, 
-  ownedRepositories, 
-  contributedRepositories,
+  ownedProducts, 
+  contributedProducts,
   organizations,
   showWelcome = false
 }: IndividualProfileProps) {
@@ -93,17 +93,17 @@ export function IndividualProfile({
         </Box>
       )}
 
-      {ownedRepositories.length > 0 && (
+      {ownedProducts.length > 0 && (
         <Box mb="6">
-          <Heading size="4" mb="2">Repositories</Heading>
-          <RepositoryList repositories={ownedRepositories} />
+          <Heading size="4" mb="2">Products</Heading>
+          <ProductList products={ownedProducts} />
         </Box>
       )}
 
-      {contributedRepositories.length > 0 && (
+      {contributedProducts.length > 0 && (
         <Box>
           <Heading size="4" mb="2">Contributions</Heading>
-          <RepositoryList repositories={contributedRepositories} />
+          <ProductList products={contributedProducts} />
         </Box>
       )}
     </Box>

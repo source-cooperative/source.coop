@@ -1,0 +1,56 @@
+'use client';
+
+import { useState } from 'react';
+import type { Product_v2 } from '@/types/product_v2';
+import { ProductListItem } from './ProductListItem';
+import { ShortcutHelp } from '@/components/features/keyboard/ShortcutHelp';
+import { useProductListKeyboardShortcuts } from '@/hooks/useProductListKeyboardShortcuts';
+import { Text } from '@radix-ui/themes';
+import styles from './ProductList.module.css';
+
+interface ProductListProps {
+  products: Product_v2[];
+}
+
+export function ProductList({ products }: ProductListProps) {
+  const [showHelp, setShowHelp] = useState(false);
+  const { itemRefs, selectedIndex } = useProductListKeyboardShortcuts({
+    products,
+    onShowHelp: () => setShowHelp(true)
+  });
+
+  if (!products.length) {
+    return (
+      <Text as="p" className={styles.empty}>
+        No products found.
+      </Text>
+    );
+  }
+
+  return (
+    <nav aria-label="Product list">
+      <ul className={styles.list} role="listbox">
+        {products.map((product, index) => (
+          <li 
+            key={`${product.account_id}/${product.product_id}`} 
+            role="option"
+            aria-selected={index === selectedIndex}
+          >
+            <ProductListItem
+              product={product}
+              isSelected={index === selectedIndex}
+              ref={(el) => {
+                itemRefs.current[index] = el;
+              }}
+            />
+          </li>
+        ))}
+      </ul>
+      <ShortcutHelp 
+        open={showHelp} 
+        onOpenChange={setShowHelp} 
+        context="product-list" 
+      />
+    </nav>
+  );
+} 
