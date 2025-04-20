@@ -17,7 +17,7 @@ We are working in dev. Our environment variables are set in `.env.local`. Do not
      ```typescript
      // ✅ Correct: Await params before destructuring
      export default async function Page({ params }) {
-       const { slug } = await Promise.resolve(params);
+       const { slug } = await params;
        // ...
      }
      

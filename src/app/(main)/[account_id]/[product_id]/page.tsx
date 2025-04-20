@@ -28,7 +28,7 @@ interface ProductPageProps {
 
 export default async function ProductPage({ params }: ProductPageProps) {
   // Await params before destructuring as required by Next.js 15+
-  const { account_id, product_id } = await Promise.resolve(params);
+  const { account_id, product_id } = await params;
   
   try {
     const product = await fetchProduct(account_id, product_id);
@@ -115,7 +115,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
 // Basic metadata
 export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
   // Await params before destructuring as required by Next.js 15+
-  const { account_id, product_id } = await Promise.resolve(params);
+  const { account_id, product_id } = await params;
   
   try {
     const product = await fetchProduct(account_id, product_id);
