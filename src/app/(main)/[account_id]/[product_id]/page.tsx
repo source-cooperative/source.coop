@@ -31,21 +31,21 @@ export default async function ProductPage({ params }: ProductPageProps) {
   const { account_id, product_id } = await params;
   
   try {
-    const product = await fetchProduct(account_id, product_id);
+    const [product, {objects = []}] = await Promise.all([
+      fetchProduct(account_id, product_id), 
+      createStorageClient().listObjects({
+        account_id,
+        product_id, // Use product_id instead of repository_id
+        object_path: '',
+        prefix: ''
+      })
+    ]);
     if (!product) {
       return notFound();
     }
 
-    // Get objects from storage
-    const result = await createStorageClient().listObjects({
-      account_id,
-      product_id, // Use product_id instead of repository_id
-      object_path: '',
-      prefix: ''
-    });
-
     // Transform storage objects to product objects
-    const productObjects: ProductObject[] = (result?.objects || [])
+    const productObjects: ProductObject[] = objects
       .filter(obj => obj?.path)
       .map(obj => ({
         id: obj.path!,
