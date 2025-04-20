@@ -117,19 +117,21 @@ export async function updateAccount(account: Account): Promise<boolean> {
 
 export async function fetchProduct(account_id: string, product_id: string): Promise<Product | null> {
   try {
-    const result = await docClient.send(new GetCommand({
-      TableName: "sc-products",
-      Key: {
-        product_id,
-        account_id
-      }
-    }));
+    const [result, account] = await Promise.all([
+      docClient.send(
+        new GetCommand({
+          TableName: "sc-products",
+          Key: {
+            product_id,
+            account_id,
+          },
+        })
+      ),
+      fetchAccount(account_id),
+    ]);
 
     if (!result.Item) return null;
 
-    // Get the account for this product
-    const account = await fetchAccount(account_id);
-    
     return {
       ...result.Item as Product,
       account: account || undefined
@@ -142,17 +144,19 @@ export async function fetchProduct(account_id: string, product_id: string): Prom
 
 export async function fetchProductsByAccount(account_id: string): Promise<Product[]> {
   try {
-    const result = await docClient.send(new QueryCommand({
-      TableName: "sc-products",
-      IndexName: "AccountProductsIndex",
-      KeyConditionExpression: "account_id = :account_id",
-      ExpressionAttributeValues: {
-        ":account_id": account_id
-      }
-    }));
-
-    // Get the account for these products
-    const account = await fetchAccount(account_id);
+    const [result, account] = await Promise.all([
+      docClient.send(
+        new QueryCommand({
+          TableName: "sc-products",
+          IndexName: "AccountProductsIndex",
+          KeyConditionExpression: "account_id = :account_id",
+          ExpressionAttributeValues: {
+            ":account_id": account_id,
+          },
+        })
+      ),
+      fetchAccount(account_id),
+    ]);
 
     return (result.Items || []).map(item => ({
       ...item as Product,
