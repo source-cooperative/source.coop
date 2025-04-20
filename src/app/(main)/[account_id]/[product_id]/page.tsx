@@ -31,14 +31,14 @@ export default async function ProductPage({ params }: ProductPageProps) {
   const { account_id, product_id } = await params;
   
   try {
-    const [product, {objects = []}] = await Promise.all([
-      fetchProduct(account_id, product_id), 
+    const [product, { objects = [] }] = await Promise.all([
+      fetchProduct(account_id, product_id),
       createStorageClient().listObjects({
         account_id,
-        product_id, // Use product_id instead of repository_id
-        object_path: '',
-        prefix: ''
-      })
+        product_id,
+        object_path: "",
+        prefix: "",
+      }),
     ]);
     if (!product) {
       return notFound();
@@ -74,8 +74,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
         const storageClient = createStorageClient();
         const readmeResult = await storageClient.getObject({
           account_id,
-          product_id, // Use product_id instead of repository_id
-          object_path: readmeFile.path
+          product_id,
+          object_path: readmeFile.path,
         });
         
         // Convert buffer to string
