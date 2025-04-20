@@ -30,18 +30,18 @@ export const ProductListItem = forwardRef<HTMLAnchorElement, ProductListItemProp
             </Heading>
               
             {product.description && (
-              <Text as="p" size="2" color="gray" mb="4">
+              <Text as="p" size="2" color="gray" mb="4" mr="2">
                 {product.description}
               </Text>
             )}
 
             <Box>
               {product.account?.name && (
-                <Text size="1" color="gray" mb="2">
+                <Text size="1" color="gray" mb="2" mr="2">
                   {product.account.name}
                 </Text>
               )}
-              <Text size="1" color="gray" mb="2">
+              <Text size="1" color="gray" mb="2" mr="2">
                 Updated <DateText date={product.updated_at} />
               </Text>
               <Badge 
