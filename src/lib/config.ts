@@ -2,9 +2,13 @@ import type { OryConfig } from "@ory/nextjs";
 import type { StorageConfig } from "@/types/storage";
 import { awsCredentialsProvider } from "@vercel/functions/oidc";
 
-const ORY_BASE_URL = process.env.VERCEL_ENV
-  ? process.env.NEXT_PUBLIC_ORY_SDK_URL
-  : "";
+// When running locally, we use the ORY_BASE_URL environment variable to instruct the 
+// middleware to proxy requests to Ory. In production, we use the NEXT_PUBLIC_ORY_SDK_URL
+// environment variable to send requests to directly to Ory.
+const ORY_BASE_URL =
+  process.env.ORY_BASE_URL !== undefined
+    ? process.env.ORY_BASE_URL
+    : process.env.NEXT_PUBLIC_ORY_SDK_URL;
 
 export const CONFIG = {
   api: {
@@ -29,15 +33,11 @@ export const CONFIG = {
       : undefined,
   },
   auth: {
-    // Remove this
     api: {
-      frontendUrl: process.env.VERCEL_ENV
-        ? process.env.NEXT_PUBLIC_ORY_SDK_URL
-        : "",
-      backendUrl: process.env.ORY_BASE_URL || "",
+      frontendUrl: ORY_BASE_URL,
+      backendUrl: process.env.NEXT_PUBLIC_ORY_SDK_URL,
     },
     accessToken: process.env.ORY_PROJECT_API_KEY || "",
-    // /end Remove
 
     routes: {
       // https://www.ory.sh/docs/reference/api#tag/frontend/operation/createBrowserLoginFlow
