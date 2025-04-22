@@ -130,6 +130,12 @@ export function EditProfileForm({
       const updateData = {
         ...initialAccount,
         name: data.name,
+        emails: [
+          {
+            address: data.email,
+            is_primary: true,
+          },
+        ],
         metadata_public: {
           ...initialAccount.metadata_public,
           bio: data.description,
