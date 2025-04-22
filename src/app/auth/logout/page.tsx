@@ -28,7 +28,7 @@ export default function LogoutPage() {
   }, []);
 
   if (logoutUrl) {
-    router.push(logoutUrl);
+    window.location.href = logoutUrl;
   }
 
   return (
@@ -45,7 +45,7 @@ export default function LogoutPage() {
           />
         </Box>
         <Text size="4" weight="medium">
-          Until next time!
+          Until next time...
         </Text>
       </Flex>
     </Container>
