@@ -75,7 +75,7 @@ export function Navigation() {
                   <DropdownMenu.Item color="red">
                     <Link
                       className="underline block w-full"
-                      href="/auth/logout"
+                      href={`/auth/logout`}
                     >
                       Logout
                     </Link>
@@ -84,7 +84,7 @@ export function Navigation() {
               </DropdownMenu.Root>
             ) : (
               <Link
-                href={CONFIG.auth.config.override?.loginUiPath || "/auth/login"}
+                href={`${CONFIG.auth.routes.login}?return_to=${window.location.href}`}
               >
                 <Button>Log In / Register</Button>
               </Link>

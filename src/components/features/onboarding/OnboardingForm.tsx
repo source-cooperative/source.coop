@@ -59,10 +59,10 @@ export function OnboardingForm() {
   useEffect(() => {
     const checkSession = async () => {
       try {
-        const { data } = await ory.toSession();
+        const { data } = await ory.toSession();  // TODO: useSession()
         // If no session, redirect to login
         if (!data) {
-          router.push('/login');
+          router.push(CONFIG.auth.routes.login);
         } else {
           // Check email verification status
           const identity = data.identity;
@@ -95,7 +95,7 @@ export function OnboardingForm() {
         }
       } catch (err) {
         console.error('Session error:', err);
-        router.push('/login');
+        router.push(CONFIG.auth.routes.login);
       }
     };
 
