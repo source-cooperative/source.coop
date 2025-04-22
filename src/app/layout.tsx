@@ -8,7 +8,7 @@ import { Box } from "@radix-ui/themes";
 import { Navigation, Footer } from "@/components/layout";
 import { Suspense } from "react";
 import { metadata } from "./metadata";
-
+import { CONFIG } from "@/lib/config";
 const ibmPlexSans = IBM_Plex_Sans({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
@@ -33,7 +33,7 @@ export default async function RootLayout({
           defaultTheme="system"
           storageKey="source-theme"
         >
-          <SessionProvider session={session}>
+          <SessionProvider session={session} baseUrl={CONFIG.auth.api.frontendUrl}>
             <Box style={{ minHeight: "100vh" }}>
               <Suspense>
                 <Navigation />
