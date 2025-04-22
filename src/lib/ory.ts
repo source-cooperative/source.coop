@@ -1,21 +1,4 @@
-import { Session, Identity } from "@ory/client";
 import { CONFIG } from "./config";
-
-// Define our metadata types
-interface IdentityMetadataPublic {
-  account_id?: string;
-  is_admin?: boolean;
-}
-
-// Extend the Ory Identity type
-type ExtendedIdentity = Identity & {
-  metadata_public?: IdentityMetadataPublic | null;
-};
-
-// Extend the Ory Session type
-export type ExtendedSession = Session & {
-  identity?: ExtendedIdentity;
-};
 
 // Helper to update Ory identity (admin operation)
 export async function updateOryIdentity(oryId: string, data: any) {

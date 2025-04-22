@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { fetchAccount, updateAccount } from "@/lib/db/operations_v2";
 import { getDynamoDb } from "@/lib/clients";
 import { DeleteCommand } from "@aws-sdk/lib-dynamodb";
-import type { ExtendedSession } from "@/lib/ory";
+import type { ExtendedSession } from "@/types/session";
 import { getServerSession } from "@ory/nextjs/app";
 
 export async function GET(
