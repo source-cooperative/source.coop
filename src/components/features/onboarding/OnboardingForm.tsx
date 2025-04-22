@@ -7,11 +7,11 @@ import { MonoText } from '@/components/core/MonoText';
 import { FormWrapper } from '@/components/core/Form';
 import { FormField } from '@/types/form';
 import debounce from 'lodash/debounce';
-import { FrontendApi, Configuration } from '@ory/client';
 import { InfoCircledIcon, CheckCircledIcon } from '@radix-ui/react-icons';
 import { VerificationSuccessCallout } from '@/components/features/auth/VerificationSuccessCallout';
 import { recordVerificationTimestamp } from "@/lib/actions/account";
 import { CONFIG } from "@/lib/config";
+import { useSession } from '@ory/elements-react/client';
 
 interface OnboardingFormData {
   account_id: string;
@@ -40,67 +40,57 @@ export function OnboardingForm() {
   });
   const [usernameStatus, setUsernameStatus] = useState<UsernameStatus>('idle');
   const [verificationStatus, setVerificationStatus] = useState<'pending' | 'verified'>('pending');
+  const { session, isLoading: isSessionLoading } = useSession();
 
-  // Initialize Ory client with useMemo to prevent recreation on each render
-  const ory = useMemo(
-    () =>
-      new FrontendApi(
-        new Configuration({
-          basePath: CONFIG.auth.api.frontendUrl,
-          baseOptions: {
-            withCredentials: true,
-          },
-        })
-      ),
-    []
-  );
+  if (!session && !isSessionLoading) {
+    // If no session, redirect to login
+    router.push(CONFIG.auth.routes.login);
+  } 
 
   // Check session on mount
   useEffect(() => {
     const checkSession = async () => {
+      if (!session) {
+        return;
+      }
+
       try {
-        const { data } = await ory.toSession();
-        // If no session, redirect to login
-        if (!data) {
-          router.push('/login');
-        } else {
-          // Check email verification status
-          const identity = data.identity;
-          if (identity?.verifiable_addresses) {
-            const emailAddress = identity.verifiable_addresses.find(
-              (addr) => addr.via === 'email'
-            );
-            if (emailAddress?.verified) {
-              setVerificationStatus('verified');
+        // Check email verification status
+        const identity = session.identity;
+        if (identity?.verifiable_addresses) {
+          const emailAddress = identity.verifiable_addresses.find(
+            (addr) => addr.via === 'email'
+          );
+          if (emailAddress?.verified) {
+            setVerificationStatus('verified');
+            
+            // Record verification timestamp if coming from email-verified page
+            const isFromVerification = window.location.search.includes('verified=true');
+            if (isFromVerification && identity.id) {
+              console.log('Recording verification timestamp for identity:', identity.id);
               
-              // Record verification timestamp if coming from email-verified page
-              const isFromVerification = window.location.search.includes('verified=true');
-              if (isFromVerification && identity.id) {
-                console.log('Recording verification timestamp for identity:', identity.id);
-                
-                try {
-                  await recordVerificationTimestamp(identity.id);
-                  console.log('Successfully recorded verification timestamp');
-                } catch (err) {
-                  console.error('Error recording verification timestamp:', err);
-                }
+              try {
+                await recordVerificationTimestamp(identity.id);
+                console.log('Successfully recorded verification timestamp');
+              } catch (err) {
+                console.error('Error recording verification timestamp:', err);
               }
             }
           }
-          
-          // Pre-fill email if available
-          if (identity?.traits?.email) {
-            console.log('Session found, email:', identity.traits.email);
-          }
+        }
+        
+        // Pre-fill email if available
+        if (identity?.traits?.email) {
+          console.log('Session found, email:', identity.traits.email);
         }
       } catch (err) {
         console.error('Session error:', err);
-        router.push('/login');
+        router.push(CONFIG.auth.routes.login);
       }
     };
 
     checkSession();
-  }, [router, ory]);
+  }, [isSessionLoading, session, router]);
 
   const checkUsername = useCallback(
     async (value: string) => {
@@ -154,9 +144,7 @@ export function OnboardingForm() {
       }
 
       // Get the current session to ensure we have the Ory ID
-      const { data: sessionData } = await ory.toSession();
-      
-      if (!sessionData?.identity?.id) {
+      if (!session?.identity?.id) {
         throw new Error('No active session found');
       }
 
@@ -171,8 +159,8 @@ export function OnboardingForm() {
         body: JSON.stringify({
           account_id,
           name,
-          ory_id: sessionData.identity.id,
-          email: sessionData.identity.traits.email
+          ory_id: session.identity.id,
+          email: session.identity.traits.email
         }),
       });
 
