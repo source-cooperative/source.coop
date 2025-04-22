@@ -80,6 +80,7 @@ export async function GET(
     // If the user is viewing their own account or is an admin, include all fields
     if (isAuthenticatedUser || isAdmin) {
       console.log("API: Returning full account data:", account);
+      // TODO: add verification status
       return NextResponse.json(account);
     }
 
@@ -91,6 +92,7 @@ export async function GET(
       created_at: account.created_at,
       updated_at: account.updated_at,
       metadata_public: account.metadata_public,
+      // TODO: add verification status
     };
 
     console.log("API: Returning public account data:", publicAccountData);
