@@ -1,8 +1,8 @@
-import { getSession } from '@/lib/auth';
+import { getServerSession } from "@ory/nextjs/app";
 
 async function cleanupTestAccounts() {
   // Get your session
-  const session = await getSession();
+  const session = await getServerSession();
   if (!session) {
     console.error('No valid session found');
     return;

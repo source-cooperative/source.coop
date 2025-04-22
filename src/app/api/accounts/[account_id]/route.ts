@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { serverOry } from "@/lib/ory";
 import { fetchAccount, updateAccount } from "@/lib/db/operations_v2";
 import { getDynamoDb } from "@/lib/clients";
 import { DeleteCommand } from "@aws-sdk/lib-dynamodb";
@@ -45,13 +44,8 @@ export async function GET(
 
     try {
       // Get all cookies from the request
-      const cookieHeader = request.headers.get("cookie");
-      if (cookieHeader) {
-        // Use the cookie header for session verification
-        const { data: session } = (await serverOry.toSession({
-          cookie: cookieHeader,
-        })) as { data: ExtendedSession };
-
+      const session = (await getServerSession()) as ExtendedSession;
+      if (session) {
         console.log("API: Session check:", {
           hasSession: !!session,
           isActive: session?.active,
@@ -115,7 +109,7 @@ export async function PUT(
   { params }: { params: Promise<{ account_id: string }> }
 ) {
   try {
-    const session = await getServerSession();
+    const session = (await getServerSession()) as ExtendedSession;
     if (!session) {
       return NextResponse.json(
         {
@@ -133,9 +127,7 @@ export async function PUT(
     console.log("API: Updating account:", account_id);
 
     // Only allow the user to update their own account
-    const sessionAccountId = (
-      session?.identity?.metadata_public as { account_id?: string }
-    )?.account_id;
+    const sessionAccountId = session?.identity?.metadata_public?.account_id;
 
     if (!session.active) {
       return NextResponse.json(
@@ -164,9 +156,7 @@ export async function PUT(
     }
 
     // Check if user is updating their own account or is an admin
-    const isAdmin = !!(
-      session?.identity?.metadata_public as { is_admin?: boolean }
-    )?.is_admin;
+    const isAdmin = !!session?.identity?.metadata_public?.is_admin;
     const isAuthenticatedUser = sessionAccountId === account_id;
 
     if (!isAuthenticatedUser && !isAdmin) {
@@ -249,9 +239,7 @@ export async function DELETE(
     }
 
     // Verify session with Ory
-    const { data: session } = (await serverOry.toSession()) as {
-      data: ExtendedSession;
-    };
+    const session = (await getServerSession()) as ExtendedSession;
     if (!session?.active) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -301,11 +289,6 @@ export async function DELETE(
         },
       })
     );
-
-    // Log out the user if they're deleting their own account
-    if (sessionAccountId === account_id) {
-      await serverOry.createBrowserLogoutFlow();
-    }
 
     return NextResponse.json({
       success: true,

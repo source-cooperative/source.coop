@@ -1,4 +1,4 @@
-import { Configuration, FrontendApi, Session, Identity } from "@ory/client";
+import { Session, Identity } from "@ory/client";
 import { CONFIG } from "./config";
 
 // Define our metadata types
@@ -16,24 +16,6 @@ type ExtendedIdentity = Identity & {
 export type ExtendedSession = Session & {
   identity?: ExtendedIdentity;
 };
-
-// Create a server-side instance of the Ory SDK
-export const serverOry = new FrontendApi(
-  new Configuration({
-    basePath: CONFIG.auth.api.backendUrl,
-    baseOptions: {
-      withCredentials: true,
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-      },
-      validateStatus: () => {
-        // Accept any status code to handle redirects
-        return true;
-      },
-    },
-  })
-);
 
 // Helper to update Ory identity (admin operation)
 export async function updateOryIdentity(oryId: string, data: any) {

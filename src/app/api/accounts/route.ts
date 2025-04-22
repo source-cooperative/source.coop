@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server';
-import { serverOry } from '@/lib/ory';
 import { CONFIG } from '@/lib/config';
+import { getServerSession } from '@ory/nextjs/app';
 
 export async function POST(request: Request) {
   try {
     const data = await request.json();
     // Verify the user is authenticated
-    const session = await serverOry.toSession();
-    if (!session.data.active) {
+    const session = await getServerSession();
+    if (!session?.active) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -15,15 +15,15 @@ export async function POST(request: Request) {
     }
 
     // Get user data from session
-    if (!session.data.identity) {
+    if (!session.identity) {
       return NextResponse.json(
         { error: 'No identity found in session' },
         { status: 400 }
       );
     }
 
-    const userId = session.data.identity.id;
-    const email = session.data.identity.traits.email;
+    const userId = session.identity.id;
+    const email = session.identity.traits.email;
 
     // Create the account in our database
     const accountData = {
