@@ -7,19 +7,20 @@ import { useRouter } from "next/navigation";
 
 export default function LogoutPage() {
   const [logoutUrl, setLogoutUrl] = useState();
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
-    console.log(CONFIG.auth.routes.logout);
     const logout = async () => {
       const returnTo = new URL(window.location.href);
       const response = await fetch(
         `${CONFIG.auth.routes.logout}?return_to=${returnTo.origin}`,
-        { headers: { Accept: "application/json" } }
+        { headers: { Accept: "application/json" }, credentials: "include" }
       );
       if (response.status !== 200) {
         // If the logout fails (e.g. the user is not logged in), redirect to the home page
-        router.push("/");
+        console.error("Logout failed", response.status, response.statusText);
+        setError("Logout failed");
       }
       const data = await response.json();
       setLogoutUrl(data.logout_url);
@@ -44,8 +45,8 @@ export default function LogoutPage() {
             }}
           />
         </Box>
-        <Text size="4" weight="medium">
-          Until next time...
+        <Text size="4" weight="medium" color={error ? "red" : undefined}>
+          {error ? error : "Until next time..."}
         </Text>
       </Flex>
     </Container>
