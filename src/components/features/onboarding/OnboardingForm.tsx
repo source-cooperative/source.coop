@@ -11,7 +11,7 @@ import { InfoCircledIcon, CheckCircledIcon } from '@radix-ui/react-icons';
 import { VerificationSuccessCallout } from '@/components/features/auth/VerificationSuccessCallout';
 import { recordVerificationTimestamp } from "@/lib/actions/account";
 import { CONFIG } from "@/lib/config";
-import { useSession } from '@ory/elements-react/client';
+import { useSession } from "@ory/elements-react/client";
 
 interface OnboardingFormData {
   account_id: string;
