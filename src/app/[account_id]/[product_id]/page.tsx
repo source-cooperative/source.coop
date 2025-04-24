@@ -12,7 +12,7 @@
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { Container, Box } from '@radix-ui/themes';
-import { fetchProduct } from '@/lib/db/operations_v2';
+import { productsTable } from "@/lib/clients/database";
 import { ProductHeader } from '@/components/features/products';
 import { ObjectBrowser } from '@/components/features/products';
 import { createStorageClient } from '@/lib/clients/storage';
@@ -32,7 +32,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
   
   try {
     const [product, { objects = [] }] = await Promise.all([
-      fetchProduct(account_id, product_id),
+      productsTable.fetchById(account_id, product_id),
       createStorageClient().listObjects({
         account_id,
         product_id,
@@ -118,7 +118,7 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
   const { account_id, product_id } = await params;
   
   try {
-    const product = await fetchProduct(account_id, product_id);
+    const product = await productsTable.fetchById(account_id, product_id);
     if (!product) {
       return {
         title: 'Product Not Found',

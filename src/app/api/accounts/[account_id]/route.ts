@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { fetchAccount, updateAccount } from "@/lib/db/operations_v2";
-import { getDynamoDb } from "@/lib/clients";
-import { DeleteCommand } from "@aws-sdk/lib-dynamodb";
+import { accountsTable } from "@/lib/clients/database";
 import type { ExtendedSession } from "@/types/session";
 import { getServerSession } from "@ory/nextjs/app";
 
 export async function GET(
-  request: Request,
+  _request: Request,
   { params }: { params: Promise<{ account_id: string }> }
 ) {
   try {
@@ -16,7 +14,7 @@ export async function GET(
     console.log("API: Fetching account for ID:", account_id);
 
     // Fetch account from DynamoDB
-    const account = await fetchAccount(account_id);
+    const account = await accountsTable.fetchById(account_id);
     console.log("API: Account fetch result:", {
       found: !!account,
       accountId: account_id,
@@ -194,30 +192,24 @@ export async function PUT(
     }
 
     // Update the account in DynamoDB
-    const success = await updateAccount(account);
-
-    if (!success) {
-      console.error("Failed to update account:", {
-        account_id: account_id,
-        account_type: account.type,
-        account_data: account,
-      });
+    try {
+      const updatedAccount = await accountsTable.update(account);
+      return NextResponse.json(updatedAccount);
+    } catch (error) {
+      console.error(
+        "Failed to update account:",
+        {
+          account_id: account_id,
+          account_type: account.type,
+          account_data: account,
+        },
+        error
+      );
       return NextResponse.json(
         { error: "Failed to update account in database" },
         { status: 400 }
       );
     }
-
-    // Fetch and return the updated account
-    const updatedAccount = await fetchAccount(account_id);
-    if (!updatedAccount) {
-      return NextResponse.json(
-        { error: "Account not found after update" },
-        { status: 404 }
-      );
-    }
-
-    return NextResponse.json(updatedAccount);
   } catch (error) {
     console.error("Error updating account:", error);
     return NextResponse.json(
@@ -275,22 +267,18 @@ export async function DELETE(
     }
 
     // Fetch the account first to verify it exists and get its type
-    const account = await fetchAccount(account_id);
+    const account = await accountsTable.fetchById(account_id);
     if (!account) {
       return NextResponse.json({ error: "Account not found" }, { status: 404 });
     }
 
     // Delete the account from DynamoDB
-    const dynamoDb = getDynamoDb();
-    await dynamoDb.send(
-      new DeleteCommand({
-        TableName: "Accounts",
-        Key: {
-          account_id,
-          type: account.type,
-        },
-      })
-    );
+    try {
+      await accountsTable.delete({ account_id, type: account.type });
+    } catch (error) {
+      console.error("Failed to delete account:", error);
+      return NextResponse.json({ error: "Failed to delete account" }, { status: 500 });
+    }
 
     return NextResponse.json({
       success: true,

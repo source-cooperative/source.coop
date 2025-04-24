@@ -14,10 +14,9 @@ import { notFound } from "next/navigation";
 import { Container } from "@radix-ui/themes";
 import { IndividualProfile } from "@/components/features/profiles";
 import { OrganizationProfilePage } from "@/components/features/profiles/OrganizationProfilePage";
-import { fetchAccount, fetchProductsByAccount } from "@/lib/db";
 import type { IndividualAccount } from "@/types/account_v2";
 import type { Product_v2 } from "@/types/product_v2";
-
+import { accountsTable, productsTable } from "@/lib/clients/database";
 type PageProps = {
   params: Promise<{ account_id: string }>;
   searchParams: Promise<{ welcome?: string }>;
@@ -29,7 +28,7 @@ export default async function AccountPage({ params, searchParams }: PageProps) {
   const showWelcome = welcome === "true";
 
   // Get account data
-  const account = await fetchAccount(account_id);
+  const account = await accountsTable.fetchById(account_id);
   if (!account) {
     notFound();
   }
@@ -40,7 +39,7 @@ export default async function AccountPage({ params, searchParams }: PageProps) {
   }
 
   // Get repositories for individual account
-  const products: Product_v2[] = await fetchProductsByAccount(account_id);
+  const products: Product_v2[] = await productsTable.listByAccount(account_id);
 
   // For individual accounts
   return (

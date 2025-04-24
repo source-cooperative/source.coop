@@ -1,6 +1,6 @@
 import { Container } from '@radix-ui/themes';
 import { OrganizationProfile } from './OrganizationProfile';
-import { fetchAccount, fetchProductsByAccount, fetchOrganizationMembers } from '@/lib/db';
+import { accountsTable, productsTable } from "@/lib/clients/database";
 import { notFound } from 'next/navigation';
 import type { Account, OrganizationalAccount } from '@/types/account_v2';
 
@@ -14,16 +14,16 @@ interface OrganizationProfilePageProps {
 
 export async function OrganizationProfilePage({ account_id }: OrganizationProfilePageProps) {
   // Get account data
-  const account = await fetchAccount(account_id);
+  const account = await accountsTable.fetchById(account_id);
   if (!account || !isOrganizationalAccount(account)) {
     notFound();
   }
 
   // Get products for this account
-  const products = await fetchProductsByAccount(account_id);
+  const products = await productsTable.listByAccount(account_id);
 
   // Get member details
-  const { owner, admins, members } = await fetchOrganizationMembers(account);
+  const { owner, admins, members } = await accountsTable.listOrgMembers(account);
 
   return (
     <Container size="4" py="6">

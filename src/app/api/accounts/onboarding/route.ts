@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDynamoDb } from '@/lib/clients';
-import { PutCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
 import type { IndividualAccount } from '@/types/account_v2';
 import { updateOryIdentity } from '@/lib/ory';
-import { fetchAccount } from '@/lib/db/operations_v2';
+import { accountsTable } from "@/lib/clients/database";
 import { CONFIG } from '@/lib/config';
 
 export async function POST(request: NextRequest) {
@@ -34,7 +32,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if account already exists
-    const existingAccount = await fetchAccount(account_id);
+    const existingAccount = await accountsTable.fetchById(account_id);
     if (existingAccount) {
       console.log('Account already exists:', { account_id });
       return NextResponse.json(
@@ -69,12 +67,8 @@ export async function POST(request: NextRequest) {
     console.log('Attempting to create account in DynamoDB:', newAccount);
     
     // Save to DynamoDB
-    const dynamoDb = getDynamoDb();
     try {
-      await dynamoDb.send(new PutCommand({
-        TableName: "sc-accounts",
-        Item: newAccount
-      }));
+      await accountsTable.create(newAccount);
       console.log('Successfully created account in DynamoDB:', { account_id, type: 'individual' });
     } catch (dbError) {
       console.error('DynamoDB error:', dbError);
@@ -102,13 +96,7 @@ export async function POST(request: NextRequest) {
         
         // If Ory update fails, delete the account from DynamoDB
         try {
-          await dynamoDb.send(new DeleteCommand({
-            TableName: "sc-accounts",
-            Key: { 
-              account_id,
-              type: 'individual'
-            }
-          }));
+          await accountsTable.delete({ account_id, type: 'individual' });
           console.log('Cleaned up DynamoDB account after Ory update failure');
         } catch (cleanupError) {
           console.error('Failed to clean up DynamoDB account:', cleanupError);

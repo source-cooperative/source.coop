@@ -17,9 +17,9 @@ import { notFound } from 'next/navigation';
 import { ObjectBrowser, ProductHeader } from '@/components/features/products';
 
 // Utilities
-import { fetchProduct } from '@/lib/db/operations_v2';
+import { productsTable } from "@/lib/clients/database";
 import { createStorageClient } from '@/lib/clients/storage';
-import { ProductObject } from '@/types/product_object';
+import type { ProductObject } from '@/types/product_object';
 
 interface PageProps {
   params: Promise<{
@@ -44,7 +44,7 @@ export default async function ProductPathPage({
   console.log('Debug - Page params:', { account_id, product_id, path, pathString, prefix, isFilePath });
 
   // 2. Find the product or 404
-  const product = await fetchProduct(account_id, product_id);
+  const product = await productsTable.fetchById(account_id, product_id);
   console.log('Debug - Product:', product);
   
   if (!product) {

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { fetchAccount } from '@/lib/db/operations_v2';
+import { accountsTable } from "@/lib/clients/database";
 
 // Reserved usernames that cannot be used
 const RESERVED_USERNAMES = [
@@ -42,7 +42,7 @@ export async function GET(request: Request) {
       );
     }
 
-    const account = await fetchAccount(username);
+    const account = await accountsTable.fetchById(username);
     return NextResponse.json({ available: !account });
   } catch (error) {
     console.error('Error checking username:', error);
