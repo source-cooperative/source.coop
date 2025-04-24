@@ -86,9 +86,7 @@ export function Navigation() {
                 </DropdownMenu.Content>
               </DropdownMenu.Root>
             ) : (
-              <Link
-                href={`${CONFIG.auth.routes.login}?return_to=${window.location.href}`}
-              >
+              <Link href={CONFIG.auth.routes.login}>
                 <Button>Log In / Register</Button>
               </Link>
             )}
