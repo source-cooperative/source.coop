@@ -3,28 +3,14 @@
 import { Container, Box, Heading, Text } from "@radix-ui/themes";
 import { OnboardingForm } from "@/components/features/onboarding/OnboardingForm";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
 import { useSession } from "@ory/elements-react/client";
 import { getAccountId } from "@/lib/ory";
+import { CONFIG } from "@/lib";
 
 export function OnboardingPageContent() {
   const { session, isLoading } = useSession();
   const router = useRouter();
-
-  // If not authenticated, redirect to login
-  // If has account_id, redirect to profile
-  useEffect(() => {
-    if (!isLoading) {
-      if (!session) {
-        router.push("/auth?flow=login");
-      } else {
-        const accountId = getAccountId(session);
-        if (accountId) {
-          router.push(`/${accountId}?welcome=true`);
-        }
-      }
-    }
-  }, [isLoading, session, router]);
+  const accountId = getAccountId(session);
 
   if (isLoading) {
     return (
@@ -32,6 +18,16 @@ export function OnboardingPageContent() {
         Loading...
       </Container>
     );
+  }
+  
+  // If not authenticated, redirect to login
+  if (!session) {
+    router.push(CONFIG.auth.routes.login);
+  }
+  
+  // If has account_id, redirect to profile
+  if (accountId) {
+    router.push(`/${accountId}?welcome=true`);
   }
 
   return (
