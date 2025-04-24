@@ -55,7 +55,7 @@ if (response.ok) {
   const accountId = data.identity.metadata_public?.account_id;
   if (accountId) {
     // Use accountId for all operations
-    const account = await fetchAccount(accountId);
+    const account = await accountsTable.fetchById(accountId);
   }
 }
 ```
@@ -63,8 +63,8 @@ if (response.ok) {
 ### 3. Database Operations
 ```typescript
 // Always use account_id for lookups
-const account = await fetchAccount(accountId);
-const products = await fetchProductsByAccount(accountId);
+const account = await accountsTable.fetchById(accountId);
+const products = await productsTable.listByAccount(accountId);
 ```
 
 ### 4. URL Structure

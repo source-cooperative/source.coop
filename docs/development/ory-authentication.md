@@ -15,14 +15,6 @@ ORY_API_URL=your-project-api-url
 ORY_PROJECT_API_KEY=your-access-token
 ```
 
-2. **Start Ory Tunnel**:
-```bash
-ory tunnel --dev --debug \
-  --allowed-cors-origins="http://localhost:3000" \
-  http://localhost:3000 \
-  --project your-project-id
-```
-
 ## Core Principles
 
 1. **Server-First Authentication**
@@ -45,7 +37,7 @@ ory tunnel --dev --debug \
 The registration process follows these steps:
 
 1. **Initial Registration**
-   ```typescript
+   ```ts
    // Initialize the registration flow
    const { data } = await ory.createBrowserRegistrationFlow();
    ```
@@ -77,9 +69,9 @@ Source Cooperative configures Ory redirects to handle authentication flows appro
 
 ### Flow-Specific Redirects
 - **Post-Login**: `/` (homepage)
-- **Post-Registration**: `/email-verified`
+- **Post-Registration**: `/onboarding`
 - **Post-Verification**: `/email-verified`
-- **Post-Logout**: `/auth?flow=login`
+- **Post-Logout**: (uses global default)
 - **Post-Settings**: (uses global default)
 - **Post-Recovery**: (uses global default)
 

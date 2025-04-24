@@ -204,11 +204,11 @@ Remember: Never skip testing steps. Trust the platform. Keep changes minimal.
 
 ```typescript
 // ✅ Correct: Using account_id
-const account = await fetchAccount(accountId);
-const products = await fetchProductsByAccount(accountId);
+const account = await accountsTable.fetchById(accountId);
+const products = await productsTable.listByAccount(accountId);
 
 // ❌ Incorrect: Using Ory ID
-const account = await fetchAccountByOryId(oryId);
+const account = await accountsTable.fetchById(oryId);
 ```
 
 ```typescript

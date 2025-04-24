@@ -108,10 +108,10 @@ Example:
 ```typescript
 // Good: Simple, focused page component
 export default async function AccountPage({ params }: PageProps) {
-  const account = await fetchAccount(params.account_id);
+  const account = await accountsTable.fetchById(params.account_id);
   if (!account) notFound();
   
-  const products = await fetchProductsByAccount(params.account_id);
+  const products = await productsTable.listByAccount(params.account_id);
   
   return <AccountProfile account={account} products={products} />;
 }

@@ -205,19 +205,13 @@ async function batchGetEntitiesByIds<T>(
 
 ```typescript
 // Get account by ID
-const account = await fetchAccount('account123');
-
-// Get account by Ory ID
-const account = await fetchAccountByOryId('ory-id-123');
+const account = await accountsTable.fetchById('account123');
 
 // Get account by email
-const account = await fetchAccountByEmail('user@example.com');
-
-// Get multiple accounts by IDs
-const accounts = await fetchAccountsByIds(['account1', 'account2']);
+const account = await accountsTable.fetchByEmail('user@example.com');
 
 // Get accounts by type
-const organizations = await fetchAccountsByType('organization');
+const organizations = await accountsTable.listByType('organization');
 ```
 
 ### product Operations
