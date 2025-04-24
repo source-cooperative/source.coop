@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Flex, Text, Box, Callout } from '@radix-ui/themes';
 import { MonoText } from '@/components/core/MonoText';
 import { FormWrapper } from '@/components/core/Form';
@@ -31,6 +31,7 @@ interface OnboardingResponse {
 
 export function OnboardingForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [username, setUsername] = useState('');
@@ -65,7 +66,7 @@ export function OnboardingForm() {
             setVerificationStatus('verified');
             
             // Record verification timestamp if coming from email-verified page
-            const isFromVerification = window.location.search.includes('verified=true');
+            const isFromVerification = searchParams.get('verified') === 'true';
             if (isFromVerification && identity.id) {
               console.log('Recording verification timestamp for identity:', identity.id);
               
@@ -265,7 +266,7 @@ export function OnboardingForm() {
         <VerificationSuccessCallout />
         {verificationStatus === 'verified' ? (
           // Don't show a second verification message if VerificationSuccessCallout is displayed
-          window.location.search.includes('verified=true') ? null : (
+          searchParams.get('verified') === 'true' ? null : (
             <Callout.Root color="green">
               <Callout.Icon>
                 <CheckCircledIcon />
