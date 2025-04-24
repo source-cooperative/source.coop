@@ -9,19 +9,16 @@ import { ChevronDownIcon } from "@radix-ui/react-icons";
 import styles from "./Navigation.module.css";
 import { useAccount } from "@/hooks/useAccount";
 import { CONFIG } from "@/lib/config";
-
+import { useRouter } from "next/navigation";
 export function Navigation() {
   const [isOpen, setIsOpen] = useState(false);
+  const router = useRouter();
 
   // Only fetch account when we have a valid account ID
-  const {
-    account,
-    isLoading: isAccountLoading,
-    refresh: refreshAccount,
-  } = useAccount();
+  const { account, session, isLoading } = useAccount();
 
   // Loading state
-  if (isAccountLoading) {
+  if (isLoading) {
     return (
       <nav className={styles.nav}>
         <Container>
@@ -32,6 +29,12 @@ export function Navigation() {
         </Container>
       </nav>
     );
+  }
+
+  // If we have a session but no account, that means a user is authenticated but we need
+  // to redirect to the email verification page so that a user can setup their account.
+  if (!isLoading && !account && session) {
+    router.push("/onboarding");
   }
 
   return (

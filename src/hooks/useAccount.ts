@@ -67,7 +67,7 @@ export function useAccount() {
     };
   }, [getAccountId(session), isAuthLoading, refreshCounter]);
 
-  return { account, isLoading, refresh };
+  return { account, isLoading, refresh, session };
 } 
 
 // Helper to get account_id from session
