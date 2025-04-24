@@ -238,7 +238,7 @@ export async function fetchPublicProducts(
   }
 }
 
-export async function addAccountToProducts(
+export async function fetchEachProductsAccount(
   products: Product[]
 ): Promise<Product[]> {
   // Fetch all accounts in parallel

@@ -1,12 +1,15 @@
 import { MetadataRoute } from 'next';
-import { fetchPublicProducts, addAccountToProducts } from '@/lib/db/operations_v2';
+import {
+  fetchPublicProducts,
+  fetchEachProductsAccount,
+} from "@/lib/db/operations_v2";
 import { CONFIG } from '@/lib/config';
 
 export async function GET() {
   try {
     // Fetch products for the feed
     const { products: productsWithoutAccounts } = await fetchPublicProducts();
-    const products = await addAccountToProducts(productsWithoutAccounts);
+    const products = await fetchEachProductsAccount(productsWithoutAccounts);
 
     
     // Generate RSS feed
