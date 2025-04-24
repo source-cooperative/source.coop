@@ -15,6 +15,7 @@ import {
 import { TrashIcon } from "@radix-ui/react-icons";
 import { FormWrapper } from "@/components/core/Form";
 import type { FormField, FormFieldType } from "@/types/form";
+import { useSession } from "@ory/elements-react/client";
 
 // Define types for website and form data
 interface Website {
@@ -90,6 +91,7 @@ export function EditProfileForm({
   account: initialAccount,
 }: EditProfileFormProps) {
   const router = useRouter();
+  const { refetch } = useSession();
   const [saving, setSaving] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
   const [formData, setFormData] = useState<AccountFormData>({
@@ -163,6 +165,7 @@ export function EditProfileForm({
         throw new Error(errorData.error || "Failed to update profile");
       }
 
+      await refetch();
       router.push(`/${initialAccount.account_id}`);
     } catch (error) {
       console.error("Error updating profile:", error);
