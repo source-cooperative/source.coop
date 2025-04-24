@@ -5,7 +5,7 @@ import { OnboardingForm } from "@/components/features/onboarding/OnboardingForm"
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useSession } from "@ory/elements-react/client";
-import { getAccountId } from "@/hooks/useAccount";
+import { getAccountId } from "@/lib/ory";
 
 export function OnboardingPageContent() {
   const { session, isLoading } = useSession();

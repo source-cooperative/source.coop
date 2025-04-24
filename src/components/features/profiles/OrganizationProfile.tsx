@@ -9,7 +9,7 @@ import { OrganizationMembers } from './OrganizationMembers';
 import { ProfileAvatar } from './ProfileAvatar';
 import { WebsiteLink } from './WebsiteLink';
 import { useSession } from '@ory/elements-react/client';
-import { getAccountId } from '@/hooks/useAccount';
+import { getAccountId } from "@/lib/ory";
 interface OrganizationProfileProps {
   account: OrganizationalAccount;
   products: Product_v2[];

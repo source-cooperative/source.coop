@@ -1,3 +1,5 @@
+import { ExtendedSession } from "@/types";
+import { Session } from "@ory/client-fetch";
 import { CONFIG } from "./config";
 
 // Helper to update Ory identity (admin operation)
@@ -78,4 +80,11 @@ export async function updateOryIdentity(oryId: string, data: any) {
   }
 
   return response.json();
+}
+// Helper to get account_id from session
+
+export function getAccountId(session: Session | null): string | null {
+  return (
+    (session as ExtendedSession)?.identity?.metadata_public?.account_id || null
+  );
 }
