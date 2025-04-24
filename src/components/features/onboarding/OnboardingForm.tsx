@@ -41,7 +41,7 @@ export function OnboardingForm() {
   });
   const [usernameStatus, setUsernameStatus] = useState<UsernameStatus>('idle');
   const [verificationStatus, setVerificationStatus] = useState<'pending' | 'verified'>('pending');
-  const { session, isLoading: isSessionLoading } = useSession();
+  const { session, isLoading: isSessionLoading, refetch } = useSession();
 
   if (!session && !isSessionLoading) {
     // If no session, redirect to login
@@ -172,8 +172,8 @@ export function OnboardingForm() {
       }
 
       // On success, redirect to profile page
+      await refetch();
       router.push(`/${account_id}?welcome=true`);
-      router.refresh();
     } catch (err: unknown) {
       console.error('Onboarding error:', err);
       setError(err instanceof Error ? err.message : 'An error occurred. Please try again.');
