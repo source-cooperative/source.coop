@@ -13,13 +13,13 @@
 import { Container, Box, Heading } from '@radix-ui/themes';
 import { ProductList } from '@/components/features/products';
 import type { Product_v2 as Product } from '@/types/product_v2';
-import { fetchProducts } from '@/lib/db/operations_v2';
+import { addAccountToProducts, fetchPublicProducts } from '@/lib/db/operations_v2';
 
 // Server action for data fetching
 async function getProducts(): Promise<Product[]> {
   'use server';
-  const { products } = await fetchProducts();
-  return products;
+  const { products: productsWithoutAccounts } = await fetchPublicProducts();
+  return addAccountToProducts(productsWithoutAccounts);
 }
 
 export default async function HomePage() {

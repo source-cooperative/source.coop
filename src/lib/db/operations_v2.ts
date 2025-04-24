@@ -176,48 +176,27 @@ export async function fetchProducts(
   lastEvaluatedKey: any;
 }> {
   try {
-    // Only use the products table now
-    const tableName = "sc-products";
-    let allItems: any[] = [];
-    
     const scanParams: any = {
-      TableName: tableName,
+      TableName: "sc-products",
       Limit: limit,
-      FilterExpression: "attribute_exists(account_id)" // Only get valid items
+      FilterExpression: "attribute_exists(account_id)", // Only get valid items
     };
-    
+
     if (lastEvaluatedKey) {
       scanParams.ExclusiveStartKey = lastEvaluatedKey;
     }
-    
+
     const result = await docClient.send(new ScanCommand(scanParams));
-    if (result.Items) {
-      allItems = [...allItems, ...result.Items];
-    }
-    
-    // Get all unique account IDs
-    const accountIds = new Set(allItems.map(item => item.account_id));
-    
-    // Fetch all accounts in parallel
-    const accountPromises = Array.from(accountIds).map(id => fetchAccount(id));
-    const accounts = await Promise.all(accountPromises);
-    const accountMap = new Map(accounts.filter(Boolean).map(acc => [acc!.account_id, acc]));
-    
-    // Attach accounts to products
-    const products = allItems.map(item => ({
-      ...item as Product,
-      account: accountMap.get(item.account_id) || undefined
-    }));
-    
+
     return {
-      products,
-      lastEvaluatedKey: undefined // Reset pagination since we're combining results
+      products: (result.Items || []) as Product[],
+      lastEvaluatedKey: result.LastEvaluatedKey,
     };
   } catch (e) {
-    console.error('Error fetching products:', e);
+    console.error("Error fetching products:", e);
     return {
       products: [],
-      lastEvaluatedKey: undefined
+      lastEvaluatedKey: undefined,
     };
   }
 }
@@ -235,9 +214,9 @@ export async function fetchPublicProducts(
       IndexName: "PublicProductsIndex",
       KeyConditionExpression: "visibility = :visibility",
       ExpressionAttributeValues: {
-        ":visibility": "public"
+        ":visibility": "public",
       },
-      Limit: limit
+      Limit: limit,
     };
 
     if (lastEvaluatedKey) {
@@ -248,16 +227,37 @@ export async function fetchPublicProducts(
 
     return {
       products: (result.Items || []) as Product[],
-      lastEvaluatedKey: result.LastEvaluatedKey
+      lastEvaluatedKey: result.LastEvaluatedKey,
     };
   } catch (e) {
-    console.error('Error fetching public products:', e);
+    console.error("Error fetching public products:", e);
     return {
       products: [],
-      lastEvaluatedKey: null
+      lastEvaluatedKey: null,
     };
   }
 }
+
+export async function addAccountToProducts(
+  products: Product[]
+): Promise<Product[]> {
+  // Fetch all accounts in parallel
+  const accounts = await Promise.all(
+    Array.from(new Set(products.map((item) => item.account_id))).map((id) =>
+      fetchAccount(id)
+    )
+  );
+  const accountMap = new Map(
+    accounts.filter(Boolean).map((acc) => [acc!.account_id, acc])
+  );
+
+  // Attach accounts to products
+  return products.map((item) => ({
+    ...item,
+    account: accountMap.get(item.account_id) || undefined,
+  }));
+}
+
 
 export async function updateProduct(product: Product): Promise<boolean> {
   try {
