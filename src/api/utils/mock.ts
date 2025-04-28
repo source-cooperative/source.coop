@@ -80,7 +80,7 @@ for (const account of accounts) {
     continue;
   }
 
-  var accountMemberships = [];
+  var accountMemberships: Membership[] = [];
   for (const membership of memberships) {
     if (membership.account_id === account.account_id) {
       accountMemberships.push(membership);
