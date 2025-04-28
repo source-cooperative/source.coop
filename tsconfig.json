@@ -28,8 +28,7 @@
       {
         "name": "next"
       }
-    ],
-    "strictNullChecks": true
+    ]
   },
   "types": [
     "jest",
