@@ -226,7 +226,7 @@ import { CONFIG } from '@/lib/config';
 const baseUrl = CONFIG.auth.api.frontendUrl;
 
 // ❌ Incorrect: Direct env access
-const baseUrl = process.env.NEXT_PUBLIC_ORY_BASE_URL;
+const baseUrl = process.env.NEXT_PUBLIC_NEXT_PUBLIC_LOCAL_ORY_SDK_URL;
 ```
 
 ### 5. Testing

@@ -6,8 +6,8 @@ import { awsCredentialsProvider } from "@vercel/functions/oidc";
 // middleware to proxy requests to Ory. In production, we use the NEXT_PUBLIC_ORY_SDK_URL
 // environment variable to send requests to directly to Ory.
 const ORY_BASE_URL =
-  process.env.ORY_BASE_URL !== undefined
-    ? process.env.ORY_BASE_URL
+  process.env.NEXT_PUBLIC_LOCAL_ORY_SDK_URL !== undefined
+    ? process.env.NEXT_PUBLIC_LOCAL_ORY_SDK_URL
     : process.env.NEXT_PUBLIC_ORY_SDK_URL;
 
 export const CONFIG = {
