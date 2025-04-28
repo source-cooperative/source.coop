@@ -15,28 +15,28 @@ export default async function NewOrganizationPage({ params }: PageProps) {
   async function handleSubmit(data: Record<string, string>) {
     "use server";
 
-    try {
-      // TODO: Replace with actual organization creation
-      const response = await fetch(`${CONFIG.api.baseUrl}/api/accounts`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...data,
-          type: "organization",
-          owner_account_id: account_id,
-        }),
-      });
+    // try {
+    //   // TODO: Replace with actual organization creation
+    //   const response = await fetch(`${CONFIG.api.baseUrl}/api/accounts`, {
+    //     method: "POST",
+    //     headers: { "Content-Type": "application/json" },
+    //     body: JSON.stringify({
+    //       ...data,
+    //       type: "organization",
+    //       owner_account_id: account_id,
+    //     }),
+    //   });
 
-      if (!response.ok) {
-        throw new Error("Failed to create organization");
-      }
+    //   if (!response.ok) {
+    //     throw new Error("Failed to create organization");
+    //   }
 
-      const newOrg = await response.json();
-      redirect(`/${newOrg.account_id}/edit`);
-    } catch (error) {
-      console.error("Error creating organization:", error);
-      throw error;
-    }
+    //   const newOrg = await response.json();
+    //   redirect(`/${newOrg.account_id}/edit`);
+    // } catch (error) {
+    //   console.error("Error creating organization:", error);
+    //   throw error;
+    // }
   }
 
   const fields = [

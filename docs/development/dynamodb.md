@@ -15,9 +15,6 @@ docker run -p 8000:8000 amazon/dynamodb-local
 Add to `.env.local`:
 ```bash
 DYNAMODB_ENDPOINT=http://localhost:8000
-AWS_ACCESS_KEY_ID=local
-AWS_SECRET_ACCESS_KEY=local
-AWS_REGION=us-east-1
 ```
 
 ### Table Creation
