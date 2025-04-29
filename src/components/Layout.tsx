@@ -15,9 +15,9 @@ import UserNavButton from "./UserNavButton";
 
 const alerts = [
   {
-    type: "warning",
-    message:
-      "NOTE: This service is under active development. Certain features may not work or become unavailable at any time.",
+    type: "info",
+    message: "NOTE: We are rebuilding Source Cooperative. <a href='https://survey.source.coop' style='text-decoration: underline; color: white'>Please take our survey</a> to guide our improvements.",
+    dangerouslySetInnerHTML: true
   },
 ];
 
@@ -92,7 +92,11 @@ export function Layout({
             {alerts.map((alert, i) => {
               return (
                 <Alert key={"alert-" + i} variant={alert.type}>
-                  {alert.message}
+                  {alert.dangerouslySetInnerHTML ? (
+                    <div dangerouslySetInnerHTML={{ __html: alert.message }} />
+                  ) : (
+                    alert.message
+                  )}
                 </Alert>
               );
             })}

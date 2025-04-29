@@ -19,7 +19,7 @@ import { defaults as defaultControls } from "ol/control.js";
 
 export default function GeoJSONViewer({ url }) {
   const mapElement = useRef();
-  const [map, setMap] = useState(null);
+  const [map, setMap] = useState<Map | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
 
@@ -89,7 +89,7 @@ export default function GeoJSONViewer({ url }) {
 
     setMap(m);
 
-    return () => m.setTarget(null);
+    return () => m.setTarget(undefined);
   }, []);
 
   return (

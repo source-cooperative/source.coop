@@ -36,7 +36,7 @@ export default {
     yellow: "#d4c05e",
     green: "#7eb36a",
     teal: "#64b9c4",
-    blue: "#85a2f7",
+    blue: "#4a6bd1",
     purple: "#bc85d9",
     pink: "#e587b6",
     grey: "#a9b4c4",
@@ -541,7 +541,7 @@ export default {
     },
     info: {
       color: "text",
-      bg: "accent",
+      bg: "blue",
       fontFamily: "mono",
       justifyContent: "center",
       textAlign: "center",

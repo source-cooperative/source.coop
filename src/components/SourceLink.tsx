@@ -16,4 +16,6 @@ export default function SourceLink({ ...props }) {
   if (props.onClick) {
     return <ThemeLink {...props} />;
   }
+
+  return null;
 }
