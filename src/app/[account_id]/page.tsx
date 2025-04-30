@@ -17,6 +17,9 @@ import { OrganizationProfilePage } from "@/components/features/profiles/Organiza
 import type { IndividualAccount } from "@/types/account_v2";
 import type { Product_v2 } from "@/types/product_v2";
 import { accountsTable, productsTable } from "@/lib/clients/database";
+import { getServerSession } from "@ory/nextjs/app";
+import type { ExtendedSession } from "@/types/session";
+
 type PageProps = {
   params: Promise<{ account_id: string }>;
   searchParams: Promise<{ welcome?: string }>;
@@ -33,13 +36,23 @@ export default async function AccountPage({ params, searchParams }: PageProps) {
     notFound();
   }
 
+  // Get session to check authentication status
+  const session = await getServerSession() as ExtendedSession;
+  const isAuthenticated = !!session?.active;
+  const isAccountOwner = session?.identity?.metadata_public?.account_id === account_id;
+
   // If this is an organization, use the organization profile page
   if (account.type === "organization") {
     return <OrganizationProfilePage account_id={account_id} />;
   }
 
   // Get repositories for individual account
-  const products: Product_v2[] = await productsTable.listByAccount(account_id);
+  let products: Product_v2[] = await productsTable.listByAccount(account_id);
+
+  // Filter products based on authentication status
+  if (!isAuthenticated || !isAccountOwner) {
+    products = products.filter(product => product.visibility === 'public');
+  }
 
   // For individual accounts
   return (
