@@ -5,7 +5,7 @@ import { SessionProvider } from "@ory/elements-react/client";
 import { getServerSession } from "@ory/nextjs/app";
 import { IBM_Plex_Sans } from "next/font/google";
 import { Box } from "@radix-ui/themes";
-import { Navigation, Footer } from "@/components/layout";
+import { Navigation, Footer, Banner } from "@/components/layout";
 import { Suspense } from "react";
 import { metadata } from "./metadata";
 import { CONFIG } from "@/lib/config";
@@ -35,6 +35,7 @@ export default async function RootLayout({
         >
           <SessionProvider session={session} baseUrl={CONFIG.auth.api.frontendUrl}>
             <Box style={{ minHeight: "100vh" }}>
+              <Banner />
               <Suspense>
                 <Navigation />
               </Suspense>

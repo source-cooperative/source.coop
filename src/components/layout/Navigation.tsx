@@ -24,7 +24,7 @@ export function Navigation() {
         <Container>
           <Flex justify="between" align="center" py="3">
             <Logo />
-            <Text>Loading...</Text>
+            {/* <Text>Loading...</Text> */}
           </Flex>
         </Container>
       </nav>
@@ -86,9 +86,10 @@ export function Navigation() {
                 </DropdownMenu.Content>
               </DropdownMenu.Root>
             ) : (
-              <Link href={CONFIG.auth.routes.login}>
-                <Button>Log In / Register</Button>
-              </Link>
+              // <Link href={CONFIG.auth.routes.login}>
+              //   <Button>Log In / Register</Button>
+              // </Link>
+              null
             )}
           </Flex>
         </Flex>
