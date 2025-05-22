@@ -14,11 +14,11 @@ import SourceLink from "./SourceLink";
 import UserNavButton from "./UserNavButton";
 
 const alerts = [
-  {
-    type: "info",
-    message: "NOTE: We are rebuilding Source Cooperative. <a href='https://survey.source.coop' style='text-decoration: underline; color: white'>Please take our survey</a> to guide our improvements.",
-    dangerouslySetInnerHTML: true
-  },
+  // {
+  //   type: "info",
+  //   message: "NOTE: We are rebuilding Source Cooperative. <a href='https://survey.source.coop' style='text-decoration: underline; color: white'>Please take our survey</a> to guide our improvements.",
+  //   dangerouslySetInnerHTML: true
+  // },
 ];
 
 export function Loading() {
@@ -89,17 +89,6 @@ export function Layout({
       >
         <Box>
           <Box sx={{ zIndex: 9999999 }}>
-            {alerts.map((alert, i) => {
-              return (
-                <Alert key={"alert-" + i} variant={alert.type}>
-                  {alert.dangerouslySetInnerHTML ? (
-                    <div dangerouslySetInnerHTML={{ __html: alert.message }} />
-                  ) : (
-                    alert.message
-                  )}
-                </Alert>
-              );
-            })}
             {pendingInvitations?.length > 0 ? (
               <Alert variant="info">
                 <SourceLink href={`/${user?.account?.account_id}/manage`}>
