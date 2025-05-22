@@ -2,6 +2,7 @@
 
 import { Box, Text, Link } from "@radix-ui/themes";
 
+/*
 export function Banner() {
   return (
     <Box 
@@ -21,3 +22,4 @@ export function Banner() {
     </Box>
   );
 } 
+*/ 
