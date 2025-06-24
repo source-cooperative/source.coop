@@ -11,12 +11,7 @@ import {
   BadRequestError,
 } from "@/lib/api/errors";
 import { MockNextApiResponse, jsonBody } from "@/api/utils/mock";
-import {
-  Membership,
-  MembershipRole,
-  MembershipState,
-  Actions,
-} from "@/types/api";
+import { Membership, MembershipRole, MembershipState, Actions } from "@/types";
 import { AccountType } from "@/types/account";
 import { Account } from "@/types/account";
 

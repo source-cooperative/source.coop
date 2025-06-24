@@ -17,7 +17,7 @@
  * - Special handling for admin users
  *
  * @module api/authz
- * @requires @/types/api
+ * @requires @/types
  * @requires @/api/utils
  * @requires ts-pattern
  *
@@ -44,7 +44,7 @@ import {
   Membership,
   RepositoryState,
   DataConnection,
-} from "@/types/api";
+} from "@/types";
 import { AccountType } from "@/types/account";
 import { Account } from "@/types/account";
 import { match } from "ts-pattern";

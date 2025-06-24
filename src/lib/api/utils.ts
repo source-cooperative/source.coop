@@ -28,7 +28,7 @@
  * const adminStatus = isAdmin(session);
  */
 
-import { Actions, UserSession, AccountFlags } from "@/types/api";
+import { Actions, UserSession, AccountFlags } from "@/types";
 import { AccountType } from "@/types/account";
 import { Account } from "@/types/account";
 import {
@@ -110,46 +110,12 @@ async function authenticateWithApiKey(
   // Retrieve and filter memberships for the user
   const memberships = await membershipsTable.listByUser(account.account_id);
   const filteredMemberships = memberships.filter((membership) =>
-    isAuthorized(
-      {
-        account: {
-          account_id: account.account_id,
-          disabled: account.disabled,
-          account_type:
-            account.type === "individual"
-              ? AccountType.USER
-              : AccountType.ORGANIZATION,
-          profile: {
-            name: account.name,
-            bio: account.metadata_public.bio,
-            location: account.metadata_public.location,
-          },
-          flags: account.flags.map((flag) => flag as AccountFlags),
-          identity_id: account.metadata_private.identity_id,
-        },
-      },
-      membership,
-      Actions.GetMembership
-    )
+    isAuthorized(account, membership, Actions.GetMembership)
   );
 
   // Return the user session
   return {
-    account: {
-      account_id: account.account_id,
-      disabled: account.disabled,
-      account_type:
-        account.type === "individual"
-          ? AccountType.USER
-          : AccountType.ORGANIZATION,
-      profile: {
-        name: account.name,
-        bio: account.metadata_public.bio,
-        location: account.metadata_public.location,
-      },
-      flags: account.flags.map((flag) => flag as AccountFlags),
-      identity_id: account.metadata_private.identity_id,
-    },
+    account,
     memberships: filteredMemberships,
   };
 }

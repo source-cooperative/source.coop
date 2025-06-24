@@ -12,7 +12,7 @@ import {
   S3Regions,
   DataProvider,
   RepositoryDataMode,
-} from "@/types/api";
+} from "@/types";
 import { AccountType } from "@/types/account";
 import { Account } from "@/types/account";
 

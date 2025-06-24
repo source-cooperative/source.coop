@@ -8,7 +8,7 @@ import {
   MembershipSchema,
   APIKey,
   APIKeySchema,
-} from "@/types/api";
+} from "@/types";
 import { AccountType } from "@/types/account";
 import { Account } from "@/types/account";
 import { AccountSchema } from "@/types/account";

@@ -6,7 +6,7 @@ import { isAuthorized } from "@/lib/api/authz";
 import { putAccount } from "@/api/db";
 import { UnauthorizedError, BadRequestError } from "@/lib/api/errors";
 import { MockNextApiResponse, jsonBody } from "@/api/utils/mock";
-import { AccountFlags, UserSession } from "@/types/api";
+import { AccountFlags, UserSession } from "@/types";
 import { AccountType } from "@/types/account";
 import { Account } from "@/types/account";
 import { ZodError } from "zod";

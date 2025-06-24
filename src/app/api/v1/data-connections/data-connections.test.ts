@@ -14,7 +14,7 @@ import {
   UserSession,
   DataConnection,
   RepositoryDataMode,
-} from "@/types/api";
+} from "@/types";
 import { AccountType } from "@/types/account";
 
 jest.mock("@/api/utils", () => ({

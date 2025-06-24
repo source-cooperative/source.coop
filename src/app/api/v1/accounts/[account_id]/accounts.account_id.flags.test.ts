@@ -10,7 +10,7 @@ import {
   MethodNotImplementedError,
 } from "@/lib/api/errors";
 import { MockNextApiResponse, jsonBody } from "@/api/utils/mock";
-import { UserSession, AccountFlags, Actions } from "@/types/api";
+import { UserSession, AccountFlags, Actions } from "@/types";
 import { AccountType } from "@/types/account";
 import { Account } from "@/types/account";
 

@@ -1,4 +1,4 @@
-import { DataConnection } from "@/types/api";
+import { DataConnection } from "@/types";
 import { PutItemCommand } from "@aws-sdk/client-dynamodb";
 import { QueryCommand, ScanCommand } from "@aws-sdk/lib-dynamodb";
 import { marshall } from "@aws-sdk/util-dynamodb";

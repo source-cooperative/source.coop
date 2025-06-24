@@ -6,7 +6,7 @@ import { isAuthorized } from "@/lib/api/authz";
 import { getAPIKey, putAPIKey } from "@/api/db";
 import { UnauthorizedError, MethodNotImplementedError } from "@/lib/api/errors";
 import { MockNextApiResponse, jsonBody } from "@/api/utils/mock";
-import { UserSession, APIKey, Actions } from "@/types/api";
+import { UserSession, APIKey, Actions } from "@/types";
 import { AccountType } from "@/types/account";
 
 jest.mock("@/api/utils", () => ({

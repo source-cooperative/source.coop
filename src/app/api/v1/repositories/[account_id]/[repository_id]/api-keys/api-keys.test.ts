@@ -21,7 +21,7 @@ import {
   RepositoryDataMode,
   RepositoryFeatured,
   Actions,
-} from "@/types/api";
+} from "@/types";
 import { AccountType } from "@/types/account";
 
 jest.mock("@/api/utils", () => ({

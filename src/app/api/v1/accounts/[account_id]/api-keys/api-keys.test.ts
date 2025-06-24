@@ -19,7 +19,7 @@ import {
   APIKeyRequest,
   RedactedAPIKey,
   Actions,
-} from "@/types/api";
+} from "@/types";
 import { AccountType } from "@/types/account";
 import { Account } from "@/types/account";
 
