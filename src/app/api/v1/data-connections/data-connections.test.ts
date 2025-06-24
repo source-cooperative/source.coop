@@ -2,9 +2,9 @@ import { NextApiRequest } from "next";
 import httpMocks from "node-mocks-http";
 import { handler } from "@/pages/api/v1/data-connections";
 import { getServerSession } from "@ory/nextjs/app";
-import { isAuthorized } from "@/api/authz";
+import { isAuthorized } from "@/lib/api/authz";
 import { getDataConnections, putDataConnection } from "@/api/db";
-import { UnauthorizedError, BadRequestError } from "@/api/errors";
+import { UnauthorizedError, BadRequestError } from "@/lib/api/errors";
 import { MockNextApiResponse, jsonBody } from "@/api/utils/mock";
 import {
   DataProvider,
@@ -13,15 +13,15 @@ import {
   AccountFlags,
   UserSession,
   DataConnection,
-  AccountType,
   RepositoryDataMode,
-} from "@/api/types";
+} from "@/types/api";
+import { AccountType } from "@/types/account";
 
 jest.mock("@/api/utils", () => ({
   getServerSession: jest.fn(),
 }));
 
-jest.mock("@/api/authz", () => ({
+jest.mock("@/lib/api/authz", () => ({
   isAuthorized: jest.fn(),
 }));
 

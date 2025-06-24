@@ -2,18 +2,20 @@ import { NextApiRequest } from "next";
 import httpMocks from "node-mocks-http";
 import { handler } from "@/pages/api/v1/accounts";
 import { getServerSession } from "@ory/nextjs/app";
-import { isAuthorized } from "@/api/authz";
+import { isAuthorized } from "@/lib/api/authz";
 import { putAccount } from "@/api/db";
-import { UnauthorizedError, BadRequestError } from "@/api/errors";
+import { UnauthorizedError, BadRequestError } from "@/lib/api/errors";
 import { MockNextApiResponse, jsonBody } from "@/api/utils/mock";
-import { AccountType, AccountFlags, UserSession, Account } from "@/api/types";
+import { AccountFlags, UserSession } from "@/types/api";
+import { AccountType } from "@/types/account";
+import { Account } from "@/types/account";
 import { ZodError } from "zod";
 
 jest.mock("@/api/utils", () => ({
   getServerSession: jest.fn(),
 }));
 
-jest.mock("@/api/authz", () => ({
+jest.mock("@/lib/api/authz", () => ({
   isAuthorized: jest.fn(),
 }));
 

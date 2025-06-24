@@ -28,25 +28,22 @@
  *       500:
  *         description: Internal server error
  */
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "@ory/nextjs/app";
-import {
-  Account,
-  AccountType,
-  AccountCreationRequestSchema,
-  Actions,
-  AccountFlags,
-} from "@/api/types";
+import { AccountCreationRequestSchema, Actions, AccountFlags } from "@/types";
+import { AccountType } from "@/types/account";
+import { Account } from "@/types/account";
 import { StatusCodes } from "http-status-codes";
-import { BadRequestError, UnauthorizedError } from "@/api/errors";
+import { BadRequestError, UnauthorizedError } from "@/lib/api/errors";
 import { putAccount } from "@/api/db";
-import { isAuthorized } from "@/api/authz";
+import { isAuthorized } from "@/lib/api/authz";
+import { getApiSession } from "@/lib/api/utils";
 
 const isProd = process.env.NEXT_PUBLIC_IS_PROD === "1";
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession();
+    const session = await getApiSession(request);
     const body = await request.json();
     const accountRequest = AccountCreationRequestSchema.parse(body);
     const flags: AccountFlags[] = isProd
@@ -60,10 +57,12 @@ export async function POST(request: Request) {
       ...accountRequest,
       disabled: false,
       flags,
-      identity_id:
-        accountRequest.account_type === AccountType.USER
-          ? session?.identity_id
-          : "N/A",
+      metadata_private:
+        accountRequest.type === AccountType.INDIVIDUAL
+          ? {
+              identity_id: session?.identity_id ?? "",
+            }
+          : undefined,
     };
     if (!isAuthorized(session, newAccount, Actions.CreateAccount)) {
       return NextResponse.json(

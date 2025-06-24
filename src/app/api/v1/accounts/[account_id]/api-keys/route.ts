@@ -1,5 +1,4 @@
-import { NextResponse } from "next/server";
-import { getServerSession } from "@ory/nextjs/app";
+import { NextRequest, NextResponse } from "next/server";
 import {
   Actions,
   APIKey,
@@ -7,25 +6,25 @@ import {
   APIKeyRequestSchema,
   RedactedAPIKey,
   RedactedAPIKeySchema,
-} from "@/api/types";
+} from "@/types";
 import { StatusCodes } from "http-status-codes";
+import { isAuthorized } from "@/lib/api/authz";
 import {
-  BadRequestError,
-  MethodNotImplementedError,
-  NotFoundError,
-  UnauthorizedError,
-} from "@/api/errors";
-import { putAPIKey, getAccount, getAPIKeys } from "@/api/db";
-import { isAuthorized } from "@/api/authz";
-import { generateAccessKeyID, generateSecretAccessKey } from "@/api/utils";
+  generateAccessKeyID,
+  generateSecretAccessKey,
+  getApiSession,
+} from "@/lib/api/utils";
+import { accountsTable, apiKeysTable } from "@/lib/clients/database";
+import { AccountFlags } from "@/types";
+import { AccountType } from "@/types/account";
 
 // POST /api/v1/accounts/[account_id]/api-keys
 export async function POST(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { account_id: string } }
 ) {
   try {
-    const session = await getServerSession();
+    const session = await getApiSession(request);
     const { account_id } = params;
     const body = await request.json();
     const apiKeyRequest: APIKeyRequest = APIKeyRequestSchema.parse(body);
@@ -37,7 +36,7 @@ export async function POST(
       );
     }
 
-    const account = await getAccount(account_id);
+    const account = session?.account;
     if (!account) {
       return NextResponse.json(
         { error: `Account with ID ${account_id} not found` },
@@ -60,7 +59,7 @@ export async function POST(
           { status: StatusCodes.UNAUTHORIZED }
         );
       }
-      [apiKeyCreated, success] = await putAPIKey(apiKey, true);
+      [apiKeyCreated, success] = await apiKeysTable.create(apiKey, true);
       if (success) {
         return NextResponse.json(apiKeyCreated, { status: StatusCodes.OK });
       }
@@ -75,13 +74,13 @@ export async function POST(
 
 // GET /api/v1/accounts/[account_id]/api-keys
 export async function GET(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { account_id: string } }
 ) {
   try {
-    const session = await getServerSession();
+    const session = await getApiSession(request);
     const { account_id } = params;
-    const account = await getAccount(account_id);
+    const account = session?.account;
     if (!account) {
       return NextResponse.json(
         { error: `Account with ID ${account_id} not found` },
@@ -94,7 +93,7 @@ export async function GET(
         { status: StatusCodes.UNAUTHORIZED }
       );
     }
-    const apiKeys = await getAPIKeys(account.account_id);
+    const apiKeys = await apiKeysTable.listByAccount(account.account_id);
     const redactedAPIKeys: RedactedAPIKey[] = [];
     for (const apiKey of apiKeys) {
       if (isAuthorized(session, apiKey, Actions.GetAPIKey)) {

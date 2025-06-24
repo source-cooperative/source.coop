@@ -1,7 +1,7 @@
 // Import necessary modules and types
 import type { NextApiRequest, NextApiResponse } from "next";
 import { getServerSession } from "@ory/nextjs/app";
-import { Actions, Membership, MembershipState } from "@/api/types";
+import { Actions, Membership, MembershipState } from "@/types";
 import { withErrorHandling } from "@/api/middleware";
 import { StatusCodes } from "http-status-codes";
 import {
@@ -9,9 +9,9 @@ import {
   NotFoundError,
   UnauthorizedError,
   BadRequestError,
-} from "@/api/errors";
+} from "@/lib/api/errors";
 import { getMembership, putMembership } from "@/api/db";
-import { isAuthorized } from "@/api/authz";
+import { isAuthorized } from "@/lib/api/authz";
 
 /**
  * @openapi
@@ -50,7 +50,7 @@ async function revokeMembershipHandler(
   res: NextApiResponse<Membership>
 ): Promise<void> {
   // Get the current session and membership ID
-  const session = await getServerSession();
+  const session = await getApiSession(request);
   const { membership_id } = req.query;
 
   // Fetch the membership

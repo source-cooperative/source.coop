@@ -6,7 +6,7 @@ import {
   Membership,
   MembershipRoleSchema,
   MembershipState,
-} from "@/api/types";
+} from "@/types";
 import { withErrorHandling } from "@/api/middleware";
 import { StatusCodes } from "http-status-codes";
 import {
@@ -14,9 +14,9 @@ import {
   NotFoundError,
   UnauthorizedError,
   BadRequestError,
-} from "@/api/errors";
+} from "@/lib/api/errors";
 import { getMembership, putMembership } from "@/api/db";
-import { isAuthorized } from "@/api/authz";
+import { isAuthorized } from "@/lib/api/authz";
 
 /**
  * @openapi
@@ -59,7 +59,7 @@ async function updateMembershipHandler(
   res: NextApiResponse<Membership>
 ): Promise<void> {
   // Get the current session and membership ID
-  const session = await getServerSession();
+  const session = await getApiSession(request);
   const { membership_id } = req.query;
 
   // Fetch the membership

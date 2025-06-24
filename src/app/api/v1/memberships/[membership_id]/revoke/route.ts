@@ -32,22 +32,22 @@
  */
 import { NextResponse } from "next/server";
 import { getServerSession } from "@ory/nextjs/app";
-import { Actions, Membership, MembershipState } from "@/api/types";
+import { Actions, Membership, MembershipState } from "@/types";
 import { StatusCodes } from "http-status-codes";
 import {
   NotFoundError,
   UnauthorizedError,
   BadRequestError,
-} from "@/api/errors";
+} from "@/lib/api/errors";
 import { getMembership, putMembership } from "@/api/db";
-import { isAuthorized } from "@/api/authz";
+import { isAuthorized } from "@/lib/api/authz";
 
 export async function POST(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { membership_id: string } }
 ) {
   try {
-    const session = await getServerSession();
+    const session = await getApiSession(request);
     const { membership_id } = params;
     const membership = await getMembership(membership_id);
     if (!membership) {

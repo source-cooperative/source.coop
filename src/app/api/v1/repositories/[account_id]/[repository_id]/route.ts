@@ -1,13 +1,9 @@
 import { NextResponse } from "next/server";
-import {
-  Actions,
-  Repository,
-  RepositoryUpdateRequestSchema,
-} from "@/api/types";
+import { Actions, Repository, RepositoryUpdateRequestSchema } from "@/types";
 import { getServerSession } from "@ory/nextjs/app";
 import { getRepository, putRepository } from "@/api/db";
-import { NotFoundError, UnauthorizedError } from "@/api/errors";
-import { isAuthorized } from "@/api/authz";
+import { NotFoundError, UnauthorizedError } from "@/lib/api/errors";
+import { isAuthorized } from "@/lib/api/authz";
 import { StatusCodes } from "http-status-codes";
 
 /**
@@ -52,11 +48,11 @@ import { StatusCodes } from "http-status-codes";
  *         $ref: '#/components/responses/InternalServerError'
  */
 export async function GET(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { account_id: string; repository_id: string } }
 ) {
   try {
-    const session = await getServerSession();
+    const session = await getApiSession(request);
     const { account_id, repository_id } = params;
     const repository = await getRepository(account_id, repository_id);
     if (!repository) {
@@ -132,11 +128,11 @@ export async function GET(
  *         $ref: '#/components/responses/InternalServerError'
  */
 export async function PUT(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { account_id: string; repository_id: string } }
 ) {
   try {
-    const session = await getServerSession();
+    const session = await getApiSession(request);
     const { account_id, repository_id } = params;
     const repository = await getRepository(account_id, repository_id);
     if (!repository) {
@@ -210,11 +206,11 @@ export async function PUT(
  *         $ref: '#/components/responses/InternalServerError'
  */
 export async function DELETE(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { account_id: string; repository_id: string } }
 ) {
   try {
-    const session = await getServerSession();
+    const session = await getApiSession(request);
     const { account_id, repository_id } = params;
     const repository = await getRepository(account_id, repository_id);
     if (!repository) {

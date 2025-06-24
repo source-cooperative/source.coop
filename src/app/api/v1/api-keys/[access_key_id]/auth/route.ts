@@ -37,13 +37,13 @@
  *         description: Internal server error
  */
 import { NextResponse } from "next/server";
-import { APIKey } from "@/api/types";
+import { APIKey } from "@/types";
 import { StatusCodes } from "http-status-codes";
-import { NotFoundError, UnauthorizedError } from "@/api/errors";
+import { NotFoundError, UnauthorizedError } from "@/lib/api/errors";
 import { getAPIKey, getAccount } from "@/api/db";
 
 export async function POST(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { access_key_id: string } }
 ) {
   try {

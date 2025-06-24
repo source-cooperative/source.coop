@@ -6,12 +6,12 @@ import {
   RepositoryList,
   RepositoryState,
   RepositoryFeatured,
-} from "@/api/types";
+} from "@/types";
 import {
   BadRequestError,
   NotFoundError,
   UnauthorizedError,
-} from "@/api/errors";
+} from "@/lib/api/errors";
 import { getServerSession } from "@ory/nextjs/app";
 import {
   getAccount,
@@ -19,7 +19,7 @@ import {
   getRepositoriesByAccount,
   putRepository,
 } from "@/api/db";
-import { isAuthorized } from "@/api/authz";
+import { isAuthorized } from "@/lib/api/authz";
 import Handlebars from "handlebars";
 import { StatusCodes } from "http-status-codes";
 
@@ -50,11 +50,11 @@ import { StatusCodes } from "http-status-codes";
  *         description: Internal server error
  */
 export async function GET(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { account_id: string } }
 ) {
   try {
-    const session = await getServerSession();
+    const session = await getApiSession(request);
     const { account_id } = params;
     const account = await getAccount(account_id);
     if (!account) {
@@ -125,11 +125,11 @@ export async function GET(
  *         $ref: '#/components/responses/InternalServerError'
  */
 export async function POST(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { account_id: string } }
 ) {
   try {
-    const session = await getServerSession();
+    const session = await getApiSession(request);
     const { account_id } = params;
     const repositoryCreateRequest = RepositoryCreationRequestSchema.parse(
       await request.json()

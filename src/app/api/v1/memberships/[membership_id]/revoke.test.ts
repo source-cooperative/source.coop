@@ -2,27 +2,27 @@ import { NextApiRequest } from "next";
 import httpMocks from "node-mocks-http";
 import { handler } from "@/pages/api/v1/memberships/[membership_id]/revoke";
 import { getServerSession } from "@ory/nextjs/app";
-import { isAuthorized } from "@/api/authz";
+import { isAuthorized } from "@/lib/api/authz";
 import { getMembership, putMembership } from "@/api/db";
 import {
   UnauthorizedError,
   NotFoundError,
   MethodNotImplementedError,
   BadRequestError,
-} from "@/api/errors";
+} from "@/lib/api/errors";
 import { MockNextApiResponse, jsonBody } from "@/api/utils/mock";
 import {
   Membership,
   MembershipRole,
   MembershipState,
   Actions,
-} from "@/api/types";
+} from "@/types/api";
 
 jest.mock("@/api/utils", () => ({
   getServerSession: jest.fn(),
 }));
 
-jest.mock("@/api/authz", () => ({
+jest.mock("@/lib/api/authz", () => ({
   isAuthorized: jest.fn(),
 }));
 

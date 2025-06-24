@@ -1,15 +1,15 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { getServerSession } from "@ory/nextjs/app";
-import { AccountFlags, AccountFlagsSchema, Actions } from "@/api/types";
+import { AccountFlags, AccountFlagsSchema, Actions } from "@/types";
 import { withErrorHandling } from "@/api/middleware";
 import { StatusCodes } from "http-status-codes";
 import {
   MethodNotImplementedError,
   NotFoundError,
   UnauthorizedError,
-} from "@/api/errors";
+} from "@/lib/api/errors";
 import { getAccount, putAccount } from "@/api/db";
-import { isAuthorized } from "@/api/authz";
+import { isAuthorized } from "@/lib/api/authz";
 
 /**
  * @openapi
@@ -47,7 +47,7 @@ async function getAccountFlagsHandler(
   res: NextApiResponse<AccountFlags[]>
 ): Promise<void> {
   const { account_id } = req.query;
-  const session = await getServerSession();
+  const session = await getApiSession(request);
 
   const account = await getAccount(account_id as string);
   if (!account) {
@@ -102,7 +102,7 @@ async function putAccountFlagsHandler(
   res: NextApiResponse<AccountFlags[]>
 ): Promise<void> {
   const { account_id } = req.query;
-  const session = await getServerSession();
+  const session = await getApiSession(request);
 
   const flagsRequest = AccountFlagsSchema.parse(req.body);
 

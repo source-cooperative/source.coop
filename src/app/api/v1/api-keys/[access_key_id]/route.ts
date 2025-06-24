@@ -28,23 +28,18 @@
  */
 import { NextResponse } from "next/server";
 import { getServerSession } from "@ory/nextjs/app";
-import {
-  Actions,
-  APIKey,
-  RedactedAPIKey,
-  RedactedAPIKeySchema,
-} from "@/api/types";
+import { Actions, APIKey, RedactedAPIKey, RedactedAPIKeySchema } from "@/types";
 import { StatusCodes } from "http-status-codes";
-import { NotFoundError, UnauthorizedError } from "@/api/errors";
+import { NotFoundError, UnauthorizedError } from "@/lib/api/errors";
 import { getAPIKey, putAPIKey } from "@/api/db";
-import { isAuthorized } from "@/api/authz";
+import { isAuthorized } from "@/lib/api/authz";
 
 export async function GET(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { access_key_id: string } }
 ) {
   try {
-    const session = await getServerSession();
+    const session = await getApiSession(request);
     const { access_key_id } = params;
     const apiKey = await getAPIKey(access_key_id);
     if (!apiKey) {
@@ -108,11 +103,11 @@ export async function GET(
  *         description: Internal server error
  */
 export async function PUT(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { access_key_id: string } }
 ) {
   try {
-    const session = await getServerSession();
+    const session = await getApiSession(request);
     const { access_key_id } = params;
     const { disabled } = await request.json();
     const apiKey = await getAPIKey(access_key_id);
@@ -164,11 +159,11 @@ export async function PUT(
  *         description: Internal server error
  */
 export async function DELETE(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { access_key_id: string } }
 ) {
   try {
-    const session = await getServerSession();
+    const session = await getApiSession(request);
     const { access_key_id } = params;
     const apiKey = await getAPIKey(access_key_id);
     if (!apiKey) {

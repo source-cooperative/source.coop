@@ -2,7 +2,7 @@ import { NextApiRequest } from "next";
 import httpMocks from "node-mocks-http";
 import { handler } from "@/pages/api/v1/whoami";
 import { getServerSession } from "@ory/nextjs/app";
-import { UnauthorizedError, MethodNotImplementedError } from "@/api/errors";
+import { UnauthorizedError, MethodNotImplementedError } from "@/lib/api/errors";
 import { MockNextApiResponse, jsonBody } from "@/api/utils/mock";
 
 jest.mock("@/api/utils", () => ({

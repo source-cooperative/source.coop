@@ -6,7 +6,6 @@ import swaggerJSDoc from "swagger-jsdoc";
 import { OpenApiGeneratorV3 } from "@asteasolutions/zod-to-openapi";
 import {
   AccountCreationRequestSchema,
-  AccountSchema,
   APIKeyRequestSchema,
   APIKeySchema,
   DataConnectionSchema,
@@ -20,7 +19,8 @@ import {
   RepositoryUpdateRequestSchema,
   RepositoryListSchema,
   RepositoryFeaturedUpdateRequestSchema,
-} from "@/api/types";
+} from "@/types";
+import { AccountSchema } from "@/types/account";
 
 export default async function handler(
   req: NextApiRequest,

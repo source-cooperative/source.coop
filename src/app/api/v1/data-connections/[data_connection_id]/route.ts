@@ -28,18 +28,18 @@
  */
 import { NextResponse } from "next/server";
 import { getServerSession } from "@ory/nextjs/app";
-import { Actions, DataConnection, DataConnectionSchema } from "@/api/types";
+import { Actions, DataConnection, DataConnectionSchema } from "@/types";
 import { StatusCodes } from "http-status-codes";
-import { NotFoundError, UnauthorizedError } from "@/api/errors";
+import { NotFoundError, UnauthorizedError } from "@/lib/api/errors";
 import { getDataConnection, putDataConnection } from "@/api/db";
-import { isAuthorized } from "@/api/authz";
+import { isAuthorized } from "@/lib/api/authz";
 
 export async function GET(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { data_connection_id: string } }
 ) {
   try {
-    const session = await getServerSession();
+    const session = await getApiSession(request);
     const { data_connection_id } = params;
     const dataConnection = await getDataConnection(data_connection_id);
     if (!dataConnection) {
@@ -113,11 +113,11 @@ export async function GET(
  *         description: Internal server error
  */
 export async function PUT(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { data_connection_id: string } }
 ) {
   try {
-    const session = await getServerSession();
+    const session = await getApiSession(request);
     const { data_connection_id } = params;
     const dataConnectionUpdate = DataConnectionSchema.parse(
       await request.json()
@@ -178,11 +178,11 @@ export async function PUT(
  *         description: Internal server error
  */
 export async function DELETE(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { data_connection_id: string } }
 ) {
   try {
-    const session = await getServerSession();
+    const session = await getApiSession(request);
     const { data_connection_id } = params;
     const dataConnection = await getDataConnection(data_connection_id);
     if (!dataConnection) {

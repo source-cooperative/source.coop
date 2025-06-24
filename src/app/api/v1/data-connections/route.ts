@@ -19,15 +19,15 @@
  */
 import { NextResponse } from "next/server";
 import { getServerSession } from "@ory/nextjs/app";
-import { Actions, DataConnectionSchema, DataConnection } from "@/api/types";
+import { Actions, DataConnectionSchema, DataConnection } from "@/types";
 import { StatusCodes } from "http-status-codes";
-import { BadRequestError, UnauthorizedError } from "@/api/errors";
-import { isAuthorized } from "@/api/authz";
+import { BadRequestError, UnauthorizedError } from "@/lib/api/errors";
+import { isAuthorized } from "@/lib/api/authz";
 import { getDataConnections, putDataConnection } from "@/api/db";
 
 export async function GET() {
   try {
-    const session = await getServerSession();
+    const session = await getApiSession(request);
     const dataConnections: DataConnection[] = await getDataConnections();
     const filteredConnections = dataConnections.filter((dataConnection) =>
       isAuthorized(session, dataConnection, Actions.GetDataConnection)
@@ -79,9 +79,9 @@ export async function GET() {
  *       500:
  *         description: Internal server error
  */
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession();
+    const session = await getApiSession(request);
     const body = await request.json();
     const dataConnection = DataConnectionSchema.parse(body);
     if (!isAuthorized(session, dataConnection, Actions.CreateDataConnection)) {

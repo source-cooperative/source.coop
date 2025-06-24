@@ -6,16 +6,16 @@ import {
   AccountProfileResponse,
   AccountProfileSchema,
   Actions,
-} from "@/api/types";
+} from "@/types";
 import { withErrorHandling } from "@/api/middleware";
 import { StatusCodes } from "http-status-codes";
 import {
   MethodNotImplementedError,
   NotFoundError,
   UnauthorizedError,
-} from "@/api/errors";
+} from "@/lib/api/errors";
 import { getAccount, putAccount } from "@/api/db";
-import { isAuthorized } from "@/api/authz";
+import { isAuthorized } from "@/lib/api/authz";
 
 /**
  * @openapi
@@ -52,7 +52,7 @@ async function getAccountProfileHandler(
   // Extract account_id from request query
   const { account_id } = req.query;
   // Get user session
-  const session = await getServerSession();
+  const session = await getApiSession(request);
 
   // Fetch account from database
   const account = await getAccount(account_id as string);
@@ -126,7 +126,7 @@ async function putAccountProfileHandler(
   // Extract account_id from request query
   const { account_id } = req.query;
   // Get user session
-  const session = await getServerSession();
+  const session = await getApiSession(request);
 
   // Parse and validate the account profile update request
   const profileRequest = AccountProfileSchema.parse(req.body);

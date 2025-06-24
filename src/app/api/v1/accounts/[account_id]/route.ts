@@ -31,19 +31,20 @@
  */
 import { NextResponse } from "next/server";
 import { getServerSession } from "@ory/nextjs/app";
-import { Account, Actions } from "@/api/types";
+import { Actions } from "@/types";
+import { Account } from "@/types/account";
 import { StatusCodes } from "http-status-codes";
-import { NotFoundError, UnauthorizedError } from "@/api/errors";
+import { NotFoundError, UnauthorizedError } from "@/lib/api/errors";
 import { getAccount, putAccount } from "@/api/db";
-import { isAuthorized } from "@/api/authz";
+import { isAuthorized } from "@/lib/api/authz";
 
 export async function GET(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { account_id: string } }
 ) {
   try {
     const { account_id } = params;
-    const session = await getServerSession();
+    const session = await getApiSession(request);
     const account = await getAccount(account_id);
     if (!account) {
       return NextResponse.json(
@@ -97,12 +98,12 @@ export async function GET(
  *         description: Internal server error
  */
 export async function DELETE(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { account_id: string } }
 ) {
   try {
     const { account_id } = params;
-    const session = await getServerSession();
+    const session = await getApiSession(request);
     const disableAccount = await getAccount(account_id);
     if (!disableAccount) {
       return NextResponse.json(

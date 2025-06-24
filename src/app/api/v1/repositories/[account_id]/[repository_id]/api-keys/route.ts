@@ -51,23 +51,23 @@ import {
   APIKeyRequestSchema,
   RedactedAPIKey,
   RedactedAPIKeySchema,
-} from "@/api/types";
+} from "@/types";
 import { StatusCodes } from "http-status-codes";
 import {
   BadRequestError,
   NotFoundError,
   UnauthorizedError,
-} from "@/api/errors";
+} from "@/lib/api/errors";
 import { putAPIKey, getRepository, getAPIKeys } from "@/api/db";
-import { isAuthorized } from "@/api/authz";
+import { isAuthorized } from "@/lib/api/authz";
 import { generateAccessKeyID, generateSecretAccessKey } from "@/api/utils";
 
 export async function POST(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { account_id: string; repository_id: string } }
 ) {
   try {
-    const session = await getServerSession();
+    const session = await getApiSession(request);
     const { account_id, repository_id } = params;
     const apiKeyRequest: APIKeyRequest = APIKeyRequestSchema.parse(
       await request.json()
@@ -155,11 +155,11 @@ export async function POST(
  *         description: Internal server error
  */
 export async function GET(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { account_id: string; repository_id: string } }
 ) {
   try {
-    const session = await getServerSession();
+    const session = await getApiSession(request);
     const { account_id, repository_id } = params;
     const repository = await getRepository(account_id, repository_id);
     if (!repository) {

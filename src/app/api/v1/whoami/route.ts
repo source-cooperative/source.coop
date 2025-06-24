@@ -19,13 +19,13 @@
  */
 import { NextResponse } from "next/server";
 import { getServerSession } from "@ory/nextjs/app";
-import { UserSession } from "@/api/types";
+import { UserSession } from "@/types";
 import { StatusCodes } from "http-status-codes";
-import { UnauthorizedError } from "@/api/errors";
+import { UnauthorizedError } from "@/lib/api/errors";
 
 export async function GET() {
   try {
-    const session = await getServerSession();
+    const session = await getApiSession(request);
     if (!session) {
       return NextResponse.json(
         { error: "Unauthorized" },

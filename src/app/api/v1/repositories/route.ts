@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { Actions, RepositoryListResponse, AccountFlags } from "@/api/types";
-import { MethodNotImplementedError } from "@/api/errors";
+import { Actions, RepositoryListResponse, AccountFlags } from "@/types";
+import { MethodNotImplementedError } from "@/lib/api/errors";
 import { StatusCodes } from "http-status-codes";
 import { getRepositories } from "@/api/db";
 import { getServerSession } from "@ory/nextjs/app";
-import { isAuthorized } from "@/api/authz";
+import { isAuthorized } from "@/lib/api/authz";
 
 /**
  * @openapi
@@ -44,9 +44,9 @@ import { isAuthorized } from "@/api/authz";
  *       500:
  *         description: Internal server error
  */
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession();
+    const session = await getApiSession(request);
     const { searchParams } = new URL(request.url);
     const tags = searchParams.get("tags");
     const search = searchParams.get("search");

@@ -3,7 +3,7 @@ import { getServerSession } from "@ory/nextjs/app";
 import type { ExtendedSession } from "@/types/session";
 
 export async function GET() {
-  const session = (await getServerSession()) as ExtendedSession | null;
+  const session = (await getApiSession(request)) as ExtendedSession | null;
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

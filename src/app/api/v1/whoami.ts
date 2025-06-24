@@ -1,15 +1,15 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { getServerSession } from "@ory/nextjs/app";
-import { UserSession } from "@/api/types";
+import { UserSession } from "@/types";
 import { withErrorHandling } from "@/api/middleware";
 import { StatusCodes } from "http-status-codes";
-import { MethodNotImplementedError, UnauthorizedError } from "@/api/errors";
+import { MethodNotImplementedError, UnauthorizedError } from "@/lib/api/errors";
 
 async function whoamiHandler(
   req: NextApiRequest,
   res: NextApiResponse<UserSession>
 ): Promise<void> {
-  const session = await getServerSession();
+  const session = await getApiSession(request);
   if (!session) {
     throw new UnauthorizedError();
   }

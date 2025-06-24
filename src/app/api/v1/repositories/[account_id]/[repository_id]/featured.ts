@@ -5,15 +5,15 @@ import {
   Repository,
   RepositoryFeaturedUpdateRequestSchema,
   RepositoryUpdateRequestSchema,
-} from "@/api/types";
+} from "@/types";
 import { getServerSession, isAdmin } from "@/api/utils";
 import { getRepository, putRepository } from "@/api/db";
 import {
   NotFoundError,
   MethodNotImplementedError,
   UnauthorizedError,
-} from "@/api/errors";
-import { isAuthorized } from "@/api/authz";
+} from "@/lib/api/errors";
+import { isAuthorized } from "@/lib/api/authz";
 import { StatusCodes } from "http-status-codes";
 
 /**
@@ -61,7 +61,7 @@ async function putRepositoryFeaturedHandler(
   req: NextApiRequest,
   res: NextApiResponse<Repository>
 ): Promise<void> {
-  const session = await getServerSession();
+  const session = await getApiSession(request);
   const { account_id, repository_id } = req.query;
 
   const repository = await getRepository(

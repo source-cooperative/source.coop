@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { Actions, RepositoryList } from "@/api/types";
+import { Actions, RepositoryList } from "@/types";
 import { getServerSession } from "@ory/nextjs/app";
 import { getFeaturedRepositories } from "@/api/db";
-import { isAuthorized } from "@/api/authz";
+import { isAuthorized } from "@/lib/api/authz";
 import { StatusCodes } from "http-status-codes";
 
 /**
@@ -24,7 +24,7 @@ import { StatusCodes } from "http-status-codes";
  */
 export async function GET() {
   try {
-    const session = await getServerSession();
+    const session = await getApiSession(request);
     const featuredRepositories = await getFeaturedRepositories();
     const filteredRepositories = featuredRepositories.filter((repository) => {
       return isAuthorized(session, repository, Actions.GetRepository);

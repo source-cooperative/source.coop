@@ -28,23 +28,19 @@
  */
 import { NextResponse } from "next/server";
 import { getEmail, getProfileImage, getServerSession } from "@/api/utils";
-import {
-  AccountProfileResponse,
-  AccountProfileSchema,
-  Actions,
-} from "@/api/types";
+import { AccountProfileResponse, AccountProfileSchema, Actions } from "@/types";
 import { StatusCodes } from "http-status-codes";
-import { NotFoundError, UnauthorizedError } from "@/api/errors";
+import { NotFoundError, UnauthorizedError } from "@/lib/api/errors";
 import { getAccount, putAccount } from "@/api/db";
-import { isAuthorized } from "@/api/authz";
+import { isAuthorized } from "@/lib/api/authz";
 
 export async function GET(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { account_id: string } }
 ) {
   try {
     const { account_id } = params;
-    const session = await getServerSession();
+    const session = await getApiSession(request);
     const account = await getAccount(account_id);
     if (!account) {
       return NextResponse.json(
@@ -115,12 +111,12 @@ export async function GET(
  *         description: Internal server error
  */
 export async function PUT(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { account_id: string } }
 ) {
   try {
     const { account_id } = params;
-    const session = await getServerSession();
+    const session = await getApiSession(request);
     const profileRequest = AccountProfileSchema.parse(await request.json());
     var updateProfileAccount = await getAccount(account_id);
     if (!updateProfileAccount) {

@@ -4,18 +4,18 @@ import {
   Actions,
   RepositoryPermissions,
   RepositoryPermissionsResponse,
-} from "@/api/types";
+} from "@/types";
 import { getServerSession } from "@ory/nextjs/app";
 import { getRepository } from "@/api/db";
-import { NotFoundError, MethodNotImplementedError } from "@/api/errors";
-import { isAuthorized } from "@/api/authz";
+import { NotFoundError, MethodNotImplementedError } from "@/lib/api/errors";
+import { isAuthorized } from "@/lib/api/authz";
 import { StatusCodes } from "http-status-codes";
 
 async function getRepositoryPermissionsHandler(
   req: NextApiRequest,
   res: NextApiResponse<RepositoryPermissionsResponse>
 ): Promise<void> {
-  const session = await getServerSession();
+  const session = await getApiSession(request);
   const { account_id, repository_id } = req.query;
 
   const repository = await getRepository(
