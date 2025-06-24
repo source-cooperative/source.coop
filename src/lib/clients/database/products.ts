@@ -9,31 +9,10 @@ import {
   ScanCommand,
   UpdateCommand,
 } from "@aws-sdk/lib-dynamodb";
-import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
-import { CONFIG } from "../../config";
 import { accountsTable } from "./accounts";
+import { BaseTable } from "./base";
 
-class ProductsTable {
-  private readonly table: string;
-  private readonly client: DynamoDBDocumentClient;
-
-  constructor({
-    client,
-    table = "sc-products",
-  }: {
-    table?: string;
-    client?: DynamoDBDocumentClient;
-  }) {
-    this.table = table;
-    if (client) {
-      this.client = client;
-    } else {
-      const client = new DynamoDBClient(CONFIG.database);
-      this.client = DynamoDBDocumentClient.from(client);
-    }
-  }
-
+class ProductsTable extends BaseTable {
   async listPublic(
     limit = 50,
     lastEvaluatedKey?: any
@@ -228,4 +207,6 @@ class ProductsTable {
 }
 
 // Export a singleton instance
-export const productsTable = new ProductsTable({});
+export const productsTable = new ProductsTable({
+  table: "sc-products",
+});

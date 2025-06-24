@@ -14,28 +14,9 @@ import type {
 } from "@/types/account_v2";
 
 // Use the singleton client from clients/index.ts
-import { CONFIG } from "../../config";
+import { BaseTable } from "./base";
 
-class AccountsTable {
-  private readonly table: string;
-  private readonly client: DynamoDBDocumentClient;
-
-  constructor({
-    client,
-    table = "sc-accounts",
-  }: {
-    table?: string;
-    client?: DynamoDBDocumentClient;
-  }) {
-    this.table = table;
-    if (client) {
-      this.client = client;
-    } else {
-      const client = new DynamoDBClient(CONFIG.database);
-      this.client = DynamoDBDocumentClient.from(client);
-    }
-  }
-
+class AccountsTable extends BaseTable {
   async fetchById(account_id: string): Promise<Account | null> {
     const types = ["individual", "organization"] as const;
 
@@ -219,4 +200,6 @@ export const isOrganizationalAccount = (
 ): acc is OrganizationalAccount => acc.type === "organization";
 
 // Export a singleton instance
-export const accountsTable = new AccountsTable({});
+export const accountsTable = new AccountsTable({
+  table: "sc-accounts",
+});
