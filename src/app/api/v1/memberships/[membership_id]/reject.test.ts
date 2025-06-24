@@ -1,7 +1,7 @@
 import { NextApiRequest } from "next";
 import httpMocks from "node-mocks-http";
 import { handler } from "@/pages/api/v1/memberships/[membership_id]/reject";
-import { getSession } from "@/api/utils";
+import { getServerSession } from "@ory/nextjs/app";
 import { isAuthorized } from "@/api/authz";
 import { getMembership, putMembership } from "@/api/db";
 import {
@@ -19,7 +19,7 @@ import {
 } from "@/api/types";
 
 jest.mock("@/api/utils", () => ({
-  getSession: jest.fn(),
+  getServerSession: jest.fn(),
 }));
 
 jest.mock("@/api/authz", () => ({
@@ -47,7 +47,9 @@ describe("/api/v1/memberships/[membership_id]/reject", () => {
   });
 
   it("should throw NotFoundError when membership doesn't exist", async () => {
-    (getSession as jest.Mock).mockResolvedValue({ identity_id: "user-1" });
+    (getServerSession as jest.Mock).mockResolvedValue({
+      identity_id: "user-1",
+    });
     (getMembership as jest.Mock).mockResolvedValue(null);
 
     await expect(handler(req, res)).rejects.toThrow(NotFoundError);
@@ -62,7 +64,7 @@ describe("/api/v1/memberships/[membership_id]/reject", () => {
       state: MembershipState.Invited,
       state_changed: new Date().toISOString(),
     };
-    (getSession as jest.Mock).mockResolvedValue({
+    (getServerSession as jest.Mock).mockResolvedValue({
       identity_id: "unauthorized-user",
     });
     (getMembership as jest.Mock).mockResolvedValue(mockMembership);
@@ -80,7 +82,7 @@ describe("/api/v1/memberships/[membership_id]/reject", () => {
       state: MembershipState.Member,
       state_changed: new Date().toISOString(),
     };
-    (getSession as jest.Mock).mockResolvedValue({
+    (getServerSession as jest.Mock).mockResolvedValue({
       identity_id: "authorized-user",
     });
     (getMembership as jest.Mock).mockResolvedValue(mockMembership);
@@ -98,7 +100,7 @@ describe("/api/v1/memberships/[membership_id]/reject", () => {
       state: MembershipState.Revoked,
       state_changed: new Date().toISOString(),
     };
-    (getSession as jest.Mock).mockResolvedValue({
+    (getServerSession as jest.Mock).mockResolvedValue({
       identity_id: "authorized-user",
     });
     (getMembership as jest.Mock).mockResolvedValue(mockMembership);
@@ -116,7 +118,7 @@ describe("/api/v1/memberships/[membership_id]/reject", () => {
       state: MembershipState.Invited,
       state_changed: "2023-01-01T00:00:00Z", // Use a fixed date for testing
     };
-    (getSession as jest.Mock).mockResolvedValue({
+    (getServerSession as jest.Mock).mockResolvedValue({
       identity_id: "authorized-user",
     });
     (getMembership as jest.Mock).mockResolvedValue(mockMembership);

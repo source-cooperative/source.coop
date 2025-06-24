@@ -1,12 +1,12 @@
 import { NextApiRequest } from "next";
 import httpMocks from "node-mocks-http";
 import { handler } from "@/pages/api/v1/whoami";
-import { getSession } from "@/api/utils";
+import { getServerSession } from "@ory/nextjs/app";
 import { UnauthorizedError, MethodNotImplementedError } from "@/api/errors";
 import { MockNextApiResponse, jsonBody } from "@/api/utils/mock";
 
 jest.mock("@/api/utils", () => ({
-  getSession: jest.fn(),
+  getServerSession: jest.fn(),
 }));
 
 describe("/api/v1/whoami", () => {
@@ -45,7 +45,7 @@ describe("/api/v1/whoami", () => {
         },
       ],
     };
-    (getSession as jest.Mock).mockResolvedValue(mockSession);
+    (getServerSession as jest.Mock).mockResolvedValue(mockSession);
     req.method = "GET";
 
     await handler(req, res);
@@ -55,7 +55,7 @@ describe("/api/v1/whoami", () => {
   });
 
   it("should throw UnauthorizedError for unauthenticated GET request", async () => {
-    (getSession as jest.Mock).mockResolvedValue(null);
+    (getServerSession as jest.Mock).mockResolvedValue(null);
     req.method = "GET";
 
     await expect(handler(req, res)).rejects.toThrow(UnauthorizedError);

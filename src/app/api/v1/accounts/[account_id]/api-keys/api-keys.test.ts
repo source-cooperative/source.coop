@@ -3,7 +3,7 @@
 import { NextApiRequest } from "next";
 import httpMocks from "node-mocks-http";
 import { handler } from "@/pages/api/v1/accounts/[account_id]/api-keys";
-import { getSession } from "@/api/utils";
+import { getServerSession } from "@ory/nextjs/app";
 import { isAuthorized } from "@/api/authz";
 import { getAccount, putAPIKey, getAPIKeys } from "@/api/db";
 import {
@@ -24,7 +24,7 @@ import {
 } from "@/api/types";
 
 jest.mock("@/api/utils", () => ({
-  getSession: jest.fn(),
+  getServerSession: jest.fn(),
   generateAccessKeyID: jest.fn(() => "SCgenerated-access-key-id"),
   generateSecretAccessKey: jest.fn(
     () => "A1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6Q7r8S9t0U1v2W3x4Y5z6A7B8C9D00000"
@@ -72,7 +72,7 @@ describe("/api/v1/accounts/[account_id]/api-keys", () => {
         profile: {},
         flags: [],
       };
-      (getSession as jest.Mock).mockResolvedValue(null);
+      (getServerSession as jest.Mock).mockResolvedValue(null);
       (getAccount as jest.Mock).mockResolvedValue(mockAccount);
       (isAuthorized as jest.Mock).mockReturnValue(false);
 
@@ -80,7 +80,9 @@ describe("/api/v1/accounts/[account_id]/api-keys", () => {
     });
 
     it("should throw NotFoundError when account doesn't exist", async () => {
-      (getSession as jest.Mock).mockResolvedValue({ identity_id: "user-1" });
+      (getServerSession as jest.Mock).mockResolvedValue({
+        identity_id: "user-1",
+      });
       (getAccount as jest.Mock).mockResolvedValue(null);
 
       await expect(handler(req, res)).rejects.toThrow(NotFoundError);
@@ -88,7 +90,9 @@ describe("/api/v1/accounts/[account_id]/api-keys", () => {
 
     it("should throw BadRequestError when expiration date is in the past", async () => {
       req.body.expires = new Date(Date.now() - 86400000).toISOString(); // 1 day in the past
-      (getSession as jest.Mock).mockResolvedValue({ identity_id: "user-1" });
+      (getServerSession as jest.Mock).mockResolvedValue({
+        identity_id: "user-1",
+      });
       (getAccount as jest.Mock).mockResolvedValue({
         account_id: "test-account",
         account_type: AccountType.USER,
@@ -113,7 +117,7 @@ describe("/api/v1/accounts/[account_id]/api-keys", () => {
         secret_access_key:
           "A1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6Q7r8S9t0U1v2W3x4Y5z6A7B8C9D00000",
       };
-      (getSession as jest.Mock).mockResolvedValue({
+      (getServerSession as jest.Mock).mockResolvedValue({
         identity_id: "authorized-user",
       });
       (getAccount as jest.Mock).mockResolvedValue(mockAccount);
@@ -142,14 +146,16 @@ describe("/api/v1/accounts/[account_id]/api-keys", () => {
     });
 
     it("should throw UnauthorizedError when user is not authenticated", async () => {
-      (getSession as jest.Mock).mockResolvedValue(null);
+      (getServerSession as jest.Mock).mockResolvedValue(null);
       (isAuthorized as jest.Mock).mockReturnValue(false);
 
       await expect(handler(req, res)).rejects.toThrow(UnauthorizedError);
     });
 
     it("should throw NotFoundError when account doesn't exist", async () => {
-      (getSession as jest.Mock).mockResolvedValue({ identity_id: "user-1" });
+      (getServerSession as jest.Mock).mockResolvedValue({
+        identity_id: "user-1",
+      });
       (getAccount as jest.Mock).mockResolvedValue(null);
 
       await expect(handler(req, res)).rejects.toThrow(NotFoundError);
@@ -183,7 +189,7 @@ describe("/api/v1/accounts/[account_id]/api-keys", () => {
             "A1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6Q7r8S9t0U1v2W3x4Y5z6A7B8C9D00000",
         },
       ];
-      (getSession as jest.Mock).mockResolvedValue({
+      (getServerSession as jest.Mock).mockResolvedValue({
         identity_id: "authorized-user",
       });
       (getAccount as jest.Mock).mockResolvedValue(mockAccount);

@@ -1,16 +1,3 @@
-import type { NextApiRequest, NextApiResponse } from "next";
-import { getServerSession } from "@ory/nextjs/app";
-import { AccountFlags, AccountFlagsSchema, Actions } from "@/api/types";
-import { withErrorHandling } from "@/api/middleware";
-import { StatusCodes } from "http-status-codes";
-import {
-  MethodNotImplementedError,
-  NotFoundError,
-  UnauthorizedError,
-} from "@/api/errors";
-import { getAccount, putAccount } from "@/api/db";
-import { isAuthorized } from "@/api/authz";
-
 /**
  * @openapi
  * /accounts/{account_id}/flags:
@@ -42,23 +29,41 @@ import { isAuthorized } from "@/api/authz";
  *       500:
  *         description: Internal server error
  */
-async function getAccountFlagsHandler(
-  req: NextApiRequest,
-  res: NextApiResponse<AccountFlags[]>
-): Promise<void> {
-  const { account_id } = req.query;
-  const session = await getServerSession();
+import { NextResponse } from "next/server";
+import { getServerSession } from "@ory/nextjs/app";
+import { AccountFlags, AccountFlagsSchema, Actions } from "@/api/types";
+import { StatusCodes } from "http-status-codes";
+import { NotFoundError, UnauthorizedError } from "@/api/errors";
+import { getAccount, putAccount } from "@/api/db";
+import { isAuthorized } from "@/api/authz";
 
-  const account = await getAccount(account_id as string);
-  if (!account) {
-    throw new NotFoundError(`Account ${account_id} not found`);
+export async function GET(
+  request: Request,
+  { params }: { params: { account_id: string } }
+) {
+  try {
+    const { account_id } = params;
+    const session = await getServerSession();
+    const account = await getAccount(account_id);
+    if (!account) {
+      return NextResponse.json(
+        { error: `Account ${account_id} not found` },
+        { status: StatusCodes.NOT_FOUND }
+      );
+    }
+    if (!isAuthorized(session, account, Actions.GetAccountFlags)) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: StatusCodes.UNAUTHORIZED }
+      );
+    }
+    return NextResponse.json(account.flags, { status: StatusCodes.OK });
+  } catch (err: any) {
+    return NextResponse.json(
+      { error: err.message || "Internal server error" },
+      { status: StatusCodes.INTERNAL_SERVER_ERROR }
+    );
   }
-
-  if (!isAuthorized(session, account, Actions.GetAccountFlags)) {
-    throw new UnauthorizedError();
-  }
-
-  res.status(StatusCodes.OK).json(account.flags);
 }
 
 /**
@@ -97,42 +102,34 @@ async function getAccountFlagsHandler(
  *       500:
  *         description: Internal server error
  */
-async function putAccountFlagsHandler(
-  req: NextApiRequest,
-  res: NextApiResponse<AccountFlags[]>
-): Promise<void> {
-  const { account_id } = req.query;
-  const session = await getServerSession();
-
-  const flagsRequest = AccountFlagsSchema.parse(req.body);
-
-  var updateFlagsAccount = await getAccount(account_id as string);
-  if (!updateFlagsAccount) {
-    throw new NotFoundError(`Account ${account_id} not found`);
-  }
-
-  if (!isAuthorized(session, updateFlagsAccount, Actions.PutAccountFlags)) {
-    throw new UnauthorizedError();
-  }
-
-  updateFlagsAccount.flags = flagsRequest;
-
-  const [account, _success] = await putAccount(updateFlagsAccount);
-
-  res.status(StatusCodes.OK).json(account.flags);
-}
-
-export async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse<AccountFlags[]>
+export async function PUT(
+  request: Request,
+  { params }: { params: { account_id: string } }
 ) {
-  if (req.method === "GET") {
-    return getAccountFlagsHandler(req, res);
-  } else if (req.method === "PUT") {
-    return putAccountFlagsHandler(req, res);
+  try {
+    const { account_id } = params;
+    const session = await getServerSession();
+    const flagsRequest = AccountFlagsSchema.parse(await request.json());
+    var updateFlagsAccount = await getAccount(account_id);
+    if (!updateFlagsAccount) {
+      return NextResponse.json(
+        { error: `Account ${account_id} not found` },
+        { status: StatusCodes.NOT_FOUND }
+      );
+    }
+    if (!isAuthorized(session, updateFlagsAccount, Actions.PutAccountFlags)) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: StatusCodes.UNAUTHORIZED }
+      );
+    }
+    updateFlagsAccount.flags = flagsRequest;
+    const [account, _success] = await putAccount(updateFlagsAccount);
+    return NextResponse.json(account.flags, { status: StatusCodes.OK });
+  } catch (err: any) {
+    return NextResponse.json(
+      { error: err.message || "Internal server error" },
+      { status: StatusCodes.INTERNAL_SERVER_ERROR }
+    );
   }
-
-  throw new MethodNotImplementedError();
 }
-
-export default withErrorHandling(handler);

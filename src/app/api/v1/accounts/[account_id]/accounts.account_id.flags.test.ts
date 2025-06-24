@@ -1,7 +1,7 @@
 import { NextApiRequest } from "next";
 import httpMocks from "node-mocks-http";
 import { handler } from "@/pages/api/v1/accounts/[account_id]/flags";
-import { getSession } from "@/api/utils";
+import { getServerSession } from "@ory/nextjs/app";
 import { isAuthorized } from "@/api/authz";
 import { getAccount, putAccount } from "@/api/db";
 import {
@@ -19,7 +19,7 @@ import {
 } from "@/api/types";
 
 jest.mock("@/api/utils", () => ({
-  getSession: jest.fn(),
+  getServerSession: jest.fn(),
 }));
 
 jest.mock("@/api/authz", () => ({
@@ -51,7 +51,7 @@ describe("/api/v1/accounts/[account_id]/flags", () => {
     });
 
     it("should throw UnauthorizedError when user is not authenticated", async () => {
-      (getSession as jest.Mock).mockResolvedValue(null);
+      (getServerSession as jest.Mock).mockResolvedValue(null);
       (getAccount as jest.Mock).mockResolvedValue({
         account_id: "test-account",
         account_type: AccountType.USER,
@@ -65,7 +65,9 @@ describe("/api/v1/accounts/[account_id]/flags", () => {
     });
 
     it("should throw NotFoundError when account doesn't exist", async () => {
-      (getSession as jest.Mock).mockResolvedValue({ identity_id: "user-1" });
+      (getServerSession as jest.Mock).mockResolvedValue({
+        identity_id: "user-1",
+      });
       (getAccount as jest.Mock).mockResolvedValue(null);
 
       await expect(handler(req, res)).rejects.toThrow(NotFoundError);
@@ -82,7 +84,7 @@ describe("/api/v1/accounts/[account_id]/flags", () => {
           flags: [],
         },
       };
-      (getSession as jest.Mock).mockResolvedValue(mockSession);
+      (getServerSession as jest.Mock).mockResolvedValue(mockSession);
       (getAccount as jest.Mock).mockResolvedValue({
         account_id: "test-account",
         account_type: AccountType.USER,
@@ -103,7 +105,7 @@ describe("/api/v1/accounts/[account_id]/flags", () => {
         profile: {},
         flags: [AccountFlags.ADMIN, AccountFlags.CREATE_REPOSITORIES],
       };
-      (getSession as jest.Mock).mockResolvedValue({
+      (getServerSession as jest.Mock).mockResolvedValue({
         identity_id: "authorized-user",
       });
       (getAccount as jest.Mock).mockResolvedValue(mockAccount);
@@ -131,14 +133,16 @@ describe("/api/v1/accounts/[account_id]/flags", () => {
     });
 
     it("should throw UnauthorizedError when user is not authenticated", async () => {
-      (getSession as jest.Mock).mockResolvedValue(null);
+      (getServerSession as jest.Mock).mockResolvedValue(null);
       (isAuthorized as jest.Mock).mockReturnValue(false);
 
       await expect(handler(req, res)).rejects.toThrow(UnauthorizedError);
     });
 
     it("should throw NotFoundError when account doesn't exist", async () => {
-      (getSession as jest.Mock).mockResolvedValue({ identity_id: "user-1" });
+      (getServerSession as jest.Mock).mockResolvedValue({
+        identity_id: "user-1",
+      });
       (getAccount as jest.Mock).mockResolvedValue(null);
       req.body = [AccountFlags.ADMIN]; // Set a valid flag array
 
@@ -156,7 +160,7 @@ describe("/api/v1/accounts/[account_id]/flags", () => {
           flags: [],
         },
       };
-      (getSession as jest.Mock).mockResolvedValue(mockSession);
+      (getServerSession as jest.Mock).mockResolvedValue(mockSession);
       (getAccount as jest.Mock).mockResolvedValue({
         account_id: "test-account",
         account_type: AccountType.USER,
@@ -183,7 +187,7 @@ describe("/api/v1/accounts/[account_id]/flags", () => {
         ...mockAccount,
         flags: [AccountFlags.ADMIN, AccountFlags.CREATE_REPOSITORIES],
       };
-      (getSession as jest.Mock).mockResolvedValue({
+      (getServerSession as jest.Mock).mockResolvedValue({
         identity_id: "authorized-user",
       });
       (getAccount as jest.Mock).mockResolvedValue(mockAccount);
@@ -219,7 +223,7 @@ describe("/api/v1/accounts/[account_id]/flags", () => {
         ...mockAccount,
         flags: [],
       };
-      (getSession as jest.Mock).mockResolvedValue({
+      (getServerSession as jest.Mock).mockResolvedValue({
         identity_id: "authorized-user",
       });
       (getAccount as jest.Mock).mockResolvedValue(mockAccount);
@@ -236,7 +240,7 @@ describe("/api/v1/accounts/[account_id]/flags", () => {
     });
 
     it("should throw an error for invalid flag data", async () => {
-      (getSession as jest.Mock).mockResolvedValue({
+      (getServerSession as jest.Mock).mockResolvedValue({
         identity_id: "authorized-user",
       });
       (getAccount as jest.Mock).mockResolvedValue({

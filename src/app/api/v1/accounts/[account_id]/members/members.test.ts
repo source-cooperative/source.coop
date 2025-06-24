@@ -1,7 +1,7 @@
 import { NextApiRequest } from "next";
 import httpMocks from "node-mocks-http";
 import { handler } from "@/pages/api/v1/accounts/[account_id]/members";
-import { getSession } from "@/api/utils";
+import { getServerSession } from "@ory/nextjs/app";
 import { isAuthorized } from "@/api/authz";
 import { getAccount, getMemberships, putMembership } from "@/api/db";
 import {
@@ -21,7 +21,7 @@ import {
 } from "@/api/types";
 
 jest.mock("@/api/utils", () => ({
-  getSession: jest.fn(),
+  getServerSession: jest.fn(),
 }));
 
 jest.mock("@/api/authz", () => ({
@@ -58,7 +58,9 @@ describe("/api/v1/accounts/[account_id]/members", () => {
     });
 
     it("should throw NotFoundError when account doesn't exist", async () => {
-      (getSession as jest.Mock).mockResolvedValue({ identity_id: "user-1" });
+      (getServerSession as jest.Mock).mockResolvedValue({
+        identity_id: "user-1",
+      });
       (getAccount as jest.Mock).mockResolvedValue(null);
 
       await expect(handler(req, res)).rejects.toThrow(NotFoundError);
@@ -72,7 +74,9 @@ describe("/api/v1/accounts/[account_id]/members", () => {
         profile: {},
         flags: [],
       };
-      (getSession as jest.Mock).mockResolvedValue({ identity_id: "user-1" });
+      (getServerSession as jest.Mock).mockResolvedValue({
+        identity_id: "user-1",
+      });
       (getAccount as jest.Mock)
         .mockResolvedValueOnce(mockAccount)
         .mockResolvedValueOnce(null);
@@ -88,7 +92,7 @@ describe("/api/v1/accounts/[account_id]/members", () => {
         profile: {},
         flags: [],
       };
-      (getSession as jest.Mock).mockResolvedValue({
+      (getServerSession as jest.Mock).mockResolvedValue({
         identity_id: "unauthorized-user",
       });
       (getAccount as jest.Mock).mockResolvedValue(mockAccount);
@@ -113,7 +117,7 @@ describe("/api/v1/accounts/[account_id]/members", () => {
         state: MembershipState.Invited,
         state_changed: new Date().toISOString(),
       };
-      (getSession as jest.Mock).mockResolvedValue({
+      (getServerSession as jest.Mock).mockResolvedValue({
         identity_id: "authorized-user",
       });
       (getAccount as jest.Mock).mockResolvedValue(mockAccount);
@@ -139,7 +143,7 @@ describe("/api/v1/accounts/[account_id]/members", () => {
         state: MembershipState.Invited,
         state_changed: "2023-05-01T00:00:00Z",
       };
-      (getSession as jest.Mock).mockResolvedValue({
+      (getServerSession as jest.Mock).mockResolvedValue({
         identity_id: "authorized-user",
       });
       (getAccount as jest.Mock).mockResolvedValue(mockAccount);
@@ -187,7 +191,9 @@ describe("/api/v1/accounts/[account_id]/members", () => {
     });
 
     it("should throw NotFoundError when account doesn't exist", async () => {
-      (getSession as jest.Mock).mockResolvedValue({ identity_id: "user-1" });
+      (getServerSession as jest.Mock).mockResolvedValue({
+        identity_id: "user-1",
+      });
       (getAccount as jest.Mock).mockResolvedValue(null);
 
       await expect(handler(req, res)).rejects.toThrow(NotFoundError);
@@ -201,7 +207,7 @@ describe("/api/v1/accounts/[account_id]/members", () => {
         profile: {},
         flags: [],
       };
-      (getSession as jest.Mock).mockResolvedValue({
+      (getServerSession as jest.Mock).mockResolvedValue({
         identity_id: "unauthorized-user",
       });
       (getAccount as jest.Mock).mockResolvedValue(mockAccount);
@@ -236,7 +242,7 @@ describe("/api/v1/accounts/[account_id]/members", () => {
           state_changed: new Date().toISOString(),
         },
       ];
-      (getSession as jest.Mock).mockResolvedValue({
+      (getServerSession as jest.Mock).mockResolvedValue({
         identity_id: "authorized-user",
       });
       (getAccount as jest.Mock).mockResolvedValue(mockAccount);

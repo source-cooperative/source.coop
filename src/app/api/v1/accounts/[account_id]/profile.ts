@@ -1,6 +1,6 @@
 // Import necessary modules and types
 import type { NextApiRequest, NextApiResponse } from "next";
-import { getEmail, getProfileImage, getSession } from "@/api/utils";
+import { getEmail, getProfileImage, getServerSession } from "@/api/utils";
 import {
   AccountProfile,
   AccountProfileResponse,
@@ -52,7 +52,7 @@ async function getAccountProfileHandler(
   // Extract account_id from request query
   const { account_id } = req.query;
   // Get user session
-  const session = await getSession(req);
+  const session = await getServerSession();
 
   // Fetch account from database
   const account = await getAccount(account_id as string);
@@ -126,7 +126,7 @@ async function putAccountProfileHandler(
   // Extract account_id from request query
   const { account_id } = req.query;
   // Get user session
-  const session = await getSession(req);
+  const session = await getServerSession();
 
   // Parse and validate the account profile update request
   const profileRequest = AccountProfileSchema.parse(req.body);

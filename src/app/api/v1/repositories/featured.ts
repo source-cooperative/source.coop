@@ -2,7 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { withErrorHandling } from "@/api/middleware";
 import { Actions, RepositoryList } from "@/api/types";
 import { MethodNotImplementedError } from "@/api/errors";
-import { getSession } from "@/api/utils";
+import { getServerSession } from "@ory/nextjs/app";
 import { getFeaturedRepositories } from "@/api/db";
 import { isAuthorized } from "@/api/authz";
 import { StatusCodes } from "http-status-codes";
@@ -11,7 +11,7 @@ async function featuredRepositoriesHandler(
   req: NextApiRequest,
   res: NextApiResponse<RepositoryList>
 ): Promise<void> {
-  const session = await getSession(req);
+  const session = await getServerSession();
 
   const featuredRepositories = await getFeaturedRepositories();
   const filteredRepositories = featuredRepositories.filter((repository) => {

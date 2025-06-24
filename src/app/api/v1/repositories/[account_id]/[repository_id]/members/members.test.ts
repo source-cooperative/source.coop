@@ -1,7 +1,7 @@
 import { NextApiRequest } from "next";
 import httpMocks from "node-mocks-http";
 import { handler } from "@/pages/api/v1/repositories/[account_id]/[repository_id]/members";
-import { getSession } from "@/api/utils";
+import { getServerSession } from "@ory/nextjs/app";
 import { isAuthorized } from "@/api/authz";
 import {
   getRepository,
@@ -30,7 +30,7 @@ import {
 } from "@/api/types";
 
 jest.mock("@/api/utils", () => ({
-  getSession: jest.fn(),
+  getServerSession: jest.fn(),
 }));
 
 jest.mock("@/api/authz", () => ({
@@ -68,7 +68,9 @@ describe("/api/v1/repositories/[account_id]/[repository_id]/members", () => {
     });
 
     it("should throw NotFoundError when repository doesn't exist", async () => {
-      (getSession as jest.Mock).mockResolvedValue({ identity_id: "user-1" });
+      (getServerSession as jest.Mock).mockResolvedValue({
+        identity_id: "user-1",
+      });
       (getRepository as jest.Mock).mockResolvedValue(null);
 
       await expect(handler(req, res)).rejects.toThrow(NotFoundError);
@@ -86,7 +88,9 @@ describe("/api/v1/repositories/[account_id]/[repository_id]/members", () => {
         published: new Date().toISOString(),
         disabled: false,
       };
-      (getSession as jest.Mock).mockResolvedValue({ identity_id: "user-1" });
+      (getServerSession as jest.Mock).mockResolvedValue({
+        identity_id: "user-1",
+      });
       (getRepository as jest.Mock).mockResolvedValue(mockRepository);
       (getAccount as jest.Mock).mockResolvedValue(null);
 
@@ -112,7 +116,7 @@ describe("/api/v1/repositories/[account_id]/[repository_id]/members", () => {
         profile: {},
         flags: [],
       };
-      (getSession as jest.Mock).mockResolvedValue({
+      (getServerSession as jest.Mock).mockResolvedValue({
         identity_id: "unauthorized-user",
       });
       (getRepository as jest.Mock).mockResolvedValue(mockRepository);
@@ -150,7 +154,7 @@ describe("/api/v1/repositories/[account_id]/[repository_id]/members", () => {
         state: MembershipState.Invited,
         state_changed: new Date().toISOString(),
       };
-      (getSession as jest.Mock).mockResolvedValue({
+      (getServerSession as jest.Mock).mockResolvedValue({
         identity_id: "authorized-user",
       });
       (getRepository as jest.Mock).mockResolvedValue(mockRepository);
@@ -189,7 +193,7 @@ describe("/api/v1/repositories/[account_id]/[repository_id]/members", () => {
         state: MembershipState.Invited,
         state_changed: new Date().toISOString(),
       };
-      (getSession as jest.Mock).mockResolvedValue({
+      (getServerSession as jest.Mock).mockResolvedValue({
         identity_id: "authorized-user",
       });
       (getRepository as jest.Mock).mockResolvedValue(mockRepository);
@@ -241,7 +245,9 @@ describe("/api/v1/repositories/[account_id]/[repository_id]/members", () => {
     });
 
     it("should throw NotFoundError when repository doesn't exist", async () => {
-      (getSession as jest.Mock).mockResolvedValue({ identity_id: "user-1" });
+      (getServerSession as jest.Mock).mockResolvedValue({
+        identity_id: "user-1",
+      });
       (getRepository as jest.Mock).mockResolvedValue(null);
 
       await expect(handler(req, res)).rejects.toThrow(NotFoundError);
@@ -259,7 +265,7 @@ describe("/api/v1/repositories/[account_id]/[repository_id]/members", () => {
         published: new Date().toISOString(),
         disabled: false,
       };
-      (getSession as jest.Mock).mockResolvedValue({
+      (getServerSession as jest.Mock).mockResolvedValue({
         identity_id: "unauthorized-user",
       });
       (getRepository as jest.Mock).mockResolvedValue(mockRepository);
@@ -300,7 +306,7 @@ describe("/api/v1/repositories/[account_id]/[repository_id]/members", () => {
           state_changed: new Date().toISOString(),
         },
       ];
-      (getSession as jest.Mock).mockResolvedValue({
+      (getServerSession as jest.Mock).mockResolvedValue({
         identity_id: "authorized-user",
       });
       (getRepository as jest.Mock).mockResolvedValue(mockRepository);

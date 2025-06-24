@@ -6,7 +6,7 @@ import {
   RepositoryFeaturedUpdateRequestSchema,
   RepositoryUpdateRequestSchema,
 } from "@/api/types";
-import { getSession, isAdmin } from "@/api/utils";
+import { getServerSession, isAdmin } from "@/api/utils";
 import { getRepository, putRepository } from "@/api/db";
 import {
   NotFoundError,
@@ -61,7 +61,7 @@ async function putRepositoryFeaturedHandler(
   req: NextApiRequest,
   res: NextApiResponse<Repository>
 ): Promise<void> {
-  const session = await getSession(req);
+  const session = await getServerSession();
   const { account_id, repository_id } = req.query;
 
   const repository = await getRepository(

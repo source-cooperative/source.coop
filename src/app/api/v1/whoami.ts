@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { getSession } from "@/api/utils";
+import { getServerSession } from "@ory/nextjs/app";
 import { UserSession } from "@/api/types";
 import { withErrorHandling } from "@/api/middleware";
 import { StatusCodes } from "http-status-codes";
@@ -9,7 +9,7 @@ async function whoamiHandler(
   req: NextApiRequest,
   res: NextApiResponse<UserSession>
 ): Promise<void> {
-  const session = await getSession(req);
+  const session = await getServerSession();
   if (!session) {
     throw new UnauthorizedError();
   }

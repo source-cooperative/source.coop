@@ -1,7 +1,7 @@
 import { NextApiRequest } from "next";
 import httpMocks from "node-mocks-http";
 import { handler } from "@/pages/api/v1/data-connections/[data_connection_id]";
-import { getSession } from "@/api/utils";
+import { getServerSession } from "@ory/nextjs/app";
 import { isAuthorized } from "@/api/authz";
 import { getDataConnection, putDataConnection } from "@/api/db";
 import {
@@ -22,7 +22,7 @@ import {
 } from "@/api/types";
 
 jest.mock("@/api/utils", () => ({
-  getSession: jest.fn(),
+  getServerSession: jest.fn(),
 }));
 
 jest.mock("@/api/authz", () => ({
@@ -82,7 +82,7 @@ describe("/api/v1/data-connections/[data_connection_id]", () => {
         },
       };
 
-      (getSession as jest.Mock).mockResolvedValue(mockSession);
+      (getServerSession as jest.Mock).mockResolvedValue(mockSession);
       (getDataConnection as jest.Mock).mockResolvedValue(mockDataConnection);
       (isAuthorized as jest.Mock).mockReturnValue(true);
 
@@ -93,7 +93,7 @@ describe("/api/v1/data-connections/[data_connection_id]", () => {
     });
 
     it("should throw UnauthorizedError when user is not authorized", async () => {
-      (getSession as jest.Mock).mockResolvedValue({
+      (getServerSession as jest.Mock).mockResolvedValue({
         identity_id: "unauthorized-user",
       });
       (getDataConnection as jest.Mock).mockResolvedValue({
@@ -105,7 +105,7 @@ describe("/api/v1/data-connections/[data_connection_id]", () => {
     });
 
     it("should throw NotFoundError when data connection doesn't exist", async () => {
-      (getSession as jest.Mock).mockResolvedValue({
+      (getServerSession as jest.Mock).mockResolvedValue({
         identity_id: "authorized-user",
       });
       (getDataConnection as jest.Mock).mockResolvedValue(null);
@@ -142,7 +142,7 @@ describe("/api/v1/data-connections/[data_connection_id]", () => {
           flags: [AccountFlags.ADMIN],
         },
       };
-      (getSession as jest.Mock).mockResolvedValue(mockSession);
+      (getServerSession as jest.Mock).mockResolvedValue(mockSession);
       (getDataConnection as jest.Mock).mockResolvedValue({
         data_connection_id: "test-connection",
       });
@@ -156,7 +156,7 @@ describe("/api/v1/data-connections/[data_connection_id]", () => {
     });
 
     it("should throw UnauthorizedError when user is not authorized", async () => {
-      (getSession as jest.Mock).mockResolvedValue({
+      (getServerSession as jest.Mock).mockResolvedValue({
         identity_id: "unauthorized-user",
       });
       (getDataConnection as jest.Mock).mockResolvedValue({
@@ -168,7 +168,7 @@ describe("/api/v1/data-connections/[data_connection_id]", () => {
     });
 
     it("should throw NotFoundError when data connection doesn't exist", async () => {
-      (getSession as jest.Mock).mockResolvedValue({
+      (getServerSession as jest.Mock).mockResolvedValue({
         identity_id: "authorized-user",
       });
       (getDataConnection as jest.Mock).mockResolvedValue(null);
@@ -207,7 +207,7 @@ describe("/api/v1/data-connections/[data_connection_id]", () => {
       };
       const disabledDataConnection = { ...mockDataConnection, read_only: true };
 
-      (getSession as jest.Mock).mockResolvedValue(mockSession);
+      (getServerSession as jest.Mock).mockResolvedValue(mockSession);
       (getDataConnection as jest.Mock).mockResolvedValue(mockDataConnection);
       (isAuthorized as jest.Mock).mockReturnValue(true);
       (putDataConnection as jest.Mock).mockResolvedValue([
@@ -222,7 +222,7 @@ describe("/api/v1/data-connections/[data_connection_id]", () => {
     });
 
     it("should throw UnauthorizedError when user is not authorized", async () => {
-      (getSession as jest.Mock).mockResolvedValue({
+      (getServerSession as jest.Mock).mockResolvedValue({
         identity_id: "unauthorized-user",
       });
       (getDataConnection as jest.Mock).mockResolvedValue({
@@ -234,7 +234,7 @@ describe("/api/v1/data-connections/[data_connection_id]", () => {
     });
 
     it("should throw NotFoundError when data connection doesn't exist", async () => {
-      (getSession as jest.Mock).mockResolvedValue({
+      (getServerSession as jest.Mock).mockResolvedValue({
         identity_id: "authorized-user",
       });
       (getDataConnection as jest.Mock).mockResolvedValue(null);

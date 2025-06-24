@@ -1,7 +1,7 @@
 import { NextApiRequest } from "next";
 import httpMocks from "node-mocks-http";
 import { handler } from "@/pages/api/v1/accounts";
-import { getSession } from "@/api/utils";
+import { getServerSession } from "@ory/nextjs/app";
 import { isAuthorized } from "@/api/authz";
 import { putAccount } from "@/api/db";
 import { UnauthorizedError, BadRequestError } from "@/api/errors";
@@ -10,7 +10,7 @@ import { AccountType, AccountFlags, UserSession, Account } from "@/api/types";
 import { ZodError } from "zod";
 
 jest.mock("@/api/utils", () => ({
-  getSession: jest.fn(),
+  getServerSession: jest.fn(),
 }));
 
 jest.mock("@/api/authz", () => ({
@@ -36,7 +36,7 @@ describe("/api/v1/accounts", () => {
   });
 
   it("should throw UnauthorizedError when user is not signed in", async () => {
-    (getSession as jest.Mock).mockResolvedValue(null);
+    (getServerSession as jest.Mock).mockResolvedValue(null);
 
     req.body = {
       account_id: "new-user-account",
@@ -60,7 +60,7 @@ describe("/api/v1/accounts", () => {
         flags: [],
       },
     };
-    (getSession as jest.Mock).mockResolvedValue(mockSession);
+    (getServerSession as jest.Mock).mockResolvedValue(mockSession);
     (isAuthorized as jest.Mock).mockReturnValue(false);
 
     req.body = {
@@ -85,7 +85,7 @@ describe("/api/v1/accounts", () => {
         flags: [],
       },
     };
-    (getSession as jest.Mock).mockResolvedValue(mockSession);
+    (getServerSession as jest.Mock).mockResolvedValue(mockSession);
     (isAuthorized as jest.Mock).mockReturnValue(false);
 
     req.body = {
@@ -103,7 +103,7 @@ describe("/api/v1/accounts", () => {
     const mockSession: UserSession = {
       identity_id: "authorized-user",
     };
-    (getSession as jest.Mock).mockResolvedValue(mockSession);
+    (getServerSession as jest.Mock).mockResolvedValue(mockSession);
     (isAuthorized as jest.Mock).mockReturnValue(true);
 
     const newAccount: Account = {
@@ -144,7 +144,7 @@ describe("/api/v1/accounts", () => {
         flags: [AccountFlags.CREATE_ORGANIZATIONS],
       },
     };
-    (getSession as jest.Mock).mockResolvedValue(mockSession);
+    (getServerSession as jest.Mock).mockResolvedValue(mockSession);
     (isAuthorized as jest.Mock).mockReturnValue(true);
 
     const newAccount: Account = {
@@ -184,7 +184,7 @@ describe("/api/v1/accounts", () => {
         flags: [AccountFlags.ADMIN],
       },
     };
-    (getSession as jest.Mock).mockResolvedValue(mockSession);
+    (getServerSession as jest.Mock).mockResolvedValue(mockSession);
     (isAuthorized as jest.Mock).mockReturnValue(true);
 
     const newAccount: Account = {
@@ -224,7 +224,7 @@ describe("/api/v1/accounts", () => {
         flags: [],
       },
     };
-    (getSession as jest.Mock).mockResolvedValue(mockSession);
+    (getServerSession as jest.Mock).mockResolvedValue(mockSession);
     (isAuthorized as jest.Mock).mockReturnValue(true);
     (putAccount as jest.Mock).mockResolvedValue([
       { account_id: "existing-account" },
@@ -253,7 +253,7 @@ describe("/api/v1/accounts", () => {
         flags: [],
       },
     };
-    (getSession as jest.Mock).mockResolvedValue(mockSession);
+    (getServerSession as jest.Mock).mockResolvedValue(mockSession);
     (isAuthorized as jest.Mock).mockReturnValue(true);
 
     req.body = {

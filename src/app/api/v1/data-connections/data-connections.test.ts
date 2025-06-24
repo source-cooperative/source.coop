@@ -1,7 +1,7 @@
 import { NextApiRequest } from "next";
 import httpMocks from "node-mocks-http";
 import { handler } from "@/pages/api/v1/data-connections";
-import { getSession } from "@/api/utils";
+import { getServerSession } from "@ory/nextjs/app";
 import { isAuthorized } from "@/api/authz";
 import { getDataConnections, putDataConnection } from "@/api/db";
 import { UnauthorizedError, BadRequestError } from "@/api/errors";
@@ -18,7 +18,7 @@ import {
 } from "@/api/types";
 
 jest.mock("@/api/utils", () => ({
-  getSession: jest.fn(),
+  getServerSession: jest.fn(),
 }));
 
 jest.mock("@/api/authz", () => ({
@@ -86,7 +86,7 @@ describe("/api/v1/data-connections", () => {
         },
       ];
 
-      (getSession as jest.Mock).mockResolvedValue(mockSession);
+      (getServerSession as jest.Mock).mockResolvedValue(mockSession);
       (isAuthorized as jest.Mock).mockReturnValue(true);
       (getDataConnections as jest.Mock).mockResolvedValue(mockDataConnections);
 
@@ -130,7 +130,7 @@ describe("/api/v1/data-connections", () => {
           flags: [AccountFlags.ADMIN],
         },
       };
-      (getSession as jest.Mock).mockResolvedValue(mockSession);
+      (getServerSession as jest.Mock).mockResolvedValue(mockSession);
       (isAuthorized as jest.Mock).mockReturnValue(true);
       (putDataConnection as jest.Mock).mockResolvedValue([req.body, true]);
 
@@ -141,7 +141,7 @@ describe("/api/v1/data-connections", () => {
     });
 
     it("should throw UnauthorizedError when user is not authorized", async () => {
-      (getSession as jest.Mock).mockResolvedValue({
+      (getServerSession as jest.Mock).mockResolvedValue({
         identity_id: "unauthorized-user",
       });
       (isAuthorized as jest.Mock).mockReturnValue(false);
@@ -150,7 +150,7 @@ describe("/api/v1/data-connections", () => {
     });
 
     it("should throw BadRequestError when data connection already exists", async () => {
-      (getSession as jest.Mock).mockResolvedValue({
+      (getServerSession as jest.Mock).mockResolvedValue({
         identity_id: "authorized-user",
         account: {
           account_id: "admin-account",

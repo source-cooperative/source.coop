@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { getSession } from "@/api/utils";
+import { getServerSession } from "@ory/nextjs/app";
 import { Actions, DataConnectionSchema, DataConnection } from "@/api/types";
 import { withErrorHandling } from "@/api/middleware";
 import { StatusCodes } from "http-status-codes";
@@ -33,7 +33,7 @@ async function listAvailableDataConnectionsHandler(
   req: NextApiRequest,
   res: NextApiResponse<DataConnection[]>
 ): Promise<void> {
-  const session = await getSession(req);
+  const session = await getServerSession();
 
   const dataConnections: DataConnection[] = await getDataConnections();
 

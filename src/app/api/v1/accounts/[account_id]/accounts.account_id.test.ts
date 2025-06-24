@@ -1,7 +1,7 @@
 import { NextApiRequest } from "next";
 import httpMocks from "node-mocks-http";
 import { handler } from "@/pages/api/v1/accounts/[account_id]";
-import { getSession } from "@/api/utils";
+import { getServerSession } from "@ory/nextjs/app";
 import { isAuthorized } from "@/api/authz";
 import { getAccount, putAccount } from "@/api/db";
 import { UnauthorizedError, NotFoundError } from "@/api/errors";
@@ -10,7 +10,7 @@ import { AccountType, UserSession, Account, Actions } from "@/api/types";
 import logger from "@/utils/logger";
 
 jest.mock("@/api/utils", () => ({
-  getSession: jest.fn(),
+  getServerSession: jest.fn(),
 }));
 
 jest.mock("@/api/authz", () => ({
@@ -42,7 +42,7 @@ describe("/api/v1/accounts/[account_id]", () => {
     });
 
     it("should throw UnauthorizedError when user is not authenticated", async () => {
-      (getSession as jest.Mock).mockResolvedValue(null);
+      (getServerSession as jest.Mock).mockResolvedValue(null);
       (getAccount as jest.Mock).mockResolvedValue({
         account_id: "test-account",
         account_type: AccountType.USER,
@@ -65,7 +65,7 @@ describe("/api/v1/accounts/[account_id]", () => {
           flags: [],
         },
       };
-      (getSession as jest.Mock).mockResolvedValue(mockSession);
+      (getServerSession as jest.Mock).mockResolvedValue(mockSession);
       (isAuthorized as jest.Mock).mockReturnValue(false);
       (getAccount as jest.Mock).mockResolvedValue({
         account_id: "test-account",
@@ -96,7 +96,7 @@ describe("/api/v1/accounts/[account_id]", () => {
         profile: { name: "Test Account" },
         flags: [],
       };
-      (getSession as jest.Mock).mockResolvedValue(mockSession);
+      (getServerSession as jest.Mock).mockResolvedValue(mockSession);
       (isAuthorized as jest.Mock).mockReturnValue(true);
       (getAccount as jest.Mock).mockResolvedValue(mockAccount);
 
@@ -122,7 +122,7 @@ describe("/api/v1/accounts/[account_id]", () => {
           flags: [],
         },
       };
-      (getSession as jest.Mock).mockResolvedValue(mockSession);
+      (getServerSession as jest.Mock).mockResolvedValue(mockSession);
       (getAccount as jest.Mock).mockResolvedValue(null);
 
       await expect(handler(req, res)).rejects.toThrow(NotFoundError);
@@ -135,7 +135,7 @@ describe("/api/v1/accounts/[account_id]", () => {
     });
 
     it("should throw UnauthorizedError when user is not authenticated", async () => {
-      (getSession as jest.Mock).mockResolvedValue(null);
+      (getServerSession as jest.Mock).mockResolvedValue(null);
       (isAuthorized as jest.Mock).mockReturnValue(false);
       (getAccount as jest.Mock).mockResolvedValue({
         account_id: "test-account",
@@ -159,7 +159,7 @@ describe("/api/v1/accounts/[account_id]", () => {
           flags: [],
         },
       };
-      (getSession as jest.Mock).mockResolvedValue(mockSession);
+      (getServerSession as jest.Mock).mockResolvedValue(mockSession);
       (isAuthorized as jest.Mock).mockReturnValue(false);
       (getAccount as jest.Mock).mockResolvedValue({
         account_id: "test-account",
@@ -191,7 +191,7 @@ describe("/api/v1/accounts/[account_id]", () => {
         flags: [],
       };
       const disabledAccount: Account = { ...mockAccount, disabled: true };
-      (getSession as jest.Mock).mockResolvedValue(mockSession);
+      (getServerSession as jest.Mock).mockResolvedValue(mockSession);
       (isAuthorized as jest.Mock).mockReturnValue(true);
       (getAccount as jest.Mock).mockResolvedValue(mockAccount);
       (putAccount as jest.Mock).mockResolvedValue([disabledAccount, true]);
@@ -221,7 +221,7 @@ describe("/api/v1/accounts/[account_id]", () => {
           flags: [],
         },
       };
-      (getSession as jest.Mock).mockResolvedValue(mockSession);
+      (getServerSession as jest.Mock).mockResolvedValue(mockSession);
       (getAccount as jest.Mock).mockResolvedValue(null);
 
       await expect(handler(req, res)).rejects.toThrow(NotFoundError);

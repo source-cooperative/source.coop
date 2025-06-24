@@ -5,7 +5,7 @@ import {
   RepositoryPermissions,
   RepositoryPermissionsResponse,
 } from "@/api/types";
-import { getSession } from "@/api/utils";
+import { getServerSession } from "@ory/nextjs/app";
 import { getRepository } from "@/api/db";
 import { NotFoundError, MethodNotImplementedError } from "@/api/errors";
 import { isAuthorized } from "@/api/authz";
@@ -15,7 +15,7 @@ async function getRepositoryPermissionsHandler(
   req: NextApiRequest,
   res: NextApiResponse<RepositoryPermissionsResponse>
 ): Promise<void> {
-  const session = await getSession(req);
+  const session = await getServerSession();
   const { account_id, repository_id } = req.query;
 
   const repository = await getRepository(
