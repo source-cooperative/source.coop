@@ -1,5 +1,5 @@
-import type { NextApiRequest, NextApiResponse } from "next";
-import { withErrorHandling } from "@/api/middleware";
+import type { NextRequest, NextResponse } from "next/server";
+import { withErrorHandling } from "@/lib/api/utils";
 import {
   Actions,
   Repository,
@@ -58,8 +58,8 @@ import { StatusCodes } from "http-status-codes";
  *         $ref: '#/components/responses/InternalServerError'
  */
 async function putRepositoryFeaturedHandler(
-  req: NextApiRequest,
-  res: NextApiResponse<Repository>
+  req: NextRequest,
+  res: NextResponse<Repository>
 ): Promise<void> {
   const session = await getApiSession(request);
   const { account_id, repository_id } = req.query;
@@ -90,10 +90,7 @@ async function putRepositoryFeaturedHandler(
   res.status(StatusCodes.OK).json(repository);
 }
 
-export async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse<Repository>
-) {
+export async function handler(req: NextRequest, res: NextResponse<Repository>) {
   if (req.method === "PUT") {
     return putRepositoryFeaturedHandler(req, res);
   }

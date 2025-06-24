@@ -68,7 +68,7 @@ export async function POST(
         { status: StatusCodes.UNAUTHORIZED }
       );
     }
-    const account = await getAccount(apiKey.account_id);
+    const account = await accountsTable.fetchById(apiKey.account_id);
     if (!account) {
       return NextResponse.json(
         { error: "Associated account not found" },

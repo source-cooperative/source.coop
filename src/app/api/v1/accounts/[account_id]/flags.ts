@@ -1,15 +1,15 @@
-import type { NextApiRequest, NextApiResponse } from "next";
-import { getServerSession } from "@ory/nextjs/app";
+import type { NextRequest, NextResponse } from "next/server";
 import { AccountFlags, AccountFlagsSchema, Actions } from "@/types";
-import { withErrorHandling } from "@/api/middleware";
+import { withErrorHandling } from "@/lib/api/utils";
 import { StatusCodes } from "http-status-codes";
 import {
   MethodNotImplementedError,
   NotFoundError,
   UnauthorizedError,
 } from "@/lib/api/errors";
-import { getAccount, putAccount } from "@/api/db";
 import { isAuthorized } from "@/lib/api/authz";
+import { getApiSession } from "@/lib/api/utils";
+import { accountsTable } from "@/lib/clients/database";
 
 /**
  * @openapi
@@ -43,13 +43,13 @@ import { isAuthorized } from "@/lib/api/authz";
  *         description: Internal server error
  */
 async function getAccountFlagsHandler(
-  req: NextApiRequest,
-  res: NextApiResponse<AccountFlags[]>
+  req: NextRequest,
+  res: NextResponse<AccountFlags[]>
 ): Promise<void> {
   const { account_id } = req.query;
   const session = await getApiSession(request);
 
-  const account = await getAccount(account_id as string);
+  const account = await accountsTable.fetchById(account_id as string);
   if (!account) {
     throw new NotFoundError(`Account ${account_id} not found`);
   }
@@ -98,15 +98,15 @@ async function getAccountFlagsHandler(
  *         description: Internal server error
  */
 async function putAccountFlagsHandler(
-  req: NextApiRequest,
-  res: NextApiResponse<AccountFlags[]>
+  req: NextRequest,
+  res: NextResponse<AccountFlags[]>
 ): Promise<void> {
   const { account_id } = req.query;
   const session = await getApiSession(request);
 
   const flagsRequest = AccountFlagsSchema.parse(req.body);
 
-  var updateFlagsAccount = await getAccount(account_id as string);
+  var updateFlagsAccount = await accountsTable.fetchById(account_id as string);
   if (!updateFlagsAccount) {
     throw new NotFoundError(`Account ${account_id} not found`);
   }
@@ -117,14 +117,14 @@ async function putAccountFlagsHandler(
 
   updateFlagsAccount.flags = flagsRequest;
 
-  const [account, _success] = await putAccount(updateFlagsAccount);
+  const [account, _success] = await accountsTable.update(updateFlagsAccount);
 
   res.status(StatusCodes.OK).json(account.flags);
 }
 
 export async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse<AccountFlags[]>
+  req: NextRequest,
+  res: NextResponse<AccountFlags[]>
 ) {
   if (req.method === "GET") {
     return getAccountFlagsHandler(req, res);

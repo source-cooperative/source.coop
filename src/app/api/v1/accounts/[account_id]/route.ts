@@ -45,7 +45,7 @@ export async function GET(
   try {
     const { account_id } = params;
     const session = await getApiSession(request);
-    const account = await getAccount(account_id);
+    const account = await accountsTable.fetchById(account_id);
     if (!account) {
       return NextResponse.json(
         { error: `Account ${account_id} not found` },
@@ -104,7 +104,7 @@ export async function DELETE(
   try {
     const { account_id } = params;
     const session = await getApiSession(request);
-    const disableAccount = await getAccount(account_id);
+    const disableAccount = await accountsTable.fetchById(account_id);
     if (!disableAccount) {
       return NextResponse.json(
         { error: `Account ${account_id} not found` },
@@ -118,7 +118,7 @@ export async function DELETE(
       );
     }
     disableAccount.disabled = true;
-    const [account, _success] = await putAccount(disableAccount);
+    const [account, _success] = await accountsTable.update(disableAccount);
     return NextResponse.json(account, { status: StatusCodes.OK });
   } catch (err: any) {
     return NextResponse.json(

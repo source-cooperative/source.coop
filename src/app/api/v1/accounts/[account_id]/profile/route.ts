@@ -26,13 +26,13 @@
  *       500:
  *         description: Internal server error
  */
-import { NextResponse } from "next/server";
-import { getEmail, getProfileImage, getServerSession } from "@/api/utils";
-import { AccountProfileResponse, AccountProfileSchema, Actions } from "@/types";
+import { NextRequest, NextResponse } from "next/server";
 import { StatusCodes } from "http-status-codes";
-import { NotFoundError, UnauthorizedError } from "@/lib/api/errors";
-import { getAccount, putAccount } from "@/api/db";
+import { getEmail, getProfileImage } from "@/lib/api/utils";
+import { accountsTable } from "@/lib/clients/database";
 import { isAuthorized } from "@/lib/api/authz";
+import { getApiSession } from "@/lib/api/utils";
+import { AccountProfileResponse, AccountProfileSchema, Actions } from "@/types";
 
 export async function GET(
   request: NextRequest,
@@ -41,7 +41,7 @@ export async function GET(
   try {
     const { account_id } = params;
     const session = await getApiSession(request);
-    const account = await getAccount(account_id);
+    const account = await accountsTable.fetchById(account_id);
     if (!account) {
       return NextResponse.json(
         { error: `Account ${account_id} not found` },
@@ -118,7 +118,7 @@ export async function PUT(
     const { account_id } = params;
     const session = await getApiSession(request);
     const profileRequest = AccountProfileSchema.parse(await request.json());
-    var updateProfileAccount = await getAccount(account_id);
+    var updateProfileAccount = await accountsTable.fetchById(account_id);
     if (!updateProfileAccount) {
       return NextResponse.json(
         { error: `Account ${account_id} not found` },
@@ -134,7 +134,9 @@ export async function PUT(
       );
     }
     updateProfileAccount.profile = profileRequest;
-    const [account, _success] = await putAccount(updateProfileAccount);
+    const [account, _success] = await accountsTable.update(
+      updateProfileAccount
+    );
     return NextResponse.json(account.profile, { status: StatusCodes.OK });
   } catch (err: any) {
     return NextResponse.json(

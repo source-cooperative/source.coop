@@ -1,5 +1,5 @@
-import type { NextApiRequest, NextApiResponse } from "next";
-import { withErrorHandling } from "@/api/middleware";
+import type { NextRequest, NextResponse } from "next/server";
+import { withErrorHandling } from "@/lib/api/utils";
 import {
   Actions,
   RepositoryPermissions,
@@ -12,8 +12,8 @@ import { isAuthorized } from "@/lib/api/authz";
 import { StatusCodes } from "http-status-codes";
 
 async function getRepositoryPermissionsHandler(
-  req: NextApiRequest,
-  res: NextApiResponse<RepositoryPermissionsResponse>
+  req: NextRequest,
+  res: NextResponse<RepositoryPermissionsResponse>
 ): Promise<void> {
   const session = await getApiSession(request);
   const { account_id, repository_id } = req.query;
@@ -43,8 +43,8 @@ async function getRepositoryPermissionsHandler(
 }
 
 export async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse<RepositoryPermissionsResponse>
+  req: NextRequest,
+  res: NextResponse<RepositoryPermissionsResponse>
 ) {
   if (req.method === "GET") {
     return getRepositoryPermissionsHandler(req, res);

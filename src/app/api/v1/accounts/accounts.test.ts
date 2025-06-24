@@ -42,7 +42,7 @@ describe("/api/v1/accounts", () => {
 
     req.body = {
       account_id: "new-user-account",
-      account_type: AccountType.USER,
+      account_type: AccountType.INDIVIDUAL,
       profile: {
         name: "New User",
       },
@@ -56,7 +56,7 @@ describe("/api/v1/accounts", () => {
       identity_id: "existing-user",
       account: {
         account_id: "existing-account",
-        account_type: AccountType.USER,
+        account_type: AccountType.INDIVIDUAL,
         disabled: false,
         profile: {},
         flags: [],
@@ -67,7 +67,7 @@ describe("/api/v1/accounts", () => {
 
     req.body = {
       account_id: "new-user-account",
-      account_type: AccountType.USER,
+      account_type: AccountType.INDIVIDUAL,
       profile: {
         name: "New User",
       },
@@ -81,7 +81,7 @@ describe("/api/v1/accounts", () => {
       identity_id: "user-without-perms",
       account: {
         account_id: "user-account",
-        account_type: AccountType.USER,
+        account_type: AccountType.INDIVIDUAL,
         disabled: false,
         profile: {},
         flags: [],
@@ -110,7 +110,7 @@ describe("/api/v1/accounts", () => {
 
     const newAccount: Account = {
       account_id: "new-user-account",
-      account_type: AccountType.USER,
+      account_type: AccountType.INDIVIDUAL,
       disabled: false,
       profile: {
         name: "New User",
@@ -123,7 +123,7 @@ describe("/api/v1/accounts", () => {
 
     req.body = {
       account_id: "new-user-account",
-      account_type: AccountType.USER,
+      account_type: AccountType.INDIVIDUAL,
       profile: {
         name: "New User",
       },
@@ -140,7 +140,7 @@ describe("/api/v1/accounts", () => {
       identity_id: "authorized-user",
       account: {
         account_id: "user-account",
-        account_type: AccountType.USER,
+        account_type: AccountType.INDIVIDUAL,
         disabled: false,
         profile: {},
         flags: [AccountFlags.CREATE_ORGANIZATIONS],
@@ -180,7 +180,7 @@ describe("/api/v1/accounts", () => {
       identity_id: "admin-user",
       account: {
         account_id: "admin-account",
-        account_type: AccountType.USER,
+        account_type: AccountType.INDIVIDUAL,
         disabled: false,
         profile: {},
         flags: [AccountFlags.ADMIN],
@@ -220,7 +220,7 @@ describe("/api/v1/accounts", () => {
       identity_id: "authorized-user",
       account: {
         account_id: "user-account",
-        account_type: AccountType.USER,
+        account_type: AccountType.INDIVIDUAL,
         disabled: false,
         profile: {},
         flags: [],
@@ -235,7 +235,7 @@ describe("/api/v1/accounts", () => {
 
     req.body = {
       account_id: "existing-account",
-      account_type: AccountType.USER,
+      account_type: AccountType.INDIVIDUAL,
       profile: {
         name: "Existing User",
       },
@@ -249,7 +249,7 @@ describe("/api/v1/accounts", () => {
       identity_id: "authorized-user",
       account: {
         account_id: "user-account",
-        account_type: AccountType.USER,
+        account_type: AccountType.INDIVIDUAL,
         disabled: false,
         profile: {},
         flags: [],

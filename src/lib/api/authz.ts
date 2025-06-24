@@ -92,7 +92,7 @@ export function isAuthorized(
     .with(Actions.GetRepository, () =>
       getRepository(principal, resource as Repository)
     )
-    .with(Actions.GetAccount, () => getAccount(principal, resource as Account))
+    .with(Actions.GetAccount, () => accountsTable.fetchById(principal, resource as Account))
     .with(Actions.ReadRepositoryData, () =>
       readRepositoryData(principal, resource as Repository)
     )
@@ -657,7 +657,7 @@ function disableAccount(
   return false;
 }
 
-function getAccount(principal: UserSession | null, account: Account): boolean {
+function accountsTable.fetchById(principal: UserSession | null, account: Account): boolean {
   // If the user does not have an account, they are not authorized
   if (!principal?.account) {
     return false;
@@ -679,7 +679,7 @@ function getAccount(principal: UserSession | null, account: Account): boolean {
       [MembershipRole.Owners, MembershipRole.Maintainers],
       account.account_id
     );
-  } else if (account.type === AccountType.USER) {
+  } else if (account.type === AccountType.INDIVIDUAL) {
     if (principal?.account?.account_id === account.account_id) {
       return true;
     }
@@ -710,7 +710,7 @@ function listAccount(principal: UserSession | null, account: Account): boolean {
       [MembershipRole.Owners, MembershipRole.Maintainers],
       account.account_id
     );
-  } else if (account.type === AccountType.USER) {
+  } else if (account.type === AccountType.INDIVIDUAL) {
     if (principal?.account?.account_id === account.account_id) {
       return true;
     }
@@ -761,7 +761,7 @@ function createAccount(
   account: Account
 ): boolean {
   // Handle user creation
-  if (account.type === AccountType.USER) {
+  if (account.type === AccountType.INDIVIDUAL) {
     // If the user is not signed in or has already created an account, they are not authorized
     if (principal?.account || !principal?.identity_id) {
       return false;

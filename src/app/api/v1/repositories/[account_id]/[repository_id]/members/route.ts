@@ -87,7 +87,9 @@ export async function POST(
         { status: StatusCodes.NOT_FOUND }
       );
     }
-    const invitedAccount = await getAccount(membershipInvitation.account_id);
+    const invitedAccount = await accountsTable.fetchById(
+      membershipInvitation.account_id
+    );
     if (!invitedAccount) {
       return NextResponse.json(
         {

@@ -50,7 +50,7 @@ describe("/api/v1/accounts/[account_id]/flags", () => {
       (getServerSession as jest.Mock).mockResolvedValue(null);
       (getAccount as jest.Mock).mockResolvedValue({
         account_id: "test-account",
-        account_type: AccountType.USER,
+        account_type: AccountType.INDIVIDUAL,
         disabled: false,
         profile: {},
         flags: [AccountFlags.ADMIN],
@@ -74,7 +74,7 @@ describe("/api/v1/accounts/[account_id]/flags", () => {
         identity_id: "unauthorized-user",
         account: {
           account_id: "unauthorized-account",
-          account_type: AccountType.USER,
+          account_type: AccountType.INDIVIDUAL,
           disabled: false,
           profile: {},
           flags: [],
@@ -83,7 +83,7 @@ describe("/api/v1/accounts/[account_id]/flags", () => {
       (getServerSession as jest.Mock).mockResolvedValue(mockSession);
       (getAccount as jest.Mock).mockResolvedValue({
         account_id: "test-account",
-        account_type: AccountType.USER,
+        account_type: AccountType.INDIVIDUAL,
         disabled: false,
         profile: {},
         flags: [AccountFlags.ADMIN],
@@ -96,7 +96,7 @@ describe("/api/v1/accounts/[account_id]/flags", () => {
     it("should return account flags when user is authorized", async () => {
       const mockAccount: Account = {
         account_id: "test-account",
-        account_type: AccountType.USER,
+        account_type: AccountType.INDIVIDUAL,
         disabled: false,
         profile: {},
         flags: [AccountFlags.ADMIN, AccountFlags.CREATE_REPOSITORIES],
@@ -150,7 +150,7 @@ describe("/api/v1/accounts/[account_id]/flags", () => {
         identity_id: "unauthorized-user",
         account: {
           account_id: "unauthorized-account",
-          account_type: AccountType.USER,
+          account_type: AccountType.INDIVIDUAL,
           disabled: false,
           profile: {},
           flags: [],
@@ -159,7 +159,7 @@ describe("/api/v1/accounts/[account_id]/flags", () => {
       (getServerSession as jest.Mock).mockResolvedValue(mockSession);
       (getAccount as jest.Mock).mockResolvedValue({
         account_id: "test-account",
-        account_type: AccountType.USER,
+        account_type: AccountType.INDIVIDUAL,
         disabled: false,
         profile: {},
         flags: [AccountFlags.ADMIN],
@@ -174,7 +174,7 @@ describe("/api/v1/accounts/[account_id]/flags", () => {
     it("should update account flags when user is authorized", async () => {
       const mockAccount: Account = {
         account_id: "test-account",
-        account_type: AccountType.USER,
+        account_type: AccountType.INDIVIDUAL,
         disabled: false,
         profile: {},
         flags: [AccountFlags.ADMIN],
@@ -210,7 +210,7 @@ describe("/api/v1/accounts/[account_id]/flags", () => {
     it("should handle empty array of flags", async () => {
       const mockAccount: Account = {
         account_id: "test-account",
-        account_type: AccountType.USER,
+        account_type: AccountType.INDIVIDUAL,
         disabled: false,
         profile: {},
         flags: [AccountFlags.ADMIN],
@@ -241,7 +241,7 @@ describe("/api/v1/accounts/[account_id]/flags", () => {
       });
       (getAccount as jest.Mock).mockResolvedValue({
         account_id: "test-account",
-        account_type: AccountType.USER,
+        account_type: AccountType.INDIVIDUAL,
         disabled: false,
         profile: {},
         flags: [],

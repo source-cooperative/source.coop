@@ -28,9 +28,7 @@
  * const adminStatus = isAdmin(session);
  */
 
-import { Actions, UserSession, AccountFlags } from "@/types";
-import { AccountType } from "@/types/account";
-import { Account } from "@/types/account";
+import { Actions, UserSession } from "@/types";
 import {
   apiKeysTable,
   accountsTable,
@@ -41,6 +39,15 @@ import { isAuthorized } from "@/lib/api/authz";
 import * as crypto from "crypto";
 import { getServerSession } from "@ory/nextjs/app";
 import { logger } from "../logger";
+import { NextRequest, NextResponse } from "next/server";
+import { StatusCodes } from "http-status-codes";
+import {
+  BadRequestError,
+  MethodNotImplementedError,
+  NotFoundError,
+  UnauthorizedError,
+} from "@/lib/api/errors";
+import { ZodError } from "zod";
 
 export function generateAccessKeyID(): string {
   const prefix = "SC";
@@ -231,7 +238,7 @@ export async function getApiSession(
   //   disabled: dbAccount.disabled,
   //   account_type:
   //     dbAccount.type === "individual"
-  //       ? AccountType.USER
+  //       ? AccountType.INDIVIDUAL
   //       : AccountType.ORGANIZATION,
   //   profile: {
   //     name: dbAccount.name,
@@ -265,49 +272,108 @@ export async function getApiSession(
   };
 }
 
-// export async function getEmail(identity_id: string): Promise<string | null> {
-//   const response = await fetch(
-//     `${process.env.NEXT_PUBLIC_ORY_SDK_URL}/admin/identities/${identity_id}`,
-//     {
-//       headers: {
-//         Authorization: `Bearer ${process.env.ORY_ACCESS_TOKEN}`,
-//       },
-//     }
-//   );
+export async function getEmail(identity_id: string): Promise<string | null> {
+  const response = await fetch(
+    `${process.env.NEXT_PUBLIC_ORY_SDK_URL}/admin/identities/${identity_id}`,
+    {
+      headers: {
+        Authorization: `Bearer ${process.env.ORY_ACCESS_TOKEN}`,
+      },
+    }
+  );
 
-//   if (!response.ok) {
-//     return null;
-//   }
-//   const data = await response.json();
+  if (!response.ok) {
+    return null;
+  }
+  const data = await response.json();
 
-//   for (const recover_address of data.recovery_addresses) {
-//     return recover_address.value;
-//   }
+  for (const recover_address of data.recovery_addresses) {
+    return recover_address.value;
+  }
 
-//   return null;
-// }
+  return null;
+}
 
-// /**
-//  * Generates a Gravatar profile image URL based on the provided email address.
-//  * If no email is provided, it uses a default email address.
-//  *
-//  * @param email - The email address to generate the Gravatar URL for.
-//  * @returns A string containing the Gravatar URL for the given email.
-//  *
-//  * @example
-//  * const imageUrl = getProfileImage('user@example.com');
-//  * // Returns: 'https://www.gravatar.com/avatar/[MD5 hash of email]'
-//  */
-// export function getProfileImage(email: string): string {
-//   if (!email) {
-//     email = "default@default.com";
-//   }
-//   // Trim and lowercase the email
-//   const trimmedEmail = email.trim().toLowerCase();
+/**
+ * Generates a Gravatar profile image URL based on the provided email address.
+ * If no email is provided, it uses a default email address.
+ *
+ * @param email - The email address to generate the Gravatar URL for.
+ * @returns A string containing the Gravatar URL for the given email.
+ *
+ * @example
+ * const imageUrl = getProfileImage('user@example.com');
+ * // Returns: 'https://www.gravatar.com/avatar/[MD5 hash of email]'
+ */
+export function getProfileImage(email: string): string {
+  if (!email) {
+    email = "default@default.com";
+  }
+  // Trim and lowercase the email
+  const trimmedEmail = email.trim().toLowerCase();
 
-//   // Create an MD5 hash of the email
-//   const hash = crypto.createHash("md5").update(trimmedEmail).digest("hex");
+  // Create an MD5 hash of the email
+  const hash = crypto.createHash("md5").update(trimmedEmail).digest("hex");
 
-//   // Construct and return the Gravatar URL
-//   return `https://www.gravatar.com/avatar/${hash}`;
-// }
+  // Construct and return the Gravatar URL
+  return `https://www.gravatar.com/avatar/${hash}`;
+}
+
+type ApiHandler = (req: NextRequest, res: NextResponse) => Promise<void>;
+
+export function withErrorHandling(handler: ApiHandler): ApiHandler {
+  return async (req, res) => {
+    try {
+      await handler(req, res);
+    } catch (e) {
+      if (e instanceof NotFoundError) {
+        if (!res.headersSent) {
+          res.status(StatusCodes.NOT_FOUND).json({
+            code: StatusCodes.NOT_FOUND,
+            message: e.message,
+          });
+        }
+      } else if (e instanceof UnauthorizedError) {
+        if (!res.headersSent) {
+          res.status(StatusCodes.UNAUTHORIZED).json({
+            code: StatusCodes.UNAUTHORIZED,
+            message: e.message,
+          });
+        }
+      } else if (e instanceof ZodError) {
+        if (!res.headersSent) {
+          res.status(StatusCodes.BAD_REQUEST).json({
+            code: StatusCodes.BAD_REQUEST,
+            message: "Validation error",
+            errors: e.errors,
+          });
+        }
+      } else if (e instanceof MethodNotImplementedError) {
+        if (!res.headersSent) {
+          res.status(StatusCodes.NOT_IMPLEMENTED).json({
+            code: StatusCodes.NOT_IMPLEMENTED,
+            message: e.message,
+          });
+        }
+      } else if (e instanceof BadRequestError) {
+        if (!res.headersSent) {
+          res.status(StatusCodes.BAD_REQUEST).json({
+            code: StatusCodes.BAD_REQUEST,
+            message: e.message,
+          });
+        }
+      }
+
+      logger.error(e as string, {
+        operation: "withErrorHandling",
+        context: "error",
+      });
+      if (!res.headersSent) {
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+          code: StatusCodes.INTERNAL_SERVER_ERROR,
+          message: "Internal server error",
+        });
+      }
+    }
+  };
+}

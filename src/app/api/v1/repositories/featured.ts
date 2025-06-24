@@ -1,5 +1,5 @@
-import type { NextApiRequest, NextApiResponse } from "next";
-import { withErrorHandling } from "@/api/middleware";
+import type { NextRequest, NextResponse } from "next/server";
+import { withErrorHandling } from "@/lib/api/utils";
 import { Actions, RepositoryList } from "@/types";
 import { MethodNotImplementedError } from "@/lib/api/errors";
 import { getServerSession } from "@ory/nextjs/app";
@@ -8,8 +8,8 @@ import { isAuthorized } from "@/lib/api/authz";
 import { StatusCodes } from "http-status-codes";
 
 async function featuredRepositoriesHandler(
-  req: NextApiRequest,
-  res: NextApiResponse<RepositoryList>
+  req: NextRequest,
+  res: NextResponse<RepositoryList>
 ): Promise<void> {
   const session = await getApiSession(request);
 
@@ -21,7 +21,7 @@ async function featuredRepositoriesHandler(
   res.status(StatusCodes.OK).json({ repositories: filteredRepositories });
 }
 
-export async function handler(req: NextApiRequest, res: NextApiResponse) {
+export async function handler(req: NextRequest, res: NextResponse) {
   if (req.method === "GET") {
     return featuredRepositoriesHandler(req, res);
   }

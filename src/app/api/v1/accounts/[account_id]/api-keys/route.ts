@@ -14,9 +14,7 @@ import {
   generateSecretAccessKey,
   getApiSession,
 } from "@/lib/api/utils";
-import { accountsTable, apiKeysTable } from "@/lib/clients/database";
-import { AccountFlags } from "@/types";
-import { AccountType } from "@/types/account";
+import { apiKeysTable } from "@/lib/clients/database";
 
 // POST /api/v1/accounts/[account_id]/api-keys
 export async function POST(

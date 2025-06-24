@@ -39,8 +39,7 @@
  *       500:
  *         description: Internal server error
  */
-import { NextResponse } from "next/server";
-import { getServerSession } from "@ory/nextjs/app";
+import { NextRequest, NextResponse } from "next/server";
 import {
   Actions,
   Membership,
@@ -50,14 +49,10 @@ import {
 } from "@/types";
 import { AccountType } from "@/types/account";
 import { StatusCodes } from "http-status-codes";
-import {
-  BadRequestError,
-  NotFoundError,
-  UnauthorizedError,
-} from "@/lib/api/errors";
-import { getAccount, getMemberships, putMembership } from "@/api/db";
+import { accountsTable, membershipsTable } from "@/lib/clients/database";
 import { isAuthorized } from "@/lib/api/authz";
 import * as crypto from "crypto";
+import { getApiSession } from "@/lib/api/utils";
 
 export async function POST(
   request: NextRequest,
@@ -68,14 +63,16 @@ export async function POST(
     const { account_id } = params;
     const membershipInvitation: MembershipInvitation =
       MembershipInvitationSchema.parse(await request.json());
-    const account = await getAccount(account_id);
+    const account = await accountsTable.fetchById(account_id);
     if (!account) {
       return NextResponse.json(
         { error: `Account with ID ${account_id} not found` },
         { status: StatusCodes.NOT_FOUND }
       );
     }
-    const invitedAccount = await getAccount(membershipInvitation.account_id);
+    const invitedAccount = await accountsTable.fetchById(
+      membershipInvitation.account_id
+    );
     if (!invitedAccount) {
       return NextResponse.json(
         {
@@ -84,7 +81,7 @@ export async function POST(
         { status: StatusCodes.NOT_FOUND }
       );
     }
-    if (invitedAccount.account_type !== AccountType.USER) {
+    if (invitedAccount.account_type !== AccountType.INDIVIDUAL) {
       return NextResponse.json(
         {
           error: `Invited account with ID ${membershipInvitation.account_id} is not a user account`,
@@ -110,7 +107,9 @@ export async function POST(
           { status: StatusCodes.UNAUTHORIZED }
         );
       }
-      const existingMembership = await getMemberships(account.account_id);
+      const existingMembership = await membershipsTable.listByAccount(
+        account.account_id
+      );
       var exists = false;
       for (const existing of existingMembership) {
         if (
@@ -128,7 +127,9 @@ export async function POST(
         }
       }
       if (!exists) {
-        [createdMembership, success] = await putMembership(membership, true);
+        [createdMembership, success] = await membershipsTable.create(
+          membership
+        );
         if (success) {
           return NextResponse.json(createdMembership, {
             status: StatusCodes.OK,
@@ -186,7 +187,7 @@ export async function GET(
   try {
     const session = await getApiSession(request);
     const { account_id } = params;
-    const account = await getAccount(account_id);
+    const account = await accountsTable.fetchById(account_id);
     if (!account) {
       return NextResponse.json(
         { error: `Account with ID ${account_id} not found` },
@@ -199,7 +200,9 @@ export async function GET(
         { status: StatusCodes.UNAUTHORIZED }
       );
     }
-    const memberships = await getMemberships(account.account_id);
+    const memberships = await membershipsTable.listByAccount(
+      account.account_id
+    );
     const authorizedMemberships: Membership[] = [];
     for (const membership of memberships) {
       if (isAuthorized(session, membership, Actions.GetMembership)) {

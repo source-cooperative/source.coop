@@ -47,7 +47,7 @@ describe("/api/v1/accounts/[account_id]", () => {
       (getServerSession as jest.Mock).mockResolvedValue(null);
       (getAccount as jest.Mock).mockResolvedValue({
         account_id: "test-account",
-        account_type: AccountType.USER,
+        account_type: AccountType.INDIVIDUAL,
         disabled: false,
         profile: {},
         flags: [],
@@ -61,7 +61,7 @@ describe("/api/v1/accounts/[account_id]", () => {
         identity_id: "unauthorized-user",
         account: {
           account_id: "unauthorized-account",
-          account_type: AccountType.USER,
+          account_type: AccountType.INDIVIDUAL,
           disabled: false,
           profile: {},
           flags: [],
@@ -71,7 +71,7 @@ describe("/api/v1/accounts/[account_id]", () => {
       (isAuthorized as jest.Mock).mockReturnValue(false);
       (getAccount as jest.Mock).mockResolvedValue({
         account_id: "test-account",
-        account_type: AccountType.USER,
+        account_type: AccountType.INDIVIDUAL,
         disabled: false,
         profile: {},
         flags: [],
@@ -85,7 +85,7 @@ describe("/api/v1/accounts/[account_id]", () => {
         identity_id: "authorized-user",
         account: {
           account_id: "authorized-account",
-          account_type: AccountType.USER,
+          account_type: AccountType.INDIVIDUAL,
           disabled: false,
           profile: {},
           flags: [],
@@ -93,7 +93,7 @@ describe("/api/v1/accounts/[account_id]", () => {
       };
       const mockAccount: Account = {
         account_id: "test-account",
-        account_type: AccountType.USER,
+        account_type: AccountType.INDIVIDUAL,
         disabled: false,
         profile: { name: "Test Account" },
         flags: [],
@@ -118,7 +118,7 @@ describe("/api/v1/accounts/[account_id]", () => {
         identity_id: "authorized-user",
         account: {
           account_id: "authorized-account",
-          account_type: AccountType.USER,
+          account_type: AccountType.INDIVIDUAL,
           disabled: false,
           profile: {},
           flags: [],
@@ -141,7 +141,7 @@ describe("/api/v1/accounts/[account_id]", () => {
       (isAuthorized as jest.Mock).mockReturnValue(false);
       (getAccount as jest.Mock).mockResolvedValue({
         account_id: "test-account",
-        account_type: AccountType.USER,
+        account_type: AccountType.INDIVIDUAL,
         disabled: false,
         profile: {},
         flags: [],
@@ -155,7 +155,7 @@ describe("/api/v1/accounts/[account_id]", () => {
         identity_id: "unauthorized-user",
         account: {
           account_id: "unauthorized-account",
-          account_type: AccountType.USER,
+          account_type: AccountType.INDIVIDUAL,
           disabled: false,
           profile: {},
           flags: [],
@@ -165,7 +165,7 @@ describe("/api/v1/accounts/[account_id]", () => {
       (isAuthorized as jest.Mock).mockReturnValue(false);
       (getAccount as jest.Mock).mockResolvedValue({
         account_id: "test-account",
-        account_type: AccountType.USER,
+        account_type: AccountType.INDIVIDUAL,
         disabled: false,
         profile: {},
         flags: [],
@@ -179,7 +179,7 @@ describe("/api/v1/accounts/[account_id]", () => {
         identity_id: "authorized-user",
         account: {
           account_id: "authorized-account",
-          account_type: AccountType.USER,
+          account_type: AccountType.INDIVIDUAL,
           disabled: false,
           profile: {},
           flags: [],
@@ -187,7 +187,7 @@ describe("/api/v1/accounts/[account_id]", () => {
       };
       const mockAccount: Account = {
         account_id: "test-account",
-        account_type: AccountType.USER,
+        account_type: AccountType.INDIVIDUAL,
         disabled: false,
         profile: { name: "Test Account" },
         flags: [],
@@ -217,7 +217,7 @@ describe("/api/v1/accounts/[account_id]", () => {
         identity_id: "authorized-user",
         account: {
           account_id: "authorized-account",
-          account_type: AccountType.USER,
+          account_type: AccountType.INDIVIDUAL,
           disabled: false,
           profile: {},
           flags: [],

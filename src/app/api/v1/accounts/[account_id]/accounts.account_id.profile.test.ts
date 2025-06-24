@@ -50,7 +50,7 @@ describe("/api/v1/accounts/[account_id]/profile", () => {
       (getServerSession as jest.Mock).mockResolvedValue(null);
       (getAccount as jest.Mock).mockResolvedValue({
         account_id: "test-account",
-        account_type: AccountType.USER,
+        account_type: AccountType.INDIVIDUAL,
         disabled: false,
         profile: { name: "Test User" },
         flags: [],
@@ -74,7 +74,7 @@ describe("/api/v1/accounts/[account_id]/profile", () => {
         identity_id: "unauthorized-user",
         account: {
           account_id: "unauthorized-account",
-          account_type: AccountType.USER,
+          account_type: AccountType.INDIVIDUAL,
           disabled: false,
           profile: {},
           flags: [],
@@ -83,7 +83,7 @@ describe("/api/v1/accounts/[account_id]/profile", () => {
       (getServerSession as jest.Mock).mockResolvedValue(mockSession);
       (getAccount as jest.Mock).mockResolvedValue({
         account_id: "test-account",
-        account_type: AccountType.USER,
+        account_type: AccountType.INDIVIDUAL,
         disabled: false,
         profile: { name: "Test User" },
         flags: [],
@@ -102,7 +102,7 @@ describe("/api/v1/accounts/[account_id]/profile", () => {
       };
       const mockAccount: Account = {
         account_id: "test-account",
-        account_type: AccountType.USER,
+        account_type: AccountType.INDIVIDUAL,
         disabled: false,
         profile: mockProfile,
         flags: [],
@@ -134,7 +134,7 @@ describe("/api/v1/accounts/[account_id]/profile", () => {
       (getServerSession as jest.Mock).mockResolvedValue(null);
       (getAccount as jest.Mock).mockResolvedValue({
         account_id: "test-account",
-        account_type: AccountType.USER,
+        account_type: AccountType.INDIVIDUAL,
         disabled: false,
         profile: { name: "Test User" },
         flags: [],
@@ -159,7 +159,7 @@ describe("/api/v1/accounts/[account_id]/profile", () => {
         identity_id: "unauthorized-user",
         account: {
           account_id: "unauthorized-account",
-          account_type: AccountType.USER,
+          account_type: AccountType.INDIVIDUAL,
           disabled: false,
           profile: {},
           flags: [],
@@ -168,7 +168,7 @@ describe("/api/v1/accounts/[account_id]/profile", () => {
       (getServerSession as jest.Mock).mockResolvedValue(mockSession);
       (getAccount as jest.Mock).mockResolvedValue({
         account_id: "test-account",
-        account_type: AccountType.USER,
+        account_type: AccountType.INDIVIDUAL,
         disabled: false,
         profile: { name: "Test User" },
         flags: [],
@@ -192,7 +192,7 @@ describe("/api/v1/accounts/[account_id]/profile", () => {
       };
       const mockAccount: Account = {
         account_id: "test-account",
-        account_type: AccountType.USER,
+        account_type: AccountType.INDIVIDUAL,
         disabled: false,
         profile: initialProfile,
         flags: [],
@@ -228,7 +228,7 @@ describe("/api/v1/accounts/[account_id]/profile", () => {
       });
       (getAccount as jest.Mock).mockResolvedValue({
         account_id: "test-account",
-        account_type: AccountType.USER,
+        account_type: AccountType.INDIVIDUAL,
         disabled: false,
         profile: {},
         flags: [],

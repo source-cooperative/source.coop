@@ -6,7 +6,7 @@ describe("Authorization Tests", () => {
     const adminSession: UserSession = {
       account: {
         account_id: "123",
-        account_type: AccountType.USER,
+        account_type: AccountType.INDIVIDUAL,
         profile: {
           name: "Admin User",
         },
@@ -21,7 +21,7 @@ describe("Authorization Tests", () => {
     const nonAdminSession: UserSession = {
       account: {
         account_id: "456",
-        account_type: AccountType.USER,
+        account_type: AccountType.INDIVIDUAL,
         profile: {
           name: "Regular User",
         },
@@ -36,7 +36,7 @@ describe("Authorization Tests", () => {
     const noFlagsSession: UserSession = {
       account: {
         account_id: "789",
-        account_type: AccountType.USER,
+        account_type: AccountType.INDIVIDUAL,
         disabled: false,
         profile: {
           name: "No Flags User",

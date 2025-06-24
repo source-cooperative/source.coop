@@ -1,7 +1,7 @@
 // Import necessary modules and types
-import type { NextApiRequest, NextApiResponse } from "next";
+import type { NextRequest, NextResponse } from "next/server";
 import { APIKey } from "@/types";
-import { withErrorHandling } from "@/api/middleware";
+import { withErrorHandling } from "@/lib/api/utils";
 import { StatusCodes } from "http-status-codes";
 import {
   MethodNotImplementedError,
@@ -11,8 +11,8 @@ import {
 import { getAPIKey } from "@/api/db";
 
 async function getAPIKeyHandler(
-  req: NextApiRequest,
-  res: NextApiResponse<APIKey>
+  req: NextRequest,
+  res: NextResponse<APIKey>
 ): Promise<void> {
   const { authorization } = req.headers;
 
@@ -38,10 +38,7 @@ async function getAPIKeyHandler(
 }
 
 // Handler function for the API route
-export async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse<APIKey>
-) {
+export async function handler(req: NextRequest, res: NextResponse<APIKey>) {
   // Check if the request method is DELETE
   if (req.method === "GET") {
     return getAPIKeyHandler(req, res);

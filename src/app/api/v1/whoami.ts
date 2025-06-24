@@ -1,15 +1,16 @@
-import type { NextApiRequest, NextApiResponse } from "next";
+import type { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "@ory/nextjs/app";
 import { UserSession } from "@/types";
-import { withErrorHandling } from "@/api/middleware";
+import { withErrorHandling } from "@/lib/api/utils";
 import { StatusCodes } from "http-status-codes";
 import { MethodNotImplementedError, UnauthorizedError } from "@/lib/api/errors";
+import { getApiSession } from "@/lib/api/utils";
 
 async function whoamiHandler(
-  req: NextApiRequest,
-  res: NextApiResponse<UserSession>
+  req: NextRequest,
+  res: NextResponse<UserSession>
 ): Promise<void> {
-  const session = await getApiSession(request);
+  const session = await getApiSession(req);
   if (!session) {
     throw new UnauthorizedError();
   }
@@ -37,8 +38,8 @@ async function whoamiHandler(
  *         description: Unauthorized - No valid session found
  */
 export async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse<UserSession>
+  req: NextRequest,
+  res: NextResponse<UserSession>
 ) {
   if (req.method === "GET") {
     return whoamiHandler(req, res);

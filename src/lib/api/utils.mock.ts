@@ -1,4 +1,4 @@
-import { NextApiResponse } from "next";
+import { NextResponse } from "next";
 import * as path from "path";
 import {
   Repository,
@@ -76,7 +76,7 @@ export const sessions: Record<string, UserSession | null> = {
 };
 
 for (const account of accounts) {
-  if (account.account_type != AccountType.USER) {
+  if (account.account_type != AccountType.INDIVIDUAL) {
     continue;
   }
 
@@ -111,10 +111,10 @@ for (const apiKey of apiKeys) {
   mappedAPIKeys[apiKey.access_key_id] = apiKey;
 }
 
-export type MockNextApiResponse = NextApiResponse & {
+export type MockNextResponse = NextResponse & {
   _getData: () => string;
 };
 
-export function jsonBody(res: MockNextApiResponse) {
+export function jsonBody(res: MockNextResponse) {
   return JSON.parse(res._getData());
 }

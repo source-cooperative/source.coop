@@ -1,5 +1,5 @@
 // Import necessary modules and types
-import type { NextApiRequest, NextApiResponse } from "next";
+import type { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "@ory/nextjs/app";
 import {
   Actions,
@@ -7,7 +7,7 @@ import {
   MembershipRoleSchema,
   MembershipState,
 } from "@/types";
-import { withErrorHandling } from "@/api/middleware";
+import { withErrorHandling } from "@/lib/api/utils";
 import { StatusCodes } from "http-status-codes";
 import {
   MethodNotImplementedError,
@@ -55,8 +55,8 @@ import { isAuthorized } from "@/lib/api/authz";
  *         description: Internal server error
  */
 async function updateMembershipHandler(
-  req: NextApiRequest,
-  res: NextApiResponse<Membership>
+  req: NextRequest,
+  res: NextResponse<Membership>
 ): Promise<void> {
   // Get the current session and membership ID
   const session = await getApiSession(request);
@@ -95,10 +95,7 @@ async function updateMembershipHandler(
 }
 
 // Handler function for the API route
-export async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse<Membership>
-) {
+export async function handler(req: NextRequest, res: NextResponse<Membership>) {
   // Check if the request method is POST
   if (req.method === "POST") {
     return updateMembershipHandler(req, res);

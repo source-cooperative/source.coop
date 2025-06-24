@@ -78,10 +78,19 @@ export const AccountSchema = z
   .object({
     account_id: z
       .string()
-      .min(MIN_ID_LENGTH)
-      .max(MAX_ID_LENGTH)
+      .min(
+        MIN_ID_LENGTH,
+        `Account ID must be at least ${MIN_ID_LENGTH} characters`
+      )
+      .max(
+        MAX_ID_LENGTH,
+        `Account ID must not exceed ${MAX_ID_LENGTH} characters`
+      )
       .toLowerCase()
-      .regex(ID_REGEX, "Invalid account ID format")
+      .regex(
+        ID_REGEX,
+        "Account ID may not begin or end with a hyphen OR contain consecutive hyphens"
+      )
       .openapi({ example: "account-id" }),
     type: z.nativeEnum(AccountType, {
       errorMap: () => ({ message: "Invalid account type" }),

@@ -53,7 +53,7 @@ describe("/api/v1/data-connections", () => {
         identity_id: "authorized-user",
         account: {
           account_id: "user-account",
-          account_type: AccountType.USER,
+          account_type: AccountType.INDIVIDUAL,
           disabled: false,
           profile: {},
           flags: [AccountFlags.ADMIN],
@@ -124,7 +124,7 @@ describe("/api/v1/data-connections", () => {
         identity_id: "authorized-user",
         account: {
           account_id: "admin-account",
-          account_type: AccountType.USER,
+          account_type: AccountType.INDIVIDUAL,
           disabled: false,
           profile: {},
           flags: [AccountFlags.ADMIN],

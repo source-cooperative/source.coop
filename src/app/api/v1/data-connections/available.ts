@@ -1,7 +1,7 @@
-import type { NextApiRequest, NextApiResponse } from "next";
+import type { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "@ory/nextjs/app";
 import { Actions, DataConnectionSchema, DataConnection } from "@/types";
-import { withErrorHandling } from "@/api/middleware";
+import { withErrorHandling } from "@/lib/api/utils";
 import { StatusCodes } from "http-status-codes";
 import { MethodNotImplementedError } from "@/lib/api/errors";
 import { isAuthorized } from "@/lib/api/authz";
@@ -30,8 +30,8 @@ import { getDataConnections } from "@/api/db";
  *         $ref: '#/components/responses/InternalServerError'
  */
 async function listAvailableDataConnectionsHandler(
-  req: NextApiRequest,
-  res: NextApiResponse<DataConnection[]>
+  req: NextRequest,
+  res: NextResponse<DataConnection[]>
 ): Promise<void> {
   const session = await getApiSession(request);
 
@@ -61,8 +61,8 @@ async function listAvailableDataConnectionsHandler(
 }
 
 export async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse<DataConnection[] | DataConnection>
+  req: NextRequest,
+  res: NextResponse<DataConnection[] | DataConnection>
 ) {
   if (req.method === "GET") {
     return listAvailableDataConnectionsHandler(req, res);

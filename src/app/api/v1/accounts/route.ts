@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
         { status: StatusCodes.UNAUTHORIZED }
       );
     }
-    const [account, success] = await putAccount(newAccount, true);
+    const [account, success] = await accountsTable.update(newAccount, true);
     if (!success) {
       return NextResponse.json(
         { error: `Account with ID ${newAccount.account_id} already exists` },

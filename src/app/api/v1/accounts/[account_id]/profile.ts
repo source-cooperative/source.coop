@@ -1,5 +1,5 @@
 // Import necessary modules and types
-import type { NextApiRequest, NextApiResponse } from "next";
+import type { NextRequest, NextResponse } from "next/server";
 import { getEmail, getProfileImage, getServerSession } from "@/api/utils";
 import {
   AccountProfile,
@@ -7,7 +7,7 @@ import {
   AccountProfileSchema,
   Actions,
 } from "@/types";
-import { withErrorHandling } from "@/api/middleware";
+import { withErrorHandling } from "@/lib/api/utils";
 import { StatusCodes } from "http-status-codes";
 import {
   MethodNotImplementedError,
@@ -46,8 +46,8 @@ import { isAuthorized } from "@/lib/api/authz";
  *         description: Internal server error
  */
 async function getAccountProfileHandler(
-  req: NextApiRequest,
-  res: NextApiResponse<AccountProfileResponse>
+  req: NextRequest,
+  res: NextResponse<AccountProfileResponse>
 ): Promise<void> {
   // Extract account_id from request query
   const { account_id } = req.query;
@@ -55,7 +55,7 @@ async function getAccountProfileHandler(
   const session = await getApiSession(request);
 
   // Fetch account from database
-  const account = await getAccount(account_id as string);
+  const account = await accountsTable.fetchById(account_id as string);
   // If account not found, throw NotFoundError
   if (!account) {
     throw new NotFoundError(`Account ${account_id} not found`);
@@ -120,8 +120,8 @@ async function getAccountProfileHandler(
  *         description: Internal server error
  */
 async function putAccountProfileHandler(
-  req: NextApiRequest,
-  res: NextApiResponse<AccountProfileResponse>
+  req: NextRequest,
+  res: NextResponse<AccountProfileResponse>
 ): Promise<void> {
   // Extract account_id from request query
   const { account_id } = req.query;
@@ -132,7 +132,9 @@ async function putAccountProfileHandler(
   const profileRequest = AccountProfileSchema.parse(req.body);
 
   // Fetch account to be updated from database
-  var updateProfileAccount = await getAccount(account_id as string);
+  var updateProfileAccount = await accountsTable.fetchById(
+    account_id as string
+  );
   // If account not found, throw NotFoundError
   if (!updateProfileAccount) {
     throw new NotFoundError(`Account ${account_id} not found`);
@@ -146,7 +148,7 @@ async function putAccountProfileHandler(
   updateProfileAccount.profile = profileRequest;
 
   // Update the account in the database
-  const [account, _success] = await putAccount(updateProfileAccount);
+  const [account, _success] = await accountsTable.update(updateProfileAccount);
 
   // Send successful response with updated account profile
   res.status(StatusCodes.OK).json(account.profile);
@@ -154,8 +156,8 @@ async function putAccountProfileHandler(
 
 // Main handler function for the API endpoint
 export async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse<AccountProfileResponse>
+  req: NextRequest,
+  res: NextResponse<AccountProfileResponse>
 ) {
   // Route request based on HTTP method
   if (req.method === "GET") {

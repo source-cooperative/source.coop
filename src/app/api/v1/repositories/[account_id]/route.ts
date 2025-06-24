@@ -56,7 +56,7 @@ export async function GET(
   try {
     const session = await getApiSession(request);
     const { account_id } = params;
-    const account = await getAccount(account_id);
+    const account = await accountsTable.fetchById(account_id);
     if (!account) {
       return NextResponse.json(
         { error: `Account with ID ${account_id} not found` },
@@ -134,7 +134,7 @@ export async function POST(
     const repositoryCreateRequest = RepositoryCreationRequestSchema.parse(
       await request.json()
     );
-    const account = await getAccount(account_id);
+    const account = await accountsTable.fetchById(account_id);
     if (!account) {
       return NextResponse.json(
         { error: `Account with ID ${account_id} not found` },

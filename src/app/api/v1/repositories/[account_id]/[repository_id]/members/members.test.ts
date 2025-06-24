@@ -111,7 +111,7 @@ describe("/api/v1/repositories/[account_id]/[repository_id]/members", () => {
       };
       const mockAccount: Account = {
         account_id: "invited-account",
-        account_type: AccountType.USER,
+        account_type: AccountType.INDIVIDUAL,
         disabled: false,
         profile: {},
         flags: [],
@@ -140,7 +140,7 @@ describe("/api/v1/repositories/[account_id]/[repository_id]/members", () => {
       };
       const mockAccount: Account = {
         account_id: "invited-account",
-        account_type: AccountType.USER,
+        account_type: AccountType.INDIVIDUAL,
         disabled: false,
         profile: {},
         flags: [],
@@ -179,7 +179,7 @@ describe("/api/v1/repositories/[account_id]/[repository_id]/members", () => {
       };
       const mockAccount: Account = {
         account_id: "invited-account",
-        account_type: AccountType.USER,
+        account_type: AccountType.INDIVIDUAL,
         disabled: false,
         profile: {},
         flags: [],

@@ -1,7 +1,7 @@
 // @ts-nocheck
 
 import { StatusCodes } from "http-status-codes";
-import type { NextApiRequest, NextApiResponse } from "next";
+import type { NextRequest, NextResponse } from "next/server";
 import swaggerJSDoc from "swagger-jsdoc";
 import { OpenApiGeneratorV3 } from "@asteasolutions/zod-to-openapi";
 import {
@@ -22,10 +22,7 @@ import {
 } from "@/types";
 import { AccountSchema } from "@/types/account";
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
+export default async function handler(req: NextRequest, res: NextResponse) {
   const options = {
     definition: {
       openapi: "3.0.0",

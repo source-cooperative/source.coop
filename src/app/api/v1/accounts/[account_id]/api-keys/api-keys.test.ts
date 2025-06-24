@@ -67,7 +67,7 @@ describe("/api/v1/accounts/[account_id]/api-keys", () => {
     it("should throw UnauthorizedError when user is not authenticated", async () => {
       const mockAccount: Account = {
         account_id: "test-account",
-        account_type: AccountType.USER,
+        account_type: AccountType.INDIVIDUAL,
         disabled: false,
         profile: {},
         flags: [],
@@ -95,7 +95,7 @@ describe("/api/v1/accounts/[account_id]/api-keys", () => {
       });
       (getAccount as jest.Mock).mockResolvedValue({
         account_id: "test-account",
-        account_type: AccountType.USER,
+        account_type: AccountType.INDIVIDUAL,
       });
 
       await expect(handler(req, res)).rejects.toThrow(BadRequestError);
@@ -104,7 +104,7 @@ describe("/api/v1/accounts/[account_id]/api-keys", () => {
     it("should create API key when user is authorized", async () => {
       const mockAccount: Account = {
         account_id: "test-account",
-        account_type: AccountType.USER,
+        account_type: AccountType.INDIVIDUAL,
         disabled: false,
         profile: {},
         flags: [],
@@ -164,7 +164,7 @@ describe("/api/v1/accounts/[account_id]/api-keys", () => {
     it("should return API keys when user is authorized", async () => {
       const mockAccount: Account = {
         account_id: "test-account",
-        account_type: AccountType.USER,
+        account_type: AccountType.INDIVIDUAL,
         disabled: false,
         profile: {},
         flags: [],
