@@ -92,7 +92,7 @@ export function isAuthorized(
     .with(Actions.GetRepository, () =>
       getRepository(principal, resource as Repository)
     )
-    .with(Actions.GetAccount, () => accountsTable.fetchById(principal, resource as Account))
+    .with(Actions.GetAccount, () => getAccount(principal, resource as Account))
     .with(Actions.ReadRepositoryData, () =>
       readRepositoryData(principal, resource as Repository)
     )
@@ -657,7 +657,7 @@ function disableAccount(
   return false;
 }
 
-function accountsTable.fetchById(principal: UserSession | null, account: Account): boolean {
+function getAccount(principal: UserSession | null, account: Account): boolean {
   // If the user does not have an account, they are not authorized
   if (!principal?.account) {
     return false;
