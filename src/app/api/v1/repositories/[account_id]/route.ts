@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import {
   Actions,
   Repository,
@@ -7,21 +7,13 @@ import {
   RepositoryState,
   RepositoryFeatured,
 } from "@/types";
-import {
-  BadRequestError,
-  NotFoundError,
-  UnauthorizedError,
-} from "@/lib/api/errors";
-import { getServerSession } from "@ory/nextjs/app";
-import {
-  getAccount,
-  getDataConnection,
-  getRepositoriesByAccount,
-  putRepository,
-} from "@/api/db";
 import { isAuthorized } from "@/lib/api/authz";
 import Handlebars from "handlebars";
 import { StatusCodes } from "http-status-codes";
+import { getApiSession } from "@/lib/api/utils";
+import { accountsTable } from "@/lib/clients/database/accounts";
+import { productsTable } from "@/lib/clients/database/products";
+import { dataConnectionsTable } from "@/lib/clients/database/data-connections";
 
 /**
  * @openapi
@@ -63,7 +55,7 @@ export async function GET(
         { status: StatusCodes.NOT_FOUND }
       );
     }
-    const repositories: Repository[] = await getRepositoriesByAccount(
+    const repositories: Repository[] = await productsTable.listByAccount(
       account_id
     );
     const filteredRepositories = repositories.filter((repository) => {
@@ -141,7 +133,7 @@ export async function POST(
         { status: StatusCodes.NOT_FOUND }
       );
     }
-    const dataConnection = await getDataConnection(
+    const dataConnection = await dataConnectionsTable.fetchById(
       repositoryCreateRequest.data_connection_id
     );
     if (!dataConnection) {
@@ -217,7 +209,7 @@ export async function POST(
         { status: StatusCodes.UNAUTHORIZED }
       );
     }
-    const [repository, success] = await putRepository(newRepository, true);
+    const [repository, success] = await productsTable.create(newRepository);
     if (!success) {
       return NextResponse.json(
         {

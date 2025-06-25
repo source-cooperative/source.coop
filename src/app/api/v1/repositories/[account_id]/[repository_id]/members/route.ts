@@ -45,8 +45,7 @@
  *       500:
  *         description: Internal server error
  */
-import { NextResponse } from "next/server";
-import { getServerSession } from "@ory/nextjs/app";
+import { NextRequest, NextResponse } from "next/server";
 import {
   Actions,
   Membership,
@@ -55,19 +54,14 @@ import {
   MembershipState,
 } from "@/types";
 import { StatusCodes } from "http-status-codes";
-import {
-  BadRequestError,
-  NotFoundError,
-  UnauthorizedError,
-} from "@/lib/api/errors";
-import {
-  getMemberships,
-  getAccount,
-  getRepository,
-  putMembership,
-} from "@/api/db";
 import { isAuthorized } from "@/lib/api/authz";
 import * as crypto from "crypto";
+import { getApiSession } from "@/lib/api/utils";
+import {
+  accountsTable,
+  membershipsTable,
+  productsTable,
+} from "@/lib/clients/database";
 
 export async function POST(
   request: NextRequest,
@@ -78,8 +72,8 @@ export async function POST(
     const { account_id, repository_id } = params;
     const membershipInvitation: MembershipInvitation =
       MembershipInvitationSchema.parse(await request.json());
-    const repository = await getRepository(account_id, repository_id);
-    if (!repository) {
+    const product = await productsTable.fetchById(account_id, repository_id);
+    if (!product) {
       return NextResponse.json(
         {
           error: `Repository with ID ${account_id}/${repository_id} not found`,
@@ -106,8 +100,8 @@ export async function POST(
       let membership: Membership = {
         ...membershipInvitation,
         membership_id: crypto.randomUUID(),
-        membership_account_id: repository.account_id,
-        repository_id: repository.repository_id,
+        membership_account_id: product.account_id,
+        repository_id: product.product_id,
         state: MembershipState.Invited,
         state_changed: new Date().toISOString(),
       };
@@ -117,9 +111,9 @@ export async function POST(
           { status: StatusCodes.UNAUTHORIZED }
         );
       }
-      const existingMembership = await getMemberships(
-        repository.account_id,
-        repository.repository_id
+      const existingMembership = await membershipsTable.listByAccount(
+        product.account_id,
+        product.product_id
       );
       var exists = false;
       for (const existing of existingMembership) {
@@ -131,14 +125,17 @@ export async function POST(
           exists = true;
           return NextResponse.json(
             {
-              error: `Account with ID ${membership.account_id} is already a member or has a pending invitation for repository with ID ${repository.account_id}/${repository.repository_id}`,
+              error: `Account with ID ${membership.account_id} is already a member or has a pending invitation for repository with ID ${product.account_id}/${product.product_id}`,
             },
             { status: StatusCodes.BAD_REQUEST }
           );
         }
       }
       if (!exists) {
-        [createdMembership, success] = await putMembership(membership, true);
+        [createdMembership, success] = await membershipsTable.create(
+          membership,
+          true
+        );
         if (success) {
           return NextResponse.json(createdMembership, {
             status: StatusCodes.OK,
@@ -202,8 +199,8 @@ export async function GET(
   try {
     const session = await getApiSession(request);
     const { account_id, repository_id } = params;
-    const repository = await getRepository(account_id, repository_id);
-    if (!repository) {
+    const product = await productsTable.fetchById(account_id, repository_id);
+    if (!product) {
       return NextResponse.json(
         {
           error: `Repository with ID ${account_id}/${repository_id} not found`,
@@ -211,15 +208,15 @@ export async function GET(
         { status: StatusCodes.NOT_FOUND }
       );
     }
-    if (!isAuthorized(session, repository, Actions.ListRepositoryMemberships)) {
+    if (!isAuthorized(session, product, Actions.ListRepositoryMemberships)) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: StatusCodes.UNAUTHORIZED }
       );
     }
-    const memberships = await getMemberships(
-      repository.account_id,
-      repository.repository_id
+    const memberships = await membershipsTable.listByAccount(
+      product.account_id,
+      product.product_id
     );
     const authorizedMemberships: Membership[] = [];
     for (const membership of memberships) {

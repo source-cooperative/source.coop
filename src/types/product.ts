@@ -1,3 +1,4 @@
+// TODO: Merge this with product_v2.ts
 /**
  * @fileoverview Type definitions and schemas for Product entities.
  *

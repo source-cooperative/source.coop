@@ -36,11 +36,9 @@
  *       500:
  *         description: Internal server error
  */
-import { NextResponse } from "next/server";
-import { APIKey } from "@/types";
+import { NextRequest, NextResponse } from "next/server";
 import { StatusCodes } from "http-status-codes";
-import { NotFoundError, UnauthorizedError } from "@/lib/api/errors";
-import { getAPIKey, getAccount } from "@/api/db";
+import { apiKeysTable, accountsTable } from "@/lib/clients/database";
 
 export async function POST(
   request: NextRequest,
@@ -49,7 +47,7 @@ export async function POST(
   try {
     const { access_key_id } = params;
     const { secret_access_key } = await request.json();
-    const apiKey = await getAPIKey(access_key_id);
+    const apiKey = await apiKeysTable.fetchById(access_key_id);
     if (!apiKey) {
       return NextResponse.json(
         { error: `API key with ID ${access_key_id} not found` },

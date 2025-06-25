@@ -17,18 +17,18 @@
  *       500:
  *         description: Internal server error
  */
-import { NextResponse } from "next/server";
-import { getServerSession } from "@ory/nextjs/app";
+import { NextRequest, NextResponse } from "next/server";
 import { Actions, DataConnectionSchema, DataConnection } from "@/types";
 import { StatusCodes } from "http-status-codes";
-import { BadRequestError, UnauthorizedError } from "@/lib/api/errors";
 import { isAuthorized } from "@/lib/api/authz";
-import { getDataConnections, putDataConnection } from "@/api/db";
+import { getApiSession } from "@/lib/api/utils";
+import { dataConnectionsTable } from "@/lib/clients/database";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const session = await getApiSession(request);
-    const dataConnections: DataConnection[] = await getDataConnections();
+    const dataConnections: DataConnection[] =
+      await dataConnectionsTable.listAll();
     const filteredConnections = dataConnections.filter((dataConnection) =>
       isAuthorized(session, dataConnection, Actions.GetDataConnection)
     );
@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
         { status: StatusCodes.UNAUTHORIZED }
       );
     }
-    const [createdDataConnection, success] = await putDataConnection(
+    const [createdDataConnection, success] = await dataConnectionsTable.create(
       dataConnection,
       true
     );

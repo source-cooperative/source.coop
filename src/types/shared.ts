@@ -89,10 +89,12 @@ export enum Actions {
   RejectMembership = "membership:reject",
   RevokeMembership = "membership:revoke",
   InviteMembership = "membership:invite",
+  UpdateMembershipRole = "membership:role:update",
 
   GetDataConnection = "data_connection:get",
   CreateDataConnection = "data_connection:create",
   DisableDataConnection = "data_connection:disable",
+  DeleteDataConnection = "data_connection:delete",
   UseDataConnection = "data_connection:use",
   ViewDataConnectionCredentials = "data_connection:credentials:view",
   PutDataConnection = "data_connection:put",

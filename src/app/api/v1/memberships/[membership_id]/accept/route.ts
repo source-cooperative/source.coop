@@ -30,7 +30,7 @@
  *       500:
  *         description: Internal server error
  */
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "@ory/nextjs/app";
 import { Actions, Membership, MembershipState } from "@/types";
 import { StatusCodes } from "http-status-codes";
@@ -39,7 +39,8 @@ import {
   UnauthorizedError,
   BadRequestError,
 } from "@/lib/api/errors";
-import { getMembership, putMembership } from "@/api/db";
+import { getApiSession } from "@/lib/api/utils";
+import { membershipsTable } from "@/lib/clients/database";
 import { isAuthorized } from "@/lib/api/authz";
 
 export async function POST(
@@ -49,7 +50,7 @@ export async function POST(
   try {
     const session = await getApiSession(request);
     const { membership_id } = params;
-    const membership = await getMembership(membership_id);
+    const membership = await membershipsTable.fetchById(membership_id);
     if (!membership) {
       return NextResponse.json(
         { error: `Membership with ID ${membership_id} not found` },
@@ -76,7 +77,7 @@ export async function POST(
       state: MembershipState.Member,
       state_changed: new Date().toISOString(),
     };
-    await putMembership(updatedMembership);
+    await membershipsTable.create(updatedMembership);
     return NextResponse.json(updatedMembership, { status: StatusCodes.OK });
   } catch (err: any) {
     return NextResponse.json(

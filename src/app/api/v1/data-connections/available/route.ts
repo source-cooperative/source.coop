@@ -1,11 +1,10 @@
 import type { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "@ory/nextjs/app";
 import { Actions, DataConnectionSchema, DataConnection } from "@/types";
-import { withErrorHandling } from "@/lib/api/utils";
+import { getApiSession, withErrorHandling } from "@/lib/api/utils";
 import { StatusCodes } from "http-status-codes";
 import { MethodNotImplementedError } from "@/lib/api/errors";
 import { isAuthorized } from "@/lib/api/authz";
-import { getDataConnections } from "@/api/db";
+import { dataConnectionsTable } from "@/lib/clients/database";
 /**
  * @openapi
  * /data-connections/available:
@@ -33,9 +32,10 @@ async function listAvailableDataConnectionsHandler(
   req: NextRequest,
   res: NextResponse<DataConnection[]>
 ): Promise<void> {
-  const session = await getApiSession(request);
+  const session = await getApiSession(req);
 
-  const dataConnections: DataConnection[] = await getDataConnections();
+  const dataConnections: DataConnection[] =
+    await dataConnectionsTable.listAll();
 
   const filteredConnections = dataConnections.filter(
     (dataConnection) =>

@@ -26,13 +26,12 @@
  *       500:
  *         description: Internal server error
  */
-import { NextResponse } from "next/server";
-import { getServerSession } from "@ory/nextjs/app";
+import { NextRequest, NextResponse } from "next/server";
 import { Actions, DataConnection, DataConnectionSchema } from "@/types";
 import { StatusCodes } from "http-status-codes";
-import { NotFoundError, UnauthorizedError } from "@/lib/api/errors";
-import { getDataConnection, putDataConnection } from "@/api/db";
 import { isAuthorized } from "@/lib/api/authz";
+import { getApiSession } from "@/lib/api/utils";
+import { dataConnectionsTable } from "@/lib/clients";
 
 export async function GET(
   request: NextRequest,
@@ -41,7 +40,9 @@ export async function GET(
   try {
     const session = await getApiSession(request);
     const { data_connection_id } = params;
-    const dataConnection = await getDataConnection(data_connection_id);
+    const dataConnection = await dataConnectionsTable.fetchById(
+      data_connection_id
+    );
     if (!dataConnection) {
       return NextResponse.json(
         { error: `Data connection with ID ${data_connection_id} not found` },
@@ -122,7 +123,9 @@ export async function PUT(
     const dataConnectionUpdate = DataConnectionSchema.parse(
       await request.json()
     );
-    const existingDataConnection = await getDataConnection(data_connection_id);
+    const existingDataConnection = await dataConnectionsTable.fetchById(
+      data_connection_id
+    );
     if (!existingDataConnection) {
       return NextResponse.json(
         { error: `Data connection with ID ${data_connection_id} not found` },
@@ -141,7 +144,7 @@ export async function PUT(
       ...existingDataConnection,
       ...dataConnectionUpdate,
     };
-    const [dataConnection, _success] = await putDataConnection(
+    const [dataConnection, _success] = await dataConnectionsTable.create(
       updatedDataConnection
     );
     return NextResponse.json(dataConnection, { status: StatusCodes.OK });
@@ -184,7 +187,9 @@ export async function DELETE(
   try {
     const session = await getApiSession(request);
     const { data_connection_id } = params;
-    const dataConnection = await getDataConnection(data_connection_id);
+    const dataConnection = await dataConnectionsTable.fetchById(
+      data_connection_id
+    );
     if (!dataConnection) {
       return NextResponse.json(
         { error: `Data connection with ID ${data_connection_id} not found` },

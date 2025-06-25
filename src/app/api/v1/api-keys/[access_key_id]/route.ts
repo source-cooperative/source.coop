@@ -26,13 +26,12 @@
  *       500:
  *         description: Internal server error
  */
-import { NextResponse } from "next/server";
-import { getServerSession } from "@ory/nextjs/app";
+import { NextRequest, NextResponse } from "next/server";
 import { Actions, APIKey, RedactedAPIKey, RedactedAPIKeySchema } from "@/types";
 import { StatusCodes } from "http-status-codes";
-import { NotFoundError, UnauthorizedError } from "@/lib/api/errors";
-import { getAPIKey, putAPIKey } from "@/api/db";
 import { isAuthorized } from "@/lib/api/authz";
+import { getApiSession } from "@/lib/api/utils";
+import { apiKeysTable } from "@/lib/clients/database/api-keys";
 
 export async function GET(
   request: NextRequest,
@@ -41,7 +40,7 @@ export async function GET(
   try {
     const session = await getApiSession(request);
     const { access_key_id } = params;
-    const apiKey = await getAPIKey(access_key_id);
+    const apiKey = await apiKeysTable.fetchById(access_key_id);
     if (!apiKey) {
       return NextResponse.json(
         { error: `API key with ID ${access_key_id} not found` },
@@ -110,7 +109,7 @@ export async function PUT(
     const session = await getApiSession(request);
     const { access_key_id } = params;
     const { disabled } = await request.json();
-    const apiKey = await getAPIKey(access_key_id);
+    const apiKey = await apiKeysTable.fetchById(access_key_id);
     if (!apiKey) {
       return NextResponse.json(
         { error: `API key with ID ${access_key_id} not found` },
@@ -124,7 +123,7 @@ export async function PUT(
       );
     }
     apiKey.disabled = disabled;
-    const [updatedAPIKey, _success] = await putAPIKey(apiKey);
+    const [updatedAPIKey, _success] = await apiKeysTable.create(apiKey);
     return NextResponse.json(updatedAPIKey, { status: StatusCodes.OK });
   } catch (err: any) {
     return NextResponse.json(
@@ -165,7 +164,7 @@ export async function DELETE(
   try {
     const session = await getApiSession(request);
     const { access_key_id } = params;
-    const apiKey = await getAPIKey(access_key_id);
+    const apiKey = await apiKeysTable.fetchById(access_key_id);
     if (!apiKey) {
       return NextResponse.json(
         { error: `API key with ID ${access_key_id} not found` },

@@ -42,8 +42,7 @@
  *       500:
  *         description: Internal server error
  */
-import { NextResponse } from "next/server";
-import { getServerSession } from "@ory/nextjs/app";
+import { NextRequest, NextResponse } from "next/server";
 import {
   Actions,
   APIKey,
@@ -53,14 +52,11 @@ import {
   RedactedAPIKeySchema,
 } from "@/types";
 import { StatusCodes } from "http-status-codes";
-import {
-  BadRequestError,
-  NotFoundError,
-  UnauthorizedError,
-} from "@/lib/api/errors";
-import { putAPIKey, getRepository, getAPIKeys } from "@/api/db";
 import { isAuthorized } from "@/lib/api/authz";
-import { generateAccessKeyID, generateSecretAccessKey } from "@/api/utils";
+import { generateAccessKeyID, generateSecretAccessKey } from "@/lib/api/utils";
+import { getApiSession } from "@/lib/api/utils";
+import { productsTable } from "@/lib/clients/database/products";
+import { apiKeysTable } from "@/lib/clients/database/api-keys";
 
 export async function POST(
   request: NextRequest,
@@ -78,7 +74,7 @@ export async function POST(
         { status: StatusCodes.BAD_REQUEST }
       );
     }
-    const repository = await getRepository(account_id, repository_id);
+    const repository = await productsTable.fetchById(account_id, repository_id);
     if (!repository) {
       return NextResponse.json(
         {
@@ -93,7 +89,7 @@ export async function POST(
         ...apiKeyRequest,
         disabled: false,
         account_id: repository.account_id,
-        repository_id: repository.repository_id,
+        repository_id: repository.product_id,
         access_key_id: generateAccessKeyID(),
         secret_access_key: generateSecretAccessKey(),
       };
@@ -103,7 +99,7 @@ export async function POST(
           { status: StatusCodes.UNAUTHORIZED }
         );
       }
-      [apiKeyCreated, success] = await putAPIKey(apiKey, true);
+      [apiKeyCreated, success] = await apiKeysTable.create(apiKey, true);
       if (success) {
         return NextResponse.json(apiKeyCreated, { status: StatusCodes.OK });
       }
@@ -161,7 +157,7 @@ export async function GET(
   try {
     const session = await getApiSession(request);
     const { account_id, repository_id } = params;
-    const repository = await getRepository(account_id, repository_id);
+    const repository = await productsTable.fetchById(account_id, repository_id);
     if (!repository) {
       return NextResponse.json(
         {
@@ -176,9 +172,9 @@ export async function GET(
         { status: StatusCodes.UNAUTHORIZED }
       );
     }
-    const apiKeys = await getAPIKeys(
+    const apiKeys = await apiKeysTable.listByAccount(
       repository.account_id,
-      repository.repository_id
+      repository.product_id
     );
     const redactedAPIKeys: RedactedAPIKey[] = [];
     for (const apiKey of apiKeys) {

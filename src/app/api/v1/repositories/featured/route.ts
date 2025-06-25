@@ -1,9 +1,9 @@
-import { NextResponse } from "next/server";
-import { Actions, RepositoryList } from "@/types";
-import { getServerSession } from "@ory/nextjs/app";
-import { getFeaturedRepositories } from "@/api/db";
+import { NextRequest, NextResponse } from "next/server";
+import { Actions } from "@/types";
 import { isAuthorized } from "@/lib/api/authz";
 import { StatusCodes } from "http-status-codes";
+import { getApiSession } from "@/lib/api/utils";
+import { productsTable } from "@/lib/clients/database/products";
 
 /**
  * @openapi
@@ -22,10 +22,10 @@ import { StatusCodes } from "http-status-codes";
  *       500:
  *         description: Internal server error
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const session = await getApiSession(request);
-    const featuredRepositories = await getFeaturedRepositories();
+    const featuredRepositories = await productsTable.listFeatured();
     const filteredRepositories = featuredRepositories.filter((repository) => {
       return isAuthorized(session, repository, Actions.GetRepository);
     });

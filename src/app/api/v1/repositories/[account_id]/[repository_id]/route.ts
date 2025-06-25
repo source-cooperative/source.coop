@@ -1,10 +1,9 @@
-import { NextResponse } from "next/server";
-import { Actions, Repository, RepositoryUpdateRequestSchema } from "@/types";
-import { getServerSession } from "@ory/nextjs/app";
-import { getRepository, putRepository } from "@/api/db";
-import { NotFoundError, UnauthorizedError } from "@/lib/api/errors";
+import { NextRequest, NextResponse } from "next/server";
+import { Actions, RepositoryUpdateRequestSchema } from "@/types";
 import { isAuthorized } from "@/lib/api/authz";
 import { StatusCodes } from "http-status-codes";
+import { getApiSession } from "@/lib/api/utils";
+import { productsTable } from "@/lib/clients/database/products";
 
 /**
  * @openapi
@@ -54,7 +53,7 @@ export async function GET(
   try {
     const session = await getApiSession(request);
     const { account_id, repository_id } = params;
-    const repository = await getRepository(account_id, repository_id);
+    const repository = await productsTable.fetchById(account_id, repository_id);
     if (!repository) {
       return NextResponse.json(
         {
@@ -134,7 +133,7 @@ export async function PUT(
   try {
     const session = await getApiSession(request);
     const { account_id, repository_id } = params;
-    const repository = await getRepository(account_id, repository_id);
+    const repository = await productsTable.fetchById(account_id, repository_id);
     if (!repository) {
       return NextResponse.json(
         {
@@ -154,7 +153,7 @@ export async function PUT(
     }
     repository.meta = repositoryUpdate.meta;
     repository.state = repositoryUpdate.state;
-    await putRepository(repository);
+    await productsTable.update(repository);
     return NextResponse.json(repository, { status: StatusCodes.OK });
   } catch (err: any) {
     return NextResponse.json(
@@ -212,7 +211,7 @@ export async function DELETE(
   try {
     const session = await getApiSession(request);
     const { account_id, repository_id } = params;
-    const repository = await getRepository(account_id, repository_id);
+    const repository = await productsTable.fetchById(account_id, repository_id);
     if (!repository) {
       return NextResponse.json(
         {
@@ -228,7 +227,7 @@ export async function DELETE(
       );
     }
     repository.disabled = true;
-    await putRepository(repository);
+    await productsTable.update(repository);
     return NextResponse.json(repository, { status: StatusCodes.OK });
   } catch (err: any) {
     return NextResponse.json(

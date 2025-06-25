@@ -5,6 +5,7 @@ import type {
 } from "@/types";
 import {
   GetCommand,
+  PutCommand,
   QueryCommand,
   ScanCommand,
   UpdateCommand,
@@ -82,10 +83,25 @@ class ProductsTable extends BaseTable {
       accountsTable.fetchById(account_id),
     ]);
 
-    return (result.Items || []).map((item) => ({
+    return (result.Items || []).map((item: any) => ({
       ...(item as Product),
       account: account || undefined,
     }));
+  }
+
+  async listFeatured(): Promise<Product[]> {
+    // TODO: This doesn't work yet
+    const result = await this.client.send(
+      new QueryCommand({
+        TableName: this.table,
+        IndexName: "PublicProductsIndex",
+        KeyConditionExpression: "visibility = :visibility",
+        ExpressionAttributeValues: {
+          ":visibility": "public",
+        },
+      })
+    );
+    return result.Items || [];
   }
 
   async fetchById(
@@ -111,6 +127,15 @@ class ProductsTable extends BaseTable {
       ...(result.Item as Product),
       account: account || undefined,
     };
+  }
+
+  async create(product: Product): Promise<void> {
+    await this.client.send(
+      new PutCommand({
+        TableName: this.table,
+        Item: product,
+      })
+    );
   }
 
   async update(product: Product): Promise<void> {
@@ -195,11 +220,11 @@ class ProductsTable extends BaseTable {
       )
     );
     const accountMap = new Map(
-      accounts.filter(Boolean).map((acc) => [acc!.account_id, acc])
+      accounts.filter(Boolean).map((acc: any) => [acc!.account_id, acc])
     );
 
     // Attach accounts to products
-    return products.map((item) => ({
+    return products.map((item: any) => ({
       ...item,
       account: accountMap.get(item.account_id) || undefined,
     }));

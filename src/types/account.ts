@@ -15,7 +15,6 @@ import {
   MIN_ID_LENGTH,
   MAX_ID_LENGTH,
   ID_REGEX,
-  AccountFlags,
   AccountFlagsSchema,
 } from "./shared";
 

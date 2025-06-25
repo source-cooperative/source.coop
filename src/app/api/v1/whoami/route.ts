@@ -17,15 +17,13 @@
  *       401:
  *         description: Unauthorized - No valid session found
  */
-import { NextResponse } from "next/server";
-import { getServerSession } from "@ory/nextjs/app";
-import { UserSession } from "@/types";
+import { NextRequest, NextResponse } from "next/server";
 import { StatusCodes } from "http-status-codes";
-import { UnauthorizedError } from "@/lib/api/errors";
+import { getApiSession } from "@/lib/api/utils";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const session = await getApiSession(request);
+    const session = await getApiSession(req);
     if (!session) {
       return NextResponse.json(
         { error: "Unauthorized" },
