@@ -1,6 +1,11 @@
 import { DataConnection } from "@/types";
 import { PutItemCommand } from "@aws-sdk/client-dynamodb";
-import { QueryCommand, ScanCommand } from "@aws-sdk/lib-dynamodb";
+import {
+  QueryCommand,
+  ScanCommand,
+  PutCommand,
+  UpdateCommand,
+} from "@aws-sdk/lib-dynamodb";
 import { marshall } from "@aws-sdk/util-dynamodb";
 import { BaseTable } from "./base";
 
@@ -45,7 +50,56 @@ export class DataConnectionsTable extends BaseTable {
     }
   }
 
-  async create(
+  async create(dataConnection: DataConnection): Promise<DataConnection> {
+    try {
+      await this.client.send(
+        new PutCommand({
+          TableName: this.table,
+          Item: dataConnection,
+        })
+      );
+      return dataConnection;
+    } catch (error) {
+      this.logError("create", error, {
+        dataConnectionId: dataConnection.data_connection_id,
+      });
+      throw error;
+    }
+  }
+
+  async update(dataConnection: DataConnection): Promise<DataConnection> {
+    try {
+      const result = await this.client.send(
+        new UpdateCommand({
+          TableName: this.table,
+          Key: {
+            data_connection_id: dataConnection.data_connection_id,
+          },
+          UpdateExpression:
+            "SET name = :name, prefix_template = :prefix_template, read_only = :read_only, allowed_data_modes = :allowed_data_modes, required_flag = :required_flag, details = :details, authentication = :authentication",
+          ExpressionAttributeValues: {
+            ":name": dataConnection.name,
+            ":prefix_template": dataConnection.prefix_template,
+            ":read_only": dataConnection.read_only,
+            ":allowed_data_modes": dataConnection.allowed_data_modes,
+            ":required_flag": dataConnection.required_flag,
+            ":details": dataConnection.details,
+            ":authentication": dataConnection.authentication,
+          },
+          ReturnValues: "ALL_NEW",
+        })
+      );
+      return result.Attributes as DataConnection;
+    } catch (error) {
+      this.logError("update", error, {
+        dataConnectionId: dataConnection.data_connection_id,
+      });
+      throw error;
+    }
+  }
+
+  // Legacy method for backward compatibility - renamed to upsert
+  async upsert(
     dataConnection: DataConnection,
     checkIfExists: boolean = false
   ): Promise<[DataConnection, boolean]> {
@@ -67,7 +121,7 @@ export class DataConnectionsTable extends BaseTable {
       ) {
         return [dataConnection, false];
       }
-      this.logError("create", error, {
+      this.logError("upsert", error, {
         dataConnectionId: dataConnection.data_connection_id,
       });
       throw error;

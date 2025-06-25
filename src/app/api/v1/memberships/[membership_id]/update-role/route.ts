@@ -81,12 +81,13 @@ export async function PUT(
         { status: StatusCodes.BAD_REQUEST }
       );
     }
-    const updatedMembership: Membership = {
-      ...membership,
-      role: role,
-    };
-    await membershipsTable.create(updatedMembership);
-    return NextResponse.json(updatedMembership, { status: StatusCodes.OK });
+    return NextResponse.json(
+      await membershipsTable.update({
+        ...membership,
+        role: role,
+      }),
+      { status: StatusCodes.OK }
+    );
   } catch (err: any) {
     return NextResponse.json(
       { error: err.message || "Internal server error" },

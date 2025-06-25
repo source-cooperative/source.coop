@@ -1,3 +1,14 @@
+import { StatusCodes } from "http-status-codes";
+import { NextRequest, NextResponse } from "next/server";
+import { AccountCreationRequestSchema, Actions, AccountFlags } from "@/types";
+import { AccountType } from "@/types/account";
+import { Account } from "@/types/account";
+import { isAuthorized } from "@/lib/api/authz";
+import { getApiSession } from "@/lib/api/utils";
+import { accountsTable } from "@/lib/clients/database";
+
+const isProd = process.env.NEXT_PUBLIC_IS_PROD === "1";
+
 /**
  * @openapi
  * /accounts:
@@ -28,19 +39,6 @@
  *       500:
  *         description: Internal server error
  */
-import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "@ory/nextjs/app";
-import { AccountCreationRequestSchema, Actions, AccountFlags } from "@/types";
-import { AccountType } from "@/types/account";
-import { Account } from "@/types/account";
-import { StatusCodes } from "http-status-codes";
-import { BadRequestError, UnauthorizedError } from "@/lib/api/errors";
-import { putAccount } from "@/api/db";
-import { isAuthorized } from "@/lib/api/authz";
-import { getApiSession } from "@/lib/api/utils";
-
-const isProd = process.env.NEXT_PUBLIC_IS_PROD === "1";
-
 export async function POST(request: NextRequest) {
   try {
     const session = await getApiSession(request);
@@ -70,14 +68,16 @@ export async function POST(request: NextRequest) {
         { status: StatusCodes.UNAUTHORIZED }
       );
     }
-    const [account, success] = await accountsTable.update(newAccount, true);
-    if (!success) {
+    try {
+      const account = await accountsTable.create(newAccount);
+      return NextResponse.json(account, { status: StatusCodes.OK });
+    } catch (e) {
+      console.error(`Error creating account: ${e}`);
       return NextResponse.json(
         { error: `Account with ID ${newAccount.account_id} already exists` },
         { status: StatusCodes.BAD_REQUEST }
       );
     }
-    return NextResponse.json(account, { status: StatusCodes.OK });
   } catch (err: any) {
     return NextResponse.json(
       { error: err.message || "Internal server error" },

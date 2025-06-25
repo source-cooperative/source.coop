@@ -1,3 +1,18 @@
+import { NextRequest, NextResponse } from "next/server";
+import {
+  Actions,
+  Membership,
+  MembershipInvitation,
+  MembershipInvitationSchema,
+  MembershipState,
+} from "@/types";
+import { AccountType } from "@/types/account";
+import { StatusCodes } from "http-status-codes";
+import { accountsTable, membershipsTable } from "@/lib/clients/database";
+import { isAuthorized } from "@/lib/api/authz";
+import * as crypto from "crypto";
+import { getApiSession } from "@/lib/api/utils";
+
 /**
  * @openapi
  * /accounts/{account_id}/members:
@@ -39,21 +54,6 @@
  *       500:
  *         description: Internal server error
  */
-import { NextRequest, NextResponse } from "next/server";
-import {
-  Actions,
-  Membership,
-  MembershipInvitation,
-  MembershipInvitationSchema,
-  MembershipState,
-} from "@/types";
-import { AccountType } from "@/types/account";
-import { StatusCodes } from "http-status-codes";
-import { accountsTable, membershipsTable } from "@/lib/clients/database";
-import { isAuthorized } from "@/lib/api/authz";
-import * as crypto from "crypto";
-import { getApiSession } from "@/lib/api/utils";
-
 export async function POST(
   request: NextRequest,
   { params }: { params: { account_id: string } }
@@ -93,50 +93,43 @@ export async function POST(
       null,
       false,
     ];
-    do {
-      let membership: Membership = {
-        ...membershipInvitation,
-        membership_id: crypto.randomUUID(),
-        membership_account_id: account.account_id,
-        state: MembershipState.Invited,
-        state_changed: new Date().toISOString(),
-      };
-      if (!isAuthorized(session, membership, Actions.InviteMembership)) {
-        return NextResponse.json(
-          { error: "Unauthorized" },
-          { status: StatusCodes.UNAUTHORIZED }
-        );
-      }
-      const existingMembership = await membershipsTable.listByAccount(
-        account.account_id
+    let membership: Membership = {
+      ...membershipInvitation,
+      membership_id: crypto.randomUUID(),
+      membership_account_id: account.account_id,
+      state: MembershipState.Invited,
+      state_changed: new Date().toISOString(),
+    };
+    if (!isAuthorized(session, membership, Actions.InviteMembership)) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: StatusCodes.UNAUTHORIZED }
       );
-      var exists = false;
-      for (const existing of existingMembership) {
-        if (
-          existing.account_id === membership.account_id &&
-          (existing.state === MembershipState.Member ||
-            existing.state === MembershipState.Invited)
-        ) {
-          exists = true;
-          return NextResponse.json(
-            {
-              error: `Account with ID ${membership.account_id} is already a member or has a pending invitation for account with ID ${account.account_id}`,
-            },
-            { status: StatusCodes.BAD_REQUEST }
-          );
-        }
-      }
-      if (!exists) {
-        [createdMembership, success] = await membershipsTable.create(
-          membership
+    }
+    const existingMembership = await membershipsTable.listByAccount(
+      account.account_id
+    );
+    for (const existing of existingMembership) {
+      if (
+        existing.account_id === membership.account_id &&
+        [MembershipState.Member, MembershipState.Invited].includes(
+          existing.state
+        )
+      ) {
+        return NextResponse.json(
+          {
+            error: `Account with ID ${membership.account_id} is already a member or has a pending invitation for account with ID ${account.account_id}`,
+          },
+          { status: StatusCodes.BAD_REQUEST }
         );
-        if (success) {
-          return NextResponse.json(createdMembership, {
-            status: StatusCodes.OK,
-          });
-        }
       }
-    } while (!success);
+    }
+    createdMembership = await membershipsTable.create(membership);
+    if (success) {
+      return NextResponse.json(createdMembership, {
+        status: StatusCodes.OK,
+      });
+    }
   } catch (err: any) {
     return NextResponse.json(
       { error: err.message || "Internal server error" },

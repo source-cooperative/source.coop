@@ -43,6 +43,7 @@ export async function POST(
     }
 
     let [apiKeyCreated, success]: [APIKey | null, boolean] = [null, false];
+    let attempts = 0;
     do {
       let apiKey: APIKey = {
         ...apiKeyRequest,
@@ -57,11 +58,17 @@ export async function POST(
           { status: StatusCodes.UNAUTHORIZED }
         );
       }
-      [apiKeyCreated, success] = await apiKeysTable.create(apiKey, true);
-      if (success) {
+      try {
+        const apiKeyCreated = await apiKeysTable.create(apiKey);
         return NextResponse.json(apiKeyCreated, { status: StatusCodes.OK });
+      } catch (error) {
+        if (attempts > 3) {
+          throw error;
+        }
+        attempts++;
       }
     } while (!success);
+    return NextResponse.json(apiKeyCreated, { status: StatusCodes.OK });
   } catch (err: any) {
     return NextResponse.json(
       { error: err.message || "Internal server error" },

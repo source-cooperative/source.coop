@@ -83,27 +83,35 @@ export async function POST(
         { status: StatusCodes.NOT_FOUND }
       );
     }
-    let [apiKeyCreated, success]: [APIKey | null, boolean] = [null, false];
-    do {
-      let apiKey: APIKey = {
-        ...apiKeyRequest,
-        disabled: false,
-        account_id: repository.account_id,
-        repository_id: repository.product_id,
-        access_key_id: generateAccessKeyID(),
-        secret_access_key: generateSecretAccessKey(),
-      };
-      if (!isAuthorized(session, apiKey, Actions.CreateAPIKey)) {
-        return NextResponse.json(
-          { error: "Unauthorized" },
-          { status: StatusCodes.UNAUTHORIZED }
-        );
+
+    for (let i = 0; i < 3; i++) {
+      try {
+        const apiKey: APIKey = {
+          ...apiKeyRequest,
+          disabled: false,
+          account_id: repository.account_id,
+          repository_id: repository.product_id,
+          access_key_id: generateAccessKeyID(),
+          secret_access_key: generateSecretAccessKey(),
+        };
+
+        if (!isAuthorized(session, apiKey, Actions.CreateAPIKey)) {
+          return NextResponse.json(
+            { error: "Unauthorized" },
+            { status: StatusCodes.UNAUTHORIZED }
+          );
+        }
+
+        const createdAPIKey = await apiKeysTable.create(apiKey);
+        return NextResponse.json(createdAPIKey, { status: StatusCodes.OK });
+      } catch (e) {
+        console.error(`Error creating API key: ${e}`);
       }
-      [apiKeyCreated, success] = await apiKeysTable.create(apiKey, true);
-      if (success) {
-        return NextResponse.json(apiKeyCreated, { status: StatusCodes.OK });
-      }
-    } while (!success);
+    }
+    return NextResponse.json(
+      { error: "Failed to create API key" },
+      { status: StatusCodes.INTERNAL_SERVER_ERROR }
+    );
   } catch (err: any) {
     return NextResponse.json(
       { error: err.message || "Internal server error" },

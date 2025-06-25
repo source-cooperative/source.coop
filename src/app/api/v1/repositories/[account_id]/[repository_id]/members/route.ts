@@ -1,3 +1,21 @@
+import { NextRequest, NextResponse } from "next/server";
+import {
+  Actions,
+  Membership,
+  MembershipInvitation,
+  MembershipInvitationSchema,
+  MembershipState,
+} from "@/types";
+import { StatusCodes } from "http-status-codes";
+import { isAuthorized } from "@/lib/api/authz";
+import * as crypto from "crypto";
+import { getApiSession } from "@/lib/api/utils";
+import {
+  accountsTable,
+  membershipsTable,
+  productsTable,
+} from "@/lib/clients/database";
+
 /**
  * @openapi
  * /repositories/{account_id}/{repository_id}/members:
@@ -45,24 +63,6 @@
  *       500:
  *         description: Internal server error
  */
-import { NextRequest, NextResponse } from "next/server";
-import {
-  Actions,
-  Membership,
-  MembershipInvitation,
-  MembershipInvitationSchema,
-  MembershipState,
-} from "@/types";
-import { StatusCodes } from "http-status-codes";
-import { isAuthorized } from "@/lib/api/authz";
-import * as crypto from "crypto";
-import { getApiSession } from "@/lib/api/utils";
-import {
-  accountsTable,
-  membershipsTable,
-  productsTable,
-} from "@/lib/clients/database";
-
 export async function POST(
   request: NextRequest,
   { params }: { params: { account_id: string; repository_id: string } }
@@ -92,57 +92,42 @@ export async function POST(
         { status: StatusCodes.NOT_FOUND }
       );
     }
-    let [createdMembership, success]: [Membership | null, boolean] = [
-      null,
-      false,
-    ];
-    do {
-      let membership: Membership = {
-        ...membershipInvitation,
-        membership_id: crypto.randomUUID(),
-        membership_account_id: product.account_id,
-        repository_id: product.product_id,
-        state: MembershipState.Invited,
-        state_changed: new Date().toISOString(),
-      };
-      if (!isAuthorized(session, membership, Actions.InviteMembership)) {
-        return NextResponse.json(
-          { error: "Unauthorized" },
-          { status: StatusCodes.UNAUTHORIZED }
-        );
-      }
-      const existingMembership = await membershipsTable.listByAccount(
-        product.account_id,
-        product.product_id
+    const membership: Membership = {
+      ...membershipInvitation,
+      membership_id: crypto.randomUUID(),
+      membership_account_id: product.account_id,
+      repository_id: product.product_id,
+      state: MembershipState.Invited,
+      state_changed: new Date().toISOString(),
+    };
+    if (!isAuthorized(session, membership, Actions.InviteMembership)) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: StatusCodes.UNAUTHORIZED }
       );
-      var exists = false;
-      for (const existing of existingMembership) {
-        if (
-          existing.account_id === membership.account_id &&
-          (existing.state === MembershipState.Member ||
-            existing.state === MembershipState.Invited)
-        ) {
-          exists = true;
-          return NextResponse.json(
-            {
-              error: `Account with ID ${membership.account_id} is already a member or has a pending invitation for repository with ID ${product.account_id}/${product.product_id}`,
-            },
-            { status: StatusCodes.BAD_REQUEST }
-          );
-        }
-      }
-      if (!exists) {
-        [createdMembership, success] = await membershipsTable.create(
-          membership,
-          true
+    }
+    const existingMembership = await membershipsTable.listByAccount(
+      product.account_id,
+      product.product_id
+    );
+    for (const existing of existingMembership) {
+      if (
+        existing.account_id === membership.account_id &&
+        [MembershipState.Member, MembershipState.Invited].includes(
+          existing.state
+        )
+      ) {
+        return NextResponse.json(
+          {
+            error: `Account with ID ${membership.account_id} is already a member or has a pending invitation for repository with ID ${product.account_id}/${product.product_id}`,
+          },
+          { status: StatusCodes.BAD_REQUEST }
         );
-        if (success) {
-          return NextResponse.json(createdMembership, {
-            status: StatusCodes.OK,
-          });
-        }
       }
-    } while (!success);
+    }
+    return NextResponse.json(await membershipsTable.create(membership), {
+      status: StatusCodes.OK,
+    });
   } catch (err: any) {
     return NextResponse.json(
       { error: err.message || "Internal server error" },

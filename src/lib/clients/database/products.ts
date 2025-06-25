@@ -3,6 +3,8 @@ import type {
   ProductMirror,
   ProductRole,
 } from "@/types";
+import { PutItemCommand } from "@aws-sdk/client-dynamodb";
+
 import {
   GetCommand,
   PutCommand,
@@ -12,6 +14,7 @@ import {
 } from "@aws-sdk/lib-dynamodb";
 import { accountsTable } from "./accounts";
 import { BaseTable } from "./base";
+import { marshall } from "@aws-sdk/util-dynamodb";
 
 class ProductsTable extends BaseTable {
   async listPublic(
@@ -101,7 +104,7 @@ class ProductsTable extends BaseTable {
         },
       })
     );
-    return result.Items || [];
+    return (result.Items || []) as Product[];
   }
 
   async fetchById(
@@ -129,34 +132,84 @@ class ProductsTable extends BaseTable {
     };
   }
 
-  async create(product: Product): Promise<void> {
-    await this.client.send(
-      new PutCommand({
-        TableName: this.table,
-        Item: product,
-      })
-    );
+  async create(product: Product): Promise<Product> {
+    try {
+      await this.client.send(
+        new PutCommand({
+          TableName: this.table,
+          Item: product,
+        })
+      );
+      return product;
+    } catch (error) {
+      this.logError("create", error, {
+        productId: product.product_id,
+        accountId: product.account_id,
+      });
+      throw error;
+    }
   }
 
-  async update(product: Product): Promise<void> {
-    await this.client.send(
-      new UpdateCommand({
+  async update(product: Product): Promise<Product> {
+    try {
+      const result = await this.client.send(
+        new UpdateCommand({
+          TableName: this.table,
+          Key: {
+            product_id: product.product_id,
+            account_id: product.account_id,
+          },
+          UpdateExpression:
+            "SET title = :title, description = :description, updated_at = :updated_at, visibility = :visibility, metadata = :metadata",
+          ExpressionAttributeValues: {
+            ":title": product.title,
+            ":description": product.description,
+            ":updated_at": new Date().toISOString(),
+            ":visibility": product.visibility,
+            ":metadata": product.metadata,
+          },
+          ReturnValues: "ALL_NEW",
+        })
+      );
+      return result.Attributes as Product;
+    } catch (error) {
+      this.logError("update", error, {
+        productId: product.product_id,
+        accountId: product.account_id,
+      });
+      throw error;
+    }
+  }
+
+  // Legacy method for backward compatibility - renamed to upsert
+  async upsert(
+    product: Product,
+    checkIfExists: boolean = false
+  ): Promise<[Product, boolean]> {
+    try {
+      const command = new PutItemCommand({
         TableName: this.table,
-        Key: {
-          product_id: product.product_id,
-          account_id: product.account_id,
-        },
-        UpdateExpression:
-          "SET title = :title, description = :description, updated_at = :updated_at, visibility = :visibility, metadata = :metadata",
-        ExpressionAttributeValues: {
-          ":title": product.title,
-          ":description": product.description,
-          ":updated_at": new Date().toISOString(),
-          ":visibility": product.visibility,
-          ":metadata": product.metadata,
-        },
-      })
-    );
+        Item: marshall(product),
+        ConditionExpression: checkIfExists
+          ? "attribute_not_exists(product_id)"
+          : undefined,
+      });
+
+      await this.client.send(command);
+      return [product, true];
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        error.name === "ConditionalCheckFailedException"
+      ) {
+        return [product, false];
+      }
+      this.logError("upsert", error, {
+        productId: product.product_id,
+        accountId: product.account_id,
+      });
+      throw error;
+    }
   }
 
   async updateMirror(

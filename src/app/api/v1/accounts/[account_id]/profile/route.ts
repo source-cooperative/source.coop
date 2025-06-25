@@ -1,3 +1,11 @@
+import { NextRequest, NextResponse } from "next/server";
+import { StatusCodes } from "http-status-codes";
+import { getEmail, getProfileImage } from "@/lib/api/utils";
+import { accountsTable } from "@/lib/clients/database";
+import { isAuthorized } from "@/lib/api/authz";
+import { getApiSession } from "@/lib/api/utils";
+import { AccountProfileResponse, AccountProfileSchema, Actions } from "@/types";
+
 /**
  * @openapi
  * /accounts/{account_id}/profile:
@@ -26,14 +34,6 @@
  *       500:
  *         description: Internal server error
  */
-import { NextRequest, NextResponse } from "next/server";
-import { StatusCodes } from "http-status-codes";
-import { getEmail, getProfileImage } from "@/lib/api/utils";
-import { accountsTable } from "@/lib/clients/database";
-import { isAuthorized } from "@/lib/api/authz";
-import { getApiSession } from "@/lib/api/utils";
-import { AccountProfileResponse, AccountProfileSchema, Actions } from "@/types";
-
 export async function GET(
   request: NextRequest,
   { params }: { params: { account_id: string } }

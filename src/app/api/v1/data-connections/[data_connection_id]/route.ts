@@ -144,7 +144,7 @@ export async function PUT(
       ...existingDataConnection,
       ...dataConnectionUpdate,
     };
-    const [dataConnection, _success] = await dataConnectionsTable.create(
+    const dataConnection = await dataConnectionsTable.create(
       updatedDataConnection
     );
     return NextResponse.json(dataConnection, { status: StatusCodes.OK });

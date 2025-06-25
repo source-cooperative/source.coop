@@ -1,6 +1,6 @@
 import { APIKey } from "@/types";
 import { PutItemCommand } from "@aws-sdk/client-dynamodb";
-import { QueryCommand } from "@aws-sdk/lib-dynamodb";
+import { QueryCommand, PutCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import { marshall } from "@aws-sdk/util-dynamodb";
 import { BaseTable } from "./base";
 
@@ -52,7 +52,51 @@ export class APIKeysTable extends BaseTable {
     }
   }
 
-  async create(
+  async create(apiKey: APIKey): Promise<APIKey> {
+    try {
+      await this.client.send(
+        new PutCommand({
+          TableName: this.table,
+          Item: apiKey,
+        })
+      );
+      return apiKey;
+    } catch (error) {
+      this.logError("create", error, { accessKeyId: apiKey.access_key_id });
+      throw error;
+    }
+  }
+
+  async update(apiKey: APIKey): Promise<APIKey> {
+    try {
+      const result = await this.client.send(
+        new UpdateCommand({
+          TableName: this.table,
+          Key: {
+            access_key_id: apiKey.access_key_id,
+          },
+          UpdateExpression:
+            "SET account_id = :account_id, repository_id = :repository_id, disabled = :disabled, expires = :expires, name = :name, secret_access_key = :secret_access_key",
+          ExpressionAttributeValues: {
+            ":account_id": apiKey.account_id,
+            ":repository_id": apiKey.repository_id,
+            ":disabled": apiKey.disabled,
+            ":expires": apiKey.expires,
+            ":name": apiKey.name,
+            ":secret_access_key": apiKey.secret_access_key,
+          },
+          ReturnValues: "ALL_NEW",
+        })
+      );
+      return result.Attributes as APIKey;
+    } catch (error) {
+      this.logError("update", error, { accessKeyId: apiKey.access_key_id });
+      throw error;
+    }
+  }
+
+  // Legacy method for backward compatibility - renamed to upsert
+  async upsert(
     apiKey: APIKey,
     checkIfExists: boolean = false
   ): Promise<[APIKey, boolean]> {
@@ -74,7 +118,7 @@ export class APIKeysTable extends BaseTable {
       ) {
         return [apiKey, false];
       }
-      this.logError("create", error, { accessKeyId: apiKey.access_key_id });
+      this.logError("upsert", error, { accessKeyId: apiKey.access_key_id });
       throw error;
     }
   }

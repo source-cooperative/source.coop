@@ -72,13 +72,14 @@ export async function POST(
         { status: StatusCodes.BAD_REQUEST }
       );
     }
-    const updatedMembership: Membership = {
-      ...membership,
-      state: MembershipState.Member,
-      state_changed: new Date().toISOString(),
-    };
-    await membershipsTable.create(updatedMembership);
-    return NextResponse.json(updatedMembership, { status: StatusCodes.OK });
+    return NextResponse.json(
+      await membershipsTable.update({
+        ...membership,
+        state: MembershipState.Member,
+        state_changed: new Date().toISOString(),
+      }),
+      { status: StatusCodes.OK }
+    );
   } catch (err: any) {
     return NextResponse.json(
       { error: err.message || "Internal server error" },

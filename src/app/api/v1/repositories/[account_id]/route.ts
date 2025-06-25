@@ -55,16 +55,11 @@ export async function GET(
         { status: StatusCodes.NOT_FOUND }
       );
     }
-    const repositories: Repository[] = await productsTable.listByAccount(
-      account_id
+    let repositories = await productsTable.listByAccount(account_id);
+    repositories = repositories.filter((repository) =>
+      isAuthorized(session, repository, Actions.ListRepository)
     );
-    const filteredRepositories = repositories.filter((repository) => {
-      return isAuthorized(session, repository, Actions.ListRepository);
-    });
-    const response: RepositoryList = {
-      repositories: filteredRepositories,
-    };
-    return NextResponse.json(response, { status: StatusCodes.OK });
+    return NextResponse.json({ repositories }, { status: StatusCodes.OK });
   } catch (err: any) {
     return NextResponse.json(
       { error: err.message || "Internal server error" },

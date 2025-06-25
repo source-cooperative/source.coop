@@ -90,11 +90,15 @@ export async function POST(request: NextRequest) {
         { status: StatusCodes.UNAUTHORIZED }
       );
     }
-    const [createdDataConnection, success] = await dataConnectionsTable.create(
-      dataConnection,
-      true
-    );
-    if (!success) {
+    try {
+      const createdDataConnection = await dataConnectionsTable.create(
+        dataConnection
+      );
+      return NextResponse.json(createdDataConnection, {
+        status: StatusCodes.OK,
+      });
+    } catch (e) {
+      console.error(`Error creating data connection: ${e}`);
       return NextResponse.json(
         {
           error: `Data connection with ID ${dataConnection.data_connection_id} already exists`,
@@ -102,7 +106,6 @@ export async function POST(request: NextRequest) {
         { status: StatusCodes.BAD_REQUEST }
       );
     }
-    return NextResponse.json(createdDataConnection, { status: StatusCodes.OK });
   } catch (err: any) {
     return NextResponse.json(
       { error: err.message || "Internal server error" },

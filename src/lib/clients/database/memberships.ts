@@ -1,6 +1,6 @@
 import { Membership } from "@/types";
 import { PutItemCommand } from "@aws-sdk/client-dynamodb";
-import { QueryCommand } from "@aws-sdk/lib-dynamodb";
+import { QueryCommand, PutCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import { marshall } from "@aws-sdk/util-dynamodb";
 import { BaseTable } from "./base";
 
@@ -86,7 +86,55 @@ export class MembershipsTable extends BaseTable {
     }
   }
 
-  async create(
+  async create(membership: Membership): Promise<Membership> {
+    try {
+      await this.client.send(
+        new PutCommand({
+          TableName: this.table,
+          Item: membership,
+        })
+      );
+      return membership;
+    } catch (error) {
+      this.logError("create", error, {
+        membershipId: membership.membership_id,
+      });
+      throw error;
+    }
+  }
+
+  async update(membership: Membership): Promise<Membership> {
+    try {
+      const result = await this.client.send(
+        new UpdateCommand({
+          TableName: this.table,
+          Key: {
+            membership_id: membership.membership_id,
+          },
+          UpdateExpression:
+            "SET account_id = :account_id, membership_account_id = :membership_account_id, repository_id = :repository_id, role = :role, state = :state, state_changed = :state_changed",
+          ExpressionAttributeValues: {
+            ":account_id": membership.account_id,
+            ":membership_account_id": membership.membership_account_id,
+            ":repository_id": membership.repository_id,
+            ":role": membership.role,
+            ":state": membership.state,
+            ":state_changed": membership.state_changed,
+          },
+          ReturnValues: "ALL_NEW",
+        })
+      );
+      return result.Attributes as Membership;
+    } catch (error) {
+      this.logError("update", error, {
+        membershipId: membership.membership_id,
+      });
+      throw error;
+    }
+  }
+
+  // Legacy method for backward compatibility - renamed to upsert
+  async upsert(
     membership: Membership,
     checkIfExists: boolean = false
   ): Promise<[Membership, boolean]> {
@@ -108,7 +156,7 @@ export class MembershipsTable extends BaseTable {
       ) {
         return [membership, false];
       }
-      this.logError("create", error, {
+      this.logError("upsert", error, {
         membershipId: membership.membership_id,
       });
       throw error;
