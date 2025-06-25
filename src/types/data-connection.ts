@@ -16,7 +16,6 @@ import {
   MAX_ID_LENGTH,
   ID_REGEX,
   RepositoryDataMode,
-  RepositoryDataModeSchema,
   AccountFlags,
 } from "./shared";
 

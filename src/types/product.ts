@@ -16,7 +16,6 @@ import {
   MIN_ID_LENGTH,
   MAX_ID_LENGTH,
   ID_REGEX,
-  RepositoryDataMode,
   RepositoryDataModeSchema,
 } from "./shared";
 
@@ -75,7 +74,7 @@ export type RepositoryMeta = z.infer<typeof RepositoryMetaSchema>;
 export type RepositoryListResponse = {
   repositories: Repository[];
   next?: string;
-  count: Number;
+  count: number;
 };
 
 export enum RepositoryState {

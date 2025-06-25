@@ -1,10 +1,9 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { Actions, RepositoryListResponse, AccountFlags } from "@/types";
-import { MethodNotImplementedError } from "@/lib/api/errors";
 import { StatusCodes } from "http-status-codes";
-import { getRepositories } from "@/api/db";
-import { getServerSession } from "@ory/nextjs/app";
 import { isAuthorized } from "@/lib/api/authz";
+import { getApiSession } from "@/lib/api/utils";
+import { productsTable } from "@/lib/clients/database";
 
 /**
  * @openapi
@@ -57,8 +56,8 @@ export async function GET(request: NextRequest) {
         ? tags.split(",").map((tag) => tag.trim().toLowerCase())
         : [];
     let filteredRepositories = [];
-    const allRepositories = await getRepositories();
-    for (const repository of allRepositories) {
+    const { products } = await productsTable.list();
+    for (const repository of products) {
       let match = false;
       if (tagsArray.length === 0 && !search) {
         match = true;
