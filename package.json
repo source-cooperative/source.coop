@@ -73,6 +73,7 @@
     "@types/react-dom": "^18.2.0",
     "@typescript-eslint/eslint-plugin": "^8.28.0",
     "@typescript-eslint/parser": "^8.28.0",
+    "aws-sdk-client-mock": "^4.1.0",
     "babel-jest": "^29.7.0",
     "concurrently": "^9.1.2",
     "eslint": "9.22.0",
@@ -83,7 +84,9 @@
     "ts-jest": "^29.2.6",
     "ts-node": "^10.9.2",
     "typescript": "^5.0.0",
-    "uuid": "^11.1.0"
+    "undici": "^7.10.0",
+    "uuid": "^11.1.0",
+    "web-streams-polyfill": "^4.1.0"
   },
   "type": "module"
 }
