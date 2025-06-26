@@ -1,3 +1,10 @@
+import { NextRequest, NextResponse } from "next/server";
+import { StatusCodes } from "http-status-codes";
+import { isAuthorized } from "@/lib/api/authz";
+import { getApiSession } from "@/lib/api/utils";
+import { accountsTable } from "@/lib/clients/database";
+import { Actions } from "@/types";
+
 /**
  * @openapi
  * /accounts/{account_id}:
@@ -29,14 +36,6 @@
  *       500:
  *         description: Internal server error
  */
-import { NextResponse } from "next/server";
-import { getServerSession } from "@ory/nextjs/app";
-import { Actions } from "@/types";
-import { Account } from "@/types/account";
-import { StatusCodes } from "http-status-codes";
-import { NotFoundError, UnauthorizedError } from "@/lib/api/errors";
-import { getAccount, putAccount } from "@/api/db";
-import { isAuthorized } from "@/lib/api/authz";
 
 export async function GET(
   request: NextRequest,

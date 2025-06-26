@@ -34,20 +34,11 @@ import {
   accountsTable,
   membershipsTable,
 } from "@/lib/clients/database";
-import type { NextRequest } from "next/server";
 import { isAuthorized } from "@/lib/api/authz";
 import * as crypto from "crypto";
 import { getServerSession } from "@ory/nextjs/app";
 import { logger } from "../logger";
-import { NextRequest, NextResponse } from "next/server";
-import { StatusCodes } from "http-status-codes";
-import {
-  BadRequestError,
-  MethodNotImplementedError,
-  NotFoundError,
-  UnauthorizedError,
-} from "@/lib/api/errors";
-import { ZodError } from "zod";
+import { NextRequest } from "next/server";
 
 export function generateAccessKeyID(): string {
   const prefix = "SC";
@@ -317,63 +308,4 @@ export function getProfileImage(email: string): string {
 
   // Construct and return the Gravatar URL
   return `https://www.gravatar.com/avatar/${hash}`;
-}
-
-type ApiHandler = (req: NextRequest, res: NextResponse) => Promise<void>;
-
-export function withErrorHandling(handler: ApiHandler): ApiHandler {
-  return async (req, res) => {
-    try {
-      await handler(req, res);
-    } catch (e) {
-      if (e instanceof NotFoundError) {
-        if (!res.headersSent) {
-          res.status(StatusCodes.NOT_FOUND).json({
-            code: StatusCodes.NOT_FOUND,
-            message: e.message,
-          });
-        }
-      } else if (e instanceof UnauthorizedError) {
-        if (!res.headersSent) {
-          res.status(StatusCodes.UNAUTHORIZED).json({
-            code: StatusCodes.UNAUTHORIZED,
-            message: e.message,
-          });
-        }
-      } else if (e instanceof ZodError) {
-        if (!res.headersSent) {
-          res.status(StatusCodes.BAD_REQUEST).json({
-            code: StatusCodes.BAD_REQUEST,
-            message: "Validation error",
-            errors: e.errors,
-          });
-        }
-      } else if (e instanceof MethodNotImplementedError) {
-        if (!res.headersSent) {
-          res.status(StatusCodes.NOT_IMPLEMENTED).json({
-            code: StatusCodes.NOT_IMPLEMENTED,
-            message: e.message,
-          });
-        }
-      } else if (e instanceof BadRequestError) {
-        if (!res.headersSent) {
-          res.status(StatusCodes.BAD_REQUEST).json({
-            code: StatusCodes.BAD_REQUEST,
-            message: e.message,
-          });
-        }
-      }
-
-      logger.error(e as string, {
-        operation: "withErrorHandling",
-        context: "error",
-      });
-      if (!res.headersSent) {
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-          code: StatusCodes.INTERNAL_SERVER_ERROR,
-          message: "Internal server error",
-        });
-      }
-    }
-  };
 }

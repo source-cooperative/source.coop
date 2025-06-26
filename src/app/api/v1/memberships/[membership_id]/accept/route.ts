@@ -31,14 +31,8 @@
  *         description: Internal server error
  */
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "@ory/nextjs/app";
-import { Actions, Membership, MembershipState } from "@/types";
+import { Actions, MembershipState } from "@/types";
 import { StatusCodes } from "http-status-codes";
-import {
-  NotFoundError,
-  UnauthorizedError,
-  BadRequestError,
-} from "@/lib/api/errors";
 import { getApiSession } from "@/lib/api/utils";
 import { membershipsTable } from "@/lib/clients/database";
 import { isAuthorized } from "@/lib/api/authz";
