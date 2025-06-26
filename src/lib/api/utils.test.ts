@@ -1,5 +1,6 @@
-import { isAdmin, getProfileImage } from "@/lib/api/utils";
-import { UserSession, AccountFlags, AccountType } from "@/api/types";
+import { getProfileImage } from "@/lib/api/utils";
+import { isAdmin } from "@/lib/api/authz";
+import { UserSession, AccountFlags, AccountType } from "@/types";
 
 describe("Authorization Tests", () => {
   test("Admin user is identified correctly", () => {

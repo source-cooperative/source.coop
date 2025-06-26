@@ -48,22 +48,22 @@ function loadAndValidateJson<T extends z.ZodType>(
 }
 
 export const accounts: Account[] = loadAndValidateJson(
-  path.join("src", "mock", "accounts.json"),
+  path.join("scripts", "converted-data", "accounts.json"),
   z.array(AccountSchema)
 );
 
 export const repositories: Repository[] = loadAndValidateJson(
-  path.join("src", "mock", "repositories.json"),
+  path.join("scripts", "converted-data", "repositories.json"),
   z.array(RepositorySchema)
 );
 
 export const memberships: Membership[] = loadAndValidateJson(
-  path.join("src", "mock", "memberships.json"),
+  path.join("scripts", "converted-data", "memberships.json"),
   z.array(MembershipSchema)
 );
 
 export const apiKeys: APIKey[] = loadAndValidateJson(
-  path.join("src", "mock", "api-keys.json"),
+  path.join("scripts", "converted-data", "api-keys.json"),
   z.array(APIKeySchema)
 );
 
