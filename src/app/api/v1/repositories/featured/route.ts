@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Actions } from "@/types";
+import { Actions, RepositoryList } from "@/types";
 import { isAuthorized } from "@/lib/api/authz";
 import { StatusCodes } from "http-status-codes";
 import { getApiSession } from "@/lib/api/utils";
@@ -25,10 +25,10 @@ import { productsTable } from "@/lib/clients/database/products";
 export async function GET(request: NextRequest) {
   try {
     const session = await getApiSession(request);
-    const featuredRepositories = await productsTable.listFeatured();
-    const filteredRepositories = featuredRepositories.filter((repository) => {
-      return isAuthorized(session, repository, Actions.GetRepository);
-    });
+    const products = await productsTable.listFeatured();
+    const filteredRepositories = products.filter((repository) =>
+      isAuthorized(session, repository, Actions.GetRepository)
+    );
     return NextResponse.json(
       { repositories: filteredRepositories },
       { status: StatusCodes.OK }

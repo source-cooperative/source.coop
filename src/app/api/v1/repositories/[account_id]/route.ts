@@ -3,7 +3,6 @@ import {
   Actions,
   Repository,
   RepositoryCreationRequestSchema,
-  RepositoryList,
   RepositoryState,
   RepositoryFeatured,
 } from "@/types";

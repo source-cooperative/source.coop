@@ -44,6 +44,7 @@ import {
   Membership,
   RepositoryState,
   DataConnection,
+  Product_v2,
 } from "@/types";
 import { AccountType } from "@/types/account";
 import { Account } from "@/types/account";
@@ -54,6 +55,7 @@ export function isAuthorized(
   resource:
     | Account
     | Repository
+    | Product_v2
     | APIKey
     | Membership
     | DataConnection
