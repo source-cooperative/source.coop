@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSession } from "@ory/elements-react/client";
 import { getAccountId } from "@/lib/ory";
-import type { Account } from "@/types/account_v2";
+import type { Account } from "@/types";
 
 export function useAccount() {
   const { session, isLoading: isAuthLoading } = useSession();

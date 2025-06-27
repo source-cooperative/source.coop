@@ -2,7 +2,7 @@ import { Container } from '@radix-ui/themes';
 import { OrganizationProfile } from './OrganizationProfile';
 import { accountsTable, productsTable } from "@/lib/clients/database";
 import { notFound } from 'next/navigation';
-import type { Account, OrganizationalAccount } from '@/types/account_v2';
+import type { Account, OrganizationalAccount } from "@/types";
 import { getServerSession } from "@ory/nextjs/app";
 import type { ExtendedSession } from "@/types/session";
 

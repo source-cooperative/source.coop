@@ -12,7 +12,7 @@
 // src/app/page.tsx
 import { Container, Box, Heading } from '@radix-ui/themes';
 import { ProductList } from '@/components/features/products';
-import type { Product_v2 as Product } from '@/types/product_v2';
+import type { Product } from "@/types";
 import { productsTable } from "@/lib/clients/database";
 
 // Server action for data fetching

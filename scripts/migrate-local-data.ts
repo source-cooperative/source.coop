@@ -1,6 +1,6 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocument, ScanCommand, PutCommand } from "@aws-sdk/lib-dynamodb";
-import type { Account } from '@/types/account_v2';
+import type { Account } from "@/types";
 
 const client = new DynamoDBClient({
   endpoint: process.env.DYNAMODB_ENDPOINT || 'http://localhost:8000',

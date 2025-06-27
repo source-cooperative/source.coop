@@ -1,8 +1,8 @@
 import { Heading, Text, Box } from '@radix-ui/themes';
-import type { Product_v2 } from '@/types/product_v2';
+import type { Product } from "@/types";
 
 interface ProductSummaryCardProps {
-  product: Product_v2;
+  product: Product;
 }
 
 export function ProductSummaryCard({ product }: ProductSummaryCardProps) {

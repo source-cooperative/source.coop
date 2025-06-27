@@ -3,13 +3,13 @@
 // For homepage and general listing
 import { forwardRef } from 'react';
 import Link from 'next/link';
-import type { Product_v2 } from '@/types/product_v2';
+import type { Product } from "@/types";
 import { DateText } from '@/components/display';
 import { Box, Text, Badge, Heading } from '@radix-ui/themes';
 import styles from './ProductList.module.css';
 
 interface ProductListItemProps {
-  product: Product_v2;
+  product: Product;
   isSelected?: boolean;
 }
 

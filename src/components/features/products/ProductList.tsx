@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import type { Product_v2 } from '@/types/product_v2';
+import type { Product } from "@/types";
 import { ProductListItem } from './ProductListItem';
 import { ShortcutHelp } from '@/components/features/keyboard/ShortcutHelp';
 import { useProductListKeyboardShortcuts } from '@/hooks/useProductListKeyboardShortcuts';
@@ -9,7 +9,7 @@ import { Text } from '@radix-ui/themes';
 import styles from './ProductList.module.css';
 
 interface ProductListProps {
-  products: Product_v2[];
+  products: Product[];
 }
 
 export function ProductList({ products }: ProductListProps) {

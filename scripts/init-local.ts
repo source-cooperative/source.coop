@@ -16,7 +16,7 @@ import { readFileSync } from "fs";
 import { join } from "path";
 
 // Import types
-import type { Product_v2 } from "../src/types/product_v2.js";
+import type { Product } from "../src/types/product_v2.js";
 import type { Account } from "../src/types/account_v2.js";
 
 const DYNAMODB_ENDPOINT =
@@ -179,7 +179,7 @@ async function loadConvertedData() {
     const accounts: Account[] = JSON.parse(readFileSync(accountsPath, 'utf8'));
     
     console.log(`Reading products from ${productsPath}`);
-    const products: Product_v2[] = JSON.parse(readFileSync(productsPath, 'utf8'));
+    const products: Product[] = JSON.parse(readFileSync(productsPath, 'utf8'));
     
     // Insert accounts into DynamoDB
     console.log(`Inserting ${accounts.length} accounts into sc-accounts table...`);

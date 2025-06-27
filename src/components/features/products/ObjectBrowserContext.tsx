@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useCallback } from 'react';
-import type { Product_v2, ProductObject } from '@/types';
+import type { Product, ProductObject } from "@/types";
 
 interface ObjectBrowserContextType {
   currentPath: string[];
@@ -15,20 +15,22 @@ interface ObjectBrowserContextType {
 
 const ObjectBrowserContext = createContext<ObjectBrowserContextType | null>(null);
 
-export function ObjectBrowserProvider({ 
-  children, 
-  initialPath = '', 
-  initialObject 
-}: { 
+export function ObjectBrowserProvider({
+  children,
+  initialPath = "",
+  initialObject,
+}: {
   children: React.ReactNode;
-  product: Product_v2;
+  product: Product;
   initialPath?: string;
   initialObject?: ProductObject;
 }) {
   const [currentPath, setCurrentPath] = useState<string[]>(
-    initialPath ? initialPath.split('/').filter(Boolean) : []
+    initialPath ? initialPath.split("/").filter(Boolean) : []
   );
-  const [selectedObject, setSelectedObject] = useState<ProductObject | null>(initialObject || null);
+  const [selectedObject, setSelectedObject] = useState<ProductObject | null>(
+    initialObject || null
+  );
   const [selectedDataItem, setSelectedDataItem] = useState<string | null>(null);
 
   const navigateTo = useCallback((path: string[]) => {
@@ -38,15 +40,17 @@ export function ObjectBrowserProvider({
   }, []);
 
   return (
-    <ObjectBrowserContext.Provider value={{
-      currentPath,
-      selectedObject,
-      selectedDataItem,
-      setCurrentPath,
-      setSelectedObject,
-      setSelectedDataItem,
-      navigateTo
-    }}>
+    <ObjectBrowserContext.Provider
+      value={{
+        currentPath,
+        selectedObject,
+        selectedDataItem,
+        setCurrentPath,
+        setSelectedObject,
+        setSelectedDataItem,
+        navigateTo,
+      }}
+    >
       {children}
     </ObjectBrowserContext.Provider>
   );

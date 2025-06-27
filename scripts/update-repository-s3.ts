@@ -1,6 +1,6 @@
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, GetCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
-import type { Product_v2 } from '../src/types/product_v2.js';
+import type { Product } from "../src/types/product_v2.js";
 
 // Initialize DynamoDB client with local credentials
 const client = new DynamoDBClient({
@@ -30,37 +30,37 @@ async function updateProductS3Config() {
       return;
     }
 
-    const product = getResult.Item as Product_v2;
+    const product = getResult.Item as Product;
     const now = new Date().toISOString();
 
     // Update the S3 configuration
-    const updatedProduct: Product_v2 = {
+    const updatedProduct: Product = {
       ...product,
       metadata: {
         ...product.metadata,
         mirrors: {
-          'aws-us-west-2': {
-            storage_type: 's3',
-            connection_id: 'default-connection',
+          "aws-us-west-2": {
+            storage_type: "s3",
+            connection_id: "default-connection",
             prefix: `${product.account_id}/${product.product_id}/`,
             config: {
-              region: 'us-west-2',
-              bucket: 'opendata.source.coop'
+              region: "us-west-2",
+              bucket: "opendata.source.coop",
             },
             is_primary: true,
             sync_status: {
               last_sync_at: now,
-              is_synced: true
+              is_synced: true,
             },
             stats: {
               total_objects: 0,
               total_size: 0,
-              last_verified_at: now
-            }
-          }
+              last_verified_at: now,
+            },
+          },
         },
-        primary_mirror: 'aws-us-west-2'
-      }
+        primary_mirror: "aws-us-west-2",
+      },
     };
 
     // Update the product

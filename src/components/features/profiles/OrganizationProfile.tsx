@@ -2,8 +2,12 @@
 
 import { Box, Heading, Text, Link as RadixLink, Flex, Grid, Button } from '@radix-ui/themes';
 import Link from 'next/link';
-import type { Account, IndividualAccount, OrganizationalAccount } from '@/types/account_v2';
-import type { Product_v2 } from '@/types/product_v2';
+import type {
+  Account,
+  IndividualAccount,
+  OrganizationalAccount,
+} from "@/types";
+import type { Product } from "@/types";
 import { ProductList } from '@/components/features/products/ProductList';
 import { OrganizationMembers } from './OrganizationMembers';
 import { ProfileAvatar } from './ProfileAvatar';
@@ -12,7 +16,7 @@ import { useSession } from '@ory/elements-react/client';
 import { getAccountId } from "@/lib/ory";
 interface OrganizationProfileProps {
   account: OrganizationalAccount;
-  products: Product_v2[];
+  products: Product[];
   owner: IndividualAccount | null;
   admins: IndividualAccount[];
   members: IndividualAccount[];

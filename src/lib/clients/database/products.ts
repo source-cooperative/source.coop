@@ -1,39 +1,18 @@
-import type {
-  Product_v2 as Product,
-  ProductMirror,
-  ProductRole,
-} from "@/types";
+import type { Product, ProductMirror, ProductRole } from "@/types";
+import { PutItemCommand } from "@aws-sdk/client-dynamodb";
+
 import {
   GetCommand,
+  PutCommand,
   QueryCommand,
   ScanCommand,
   UpdateCommand,
 } from "@aws-sdk/lib-dynamodb";
-import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
-import { CONFIG } from "../../config";
 import { accountsTable } from "./accounts";
+import { BaseTable } from "./base";
+import { marshall } from "@aws-sdk/util-dynamodb";
 
-class ProductsTable {
-  private readonly table: string;
-  private readonly client: DynamoDBDocumentClient;
-
-  constructor({
-    client,
-    table = "sc-products",
-  }: {
-    table?: string;
-    client?: DynamoDBDocumentClient;
-  }) {
-    this.table = table;
-    if (client) {
-      this.client = client;
-    } else {
-      const client = new DynamoDBClient(CONFIG.database);
-      this.client = DynamoDBDocumentClient.from(client);
-    }
-  }
-
+class ProductsTable extends BaseTable {
   async listPublic(
     limit = 50,
     lastEvaluatedKey?: any
@@ -103,10 +82,25 @@ class ProductsTable {
       accountsTable.fetchById(account_id),
     ]);
 
-    return (result.Items || []).map((item) => ({
+    return (result.Items || []).map((item: any) => ({
       ...(item as Product),
       account: account || undefined,
     }));
+  }
+
+  async listFeatured(): Promise<Product[]> {
+    // TODO: This doesn't work yet
+    const result = await this.client.send(
+      new QueryCommand({
+        TableName: this.table,
+        IndexName: "PublicProductsIndex",
+        KeyConditionExpression: "visibility = :visibility",
+        ExpressionAttributeValues: {
+          ":visibility": "public",
+        },
+      })
+    );
+    return (result.Items || []) as Product[];
   }
 
   async fetchById(
@@ -134,25 +128,84 @@ class ProductsTable {
     };
   }
 
-  async update(product: Product): Promise<void> {
-    await this.client.send(
-      new UpdateCommand({
+  async create(product: Product): Promise<Product> {
+    try {
+      await this.client.send(
+        new PutCommand({
+          TableName: this.table,
+          Item: product,
+        })
+      );
+      return product;
+    } catch (error) {
+      this.logError("create", error, {
+        productId: product.product_id,
+        accountId: product.account_id,
+      });
+      throw error;
+    }
+  }
+
+  async update(product: Product): Promise<Product> {
+    try {
+      const result = await this.client.send(
+        new UpdateCommand({
+          TableName: this.table,
+          Key: {
+            product_id: product.product_id,
+            account_id: product.account_id,
+          },
+          UpdateExpression:
+            "SET title = :title, description = :description, updated_at = :updated_at, visibility = :visibility, metadata = :metadata",
+          ExpressionAttributeValues: {
+            ":title": product.title,
+            ":description": product.description,
+            ":updated_at": new Date().toISOString(),
+            ":visibility": product.visibility,
+            ":metadata": product.metadata,
+          },
+          ReturnValues: "ALL_NEW",
+        })
+      );
+      return result.Attributes as Product;
+    } catch (error) {
+      this.logError("update", error, {
+        productId: product.product_id,
+        accountId: product.account_id,
+      });
+      throw error;
+    }
+  }
+
+  // Legacy method for backward compatibility - renamed to upsert
+  async upsert(
+    product: Product,
+    checkIfExists: boolean = false
+  ): Promise<[Product, boolean]> {
+    try {
+      const command = new PutItemCommand({
         TableName: this.table,
-        Key: {
-          product_id: product.product_id,
-          account_id: product.account_id,
-        },
-        UpdateExpression:
-          "SET title = :title, description = :description, updated_at = :updated_at, visibility = :visibility, metadata = :metadata",
-        ExpressionAttributeValues: {
-          ":title": product.title,
-          ":description": product.description,
-          ":updated_at": new Date().toISOString(),
-          ":visibility": product.visibility,
-          ":metadata": product.metadata,
-        },
-      })
-    );
+        Item: marshall(product),
+        ConditionExpression: checkIfExists
+          ? "attribute_not_exists(product_id)"
+          : undefined,
+      });
+
+      await this.client.send(command);
+      return [product, true];
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        error.name === "ConditionalCheckFailedException"
+      ) {
+        return [product, false];
+      }
+      this.logError("upsert", error, {
+        productId: product.product_id,
+        accountId: product.account_id,
+      });
+      throw error;
+    }
   }
 
   async updateMirror(
@@ -216,11 +269,11 @@ class ProductsTable {
       )
     );
     const accountMap = new Map(
-      accounts.filter(Boolean).map((acc) => [acc!.account_id, acc])
+      accounts.filter(Boolean).map((acc: any) => [acc!.account_id, acc])
     );
 
     // Attach accounts to products
-    return products.map((item) => ({
+    return products.map((item: any) => ({
       ...item,
       account: accountMap.get(item.account_id) || undefined,
     }));
@@ -228,4 +281,6 @@ class ProductsTable {
 }
 
 // Export a singleton instance
-export const productsTable = new ProductsTable({});
+export const productsTable = new ProductsTable({
+  table: "sc-products",
+});

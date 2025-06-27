@@ -1,11 +1,11 @@
 // For product detail page header
 import { Grid, Box } from '@radix-ui/themes';
-import type { Product_v2 } from '@/types/product_v2';
+import type { Product } from "@/types";
 import { ProductSummaryCard } from './ProductSummaryCard';
 import { ProductMetaCard } from './ProductMetaCard';
 
 interface ProductHeaderProps {
-  product: Product_v2;
+  product: Product;
 }
 
 export function ProductHeader({ product }: ProductHeaderProps) {
