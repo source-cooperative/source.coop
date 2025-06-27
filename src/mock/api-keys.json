@@ -1,0 +1,35 @@
+[
+  {
+    "access_key_id": "SCREGULARUSER",
+    "expires": "3000-01-01T00:00:00Z",
+    "account_id": "regular-user",
+    "name": "Regular User API Key",
+    "disabled": false,
+    "secret_access_key": "A1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6Q7r8S9t0U1v2W3x4Y5z6A7B8C9D00000"
+  },
+  {
+    "access_key_id": "SCDISABLED",
+    "expires": "3000-01-01T00:00:00Z",
+    "account_id": "regular-user",
+    "name": "Disabled User API Key",
+    "disabled": true,
+    "secret_access_key": "E1f2G3h4I5j6K7l8M9n0O1p2Q3r4S5t6U7v8W9x0Y1z2A3B4C5D6E7F8G9H00000"
+  },
+  {
+    "access_key_id": "SCORGANIZATION",
+    "expires": "3000-01-01T00:00:00Z",
+    "account_id": "organization",
+    "name": "Organization API Key",
+    "disabled": false,
+    "secret_access_key": "I1j2K3l4M5n6O7p8Q9r0S1t2U3v4W5x6Y7z8A9B0C1D2E3F4G5H6I7J8K9L00000"
+  },
+  {
+    "access_key_id": "SCREPOSITORY",
+    "expires": "3000-01-01T00:00:00Z",
+    "account_id": "organization",
+    "repository_id": "org-repo-id",
+    "name": "Repository API Key",
+    "disabled": false,
+    "secret_access_key": "M1n2O3p4Q5r6S7t8U9v0W1x2Y3z4A5B6C7D8E9F0G1H2I3J4K5L6M7N8O9P00000"
+  }
+]

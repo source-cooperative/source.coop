@@ -1,13 +1,13 @@
-import { NextResponse } from "next";
+import { NextResponse } from "next/server";
 import * as path from "path";
 import {
-  Repository,
-  RepositorySchema,
   UserSession,
   Membership,
   MembershipSchema,
   APIKey,
   APIKeySchema,
+  Product,
+  ProductSchema,
 } from "@/types";
 import { AccountType } from "@/types/account";
 import { Account } from "@/types/account";
@@ -42,28 +42,30 @@ function loadAndValidateJson<T extends z.ZodType>(
       throw new Error(`Error processing file ${path}: ${error.message}`);
     } else {
       // For unknown error types
-      throw new Error(`Unknown error occurred while processing file ${path}`);
+      throw new Error(
+        `Unknown error occurred while processing file ${path}: ${error}`
+      );
     }
   }
 }
 
 export const accounts: Account[] = loadAndValidateJson(
-  path.join("scripts", "converted-data", "accounts.json"),
+  path.join("src/mock", "accounts.json"),
   z.array(AccountSchema)
 );
 
-export const repositories: Repository[] = loadAndValidateJson(
-  path.join("scripts", "converted-data", "repositories.json"),
-  z.array(RepositorySchema)
+export const products: Product[] = loadAndValidateJson(
+  path.join("src/mock", "products.json"),
+  z.array(ProductSchema)
 );
 
 export const memberships: Membership[] = loadAndValidateJson(
-  path.join("scripts", "converted-data", "memberships.json"),
+  path.join("src/mock", "memberships.json"),
   z.array(MembershipSchema)
 );
 
 export const apiKeys: APIKey[] = loadAndValidateJson(
-  path.join("scripts", "converted-data", "api-keys.json"),
+  path.join("src/mock", "api-keys.json"),
   z.array(APIKeySchema)
 );
 
@@ -76,11 +78,11 @@ export const sessions: Record<string, UserSession | null> = {
 };
 
 for (const account of accounts) {
-  if (account.account_type != AccountType.INDIVIDUAL) {
+  if (account.type != AccountType.INDIVIDUAL) {
     continue;
   }
 
-  var accountMemberships = [];
+  const accountMemberships = [];
   for (const membership of memberships) {
     if (membership.account_id === account.account_id) {
       accountMemberships.push(membership);
@@ -89,21 +91,17 @@ for (const account of accounts) {
 
   sessions[account.account_id] = {
     account: account,
-    identity_id: account.identity_id,
+    identity_id: account.metadata_private?.identity_id,
     memberships: accountMemberships,
   };
 }
 
-export const mappedRepositories: Record<
-  string,
-  Record<string, Repository>
-> = {};
-for (const repository of repositories) {
-  if (!mappedRepositories[repository.account_id]) {
-    mappedRepositories[repository.account_id] = {};
+export const mappedProducts: Record<string, Record<string, Product>> = {};
+for (const product of products) {
+  if (!mappedProducts[product.account_id]) {
+    mappedProducts[product.account_id] = {};
   }
-  mappedRepositories[repository.account_id][repository.repository_id] =
-    repository;
+  mappedProducts[product.account_id][product.product_id] = product;
 }
 
 export const mappedAPIKeys: Record<string, APIKey> = {};

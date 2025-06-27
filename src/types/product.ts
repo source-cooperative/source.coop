@@ -18,7 +18,6 @@ import {
   ID_REGEX,
   RepositoryDataModeSchema,
 } from "./shared";
-import { AccountSchema } from "./account";
 
 extendZodWithOpenApi(z);
 
