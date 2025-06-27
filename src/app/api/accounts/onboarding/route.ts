@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import type { IndividualAccount } from '@/types/account_v2';
+import type { IndividualAccount } from "@/types";
 import { updateOryIdentity } from '@/lib/ory';
 import { accountsTable } from "@/lib/clients/database";
 import { CONFIG } from '@/lib/config';

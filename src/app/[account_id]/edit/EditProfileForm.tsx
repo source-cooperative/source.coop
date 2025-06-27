@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Account, IndividualAccount } from "@/types/account_v2";
+import { Account, IndividualAccount } from "@/types";
 import {
   Button,
   Flex,

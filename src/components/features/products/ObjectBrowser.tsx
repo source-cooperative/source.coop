@@ -7,7 +7,7 @@ import { DirectoryList } from './object-browser/DirectoryList';
 import { buildDirectoryTree } from './object-browser/utils';
 import './ObjectBrowser.module.css';
 import { ProductObject } from '@/types/product_object';
-import { Product_v2 } from '@/types/product_v2';
+import { Product } from "@/types";
 import { useRouter } from 'next/navigation';
 import { useCallback } from 'react';
 import { useMemo } from 'react';
@@ -18,7 +18,7 @@ import { SectionHeader } from '@/components/core';
 import { BreadcrumbNav } from '@/components/display';
 
 export interface ObjectBrowserProps {
-  product: Product_v2;
+  product: Product;
   objects: ProductObject[];
   initialPath?: string;
   selectedObject?: ProductObject;

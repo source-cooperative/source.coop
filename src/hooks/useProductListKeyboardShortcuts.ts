@@ -1,9 +1,9 @@
 import { useEffect, useState, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import type { Product_v2 } from '@/types/product_v2';
+import type { Product } from "@/types";
 
 interface UseProductListKeyboardShortcutsProps {
-  products: Product_v2[];
+  products: Product[];
   onShowHelp: () => void;
 }
 

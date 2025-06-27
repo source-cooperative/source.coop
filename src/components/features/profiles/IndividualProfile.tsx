@@ -1,8 +1,8 @@
 // Server Component
 import { Box, Text, Grid, Heading, Flex, Link as RadixLink } from '@radix-ui/themes';
 import Link from 'next/link';
-import type { Account, IndividualAccount } from '@/types/account_v2';
-import type { Product_v2 } from '@/types/product_v2';
+import type { Account, IndividualAccount } from "@/types";
+import type { Product } from "@/types";
 import { ProfileAvatar } from './ProfileAvatar';
 import { ProductList } from '../products/ProductList';
 import { WebsiteLink } from './WebsiteLink';
@@ -11,8 +11,8 @@ import { IndividualProfileActions } from './IndividualProfileActions';
 
 interface IndividualProfileProps {
   account: IndividualAccount;
-  ownedProducts: Product_v2[];
-  contributedProducts: Product_v2[];
+  ownedProducts: Product[];
+  contributedProducts: Product[];
   organizations: Account[];
   showWelcome?: boolean;
 }

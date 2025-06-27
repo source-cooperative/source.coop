@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import type { Product_v2 } from '@/types/product_v2';
+import type { Product } from "@/types";
 import type { ProductObject } from '@/types/product_object';
 import { useKeyboardShortcuts } from './useKeyboardShortcuts';
 
@@ -14,7 +14,7 @@ interface FileNode {
 }
 
 interface UseObjectBrowserKeyboardShortcutsProps {
-  product: Product_v2;
+  product: Product;
   objects: FileNode[];
   currentPath: string[];
   selectedObject?: ProductObject;

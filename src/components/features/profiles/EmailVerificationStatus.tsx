@@ -2,7 +2,7 @@
 
 import { Tooltip } from '@radix-ui/themes';
 import { MinusCircledIcon, CheckCircledIcon } from '@radix-ui/react-icons';
-import type { Account, IndividualAccount } from '@/types/account_v2';
+import type { Account, IndividualAccount } from "@/types";
 import { useState, useEffect } from 'react';
 import { useSession } from '@ory/elements-react/client';
 

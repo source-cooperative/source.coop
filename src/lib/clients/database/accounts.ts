@@ -11,7 +11,7 @@ import type {
   Account,
   IndividualAccount,
   OrganizationalAccount,
-} from "@/types/account_v2";
+} from "@/types";
 
 // Use the singleton client from clients/index.ts
 import { BaseTable } from "./base";

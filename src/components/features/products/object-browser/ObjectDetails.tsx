@@ -3,7 +3,7 @@
 import { Card, Box, DataList, Flex, IconButton, Tooltip } from '@radix-ui/themes';
 import { CopyIcon, CheckIcon } from '@radix-ui/react-icons';
 import type { ProductObject } from '@/types';
-import type { Product_v2 } from '@/types/product_v2';
+import type { Product } from "@/types";
 import { SectionHeader } from '@/components/core';
 import { DateText, BreadcrumbNav } from '@/components/display';
 import { ChecksumVerifier } from '../ChecksumVerifier';
@@ -12,7 +12,7 @@ import { useState, useEffect } from 'react';
 import { DataListItem } from "./DataListItem";
 
 interface ObjectDetailsProps {
-  product: Product_v2;
+  product: Product;
   selectedObject: ProductObject;
   selectedDataItem: string | null;
   onNavigate: (path: string[]) => void;

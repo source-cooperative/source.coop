@@ -1,8 +1,4 @@
-import type {
-  Product_v2 as Product,
-  ProductMirror,
-  ProductRole,
-} from "@/types";
+import type { Product, ProductMirror, ProductRole } from "@/types";
 import { PutItemCommand } from "@aws-sdk/client-dynamodb";
 
 import {

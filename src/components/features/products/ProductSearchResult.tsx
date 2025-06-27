@@ -2,11 +2,11 @@
 import { Card, Text, Flex, Badge } from '@radix-ui/themes';
 import Link from 'next/link';
 import DOMPurify from 'isomorphic-dompurify';
-import type { Product_v2 } from '@/types/product_v2';
+import type { Product } from "@/types";
 import { DateText } from '@/components/display';
 
 interface ProductSearchResultProps {
-  product: Product_v2;
+  product: Product;
   highlight?: {
     title?: string;
     description?: string;

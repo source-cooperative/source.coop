@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
-import type { Product_v2 } from '@/types/product_v2';
+import type { Product } from "@/types";
 import { CONFIG } from "@/lib/config";
 
 interface ProductMetadataProps {
-  product: Product_v2;
+  product: Product;
 }
 
 export function generateProductMetadata({ 
