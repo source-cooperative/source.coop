@@ -1,6 +1,6 @@
 "use client";
 
-import { Container, Flex, DropdownMenu, Text } from "@radix-ui/themes";
+import { Container, Flex, DropdownMenu, Text, Button } from "@radix-ui/themes";
 import Link from "next/link";
 import { useState } from "react";
 import { Logo } from "./Logo";
@@ -9,6 +9,7 @@ import { ChevronDownIcon } from "@radix-ui/react-icons";
 import styles from "./Navigation.module.css";
 import { useAccount } from "@/hooks/useAccount";
 import { useRouter } from "next/navigation";
+import { CONFIG } from "@/lib/config";
 export function Navigation() {
   const [isOpen, setIsOpen] = useState(false);
   const router = useRouter();
@@ -85,10 +86,9 @@ export function Navigation() {
                 </DropdownMenu.Content>
               </DropdownMenu.Root>
             ) : (
-              // <Link href={CONFIG.auth.routes.login}>
-              //   <Button>Log In / Register</Button>
-              // </Link>
-              null
+              <Link href={CONFIG.auth.routes.login}>
+                <Button>Log In / Register</Button>
+              </Link>
             )}
           </Flex>
         </Flex>
