@@ -1,4 +1,3 @@
-import { getProfileImage } from "@/lib/api/utils";
 import { isAdmin } from "@/lib/api/authz";
 import { UserSession, AccountFlags, AccountType } from "@/types";
 
