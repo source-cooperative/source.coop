@@ -5,18 +5,19 @@ import { createReadStream } from 'fs';
 import { pipeline } from 'stream/promises';
 import type {
   Product,
+  ProductDataMode,
   ProductMirror,
   ProductRole,
 } from "../src/types/product_v2.js";
 
 // Initialize DynamoDB client with local credentials
 const client = new DynamoDBClient({
-  region: 'local',
-  endpoint: 'http://localhost:8000',
+  region: "local",
+  endpoint: "http://localhost:8000",
   credentials: {
-    accessKeyId: process.env.DYNAMODB_ACCESS_KEY_ID || 'local',
-    secretAccessKey: process.env.DYNAMODB_SECRET_ACCESS_KEY || 'local'
-  }
+    accessKeyId: process.env.DYNAMODB_ACCESS_KEY_ID || "local",
+    secretAccessKey: process.env.DYNAMODB_SECRET_ACCESS_KEY || "local",
+  },
 });
 
 const docClient = DynamoDBDocumentClient.from(client);
@@ -31,7 +32,7 @@ interface OldProduct {
       [key: string]: {
         prefix: string;
         data_connection_id: string;
-      }
+      };
     };
     primary_mirror: string;
   };
@@ -41,16 +42,16 @@ interface OldProduct {
     tags?: string[];
   };
   disabled: boolean;
-  data_mode: 'open' | 'private';
+  data_mode: "open" | "private";
   featured: number;
-  state: 'listed' | 'unlisted';
+  state: "listed" | "unlisted";
 }
 
 // Helper function to safely get DynamoDB attribute value
 function getAttributeValue(obj: any, path: string[]): any {
   let current = obj;
   for (const key of path) {
-    if (!current || typeof current !== 'object') return undefined;
+    if (!current || typeof current !== "object") return undefined;
     current = current[key];
   }
   return current;
@@ -109,6 +110,8 @@ function convertProduct(oldProduct: OldProduct): Product {
     description: oldProduct.meta.description || "",
     created_at: oldProduct.published,
     updated_at: now,
+    disabled: oldProduct.disabled,
+    data_mode: oldProduct.data_mode as ProductDataMode,
     visibility,
     metadata: {
       mirrors,

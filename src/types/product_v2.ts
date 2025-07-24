@@ -60,6 +60,17 @@ export const ProductMetadataSchema = z
 
 export type ProductMetadata = z.infer<typeof ProductMetadataSchema>;
 
+export enum ProductDataMode {
+  Open = "open",
+  Subscription = "subscription",
+  Private = "private",
+}
+export const ProductDataModeSchema = z
+  .nativeEnum(ProductDataMode, {
+    errorMap: () => ({ message: "Invalid product data mode" }),
+  })
+  .openapi("ProductDataMode");
+
 // Main product interface matching new schema
 // Product is the main product entity, including metadata and optional account
 export const ProductSchema = z
@@ -73,6 +84,8 @@ export const ProductSchema = z
     visibility: z.enum(["public", "unlisted", "restricted"]),
     metadata: ProductMetadataSchema,
     account: AccountSchema.optional(),
+    disabled: z.boolean(),
+    data_mode: ProductDataModeSchema,
   })
   .openapi("Product");
 
