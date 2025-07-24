@@ -43,7 +43,7 @@ export async function POST(
 ) {
   try {
     const session = await getApiSession(request);
-    const { membership_id } = params;
+    const { membership_id } = await params;
     const membership = await membershipsTable.fetchById(membership_id);
     if (!membership) {
       return NextResponse.json(

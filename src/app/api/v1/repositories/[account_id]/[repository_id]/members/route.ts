@@ -69,7 +69,7 @@ export async function POST(
 ) {
   try {
     const session = await getApiSession(request);
-    const { account_id, repository_id } = params;
+    const { account_id, repository_id } = await params;
     const membershipInvitation: MembershipInvitation =
       MembershipInvitationSchema.parse(await request.json());
     const product = await productsTable.fetchById(account_id, repository_id);
@@ -183,7 +183,7 @@ export async function GET(
 ) {
   try {
     const session = await getApiSession(request);
-    const { account_id, repository_id } = params;
+    const { account_id, repository_id } = await params;
     const product = await productsTable.fetchById(account_id, repository_id);
     if (!product) {
       return NextResponse.json(

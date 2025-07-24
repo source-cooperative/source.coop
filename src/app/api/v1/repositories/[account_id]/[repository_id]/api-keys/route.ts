@@ -64,7 +64,7 @@ export async function POST(
 ) {
   try {
     const session = await getApiSession(request);
-    const { account_id, repository_id } = params;
+    const { account_id, repository_id } = await params;
     const apiKeyRequest: APIKeyRequest = APIKeyRequestSchema.parse(
       await request.json()
     );
@@ -164,7 +164,7 @@ export async function GET(
 ) {
   try {
     const session = await getApiSession(request);
-    const { account_id, repository_id } = params;
+    const { account_id, repository_id } = await params;
     const repository = await productsTable.fetchById(account_id, repository_id);
     if (!repository) {
       return NextResponse.json(

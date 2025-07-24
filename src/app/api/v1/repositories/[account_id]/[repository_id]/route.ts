@@ -52,7 +52,7 @@ export async function GET(
 ) {
   try {
     const session = await getApiSession(request);
-    const { account_id, repository_id } = params;
+    const { account_id, repository_id } = await params;
     const repository = await productsTable.fetchById(account_id, repository_id);
     if (!repository) {
       return NextResponse.json(
@@ -132,7 +132,7 @@ export async function PUT(
 ) {
   try {
     const session = await getApiSession(request);
-    const { account_id, repository_id } = params;
+    const { account_id, repository_id } = await params;
     const repository = await productsTable.fetchById(account_id, repository_id);
     if (!repository) {
       return NextResponse.json(
@@ -210,7 +210,7 @@ export async function DELETE(
 ) {
   try {
     const session = await getApiSession(request);
-    const { account_id, repository_id } = params;
+    const { account_id, repository_id } = await params;
     const repository = await productsTable.fetchById(account_id, repository_id);
     if (!repository) {
       return NextResponse.json(

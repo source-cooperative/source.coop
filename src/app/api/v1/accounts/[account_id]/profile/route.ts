@@ -39,7 +39,7 @@ export async function GET(
   { params }: { params: Promise<{ account_id: string }> }
 ) {
   try {
-    const { account_id } = params;
+    const { account_id } = await params;
     const session = await getApiSession(request);
     const account = await accountsTable.fetchById(account_id);
     if (!account) {
@@ -117,7 +117,7 @@ export async function PUT(
   { params }: { params: Promise<{ account_id: string }> }
 ) {
   try {
-    const { account_id } = params;
+    const { account_id } = await params;
     const session = await getApiSession(request);
     const profileRequest = AccountProfileSchema.parse(await request.json());
     const updateProfileAccount = await accountsTable.fetchById(account_id);

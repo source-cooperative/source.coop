@@ -35,7 +35,7 @@ export async function DELETE(
 ) {
   try {
     const session = await getApiSession(request);
-    const { access_key_id } = params;
+    const { access_key_id } = await params;
     const apiKey = await apiKeysTable.fetchById(access_key_id);
     if (!apiKey) {
       return NextResponse.json(

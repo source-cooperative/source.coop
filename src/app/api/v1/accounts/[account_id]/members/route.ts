@@ -60,7 +60,7 @@ export async function POST(
 ) {
   try {
     const session = await getApiSession(request);
-    const { account_id } = params;
+    const { account_id } = await params;
     const membershipInvitation: MembershipInvitation =
       MembershipInvitationSchema.parse(await request.json());
     const account = await accountsTable.fetchById(account_id);
@@ -179,7 +179,7 @@ export async function GET(
 ) {
   try {
     const session = await getApiSession(request);
-    const { account_id } = params;
+    const { account_id } = await params;
     const account = await accountsTable.fetchById(account_id);
     if (!account) {
       return NextResponse.json(

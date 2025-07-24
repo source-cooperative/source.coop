@@ -39,7 +39,7 @@ export async function GET(
 ) {
   try {
     const session = await getApiSession(request);
-    const { data_connection_id } = params;
+    const { data_connection_id } = await params;
     const dataConnection = await dataConnectionsTable.fetchById(
       data_connection_id
     );
@@ -121,7 +121,7 @@ export async function PUT(
 ) {
   try {
     const session = await getApiSession(request);
-    const { data_connection_id } = params;
+    const { data_connection_id } = await params;
     const dataConnectionUpdate = DataConnectionSchema.parse(
       await request.json()
     );
@@ -190,7 +190,7 @@ export async function DELETE(
 ) {
   try {
     const session = await getApiSession(request);
-    const { data_connection_id } = params;
+    const { data_connection_id } = await params;
     const dataConnection = await dataConnectionsTable.fetchById(
       data_connection_id
     );

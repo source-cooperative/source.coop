@@ -42,7 +42,7 @@ export async function GET(
 
     try {
       // Get all cookies from the request
-      const { session } = await getApiSession(request);
+      const session = (await getApiSession(request)) as ExtendedSession;
       if (session) {
         console.log("API: Session check:", {
           hasSession: !!session,

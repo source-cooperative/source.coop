@@ -42,7 +42,7 @@ export async function GET(
   { params }: { params: Promise<{ account_id: string }> }
 ) {
   try {
-    const { account_id } = params;
+    const { account_id } = await params;
     const session = await getApiSession(request);
     const account = await accountsTable.fetchById(account_id);
     if (!account) {
@@ -101,7 +101,7 @@ export async function DELETE(
   { params }: { params: Promise<{ account_id: string }> }
 ) {
   try {
-    const { account_id } = params;
+    const { account_id } = await params;
     const session = await getApiSession(request);
     const disableAccount = await accountsTable.fetchById(account_id);
     if (!disableAccount) {

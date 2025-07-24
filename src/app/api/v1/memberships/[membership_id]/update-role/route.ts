@@ -54,7 +54,7 @@ export async function PUT(
 ) {
   try {
     const session = await getApiSession(request);
-    const { membership_id } = params;
+    const { membership_id } = await params;
     const { role } = await request.json();
     const membership = await membershipsTable.fetchById(membership_id);
     if (!membership) {

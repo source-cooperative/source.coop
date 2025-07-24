@@ -41,7 +41,7 @@ export async function GET(
   { params }: { params: Promise<{ account_id: string }> }
 ) {
   try {
-    const { account_id } = params;
+    const { account_id } = await params;
     const session = await getApiSession(request);
     const account = session?.account;
     if (!account) {
@@ -109,7 +109,7 @@ export async function PUT(
 ) {
   try {
     const session = await getApiSession(request);
-    const { account_id } = params;
+    const { account_id } = await params;
     const accountToUpdate = await accountsTable.fetchById(account_id);
     if (!accountToUpdate) {
       return NextResponse.json(

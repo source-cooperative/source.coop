@@ -45,7 +45,7 @@ export async function POST(
   { params }: { params: Promise<{ access_key_id: string }> }
 ) {
   try {
-    const { access_key_id } = params;
+    const { access_key_id } = await params;
     const { secret_access_key } = await request.json();
     const apiKey = await apiKeysTable.fetchById(access_key_id);
     if (!apiKey) {
