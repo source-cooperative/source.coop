@@ -1,3 +1,5 @@
+// TODO: This file should be merged into account.ts
+
 import { AccountEmail } from "@/types/account";
 import { AccountFlags } from "@/types/shared";
 import { AccountType } from "./account";

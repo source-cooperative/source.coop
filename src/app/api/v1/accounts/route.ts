@@ -1,8 +1,12 @@
 import { StatusCodes } from "http-status-codes";
 import { NextRequest, NextResponse } from "next/server";
-import { AccountCreationRequestSchema, Actions, AccountFlags } from "@/types";
+import {
+  Account,
+  AccountCreationRequestSchema,
+  Actions,
+  AccountFlags,
+} from "@/types";
 import { AccountType } from "@/types/account";
-import { Account } from "@/types/account";
 import { isAuthorized } from "@/lib/api/authz";
 import { getApiSession } from "@/lib/api/utils";
 import { accountsTable } from "@/lib/clients/database";
@@ -53,6 +57,9 @@ export async function POST(request: NextRequest) {
         ];
     const newAccount: Account = {
       ...accountRequest,
+      name: accountRequest.account_id, // TODO: Is this correct?
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
       disabled: false,
       flags,
       metadata_private:

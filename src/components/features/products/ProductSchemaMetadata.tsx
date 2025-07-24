@@ -18,9 +18,10 @@ export function ProductSchemaMetadata({ product }: { product: Product }) {
       creator: {
         "@type": account.type === "organization" ? "Organization" : "Person",
         name: account.name,
-        ...(account.metadata_public?.domains?.[0]?.domain && {
-          url: `https://${account.metadata_public.domains[0].domain}`, // Assuming https
-        }),
+        // TODO: Implement this
+        // ...(account.metadata_public?.domains?.[0]?.domain && {
+        //   url: `https://${account.metadata_public.domains[0].domain}`, // Assuming https
+        // }),
       },
     }),
   };

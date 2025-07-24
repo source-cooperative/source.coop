@@ -151,8 +151,8 @@ export async function PUT(
         { status: StatusCodes.UNAUTHORIZED }
       );
     }
-    repository.meta = repositoryUpdate.meta;
-    repository.state = repositoryUpdate.state;
+    // repository.meta = repositoryUpdate.meta; // TODO: Fix this
+    // repository.state = repositoryUpdate.state; // TODO: Fix this
     await productsTable.update(repository);
     return NextResponse.json(repository, { status: StatusCodes.OK });
   } catch (err: any) {
@@ -226,7 +226,7 @@ export async function DELETE(
         { status: StatusCodes.UNAUTHORIZED }
       );
     }
-    repository.disabled = true;
+    // repository.disabled = true; // TODO: Does disabled need to be supported?
     await productsTable.update(repository);
     return NextResponse.json(repository, { status: StatusCodes.OK });
   } catch (err: any) {

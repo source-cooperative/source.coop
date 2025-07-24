@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Account, IndividualAccount } from "@/types";
+import { Account } from "@/types";
 import {
   Button,
   Flex,
@@ -16,6 +16,7 @@ import { TrashIcon } from "@radix-ui/react-icons";
 import { FormWrapper } from "@/components/core/Form";
 import type { FormField, FormFieldType } from "@/types/form";
 import { useSession } from "@ory/elements-react/client";
+import { IndividualAccount } from "@/types/account_v2";
 
 // Define types for website and form data
 interface Website {
@@ -103,9 +104,10 @@ export function EditProfileForm({
       initialAccount.type === "individual"
         ? (initialAccount as IndividualAccount).metadata_public.orcid
         : undefined,
-    websites: initialAccount.metadata_public.domains?.map((domain) => ({
-      url: domain.domain,
-    })) || [{ url: "" }],
+    websites: [{ url: "" }], // TODO: Rework to support websites
+    // websites: initialAccount.metadata_public.domains?.map((domain) => ({
+    //   url: domain.domain,
+    // })) || [{ url: "" }],
   });
 
   const handleSubmit = async (_data: Record<string, unknown>) => {

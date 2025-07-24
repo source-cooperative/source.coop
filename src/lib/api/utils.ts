@@ -108,7 +108,7 @@ async function authenticateWithApiKey(
   // Retrieve and filter memberships for the user
   const memberships = await membershipsTable.listByUser(account.account_id);
   const filteredMemberships = memberships.filter((membership) =>
-    isAuthorized(account, membership, Actions.GetMembership)
+    isAuthorized({ account }, membership, Actions.GetMembership)
   );
 
   // Return the user session

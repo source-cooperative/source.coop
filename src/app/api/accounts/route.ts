@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { CONFIG } from "@/lib/config";
 import { getApiSession } from "@/lib/api/utils";
+import { AccountType } from "@/types/account";
+import { ExtendedSession } from "@/types/session";
 
 export async function POST(request: NextRequest) {
   try {
     const data = await request.json();
     // Verify the user is authenticated
-    const session = await getApiSession(request);
+    const session = (await getApiSession(request)) as ExtendedSession;
     if (!session?.active) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -27,7 +29,7 @@ export async function POST(request: NextRequest) {
       ...data,
       email,
       ory_id: userId,
-      type: "individual" as const,
+      type: AccountType.INDIVIDUAL,
     };
 
     const response = await fetch(`${CONFIG.auth.api.backendUrl}/api/accounts`, {

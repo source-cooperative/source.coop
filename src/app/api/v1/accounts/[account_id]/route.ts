@@ -117,7 +117,7 @@ export async function DELETE(
       );
     }
     disableAccount.disabled = true;
-    const [account, _success] = await accountsTable.update(disableAccount);
+    const account = await accountsTable.update(disableAccount);
     return NextResponse.json(account, { status: StatusCodes.OK });
   } catch (err: any) {
     return NextResponse.json(

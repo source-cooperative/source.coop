@@ -5,7 +5,7 @@ import {
   DeleteCommand,
   PutCommand,
 } from "@aws-sdk/lib-dynamodb";
-import type { Account } from "@/types/account";
+import type { Account, AccountType } from "@/types/account";
 import type {
   IndividualAccount,
   OrganizationalAccount,
@@ -117,10 +117,7 @@ class AccountsTable extends BaseTable {
     return result.Attributes as Account;
   }
 
-  async delete(Key: {
-    account_id: string;
-    type: "individual" | "organization";
-  }): Promise<void> {
+  async delete(Key: { account_id: string; type: AccountType }): Promise<void> {
     await this.client.send(
       new DeleteCommand({
         TableName: this.table,

@@ -1,12 +1,30 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from "next/server";
 import { accountsTable } from "@/lib/clients/database";
 
 // Reserved usernames that cannot be used
 const RESERVED_USERNAMES = [
-  'admin', 'moderator', 'root', 'superuser', 'system',
-  'api', 'auth', 'login', 'logout', 'register', 'settings',
-  'profile', 'account', 'help', 'support', 'about', 'terms',
-  'privacy', 'security', 'contact', 'feedback', 'status'
+  "admin",
+  "moderator",
+  "root",
+  "superuser",
+  "system",
+  "api",
+  "auth",
+  "login",
+  "logout",
+  "register",
+  "settings",
+  "profile",
+  "account",
+  "help",
+  "support",
+  "about",
+  "terms",
+  "privacy",
+  "security",
+  "contact",
+  "feedback",
+  "status",
 ];
 
 export async function GET(request: NextRequest) {
@@ -57,4 +75,4 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-} 
+}

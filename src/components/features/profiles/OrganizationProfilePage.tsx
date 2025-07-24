@@ -2,12 +2,15 @@ import { Container } from '@radix-ui/themes';
 import { OrganizationProfile } from './OrganizationProfile';
 import { accountsTable, productsTable } from "@/lib/clients/database";
 import { notFound } from 'next/navigation';
-import type { Account, OrganizationalAccount } from "@/types";
+import type { Account } from "@/types/account";
+import type { OrganizationalAccount } from "@/types/account_v2";
 import { getServerSession } from "@ory/nextjs/app";
 import type { ExtendedSession } from "@/types/session";
 
-function isOrganizationalAccount(account: Account): account is OrganizationalAccount {
-  return account.type === 'organization';
+function isOrganizationalAccount(
+  account: Account
+): account is OrganizationalAccount {
+  return account.type === "organization";
 }
 
 interface OrganizationProfilePageProps {
