@@ -45,27 +45,20 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ account_id: string }> }
 ) {
-  try {
-    const session = await getApiSession(request);
-    const { account_id } = await params;
-    const account = await accountsTable.fetchById(account_id);
-    if (!account) {
-      return NextResponse.json(
-        { error: `Account with ID ${account_id} not found` },
-        { status: StatusCodes.NOT_FOUND }
-      );
-    }
-    let repositories = await productsTable.listByAccount(account_id);
-    repositories = repositories.filter((repository) =>
-      isAuthorized(session, repository, Actions.ListRepository)
-    );
-    return NextResponse.json({ repositories }, { status: StatusCodes.OK });
-  } catch (err: any) {
+  const session = await getApiSession(request);
+  const { account_id } = await params;
+  const account = await accountsTable.fetchById(account_id);
+  if (!account) {
     return NextResponse.json(
-      { error: err.message || "Internal server error" },
-      { status: StatusCodes.INTERNAL_SERVER_ERROR }
+      { error: `Account with ID ${account_id} not found` },
+      { status: StatusCodes.NOT_FOUND }
     );
   }
+  let repositories = await productsTable.listByAccount(account_id);
+  repositories = repositories.filter((repository) =>
+    isAuthorized(session, repository, Actions.ListRepository)
+  );
+  return NextResponse.json({ repositories }, { status: StatusCodes.OK });
 }
 
 /**
