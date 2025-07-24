@@ -1,14 +1,10 @@
-// @ts-nocheck
 /** @jest-environment node */
 import { NextRequest } from "next/server";
 import { apiKeysTable } from "@/lib/clients/database";
-import {
-  getApiSession,
-  generateAccessKeyID,
-  generateSecretAccessKey,
-} from "@/lib/api/utils";
+import { getApiSession } from "@/lib/api/utils";
 import { isAuthorized } from "@/lib/api/authz";
-import { APIKeyRequestSchema, RedactedAPIKeySchema } from "@/types/api-key";
+import { RedactedAPIKeySchema } from "@/types/api-key";
+import { GET, POST } from "./route";
 
 jest.mock("@/lib/clients/database", () => ({
   apiKeysTable: {
@@ -22,8 +18,6 @@ jest.mock("@/lib/api/utils", () => ({
   generateSecretAccessKey: jest.fn(() => "x".repeat(64)),
 }));
 jest.mock("@/lib/api/authz", () => ({ isAuthorized: jest.fn() }));
-
-const { GET, POST } = require("./route");
 
 describe("POST /api/v1/accounts/[account_id]/api-keys", () => {
   afterEach(() => jest.resetAllMocks());
@@ -40,14 +34,16 @@ describe("POST /api/v1/accounts/[account_id]/api-keys", () => {
           ...validBody,
           expires: new Date(Date.now() - 1000).toISOString(),
         }),
-    } as any;
+    } as unknown as NextRequest;
     const res = await POST(req, { params: { account_id: "foo" } });
     expect(res.status).toBe(400);
   });
 
   test("returns 404 if account not found", async () => {
     (getApiSession as jest.Mock).mockResolvedValue({});
-    const req = { json: () => Promise.resolve(validBody) } as any;
+    const req = {
+      json: () => Promise.resolve(validBody),
+    } as unknown as NextRequest;
     const res = await POST(req, { params: { account_id: "foo" } });
     expect(res.status).toBe(404);
   });
@@ -57,7 +53,9 @@ describe("POST /api/v1/accounts/[account_id]/api-keys", () => {
       account: { account_id: "foo" },
     });
     (isAuthorized as jest.Mock).mockReturnValue(false);
-    const req = { json: () => Promise.resolve(validBody) } as any;
+    const req = {
+      json: () => Promise.resolve(validBody),
+    } as unknown as NextRequest;
     const res = await POST(req, { params: { account_id: "foo" } });
     expect(res.status).toBe(401);
   });
@@ -75,7 +73,9 @@ describe("POST /api/v1/accounts/[account_id]/api-keys", () => {
       disabled: false,
     };
     (apiKeysTable.create as jest.Mock).mockResolvedValue(createdKey);
-    const req = { json: () => Promise.resolve(validBody) } as any;
+    const req = {
+      json: () => Promise.resolve(validBody),
+    } as unknown as NextRequest;
     const res = await POST(req, { params: { account_id: "foo" } });
     expect(res.status).toBe(200);
     await expect(res.json()).resolves.toEqual(createdKey);
@@ -87,7 +87,7 @@ describe("GET /api/v1/accounts/[account_id]/api-keys", () => {
 
   test("returns 404 if account not found", async () => {
     (getApiSession as jest.Mock).mockResolvedValue({});
-    const req = {} as any;
+    const req = {} as unknown as NextRequest;
     const res = await GET(req, { params: { account_id: "foo" } });
     expect(res.status).toBe(404);
   });
@@ -97,7 +97,7 @@ describe("GET /api/v1/accounts/[account_id]/api-keys", () => {
       account: { account_id: "foo" },
     });
     (isAuthorized as jest.Mock).mockReturnValueOnce(false);
-    const req = {} as any;
+    const req = {} as unknown as NextRequest;
     const res = await GET(req, { params: { account_id: "foo" } });
     expect(res.status).toBe(401);
   });
@@ -121,7 +121,7 @@ describe("GET /api/v1/accounts/[account_id]/api-keys", () => {
       },
     ];
     (apiKeysTable.listByAccount as jest.Mock).mockResolvedValue(apiKeys);
-    const req = {} as any;
+    const req = {} as unknown as NextRequest;
     const res = await GET(req, { params: { account_id: "foo" } });
     expect(res.status).toBe(200);
     const expected = apiKeys.map((k) => RedactedAPIKeySchema.parse(k));
