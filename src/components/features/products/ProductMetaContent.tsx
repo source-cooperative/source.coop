@@ -1,14 +1,13 @@
 import { DataList, Badge, Link as RadixLink } from '@radix-ui/themes';
-import type { Product_v2 } from '@/types/product_v2';
-import { MonoText } from '@/components/core';
-import { formatBytes } from '@/lib/format';
+import type { Product } from "@/types";
+import { MonoText } from "@/components/core";
 import { DateText } from '@/components/display';
 import Link from 'next/link';
 import { Flex } from '@radix-ui/themes';
 import { ProfileAvatar } from '@/components/features/profiles/ProfileAvatar';
 
 interface ProductMetaContentProps {
-  product: Product_v2;
+  product: Product;
 }
 
 export function ProductMetaContent({ product }: ProductMetaContentProps) {

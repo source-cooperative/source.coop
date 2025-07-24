@@ -32,13 +32,14 @@ export async function GET(req: NextRequest) {
         height: 630
       }
     );
-  } catch (e: any) {
+  } catch (e: unknown) {
+    const errorMessage = e instanceof Error ? e.message : 'Unknown error';
     console.error('Failed to generate image:', e);
-    return new Response(`Failed to generate image: ${e.message}`, { 
+    return new Response(`Failed to generate image: ${errorMessage}`, {
       status: 500,
       headers: {
-        'Content-Type': 'text/plain'
-      }
+        "Content-Type": "text/plain",
+      },
     });
   }
 } 

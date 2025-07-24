@@ -1,23 +1,22 @@
-import { NextResponse } from 'next/server';
-import { CONFIG } from '@/lib/config';
-import { getServerSession } from '@ory/nextjs/app';
+import { NextRequest, NextResponse } from "next/server";
+import { CONFIG } from "@/lib/config";
+import { getApiSession } from "@/lib/api/utils";
+import { AccountType } from "@/types/account";
+import { ExtendedSession } from "@/types/session";
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const data = await request.json();
     // Verify the user is authenticated
-    const session = await getServerSession();
+    const session = (await getApiSession(request)) as ExtendedSession;
     if (!session?.active) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     // Get user data from session
     if (!session.identity) {
       return NextResponse.json(
-        { error: 'No identity found in session' },
+        { error: "No identity found in session" },
         { status: 400 }
       );
     }
@@ -30,14 +29,14 @@ export async function POST(request: Request) {
       ...data,
       email,
       ory_id: userId,
-      type: 'individual' as const,
+      type: AccountType.INDIVIDUAL,
     };
 
     const response = await fetch(`${CONFIG.auth.api.backendUrl}/api/accounts`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
+        "Content-Type": "application/json",
+        Accept: "application/json",
       },
       body: JSON.stringify(accountData),
     });
@@ -45,7 +44,7 @@ export async function POST(request: Request) {
     if (!response.ok) {
       const error = await response.json();
       return NextResponse.json(
-        { error: error.message || 'Failed to create account' },
+        { error: error.message || "Failed to create account" },
         { status: response.status }
       );
     }
@@ -53,10 +52,10 @@ export async function POST(request: Request) {
     const account = await response.json();
     return NextResponse.json(account);
   } catch (error) {
-    console.error('Account creation error:', error);
+    console.error("Account creation error:", error);
     return NextResponse.json(
-      { error: 'Failed to create account' },
+      { error: "Failed to create account" },
       { status: 500 }
     );
   }
-} 
+}

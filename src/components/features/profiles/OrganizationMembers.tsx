@@ -1,7 +1,7 @@
 import { Box, Text, Link as RadixLink, Flex } from '@radix-ui/themes';
 import Link from 'next/link';
-import type { IndividualAccount } from '@/types/account_v2';
-import { ProfileAvatar } from './ProfileAvatar';
+import type { IndividualAccount } from "@/types/account_v2";
+import { ProfileAvatar } from "./ProfileAvatar";
 
 interface OrganizationMembersProps {
   owner: IndividualAccount | null;
@@ -9,26 +9,34 @@ interface OrganizationMembersProps {
   members: IndividualAccount[];
 }
 
-export function OrganizationMembers({ owner, admins, members }: OrganizationMembersProps) {
+export function OrganizationMembers({
+  owner,
+  admins,
+  members,
+}: OrganizationMembersProps) {
   // Calculate total to show
   const totalMembers = (owner ? 1 : 0) + admins.length + members.length;
-  
+
   // If no members to show, display a message
   if (totalMembers === 0) {
-    return <Text size="2" color="gray">No members to display</Text>;
+    return (
+      <Text size="2" color="gray">
+        No members to display
+      </Text>
+    );
   }
 
   // Create a set to track unique account IDs to prevent duplicates
   const processedAccounts = new Set<string>();
-  
+
   // Ensure each account appears only once by filtering out duplicates
-  const uniqueAdmins = admins.filter(admin => {
+  const uniqueAdmins = admins.filter((admin) => {
     if (processedAccounts.has(admin.account_id)) return false;
     processedAccounts.add(admin.account_id);
     return true;
   });
-  
-  const uniqueMembers = members.filter(member => {
+
+  const uniqueMembers = members.filter((member) => {
     if (processedAccounts.has(member.account_id)) return false;
     processedAccounts.add(member.account_id);
     return true;
@@ -36,19 +44,25 @@ export function OrganizationMembers({ owner, admins, members }: OrganizationMemb
 
   // Group members by role for cleaner display
   const memberGroups = [
-    { role: 'owner', title: 'Owner', members: owner ? [owner] : [] },
-    { role: 'admin', title: 'Administrators', members: uniqueAdmins },
-    { role: 'member', title: 'Members', members: uniqueMembers }
-  ].filter(group => group.members.length > 0);
+    { role: "owner", title: "Owner", members: owner ? [owner] : [] },
+    { role: "admin", title: "Administrators", members: uniqueAdmins },
+    { role: "member", title: "Members", members: uniqueMembers },
+  ].filter((group) => group.members.length > 0);
 
   return (
     <Flex direction="column" gap="3">
-      {memberGroups.map(group => (
+      {memberGroups.map((group) => (
         <Box key={group.role}>
-          <Text as="p" size="2" weight="bold" mb="1">{group.title}</Text>
+          <Text as="p" size="2" weight="bold" mb="1">
+            {group.title}
+          </Text>
           <Flex direction="column" gap="1">
-            {group.members.map(member => (
-              <MemberLink key={member.account_id} member={member} role={group.role as 'owner' | 'admin' | 'member'} />
+            {group.members.map((member) => (
+              <MemberLink
+                key={member.account_id}
+                member={member}
+                role={group.role as "owner" | "admin" | "member"}
+              />
             ))}
           </Flex>
         </Box>
@@ -59,10 +73,10 @@ export function OrganizationMembers({ owner, admins, members }: OrganizationMemb
 
 interface MemberLinkProps {
   member: IndividualAccount;
-  role: 'owner' | 'admin' | 'member';
+  role: "owner" | "admin" | "member";
 }
 
-function MemberLink({ member, role }: MemberLinkProps) {
+function MemberLink({ member, role: _role }: MemberLinkProps) {
   return (
     <Link href={`/${member.account_id}`} passHref legacyBehavior>
       <RadixLink>

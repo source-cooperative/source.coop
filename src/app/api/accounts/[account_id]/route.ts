@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { accountsTable } from "@/lib/clients/database";
 import type { ExtendedSession } from "@/types/session";
-import { getServerSession } from "@ory/nextjs/app";
+import { getApiSession } from "@/lib/api/utils";
 
 export async function GET(
-  _request: Request,
+  request: NextRequest,
   { params }: { params: Promise<{ account_id: string }> }
 ) {
   try {
@@ -42,7 +42,7 @@ export async function GET(
 
     try {
       // Get all cookies from the request
-      const session = (await getServerSession()) as ExtendedSession;
+      const session = (await getApiSession(request)) as ExtendedSession;
       if (session) {
         console.log("API: Session check:", {
           hasSession: !!session,
@@ -105,11 +105,11 @@ export async function GET(
 }
 
 export async function PUT(
-  request: Request,
+  request: NextRequest,
   { params }: { params: Promise<{ account_id: string }> }
 ) {
   try {
-    const session = (await getServerSession()) as ExtendedSession;
+    const session = (await getApiSession(request)) as ExtendedSession;
     if (!session) {
       return NextResponse.json(
         {
@@ -233,7 +233,7 @@ export async function DELETE(
     }
 
     // Verify session with Ory
-    const session = (await getServerSession()) as ExtendedSession;
+    const session = (await getApiSession(request)) as ExtendedSession;
     if (!session?.active) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -277,7 +277,10 @@ export async function DELETE(
       await accountsTable.delete({ account_id, type: account.type });
     } catch (error) {
       console.error("Failed to delete account:", error);
-      return NextResponse.json({ error: "Failed to delete account" }, { status: 500 });
+      return NextResponse.json(
+        { error: "Failed to delete account" },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({

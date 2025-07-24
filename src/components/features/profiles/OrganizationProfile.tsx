@@ -2,8 +2,13 @@
 
 import { Box, Heading, Text, Link as RadixLink, Flex, Grid, Button } from '@radix-ui/themes';
 import Link from 'next/link';
-import type { Account, IndividualAccount, OrganizationalAccount } from '@/types/account_v2';
-import type { Product_v2 } from '@/types/product_v2';
+import type {
+  IndividualAccount,
+  OrganizationalAccount,
+} from "@/types/account_v2";
+import type { Product } from "@/types";
+import type { AccountEmail } from "@/types/account";
+import type { AccountDomain } from "@/types/account_v2";
 import { ProductList } from '@/components/features/products/ProductList';
 import { OrganizationMembers } from './OrganizationMembers';
 import { ProfileAvatar } from './ProfileAvatar';
@@ -12,7 +17,7 @@ import { useSession } from '@ory/elements-react/client';
 import { getAccountId } from "@/lib/ory";
 interface OrganizationProfileProps {
   account: OrganizationalAccount;
-  products: Product_v2[];
+  products: Product[];
   owner: IndividualAccount | null;
   admins: IndividualAccount[];
   members: IndividualAccount[];
@@ -37,7 +42,9 @@ export function OrganizationProfile({
         <Flex gap="4">
           <ProfileAvatar account={account} size="8" />
           <Box>
-            <Heading as="h1" size="8">{account.name}</Heading>
+            <Heading as="h1" size="8">
+              {account.name}
+            </Heading>
             <Text as="p" size="3" color="gray" mt="1">
               {account.metadata_public.bio}
             </Text>
@@ -52,22 +59,41 @@ export function OrganizationProfile({
 
       <Grid columns="2" gap="6" mb="6">
         <Box>
-          <Heading as="h2" size="4" mb="2">Organization Details</Heading>
-          {account.metadata_public.domains?.map((domain, index) => (
-            <Text as="p" size="2" key={index}>
-              <WebsiteLink website={{ url: `https://${domain.domain}` }} />
-            </Text>
-          ))}
-          {account.emails?.find(email => email.is_primary)?.address && (
+          <Heading as="h2" size="4" mb="2">
+            Organization Details
+          </Heading>
+          {account.metadata_public.domains?.map(
+            (domain: AccountDomain, index: number) => (
+              <Text as="p" size="2" key={index}>
+                <WebsiteLink website={{ url: `https://${domain.domain}` }} />
+              </Text>
+            )
+          )}
+          {account.emails?.find((email: AccountEmail) => email.is_primary)
+            ?.address && (
             <Text as="p" size="2">
-              Email: <RadixLink href={`mailto:${account.emails?.find(email => email.is_primary)?.address}`}>
-                {account.emails?.find(email => email.is_primary)?.address}
+              Email:{" "}
+              <RadixLink
+                href={`mailto:${
+                  account.emails?.find(
+                    (email: AccountEmail) => email.is_primary
+                  )?.address
+                }`}
+              >
+                {
+                  account.emails?.find(
+                    (email: AccountEmail) => email.is_primary
+                  )?.address
+                }
               </RadixLink>
             </Text>
           )}
           {account.metadata_public.ror_id && (
             <Text as="p" size="2">
-              ROR ID: <RadixLink href={`https://ror.org/${account.metadata_public.ror_id}`}>
+              ROR ID:{" "}
+              <RadixLink
+                href={`https://ror.org/${account.metadata_public.ror_id}`}
+              >
                 {account.metadata_public.ror_id}
               </RadixLink>
             </Text>
@@ -75,8 +101,10 @@ export function OrganizationProfile({
         </Box>
 
         <Box>
-          <Heading as="h2" size="4" mb="2">Members</Heading>
-          <OrganizationMembers 
+          <Heading as="h2" size="4" mb="2">
+            Members
+          </Heading>
+          <OrganizationMembers
             owner={owner}
             admins={admins}
             members={members}
@@ -86,7 +114,9 @@ export function OrganizationProfile({
 
       {products.length > 0 && (
         <Box>
-          <Heading as="h2" size="4" mb="2">Products</Heading>
+          <Heading as="h2" size="4" mb="2">
+            Products
+          </Heading>
           <ProductList products={products} />
         </Box>
       )}

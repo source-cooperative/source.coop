@@ -3,7 +3,11 @@ import { DynamoDBDocumentClient, PutCommand } from '@aws-sdk/lib-dynamodb';
 import { createGunzip } from 'zlib';
 import { createReadStream } from 'fs';
 import { pipeline } from 'stream/promises';
-import type { Product_v2, ProductMirror, ProductRole } from '../src/types/product_v2.js';
+import type {
+  Product,
+  ProductMirror,
+  ProductRole,
+} from "../src/types/product_v2.js";
 
 // Initialize DynamoDB client with local credentials
 const client = new DynamoDBClient({
@@ -53,30 +57,30 @@ function getAttributeValue(obj: any, path: string[]): any {
 }
 
 // Convert old repository format to new format
-function convertProduct(oldProduct: OldProduct): Product_v2 {
+function convertProduct(oldProduct: OldProduct): Product {
   const now = new Date().toISOString();
-  
+
   // Convert mirrors to new format
   const mirrors: Record<string, ProductMirror> = {};
   for (const [key, mirror] of Object.entries(oldProduct.data.mirrors)) {
     mirrors[key] = {
-      storage_type: 's3',
+      storage_type: "s3",
       connection_id: mirror.data_connection_id,
       prefix: mirror.prefix,
       config: {
-        region: 'us-west-2',
-        bucket: 'aws-opendata-us-west-2'
+        region: "us-west-2",
+        bucket: "aws-opendata-us-west-2",
       },
       is_primary: key === oldProduct.data.primary_mirror,
       sync_status: {
         last_sync_at: now,
-        is_synced: true
+        is_synced: true,
       },
       stats: {
         total_objects: 0,
         total_size: 0,
-        last_verified_at: now
-      }
+        last_verified_at: now,
+      },
     };
   }
 
@@ -84,22 +88,25 @@ function convertProduct(oldProduct: OldProduct): Product_v2 {
   const roles: Record<string, ProductRole> = {
     [oldProduct.account_id]: {
       account_id: oldProduct.account_id,
-      role: 'admin',
+      role: "admin",
       granted_at: now,
-      granted_by: oldProduct.account_id
-    }
+      granted_by: oldProduct.account_id,
+    },
   };
 
   // Convert visibility based on old fields
-  const visibility = oldProduct.data_mode === 'open' 
-    ? (oldProduct.state === 'listed' ? 'public' : 'unlisted')
-    : 'restricted';
+  const visibility =
+    oldProduct.data_mode === "open"
+      ? oldProduct.state === "listed"
+        ? "public"
+        : "unlisted"
+      : "restricted";
 
   return {
     product_id: oldProduct.repository_id,
     account_id: oldProduct.account_id,
     title: oldProduct.meta.title,
-    description: oldProduct.meta.description || '',
+    description: oldProduct.meta.description || "",
     created_at: oldProduct.published,
     updated_at: now,
     visibility,
@@ -107,13 +114,13 @@ function convertProduct(oldProduct: OldProduct): Product_v2 {
       mirrors,
       primary_mirror: oldProduct.data.primary_mirror,
       tags: oldProduct.meta.tags || [],
-      roles
-    }
+      roles,
+    },
   };
 }
 
 async function processDumpFile(filePath: string) {
-  const products: Product_v2[] = [];
+  const products: Product[] = [];
   
   // Create a pipeline to read and parse the gzipped JSON file
   await pipeline(

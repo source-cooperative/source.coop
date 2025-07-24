@@ -1,10 +1,10 @@
 import { Card } from '@radix-ui/themes';
-import type { Product_v2 } from '@/types/product_v2';
+import type { Product } from "@/types";
 import { SectionHeader } from '@/components/core';
 import { ProductMetaContent } from './ProductMetaContent';
 
 interface ProductMetaCardProps {
-  product: Product_v2;
+  product: Product;
 }
 
 export function ProductMetaCard({ product }: ProductMetaCardProps) {

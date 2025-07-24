@@ -2,40 +2,19 @@ import {
   GetCommand,
   QueryCommand,
   UpdateCommand,
-  DynamoDBDocumentClient,
   DeleteCommand,
   PutCommand,
 } from "@aws-sdk/lib-dynamodb";
-import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import type { Account, AccountType } from "@/types/account";
 import type {
-  Account,
   IndividualAccount,
   OrganizationalAccount,
 } from "@/types/account_v2";
 
 // Use the singleton client from clients/index.ts
-import { CONFIG } from "../../config";
+import { BaseTable } from "./base";
 
-class AccountsTable {
-  private readonly table: string;
-  private readonly client: DynamoDBDocumentClient;
-
-  constructor({
-    client,
-    table = "sc-accounts",
-  }: {
-    table?: string;
-    client?: DynamoDBDocumentClient;
-  }) {
-    this.table = table;
-    if (client) {
-      this.client = client;
-    } else {
-      const client = new DynamoDBClient(CONFIG.database);
-      this.client = DynamoDBDocumentClient.from(client);
-    }
-  }
-
+class AccountsTable extends BaseTable {
   async fetchById(account_id: string): Promise<Account | null> {
     const types = ["individual", "organization"] as const;
 
@@ -138,10 +117,7 @@ class AccountsTable {
     return result.Attributes as Account;
   }
 
-  async delete(Key: {
-    account_id: string;
-    type: "individual" | "organization";
-  }): Promise<void> {
+  async delete(Key: { account_id: string; type: AccountType }): Promise<void> {
     await this.client.send(
       new DeleteCommand({
         TableName: this.table,
@@ -219,4 +195,6 @@ export const isOrganizationalAccount = (
 ): acc is OrganizationalAccount => acc.type === "organization";
 
 // Export a singleton instance
-export const accountsTable = new AccountsTable({});
+export const accountsTable = new AccountsTable({
+  table: "sc-accounts",
+});

@@ -1,17 +1,14 @@
-// Email interface for managing multiple emails per account
-export interface AccountEmail {
-  address: string;
-  verified: boolean;
-  verified_at?: string;
-  is_primary: boolean;
-  added_at: string;
-}
+// TODO: This file should be merged into account.ts
+
+import { AccountEmail } from "@/types/account";
+import { AccountFlags } from "@/types/shared";
+import { AccountType } from "./account";
 
 // Domain interface for managing domain ownership
 export interface AccountDomain {
   domain: string;
-  status: 'unverified' | 'pending' | 'verified';
-  verification_method?: 'dns' | 'html' | 'file';
+  status: "unverified" | "pending" | "verified";
+  verification_method?: "dns" | "html" | "file";
   verification_token?: string;
   verified_at?: string;
   created_at: string;
@@ -21,13 +18,13 @@ export interface AccountDomain {
 // Base interface for shared properties
 interface BaseAccount {
   account_id: string;
-  type: 'individual' | 'organization';
+  type: AccountType;
   name: string;
   emails?: AccountEmail[];
   created_at: string;
   updated_at: string;
   disabled: boolean;
-  flags: string[];
+  flags: AccountFlags[];
   metadata_public: {
     location?: string;
     bio?: string;
@@ -40,7 +37,7 @@ interface BaseAccount {
 
 // Interface for individual accounts
 export interface IndividualAccount extends BaseAccount {
-  type: 'individual';
+  type: AccountType.INDIVIDUAL;
   metadata_public: {
     location?: string;
     bio?: string;
@@ -51,7 +48,7 @@ export interface IndividualAccount extends BaseAccount {
 
 // Interface for organizational accounts
 export interface OrganizationalAccount extends BaseAccount {
-  type: 'organization';
+  type: AccountType.ORGANIZATION;
   metadata_public: {
     location?: string;
     bio?: string;
@@ -64,4 +61,4 @@ export interface OrganizationalAccount extends BaseAccount {
 }
 
 // Union type for any kind of account
-export type Account = IndividualAccount | OrganizationalAccount; 
+export type AccountV2 = IndividualAccount | OrganizationalAccount;

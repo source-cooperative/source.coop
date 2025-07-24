@@ -1,7 +1,11 @@
 'use client';
 
 import { Box, Text, Flex } from '@radix-ui/themes';
-import { ChevronRightIcon, FileIcon, SlashIcon, ChevronDownIcon } from '@radix-ui/react-icons';
+import {
+  ChevronRightIcon,
+  FileIcon,
+  ChevronDownIcon,
+} from "@radix-ui/react-icons";
 import Link from 'next/link';
 import { useRef, useState, useEffect } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
