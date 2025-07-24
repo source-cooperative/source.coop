@@ -56,7 +56,7 @@ import { getApiSession } from "@/lib/api/utils";
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { account_id: string } }
+  { params }: { params: Promise<{ account_id: string }> }
 ) {
   try {
     const session = await getApiSession(request);
@@ -81,7 +81,7 @@ export async function POST(
         { status: StatusCodes.NOT_FOUND }
       );
     }
-    if (invitedAccount.account_type !== AccountType.INDIVIDUAL) {
+    if (invitedAccount.type !== AccountType.INDIVIDUAL) {
       return NextResponse.json(
         {
           error: `Invited account with ID ${membershipInvitation.account_id} is not a user account`,
@@ -89,11 +89,9 @@ export async function POST(
         { status: StatusCodes.BAD_REQUEST }
       );
     }
-    let [createdMembership, success]: [Membership | null, boolean] = [
-      null,
-      false,
-    ];
-    let membership: Membership = {
+    let createdMembership: Membership | null = null;
+    const success = false;
+    const membership: Membership = {
       ...membershipInvitation,
       membership_id: crypto.randomUUID(),
       membership_account_id: account.account_id,
@@ -130,9 +128,11 @@ export async function POST(
         status: StatusCodes.OK,
       });
     }
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const errorMessage =
+      err instanceof Error ? err.message : "Internal server error";
     return NextResponse.json(
-      { error: err.message || "Internal server error" },
+      { error: errorMessage },
       { status: StatusCodes.INTERNAL_SERVER_ERROR }
     );
   }
@@ -175,7 +175,7 @@ export async function POST(
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { account_id: string } }
+  { params }: { params: Promise<{ account_id: string }> }
 ) {
   try {
     const session = await getApiSession(request);
@@ -203,9 +203,11 @@ export async function GET(
       }
     }
     return NextResponse.json(authorizedMemberships, { status: StatusCodes.OK });
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const errorMessage =
+      err instanceof Error ? err.message : "Internal server error";
     return NextResponse.json(
-      { error: err.message || "Internal server error" },
+      { error: errorMessage },
       { status: StatusCodes.INTERNAL_SERVER_ERROR }
     );
   }

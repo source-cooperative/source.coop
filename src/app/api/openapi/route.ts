@@ -1,7 +1,6 @@
-// @ts-nocheck
-
 import { StatusCodes } from "http-status-codes";
-import type { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+// @ts-expect-error: No types for swagger-jsdoc
 import swaggerJSDoc from "swagger-jsdoc";
 import { OpenApiGeneratorV3 } from "@asteasolutions/zod-to-openapi";
 import {
@@ -22,7 +21,7 @@ import {
 } from "@/types";
 import { AccountSchema } from "@/types/account";
 
-export default async function handler(req: NextRequest, res: NextResponse) {
+export async function GET(_req: NextRequest) {
   const options = {
     definition: {
       openapi: "3.0.0",
@@ -40,7 +39,7 @@ export default async function handler(req: NextRequest, res: NextResponse) {
     apis: ["./src/api/v1/**/*.ts"],
   };
 
-  var openapiSpecification = swaggerJSDoc(options);
+  const openapiSpecification = swaggerJSDoc(options);
 
   const generator = new OpenApiGeneratorV3([
     UserSessionSchema,
@@ -59,20 +58,21 @@ export default async function handler(req: NextRequest, res: NextResponse) {
     RepositoryListSchema,
     RepositoryFeaturedUpdateRequestSchema,
   ]);
-  openapiSpecification["components"] = {
-    securitySchemes: {
-      ApiKeyAuth: {
-        type: "apiKey",
-        in: "header",
-        name: "Authorization",
-        description: "Follows the format `<access-key-id> <secret-access-key>`",
-      },
+  if (!openapiSpecification["components"]) {
+    openapiSpecification["components"] = {};
+  }
+  openapiSpecification["components"]["securitySchemes"] = {
+    ApiKeyAuth: {
+      type: "apiKey",
+      in: "header",
+      name: "Authorization",
+      description: "Follows the format `<access-key-id> <secret-access-key>`",
     },
   };
   openapiSpecification["security"] = [{ ApiKeyAuth: [] }];
-
+  const generatedComponents = generator.generateComponents().components;
   openapiSpecification["components"]["schemas"] =
-    generator.generateComponents().components.schemas;
+    generatedComponents?.schemas || {};
 
-  return res.status(StatusCodes.OK).json(openapiSpecification);
+  return NextResponse.json(openapiSpecification, { status: StatusCodes.OK });
 }

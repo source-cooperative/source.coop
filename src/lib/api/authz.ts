@@ -169,7 +169,7 @@ export function isAuthorized(
 
 function getDataConnection(
   principal: UserSession | null,
-  dataConnection: DataConnection
+  _dataConnection: DataConnection
 ): boolean {
   if (principal?.account?.disabled) {
     return false;
@@ -180,7 +180,7 @@ function getDataConnection(
 
 function createDataConnection(
   principal: UserSession | null,
-  dataConnection: DataConnection
+  _dataConnection: DataConnection
 ): boolean {
   if (principal?.account?.disabled) {
     return false;
@@ -194,7 +194,7 @@ function createDataConnection(
 
 function disableDataConnection(
   principal: UserSession | null,
-  dataConnection: DataConnection
+  _dataConnection: DataConnection
 ): boolean {
   if (principal?.account?.disabled) {
     return false;
@@ -235,7 +235,7 @@ function useDataConnection(
 
 function viewDataConnectionCredentials(
   principal: UserSession | null,
-  dataConnection: DataConnection
+  _dataConnection: DataConnection
 ): boolean {
   if (principal?.account?.disabled) {
     return false;
@@ -250,7 +250,7 @@ function viewDataConnectionCredentials(
 
 function putDataConnection(
   principal: UserSession | null,
-  dataConnection: DataConnection
+  _dataConnection: DataConnection
 ): boolean {
   if (principal?.account?.disabled) {
     return false;
@@ -265,7 +265,7 @@ function putDataConnection(
 
 function putAccountFlags(
   principal: UserSession | null,
-  account: Account
+  _account: Account
 ): boolean {
   // If the user does not have an account, they are not authorized
   if (!principal?.account) {
@@ -869,7 +869,7 @@ function listAccountAPIKeys(
 
 function listAccountMemberships(
   principal: UserSession | null,
-  account: Account
+  _account: Account
 ): boolean {
   // If the user is disabled, they are not authorized
   if (principal?.account?.disabled) {
@@ -1155,8 +1155,8 @@ function inviteMembership(
 function hasRole(
   principal: UserSession | null,
   roles: MembershipRole[],
-  account_id: String,
-  repository_id?: String
+  account_id: string,
+  repository_id?: string
 ): boolean {
   // If the user is the owner of the account, they are authorized
   if (principal?.account?.account_id === account_id) {
@@ -1167,7 +1167,7 @@ function hasRole(
     return false;
   }
 
-  for (var membership of principal.memberships) {
+  for (const membership of principal.memberships) {
     if (membership.state !== MembershipState.Member) {
       continue;
     }

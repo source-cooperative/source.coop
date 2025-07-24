@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Actions, RepositoryList } from "@/types";
+import { Actions } from "@/types";
 import { isAuthorized } from "@/lib/api/authz";
 import { StatusCodes } from "http-status-codes";
 import { getApiSession } from "@/lib/api/utils";
@@ -33,9 +33,11 @@ export async function GET(request: NextRequest) {
       { repositories: filteredRepositories },
       { status: StatusCodes.OK }
     );
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const errorMessage =
+      err instanceof Error ? err.message : "Internal server error";
     return NextResponse.json(
-      { error: err.message || "Internal server error" },
+      { error: errorMessage },
       { status: StatusCodes.INTERNAL_SERVER_ERROR }
     );
   }

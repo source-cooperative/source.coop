@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { APIKey } from "@/types";
 import { StatusCodes } from "http-status-codes";
 import { apiKeysTable } from "@/lib/clients/database/api-keys";
 
@@ -69,9 +68,11 @@ export async function GET(
 
     // Send the API key as the response
     return NextResponse.json(apiKey, { status: StatusCodes.OK });
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const errorMessage =
+      err instanceof Error ? err.message : "Internal server error";
     return NextResponse.json(
-      { error: err.message || "Internal server error" },
+      { error: errorMessage },
       { status: StatusCodes.INTERNAL_SERVER_ERROR }
     );
   }

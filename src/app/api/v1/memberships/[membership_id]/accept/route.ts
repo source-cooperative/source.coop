@@ -39,7 +39,7 @@ import { isAuthorized } from "@/lib/api/authz";
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { membership_id: string } }
+  { params }: { params: Promise<{ membership_id: string }> }
 ) {
   try {
     const session = await getApiSession(request);

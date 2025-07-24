@@ -2,16 +2,14 @@ import {
   GetCommand,
   QueryCommand,
   UpdateCommand,
-  DynamoDBDocumentClient,
   DeleteCommand,
   PutCommand,
 } from "@aws-sdk/lib-dynamodb";
-import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import type { Account } from "@/types/account";
 import type {
-  Account,
   IndividualAccount,
   OrganizationalAccount,
-} from "@/types";
+} from "@/types/account_v2";
 
 // Use the singleton client from clients/index.ts
 import { BaseTable } from "./base";

@@ -31,7 +31,7 @@
  *         description: Internal server error
  */
 import { NextRequest, NextResponse } from "next/server";
-import { Actions, Membership, MembershipState } from "@/types";
+import { Actions, MembershipState } from "@/types";
 import { StatusCodes } from "http-status-codes";
 import { isAuthorized } from "@/lib/api/authz";
 import { getApiSession } from "@/lib/api/utils";
@@ -39,7 +39,7 @@ import { membershipsTable } from "@/lib/clients/database";
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { membership_id: string } }
+  { params }: { params: Promise<{ membership_id: string }> }
 ) {
   try {
     const session = await getApiSession(request);
@@ -71,9 +71,11 @@ export async function POST(
       }),
       { status: StatusCodes.OK }
     );
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const errorMessage =
+      err instanceof Error ? err.message : "Internal server error";
     return NextResponse.json(
-      { error: err.message || "Internal server error" },
+      { error: errorMessage },
       { status: StatusCodes.INTERNAL_SERVER_ERROR }
     );
   }

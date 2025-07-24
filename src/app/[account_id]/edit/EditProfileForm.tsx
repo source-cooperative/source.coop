@@ -108,8 +108,8 @@ export function EditProfileForm({
     })) || [{ url: "" }],
   });
 
-  const handleSubmit = async (_data: Record<string, any>) => {
-    const data = _data as AccountFormData; // TODO: Find more elegant way to do this
+  const handleSubmit = async (_data: Record<string, unknown>) => {
+    const data = _data as unknown as AccountFormData; // TODO: Find more elegant way to do this
     setSaving(true);
     try {
       // Process websites: add https:// prefix if needed and filter out empty ones

@@ -39,7 +39,7 @@ import { Actions } from "@/types";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { account_id: string } }
+  { params }: { params: Promise<{ account_id: string }> }
 ) {
   try {
     const { account_id } = params;
@@ -98,7 +98,7 @@ export async function GET(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { account_id: string } }
+  { params }: { params: Promise<{ account_id: string }> }
 ) {
   try {
     const { account_id } = params;

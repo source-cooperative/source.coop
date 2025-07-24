@@ -42,7 +42,7 @@ import { apiKeysTable, accountsTable } from "@/lib/clients/database";
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { access_key_id: string } }
+  { params }: { params: Promise<{ access_key_id: string }> }
 ) {
   try {
     const { access_key_id } = params;

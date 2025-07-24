@@ -1,6 +1,6 @@
 "use client";
 
-import { Container, Flex, Button, DropdownMenu, Text } from "@radix-ui/themes";
+import { Container, Flex, DropdownMenu, Text } from "@radix-ui/themes";
 import Link from "next/link";
 import { useState } from "react";
 import { Logo } from "./Logo";
@@ -8,7 +8,6 @@ import { ProfileAvatar } from "@/components/features/profiles/ProfileAvatar";
 import { ChevronDownIcon } from "@radix-ui/react-icons";
 import styles from "./Navigation.module.css";
 import { useAccount } from "@/hooks/useAccount";
-import { CONFIG } from "@/lib/config";
 import { useRouter } from "next/navigation";
 export function Navigation() {
   const [isOpen, setIsOpen] = useState(false);

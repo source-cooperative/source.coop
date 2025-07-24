@@ -1,7 +1,5 @@
 import { Container, Box, Heading } from "@radix-ui/themes";
 import { FormWrapper } from "@/components/core";
-import { redirect } from "next/navigation";
-import { CONFIG } from "@/lib/config";
 
 interface PageProps {
   params: Promise<{
@@ -10,20 +8,20 @@ interface PageProps {
 }
 
 export default async function NewOrganizationPage({ params }: PageProps) {
-  const { account_id } = await params;
+  const { account_id: _account_id } = await params;
 
-  async function handleSubmit(data: Record<string, string>) {
+  async function handleSubmit(_data: Record<string, string>) {
     "use server";
 
     // try {
     //   // TODO: Replace with actual organization creation
-    //   const response = await fetch(`${CONFIG.api.baseUrl}/api/accounts`, {
+    //   const response = await fetch(`${_CONFIG.api.baseUrl}/api/accounts`, {
     //     method: "POST",
     //     headers: { "Content-Type": "application/json" },
     //     body: JSON.stringify({
-    //       ...data,
+    //       ..._data,
     //       type: "organization",
-    //       owner_account_id: account_id,
+    //       owner_account_id: _account_id,
     //     }),
     //   });
 
@@ -32,7 +30,7 @@ export default async function NewOrganizationPage({ params }: PageProps) {
     //   }
 
     //   const newOrg = await response.json();
-    //   redirect(`/${newOrg.account_id}/edit`);
+    //   _redirect(`/${newOrg.account_id}/edit`);
     // } catch (error) {
     //   console.error("Error creating organization:", error);
     //   throw error;

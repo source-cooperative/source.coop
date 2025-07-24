@@ -31,7 +31,7 @@ import { apiKeysTable } from "@/lib/clients/database/api-keys";
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { access_key_id: string } }
+  { params }: { params: Promise<{ access_key_id: string }> }
 ) {
   try {
     const session = await getApiSession(request);

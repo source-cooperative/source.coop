@@ -1,6 +1,6 @@
-import { NextResponse } from 'next/server';
-import { CONFIG } from '@/lib/config';
-import { getServerSession } from '@ory/nextjs/app';
+import { NextRequest, NextResponse } from "next/server";
+import { CONFIG } from "@/lib/config";
+import { getApiSession } from "@/lib/api/utils";
 
 export async function POST(request: NextRequest) {
   try {
@@ -56,4 +56,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-} 
+}

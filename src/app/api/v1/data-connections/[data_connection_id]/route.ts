@@ -27,7 +27,7 @@
  *         description: Internal server error
  */
 import { NextRequest, NextResponse } from "next/server";
-import { Actions, DataConnection, DataConnectionSchema } from "@/types";
+import { Actions, DataConnectionSchema } from "@/types";
 import { StatusCodes } from "http-status-codes";
 import { isAuthorized } from "@/lib/api/authz";
 import { getApiSession } from "@/lib/api/utils";
@@ -35,7 +35,7 @@ import { dataConnectionsTable } from "@/lib/clients";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { data_connection_id: string } }
+  { params }: { params: Promise<{ data_connection_id: string }> }
 ) {
   try {
     const session = await getApiSession(request);
@@ -69,9 +69,11 @@ export async function GET(
       return NextResponse.json(sanitized, { status: StatusCodes.OK });
     }
     return NextResponse.json(dataConnection, { status: StatusCodes.OK });
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const errorMessage =
+      err instanceof Error ? err.message : "Internal server error";
     return NextResponse.json(
-      { error: err.message || "Internal server error" },
+      { error: errorMessage },
       { status: StatusCodes.INTERNAL_SERVER_ERROR }
     );
   }
@@ -115,7 +117,7 @@ export async function GET(
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { data_connection_id: string } }
+  { params }: { params: Promise<{ data_connection_id: string }> }
 ) {
   try {
     const session = await getApiSession(request);
@@ -148,9 +150,11 @@ export async function PUT(
       updatedDataConnection
     );
     return NextResponse.json(dataConnection, { status: StatusCodes.OK });
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const errorMessage =
+      err instanceof Error ? err.message : "Internal server error";
     return NextResponse.json(
-      { error: err.message || "Internal server error" },
+      { error: errorMessage },
       { status: StatusCodes.INTERNAL_SERVER_ERROR }
     );
   }
@@ -182,7 +186,7 @@ export async function PUT(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { data_connection_id: string } }
+  { params }: { params: Promise<{ data_connection_id: string }> }
 ) {
   try {
     const session = await getApiSession(request);
@@ -207,9 +211,11 @@ export async function DELETE(
       { message: "Data connection deleted successfully" },
       { status: StatusCodes.OK }
     );
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const errorMessage =
+      err instanceof Error ? err.message : "Internal server error";
     return NextResponse.json(
-      { error: err.message || "Internal server error" },
+      { error: errorMessage },
       { status: StatusCodes.INTERNAL_SERVER_ERROR }
     );
   }

@@ -1,7 +1,5 @@
 "use client";
 
-import { Box, Text, Link } from "@radix-ui/themes";
-
 /*
 export function Banner() {
   return (

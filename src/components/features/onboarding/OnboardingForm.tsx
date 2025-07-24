@@ -125,10 +125,10 @@ export function OnboardingForm() {
       setUsername(formData.account_id);
       debouncedCheckUsername(formData.account_id);
     }
-  }, [formData.account_id, debouncedCheckUsername]);
+  }, [formData.account_id, debouncedCheckUsername, searchParams]);
 
-  const handleSubmit = async (_data: Record<string, any>) => {
-    const data = _data as OnboardingFormData; // TODO: Find more elegant way to do this
+  const handleSubmit = async (_data: Record<string, unknown>) => {
+    const data = _data as unknown as OnboardingFormData; // TODO: Find more elegant way to do this
     setLoading(true);
     setError(null);
 
@@ -137,46 +137,50 @@ export function OnboardingForm() {
 
       // Basic validation
       if (!account_id || account_id.length < 3) {
-        throw new Error('Username must be at least 3 characters long');
+        throw new Error("Username must be at least 3 characters long");
       }
 
       if (!name || name.length < 2) {
-        throw new Error('Name is required');
+        throw new Error("Name is required");
       }
 
       // Get the current session to ensure we have the Ory ID
       if (!session?.identity?.id) {
-        throw new Error('No active session found');
+        throw new Error("No active session found");
       }
 
       // Submit to API with Ory ID from session
-      const responseData = await fetch('/api/accounts/onboarding', {
-        method: 'POST',
+      const responseData = await fetch("/api/accounts/onboarding", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
+          "Content-Type": "application/json",
+          Accept: "application/json",
         },
-        credentials: 'include',
+        credentials: "include",
         body: JSON.stringify({
           account_id,
           name,
           ory_id: session.identity.id,
-          email: session.identity.traits.email
+          email: session.identity.traits.email,
         }),
       });
 
       const responseJson: OnboardingResponse = await responseData.json();
-      
+
       if (!responseData.ok) {
-        throw new Error(responseJson.error || 'Failed to complete onboarding');
+        throw new Error(responseJson.error || "Failed to complete onboarding");
       }
 
       // On success, redirect to profile page
       await refetch();
       router.push(`/${account_id}?welcome=true`);
     } catch (err: unknown) {
-      console.error('Onboarding error:', err);
-      setError(err instanceof Error ? err.message : 'An error occurred. Please try again.');
+      console.error("Onboarding error:", err);
+      setError(
+        err instanceof Error
+          ? err.message
+          : "An error occurred. Please try again."
+      );
     } finally {
       setLoading(false);
     }

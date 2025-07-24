@@ -1,7 +1,6 @@
 import { DataList, Badge, Link as RadixLink } from '@radix-ui/themes';
 import type { Product } from "@/types";
-import { MonoText } from '@/components/core';
-import { formatBytes } from '@/lib/format';
+import { MonoText } from "@/components/core";
 import { DateText } from '@/components/display';
 import Link from 'next/link';
 import { Flex } from '@radix-ui/themes';

@@ -60,7 +60,7 @@ import { apiKeysTable } from "@/lib/clients/database/api-keys";
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { account_id: string; repository_id: string } }
+  { params }: { params: Promise<{ account_id: string; repository_id: string }> }
 ) {
   try {
     const session = await getApiSession(request);
@@ -160,7 +160,7 @@ export async function POST(
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { account_id: string; repository_id: string } }
+  { params }: { params: Promise<{ account_id: string; repository_id: string }> }
 ) {
   try {
     const session = await getApiSession(request);

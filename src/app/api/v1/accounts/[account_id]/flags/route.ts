@@ -38,7 +38,7 @@ import { accountsTable } from "@/lib/clients/database";
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { account_id: string } }
+  { params }: { params: Promise<{ account_id: string }> }
 ) {
   try {
     const { account_id } = params;
@@ -57,9 +57,11 @@ export async function GET(
       );
     }
     return NextResponse.json(account.flags, { status: StatusCodes.OK });
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const errorMessage =
+      err instanceof Error ? err.message : "Internal server error";
     return NextResponse.json(
-      { error: err.message || "Internal server error" },
+      { error: errorMessage },
       { status: StatusCodes.INTERNAL_SERVER_ERROR }
     );
   }
@@ -103,7 +105,7 @@ export async function GET(
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { account_id: string } }
+  { params }: { params: Promise<{ account_id: string }> }
 ) {
   try {
     const session = await getApiSession(request);
@@ -131,9 +133,11 @@ export async function PUT(
     accountToUpdate.flags = flagsRequest;
     const updatedAccount = await accountsTable.update(accountToUpdate);
     return NextResponse.json(updatedAccount.flags, { status: StatusCodes.OK });
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const errorMessage =
+      err instanceof Error ? err.message : "Internal server error";
     return NextResponse.json(
-      { error: err.message || "Internal server error" },
+      { error: errorMessage },
       { status: StatusCodes.INTERNAL_SERVER_ERROR }
     );
   }

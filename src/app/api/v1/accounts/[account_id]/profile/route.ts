@@ -36,7 +36,7 @@ import { AccountProfileResponse, AccountProfileSchema, Actions } from "@/types";
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { account_id: string } }
+  { params }: { params: Promise<{ account_id: string }> }
 ) {
   try {
     const { account_id } = params;
@@ -54,18 +54,20 @@ export async function GET(
         { status: StatusCodes.UNAUTHORIZED }
       );
     }
-    const email = account.identity_id
-      ? await getEmail(account.identity_id)
+    const email = account.metadata_private?.identity_id
+      ? await getEmail(account.metadata_private.identity_id)
       : null;
     const profile: AccountProfileResponse = {
-      ...account.profile,
+      ...account.metadata_public,
       profile_image: email ? getProfileImage(email) : undefined,
-      account_type: account.account_type,
+      type: account.type,
     };
     return NextResponse.json(profile, { status: StatusCodes.OK });
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const errorMessage =
+      err instanceof Error ? err.message : "Internal server error";
     return NextResponse.json(
-      { error: err.message || "Internal server error" },
+      { error: errorMessage },
       { status: StatusCodes.INTERNAL_SERVER_ERROR }
     );
   }
@@ -112,13 +114,13 @@ export async function GET(
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { account_id: string } }
+  { params }: { params: Promise<{ account_id: string }> }
 ) {
   try {
     const { account_id } = params;
     const session = await getApiSession(request);
     const profileRequest = AccountProfileSchema.parse(await request.json());
-    var updateProfileAccount = await accountsTable.fetchById(account_id);
+    const updateProfileAccount = await accountsTable.fetchById(account_id);
     if (!updateProfileAccount) {
       return NextResponse.json(
         { error: `Account ${account_id} not found` },
@@ -133,14 +135,16 @@ export async function PUT(
         { status: StatusCodes.UNAUTHORIZED }
       );
     }
-    updateProfileAccount.profile = profileRequest;
-    const [account, _success] = await accountsTable.update(
-      updateProfileAccount
-    );
-    return NextResponse.json(account.profile, { status: StatusCodes.OK });
-  } catch (err: any) {
+    updateProfileAccount.metadata_public = profileRequest;
+    const updatedAccount = await accountsTable.update(updateProfileAccount);
+    return NextResponse.json(updatedAccount.metadata_public, {
+      status: StatusCodes.OK,
+    });
+  } catch (err: unknown) {
+    const errorMessage =
+      err instanceof Error ? err.message : "Internal server error";
     return NextResponse.json(
-      { error: err.message || "Internal server error" },
+      { error: errorMessage },
       { status: StatusCodes.INTERNAL_SERVER_ERROR }
     );
   }

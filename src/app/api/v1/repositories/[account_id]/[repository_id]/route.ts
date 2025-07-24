@@ -48,7 +48,7 @@ import { productsTable } from "@/lib/clients/database/products";
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { account_id: string; repository_id: string } }
+  { params }: { params: Promise<{ account_id: string; repository_id: string }> }
 ) {
   try {
     const session = await getApiSession(request);
@@ -128,7 +128,7 @@ export async function GET(
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { account_id: string; repository_id: string } }
+  { params }: { params: Promise<{ account_id: string; repository_id: string }> }
 ) {
   try {
     const session = await getApiSession(request);
@@ -206,7 +206,7 @@ export async function PUT(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { account_id: string; repository_id: string } }
+  { params }: { params: Promise<{ account_id: string; repository_id: string }> }
 ) {
   try {
     const session = await getApiSession(request);
