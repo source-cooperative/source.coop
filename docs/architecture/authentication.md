@@ -131,7 +131,7 @@ const PERMISSIONS = {
 // Protected API route
 export async function GET(
   request: NextRequest,
-  { params }: { params: { repository_id: string } }
+  { params }: { params: Promise<{ repository_id: string }> }
 ) {
   const session = await kratos.validateSession(request.cookies.get('session'));
   if (!session) {
