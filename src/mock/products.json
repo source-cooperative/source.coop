@@ -8,6 +8,10 @@
     "updated_at": "2020-01-01T00:00:00Z",
     "visibility": "public",
     "metadata": {
+      "title": "Regular",
+      "description": "Regular user's repository",
+      "tags": ["mock"],
+      "primary_mirror": "primary-data-connection",
       "mirrors": {
         "primary-data-connection": {
           "storage_type": "s3",
@@ -29,10 +33,13 @@
           }
         }
       },
-      "primary_mirror": "primary-data-connection",
-      "tags": ["mock"],
       "roles": {}
-    }
+    },
+    "disabled": false,
+    "data_mode": "open",
+    "featured": 0,
+    "state": "listed",
+    "published": "2020-01-01T00:00:00Z"
   },
   {
     "product_id": "org-repo-id",
@@ -43,6 +50,10 @@
     "updated_at": "2020-01-01T00:00:00Z",
     "visibility": "public",
     "metadata": {
+      "title": "Organization",
+      "description": "Organization's repository",
+      "tags": ["mock"],
+      "primary_mirror": "primary-data-connection",
       "mirrors": {
         "primary-data-connection": {
           "storage_type": "s3",
@@ -64,10 +75,13 @@
           }
         }
       },
-      "primary_mirror": "primary-data-connection",
-      "tags": ["mock"],
       "roles": {}
-    }
+    },
+    "disabled": false,
+    "data_mode": "open",
+    "featured": 0,
+    "state": "listed",
+    "published": "2020-01-01T00:00:00Z"
   },
   {
     "product_id": "disabled-org-repo-id",
@@ -78,6 +92,10 @@
     "updated_at": "2020-01-01T00:00:00Z",
     "visibility": "restricted",
     "metadata": {
+      "title": "Disabled Repo",
+      "description": "Disabled Organization's repository",
+      "tags": ["mock"],
+      "primary_mirror": "primary-data-connection",
       "mirrors": {
         "primary-data-connection": {
           "storage_type": "s3",
@@ -100,10 +118,13 @@
           }
         }
       },
-      "primary_mirror": "primary-data-connection",
-      "tags": ["mock"],
       "roles": {}
-    }
+    },
+    "disabled": true,
+    "data_mode": "open",
+    "featured": 0,
+    "state": "listed",
+    "published": "2020-01-01T00:00:00Z"
   },
   {
     "product_id": "unlisted-org-repo-id",
@@ -114,6 +135,10 @@
     "updated_at": "2020-01-01T00:00:00Z",
     "visibility": "unlisted",
     "metadata": {
+      "title": "Unlisted Repo",
+      "description": "Unlisted Organization's repository",
+      "tags": ["mock"],
+      "primary_mirror": "primary-data-connection",
       "mirrors": {
         "primary-data-connection": {
           "storage_type": "s3",
@@ -135,10 +160,13 @@
           }
         }
       },
-      "primary_mirror": "primary-data-connection",
-      "tags": ["mock"],
       "roles": {}
-    }
+    },
+    "disabled": false,
+    "data_mode": "open",
+    "featured": 0,
+    "state": "unlisted",
+    "published": "2020-01-01T00:00:00Z"
   },
   {
     "product_id": "featured-org-repo-id",
@@ -149,6 +177,10 @@
     "updated_at": "2020-01-01T00:00:00Z",
     "visibility": "public",
     "metadata": {
+      "title": "Featured Repo",
+      "description": "Featured Organization's repository",
+      "tags": ["mock", "featured"],
+      "primary_mirror": "primary-data-connection",
       "mirrors": {
         "primary-data-connection": {
           "storage_type": "s3",
@@ -170,10 +202,13 @@
           }
         }
       },
-      "primary_mirror": "primary-data-connection",
-      "tags": ["mock", "featured"],
       "roles": {}
-    }
+    },
+    "disabled": false,
+    "data_mode": "open",
+    "featured": 1,
+    "state": "listed",
+    "published": "2020-01-01T00:00:00Z"
   },
   {
     "product_id": "private-org-repo-id",
@@ -184,6 +219,10 @@
     "updated_at": "2020-01-01T00:00:00Z",
     "visibility": "restricted",
     "metadata": {
+      "title": "Private Repo",
+      "description": "Private Organization's repository",
+      "tags": ["mock", "private"],
+      "primary_mirror": "primary-data-connection",
       "mirrors": {
         "primary-data-connection": {
           "storage_type": "s3",
@@ -205,17 +244,13 @@
           }
         }
       },
-      "primary_mirror": "primary-data-connection",
-      "tags": ["mock", "private"],
-      "roles": {
-        "organization": {
-          "account_id": "organization",
-          "role": "admin",
-          "granted_at": "2020-01-01T00:00:00Z",
-          "granted_by": "organization"
-        }
-      }
-    }
+      "roles": {}
+    },
+    "disabled": false,
+    "data_mode": "private",
+    "featured": 0,
+    "state": "listed",
+    "published": "2020-01-01T00:00:00Z"
   },
   {
     "product_id": "subscription-org-repo-id",
@@ -226,6 +261,10 @@
     "updated_at": "2020-01-01T00:00:00Z",
     "visibility": "restricted",
     "metadata": {
+      "title": "Subscription Repo",
+      "description": "Subscription Organization's repository",
+      "tags": ["mock", "subscription"],
+      "primary_mirror": "primary-data-connection",
       "mirrors": {
         "primary-data-connection": {
           "storage_type": "s3",
@@ -247,16 +286,12 @@
           }
         }
       },
-      "primary_mirror": "primary-data-connection",
-      "tags": ["mock", "subscription"],
-      "roles": {
-        "organization": {
-          "account_id": "organization",
-          "role": "admin",
-          "granted_at": "2020-01-01T00:00:00Z",
-          "granted_by": "organization"
-        }
-      }
-    }
+      "roles": {}
+    },
+    "disabled": false,
+    "data_mode": "subscription",
+    "featured": 0,
+    "state": "listed",
+    "published": "2020-01-01T00:00:00Z"
   }
 ]
