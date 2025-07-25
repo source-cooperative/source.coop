@@ -459,7 +459,8 @@ function getRepository(
   }
 
   // If the repository is open, everyone is authorized
-  if (product.data_mode === ProductDataMode.Open) {
+  // TODO: Right now we are treating unset data_mode as open
+  if (!product.data_mode || product.data_mode === ProductDataMode.Open) {
     return true;
   }
 
