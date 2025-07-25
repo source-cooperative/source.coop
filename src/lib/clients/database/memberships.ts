@@ -1,5 +1,9 @@
 import { Membership } from "@/types";
-import { PutItemCommand } from "@aws-sdk/client-dynamodb";
+import {
+  ConditionalCheckFailedException,
+  PutItemCommand,
+  ResourceNotFoundException,
+} from "@aws-sdk/client-dynamodb";
 import { QueryCommand, PutCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import { marshall } from "@aws-sdk/util-dynamodb";
 import { BaseTable } from "./base";
@@ -21,6 +25,8 @@ export class MembershipsTable extends BaseTable {
       );
       return (result.Items?.[0] as Membership) ?? null;
     } catch (error) {
+      if (error instanceof ResourceNotFoundException) return null;
+
       this.logError("fetchById", error, { membershipId });
       throw error;
     }

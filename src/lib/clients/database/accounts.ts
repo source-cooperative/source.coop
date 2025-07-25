@@ -5,6 +5,7 @@ import {
   DeleteCommand,
   PutCommand,
 } from "@aws-sdk/lib-dynamodb";
+import { ResourceNotFoundException } from "@aws-sdk/client-dynamodb";
 import type { Account, AccountType } from "@/types/account";
 import type {
   IndividualAccount,
@@ -16,27 +17,34 @@ import { BaseTable } from "./base";
 
 class AccountsTable extends BaseTable {
   async fetchById(account_id: string): Promise<Account | null> {
-    const types = ["individual", "organization"] as const;
+    try {
+      const types = ["individual", "organization"] as const;
 
-    for (const type of types) {
-      console.log(
-        `DB: Trying to fetch account of type ${type} for ID:`,
-        account_id
-      );
-      const result = await this.client.send(
-        new GetCommand({
-          TableName: this.table,
-          Key: { account_id, type },
-        })
-      );
+      for (const type of types) {
+        console.log(
+          `DB: Trying to fetch account of type ${type} for ID:`,
+          account_id
+        );
+        const result = await this.client.send(
+          new GetCommand({
+            TableName: this.table,
+            Key: { account_id, type },
+          })
+        );
 
-      if (result.Item) {
-        console.log(`DB: Found account of type ${type} for ID:`, account_id);
-        return result.Item as Account;
+        if (result.Item) {
+          console.log(`DB: Found account of type ${type} for ID:`, account_id);
+          return result.Item as Account;
+        }
       }
-    }
 
-    return null;
+      return null;
+    } catch (error) {
+      if (error instanceof ResourceNotFoundException) return null;
+
+      this.logError("fetchById", error, { account_id });
+      throw error;
+    }
   }
 
   async fetchByEmail(email: string): Promise<Account> {

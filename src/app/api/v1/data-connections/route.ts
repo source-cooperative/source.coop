@@ -29,13 +29,9 @@ export async function GET(request: NextRequest) {
     const session = await getApiSession(request);
 
     const dataConnections = await dataConnectionsTable.listAll();
-    console.log("Data connections", dataConnections);
-
     const filteredConnections = dataConnections.filter((dataConnection) =>
       isAuthorized(session, dataConnection, Actions.GetDataConnection)
     );
-    console.log("Filtered connections", filteredConnections);
-
     const sanitizedConnections = filteredConnections.map((connection) => {
       const sanitized = DataConnectionSchema.omit({
         authentication: true,

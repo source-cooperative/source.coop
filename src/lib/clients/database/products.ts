@@ -1,5 +1,8 @@
 import type { Product, ProductMirror, ProductRole } from "@/types";
-import { PutItemCommand } from "@aws-sdk/client-dynamodb";
+import {
+  PutItemCommand,
+  ResourceNotFoundException,
+} from "@aws-sdk/client-dynamodb";
 
 import {
   GetCommand,
@@ -107,25 +110,32 @@ class ProductsTable extends BaseTable {
     account_id: string,
     product_id: string
   ): Promise<Product | null> {
-    const [result, account] = await Promise.all([
-      this.client.send(
-        new GetCommand({
-          TableName: this.table,
-          Key: {
-            product_id,
-            account_id,
-          },
-        })
-      ),
-      accountsTable.fetchById(account_id),
-    ]);
+    try {
+      const [result, account] = await Promise.all([
+        this.client.send(
+          new GetCommand({
+            TableName: this.table,
+            Key: {
+              product_id,
+              account_id,
+            },
+          })
+        ),
+        accountsTable.fetchById(account_id),
+      ]);
 
-    if (!result.Item) return null;
+      if (!result.Item) return null;
 
-    return {
-      ...(result.Item as Product),
-      account: account || undefined,
-    };
+      return {
+        ...(result.Item as Product),
+        account: account || undefined,
+      };
+    } catch (error) {
+      if (error instanceof ResourceNotFoundException) return null;
+
+      this.logError("fetchById", error, { account_id, product_id });
+      throw error;
+    }
   }
 
   async create(product: Product): Promise<Product> {

@@ -1,5 +1,8 @@
 import { DataConnection } from "@/types";
-import { PutItemCommand } from "@aws-sdk/client-dynamodb";
+import {
+  PutItemCommand,
+  ResourceNotFoundException,
+} from "@aws-sdk/client-dynamodb";
 import {
   QueryCommand,
   ScanCommand,
@@ -26,6 +29,8 @@ export class DataConnectionsTable extends BaseTable {
       );
       return (result.Items?.[0] as DataConnection) ?? null;
     } catch (error) {
+      if (error instanceof ResourceNotFoundException) return null;
+
       this.logError("fetchById", error, { dataConnectionId });
       throw error;
     }
