@@ -62,7 +62,6 @@ export async function GET(
         { status: StatusCodes.NOT_FOUND }
       );
     }
-    console.log({ session, repository });
     if (!isAuthorized(session, repository, Actions.GetRepository)) {
       return NextResponse.json(
         { error: "Unauthorized" },
