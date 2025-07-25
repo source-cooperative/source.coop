@@ -70,6 +70,7 @@ export async function GET(
     }
     return NextResponse.json(repository, { status: StatusCodes.OK });
   } catch (err: any) {
+    console.error(err);
     return NextResponse.json(
       { error: err.message || "Internal server error" },
       { status: StatusCodes.INTERNAL_SERVER_ERROR }
