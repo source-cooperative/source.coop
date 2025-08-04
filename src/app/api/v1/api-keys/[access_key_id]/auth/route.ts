@@ -1,8 +1,38 @@
+/**
+ * @openapi
+ * /api-keys/{access_key_id}/auth:
+ *   get:
+ *     tags: [API Keys, Authentication]
+ *     summary: Fetch API Key details
+ *     description: Authenticates a request using an API key and returns the associated API key details.
+ *     parameters:
+ *       - in: path
+ *         name: access_key_id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The access key ID to authenticate with
+ *       - in: header
+ *         name: Authorization
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The authorization header containing the source key
+ *     responses:
+ *       200:
+ *         description: Successfully fetched API key details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiKey'
+ *       401:
+ *         description: Unauthorized - Invalid authorization header or API key is disabled
+ *       404:
+ *         description: Not Found - API key not found
+ */
 import { NextRequest, NextResponse } from "next/server";
 import { StatusCodes } from "http-status-codes";
 import { apiKeysTable } from "@/lib/clients/database";
-
-// TODO: This route seems generally insecure. Exposing keys to anyone with the source key seems like a bad idea.
 
 export async function GET(
   request: NextRequest,
