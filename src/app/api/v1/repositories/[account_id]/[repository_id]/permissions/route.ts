@@ -70,6 +70,7 @@ export async function GET(
       permissions.push(RepositoryPermissions.Write);
     }
 
+    console.log({ session, product });
     if (isAuthorized(session, product, Actions.ReadRepositoryData)) {
       permissions.push(RepositoryPermissions.Read);
     }
