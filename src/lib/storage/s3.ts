@@ -107,7 +107,7 @@ export class S3StorageClient implements StorageClient {
         nextContinuationToken: response.NextContinuationToken,
       };
     } catch (error) {
-      console.error("Error listing objects:", error);
+      console.error("Error listing objects:", JSON.stringify(error, null, 2));
       return { objects: [], commonPrefixes: [], isTruncated: false };
     }
   }
