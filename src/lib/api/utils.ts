@@ -207,6 +207,7 @@ export async function getApiSession(
   if (!session) {
     return null;
   }
+  console.debug("API: Session:", session);
   const identityId = session.identity?.id;
   if (!identityId) {
     logger.warn("No identity ID found in session", {
