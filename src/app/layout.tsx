@@ -9,6 +9,8 @@ import { Navigation, Footer /*, Banner*/ } from "@/components/layout";
 import { Suspense } from "react";
 import { metadata } from "./metadata";
 import { CONFIG } from "@/lib/config";
+import { headers } from "next/headers";
+
 const ibmPlexSans = IBM_Plex_Sans({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
@@ -23,6 +25,13 @@ export default async function RootLayout({
   children: React.ReactNode;
 }) {
   const session = await getServerSession();
+  console.debug("layout: session:", session);
+
+  // Get the origin URL for the return_to parameter
+  const headersList = await headers();
+  const host = headersList.get("host");
+  const protocol = process.env.NODE_ENV === "development" ? "http" : "https";
+  const origin = `${protocol}://${host}`;
 
   return (
     <html lang="en" suppressHydrationWarning>
@@ -33,12 +42,15 @@ export default async function RootLayout({
           defaultTheme="system"
           storageKey="source-theme"
         >
-          <SessionProvider session={session} baseUrl={CONFIG.auth.api.frontendUrl}>
+          <SessionProvider
+            session={session}
+            baseUrl={CONFIG.auth.api.frontendUrl}
+          >
             <Box style={{ minHeight: "100vh" }}>
               {/* <Banner /> */}
-              <Suspense>
-                <Navigation />
-              </Suspense>
+              {/* <Suspense> */}
+              <Navigation session={session} origin={origin} />
+              {/* </Suspense> */}
               <Box asChild my="6">
                 <main>{children}</main>
               </Box>

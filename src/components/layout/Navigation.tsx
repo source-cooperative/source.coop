@@ -10,32 +10,43 @@ import styles from "./Navigation.module.css";
 import { useAccount } from "@/hooks/useAccount";
 import { useRouter } from "next/navigation";
 import { CONFIG } from "@/lib/config";
-export function Navigation() {
+import { useSession } from "@ory/elements-react/client";
+import { Session } from "@ory/client-fetch";
+
+export function Navigation({
+  session,
+  origin,
+}: {
+  session: Session | null;
+  origin: string;
+}) {
   const [isOpen, setIsOpen] = useState(false);
   const router = useRouter();
 
+  // const { session, isLoading } = useSession();
+
   // Only fetch account when we have a valid account ID
-  const { account, session, isLoading } = useAccount();
+  // const { account, session, isLoading } = useAccount();
 
   // Loading state
-  if (isLoading) {
-    return (
-      <nav className={styles.nav}>
-        <Container>
-          <Flex justify="between" align="center" py="3">
-            <Logo />
-            {/* <Text>Loading...</Text> */}
-          </Flex>
-        </Container>
-      </nav>
-    );
-  }
+  // if (isLoading) {
+  //   return (
+  //     <nav className={styles.nav}>
+  //       <Container>
+  //         <Flex justify="between" align="center" py="3">
+  //           <Logo />
+  //           {/* <Text>Loading...</Text> */}
+  //         </Flex>
+  //       </Container>
+  //     </nav>
+  //   );
+  // }
 
   // If we have a session but no account, that means a user is authenticated but we need
   // to redirect to the email verification page so that a user can setup their account.
-  if (session && !account) {
-    router.push("/onboarding");
-  }
+  // if (session && !account) {
+  //   router.push("/onboarding");
+  // }
 
   return (
     <nav className={styles.nav}>
@@ -43,10 +54,12 @@ export function Navigation() {
         <Flex justify="between" align="center" py="3">
           <Logo />
 
+          <code>{JSON.stringify(session, null, 2)}</code>
+
           <Flex gap="4" align="center">
-            {account ? (
+            {session ? (
               <DropdownMenu.Root open={isOpen} onOpenChange={setIsOpen}>
-                <DropdownMenu.Trigger>
+                {/* <DropdownMenu.Trigger>
                   <Flex align="center" gap="2" style={{ cursor: "pointer" }}>
                     <ProfileAvatar account={account} size="2" />
                     <Text>{account.name}</Text>
@@ -74,19 +87,23 @@ export function Navigation() {
                       Create Organization
                     </Link>
                   </DropdownMenu.Item>
-                  <DropdownMenu.Separator />
-                  <DropdownMenu.Item color="red">
-                    <Link
-                      className="underline block w-full"
-                      href={`/auth/logout`}
-                    >
-                      Logout
-                    </Link>
-                  </DropdownMenu.Item>
-                </DropdownMenu.Content>
+                  <DropdownMenu.Separator /> */}
+                <DropdownMenu.Item color="red">
+                  <Link
+                    className="underline block w-full"
+                    href={`/auth/logout`}
+                  >
+                    Logout
+                  </Link>
+                </DropdownMenu.Item>
+                {/* </DropdownMenu.Content> */}
               </DropdownMenu.Root>
             ) : (
-              <Link href={CONFIG.auth.routes.login}>
+              <Link
+                href={`${
+                  CONFIG.auth.routes.login
+                }?return_to=${encodeURIComponent(origin)}`}
+              >
                 <Button>Log In / Register</Button>
               </Link>
             )}
