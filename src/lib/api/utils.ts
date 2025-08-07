@@ -39,6 +39,7 @@ import * as crypto from "crypto";
 import { getServerSession } from "@ory/nextjs/app";
 import { logger } from "../logger";
 import { NextRequest } from "next/server";
+import { getAccountId } from "../ory";
 
 export function generateAccessKeyID(): string {
   const prefix = "SC";
@@ -118,65 +119,6 @@ async function authenticateWithApiKey(
   };
 }
 
-// /**
-//  * Authenticates a user using cookie-based authentication.
-//  *
-//  * @param cookieHeader - The cookie header from the request.
-//  * @returns A Promise that resolves to a UserSession object if authentication is successful, or null if it fails.
-//  * @throws Will throw an error if there's an issue fetching the session from Ory.
-//  */
-// async function authenticateWithCookie(
-//   cookieHeader: string | undefined
-// ): Promise<UserSession | null> {
-//   if (!cookieHeader) {
-//     return null;
-//   }
-
-//   // Make a request to Ory to validate the session
-//   const response = await fetch(
-//     `${process.env.NEXT_PUBLIC_ORY_SDK_URL}/sessions/whoami`,
-//     {
-//       method: "GET",
-//       headers: { Cookie: cookieHeader },
-//     }
-//   );
-
-//   // Handle response errors
-//   if (!response.ok) {
-//     if (response.status === 401) {
-//       return null; // Unauthorized
-//     }
-//     const errorText = await response.text();
-//     throw new Error(
-//       `Error fetching session from Ory: [${response.status}] ${errorText}`
-//     );
-//   }
-
-//   // Parse the session data
-//   const session = await response.json();
-//   const identityId = session.identity.id;
-
-//   // Fetch account information for the user
-//   const account = await accountsTable.fetchById(identityId);
-
-//   if (!account || account.disabled) {
-//     return { identity_id: identityId };
-//   }
-
-//   // Retrieve and filter memberships for the user
-//   const memberships = await membershipsTable.listByUser(account.account_id);
-//   const filteredMemberships = memberships.filter((membership) =>
-//     isAuthorized(account, membership, Actions.GetMembership)
-//   );
-
-//   // Return the user session
-//   return {
-//     identity_id: identityId,
-//     account,
-//     memberships: filteredMemberships,
-//   };
-// }
-
 /**
  * Retrieves the current user session from the request context.
  * Attempts API key authentication first, then falls back to cookie-based authentication.
@@ -218,38 +160,20 @@ export async function getApiSession(
   }
 
   // Fetch account information for the user
-  const account = await accountsTable.fetchById(identityId);
+  const accountId = getAccountId(session);
+  if (!accountId) {
+    logger.warn("No account ID found in session", {
+      operation: "getApiSession",
+      context: "session",
+    });
+    return null;
+  }
+  const account = await accountsTable.fetchById(accountId);
   console.debug("API: Account:", account);
 
   if (!account || account.disabled) {
     return { identity_id: identityId };
   }
-
-  // // Transform the database account to the expected format
-  // const account = {
-  //   account_id: dbAccount.account_id,
-  //   disabled: dbAccount.disabled,
-  //   account_type:
-  //     dbAccount.type === "individual"
-  //       ? AccountType.INDIVIDUAL
-  //       : AccountType.ORGANIZATION,
-  //   profile: {
-  //     name: dbAccount.name,
-  //     bio: dbAccount.metadata_public.bio,
-  //     location: dbAccount.metadata_public.location,
-  //   },
-  //   flags: dbAccount.flags
-  //     .map(
-  //       (flag) =>
-  //         ({
-  //           admin: AccountFlags.ADMIN,
-  //           create_repositories: AccountFlags.CREATE_REPOSITORIES,
-  //           create_organizations: AccountFlags.CREATE_ORGANIZATIONS,
-  //         }[flag])
-  //     )
-  //     .filter((flag) => flag !== undefined),
-  //   identity_id: identityId,
-  // };
 
   // Retrieve and filter memberships for the user
   const memberships = await membershipsTable.listByUser(account.account_id);
