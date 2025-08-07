@@ -2,14 +2,16 @@ import type { OryConfig } from "@ory/nextjs";
 import type { StorageConfig } from "@/types/storage";
 import { awsCredentialsProvider } from "@vercel/functions/oidc";
 
-// When running locally, we use the NEXT_PUBLIC_LOCAL_ORY_SDK_URL environment variable to 
-// instruct the middleware to proxy requests to Ory. 
-// In production, we use the NEXT_PUBLIC_ORY_SDK_URL environment variable to send requests 
+// When running locally, we use the NEXT_PUBLIC_LOCAL_ORY_SDK_URL environment variable to
+// instruct the middleware to proxy requests to Ory.
+// In production, we use the NEXT_PUBLIC_ORY_SDK_URL environment variable to send requests
 // directly to Ory.
 const ORY_SDK_URL =
   process.env.NEXT_PUBLIC_LOCAL_ORY_SDK_URL !== undefined
     ? process.env.NEXT_PUBLIC_LOCAL_ORY_SDK_URL
     : process.env.NEXT_PUBLIC_ORY_SDK_URL;
+
+const region = process.env.AWS_REGION || "us-east-1";
 
 export const CONFIG = {
   storage: {
@@ -22,8 +24,10 @@ export const CONFIG = {
     },
   } as StorageConfig,
   database: {
-    endpoint: process.env.DYNAMODB_ENDPOINT || "http://localhost:8000",
-    region: process.env.AWS_REGION || "us-east-1",
+    endpoint:
+      process.env.DYNAMODB_ENDPOINT ||
+      `https://dynamodb.${region}.amazonaws.com`,
+    region,
     credentials: process.env.AWS_ROLE_ARN
       ? awsCredentialsProvider({
           roleArn: process.env.AWS_ROLE_ARN,
