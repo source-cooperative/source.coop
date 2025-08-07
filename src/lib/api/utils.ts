@@ -219,6 +219,7 @@ export async function getApiSession(
 
   // Fetch account information for the user
   const account = await accountsTable.fetchById(identityId);
+  console.debug("API: Account:", account);
 
   if (!account || account.disabled) {
     return { identity_id: identityId };
