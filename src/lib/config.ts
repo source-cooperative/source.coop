@@ -70,7 +70,7 @@ export const CONFIG = {
 } as const;
 
 // Add debug logging
-console.log("Loaded CONFIG:", {
+console.debug("CONFIG:", {
   ...CONFIG,
   auth: {
     ...CONFIG.auth,

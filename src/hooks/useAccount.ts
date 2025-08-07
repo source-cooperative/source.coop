@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from "react";
 import { useSession } from "@ory/elements-react/client";
 import { getAccountId } from "@/lib/ory";
 import type { Account } from "@/types";
@@ -9,6 +9,8 @@ export function useAccount() {
   const [isLoading, setIsLoading] = useState(true);
   const [refreshCounter, setRefreshCounter] = useState(0);
   const accountId = getAccountId(session);
+  console.debug("useAccount: session:", session);
+  console.debug("useAccount: accountId:", accountId);
 
   const refresh = useCallback(() => {
     setRefreshCounter((prev) => prev + 1);
@@ -16,6 +18,7 @@ export function useAccount() {
 
   useEffect(() => {
     async function fetchAccount() {
+      console.log("fetchAccount", { accountId, isAuthLoading, refreshCounter });
       // If we're still loading auth or there's no account ID, don't make the API call
       if (isAuthLoading) {
         setAccount(null);
@@ -52,4 +55,4 @@ export function useAccount() {
   }, [accountId, isAuthLoading, refreshCounter]);
 
   return { account, isLoading, refresh, session };
-} 
+}

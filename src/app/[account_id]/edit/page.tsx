@@ -17,6 +17,9 @@ export default async function EditProfilePage({ params }: { params: Params }) {
   }
 
   const userAccount = getAccountId(session);
+  console.debug("session:", session);
+  console.debug("userAccount:", userAccount);
+  console.debug("account_id:", account_id);
   if (userAccount !== account_id) {
     return (
       <Container size="2" py="6">
