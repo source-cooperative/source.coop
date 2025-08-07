@@ -123,13 +123,11 @@ export async function PUT(
       );
     }
 
-    const { account_id } = await params;
-    console.log("API: Updating account:", account_id);
-
     // Only allow the user to update their own account
     const sessionAccountId = session?.identity?.metadata_public?.account_id;
 
     if (!session.active) {
+      console.warn("API: Unauthorized: Session inactive: ", session);
       return NextResponse.json(
         {
           error: {
@@ -156,6 +154,7 @@ export async function PUT(
     }
 
     // Check if user is updating their own account or is an admin
+    const { account_id } = await params;
     const isAdmin = !!session?.identity?.metadata_public?.is_admin;
     const isAuthenticatedUser = sessionAccountId === account_id;
 
@@ -193,6 +192,8 @@ export async function PUT(
 
     // Update the account in DynamoDB
     try {
+      console.log("API: Updating account:", account_id);
+      console.log("API: Update data:", account);
       const updatedAccount = await accountsTable.update(account);
       return NextResponse.json(updatedAccount);
     } catch (error) {
