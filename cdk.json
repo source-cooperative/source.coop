@@ -1,5 +1,5 @@
 {
-  "app": "npx ts-node --prefer-ts-exts deploy/bin/deploy.ts",
+  "app": "npx tsx deploy/bin/deploy.ts",
   "watch": {
     "include": ["**"],
     "exclude": [
