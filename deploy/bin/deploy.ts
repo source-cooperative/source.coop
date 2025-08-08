@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import * as cdk from "aws-cdk-lib";
-import { ApiStack } from "../lib/deploy-stack";
+import { ApiStack } from "../lib/api-stack";
 
 const stage = process.env.STAGE || "dev";
 
