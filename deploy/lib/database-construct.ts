@@ -36,12 +36,14 @@ export class DatabaseConstruct extends Construct {
     this.accountsTable = this.createTable({
       name: "accounts",
       partitionKey: "account_id",
-      sortKey: "type",
       indexes: [
         {
-          name: "AccountTypeIndex",
+          name: "account_type",
           partitionKey: "type",
-          sortKey: "account_id",
+        },
+        {
+          name: "identity_id",
+          partitionKey: "metadata_private.identity_id",
         },
       ],
       removalPolicy,
@@ -62,7 +64,6 @@ export class DatabaseConstruct extends Construct {
     this.dataConnectionsTable = this.createTable({
       name: "data-connections",
       partitionKey: "data_connection_id",
-      sortKey: "account_id",
       removalPolicy,
     });
 
@@ -89,18 +90,12 @@ export class DatabaseConstruct extends Construct {
 
     this.productsTable = this.createTable({
       name: "products",
-      partitionKey: "product_id",
-      sortKey: "account_id",
+      partitionKey: "account_id",
+      sortKey: "product_id",
       indexes: [
         {
-          name: "AccountProductsIndex",
-          partitionKey: "account_id",
-          sortKey: "created_at",
-        },
-        {
-          name: "PublicProductsIndex",
-          partitionKey: "visibility",
-          sortKey: "created_at",
+          name: "featured",
+          partitionKey: "featured",
         },
       ],
       removalPolicy,
