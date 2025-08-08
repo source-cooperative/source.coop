@@ -1,14 +1,13 @@
-import { StorageClient, StorageProvider, StorageConfig, ListObjectsParams, ListObjectsResult, GetObjectParams, GetObjectResult, PutObjectParams, PutObjectResult, DeleteObjectParams } from '@/types/storage';
+import { StorageClient, StorageConfig, ListObjectsParams, ListObjectsResult, GetObjectParams, GetObjectResult, PutObjectParams, PutObjectResult, DeleteObjectParams } from '@/types/storage';
 import { ProductObject } from '@/types';
 import { promises as fs } from 'fs';
 import path from 'path';
 
 export class LocalStorageClient implements StorageClient {
   private baseDir: string;
-  private provider: StorageProvider;
 
-  constructor(provider: StorageProvider, config: StorageConfig) {
-    console.log('LocalStorageClient constructor:', { provider, config });
+  constructor(config: StorageConfig) {
+    console.log('LocalStorageClient constructor:', { config });
     
     if (!config?.endpoint) {
       console.error('Missing endpoint in config:', config);
@@ -18,8 +17,6 @@ export class LocalStorageClient implements StorageClient {
     // Ensure the path is absolute
     this.baseDir = path.resolve(process.cwd(), config.endpoint);
     console.log('Resolved baseDir:', this.baseDir);
-    
-    this.provider = provider;
   }
 
   private getFullPath(params: { account_id: string; product_id: string; path?: string; object_path?: string }): string {

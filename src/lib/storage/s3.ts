@@ -8,7 +8,6 @@ import {
 } from "@aws-sdk/client-s3";
 import {
   StorageClient,
-  StorageProvider,
   StorageConfig,
   ListObjectsParams,
   ListObjectsResult,
@@ -23,11 +22,8 @@ import { Readable } from "stream";
 
 export class S3StorageClient implements StorageClient {
   private s3Client: S3Client;
-  private provider: StorageProvider;
 
-  constructor(provider: StorageProvider, config: StorageConfig) {
-    this.provider = provider;
-
+  constructor(config: StorageConfig) {
     // Initialize S3 client without request signing for public access
     this.s3Client = new S3Client({
       ...config,

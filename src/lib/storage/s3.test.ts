@@ -1,5 +1,5 @@
 import { S3StorageClient } from './s3';
-import type { StorageProvider, StorageConfig, ListObjectsParams } from '@/types/storage';
+import type { StorageConfig, ListObjectsParams } from '@/types/storage';
 import { describe, it, expect, beforeEach } from '@jest/globals';
 import { S3Client, ListObjectsV2Command } from '@aws-sdk/client-s3';
 import { mockClient } from 'aws-sdk-client-mock';
@@ -7,21 +7,13 @@ import { mockClient } from 'aws-sdk-client-mock';
 const s3Mock = mockClient(S3Client as any);
 
 describe('S3StorageClient', () => {
-  const provider: StorageProvider = {
-    provider_id: 's3',
-    type: 'S3',
-    endpoint: 'https://opendata.source.coop',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  };
-
   const config: StorageConfig = {
     type: 'S3',
     endpoint: 'https://opendata.source.coop',
     region: 'us-west-2',
   };
 
-  const client = new S3StorageClient(provider, config);
+  const client = new S3StorageClient(config);
 
   beforeEach(() => {
     s3Mock.reset();
