@@ -17,7 +17,7 @@ export class VercelConstruct extends Construct {
 
     this.vercelRole = new iam.Role(this, "vercel-role", {
       assumedBy: new iam.FederatedPrincipal(
-        `arn:aws:iam::${accountId}:oidc-provider/oidc.vercel.com/${props.projectName}-${stage}`,
+        `arn:aws:iam::${accountId}:oidc-provider/oidc.vercel.com/${props.projectName}-${props.stage}`,
         {
           StringEquals: {
             [`oidc.vercel.com/${props.projectName}:aud`]: `https://vercel.com/${props.projectName}`,
