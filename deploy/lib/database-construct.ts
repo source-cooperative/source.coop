@@ -16,6 +16,7 @@ interface TableDefinition {
     sortKey?: string;
   }>;
   removalPolicy?: cdk.RemovalPolicy;
+  billingMode?: dynamodb.BillingMode;
 }
 
 export class DatabaseConstruct extends Construct {
@@ -111,6 +112,7 @@ export class DatabaseConstruct extends Construct {
     sortKey,
     indexes,
     removalPolicy = cdk.RemovalPolicy.DESTROY,
+    billingMode = dynamodb.BillingMode.PAY_PER_REQUEST,
   }: TableDefinition): dynamodb.Table {
     const table = new dynamodb.Table(this, `${name}-table`, {
       tableName: `sc-${name}`,
@@ -121,8 +123,11 @@ export class DatabaseConstruct extends Construct {
       sortKey: sortKey
         ? { name: sortKey, type: dynamodb.AttributeType.STRING }
         : undefined,
-      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
-      removalPolicy: removalPolicy,
+      billingMode,
+      removalPolicy,
+      pointInTimeRecoverySpecification: {
+        pointInTimeRecoveryEnabled: true,
+      },
     });
 
     // Add indexes
