@@ -9,6 +9,7 @@ export class ApiStack extends cdk.Stack {
 
     // Create database resources
     const database = new DatabaseConstruct(this, "database", {
+      stage: props.stage,
       removalPolicy:
         props.stage === "prod"
           ? cdk.RemovalPolicy.RETAIN

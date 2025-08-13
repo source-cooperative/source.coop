@@ -4,6 +4,7 @@ import { Construct } from "constructs";
 
 export interface DatabaseConstructProps {
   readonly removalPolicy?: cdk.RemovalPolicy;
+  readonly stage: string;
 }
 
 interface TableDefinition {
@@ -29,13 +30,14 @@ export class DatabaseConstruct extends Construct {
   constructor(
     scope: Construct,
     id: string,
-    { removalPolicy }: DatabaseConstructProps
+    { removalPolicy, stage }: DatabaseConstructProps
   ) {
     super(scope, id);
 
     // Define tables
     this.accountsTable = this.createTable({
       name: "accounts",
+      stage,
       partitionKey: "account_id",
       indexes: [
         {
@@ -52,6 +54,7 @@ export class DatabaseConstruct extends Construct {
 
     this.apiKeysTable = this.createTable({
       name: "api-keys",
+      stage,
       partitionKey: "access_key_id",
       indexes: [
         {
@@ -64,12 +67,14 @@ export class DatabaseConstruct extends Construct {
 
     this.dataConnectionsTable = this.createTable({
       name: "data-connections",
+      stage,
       partitionKey: "data_connection_id",
       removalPolicy,
     });
 
     this.membershipsTable = this.createTable({
       name: "memberships",
+      stage,
       partitionKey: "membership_id",
       indexes: [
         {
@@ -91,6 +96,7 @@ export class DatabaseConstruct extends Construct {
 
     this.productsTable = this.createTable({
       name: "products",
+      stage,
       partitionKey: "account_id",
       sortKey: "product_id",
       indexes: [
@@ -108,14 +114,15 @@ export class DatabaseConstruct extends Construct {
    */
   private createTable({
     name,
+    stage,
     partitionKey,
     sortKey,
     indexes,
     removalPolicy = cdk.RemovalPolicy.DESTROY,
     billingMode = dynamodb.BillingMode.PAY_PER_REQUEST,
-  }: TableDefinition): dynamodb.Table {
+  }: TableDefinition & { stage: string }): dynamodb.Table {
     const table = new dynamodb.Table(this, `${name}-table`, {
-      tableName: `sc-${name}`,
+      tableName: `sc-${name}-${stage}`,
       partitionKey: {
         name: partitionKey,
         type: dynamodb.AttributeType.STRING,
