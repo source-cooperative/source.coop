@@ -16,6 +16,8 @@ import { BaseTable } from "./base";
 import { marshall } from "@aws-sdk/util-dynamodb";
 
 class ProductsTable extends BaseTable {
+  tableName = "products";
+
   async listPublic(
     limit = 50,
     lastEvaluatedKey?: any
@@ -291,6 +293,4 @@ class ProductsTable extends BaseTable {
 }
 
 // Export a singleton instance
-export const productsTable = new ProductsTable({
-  table: "sc-products",
-});
+export const productsTable = new ProductsTable({});

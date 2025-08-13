@@ -11,12 +11,12 @@ import type {
   IndividualAccount,
   OrganizationalAccount,
 } from "@/types/account_v2";
-import { CONFIG } from "@/lib/config";
 
-// Use the singleton client from clients/index.ts
 import { BaseTable } from "./base";
 
 class AccountsTable extends BaseTable {
+  tableName = "accounts";
+
   async fetchById(account_id: string): Promise<Account | null> {
     try {
       const types = ["individual", "organization"] as const;
@@ -204,6 +204,4 @@ export const isOrganizationalAccount = (
 ): acc is OrganizationalAccount => acc.type === "organization";
 
 // Export a singleton instance
-export const accountsTable = new AccountsTable({
-  table: `sc-${CONFIG.environment.stage}-accounts`,
-});
+export const accountsTable = new AccountsTable({});

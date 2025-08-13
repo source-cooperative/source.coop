@@ -16,6 +16,8 @@ import { BaseTable } from "./base";
  * Class for managing data connection operations in DynamoDB
  */
 export class DataConnectionsTable extends BaseTable {
+  tableName = "data-connections";
+
   async fetchById(dataConnectionId: string): Promise<DataConnection | null> {
     try {
       const result = await this.client.send(
@@ -133,6 +135,4 @@ export class DataConnectionsTable extends BaseTable {
     }
   }
 }
-export const dataConnectionsTable = new DataConnectionsTable({
-  table: "sc-data-connections",
-});
+export const dataConnectionsTable = new DataConnectionsTable({});
