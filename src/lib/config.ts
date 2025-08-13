@@ -2,9 +2,9 @@ import type { OryConfig } from "@ory/nextjs";
 import type { StorageConfig } from "@/types/storage";
 import { awsCredentialsProvider } from "@vercel/functions/oidc";
 
-// When running locally, we use the NEXT_PUBLIC_LOCAL_ORY_SDK_URL environment variable to 
-// instruct the middleware to proxy requests to Ory. 
-// In production, we use the NEXT_PUBLIC_ORY_SDK_URL environment variable to send requests 
+// When running locally, we use the NEXT_PUBLIC_LOCAL_ORY_SDK_URL environment variable to
+// instruct the middleware to proxy requests to Ory.
+// In production, we use the NEXT_PUBLIC_ORY_SDK_URL environment variable to send requests
 // directly to Ory.
 const ORY_SDK_URL =
   process.env.NEXT_PUBLIC_LOCAL_ORY_SDK_URL !== undefined
@@ -62,6 +62,7 @@ export const CONFIG = {
   },
   environment: {
     isDevelopment: process.env.NODE_ENV === "development",
+    stage: process.env.STAGE || "dev",
   },
 } as const;
 

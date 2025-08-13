@@ -11,6 +11,7 @@ import type {
   IndividualAccount,
   OrganizationalAccount,
 } from "@/types/account_v2";
+import { CONFIG } from "@/lib/config";
 
 // Use the singleton client from clients/index.ts
 import { BaseTable } from "./base";
@@ -204,5 +205,5 @@ export const isOrganizationalAccount = (
 
 // Export a singleton instance
 export const accountsTable = new AccountsTable({
-  table: "sc-accounts",
+  table: `sc-${CONFIG.environment.stage}-accounts`,
 });

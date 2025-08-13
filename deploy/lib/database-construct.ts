@@ -122,7 +122,7 @@ export class DatabaseConstruct extends Construct {
     billingMode = dynamodb.BillingMode.PAY_PER_REQUEST,
   }: TableDefinition & { stage: string }): dynamodb.Table {
     const table = new dynamodb.Table(this, `${name}-table`, {
-      tableName: `sc-${name}-${stage}`,
+      tableName: `sc-${stage}-${name}`,
       partitionKey: {
         name: partitionKey,
         type: dynamodb.AttributeType.STRING,
