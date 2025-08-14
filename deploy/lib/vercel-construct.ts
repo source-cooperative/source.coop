@@ -20,7 +20,7 @@ export class VercelConstruct extends Construct {
         `arn:aws:iam::${accountId}:oidc-provider/oidc.vercel.com/${props.projectName}`,
         {
           StringEquals: {
-            "oidc.vercel.com:aud": `https://oidc.vercel.com/${props.projectName}`,
+            "oidc.vercel.com:aud": `https://vercel.com/${props.projectName}`,
           },
         },
         "sts:AssumeRoleWithWebIdentity"
