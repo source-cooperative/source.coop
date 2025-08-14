@@ -63,7 +63,7 @@ function convertRepositoryToProduct(oldProduct: any) {
         : "unlisted"
       : "restricted";
 
-  return {
+  const result = {
     product_id: oldProduct.repository_id, // This is the primary key!
     account_id: oldProduct.account_id,
     title: oldProduct.meta.title,
@@ -81,6 +81,100 @@ function convertRepositoryToProduct(oldProduct: any) {
       roles,
     },
   };
+
+  // Clean any undefined values before returning
+  return removeUndefinedValues(result);
+}
+
+// Utility function to remove undefined values recursively
+function removeUndefinedValues(obj: any): any {
+  if (obj === null || obj === undefined) {
+    return obj;
+  }
+
+  if (Array.isArray(obj)) {
+    return obj.map(removeUndefinedValues).filter((item) => item !== undefined);
+  }
+
+  if (typeof obj === "object") {
+    const cleaned: any = {};
+    for (const [key, value] of Object.entries(obj)) {
+      if (value !== undefined) {
+        cleaned[key] = removeUndefinedValues(value);
+      }
+    }
+    return cleaned;
+  }
+
+  return obj;
+}
+
+// Account conversion function (for account tables)
+function convertAccountToNewSchema(oldAccount: any) {
+  const now = new Date().toISOString();
+
+  // Determine account type
+  const accountType =
+    oldAccount.account_type === "user" ? "individual" : "organization";
+
+  // Convert profile data
+  const profile = oldAccount.profile || {};
+
+  // Build emails array
+  const emails = [];
+  if (profile.email) {
+    emails.push({
+      address: profile.email,
+      verified: false, // Will need to be verified in new system
+      is_primary: true,
+      added_at: now,
+    });
+  }
+
+  // Ensure at least one email exists (use account_id as fallback)
+  if (emails.length === 0) {
+    emails.push({
+      address: `${oldAccount.account_id}@placeholder.source.coop`,
+      verified: false,
+      is_primary: true,
+      added_at: now,
+    });
+  }
+
+  // Build metadata_public object, only including defined values
+  const metadata_public: any = {
+    domains: [], // Initialize empty array
+  };
+
+  if (profile.location) metadata_public.location = profile.location;
+  if (profile.bio) metadata_public.bio = profile.bio;
+
+  // Convert flags from DynamoDB attribute format to simple strings
+  const flags = (oldAccount.flags || [])
+    .map((flag: any) => {
+      if (typeof flag === "string") return flag;
+      if (flag && typeof flag === "object" && flag.S) return flag.S;
+      return flag; // fallback for unexpected formats
+    })
+    .filter(Boolean);
+
+  const result = {
+    account_id: oldAccount.account_id,
+    type: accountType,
+    name: profile.name || oldAccount.account_id,
+    emails,
+    created_at: now,
+    updated_at: now,
+    disabled: oldAccount.disabled || false,
+    flags,
+    metadata_public,
+    metadata_private: {
+      identity_id: oldAccount.identity_id,
+    },
+  };
+
+  // Clean any undefined values before returning
+  return removeUndefinedValues(result);
 }
 
 // Find the most recent export for a table
@@ -465,6 +559,7 @@ async function migrateTable(config: MigrationConfig) {
 
   // Determine target table name and region
   const isRepositoryTable = tableName.endsWith("-repositories");
+  const isAccountTable = tableName.endsWith("-accounts");
   const targetTableName = isRepositoryTable
     ? `sc-${stage}-products`
     : `sc-${stage}-${tableName.replace("sc-", "")}`;
@@ -486,6 +581,12 @@ async function migrateTable(config: MigrationConfig) {
   if (isRepositoryTable) {
     console.log(
       `    ⚠️  Repository table detected - will convert to product format`
+    );
+  }
+
+  if (isAccountTable) {
+    console.log(
+      `    ⚠️  Account table detected - will convert to new schema format`
     );
   }
 
@@ -540,6 +641,10 @@ async function migrateTable(config: MigrationConfig) {
 
     if (isRepositoryTable) {
       items = items.map(convertRepositoryToProduct);
+    }
+
+    if (isAccountTable) {
+      items = items.map(convertAccountToNewSchema);
     }
 
     console.log(`✅ Processed ${items.length} items`);
