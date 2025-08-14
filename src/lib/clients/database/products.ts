@@ -87,7 +87,6 @@ class ProductsTable extends BaseTable {
     }
 
     const result = await this.client.send(new QueryCommand(queryParams));
-    console.log(result);
 
     return {
       products: (result.Items || []) as Product[],

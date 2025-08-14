@@ -1,37 +1,55 @@
 /**
- * Home Page - Lists all repositories
- * 
- * KEEP IT SIMPLE:
- * 1. No URL params needed (root route /)
- * 2. Get data -> Transform if needed -> Render
- * 3. Trust your types, avoid complex validation
- * 4. Let Next.js handle errors (404, 500, etc.)
- * 5. No helper functions unless truly needed
+ * Home Page - Lists all repositories with efficient cursor-based pagination
  */
 
-// src/app/page.tsx
-import { Container, Box, Heading } from '@radix-ui/themes';
-import { ProductList } from '@/components/features/products';
-import type { Product } from "@/types";
-import { productsTable } from "@/lib/clients/database";
+import { Container, Box, Heading } from "@radix-ui/themes";
+import { ProductList } from "@/components/features/products";
+import { getPaginatedProducts } from "@/lib/actions/products";
 
-// Server action for data fetching
-async function getProducts(): Promise<Product[]> {
-  "use server";
-  const { products: productsWithoutAccounts } =
-    await productsTable.listPublic();
-  return productsTable.attachAccounts(productsWithoutAccounts);
+interface HomePageProps {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
-export default async function HomePage() {
-  const products = await getProducts();
-  
-  return (
-    <Container size="4" py="6">
-      <Box>
-        <Heading size="6" mb="4">Products</Heading>
-        <ProductList products={products} />
-      </Box>
-    </Container>
-  );
+export default async function HomePage({ searchParams }: HomePageProps) {
+  const params = await searchParams;
+  const cursor = typeof params.cursor === "string" ? params.cursor : undefined;
+  const previousCursor =
+    typeof params.previous === "string" ? params.previous : undefined;
+  const limit = 10;
+
+  try {
+    const result = await getPaginatedProducts(limit, cursor, previousCursor);
+
+    return (
+      <Container size="4" py="6">
+        <Box>
+          <Heading size="6" mb="4">
+            Products
+          </Heading>
+          <ProductList
+            products={result.products}
+            hasNextPage={result.hasNextPage}
+            hasPreviousPage={result.hasPreviousPage}
+            nextCursor={result.nextCursor}
+            previousCursor={result.previousCursor}
+            currentCursor={cursor}
+          />
+        </Box>
+      </Container>
+    );
+  } catch (error) {
+    console.error("Failed to load products:", error);
+    return (
+      <Container size="4" py="6">
+        <Box>
+          <Heading size="6" mb="4">
+            Products
+          </Heading>
+          <div>
+            <p>Failed to load products. Please try again later.</p>
+          </div>
+        </Box>
+      </Container>
+    );
+  }
 }
