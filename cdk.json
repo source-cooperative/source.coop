@@ -1,7 +1,7 @@
 {
   "app": "npx tsx deploy/bin/deploy.ts",
   "watch": {
-    "include": ["**"],
+    "include": ["deploy/**"],
     "exclude": [
       "README.md",
       "cdk*.json",
