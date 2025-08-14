@@ -31,8 +31,8 @@ export function ProfileAvatar({ account, size = '6' }: ProfileAvatarProps) {
     <Avatar
       size={size}
       src={getAvatarSrc()}
-      fallback={account.name[0].toUpperCase()}
-      radius={account.type === 'individual' ? 'full' : 'medium'}
+      fallback={account.name?.[0]?.toUpperCase() || ""}
+      radius={account.type === "individual" ? "full" : "medium"}
     />
   );
 } 

@@ -15,24 +15,37 @@ import { ProfileAvatar } from './ProfileAvatar';
 import { WebsiteLink } from './WebsiteLink';
 import { useSession } from '@ory/elements-react/client';
 import { getAccountId } from "@/lib/ory";
+
 interface OrganizationProfileProps {
   account: OrganizationalAccount;
   products: Product[];
   owner: IndividualAccount | null;
   admins: IndividualAccount[];
   members: IndividualAccount[];
+  // Pagination props for products
+  productsHasNextPage?: boolean;
+  productsHasPreviousPage?: boolean;
+  productsNextCursor?: string;
+  productsPreviousCursor?: string;
+  productsCurrentCursor?: string;
 }
 
-export function OrganizationProfile({ 
-  account, 
+export function OrganizationProfile({
+  account,
   products,
   owner,
   admins,
-  members 
+  members,
+  // Pagination props
+  productsHasNextPage = false,
+  productsHasPreviousPage = false,
+  productsNextCursor,
+  productsPreviousCursor,
+  productsCurrentCursor,
 }: OrganizationProfileProps) {
   const { session } = useSession();
   const currentUserId = getAccountId(session);
-  const isAdmin = admins.some(admin => admin.account_id === currentUserId);
+  const isAdmin = admins.some((admin) => admin.account_id === currentUserId);
   const isOwner = owner?.account_id === currentUserId;
   const canEdit = isAdmin || isOwner;
 
@@ -117,7 +130,14 @@ export function OrganizationProfile({
           <Heading as="h2" size="4" mb="2">
             Products
           </Heading>
-          <ProductList products={products} />
+          <ProductList
+            products={products}
+            hasNextPage={productsHasNextPage}
+            hasPreviousPage={productsHasPreviousPage}
+            nextCursor={productsNextCursor}
+            previousCursor={productsPreviousCursor}
+            currentCursor={productsCurrentCursor}
+          />
         </Box>
       )}
     </Box>

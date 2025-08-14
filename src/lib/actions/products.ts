@@ -1,7 +1,7 @@
-'use server';
+"use server";
 
-import { productsTable } from '@/lib/clients/database';
-import type { Product } from '@/types';
+import { productsTable } from "@/lib/clients/database";
+import type { Product } from "@/types";
 
 export interface PaginatedProductsResult {
   products: Product[];
@@ -14,7 +14,8 @@ export interface PaginatedProductsResult {
 export async function getPaginatedProducts(
   limit = 20,
   cursor?: string,
-  previousCursor?: string
+  previousCursor?: string,
+  accountId?: string
 ): Promise<PaginatedProductsResult> {
   try {
     let lastEvaluatedKey: any = undefined;
@@ -27,7 +28,19 @@ export async function getPaginatedProducts(
       }
     }
 
-    const result = await productsTable.listPublic(limit, lastEvaluatedKey);
+    let result: { products: Product[]; lastEvaluatedKey: any };
+
+    if (accountId) {
+      // Fetch products for specific account using account_products index
+      result = await productsTable.listByAccount(
+        accountId,
+        limit,
+        lastEvaluatedKey
+      );
+    } else {
+      // Fetch public products using public_featured index
+      result = await productsTable.listPublic(limit, lastEvaluatedKey);
+    }
 
     const nextCursor = result.lastEvaluatedKey
       ? Buffer.from(JSON.stringify(result.lastEvaluatedKey)).toString("base64")

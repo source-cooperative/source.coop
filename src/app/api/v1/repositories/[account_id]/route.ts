@@ -54,7 +54,10 @@ export async function GET(
       { status: StatusCodes.NOT_FOUND }
     );
   }
-  let repositories = await productsTable.listByAccount(account_id);
+  // TODO: Implement pagination
+  let { products: repositories } = await productsTable.listByAccount(
+    account_id
+  );
   repositories = repositories.filter((repository) =>
     isAuthorized(session, repository, Actions.ListRepository)
   );

@@ -48,7 +48,10 @@ export default async function AccountPage({ params, searchParams }: PageProps) {
   }
 
   // Get repositories for individual account
-  let products: Product[] = await productsTable.listByAccount(account_id);
+  let { products, lastEvaluatedKey } = await productsTable.listByAccount(
+    //
+    account_id
+  );
 
   // Filter products based on authentication status
   if (!isAuthenticated || !isAccountOwner) {
@@ -64,6 +67,8 @@ export default async function AccountPage({ params, searchParams }: PageProps) {
         contributedProducts={[]}
         organizations={[]}
         showWelcome={showWelcome}
+        ownedProductsHasNextPage={!!lastEvaluatedKey}
+        ownedProductsNextCursor={lastEvaluatedKey}
       />
     </Container>
   );

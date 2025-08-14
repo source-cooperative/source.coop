@@ -43,25 +43,51 @@ class ProductsTable extends BaseTable {
     };
   }
 
-  async listByAccount(account_id: string): Promise<Product[]> {
-    const [result, account] = await Promise.all([
-      this.client.send(
-        new QueryCommand({
-          TableName: this.table,
-          IndexName: "account_products",
-          KeyConditionExpression: "account_id = :account_id",
-          ExpressionAttributeValues: {
-            ":account_id": account_id,
-          },
-        })
-      ),
-      accountsTable.fetchById(account_id),
-    ]);
+  async listByAccount(
+    account_id: string,
+    limit = 50,
+    lastEvaluatedKey?: any
+  ): Promise<{
+    products: Product[];
+    lastEvaluatedKey: any;
+  }> {
+    const queryParams: any = {
+      TableName: this.table,
+      IndexName: "account_products",
+      KeyConditionExpression: "account_id = :account_id",
+      ExpressionAttributeValues: {
+        ":account_id": account_id,
+      },
+      Limit: limit,
+    };
 
-    return (result.Items || []).map((item: any) => ({
-      ...(item as Product),
-      account: account || undefined,
-    }));
+    if (lastEvaluatedKey) {
+      queryParams.ExclusiveStartKey = lastEvaluatedKey;
+    }
+
+    const result = await this.client.send(new QueryCommand(queryParams));
+
+    return {
+      products: (result.Items || []) as Product[],
+      lastEvaluatedKey: result.LastEvaluatedKey,
+    };
+  }
+
+  async listByAccountAll(account_id: string): Promise<Product[]> {
+    const allProducts: Product[] = [];
+    let lastEvaluatedKey: any = undefined;
+
+    do {
+      const result = await this.listByAccount(
+        account_id,
+        1000,
+        lastEvaluatedKey
+      );
+      allProducts.push(...result.products);
+      lastEvaluatedKey = result.lastEvaluatedKey;
+    } while (lastEvaluatedKey);
+
+    return allProducts;
   }
 
   async listPublic(
