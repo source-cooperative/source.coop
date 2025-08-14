@@ -14,7 +14,7 @@ interface TableDefinition {
   indexes?: Array<{
     name: string;
     partitionKey: string;
-    sortKey?: string;
+    sortKey?: string | dynamodb.Attribute;
   }>;
   removalPolicy?: cdk.RemovalPolicy;
   billingMode?: dynamodb.BillingMode;
@@ -101,18 +101,17 @@ export class DatabaseConstruct extends Construct {
       sortKey: "product_id",
       indexes: [
         {
-          name: "featured",
-          partitionKey: "featured",
-        },
-        {
-          name: "account-products",
+          name: "account_products",
           partitionKey: "account_id",
           sortKey: "product_id",
         },
         {
-          name: "public-featured",
+          name: "public_featured",
           partitionKey: "visibility",
-          sortKey: "featured",
+          sortKey: {
+            name: "featured",
+            type: dynamodb.AttributeType.NUMBER,
+          },
         },
       ],
       removalPolicy,
@@ -138,7 +137,9 @@ export class DatabaseConstruct extends Construct {
         type: dynamodb.AttributeType.STRING,
       },
       sortKey: sortKey
-        ? { name: sortKey, type: dynamodb.AttributeType.STRING }
+        ? typeof sortKey === "string"
+          ? { name: sortKey, type: dynamodb.AttributeType.STRING }
+          : sortKey
         : undefined,
       billingMode,
       removalPolicy,
@@ -156,7 +157,9 @@ export class DatabaseConstruct extends Construct {
           type: dynamodb.AttributeType.STRING,
         },
         sortKey: index.sortKey
-          ? { name: index.sortKey, type: dynamodb.AttributeType.STRING }
+          ? typeof index.sortKey === "string"
+            ? { name: index.sortKey, type: dynamodb.AttributeType.STRING }
+            : index.sortKey
           : undefined,
         projectionType: dynamodb.ProjectionType.ALL,
       });

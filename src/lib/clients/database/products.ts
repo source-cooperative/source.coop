@@ -18,35 +18,6 @@ import { marshall } from "@aws-sdk/util-dynamodb";
 class ProductsTable extends BaseTable {
   tableName = "products";
 
-  async listPublic(
-    limit = 50,
-    lastEvaluatedKey?: any
-  ): Promise<{
-    products: Product[];
-    lastEvaluatedKey: any;
-  }> {
-    const queryParams: any = {
-      TableName: this.table,
-      IndexName: "public-featured",
-      KeyConditionExpression: "visibility = :visibility",
-      ExpressionAttributeValues: {
-        ":visibility": "public",
-      },
-      Limit: limit,
-    };
-
-    if (lastEvaluatedKey) {
-      queryParams.ExclusiveStartKey = lastEvaluatedKey;
-    }
-
-    const result = await this.client.send(new QueryCommand(queryParams));
-
-    return {
-      products: (result.Items || []) as Product[],
-      lastEvaluatedKey: result.LastEvaluatedKey,
-    };
-  }
-
   async list(
     limit = 50,
     lastEvaluatedKey?: any
@@ -77,7 +48,7 @@ class ProductsTable extends BaseTable {
       this.client.send(
         new QueryCommand({
           TableName: this.table,
-          IndexName: "account-products",
+          IndexName: "account_products",
           KeyConditionExpression: "account_id = :account_id",
           ExpressionAttributeValues: {
             ":account_id": account_id,
@@ -93,19 +64,35 @@ class ProductsTable extends BaseTable {
     }));
   }
 
-  async listFeatured(): Promise<Product[]> {
-    // TODO: This doesn't work yet
-    const result = await this.client.send(
-      new QueryCommand({
-        TableName: this.table,
-        IndexName: "public-featured",
-        KeyConditionExpression: "visibility = :visibility",
-        ExpressionAttributeValues: {
-          ":visibility": "public",
-        },
-      })
-    );
-    return (result.Items || []) as Product[];
+  async listPublic(
+    limit = 50,
+    lastEvaluatedKey?: any
+  ): Promise<{
+    products: Product[];
+    lastEvaluatedKey: any;
+  }> {
+    const queryParams: any = {
+      TableName: this.table,
+      IndexName: "public_featured",
+      KeyConditionExpression: "visibility = :visibility",
+      ExpressionAttributeValues: {
+        ":visibility": "public",
+      },
+      ScanIndexForward: false, // Descending order of featured
+      Limit: limit,
+    };
+
+    if (lastEvaluatedKey) {
+      queryParams.ExclusiveStartKey = lastEvaluatedKey;
+    }
+
+    const result = await this.client.send(new QueryCommand(queryParams));
+    console.log(result);
+
+    return {
+      products: (result.Items || []) as Product[],
+      lastEvaluatedKey: result.LastEvaluatedKey,
+    };
   }
 
   async fetchById(

@@ -48,44 +48,6 @@ class AccountsTable extends BaseTable {
     }
   }
 
-  async fetchByEmail(email: string): Promise<Account> {
-    const result = await this.client.send(
-      new QueryCommand({
-        TableName: this.table,
-        IndexName: "AccountEmailIndex",
-        KeyConditionExpression: "emails = :email",
-        ExpressionAttributeValues: {
-          ":email": email,
-        },
-        Limit: 1,
-      })
-    );
-
-    if (!result.Items || result.Items.length === 0) {
-      throw new Error(`No account found for email: ${email}`);
-    }
-
-    return result.Items[0] as Account;
-  }
-
-  async listByType(type: "individual" | "organization"): Promise<Account[]> {
-    const result = await this.client.send(
-      new QueryCommand({
-        TableName: this.table,
-        IndexName: "AccountTypeIndex",
-        KeyConditionExpression: "#type = :type",
-        ExpressionAttributeNames: {
-          "#type": "type",
-        },
-        ExpressionAttributeValues: {
-          ":type": type,
-        },
-      })
-    );
-
-    return (result.Items || []) as Account[];
-  }
-
   async create(account: Account): Promise<Account> {
     await this.client.send(
       new PutCommand({
