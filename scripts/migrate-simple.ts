@@ -42,15 +42,6 @@ function convertRepositoryToProduct(oldProduct: any) {
         bucket: "aws-opendata-us-west-2",
       },
       is_primary: key === oldProduct.data.primary_mirror,
-      sync_status: {
-        last_sync_at: now,
-        is_synced: true,
-      },
-      stats: {
-        total_objects: 0,
-        total_size: 0,
-        last_verified_at: now,
-      },
     };
   }
 
@@ -82,11 +73,11 @@ function convertRepositoryToProduct(oldProduct: any) {
     disabled: oldProduct.disabled,
     data_mode: oldProduct.data_mode,
     visibility,
-    featured: oldProduct.featured,
+    featured: Number(oldProduct.featured),
     metadata: {
       mirrors,
       primary_mirror: oldProduct.data.primary_mirror,
-      tags: oldProduct.meta.tags || [],
+      tags: oldProduct.meta.tags.map((tag: any) => tag["S"]) || [],
       roles,
     },
   };
@@ -436,8 +427,7 @@ function parseDynamoDBItem(item: any): any {
 async function writeToDynamoDB(
   docClient: DynamoDBDocumentClient,
   tableName: string,
-  items: any[],
-  isRepositoryTable: boolean
+  items: any[]
 ) {
   const batchSize = 25;
   const batches = [];
@@ -451,10 +441,7 @@ async function writeToDynamoDB(
   for (let i = 0; i < batches.length; i++) {
     const batch = batches[i];
     const writeRequests = batch.map((item) => {
-      const processedItem = isRepositoryTable
-        ? convertRepositoryToProduct(item)
-        : item;
-      return { PutRequest: { Item: processedItem } };
+      return { PutRequest: { Item: item } };
     });
 
     try {
@@ -539,7 +526,7 @@ async function migrateTable(config: MigrationConfig) {
 
     // Process S3 export
     console.log(`\n📥 Processing S3 export...`);
-    const items = await processS3Export(
+    let items = await processS3Export(
       sourceS3Client,
       sourceBucket,
       exportInfo.s3Prefix,
@@ -551,7 +538,15 @@ async function migrateTable(config: MigrationConfig) {
       return;
     }
 
+    if (isRepositoryTable) {
+      items = items.map(convertRepositoryToProduct);
+    }
+
     console.log(`✅ Processed ${items.length} items`);
+
+    // Debug: Show first item before processing
+    console.log(`\n🔍 First item structure:`);
+    console.log(JSON.stringify(items[0], null, 2));
 
     // Ask for confirmation
     const confirmed = await confirmMigration(
@@ -567,17 +562,8 @@ async function migrateTable(config: MigrationConfig) {
       return;
     }
 
-    // Debug: Show first item before processing
-    console.log(`\n🔍 First item structure:`);
-    console.log(JSON.stringify(items[0], null, 2));
-
     // Write to DynamoDB (function handles repository conversion internally)
-    await writeToDynamoDB(
-      targetDocClient,
-      targetTableName,
-      items,
-      isRepositoryTable
-    );
+    await writeToDynamoDB(targetDocClient, targetTableName, items);
 
     console.log(`\n🎉 Migration completed successfully!`);
     console.log(`    ${items.length} items migrated to ${targetTableName}`);

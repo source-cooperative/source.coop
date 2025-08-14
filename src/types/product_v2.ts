@@ -19,17 +19,6 @@ export const ProductMirrorSchema = z
     }),
     // Mirror-specific settings
     is_primary: z.boolean(), // Is this the primary mirror?
-    sync_status: z.object({
-      last_sync_at: z.string(),
-      is_synced: z.boolean(),
-      error: z.string().optional(),
-    }),
-    // Monitoring
-    stats: z.object({
-      total_objects: z.number(),
-      total_size: z.number(),
-      last_verified_at: z.string(),
-    }),
   })
   .openapi("ProductMirror");
 
