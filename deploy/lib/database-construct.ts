@@ -104,6 +104,11 @@ export class DatabaseConstruct extends Construct {
           name: "featured",
           partitionKey: "featured",
         },
+        {
+          name: "public-featured",
+          partitionKey: "visibility",
+          sortKey: "featured",
+        },
       ],
       removalPolicy,
     });

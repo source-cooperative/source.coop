@@ -27,7 +27,7 @@ class ProductsTable extends BaseTable {
   }> {
     const queryParams: any = {
       TableName: this.table,
-      IndexName: "PublicProductsIndex",
+      IndexName: "public-featured",
       KeyConditionExpression: "visibility = :visibility",
       ExpressionAttributeValues: {
         ":visibility": "public",
@@ -98,7 +98,7 @@ class ProductsTable extends BaseTable {
     const result = await this.client.send(
       new QueryCommand({
         TableName: this.table,
-        IndexName: "PublicProductsIndex",
+        IndexName: "public-featured",
         KeyConditionExpression: "visibility = :visibility",
         ExpressionAttributeValues: {
           ":visibility": "public",
@@ -118,8 +118,8 @@ class ProductsTable extends BaseTable {
           new GetCommand({
             TableName: this.table,
             Key: {
-              product_id,
               account_id,
+              product_id,
             },
           })
         ),
