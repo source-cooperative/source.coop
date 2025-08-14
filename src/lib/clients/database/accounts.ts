@@ -29,7 +29,7 @@ class AccountsTable extends BaseTable {
         const result = await this.client.send(
           new GetCommand({
             TableName: this.table,
-            Key: { account_id, type },
+            Key: { account_id },
           })
         );
 
