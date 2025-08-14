@@ -11,6 +11,8 @@ import { BaseTable } from "./base";
  * Class for managing API key operations in DynamoDB
  */
 export class APIKeysTable extends BaseTable {
+  tableName = "api-keys";
+
   async fetchById(accessKeyId: string): Promise<APIKey | null> {
     try {
       const result = await this.client.send(
@@ -130,4 +132,4 @@ export class APIKeysTable extends BaseTable {
 }
 // Export singleton instances
 
-export const apiKeysTable = new APIKeysTable({ table: "sc-api-keys" });
+export const apiKeysTable = new APIKeysTable({});

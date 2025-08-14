@@ -85,6 +85,7 @@ export const ProductSchema = z
     metadata: ProductMetadataSchema,
     account: AccountSchema.optional(),
     disabled: z.boolean(),
+    featured: z.number(),
     data_mode: ProductDataModeSchema,
   })
   .openapi("Product");

@@ -113,6 +113,7 @@ function convertProduct(oldProduct: OldProduct): Product {
     disabled: oldProduct.disabled,
     data_mode: oldProduct.data_mode as ProductDataMode,
     visibility,
+    featured: oldProduct.featured,
     metadata: {
       mirrors,
       primary_mirror: oldProduct.data.primary_mirror,

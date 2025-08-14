@@ -12,6 +12,8 @@ import { BaseTable } from "./base";
  * Class for managing membership operations in DynamoDB
  */
 export class MembershipsTable extends BaseTable {
+  tableName = "memberships";
+
   async fetchById(membershipId: string): Promise<Membership | null> {
     try {
       const result = await this.client.send(
@@ -169,6 +171,4 @@ export class MembershipsTable extends BaseTable {
     }
   }
 }
-export const membershipsTable = new MembershipsTable({
-  table: "sc-memberships",
-});
+export const membershipsTable = new MembershipsTable({});

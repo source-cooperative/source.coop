@@ -1,4 +1,3 @@
-import type { OryConfig } from "@ory/nextjs";
 import type { StorageConfig } from "@/types/storage";
 import { awsCredentialsProvider } from "@vercel/functions/oidc";
 
@@ -47,25 +46,13 @@ export const CONFIG = {
       // https://www.ory.sh/docs/reference/api#tag/frontend/operation/createBrowserLogoutFlow
       logout: `${ORY_SDK_URL}/self-service/logout/browser`,
     },
-
-    // Override configuration
-    config: {
-      // override: {
-      //   applicationName: "",
-      //   loginUiPath: "/auth/login",
-      //   registrationUiPath: "/auth/registration",
-      //   recoveryUiPath: "/auth/recovery",
-      //   verificationUiPath: "/auth/verification",
-      //   settingsUiPath: "/auth/settings",
-      //   defaultRedirectUri: "/",
-      // },
-    } as OryConfig,
   },
   google: {
     siteVerification: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || "",
   },
   environment: {
     isDevelopment: process.env.NODE_ENV === "development",
+    stage: process.env.STAGE || "dev",
   },
 } as const;
 
