@@ -77,7 +77,7 @@ class ProductsTable extends BaseTable {
       this.client.send(
         new QueryCommand({
           TableName: this.table,
-          IndexName: "AccountProductsIndex",
+          IndexName: "account-products",
           KeyConditionExpression: "account_id = :account_id",
           ExpressionAttributeValues: {
             ":account_id": account_id,

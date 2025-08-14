@@ -105,6 +105,11 @@ export class DatabaseConstruct extends Construct {
           partitionKey: "featured",
         },
         {
+          name: "account-products",
+          partitionKey: "account_id",
+          sortKey: "product_id",
+        },
+        {
           name: "public-featured",
           partitionKey: "visibility",
           sortKey: "featured",
