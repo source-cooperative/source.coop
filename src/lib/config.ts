@@ -43,19 +43,6 @@ export const CONFIG = {
       // https://www.ory.sh/docs/reference/api#tag/frontend/operation/createBrowserLogoutFlow
       logout: `${ORY_SDK_URL}/self-service/logout/browser`,
     },
-
-    // Override configuration
-    config: {
-      // override: {
-      //   applicationName: "",
-      //   loginUiPath: "/auth/login",
-      //   registrationUiPath: "/auth/registration",
-      //   recoveryUiPath: "/auth/recovery",
-      //   verificationUiPath: "/auth/verification",
-      //   settingsUiPath: "/auth/settings",
-      //   defaultRedirectUri: "/",
-      // },
-    } as OryConfig,
   },
   google: {
     siteVerification: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || "",
