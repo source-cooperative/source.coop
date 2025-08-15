@@ -444,19 +444,14 @@ function parseDynamoDBItem(item: any): any {
       result[key] = value.BOOL;
     } else if (value && typeof value === "object" && "M" in value) {
       result[key] = parseDynamoDBItem(value.M);
-    } else if (
-      value &&
-      typeof value === "object" &&
-      "L" in value &&
-      Array.isArray(value.L)
-    ) {
-      result[key] = (value.L as any[]).map(parseDynamoDBItem);
-    } else if (
-      value &&
-      typeof value === "object" &&
-      "NULL" in value &&
-      value.NULL === true
-    ) {
+    } else if (value && typeof value === "object" && "L" in value && Array.isArray(value.L)) {
+      result[key] = value.L.map(item => 
+        item && typeof item === "object" && "S" in item ? item.S :
+        item && typeof item === "object" && "N" in item ? item.N :
+        item && typeof item === "object" && "BOOL" in item ? item.BOOL :
+        item
+      );
+    } else if (value && typeof value === "object" && "NULL" in value && value.NULL === true) {
       result[key] = null;
     } else {
       result[key] = value;
