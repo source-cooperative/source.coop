@@ -402,66 +402,17 @@ async function processS3Export(
     );
 
     // Handle JSONL format (multiple JSON objects on separate lines)
-    const manifestLines = manifestText.trim().split("\n");
-    let manifest: any = null;
-
-    // Try to find the manifest object (could have dataFiles array or dataFileS3Key)
-    for (const line of manifestLines) {
-      if (line.trim()) {
-        try {
-          const parsed = JSON.parse(line);
-          if (parsed.dataFiles && Array.isArray(parsed.dataFiles)) {
-            manifest = parsed;
-            console.log(
-              `   Found manifest with ${parsed.dataFiles.length} data files`
-            );
-            break;
-          } else if (parsed.dataFileS3Key) {
-            manifest = parsed;
-            console.log(
-              `   Found manifest with single data file: ${parsed.dataFileS3Key}`
-            );
-            break;
-          }
-        } catch (parseError) {
-          // Skip invalid JSON lines
-          continue;
-        }
-      }
-    }
-
-    if (!manifest) {
-      throw new Error(
-        "Could not find valid manifest with dataFiles array or dataFileS3Key"
-      );
-    }
-
+    const manifests = manifestText
+      .trim()
+      .split("\n")
+      .map((line) => JSON.parse(line));
     const items: any[] = [];
 
-    // Process data files based on manifest format
-    if (manifest.dataFiles && Array.isArray(manifest.dataFiles)) {
-      // Multiple data files format
-      for (const fileInfo of manifest.dataFiles) {
-        const dataKey = `${prefix}/${fileInfo.key}`;
-        console.log(`Processing file: ${dataKey}`);
-
-        const dataResponse = await s3Client.send(
-          new GetObjectCommand({ Bucket: bucket, Key: dataKey })
-        );
-
-        if (!dataResponse.Body) continue;
-
-        // Process the data file
-        const fileItems = await processDataFile(dataResponse.Body);
-        items.push(...fileItems);
-      }
-    } else if (manifest.dataFileS3Key) {
-      // Single data file format
-      const dataKey = manifest.dataFileS3Key;
-      console.log(`Processing single data file: ${dataKey}`);
-
+    // Single data file format
+    for (const manifest of manifests) {
+      console.log(`\nProcessing manifest with ${manifest.itemCount} items...`);
       const dataResponse = await s3Client.send(
-        new GetObjectCommand({ Bucket: bucket, Key: dataKey })
+        new GetObjectCommand({ Bucket: bucket, Key: manifest.dataFileS3Key })
       );
 
       if (!dataResponse.Body) {
@@ -471,8 +422,6 @@ async function processS3Export(
       // Process the data file
       const fileItems = await processDataFile(dataResponse.Body);
       items.push(...fileItems);
-    } else {
-      throw new Error("Manifest does not contain dataFiles or dataFileS3Key");
     }
 
     return items;
