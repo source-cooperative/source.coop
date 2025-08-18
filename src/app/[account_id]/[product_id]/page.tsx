@@ -15,9 +15,6 @@ import { Container, Box } from '@radix-ui/themes';
 import { productsTable } from "@/lib/clients/database";
 import { ProductHeader } from '@/components/features/products';
 import { ObjectBrowser } from '@/components/features/products';
-import { createStorageClient } from '@/lib/clients/storage';
-import type { ProductObject } from '@/types/product_object';
-import { MarkdownViewer } from '@/components/features/markdown/MarkdownViewer';
 
 interface ProductPageProps {
   params: Promise<{
@@ -31,79 +28,18 @@ export default async function ProductPage({ params }: ProductPageProps) {
   const { account_id, product_id } = await params;
   
   try {
-    const [product, { objects = [] }] = await Promise.all([
-      productsTable.fetchById(account_id, product_id),
-      createStorageClient().listObjects({
-        account_id,
-        product_id,
-        object_path: "",
-        prefix: "",
-      }),
-    ]);
+    const product = await productsTable.fetchById(account_id, product_id);
     if (!product) {
       return notFound();
-    }
-
-    // Transform storage objects to product objects
-    const productObjects: ProductObject[] = objects
-      .filter(obj => obj?.path)
-      .map(obj => ({
-        id: obj.path!,
-        product_id,
-        path: obj.path!,
-        size: obj.size || 0,
-        type: obj.type || 'file',
-        mime_type: obj.mime_type || '',
-        created_at: obj.created_at || new Date().toISOString(),
-        updated_at: obj.updated_at || new Date().toISOString(),
-        checksum: obj.checksum || '',
-        metadata: obj.metadata || {}
-      }));
-
-    // Check for README.md file
-    const readmeFile = productObjects.find(obj => 
-      obj.path.toLowerCase() === 'readme.md' || 
-      obj.path.toLowerCase() === 'readme'
-    );
-
-    let readmeContent = '';
-    
-    // If README.md exists, fetch its content
-    if (readmeFile) {
-      try {
-        const storageClient = createStorageClient();
-        const readmeResult = await storageClient.getObject({
-          account_id,
-          product_id,
-          object_path: readmeFile.path,
-        });
-        
-        // Convert buffer to string
-        readmeContent = readmeResult.data.toString('utf-8');
-      } catch (error) {
-        console.error('Error fetching README content:', error);
-        // Continue without README if there's an error
-      }
     }
 
     return (
       <Container>
         <ProductHeader product={product} />
-        
-        <Box mt="4">
-          <ObjectBrowser
-            product={product}
-            objects={productObjects}
-            initialPath=""
-          />
-        </Box>
 
-        {/* Display README if available */}
-        {readmeContent && (
-          <Box mt="4">
-            <MarkdownViewer content={readmeContent} />
-          </Box>
-        )}
+        <Box mt="4">
+          <ObjectBrowser product={product} initialPath="" />
+        </Box>
       </Container>
     );
   } catch (error) {

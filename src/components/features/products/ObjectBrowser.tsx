@@ -4,55 +4,85 @@ import { ShortcutHelp } from '@/components/features/keyboard/ShortcutHelp';
 import { useObjectBrowserKeyboardShortcuts } from '@/hooks/useObjectBrowserKeyboardShortcuts';
 import { ObjectDetails } from './object-browser/ObjectDetails';
 import { DirectoryList } from './object-browser/DirectoryList';
-import { buildDirectoryTree } from './object-browser/utils';
 import './ObjectBrowser.module.css';
 import { ProductObject } from '@/types/product_object';
 import { Product } from "@/types";
 import { useRouter } from 'next/navigation';
-import { useCallback } from 'react';
-import { useMemo } from 'react';
-import { useRef } from 'react';
-import { useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Card, Box } from '@radix-ui/themes';
 import { SectionHeader } from '@/components/core';
 import { BreadcrumbNav } from '@/components/display';
+import { createStorageClient } from '@/lib/clients/storage';
 
 export interface ObjectBrowserProps {
   product: Product;
-  objects: ProductObject[];
   initialPath?: string;
   selectedObject?: ProductObject;
 }
 
-export function ObjectBrowser({ product, objects, initialPath = '', selectedObject }: ObjectBrowserProps) {
-  const router = useRouter(); 
+export function ObjectBrowser({ product, initialPath = '', selectedObject }: ObjectBrowserProps) {
+  const router = useRouter();
   const [currentPath, setCurrentPath] = useState<string[]>(
     initialPath ? initialPath.split('/').filter(Boolean) : []
   );
   const [showHelp, setShowHelp] = useState(false);
   const itemRefs = useRef<(HTMLAnchorElement | null)[]>([]);
+  const [objectsByPath, setObjectsByPath] = useState<Record<string, ProductObject[]>>({});
 
-  // Get current directory items
+  const pathString = useMemo(() => currentPath.join('/'), [currentPath]);
+
+  const fetchObjects = useCallback(async (path: string) => {
+    try {
+      const prefix = path && !path.endsWith('/') ? `${path}/` : path;
+      const result = await createStorageClient().listObjects({
+        account_id: product.account_id,
+        product_id: product.product_id,
+        object_path: path,
+        prefix,
+        delimiter: '/',
+      });
+      setObjectsByPath((prev) => ({ ...prev, [path]: result.objects || [] }));
+    } catch (error) {
+      console.error('Error fetching objects:', error);
+      setObjectsByPath((prev) => ({ ...prev, [path]: [] }));
+    }
+  }, [product]);
+
+  useEffect(() => {
+    if (!objectsByPath[pathString]) {
+      fetchObjects(pathString);
+    }
+  }, [fetchObjects, objectsByPath, pathString]);
+
   const items = useMemo(() => {
-    const root = buildDirectoryTree(objects, currentPath);
-    return Object.values(root).sort((a, b) => {
-      // Directories first, then alphabetically
-      if (a.isDirectory !== b.isDirectory) {
-        return a.isDirectory ? -1 : 1;
-      }
-      return a.name.toLowerCase().localeCompare(b.name.toLowerCase());
-    });
-  }, [objects, currentPath]);
+    const objects = objectsByPath[pathString] || [];
+    return objects
+      .map((obj) => ({
+        name: obj.path.split('/').pop() || '',
+        path: obj.path,
+        size: obj.size,
+        updated_at: obj.updated_at,
+        isDirectory: obj.type === 'directory',
+        object: obj,
+      }))
+      .sort((a, b) => {
+        if (a.isDirectory !== b.isDirectory) {
+          return a.isDirectory ? -1 : 1;
+        }
+        return a.name.toLowerCase().localeCompare(b.name.toLowerCase());
+      });
+  }, [objectsByPath, pathString]);
 
   const navigateToPath = useCallback(async (newPath: string[]) => {
     setCurrentPath(newPath);
-    const urlPath = newPath.length > 0 ? '/' + newPath.join('/') : '';
-    router.push(`/${product.account_id}/${product.product_id}${urlPath}`);
-  }, [product, router]);
+  }, []);
 
-  const navigateToFile = useCallback((path: string) => {
-    router.push(`/${product.account_id}/${product.product_id}/${path}`);
-  }, [product, router]);
+  const navigateToFile = useCallback(
+    (path: string) => {
+      router.push(`/${product.account_id}/${product.product_id}/${path}`);
+    },
+    [product, router]
+  );
 
   const { 
     focusedIndex, 
