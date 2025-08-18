@@ -1,9 +1,7 @@
 import { ProductObject } from './product_object';
-export type StorageType = 'LOCAL' | 'S3' | 'GCS' | 'AZURE';
 
 // Configuration for connecting to the provider
 export interface StorageConfig {
-  type: StorageType;
   endpoint: string;
   region?: string;
   credentials?: {

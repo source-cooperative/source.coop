@@ -14,7 +14,7 @@ const region = process.env.AWS_REGION || "us-east-1";
 
 export const CONFIG = {
   storage: {
-    type: process.env.STORAGE_TYPE || "S3",
+    type: "S3",
     endpoint: process.env.NEXT_PUBLIC_S3_ENDPOINT,
     region: "us-east-1",
     credentials: {
