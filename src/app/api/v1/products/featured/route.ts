@@ -25,7 +25,7 @@ import { productsTable } from "@/lib/clients/database/products";
 export async function GET(request: NextRequest) {
   try {
     const session = await getApiSession(request);
-    const { products } = await productsTable.listPublic();
+    const { products } = await productsTable.listPublic(10);
     const filteredProducts = products.filter((repository) =>
       isAuthorized(session, repository, Actions.GetRepository)
     );
