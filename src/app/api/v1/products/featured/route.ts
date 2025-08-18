@@ -7,14 +7,14 @@ import { productsTable } from "@/lib/clients/database/products";
 
 /**
  * @openapi
- * /repositories/featured:
+ * /products/featured:
  *   get:
- *     tags: [Repositories]
- *     summary: Get featured repositories
- *     description: Retrieves a list of featured repositories that the user is authorized to view.
+ *     tags: [Products]
+ *     summary: Get featured products
+ *     description: Retrieves a list of featured products that the user is authorized to view.
  *     responses:
  *       200:
- *         description: Successfully retrieved featured repositories
+ *         description: Successfully retrieved featured products
  *         content:
  *           application/json:
  *             schema:
@@ -26,11 +26,11 @@ export async function GET(request: NextRequest) {
   try {
     const session = await getApiSession(request);
     const { products } = await productsTable.listPublic();
-    const filteredRepositories = products.filter((repository) =>
+    const filteredProducts = products.filter((repository) =>
       isAuthorized(session, repository, Actions.GetRepository)
     );
     return NextResponse.json(
-      { repositories: filteredRepositories },
+      { products: filteredProducts },
       { status: StatusCodes.OK }
     );
   } catch (err: unknown) {

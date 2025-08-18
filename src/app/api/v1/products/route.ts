@@ -7,17 +7,17 @@ import { StatusCodes } from "http-status-codes";
 
 /**
  * @openapi
- * /repositories:
+ * /products:
  *   get:
- *     tags: [Repositories]
- *     summary: List repositories
- *     description: Retrieves a list of repositories, optionally filtered by tags or search query.
+ *     tags: [Products]
+ *     summary: List products
+ *     description: Retrieves a list of products, optionally filtered by tags or search query.
  *     parameters:
  *       - in: query
  *         name: tags
  *         schema:
  *           type: string
- *         description: Comma-separated list of tags to filter repositories
+ *         description: Comma-separated list of tags to filter products
  *       - in: query
  *         name: search
  *         schema:
@@ -32,10 +32,10 @@ import { StatusCodes } from "http-status-codes";
  *         name: limit
  *         schema:
  *           type: integer
- *         description: Number of repositories to return per page
+ *         description: Number of products to return per page
  *     responses:
  *       200:
- *         description: Returns a list of repositories
+ *         description: Returns a list of products
  *         content:
  *           application/json:
  *             schema:
@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
   //     typeof tags === "string"
   //       ? tags.split(",").map((tag) => tag.trim().toLowerCase())
   //       : [];
-  //   const filteredRepositories = [];
+  //   const filteredProducts = [];
   //   const { products } = await productsTable.list();
   //   for (const repository of products) {
   //     let match = false;
@@ -110,10 +110,10 @@ export async function GET(request: NextRequest) {
   //       continue;
   //     }
   //     if (match && isAuthorized(session, repository, Actions.ListRepository)) {
-  //       filteredRepositories.push(repository);
+  //       filteredProducts.push(repository);
   //     }
   //   }
-  //   filteredRepositories.sort((a, b) => {
+  //   filteredProducts.sort((a, b) => {
   //     const dateA = new Date(a.published);
   //     const dateB = new Date(b.published);
   //     return dateB.getTime() - dateA.getTime();
@@ -121,10 +121,10 @@ export async function GET(request: NextRequest) {
   //   const startIndex = (next - 1) * limit;
   //   const endIndex = startIndex + limit;
   //   const repositoryResponse: RepositoryListResponse = {
-  //     repositories: filteredRepositories.slice(startIndex, endIndex),
-  //     count: filteredRepositories.length,
+  //     products: filteredProducts.slice(startIndex, endIndex),
+  //     count: filteredProducts.length,
   //     next:
-  //       filteredRepositories.length > endIndex ? String(next + 1) : undefined,
+  //       filteredProducts.length > endIndex ? String(next + 1) : undefined,
   //   };
   //   return NextResponse.json(repositoryResponse, { status: StatusCodes.OK });
   // } catch (err: unknown) {

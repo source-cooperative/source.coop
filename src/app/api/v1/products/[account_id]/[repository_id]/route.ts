@@ -7,16 +7,16 @@ import { productsTable } from "@/lib/clients/database/products";
 
 /**
  * @openapi
- * /repositories/{account_id}/{repository_id}:
+ * /products/{account_id}/{repository_id}:
  *   get:
- *     tags: [Repositories]
+ *     tags: [Products]
  *     summary: Get an existing repository
  *     description: |
  *       Retrieves an existing repository for the specified account.
  *       For user accounts, you must be authenticated as the user account you are retrieving the repository for.
  *       For organization accounts, you must be authenticated as either an `owners` or `maintainers` member for the organization you are retrieving the repository from.
  *
- *       Users with the `admin` flag may retrieve repositories for any account.
+ *       Users with the `admin` flag may retrieve products for any account.
  *     parameters:
  *       - in: path
  *         name: account_id
@@ -80,16 +80,16 @@ export async function GET(
 
 /**
  * @openapi
- * /repositories/{account_id}/{repository_id}:
+ * /products/{account_id}/{repository_id}:
  *   put:
- *     tags: [Repositories]
+ *     tags: [Products]
  *     summary: Update an existing repository
  *     description: |
  *       Updates an existing repository for the specified account.
  *       For user accounts, you must be authenticated as the user account you are updating the repository for.
  *       For organization accounts, you must be authenticated as either an `owners` or `maintainers` member for the organization you are updating the repository for.
  *
- *       Users with the `admin` flag may update repositories for any account.
+ *       Users with the `admin` flag may update products for any account.
  *     parameters:
  *       - in: path
  *         name: account_id
@@ -166,16 +166,16 @@ export async function PUT(
 
 /**
  * @openapi
- * /repositories/{account_id}/{repository_id}:
+ * /products/{account_id}/{repository_id}:
  *   delete:
- *     tags: [Repositories]
+ *     tags: [Products]
  *     summary: Disable an existing repository
  *     description: |
  *       Disables an existing repository for the specified account.
  *       For user accounts, you must be authenticated as the user account you are disabling the repository for.
  *       For organization accounts, you must be authenticated as either an `owners` or `maintainers` member for the organization you are disabling the repository for.
  *
- *       Users with the `admin` flag may disable repositories for any account.
+ *       Users with the `admin` flag may disable products for any account.
  *     parameters:
  *       - in: path
  *         name: account_id

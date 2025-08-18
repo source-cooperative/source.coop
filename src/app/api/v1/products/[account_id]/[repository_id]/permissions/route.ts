@@ -11,9 +11,9 @@ import { StatusCodes } from "http-status-codes";
 
 /**
  * @openapi
- * /repositories/{account_id}/{repository_id}/permissions:
+ * /products/{account_id}/{repository_id}/permissions:
  *   get:
- *     tags: [Repositories]
+ *     tags: [Products]
  *     summary: Get repository permissions
  *     description: Retrieves the current user's permissions for a specific repository.
  *     parameters:

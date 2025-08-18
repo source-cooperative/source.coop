@@ -193,18 +193,18 @@ describe('ObjectBrowser', () => {
 
 ### 3. API Route Tests
 ```typescript
-// __tests__/api/repositories/[account_id]/[repository_id]/route.test.ts
+// __tests__/api/products/[account_id]/[repository_id]/route.test.ts
 import { NextRequest } from 'next/server'
 import { GET } from './route'
 import { storageClient } from '@/lib/storage'
 
-describe('GET /api/repositories/[account_id]/[repository_id]', () => {
+describe('GET /api/products/[account_id]/[repository_id]', () => {
   const TEST_ACCOUNT = 'nasa'
   const TEST_REPOSITORY = 'landsat-collection'
   
   it('returns repository data', async () => {
     const request = new NextRequest(
-      `http://localhost:3000/api/repositories/${TEST_ACCOUNT}/${TEST_REPOSITORY}`
+      `http://localhost:3000/api/products/${TEST_ACCOUNT}/${TEST_REPOSITORY}`
     )
     
     const response = await GET(request, {
@@ -221,7 +221,7 @@ describe('GET /api/repositories/[account_id]/[repository_id]', () => {
 
   it('handles invalid repository', async () => {
     const request = new NextRequest(
-      `http://localhost:3000/api/repositories/${TEST_ACCOUNT}/invalid-repo`
+      `http://localhost:3000/api/products/${TEST_ACCOUNT}/invalid-repo`
     )
     
     const response = await GET(request, {

@@ -1,8 +1,8 @@
 /**
  * @openapi
- * /repositories/{account_id}/{repository_id}/api-keys:
+ * /products/{account_id}/{repository_id}/api-keys:
  *   post:
- *     tags: [API Keys, Repositories]
+ *     tags: [API Keys, Products]
  *     summary: Create a new API key
  *     description: Creates a new API key for the specified repository.
  *       Only users who are an `owners` or `maintainers` member of the repository or organization may create an API Key.
@@ -122,9 +122,9 @@ export async function POST(
 
 /**
  * @openapi
- * /repositories/{account_id}/{repository_id}/api-keys:
+ * /products/{account_id}/{repository_id}/api-keys:
  *   get:
- *     tags: [API Keys, Repositories]
+ *     tags: [API Keys, Products]
  *     summary: List API keys for a repository
  *     description: Retrieves all API keys associated with the specified repository.
  *       Only users who are an `owners` or `maintainers` member of the repository or organization may list API keys.
