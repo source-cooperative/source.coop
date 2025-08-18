@@ -1,34 +1,34 @@
-"use client";
-
-import { Container, Box, Heading, Text } from "@radix-ui/themes";
+import { Container, Box, Heading } from "@radix-ui/themes";
 import { ProductList } from "@/components/features/products";
-import { useApi } from "@/hooks/useApi";
-import type { Product } from "@/types";
-import styles from "@/components/features/products/ProductList.module.css";
+import { productsTable } from "@/lib/clients/database";
 
-export default function HomePage() {
-  const { data, loading, error } = useApi<{ products: Product[] }>({
-    url: "/api/v1/products/featured",
-  });
+export default async function HomePage() {
+  try {
+    const result = await productsTable.listPublic(10);
 
-  return (
-    <Container size="4" py="6">
-      <Box>
-        <Heading size="6" mb="4">
-          Featured Products
-        </Heading>
-        {loading ? (
-          <Text as="p" className={styles.empty}>
-            Loading featured products...
-          </Text>
-        ) : error ? (
-          <Text as="p" color="red" className={styles.empty}>
-            Failed to load featured products. Please try again later.
-          </Text>
-        ) : (
-          <ProductList products={data?.products || []} />
-        )}
-      </Box>
-    </Container>
-  );
+    return (
+      <Container size="4" py="6">
+        <Box>
+          <Heading size="6" mb="4">
+            Products
+          </Heading>
+          <ProductList products={result.products} />
+        </Box>
+      </Container>
+    );
+  } catch (error) {
+    console.error("Failed to load products:", error);
+    return (
+      <Container size="4" py="6">
+        <Box>
+          <Heading size="6" mb="4">
+            Products
+          </Heading>
+          <div>
+            <p>Failed to load products. Please try again later.</p>
+          </div>
+        </Box>
+      </Container>
+    );
+  }
 }
