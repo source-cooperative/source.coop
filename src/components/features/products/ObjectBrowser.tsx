@@ -12,7 +12,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Card, Box } from '@radix-ui/themes';
 import { SectionHeader } from '@/components/core';
 import { BreadcrumbNav } from '@/components/display';
-import { createStorageClient } from '@/lib/clients/storage';
+import { createStorageClient } from '@/lib/clients/storage-browser';
 
 export interface ObjectBrowserProps {
   product: Product;
