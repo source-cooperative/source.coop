@@ -6,7 +6,7 @@ import { useApi } from "@/hooks/useApi";
 import type { Product } from "@/types";
 
 export default function HomePage() {
-  const { data, loading, error } = useApi<{ repositories: Product[] }>({
+  const { data, loading, error } = useApi<{ products: Product[] }>({
     url: "/api/v1/products/featured",
   });
 
@@ -23,7 +23,7 @@ export default function HomePage() {
             Failed to load featured products. Please try again later.
           </Text>
         ) : (
-          <ProductList products={data?.repositories || []} />
+          <ProductList products={data?.products || []} />
         )}
       </Box>
     </Container>
