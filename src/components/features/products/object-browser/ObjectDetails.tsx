@@ -1,14 +1,22 @@
-'use client';
+"use client";
 
-import { Card, Box, DataList, Flex, IconButton, Tooltip } from '@radix-ui/themes';
-import { CopyIcon, CheckIcon } from '@radix-ui/react-icons';
-import type { ProductObject } from '@/types';
+import {
+  Card,
+  Box,
+  DataList,
+  Flex,
+  IconButton,
+  Tooltip,
+} from "@radix-ui/themes";
+import { CopyIcon, CheckIcon } from "@radix-ui/react-icons";
+import type { ProductObject } from "@/types";
 import type { Product } from "@/types";
-import { SectionHeader } from '@/components/core';
-import { DateText, BreadcrumbNav } from '@/components/display';
-import { ChecksumVerifier } from '../ChecksumVerifier';
-import { formatFileSize } from './utils';
-import { useState, useEffect } from 'react';
+import type { DataConnection } from "@/types";
+import { SectionHeader } from "@/components/core";
+import { DateText, BreadcrumbNav } from "@/components/display";
+import { ChecksumVerifier } from "../ChecksumVerifier";
+import { formatFileSize } from "./utils";
+import { useState, useEffect } from "react";
 import { DataListItem } from "./DataListItem";
 
 interface ObjectDetailsProps {
@@ -25,6 +33,37 @@ export function ObjectDetails({
   const pathParts = selectedObject.path.split("/").filter(Boolean);
   const fileName = pathParts.pop();
   const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [dataConnectionDetails, setDataConnectionDetails] =
+    useState<DataConnection | null>(null);
+
+  // Fetch data connection details when component mounts
+  useEffect(() => {
+    const fetchDataConnection = async () => {
+      if (!product.metadata?.mirrors || !product.metadata.primary_mirror) {
+        return;
+      }
+
+      const primaryMirror =
+        product.metadata.mirrors[product.metadata.primary_mirror];
+      if (!primaryMirror?.connection_id) {
+        return;
+      }
+
+      try {
+        const response = await fetch(
+          `/api/v1/data-connections/${primaryMirror.connection_id}`
+        );
+        if (response.ok) {
+          const data = await response.json();
+          setDataConnectionDetails(data);
+        }
+      } catch (error) {
+        console.error("Error fetching data connection:", error);
+      }
+    };
+
+    fetchDataConnection();
+  }, [product.metadata?.mirrors, product.metadata.primary_mirror]);
 
   // Handle keyboard shortcuts directly in the component
   useEffect(() => {
@@ -78,6 +117,33 @@ export function ObjectDetails({
       }, 1500);
     });
   };
+
+  // Generate Cloud URI based on data connection details
+  let cloudUri = null;
+  if (
+    dataConnectionDetails &&
+    product.metadata?.mirrors &&
+    product.metadata.primary_mirror
+  ) {
+    const primaryMirror =
+      product.metadata.mirrors[product.metadata.primary_mirror];
+    if (!primaryMirror) {
+      return null;
+    }
+
+    const { details } = dataConnectionDetails;
+
+    switch (details.provider) {
+      case "s3":
+        cloudUri = `s3://${details.bucket}/${primaryMirror.prefix}${selectedObject.path}`;
+        break;
+      case "az":
+        cloudUri = `https://${details.account_name}.blob.core.windows.net/${details.container_name}/${primaryMirror.prefix}${selectedObject.path}`;
+        break;
+      default:
+        break;
+    }
+  }
 
   return (
     <Card>
@@ -185,29 +251,18 @@ export function ObjectDetails({
           onCopy={copyToClipboard}
         />
 
-        {/* 
-        TODO: On production, this is based on dataConnectionDetails, but we don't have that data here.
-  
-        {dataConnectionDetails.s3DataConnection ? `s3://${dataConnectionDetails.s3DataConnection.bucket}/${account_id}/${resultState.key}` : ""}
-        {dataConnectionDetails.azureDataConnection ? `https://${dataConnectionDetails.azureDataConnection.account_name}.blob.core.windows.net/${dataConnectionDetails.azureDataConnection.container_name}/${account_id}/${resultState.key}` : ""}
-        */}
-        {/* {product.metadata?.mirrors && product.metadata.primary_mirror && (
+        {/* Cloud URI based on data connection details */}
+        {cloudUri && (
           <DataListItem
             label="Cloud URI"
-            value={`s3://${
-              product.metadata.mirrors[product.metadata.primary_mirror]
-                .config.bucket
-            }/${
-              product.metadata.mirrors[product.metadata.primary_mirror]
-                .prefix
-            }${selectedObject.path}`}
+            value={cloudUri}
             selectedDataItem={selectedDataItem}
             itemKey="cloud_uri"
             copiedField={copiedField}
             onCopy={copyToClipboard}
           />
-        )} */}
+        )}
       </DataList.Root>
     </Card>
   );
-} 
+}
