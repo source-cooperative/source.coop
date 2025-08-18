@@ -6,13 +6,23 @@ import { ProductListItem } from "./ProductListItem";
 import { ShortcutHelp } from "@/components/features/keyboard/ShortcutHelp";
 import { useProductListKeyboardShortcuts } from "@/hooks/useProductListKeyboardShortcuts";
 import { Text } from "@radix-ui/themes";
+import { Pagination } from "./Pagination";
 import styles from "./ProductList.module.css";
+
+interface PaginationInfo {
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+  nextCursor?: string;
+  previousCursor?: string;
+  currentCursor?: string;
+}
 
 interface ProductListProps {
   products: Product[];
+  pagination?: PaginationInfo;
 }
 
-export function ProductList({ products }: ProductListProps) {
+export function ProductList({ products, pagination }: ProductListProps) {
   const [showHelp, setShowHelp] = useState(false);
 
   const { itemRefs, selectedIndex } = useProductListKeyboardShortcuts({
@@ -49,6 +59,17 @@ export function ProductList({ products }: ProductListProps) {
           ))}
         </ul>
       </nav>
+
+      {pagination && (
+        <Pagination
+          hasNextPage={pagination.hasNextPage}
+          hasPreviousPage={pagination.hasPreviousPage}
+          nextCursor={pagination.nextCursor}
+          previousCursor={pagination.previousCursor}
+          currentCursor={pagination.currentCursor}
+        />
+      )}
+
       <ShortcutHelp
         open={showHelp}
         onOpenChange={setShowHelp}

@@ -1,6 +1,13 @@
 // Server Component
-import { Box, Text, Grid, Heading, Flex, Link as RadixLink } from '@radix-ui/themes';
-import Link from 'next/link';
+import {
+  Box,
+  Text,
+  Grid,
+  Heading,
+  Flex,
+  Link as RadixLink,
+} from "@radix-ui/themes";
+import Link from "next/link";
 import type { AccountV2, IndividualAccount } from "@/types/account_v2";
 import type { Account, Product } from "@/types";
 import { ProfileAvatar } from "./ProfileAvatar";
@@ -47,6 +54,22 @@ export function IndividualProfile({
   contributedProductsPreviousCursor,
   contributedProductsCurrentCursor,
 }: IndividualProfileProps) {
+  const pagination = {
+    ownedProducts: {
+      hasNextPage: ownedProductsHasNextPage,
+      hasPreviousPage: ownedProductsHasPreviousPage,
+      nextCursor: ownedProductsNextCursor,
+      previousCursor: ownedProductsPreviousCursor,
+      currentCursor: ownedProductsCurrentCursor,
+    },
+    contributedProducts: {
+      hasNextPage: contributedProductsHasNextPage,
+      hasPreviousPage: contributedProductsHasPreviousPage,
+      nextCursor: contributedProductsNextCursor,
+      previousCursor: contributedProductsPreviousCursor,
+      currentCursor: contributedProductsCurrentCursor,
+    },
+  };
   return (
     <Box>
       <IndividualProfileActions account={account} showWelcome={showWelcome} />
@@ -147,11 +170,7 @@ export function IndividualProfile({
           </Heading>
           <ProductList
             products={ownedProducts}
-            hasNextPage={ownedProductsHasNextPage}
-            hasPreviousPage={ownedProductsHasPreviousPage}
-            nextCursor={ownedProductsNextCursor}
-            previousCursor={ownedProductsPreviousCursor}
-            currentCursor={ownedProductsCurrentCursor}
+            pagination={pagination.ownedProducts}
           />
         </Box>
       )}
@@ -163,14 +182,10 @@ export function IndividualProfile({
           </Heading>
           <ProductList
             products={contributedProducts}
-            hasNextPage={contributedProductsHasNextPage}
-            hasPreviousPage={contributedProductsHasPreviousPage}
-            nextCursor={contributedProductsNextCursor}
-            previousCursor={contributedProductsPreviousCursor}
-            currentCursor={contributedProductsCurrentCursor}
+            pagination={pagination.contributedProducts}
           />
         </Box>
       )}
     </Box>
   );
-} 
+}
