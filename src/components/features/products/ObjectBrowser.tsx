@@ -31,6 +31,7 @@ export function ObjectBrowser({
     initialPath ? initialPath.split("/").filter(Boolean) : []
   );
   const [showHelp, setShowHelp] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const itemRefs = useRef<(HTMLAnchorElement | null)[]>([]);
   const [objectsByPath, setObjectsByPath] = useState<
     Record<string, ProductObject[]>
@@ -41,6 +42,7 @@ export function ObjectBrowser({
   const fetchObjects = useCallback(
     async (path: string) => {
       try {
+        setIsLoading(true);
         const prefix = path && !path.endsWith("/") ? `${path}/` : path;
         const result = await createStorageClient().listObjects({
           account_id: product.account_id,
@@ -53,6 +55,8 @@ export function ObjectBrowser({
       } catch (error) {
         console.error("Error fetching objects:", error);
         setObjectsByPath((prev) => ({ ...prev, [path]: [] }));
+      } finally {
+        setIsLoading(false);
       }
     },
     [product]
@@ -76,17 +80,6 @@ export function ObjectBrowser({
     });
   }, [objectsByPath, pathString]);
 
-  const navigateToPath = useCallback(async (newPath: string[]) => {
-    setCurrentPath(newPath);
-  }, []);
-
-  const navigateToFile = useCallback(
-    (path: string) => {
-      router.push(`/${product.account_id}/${product.product_id}/${path}`);
-    },
-    [product, router]
-  );
-
   const { focusedIndex, setFocusedIndex, selectedDataItem } =
     useObjectBrowserKeyboardShortcuts({
       product,
@@ -94,8 +87,12 @@ export function ObjectBrowser({
       currentPath,
       selectedObject,
       onShowHelp: () => setShowHelp(true),
-      onNavigateToPath: navigateToPath,
-      onNavigateToFile: navigateToFile,
+      onNavigateToPath: (newPath: string[]) => {
+        setCurrentPath(newPath);
+      },
+      onNavigateToFile: (path: string) => {
+        router.push(`/${product.account_id}/${product.product_id}/${path}`);
+      },
     });
 
   // If we have a selected object and it's a file, show file details
@@ -107,7 +104,6 @@ export function ObjectBrowser({
           product={product}
           selectedObject={selectedObject}
           selectedDataItem={selectedDataItem}
-          onNavigate={navigateToPath}
         />
         <ShortcutHelp
           open={showHelp}
@@ -130,7 +126,10 @@ export function ObjectBrowser({
               marginBottom: "var(--space-3)",
             }}
           >
-            <BreadcrumbNav path={currentPath} onNavigate={navigateToPath} />
+            <BreadcrumbNav
+              path={currentPath}
+              baseUrl={`/${product.account_id}/${product.product_id}`}
+            />
           </Box>
         </SectionHeader>
 
@@ -139,9 +138,9 @@ export function ObjectBrowser({
           currentPath={currentPath}
           focusedIndex={focusedIndex}
           itemRefs={itemRefs}
-          onNavigateToPath={navigateToPath}
-          onNavigateToFile={navigateToFile}
+          product={product}
           setFocusedIndex={setFocusedIndex}
+          isLoading={isLoading}
         />
       </Card>
       <ShortcutHelp

@@ -15,16 +15,14 @@ interface ObjectDetailsProps {
   product: Product;
   selectedObject: ProductObject;
   selectedDataItem: string | null;
-  onNavigate: (path: string[]) => void;
 }
 
-export function ObjectDetails({ 
-  product, 
-  selectedObject, 
+export function ObjectDetails({
+  product,
+  selectedObject,
   selectedDataItem,
-  onNavigate
 }: ObjectDetailsProps) {
-  const pathParts = selectedObject.path.split('/').filter(Boolean);
+  const pathParts = selectedObject.path.split("/").filter(Boolean);
   const fileName = pathParts.pop();
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
@@ -32,28 +30,32 @@ export function ObjectDetails({
   useEffect(() => {
     // Skip if no item is selected - no need to attach listeners
     if (!selectedDataItem) return;
-    
+
     const handleKeyDown = (e: KeyboardEvent) => {
       const selection = window.getSelection();
       const hasSelection = selection && selection.toString().length > 0;
-      const isInput = e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement;
-      
+      const isInput =
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement;
+
       // Skip if there's text selected or we're in an input
       if (hasSelection || isInput) return;
-      
+
       // Handle copy with Cmd/Ctrl+C or Enter
-      if ((e.key === 'Enter' || ((e.ctrlKey || e.metaKey) && e.key === 'c'))) {
+      if (e.key === "Enter" || ((e.ctrlKey || e.metaKey) && e.key === "c")) {
         e.preventDefault();
-        
+
         // Find the element with the selected data item
-        const element = document.querySelector(`[data-selectable="true"][data-item="${selectedDataItem}"]`);
+        const element = document.querySelector(
+          `[data-selectable="true"][data-item="${selectedDataItem}"]`
+        );
         if (element) {
-          const text = element.textContent || '';
+          const text = element.textContent || "";
           navigator.clipboard.writeText(text);
-          
+
           // Update the copied field
           setCopiedField(selectedDataItem);
-          
+
           // Reset after animation time
           setTimeout(() => {
             setCopiedField(null);
@@ -61,15 +63,15 @@ export function ObjectDetails({
         }
       }
     };
-    
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
   }, [selectedDataItem]);
 
   const copyToClipboard = (text: string | undefined, field: string) => {
-    navigator.clipboard.writeText(text || '').then(() => {
+    navigator.clipboard.writeText(text || "").then(() => {
       setCopiedField(field);
-      
+
       // Reset the copied field after animation time
       setTimeout(() => {
         setCopiedField(null);
@@ -91,7 +93,7 @@ export function ObjectDetails({
             <BreadcrumbNav
               path={pathParts}
               fileName={fileName}
-              onNavigate={onNavigate}
+              baseUrl={`/${product.account_id}/${product.product_id}`}
             />
           </Flex>
         </Box>
