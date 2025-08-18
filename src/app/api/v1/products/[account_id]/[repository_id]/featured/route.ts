@@ -6,10 +6,10 @@ import { StatusCodes } from "http-status-codes";
 
 /**
  * @openapi
- * /repositories/{account_id}/{repository_id}/featured:
+ * /products/{account_id}/{repository_id}/featured:
  *   put:
- *     tags: [Repositories]
- *     summary: Updates a repositories featured state
+ *     tags: [Products]
+ *     summary: Updates a products featured state
  *     description: |
  *       Updates the featured state of a repository. This functionality is not yet implemented
  *       in the new product schema and will return a 501 Not Implemented error.

@@ -67,7 +67,7 @@ export function OptimizedImage({ src, alt }) {
 import useSWR from 'swr'
 
 export function RepositoryData({ id }) {
-  const { data, error } = useSWR(`/api/repositories/${id}`, fetcher, {
+  const { data, error } = useSWR(`/api/products/${id}`, fetcher, {
     revalidateOnFocus: false,
     dedupingInterval: 5000
   });

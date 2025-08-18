@@ -38,25 +38,13 @@ export default async function ProductPathPage({
   
   // Check if this is a file path (ends with a file extension)
   const isFilePath = pathString && /\.\w+$/.test(pathString);
-  const prefix = isFilePath ? pathString.slice(0, pathString.lastIndexOf('/') + 1) : 
-                (pathString ? (pathString.endsWith('/') ? pathString : pathString + '/') : '');
-  
-  console.log('Debug - Page params:', { account_id, product_id, path, pathString, prefix, isFilePath });
-
-  // 2. Find the product or 404
   const product = await productsTable.fetchById(account_id, product_id);
-  console.log('Debug - Product:', product);
-  
   if (!product) {
-    console.log('Debug - Product not found, returning 404');
     return notFound();
   }
 
   try {
     let selectedObject: ProductObject | undefined;
-    let productObjects: ProductObject[] = [];
-
-    // 3. If this is a file path, try to get the object metadata first
     if (isFilePath) {
       try {
         selectedObject = await createStorageClient().getObjectInfo({
@@ -64,62 +52,21 @@ export default async function ProductPathPage({
           product_id,
           object_path: pathString,
         });
-      } catch (error) {
-        console.log("Debug - Head object failed, falling back to list:", error);
+      } catch {
+        // Ignore if object info cannot be fetched
       }
     }
 
-    // 4. If we don't have a selected object or this is a directory, list objects
-    if (!selectedObject) {
-      console.log("Debug - Fetching objects with:", {
-        account_id,
-        product_id,
-        object_path: pathString,
-        prefix,
-      });
-      const result = await createStorageClient().listObjects({
-        account_id,
-        product_id,
-        object_path: pathString,
-        prefix,
-        delimiter: "/",
-      });
-
-      // Transform storage objects to product objects
-      productObjects = (result?.objects || [])
-        .filter((obj) => obj?.path)
-        .map((obj) => ({
-          id: obj.path!,
-          product_id,
-          path: obj.path!,
-          size: obj.size || 0,
-          type: obj.type || "file",
-          mime_type: obj.mime_type || "",
-          created_at: obj.created_at || new Date().toISOString(),
-          updated_at: obj.updated_at || new Date().toISOString(),
-          checksum: obj.checksum || "",
-          metadata: obj.metadata || {},
-        }));
-    }
-
-    console.log("Debug - Selected object:", selectedObject);
-
-    // 5. Determine if we're viewing a file or directory
-    const isFile =
-      isFilePath || (selectedObject?.type === "file");
-    const parentPath = isFile
-      ? pathString.slice(0, pathString.lastIndexOf("/"))
+    const parentPath = isFilePath
+      ? pathString.slice(0, pathString.lastIndexOf('/'))
       : pathString;
-    console.log("Debug - Path info:", { isFile, parentPath, isFilePath });
 
-    // 6. Render the page
     return (
       <Container>
         <ProductHeader product={product} />
         <Box mt="4">
           <ObjectBrowser
             product={product}
-            objects={productObjects}
             initialPath={parentPath}
             selectedObject={selectedObject}
           />
@@ -127,8 +74,7 @@ export default async function ProductPathPage({
       </Container>
     );
   } catch (error) {
-    console.error('Debug - Error:', error);
-    // Handle errors by showing an error message
+    console.error('Error loading product path:', error);
     return (
       <Container>
         <ProductHeader product={product} />
@@ -140,4 +86,4 @@ export default async function ProductPathPage({
       </Container>
     );
   }
-} 
+}

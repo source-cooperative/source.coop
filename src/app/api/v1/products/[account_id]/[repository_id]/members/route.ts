@@ -18,9 +18,9 @@ import {
 
 /**
  * @openapi
- * /repositories/{account_id}/{repository_id}/members:
+ * /products/{account_id}/{repository_id}/members:
  *   post:
- *     tags: [Memberships, Repositories]
+ *     tags: [Memberships, Products]
  *     summary: Invite a new member to a repository.
  *     description: >
  *       Invites a new member to the specified repository.
@@ -138,9 +138,9 @@ export async function POST(
 
 /**
  * @openapi
- * /repositories/{account_id}/{repository_id}/members:
+ * /products/{account_id}/{repository_id}/members:
  *   get:
- *     tags: [Memberships, Repositories]
+ *     tags: [Memberships, Products]
  *     summary: List the memberships for a repository
  *     description: |
  *       Retrieves all memberships associated with the specified repository.

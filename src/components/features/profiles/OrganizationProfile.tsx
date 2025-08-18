@@ -1,7 +1,15 @@
-'use client';
+"use client";
 
-import { Box, Heading, Text, Link as RadixLink, Flex, Grid, Button } from '@radix-ui/themes';
-import Link from 'next/link';
+import {
+  Box,
+  Heading,
+  Text,
+  Link as RadixLink,
+  Flex,
+  Grid,
+  Button,
+} from "@radix-ui/themes";
+import Link from "next/link";
 import type {
   IndividualAccount,
   OrganizationalAccount,
@@ -9,11 +17,11 @@ import type {
 import type { Product } from "@/types";
 import type { AccountEmail } from "@/types/account";
 import type { AccountDomain } from "@/types/account_v2";
-import { ProductList } from '@/components/features/products/ProductList';
-import { OrganizationMembers } from './OrganizationMembers';
-import { ProfileAvatar } from './ProfileAvatar';
-import { WebsiteLink } from './WebsiteLink';
-import { useSession } from '@ory/elements-react/client';
+import { ProductList } from "@/components/features/products/ProductList";
+import { OrganizationMembers } from "./OrganizationMembers";
+import { ProfileAvatar } from "./ProfileAvatar";
+import { WebsiteLink } from "./WebsiteLink";
+import { useSession } from "@ory/elements-react/client";
 import { getAccountId } from "@/lib/ory";
 
 interface OrganizationProfileProps {
@@ -48,6 +56,14 @@ export function OrganizationProfile({
   const isAdmin = admins.some((admin) => admin.account_id === currentUserId);
   const isOwner = owner?.account_id === currentUserId;
   const canEdit = isAdmin || isOwner;
+
+  const pagination = {
+    hasNextPage: productsHasNextPage,
+    hasPreviousPage: productsHasPreviousPage,
+    nextCursor: productsNextCursor,
+    previousCursor: productsPreviousCursor,
+    currentCursor: productsCurrentCursor,
+  };
 
   return (
     <Box>
@@ -130,16 +146,9 @@ export function OrganizationProfile({
           <Heading as="h2" size="4" mb="2">
             Products
           </Heading>
-          <ProductList
-            products={products}
-            hasNextPage={productsHasNextPage}
-            hasPreviousPage={productsHasPreviousPage}
-            nextCursor={productsNextCursor}
-            previousCursor={productsPreviousCursor}
-            currentCursor={productsCurrentCursor}
-          />
+          <ProductList products={products} pagination={pagination} />
         </Box>
       )}
     </Box>
   );
-} 
+}

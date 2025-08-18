@@ -23,6 +23,12 @@ export function useAccount() {
         return;
       }
 
+      if (!accountId) {
+        setAccount(null);
+        setIsLoading(false);
+        return;
+      }
+
       try {
         console.log("Fetching account for ID:", accountId);
         const response = await fetch(`/api/accounts/${accountId}`, {

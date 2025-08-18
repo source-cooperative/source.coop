@@ -17,21 +17,21 @@ import { productsTable } from "@/lib/clients/database/products";
 
 /**
  * @openapi
- * /repositories/{account_id}:
+ * /products/{account_id}:
  *   get:
- *     tags: [Repositories]
- *     summary: List repositories for an account
- *     description: Retrieves all repositories associated with the specified account that the user is authorized to view.
+ *     tags: [Products]
+ *     summary: List products for an account
+ *     description: Retrieves all products associated with the specified account that the user is authorized to view.
  *     parameters:
  *       - in: path
  *         name: account_id
  *         required: true
  *         schema:
  *           type: string
- *         description: The ID of the account to list repositories for
+ *         description: The ID of the account to list products for
  *     responses:
  *       200:
- *         description: Successfully retrieved repositories
+ *         description: Successfully retrieved products
  *         content:
  *           application/json:
  *             schema:
@@ -55,27 +55,25 @@ export async function GET(
     );
   }
   // TODO: Implement pagination
-  let { products: repositories } = await productsTable.listByAccount(
-    account_id
-  );
-  repositories = repositories.filter((repository) =>
+  let { products: products } = await productsTable.listByAccount(account_id);
+  products = products.filter((repository) =>
     isAuthorized(session, repository, Actions.ListRepository)
   );
-  return NextResponse.json({ repositories }, { status: StatusCodes.OK });
+  return NextResponse.json({ products }, { status: StatusCodes.OK });
 }
 
 /**
  * @openapi
- * /repositories/{account_id}:
+ * /products/{account_id}:
  *   post:
- *     tags: [Repositories]
+ *     tags: [Products]
  *     summary: Create a new repository
  *     description: |
  *       Creates a new repository for the specified account.
  *       For user accounts, you must be authenticated as the user account you are creating the repository for.
  *       For organization accounts, you must be authenticated as either an `owners` or `maintainers` member for the organization you are creating the repository for.
  *
- *       Users with the `admin` flag may create repositories for any account.
+ *       Users with the `admin` flag may create products for any account.
  *     parameters:
  *       - in: path
  *         name: account_id

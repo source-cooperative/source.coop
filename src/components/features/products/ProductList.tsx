@@ -1,16 +1,15 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
+import { useState } from "react";
 import type { Product } from "@/types";
-import { ProductListItem } from './ProductListItem';
-import { ShortcutHelp } from '@/components/features/keyboard/ShortcutHelp';
-import { useProductListKeyboardShortcuts } from '@/hooks/useProductListKeyboardShortcuts';
-import { Text } from '@radix-ui/themes';
+import { ProductListItem } from "./ProductListItem";
+import { ShortcutHelp } from "@/components/features/keyboard/ShortcutHelp";
+import { useProductListKeyboardShortcuts } from "@/hooks/useProductListKeyboardShortcuts";
+import { Text } from "@radix-ui/themes";
 import { Pagination } from "./Pagination";
 import styles from "./ProductList.module.css";
 
-interface ProductListProps {
-  products: Product[];
+interface PaginationInfo {
   hasNextPage: boolean;
   hasPreviousPage: boolean;
   nextCursor?: string;
@@ -18,14 +17,12 @@ interface ProductListProps {
   currentCursor?: string;
 }
 
-export function ProductList({
-  products,
-  hasNextPage,
-  hasPreviousPage,
-  nextCursor,
-  previousCursor,
-  currentCursor,
-}: ProductListProps) {
+interface ProductListProps {
+  products: Product[];
+  pagination?: PaginationInfo;
+}
+
+export function ProductList({ products, pagination }: ProductListProps) {
   const [showHelp, setShowHelp] = useState(false);
 
   const { itemRefs, selectedIndex } = useProductListKeyboardShortcuts({
@@ -63,13 +60,15 @@ export function ProductList({
         </ul>
       </nav>
 
-      <Pagination
-        hasNextPage={hasNextPage}
-        hasPreviousPage={hasPreviousPage}
-        nextCursor={nextCursor}
-        previousCursor={previousCursor}
-        currentCursor={currentCursor}
-      />
+      {pagination && (
+        <Pagination
+          hasNextPage={pagination.hasNextPage}
+          hasPreviousPage={pagination.hasPreviousPage}
+          nextCursor={pagination.nextCursor}
+          previousCursor={pagination.previousCursor}
+          currentCursor={pagination.currentCursor}
+        />
+      )}
 
       <ShortcutHelp
         open={showHelp}
@@ -78,4 +77,4 @@ export function ProductList({
       />
     </div>
   );
-} 
+}
