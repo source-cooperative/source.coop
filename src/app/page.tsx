@@ -1,55 +1,31 @@
-/**
- * Home Page - Lists all repositories with efficient cursor-based pagination
- */
+"use client";
 
-import { Container, Box, Heading } from "@radix-ui/themes";
+import { Container, Box, Heading, Text } from "@radix-ui/themes";
 import { ProductList } from "@/components/features/products";
-import { getPaginatedProducts } from "@/lib/actions/products";
+import { useApi } from "@/hooks/useApi";
+import type { Product } from "@/types";
 
-interface HomePageProps {
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
-}
+export default function HomePage() {
+  const { data, loading, error } = useApi<{ repositories: Product[] }>({
+    url: "/api/v1/products/featured",
+  });
 
-export default async function HomePage({ searchParams }: HomePageProps) {
-  const params = await searchParams;
-  const cursor = typeof params.cursor === "string" ? params.cursor : undefined;
-  const previousCursor =
-    typeof params.previous === "string" ? params.previous : undefined;
-  const limit = 10;
-
-  try {
-    const result = await getPaginatedProducts(limit, cursor, previousCursor);
-
-    return (
-      <Container size="4" py="6">
-        <Box>
-          <Heading size="6" mb="4">
-            Products
-          </Heading>
-          <ProductList
-            products={result.products}
-            hasNextPage={result.hasNextPage}
-            hasPreviousPage={result.hasPreviousPage}
-            nextCursor={result.nextCursor}
-            previousCursor={result.previousCursor}
-            currentCursor={cursor}
-          />
-        </Box>
-      </Container>
-    );
-  } catch (error) {
-    console.error("Failed to load products:", error);
-    return (
-      <Container size="4" py="6">
-        <Box>
-          <Heading size="6" mb="4">
-            Products
-          </Heading>
-          <div>
-            <p>Failed to load products. Please try again later.</p>
-          </div>
-        </Box>
-      </Container>
-    );
-  }
+  return (
+    <Container size="4" py="6">
+      <Box>
+        <Heading size="6" mb="4">
+          Featured Products
+        </Heading>
+        {loading ? (
+          <Text as="p">Loading featured products...</Text>
+        ) : error ? (
+          <Text as="p" color="red">
+            Failed to load featured products. Please try again later.
+          </Text>
+        ) : (
+          <ProductList products={data?.repositories || []} />
+        )}
+      </Box>
+    </Container>
+  );
 }

@@ -1,31 +1,18 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
+import { useState } from "react";
 import type { Product } from "@/types";
-import { ProductListItem } from './ProductListItem';
-import { ShortcutHelp } from '@/components/features/keyboard/ShortcutHelp';
-import { useProductListKeyboardShortcuts } from '@/hooks/useProductListKeyboardShortcuts';
-import { Text } from '@radix-ui/themes';
-import { Pagination } from "./Pagination";
+import { ProductListItem } from "./ProductListItem";
+import { ShortcutHelp } from "@/components/features/keyboard/ShortcutHelp";
+import { useProductListKeyboardShortcuts } from "@/hooks/useProductListKeyboardShortcuts";
+import { Text } from "@radix-ui/themes";
 import styles from "./ProductList.module.css";
 
 interface ProductListProps {
   products: Product[];
-  hasNextPage: boolean;
-  hasPreviousPage: boolean;
-  nextCursor?: string;
-  previousCursor?: string;
-  currentCursor?: string;
 }
 
-export function ProductList({
-  products,
-  hasNextPage,
-  hasPreviousPage,
-  nextCursor,
-  previousCursor,
-  currentCursor,
-}: ProductListProps) {
+export function ProductList({ products }: ProductListProps) {
   const [showHelp, setShowHelp] = useState(false);
 
   const { itemRefs, selectedIndex } = useProductListKeyboardShortcuts({
@@ -62,15 +49,6 @@ export function ProductList({
           ))}
         </ul>
       </nav>
-
-      <Pagination
-        hasNextPage={hasNextPage}
-        hasPreviousPage={hasPreviousPage}
-        nextCursor={nextCursor}
-        previousCursor={previousCursor}
-        currentCursor={currentCursor}
-      />
-
       <ShortcutHelp
         open={showHelp}
         onOpenChange={setShowHelp}
@@ -78,4 +56,4 @@ export function ProductList({
       />
     </div>
   );
-} 
+}
