@@ -15,14 +15,38 @@ import type { Product } from "@/types";
 import { formatFileSize } from "./utils";
 import styles from "../ObjectBrowser.module.css";
 
+/**
+ * Unified directory list component that can be used for both server-side and client-side rendering.
+ * 
+ * @example
+ * // Server-side usage (simple list)
+ * <DirectoryList
+ *   items={items}
+ *   currentPath={currentPath}
+ *   product={product}
+ * />
+ * 
+ * // Client-side usage with virtualization and keyboard navigation
+ * <DirectoryList
+ *   items={items}
+ *   currentPath={currentPath}
+ *   product={product}
+ *   enableVirtualization={true}
+ *   enableKeyboardNavigation={true}
+ *   focusedIndex={focusedIndex}
+ *   setFocusedIndex={setFocusedIndex}
+ * />
+ */
 interface DirectoryListProps {
   items: FileNode[];
   currentPath: string[];
-  focusedIndex: number;
-  itemRefs: React.MutableRefObject<(HTMLAnchorElement | null)[]>;
   product: Product;
-  setFocusedIndex: (index: number) => void;
-  isLoading: boolean;
+  // Client-side features
+  enableVirtualization?: boolean;
+  enableKeyboardNavigation?: boolean;
+  focusedIndex?: number;
+  setFocusedIndex?: (index: number) => void;
+  isLoading?: boolean;
 }
 
 interface DirectoryRowProps {
@@ -31,10 +55,12 @@ interface DirectoryRowProps {
   itemsLength: number;
   product: Product;
   currentPath: string[];
-  focusedIndex: number;
-  setFocusedIndex: (index: number) => void;
-  itemRefs: React.MutableRefObject<(HTMLAnchorElement | null)[]>;
+  // Client-side features
+  focusedIndex?: number;
+  setFocusedIndex?: (index: number) => void;
+  itemRefs?: React.MutableRefObject<(HTMLAnchorElement | null)[]>;
   virtualRow?: { start: number };
+  enableKeyboardNavigation?: boolean;
 }
 
 const ITEM_HEIGHT = 40;
@@ -50,6 +76,7 @@ function DirectoryRow({
   setFocusedIndex,
   itemRefs,
   virtualRow,
+  enableKeyboardNavigation,
 }: DirectoryRowProps) {
   const href = item.isDirectory
     ? `/${product.account_id}/${product.product_id}/${[
@@ -72,17 +99,23 @@ function DirectoryRow({
         marginBottom: index < itemsLength - 1 ? "var(--space-2)" : 0,
       };
 
+  const linkProps = enableKeyboardNavigation
+    ? {
+        ref: (el: HTMLAnchorElement | null) => {
+          if (el && itemRefs) itemRefs.current[index] = el;
+        },
+        onFocus: () => setFocusedIndex?.(index),
+        "data-focused": focusedIndex === index,
+      }
+    : {};
+
   return (
     <Box key={item.path} style={wrapperStyle}>
       <Link
-        ref={(el) => {
-          if (el) itemRefs.current[index] = el;
-        }}
         href={href}
-        onFocus={() => setFocusedIndex(index)}
         className={styles.item}
-        data-focused={focusedIndex === index}
         title={item.name}
+        {...linkProps}
       >
         <Flex justify="between" align="center" style={{ width: "100%" }}>
           <Flex align="center" gap="2" style={{ minWidth: 0, flex: 1 }}>
@@ -117,16 +150,18 @@ function DirectoryRow({
 export function DirectoryList({
   items,
   currentPath,
-  focusedIndex,
-  itemRefs,
   product,
+  enableVirtualization = false,
+  enableKeyboardNavigation = false,
+  focusedIndex = 0,
   setFocusedIndex,
-  isLoading,
+  isLoading = false,
 }: DirectoryListProps) {
   const parentRef = useRef<HTMLDivElement>(null);
   const [showScrollIndicator, setShowScrollIndicator] = useState(false);
+  const itemRefs = useRef<(HTMLAnchorElement | null)[]>([]);
 
-  // Set up virtualizer with simple configuration
+  // Set up virtualizer when enabled
   const rowVirtualizer = useVirtualizer({
     count: items.length,
     getScrollElement: () => parentRef.current,
@@ -134,11 +169,12 @@ export function DirectoryList({
     overscan: 3,
     scrollPaddingStart: ITEM_HEIGHT / 2,
     scrollPaddingEnd: ITEM_HEIGHT / 2,
+    enabled: enableVirtualization,
   });
 
   // Check if we need to show scroll indicator
   useEffect(() => {
-    if (items.length > MAX_VISIBLE_ITEMS) {
+    if (enableVirtualization && items.length > MAX_VISIBLE_ITEMS) {
       setShowScrollIndicator(true);
 
       // Hide the indicator after 5 seconds
@@ -150,17 +186,25 @@ export function DirectoryList({
     } else {
       setShowScrollIndicator(false);
     }
-  }, [items.length]);
+  }, [enableVirtualization, items.length]);
 
   if (isLoading) {
-    return <Text color="gray">Loading...</Text>;
+    return (
+      <Box p="4">
+        <Text color="gray">Loading...</Text>
+      </Box>
+    );
   }
 
   if (items.length === 0) {
-    return <Text color="gray">This directory is empty.</Text>;
+    return (
+      <Box p="4">
+        <MonoText color="gray">This directory is empty.</MonoText>
+      </Box>
+    );
   }
 
-  const isVirtualized = items.length > MAX_VISIBLE_ITEMS;
+  const isVirtualized = enableVirtualization && items.length > MAX_VISIBLE_ITEMS;
 
   return (
     <Box
@@ -230,6 +274,7 @@ export function DirectoryList({
                   setFocusedIndex={setFocusedIndex}
                   itemRefs={itemRefs}
                   virtualRow={{ start: virtualRow.start }}
+                  enableKeyboardNavigation={enableKeyboardNavigation}
                 />
               ))
           : items.map((item, index) => (
@@ -243,6 +288,7 @@ export function DirectoryList({
                 focusedIndex={focusedIndex}
                 setFocusedIndex={setFocusedIndex}
                 itemRefs={itemRefs}
+                enableKeyboardNavigation={enableKeyboardNavigation}
               />
             ))}
       </Box>

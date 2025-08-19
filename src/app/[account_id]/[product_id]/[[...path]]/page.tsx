@@ -10,11 +10,11 @@
  */
 
 // External packages
-import { Container, Box, Text } from '@radix-ui/themes';
+import { Text } from "@radix-ui/themes";
 import { notFound } from 'next/navigation';
 
 // Internal components
-import { ObjectBrowser, ProductHeader } from '@/components/features/products';
+import { ObjectBrowser } from "@/components/features/products";
 
 // Utilities
 import { productsTable } from "@/lib/clients/database";
@@ -58,28 +58,20 @@ export default async function ProductPathPage({
     }
 
     return (
-      <Container>
-        <ProductHeader product={product} />
-        <Box mt="4">
-          <ObjectBrowser
-            product={product}
-            initialPath={pathString}
-            selectedObject={selectedObject}
-          />
-        </Box>
-      </Container>
+      <ObjectBrowser
+        product={product}
+        initialPath={pathString}
+        selectedObject={selectedObject}
+      />
     );
   } catch (error) {
     console.error('Error loading product path:', error);
     return (
-      <Container>
-        <ProductHeader product={product} />
-        <Box mt="4">
-          <Text role="alert" color="red" size="3">
-            {error instanceof Error ? error.message : 'An error occurred while loading product contents'}
-          </Text>
-        </Box>
-      </Container>
+      <Text role="alert" color="red" size="3">
+        {error instanceof Error
+          ? error.message
+          : "An error occurred while loading product contents"}
+      </Text>
     );
   }
 }
