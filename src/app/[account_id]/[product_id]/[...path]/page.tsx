@@ -57,17 +57,13 @@ export default async function ProductPathPage({
       }
     }
 
-    const parentPath = isFilePath
-      ? pathString.slice(0, pathString.lastIndexOf('/'))
-      : pathString;
-
     return (
       <Container>
         <ProductHeader product={product} />
         <Box mt="4">
           <ObjectBrowser
             product={product}
-            initialPath={parentPath}
+            initialPath={pathString}
             selectedObject={selectedObject}
           />
         </Box>
