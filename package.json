@@ -17,6 +17,8 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "test:ci": "jest --ci --coverage --runInBand",
+    "type-check": "tsc --noEmit -p tsconfig.typecheck.json",
+    "type-check:watch": "tsc --noEmit -p tsconfig.typecheck.json --watch",
     "test-pages": "node scripts/test-pages.js",
     "test:perf": "node scripts/test-perf.js"
   },

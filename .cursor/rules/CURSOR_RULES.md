@@ -360,4 +360,22 @@ const baseUrl = process.env.NEXT_PUBLIC_NEXT_PUBLIC_LOCAL_ORY_SDK_URL;
    - Handle 401s gracefully (expected for non-authenticated users)
    - Log only unexpected auth errors
    - Use proper error boundaries
-   - Maintain consistent error states 
+   - Maintain consistent error states
+
+## TypeScript and Development Practices
+
+### Type Validation
+- **Always run `npm run type-check` before committing**
+- Use `npm run type-check:watch` during development
+- Never commit code with TypeScript errors
+
+### Development Workflow
+- **Prefer type checking over full builds for validation**
+- Use `npm run type-check` to validate without dev server interference
+- Only run `npm run build` for production or debugging build issues
+
+### Code Quality
+- Run `npm run lint:src` for focused linting
+- Fix issues with `npm run lint:src:fix`
+- Use precise types over `any`
+- Validate external data with Zod schemas 
