@@ -5,6 +5,7 @@ export { ProductMetaCard } from "./ProductMetaCard";
 export { ProductSchemaMetadata } from "./ProductSchemaMetadata";
 export { ProductSearchResult } from "./ProductSearchResult";
 export { ProductSummaryCard } from "./ProductSummaryCard";
+export { TagList } from "./TagList";
 export { ObjectBrowser } from "./ObjectBrowser";
 export { Pagination } from "./Pagination";
 export { ChecksumVerifier } from "./ChecksumVerifier";

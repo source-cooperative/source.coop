@@ -6,6 +6,7 @@ import Link from "next/link";
 import type { Product } from "@/types";
 import { DateText } from "@/components/display";
 import { Box, Text, Badge, Heading } from "@radix-ui/themes";
+import { TagList } from "./TagList";
 import styles from "./ProductList.module.css";
 
 interface ProductListItemProps {
@@ -34,6 +35,11 @@ export const ProductListItem = forwardRef<HTMLAnchorElement, ProductListItemProp
                 {product.description}
               </Text>
             )}
+
+            {product.metadata.tags &&
+              product.metadata.tags.filter(Boolean).length > 0 && (
+                <TagList tags={product.metadata.tags} />
+              )}
 
             <Box>
               {product.account?.name && (
