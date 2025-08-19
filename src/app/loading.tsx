@@ -6,9 +6,9 @@ export default function HomePageLoading() {
     <Container size="4" py="6">
       <Box>
         <Heading size="6" mb="4">
-          Products
+          Featured Products
         </Heading>
-        
+
         {/* Product List Skeleton */}
         <Box>
           {Array.from({ length: 6 }).map((_, index) => (
@@ -23,14 +23,18 @@ export default function HomePageLoading() {
               }}
             >
               {/* Product Title */}
-              <Skeleton height="24px" width={`${50 + Math.random() * 40}%`} mb="2" />
-              
+              <Skeleton
+                height="24px"
+                width={`${50 + Math.random() * 40}%`}
+                mb="2"
+              />
+
               {/* Product Description */}
               <Box mb="4">
                 <Skeleton height="16px" width="90%" mb="1" />
                 <Skeleton height="16px" width={`${60 + Math.random() * 30}%`} />
               </Box>
-              
+
               {/* Metadata Row */}
               <Flex gap="3" align="center">
                 <Skeleton height="14px" width="80px" />

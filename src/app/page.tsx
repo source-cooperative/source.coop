@@ -10,7 +10,7 @@ export default async function HomePage() {
       <Container size="4" py="6">
         <Box>
           <Heading size="6" mb="4">
-            Products
+            Featured Products
           </Heading>
           <ProductList products={result.products} />
         </Box>
@@ -22,7 +22,7 @@ export default async function HomePage() {
       <Container size="4" py="6">
         <Box>
           <Heading size="6" mb="4">
-            Products
+            Featured Products
           </Heading>
           <div>
             <p>Failed to load products. Please try again later.</p>
