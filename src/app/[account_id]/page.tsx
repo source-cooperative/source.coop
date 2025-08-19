@@ -15,7 +15,6 @@ import { Container } from "@radix-ui/themes";
 import { IndividualProfile } from "@/components/features/profiles";
 import { OrganizationProfilePage } from "@/components/features/profiles/OrganizationProfilePage";
 import type { IndividualAccount } from "@/types/account_v2";
-import type { Product } from "@/types";
 import { accountsTable, productsTable } from "@/lib/clients/database";
 import { getServerSession } from "@ory/nextjs/app";
 import type { ExtendedSession } from "@/types/session";
