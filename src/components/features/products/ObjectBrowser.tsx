@@ -6,7 +6,7 @@ import { Product } from "@/types";
 import { Card, Box } from "@radix-ui/themes";
 import { SectionHeader } from "@/components/core";
 import { BreadcrumbNav } from "@/components/display";
-import { createStorageClient } from "@/lib/clients/storage";
+import { storage } from "@/lib/clients/storage";
 import { buildDirectoryTree } from "./object-browser/utils";
 
 export interface ObjectBrowserProps {
@@ -28,7 +28,7 @@ export async function ObjectBrowser({
   try {
     const prefix =
       pathString && !pathString.endsWith("/") ? `${pathString}/` : pathString;
-    const result = await createStorageClient().listObjects({
+    const result = await storage.listObjects({
       account_id: product.account_id,
       product_id: product.product_id,
       object_path: pathString,

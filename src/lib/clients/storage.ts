@@ -2,7 +2,7 @@ import { S3StorageClient } from "../storage/s3";
 import { CONFIG } from "../config";
 import type { StorageClient } from "@/types/storage";
 
-export function createStorageClient(): StorageClient {
+function createStorageClient(): StorageClient {
   if (CONFIG.environment.debug) {
     console.log("Creating storage client with config:", CONFIG);
   }
@@ -19,3 +19,5 @@ export function createStorageClient(): StorageClient {
     credentials: CONFIG.storage.credentials,
   });
 }
+
+export const storage = createStorageClient();

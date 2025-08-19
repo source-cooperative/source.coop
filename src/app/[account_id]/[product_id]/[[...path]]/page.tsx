@@ -19,7 +19,7 @@ import { MarkdownViewer } from "@/components/features/markdown";
 
 // Utilities
 import { productsTable } from "@/lib/clients/database";
-import { createStorageClient } from "@/lib/clients/storage";
+import { storage } from "@/lib/clients/storage";
 import type { ProductObject } from "@/types/product_object";
 
 interface PageProps {
@@ -48,7 +48,7 @@ export default async function ProductPathPage({ params }: PageProps) {
 
     if (isFilePath) {
       try {
-        selectedObject = await createStorageClient().getObjectInfo({
+        selectedObject = await storage.getObjectInfo({
           account_id,
           product_id,
           object_path: pathString,
@@ -59,12 +59,10 @@ export default async function ProductPathPage({ params }: PageProps) {
     } else {
       // If we're at the root (no path or empty path), try to fetch and display README
       try {
-        const storageClient = createStorageClient();
-
         // Try to find and fetch README directly
         for (const readmePath of ["README.md"]) {
           try {
-            const readmeResult = await storageClient.getObject({
+            const readmeResult = await storage.getObject({
               account_id,
               product_id,
               object_path: readmePath,
