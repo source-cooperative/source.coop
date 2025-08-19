@@ -3,7 +3,9 @@ import { CONFIG } from "../config";
 import type { StorageClient } from "@/types/storage";
 
 export function createStorageClient(): StorageClient {
-  console.log("Creating storage client with config:", CONFIG);
+  if (CONFIG.environment.debug) {
+    console.log("Creating storage client with config:", CONFIG);
+  }
 
   if (!CONFIG.storage.endpoint || CONFIG.storage.endpoint.trim() === "") {
     console.error("Storage endpoint is missing in CONFIG:", CONFIG);
