@@ -12,6 +12,7 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import { MonoText } from "@/components/core";
 import type { FileNode } from "./utils";
 import type { Product } from "@/types";
+import { formatFileSize } from "./utils";
 import styles from "../ObjectBrowser.module.css";
 
 interface DirectoryListProps {
@@ -24,8 +25,81 @@ interface DirectoryListProps {
   isLoading: boolean;
 }
 
+interface DirectoryRowProps {
+  item: FileNode;
+  index: number;
+  itemsLength: number;
+  product: Product;
+  currentPath: string[];
+  focusedIndex: number;
+  setFocusedIndex: (index: number) => void;
+  itemRefs: React.MutableRefObject<(HTMLAnchorElement | null)[]>;
+  virtualRow?: { start: number };
+}
+
 const ITEM_HEIGHT = 40;
 const MAX_VISIBLE_ITEMS = 20;
+
+function DirectoryRow({
+  item,
+  index,
+  itemsLength,
+  product,
+  currentPath,
+  focusedIndex,
+  setFocusedIndex,
+  itemRefs,
+  virtualRow,
+}: DirectoryRowProps) {
+  const href = item.isDirectory
+    ? `/${product.account_id}/${product.product_id}/${[
+        ...currentPath,
+        item.name,
+      ].join("/")}`
+    : `/${product.account_id}/${product.product_id}/${item.path}`;
+
+  const wrapperStyle = virtualRow
+    ? {
+        position: "absolute" as const,
+        top: 0,
+        transform: `translateY(${virtualRow.start}px)`,
+        left: 0,
+        width: "100%",
+        height: `${ITEM_HEIGHT}px`,
+        willChange: "transform" as const,
+      }
+    : {
+        marginBottom: index < itemsLength - 1 ? "var(--space-2)" : 0,
+      };
+
+  return (
+    <Box key={item.path} style={wrapperStyle}>
+      <Link
+        ref={(el) => {
+          if (el) itemRefs.current[index] = el;
+        }}
+        href={href}
+        onFocus={() => setFocusedIndex(index)}
+        className={styles.item}
+        data-focused={focusedIndex === index}
+      >
+        <Flex justify="between" align="center" style={{ width: "100%" }}>
+          <Flex align="center" gap="2">
+            {item.isDirectory ? (
+              <ChevronRightIcon width={16} height={16} />
+            ) : (
+              <FileIcon width={16} height={16} />
+            )}
+            <MonoText>{item.name}</MonoText>
+          </Flex>
+          {!item.isDirectory && item.size > 0 && (
+            <MonoText>{formatFileSize(item.size)}</MonoText>
+          )}
+        </Flex>
+      </Link>
+    </Box>
+  );
+}
 
 export function DirectoryList({
   items,
@@ -73,11 +147,13 @@ export function DirectoryList({
     return <Text color="gray">This directory is empty.</Text>;
   }
 
+  const isVirtualized = items.length > MAX_VISIBLE_ITEMS;
+
   return (
     <Box
       ref={parentRef}
       style={{
-        ...(items.length > MAX_VISIBLE_ITEMS
+        ...(isVirtualized
           ? {
               maxHeight: `${Math.min(
                 items.length * ITEM_HEIGHT,
@@ -115,97 +191,44 @@ export function DirectoryList({
 
       <Box
         style={{
-          ...(items.length > MAX_VISIBLE_ITEMS
+          ...(isVirtualized
             ? {
                 height: `${rowVirtualizer.getTotalSize()}px`,
                 position: "relative",
                 width: "100%",
               }
-            : {
-                width: "100%",
-              }),
+            : { width: "100%" }),
         }}
       >
-        {items.length > MAX_VISIBLE_ITEMS
-          ? // Virtualized list
-            rowVirtualizer.getVirtualItems().map((virtualRow) => {
-              const item = items[virtualRow.index];
-
-              return (
-                <Box
-                  key={item.path}
-                  style={{
-                    position: "absolute",
-                    top: 0,
-                    transform: `translateY(${virtualRow.start}px)`,
-                    left: 0,
-                    width: "100%",
-                    height: `${ITEM_HEIGHT}px`,
-                    willChange: "transform",
-                  }}
-                >
-                  <Link
-                    ref={(el) => {
-                      if (el) itemRefs.current[virtualRow.index] = el;
-                    }}
-                    href={
-                      item.isDirectory
-                        ? `/${product.account_id}/${product.product_id}/${[
-                            ...currentPath,
-                            item.name,
-                          ].join("/")}`
-                        : `/${product.account_id}/${product.product_id}/${item.path}`
-                    }
-                    onFocus={() => setFocusedIndex(virtualRow.index)}
-                    className={styles.directoryItem}
-                    data-focused={focusedIndex === virtualRow.index}
-                  >
-                    <Flex align="center" gap="2">
-                      {item.isDirectory ? (
-                        <ChevronRightIcon width={16} height={16} />
-                      ) : (
-                        <FileIcon width={16} height={16} />
-                      )}
-                      <MonoText>{item.name}</MonoText>
-                    </Flex>
-                  </Link>
-                </Box>
-              );
-            })
-          : // Non-virtualized list
-            items.map((item, index) => (
-              <Box
+        {isVirtualized
+          ? rowVirtualizer
+              .getVirtualItems()
+              .map((virtualRow) => (
+                <DirectoryRow
+                  key={items[virtualRow.index].path}
+                  item={items[virtualRow.index]}
+                  index={virtualRow.index}
+                  itemsLength={items.length}
+                  product={product}
+                  currentPath={currentPath}
+                  focusedIndex={focusedIndex}
+                  setFocusedIndex={setFocusedIndex}
+                  itemRefs={itemRefs}
+                  virtualRow={{ start: virtualRow.start }}
+                />
+              ))
+          : items.map((item, index) => (
+              <DirectoryRow
                 key={item.path}
-                style={{
-                  marginBottom: index < items.length - 1 ? "var(--space-2)" : 0,
-                }}
-              >
-                <Link
-                  ref={(el) => {
-                    if (el) itemRefs.current[index] = el;
-                  }}
-                  href={
-                    item.isDirectory
-                      ? `/${product.account_id}/${product.product_id}/${[
-                          ...currentPath,
-                          item.name,
-                        ].join("/")}`
-                      : `/${product.account_id}/${product.product_id}/${item.path}`
-                  }
-                  onFocus={() => setFocusedIndex(index)}
-                  className={styles.directoryItem}
-                  data-focused={focusedIndex === index}
-                >
-                  <Flex align="center" gap="2">
-                    {item.isDirectory ? (
-                      <ChevronRightIcon width={16} height={16} />
-                    ) : (
-                      <FileIcon width={16} height={16} />
-                    )}
-                    <MonoText>{item.name}</MonoText>
-                  </Flex>
-                </Link>
-              </Box>
+                item={item}
+                index={index}
+                itemsLength={items.length}
+                product={product}
+                currentPath={currentPath}
+                focusedIndex={focusedIndex}
+                setFocusedIndex={setFocusedIndex}
+                itemRefs={itemRefs}
+              />
             ))}
       </Box>
     </Box>

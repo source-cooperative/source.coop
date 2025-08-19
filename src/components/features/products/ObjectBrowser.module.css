@@ -1,7 +1,7 @@
 .item {
   display: block;
-  padding: var(--space-2);
-  color: var(--accent-12);
+  padding: var(--space-0);
+  color: var(--accent-11);
   text-decoration: underline;
   transition: background-color 100ms ease-in-out,
               outline-color 100ms ease-in-out;
