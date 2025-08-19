@@ -82,6 +82,7 @@ function DirectoryRow({
         onFocus={() => setFocusedIndex(index)}
         className={styles.item}
         data-focused={focusedIndex === index}
+        title={item.name}
       >
         <Flex justify="between" align="center" style={{ width: "100%" }}>
           <Flex align="center" gap="2">
