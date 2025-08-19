@@ -37,84 +37,86 @@ export default async function ProductPathPage({ params }: PageProps) {
 
   // Check if this is a file path (ends with a file extension)
   const isFilePath = pathString && /\.\w+$/.test(pathString);
-  const product = await productsTable.fetchById(account_id, product_id);
-  if (!product) {
-    return notFound();
-  }
 
-  try {
-    let selectedObject: ProductObject | undefined;
-    let readmeContent = "";
+  // 2. Run concurrent requests for better performance
+  const [product, objectInfo, readmeContent, objectsList] =
+    await Promise.allSettled([
+      // Always fetch product info
+      productsTable.fetchById(account_id, product_id),
 
-    if (isFilePath) {
-      try {
-        selectedObject = await storage.getObjectInfo({
+      // If file path, fetch object info
+      isFilePath
+        ? storage.getObjectInfo({
+            account_id,
+            product_id,
+            object_path: pathString,
+          })
+        : Promise.resolve(undefined),
+
+      // If directory, try to fetch README
+      !isFilePath
+        ? storage
+            .getObject({
+              account_id,
+              product_id,
+              object_path: "README.md",
+            })
+            .then((result) => {
+              if (result.data instanceof Buffer) {
+                return result.data.toString("utf-8");
+              }
+              return "";
+            })
+            .catch(() => "") // Ignore README fetch errors
+        : Promise.resolve(""),
+
+      // Always fetch objects list for directory browsing
+      storage
+        .listObjects({
           account_id,
           product_id,
           object_path: pathString,
-        });
-      } catch {
-        // Ignore if object info cannot be fetched
-      }
-    } else {
-      // If we're at the root (no path or empty path), try to fetch and display README
-      try {
-        // Try to find and fetch README directly
-        for (const readmePath of ["README.md"]) {
-          try {
-            const readmeResult = await storage.getObject({
-              account_id,
-              product_id,
-              object_path: readmePath,
-            });
+          prefix:
+            pathString && !pathString.endsWith("/")
+              ? `${pathString}/`
+              : pathString,
+          delimiter: "/",
+        })
+        .then((result) => result.objects || [])
+        .catch(() => []),
+    ]);
 
-            // Convert buffer to string
-            if (readmeResult.data instanceof Buffer) {
-              readmeContent = readmeResult.data.toString("utf-8");
-              break; // Found a README, no need to check other paths
-            } else {
-              // Handle ReadableStream if needed
-              console.warn(
-                "README data is not a Buffer, skipping content display"
-              );
-            }
-          } catch (error) {
-            // File doesn't exist or can't be accessed, try next path
-            continue;
-          }
-        }
-      } catch (error) {
-        console.error("Error checking for README files:", error);
-        // Continue without README if there's an error
-      }
-    }
-
-    return (
-      <Container>
-        <Box mt="4">
-          <ObjectBrowser
-            product={product}
-            initialPath={pathString}
-            selectedObject={selectedObject}
-          />
-        </Box>
-
-        {/* Display README if available and we're at the root */}
-        {readmeContent && !pathString && (
-          <Box mt="4">
-            <MarkdownViewer content={readmeContent} />
-          </Box>
-        )}
-      </Container>
-    );
-  } catch (error) {
-    console.error("Error loading product path:", error);
-    return (
-      <Text role="alert" color="red" size="3">
-        {error instanceof Error
-          ? error.message
-          : "An error occurred while loading product contents"}
-      </Text>
-    );
+  // Handle product fetch failure
+  if (product.status === "rejected" || !product.value) {
+    return notFound();
   }
+
+  // Extract values from settled promises
+  const selectedObject: ProductObject | undefined =
+    objectInfo.status === "fulfilled" ? objectInfo.value : undefined;
+
+  const readme =
+    readmeContent.status === "fulfilled" ? readmeContent.value : "";
+
+  const objects = objectsList.status === "fulfilled" ? objectsList.value : [];
+
+  return (
+    <Container>
+      <Box mt="4">
+        <ObjectBrowser
+          product={product.value}
+          initialPath={pathString}
+          selectedObject={selectedObject}
+          objects={objects}
+        />
+      </Box>
+
+      {/* Display README if available and we're at the root */}
+      {readme && !pathString && (
+        <Box mt="4">
+          <MarkdownViewer content={readme} />
+        </Box>
+      )}
+    </Container>
+  );
 }

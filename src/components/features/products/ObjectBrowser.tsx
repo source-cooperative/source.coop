@@ -13,32 +13,39 @@ export interface ObjectBrowserProps {
   product: Product;
   initialPath?: string;
   selectedObject?: ProductObject;
+  objects?: ProductObject[]; // Allow parent to pass objects to avoid duplicate calls
 }
 
 export async function ObjectBrowser({
   product,
   initialPath = "",
   selectedObject,
+  objects: providedObjects,
 }: ObjectBrowserProps) {
   const currentPath = initialPath ? initialPath.split("/").filter(Boolean) : [];
   const pathString = currentPath.join("/");
 
-  // Fetch objects server-side
+  // Use provided objects or fetch them if needed
   let objects: ProductObject[] = [];
-  try {
-    const prefix =
-      pathString && !pathString.endsWith("/") ? `${pathString}/` : pathString;
-    const result = await storage.listObjects({
-      account_id: product.account_id,
-      product_id: product.product_id,
-      object_path: pathString,
-      prefix,
-      delimiter: "/",
-    });
-    objects = result.objects || [];
-  } catch (error) {
-    console.error("Error fetching objects:", error);
-    objects = [];
+  if (providedObjects) {
+    objects = providedObjects;
+  } else if (!selectedObject || selectedObject.type === "directory") {
+    // Only fetch objects if we don't have them and we're not showing a file
+    try {
+      const prefix =
+        pathString && !pathString.endsWith("/") ? `${pathString}/` : pathString;
+      const result = await storage.listObjects({
+        account_id: product.account_id,
+        product_id: product.product_id,
+        object_path: pathString,
+        prefix,
+        delimiter: "/",
+      });
+      objects = result.objects || [];
+    } catch (error) {
+      console.error("Error fetching objects:", error);
+      objects = [];
+    }
   }
 
   // Build directory tree
