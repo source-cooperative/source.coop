@@ -85,16 +85,28 @@ function DirectoryRow({
         title={item.name}
       >
         <Flex justify="between" align="center" style={{ width: "100%" }}>
-          <Flex align="center" gap="2">
+          <Flex align="center" gap="2" style={{ minWidth: 0, flex: 1 }}>
             {item.isDirectory ? (
               <ChevronRightIcon width={16} height={16} />
             ) : (
               <FileIcon width={16} height={16} />
             )}
-            <MonoText>{item.name}</MonoText>
+            <MonoText
+              style={{
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+                minWidth: 0,
+                flex: 1,
+              }}
+            >
+              {item.name}
+            </MonoText>
           </Flex>
           {!item.isDirectory && item.size > 0 && (
-            <MonoText>{formatFileSize(item.size)}</MonoText>
+            <MonoText style={{ flexShrink: 0, marginLeft: "var(--space-2)" }}>
+              {formatFileSize(item.size)}
+            </MonoText>
           )}
         </Flex>
       </Link>
@@ -171,9 +183,10 @@ export function DirectoryList({
         <Box
           className={styles.scrollIndicator}
           style={{
-            position: "absolute",
+            position: "fixed",
             bottom: "8px",
             left: "50%",
+            transform: "translateX(-50%)",
             zIndex: 10,
             background: "var(--gray-3)",
             borderRadius: "var(--radius-2)",
@@ -181,6 +194,7 @@ export function DirectoryList({
             display: "flex",
             alignItems: "center",
             gap: "4px",
+            pointerEvents: "none",
           }}
         >
           <Text size="1" color="gray">
