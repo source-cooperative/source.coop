@@ -25,13 +25,15 @@ For DynamoDB, cursor-based pagination is the **only efficient approach**:
 const result = await getPaginatedProducts(limit, cursor, previousCursor);
 
 // Render
-<ProductList 
+<ProductsList 
   products={result.products}
-  hasNextPage={result.hasNextPage}
-  hasPreviousPage={result.hasPreviousPage}
-  nextCursor={result.nextCursor}
-  previousCursor={result.previousCursor}
-  currentCursor={cursor}
+  pagination={{
+    hasNextPage: result.hasNextPage,
+    hasPreviousPage: result.hasPreviousPage,
+    nextCursor: result.nextCursor,
+    previousCursor: result.previousCursor,
+    currentCursor: cursor
+  }}
 />
 ```
 
@@ -68,7 +70,7 @@ const result = await getPaginatedProducts(limit, cursor, previousCursor);
 ## Components
 
 - **Pagination**: Previous/Next buttons wrapped in Link components
-- **ProductList**: Wraps products with pagination
+- **ProductsList**: Wraps products with pagination
 - **Server Action**: Efficient cursor-based data fetching
 
 That's it! Efficient, scalable, accessible, and SEO-friendly - perfect for DynamoDB.

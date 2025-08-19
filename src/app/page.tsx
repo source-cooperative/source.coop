@@ -1,34 +1,34 @@
-import { Container, Box, Heading } from "@radix-ui/themes";
-import { ProductList } from "@/components/features/products";
-import { productsTable } from "@/lib/clients/database";
+import { Container, Heading, Text, Box } from "@radix-ui/themes";
+import { ProductsList } from "@/components/features/products/ProductsList";
+import { getProducts } from "@/lib/actions/products";
+
+export const metadata = {
+  title: "Featured Products | Source.coop",
+  description: "Browse and discover public data products on Source.coop",
+};
 
 export default async function HomePage() {
-  try {
-    const result = await productsTable.listPublic(10);
+  // Fetch featured products on the server
+  const result = await getProducts({
+    featuredOnly: true,
+    limit: 10,
+  });
 
-    return (
-      <Container size="4" py="6">
-        <Box>
-          <Heading size="6" mb="4">
-            Featured Products
-          </Heading>
-          <ProductList products={result.products} />
-        </Box>
-      </Container>
-    );
-  } catch (error) {
-    console.error("Failed to load products:", error);
-    return (
-      <Container size="4" py="6">
-        <Box>
-          <Heading size="6" mb="4">
-            Featured Products
-          </Heading>
-          <div>
-            <p>Failed to load products. Please try again later.</p>
-          </div>
-        </Box>
-      </Container>
-    );
-  }
+  return (
+    <Container size="4" py="6">
+      <Box>
+        <Heading size="6" mb="2">
+          Featured Products
+        </Heading>
+        <Text as="p" size="3" color="gray" mb="6">
+          Discover the latest and most popular data products from the
+          Source.coop community.
+        </Text>
+        <ProductsList
+          products={result.products}
+          // No pagination for featured products
+        />
+      </Box>
+    </Container>
+  );
 }

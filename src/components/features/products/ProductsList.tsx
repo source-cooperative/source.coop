@@ -1,45 +1,37 @@
 "use client";
 
 import { useState } from "react";
+import { Box, Text } from "@radix-ui/themes";
 import type { Product } from "@/types";
 import { ProductListItem } from "./ProductListItem";
 import { ShortcutHelp } from "@/components/features/keyboard/ShortcutHelp";
 import { useProductListKeyboardShortcuts } from "@/hooks/useProductListKeyboardShortcuts";
-import { Text } from "@radix-ui/themes";
-import { Pagination } from "./Pagination";
 import styles from "./ProductList.module.css";
 
-interface PaginationInfo {
-  hasNextPage: boolean;
-  hasPreviousPage: boolean;
-  nextCursor?: string;
-  previousCursor?: string;
-  currentCursor?: string;
-}
-
-interface ProductListProps {
+interface ProductsListProps {
   products: Product[];
-  pagination?: PaginationInfo;
 }
 
-export function ProductList({ products, pagination }: ProductListProps) {
+export function ProductsList({ products }: ProductsListProps) {
   const [showHelp, setShowHelp] = useState(false);
 
-  const { itemRefs, selectedIndex } = useProductListKeyboardShortcuts({
+  const { selectedIndex } = useProductListKeyboardShortcuts({
     products,
     onShowHelp: () => setShowHelp(true),
   });
 
   if (!products.length) {
     return (
-      <Text as="p" className={styles.empty}>
-        No products found.
-      </Text>
+      <Box p="8">
+        <Text size="3" color="gray" align="center">
+          No products found matching your criteria.
+        </Text>
+      </Box>
     );
   }
 
   return (
-    <div>
+    <Box>
       <nav aria-label="Product list">
         <ul className={styles.list} role="listbox">
           {products.map((product, index) => (
@@ -51,30 +43,17 @@ export function ProductList({ products, pagination }: ProductListProps) {
               <ProductListItem
                 product={product}
                 isSelected={index === selectedIndex}
-                ref={(el) => {
-                  itemRefs.current[index] = el;
-                }}
               />
             </li>
           ))}
         </ul>
       </nav>
 
-      {pagination && (
-        <Pagination
-          hasNextPage={pagination.hasNextPage}
-          hasPreviousPage={pagination.hasPreviousPage}
-          nextCursor={pagination.nextCursor}
-          previousCursor={pagination.previousCursor}
-          currentCursor={pagination.currentCursor}
-        />
-      )}
-
       <ShortcutHelp
         open={showHelp}
         onOpenChange={setShowHelp}
         context="product-list"
       />
-    </div>
+    </Box>
   );
 }

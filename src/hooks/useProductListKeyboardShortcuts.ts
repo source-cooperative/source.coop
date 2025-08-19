@@ -1,4 +1,5 @@
-import { useRef, useEffect, useCallback, useState } from "react";
+import { useEffect, useCallback, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { Product } from "@/types";
 
 interface UseProductListKeyboardShortcutsOptions {
@@ -10,7 +11,7 @@ export function useProductListKeyboardShortcuts({
   products,
   onShowHelp,
 }: UseProductListKeyboardShortcutsOptions) {
-  const itemRefs = useRef<(HTMLElement | null)[]>([]);
+  const router = useRouter();
   const [selectedIndex, setSelectedIndex] = useState(0);
 
   const handleKeyDown = useCallback(
@@ -34,10 +35,8 @@ export function useProductListKeyboardShortcuts({
         case " ":
           event.preventDefault();
           if (products[selectedIndex]) {
-            const element = itemRefs.current[selectedIndex];
-            if (element) {
-              element.click();
-            }
+            const product = products[selectedIndex];
+            router.push(`/${product.account_id}/${product.product_id}`);
           }
           break;
         case "?":
@@ -46,7 +45,7 @@ export function useProductListKeyboardShortcuts({
           break;
       }
     },
-    [products, selectedIndex, onShowHelp]
+    [products, selectedIndex, onShowHelp, router]
   );
 
   useEffect(() => {
@@ -56,5 +55,5 @@ export function useProductListKeyboardShortcuts({
 
   useEffect(() => setSelectedIndex(0), [products]);
 
-  return { itemRefs, selectedIndex };
+  return { selectedIndex };
 }

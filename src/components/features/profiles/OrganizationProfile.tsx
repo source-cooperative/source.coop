@@ -17,7 +17,7 @@ import type {
 import type { Product } from "@/types";
 import type { AccountEmail } from "@/types/account";
 import type { AccountDomain } from "@/types/account_v2";
-import { ProductList } from "@/components/features/products/ProductList";
+import { ProductsList } from "@/components/features/products/ProductsList";
 import { OrganizationMembers } from "./OrganizationMembers";
 import { ProfileAvatar } from "./ProfileAvatar";
 import { WebsiteLink } from "./WebsiteLink";
@@ -146,7 +146,7 @@ export function OrganizationProfile({
           <Heading as="h2" size="4" mb="2">
             Products
           </Heading>
-          <ProductList products={products} pagination={pagination} />
+          <ProductsList products={products} />
         </Box>
       )}
     </Box>

@@ -11,7 +11,7 @@ import Link from "next/link";
 import type { AccountV2, IndividualAccount } from "@/types/account_v2";
 import type { Account, Product } from "@/types";
 import { ProfileAvatar } from "./ProfileAvatar";
-import { ProductList } from "../products/ProductList";
+import { ProductsList } from "../products/ProductsList";
 import { WebsiteLink } from "./WebsiteLink";
 import { EmailVerificationStatus } from "./EmailVerificationStatus";
 import { IndividualProfileActions } from "./IndividualProfileActions";
@@ -168,10 +168,7 @@ export function IndividualProfile({
           <Heading size="4" mb="2">
             Products
           </Heading>
-          <ProductList
-            products={ownedProducts}
-            pagination={pagination.ownedProducts}
-          />
+          <ProductsList products={ownedProducts} />
         </Box>
       )}
 
@@ -180,10 +177,7 @@ export function IndividualProfile({
           <Heading size="4" mb="2">
             Contributions
           </Heading>
-          <ProductList
-            products={contributedProducts}
-            pagination={pagination.contributedProducts}
-          />
+          <ProductsList products={contributedProducts} />
         </Box>
       )}
     </Box>
