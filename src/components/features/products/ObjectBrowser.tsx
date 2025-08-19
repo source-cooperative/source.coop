@@ -84,8 +84,6 @@ export async function ObjectBrowser({
         items={items}
         currentPath={currentPath}
         product={product}
-        enableVirtualization={false}
-        enableKeyboardNavigation={false}
       />
     </Card>
   );
