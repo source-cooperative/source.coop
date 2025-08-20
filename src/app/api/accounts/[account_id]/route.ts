@@ -110,6 +110,7 @@ export async function PUT(
 ) {
   try {
     const session = await getApiSession(request);
+    console.log("api session", session);
     if (!session) {
       return NextResponse.json(
         {
@@ -128,7 +129,6 @@ export async function PUT(
 
     // Only allow the user to update their own account
     const sessionAccountId = session?.account?.account_id;
-    console.log(session);
 
     if (session.account?.disabled) {
       return NextResponse.json(
