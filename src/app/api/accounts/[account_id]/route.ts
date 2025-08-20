@@ -109,7 +109,7 @@ export async function PUT(
   { params }: { params: Promise<{ account_id: string }> }
 ) {
   try {
-    const session = (await getApiSession(request)) as ExtendedSession;
+    const session = await getApiSession(request);
     if (!session) {
       return NextResponse.json(
         {
@@ -127,14 +127,15 @@ export async function PUT(
     console.log("API: Updating account:", account_id);
 
     // Only allow the user to update their own account
-    const sessionAccountId = session?.identity?.metadata_public?.account_id;
+    const sessionAccountId = session?.account?.account_id;
+    console.log(session);
 
-    if (!session.active) {
+    if (session.account?.disabled) {
       return NextResponse.json(
         {
           error: {
             code: "401",
-            message: "Unauthorized: Session inactive",
+            message: "Unauthorized: Account disabled",
             status: "Unauthorized",
           },
         },
@@ -156,7 +157,7 @@ export async function PUT(
     }
 
     // Check if user is updating their own account or is an admin
-    const isAdmin = !!session?.identity?.metadata_public?.is_admin;
+    const isAdmin = !!session?.account?.metadata_public?.is_admin;
     const isAuthenticatedUser = sessionAccountId === account_id;
 
     if (!isAuthenticatedUser && !isAdmin) {

@@ -59,6 +59,7 @@ export const AccountProfileSchema = z
         return location === "" ? undefined : location;
       }, z.optional(z.string().max(128, "Location must not exceed 128 characters")))
       .openapi({ example: "Augsburg, Germany" }),
+    is_admin: z.boolean().optional(),
   })
   .openapi("AccountProfile");
 
