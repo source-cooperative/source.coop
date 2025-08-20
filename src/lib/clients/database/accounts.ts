@@ -48,6 +48,34 @@ class AccountsTable extends BaseTable {
     }
   }
 
+  async fetchByOryId(identity_id: string): Promise<Account | null> {
+    try {
+      console.log(`DB: Trying to fetch account by Ory ID:`, identity_id);
+      const result = await this.client.send(
+        new QueryCommand({
+          TableName: this.table,
+          IndexName: "identity_id",
+          KeyConditionExpression: "metadata_private.identity_id = :identity_id",
+          ExpressionAttributeValues: {
+            ":identity_id": identity_id,
+          },
+        })
+      );
+
+      if (result.Items && result.Items.length > 0) {
+        console.log(`DB: Found account by Ory ID:`, identity_id);
+        return result.Items[0] as Account;
+      }
+
+      return null;
+    } catch (error) {
+      if (error instanceof ResourceNotFoundException) return null;
+
+      this.logError("fetchByOryId", error, { identity_id });
+      throw error;
+    }
+  }
+
   async create(account: Account): Promise<Account> {
     await this.client.send(
       new PutCommand({
