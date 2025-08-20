@@ -30,7 +30,7 @@ interface BaseAccount {
     bio?: string;
     domains?: AccountDomain[];
   };
-  metadata_private: {};
+  metadata_private: { [key: string]: any };
   identity_id: string;
 }
 

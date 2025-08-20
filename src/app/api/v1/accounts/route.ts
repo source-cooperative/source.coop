@@ -62,12 +62,8 @@ export async function POST(request: NextRequest) {
       updated_at: new Date().toISOString(),
       disabled: false,
       flags,
-      metadata_private:
-        accountRequest.type === AccountType.INDIVIDUAL
-          ? {
-              identity_id: session?.identity_id ?? "",
-            }
-          : undefined,
+      metadata_private: {},
+      identity_id: session!.identity_id!,
     };
     if (!isAuthorized(session, newAccount, Actions.CreateAccount)) {
       return NextResponse.json(
