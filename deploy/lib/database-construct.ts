@@ -46,7 +46,7 @@ export class DatabaseConstruct extends Construct {
         },
         {
           name: "identity_id",
-          partitionKey: "metadata_private.identity_id",
+          partitionKey: "identity_id",
         },
       ],
       removalPolicy,

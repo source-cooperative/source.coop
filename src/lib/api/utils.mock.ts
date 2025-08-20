@@ -91,7 +91,7 @@ for (const account of accounts) {
 
   sessions[account.account_id] = {
     account: account,
-    identity_id: account.metadata_private?.identity_id,
+    identity_id: account.identity_id,
     memberships: accountMemberships,
   };
 }

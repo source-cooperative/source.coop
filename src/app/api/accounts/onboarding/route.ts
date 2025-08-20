@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from "next/server";
 import type { IndividualAccount } from "@/types/account_v2";
 import { updateOryIdentity } from "@/lib/ory";
 import { accountsTable } from "@/lib/clients/database";
@@ -62,9 +62,8 @@ export async function POST(request: NextRequest) {
       metadata_public: {
         domains: [],
       },
-      metadata_private: {
-        identity_id: ory_id,
-      },
+      metadata_private: {},
+      identity_id: ory_id,
     };
 
     console.log("Attempting to create account in DynamoDB:", newAccount);
@@ -163,4 +162,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-} 
+}

@@ -55,7 +55,7 @@ class AccountsTable extends BaseTable {
         new QueryCommand({
           TableName: this.table,
           IndexName: "identity_id",
-          KeyConditionExpression: "metadata_private.identity_id = :identity_id",
+          KeyConditionExpression: "identity_id = :identity_id",
           ExpressionAttributeValues: {
             ":identity_id": identity_id,
           },
@@ -96,7 +96,7 @@ class AccountsTable extends BaseTable {
           type: account.type,
         },
         UpdateExpression:
-          "SET #name = :name, emails = :emails, updated_at = :updated_at, disabled = :disabled, flags = :flags, metadata_public = :metadata_public, metadata_private = :metadata_private",
+          "SET #name = :name, emails = :emails, updated_at = :updated_at, disabled = :disabled, flags = :flags, metadata_public = :metadata_public, metadata_private = :metadata_private, identity_id = :identity_id",
         ExpressionAttributeNames: {
           "#name": "name", // name is a reserved word in DynamoDB
         },
@@ -108,6 +108,8 @@ class AccountsTable extends BaseTable {
           ":flags": account.flags,
           ":metadata_public": account.metadata_public,
           ":metadata_private": account.metadata_private,
+          ":identity_id":
+            account.identity_id || account.metadata_private?.identity_id,
         },
         ReturnValues: "ALL_NEW",
       })

@@ -110,6 +110,7 @@ export const AccountSchema = z
         identity_id: z.string().openapi({ example: "identity-id" }),
       })
     ),
+    identity_id: z.string().openapi({ example: "identity-id" }),
   })
   .openapi("Account");
 
