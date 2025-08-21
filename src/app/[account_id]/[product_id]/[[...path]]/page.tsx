@@ -10,18 +10,13 @@ import { DataConnection, ProductMirror } from "@/types";
 
 export async function generateMetadata({ params }: PageProps) {
   const { account_id, product_id, path } = await params;
-  let title: string;
   const product = await productsTable.fetchById(account_id, product_id);
+  let title = product?.title || "Untitled Product";
   if (path) {
-    title = `${path.join("/")} | ${product?.title}`;
-  } else {
-    title = product?.title!;
+    title = `${path.join("/")} | ${title}`;
   }
-
-  return {
-    title,
-    description: product?.description || "A product on Source.coop",
-  };
+  const description = product?.description || "A product on Source.coop";
+  return { title, description };
 }
 
 interface PageProps {
