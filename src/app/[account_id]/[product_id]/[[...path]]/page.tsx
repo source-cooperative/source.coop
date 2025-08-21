@@ -18,9 +18,10 @@ import { ObjectBrowser } from "@/components/features/products";
 import { MarkdownViewer } from "@/components/features/markdown";
 
 // Utilities
-import { productsTable } from "@/lib/clients/database";
+import { dataConnectionsTable, productsTable } from "@/lib/clients/database";
 import { storage } from "@/lib/clients/storage";
 import type { ProductObject } from "@/types/product_object";
+import { DataConnection, ProductMirror } from "@/types";
 
 interface PageProps {
   params: Promise<{
@@ -34,7 +35,6 @@ export default async function ProductPathPage({ params }: PageProps) {
   // 1. Get and await params
   const { account_id, product_id, path } = await params;
   const object_path = decodeURIComponent(path?.join("/") || "");
-
 
   // 2. Run concurrent requests for better performance
   const [product, objectInfo, readmeContent, objectsList] =
@@ -98,6 +98,32 @@ export default async function ProductPathPage({ params }: PageProps) {
 
   const objects = objectsList.status === "fulfilled" ? objectsList.value : [];
 
+  let connectionDetails:
+    | {
+        primaryMirror: ProductMirror;
+        dataConnection: DataConnection;
+      }
+    | undefined = undefined;
+
+  if (selectedObject) {
+    const primaryMirror =
+      product.value.metadata.mirrors[product.value.metadata.primary_mirror];
+    const dataConnection = await dataConnectionsTable.fetchById(
+      primaryMirror.connection_id
+    );
+    if (!dataConnection) {
+      console.error(
+        `Data connection not found for ${primaryMirror.connection_id}`,
+        { primaryMirror }
+      );
+    } else {
+      connectionDetails = {
+        primaryMirror,
+        dataConnection,
+      };
+    }
+  }
+
   return (
     <Container>
       <Box mt="4">
@@ -106,6 +132,7 @@ export default async function ProductPathPage({ params }: PageProps) {
           initialPath={object_path}
           selectedObject={selectedObject || undefined}
           objects={objects}
+          connectionDetails={connectionDetails}
         />
       </Box>
 
