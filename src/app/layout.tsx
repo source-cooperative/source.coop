@@ -33,11 +33,27 @@ export default async function RootLayout({
     const oryId = getOryId(session);
     if (oryId) {
       account = await accountsTable.fetchByOryId(oryId);
-    } else {
       // If we have a session but no account, that means a user is authenticated but we need
       // to redirect to the email verification page so that a user can setup their account.
-      if (session && !account) {
+      if (!account) {
         redirect("/onboarding", RedirectType.replace);
+      }
+
+      // If we have an account but no email, we add the email from the session.
+      if (account.emails?.length === 0 && session.identity?.traits.email) {
+        account.emails = [
+          {
+            address: session.identity.traits.email,
+            verified: false,
+            is_primary: true,
+            added_at: new Date().toISOString(),
+          },
+        ];
+        try {
+          await accountsTable.update(account);
+        } catch (error) {
+          console.error("Failed to add email to account", error);
+        }
       }
     }
   }

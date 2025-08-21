@@ -133,12 +133,12 @@ function convertAccountToNewSchema(oldAccount: any) {
 
   // Ensure at least one email exists (use account_id as fallback)
   if (emails.length === 0) {
-    emails.push({
-      address: `${oldAccount.account_id}@placeholder.source.coop`,
-      verified: false,
-      is_primary: true,
-      added_at: now,
-    });
+    // emails.push({
+    //   address: `${oldAccount.account_id}@placeholder.source.coop`,
+    //   verified: false,
+    //   is_primary: true,
+    //   added_at: now,
+    // });
   }
 
   // Build metadata_public object, only including defined values
