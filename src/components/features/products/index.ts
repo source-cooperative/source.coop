@@ -8,7 +8,6 @@ export { ProductSearchResult } from "./ProductSearchResult";
 export { TagList } from "./TagList";
 export { ObjectBrowser } from "./ObjectBrowser";
 export { ChecksumVerifier } from "./ChecksumVerifier";
-export { Pagination } from "./Pagination";
 export { ProductsFilters } from "./ProductsFilters";
 export { ProductsList } from "./ProductsList";
 export { ProductsSkeleton } from "./ProductsSkeleton";
