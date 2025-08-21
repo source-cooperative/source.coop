@@ -1,99 +1,138 @@
-# Source Cooperative Frontend & API
+# Source Cooperative 
 
-This repository contains the Next.JS application which hosts the Source Cooperative frontend and API.
+A data publishing utility that allows trusted organizations and individuals to share data using standard HTTP methods.
 
-## Getting Started
+## Project Status
+
+Source Cooperative is operational and available at [https://source.coop](https://source.coop), providing access to over 800TB of data. 
+
+A new version of the Source Cooperative web app called *S2* is under active development. It is currently only available to be deployed locally and is not yet available in staging or production environments.
+
+### Development Stages
+- **Current**: Local Development (v0.1.0 - v0.3.0)
+- **Planned**: Staging Environment (v0.4.0)
+- **Planned**: Production Release (v0.6.0)
+
+## Documentation
+
+The project documentation is organized in the `docs/` directory with the following structure:
+
+```
+docs/
+├── architecture/           # System architecture and design
+│   ├── overview.md        # High-level system overview
+│   ├── data-model.md      # Data structures and relationships
+│   ├── storage.md         # Storage architecture details
+│   └── authentication.md  # Authentication and authorization
+├── development/           # Development guidelines
+│   ├── setup.md          # Development environment setup
+│   ├── coding-standards.md # Coding standards and practices
+│   ├── testing.md        # Testing guidelines and protocols
+│   └── performance.md    # Performance optimization guidelines
+├── roadmap/              # Project roadmap and planning
+│   ├── overview.md       # High-level roadmap
+│   ├── current.md        # Current sprint and priorities
+│   └── future.md         # Future considerations
+└── releases/             # Release information
+    └── changelog.md      # Detailed changelog
+```
+
+### Key Documentation Sections
+
+- **Architecture**: System design, data models, and technical decisions
+- **Development**: Guidelines for contributing and development practices
+- **Roadmap**: Project planning and future development stages
+- **Releases**: Version history and changelog
+
+## Development Setup
 
 ### Prerequisites
+- Node.js 18+
+- Docker and Docker Compose
+- Git
+- AWS CLI (for local DynamoDB interaction)
 
-- Docker installed and running locally
-- NPM installed on your local machine
-- AWS CLI installed on your local machine
+### Local Development
+1. Clone the repository
+2. Copy `.env.example` to `.env.local`
+3. Install dependencies: `npm install`
+4. Start development server: `npm run dev`
 
-Ensure the AWS CLI is configured (even if the values don't matter) by running, e.g.:
-
-```bash
-$ aws configure
-AWS Access Key ID [None]: dummy
-AWS Secret Access Key [None]: dummy
-Default region name [None]: us-east-1
-Default output format [None]:
-```
-
-### Install Dependencies
-
-To install the dependencies, run the following command:
-
-```
-npm install
-```
-
-### Installing the Source Cooperative CLI
-
-To install the Source Cooperative CLI, run the following command:
-
-```
-npm run install-cli
-```
-
-### Setting up Ory
-
-To set up Ory, create an [Ory](https://ory.sh) account and create a new project in the [console](https://console.ory.sh).
-After creating the project, navigate to Ory Project settings tab and create a new API key within the API Keys section.
-Copy the API key and set it as the `ORY_ACCESS_TOKEN` environment variable.
-Next, copy the `API endpoint` URL and set it as the `ORY_SDK_URL` environment variable.
-
-You can copy `.env.local` to `.env` and set the values inside it to avoid leaking secrets, since the latter file is not versioned. Also `.env` is loaded after `.env.local`, so it will override the values.
+### Database Setup
+The application requires a DynamoDB instance for data storage. We've added several convenience scripts to manage the local DynamoDB:
 
 ```bash
-cp .env.local .env
-vi .env
+# Start DynamoDB (will prompt for table initialization if needed)
+npm run start-dynamodb
+
+# Check if DynamoDB is running
+npm run check-dynamodb
+
+# Initialize DynamoDB tables and sample data
+npm run init-local
 ```
+
+When you run `npm run dev`, the system automatically:
+1. Checks if DynamoDB is running
+2. Starts DynamoDB if it's not running
+3. Skips initialization if tables already exist
+
+### Development Environment
+- Local DynamoDB running on port 8000
+- Local file storage in `./test-storage`
+- Ory Kratos for authentication
+- Environment variables in `.env.local`
+
+## Contributing
+
+See [Development Guidelines](docs/development/coding-standards.md) for detailed information about contributing to the project.
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+### Development Guidelines
+
+- Follow the patterns outlined in `CURSOR_RULES.md`
+- Components use Radix UI for consistent theming
+- Pages follow Next.js 13+ App Router conventions
+- TypeScript is used throughout the project
+
+### Available Scripts
 
 ```bash
-ORY_ACCESS_TOKEN=ory_pat_xxxxx
-ORY_SDK_URL=https://[PROJECT_SLUG].projects.oryapis.com
+# Development
+npm run dev         # Start development server
+# npm run build       # Build production bundle
+# npm run start      # Start production server
+npm run lint       # Run ESLint
+npm run type-check # Run TypeScript checks
 ```
 
-The `PROJECT_SLUG` for your Ory project can be found on the main "Project settings" page in the Ory console.
+### Troubleshooting
 
-### Run Locally
+**Common Issues:**
 
-After having set up your environment variables, run the following command to start the service locally:
+1. **Build errors**
+   - Ensure all dependencies are installed
+   - Clear `.next` directory and rebuild
+   ```bash
+   rm -rf .next
+   npm run build
+   ```
 
-```
-npm run dev
-```
+2. **Environment variables not working**
+   - Verify `.env.local` exists and is properly configured
+   - Restart the development server
 
-You can now access the service at [http://localhost:3000](http://localhost:3000).
+3. **Type errors**
+   - Run `npm run type-check` to identify issues
+   - Ensure types are properly imported
 
-You can also check that the was correctly initialized by running the following command and ensuring it contains a non-empty list of tables:
+### Additional Resources
 
-```
-aws dynamodb list-tables --page-size 1 --endpoint-url=http://localhost:8000
-```
+- [Next.js Documentation](https://nextjs.org/docs)
+- [Radix UI Documentation](https://www.radix-ui.com/docs/primitives/overview/introduction)
+- [TypeScript Documentation](https://www.typescriptlang.org/docs/)
 
-Now, make sure that you have the [Source Cooperative Data Proxy](https://github.com/source-cooperative/data.source.coop) running locally as well.
-
-### Resetting the Database
-
-To reset the database, stop the local webserver and run the following CLI command:
-
-```
-npm run kill
-```
-
-You will need to restart the local webserver after running this command.
-
-
-## Running Tests
-
-To run the tests, run the following command:
-
-```
-npm run test
-```
-
-## Deployment
-
-Any commits pushed to the `main` branch will be automatically deployed via Vercel.
+Copyright 2024 Radiant Earth 

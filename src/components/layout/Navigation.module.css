@@ -1,0 +1,17 @@
+.nav {
+  border-bottom: 1px solid var(--gray-5);
+  background: var(--gray-1);
+}
+
+.logo {
+  text-decoration: none;
+  color: inherit;
+}
+
+.chevron {
+  transition: transform 0.3s ease;
+}
+
+.chevron[data-state="open"] {
+  transform: rotate(180deg);
+} 

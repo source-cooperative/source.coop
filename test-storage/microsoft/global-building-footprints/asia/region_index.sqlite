@@ -1,0 +1,15 @@
+CREATE TABLE regions (
+    id INTEGER PRIMARY KEY,
+    name TEXT NOT NULL,
+    country TEXT NOT NULL,
+    total_buildings INTEGER,
+    total_area_sqkm REAL,
+    last_updated DATE
+);
+
+INSERT INTO regions VALUES
+(1, 'Tokyo Metropolitan', 'Japan', 8765432, 2187.65, '2024-03-01'),
+(2, 'Shanghai Region', 'China', 6543210, 1654.32, '2024-02-28'),
+(3, 'Mumbai Metropolitan', 'India', 5432109, 1432.10, '2024-02-15'),
+(4, 'Seoul Capital Area', 'South Korea', 4321098, 1321.09, '2024-03-10'),
+(5, 'Bangkok Metro', 'Thailand', 3210987, 1210.98, '2024-02-20'); 

@@ -1,0 +1,99 @@
+{
+  "dataset_id": "germany-crops-2023",
+  "version": "1.0.0",
+  "created": "2023-05-15T10:00:00Z",
+  "updated": "2024-03-01T08:30:00Z",
+  "description": "Agricultural crop type classification dataset covering Germany for the 2023 growing season",
+  "citation": "Radiant Earth Foundation. (2024). Germany Crop Classification Dataset 2023. Radiant MLHub. https://doi.org/10.5281/zenodo.1234567",
+  "license": "CC BY-NC-SA 4.0",
+  "spatial_coverage": {
+    "type": "Polygon",
+    "coordinates": [[[5.98865807458, 47.3024876979], [15.0169958839, 47.3024876979], [15.0169958839, 54.983104153], [5.98865807458, 54.983104153], [5.98865807458, 47.3024876979]]]
+  },
+  "temporal_coverage": {
+    "start": "2023-03-01T00:00:00Z",
+    "end": "2023-10-31T23:59:59Z"
+  },
+  "classes": {
+    "1": {"name": "wheat", "color": "#FFD700"},
+    "2": {"name": "corn", "color": "#228B22"},
+    "3": {"name": "barley", "color": "#DAA520"},
+    "4": {"name": "rapeseed", "color": "#FFFF00"},
+    "5": {"name": "potato", "color": "#8B4513"},
+    "6": {"name": "sugar_beet", "color": "#FF4500"},
+    "7": {"name": "rye", "color": "#CD853F"},
+    "8": {"name": "meadow", "color": "#90EE90"},
+    "9": {"name": "fallow", "color": "#A0522D"},
+    "10": {"name": "soy", "color": "#32CD32"},
+    "11": {"name": "oats", "color": "#F4A460"},
+    "12": {"name": "triticale", "color": "#BDB76B"},
+    "13": {"name": "peas", "color": "#556B2F"},
+    "14": {"name": "sunflower", "color": "#FFB6C1"},
+    "15": {"name": "hemp", "color": "#006400"}
+  },
+  "statistics": {
+    "total_samples": 125000,
+    "total_area_km2": 158489,
+    "class_distribution": {
+      "wheat": 0.25,
+      "corn": 0.15,
+      "barley": 0.12,
+      "rapeseed": 0.10,
+      "potato": 0.08,
+      "sugar_beet": 0.07,
+      "rye": 0.06,
+      "meadow": 0.05,
+      "fallow": 0.03,
+      "soy": 0.02,
+      "oats": 0.02,
+      "triticale": 0.02,
+      "peas": 0.01,
+      "sunflower": 0.01,
+      "hemp": 0.01
+    },
+    "validation_split": {
+      "train": 0.7,
+      "validation": 0.15,
+      "test": 0.15
+    }
+  },
+  "imagery": {
+    "satellites": ["sentinel2a", "sentinel2b"],
+    "bands": ["B02", "B03", "B04", "B05", "B06", "B07", "B08", "B8A", "B11", "B12"],
+    "resolution_meters": 10,
+    "cloud_coverage_max": 20,
+    "processing_level": "L2A",
+    "atmospheric_correction": "Sen2Cor",
+    "temporal_frequency": "5 days"
+  },
+  "quality_metrics": {
+    "label_accuracy": 0.945,
+    "spatial_accuracy_meters": 10,
+    "cloud_free_percentage": 85,
+    "class_balance_gini": 0.82,
+    "validation_metrics": {
+      "overall_accuracy": 0.89,
+      "mean_f1_score": 0.88,
+      "mean_iou": 0.85
+    }
+  },
+  "preprocessing": {
+    "steps": [
+      "Cloud masking using s2cloudless",
+      "Atmospheric correction using Sen2Cor",
+      "Spatial resampling to 10m",
+      "Temporal interpolation for gap-filling",
+      "Normalization to surface reflectance values"
+    ],
+    "software_versions": {
+      "s2cloudless": "1.6.0",
+      "sen2cor": "2.10.0",
+      "gdal": "3.6.2"
+    }
+  },
+  "contact": {
+    "name": "Radiant Earth Foundation",
+    "email": "ml@radiant.earth",
+    "website": "https://radiant.earth"
+  }
+} 

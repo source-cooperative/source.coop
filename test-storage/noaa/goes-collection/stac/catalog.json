@@ -1,0 +1,48 @@
+{
+  "type": "Catalog",
+  "stac_version": "1.0.0",
+  "id": "goes-collection",
+  "title": "GOES-R Series ABI Level 2",
+  "description": "Level 2 products from the Advanced Baseline Imager (ABI) instrument aboard the GOES-R Series satellites",
+  "links": [
+    {
+      "rel": "self",
+      "href": "catalog.json",
+      "type": "application/json"
+    },
+    {
+      "rel": "child",
+      "href": "goes16.json",
+      "title": "GOES-16 Products",
+      "type": "application/json"
+    },
+    {
+      "rel": "child",
+      "href": "goes17.json",
+      "title": "GOES-17 Products",
+      "type": "application/json"
+    },
+    {
+      "rel": "child",
+      "href": "goes18.json",
+      "title": "GOES-18 Products",
+      "type": "application/json"
+    }
+  ],
+  "extent": {
+    "spatial": {
+      "bbox": [[-180, -90, 180, 90]]
+    },
+    "temporal": {
+      "interval": [["2017-11-19T00:00:00Z", null]]
+    }
+  },
+  "providers": [
+    {
+      "name": "NOAA",
+      "roles": ["producer", "processor", "licensor"],
+      "url": "https://www.goes-r.gov"
+    }
+  ],
+  "license": "PDDL-1.0"
+} 
