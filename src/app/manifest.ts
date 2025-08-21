@@ -35,7 +35,14 @@ export default function manifest(): MetadataRoute.Manifest {
       {
         src: '/favicon/light/icon.svg',
         sizes: 'any',
-        type: 'image/svg+xml'
+        type: 'image/svg+xml',
+        purpose: 'any'
+      },
+      {
+        src: '/favicon/dark/icon.svg',
+        sizes: 'any',
+        type: 'image/svg+xml',
+        purpose: 'any'
       }
     ]
   };

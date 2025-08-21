@@ -6,10 +6,10 @@ export const metadata: Metadata = {
     default: 'Source Cooperative',
     template: '%s | Source Cooperative'
   },
-  description: 'A platform for sharing and discovering open data',
+  description: 'A data publishing utility for the open web.',
   openGraph: {
     title: 'Source Cooperative',
-    description: 'A platform for sharing and discovering open data',
+    description: 'A data publishing utility for the open web.',
     url: 'https://source.coop',
     siteName: 'Source Cooperative',
     locale: 'en_US',
@@ -20,7 +20,22 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
   },
   icons: {
-    icon: '/favicon.ico',
+    icon: [
+      { 
+        url: '/favicon/light/icon.svg', 
+        media: '(prefers-color-scheme: light)',
+        type: 'image/svg+xml'
+      },
+      { 
+        url: '/favicon/dark/icon.svg', 
+        media: '(prefers-color-scheme: dark)',
+        type: 'image/svg+xml'
+      },
+      { 
+        url: '/favicon.ico',
+        type: 'image/x-icon'
+      }
+    ],
     shortcut: '/favicon-16x16.png',
     apple: '/apple-touch-icon.png',
   },
