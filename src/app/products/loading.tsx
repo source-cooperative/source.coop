@@ -4,11 +4,7 @@ import { ProductsSkeleton } from "@/components/features/products/ProductsSkeleto
 export default function ProductsLoading() {
   return (
     <PageContainer>
-      <PageHeader
-        title="Products"
-        description="Discover and explore public data products from the Source.coop community."
-        headingSize="8"
-      />
+      <PageHeader title="Products" />
       <ProductsSkeleton />
     </PageContainer>
   );

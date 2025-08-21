@@ -16,10 +16,7 @@ export default async function HomePage() {
 
   return (
     <PageContainer>
-      <PageHeader
-        title="Featured Products"
-        description="Discover the latest and most popular data products from the Source.coop community."
-      />
+      <PageHeader title="Featured Products" />
       <ProductsList products={result.products} />
     </PageContainer>
   );
