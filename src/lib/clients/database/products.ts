@@ -1,4 +1,4 @@
-import type { Product, ProductMirror, ProductRole } from "@/types";
+import type { Product, ProductMirror, ProductRole, Account } from "@/types";
 import {
   PutItemCommand,
   ResourceNotFoundException,
@@ -10,6 +10,7 @@ import {
   QueryCommand,
   ScanCommand,
   UpdateCommand,
+  BatchGetCommand,
 } from "@aws-sdk/lib-dynamodb";
 import { accountsTable } from "./accounts";
 import { BaseTable } from "./base";
@@ -282,18 +283,39 @@ class ProductsTable extends BaseTable {
    * @returns Products with accounts attached
    */
   async attachAccounts(products: Product[]): Promise<Product[]> {
-    // Fetch all accounts in parallel
-    const accounts = await Promise.all(
-      Array.from(new Set(products.map((item) => item.account_id))).map((id) =>
-        accountsTable.fetchById(id)
-      )
-    );
-    const accountMap = new Map(
-      accounts.filter(Boolean).map((acc: any) => [acc!.account_id, acc])
+    const uniqueAccountIds = Array.from(
+      new Set(products.map((p) => p.account_id))
     );
 
-    // Attach accounts to products
-    return products.map((item: any) => ({
+    if (uniqueAccountIds.length === 0) return products;
+
+    const batchSize = 100;
+    const accountBatches = [];
+
+    for (let i = 0; i < uniqueAccountIds.length; i += batchSize) {
+      const batch = uniqueAccountIds.slice(i, i + batchSize);
+      const batchRequest = {
+        RequestItems: {
+          [accountsTable.table]: {
+            Keys: batch.map((account_id) => ({ account_id })),
+          },
+        },
+      };
+
+      console.debug(
+        `DB: Fetching ${batch.length} accounts: ${batch.join(", ")}`
+      );
+      const result = await this.client.send(new BatchGetCommand(batchRequest));
+      if (result.Responses?.[accountsTable.table]) {
+        accountBatches.push(...result.Responses[accountsTable.table]);
+      }
+    }
+
+    const accountMap = new Map(
+      accountBatches.map((acc) => [acc.account_id, acc as Account])
+    );
+
+    return products.map((item) => ({
       ...item,
       account: accountMap.get(item.account_id) || undefined,
     }));
