@@ -28,8 +28,8 @@ export function ProductsFilters() {
   }, [searchParams]);
 
   // Update filters when search or tags change
-  const debouncedSearch = useDebounce(searchInput, 300);
-  const debouncedTags = useDebounce(tagsInput, 300);
+  const debouncedSearch = useDebounce(searchInput, 500);
+  const debouncedTags = useDebounce(tagsInput, 500);
   useEffect(() => {
     updateFilters(debouncedSearch, debouncedTags);
   }, [debouncedSearch, debouncedTags]);
