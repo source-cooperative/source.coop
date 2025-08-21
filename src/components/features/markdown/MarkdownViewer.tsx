@@ -1,4 +1,10 @@
-import { Text, Heading, Link as RadixLink, Card } from "@radix-ui/themes";
+import {
+  Text,
+  Heading,
+  Link as RadixLink,
+  Card,
+  Table,
+} from "@radix-ui/themes";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
@@ -73,6 +79,18 @@ export function MarkdownViewer({ content }: MarkdownViewerProps) {
             a: ({ href, children }) => (
               <RadixLink href={href}>{children}</RadixLink>
             ),
+            table: ({ children }) => (
+              <Table.Root mb="3" variant="surface">
+                {children}
+              </Table.Root>
+            ),
+            thead: ({ children }) => <Table.Header>{children}</Table.Header>,
+            tbody: ({ children }) => <Table.Body>{children}</Table.Body>,
+            tr: ({ children }) => <Table.Row>{children}</Table.Row>,
+            th: ({ children }) => (
+              <Table.ColumnHeaderCell>{children}</Table.ColumnHeaderCell>
+            ),
+            td: ({ children }) => <Table.Cell>{children}</Table.Cell>,
             code({ className, children }) {
               const match = /language-(\w+)/.exec(className || "");
               const lang = match ? match[1] : "";

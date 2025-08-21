@@ -74,29 +74,6 @@ code.inline-code {
   margin: 1em 0;
 }
 
-/* Table styles */
-.markdown-viewer table {
-  border-collapse: collapse;
-  width: 100%;
-  margin: 1em 0;
-}
-
-.markdown-viewer th,
-.markdown-viewer td {
-  padding: 0.5em;
-  border: 1px solid var(--gray-6);
-}
-
-.markdown-viewer th {
-  background-color: var(--gray-3);
-  font-weight: 600;
-}
-
-/* Dark mode for tables */
-:root[class~="dark"] .markdown-viewer th {
-  background-color: var(--gray-4);
-}
-
 /* Links */
 .markdown-viewer a {
   color: var(--blue-9);
@@ -157,4 +134,4 @@ code.inline-code {
 
 :root[class~="dark"] .admonition.important {
   background-color: var(--purple-12);
-} 
+}
