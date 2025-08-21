@@ -4,7 +4,7 @@ import type { StorageClient } from "@/types/storage";
 
 function createStorageClient(): StorageClient {
   if (CONFIG.environment.debug) {
-    console.log("Creating storage client with config:", CONFIG);
+    console.log("Creating storage client with config:", CONFIG.storage);
   }
 
   if (!CONFIG.storage.endpoint || CONFIG.storage.endpoint.trim() === "") {
