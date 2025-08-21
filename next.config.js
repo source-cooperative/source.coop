@@ -2,14 +2,6 @@
 const nextConfig = {
   reactStrictMode: true,
   trailingSlash: false,
-  async rewrites() {
-    return [
-      {
-        source: "/auth/:path*",
-        destination: "https://*",
-      },
-    ];
-  },
   images: {
     remotePatterns: [
       {
@@ -19,7 +11,12 @@ const nextConfig = {
         pathname: "/**",
       },
     ],
+    domains: ["localhost"],
+  },
+  env: {
+    STORAGE_ENDPOINT: process.env.STORAGE_ENDPOINT,
+    AWS_REGION: process.env.AWS_REGION,
   },
 };
 
-module.exports = nextConfig;
+export default nextConfig;

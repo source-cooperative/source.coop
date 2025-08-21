@@ -1,41 +1,107 @@
 @font-face {
-  font-family: "BerkleyMono";
-  src: url("/fonts/BerkeleyMonoVariable-Regular.woff"),
-    url("/fonts/BerkeleyMonoVariable-Regular.woff2");
-  font-weight: 100;
+  font-family: 'Berkeley Mono';
+  src: url('/fonts/BerkeleyMono-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
 }
 
-body {
-  overscroll-behavior: none;
-  text-rendering: optimizeLegibility;
+@font-face {
+  font-family: 'Berkeley Mono';
+  src: url('/fonts/BerkeleyMono-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
 }
 
+@font-face {
+  font-family: 'Berkeley Mono';
+  src: url('/fonts/BerkeleyMono-Italic.woff2') format('woff2');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Berkeley Mono';
+  src: url('/fonts/BerkeleyMono-BoldItalic.woff2') format('woff2');
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+
+:root .radix-themes {
+  --default-font-family: var(--font-ibm-plex);
+  --code-font-family: 'Berkeley Mono', Menlo, Consolas, monospace;
+}
+
+/* Global link styling */
 a {
+  text-decoration: underline;
+  color: var(--accent-11);
+  transition: all 0.2s ease;
+}
+
+a:hover {
   text-decoration: none;
 }
 
-html,
-body,
-main {
-  height: max-content;
+/* Light mode hover */
+:root:not([class~="dark"]) a:hover {
+  color: black !important;
 }
 
-html {
-  overflow-y: scroll;
+/* Dark mode hover */
+:root[class~="dark"] a:hover {
+  color: white !important;
 }
 
-fieldset {
-  border: none;
-  padding: 0;
+.repository-listing {
+  color: var(--accent-13);
+  display: block;
+  text-decoration: none;
   margin: 0;
 }
 
-#__next {
-  height: max-content;
+.repository-title {
+  text-decoration: underline;
 }
 
-@keyframes l {
+.repository-title:hover {
+  text-decoration: none;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Dark mode override */
+:root[class~="dark"] {
+  --color-page-background: var(--gray-4) !important;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
   to {
-    clip-path: inset(0 -1ch 0 0);
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
   }
 }

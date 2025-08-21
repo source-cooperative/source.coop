@@ -1,0 +1,81 @@
+@import '@radix-ui/colors/blue.css';
+@import '@radix-ui/colors/slate.css';
+@import '@radix-ui/colors/slate-dark.css';
+@import '@radix-ui/colors/blue-dark.css';
+
+:root {
+  --ifm-color-primary: var(--blue-9);
+  --ifm-color-primary-dark: var(--blue-10);
+  --ifm-color-primary-darker: var(--blue-11);
+  --ifm-color-primary-darkest: var(--blue-12);
+  --ifm-color-primary-light: var(--blue-8);
+  --ifm-color-primary-lighter: var(--blue-7);
+  --ifm-color-primary-lightest: var(--blue-6);
+  
+  --ifm-code-font-size: 95%;
+  --docusaurus-highlighted-code-line-bg: var(--slate-3);
+  
+  --ifm-navbar-background-color: var(--slate-1);
+  --ifm-navbar-shadow: 0 1px 0 0 var(--slate-6);
+  
+  --ifm-toc-border-color: var(--slate-6);
+  --ifm-footer-background-color: var(--slate-1);
+  
+  --ifm-menu-color: var(--slate-11);
+  --ifm-menu-color-active: var(--blue-9);
+  --ifm-menu-color-background-active: var(--blue-3);
+}
+
+[data-theme='dark'] {
+  --ifm-color-primary: var(--blue-9);
+  --ifm-color-primary-dark: var(--blue-10);
+  --ifm-color-primary-darker: var(--blue-11);
+  --ifm-color-primary-darkest: var(--blue-12);
+  --ifm-color-primary-light: var(--blue-8);
+  --ifm-color-primary-lighter: var(--blue-7);
+  --ifm-color-primary-lightest: var(--blue-6);
+  
+  --docusaurus-highlighted-code-line-bg: var(--slate-dark-3);
+  
+  --ifm-navbar-background-color: var(--slate-dark-1);
+  --ifm-navbar-shadow: 0 1px 0 0 var(--slate-dark-6);
+  
+  --ifm-toc-border-color: var(--slate-dark-6);
+  --ifm-footer-background-color: var(--slate-dark-1);
+  
+  --ifm-menu-color: var(--slate-dark-11);
+  --ifm-menu-color-active: var(--blue-9);
+  --ifm-menu-color-background-active: var(--blue-dark-3);
+}
+
+.navbar {
+  border-bottom: 1px solid var(--slate-6);
+}
+
+[data-theme='dark'] .navbar {
+  border-bottom: 1px solid var(--slate-dark-6);
+}
+
+.footer {
+  border-top: 1px solid var(--slate-6);
+}
+
+[data-theme='dark'] .footer {
+  border-top: 1px solid var(--slate-dark-6);
+}
+
+.theme-doc-sidebar-container {
+  border-right: 1px solid var(--slate-6) !important;
+}
+
+[data-theme='dark'] .theme-doc-sidebar-container {
+  border-right: 1px solid var(--slate-dark-6) !important;
+}
+
+.table-of-contents {
+  border-left: 1px solid var(--slate-6);
+}
+
+[data-theme='dark'] .table-of-contents {
+  border-left: 1px solid var(--slate-dark-6);
+} 

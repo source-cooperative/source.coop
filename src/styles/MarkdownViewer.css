@@ -1,0 +1,137 @@
+.markdown-viewer {
+  /* Base markdown styling */
+  line-height: 1.6;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.markdown-viewer h1 {
+  margin-top: var(--space-6);
+  margin-bottom: var(--space-4);
+  font-weight: 600;
+  font-size: var(--font-size-8);
+  line-height: var(--line-height-8);
+}
+
+.markdown-viewer h2 {
+  margin-top: var(--space-6);
+  margin-bottom: var(--space-3);
+  font-weight: 600;
+  font-size: var(--font-size-7);
+  line-height: var(--line-height-7);
+}
+
+.markdown-viewer h3 {
+  margin-top: var(--space-5);
+  margin-bottom: var(--space-2);
+  font-weight: 600;
+  font-size: var(--font-size-6);
+  line-height: var(--line-height-6);
+}
+
+.markdown-viewer h4 {
+  margin-top: var(--space-4);
+  margin-bottom: var(--space-2);
+  font-weight: 600;
+  font-size: var(--font-size-5);
+  line-height: var(--line-height-5);
+}
+
+.markdown-viewer h5 {
+  margin-top: var(--space-3);
+  margin-bottom: var(--space-2);
+  font-weight: 600;
+  font-size: var(--font-size-4);
+  line-height: var(--line-height-4);
+}
+
+.markdown-viewer h6 {
+  margin-top: var(--space-3);
+  margin-bottom: var(--space-2);
+  font-weight: 600;
+  font-size: var(--font-size-3);
+  line-height: var(--line-height-3);
+}
+
+/* Only style inline code - Bright handles code blocks */
+code.inline-code {
+  background-color: var(--gray-3);
+  color: var(--gray-12);
+  padding: 0.2em 0.4em;
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+}
+
+:root[class~="dark"] code.inline-code {
+  background-color: var(--gray-6);
+}
+
+.markdown-viewer blockquote {
+  padding: 0 1em;
+  color: var(--gray-11);
+  border-left: 0.25em solid var(--gray-6);
+  margin: 1em 0;
+}
+
+/* Links */
+.markdown-viewer a {
+  color: var(--blue-9);
+  text-decoration: none;
+}
+
+.markdown-viewer a:hover {
+  text-decoration: underline;
+}
+
+/* Styles for MyST admonitions */
+.admonition {
+  border-left: 4px solid var(--blue-9);
+  padding: var(--space-3);
+  margin: var(--space-3) 0;
+  background-color: var(--blue-3);
+  border-radius: 0 var(--radius-3) var(--radius-3) 0;
+}
+
+.admonition.warning {
+  border-left-color: var(--orange-9);
+  background-color: var(--orange-3);
+}
+
+.admonition.error {
+  border-left-color: var(--red-9);
+  background-color: var(--red-3);
+}
+
+.admonition.hint,
+.admonition.tip {
+  border-left-color: var(--green-9);
+  background-color: var(--green-3);
+}
+
+.admonition.important {
+  border-left-color: var(--purple-9);
+  background-color: var(--purple-3);
+}
+
+/* Dark mode for admonitions */
+:root[class~="dark"] .admonition {
+  background-color: var(--blue-12);
+}
+
+:root[class~="dark"] .admonition.warning {
+  background-color: var(--orange-12);
+}
+
+:root[class~="dark"] .admonition.error {
+  background-color: var(--red-12);
+}
+
+:root[class~="dark"] .admonition.hint,
+:root[class~="dark"] .admonition.tip {
+  background-color: var(--green-12);
+}
+
+:root[class~="dark"] .admonition.important {
+  background-color: var(--purple-12);
+}

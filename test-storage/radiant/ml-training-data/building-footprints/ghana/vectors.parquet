@@ -1,0 +1,81 @@
+PAR1
+L�  
+   GH_2023_001
+   GH_2023_002
+   GH_2023_003
+   GH_2023_004
+   GH_2023_005 ,6 (
+GH_2023_005
+GH_2023_001   (   �F &�5 building_id��&�&6 (
+GH_2023_005
+GH_2023_001 ,     ��L  ��  {
+    "type": "Polygon",
+    "coordinates": [[
+      [-0.1867, 5.6037],
+      [-0.1865, 5.6037],
+      [-0.1865, 5.6039],
+      [-0.1867, 5.6039],
+      [-0.1867, 5.6037]
+    ]]
+  } ,6 (  {
+    "type": "Polygon",
+    "coordinates": [[
+      [-0.1867, 5.6037],
+      [-0.1865, 5.6037],
+      [-0.1865, 5.6039],
+      [-0.1867, 5.6039],
+      [-0.1867, 5.6037]
+    ]]
+  }  {
+    "type": "Polygon",
+    "coordinates": [[
+      [-0.1867, 5.6037],
+      [-0.1865, 5.6037],
+      [-0.1865, 5.6039],
+      [-0.1867, 5.6039],
+      [-0.1867, 5.6037]
+    ]]
+  }   (   �F &�5 geometry��&�
+&�6 (  {
+    "type": "Polygon",
+    "coordinates": [[
+      [-0.1867, 5.6037],
+      [-0.1865, 5.6037],
+      [-0.1865, 5.6039],
+      [-0.1867, 5.6039],
+      [-0.1867, 5.6037]
+    ]]
+  }  {
+    "type": "Polygon",
+    "coordinates": [[
+      [-0.1867, 5.6037],
+      [-0.1865, 5.6037],
+      [-0.1865, 5.6039],
+      [-0.1867, 5.6039],
+      [-0.1867, 5.6037]
+    ]]
+  } ,     L�  4   156.8   245.2   185.6   165.4   198.2 ,6 (245.2156.8   (   �F &�5 area_m2��&�&�6 (245.2156.8 ,     L�  4   52.4   65.8   58.2   54.6   59.8 ,6 (65.852.4   (   �F &�5 perimeter_m��&�&�6 (65.852.4 ,     L�  4   0.95   0.92   0.88   0.91   0.89 ,6 (0.950.88   (   �F &�5 
+confidence��&�&�6 (0.950.88 ,     L�  4   Greater Accra   Ashanti   Western   Central   Greater Accra ,6 (WesternAshanti   (   �F &�5 region��&�&�6 (WesternAshanti ,     L�  4   Accra Metropolitan   Kumasi Metropolitan   Sekondi-Takoradi Metropolitan   Cape Coast Metropolitan   Tema Metropolitan ,6 (Tema MetropolitanAccra Metropolitan   (   �F &�5 district��&�&�6 (Tema MetropolitanAccra Metropolitan ,     L�  4	   confirmed	   confirmed   needs_review	   confirmed	   confirmed ,6 (needs_reviewconfirmed   (   �F &�5 validation_status��&�&�6 (needs_reviewconfirmed ,     |5 schema %building_id% L   %geometry% L   %area_m2% L   %perimeter_m% L   %
+confidence% L   %region% L   %district% L   %validation_status% L   l&�5 building_id��&�&6 (
+GH_2023_005
+GH_2023_001 ,     &�5 geometry��&�
+&�6 (  {
+    "type": "Polygon",
+    "coordinates": [[
+      [-0.1867, 5.6037],
+      [-0.1865, 5.6037],
+      [-0.1865, 5.6039],
+      [-0.1867, 5.6039],
+      [-0.1867, 5.6037]
+    ]]
+  }  {
+    "type": "Polygon",
+    "coordinates": [[
+      [-0.1867, 5.6037],
+      [-0.1865, 5.6037],
+      [-0.1865, 5.6039],
+      [-0.1867, 5.6039],
+      [-0.1867, 5.6037]
+    ]]
+  } ,     &�5 area_m2��&�&�6 (245.2156.8 ,     &�5 perimeter_m��&�&�6 (65.852.4 ,     &�5 
+confidence��&�&�6 (0.950.88 ,     &�5 region��&�&�6 (WesternAshanti ,     &�5 district��&�&�6 (Tema MetropolitanAccra Metropolitan ,     &�5 validation_status��&�&�6 (needs_reviewconfirmed ,     �&�  ,pandas�{"index_columns": [], "column_indexes": [], "columns": [{"name": "building_id", "field_name": "building_id", "pandas_type": "unicode", "numpy_type": "object", "metadata": null}, {"name": "geometry", "field_name": "geometry", "pandas_type": "unicode", "numpy_type": "object", "metadata": null}, {"name": "area_m2", "field_name": "area_m2", "pandas_type": "unicode", "numpy_type": "object", "metadata": null}, {"name": "perimeter_m", "field_name": "perimeter_m", "pandas_type": "unicode", "numpy_type": "object", "metadata": null}, {"name": "confidence", "field_name": "confidence", "pandas_type": "unicode", "numpy_type": "object", "metadata": null}, {"name": "region", "field_name": "region", "pandas_type": "unicode", "numpy_type": "object", "metadata": null}, {"name": "district", "field_name": "district", "pandas_type": "unicode", "numpy_type": "object", "metadata": null}, {"name": "validation_status", "field_name": "validation_status", "pandas_type": "unicode", "numpy_type": "object", "metadata": null}], "creator": {"library": "pyarrow", "version": "11.0.0"}, "pandas_version": "2.0.0"} ARROW:schema�/////7gEAAAQAAAAAAAKAA4ABgAFAAgACgAAAAABBAAQAAAAAAAKAAwAAAAEAAgACgAAANwDAAAEAAAAAQAAAAwAAAAIAAwABAAIAAgAAAAIAAAAEAAAAAYAAABwYW5kYXMAAKYDAAB7ImluZGV4X2NvbHVtbnMiOiBbXSwgImNvbHVtbl9pbmRleGVzIjogW10sICJjb2x1bW5zIjogW3sibmFtZSI6ICJidWlsZGluZ19pZCIsICJmaWVsZF9uYW1lIjogImJ1aWxkaW5nX2lkIiwgInBhbmRhc190eXBlIjogInVuaWNvZGUiLCAibnVtcHlfdHlwZSI6ICJvYmplY3QiLCAibWV0YWRhdGEiOiBudWxsfSwgeyJuYW1lIjogImdlb21ldHJ5IiwgImZpZWxkX25hbWUiOiAiZ2VvbWV0cnkiLCAicGFuZGFzX3R5cGUiOiAidW5pY29kZSIsICJudW1weV90eXBlIjogIm9iamVjdCIsICJtZXRhZGF0YSI6IG51bGx9LCB7Im5hbWUiOiAiYXJlYV9tMiIsICJmaWVsZF9uYW1lIjogImFyZWFfbTIiLCAicGFuZGFzX3R5cGUiOiAidW5pY29kZSIsICJudW1weV90eXBlIjogIm9iamVjdCIsICJtZXRhZGF0YSI6IG51bGx9LCB7Im5hbWUiOiAicGVyaW1ldGVyX20iLCAiZmllbGRfbmFtZSI6ICJwZXJpbWV0ZXJfbSIsICJwYW5kYXNfdHlwZSI6ICJ1bmljb2RlIiwgIm51bXB5X3R5cGUiOiAib2JqZWN0IiwgIm1ldGFkYXRhIjogbnVsbH0sIHsibmFtZSI6ICJjb25maWRlbmNlIiwgImZpZWxkX25hbWUiOiAiY29uZmlkZW5jZSIsICJwYW5kYXNfdHlwZSI6ICJ1bmljb2RlIiwgIm51bXB5X3R5cGUiOiAib2JqZWN0IiwgIm1ldGFkYXRhIjogbnVsbH0sIHsibmFtZSI6ICJyZWdpb24iLCAiZmllbGRfbmFtZSI6ICJyZWdpb24iLCAicGFuZGFzX3R5cGUiOiAidW5pY29kZSIsICJudW1weV90eXBlIjogIm9iamVjdCIsICJtZXRhZGF0YSI6IG51bGx9LCB7Im5hbWUiOiAiZGlzdHJpY3QiLCAiZmllbGRfbmFtZSI6ICJkaXN0cmljdCIsICJwYW5kYXNfdHlwZSI6ICJ1bmljb2RlIiwgIm51bXB5X3R5cGUiOiAib2JqZWN0IiwgIm1ldGFkYXRhIjogbnVsbH0sIHsibmFtZSI6ICJ2YWxpZGF0aW9uX3N0YXR1cyIsICJmaWVsZF9uYW1lIjogInZhbGlkYXRpb25fc3RhdHVzIiwgInBhbmRhc190eXBlIjogInVuaWNvZGUiLCAibnVtcHlfdHlwZSI6ICJvYmplY3QiLCAibWV0YWRhdGEiOiBudWxsfV0sICJjcmVhdG9yIjogeyJsaWJyYXJ5IjogInB5YXJyb3ciLCAidmVyc2lvbiI6ICIxMS4wLjAifSwgInBhbmRhc192ZXJzaW9uIjogIjIuMC4wIn0AAAAIAAAABAIAAAgBAADEAAAAeAAAAEQAAAAQAAAABAAAAMz+//8AAAEFEAAAACAAAAAEAAAAAAAAABAAAABjb25maWRlbmNlX3Njb3JlABT///8AAAABQAAAAEQ///8AAAEFEAAAABwAAAAEAAAAAAAAAAkAAABsb25naXR1ZGUAAAAATf///wAAAAFAAAAAfv///wAAAQUQAAAAHAAAAAQAAAAAAAAACAAAAGxhdGl0dWRlAAAAAIj///8AAAABQAAAALj///8AAAEFEAAAABwAAAAEAAAAAAAAAAoAAABjb25maWRlbmNlAAAAwP///wAAAAFAAAAA8P///wAAAQUQAAAAHAAAAAQAAAAAAAAACAAAAGRpc3RyaWN0AAAAAAD///8AAAABQAAAAA4BAAAEAAAAAQAAABgAAAAIAAwABAAIAAgAAAAIAAAAEAAAAAYAAABwYW5kYXMAABQAAAAUAAAABAAAAAAAAAAGAAAAcmVnaW9uAAAAABgAAAAYAAAABAAAAAAAAAACAAAAaWQAAAAEAAAABAAAAAAAAAAHAAAAdGlsZV9pZAAAAAAA parquet-cpp-arrow version 11.0.0 

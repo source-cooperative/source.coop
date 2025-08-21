@@ -1,183 +1,326 @@
 [
   {
     "account_id": "admin",
-    "account_type": "user",
+    "type": "individual",
+    "name": "Admin User",
+    "emails": [
+      {
+        "address": "admin@source.coop",
+        "verified": true,
+        "verified_at": "2020-01-01T00:00:00Z",
+        "is_primary": true,
+        "added_at": "2020-01-01T00:00:00Z"
+      }
+    ],
+    "created_at": "2020-01-01T00:00:00Z",
+    "updated_at": "2020-01-01T00:00:00Z",
     "disabled": false,
-    "profile": {
-      "name": "Admin User",
+    "flags": ["admin"],
+    "metadata_public": {
       "bio": "This is an admin user account",
       "location": "United States"
     },
-    "identity_id": "admin_identity_id",
-    "flags": ["admin"],
-    "email": "admin@source.coop"
+    "metadata_private": {},
+    "identity_id": "admin_identity_id"
   },
   {
     "account_id": "disabled",
-    "account_type": "user",
+    "type": "individual",
+    "name": "Disabled User",
+    "emails": [
+      {
+        "address": "disabled@source.coop",
+        "verified": true,
+        "verified_at": "2020-01-01T00:00:00Z",
+        "is_primary": true,
+        "added_at": "2020-01-01T00:00:00Z"
+      }
+    ],
+    "created_at": "2020-01-01T00:00:00Z",
+    "updated_at": "2020-01-01T00:00:00Z",
     "disabled": true,
-    "profile": {
-      "name": "Disabled User",
+    "flags": ["admin", "create_repositories"],
+    "metadata_public": {
       "bio": "This is a disabled user account",
       "location": "United States"
     },
-    "identity_id": "disabled_identity_id",
-    "flags": ["admin", "create_repositories"],
-    "email": "disabled@source.coop"
+    "metadata_private": {},
+    "identity_id": "disabled_identity_id"
   },
   {
     "account_id": "regular-user",
-    "account_type": "user",
+    "type": "individual",
+    "name": "Regular User",
+    "emails": [
+      {
+        "address": "regular@source.coop",
+        "verified": true,
+        "verified_at": "2020-01-01T00:00:00Z",
+        "is_primary": true,
+        "added_at": "2020-01-01T00:00:00Z"
+      }
+    ],
+    "created_at": "2020-01-01T00:00:00Z",
+    "updated_at": "2020-01-01T00:00:00Z",
     "disabled": false,
-    "profile": {
-      "name": "Regular User",
+    "flags": [],
+    "metadata_public": {
       "bio": "This is a regular user account",
       "location": "United States"
     },
-    "identity_id": "regular_user_identity_id",
-    "flags": [],
-    "email": "regular@source.coop"
+    "metadata_private": {},
+    "identity_id": "regular_user_identity_id"
   },
   {
     "account_id": "create-repositories-user",
-    "account_type": "user",
+    "type": "individual",
+    "name": "Create Repositories User",
+    "emails": [
+      {
+        "address": "createRepositories@source.coop",
+        "verified": true,
+        "verified_at": "2020-01-01T00:00:00Z",
+        "is_primary": true,
+        "added_at": "2020-01-01T00:00:00Z"
+      }
+    ],
+    "created_at": "2020-01-01T00:00:00Z",
+    "updated_at": "2020-01-01T00:00:00Z",
     "disabled": false,
-    "profile": {
-      "name": "Create Repositories User",
+    "flags": ["create_repositories"],
+    "metadata_public": {
       "bio": "This is a user account which has the create_repositories flag",
       "location": "United States"
     },
-    "identity_id": "create_repositories_user_identity_id",
-    "flags": ["create_repositories"],
-    "email": "createRepositories@source.coop"
+    "metadata_private": {},
+    "identity_id": "create_repositories_user_identity_id"
   },
   {
     "account_id": "organization-owner-user",
-    "account_type": "user",
+    "type": "individual",
+    "name": "Organization Owner User",
+    "emails": [
+      {
+        "address": "organizationOwner@source.coop",
+        "verified": true,
+        "verified_at": "2020-01-01T00:00:00Z",
+        "is_primary": true,
+        "added_at": "2020-01-01T00:00:00Z"
+      }
+    ],
+    "created_at": "2020-01-01T00:00:00Z",
+    "updated_at": "2020-01-01T00:00:00Z",
     "disabled": false,
-    "profile": {
-      "name": "Organization Owner User",
+    "flags": ["create_repositories", "create_organizations"],
+    "metadata_public": {
       "bio": "This is a user account which owns an organization",
       "location": "United States"
     },
-    "identity_id": "organization_owner_user_identity_id",
-    "flags": ["create_repositories", "create_organizations"],
-    "email": "organizationOwner@source.coop"
+    "metadata_private": {}
   },
   {
     "account_id": "organization-maintainer-user",
-    "account_type": "user",
+    "type": "individual",
+    "name": "Organization Maintainer User",
+    "emails": [
+      {
+        "address": "organizationMaintainer@source.coop",
+        "verified": true,
+        "verified_at": "2020-01-01T00:00:00Z",
+        "is_primary": true,
+        "added_at": "2020-01-01T00:00:00Z"
+      }
+    ],
+    "created_at": "2020-01-01T00:00:00Z",
+    "updated_at": "2020-01-01T00:00:00Z",
     "disabled": false,
-    "profile": {
-      "name": "Organization Maintainer User",
+    "flags": ["create_repositories"],
+    "metadata_public": {
       "bio": "This is a user account which maintains an organization",
       "location": "United States"
     },
-    "identity_id": "organization_maintainer_user_identity_id",
-    "flags": ["create_repositories"],
-    "email": "organizationMaintainer@source.coop"
+    "metadata_private": {}
   },
   {
     "account_id": "organization-read-data-user",
-    "account_type": "user",
+    "type": "individual",
+    "name": "Organization Read Data User",
+    "emails": [
+      {
+        "address": "organizationReadData@source.coop",
+        "verified": true,
+        "verified_at": "2020-01-01T00:00:00Z",
+        "is_primary": true,
+        "added_at": "2020-01-01T00:00:00Z"
+      }
+    ],
+    "created_at": "2020-01-01T00:00:00Z",
+    "updated_at": "2020-01-01T00:00:00Z",
     "disabled": false,
-    "profile": {
-      "name": "Organization Read Data User",
+    "flags": [],
+    "metadata_public": {
       "bio": "This is a user account which is a ReadData member of an organization",
       "location": "United States"
     },
-    "identity_id": "organization_read_data_user_identity_id",
-    "flags": [],
-    "email": "organizationReadData@source.coop"
+    "metadata_private": {}
   },
   {
     "account_id": "repo-member-owner",
-    "account_type": "user",
+    "type": "individual",
+    "name": "Repository Member Owner",
+    "emails": [
+      {
+        "address": "repositoryMemberOwner@source.coop",
+        "verified": true,
+        "verified_at": "2020-01-01T00:00:00Z",
+        "is_primary": true,
+        "added_at": "2020-01-01T00:00:00Z"
+      }
+    ],
+    "created_at": "2020-01-01T00:00:00Z",
+    "updated_at": "2020-01-01T00:00:00Z",
     "disabled": false,
-    "profile": {
-      "name": "Repository Member Owner",
+    "flags": [],
+    "metadata_public": {
       "bio": "This is a user account which is an owner of a repository",
       "location": "United States"
     },
-    "identity_id": "repo_member_owner_identity_id",
-    "flags": [],
-    "email": "repositoryMemberOwner@source.coop"
+    "metadata_private": {}
   },
   {
     "account_id": "repo-member-maintainer",
-    "account_type": "user",
+    "type": "individual",
+    "name": "Repository Member Maintainer",
+    "emails": [
+      {
+        "address": "repositoryMemberMaintainer@source.coop",
+        "verified": true,
+        "verified_at": "2020-01-01T00:00:00Z",
+        "is_primary": true,
+        "added_at": "2020-01-01T00:00:00Z"
+      }
+    ],
+    "created_at": "2020-01-01T00:00:00Z",
+    "updated_at": "2020-01-01T00:00:00Z",
     "disabled": false,
-    "profile": {
-      "name": "Repository Member Maintainer",
+    "flags": [],
+    "metadata_public": {
       "bio": "This is a user account which is a maintainer of a repository",
       "location": "United States"
     },
-    "identity_id": "repo_member_maintainer_identity_id",
-    "flags": [],
-    "email": "repositoryMemberMaintainer@source.coop"
+    "metadata_private": {}
   },
   {
     "account_id": "repo-member-read-data",
-    "account_type": "user",
+    "type": "individual",
+    "name": "Repository Member Read Data",
+    "emails": [
+      {
+        "address": "repositoryMemberReadData@source.coop",
+        "verified": true,
+        "verified_at": "2020-01-01T00:00:00Z",
+        "is_primary": true,
+        "added_at": "2020-01-01T00:00:00Z"
+      }
+    ],
+    "created_at": "2020-01-01T00:00:00Z",
+    "updated_at": "2020-01-01T00:00:00Z",
     "disabled": false,
-    "profile": {
-      "name": "Repository Member Read Data",
+    "flags": [],
+    "metadata_public": {
       "bio": "This is a user account which is a read data member of a repository",
       "location": "United States"
     },
-    "identity_id": "repo_member_read_data_identity_id",
-    "flags": [],
-    "email": "repositoryMemberReadData@source.coop"
+    "metadata_private": {}
   },
   {
     "account_id": "repo-member-write-data",
-    "account_type": "user",
+    "type": "individual",
+    "name": "Repository Member Write Data",
+    "emails": [
+      {
+        "address": "repositoryMemberWriteData@source.coop",
+        "verified": true,
+        "verified_at": "2020-01-01T00:00:00Z",
+        "is_primary": true,
+        "added_at": "2020-01-01T00:00:00Z"
+      }
+    ],
+    "created_at": "2020-01-01T00:00:00Z",
+    "updated_at": "2020-01-01T00:00:00Z",
     "disabled": false,
-    "profile": {
-      "name": "Repository Member Write Data",
+    "flags": [],
+    "metadata_public": {
       "bio": "This is a user account which is a write data member of a repository",
       "location": "United States"
     },
-    "identity_id": "repo_member_write_data_identity_id",
-    "flags": [],
-    "email": "repositoryMemberWriteData@source.coop"
+    "metadata_private": {}
   },
   {
     "account_id": "repo-member-invited",
-    "account_type": "user",
+    "type": "individual",
+    "name": "Repository Member Invited",
+    "emails": [
+      {
+        "address": "repositoryMemberInvited@source.coop",
+        "verified": false,
+        "is_primary": true,
+        "added_at": "2020-01-01T00:00:00Z"
+      }
+    ],
+    "created_at": "2020-01-01T00:00:00Z",
+    "updated_at": "2020-01-01T00:00:00Z",
     "disabled": false,
-    "profile": {
-      "name": "Repository Member Invited",
+    "flags": [],
+    "metadata_public": {
       "bio": "This is a user account which is an invited member of a repository",
       "location": "United States"
     },
-    "identity_id": "repo_member_invited_identity_id",
-    "flags": [],
-    "email": "repositoryMemberInvited@source.coop"
+    "metadata_private": {}
   },
   {
     "account_id": "organization-write-data-user",
-    "account_type": "user",
+    "type": "individual",
+    "name": "Organization Write Data User",
+    "emails": [
+      {
+        "address": "organizationWriteData@source.coop",
+        "verified": true,
+        "verified_at": "2020-01-01T00:00:00Z",
+        "is_primary": true,
+        "added_at": "2020-01-01T00:00:00Z"
+      }
+    ],
+    "created_at": "2020-01-01T00:00:00Z",
+    "updated_at": "2020-01-01T00:00:00Z",
     "disabled": false,
-    "profile": {
-      "name": "Organization Write Data User",
+    "flags": ["create_repositories"],
+    "metadata_public": {
       "bio": "This is a user account which is a WriteData member of an organization",
       "location": "United States"
     },
-    "identity_id": "organization_write_data_user_identity_id",
-    "flags": ["create_repositories"],
-    "email": "organizationWriteData@source.coop"
+    "metadata_private": {}
   },
   {
     "account_id": "organization",
-    "account_type": "organization",
+    "type": "organization",
+    "name": "Organization",
+    "emails": [
+      {
+        "address": "organization@source.coop",
+        "verified": true,
+        "verified_at": "2020-01-01T00:00:00Z",
+        "is_primary": true,
+        "added_at": "2020-01-01T00:00:00Z"
+      }
+    ],
+    "created_at": "2020-01-01T00:00:00Z",
+    "updated_at": "2020-01-01T00:00:00Z",
     "disabled": false,
-    "profile": {
-      "name": "Organization",
+    "flags": [],
+    "metadata_public": {
       "bio": "This is an organization",
       "location": "United States"
-    },
-    "flags": [],
-    "email": "organization@source.coop"
+    }
   }
 ]

@@ -1,0 +1,177 @@
+{
+  "dataset_info": {
+    "name": "Ghana Building Footprints",
+    "version": "1.0.0",
+    "description": "Building footprint polygons for Ghana derived from high-resolution satellite imagery",
+    "citation": "Radiant Earth Foundation. (2024). Ghana Building Footprints Dataset. Radiant MLHub.",
+    "license": "CC BY-NC-SA 4.0"
+  },
+  "coverage": {
+    "spatial": {
+      "country": "Ghana",
+      "bbox": [-3.262, 4.737, 1.199, 11.175],
+      "area_km2": 238535,
+      "regions": [
+        "Greater Accra",
+        "Ashanti",
+        "Western",
+        "Central",
+        "Eastern",
+        "Volta",
+        "Northern",
+        "Upper East",
+        "Upper West",
+        "Bono",
+        "Ahafo",
+        "Bono East",
+        "North East",
+        "Savannah",
+        "Oti",
+        "Western North"
+      ]
+    },
+    "temporal": {
+      "start_date": "2023-01-01",
+      "end_date": "2023-12-31",
+      "imagery_source": "Maxar",
+      "imagery_resolution": "0.5m"
+    }
+  },
+  "statistics": {
+    "total_buildings": 4582934,
+    "total_area_km2": 892.5,
+    "density_buildings_per_km2": 19.2,
+    "area_distribution": {
+      "min_m2": 10,
+      "max_m2": 15000,
+      "mean_m2": 195,
+      "median_m2": 145,
+      "std_m2": 285
+    },
+    "regional_counts": {
+      "Greater Accra": 985000,
+      "Ashanti": 875000,
+      "Western": 425000,
+      "Central": 385000,
+      "Eastern": 365000,
+      "Volta": 295000,
+      "Northern": 275000,
+      "Upper East": 185000,
+      "Upper West": 165000,
+      "Bono": 155000,
+      "Ahafo": 125000,
+      "Bono East": 115000,
+      "North East": 95000,
+      "Savannah": 85000,
+      "Oti": 75000,
+      "Western North": 65000
+    }
+  },
+  "quality_metrics": {
+    "overall": {
+      "precision": 0.96,
+      "recall": 0.94,
+      "f1_score": 0.95,
+      "iou": 0.91
+    },
+    "by_area": {
+      "small": {
+        "range_m2": "10-100",
+        "precision": 0.94,
+        "recall": 0.92,
+        "f1_score": 0.93
+      },
+      "medium": {
+        "range_m2": "100-500",
+        "precision": 0.97,
+        "recall": 0.95,
+        "f1_score": 0.96
+      },
+      "large": {
+        "range_m2": ">500",
+        "precision": 0.98,
+        "recall": 0.96,
+        "f1_score": 0.97
+      }
+    },
+    "by_region": {
+      "urban": {
+        "precision": 0.97,
+        "recall": 0.95,
+        "f1_score": 0.96
+      },
+      "suburban": {
+        "precision": 0.95,
+        "recall": 0.93,
+        "f1_score": 0.94
+      },
+      "rural": {
+        "precision": 0.94,
+        "recall": 0.92,
+        "f1_score": 0.93
+      }
+    }
+  },
+  "validation": {
+    "method": "Random stratified sampling",
+    "sample_size": 5000,
+    "ground_truth_source": "Manual verification using high-resolution imagery",
+    "validators": ["Remote sensing experts", "Local GIS professionals"],
+    "validation_date": "2024-02-15"
+  },
+  "model": {
+    "architecture": "Mask R-CNN",
+    "backbone": "ResNet101",
+    "training_details": {
+      "epochs": 100,
+      "batch_size": 16,
+      "learning_rate": 0.001,
+      "optimizer": "Adam",
+      "loss_function": "Binary cross-entropy + Dice loss",
+      "augmentation": [
+        "Random rotation",
+        "Random flip",
+        "Random brightness",
+        "Random contrast"
+      ]
+    },
+    "hardware": {
+      "gpu": "NVIDIA A100",
+      "memory": "80GB",
+      "training_time_hours": 72
+    }
+  },
+  "preprocessing": {
+    "imagery": {
+      "atmospheric_correction": true,
+      "cloud_masking": true,
+      "pan_sharpening": true,
+      "orthorectification": true
+    },
+    "vector": {
+      "simplification_tolerance": 0.5,
+      "minimum_area_m2": 10,
+      "topology_correction": true
+    }
+  },
+  "metadata": {
+    "created": "2024-01-15",
+    "updated": "2024-03-01",
+    "format": "GeoParquet",
+    "crs": "EPSG:4326",
+    "attributes": [
+      "building_id",
+      "area_m2",
+      "perimeter_m",
+      "confidence",
+      "region",
+      "district",
+      "validation_status"
+    ],
+    "contact": {
+      "name": "Radiant Earth Foundation",
+      "email": "ml@radiant.earth",
+      "website": "https://radiant.earth"
+    }
+  }
+} 

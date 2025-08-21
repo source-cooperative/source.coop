@@ -1,0 +1,87 @@
+{
+  "type": "Catalog",
+  "stac_version": "1.0.0",
+  "id": "landsat-collection",
+  "title": "NASA Landsat Collection",
+  "description": "Comprehensive collection of Landsat satellite imagery from missions 4 through 9",
+  "links": [
+    {
+      "rel": "self",
+      "href": "catalog.json",
+      "type": "application/json"
+    },
+    {
+      "rel": "child",
+      "href": "landsat-4-5.json",
+      "title": "Landsat 4-5 Collection",
+      "type": "application/json"
+    },
+    {
+      "rel": "child",
+      "href": "landsat-7.json",
+      "title": "Landsat 7 Collection",
+      "type": "application/json"
+    },
+    {
+      "rel": "child",
+      "href": "landsat-8-9.json",
+      "title": "Landsat 8-9 Collection",
+      "type": "application/json"
+    }
+  ],
+  "extensions": [
+    "https://stac-extensions.github.io/eo/v1.0.0/schema.json",
+    "https://stac-extensions.github.io/projection/v1.0.0/schema.json",
+    "https://stac-extensions.github.io/view/v1.0.0/schema.json"
+  ],
+  "keywords": [
+    "landsat",
+    "earth observation",
+    "nasa",
+    "usgs",
+    "surface reflectance",
+    "surface temperature"
+  ],
+  "providers": [
+    {
+      "name": "NASA",
+      "roles": ["producer", "processor"],
+      "url": "https://www.nasa.gov"
+    },
+    {
+      "name": "USGS",
+      "roles": ["host", "processor"],
+      "url": "https://www.usgs.gov"
+    }
+  ],
+  "extent": {
+    "spatial": {
+      "bbox": [[-180, -90, 180, 90]]
+    },
+    "temporal": {
+      "interval": [["1982-07-16T00:00:00Z", null]]
+    }
+  },
+  "license": "PDDL-1.0",
+  "summaries": {
+    "platform": [
+      "landsat-4",
+      "landsat-5",
+      "landsat-7",
+      "landsat-8",
+      "landsat-9"
+    ],
+    "instruments": [
+      "tm",
+      "etm",
+      "oli",
+      "tirs"
+    ],
+    "gsd": [15, 30, 60, 100],
+    "eo:cloud_cover": {
+      "minimum": 0,
+      "maximum": 100
+    },
+    "proj:epsg": [4326, 32601, 32602, 32603]
+  }
+} 

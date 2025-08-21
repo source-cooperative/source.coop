@@ -1,0 +1,19 @@
+{
+  "stac_version": "1.0.0",
+  "type": "Catalog",
+  "id": "goes-18",
+  "title": "GOES-18 Level 2 Products",
+  "description": "GOES-18 Advanced Baseline Imager Level 2 Products",
+  "links": [
+    {
+      "rel": "self",
+      "href": "catalog.json",
+      "type": "application/json"
+    },
+    {
+      "rel": "child",
+      "href": "collection.json",
+      "type": "application/json"
+    }
+  ]
+} 
