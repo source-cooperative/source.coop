@@ -14,6 +14,7 @@ import { getOryId } from "@/lib/ory";
 import { accountsTable } from "@/lib/clients/database";
 import { Account } from "@/types/account";
 import { redirect, RedirectType } from "next/navigation";
+import { headers } from "next/headers";
 const ibmPlexSans = IBM_Plex_Sans({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
@@ -27,20 +28,20 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const headersList = await headers();
+  const pathname =
+    headersList.get("x-pathname") || headersList.get("x-invoke-path") || "";
   const session = await getServerSession();
   let account: Account | null = null;
+
   if (session) {
     const oryId = getOryId(session);
     if (oryId) {
       account = await accountsTable.fetchByOryId(oryId);
       // If we have a session but no account, that means a user is authenticated but we need
       // to redirect to the email verification page so that a user can setup their account.
-      if (!account) {
-        redirect("/onboarding", RedirectType.replace);
-      }
-
-      // If we have an account but no email, we add the email from the session.
-      if (account.emails?.length === 0 && session.identity?.traits.email) {
+      if (account?.emails?.length === 0 && session.identity?.traits.email) {
+        // If we have an account but no email, we add the email from the session.
         account.emails = [
           {
             address: session.identity.traits.email,
@@ -54,6 +55,8 @@ export default async function RootLayout({
         } catch (error) {
           console.error("Failed to add email to account", error);
         }
+      } else if (!account && pathname !== "/onboarding") {
+        redirect("/onboarding", RedirectType.replace);
       }
     }
   }
