@@ -1,27 +1,20 @@
-/**
- * Product Path Page - Displays product contents at a specific path
- *
- * KEEP IT SIMPLE:
- * 1. URL params are known values (/[account_id]/[product_id]/[...path])
- * 2. Get data -> Transform if needed -> Render
- * 3. Trust your types, avoid complex validation
- * 4. Let Next.js handle errors (404, 500, etc.)
- * 5. No helper functions unless truly needed
- */
-
-// External packages
-import { Text, Container, Box } from "@radix-ui/themes";
+import { Container, Box } from "@radix-ui/themes";
 import { notFound } from "next/navigation";
 
-// Internal components
 import { ObjectBrowser } from "@/components/features/products";
 import { MarkdownViewer } from "@/components/features/markdown";
 
-// Utilities
 import { dataConnectionsTable, productsTable } from "@/lib/clients/database";
 import { storage } from "@/lib/clients/storage";
-import type { ProductObject } from "@/types/product_object";
 import { DataConnection, ProductMirror } from "@/types";
+
+export async function generateMetadata({ params }: PageProps) {
+  const { account_id, product_id, path } = await params;
+  return {
+    title: `${account_id}/${product_id}/${path?.join("/")} | Source.coop`,
+    description: `Browse and discover public data products on Source.coop`,
+  };
+}
 
 interface PageProps {
   params: Promise<{
