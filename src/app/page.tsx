@@ -3,7 +3,7 @@ import { ProductsList } from "@/components/features/products/ProductsList";
 import { getProducts } from "@/lib/actions/products";
 
 export const metadata = {
-  title: "Featured Products | Source.coop",
+  title: "Featured Products | Source Cooperative",
   description: "Browse and discover public data products on Source.coop",
 };
 

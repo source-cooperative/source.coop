@@ -5,7 +5,7 @@ import { getProducts } from "@/lib/actions/products";
 import { Badge, Flex, Text } from "@radix-ui/themes";
 
 export const metadata = {
-  title: "Products | Source.coop",
+  title: "Products | Source Cooperative",
   description: "Browse and discover public data products on Source.coop",
 };
 
