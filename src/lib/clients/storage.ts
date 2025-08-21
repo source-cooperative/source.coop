@@ -1,23 +1,23 @@
 import { S3StorageClient } from "../storage/s3";
 import { CONFIG } from "../config";
-import type { StorageClient } from "@/types/storage";
+import type { StorageClient, StorageConfig } from "@/types/storage";
 
-function createStorageClient(): StorageClient {
+function createStorageClient(config: StorageConfig): StorageClient {
   if (CONFIG.environment.debug) {
-    console.log("Creating storage client with config:", CONFIG.storage);
+    console.log("Creating storage client with config:", config);
   }
 
-  if (!CONFIG.storage.endpoint || CONFIG.storage.endpoint.trim() === "") {
+  if (!config.endpoint || config.endpoint.trim() === "") {
     console.error("Storage endpoint is missing in CONFIG:", CONFIG);
     throw new Error("Storage endpoint is not configured");
   }
 
   // Create the appropriate storage client based on type
   return new S3StorageClient({
-    endpoint: CONFIG.storage.endpoint,
-    region: CONFIG.storage.region,
-    credentials: CONFIG.storage.credentials,
+    endpoint: config.endpoint,
+    region: config.region,
+    credentials: config.credentials,
   });
 }
 
-export const storage = createStorageClient();
+export const storage = createStorageClient(CONFIG.storage);
