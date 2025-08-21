@@ -54,9 +54,7 @@ export async function GET(
         { status: StatusCodes.UNAUTHORIZED }
       );
     }
-    const email = account.metadata_private?.identity_id
-      ? await getEmail(account.metadata_private.identity_id)
-      : null;
+    const email = await getEmail(account.identity_id);
     const profile: AccountProfileResponse = {
       ...account.metadata_public,
       profile_image: email ? getProfileImage(email) : undefined,

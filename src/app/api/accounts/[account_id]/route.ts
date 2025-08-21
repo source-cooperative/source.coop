@@ -123,13 +123,6 @@ export async function PUT(
       );
     }
 
-    const { account_id } = await params;
-    console.log("API: Updating account:", account_id);
-
-    // Only allow the user to update their own account
-    const sessionAccountId = session?.account?.account_id;
-    console.log(session);
-
     if (session.account?.disabled) {
       return NextResponse.json(
         {
@@ -143,6 +136,9 @@ export async function PUT(
       );
     }
 
+    const { account_id } = await params;
+
+    const sessionAccountId = session?.account?.account_id;
     if (!sessionAccountId) {
       return NextResponse.json(
         {
@@ -180,17 +176,10 @@ export async function PUT(
     }
 
     const account = {
-      metadata_private: {}, // TODO: not getting metadata_private from ory, why?
       ...(await request.json()),
+      account_id,
+      identity_id: session.identity_id,
     };
-
-    // Verify the account_id matches the URL parameter
-    if (account.account_id !== account_id) {
-      return NextResponse.json(
-        { error: "Account ID mismatch" },
-        { status: 400 }
-      );
-    }
 
     // Update the account in DynamoDB
     try {

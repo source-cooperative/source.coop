@@ -105,11 +105,8 @@ export const AccountSchema = z
     disabled: z.boolean(),
     flags: AccountFlagsSchema,
     metadata_public: AccountProfileSchema,
-    metadata_private: z.optional(
-      z.object({
-        identity_id: z.string().openapi({ example: "identity-id" }),
-      })
-    ),
+    metadata_private: z.optional(z.record(z.object({}))),
+    identity_id: z.string().openapi({ example: "identity-id" }),
   })
   .openapi("Account");
 
