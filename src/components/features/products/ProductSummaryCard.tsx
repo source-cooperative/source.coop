@@ -17,7 +17,7 @@ export function ProductSummaryCard({ product }: ProductSummaryCardProps) {
           {product.description}
         </Text>
       )}
-      {product.metadata.tags?.length && (
+      {product.metadata.tags && product.metadata.tags.length > 0 && (
         <TagList tags={product.metadata.tags} />
       )}
     </Box>
