@@ -45,41 +45,12 @@
   outline-color: var(--accent-8);
 }
 
-.item h2 {
-  margin: 0;
-  font-size: var(--font-size-5);
-  line-height: var(--line-height-5);
-  font-weight: var(--font-weight-7);
-  color: var(--gray-12);
-}
-
-.item .description {
-  margin: 0 0 1rem 0;
-  color: var(--gray-11);
-}
-
-.item .metadata {
+.metadata {
   display: flex;
   gap: 1rem;
   align-items: center;
   font-size: 0.875rem;
   color: var(--gray-11);
-}
-
-.item .badge {
-  padding: 0.25rem 0.5rem;
-  border-radius: var(--radius-2);
-  font-weight: 500;
-}
-
-.item .badge.public {
-  background: var(--green-3);
-  color: var(--green-11);
-}
-
-.item .badge.private {
-  background: var(--red-3);
-  color: var(--red-11);
 }
 
 .empty {

@@ -40,7 +40,7 @@ export async function GET(
   try {
     const session = await getApiSession(request);
     const { data_connection_id } = await params;
-    const dataConnection = await dataConnectionsTable.fetchById(
+    let dataConnection = await dataConnectionsTable.fetchById(
       data_connection_id
     );
     if (!dataConnection) {
@@ -49,6 +49,7 @@ export async function GET(
         { status: StatusCodes.NOT_FOUND }
       );
     }
+
     if (!isAuthorized(session, dataConnection, Actions.GetDataConnection)) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -57,17 +58,18 @@ export async function GET(
     }
     // Sanitize connection if user doesn't have permission to view credentials
     if (
+      request.headers.get("Authorization") !== process.env.SOURCE_KEY &&
       !isAuthorized(
         session,
         dataConnection,
         Actions.ViewDataConnectionCredentials
       )
     ) {
-      const sanitized = DataConnectionSchema.omit({
+      dataConnection = DataConnectionSchema.omit({
         authentication: true,
       }).parse(dataConnection);
-      return NextResponse.json(sanitized, { status: StatusCodes.OK });
     }
+
     return NextResponse.json(dataConnection, { status: StatusCodes.OK });
   } catch (err: unknown) {
     const errorMessage =

@@ -1,6 +1,7 @@
 // jest.setup.ts
 import { jest } from "@jest/globals";
 import { Request, Response, Headers, fetch } from "undici";
+import "@testing-library/jest-dom";
 
 // Mock next/navigation
 jest.mock("next/navigation", () => ({

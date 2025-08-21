@@ -1,30 +1,37 @@
-'use client';
+"use client";
 
-import { Card, Box, DataList, Flex, IconButton, Tooltip } from '@radix-ui/themes';
-import { CopyIcon, CheckIcon } from '@radix-ui/react-icons';
-import type { ProductObject } from '@/types';
+import {
+  Card,
+  Box,
+  DataList,
+  Flex,
+  IconButton,
+  Tooltip,
+} from "@radix-ui/themes";
+import { CopyIcon, CheckIcon } from "@radix-ui/react-icons";
+import type { ProductObject } from "@/types";
 import type { Product } from "@/types";
-import { SectionHeader } from '@/components/core';
-import { DateText, BreadcrumbNav } from '@/components/display';
-import { ChecksumVerifier } from '../ChecksumVerifier';
-import { formatFileSize } from './utils';
-import { useState, useEffect } from 'react';
+import { SectionHeader } from "@/components/core";
+import { DateText, BreadcrumbNav } from "@/components/display";
+import { ChecksumVerifier } from "../ChecksumVerifier";
+import { formatFileSize } from "./utils";
+import { useState, useEffect } from "react";
 import { DataListItem } from "./DataListItem";
 
 interface ObjectDetailsProps {
   product: Product;
   selectedObject: ProductObject;
   selectedDataItem: string | null;
-  onNavigate: (path: string[]) => void;
+  cloudUri?: string;
 }
 
-export function ObjectDetails({ 
-  product, 
-  selectedObject, 
+export function ObjectDetails({
+  product,
+  selectedObject,
   selectedDataItem,
-  onNavigate
+  cloudUri,
 }: ObjectDetailsProps) {
-  const pathParts = selectedObject.path.split('/').filter(Boolean);
+  const pathParts = selectedObject.path.split("/").filter(Boolean);
   const fileName = pathParts.pop();
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
@@ -32,28 +39,32 @@ export function ObjectDetails({
   useEffect(() => {
     // Skip if no item is selected - no need to attach listeners
     if (!selectedDataItem) return;
-    
+
     const handleKeyDown = (e: KeyboardEvent) => {
       const selection = window.getSelection();
       const hasSelection = selection && selection.toString().length > 0;
-      const isInput = e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement;
-      
+      const isInput =
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement;
+
       // Skip if there's text selected or we're in an input
       if (hasSelection || isInput) return;
-      
+
       // Handle copy with Cmd/Ctrl+C or Enter
-      if ((e.key === 'Enter' || ((e.ctrlKey || e.metaKey) && e.key === 'c'))) {
+      if (e.key === "Enter" || ((e.ctrlKey || e.metaKey) && e.key === "c")) {
         e.preventDefault();
-        
+
         // Find the element with the selected data item
-        const element = document.querySelector(`[data-selectable="true"][data-item="${selectedDataItem}"]`);
+        const element = document.querySelector(
+          `[data-selectable="true"][data-item="${selectedDataItem}"]`
+        );
         if (element) {
-          const text = element.textContent || '';
+          const text = element.textContent || "";
           navigator.clipboard.writeText(text);
-          
+
           // Update the copied field
           setCopiedField(selectedDataItem);
-          
+
           // Reset after animation time
           setTimeout(() => {
             setCopiedField(null);
@@ -61,15 +72,15 @@ export function ObjectDetails({
         }
       }
     };
-    
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
   }, [selectedDataItem]);
 
   const copyToClipboard = (text: string | undefined, field: string) => {
-    navigator.clipboard.writeText(text || '').then(() => {
+    navigator.clipboard.writeText(text || "").then(() => {
       setCopiedField(field);
-      
+
       // Reset the copied field after animation time
       setTimeout(() => {
         setCopiedField(null);
@@ -91,7 +102,7 @@ export function ObjectDetails({
             <BreadcrumbNav
               path={pathParts}
               fileName={fileName}
-              onNavigate={onNavigate}
+              baseUrl={`/${product.account_id}/${product.product_id}`}
             />
           </Flex>
         </Box>
@@ -183,29 +194,18 @@ export function ObjectDetails({
           onCopy={copyToClipboard}
         />
 
-        {/* 
-        TODO: On production, this is based on dataConnectionDetails, but we don't have that data here.
-  
-        {dataConnectionDetails.s3DataConnection ? `s3://${dataConnectionDetails.s3DataConnection.bucket}/${account_id}/${resultState.key}` : ""}
-        {dataConnectionDetails.azureDataConnection ? `https://${dataConnectionDetails.azureDataConnection.account_name}.blob.core.windows.net/${dataConnectionDetails.azureDataConnection.container_name}/${account_id}/${resultState.key}` : ""}
-        */}
-        {/* {product.metadata?.mirrors && product.metadata.primary_mirror && (
+        {/* Cloud URI based on data connection details */}
+        {cloudUri && (
           <DataListItem
             label="Cloud URI"
-            value={`s3://${
-              product.metadata.mirrors[product.metadata.primary_mirror]
-                .config.bucket
-            }/${
-              product.metadata.mirrors[product.metadata.primary_mirror]
-                .prefix
-            }${selectedObject.path}`}
+            value={cloudUri}
             selectedDataItem={selectedDataItem}
             itemKey="cloud_uri"
             copiedField={copiedField}
             onCopy={copyToClipboard}
           />
-        )} */}
+        )}
       </DataList.Root>
     </Card>
   );
-} 
+}

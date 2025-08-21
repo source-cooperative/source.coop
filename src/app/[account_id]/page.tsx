@@ -15,7 +15,6 @@ import { Container } from "@radix-ui/themes";
 import { IndividualProfile } from "@/components/features/profiles";
 import { OrganizationProfilePage } from "@/components/features/profiles/OrganizationProfilePage";
 import type { IndividualAccount } from "@/types/account_v2";
-import type { Product } from "@/types";
 import { accountsTable, productsTable } from "@/lib/clients/database";
 import { getServerSession } from "@ory/nextjs/app";
 import type { ExtendedSession } from "@/types/session";
@@ -48,7 +47,10 @@ export default async function AccountPage({ params, searchParams }: PageProps) {
   }
 
   // Get repositories for individual account
-  let products: Product[] = await productsTable.listByAccount(account_id);
+  let { products, lastEvaluatedKey } = await productsTable.listByAccount(
+    //
+    account_id
+  );
 
   // Filter products based on authentication status
   if (!isAuthenticated || !isAccountOwner) {
@@ -64,6 +66,8 @@ export default async function AccountPage({ params, searchParams }: PageProps) {
         contributedProducts={[]}
         organizations={[]}
         showWelcome={showWelcome}
+        ownedProductsHasNextPage={!!lastEvaluatedKey}
+        ownedProductsNextCursor={lastEvaluatedKey}
       />
     </Container>
   );

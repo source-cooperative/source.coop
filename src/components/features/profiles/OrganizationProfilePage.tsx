@@ -34,7 +34,7 @@ export async function OrganizationProfilePage({ account_id }: OrganizationProfil
   );
 
   // Get products for this account
-  let products = await productsTable.listByAccount(account_id);
+  let { products } = await productsTable.listByAccount(account_id); // TODO: Implement pagination
 
   // Filter products based on authentication status
   if (!isAuthenticated || !isMember) {

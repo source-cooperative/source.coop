@@ -1,70 +1,75 @@
-'use client';
+"use client";
 
-// For homepage and general listing
-import { forwardRef } from 'react';
-import Link from 'next/link';
+import Link from "next/link";
 import type { Product } from "@/types";
-import { DateText } from '@/components/display';
-import { Box, Text, Badge, Heading } from '@radix-ui/themes';
-import styles from './ProductList.module.css';
+import { DateText } from "@/components/display";
+import { Box, Text, Badge, Heading } from "@radix-ui/themes";
+import { TagList } from "./TagList";
+import styles from "./ProductList.module.css";
 
 interface ProductListItemProps {
   product: Product;
   isSelected?: boolean;
 }
 
-export const ProductListItem = forwardRef<HTMLAnchorElement, ProductListItemProps>(
-  function ProductListItem({ product, isSelected }, ref) {
-    return (
-      <Link 
-        href={`/${product.account_id}/${product.product_id}`}
-        className={styles.item}
-        data-selected={isSelected}
-        ref={ref}
-        aria-current={isSelected ? 'page' : undefined}
-      >
-        <Box asChild>
-          <article>
-            <Heading size="5" weight="bold" color="gray" mb="2">
-              {product.title}
-            </Heading>
-              
-            {product.description && (
-              <Text as="p" size="2" color="gray" mb="4" mr="2">
-                {product.description}
-              </Text>
-            )}
+const VISIBILITY_CONFIG = {
+  public: { color: "green" as const, label: "Public" },
+  unlisted: { color: "yellow" as const, label: "Unlisted" },
+  restricted: { color: "red" as const, label: "Restricted" },
+} as const;
 
-            <Box>
-              {product.account?.name && (
-                <Text size="1" color="gray" mb="2" mr="2">
+export function ProductListItem({ product, isSelected }: ProductListItemProps) {
+  const visibility =
+    VISIBILITY_CONFIG[product.visibility] || VISIBILITY_CONFIG.restricted;
+
+  return (
+    <Box
+      className={styles.item}
+      data-selected={isSelected}
+      aria-current={isSelected ? "page" : undefined}
+    >
+      <article>
+        <Link href={`/${product.account_id}/${product.product_id}`}>
+          <Heading size="5" weight="bold" color="gray" mb="2">
+            {product.title}
+          </Heading>
+        </Link>
+
+        {product.description && (
+          <Text as="p" size="2" color="gray" mb="4">
+            {product.description}
+          </Text>
+        )}
+
+        <Box className={styles.metadata}>
+          {product.account?.name && (
+            <>
+              <Text size="1" color="gray">
+                Provided by{" "}
+                <Link href={`/${product.account_id}`}>
                   {product.account.name}
-                </Text>
-              )}
-              <Text size="1" color="gray" mb="2" mr="2">
-                Updated <DateText date={product.updated_at} />
+                </Link>
               </Text>
-              <Badge 
-                size="1" 
-                color={
-                  product.visibility === 'public' ? "green" : 
-                  product.visibility === 'unlisted' ? "yellow" : 
-                  "red"
-                }
-                aria-label={
-                  product.visibility === 'public' ? "Public product" : 
-                  product.visibility === 'unlisted' ? "Unlisted product" : 
-                  "Restricted product"
-                }
-              >
-                {product.visibility === 'public' ? "Public" : 
-                 product.visibility === 'unlisted' ? "Unlisted" : 
-                 "Restricted"}
-              </Badge>
-            </Box>
-          </article>
+              {" • "}
+            </>
+          )}
+          <Text size="1" color="gray">
+            Published on <DateText date={product.created_at} />
+          </Text>
+          <Badge
+            size="1"
+            color={visibility.color}
+            aria-label={`${visibility.label} product`}
+          >
+            {visibility.label}
+          </Badge>
         </Box>
-      </Link>
-    );
-  }
-); 
+
+        {product.metadata.tags &&
+          product.metadata.tags.filter(Boolean).length > 0 && (
+            <TagList tags={product.metadata.tags} />
+          )}
+      </article>
+    </Box>
+  );
+}

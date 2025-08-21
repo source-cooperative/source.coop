@@ -59,6 +59,7 @@ export const AccountProfileSchema = z
         return location === "" ? undefined : location;
       }, z.optional(z.string().max(128, "Location must not exceed 128 characters")))
       .openapi({ example: "Augsburg, Germany" }),
+    is_admin: z.boolean().optional(),
   })
   .openapi("AccountProfile");
 
@@ -104,11 +105,8 @@ export const AccountSchema = z
     disabled: z.boolean(),
     flags: AccountFlagsSchema,
     metadata_public: AccountProfileSchema,
-    metadata_private: z.optional(
-      z.object({
-        identity_id: z.string().openapi({ example: "identity-id" }),
-      })
-    ),
+    metadata_private: z.optional(z.record(z.object({}))),
+    identity_id: z.string().openapi({ example: "identity-id" }),
   })
   .openapi("Account");
 

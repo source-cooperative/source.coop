@@ -1,10 +1,10 @@
 /**
  * @openapi
  * /api-keys/{access_key_id}/auth:
- *   post:
+ *   get:
  *     tags: [API Keys, Authentication]
- *     summary: Authenticate with API key
- *     description: Authenticates a request using an API key and returns the associated account information.
+ *     summary: Fetch API Key details
+ *     description: Authenticates a request using an API key and returns the associated API key details.
  *     parameters:
  *       - in: path
  *         name: access_key_id
@@ -12,52 +12,53 @@
  *         schema:
  *           type: string
  *         description: The access key ID to authenticate with
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               secret_access_key:
- *                 type: string
- *                 description: The secret access key for authentication
+ *       - in: header
+ *         name: Authorization
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The authorization header containing the source key
  *     responses:
  *       200:
- *         description: Successfully authenticated
+ *         description: Successfully fetched API key details
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Account'
+ *               $ref: '#/components/schemas/ApiKey'
  *       401:
- *         description: Unauthorized - Invalid API key or secret
+ *         description: Unauthorized - Invalid authorization header or API key is disabled
  *       404:
  *         description: Not Found - API key not found
- *       500:
- *         description: Internal server error
  */
 import { NextRequest, NextResponse } from "next/server";
 import { StatusCodes } from "http-status-codes";
-import { apiKeysTable, accountsTable } from "@/lib/clients/database";
+import { apiKeysTable } from "@/lib/clients/database";
 
-export async function POST(
+export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ access_key_id: string }> }
 ) {
   try {
+    const authorization = request.headers.get("Authorization");
+    if (!authorization) {
+      return NextResponse.json(
+        { error: "Authorization header is required" },
+        { status: StatusCodes.UNAUTHORIZED }
+      );
+    }
+    if (authorization !== process.env.SOURCE_KEY) {
+      return NextResponse.json(
+        { error: "Invalid authorization header" },
+        { status: StatusCodes.UNAUTHORIZED }
+      );
+    }
+
     const { access_key_id } = await params;
-    const { secret_access_key } = await request.json();
     const apiKey = await apiKeysTable.fetchById(access_key_id);
     if (!apiKey) {
       return NextResponse.json(
         { error: `API key with ID ${access_key_id} not found` },
         { status: StatusCodes.NOT_FOUND }
-      );
-    }
-    if (apiKey.secret_access_key !== secret_access_key) {
-      return NextResponse.json(
-        { error: "Invalid API key or secret" },
-        { status: StatusCodes.UNAUTHORIZED }
       );
     }
     if (apiKey.disabled) {
@@ -66,14 +67,7 @@ export async function POST(
         { status: StatusCodes.UNAUTHORIZED }
       );
     }
-    const account = await accountsTable.fetchById(apiKey.account_id);
-    if (!account) {
-      return NextResponse.json(
-        { error: "Associated account not found" },
-        { status: StatusCodes.NOT_FOUND }
-      );
-    }
-    return NextResponse.json(account, { status: StatusCodes.OK });
+    return NextResponse.json(apiKey, { status: StatusCodes.OK });
   } catch (err: any) {
     return NextResponse.json(
       { error: err.message || "Internal server error" },

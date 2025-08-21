@@ -27,8 +27,8 @@ import { dataConnectionsTable } from "@/lib/clients/database";
 export async function GET(request: NextRequest) {
   try {
     const session = await getApiSession(request);
-    const dataConnections: DataConnection[] =
-      await dataConnectionsTable.listAll();
+
+    const dataConnections = await dataConnectionsTable.listAll();
     const filteredConnections = dataConnections.filter((dataConnection) =>
       isAuthorized(session, dataConnection, Actions.GetDataConnection)
     );

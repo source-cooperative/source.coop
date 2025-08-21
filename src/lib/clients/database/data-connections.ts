@@ -1,5 +1,8 @@
 import { DataConnection } from "@/types";
-import { PutItemCommand } from "@aws-sdk/client-dynamodb";
+import {
+  PutItemCommand,
+  ResourceNotFoundException,
+} from "@aws-sdk/client-dynamodb";
 import {
   QueryCommand,
   ScanCommand,
@@ -13,6 +16,8 @@ import { BaseTable } from "./base";
  * Class for managing data connection operations in DynamoDB
  */
 export class DataConnectionsTable extends BaseTable {
+  model = "data-connections";
+
   async fetchById(dataConnectionId: string): Promise<DataConnection | null> {
     try {
       const result = await this.client.send(
@@ -26,6 +31,8 @@ export class DataConnectionsTable extends BaseTable {
       );
       return (result.Items?.[0] as DataConnection) ?? null;
     } catch (error) {
+      if (error instanceof ResourceNotFoundException) return null;
+
       this.logError("fetchById", error, { dataConnectionId });
       throw error;
     }
@@ -128,6 +135,4 @@ export class DataConnectionsTable extends BaseTable {
     }
   }
 }
-export const dataConnectionsTable = new DataConnectionsTable({
-  table: "sc-data-connections",
-});
+export const dataConnectionsTable = new DataConnectionsTable({});

@@ -1,125 +1,118 @@
-'use client';
-
-import { ShortcutHelp } from '@/components/features/keyboard/ShortcutHelp';
-import { useObjectBrowserKeyboardShortcuts } from '@/hooks/useObjectBrowserKeyboardShortcuts';
-import { ObjectDetails } from './object-browser/ObjectDetails';
-import { DirectoryList } from './object-browser/DirectoryList';
-import { buildDirectoryTree } from './object-browser/utils';
-import './ObjectBrowser.module.css';
-import { ProductObject } from '@/types/product_object';
-import { Product } from "@/types";
-import { useRouter } from 'next/navigation';
-import { useCallback } from 'react';
-import { useMemo } from 'react';
-import { useRef } from 'react';
-import { useState } from 'react';
-import { Card, Box } from '@radix-ui/themes';
-import { SectionHeader } from '@/components/core';
-import { BreadcrumbNav } from '@/components/display';
+import { ObjectDetails } from "./object-browser/ObjectDetails";
+import { DirectoryList } from "./object-browser/DirectoryList";
+import "./ObjectBrowser.module.css";
+import { ProductObject } from "@/types/product_object";
+import { DataConnection, Product, ProductMirror } from "@/types";
+import { Card, Box } from "@radix-ui/themes";
+import { SectionHeader } from "@/components/core";
+import { BreadcrumbNav } from "@/components/display";
+import { storage } from "@/lib/clients/storage";
+import { buildDirectoryTree } from "./object-browser/utils";
 
 export interface ObjectBrowserProps {
   product: Product;
-  objects: ProductObject[];
   initialPath?: string;
   selectedObject?: ProductObject;
+  connectionDetails?: {
+    primaryMirror: ProductMirror;
+    dataConnection: DataConnection;
+  };
+  objects?: ProductObject[]; // Allow parent to pass objects to avoid duplicate calls
 }
 
-export function ObjectBrowser({ product, objects, initialPath = '', selectedObject }: ObjectBrowserProps) {
-  const router = useRouter(); 
-  const [currentPath, setCurrentPath] = useState<string[]>(
-    initialPath ? initialPath.split('/').filter(Boolean) : []
-  );
-  const [showHelp, setShowHelp] = useState(false);
-  const itemRefs = useRef<(HTMLAnchorElement | null)[]>([]);
+export async function ObjectBrowser({
+  product,
+  initialPath = "",
+  selectedObject,
+  connectionDetails,
+  objects: providedObjects,
+}: ObjectBrowserProps) {
+  const currentPath = initialPath ? initialPath.split("/").filter(Boolean) : [];
+  const pathString = currentPath.join("/");
 
-  // Get current directory items
-  const items = useMemo(() => {
-    const root = buildDirectoryTree(objects, currentPath);
-    return Object.values(root).sort((a, b) => {
-      // Directories first, then alphabetically
-      if (a.isDirectory !== b.isDirectory) {
-        return a.isDirectory ? -1 : 1;
-      }
-      return a.name.toLowerCase().localeCompare(b.name.toLowerCase());
-    });
-  }, [objects, currentPath]);
+  // Use provided objects or fetch them if needed
+  let objects: ProductObject[] = [];
+  if (providedObjects) {
+    objects = providedObjects;
+  } else if (!selectedObject || selectedObject.type === "directory") {
+    // Only fetch objects if we don't have them and we're not showing a file
+    try {
+      const prefix =
+        pathString && !pathString.endsWith("/") ? `${pathString}/` : pathString;
+      const result = await storage.listObjects({
+        account_id: product.account_id,
+        product_id: product.product_id,
+        object_path: pathString,
+        prefix,
+        delimiter: "/",
+      });
+      objects = result.objects || [];
+    } catch (error) {
+      console.error("Error fetching objects:", error);
+      objects = [];
+    }
+  }
 
-  const navigateToPath = useCallback(async (newPath: string[]) => {
-    setCurrentPath(newPath);
-    const urlPath = newPath.length > 0 ? '/' + newPath.join('/') : '';
-    router.push(`/${product.account_id}/${product.product_id}${urlPath}`);
-  }, [product, router]);
-
-  const navigateToFile = useCallback((path: string) => {
-    router.push(`/${product.account_id}/${product.product_id}/${path}`);
-  }, [product, router]);
-
-  const { 
-    focusedIndex, 
-    setFocusedIndex, 
-    selectedDataItem
-  } = useObjectBrowserKeyboardShortcuts({
-    product,
-    objects: items,
-    currentPath,
-    selectedObject,
-    onShowHelp: () => setShowHelp(true),
-    onNavigateToPath: navigateToPath,
-    onNavigateToFile: navigateToFile
+  // Build directory tree
+  const root = buildDirectoryTree(objects, currentPath);
+  const items = Object.values(root).sort((a, b) => {
+    // Directories first, then alphabetically
+    if (a.isDirectory !== b.isDirectory) {
+      return a.isDirectory ? -1 : 1;
+    }
+    return a.name.toLowerCase().localeCompare(b.name.toLowerCase());
   });
 
   // If we have a selected object and it's a file, show file details
-  // Only show file details if the file exists in our objects list
-  if (selectedObject && selectedObject.type !== 'directory') {
+  if (selectedObject && selectedObject.type !== "directory") {
+    let cloudUri: string | undefined = undefined;
+    if (connectionDetails) {
+      const details = connectionDetails.dataConnection.details;
+      const prefix = connectionDetails.primaryMirror.prefix;
+      switch (details.provider) {
+        case "s3":
+          cloudUri = `s3://${details.bucket}/${prefix}${selectedObject.path}`;
+          break;
+        case "az":
+          cloudUri = `https://${details.account_name}.blob.core.windows.net/${details.container_name}/${prefix}${selectedObject.path}`;
+          break;
+        default:
+          break;
+      }
+    }
     return (
-      <>
-        <ObjectDetails
-          product={product}
-          selectedObject={selectedObject}
-          selectedDataItem={selectedDataItem}
-          onNavigate={navigateToPath}
-        />
-        <ShortcutHelp 
-          open={showHelp} 
-          onOpenChange={setShowHelp} 
-          context="object-details" 
-        />
-      </>
+      <ObjectDetails
+        product={product}
+        selectedObject={selectedObject}
+        selectedDataItem={null}
+        cloudUri={cloudUri}
+      />
     );
   }
 
   // For directory view, show the contents of the current directory
   return (
-    <>
-      <Card>
-        <SectionHeader title="Product Contents">
-          <Box style={{ 
-            borderBottom: '1px solid var(--gray-5)',
-            paddingBottom: 'var(--space-3)',
-            marginBottom: 'var(--space-3)'
-          }}>
-            <BreadcrumbNav 
-              path={currentPath}
-              onNavigate={navigateToPath}
-            />
-          </Box>
-        </SectionHeader>
-        
-        <DirectoryList
-          items={items}
-          currentPath={currentPath}
-          focusedIndex={focusedIndex}
-          itemRefs={itemRefs}
-          onNavigateToPath={navigateToPath}
-          onNavigateToFile={navigateToFile}
-          setFocusedIndex={setFocusedIndex}
-        />
-      </Card>
-      <ShortcutHelp 
-        open={showHelp} 
-        onOpenChange={setShowHelp} 
-        context="object-browser" 
+    <Card>
+      <SectionHeader title="Product Contents">
+        <Box
+          style={{
+            borderBottom: "1px solid var(--gray-5)",
+            paddingBottom: "var(--space-3)",
+            marginBottom: "var(--space-3)",
+          }}
+        >
+          <BreadcrumbNav
+            path={currentPath}
+            baseUrl={`/${product.account_id}/${product.product_id}`}
+          />
+        </Box>
+      </SectionHeader>
+
+      <DirectoryList
+        items={items}
+        currentPath={currentPath}
+        product={product}
       />
-    </>
+    </Card>
   );
 }

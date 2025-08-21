@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from "next/server";
 import type { IndividualAccount } from "@/types/account_v2";
 import { updateOryIdentity } from "@/lib/ory";
 import { accountsTable } from "@/lib/clients/database";
@@ -62,9 +62,8 @@ export async function POST(request: NextRequest) {
       metadata_public: {
         domains: [],
       },
-      metadata_private: {
-        identity_id: ory_id,
-      },
+      metadata_private: {},
+      identity_id: ory_id,
     };
 
     console.log("Attempting to create account in DynamoDB:", newAccount);
@@ -102,10 +101,10 @@ export async function POST(request: NextRequest) {
 
         // If Ory update fails, delete the account from DynamoDB
         try {
-          await accountsTable.delete({
-            account_id,
-            type: AccountType.INDIVIDUAL,
-          });
+                          await accountsTable.delete({
+          account_id,
+          type: AccountType.INDIVIDUAL,
+        });
           console.log("Cleaned up DynamoDB account after Ory update failure");
         } catch (cleanupError) {
           console.error("Failed to clean up DynamoDB account:", cleanupError);
@@ -163,4 +162,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-} 
+}

@@ -33,28 +33,25 @@
  */
 
 import {
-  Repository,
-  Actions,
-  UserSession,
+  Account,
   AccountFlags,
-  MembershipState,
-  MembershipRole,
-  RepositoryDataMode,
+  AccountType,
+  Actions,
   APIKey,
-  Membership,
-  RepositoryState,
   DataConnection,
+  Membership,
+  MembershipRole,
+  MembershipState,
   Product,
+  ProductDataMode,
+  UserSession,
 } from "@/types";
-import { AccountType } from "@/types/account";
-import { Account } from "@/types/account";
 import { match } from "ts-pattern";
 
 export function isAuthorized(
   principal: UserSession | null,
   resource:
     | Account
-    | Repository
     | Product
     | APIKey
     | Membership
@@ -71,35 +68,35 @@ export function isAuthorized(
       createAccount(principal, resource as Account)
     )
     .with(Actions.CreateRepository, () =>
-      createRepository(principal, resource as Repository)
+      createRepository(principal, resource as Product)
     )
     .with(Actions.DisableAccount, () =>
       disableAccount(principal, resource as Account)
     )
     .with(Actions.DisableRepository, () =>
-      disableRepository(principal, resource as Repository)
+      disableRepository(principal, resource as Product)
     )
     .with(Actions.GetAccountProfile, () =>
       getAccountProfile(principal, resource as Account)
     )
     .with(Actions.PutRepository, () =>
-      putRepository(principal, resource as Repository)
+      putRepository(principal, resource as Product)
     )
     .with(Actions.ListRepository, () =>
-      listRepository(principal, resource as Repository)
+      listRepository(principal, resource as Product)
     )
     .with(Actions.ListAccount, () =>
       listAccount(principal, resource as Account)
     )
     .with(Actions.GetRepository, () =>
-      getRepository(principal, resource as Repository)
+      getRepository(principal, resource as Product)
     )
     .with(Actions.GetAccount, () => getAccount(principal, resource as Account))
     .with(Actions.ReadRepositoryData, () =>
-      readRepositoryData(principal, resource as Repository)
+      readRepositoryData(principal, resource as Product)
     )
     .with(Actions.WriteRepositoryData, () =>
-      writeRepositoryData(principal, resource as Repository)
+      writeRepositoryData(principal, resource as Product)
     )
     .with(Actions.PutAccountProfile, () =>
       putAccountProfile(principal, resource as Account)
@@ -136,10 +133,10 @@ export function isAuthorized(
       inviteMembership(principal, resource as Membership)
     )
     .with(Actions.ListRepositoryAPIKeys, () =>
-      listRepositoryAPIKeys(principal, resource as Repository)
+      listRepositoryAPIKeys(principal, resource as Product)
     )
     .with(Actions.ListRepositoryMemberships, () =>
-      listRepositoryMemberships(principal, resource as Repository)
+      listRepositoryMemberships(principal, resource as Product)
     )
     .with(Actions.ListAccountMemberships, () =>
       listAccountMemberships(principal, resource as Account)
@@ -364,10 +361,10 @@ function putAccountProfile(
 
 function writeRepositoryData(
   principal: UserSession | null,
-  repository: Repository
+  product: Product
 ): boolean {
   // If the repository is disabled, no one is authorized
-  if (repository.disabled) {
+  if (product.disabled) {
     return false;
   }
 
@@ -382,7 +379,7 @@ function writeRepositoryData(
   }
 
   // If the repository is under the user's account, they are authorized
-  if (principal?.account?.account_id === repository.account_id) {
+  if (principal?.account?.account_id === product.account_id) {
     return true;
   }
 
@@ -394,14 +391,14 @@ function writeRepositoryData(
       MembershipRole.Maintainers,
       MembershipRole.WriteData,
     ],
-    repository.account_id,
-    repository.repository_id
+    product.account_id,
+    product.product_id
   );
 }
 
 function readRepositoryData(
   principal: UserSession | null,
-  repository: Repository
+  product: Product
 ): boolean {
   // If the user is disabled, they are not authorized
   if (principal?.account?.disabled) {
@@ -414,17 +411,17 @@ function readRepositoryData(
   }
 
   // If the repository is disabled, they are not authorized
-  if (repository.disabled) {
+  if (product.disabled) {
     return false;
   }
 
   // If the repository is open, everyone is authorized
-  if (repository.data_mode === RepositoryDataMode.Open) {
+  if (product.data_mode === ProductDataMode.Open) {
     return true;
   }
 
   // If the repository is under the user's account, they are authorized
-  if (principal?.account?.account_id === repository.account_id) {
+  if (principal?.account?.account_id === product.account_id) {
     return true;
   }
 
@@ -437,14 +434,14 @@ function readRepositoryData(
       MembershipRole.WriteData,
       MembershipRole.ReadData,
     ],
-    repository.account_id,
-    repository.repository_id
+    product.account_id,
+    product.product_id
   );
 }
 
 function getRepository(
   principal: UserSession | null,
-  repository: Repository
+  product: Product
 ): boolean {
   // If the user is disabled, they are not authorized
   if (principal?.account?.disabled) {
@@ -457,17 +454,18 @@ function getRepository(
   }
 
   // If the repository is disabled, they are not authorized
-  if (repository.disabled) {
+  if (product.disabled) {
     return false;
   }
 
   // If the repository is open, everyone is authorized
-  if (repository.data_mode === RepositoryDataMode.Open) {
+  // TODO: Right now we are treating unset data_mode as open
+  if (!product.data_mode || product.data_mode === ProductDataMode.Open) {
     return true;
   }
 
   // If the repository is under the user's account, they are authorized
-  if (principal?.account?.account_id === repository.account_id) {
+  if (principal?.account?.account_id === product.account_id) {
     return true;
   }
 
@@ -480,14 +478,14 @@ function getRepository(
       MembershipRole.WriteData,
       MembershipRole.ReadData,
     ],
-    repository.account_id,
-    repository.repository_id
+    product.account_id,
+    product.product_id
   );
 }
 
 function listRepository(
   principal: UserSession | null,
-  repository: Repository
+  product: Product
 ): boolean {
   // If the user is disabled, they are not authorized
   if (principal?.account?.disabled) {
@@ -500,14 +498,15 @@ function listRepository(
   }
 
   // If the repository is disabled, they are not authorized
-  if (repository.disabled) {
+  if (product.disabled) {
     return false;
   }
 
   // If the repository is listed , everyone is authorized
   if (
-    repository.state === RepositoryState.Listed &&
-    repository.data_mode === RepositoryDataMode.Open
+    // product.state === RepositoryState.Listed &&
+    // product.data_mode === RepositoryDataMode.Open
+    product.visibility === "public"
   ) {
     return true;
   }
@@ -518,7 +517,7 @@ function listRepository(
   }
 
   // If the repository is under the user's account, they are authorized
-  if (principal?.account?.account_id === repository.account_id) {
+  if (principal?.account?.account_id === product.account_id) {
     return true;
   }
 
@@ -531,14 +530,14 @@ function listRepository(
       MembershipRole.ReadData,
       MembershipRole.WriteData,
     ],
-    repository.account_id,
-    repository.repository_id
+    product.account_id,
+    product.product_id
   );
 }
 
 function putRepository(
   principal: UserSession | null,
-  repository: Repository
+  product: Product
 ): boolean {
   // If the user does not have an account, they are not authorized
   if (!principal?.account) {
@@ -556,12 +555,12 @@ function putRepository(
   }
 
   // If the repository is disabled, they are not authorized
-  if (repository.disabled) {
+  if (product.disabled) {
     return false;
   }
 
   // If the repository is under the user's account, they are authorized
-  if (principal?.account?.account_id === repository.account_id) {
+  if (principal?.account?.account_id === product.account_id) {
     return true;
   }
 
@@ -569,8 +568,8 @@ function putRepository(
   return hasRole(
     principal,
     [MembershipRole.Owners, MembershipRole.Maintainers],
-    repository.account_id,
-    repository.repository_id
+    product.account_id,
+    product.product_id
   );
 }
 
@@ -598,7 +597,7 @@ function getAccountProfile(
 
 function disableRepository(
   principal: UserSession | null,
-  repository: Repository
+  product: Product
 ): boolean {
   // If the user does not have an account, they are not authorized
   if (!principal?.account) {
@@ -616,20 +615,20 @@ function disableRepository(
   }
 
   // If the repository is disabled, they are not authorized
-  if (repository.disabled) {
+  if (product.disabled) {
     return false;
   }
 
   // If the repository is under the user's account, they are authorized
-  if (principal?.account?.account_id === repository.account_id) {
+  if (principal?.account?.account_id === product.account_id) {
     return true;
   }
 
   return hasRole(
     principal,
     [MembershipRole.Owners, MembershipRole.Maintainers],
-    repository.account_id,
-    repository.repository_id
+    product.account_id,
+    product.product_id
   );
 }
 
@@ -723,7 +722,7 @@ function listAccount(principal: UserSession | null, account: Account): boolean {
 
 function createRepository(
   principal: UserSession | null,
-  repository: Repository
+  product: Product
 ): boolean {
   // If the user does not have an account, they are not authorized
   if (!principal?.account) {
@@ -746,15 +745,15 @@ function createRepository(
   }
 
   // If the repository is under the user's account, they are authorized
-  if (principal?.account?.account_id === repository.account_id) {
+  if (principal?.account?.account_id === product.account_id) {
     return true;
   }
 
   return hasRole(
     principal,
     [MembershipRole.Owners, MembershipRole.Maintainers],
-    repository.account_id,
-    repository.repository_id
+    product.account_id,
+    product.product_id
   );
 }
 
@@ -881,7 +880,7 @@ function listAccountMemberships(
 
 function listRepositoryAPIKeys(
   principal: UserSession | null,
-  repository: Repository
+  product: Product
 ): boolean {
   // If the user does not have an account, they are not authorized
   if (!principal?.account) {
@@ -899,7 +898,7 @@ function listRepositoryAPIKeys(
   }
 
   // If the user is the owner of the API key, they are authorized
-  if (repository.account_id === principal.account.account_id) {
+  if (product.account_id === principal.account.account_id) {
     return true;
   }
 
@@ -907,14 +906,14 @@ function listRepositoryAPIKeys(
   return hasRole(
     principal,
     [MembershipRole.Owners, MembershipRole.Maintainers],
-    repository.account_id,
-    repository.repository_id
+    product.account_id,
+    product.product_id
   );
 }
 
 function listRepositoryMemberships(
   principal: UserSession | null,
-  repository: Repository
+  product: Product
 ): boolean {
   // If the user does not have an account, they are not authorized
   if (!principal?.account) {
@@ -932,7 +931,7 @@ function listRepositoryMemberships(
   }
 
   // If the user is the owner of the API key, they are authorized
-  if (repository.account_id === principal.account.account_id) {
+  if (product.account_id === principal.account.account_id) {
     return true;
   }
 
@@ -940,8 +939,8 @@ function listRepositoryMemberships(
   return hasRole(
     principal,
     [MembershipRole.Owners, MembershipRole.Maintainers],
-    repository.account_id,
-    repository.repository_id
+    product.account_id,
+    product.product_id
   );
 }
 

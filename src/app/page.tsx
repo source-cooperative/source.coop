@@ -1,36 +1,33 @@
-/**
- * Home Page - Lists all repositories
- * 
- * KEEP IT SIMPLE:
- * 1. No URL params needed (root route /)
- * 2. Get data -> Transform if needed -> Render
- * 3. Trust your types, avoid complex validation
- * 4. Let Next.js handle errors (404, 500, etc.)
- * 5. No helper functions unless truly needed
- */
+import { Container, Heading, Text, Box } from "@radix-ui/themes";
+import { ProductsList } from "@/components/features/products/ProductsList";
+import { getProducts } from "@/lib/actions/products";
 
-// src/app/page.tsx
-import { Container, Box, Heading } from '@radix-ui/themes';
-import { ProductList } from '@/components/features/products';
-import type { Product } from "@/types";
-import { productsTable } from "@/lib/clients/database";
-
-// Server action for data fetching
-async function getProducts(): Promise<Product[]> {
-  "use server";
-  const { products: productsWithoutAccounts } =
-    await productsTable.listPublic();
-  return productsTable.attachAccounts(productsWithoutAccounts);
-}
+export const metadata = {
+  title: "Featured Products | Source.coop",
+  description: "Browse and discover public data products on Source.coop",
+};
 
 export default async function HomePage() {
-  const products = await getProducts();
-  
+  // Fetch featured products on the server
+  const result = await getProducts({
+    featuredOnly: true,
+    limit: 10,
+  });
+
   return (
     <Container size="4" py="6">
       <Box>
-        <Heading size="6" mb="4">Products</Heading>
-        <ProductList products={products} />
+        <Heading size="6" mb="2">
+          Featured Products
+        </Heading>
+        <Text as="p" size="3" color="gray" mb="6">
+          Discover the latest and most popular data products from the
+          Source.coop community.
+        </Text>
+        <ProductsList
+          products={result.products}
+          // No pagination for featured products
+        />
       </Box>
     </Container>
   );

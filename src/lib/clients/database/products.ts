@@ -1,5 +1,8 @@
-import type { Product, ProductMirror, ProductRole } from "@/types";
-import { PutItemCommand } from "@aws-sdk/client-dynamodb";
+import type { Product, ProductMirror, ProductRole, Account } from "@/types";
+import {
+  PutItemCommand,
+  ResourceNotFoundException,
+} from "@aws-sdk/client-dynamodb";
 
 import {
   GetCommand,
@@ -7,40 +10,14 @@ import {
   QueryCommand,
   ScanCommand,
   UpdateCommand,
+  BatchGetCommand,
 } from "@aws-sdk/lib-dynamodb";
 import { accountsTable } from "./accounts";
 import { BaseTable } from "./base";
 import { marshall } from "@aws-sdk/util-dynamodb";
 
 class ProductsTable extends BaseTable {
-  async listPublic(
-    limit = 50,
-    lastEvaluatedKey?: any
-  ): Promise<{
-    products: Product[];
-    lastEvaluatedKey: any;
-  }> {
-    const queryParams: any = {
-      TableName: this.table,
-      IndexName: "PublicProductsIndex",
-      KeyConditionExpression: "visibility = :visibility",
-      ExpressionAttributeValues: {
-        ":visibility": "public",
-      },
-      Limit: limit,
-    };
-
-    if (lastEvaluatedKey) {
-      queryParams.ExclusiveStartKey = lastEvaluatedKey;
-    }
-
-    const result = await this.client.send(new QueryCommand(queryParams));
-
-    return {
-      products: (result.Items || []) as Product[],
-      lastEvaluatedKey: result.LastEvaluatedKey,
-    };
-  }
+  model = "products";
 
   async list(
     limit = 50,
@@ -67,65 +44,109 @@ class ProductsTable extends BaseTable {
     };
   }
 
-  async listByAccount(account_id: string): Promise<Product[]> {
-    const [result, account] = await Promise.all([
-      this.client.send(
-        new QueryCommand({
-          TableName: this.table,
-          IndexName: "AccountProductsIndex",
-          KeyConditionExpression: "account_id = :account_id",
-          ExpressionAttributeValues: {
-            ":account_id": account_id,
-          },
-        })
-      ),
-      accountsTable.fetchById(account_id),
-    ]);
-
-    return (result.Items || []).map((item: any) => ({
-      ...(item as Product),
-      account: account || undefined,
-    }));
-  }
-
-  async listFeatured(): Promise<Product[]> {
-    // TODO: This doesn't work yet
+  async listByAccount(
+    account_id: string,
+    limit = 50,
+    lastEvaluatedKey?: any
+  ): Promise<{
+    products: Product[];
+    lastEvaluatedKey: any;
+  }> {
     const result = await this.client.send(
       new QueryCommand({
         TableName: this.table,
-        IndexName: "PublicProductsIndex",
-        KeyConditionExpression: "visibility = :visibility",
+        KeyConditionExpression: "account_id = :account_id",
         ExpressionAttributeValues: {
-          ":visibility": "public",
+          ":account_id": account_id,
         },
+        Limit: limit,
+        ExclusiveStartKey: lastEvaluatedKey,
       })
     );
-    return (result.Items || []) as Product[];
+
+    return {
+      products: (result.Items || []) as Product[],
+      lastEvaluatedKey: result.LastEvaluatedKey,
+    };
+  }
+
+  async listByAccountAll(account_id: string): Promise<Product[]> {
+    const allProducts: Product[] = [];
+    let lastEvaluatedKey: any = undefined;
+
+    do {
+      const result = await this.listByAccount(
+        account_id,
+        1000,
+        lastEvaluatedKey
+      );
+      allProducts.push(...result.products);
+      lastEvaluatedKey = result.lastEvaluatedKey;
+    } while (lastEvaluatedKey);
+
+    return allProducts;
+  }
+
+  async listPublic(
+    limit = 50,
+    lastEvaluatedKey?: any
+  ): Promise<{
+    products: Product[];
+    lastEvaluatedKey: any;
+  }> {
+    const queryParams: any = {
+      TableName: this.table,
+      IndexName: "public_featured",
+      KeyConditionExpression: "visibility = :visibility",
+      ExpressionAttributeValues: {
+        ":visibility": "public",
+      },
+      ScanIndexForward: false, // Descending order of featured
+      Limit: limit,
+    };
+
+    if (lastEvaluatedKey) {
+      queryParams.ExclusiveStartKey = lastEvaluatedKey;
+    }
+
+    const result = await this.client.send(new QueryCommand(queryParams));
+
+    return {
+      products: (result.Items || []) as Product[],
+      lastEvaluatedKey: result.LastEvaluatedKey,
+    };
   }
 
   async fetchById(
     account_id: string,
     product_id: string
   ): Promise<Product | null> {
-    const [result, account] = await Promise.all([
-      this.client.send(
-        new GetCommand({
-          TableName: this.table,
-          Key: {
-            product_id,
-            account_id,
-          },
-        })
-      ),
-      accountsTable.fetchById(account_id),
-    ]);
+    try {
+      const [result, account] = await Promise.all([
+        this.client.send(
+          new GetCommand({
+            TableName: this.table,
+            Key: {
+              account_id,
+              product_id,
+            },
+          })
+        ),
+        accountsTable.fetchById(account_id),
+      ]);
 
-    if (!result.Item) return null;
+      if (!result.Item) return null;
 
-    return {
-      ...(result.Item as Product),
-      account: account || undefined,
-    };
+      return {
+        ...(result.Item as Product),
+        account: account || undefined,
+      };
+    } catch (error) {
+      if (error instanceof ResourceNotFoundException) return null;
+
+      this.logError("fetchById", error, { account_id, product_id });
+      throw error;
+    }
   }
 
   async create(product: Product): Promise<Product> {
@@ -262,18 +283,39 @@ class ProductsTable extends BaseTable {
    * @returns Products with accounts attached
    */
   async attachAccounts(products: Product[]): Promise<Product[]> {
-    // Fetch all accounts in parallel
-    const accounts = await Promise.all(
-      Array.from(new Set(products.map((item) => item.account_id))).map((id) =>
-        accountsTable.fetchById(id)
-      )
-    );
-    const accountMap = new Map(
-      accounts.filter(Boolean).map((acc: any) => [acc!.account_id, acc])
+    const uniqueAccountIds = Array.from(
+      new Set(products.map((p) => p.account_id))
     );
 
-    // Attach accounts to products
-    return products.map((item: any) => ({
+    if (uniqueAccountIds.length === 0) return products;
+
+    const batchSize = 100;
+    const accountBatches = [];
+
+    for (let i = 0; i < uniqueAccountIds.length; i += batchSize) {
+      const batch = uniqueAccountIds.slice(i, i + batchSize);
+      const batchRequest = {
+        RequestItems: {
+          [accountsTable.table]: {
+            Keys: batch.map((account_id) => ({ account_id })),
+          },
+        },
+      };
+
+      console.debug(
+        `DB: Fetching ${batch.length} accounts: ${batch.join(", ")}`
+      );
+      const result = await this.client.send(new BatchGetCommand(batchRequest));
+      if (result.Responses?.[accountsTable.table]) {
+        accountBatches.push(...result.Responses[accountsTable.table]);
+      }
+    }
+
+    const accountMap = new Map(
+      accountBatches.map((acc) => [acc.account_id, acc as Account])
+    );
+
+    return products.map((item) => ({
       ...item,
       account: accountMap.get(item.account_id) || undefined,
     }));
@@ -281,6 +323,4 @@ class ProductsTable extends BaseTable {
 }
 
 // Export a singleton instance
-export const productsTable = new ProductsTable({
-  table: "sc-products",
-});
+export const productsTable = new ProductsTable({});

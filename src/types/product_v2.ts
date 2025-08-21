@@ -19,17 +19,6 @@ export const ProductMirrorSchema = z
     }),
     // Mirror-specific settings
     is_primary: z.boolean(), // Is this the primary mirror?
-    sync_status: z.object({
-      last_sync_at: z.string(),
-      is_synced: z.boolean(),
-      error: z.string().optional(),
-    }),
-    // Monitoring
-    stats: z.object({
-      total_objects: z.number(),
-      total_size: z.number(),
-      last_verified_at: z.string(),
-    }),
   })
   .openapi("ProductMirror");
 
@@ -60,6 +49,17 @@ export const ProductMetadataSchema = z
 
 export type ProductMetadata = z.infer<typeof ProductMetadataSchema>;
 
+export enum ProductDataMode {
+  Open = "open",
+  Subscription = "subscription",
+  Private = "private",
+}
+export const ProductDataModeSchema = z
+  .nativeEnum(ProductDataMode, {
+    errorMap: () => ({ message: "Invalid product data mode" }),
+  })
+  .openapi("ProductDataMode");
+
 // Main product interface matching new schema
 // Product is the main product entity, including metadata and optional account
 export const ProductSchema = z
@@ -73,6 +73,9 @@ export const ProductSchema = z
     visibility: z.enum(["public", "unlisted", "restricted"]),
     metadata: ProductMetadataSchema,
     account: AccountSchema.optional(),
+    disabled: z.boolean(),
+    featured: z.number(),
+    data_mode: ProductDataModeSchema,
   })
   .openapi("Product");
 

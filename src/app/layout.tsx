@@ -3,6 +3,7 @@ import "@/styles/globals.css";
 import { ThemeProvider } from "@/styles/theme";
 import { SessionProvider } from "@ory/elements-react/client";
 import { getServerSession } from "@ory/nextjs/app";
+import NextTopLoader from "nextjs-toploader";
 import { IBM_Plex_Sans } from "next/font/google";
 import { Box } from "@radix-ui/themes";
 import { Navigation, Footer /*, Banner*/ } from "@/components/layout";
@@ -33,7 +34,11 @@ export default async function RootLayout({
           defaultTheme="system"
           storageKey="source-theme"
         >
-          <SessionProvider session={session} baseUrl={CONFIG.auth.api.frontendUrl}>
+          <NextTopLoader />
+          <SessionProvider
+            session={session}
+            baseUrl={CONFIG.auth.api.frontendUrl}
+          >
             <Box style={{ minHeight: "100vh" }}>
               {/* <Banner /> */}
               <Suspense>

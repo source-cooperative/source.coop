@@ -207,8 +207,9 @@ export async function getApiSession(
   if (!session) {
     return null;
   }
-  const identityId = session.identity?.id;
-  if (!identityId) {
+  console.log("ory session", session);
+  const oryId = session.identity?.id;
+  if (!oryId) {
     logger.warn("No identity ID found in session", {
       operation: "getApiSession",
       context: "session",
@@ -217,37 +218,11 @@ export async function getApiSession(
   }
 
   // Fetch account information for the user
-  const account = await accountsTable.fetchById(identityId);
+  const account = await accountsTable.fetchByOryId(oryId);
 
   if (!account || account.disabled) {
-    return { identity_id: identityId };
+    return { identity_id: oryId };
   }
-
-  // // Transform the database account to the expected format
-  // const account = {
-  //   account_id: dbAccount.account_id,
-  //   disabled: dbAccount.disabled,
-  //   account_type:
-  //     dbAccount.type === "individual"
-  //       ? AccountType.INDIVIDUAL
-  //       : AccountType.ORGANIZATION,
-  //   profile: {
-  //     name: dbAccount.name,
-  //     bio: dbAccount.metadata_public.bio,
-  //     location: dbAccount.metadata_public.location,
-  //   },
-  //   flags: dbAccount.flags
-  //     .map(
-  //       (flag) =>
-  //         ({
-  //           admin: AccountFlags.ADMIN,
-  //           create_repositories: AccountFlags.CREATE_REPOSITORIES,
-  //           create_organizations: AccountFlags.CREATE_ORGANIZATIONS,
-  //         }[flag])
-  //     )
-  //     .filter((flag) => flag !== undefined),
-  //   identity_id: identityId,
-  // };
 
   // Retrieve and filter memberships for the user
   const memberships = await membershipsTable.listByUser(account.account_id);
@@ -257,7 +232,7 @@ export async function getApiSession(
 
   // Return the user session
   return {
-    identity_id: identityId,
+    identity_id: oryId,
     account,
     memberships: filteredMemberships,
   };

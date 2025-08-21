@@ -30,9 +30,8 @@ interface BaseAccount {
     bio?: string;
     domains?: AccountDomain[];
   };
-  metadata_private: {
-    identity_id: string;
-  };
+  metadata_private: { [key: string]: any };
+  identity_id: string;
 }
 
 // Interface for individual accounts

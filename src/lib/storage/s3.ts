@@ -1,5 +1,6 @@
 import {
   S3Client,
+  S3ServiceException,
   ListObjectsV2Command,
   GetObjectCommand,
   PutObjectCommand,
@@ -8,7 +9,6 @@ import {
 } from "@aws-sdk/client-s3";
 import {
   StorageClient,
-  StorageProvider,
   StorageConfig,
   ListObjectsParams,
   ListObjectsResult,
@@ -23,11 +23,8 @@ import { Readable } from "stream";
 
 export class S3StorageClient implements StorageClient {
   private s3Client: S3Client;
-  private provider: StorageProvider;
 
-  constructor(provider: StorageProvider, config: StorageConfig) {
-    this.provider = provider;
-
+  constructor(config: StorageConfig) {
     // Initialize S3 client without request signing for public access
     this.s3Client = new S3Client({
       ...config,
@@ -107,7 +104,7 @@ export class S3StorageClient implements StorageClient {
         nextContinuationToken: response.NextContinuationToken,
       };
     } catch (error) {
-      console.error("Error listing objects:", error);
+      console.error("Error listing objects:", JSON.stringify(error, null, 2));
       return { objects: [], commonPrefixes: [], isTruncated: false };
     }
   }
@@ -154,7 +151,7 @@ export class S3StorageClient implements StorageClient {
     }
   }
 
-  async getObjectInfo(params: GetObjectParams): Promise<ProductObject> {
+  async getObjectInfo(params: GetObjectParams): Promise<ProductObject | null> {
     try {
       const command = new HeadObjectCommand({
         Bucket: params.account_id,
@@ -177,7 +174,12 @@ export class S3StorageClient implements StorageClient {
         checksum: response.ETag || "",
         metadata: response.Metadata || {},
       };
-    } catch (error) {
+    } catch (error: unknown) {
+      if (error instanceof S3ServiceException && error.name === "NotFound") {
+        console.debug("Object not found:", params.object_path);
+        return null;
+      }
+
       console.error("Error getting object info:", error);
       throw error;
     }

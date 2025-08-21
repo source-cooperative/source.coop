@@ -1,5 +1,9 @@
 import { Membership } from "@/types";
-import { PutItemCommand } from "@aws-sdk/client-dynamodb";
+import {
+  ConditionalCheckFailedException,
+  PutItemCommand,
+  ResourceNotFoundException,
+} from "@aws-sdk/client-dynamodb";
 import { QueryCommand, PutCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import { marshall } from "@aws-sdk/util-dynamodb";
 import { BaseTable } from "./base";
@@ -8,6 +12,8 @@ import { BaseTable } from "./base";
  * Class for managing membership operations in DynamoDB
  */
 export class MembershipsTable extends BaseTable {
+  model = "memberships";
+
   async fetchById(membershipId: string): Promise<Membership | null> {
     try {
       const result = await this.client.send(
@@ -21,6 +27,8 @@ export class MembershipsTable extends BaseTable {
       );
       return (result.Items?.[0] as Membership) ?? null;
     } catch (error) {
+      if (error instanceof ResourceNotFoundException) return null;
+
       this.logError("fetchById", error, { membershipId });
       throw error;
     }
@@ -50,31 +58,26 @@ export class MembershipsTable extends BaseTable {
     repositoryId?: string
   ): Promise<Membership[]> {
     try {
-      let command: QueryCommand;
-
-      if (repositoryId) {
-        command = new QueryCommand({
-          TableName: this.table,
-          IndexName: "membership_account_id_repository_id",
-          KeyConditionExpression:
-            "membership_account_id = :membership_account_id AND repository_id = :repository_id",
-          ExpressionAttributeValues: {
-            ":membership_account_id": membershipAccountId,
-            ":repository_id": repositoryId,
-          },
-        });
-      } else {
-        command = new QueryCommand({
-          TableName: this.table,
-          IndexName: "membership_account_id",
-          KeyConditionExpression:
-            "membership_account_id = :membership_account_id",
-          ExpressionAttributeValues: {
-            ":membership_account_id": membershipAccountId,
-          },
-        });
-      }
-
+      const command = new QueryCommand({
+        TableName: this.table,
+        IndexName: "membership_account_id_repository_id",
+        ...(repositoryId
+          ? {
+              KeyConditionExpression:
+                "membership_account_id = :membership_account_id AND repository_id = :repository_id",
+              ExpressionAttributeValues: {
+                ":membership_account_id": membershipAccountId,
+                ":repository_id": repositoryId,
+              },
+            }
+          : {
+              KeyConditionExpression:
+                "membership_account_id = :membership_account_id",
+              ExpressionAttributeValues: {
+                ":membership_account_id": membershipAccountId,
+              },
+            }),
+      });
       const result = await this.client.send(command);
       return result.Items?.map((item) => item as Membership) ?? [];
     } catch (error) {
@@ -163,6 +166,4 @@ export class MembershipsTable extends BaseTable {
     }
   }
 }
-export const membershipsTable = new MembershipsTable({
-  table: "sc-memberships",
-});
+export const membershipsTable = new MembershipsTable({});

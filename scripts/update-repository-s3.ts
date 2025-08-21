@@ -48,15 +48,6 @@ async function updateProductS3Config() {
               bucket: "opendata.source.coop",
             },
             is_primary: true,
-            sync_status: {
-              last_sync_at: now,
-              is_synced: true,
-            },
-            stats: {
-              total_objects: 0,
-              total_size: 0,
-              last_verified_at: now,
-            },
           },
         },
         primary_mirror: "aws-us-west-2",

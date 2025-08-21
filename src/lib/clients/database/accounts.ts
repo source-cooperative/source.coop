@@ -5,76 +5,71 @@ import {
   DeleteCommand,
   PutCommand,
 } from "@aws-sdk/lib-dynamodb";
+import { ResourceNotFoundException } from "@aws-sdk/client-dynamodb";
 import type { Account, AccountType } from "@/types/account";
 import type {
   IndividualAccount,
   OrganizationalAccount,
 } from "@/types/account_v2";
 
-// Use the singleton client from clients/index.ts
 import { BaseTable } from "./base";
 
 class AccountsTable extends BaseTable {
-  async fetchById(account_id: string): Promise<Account | null> {
-    const types = ["individual", "organization"] as const;
+  model = "accounts";
 
-    for (const type of types) {
-      console.log(
-        `DB: Trying to fetch account of type ${type} for ID:`,
-        account_id
-      );
+  async fetchById(account_id: string): Promise<Account | null> {
+    try {
+      console.log(`DB: Trying to fetch account for ID:`, account_id);
       const result = await this.client.send(
-        new GetCommand({
+        new QueryCommand({
           TableName: this.table,
-          Key: { account_id, type },
+          ExpressionAttributeValues: {
+            ":account_id": account_id,
+          },
+          KeyConditionExpression: "account_id = :account_id",
         })
       );
 
-      if (result.Item) {
-        console.log(`DB: Found account of type ${type} for ID:`, account_id);
-        return result.Item as Account;
+      if (result.Items?.length) {
+        console.log(`DB: Found account for ID:`, account_id);
+        return result.Items[0] as Account;
       }
-    }
 
-    return null;
+      return null;
+    } catch (error) {
+      if (error instanceof ResourceNotFoundException) return null;
+
+      this.logError("fetchById", error, { account_id });
+      throw error;
+    }
   }
 
-  async fetchByEmail(email: string): Promise<Account> {
-    const result = await this.client.send(
-      new QueryCommand({
-        TableName: this.table,
-        IndexName: "AccountEmailIndex",
-        KeyConditionExpression: "emails = :email",
-        ExpressionAttributeValues: {
-          ":email": email,
-        },
-        Limit: 1,
-      })
-    );
+  async fetchByOryId(identity_id: string): Promise<Account | null> {
+    try {
+      console.log(`DB: Trying to fetch account by Ory ID:`, identity_id);
+      const result = await this.client.send(
+        new QueryCommand({
+          TableName: this.table,
+          IndexName: "identity_id",
+          KeyConditionExpression: "identity_id = :identity_id",
+          ExpressionAttributeValues: {
+            ":identity_id": identity_id,
+          },
+        })
+      );
 
-    if (!result.Items || result.Items.length === 0) {
-      throw new Error(`No account found for email: ${email}`);
+      if (result.Items && result.Items.length > 0) {
+        console.log(`DB: Found account by Ory ID:`, identity_id);
+        return result.Items[0] as Account;
+      }
+
+      return null;
+    } catch (error) {
+      if (error instanceof ResourceNotFoundException) return null;
+
+      this.logError("fetchByOryId", error, { identity_id });
+      throw error;
     }
-
-    return result.Items[0] as Account;
-  }
-
-  async listByType(type: "individual" | "organization"): Promise<Account[]> {
-    const result = await this.client.send(
-      new QueryCommand({
-        TableName: this.table,
-        IndexName: "AccountTypeIndex",
-        KeyConditionExpression: "#type = :type",
-        ExpressionAttributeNames: {
-          "#type": "type",
-        },
-        ExpressionAttributeValues: {
-          ":type": type,
-        },
-      })
-    );
-
-    return (result.Items || []) as Account[];
   }
 
   async create(account: Account): Promise<Account> {
@@ -94,14 +89,15 @@ class AccountsTable extends BaseTable {
         TableName: this.table,
         Key: {
           account_id: account.account_id,
-          type: account.type,
         },
         UpdateExpression:
-          "SET #name = :name, emails = :emails, updated_at = :updated_at, disabled = :disabled, flags = :flags, metadata_public = :metadata_public, metadata_private = :metadata_private",
+          "SET #name = :name, #type = :type, emails = :emails, updated_at = :updated_at, disabled = :disabled, flags = :flags, metadata_public = :metadata_public, metadata_private = :metadata_private, identity_id = :identity_id",
         ExpressionAttributeNames: {
           "#name": "name", // name is a reserved word in DynamoDB
+          "#type": "type", // type is also a reserved word in DynamoDB
         },
         ExpressionAttributeValues: {
+          ":type": account.type,
           ":name": account.name,
           ":emails": account.emails,
           ":updated_at": new Date().toISOString(),
@@ -109,6 +105,8 @@ class AccountsTable extends BaseTable {
           ":flags": account.flags,
           ":metadata_public": account.metadata_public,
           ":metadata_private": account.metadata_private,
+          ":identity_id":
+            account.identity_id || account.metadata_private?.identity_id,
         },
         ReturnValues: "ALL_NEW",
       })
@@ -195,6 +193,4 @@ export const isOrganizationalAccount = (
 ): acc is OrganizationalAccount => acc.type === "organization";
 
 // Export a singleton instance
-export const accountsTable = new AccountsTable({
-  table: "sc-accounts",
-});
+export const accountsTable = new AccountsTable({});

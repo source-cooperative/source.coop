@@ -123,12 +123,6 @@ npm run start-dynamodb  # Start local DynamoDB
 npm run check-dynamodb  # Check if DynamoDB is running
 npm run init-local      # Initialize database tables
 ```
-
-### Local Storage
-- Local file storage is configured in `./test-storage`
-- DynamoDB runs locally on port 8000
-- Ory Kratos authentication service runs on port 4433
-
 ## IDE Setup
 
 ### VS Code Extensions

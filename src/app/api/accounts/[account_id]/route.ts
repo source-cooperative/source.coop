@@ -109,7 +109,7 @@ export async function PUT(
   { params }: { params: Promise<{ account_id: string }> }
 ) {
   try {
-    const session = (await getApiSession(request)) as ExtendedSession;
+    const session = await getApiSession(request);
     if (!session) {
       return NextResponse.json(
         {
@@ -123,18 +123,12 @@ export async function PUT(
       );
     }
 
-    const { account_id } = await params;
-    console.log("API: Updating account:", account_id);
-
-    // Only allow the user to update their own account
-    const sessionAccountId = session?.identity?.metadata_public?.account_id;
-
-    if (!session.active) {
+    if (session.account?.disabled) {
       return NextResponse.json(
         {
           error: {
             code: "401",
-            message: "Unauthorized: Session inactive",
+            message: "Unauthorized: Account disabled",
             status: "Unauthorized",
           },
         },
@@ -142,6 +136,9 @@ export async function PUT(
       );
     }
 
+    const { account_id } = await params;
+
+    const sessionAccountId = session?.account?.account_id;
     if (!sessionAccountId) {
       return NextResponse.json(
         {
@@ -156,7 +153,7 @@ export async function PUT(
     }
 
     // Check if user is updating their own account or is an admin
-    const isAdmin = !!session?.identity?.metadata_public?.is_admin;
+    const isAdmin = !!session?.account?.metadata_public?.is_admin;
     const isAuthenticatedUser = sessionAccountId === account_id;
 
     if (!isAuthenticatedUser && !isAdmin) {
@@ -179,17 +176,10 @@ export async function PUT(
     }
 
     const account = {
-      metadata_private: {}, // TODO: not getting metadata_private from ory, why?
       ...(await request.json()),
+      account_id,
+      identity_id: session.identity_id,
     };
-
-    // Verify the account_id matches the URL parameter
-    if (account.account_id !== account_id) {
-      return NextResponse.json(
-        { error: "Account ID mismatch" },
-        { status: 400 }
-      );
-    }
 
     // Update the account in DynamoDB
     try {
