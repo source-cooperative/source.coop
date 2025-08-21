@@ -21,8 +21,6 @@ import { ProductsList } from "@/components/features/products/ProductsList";
 import { OrganizationMembers } from "./OrganizationMembers";
 import { ProfileAvatar } from "./ProfileAvatar";
 import { WebsiteLink } from "./WebsiteLink";
-import { useSession } from "@ory/elements-react/client";
-import { getAccountId } from "@/lib/ory";
 
 interface OrganizationProfileProps {
   account: OrganizationalAccount;
@@ -30,12 +28,6 @@ interface OrganizationProfileProps {
   owner: IndividualAccount | null;
   admins: IndividualAccount[];
   members: IndividualAccount[];
-  // Pagination props for products
-  productsHasNextPage?: boolean;
-  productsHasPreviousPage?: boolean;
-  productsNextCursor?: string;
-  productsPreviousCursor?: string;
-  productsCurrentCursor?: string;
 }
 
 export function OrganizationProfile({
@@ -44,26 +36,12 @@ export function OrganizationProfile({
   owner,
   admins,
   members,
-  // Pagination props
-  productsHasNextPage = false,
-  productsHasPreviousPage = false,
-  productsNextCursor,
-  productsPreviousCursor,
-  productsCurrentCursor,
 }: OrganizationProfileProps) {
-  const { session } = useSession();
-  const currentUserId = getAccountId(session);
-  const isAdmin = admins.some((admin) => admin.account_id === currentUserId);
-  const isOwner = owner?.account_id === currentUserId;
+  const isAdmin = admins.some(
+    (admin) => admin.account_id === account.account_id
+  );
+  const isOwner = owner?.account_id === account.account_id;
   const canEdit = isAdmin || isOwner;
-
-  const pagination = {
-    hasNextPage: productsHasNextPage,
-    hasPreviousPage: productsHasPreviousPage,
-    nextCursor: productsNextCursor,
-    previousCursor: productsPreviousCursor,
-    currentCursor: productsCurrentCursor,
-  };
 
   return (
     <Box>

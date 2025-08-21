@@ -39,6 +39,7 @@ import * as crypto from "crypto";
 import { getServerSession } from "@ory/nextjs/app";
 import { logger } from "../logger";
 import { NextRequest } from "next/server";
+import { getOryId } from "../ory";
 
 export function generateAccessKeyID(): string {
   const prefix = "SC";
@@ -207,13 +208,9 @@ export async function getApiSession(
   if (!session) {
     return null;
   }
-  console.log("ory session", session);
-  const oryId = session.identity?.id;
+
+  const oryId = getOryId(session);
   if (!oryId) {
-    logger.warn("No identity ID found in session", {
-      operation: "getApiSession",
-      context: "session",
-    });
     return null;
   }
 
