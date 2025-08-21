@@ -41,10 +41,13 @@ export class DatabaseConstruct extends Construct {
       partitionKey: "account_id",
       indexes: [
         {
+          // fetch all accounts of a given type
           name: "account_type",
           partitionKey: "type",
+          sortKey: "account_id",
         },
         {
+          // fetch an account by Ory identity_id
           name: "identity_id",
           partitionKey: "identity_id",
         },
@@ -58,6 +61,7 @@ export class DatabaseConstruct extends Construct {
       partitionKey: "access_key_id",
       indexes: [
         {
+          // fetch all API keys for a given account
           name: "account_id",
           partitionKey: "account_id",
         },
@@ -78,14 +82,12 @@ export class DatabaseConstruct extends Construct {
       partitionKey: "membership_id",
       indexes: [
         {
+          // fetch all memberships for a given account
           name: "account_id",
           partitionKey: "account_id",
         },
         {
-          name: "membership_account_id",
-          partitionKey: "membership_account_id",
-        },
-        {
+          // fetch all memberships for a given account and repository
           name: "membership_account_id_repository_id",
           partitionKey: "membership_account_id",
           sortKey: "repository_id",
@@ -101,11 +103,7 @@ export class DatabaseConstruct extends Construct {
       sortKey: "product_id",
       indexes: [
         {
-          name: "account_products",
-          partitionKey: "account_id",
-          sortKey: "product_id",
-        },
-        {
+          // fetch all public products
           name: "public_featured",
           partitionKey: "visibility",
           sortKey: {

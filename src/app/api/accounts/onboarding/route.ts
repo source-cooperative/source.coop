@@ -101,10 +101,10 @@ export async function POST(request: NextRequest) {
 
         // If Ory update fails, delete the account from DynamoDB
         try {
-          await accountsTable.delete({
-            account_id,
-            type: AccountType.INDIVIDUAL,
-          });
+                          await accountsTable.delete({
+          account_id,
+          type: AccountType.INDIVIDUAL,
+        });
           console.log("Cleaned up DynamoDB account after Ory update failure");
         } catch (cleanupError) {
           console.error("Failed to clean up DynamoDB account:", cleanupError);

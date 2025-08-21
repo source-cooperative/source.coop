@@ -51,21 +51,17 @@ class ProductsTable extends BaseTable {
     products: Product[];
     lastEvaluatedKey: any;
   }> {
-    const queryParams: any = {
-      TableName: this.table,
-      IndexName: "account_products",
-      KeyConditionExpression: "account_id = :account_id",
-      ExpressionAttributeValues: {
-        ":account_id": account_id,
-      },
-      Limit: limit,
-    };
-
-    if (lastEvaluatedKey) {
-      queryParams.ExclusiveStartKey = lastEvaluatedKey;
-    }
-
-    const result = await this.client.send(new QueryCommand(queryParams));
+    const result = await this.client.send(
+      new QueryCommand({
+        TableName: this.table,
+        KeyConditionExpression: "account_id = :account_id",
+        ExpressionAttributeValues: {
+          ":account_id": account_id,
+        },
+        Limit: limit,
+        ExclusiveStartKey: lastEvaluatedKey,
+      })
+    );
 
     return {
       products: (result.Items || []) as Product[],

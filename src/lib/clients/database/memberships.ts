@@ -58,31 +58,26 @@ export class MembershipsTable extends BaseTable {
     repositoryId?: string
   ): Promise<Membership[]> {
     try {
-      let command: QueryCommand;
-
-      if (repositoryId) {
-        command = new QueryCommand({
-          TableName: this.table,
-          IndexName: "membership_account_id_repository_id",
-          KeyConditionExpression:
-            "membership_account_id = :membership_account_id AND repository_id = :repository_id",
-          ExpressionAttributeValues: {
-            ":membership_account_id": membershipAccountId,
-            ":repository_id": repositoryId,
-          },
-        });
-      } else {
-        command = new QueryCommand({
-          TableName: this.table,
-          IndexName: "membership_account_id",
-          KeyConditionExpression:
-            "membership_account_id = :membership_account_id",
-          ExpressionAttributeValues: {
-            ":membership_account_id": membershipAccountId,
-          },
-        });
-      }
-
+      const command = new QueryCommand({
+        TableName: this.table,
+        IndexName: "membership_account_id_repository_id",
+        ...(repositoryId
+          ? {
+              KeyConditionExpression:
+                "membership_account_id = :membership_account_id AND repository_id = :repository_id",
+              ExpressionAttributeValues: {
+                ":membership_account_id": membershipAccountId,
+                ":repository_id": repositoryId,
+              },
+            }
+          : {
+              KeyConditionExpression:
+                "membership_account_id = :membership_account_id",
+              ExpressionAttributeValues: {
+                ":membership_account_id": membershipAccountId,
+              },
+            }),
+      });
       const result = await this.client.send(command);
       return result.Items?.map((item) => item as Membership) ?? [];
     } catch (error) {

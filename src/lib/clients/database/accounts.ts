@@ -19,24 +19,20 @@ class AccountsTable extends BaseTable {
 
   async fetchById(account_id: string): Promise<Account | null> {
     try {
-      const types = ["individual", "organization"] as const;
+      console.log(`DB: Trying to fetch account for ID:`, account_id);
+      const result = await this.client.send(
+        new QueryCommand({
+          TableName: this.table,
+          ExpressionAttributeValues: {
+            ":account_id": account_id,
+          },
+          KeyConditionExpression: "account_id = :account_id",
+        })
+      );
 
-      for (const type of types) {
-        console.log(
-          `DB: Trying to fetch account of type ${type} for ID:`,
-          account_id
-        );
-        const result = await this.client.send(
-          new GetCommand({
-            TableName: this.table,
-            Key: { account_id },
-          })
-        );
-
-        if (result.Item) {
-          console.log(`DB: Found account of type ${type} for ID:`, account_id);
-          return result.Item as Account;
-        }
+      if (result.Items?.length) {
+        console.log(`DB: Found account for ID:`, account_id);
+        return result.Items[0] as Account;
       }
 
       return null;
@@ -93,14 +89,15 @@ class AccountsTable extends BaseTable {
         TableName: this.table,
         Key: {
           account_id: account.account_id,
-          type: account.type,
         },
         UpdateExpression:
-          "SET #name = :name, emails = :emails, updated_at = :updated_at, disabled = :disabled, flags = :flags, metadata_public = :metadata_public, metadata_private = :metadata_private, identity_id = :identity_id",
+          "SET #name = :name, #type = :type, emails = :emails, updated_at = :updated_at, disabled = :disabled, flags = :flags, metadata_public = :metadata_public, metadata_private = :metadata_private, identity_id = :identity_id",
         ExpressionAttributeNames: {
           "#name": "name", // name is a reserved word in DynamoDB
+          "#type": "type", // type is also a reserved word in DynamoDB
         },
         ExpressionAttributeValues: {
+          ":type": account.type,
           ":name": account.name,
           ":emails": account.emails,
           ":updated_at": new Date().toISOString(),
