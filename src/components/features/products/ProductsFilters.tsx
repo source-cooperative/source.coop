@@ -1,9 +1,10 @@
 "use client";
 
-import { useTransition } from "react";
+import { useTransition, useState, useEffect } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { TextField, Button, Flex } from "@radix-ui/themes";
 import { Cross2Icon } from "@radix-ui/react-icons";
+import { useDebounce } from "@/hooks/useDebounce";
 
 export function ProductsFilters() {
   const router = useRouter();
@@ -14,6 +15,24 @@ export function ProductsFilters() {
   // Read current values from URL
   const currentSearch = searchParams.get("search") || "";
   const currentTags = searchParams.get("tags") || "";
+  const hasActiveFilters = currentSearch || currentTags;
+
+  // Local state for search and tags input
+  const [searchInput, setSearchInput] = useState("");
+  const [tagsInput, setTagsInput] = useState("");
+
+  // Set search and tags input values from URL on mount
+  useEffect(() => {
+    setSearchInput(currentSearch);
+    setTagsInput(currentTags);
+  }, [searchParams]);
+
+  // Update filters when search or tags change
+  const debouncedSearch = useDebounce(searchInput, 300);
+  const debouncedTags = useDebounce(tagsInput, 300);
+  useEffect(() => {
+    updateFilters(debouncedSearch, debouncedTags);
+  }, [debouncedSearch, debouncedTags]);
 
   const updateFilters = (search: string, tags: string) => {
     const params = new URLSearchParams(searchParams);
@@ -43,12 +62,12 @@ export function ProductsFilters() {
   };
 
   const handleClearFilters = () => {
+    setSearchInput("");
+    setTagsInput("");
     startTransition(() => {
       router.push(pathname);
     });
   };
-
-  const hasActiveFilters = currentSearch || currentTags;
 
   return (
     <Flex gap="3" mb="4" wrap="wrap">
@@ -56,8 +75,8 @@ export function ProductsFilters() {
         size="1"
         style={{ minWidth: "300px" }}
         placeholder="Search products..."
-        value={currentSearch}
-        onChange={(e) => updateFilters(e.target.value, currentTags)}
+        value={searchInput}
+        onChange={(e) => setSearchInput(e.target.value)}
         disabled={isPending}
       />
 
@@ -65,8 +84,8 @@ export function ProductsFilters() {
         size="1"
         style={{ minWidth: "250px" }}
         placeholder="Filter by tags (comma-separated)"
-        value={currentTags}
-        onChange={(e) => updateFilters(currentSearch, e.target.value)}
+        value={tagsInput}
+        onChange={(e) => setTagsInput(e.target.value)}
         disabled={isPending}
       />
 
