@@ -5,8 +5,8 @@ import Image from "next/image";
 export function Logo() {
   const LogoImage = (
     <ThemeAwareImage
-      lightSrc="/logotype-light.svg"
-      darkSrc="/logotype-dark.svg"
+      lightSrc="/logo/logotype-light.svg"
+      darkSrc="/logo/logotype-dark.svg"
       alt="Source Cooperative"
       width={243}
       height={74}
@@ -20,7 +20,7 @@ export function Logo() {
 export function LightLogo() {
   return (
     <Image
-      src="/logotype-light.svg"
+      src="/logo/logotype-light.svg"
       alt="Source Cooperative"
       width={243}
       height={74}
