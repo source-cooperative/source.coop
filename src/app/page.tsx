@@ -1,4 +1,4 @@
-import { Container, Heading, Text, Box } from "@radix-ui/themes";
+import { PageContainer, PageHeader } from "@/components/layout";
 import { ProductsList } from "@/components/features/products/ProductsList";
 import { getProducts } from "@/lib/actions/products";
 
@@ -15,20 +15,12 @@ export default async function HomePage() {
   });
 
   return (
-    <Container size="4" py="6">
-      <Box>
-        <Heading size="6" mb="2">
-          Featured Products
-        </Heading>
-        <Text as="p" size="3" color="gray" mb="6">
-          Discover the latest and most popular data products from the
-          Source.coop community.
-        </Text>
-        <ProductsList
-          products={result.products}
-          // No pagination for featured products
-        />
-      </Box>
-    </Container>
+    <PageContainer>
+      <PageHeader
+        title="Featured Products"
+        description="Discover the latest and most popular data products from the Source.coop community."
+      />
+      <ProductsList products={result.products} />
+    </PageContainer>
   );
 }
