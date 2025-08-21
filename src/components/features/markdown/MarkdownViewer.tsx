@@ -94,16 +94,15 @@ export function MarkdownViewer({ content }: MarkdownViewerProps) {
             code({ className, children }) {
               const match = /language-(\w+)/.exec(className || "");
               const lang = match ? match[1] : "";
+              const codeContent = String(children).replace(/\n$/, "");
 
-              // Handle inline code
-              if (!className) {
+              // Handle inline code - check if it's single line and has no language class
+              if (!className && !codeContent.includes("\n")) {
                 return <code className="inline-code">{children}</code>;
               }
 
-              // Use Bright for code blocks
-              return (
-                <Code lang={lang}>{String(children).replace(/\n$/, "")}</Code>
-              );
+              // Use Bright for code blocks (multiline or has language class)
+              return <Code lang={lang}>{codeContent}</Code>;
             },
           }}
         >
