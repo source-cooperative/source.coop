@@ -60,10 +60,24 @@ export interface DeleteObjectParams extends ObjectPath {
   versionId?: string;
 }
 
+export interface HeadObjectParams extends ObjectPath {
+  versionId?: string;
+}
+
+export interface HeadObjectResult {
+  etag?: string;
+  contentLength?: number;
+  contentType?: string;
+  lastModified?: Date;
+  metadata?: Record<string, string>;
+  versionId?: string;
+}
+
 export interface StorageClient {
   listObjects(params: ListObjectsParams): Promise<ListObjectsResult>;
   getObject(params: GetObjectParams): Promise<GetObjectResult>;
   putObject(params: PutObjectParams): Promise<PutObjectResult>;
   deleteObject(params: DeleteObjectParams): Promise<void>;
   getObjectInfo(params: GetObjectParams): Promise<ProductObject | null>;
+  headObject(params: HeadObjectParams): Promise<HeadObjectResult>;
 }

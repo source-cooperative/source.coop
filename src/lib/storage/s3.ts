@@ -17,9 +17,12 @@ import {
   PutObjectParams,
   PutObjectResult,
   DeleteObjectParams,
+  HeadObjectParams,
+  HeadObjectResult,
 } from "@/types/storage";
 import { ProductObject } from "@/types";
 import { Readable } from "stream";
+import { CONFIG } from "..";
 
 export class S3StorageClient implements StorageClient {
   private s3Client: S3Client;
@@ -176,7 +179,14 @@ export class S3StorageClient implements StorageClient {
       };
     } catch (error: unknown) {
       if (error instanceof S3ServiceException && error.name === "NotFound") {
-        console.debug("Object not found:", params.object_path);
+        if (CONFIG.environment.debug) {
+          console.debug(
+            "Object not found:",
+            params.account_id,
+            params.product_id,
+            params.object_path
+          );
+        }
         return null;
       }
 
@@ -218,6 +228,42 @@ export class S3StorageClient implements StorageClient {
       await this.s3Client.send(command);
     } catch (error) {
       console.error("Error deleting object:", error);
+      throw error;
+    }
+  }
+
+  async headObject(params: HeadObjectParams): Promise<HeadObjectResult> {
+    try {
+      const command = new HeadObjectCommand({
+        Bucket: params.account_id,
+        Key: `${params.product_id}/${params.object_path}`,
+        VersionId: params.versionId,
+      });
+
+      const response = await this.s3Client.send(command);
+
+      return {
+        etag: response.ETag,
+        contentLength: response.ContentLength,
+        contentType: response.ContentType,
+        lastModified: response.LastModified,
+        metadata: response.Metadata,
+        versionId: response.VersionId,
+      };
+    } catch (error: unknown) {
+      if (error instanceof S3ServiceException && error.name === "NotFound") {
+        if (CONFIG.environment.debug) {
+          console.debug(
+            "Object not found:",
+            params.account_id,
+            params.product_id,
+            params.object_path
+          );
+        }
+        throw error;
+      }
+
+      console.error("Error getting object head:", error);
       throw error;
     }
   }

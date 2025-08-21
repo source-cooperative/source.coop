@@ -54,18 +54,25 @@ export default async function ProductPathPage({ params }: PageProps) {
       // If not looking at a path, try to fetch README
       !object_path
         ? storage
-            .getObject({
+            .headObject({
               account_id,
               product_id,
               object_path: "README.md",
             })
+            .then(() =>
+              storage.getObject({
+                account_id,
+                product_id,
+                object_path: "README.md",
+              })
+            )
             .then((result) => {
               if (result.data instanceof Buffer) {
                 return result.data.toString("utf-8");
               }
-              return "";
+              return undefined;
             })
-            .catch(() => "") // If README doesn't exist, that's fine
+            .catch(() => undefined) // If README doesn't exist, that's fine
         : undefined,
 
       // Always fetch objects list for directory browsing
