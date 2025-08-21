@@ -16,6 +16,19 @@ export function useProductListKeyboardShortcuts({
 
   const handleKeyDown = useCallback(
     (event: KeyboardEvent) => {
+      // Check if an input element is currently focused
+      const activeElement = document.activeElement;
+      const isInputActive =
+        activeElement &&
+        (activeElement.tagName === "INPUT" ||
+          activeElement.tagName === "TEXTAREA" ||
+          activeElement.getAttribute("contenteditable") === "true");
+
+      // If an input is active, don't handle keyboard shortcuts
+      if (isInputActive) {
+        return;
+      }
+
       switch (event.key) {
         case "ArrowDown":
         case "ArrowRight":
