@@ -50,7 +50,7 @@ export async function getAccountFromSession(): Promise<Account | null> {
     return null;
   }
 
-  let account = await accountsTable.fetchByOryId(oryId);
+  const account = await accountsTable.fetchByOryId(oryId);
 
   // If we have a session but no account, that means a user is authenticated but we need
   // to redirect to the email verification page so that a user can setup their account.
