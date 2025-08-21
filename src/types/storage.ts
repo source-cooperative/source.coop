@@ -65,5 +65,5 @@ export interface StorageClient {
   getObject(params: GetObjectParams): Promise<GetObjectResult>;
   putObject(params: PutObjectParams): Promise<PutObjectResult>;
   deleteObject(params: DeleteObjectParams): Promise<void>;
-  getObjectInfo(params: GetObjectParams): Promise<ProductObject>;
+  getObjectInfo(params: GetObjectParams): Promise<ProductObject | null>;
 }

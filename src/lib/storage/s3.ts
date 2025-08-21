@@ -1,5 +1,6 @@
 import {
   S3Client,
+  S3ServiceException,
   ListObjectsV2Command,
   GetObjectCommand,
   PutObjectCommand,
@@ -150,7 +151,7 @@ export class S3StorageClient implements StorageClient {
     }
   }
 
-  async getObjectInfo(params: GetObjectParams): Promise<ProductObject> {
+  async getObjectInfo(params: GetObjectParams): Promise<ProductObject | null> {
     try {
       const command = new HeadObjectCommand({
         Bucket: params.account_id,
@@ -173,7 +174,12 @@ export class S3StorageClient implements StorageClient {
         checksum: response.ETag || "",
         metadata: response.Metadata || {},
       };
-    } catch (error) {
+    } catch (error: unknown) {
+      if (error instanceof S3ServiceException && error.name === "NotFound") {
+        console.debug("Object not found:", params.object_path);
+        return null;
+      }
+
       console.error("Error getting object info:", error);
       throw error;
     }
