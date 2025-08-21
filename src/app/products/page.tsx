@@ -34,10 +34,7 @@ export default async function ProductsPage({
 
   return (
     <PageContainer>
-      <PageHeader
-        title="Products"
-        description="Discover and explore public data products from the Source.coop community."
-      />
+      <PageHeader title="Products" />
 
       <ProductsFilters />
 
