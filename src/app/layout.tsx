@@ -13,8 +13,6 @@ import { CONFIG } from "@/lib/config";
 import { getOryId } from "@/lib/ory";
 import { accountsTable } from "@/lib/clients/database";
 import { Account } from "@/types/account";
-import { redirect, RedirectType } from "next/navigation";
-import { headers } from "next/headers";
 const ibmPlexSans = IBM_Plex_Sans({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
@@ -28,9 +26,6 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const headersList = await headers();
-  const pathname =
-    headersList.get("x-pathname") || headersList.get("x-invoke-path") || "";
   const session = await getServerSession();
   let account: Account | null = null;
 
@@ -55,8 +50,6 @@ export default async function RootLayout({
         } catch (error) {
           console.error("Failed to add email to account", error);
         }
-      } else if (!account && pathname !== "/onboarding") {
-        redirect("/onboarding", RedirectType.replace);
       }
     }
   }
