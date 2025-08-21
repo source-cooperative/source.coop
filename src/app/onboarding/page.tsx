@@ -5,7 +5,8 @@ import { getServerSession } from "@ory/nextjs/app";
 import { Container, Box, Heading, Text } from "@radix-ui/themes";
 import { OnboardingForm } from "@/components/features/onboarding/OnboardingForm";
 import { CONFIG } from "@/lib";
-import { getAccountId } from "@/lib/ory";
+import { getOryId } from "@/lib/ory";
+import { accountsTable } from "@/lib/clients";
 
 export const metadata: Metadata = {
   title: "Complete Your Profile",
@@ -21,9 +22,12 @@ export default async function OnboardingPage() {
   }
 
   // If has account_id, redirect to profile
-  const accountId = getAccountId(session);
-  if (accountId) {
-    redirect(`/${accountId}?welcome=true`);
+  const oryId = getOryId(session);
+  if (oryId) {
+    const account = await accountsTable.fetchByOryId(oryId);
+    if (account) {
+      redirect(`/${account.account_id}?welcome=true`);
+    }
   }
 
   return (

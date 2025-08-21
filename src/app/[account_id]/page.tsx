@@ -10,7 +10,7 @@
  * @throws {notFound} If account does not exist
  */
 
-import { notFound } from "next/navigation";
+import { forbidden, notFound } from "next/navigation";
 import { Container } from "@radix-ui/themes";
 import { IndividualProfile } from "@/components/features/profiles";
 import { OrganizationProfilePage } from "@/components/features/profiles/OrganizationProfilePage";
@@ -18,6 +18,7 @@ import type { IndividualAccount } from "@/types/account_v2";
 import { accountsTable, productsTable } from "@/lib/clients/database";
 import { getServerSession } from "@ory/nextjs/app";
 import type { ExtendedSession } from "@/types/session";
+import { getOryId } from "@/lib/ory";
 
 type PageProps = {
   params: Promise<{ account_id: string }>;
@@ -29,17 +30,19 @@ export default async function AccountPage({ params, searchParams }: PageProps) {
   const { welcome } = await searchParams;
   const showWelcome = welcome === "true";
 
+  // Get session to check authentication status
+  const session = await getServerSession();
+  if (!session) {
+    forbidden();
+  }
+
   // Get account data
   const account = await accountsTable.fetchById(account_id);
   if (!account) {
     notFound();
   }
-
-  // Get session to check authentication status
-  const session = (await getServerSession()) as ExtendedSession;
   const isAuthenticated = !!session?.active;
-  const isAccountOwner =
-    session?.identity?.metadata_public?.account_id === account_id;
+  const isAccountOwner = getOryId(session) === account.identity_id;
 
   // If this is an organization, use the organization profile page
   if (account.type === "organization") {

@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { getServerSession } from "@ory/nextjs/app";
 import { Container, Heading, Text } from "@radix-ui/themes";
 import { accountsTable } from "@/lib/clients/database";
-import { getAccountId } from "@/lib/ory";
+import { getOryId } from "@/lib/ory";
 import { EditProfileForm } from "./EditProfileForm";
 
 type Params = Promise<{ account_id: string }>;
@@ -16,8 +16,8 @@ export default async function EditProfilePage({ params }: { params: Params }) {
     notFound();
   }
 
-  const userAccount = getAccountId(session);
-  if (userAccount !== account_id) {
+  // Can only edit your own profile
+  if (session && account.identity_id !== getOryId(session)) {
     return (
       <Container size="2" py="6">
         <Heading size="6" mb="4">
