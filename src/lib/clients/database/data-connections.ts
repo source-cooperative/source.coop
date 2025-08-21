@@ -16,7 +16,7 @@ import { BaseTable } from "./base";
  * Class for managing data connection operations in DynamoDB
  */
 export class DataConnectionsTable extends BaseTable {
-  tableName = "data-connections";
+  model = "data-connections";
 
   async fetchById(dataConnectionId: string): Promise<DataConnection | null> {
     try {

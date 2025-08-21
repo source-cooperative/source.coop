@@ -16,7 +16,7 @@ import { BaseTable } from "./base";
 import { marshall } from "@aws-sdk/util-dynamodb";
 
 class ProductsTable extends BaseTable {
-  tableName = "products";
+  model = "products";
 
   async list(
     limit = 50,

@@ -5,7 +5,7 @@ import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 
 // Base class for database operations
 export abstract class BaseTable {
-  abstract tableName: string;
+  abstract model: string;
   protected readonly client: DynamoDBDocumentClient;
 
   constructor({ client }: { client?: DynamoDBDocumentClient }) {
@@ -17,8 +17,8 @@ export abstract class BaseTable {
     }
   }
 
-  protected get table(): string {
-    return `sc-${CONFIG.environment.stage}-${this.tableName}`;
+  get table(): string {
+    return `sc-${CONFIG.environment.stage}-${this.model}`;
   }
 
   protected logError(

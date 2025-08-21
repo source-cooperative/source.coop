@@ -11,7 +11,7 @@ import { BaseTable } from "./base";
  * Class for managing API key operations in DynamoDB
  */
 export class APIKeysTable extends BaseTable {
-  tableName = "api-keys";
+  model = "api-keys";
 
   async fetchById(accessKeyId: string): Promise<APIKey | null> {
     try {

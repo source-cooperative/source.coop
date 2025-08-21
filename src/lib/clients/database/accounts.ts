@@ -15,7 +15,7 @@ import type {
 import { BaseTable } from "./base";
 
 class AccountsTable extends BaseTable {
-  tableName = "accounts";
+  model = "accounts";
 
   async fetchById(account_id: string): Promise<Account | null> {
     try {

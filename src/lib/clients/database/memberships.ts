@@ -12,7 +12,7 @@ import { BaseTable } from "./base";
  * Class for managing membership operations in DynamoDB
  */
 export class MembershipsTable extends BaseTable {
-  tableName = "memberships";
+  model = "memberships";
 
   async fetchById(membershipId: string): Promise<Membership | null> {
     try {
