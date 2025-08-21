@@ -32,7 +32,7 @@ export default async function RootLayout({
   if (session) {
     const oryId = getOryId(session);
     if (oryId) {
-      const account = await accountsTable.fetchByOryId(oryId);
+      account = await accountsTable.fetchByOryId(oryId);
     } else {
       // If we have a session but no account, that means a user is authenticated but we need
       // to redirect to the email verification page so that a user can setup their account.
