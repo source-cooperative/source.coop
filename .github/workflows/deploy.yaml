@@ -1,5 +1,9 @@
 name: Deploy Infrastructure
 
+permissions:
+  id-token: write
+  contents: read
+
 on:
   push:
     branches:
@@ -23,7 +27,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: ${{ vars.AWS_REGION }}
-          role-to-assume: ${{ vars.DEPLOY_ROLE_ARN }}
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
       - uses: actions/setup-node@v4.4.0
         with:
           node-version: 22
