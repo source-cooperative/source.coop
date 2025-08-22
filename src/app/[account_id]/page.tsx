@@ -17,7 +17,6 @@ import { OrganizationProfilePage } from "@/components/features/profiles/Organiza
 import type { IndividualAccount } from "@/types/account_v2";
 import { accountsTable, productsTable } from "@/lib/clients/database";
 import { getServerSession } from "@ory/nextjs/app";
-import type { ExtendedSession } from "@/types/session";
 import { getOryId } from "@/lib/ory";
 
 type PageProps = {

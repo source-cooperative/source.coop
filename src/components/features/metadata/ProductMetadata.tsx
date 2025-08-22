@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import type { Product } from "@/types";
-import { CONFIG } from "@/lib/config";
+import { CONFIG } from "@/lib";
 
 interface ProductMetadataProps {
   product: Product;

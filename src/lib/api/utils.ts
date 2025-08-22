@@ -37,7 +37,6 @@ import {
 import { isAuthorized } from "@/lib/api/authz";
 import * as crypto from "crypto";
 import { getServerSession } from "@ory/nextjs/app";
-import { logger } from "../logger";
 import { NextRequest } from "next/server";
 import { getOryId } from "../ory";
 

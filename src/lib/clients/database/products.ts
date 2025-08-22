@@ -14,6 +14,7 @@ import {
 } from "@aws-sdk/lib-dynamodb";
 import { accountsTable } from "./accounts";
 import { BaseTable } from "./base";
+import { LOGGER } from "@/lib/logging";
 import { marshall } from "@aws-sdk/util-dynamodb";
 
 class ProductsTable extends BaseTable {
@@ -302,9 +303,14 @@ class ProductsTable extends BaseTable {
         },
       };
 
-      console.debug(
-        `DB: Fetching ${batch.length} accounts: ${batch.join(", ")}`
-      );
+      LOGGER.debug(`Fetching ${batch.length} accounts`, {
+        operation: "ProductsTable.attachAccounts",
+        context: "database operation",
+        metadata: {
+          batch_size: batch.length,
+          account_ids: batch,
+        },
+      });
       const result = await this.client.send(new BatchGetCommand(batchRequest));
       if (result.Responses?.[accountsTable.table]) {
         accountBatches.push(...result.Responses[accountsTable.table]);

@@ -2,30 +2,42 @@ import { NextRequest, NextResponse } from "next/server";
 import type { IndividualAccount } from "@/types/account_v2";
 import { updateOryIdentity } from "@/lib/ory";
 import { accountsTable } from "@/lib/clients/database";
-import { CONFIG } from "@/lib/config";
+import { CONFIG, LOGGER } from "@/lib";
 import { AccountType } from "@/types/account";
 
 export async function POST(request: NextRequest) {
   try {
     // Log the request headers to debug session issues
-    console.log("Received onboarding request with headers:", {
-      contentType: request.headers.get("content-type"),
-      accept: request.headers.get("accept"),
-      cookie: !!request.headers.get("cookie"), // Log presence only, not the actual value
-      host: request.headers.get("host"),
+    LOGGER.info("Received onboarding request with headers", {
+      operation: "onboarding.POST",
+      context: "request processing",
+      metadata: {
+        contentType: request.headers.get("content-type"),
+        accept: request.headers.get("accept"),
+        cookie: !!request.headers.get("cookie"), // Log presence only, not the actual value
+        host: request.headers.get("host"),
+      },
     });
 
     const { account_id, name, ory_id, email } = await request.json();
-    console.log("Starting onboarding process:", {
-      account_id,
-      name,
-      hasOryId: !!ory_id,
-      oryIdLength: ory_id?.length || 0,
-      email,
+    LOGGER.info("Starting onboarding process", {
+      operation: "onboarding.POST",
+      context: "request processing",
+      metadata: {
+        account_id,
+        name,
+        hasOryId: !!ory_id,
+        oryIdLength: ory_id?.length || 0,
+        email,
+      },
     });
 
     if (!ory_id) {
-      console.error("Missing ory_id in request");
+      LOGGER.error("Missing ory_id in request", {
+        operation: "onboarding.POST",
+        context: "request validation",
+        metadata: { account_id, name, email },
+      });
       return NextResponse.json(
         { error: "Invalid request: missing ory_id" },
         { status: 400 }
@@ -35,7 +47,11 @@ export async function POST(request: NextRequest) {
     // Check if account already exists
     const existingAccount = await accountsTable.fetchById(account_id);
     if (existingAccount) {
-      console.log("Account already exists:", { account_id });
+      LOGGER.info("Account already exists", {
+        operation: "onboarding.POST",
+        context: "account validation",
+        metadata: { account_id },
+      });
       return NextResponse.json(
         { error: "This username is already taken" },
         { status: 400 }
@@ -66,26 +82,42 @@ export async function POST(request: NextRequest) {
       identity_id: ory_id,
     };
 
-    console.log("Attempting to create account in DynamoDB:", newAccount);
+    LOGGER.info("Attempting to create account in DynamoDB", {
+      operation: "onboarding.POST",
+      context: "database operation",
+      metadata: { newAccount },
+    });
 
     // Save to DynamoDB
     try {
       await accountsTable.create(newAccount);
-      console.log("Successfully created account in DynamoDB:", {
-        account_id,
-        type: "individual",
+      LOGGER.info("Successfully created account in DynamoDB", {
+        operation: "onboarding.POST",
+        context: "database operation",
+        metadata: {
+          account_id,
+          type: "individual",
+        },
       });
     } catch (dbError) {
-      console.error("DynamoDB error:", dbError);
+      LOGGER.error("DynamoDB error", {
+        operation: "onboarding.POST",
+        context: "database operation",
+        error: dbError,
+      });
       throw dbError;
     }
 
     // Only try to update Ory identity if we have the required environment variables
     if (CONFIG.auth.api.backendUrl && CONFIG.auth.accessToken) {
-      console.log("Attempting to update Ory identity:", {
-        hasApiUrl: !!CONFIG.auth.api.backendUrl,
-        hasAccessToken: !!CONFIG.auth.accessToken,
-        oryId: ory_id,
+      LOGGER.info("Attempting to update Ory identity", {
+        operation: "onboarding.POST",
+        context: "Ory operation",
+        metadata: {
+          hasApiUrl: !!CONFIG.auth.api.backendUrl,
+          hasAccessToken: !!CONFIG.auth.accessToken,
+          oryId: ory_id,
+        },
       });
 
       try {
@@ -95,19 +127,35 @@ export async function POST(request: NextRequest) {
             account_id: account_id,
           },
         });
-        console.log("Successfully updated Ory identity");
+        LOGGER.info("Successfully updated Ory identity", {
+          operation: "onboarding.POST",
+          context: "Ory operation",
+          metadata: { ory_id },
+        });
       } catch (oryError) {
-        console.error("Ory identity update failed:", oryError);
+        LOGGER.error("Ory identity update failed", {
+          operation: "onboarding.POST",
+          context: "Ory operation",
+          error: oryError,
+        });
 
         // If Ory update fails, delete the account from DynamoDB
         try {
-                          await accountsTable.delete({
-          account_id,
-          type: AccountType.INDIVIDUAL,
-        });
-          console.log("Cleaned up DynamoDB account after Ory update failure");
+          await accountsTable.delete({
+            account_id,
+            type: AccountType.INDIVIDUAL,
+          });
+          LOGGER.info("Cleaned up DynamoDB account after Ory update failure", {
+            operation: "onboarding.POST",
+            context: "cleanup operation",
+            metadata: { account_id },
+          });
         } catch (cleanupError) {
-          console.error("Failed to clean up DynamoDB account:", cleanupError);
+          LOGGER.error("Failed to clean up DynamoDB account", {
+            operation: "onboarding.POST",
+            context: "cleanup operation",
+            error: cleanupError,
+          });
         }
 
         return NextResponse.json(
@@ -122,8 +170,16 @@ export async function POST(request: NextRequest) {
         );
       }
     } else {
-      console.warn(
-        "Skipping Ory identity update - missing environment variables"
+      LOGGER.warn(
+        "Skipping Ory identity update - missing environment variables",
+        {
+          operation: "onboarding.POST",
+          context: "configuration",
+          metadata: {
+            hasBackendUrl: !!CONFIG.auth.api.backendUrl,
+            hasAccessToken: !!CONFIG.auth.accessToken,
+          },
+        }
       );
     }
 
@@ -138,10 +194,14 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("Error in onboarding:", {
-      error,
-      message: error instanceof Error ? error.message : "Unknown error",
-      stack: error instanceof Error ? error.stack : undefined,
+    LOGGER.error("Error in onboarding", {
+      operation: "onboarding.POST",
+      context: "request processing",
+      error: error,
+      metadata: {
+        message: error instanceof Error ? error.message : "Unknown error",
+        stack: error instanceof Error ? error.stack : undefined,
+      },
     });
 
     // More specific error handling

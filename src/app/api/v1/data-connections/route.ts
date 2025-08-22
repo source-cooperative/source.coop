@@ -23,6 +23,7 @@ import { StatusCodes } from "http-status-codes";
 import { isAuthorized } from "@/lib/api/authz";
 import { getApiSession } from "@/lib/api/utils";
 import { dataConnectionsTable } from "@/lib/clients/database";
+import { LOGGER } from "@/lib";
 
 export async function GET(request: NextRequest) {
   try {
@@ -98,7 +99,11 @@ export async function POST(request: NextRequest) {
         status: StatusCodes.OK,
       });
     } catch (e) {
-      console.error(`Error creating data connection: ${e}`);
+      LOGGER.error("Error creating data connection", {
+        operation: "data-connections.POST",
+        context: "data connection creation",
+        error: e,
+      });
       return NextResponse.json(
         {
           error: `Data connection with ID ${dataConnection.data_connection_id} already exists`,

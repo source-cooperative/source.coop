@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { accountsTable } from "@/lib/clients/database";
 import type { ExtendedSession } from "@/types/session";
 import { getApiSession } from "@/lib/api/utils";
+import { LOGGER } from "@/lib";
 
 export async function GET(
   request: NextRequest,
@@ -11,18 +12,30 @@ export async function GET(
     // Await params before using, per Next.js 15+ requirements
     const { account_id } = await params;
 
-    console.log("API: Fetching account for ID:", account_id);
+    LOGGER.info("API: Fetching account for ID", {
+      operation: "accounts.GET",
+      context: "account fetching",
+      metadata: { account_id },
+    });
 
     // Fetch account from DynamoDB
     const account = await accountsTable.fetchById(account_id);
-    console.log("API: Account fetch result:", {
-      found: !!account,
-      accountId: account_id,
-      accountType: account?.type,
+    LOGGER.info("API: Account fetch result", {
+      operation: "accounts.GET",
+      context: "account fetching",
+      metadata: {
+        found: !!account,
+        accountId: account_id,
+        accountType: account?.type,
+      },
     });
 
     if (!account) {
-      console.log("API: Account not found:", account_id);
+      LOGGER.info("API: Account not found", {
+        operation: "accounts.GET",
+        context: "account fetching",
+        metadata: { account_id },
+      });
       return NextResponse.json(
         {
           error: {
@@ -44,12 +57,16 @@ export async function GET(
       // Get all cookies from the request
       const session = (await getApiSession(request)) as ExtendedSession;
       if (session) {
-        console.log("API: Session check:", {
-          hasSession: !!session,
-          isActive: session?.active,
-          hasIdentity: !!session?.identity,
-          sessionAccountId: session?.identity?.metadata_public?.account_id,
-          requestedAccountId: account_id,
+        LOGGER.info("API: Session check", {
+          operation: "accounts.GET",
+          context: "session validation",
+          metadata: {
+            hasSession: !!session,
+            isActive: session?.active,
+            hasIdentity: !!session?.identity,
+            sessionAccountId: session?.identity?.metadata_public?.account_id,
+            requestedAccountId: account_id,
+          },
         });
 
         if (session?.active && session.identity) {
@@ -59,25 +76,41 @@ export async function GET(
           isAuthenticatedUser = sessionAccountId === account_id;
           isAdmin = !!session.identity?.metadata_public?.is_admin;
 
-          console.log("API: Auth status:", {
-            isAuthenticated,
-            isAuthenticatedUser,
-            isAdmin,
-            sessionAccountId,
-            requestedAccountId: account_id,
+          LOGGER.info("API: Auth status", {
+            operation: "accounts.GET",
+            context: "session validation",
+            metadata: {
+              isAuthenticated,
+              isAuthenticatedUser,
+              isAdmin,
+              sessionAccountId,
+              requestedAccountId: account_id,
+            },
           });
         }
       }
     } catch (authError) {
       // Log the actual error for debugging
-      console.error("API: Auth error:", authError);
-      console.log("User not authenticated, showing public account data only");
+      LOGGER.error("API: Auth error", {
+        operation: "accounts.GET",
+        context: "session validation",
+        error: authError,
+      });
+      LOGGER.info("User not authenticated, showing public account data only", {
+        operation: "accounts.GET",
+        context: "session validation",
+        metadata: { account_id },
+      });
     }
 
     // Filter account data based on authentication status
     // If the user is viewing their own account or is an admin, include all fields
     if (isAuthenticatedUser || isAdmin) {
-      console.log("API: Returning full account data:", account);
+      LOGGER.info("API: Returning full account data", {
+        operation: "accounts.GET",
+        context: "response",
+        metadata: { account_id },
+      });
       // TODO: add verification status
       return NextResponse.json(account);
     }
@@ -93,10 +126,18 @@ export async function GET(
       // TODO: add verification status
     };
 
-    console.log("API: Returning public account data:", publicAccountData);
+    LOGGER.info("API: Returning public account data", {
+      operation: "accounts.GET",
+      context: "response",
+      metadata: { account_id },
+    });
     return NextResponse.json(publicAccountData);
   } catch (error) {
-    console.error("Error fetching account:", error);
+    LOGGER.error("Error fetching account", {
+      operation: "accounts.GET",
+      context: "account fetching",
+      error: error,
+    });
     return NextResponse.json(
       { error: "Failed to fetch account" },
       { status: 500 }
@@ -157,10 +198,14 @@ export async function PUT(
     const isAuthenticatedUser = sessionAccountId === account_id;
 
     if (!isAuthenticatedUser && !isAdmin) {
-      console.log("API: Unauthorized account update attempt:", {
-        sessionAccountId,
-        targetAccountId: account_id,
-        isAdmin,
+      LOGGER.warn("API: Unauthorized account update attempt", {
+        operation: "accounts.PUT",
+        context: "authorization",
+        metadata: {
+          sessionAccountId,
+          targetAccountId: account_id,
+          isAdmin,
+        },
       });
 
       return NextResponse.json(
@@ -186,22 +231,27 @@ export async function PUT(
       const updatedAccount = await accountsTable.update(account);
       return NextResponse.json(updatedAccount);
     } catch (error) {
-      console.error(
-        "Failed to update account:",
-        {
+      LOGGER.error("Failed to update account", {
+        operation: "accounts.PUT",
+        context: "database operation",
+        error: error,
+        metadata: {
           account_id: account_id,
           account_type: account.type,
           account_data: account,
         },
-        error
-      );
+      });
       return NextResponse.json(
         { error: "Failed to update account in database" },
         { status: 400 }
       );
     }
   } catch (error) {
-    console.error("Error updating account:", error);
+    LOGGER.error("Error updating account", {
+      operation: "accounts.PUT",
+      context: "request processing",
+      error: error,
+    });
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
@@ -266,7 +316,12 @@ export async function DELETE(
     try {
       await accountsTable.delete({ account_id, type: account.type });
     } catch (error) {
-      console.error("Failed to delete account:", error);
+      LOGGER.error("Failed to delete account", {
+        operation: "accounts.DELETE",
+        context: "database operation",
+        error: error,
+        metadata: { account_id },
+      });
       return NextResponse.json(
         { error: "Failed to delete account" },
         { status: 500 }
@@ -279,7 +334,11 @@ export async function DELETE(
       deleted_by: isAdmin ? "admin" : "self",
     });
   } catch (error) {
-    console.error("Account deletion error:", error);
+    LOGGER.error("Account deletion error", {
+      operation: "accounts.DELETE",
+      context: "request processing",
+      error: error,
+    });
     return NextResponse.json(
       {
         error: "Failed to delete account",
