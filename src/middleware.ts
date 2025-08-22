@@ -96,7 +96,8 @@ export const middleware = async (request: NextRequest) => {
   if (redirect) return redirect;
 
   // Handle authentication and account management
-  // const onboardingRedirect = await handleOnboarding(request);
+  const onboardingRedirect = await handleOnboarding(request);
+  if (onboardingRedirect) return onboardingRedirect;
   await handleEmailVerification(request);
 
   // Run Ory middleware last
