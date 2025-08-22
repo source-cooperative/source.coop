@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - main
+  release:
+    types: [published]
   workflow_dispatch:
     inputs:
       environment:
@@ -13,6 +15,7 @@ on:
 
 jobs:
   deploy:
+    environment: ${{ github.event_name == 'workflow_dispatch' && inputs.environment || (github.event_name == 'release' && 'Production' || 'Development') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4.2.2
@@ -33,5 +36,3 @@ jobs:
           echo "$VARS_JSON" | jq -r 'keys[] as $k | "\($k)=\(.[$k])"' >> $GITHUB_ENV
       - name: CDK Deploy
         run: npx cdk deploy --all --require-approval never
-        env:
-          STAGE: ${{ inputs.environment }}
