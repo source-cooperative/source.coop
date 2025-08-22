@@ -17,6 +17,16 @@ interface MarkdownViewerProps {
   content: string;
 }
 
+// Utility function to convert heading text to URL-friendly ID
+function generateHeadingId(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, '') // Remove special characters except spaces and hyphens
+    .replace(/\s+/g, '-') // Replace spaces with hyphens
+    .replace(/-+/g, '-') // Replace multiple hyphens with single hyphen
+    .trim();
+}
+
 // Sanitization schema that allows images while maintaining security
 const sanitizeSchema = {
   ...defaultSchema,
@@ -42,32 +52,32 @@ export function MarkdownViewer({ content }: MarkdownViewerProps) {
           rehypePlugins={[rehypeRaw, [rehypeSanitize, sanitizeSchema]]}
           components={{
             h1: ({ children }) => (
-              <Heading size="8" mb="4">
+              <Heading size="8" mb="4" id={generateHeadingId(String(children))}>
                 {children}
               </Heading>
             ),
             h2: ({ children }) => (
-              <Heading size="7" mb="3">
+              <Heading size="7" mb="3" id={generateHeadingId(String(children))}>
                 {children}
               </Heading>
             ),
             h3: ({ children }) => (
-              <Heading size="6" mb="2">
+              <Heading size="6" mb="2" id={generateHeadingId(String(children))}>
                 {children}
               </Heading>
             ),
             h4: ({ children }) => (
-              <Heading size="5" mb="2">
+              <Heading size="5" mb="2" id={generateHeadingId(String(children))}>
                 {children}
               </Heading>
             ),
             h5: ({ children }) => (
-              <Heading size="4" mb="2">
+              <Heading size="4" mb="2" id={generateHeadingId(String(children))}>
                 {children}
               </Heading>
             ),
             h6: ({ children }) => (
-              <Heading size="3" mb="2">
+              <Heading size="3" mb="2" id={generateHeadingId(String(children))}>
                 {children}
               </Heading>
             ),
