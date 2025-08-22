@@ -13,13 +13,16 @@ const handleLegacyRedirects = (request: NextRequest): NextResponse | null => {
     // Handle the specific pattern: /repositories/[owner_id]/[repo_id]/description
     const pathParts = request.nextUrl.pathname.split("/");
 
-    if (pathParts.length >= 5 && pathParts[4] === "description") {
+    if (
+      pathParts.length >= 5 &&
+      ["description", "access"].includes(pathParts[4])
+    ) {
       // Extract owner_id and repo_id from the path
       // pathParts[0] = "" (empty due to leading slash)
       // pathParts[1] = "repositories"
       // pathParts[2] = owner_id
       // pathParts[3] = repo_id
-      // pathParts[4] = "description"
+      // pathParts[4] = "description" or "access"
       const ownerId = pathParts[2];
       const repoId = pathParts[3];
       const newPath = `/${ownerId}/${repoId}`;

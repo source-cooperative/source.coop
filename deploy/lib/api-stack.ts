@@ -7,19 +7,23 @@ export class ApiStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: ApiStackProps) {
     super(scope, id, props);
 
+    const isProduction = props.stage === "prod";
+
     // Create database resources
     const database = new DatabaseConstruct(this, "database", {
       stage: props.stage,
-      removalPolicy:
-        props.stage === "prod"
-          ? cdk.RemovalPolicy.RETAIN
-          : cdk.RemovalPolicy.DESTROY,
+      removalPolicy: isProduction
+        ? cdk.RemovalPolicy.RETAIN
+        : cdk.RemovalPolicy.DESTROY,
     });
 
     // Create Vercel role with OIDC trust relationship
     const vercel = new VercelConstruct(this, "vercel", {
       projectName: "radiantearth",
       stage: props.stage,
+      vercelEnvironment: isProduction
+        ? ["production"]
+        : ["preview", "development"],
     });
 
     for (const table of [
