@@ -4,53 +4,90 @@ import { NextRequest, NextResponse } from "next/server";
 import { getOryId } from "./lib/ory";
 import { accountsTable } from "./lib/clients/database";
 
-// Handle legacy repository redirects
+/**
+ * Handle requests to legacy repository description paths.
+ * @param request
+ * @returns response or null
+ */
 const handleLegacyRedirects = (request: NextRequest): NextResponse | null => {
   if (request.nextUrl.pathname.startsWith("/repositories")) {
+    // Handle the specific pattern: /repositories/[owner_id]/[repo_id]/description
+    const pathParts = request.nextUrl.pathname.split("/");
+
+    if (pathParts.length >= 5 && pathParts[4] === "description") {
+      // Extract owner_id and repo_id from the path
+      // pathParts[0] = "" (empty due to leading slash)
+      // pathParts[1] = "repositories"
+      // pathParts[2] = owner_id
+      // pathParts[3] = repo_id
+      // pathParts[4] = "description"
+      const ownerId = pathParts[2];
+      const repoId = pathParts[3];
+      return NextResponse.redirect(
+        new URL(`/${ownerId}/${repoId}`, request.url)
+      );
+    }
+
+    // Handle other /repositories patterns by removing the prefix
     const newPath = request.nextUrl.pathname.replace("/repositories", "");
     return NextResponse.redirect(new URL(newPath || "/", request.url));
   }
   return null;
 };
 
-// Handle account onboarding checks
+/**
+ * Send authenticated users to the onboarding page if they don't have an account.
+ * @param request
+ * @returns response or null
+ */
 const handleOnboarding = async (
-  request: NextRequest,
-  oryId: string
+  request: NextRequest
 ): Promise<NextResponse | null> => {
+  if (request.nextUrl.pathname !== "/onboarding") return null;
+
+  const session = await getServerSession();
+  if (!session) return null;
+  const oryId = getOryId(session);
+  if (!oryId) return null;
   const account = await accountsTable.fetchByOryId(oryId);
 
-  if (!account && request.nextUrl.pathname !== "/onboarding") {
+  if (!account) {
     return NextResponse.redirect(new URL("/onboarding", request.url));
   }
 
   return null;
 };
 
-// Handle email verification for accounts
-const handleEmailVerification = async (
-  session: any,
-  account: any
-): Promise<void> => {
-  if (
-    account &&
-    account.emails?.length === 0 &&
-    session.identity?.traits.email
-  ) {
-    account.emails = [
-      {
-        address: session.identity.traits.email,
-        verified: false,
-        is_primary: true,
-        added_at: new Date().toISOString(),
-      },
-    ];
+/**
+ * Ensure that authenticated users have an email address.
+ * @param request
+ * @returns void
+ */
+const handleEmailVerification = async (request: NextRequest): Promise<void> => {
+  const session = await getServerSession();
+  if (!session) return;
+  const oryId = getOryId(session);
+  if (!oryId) return;
+  const account = await accountsTable.fetchByOryId(oryId);
 
-    try {
-      await accountsTable.update(account);
-    } catch (error) {
-      console.error("Failed to add email to account", error);
-    }
+  if (!account) return;
+  if (!account.emails) return;
+  if (account.emails.length > 0) return;
+  if (!session.identity?.traits.email) return;
+
+  account.emails = [
+    {
+      address: session.identity.traits.email,
+      verified: false,
+      is_primary: true,
+      added_at: new Date().toISOString(),
+    },
+  ];
+
+  try {
+    await accountsTable.update(account);
+  } catch (error) {
+    console.error("Failed to add email to account", error);
   }
 };
 
@@ -60,19 +97,8 @@ export const middleware = async (request: NextRequest) => {
   if (redirect) return redirect;
 
   // Handle authentication and account management
-  const session = await getServerSession();
-  if (session) {
-    const oryId = getOryId(session);
-    if (oryId) {
-      // Check onboarding status
-      const onboardingRedirect = await handleOnboarding(request, oryId);
-      if (onboardingRedirect) return onboardingRedirect;
-
-      // Handle email verification
-      const account = await accountsTable.fetchByOryId(oryId);
-      await handleEmailVerification(session, account);
-    }
-  }
+  // const onboardingRedirect = await handleOnboarding(request);
+  await handleEmailVerification(request);
 
   // Run Ory middleware last
   const ory = await createOryMiddleware({});
