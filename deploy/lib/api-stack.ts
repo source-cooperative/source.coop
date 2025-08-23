@@ -21,9 +21,7 @@ export class ApiStack extends cdk.Stack {
     const vercel = new VercelConstruct(this, "vercel", {
       projectName: "radiantearth",
       stage: props.stage,
-      vercelEnvironment: isProduction
-        ? ["production"]
-        : ["preview", "development"],
+      vercelEnvironment: isProduction ? ["production"] : ["preview", "staging"],
     });
 
     for (const table of [
