@@ -10,7 +10,7 @@
  * @throws {notFound} If account does not exist
  */
 
-import { forbidden, notFound } from "next/navigation";
+import { notFound } from "next/navigation";
 import { Container } from "@radix-ui/themes";
 import { IndividualProfile } from "@/components/features/profiles";
 import { OrganizationProfilePage } from "@/components/features/profiles/OrganizationProfilePage";
