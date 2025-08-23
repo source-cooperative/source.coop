@@ -10,14 +10,13 @@
  * @throws {notFound} If account does not exist
  */
 
-import { forbidden, notFound } from "next/navigation";
+import { notFound } from "next/navigation";
 import { Container } from "@radix-ui/themes";
 import { IndividualProfile } from "@/components/features/profiles";
 import { OrganizationProfilePage } from "@/components/features/profiles/OrganizationProfilePage";
 import type { IndividualAccount } from "@/types/account_v2";
 import { accountsTable, productsTable } from "@/lib/clients/database";
 import { getServerSession } from "@ory/nextjs/app";
-import type { ExtendedSession } from "@/types/session";
 import { getOryId } from "@/lib/ory";
 
 type PageProps = {
