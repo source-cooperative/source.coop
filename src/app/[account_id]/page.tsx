@@ -30,19 +30,16 @@ export default async function AccountPage({ params, searchParams }: PageProps) {
   const { welcome } = await searchParams;
   const showWelcome = welcome === "true";
 
-  // Get session to check authentication status
-  const session = await getServerSession();
-  if (!session) {
-    forbidden();
-  }
-
   // Get account data
   const account = await accountsTable.fetchById(account_id);
   if (!account) {
     notFound();
   }
+
+  // Get session to check authentication status
+  const session = await getServerSession();
   const isAuthenticated = !!session?.active;
-  const isAccountOwner = getOryId(session) === account.identity_id;
+  const isAccountOwner = session && getOryId(session) === account.identity_id;
 
   // If this is an organization, use the organization profile page
   if (account.type === "organization") {
