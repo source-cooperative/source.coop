@@ -1,4 +1,8 @@
 #!/usr/bin/env tsx
+/**
+ * This script is used to extract records from DynamoDB table exports and to load them
+ * into a DynamoDB table, likely in another account.
+ */
 
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
