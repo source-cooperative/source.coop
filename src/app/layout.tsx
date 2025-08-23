@@ -9,7 +9,7 @@ import { Box } from "@radix-ui/themes";
 import { Navigation, Footer /*, Banner*/ } from "@/components/layout";
 import { Suspense } from "react";
 import { metadata } from "./metadata";
-import { CONFIG } from "@/lib/config";
+import { CONFIG } from "@/lib";
 import { getOryId } from "@/lib/ory";
 import { accountsTable } from "@/lib/clients/database";
 import { Account } from "@/types/account";

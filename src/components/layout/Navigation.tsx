@@ -7,7 +7,7 @@ import { Logo } from "./Logo";
 import { ProfileAvatar } from "@/components/features/profiles/ProfileAvatar";
 import { ChevronDownIcon } from "@radix-ui/react-icons";
 import styles from "./Navigation.module.css";
-import { CONFIG } from "@/lib/config";
+import { CONFIG } from "@/lib";
 import { Account } from "@/types/account";
 
 function AccountDropdown({ account }: { account: Account }) {

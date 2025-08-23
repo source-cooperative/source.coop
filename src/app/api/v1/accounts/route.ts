@@ -6,10 +6,10 @@ import {
   Actions,
   AccountFlags,
 } from "@/types";
-import { AccountType } from "@/types/account";
 import { isAuthorized } from "@/lib/api/authz";
 import { getApiSession } from "@/lib/api/utils";
 import { accountsTable } from "@/lib/clients/database";
+import { LOGGER } from "@/lib";
 
 const isProd = process.env.NEXT_PUBLIC_IS_PROD === "1";
 
@@ -75,7 +75,11 @@ export async function POST(request: NextRequest) {
       const account = await accountsTable.create(newAccount);
       return NextResponse.json(account, { status: StatusCodes.OK });
     } catch (e) {
-      console.error(`Error creating account: ${e}`);
+      LOGGER.error("Error creating account", {
+        operation: "accounts.POST",
+        context: "account creation",
+        error: e,
+      });
       return NextResponse.json(
         { error: `Account with ID ${newAccount.account_id} already exists` },
         { status: StatusCodes.BAD_REQUEST }

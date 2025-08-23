@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { CONFIG } from '@/lib/config';
+import { CONFIG } from "@/lib";
 
 export const metadata: Metadata = {
   title: {

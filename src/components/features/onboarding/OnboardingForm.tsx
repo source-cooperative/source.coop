@@ -10,7 +10,7 @@ import debounce from 'lodash/debounce';
 import { InfoCircledIcon, CheckCircledIcon } from '@radix-ui/react-icons';
 import { VerificationSuccessCallout } from '@/components/features/auth/VerificationSuccessCallout';
 import { recordVerificationTimestamp } from "@/lib/actions/account";
-import { CONFIG } from "@/lib/config";
+import { CONFIG, LOGGER } from "@/lib";
 import { useSession } from "@ory/elements-react/client";
 
 interface OnboardingFormData {
@@ -18,7 +18,7 @@ interface OnboardingFormData {
   name: string;
 }
 
-type UsernameStatus = 'idle' | 'checking' | 'available' | 'taken';
+type UsernameStatus = "idle" | "checking" | "available" | "taken";
 
 interface UsernameCheckResponse {
   available: boolean;
@@ -34,19 +34,21 @@ export function OnboardingForm() {
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [username, setUsername] = useState('');
+  const [username, setUsername] = useState("");
   const [formData, setFormData] = useState<OnboardingFormData>({
-    account_id: '',
-    name: ''
+    account_id: "",
+    name: "",
   });
-  const [usernameStatus, setUsernameStatus] = useState<UsernameStatus>('idle');
-  const [verificationStatus, setVerificationStatus] = useState<'pending' | 'verified'>('pending');
+  const [usernameStatus, setUsernameStatus] = useState<UsernameStatus>("idle");
+  const [verificationStatus, setVerificationStatus] = useState<
+    "pending" | "verified"
+  >("pending");
   const { session, isLoading: isSessionLoading, refetch } = useSession();
 
   if (!session && !isSessionLoading) {
     // If no session, redirect to login
     router.push(CONFIG.auth.routes.login);
-  } 
+  }
 
   // Check session on mount
   useEffect(() => {
@@ -60,32 +62,52 @@ export function OnboardingForm() {
         const identity = session.identity;
         if (identity?.verifiable_addresses) {
           const emailAddress = identity.verifiable_addresses.find(
-            (addr) => addr.via === 'email'
+            (addr) => addr.via === "email"
           );
           if (emailAddress?.verified) {
-            setVerificationStatus('verified');
-            
+            setVerificationStatus("verified");
+
             // Record verification timestamp if coming from email-verified page
-            const isFromVerification = searchParams.get('verified') === 'true';
+            const isFromVerification = searchParams.get("verified") === "true";
             if (isFromVerification && identity.id) {
-              console.log('Recording verification timestamp for identity:', identity.id);
-              
+              LOGGER.info("Recording verification timestamp for identity", {
+                operation: "OnboardingForm.checkSession",
+                context: "email verification",
+                metadata: { identityId: identity.id },
+              });
+
               try {
                 await recordVerificationTimestamp(identity.id);
-                console.log('Successfully recorded verification timestamp');
+                LOGGER.info("Successfully recorded verification timestamp", {
+                  operation: "OnboardingForm.checkSession",
+                  context: "email verification",
+                  metadata: { identityId: identity.id },
+                });
               } catch (err) {
-                console.error('Error recording verification timestamp:', err);
+                LOGGER.error("Error recording verification timestamp", {
+                  operation: "OnboardingForm.checkSession",
+                  context: "email verification",
+                  error: err,
+                });
               }
             }
           }
         }
-        
+
         // Pre-fill email if available
         if (identity?.traits?.email) {
-          console.log('Session found, email:', identity.traits.email);
+          LOGGER.info("Session found, email", {
+            operation: "OnboardingForm.checkSession",
+            context: "session validation",
+            metadata: { email: identity.traits.email },
+          });
         }
       } catch (err) {
-        console.error('Session error:', err);
+        LOGGER.error("Session error", {
+          operation: "OnboardingForm.checkSession",
+          context: "session validation",
+          error: err,
+        });
         router.push(CONFIG.auth.routes.login);
       }
     };
@@ -93,29 +115,32 @@ export function OnboardingForm() {
     checkSession();
   }, [isSessionLoading, session, router]);
 
-  const checkUsername = useCallback(
-    async (value: string) => {
-      if (!value || value.length < 3) {
-        setUsernameStatus('idle');
-        return;
-      }
+  const checkUsername = useCallback(async (value: string) => {
+    if (!value || value.length < 3) {
+      setUsernameStatus("idle");
+      return;
+    }
 
-      setUsernameStatus('checking');
-      try {
-        const response = await fetch(`/api/accounts/check-username?username=${encodeURIComponent(value)}`);
-        const data: UsernameCheckResponse = await response.json();
-        setUsernameStatus(data.available ? 'available' : 'taken');
-      } catch (err) {
-        console.error('Error checking username:', err);
-        setUsernameStatus('idle');
-      }
-    },
-    []
-  );
+    setUsernameStatus("checking");
+    try {
+      const response = await fetch(
+        `/api/accounts/check-username?username=${encodeURIComponent(value)}`
+      );
+      const data: UsernameCheckResponse = await response.json();
+      setUsernameStatus(data.available ? "available" : "taken");
+    } catch (err) {
+      LOGGER.error("Error checking username", {
+        operation: "OnboardingForm.checkUsername",
+        context: "username validation",
+        error: err,
+      });
+      setUsernameStatus("idle");
+    }
+  }, []);
 
   // Use the debounced version
-  const debouncedCheckUsername = useMemo(() => 
-    debounce((value: string) => checkUsername(value), 500),
+  const debouncedCheckUsername = useMemo(
+    () => debounce((value: string) => checkUsername(value), 500),
     [checkUsername]
   );
 
@@ -175,7 +200,11 @@ export function OnboardingForm() {
       await refetch();
       router.push(`/${account_id}?welcome=true`);
     } catch (err: unknown) {
-      console.error("Onboarding error:", err);
+      LOGGER.error("Onboarding error", {
+        operation: "OnboardingForm.handleSubmit",
+        context: "onboarding submission",
+        error: err,
+      });
       setError(
         err instanceof Error
           ? err.message
@@ -188,26 +217,26 @@ export function OnboardingForm() {
 
   const fields: FormField[] = [
     {
-      name: 'account_id',
-      label: 'Username',
-      type: 'text',
+      name: "account_id",
+      label: "Username",
+      type: "text",
       required: true,
-      placeholder: 'Choose a username',
+      placeholder: "Choose a username",
       validation: {
         minLength: 3,
-        pattern: '^[a-z0-9_-]+$'
+        pattern: "^[a-z0-9_-]+$",
       },
       defaultValue: formData.account_id,
       onChange: (value) => {
         // Process the username value (lowercase and remove spaces)
-        const processedValue = value.toLowerCase().replace(/\s+/g, '');
-        setFormData(prev => ({
+        const processedValue = value.toLowerCase().replace(/\s+/g, "");
+        setFormData((prev) => ({
           ...prev,
-          account_id: processedValue
+          account_id: processedValue,
         }));
       },
       description: (
-        <Flex direction="column" gap="1" style={{ minHeight: '24px' }}>
+        <Flex direction="column" gap="1" style={{ minHeight: "24px" }}>
           <Flex gap="1" align="center">
             <Text size="1" color="gray">
               This will be your profile URL:
@@ -216,61 +245,70 @@ export function OnboardingForm() {
               <MonoText size="1" color="gray">
                 source.coop/
               </MonoText>
-              <MonoText 
-                size="1" 
+              <MonoText
+                size="1"
                 color={
-                  usernameStatus === 'checking' 
-                    ? 'gray' 
-                    : usernameStatus === 'available'
-                      ? 'green'
-                      : usernameStatus === 'taken'
-                        ? 'red'
-                        : 'gray'
+                  usernameStatus === "checking"
+                    ? "gray"
+                    : usernameStatus === "available"
+                    ? "green"
+                    : usernameStatus === "taken"
+                    ? "red"
+                    : "gray"
                 }
               >
                 {username}
               </MonoText>
             </Flex>
           </Flex>
-          <div style={{ height: '16px' }}>
-            {usernameStatus === 'checking' ? (
-              <Text size="1" color="gray">Checking availability…</Text>
-            ) : usernameStatus !== 'idle' && (
-              <Text size="1" color={usernameStatus === 'available' ? 'green' : 'red'}>
-                {usernameStatus === 'available' ? 'Username is available' : 'This username is already taken'}
+          <div style={{ height: "16px" }}>
+            {usernameStatus === "checking" ? (
+              <Text size="1" color="gray">
+                Checking availability…
               </Text>
+            ) : (
+              usernameStatus !== "idle" && (
+                <Text
+                  size="1"
+                  color={usernameStatus === "available" ? "green" : "red"}
+                >
+                  {usernameStatus === "available"
+                    ? "Username is available"
+                    : "This username is already taken"}
+                </Text>
+              )
             )}
           </div>
         </Flex>
-      )
+      ),
     },
     {
-      name: 'name',
-      label: 'Full Name',
-      type: 'text',
+      name: "name",
+      label: "Full Name",
+      type: "text",
       required: true,
-      placeholder: 'Your Name',
+      placeholder: "Your Name",
       validation: {
-        minLength: 2
+        minLength: 2,
       },
       defaultValue: formData.name,
       onChange: (value) => {
-        setFormData(prev => ({
+        setFormData((prev) => ({
           ...prev,
-          name: value
+          name: value,
         }));
       },
-      description: 'This is the name that will be displayed on your profile'
-    }
+      description: "This is the name that will be displayed on your profile",
+    },
   ];
 
   return (
     <Box pt="6">
       <Box mb="4">
         <VerificationSuccessCallout />
-        {verificationStatus === 'verified' ? (
+        {verificationStatus === "verified" ? (
           // Don't show a second verification message if VerificationSuccessCallout is displayed
-          searchParams.get('verified') === 'true' ? null : (
+          searchParams.get("verified") === "true" ? null : (
             <Callout.Root color="green">
               <Callout.Icon>
                 <CheckCircledIcon />
@@ -286,7 +324,8 @@ export function OnboardingForm() {
               <InfoCircledIcon />
             </Callout.Icon>
             <Callout.Text>
-              Please check your email. We&apos;ve sent you a code to verify your email address.
+              Please check your email. We&apos;ve sent you a code to verify your
+              email address.
             </Callout.Text>
           </Callout.Root>
         )}
@@ -297,7 +336,9 @@ export function OnboardingForm() {
         submitLabel="Complete Profile"
         error={error}
         isLoading={loading}
-        submitDisabled={usernameStatus === 'taken' || usernameStatus === 'checking'}
+        submitDisabled={
+          usernameStatus === "taken" || usernameStatus === "checking"
+        }
       />
     </Box>
   );

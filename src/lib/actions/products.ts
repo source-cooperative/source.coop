@@ -2,6 +2,7 @@
 
 import { productsTable } from "@/lib/clients/database";
 import type { Product } from "@/types";
+import { LOGGER } from "@/lib";
 
 export interface PaginatedProductsResult {
   products: Product[];
@@ -113,7 +114,11 @@ export async function getProducts(
         );
         startIndex = decodedCursor.startIndex || 0;
       } catch (error) {
-        console.error("Failed to decode pagination cursor:", error);
+        LOGGER.error("Failed to decode pagination cursor", {
+          operation: "getProducts",
+          context: "cursor decoding",
+          error: error,
+        });
       }
 
       endIndex = startIndex + limit;
@@ -156,7 +161,11 @@ export async function getProducts(
       previousCursor,
     };
   } catch (error) {
-    console.error("Failed to fetch products:", error);
+    LOGGER.error("Failed to fetch products", {
+      operation: "getProducts",
+      context: "product fetching",
+      error: error,
+    });
     throw new Error("Failed to fetch products");
   }
 }
@@ -174,7 +183,11 @@ export async function getPaginatedProducts(
       try {
         lastEvaluatedKey = JSON.parse(Buffer.from(cursor, "base64").toString());
       } catch (error) {
-        console.error("Failed to decode cursor:", error);
+        LOGGER.error("Failed to decode cursor", {
+          operation: "getPaginatedProducts",
+          context: "cursor decoding",
+          error: error,
+        });
       }
     }
 
@@ -204,7 +217,11 @@ export async function getPaginatedProducts(
       previousCursor: previousCursor || undefined, // Use provided previous cursor or undefined
     };
   } catch (error) {
-    console.error("Failed to fetch paginated products:", error);
+    LOGGER.error("Failed to fetch paginated products", {
+      operation: "getPaginatedProducts",
+      context: "product fetching",
+      error: error,
+    });
     throw new Error("Failed to fetch products");
   }
 }

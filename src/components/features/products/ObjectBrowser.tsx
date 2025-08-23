@@ -8,6 +8,7 @@ import { SectionHeader } from "@/components/core";
 import { BreadcrumbNav } from "@/components/display";
 import { storage } from "@/lib/clients/storage";
 import { buildDirectoryTree } from "./object-browser/utils";
+import { LOGGER } from "@/lib";
 
 export interface ObjectBrowserProps {
   product: Product;
@@ -48,7 +49,16 @@ export async function ObjectBrowser({
       });
       objects = result.objects || [];
     } catch (error) {
-      console.error("Error fetching objects:", error);
+      LOGGER.error("Error fetching objects", {
+        operation: "ObjectBrowser",
+        context: "object fetching",
+        error: error,
+        metadata: {
+          account_id: product.account_id,
+          product_id: product.product_id,
+          path: pathString,
+        },
+      });
       objects = [];
     }
   }

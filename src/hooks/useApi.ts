@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { LOGGER } from "@/lib";
 
 interface UseApiOptions<T> {
   url: string;
@@ -39,7 +40,12 @@ export function useApi<T = any>({
       const errorMessage =
         err instanceof Error ? err.message : "An error occurred";
       setError(errorMessage);
-      console.error("API request failed:", err);
+      LOGGER.error("API request failed", {
+        operation: "useApi.fetchData",
+        context: "API request",
+        error: err,
+        metadata: { url }
+      });
     } finally {
       setLoading(false);
     }

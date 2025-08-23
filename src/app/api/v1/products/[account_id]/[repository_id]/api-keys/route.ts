@@ -55,6 +55,7 @@ import { StatusCodes } from "http-status-codes";
 import { isAuthorized } from "@/lib/api/authz";
 import { generateAccessKeyID, generateSecretAccessKey } from "@/lib/api/utils";
 import { getApiSession } from "@/lib/api/utils";
+import { LOGGER } from "@/lib";
 import { productsTable } from "@/lib/clients/database/products";
 import { apiKeysTable } from "@/lib/clients/database/api-keys";
 
@@ -105,7 +106,11 @@ export async function POST(
         const createdAPIKey = await apiKeysTable.create(apiKey);
         return NextResponse.json(createdAPIKey, { status: StatusCodes.OK });
       } catch (e) {
-        console.error(`Error creating API key: ${e}`);
+        LOGGER.error("Error creating API key", {
+          operation: "products.api-keys.POST",
+          context: "API key creation",
+          error: e,
+        });
       }
     }
     return NextResponse.json(

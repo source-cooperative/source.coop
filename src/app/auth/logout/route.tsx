@@ -1,4 +1,4 @@
-import { CONFIG } from "@/lib/config";
+import { CONFIG, LOGGER } from "@/lib";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
@@ -13,7 +13,15 @@ export async function GET(request: NextRequest) {
     },
   });
   if (!response.ok) {
-    console.error("Logout failed", response.status, response.statusText);
+    LOGGER.error("Logout failed", {
+      operation: "logout.GET",
+      context: "logout request",
+      error: new Error(`HTTP ${response.status}: ${response.statusText}`),
+      metadata: {
+        status: response.status,
+        statusText: response.statusText,
+      },
+    });
     return NextResponse.json(
       {
         error: "Logout failed",

@@ -7,6 +7,7 @@ import { MarkdownViewer } from "@/components/features/markdown";
 import { dataConnectionsTable, productsTable } from "@/lib/clients/database";
 import { storage } from "@/lib/clients/storage";
 import { DataConnection, ProductMirror } from "@/types";
+import { LOGGER } from "@/lib";
 
 export async function generateMetadata({ params }: PageProps) {
   const { account_id, product_id, path } = await params;
@@ -115,10 +116,14 @@ export default async function ProductPathPage({ params }: PageProps) {
       primaryMirror.connection_id
     );
     if (!dataConnection) {
-      console.error(
-        `Data connection not found for ${primaryMirror.connection_id}`,
-        { primaryMirror }
-      );
+      LOGGER.error("Data connection not found", {
+        operation: "ProductPathPage",
+        context: "data connection lookup",
+        metadata: {
+          connection_id: primaryMirror.connection_id,
+          primaryMirror,
+        },
+      });
     } else {
       connectionDetails = {
         primaryMirror,
