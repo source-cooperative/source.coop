@@ -106,7 +106,7 @@ async function authenticateWithApiKey(
   }
 
   // Retrieve and filter memberships for the user
-  const memberships = await membershipsTable.listByUser(account.account_id);
+  const memberships = await membershipsTable.listByAccount(account.account_id);
   const filteredMemberships = memberships.filter((membership) =>
     isAuthorized({ account }, membership, Actions.GetMembership)
   );
@@ -164,7 +164,7 @@ async function authenticateWithApiKey(
 //   }
 
 //   // Retrieve and filter memberships for the user
-//   const memberships = await membershipsTable.listByUser(account.account_id);
+//   const memberships = await membershipsTable.listByAccount(account.account_id);
 //   const filteredMemberships = memberships.filter((membership) =>
 //     isAuthorized(account, membership, Actions.GetMembership)
 //   );
@@ -221,7 +221,7 @@ export async function getApiSession(
   }
 
   // Retrieve and filter memberships for the user
-  const memberships = await membershipsTable.listByUser(account.account_id);
+  const memberships = await membershipsTable.listByAccount(account.account_id);
   const filteredMemberships = memberships.filter((membership) =>
     isAuthorized({ account }, membership, Actions.GetMembership)
   );

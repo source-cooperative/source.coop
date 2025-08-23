@@ -82,11 +82,6 @@ export class DatabaseConstruct extends Construct {
       partitionKey: "membership_id",
       indexes: [
         {
-          // fetch all memberships for a given account
-          name: "account_id",
-          partitionKey: "account_id",
-        },
-        {
           // fetch all memberships for a given account and repository
           name: "membership_account_id_repository_id",
           partitionKey: "membership_account_id",
