@@ -15,9 +15,14 @@ import { Container } from "@radix-ui/themes";
 import { IndividualProfile } from "@/components/features/profiles";
 import { OrganizationProfilePage } from "@/components/features/profiles/OrganizationProfilePage";
 import type { IndividualAccount } from "@/types/account_v2";
-import { accountsTable, productsTable } from "@/lib/clients/database";
+import {
+  accountsTable,
+  membershipsTable,
+  productsTable,
+} from "@/lib/clients/database";
 import { getServerSession } from "@ory/nextjs/app";
 import { getOryId } from "@/lib/ory";
+import { MembershipState } from "@/types";
 
 type PageProps = {
   params: Promise<{ account_id: string }>;
@@ -56,6 +61,13 @@ export default async function AccountPage({ params, searchParams }: PageProps) {
     products = products.filter((product) => product.visibility === "public");
   }
 
+  const memberships = await membershipsTable.listByAccount(account_id);
+  const organizations = await accountsTable.fetchManyByIds(
+    memberships
+      .filter((membership) => membership.state === MembershipState.Member)
+      .map((membership) => membership.account_id)
+  );
+
   // For individual accounts
   return (
     <Container size="4" py="6">
@@ -63,7 +75,7 @@ export default async function AccountPage({ params, searchParams }: PageProps) {
         account={account as IndividualAccount}
         ownedProducts={products}
         contributedProducts={[]}
-        organizations={[]}
+        organizations={Object.values(organizations)}
         showWelcome={showWelcome}
         ownedProductsHasNextPage={!!lastEvaluatedKey}
         ownedProductsNextCursor={lastEvaluatedKey}
