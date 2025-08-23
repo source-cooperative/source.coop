@@ -284,9 +284,10 @@ class ProductsTable extends BaseTable {
   async attachAccounts(products: Product[]): Promise<Product[]> {
     if (!products.length) return products;
 
-    const accountMap = await accountsTable.fetchManyByIds([
+    const accounts = await accountsTable.fetchManyByIds([
       ...new Set(products.map((p) => p.account_id).filter((id) => id)),
     ]);
+    const accountMap = new Map(accounts.map((acc) => [acc.account_id, acc]));
 
     return products.map((item) => ({
       ...item,

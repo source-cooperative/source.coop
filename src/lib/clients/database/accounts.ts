@@ -47,8 +47,8 @@ class AccountsTable extends BaseTable {
   async fetchManyByIds(
     account_ids: string[],
     batchSize = 100
-  ): Promise<Map<string, Account>> {
-    const accountBatches = [];
+  ): Promise<Account[]> {
+    const accountBatches: Account[] = [];
 
     for (let i = 0; i < account_ids.length; i += batchSize) {
       const batch = account_ids.slice(i, i + batchSize);
@@ -65,13 +65,13 @@ class AccountsTable extends BaseTable {
       );
       const result = await this.client.send(new BatchGetCommand(batchRequest));
       if (result.Responses?.[accountsTable.table]) {
-        accountBatches.push(...result.Responses[accountsTable.table]);
+        accountBatches.push(
+          ...(result.Responses[accountsTable.table] as Account[])
+        );
       }
     }
 
-    return new Map(
-      accountBatches.map((acc) => [acc.account_id, acc as Account])
-    );
+    return accountBatches;
   }
 
   async fetchByOryId(identity_id: string): Promise<Account | null> {
