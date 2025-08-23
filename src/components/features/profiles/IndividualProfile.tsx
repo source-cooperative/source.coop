@@ -42,34 +42,7 @@ export function IndividualProfile({
   contributedProducts,
   organizations,
   showWelcome = false,
-  // Pagination props
-  ownedProductsHasNextPage = false,
-  ownedProductsHasPreviousPage = false,
-  ownedProductsNextCursor,
-  ownedProductsPreviousCursor,
-  ownedProductsCurrentCursor,
-  contributedProductsHasNextPage = false,
-  contributedProductsHasPreviousPage = false,
-  contributedProductsNextCursor,
-  contributedProductsPreviousCursor,
-  contributedProductsCurrentCursor,
 }: IndividualProfileProps) {
-  const pagination = {
-    ownedProducts: {
-      hasNextPage: ownedProductsHasNextPage,
-      hasPreviousPage: ownedProductsHasPreviousPage,
-      nextCursor: ownedProductsNextCursor,
-      previousCursor: ownedProductsPreviousCursor,
-      currentCursor: ownedProductsCurrentCursor,
-    },
-    contributedProducts: {
-      hasNextPage: contributedProductsHasNextPage,
-      hasPreviousPage: contributedProductsHasPreviousPage,
-      nextCursor: contributedProductsNextCursor,
-      previousCursor: contributedProductsPreviousCursor,
-      currentCursor: contributedProductsCurrentCursor,
-    },
-  };
   return (
     <Box>
       <IndividualProfileActions account={account} showWelcome={showWelcome} />
