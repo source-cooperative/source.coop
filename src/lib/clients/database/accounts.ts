@@ -3,6 +3,7 @@ import {
   UpdateCommand,
   DeleteCommand,
   PutCommand,
+  BatchGetCommand,
 } from "@aws-sdk/lib-dynamodb";
 import { ResourceNotFoundException } from "@aws-sdk/client-dynamodb";
 import type { Account, AccountType } from "@/types/account";
@@ -50,6 +51,36 @@ class AccountsTable extends BaseTable {
       this.logError("fetchById", error, { account_id });
       throw error;
     }
+  }
+
+  async fetchManyByIds(
+    account_ids: string[],
+    batchSize = 100
+  ): Promise<Map<string, Account>> {
+    const accountBatches = [];
+
+    for (let i = 0; i < account_ids.length; i += batchSize) {
+      const batch = account_ids.slice(i, i + batchSize);
+      const batchRequest = {
+        RequestItems: {
+          [accountsTable.table]: {
+            Keys: batch.map((account_id) => ({ account_id })),
+          },
+        },
+      };
+
+      console.debug(
+        `DB: Fetching ${batch.length} accounts: ${batch.join(", ")}`
+      );
+      const result = await this.client.send(new BatchGetCommand(batchRequest));
+      if (result.Responses?.[accountsTable.table]) {
+        accountBatches.push(...result.Responses[accountsTable.table]);
+      }
+    }
+
+    return new Map(
+      accountBatches.map((acc) => [acc.account_id, acc as Account])
+    );
   }
 
   async fetchByOryId(identity_id: string): Promise<Account | null> {
