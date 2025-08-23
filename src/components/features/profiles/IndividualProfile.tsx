@@ -22,19 +22,7 @@ interface IndividualProfileProps {
   contributedProducts: Product[];
   organizations: AccountV2[];
   showWelcome?: boolean;
-  // Pagination props for owned products
-  ownedProductsHasNextPage?: boolean;
-  ownedProductsHasPreviousPage?: boolean;
-  ownedProductsNextCursor?: string;
-  ownedProductsPreviousCursor?: string;
-  ownedProductsCurrentCursor?: string;
-  // Pagination props for contributed products
-  contributedProductsHasNextPage?: boolean;
-  contributedProductsHasPreviousPage?: boolean;
-  contributedProductsNextCursor?: string;
-  contributedProductsPreviousCursor?: string;
-  contributedProductsCurrentCursor?: string;
-}
+  }
 
 export function IndividualProfile({
   account,
