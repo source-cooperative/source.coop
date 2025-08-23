@@ -9,7 +9,7 @@ import {
 } from "@radix-ui/themes";
 import Link from "next/link";
 import type { AccountV2, IndividualAccount } from "@/types/account_v2";
-import type { Account, Product } from "@/types";
+import type { Product } from "@/types";
 import { ProfileAvatar } from "./ProfileAvatar";
 import { ProductsList } from "../products/ProductsList";
 import { WebsiteLink } from "./WebsiteLink";
