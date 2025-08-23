@@ -34,6 +34,25 @@ export class MembershipsTable extends BaseTable {
     }
   }
 
+  async listByUser(accountId: string): Promise<Membership[]> {
+    try {
+      const result = await this.client.send(
+        new QueryCommand({
+          TableName: this.table,
+          IndexName: "account_id",
+          KeyConditionExpression: "account_id = :account_id",
+          ExpressionAttributeValues: {
+            ":account_id": accountId,
+          },
+        })
+      );
+      return result.Items?.map((item) => item as Membership) ?? [];
+    } catch (error) {
+      this.logError("listByUser", error, { accountId });
+      throw error;
+    }
+  }
+
   async listByAccount(
     membershipAccountId: string,
     repositoryId?: string
