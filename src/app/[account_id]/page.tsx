@@ -61,7 +61,7 @@ export default async function AccountPage({ params, searchParams }: PageProps) {
     products = products.filter((product) => product.visibility === "public");
   }
 
-  const memberships = await membershipsTable.listByAccount(account_id);
+  const memberships = await membershipsTable.listByUser(account_id);
   const organizations = await accountsTable.fetchManyByIds(
     memberships
       .filter((membership) => membership.state === MembershipState.Member)
