@@ -31,8 +31,6 @@ export function EmailVerificationStatus({
       return;
     }
 
-    const _individualAccount = account as IndividualAccount;
-
     const checkVerificationStatus = async () => {
       // TODO: This is currently only partially implemented, where we display the verification status of the authenticated user, but we don't actually check the status of the account.
       try {
@@ -104,4 +102,4 @@ export function EmailVerificationStatus({
       )}
     </Tooltip>
   );
-} 
+}

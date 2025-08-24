@@ -16,6 +16,7 @@ import { IndividualProfile } from "@/components/features/profiles";
 import { OrganizationProfilePage } from "@/components/features/profiles/OrganizationProfilePage";
 import {
   accountsTable,
+  isOrganizationalAccount,
   membershipsTable,
   productsTable,
 } from "@/lib/clients/database";
@@ -51,8 +52,8 @@ export default async function AccountPage({ params, searchParams }: PageProps) {
 
   // Get repositories for individual account
   let { products, lastEvaluatedKey } = await productsTable.listByAccount(
-    //
-    account_id
+    account_id,
+    1000
   );
 
   // Filter products based on authentication status
@@ -61,11 +62,13 @@ export default async function AccountPage({ params, searchParams }: PageProps) {
   }
 
   const memberships = await membershipsTable.listByUser(account_id);
-  const organizations = await accountsTable.fetchManyByIds(
-    memberships
-      .filter((membership) => membership.state === MembershipState.Member)
-      .map((membership) => membership.account_id)
-  );
+  const organizations = (
+    await accountsTable.fetchManyByIds(
+      memberships
+        .filter((membership) => membership.state === MembershipState.Member)
+        .map((membership) => membership.membership_account_id)
+    )
+  ).filter(isOrganizationalAccount);
 
   // For individual accounts
   return (
@@ -74,7 +77,7 @@ export default async function AccountPage({ params, searchParams }: PageProps) {
         account={account as IndividualAccount}
         ownedProducts={products}
         contributedProducts={[]}
-        organizations={Object.values(organizations)}
+        organizations={organizations}
         showWelcome={showWelcome}
       />
     </Container>
