@@ -1,6 +1,6 @@
 import { Box, Text, Link as RadixLink, Flex } from '@radix-ui/themes';
 import Link from 'next/link';
-import type { IndividualAccount } from "@/types/account_v2";
+import type { IndividualAccount } from "@/types";
 import { ProfileAvatar } from "./ProfileAvatar";
 
 interface OrganizationMembersProps {

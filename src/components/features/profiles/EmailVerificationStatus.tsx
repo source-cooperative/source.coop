@@ -1,9 +1,8 @@
-'use client';
+"use client";
 
-import { Tooltip } from '@radix-ui/themes';
-import { MinusCircledIcon, CheckCircledIcon } from '@radix-ui/react-icons';
-import type { Account } from "@/types";
-import type { IndividualAccount } from "@/types/account_v2";
+import { Tooltip } from "@radix-ui/themes";
+import { MinusCircledIcon, CheckCircledIcon } from "@radix-ui/react-icons";
+import type { Account, IndividualAccount } from "@/types";
 import { useState, useEffect } from "react";
 import { useSession } from "@ory/elements-react/client";
 import { LOGGER } from "@/lib";

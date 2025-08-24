@@ -13,10 +13,10 @@ import Link from "next/link";
 import type {
   IndividualAccount,
   OrganizationalAccount,
-} from "@/types/account_v2";
+  AccountEmail,
+  AccountDomain,
+} from "@/types/account";
 import type { Product } from "@/types";
-import type { AccountEmail } from "@/types/account";
-import type { AccountDomain } from "@/types/account_v2";
 import { ProductsList } from "@/components/features/products/ProductsList";
 import { OrganizationMembers } from "./OrganizationMembers";
 import { ProfileAvatar } from "./ProfileAvatar";
