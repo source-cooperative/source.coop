@@ -90,7 +90,13 @@ export class DatabaseConstruct extends Construct {
           // fetch all memberships for a given account and repository
           name: "membership_account_id_repository_id",
           partitionKey: "membership_account_id",
+          // TODO: If we don't have a repository_id on the membership, it won't be in the index
           sortKey: "repository_id",
+        },
+        {
+          // fetch all memberships for a given account
+          name: "membership_account_id",
+          partitionKey: "membership_account_id",
         },
       ],
       removalPolicy,

@@ -1,6 +1,5 @@
 import { Membership } from "@/types";
 import {
-  ConditionalCheckFailedException,
   PutItemCommand,
   ResourceNotFoundException,
 } from "@aws-sdk/client-dynamodb";
@@ -53,6 +52,15 @@ export class MembershipsTable extends BaseTable {
     }
   }
 
+  /**
+   * Fetches all memberships for a given organization account.
+   *
+   * @param membershipAccountId The account ID of the organization.
+   * @param repositoryId Optional repository ID to filter by.
+   * @returns A list of memberships.
+   */
+  // TODO: support pagination
+  // TODO: support filtering by state
   async listByAccount(
     membershipAccountId: string,
     repositoryId?: string
@@ -60,9 +68,9 @@ export class MembershipsTable extends BaseTable {
     try {
       const command = new QueryCommand({
         TableName: this.table,
-        IndexName: "membership_account_id_repository_id",
         ...(repositoryId
           ? {
+              IndexName: "membership_account_id_repository_id",
               KeyConditionExpression:
                 "membership_account_id = :membership_account_id AND repository_id = :repository_id",
               ExpressionAttributeValues: {
@@ -71,6 +79,7 @@ export class MembershipsTable extends BaseTable {
               },
             }
           : {
+              IndexName: "membership_account_id",
               KeyConditionExpression:
                 "membership_account_id = :membership_account_id",
               ExpressionAttributeValues: {
