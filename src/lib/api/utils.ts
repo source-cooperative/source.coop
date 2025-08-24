@@ -28,7 +28,7 @@
  * const adminStatus = isAdmin(session);
  */
 
-import { Actions, UserSession } from "@/types";
+import { Account, Actions, UserSession } from "@/types";
 import {
   apiKeysTable,
   accountsTable,
@@ -39,6 +39,7 @@ import * as crypto from "crypto";
 import { getServerSession } from "@ory/nextjs/app";
 import { NextRequest } from "next/server";
 import { getOryId } from "../ory";
+import { Session } from "@ory/client-fetch";
 
 export function generateAccessKeyID(): string {
   const prefix = "SC";
@@ -231,6 +232,28 @@ export async function getApiSession(
     identity_id: oryId,
     account,
     memberships: filteredMemberships,
+  };
+}
+
+/**
+ * Retrieves the current user session for visitor to the page.
+ *
+ * @returns A Promise that resolves to a UserSession object if a valid session exists, or null if not authenticated.
+ */
+export async function getPageSession(): Promise<{
+  session: Session | null;
+  oryId: string | null;
+  account: Account | null;
+}> {
+  const session = await getServerSession();
+  const userOryId = session ? getOryId(session) : null;
+  const userAccount = userOryId
+    ? await accountsTable.fetchByOryId(userOryId)
+    : null;
+  return {
+    session,
+    oryId: userOryId,
+    account: userAccount,
   };
 }
 
