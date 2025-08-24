@@ -119,14 +119,18 @@ export function OrganizationProfile({
         </Box>
       </Grid>
 
-      {products.length > 0 && (
         <Box>
           <Heading as="h2" size="4" mb="2">
             Products
           </Heading>
+        {products.length > 0 ? (
           <ProductsList products={products} />
+        ) : (
+          <Text as="p" size="2">
+            No products available.
+          </Text>
+        )}
         </Box>
-      )}
     </Box>
   );
 }
