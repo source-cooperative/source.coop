@@ -71,8 +71,8 @@ export function OrganizationProfile({
           </Heading>
           {account.metadata_public.domains?.map(
             (domain: AccountDomain, index: number) => (
-              <Text as="p" size="2" key={index}>
-                <WebsiteLink website={{ url: `https://${domain.domain}` }} />
+              <Text as="div" size="2" key={index}>
+                <WebsiteLink url={domain.domain} />
               </Text>
             )
           )}
