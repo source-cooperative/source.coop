@@ -6,11 +6,12 @@ import {
   BatchGetCommand,
 } from "@aws-sdk/lib-dynamodb";
 import { ResourceNotFoundException } from "@aws-sdk/client-dynamodb";
-import type { Account, AccountType } from "@/types/account";
 import type {
+  Account,
+  AccountType,
   IndividualAccount,
   OrganizationalAccount,
-} from "@/types/account_v2";
+} from "@/types";
 
 import { BaseTable } from "./base";
 import { LOGGER } from "@/lib/logging";

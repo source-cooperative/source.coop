@@ -14,7 +14,6 @@ import { notFound } from "next/navigation";
 import { Container } from "@radix-ui/themes";
 import { IndividualProfile } from "@/components/features/profiles";
 import { OrganizationProfilePage } from "@/components/features/profiles/OrganizationProfilePage";
-import type { IndividualAccount } from "@/types/account_v2";
 import {
   accountsTable,
   membershipsTable,
@@ -22,7 +21,7 @@ import {
 } from "@/lib/clients/database";
 import { getServerSession } from "@ory/nextjs/app";
 import { getOryId } from "@/lib/ory";
-import { MembershipState } from "@/types";
+import { MembershipState, IndividualAccount } from "@/types";
 
 type PageProps = {
   params: Promise<{ account_id: string }>;

@@ -2,7 +2,7 @@
 
 import { WelcomeCallout } from './WelcomeCallout';
 import { VerificationSuccessCallout } from '@/components/features/auth/VerificationSuccessCallout';
-import type { IndividualAccount } from "@/types/account_v2";
+import type { IndividualAccount } from "@/types";
 interface IndividualProfileActionsProps {
   account: IndividualAccount;
   showWelcome?: boolean;

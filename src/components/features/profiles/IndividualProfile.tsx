@@ -1,4 +1,3 @@
-// Server Component
 import {
   Box,
   Text,
@@ -8,8 +7,11 @@ import {
   Link as RadixLink,
 } from "@radix-ui/themes";
 import Link from "next/link";
-import type { AccountV2, IndividualAccount } from "@/types/account_v2";
-import type { Product } from "@/types";
+import type {
+  IndividualAccount,
+  OrganizationalAccount,
+  Product,
+} from "@/types";
 import { ProfileAvatar } from "./ProfileAvatar";
 import { ProductsList } from "../products/ProductsList";
 import { WebsiteLink } from "./WebsiteLink";
@@ -20,7 +22,7 @@ interface IndividualProfileProps {
   account: IndividualAccount;
   ownedProducts: Product[];
   contributedProducts: Product[];
-  organizations: AccountV2[];
+  organizations: OrganizationalAccount[];
   showWelcome?: boolean;
   }
 
