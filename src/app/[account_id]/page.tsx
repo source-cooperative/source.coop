@@ -46,8 +46,8 @@ export default async function AccountPage({ params, searchParams }: PageProps) {
   const isAccountOwner = session && getOryId(session) === account.identity_id;
 
   // If this is an organization, use the organization profile page
-  if (account.type === "organization") {
-    return <OrganizationProfilePage account_id={account_id} />;
+  if (isOrganizationalAccount(account)) {
+    return <OrganizationProfilePage account={account} />;
   }
 
   // Get repositories for individual account
