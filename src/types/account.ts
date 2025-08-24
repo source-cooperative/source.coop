@@ -150,11 +150,11 @@ export type AccountProfile = z.infer<typeof AccountProfileSchema>;
 
 export const AccountProfileResponseSchema = z
   .union([
-    IndividualAccountSchema.extend({
+    IndividualAccountProfileSchema.extend({
       profile_image: z.optional(z.string()),
       type: z.optional(z.nativeEnum(AccountType)),
     }),
-    OrganizationalAccountSchema.extend({
+    OrganizationalAccountProfileSchema.extend({
       profile_image: z.optional(z.string()),
       type: z.optional(z.nativeEnum(AccountType)),
     }),
