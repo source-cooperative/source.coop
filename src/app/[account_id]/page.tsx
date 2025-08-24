@@ -77,8 +77,6 @@ export default async function AccountPage({ params, searchParams }: PageProps) {
         contributedProducts={[]}
         organizations={Object.values(organizations)}
         showWelcome={showWelcome}
-        ownedProductsHasNextPage={!!lastEvaluatedKey}
-        ownedProductsNextCursor={lastEvaluatedKey}
       />
     </Container>
   );
