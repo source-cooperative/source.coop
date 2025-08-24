@@ -24,7 +24,7 @@ interface IndividualProfileProps {
   contributedProducts: Product[];
   organizations: OrganizationalAccount[];
   showWelcome?: boolean;
-  }
+}
 
 export function IndividualProfile({
   account,
@@ -75,9 +75,7 @@ export function IndividualProfile({
                         : "0"
                     }
                   >
-                    <WebsiteLink
-                      website={{ url: `https://${domain.domain}` }}
-                    />
+                    <WebsiteLink url={domain.domain} />
                   </Box>
                 ))}
               </Box>
