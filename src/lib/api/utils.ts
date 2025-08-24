@@ -33,6 +33,7 @@ import {
   apiKeysTable,
   accountsTable,
   membershipsTable,
+  isIndividualAccount,
 } from "@/lib/clients/database";
 import { isAuthorized } from "@/lib/api/authz";
 import * as crypto from "crypto";
@@ -102,7 +103,7 @@ async function authenticateWithApiKey(
 
   // Fetch the account associated with the API key
   const account = await accountsTable.fetchById(apiKey.account_id);
-  if (!account || account.disabled) {
+  if (!account || account.disabled || !isIndividualAccount(account)) {
     return null;
   }
 
@@ -217,7 +218,7 @@ export async function getApiSession(
   // Fetch account information for the user
   const account = await accountsTable.fetchByOryId(oryId);
 
-  if (!account || account.disabled) {
+  if (!account || account.disabled || !isIndividualAccount(account)) {
     return { identity_id: oryId };
   }
 
