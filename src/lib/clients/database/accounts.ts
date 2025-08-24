@@ -50,6 +50,9 @@ class AccountsTable extends BaseTable {
   ): Promise<Account[]> {
     const accountBatches: Account[] = [];
 
+    // Remove duplicates
+    account_ids = [...new Set(account_ids)];
+
     for (let i = 0; i < account_ids.length; i += batchSize) {
       const batch = account_ids.slice(i, i + batchSize);
       const batchRequest = {
