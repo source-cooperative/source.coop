@@ -171,65 +171,6 @@ class AccountsTable extends BaseTable {
       })
     );
   }
-
-  async listOrgMembers(orgAccount: OrganizationalAccount): Promise<{
-    owner: IndividualAccount | null;
-    admins: IndividualAccount[];
-    members: IndividualAccount[];
-  }> {
-    // Extract member IDs from the account's metadata
-    const ownerId = orgAccount.metadata_public.owner_account_id;
-    const adminIds = orgAccount.metadata_public.admin_account_ids || [];
-    const memberIds = orgAccount.metadata_public.member_account_ids || [];
-
-    // Fetch the owner account if available
-    let owner: IndividualAccount | null = null;
-    if (ownerId) {
-      const ownerAccount = await this.fetchById(ownerId);
-      if (!ownerAccount) {
-        throw new Error(`Owner account ${ownerId} not found`);
-      }
-      if (isIndividualAccount(ownerAccount)) {
-        owner = ownerAccount;
-      } else {
-        throw new Error(
-          `Owner account ${ownerId} is not an individual account`
-        );
-      }
-    }
-
-    // Fetch admin accounts
-    const adminPromises = adminIds.map(async (id: string) => {
-      const account = await this.fetchById(id);
-      if (!account) {
-        throw new Error(`Admin account ${id} not found`);
-      }
-      if (!isIndividualAccount(account)) {
-        throw new Error(`Admin account ${id} is not an individual account`);
-      }
-      return account;
-    });
-    const admins = await Promise.all(adminPromises);
-
-    // Fetch member accounts
-    const memberPromises = memberIds.map(async (id: string) => {
-      const account = await this.fetchById(id);
-      if (!account) {
-        throw new Error(`Member account ${id} not found`);
-      }
-      if (!isIndividualAccount(account)) {
-        throw new Error(`Member account ${id} is not an individual account`);
-      }
-      return account;
-    });
-    const members = await Promise.all(memberPromises);
-
-    return {
-      owner,
-      admins,
-      members,
-    };
-  }
 }
 
 // Type guards
