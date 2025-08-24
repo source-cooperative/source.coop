@@ -21,6 +21,7 @@ import { ProductsList } from "@/components/features/products/ProductsList";
 import { OrganizationMembers } from "./OrganizationMembers";
 import { ProfileAvatar } from "./ProfileAvatar";
 import { WebsiteLink } from "./WebsiteLink";
+import { ProfileLocation } from "./ProfileLocation";
 
 interface OrganizationProfileProps {
   account: OrganizationalAccount;
@@ -64,11 +65,18 @@ export function OrganizationProfile({
         )}
       </Flex>
 
-      <Grid columns="2" gap="6" mb="6">
+      <Grid columns={{ initial: "1", md: "2" }} gap="6" mb="6">
         <Box>
           <Heading as="h2" size="4" mb="2">
             Organization Details
           </Heading>
+
+          {account.metadata_public.location && (
+            <Text as="div" size="2" color="gray">
+              <ProfileLocation location={account.metadata_public.location} />
+            </Text>
+          )}
+
           {account.metadata_public.domains?.map(
             (domain: AccountDomain, index: number) => (
               <Text as="div" size="2" key={index}>
@@ -119,10 +127,10 @@ export function OrganizationProfile({
         </Box>
       </Grid>
 
-        <Box>
-          <Heading as="h2" size="4" mb="2">
-            Products
-          </Heading>
+      <Box>
+        <Heading as="h2" size="4" mb="2">
+          Products
+        </Heading>
         {products.length > 0 ? (
           <ProductsList products={products} />
         ) : (
@@ -130,7 +138,7 @@ export function OrganizationProfile({
             No products available.
           </Text>
         )}
-        </Box>
+      </Box>
     </Box>
   );
 }
