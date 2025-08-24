@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { accountsTable } from "@/lib/clients/database";
+import { LOGGER } from "@/lib";
 
 // Reserved usernames that cannot be used
 const RESERVED_USERNAMES = [
@@ -69,7 +70,12 @@ export async function GET(request: NextRequest) {
     const account = await accountsTable.fetchById(username);
     return NextResponse.json({ available: !account });
   } catch (error) {
-    console.error("Error checking username:", error);
+    LOGGER.error("Error checking username", {
+      operation: "check-username.GET",
+      context: "username validation",
+      error: error,
+      metadata: { username },
+    });
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

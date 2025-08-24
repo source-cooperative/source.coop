@@ -7,8 +7,8 @@
 
 import { notFound } from 'next/navigation';
 import { Container, Box } from '@radix-ui/themes';
-import { productsTable } from "@/lib/clients/database";
 import { ProductHeader } from '@/components/features/products';
+import { LOGGER, productsTable } from "@/lib";
 
 interface ProductLayoutProps {
   children: React.ReactNode;
@@ -37,7 +37,11 @@ export default async function ProductLayout({ children, params }: ProductLayoutP
       </Container>
     );
   } catch (error) {
-    console.error('Error fetching product for layout:', error);
+    LOGGER.error("Error fetching product for layout:", {
+      operation: "fetch_product_for_layout",
+      context: __filename,
+      error,
+    });
     return notFound();
   }
 }

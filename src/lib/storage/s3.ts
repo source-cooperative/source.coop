@@ -22,7 +22,7 @@ import {
 } from "@/types/storage";
 import { ProductObject } from "@/types";
 import { Readable } from "stream";
-import { CONFIG } from "..";
+import { LOGGER } from "@/lib/logging";
 
 export class S3StorageClient implements StorageClient {
   private s3Client: S3Client;
@@ -37,7 +37,11 @@ export class S3StorageClient implements StorageClient {
 
   async listObjects(params: ListObjectsParams): Promise<ListObjectsResult> {
     if (!params.account_id || !params.product_id) {
-      console.error("Invalid params for listObjects:", params);
+      LOGGER.error("Invalid params for listObjects", {
+        operation: "S3StorageClient.listObjects",
+        context: "parameter validation",
+        metadata: { params },
+      });
       return { objects: [], commonPrefixes: [], isTruncated: false };
     }
 
@@ -107,7 +111,12 @@ export class S3StorageClient implements StorageClient {
         nextContinuationToken: response.NextContinuationToken,
       };
     } catch (error) {
-      console.error("Error listing objects:", JSON.stringify(error, null, 2));
+      LOGGER.error("Error listing objects", {
+        operation: "S3StorageClient.listObjects",
+        context: "S3 operation",
+        error: error,
+        metadata: { params },
+      });
       return { objects: [], commonPrefixes: [], isTruncated: false };
     }
   }
@@ -149,7 +158,12 @@ export class S3StorageClient implements StorageClient {
         lastModified: response.LastModified || new Date(),
       };
     } catch (error) {
-      console.error("Error getting object:", error);
+      LOGGER.error("Error getting object", {
+        operation: "S3StorageClient.getObject",
+        context: "S3 operation",
+        error: error,
+        metadata: { params },
+      });
       throw error;
     }
   }
@@ -179,18 +193,24 @@ export class S3StorageClient implements StorageClient {
       };
     } catch (error: unknown) {
       if (error instanceof S3ServiceException && error.name === "NotFound") {
-        if (CONFIG.environment.debug) {
-          console.debug(
-            "Object not found:",
-            params.account_id,
-            params.product_id,
-            params.object_path
-          );
-        }
+        LOGGER.debug("Object not found", {
+          operation: "S3StorageClient.getObjectInfo",
+          context: "S3 operation",
+          metadata: {
+            account_id: params.account_id,
+            product_id: params.product_id,
+            object_path: params.object_path,
+          },
+        });
         return null;
       }
 
-      console.error("Error getting object info:", error);
+      LOGGER.error("Error getting object info", {
+        operation: "S3StorageClient.getObjectInfo",
+        context: "S3 operation",
+        error: error,
+        metadata: { params },
+      });
       throw error;
     }
   }
@@ -212,7 +232,12 @@ export class S3StorageClient implements StorageClient {
         versionId: response.VersionId,
       };
     } catch (error) {
-      console.error("Error putting object:", error);
+      LOGGER.error("Error putting object", {
+        operation: "S3StorageClient.putObject",
+        context: "S3 operation",
+        error: error,
+        metadata: { params },
+      });
       throw error;
     }
   }
@@ -227,7 +252,12 @@ export class S3StorageClient implements StorageClient {
 
       await this.s3Client.send(command);
     } catch (error) {
-      console.error("Error deleting object:", error);
+      LOGGER.error("Error deleting object", {
+        operation: "S3StorageClient.deleteObject",
+        context: "S3 operation",
+        error: error,
+        metadata: { params },
+      });
       throw error;
     }
   }
@@ -252,18 +282,24 @@ export class S3StorageClient implements StorageClient {
       };
     } catch (error: unknown) {
       if (error instanceof S3ServiceException && error.name === "NotFound") {
-        if (CONFIG.environment.debug) {
-          console.debug(
-            "Object not found:",
-            params.account_id,
-            params.product_id,
-            params.object_path
-          );
-        }
+        LOGGER.debug("Object not found", {
+          operation: "S3StorageClient.headObject",
+          context: "S3 operation",
+          metadata: {
+            account_id: params.account_id,
+            product_id: params.product_id,
+            object_path: params.object_path,
+          },
+        });
         throw error;
       }
 
-      console.error("Error getting object head:", error);
+      LOGGER.error("Error getting object head", {
+        operation: "S3StorageClient.headObject",
+        context: "S3 operation",
+        error: error,
+        metadata: { params },
+      });
       throw error;
     }
   }

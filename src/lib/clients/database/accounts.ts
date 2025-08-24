@@ -13,13 +13,18 @@ import type {
 } from "@/types/account_v2";
 
 import { BaseTable } from "./base";
+import { LOGGER } from "@/lib/logging";
 
 class AccountsTable extends BaseTable {
   model = "accounts";
 
   async fetchById(account_id: string): Promise<Account | null> {
     try {
-      console.log(`DB: Trying to fetch account for ID:`, account_id);
+      LOGGER.debug(`Trying to fetch account for ID`, {
+        operation: "AccountsTable.fetchById",
+        context: "database operation",
+        metadata: { account_id },
+      });
       const result = await this.client.send(
         new QueryCommand({
           TableName: this.table,
@@ -31,7 +36,11 @@ class AccountsTable extends BaseTable {
       );
 
       if (result.Items?.length) {
-        console.log(`DB: Found account for ID:`, account_id);
+        LOGGER.debug(`Found account for ID`, {
+          operation: "AccountsTable.fetchById",
+          context: "database operation",
+          metadata: { account_id },
+        });
         return result.Items[0] as Account;
       }
 
@@ -77,7 +86,11 @@ class AccountsTable extends BaseTable {
 
   async fetchByOryId(identity_id: string): Promise<Account | null> {
     try {
-      console.log(`DB: Trying to fetch account by Ory ID:`, identity_id);
+      LOGGER.debug(`Trying to fetch account by Ory ID`, {
+        operation: "AccountsTable.fetchByOryId",
+        context: "database operation",
+        metadata: { identity_id },
+      });
       const result = await this.client.send(
         new QueryCommand({
           TableName: this.table,
@@ -90,7 +103,11 @@ class AccountsTable extends BaseTable {
       );
 
       if (result.Items && result.Items.length > 0) {
-        console.log(`DB: Found account by Ory ID:`, identity_id);
+        LOGGER.debug(`Found account by Ory ID`, {
+          operation: "AccountsTable.fetchByOryId",
+          context: "database operation",
+          metadata: { identity_id },
+        });
         return result.Items[0] as Account;
       }
 

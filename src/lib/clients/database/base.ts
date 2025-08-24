@@ -1,5 +1,5 @@
 import { CONFIG } from "@/lib/config";
-import { logger } from "@/lib/logger";
+import { LOGGER } from "@/lib/logging";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 
@@ -26,7 +26,7 @@ export abstract class BaseTable {
     error: unknown,
     context?: Record<string, unknown>
   ): void {
-    logger.error(`Database operation failed: ${operation}`, {
+    LOGGER.error(`Database operation failed: ${operation}`, {
       operation: `db_${operation}`,
       context: this.table,
       metadata: context,

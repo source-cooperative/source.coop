@@ -53,17 +53,5 @@ export const CONFIG = {
   environment: {
     isDevelopment: process.env.NODE_ENV === "development",
     stage: process.env.STAGE || "dev",
-    debug: !!process.env.DEBUG,
   },
 } as const;
-
-// Add debug logging
-if (CONFIG.environment.debug) {
-  console.log("Loaded CONFIG:", {
-    ...CONFIG,
-    auth: {
-      ...CONFIG.auth,
-      accessToken: CONFIG.auth.accessToken ? "[REDACTED]" : undefined,
-    },
-  });
-}

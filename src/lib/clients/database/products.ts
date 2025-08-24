@@ -13,6 +13,7 @@ import {
 } from "@aws-sdk/lib-dynamodb";
 import { accountsTable } from "./accounts";
 import { BaseTable } from "./base";
+import { LOGGER } from "@/lib/logging";
 import { marshall } from "@aws-sdk/util-dynamodb";
 
 class ProductsTable extends BaseTable {

@@ -17,6 +17,11 @@ const nextConfig = {
     STORAGE_ENDPOINT: process.env.STORAGE_ENDPOINT,
     AWS_REGION: process.env.AWS_REGION,
   },
+  logging: {
+    fetches: {
+      fullUrl: true,
+    },
+  },
 };
 
 export default nextConfig;

@@ -1,4 +1,5 @@
 import { productsTable } from "@/lib/clients/database";
+import { LOGGER } from "@/lib";
 
 export async function GET() {
   try {
@@ -45,7 +46,11 @@ export async function GET() {
       },
     });
   } catch (error) {
-    console.error("Error generating feed:", error);
+    LOGGER.error("Error generating feed", {
+      operation: "feed.xml.GET",
+      context: "feed generation",
+      error: error,
+    });
     return new Response("Error generating feed", { status: 500 });
   }
 }

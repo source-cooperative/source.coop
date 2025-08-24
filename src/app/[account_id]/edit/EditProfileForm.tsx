@@ -17,6 +17,7 @@ import { FormWrapper } from "@/components/core/Form";
 import type { FormField, FormFieldType } from "@/types/form";
 import { useSession } from "@ory/elements-react/client";
 import { IndividualAccount } from "@/types/account_v2";
+import { LOGGER } from "@/lib";
 
 // Define types for website and form data
 interface Website {
@@ -170,7 +171,11 @@ export function EditProfileForm({
       await refetch();
       router.push(`/${initialAccount.account_id}`);
     } catch (error) {
-      console.error("Error updating profile:", error);
+      LOGGER.error("Error updating profile", {
+        operation: "EditProfileForm.handleSubmit",
+        context: "profile update",
+        error: error,
+      });
       throw new Error("Failed to update profile. Please try again.");
     } finally {
       setSaving(false);
