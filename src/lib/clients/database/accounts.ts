@@ -66,7 +66,7 @@ class AccountsTable extends BaseTable {
       const batch = account_ids.slice(i, i + batchSize);
       const batchRequest = {
         RequestItems: {
-          [accountsTable.table]: {
+          [this.table]: {
             Keys: batch.map((account_id) => ({ account_id })),
           },
         },
@@ -76,10 +76,8 @@ class AccountsTable extends BaseTable {
         `DB: Fetching ${batch.length} accounts: ${batch.join(", ")}`
       );
       const result = await this.client.send(new BatchGetCommand(batchRequest));
-      if (result.Responses?.[accountsTable.table]) {
-        accountBatches.push(
-          ...(result.Responses[accountsTable.table] as Account[])
-        );
+      if (result.Responses?.[this.table]) {
+        accountBatches.push(...(result.Responses[this.table] as Account[]));
       }
     }
 
