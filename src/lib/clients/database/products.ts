@@ -1,4 +1,4 @@
-import type { Product, ProductMirror, ProductRole, Account } from "@/types";
+import type { Product, ProductMirror, ProductRole } from "@/types";
 import {
   PutItemCommand,
   ResourceNotFoundException,
@@ -10,7 +10,6 @@ import {
   QueryCommand,
   ScanCommand,
   UpdateCommand,
-  BatchGetCommand,
 } from "@aws-sdk/lib-dynamodb";
 import { accountsTable } from "./accounts";
 import { BaseTable } from "./base";
@@ -279,47 +278,17 @@ class ProductsTable extends BaseTable {
   }
 
   /**
-   * Attach accounts to products
+   * Attach accounts to products records (client-side, no change to database records)
    * @param products - Products to attach accounts to
    * @returns Products with accounts attached
    */
   async attachAccounts(products: Product[]): Promise<Product[]> {
-    const uniqueAccountIds = Array.from(
-      new Set(products.map((p) => p.account_id))
+    if (!products.length) return products;
+
+    const accounts = await accountsTable.fetchManyByIds(
+      products.map((p) => p.account_id).filter((id) => id)
     );
-
-    if (uniqueAccountIds.length === 0) return products;
-
-    const batchSize = 100;
-    const accountBatches = [];
-
-    for (let i = 0; i < uniqueAccountIds.length; i += batchSize) {
-      const batch = uniqueAccountIds.slice(i, i + batchSize);
-      const batchRequest = {
-        RequestItems: {
-          [accountsTable.table]: {
-            Keys: batch.map((account_id) => ({ account_id })),
-          },
-        },
-      };
-
-      LOGGER.debug(`Fetching ${batch.length} accounts`, {
-        operation: "ProductsTable.attachAccounts",
-        context: "database operation",
-        metadata: {
-          batch_size: batch.length,
-          account_ids: batch,
-        },
-      });
-      const result = await this.client.send(new BatchGetCommand(batchRequest));
-      if (result.Responses?.[accountsTable.table]) {
-        accountBatches.push(...result.Responses[accountsTable.table]);
-      }
-    }
-
-    const accountMap = new Map(
-      accountBatches.map((acc) => [acc.account_id, acc as Account])
-    );
+    const accountMap = new Map(accounts.map((acc) => [acc.account_id, acc]));
 
     return products.map((item) => ({
       ...item,

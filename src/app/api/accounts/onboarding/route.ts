@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import type { IndividualAccount } from "@/types/account_v2";
 import { updateOryIdentity } from "@/lib/ory";
 import { accountsTable } from "@/lib/clients/database";
 import { CONFIG, LOGGER } from "@/lib";
-import { AccountType } from "@/types/account";
+import { AccountType, IndividualAccount } from "@/types";
 
 export async function POST(request: NextRequest) {
   try {

@@ -14,9 +14,8 @@ import {
 } from "@radix-ui/themes";
 import { TrashIcon } from "@radix-ui/react-icons";
 import { FormWrapper } from "@/components/core/Form";
-import type { FormField, FormFieldType } from "@/types/form";
+import type { IndividualAccount, FormField, FormFieldType } from "@/types";
 import { useSession } from "@ory/elements-react/client";
-import { IndividualAccount } from "@/types/account_v2";
 import { LOGGER } from "@/lib";
 
 // Define types for website and form data

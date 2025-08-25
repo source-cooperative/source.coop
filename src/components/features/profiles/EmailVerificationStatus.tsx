@@ -1,9 +1,8 @@
-'use client';
+"use client";
 
-import { Tooltip } from '@radix-ui/themes';
-import { MinusCircledIcon, CheckCircledIcon } from '@radix-ui/react-icons';
-import type { Account } from "@/types";
-import type { IndividualAccount } from "@/types/account_v2";
+import { Tooltip } from "@radix-ui/themes";
+import { MinusCircledIcon, CheckCircledIcon } from "@radix-ui/react-icons";
+import type { Account, IndividualAccount } from "@/types";
 import { useState, useEffect } from "react";
 import { useSession } from "@ory/elements-react/client";
 import { LOGGER } from "@/lib";
@@ -31,8 +30,6 @@ export function EmailVerificationStatus({
     if (account.type !== "individual") {
       return;
     }
-
-    const _individualAccount = account as IndividualAccount;
 
     const checkVerificationStatus = async () => {
       // TODO: This is currently only partially implemented, where we display the verification status of the authenticated user, but we don't actually check the status of the account.
@@ -105,4 +102,4 @@ export function EmailVerificationStatus({
       )}
     </Tooltip>
   );
-} 
+}

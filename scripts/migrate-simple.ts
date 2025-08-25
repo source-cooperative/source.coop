@@ -146,8 +146,14 @@ function convertAccountToNewSchema(oldAccount: any) {
     domains: [], // Initialize empty array
   };
 
-  if (profile.location) metadata_public.location = profile.location;
   if (profile.bio) metadata_public.bio = profile.bio;
+  if (profile.location) metadata_public.location = profile.location;
+  if (profile.url)
+    metadata_public.domains.push({
+      domain: profile.url,
+      created_at: now,
+      status: "unverified",
+    });
 
   // Convert flags from DynamoDB attribute format to simple strings
   const flags = (oldAccount.flags || [])

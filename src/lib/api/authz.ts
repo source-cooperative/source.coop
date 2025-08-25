@@ -797,9 +797,10 @@ function createAccount(
   }
 
   // Let admins create service accounts
-  if (account.type === AccountType.SERVICE) {
-    return isAdmin(principal);
-  }
+  // NOTE: Service accounts are not supported yet
+  // if (account.type === AccountType.SERVICE) {
+  //   return isAdmin(principal);
+  // }
 
   return false;
 }

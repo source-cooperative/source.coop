@@ -13,14 +13,15 @@ import Link from "next/link";
 import type {
   IndividualAccount,
   OrganizationalAccount,
-} from "@/types/account_v2";
+  AccountEmail,
+  AccountDomain,
+} from "@/types/account";
 import type { Product } from "@/types";
-import type { AccountEmail } from "@/types/account";
-import type { AccountDomain } from "@/types/account_v2";
 import { ProductsList } from "@/components/features/products/ProductsList";
 import { OrganizationMembers } from "./OrganizationMembers";
 import { ProfileAvatar } from "./ProfileAvatar";
 import { WebsiteLink } from "./WebsiteLink";
+import { ProfileLocation } from "./ProfileLocation";
 
 interface OrganizationProfileProps {
   account: OrganizationalAccount;
@@ -64,15 +65,22 @@ export function OrganizationProfile({
         )}
       </Flex>
 
-      <Grid columns="2" gap="6" mb="6">
+      <Grid columns={{ initial: "1", md: "2" }} gap="6" mb="6">
         <Box>
           <Heading as="h2" size="4" mb="2">
             Organization Details
           </Heading>
+
+          {account.metadata_public.location && (
+            <Text as="div" size="2" color="gray">
+              <ProfileLocation location={account.metadata_public.location} />
+            </Text>
+          )}
+
           {account.metadata_public.domains?.map(
             (domain: AccountDomain, index: number) => (
-              <Text as="p" size="2" key={index}>
-                <WebsiteLink website={{ url: `https://${domain.domain}` }} />
+              <Text as="div" size="2" key={index}>
+                <WebsiteLink url={domain.domain} />
               </Text>
             )
           )}
@@ -119,14 +127,18 @@ export function OrganizationProfile({
         </Box>
       </Grid>
 
-      {products.length > 0 && (
-        <Box>
-          <Heading as="h2" size="4" mb="2">
-            Products
-          </Heading>
+      <Box>
+        <Heading as="h2" size="4" mb="2">
+          Products
+        </Heading>
+        {products.length > 0 ? (
           <ProductsList products={products} />
-        </Box>
-      )}
+        ) : (
+          <Text as="p" size="2">
+            No products available.
+          </Text>
+        )}
+      </Box>
     </Box>
   );
 }
