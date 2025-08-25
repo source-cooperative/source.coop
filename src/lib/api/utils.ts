@@ -205,6 +205,16 @@ export async function getApiSession(
     }
   }
 
+  // Fall back to page session
+  return await getPageSession();
+}
+
+/**
+ * Retrieves the current user session for visitor to the page.
+ *
+ * @returns A Promise that resolves to a UserSession object if a valid session exists, or null if not authenticated.
+ */
+export async function getPageSession(): Promise<UserSession | null> {
   const session = await getServerSession();
   if (!session) {
     return null;
@@ -233,28 +243,6 @@ export async function getApiSession(
     identity_id: oryId,
     account,
     memberships: filteredMemberships,
-  };
-}
-
-/**
- * Retrieves the current user session for visitor to the page.
- *
- * @returns A Promise that resolves to a UserSession object if a valid session exists, or null if not authenticated.
- */
-export async function getPageSession(): Promise<{
-  session: Session | null;
-  identity_id: string | null;
-  account: Account | null;
-}> {
-  const session = await getServerSession();
-  const userOryId = session ? getOryId(session) : null;
-  const userAccount = userOryId
-    ? await accountsTable.fetchByOryId(userOryId)
-    : null;
-  return {
-    session,
-    identity_id: userOryId,
-    account: userAccount,
   };
 }
 

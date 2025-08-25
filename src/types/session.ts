@@ -17,7 +17,6 @@ import type { Session, Identity } from "@ory/client";
 
 extendZodWithOpenApi(z);
 
-// TODO: How do we make this work with the @ory/nextjs session?
 export const UserSessionSchema = z
   .object({
     identity_id: z.optional(z.string()).openapi({ example: "identity-id" }),

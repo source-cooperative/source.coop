@@ -22,8 +22,8 @@ export async function OrganizationProfilePage({
   account,
 }: OrganizationProfilePageProps) {
   // Get session to check authentication status
-  const { session, account: userAccount } = await getPageSession();
-  const isAuthenticated = !!session?.active;
+  const session = await getPageSession();
+  const isAuthenticated = session?.account && !session.account.disabled;
 
   let [memberships, { products }] = await Promise.all([
     membershipsTable.listByAccount(account.account_id),
@@ -73,10 +73,10 @@ export async function OrganizationProfilePage({
   // Check if the authenticated user is a member of this organization
   const isMember =
     isAuthenticated &&
-    userAccount &&
+    session?.account &&
     memberships
       .map((membership) => membership.account_id)
-      .includes(userAccount.account_id);
+      .includes(session.account.account_id);
 
   // Filter products based on authentication status
   if (!isAuthenticated || !isMember) {

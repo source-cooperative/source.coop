@@ -22,7 +22,8 @@ import {
 } from "@/lib/clients/database";
 import { getServerSession } from "@ory/nextjs/app";
 import { getOryId } from "@/lib/ory";
-import { MembershipState, IndividualAccount } from "@/types";
+import { IndividualAccount, Actions } from "@/types";
+import { isAuthorized } from "@/lib/api/authz";
 
 type PageProps = {
   params: Promise<{ account_id: string }>;
@@ -61,12 +62,12 @@ export default async function AccountPage({ params, searchParams }: PageProps) {
     products = products.filter((product) => product.visibility === "public");
   }
 
-  const memberships = await membershipsTable.listByUser(account_id);
+  const memberships = (await membershipsTable.listByUser(account_id)).filter(
+    (membership) => isAuthorized(account, membership, Actions.GetMembership)
+  );
   const organizations = (
     await accountsTable.fetchManyByIds(
-      memberships
-        .filter((membership) => membership.state === MembershipState.Member)
-        .map((membership) => membership.membership_account_id)
+      memberships.map((membership) => membership.membership_account_id)
     )
   ).filter(isOrganizationalAccount);
 

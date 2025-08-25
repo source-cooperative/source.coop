@@ -7,7 +7,7 @@ import styles from "./Navigation.module.css";
 import { getPageSession } from "@/lib/api/utils";
 
 export async function Navigation() {
-  const { account } = await getPageSession();
+  const session = await getPageSession();
 
   return (
     <nav className={styles.nav}>
@@ -16,8 +16,8 @@ export async function Navigation() {
           <Logo />
 
           <Flex gap="4" align="center">
-            {account ? (
-              <AccountDropdown account={account} />
+            {session?.account ? (
+              <AccountDropdown account={session.account} />
             ) : (
               <Link href={CONFIG.auth.routes.login}>
                 <Button>Log In / Register</Button>
