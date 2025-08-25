@@ -243,7 +243,7 @@ export async function getApiSession(
  */
 export async function getPageSession(): Promise<{
   session: Session | null;
-  oryId: string | null;
+  identity_id: string | null;
   account: Account | null;
 }> {
   const session = await getServerSession();
@@ -253,7 +253,7 @@ export async function getPageSession(): Promise<{
     : null;
   return {
     session,
-    oryId: userOryId,
+    identity_id: userOryId,
     account: userAccount,
   };
 }
