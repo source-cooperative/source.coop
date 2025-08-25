@@ -45,6 +45,7 @@ export class Logger {
     let formattedMessage = this.formatMessage(level, message, context);
 
     for (const sensitiveValue of this.sensitiveValues) {
+      if (!sensitiveValue) continue;
       formattedMessage = formattedMessage.replace(sensitiveValue, "[REDACTED]");
     }
 
