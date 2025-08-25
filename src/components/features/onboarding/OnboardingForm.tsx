@@ -8,7 +8,7 @@ import { FormWrapper } from '@/components/core/Form';
 import { FormField } from '@/types/form';
 import debounce from 'lodash/debounce';
 import { InfoCircledIcon, CheckCircledIcon } from '@radix-ui/react-icons';
-import { VerificationSuccessCallout } from '@/components/features/auth/VerificationSuccessCallout';
+import { EmailVerificationCallout } from "@/components/features/auth/EmailVerificationCallout";
 import { recordVerificationTimestamp } from "@/lib/actions/account";
 import { CONFIG, LOGGER } from "@/lib";
 import { useSession } from "@ory/elements-react/client";
@@ -305,30 +305,7 @@ export function OnboardingForm() {
   return (
     <Box pt="6">
       <Box mb="4">
-        <VerificationSuccessCallout />
-        {verificationStatus === "verified" ? (
-          // Don't show a second verification message if VerificationSuccessCallout is displayed
-          searchParams.get("verified") === "true" ? null : (
-            <Callout.Root color="green">
-              <Callout.Icon>
-                <CheckCircledIcon />
-              </Callout.Icon>
-              <Callout.Text>
-                Your email has been verified successfully!
-              </Callout.Text>
-            </Callout.Root>
-          )
-        ) : (
-          <Callout.Root color="blue">
-            <Callout.Icon>
-              <InfoCircledIcon />
-            </Callout.Icon>
-            <Callout.Text>
-              Please check your email. We&apos;ve sent you a code to verify your
-              email address.
-            </Callout.Text>
-          </Callout.Root>
-        )}
+        <EmailVerificationCallout showCheckEmail={true} />
       </Box>
       <FormWrapper
         fields={fields}
