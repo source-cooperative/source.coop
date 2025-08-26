@@ -8,6 +8,7 @@ import { Box } from "@radix-ui/themes";
 import { Navigation, Footer /*, Banner*/ } from "@/components/layout";
 import { Suspense } from "react";
 import { metadata } from "./metadata";
+import { getPageSession } from "@/lib/api/utils";
 const ibmPlexSans = IBM_Plex_Sans({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
@@ -16,7 +17,13 @@ const ibmPlexSans = IBM_Plex_Sans({
 
 export { metadata };
 
-export default async function RootLayout({ children }: { children: React.ReactNode }) {
+interface RootLayoutProps {
+  children: React.ReactNode;
+}
+
+export default async function RootLayout({ children }: RootLayoutProps) {
+  const session = await getPageSession();
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={ibmPlexSans.variable}>
@@ -31,7 +38,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <Box style={{ minHeight: "100vh" }}>
               {/* <Banner /> */}
               <Suspense>
-                <Navigation />
+                <Navigation account={session?.account} />
               </Suspense>
               <Box asChild my="6">
                 <main>{children}</main>

@@ -4,11 +4,10 @@ import { CONFIG } from "@/lib";
 import { AccountDropdown } from "./AccountDropdown";
 import { Logo } from "./Logo";
 import styles from "./Navigation.module.css";
-import { getPageSession } from "@/lib/api/utils";
+import { OnboardingCheck } from "@/components/core/OnboardingCheck";
+import { Account } from "@/types/account";
 
-export async function Navigation() {
-  const session = await getPageSession();
-
+export async function Navigation({ account }: { account?: Account }) {
   return (
     <nav className={styles.nav}>
       <Container>
@@ -16,14 +15,15 @@ export async function Navigation() {
           <Logo />
 
           <Flex gap="4" align="center">
-            {session?.account ? (
-              <AccountDropdown account={session.account} />
+            {account ? (
+              <AccountDropdown account={account} />
             ) : (
               <Link href={CONFIG.auth.routes.login}>
                 <Button>Log In / Register</Button>
               </Link>
             )}
           </Flex>
+          <OnboardingCheck account={account} />
         </Flex>
       </Container>
     </nav>

@@ -1,7 +1,7 @@
 import { getServerSession } from "@ory/nextjs/app";
 import { createOryMiddleware } from "@ory/nextjs/middleware";
 import { NextRequest, NextResponse } from "next/server";
-import { getOryId, accountsTable, LOGGER } from "@/lib";
+import { getOryId, accountsTable, LOGGER, AccountsTable } from "@/lib";
 
 /**
  * Handle requests to legacy repository description paths.
@@ -45,7 +45,7 @@ const handleLegacyRedirects = (request: NextRequest): NextResponse | null => {
  * @param request
  * @returns response or null
  */
-const handleOnboarding = async (
+export const handleOnboarding = async (
   request: NextRequest
 ): Promise<NextResponse | null> => {
   if (request.nextUrl.pathname !== "/onboarding") return null;
@@ -81,6 +81,7 @@ const addEmailToAccount = async (request: NextRequest): Promise<void> => {
   if (!session) return;
   const oryId = getOryId(session);
   if (!oryId) return;
+  const accountsTable = new AccountsTable({});
   const account = await accountsTable.fetchByOryId(oryId);
 
   if (!account) return;
@@ -115,7 +116,7 @@ export const middleware = async (request: NextRequest) => {
 
   // Handle authentication and account management
   // const onboardingRedirect = await handleOnboarding(request);
-  await addEmailToAccount(request);
+  // await addEmailToAccount(request);
 
   // Run Ory middleware last
   const ory = await createOryMiddleware({});
