@@ -1,1 +1,0 @@
-This is the Landsat Collection 2 Level-2 Science Products repository
