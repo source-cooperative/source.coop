@@ -1,1 +1,0 @@
-NASA Shuttle Radar Topography Mission Digital Elevation Model
