@@ -1,3 +1,6 @@
+"use client";
+
+import { useActionState } from "react";
 import { Button, Text, Flex } from "@radix-ui/themes";
 import Form from "next/form";
 
@@ -10,23 +13,50 @@ export interface FormField {
   placeholder?: string;
 }
 
-interface DynamicFormProps {
+export interface FormState<T> {
+  fieldErrors: Record<string, string[]>;
+  data: FormData;
+  message: string;
+  success: boolean;
+}
+
+interface DynamicFormProps<T> {
   fields: FormField[];
-  action: (formData: FormData) => void | Promise<void>;
+  action: (
+    initialState: any,
+    formData: FormData
+  ) => Promise<FormState<T>> | FormState<T>;
   submitButtonText?: string;
   hiddenFields?: Record<string, string>;
   className?: string;
 }
 
-export function DynamicForm({
+const style: React.CSSProperties = {
+  fontFamily: "var(--code-font-family)",
+  width: "100%",
+  padding: "8px 12px",
+  borderRadius: "0",
+  border: "1px solid var(--gray-6)",
+  fontSize: "16px",
+  lineHeight: "1.5",
+  boxSizing: "border-box",
+};
+
+export function DynamicForm<T>({
   fields,
   action,
   submitButtonText = "Submit",
   hiddenFields = {},
   className,
-}: DynamicFormProps) {
+}: DynamicFormProps<T>) {
+  const [state, formAction, pending] = useActionState(action, {
+    message: "",
+    data: new FormData(),
+    fieldErrors: {},
+    success: false,
+  });
   return (
-    <Form action={action} className={className}>
+    <Form action={formAction} className={className}>
       {/* Hidden fields */}
       {Object.entries(hiddenFields).map(([name, value]) => (
         <input key={name} type="hidden" name={name} value={value} />
@@ -45,18 +75,11 @@ export function DynamicForm({
                   name={field.name}
                   placeholder={field.placeholder}
                   required={field.required}
+                  defaultValue={(state.data.get(field.name) as string) || ""}
                   style={{
-                    fontFamily: "var(--code-font-family)",
-                    width: "100%",
+                    ...style,
                     height: "7rem",
                     resize: "none",
-                    padding: "8px 12px",
-                    borderRadius: "0",
-                    border: "1px solid var(--gray-6)",
-                    backgroundColor: "var(--gray-1)",
-                    fontSize: "16px",
-                    lineHeight: "1.5",
-                    boxSizing: "border-box",
                   }}
                 />
               ) : (
@@ -65,17 +88,8 @@ export function DynamicForm({
                   name={field.name}
                   placeholder={field.placeholder}
                   required={field.required}
-                  style={{
-                    fontFamily: "var(--code-font-family)",
-                    width: "100%",
-                    padding: "8px 12px",
-                    borderRadius: "0",
-                    border: "1px solid var(--gray-6)",
-                    backgroundColor: "var(--gray-1)",
-                    fontSize: "16px",
-                    lineHeight: "1.5",
-                    boxSizing: "border-box",
-                  }}
+                  defaultValue={(state.data.get(field.name) as string) || ""}
+                  style={style}
                 />
               )}
 
@@ -84,14 +98,27 @@ export function DynamicForm({
                   {field.description}
                 </Text>
               )}
+
+              {state.fieldErrors?.[field.name]?.map((error, index) => (
+                <Text size="1" color="red" key={`${field.name}-${index}`}>
+                  {error}
+                </Text>
+              ))}
             </Flex>
           </div>
         ))}
 
         <Flex mt="4" justify="end">
-          <Button size="3" type="submit">
-            {submitButtonText}
-          </Button>
+          <Flex direction="column" gap="2">
+            <Button size="3" type="submit" disabled={pending} loading={pending}>
+              {submitButtonText}
+            </Button>
+            {state?.message && (
+              <Text size="1" color={state.success ? "green" : "red"}>
+                {state.message}
+              </Text>
+            )}
+          </Flex>
         </Flex>
       </Flex>
     </Form>

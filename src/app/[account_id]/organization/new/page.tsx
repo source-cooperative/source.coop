@@ -1,7 +1,7 @@
 import { Container, Box, Heading, Text } from "@radix-ui/themes";
-import { createOrganization } from "./actions";
 import { DynamicForm, FormField } from "@/components/core";
-import { createAccount } from "@/lib/actions/accounts";
+import { createAccount } from "@/lib/actions/account";
+import { AccountType } from "@/types";
 
 interface PageProps {
   params: Promise<{
@@ -20,6 +20,15 @@ export default async function NewOrganizationPage({ params }: PageProps) {
       required: true,
       description: "The name of your organization",
       placeholder: "Enter organization name",
+    },
+    {
+      label: "Account ID",
+      name: "account_id",
+      type: "text",
+      required: true,
+      description: "The account ID of your organization",
+      placeholder: "Enter account ID",
+      // TODO: We need a way to check if the account ID is available
     },
     {
       label: "Description",
@@ -62,7 +71,10 @@ export default async function NewOrganizationPage({ params }: PageProps) {
           fields={fields}
           action={createAccount}
           submitButtonText="Create Organization"
-          hiddenFields={{ owner_account_id: account_id }}
+          hiddenFields={{
+            owner_account_id: account_id,
+            type: AccountType.ORGANIZATION,
+          }}
         />
       </Box>
     </Container>
