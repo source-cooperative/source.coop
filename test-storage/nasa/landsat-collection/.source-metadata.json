@@ -1,9 +1,0 @@
-{
-  "stac/catalog.json": {
-    "sha256": "5fa298255259bfbb540d32a03a9a73e2caf2c75c2be384f5958fe4269596d2f7",
-    "sha1": "3ab50ebbc1ea85d68ba51c421145f668d9d78172",
-    "content_type": "application/json",
-    "size": 23,
-    "tags": {}
-  }
-} 
