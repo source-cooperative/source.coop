@@ -26,7 +26,7 @@ export default async function RootLayout({ children }: RootLayoutProps) {
 
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={ibmPlexSans.variable}>
+      <body className={ibmPlexSans.variable} suppressHydrationWarning>
         <ThemeProvider
           attribute="class"
           enableSystem={true}
