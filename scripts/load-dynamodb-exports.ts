@@ -19,6 +19,10 @@ import { pipeline } from "stream/promises";
 import { Readable } from "stream";
 import * as zlib from "zlib";
 import * as readline from "readline";
+import {
+  DEFAULT_INDIVIDUAL_FLAGS,
+  DEFAULT_ORGANIZATION_FLAGS,
+} from "@/types/shared";
 
 // Simple configuration - just the essentials
 interface MigrationConfig {
@@ -160,13 +164,23 @@ function convertAccountToNewSchema(oldAccount: any) {
     });
 
   // Convert flags from DynamoDB attribute format to simple strings
-  const flags = (oldAccount.flags || [])
+  let flags = (oldAccount.flags || [])
     .map((flag: any) => {
       if (typeof flag === "string") return flag;
       if (flag && typeof flag === "object" && flag.S) return flag.S;
       return flag; // fallback for unexpected formats
     })
     .filter(Boolean);
+
+  // Add default flags
+  flags = [
+    ...new Set([
+      ...flags,
+      ...(accountType === "individual"
+        ? DEFAULT_INDIVIDUAL_FLAGS
+        : DEFAULT_ORGANIZATION_FLAGS),
+    ]),
+  ];
 
   const result = {
     account_id: oldAccount.account_id,
@@ -179,7 +193,8 @@ function convertAccountToNewSchema(oldAccount: any) {
     flags,
     metadata_public,
     metadata_private: {},
-    identity_id: oldAccount.identity_id,
+    identity_id:
+      accountType === "individual" ? oldAccount.identity_id : undefined,
   };
 
   // Clean any undefined values before returning

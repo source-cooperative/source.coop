@@ -2,8 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { updateOryIdentity } from "@/lib/ory";
 import { accountsTable } from "@/lib/clients/database";
 import { CONFIG, LOGGER } from "@/lib";
-import { AccountType, IndividualAccount } from "@/types";
+import {
+  AccountType,
+  DEFAULT_INDIVIDUAL_FLAGS,
+  IndividualAccount,
+} from "@/types";
 
+// TODO: Rework this into a server action
 export async function POST(request: NextRequest) {
   try {
     // Log the request headers to debug session issues
@@ -73,7 +78,7 @@ export async function POST(request: NextRequest) {
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       disabled: false,
-      flags: [],
+      flags: DEFAULT_INDIVIDUAL_FLAGS,
       metadata_public: {
         domains: [],
       },

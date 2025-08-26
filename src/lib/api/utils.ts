@@ -36,47 +36,10 @@ import {
   isIndividualAccount,
 } from "@/lib/clients/database";
 import { isAuthorized } from "@/lib/api/authz";
-import * as crypto from "crypto";
 import { getServerSession } from "@ory/nextjs/app";
 import { NextRequest } from "next/server";
 import { getOryId } from "../ory";
-import { Session } from "@ory/client-fetch";
-
-export function generateAccessKeyID(): string {
-  const prefix = "SC";
-  const length = 22;
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  let result = "";
-
-  // Generate cryptographically strong random values
-  const randomBytes = crypto.randomBytes(length);
-
-  for (let i = 0; i < length; i++) {
-    // Use modulo to map the random byte to an index in the chars string
-    const randomIndex = randomBytes[i] % chars.length;
-    result += chars[randomIndex];
-  }
-
-  return prefix + result;
-}
-
-export function generateSecretAccessKey(): string {
-  const length = 64;
-  const chars =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  let result = "";
-
-  // Generate cryptographically strong random values
-  const randomBytes = crypto.randomBytes(length);
-
-  for (let i = 0; i < length; i++) {
-    // Use modulo to map the random byte to an index in the chars string
-    const randomIndex = randomBytes[i] % chars.length;
-    result += chars[randomIndex];
-  }
-
-  return result;
-}
+import md5 from "md5";
 
 /**
  * Authenticates a user using API key credentials.
@@ -287,7 +250,7 @@ export function getProfileImage(email: string): string {
   const trimmedEmail = email.trim().toLowerCase();
 
   // Create an MD5 hash of the email
-  const hash = crypto.createHash("md5").update(trimmedEmail).digest("hex");
+  const hash = md5(trimmedEmail);
 
   // Construct and return the Gravatar URL
   return `https://www.gravatar.com/avatar/${hash}`;

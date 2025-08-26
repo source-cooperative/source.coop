@@ -16,6 +16,8 @@ import {
   MAX_ID_LENGTH,
   ID_REGEX,
   AccountFlagsSchema,
+  MIN_NAME_LENGTH,
+  MAX_NAME_LENGTH,
 } from "./shared";
 
 extendZodWithOpenApi(z);
@@ -23,7 +25,7 @@ extendZodWithOpenApi(z);
 export enum AccountType {
   INDIVIDUAL = "individual",
   ORGANIZATION = "organization",
-  SERVICE = "service",
+  // SERVICE = "service",  // TODO: Enable when we support services
 }
 
 export const AccountTypeSchema = z
@@ -58,6 +60,35 @@ export const AccountDomainSchema = z.object({
 // Export the type for use in other files
 export type AccountDomain = z.infer<typeof AccountDomainSchema>;
 
+const BaseAccountProfileSchema = z.object({
+  bio: z
+    .preprocess((bio) => {
+      if (!bio || typeof bio !== "string") return undefined;
+      return bio === "" ? undefined : bio;
+    }, z.optional(z.string().max(1024, "Bio must not exceed 1024 characters")))
+    .openapi({ example: "Software Engineer @radiantearth" }),
+  location: z
+    .preprocess((location) => {
+      if (!location || typeof location !== "string") return undefined;
+      return location === "" ? undefined : location;
+    }, z.optional(z.string().max(128, "Location must not exceed 128 characters")))
+    .openapi({ example: "Augsburg, Germany" }),
+  domains: z.optional(z.array(AccountDomainSchema)),
+});
+
+const IndividualAccountProfileSchema = BaseAccountProfileSchema.extend({
+  orcid: z.optional(z.string()),
+  is_admin: z.boolean().optional(),
+});
+
+const OrganizationalAccountProfileSchema = BaseAccountProfileSchema.extend({
+  ror_id: z.optional(z.string()),
+});
+
+export const AccountProfileSchema = z
+  .union([IndividualAccountProfileSchema, OrganizationalAccountProfileSchema])
+  .openapi("AccountProfile");
+
 // Base account schema for shared properties
 export const BaseAccountSchema = z.object({
   account_id: z
@@ -89,41 +120,11 @@ export const BaseAccountSchema = z.object({
   disabled: z.boolean(),
   flags: AccountFlagsSchema,
   metadata_private: z.optional(z.record(z.any())),
-  identity_id: z.string().openapi({ example: "identity-id" }),
 });
-
-const BaseAccountProfileSchema = z.object({
-  bio: z
-    .preprocess((bio) => {
-      if (!bio || typeof bio !== "string") return undefined;
-      return bio === "" ? undefined : bio;
-    }, z.optional(z.string().max(1024, "Bio must not exceed 1024 characters")))
-    .openapi({ example: "Software Engineer @radiantearth" }),
-  location: z
-    .preprocess((location) => {
-      if (!location || typeof location !== "string") return undefined;
-      return location === "" ? undefined : location;
-    }, z.optional(z.string().max(128, "Location must not exceed 128 characters")))
-    .openapi({ example: "Augsburg, Germany" }),
-  domains: z.optional(z.array(AccountDomainSchema)),
-});
-
-const IndividualAccountProfileSchema = BaseAccountProfileSchema.extend({
-  orcid: z.optional(z.string()),
-  is_admin: z.boolean().optional(),
-});
-
-const OrganizationalAccountProfileSchema = BaseAccountProfileSchema.extend({
-  ror_id: z.optional(z.string()),
-});
-
-export const AccountProfileSchema = z
-  .union([IndividualAccountProfileSchema, OrganizationalAccountProfileSchema])
-  .openapi("AccountProfile");
-
 // Individual account schema
 export const IndividualAccountSchema = BaseAccountSchema.extend({
   type: z.literal(AccountType.INDIVIDUAL),
+  identity_id: z.string().openapi({ example: "identity-id" }),
   metadata_public: IndividualAccountProfileSchema,
 }).openapi("IndividualAccount");
 
@@ -132,6 +133,7 @@ export type IndividualAccount = z.infer<typeof IndividualAccountSchema>;
 // Organizational account schema
 export const OrganizationalAccountSchema = BaseAccountSchema.extend({
   type: z.literal(AccountType.ORGANIZATION),
+  identity_id: z.undefined(),
   metadata_public: OrganizationalAccountProfileSchema,
 }).openapi("OrganizationalAccount");
 
@@ -165,6 +167,7 @@ export type AccountProfileResponse = z.infer<
   typeof AccountProfileResponseSchema
 >;
 
+// TODO: We need an individual and organization creation request schema
 export const AccountCreationRequestSchema = z
   .object({
     account_id: z
@@ -186,10 +189,28 @@ export const AccountCreationRequestSchema = z
     type: z.nativeEnum(AccountType, {
       errorMap: () => ({ message: "Invalid account type" }),
     }),
-    metadata_public: AccountProfileSchema,
+    name: z
+      .string()
+      .min(
+        MIN_NAME_LENGTH,
+        `Name must be at least ${MIN_NAME_LENGTH} characters`
+      )
+      .max(
+        MAX_NAME_LENGTH,
+        `Name must not exceed ${MAX_NAME_LENGTH} characters`
+      ),
   })
   .openapi("AccountCreationRequest");
 
 export type AccountCreationRequest = z.infer<
   typeof AccountCreationRequestSchema
+>;
+
+export const OrganizationCreationRequestSchema =
+  AccountCreationRequestSchema.extend({
+    owner_account_id: z.string(),
+  });
+
+export type OrganizationCreationRequest = z.infer<
+  typeof OrganizationCreationRequestSchema
 >;

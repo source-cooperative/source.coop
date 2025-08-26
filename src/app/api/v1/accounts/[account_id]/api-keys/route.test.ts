@@ -14,6 +14,8 @@ jest.mock("@/lib/clients/database", () => ({
 }));
 jest.mock("@/lib/api/utils", () => ({
   getApiSession: jest.fn(),
+}));
+jest.mock("@/lib/actions/crypto", () => ({
   generateAccessKeyID: jest.fn(() => "SCFAKEID"),
   generateSecretAccessKey: jest.fn(() => "x".repeat(64)),
 }));

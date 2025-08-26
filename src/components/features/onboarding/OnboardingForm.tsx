@@ -1,14 +1,13 @@
-'use client';
+"use client";
 
-import { useState, useCallback, useEffect, useMemo } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { Flex, Text, Box, Callout } from '@radix-ui/themes';
-import { MonoText } from '@/components/core/MonoText';
-import { FormWrapper } from '@/components/core/Form';
-import { FormField } from '@/types/form';
-import debounce from 'lodash/debounce';
-import { InfoCircledIcon, CheckCircledIcon } from '@radix-ui/react-icons';
-import { VerificationSuccessCallout } from '@/components/features/auth/VerificationSuccessCallout';
+import { useState, useCallback, useEffect, useMemo } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Flex, Text, Box } from "@radix-ui/themes";
+import { MonoText } from "@/components/core/MonoText";
+import { FormWrapper } from "@/components/core/Form";
+import { FormField } from "@/types/form";
+import debounce from "lodash/debounce";
+import { EmailVerificationCallout } from "@/components/features/auth/EmailVerificationCallout";
 import { recordVerificationTimestamp } from "@/lib/actions/account";
 import { CONFIG, LOGGER } from "@/lib";
 import { useSession } from "@ory/elements-react/client";
@@ -43,11 +42,11 @@ export function OnboardingForm() {
   const [verificationStatus, setVerificationStatus] = useState<
     "pending" | "verified"
   >("pending");
-  const { session, isLoading: isSessionLoading, refetch } = useSession();
+  const { session, isLoading: isSessionLoading } = useSession();
 
   if (!session && !isSessionLoading) {
     // If no session, redirect to login
-    router.push(CONFIG.auth.routes.login);
+    router.push("/");
   }
 
   // Check session on mount
@@ -196,9 +195,8 @@ export function OnboardingForm() {
         throw new Error(responseJson.error || "Failed to complete onboarding");
       }
 
-      // On success, redirect to profile page
-      await refetch();
-      router.push(`/${account_id}?welcome=true`);
+      // On success, redirect to profile page with a full refresh
+      window.location.href = `/${account_id}?welcome=true`;
     } catch (err: unknown) {
       LOGGER.error("Onboarding error", {
         operation: "OnboardingForm.handleSubmit",
@@ -305,30 +303,7 @@ export function OnboardingForm() {
   return (
     <Box pt="6">
       <Box mb="4">
-        <VerificationSuccessCallout />
-        {verificationStatus === "verified" ? (
-          // Don't show a second verification message if VerificationSuccessCallout is displayed
-          searchParams.get("verified") === "true" ? null : (
-            <Callout.Root color="green">
-              <Callout.Icon>
-                <CheckCircledIcon />
-              </Callout.Icon>
-              <Callout.Text>
-                Your email has been verified successfully!
-              </Callout.Text>
-            </Callout.Root>
-          )
-        ) : (
-          <Callout.Root color="blue">
-            <Callout.Icon>
-              <InfoCircledIcon />
-            </Callout.Icon>
-            <Callout.Text>
-              Please check your email. We&apos;ve sent you a code to verify your
-              email address.
-            </Callout.Text>
-          </Callout.Root>
-        )}
+        <EmailVerificationCallout showCheckEmail={true} />
       </Box>
       <FormWrapper
         fields={fields}
@@ -342,4 +317,4 @@ export function OnboardingForm() {
       />
     </Box>
   );
-} 
+}

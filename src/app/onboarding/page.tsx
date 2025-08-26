@@ -4,9 +4,6 @@ import { Suspense } from "react";
 import { getServerSession } from "@ory/nextjs/app";
 import { Container, Box, Heading, Text } from "@radix-ui/themes";
 import { OnboardingForm } from "@/components/features/onboarding/OnboardingForm";
-import { CONFIG } from "@/lib";
-import { getOryId } from "@/lib/ory";
-import { accountsTable } from "@/lib/clients";
 
 export const metadata: Metadata = {
   title: "Complete Your Profile",
@@ -14,22 +11,6 @@ export const metadata: Metadata = {
 };
 
 export default async function OnboardingPage() {
-  const session = await getServerSession();
-
-  // If not authenticated, redirect to login
-  if (!session) {
-    redirect(CONFIG.auth.routes.login);
-  }
-
-  // If has account_id, redirect to profile
-  const oryId = getOryId(session);
-  if (oryId) {
-    const account = await accountsTable.fetchByOryId(oryId);
-    if (account) {
-      redirect(`/${account.account_id}?welcome=true`);
-    }
-  }
-
   return (
     <Container size="2" pt="8" pb="9">
       <Box className="mx-auto max-w-md">

@@ -4,7 +4,6 @@ import { NextRequest, NextResponse } from "next/server";
 import swaggerJSDoc from "swagger-jsdoc";
 import { OpenApiGeneratorV3 } from "@asteasolutions/zod-to-openapi";
 import {
-  AccountCreationRequestSchema,
   APIKeyRequestSchema,
   APIKeySchema,
   DataConnectionSchema,
@@ -43,7 +42,6 @@ export async function GET(_req: NextRequest) {
   const generator = new OpenApiGeneratorV3([
     AccountSchema,
     MembershipSchema,
-    AccountCreationRequestSchema,
     APIKeySchema,
     APIKeyRequestSchema,
     RedactedAPIKeySchema,

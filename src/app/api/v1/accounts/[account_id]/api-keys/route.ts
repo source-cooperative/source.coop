@@ -9,11 +9,11 @@ import {
 } from "@/types";
 import { StatusCodes } from "http-status-codes";
 import { isAuthorized } from "@/lib/api/authz";
+import { getApiSession } from "@/lib/api/utils";
 import {
   generateAccessKeyID,
   generateSecretAccessKey,
-  getApiSession,
-} from "@/lib/api/utils";
+} from "@/lib/actions/crypto";
 import { apiKeysTable } from "@/lib/clients/database";
 
 // POST /api/v1/accounts/[account_id]/api-keys
