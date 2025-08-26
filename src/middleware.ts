@@ -108,6 +108,8 @@ const addEmailToAccount = async (request: NextRequest): Promise<void> => {
   }
 };
 
+const ory = createOryMiddleware({});
+
 export const middleware = async (request: NextRequest) => {
   // Handle legacy redirects first
   const redirect = handleLegacyRedirects(request);
@@ -118,7 +120,6 @@ export const middleware = async (request: NextRequest) => {
   // await addEmailToAccount(request);
 
   // Run Ory middleware last
-  const ory = await createOryMiddleware({});
   return ory(request);
 };
 
