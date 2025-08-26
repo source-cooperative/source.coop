@@ -1,7 +1,7 @@
 import { getServerSession } from "@ory/nextjs/app";
 import { createOryMiddleware } from "@ory/nextjs/middleware";
 import { NextRequest, NextResponse } from "next/server";
-import { getOryId, accountsTable, LOGGER, AccountsTable } from "@/lib";
+import { getOryId, accountsTable, LOGGER } from "@/lib";
 
 /**
  * Handle requests to legacy repository description paths.
@@ -81,7 +81,6 @@ const addEmailToAccount = async (request: NextRequest): Promise<void> => {
   if (!session) return;
   const oryId = getOryId(session);
   if (!oryId) return;
-  const accountsTable = new AccountsTable({});
   const account = await accountsTable.fetchByOryId(oryId);
 
   if (!account) return;
