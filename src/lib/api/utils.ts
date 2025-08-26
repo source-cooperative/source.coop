@@ -40,7 +40,6 @@ import * as crypto from "crypto";
 import { getServerSession } from "@ory/nextjs/app";
 import { NextRequest } from "next/server";
 import { getOryId } from "../ory";
-import { Session } from "@ory/client-fetch";
 
 export function generateAccessKeyID(): string {
   const prefix = "SC";
