@@ -10,15 +10,20 @@
  * @throws {notFound} If account does not exist
  */
 
-import { forbidden, notFound } from "next/navigation";
+import { notFound } from "next/navigation";
 import { Container } from "@radix-ui/themes";
 import { IndividualProfile } from "@/components/features/profiles";
 import { OrganizationProfilePage } from "@/components/features/profiles/OrganizationProfilePage";
-import type { IndividualAccount } from "@/types/account_v2";
-import { accountsTable, productsTable } from "@/lib/clients/database";
+import {
+  accountsTable,
+  isOrganizationalAccount,
+  membershipsTable,
+  productsTable,
+} from "@/lib/clients/database";
 import { getServerSession } from "@ory/nextjs/app";
-import type { ExtendedSession } from "@/types/session";
 import { getOryId } from "@/lib/ory";
+import { IndividualAccount, Actions } from "@/types";
+import { isAuthorized } from "@/lib/api/authz";
 
 type PageProps = {
   params: Promise<{ account_id: string }>;
@@ -42,20 +47,29 @@ export default async function AccountPage({ params, searchParams }: PageProps) {
   const isAccountOwner = session && getOryId(session) === account.identity_id;
 
   // If this is an organization, use the organization profile page
-  if (account.type === "organization") {
-    return <OrganizationProfilePage account_id={account_id} />;
+  if (isOrganizationalAccount(account)) {
+    return <OrganizationProfilePage account={account} />;
   }
 
   // Get repositories for individual account
   let { products, lastEvaluatedKey } = await productsTable.listByAccount(
-    //
-    account_id
+    account_id,
+    1000
   );
 
   // Filter products based on authentication status
   if (!isAuthenticated || !isAccountOwner) {
     products = products.filter((product) => product.visibility === "public");
   }
+
+  const memberships = (await membershipsTable.listByUser(account_id)).filter(
+    (membership) => isAuthorized(account, membership, Actions.GetMembership)
+  );
+  const organizations = (
+    await accountsTable.fetchManyByIds(
+      memberships.map((membership) => membership.membership_account_id)
+    )
+  ).filter(isOrganizationalAccount);
 
   // For individual accounts
   return (
@@ -64,10 +78,8 @@ export default async function AccountPage({ params, searchParams }: PageProps) {
         account={account as IndividualAccount}
         ownedProducts={products}
         contributedProducts={[]}
-        organizations={[]}
+        organizations={organizations}
         showWelcome={showWelcome}
-        ownedProductsHasNextPage={!!lastEvaluatedKey}
-        ownedProductsNextCursor={lastEvaluatedKey}
       />
     </Container>
   );

@@ -23,7 +23,7 @@ export class ApiStack extends cdk.Stack {
       stage: props.stage,
       vercelEnvironment: isProduction
         ? ["production"]
-        : ["preview", "development"],
+        : ["preview", "development", "staging"],
     });
 
     for (const table of [

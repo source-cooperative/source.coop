@@ -1,25 +1,31 @@
 import {
-  GetCommand,
   QueryCommand,
   UpdateCommand,
   DeleteCommand,
   PutCommand,
+  BatchGetCommand,
 } from "@aws-sdk/lib-dynamodb";
 import { ResourceNotFoundException } from "@aws-sdk/client-dynamodb";
-import type { Account, AccountType } from "@/types/account";
 import type {
+  Account,
+  AccountType,
   IndividualAccount,
   OrganizationalAccount,
-} from "@/types/account_v2";
+} from "@/types";
 
 import { BaseTable } from "./base";
+import { LOGGER } from "@/lib/logging";
 
 class AccountsTable extends BaseTable {
   model = "accounts";
 
   async fetchById(account_id: string): Promise<Account | null> {
     try {
-      console.log(`DB: Trying to fetch account for ID:`, account_id);
+      LOGGER.debug(`Trying to fetch account for ID`, {
+        operation: "AccountsTable.fetchById",
+        context: "database operation",
+        metadata: { account_id },
+      });
       const result = await this.client.send(
         new QueryCommand({
           TableName: this.table,
@@ -31,7 +37,11 @@ class AccountsTable extends BaseTable {
       );
 
       if (result.Items?.length) {
-        console.log(`DB: Found account for ID:`, account_id);
+        LOGGER.debug(`Found account for ID`, {
+          operation: "AccountsTable.fetchById",
+          context: "database operation",
+          metadata: { account_id },
+        });
         return result.Items[0] as Account;
       }
 
@@ -44,9 +54,44 @@ class AccountsTable extends BaseTable {
     }
   }
 
+  async fetchManyByIds(
+    account_ids: string[],
+    batchSize = 100
+  ): Promise<Account[]> {
+    const accountBatches: Account[] = [];
+
+    // Remove duplicates
+    account_ids = [...new Set(account_ids)];
+
+    for (let i = 0; i < account_ids.length; i += batchSize) {
+      const batch = account_ids.slice(i, i + batchSize);
+      const batchRequest = {
+        RequestItems: {
+          [this.table]: {
+            Keys: batch.map((account_id) => ({ account_id })),
+          },
+        },
+      };
+
+      console.debug(
+        `DB: Fetching ${batch.length} accounts: ${batch.join(", ")}`
+      );
+      const result = await this.client.send(new BatchGetCommand(batchRequest));
+      if (result.Responses?.[this.table]) {
+        accountBatches.push(...(result.Responses[this.table] as Account[]));
+      }
+    }
+
+    return accountBatches;
+  }
+
   async fetchByOryId(identity_id: string): Promise<Account | null> {
     try {
-      console.log(`DB: Trying to fetch account by Ory ID:`, identity_id);
+      LOGGER.debug(`Trying to fetch account by Ory ID`, {
+        operation: "AccountsTable.fetchByOryId",
+        context: "database operation",
+        metadata: { identity_id },
+      });
       const result = await this.client.send(
         new QueryCommand({
           TableName: this.table,
@@ -59,7 +104,11 @@ class AccountsTable extends BaseTable {
       );
 
       if (result.Items && result.Items.length > 0) {
-        console.log(`DB: Found account by Ory ID:`, identity_id);
+        LOGGER.debug(`Found account by Ory ID`, {
+          operation: "AccountsTable.fetchByOryId",
+          context: "database operation",
+          metadata: { identity_id },
+        });
         return result.Items[0] as Account;
       }
 
@@ -122,65 +171,6 @@ class AccountsTable extends BaseTable {
         Key,
       })
     );
-  }
-
-  async listOrgMembers(orgAccount: OrganizationalAccount): Promise<{
-    owner: IndividualAccount | null;
-    admins: IndividualAccount[];
-    members: IndividualAccount[];
-  }> {
-    // Extract member IDs from the account's metadata
-    const ownerId = orgAccount.metadata_public.owner_account_id;
-    const adminIds = orgAccount.metadata_public.admin_account_ids || [];
-    const memberIds = orgAccount.metadata_public.member_account_ids || [];
-
-    // Fetch the owner account if available
-    let owner: IndividualAccount | null = null;
-    if (ownerId) {
-      const ownerAccount = await this.fetchById(ownerId);
-      if (!ownerAccount) {
-        throw new Error(`Owner account ${ownerId} not found`);
-      }
-      if (isIndividualAccount(ownerAccount)) {
-        owner = ownerAccount;
-      } else {
-        throw new Error(
-          `Owner account ${ownerId} is not an individual account`
-        );
-      }
-    }
-
-    // Fetch admin accounts
-    const adminPromises = adminIds.map(async (id: string) => {
-      const account = await this.fetchById(id);
-      if (!account) {
-        throw new Error(`Admin account ${id} not found`);
-      }
-      if (!isIndividualAccount(account)) {
-        throw new Error(`Admin account ${id} is not an individual account`);
-      }
-      return account;
-    });
-    const admins = await Promise.all(adminPromises);
-
-    // Fetch member accounts
-    const memberPromises = memberIds.map(async (id: string) => {
-      const account = await this.fetchById(id);
-      if (!account) {
-        throw new Error(`Member account ${id} not found`);
-      }
-      if (!isIndividualAccount(account)) {
-        throw new Error(`Member account ${id} is not an individual account`);
-      }
-      return account;
-    });
-    const members = await Promise.all(memberPromises);
-
-    return {
-      owner,
-      admins,
-      members,
-    };
   }
 }
 

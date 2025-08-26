@@ -1,6 +1,6 @@
 import { Session } from "@ory/client-fetch";
-import { logger } from "@/lib/logger";
-import { CONFIG } from "./config";
+import { CONFIG } from "@/lib/config";
+import { LOGGER } from "@/lib/logging";
 
 // Helper to update Ory identity (admin operation)
 export async function updateOryIdentity(oryId: string, data: any) {
@@ -26,13 +26,17 @@ export async function updateOryIdentity(oryId: string, data: any) {
 
   if (!getResponse.ok) {
     const errorText = await getResponse.text();
-    console.error("Failed to get Ory identity:", {
-      status: getResponse.status,
-      statusText: getResponse.statusText,
-      error: errorText,
-      url: getResponse.url,
-      baseUrl: CONFIG.auth.api.backendUrl,
-      hasAccessToken: !!CONFIG.auth.accessToken,
+    LOGGER.error("Failed to get Ory identity", {
+      operation: "updateOryIdentity",
+      context: "Ory API call",
+      error: new Error(errorText),
+      metadata: {
+        status: getResponse.status,
+        statusText: getResponse.statusText,
+        url: getResponse.url,
+        baseUrl: CONFIG.auth.api.backendUrl,
+        hasAccessToken: !!CONFIG.auth.accessToken,
+      },
     });
     throw new Error(errorText);
   }
@@ -68,13 +72,17 @@ export async function updateOryIdentity(oryId: string, data: any) {
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error("Failed to update Ory identity:", {
-      status: response.status,
-      statusText: response.statusText,
-      error: errorText,
-      url: response.url,
-      baseUrl: CONFIG.auth.api.backendUrl,
-      hasAccessToken: !!CONFIG.auth.accessToken,
+    LOGGER.error("Failed to update Ory identity", {
+      operation: "updateOryIdentity",
+      context: "Ory API call",
+      error: new Error(errorText),
+      metadata: {
+        status: response.status,
+        statusText: response.statusText,
+        url: response.url,
+        baseUrl: CONFIG.auth.api.backendUrl,
+        hasAccessToken: !!CONFIG.auth.accessToken,
+      },
     });
     throw new Error(errorText);
   }
@@ -90,7 +98,7 @@ export async function updateOryIdentity(oryId: string, data: any) {
 export function getOryId(session: Session): string | null {
   const oryId = session.identity?.id;
   if (!oryId) {
-    logger.warn("No identity ID found in session", {
+    LOGGER.warn("No identity ID found in session", {
       operation: "getApiSession",
       context: "session",
     });

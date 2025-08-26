@@ -17,7 +17,7 @@ import { join } from "path";
 
 // Import types
 import type { Product } from "../src/types/product_v2.js";
-import type { AccountV2 } from "../src/types/account_v2.js";
+import type { Account } from "../src/types/account.js";
 
 const DYNAMODB_ENDPOINT =
   process.env.DYNAMODB_ENDPOINT || "http://localhost:8000";
@@ -176,9 +176,7 @@ async function loadConvertedData() {
     const productsPath = join(process.cwd(), 'scripts', 'converted-data', 'products.json');
     
     console.log(`Reading accounts from ${accountsPath}`);
-    const accounts: AccountV2[] = JSON.parse(
-      readFileSync(accountsPath, "utf8")
-    );
+    const accounts: Account[] = JSON.parse(readFileSync(accountsPath, "utf8"));
     
     console.log(`Reading products from ${productsPath}`);
     const products: Product[] = JSON.parse(readFileSync(productsPath, 'utf8'));

@@ -5,7 +5,7 @@ import * as Form from '@radix-ui/react-form';
 import { Button, Text, Flex, Box, Select } from '@radix-ui/themes';
 import { TextField } from '@radix-ui/themes';
 import { FormField, FormProps } from '@/types/form';
-import { logger } from '@/lib/logger';
+import { LOGGER } from "@/lib";
 
 export const FormWrapper = forwardRef<HTMLFormElement, FormProps>(({
   fields,
@@ -52,18 +52,18 @@ export const FormWrapper = forwardRef<HTMLFormElement, FormProps>(({
         }
       });
 
-      logger.info('Form submission started', {
-        operation: 'form_submit',
-        context: 'Form component',
-        metadata: { formData: safeFormData }
+      LOGGER.info("Form submission started", {
+        operation: "form_submit",
+        context: "Form component",
+        metadata: { formData: safeFormData },
       });
 
       await onSubmit(data);
     } catch (err) {
-      logger.error('Form submission failed', {
-        operation: 'form_submit',
-        context: 'Form component',
-        error: err instanceof Error ? err : new Error('Unknown error')
+      LOGGER.error("Form submission failed", {
+        operation: "form_submit",
+        context: "Form component",
+        error: err instanceof Error ? err : new Error("Unknown error"),
       });
       throw err;
     }

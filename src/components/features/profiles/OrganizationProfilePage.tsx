@@ -1,58 +1,97 @@
-import { Container } from '@radix-ui/themes';
-import { OrganizationProfile } from './OrganizationProfile';
-import { accountsTable, productsTable } from "@/lib/clients/database";
-import { notFound } from 'next/navigation';
-import type { Account } from "@/types/account";
-import type { OrganizationalAccount } from "@/types/account_v2";
-import { getServerSession } from "@ory/nextjs/app";
-import type { ExtendedSession } from "@/types/session";
-
-function isOrganizationalAccount(
-  account: Account
-): account is OrganizationalAccount {
-  return account.type === "organization";
-}
+import { Container } from "@radix-ui/themes";
+import { OrganizationProfile } from "./OrganizationProfile";
+import {
+  accountsTable,
+  isIndividualAccount,
+  membershipsTable,
+  productsTable,
+} from "@/lib/clients/database";
+import {
+  type IndividualAccount,
+  type OrganizationalAccount,
+  MembershipRole,
+  MembershipState,
+} from "@/types";
+import { getPageSession } from "@/lib/api/utils";
 
 interface OrganizationProfilePageProps {
-  account_id: string;
+  account: OrganizationalAccount;
 }
 
-export async function OrganizationProfilePage({ account_id }: OrganizationProfilePageProps) {
-  // Get account data
-  const account = await accountsTable.fetchById(account_id);
-  if (!account || !isOrganizationalAccount(account)) {
-    notFound();
-  }
-
+export async function OrganizationProfilePage({
+  account,
+}: OrganizationProfilePageProps) {
   // Get session to check authentication status
-  const session = await getServerSession() as ExtendedSession;
-  const isAuthenticated = !!session?.active;
-  const isMember = isAuthenticated && (
-    session?.identity?.metadata_public?.account_id === account.metadata_public.owner_account_id ||
-    account.metadata_public.admin_account_ids?.includes(session?.identity?.metadata_public?.account_id || '') ||
-    account.metadata_public.member_account_ids?.includes(session?.identity?.metadata_public?.account_id || '')
+  const session = await getPageSession();
+  const isAuthenticated = session?.account && !session.account.disabled;
+
+  let [memberships, { products }] = await Promise.all([
+    membershipsTable.listByAccount(account.account_id),
+    productsTable.listByAccount(account.account_id),
+  ]);
+
+  // Only consider active memberships
+  memberships = memberships.filter(
+    (membership) => membership.state === MembershipState.Member
   );
 
-  // Get products for this account
-  let { products } = await productsTable.listByAccount(account_id); // TODO: Implement pagination
+  const relatedUserAccounts = new Map(
+    (
+      await accountsTable.fetchManyByIds(
+        memberships.map((membership) => membership.account_id)
+      )
+    ).map((account) => [account.account_id, account])
+  );
+
+  const ownerMembership = memberships.find(
+    (membership) => membership.role === MembershipRole.Owners
+  );
+  const owner = ownerMembership
+    ? relatedUserAccounts.get(ownerMembership.account_id) || null
+    : null;
+
+  const adminMemberships = memberships.filter(
+    (membership) => membership.role === MembershipRole.Maintainers
+  );
+  const admins = adminMemberships
+    .map((membership) => relatedUserAccounts.get(membership.account_id))
+    .filter(
+      (account): account is IndividualAccount =>
+        !!account && isIndividualAccount(account)
+    );
+
+  const memberMemberships = memberships.filter(
+    (membership) => membership.role === MembershipRole.ReadData
+  );
+  const members = memberMemberships
+    .map((membership) => relatedUserAccounts.get(membership.account_id))
+    .filter(
+      (account): account is IndividualAccount =>
+        !!account && isIndividualAccount(account)
+    );
+
+  // Check if the authenticated user is a member of this organization
+  const isMember =
+    isAuthenticated &&
+    session?.account &&
+    memberships
+      .map((membership) => membership.account_id)
+      .includes(session.account.account_id);
 
   // Filter products based on authentication status
   if (!isAuthenticated || !isMember) {
-    products = products.filter(product => product.visibility === 'public');
+    products = products.filter((product) => product.visibility === "public");
   }
-
-  // Get member details
-  const { owner, admins, members } = await accountsTable.listOrgMembers(account);
 
   return (
     <Container size="4" py="6">
       <OrganizationProfile
         account={account}
         products={products}
-        owner={owner}
+        owner={owner && isIndividualAccount(owner) ? owner : null}
         admins={admins}
         members={members}
       />
     </Container>
   );
-} 
+}

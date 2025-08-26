@@ -8,6 +8,7 @@ import { getApiSession } from "@/lib/api/utils";
 import { productsTable } from "@/lib/clients/database/products";
 import { isAuthorized } from "@/lib/api/authz";
 import { StatusCodes } from "http-status-codes";
+import { LOGGER } from "@/lib";
 
 /**
  * @openapi
@@ -70,7 +71,16 @@ export async function GET(
       permissions.push(RepositoryPermissions.Write);
     }
 
-    console.log({ session, product });
+    LOGGER.debug("Session and product for permissions check", {
+      operation: "products.permissions.GET",
+      context: "permissions check",
+      metadata: {
+        account_id,
+        repository_id,
+        hasSession: !!session,
+        hasProduct: !!product,
+      },
+    });
     if (isAuthorized(session, product, Actions.ReadRepositoryData)) {
       permissions.push(RepositoryPermissions.Read);
     }

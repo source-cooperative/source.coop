@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { StatusCodes } from "http-status-codes";
 import { getEmail, getProfileImage } from "@/lib/api/utils";
-import { accountsTable } from "@/lib/clients/database";
+import { accountsTable, isIndividualAccount } from "@/lib/clients/database";
 import { isAuthorized } from "@/lib/api/authz";
 import { getApiSession } from "@/lib/api/utils";
 import { AccountProfileResponse, AccountProfileSchema, Actions } from "@/types";
@@ -48,7 +48,11 @@ export async function GET(
         { status: StatusCodes.NOT_FOUND }
       );
     }
-    if (!isAuthorized(session, account, Actions.GetAccountProfile)) {
+    if (
+      account.disabled ||
+      !isIndividualAccount(account) ||
+      !isAuthorized(session, account, Actions.GetAccountProfile)
+    ) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: StatusCodes.UNAUTHORIZED }

@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import { Tooltip } from '@radix-ui/themes';
-import { MinusCircledIcon, CheckCircledIcon } from '@radix-ui/react-icons';
-import type { Account } from "@/types";
-import type { IndividualAccount } from "@/types/account_v2";
+import { Tooltip } from "@radix-ui/themes";
+import { MinusCircledIcon, CheckCircledIcon } from "@radix-ui/react-icons";
+import type { Account, IndividualAccount } from "@/types";
 import { useState, useEffect } from "react";
 import { useSession } from "@ory/elements-react/client";
+import { LOGGER } from "@/lib";
 
 interface EmailVerificationStatusProps {
   account: Account;
@@ -31,8 +31,6 @@ export function EmailVerificationStatus({
       return;
     }
 
-    const _individualAccount = account as IndividualAccount;
-
     const checkVerificationStatus = async () => {
       // TODO: This is currently only partially implemented, where we display the verification status of the authenticated user, but we don't actually check the status of the account.
       try {
@@ -41,7 +39,13 @@ export function EmailVerificationStatus({
             (addr) => addr.verified
           ) ?? false;
         setIsVerified(verified);
-        console.log(session?.identity?.verifiable_addresses);
+        LOGGER.debug("Session verifiable addresses", {
+          operation: "EmailVerificationStatus.checkVerificationStatus",
+          context: "verification check",
+          metadata: {
+            verifiableAddresses: session?.identity?.verifiable_addresses,
+          },
+        });
 
         // Get verification timestamp from metadata
         const metadata = account.metadata_public as
@@ -58,7 +62,11 @@ export function EmailVerificationStatus({
           setVerifiedAt(`${day} ${month} ${year}`);
         }
       } catch (error) {
-        console.error("Error checking email verification status:", error);
+        LOGGER.error("Error checking email verification status", {
+          operation: "EmailVerificationStatus.checkVerificationStatus",
+          context: "verification check",
+          error: error,
+        });
         setIsVerified(false);
       }
     };
@@ -94,4 +102,4 @@ export function EmailVerificationStatus({
       )}
     </Tooltip>
   );
-} 
+}

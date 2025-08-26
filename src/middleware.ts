@@ -1,8 +1,7 @@
 import { getServerSession } from "@ory/nextjs/app";
 import { createOryMiddleware } from "@ory/nextjs/middleware";
 import { NextRequest, NextResponse } from "next/server";
-import { getOryId } from "./lib/ory";
-import { accountsTable } from "./lib/clients/database";
+import { getOryId, accountsTable, LOGGER } from "@/lib";
 
 /**
  * Handle requests to legacy repository description paths.
@@ -26,9 +25,16 @@ const handleLegacyRedirects = (request: NextRequest): NextResponse | null => {
       // pathParts[4] = "description" or "access"
       const ownerId = pathParts[2];
       const repoId = pathParts[3];
-      return NextResponse.redirect(
-        new URL(`/${ownerId}/${repoId}`, request.url)
-      );
+      const newPath = `/${ownerId}/${repoId}`;
+      LOGGER.debug("Redirecting to new path", {
+        operation: "handle_legacy_redirects",
+        context: __filename,
+        metadata: {
+          oldPath: request.nextUrl.pathname,
+          newPath,
+        },
+      });
+      return NextResponse.redirect(new URL(newPath, request.url));
     }
   }
   return null;
@@ -51,6 +57,14 @@ const handleOnboarding = async (
   const account = await accountsTable.fetchByOryId(oryId);
 
   if (!account) {
+    LOGGER.debug("Redirecting to onboarding", {
+      operation: "handle_onboarding",
+      context: __filename,
+      metadata: {
+        oryId,
+        account,
+      },
+    });
     return NextResponse.redirect(new URL("/onboarding", request.url));
   }
 
@@ -62,7 +76,7 @@ const handleOnboarding = async (
  * @param request
  * @returns void
  */
-const handleEmailVerification = async (request: NextRequest): Promise<void> => {
+const addEmailToAccount = async (request: NextRequest): Promise<void> => {
   const session = await getServerSession();
   if (!session) return;
   const oryId = getOryId(session);
@@ -86,7 +100,11 @@ const handleEmailVerification = async (request: NextRequest): Promise<void> => {
   try {
     await accountsTable.update(account);
   } catch (error) {
-    console.error("Failed to add email to account", error);
+    LOGGER.error("Failed to add email to account", {
+      operation: "add_email_to_account",
+      context: __filename,
+      error,
+    });
   }
 };
 
@@ -97,7 +115,7 @@ export const middleware = async (request: NextRequest) => {
 
   // Handle authentication and account management
   // const onboardingRedirect = await handleOnboarding(request);
-  await handleEmailVerification(request);
+  await addEmailToAccount(request);
 
   // Run Ory middleware last
   const ory = await createOryMiddleware({});

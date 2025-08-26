@@ -28,18 +28,19 @@
  * const adminStatus = isAdmin(session);
  */
 
-import { Actions, UserSession } from "@/types";
+import { Account, Actions, UserSession } from "@/types";
 import {
   apiKeysTable,
   accountsTable,
   membershipsTable,
+  isIndividualAccount,
 } from "@/lib/clients/database";
 import { isAuthorized } from "@/lib/api/authz";
 import * as crypto from "crypto";
 import { getServerSession } from "@ory/nextjs/app";
-import { logger } from "../logger";
 import { NextRequest } from "next/server";
 import { getOryId } from "../ory";
+import { Session } from "@ory/client-fetch";
 
 export function generateAccessKeyID(): string {
   const prefix = "SC";
@@ -102,7 +103,7 @@ async function authenticateWithApiKey(
 
   // Fetch the account associated with the API key
   const account = await accountsTable.fetchById(apiKey.account_id);
-  if (!account || account.disabled) {
+  if (!account || account.disabled || !isIndividualAccount(account)) {
     return null;
   }
 
@@ -204,6 +205,16 @@ export async function getApiSession(
     }
   }
 
+  // Fall back to page session
+  return await getPageSession();
+}
+
+/**
+ * Retrieves the current user session for visitor to the page.
+ *
+ * @returns A Promise that resolves to a UserSession object if a valid session exists, or null if not authenticated.
+ */
+export async function getPageSession(): Promise<UserSession | null> {
   const session = await getServerSession();
   if (!session) {
     return null;
@@ -217,7 +228,7 @@ export async function getApiSession(
   // Fetch account information for the user
   const account = await accountsTable.fetchByOryId(oryId);
 
-  if (!account || account.disabled) {
+  if (!account || account.disabled || !isIndividualAccount(account)) {
     return { identity_id: oryId };
   }
 

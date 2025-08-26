@@ -14,7 +14,6 @@ import {
   RepositoryCreationRequestSchema,
   RepositoryMetaSchema,
   RepositorySchema,
-  UserSessionSchema,
   RepositoryUpdateRequestSchema,
   RepositoryListSchema,
   RepositoryFeaturedUpdateRequestSchema,
@@ -42,7 +41,6 @@ export async function GET(_req: NextRequest) {
   const openapiSpecification = swaggerJSDoc(options);
 
   const generator = new OpenApiGeneratorV3([
-    UserSessionSchema,
     AccountSchema,
     MembershipSchema,
     AccountCreationRequestSchema,

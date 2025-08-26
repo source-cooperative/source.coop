@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { CONFIG } from "@/lib/config";
+import { CONFIG, LOGGER } from "@/lib";
 import { getApiSession } from "@/lib/api/utils";
 import { AccountType } from "@/types/account";
 import { ExtendedSession } from "@/types/session";
@@ -52,7 +52,11 @@ export async function POST(request: NextRequest) {
     const account = await response.json();
     return NextResponse.json(account);
   } catch (error) {
-    console.error("Account creation error:", error);
+    LOGGER.error("Account creation error", {
+      operation: "accounts.POST",
+      context: "account creation",
+      error: error,
+    });
     return NextResponse.json(
       { error: "Failed to create account" },
       { status: 500 }

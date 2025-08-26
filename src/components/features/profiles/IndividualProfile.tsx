@@ -1,4 +1,3 @@
-// Server Component
 import {
   Box,
   Text,
@@ -8,8 +7,11 @@ import {
   Link as RadixLink,
 } from "@radix-ui/themes";
 import Link from "next/link";
-import type { AccountV2, IndividualAccount } from "@/types/account_v2";
-import type { Account, Product } from "@/types";
+import type {
+  IndividualAccount,
+  OrganizationalAccount,
+  Product,
+} from "@/types";
 import { ProfileAvatar } from "./ProfileAvatar";
 import { ProductsList } from "../products/ProductsList";
 import { WebsiteLink } from "./WebsiteLink";
@@ -20,20 +22,8 @@ interface IndividualProfileProps {
   account: IndividualAccount;
   ownedProducts: Product[];
   contributedProducts: Product[];
-  organizations: AccountV2[];
+  organizations: OrganizationalAccount[];
   showWelcome?: boolean;
-  // Pagination props for owned products
-  ownedProductsHasNextPage?: boolean;
-  ownedProductsHasPreviousPage?: boolean;
-  ownedProductsNextCursor?: string;
-  ownedProductsPreviousCursor?: string;
-  ownedProductsCurrentCursor?: string;
-  // Pagination props for contributed products
-  contributedProductsHasNextPage?: boolean;
-  contributedProductsHasPreviousPage?: boolean;
-  contributedProductsNextCursor?: string;
-  contributedProductsPreviousCursor?: string;
-  contributedProductsCurrentCursor?: string;
 }
 
 export function IndividualProfile({
@@ -42,34 +32,7 @@ export function IndividualProfile({
   contributedProducts,
   organizations,
   showWelcome = false,
-  // Pagination props
-  ownedProductsHasNextPage = false,
-  ownedProductsHasPreviousPage = false,
-  ownedProductsNextCursor,
-  ownedProductsPreviousCursor,
-  ownedProductsCurrentCursor,
-  contributedProductsHasNextPage = false,
-  contributedProductsHasPreviousPage = false,
-  contributedProductsNextCursor,
-  contributedProductsPreviousCursor,
-  contributedProductsCurrentCursor,
 }: IndividualProfileProps) {
-  const pagination = {
-    ownedProducts: {
-      hasNextPage: ownedProductsHasNextPage,
-      hasPreviousPage: ownedProductsHasPreviousPage,
-      nextCursor: ownedProductsNextCursor,
-      previousCursor: ownedProductsPreviousCursor,
-      currentCursor: ownedProductsCurrentCursor,
-    },
-    contributedProducts: {
-      hasNextPage: contributedProductsHasNextPage,
-      hasPreviousPage: contributedProductsHasPreviousPage,
-      nextCursor: contributedProductsNextCursor,
-      previousCursor: contributedProductsPreviousCursor,
-      currentCursor: contributedProductsCurrentCursor,
-    },
-  };
   return (
     <Box>
       <IndividualProfileActions account={account} showWelcome={showWelcome} />
@@ -112,9 +75,7 @@ export function IndividualProfile({
                         : "0"
                     }
                   >
-                    <WebsiteLink
-                      website={{ url: `https://${domain.domain}` }}
-                    />
+                    <WebsiteLink url={domain.domain} />
                   </Box>
                 ))}
               </Box>

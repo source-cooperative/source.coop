@@ -11,17 +11,16 @@
 
 import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
 import { z } from "zod";
-import { AccountSchema } from "./account";
+import { IndividualAccountSchema } from "./account";
 import { MembershipSchema } from "./membership";
 import type { Session, Identity } from "@ory/client";
 
 extendZodWithOpenApi(z);
 
-// TODO: How do we make this work with the @ory/nextjs session?
 export const UserSessionSchema = z
   .object({
     identity_id: z.optional(z.string()).openapi({ example: "identity-id" }),
-    account: z.optional(AccountSchema),
+    account: z.optional(IndividualAccountSchema),
     memberships: z.optional(z.array(MembershipSchema)),
   })
   .openapi("UserSession");
