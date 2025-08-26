@@ -8,13 +8,13 @@ import {
 } from "@/types";
 import { StatusCodes } from "http-status-codes";
 import { isAuthorized } from "@/lib/api/authz";
+import * as crypto from "crypto";
 import { getApiSession } from "@/lib/api/utils";
 import {
   accountsTable,
   membershipsTable,
   productsTable,
 } from "@/lib/clients/database";
-import { v4 } from "uuid";
 
 /**
  * @openapi
@@ -94,7 +94,7 @@ export async function POST(
     }
     const membership: Membership = {
       ...membershipInvitation,
-      membership_id: v4(),
+      membership_id: crypto.randomUUID(),
       membership_account_id: product.account_id,
       repository_id: product.product_id,
       state: MembershipState.Invited,

@@ -20,7 +20,7 @@ import { getPageSession } from "../api/utils";
 import { accountsTable, membershipsTable } from "../clients";
 import { FormState } from "@/components/core/DynamicForm";
 import { redirect } from "next/navigation";
-import { v4 } from "uuid";
+import { randomUUID } from "crypto";
 
 /**
  * Server action to record email verification timestamp
@@ -155,7 +155,7 @@ export async function createAccount(
       role: MembershipRole.Owners,
       state: MembershipState.Member,
       state_changed: new Date().toISOString(),
-      membership_id: v4(),
+      membership_id: randomUUID(),
       membership_account_id: account.account_id,
     });
   }

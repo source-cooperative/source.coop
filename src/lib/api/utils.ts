@@ -14,6 +14,7 @@
  * @requires next
  * @requires @/utils/logger
  * @requires zod
+ * @requires crypto
  * @requires @/api/authz
  * @requires @/api/db
  *
@@ -27,7 +28,7 @@
  * const adminStatus = isAdmin(session);
  */
 
-import { Actions, UserSession } from "@/types";
+import { Account, Actions, UserSession } from "@/types";
 import {
   apiKeysTable,
   accountsTable,
