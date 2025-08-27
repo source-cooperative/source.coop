@@ -28,10 +28,7 @@ export enum AccountFlags {
   CREATE_ORGANIZATIONS = "create_organizations",
 }
 
-export const DEFAULT_INDIVIDUAL_FLAGS: AccountFlags[] = [
-  AccountFlags.CREATE_REPOSITORIES,
-  AccountFlags.CREATE_ORGANIZATIONS,
-];
+export const DEFAULT_INDIVIDUAL_FLAGS: AccountFlags[] = [];
 
 export const DEFAULT_ORGANIZATION_FLAGS: AccountFlags[] = [];
 
