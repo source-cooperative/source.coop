@@ -11,6 +11,8 @@ import { useEffect } from "react";
  * credentials: https://github.com/vercel/next.js/issues/65769
  */
 export function OnboardingCheck({ account }: { account?: Account }) {
+  const pathname = usePathname();
+
   useEffect(() => {
     if (pathname !== "/onboarding" && !account) {
       redirect("/onboarding");
@@ -19,9 +21,7 @@ export function OnboardingCheck({ account }: { account?: Account }) {
     if (pathname === "/onboarding" && account) {
       redirect("/");
     }
-  }, []);
-
-  const pathname = usePathname();
+  }, [account, pathname]);
 
   return null;
 }
