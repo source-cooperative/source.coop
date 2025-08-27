@@ -20,6 +20,7 @@ export function LoginButton({ session }: LoginButtonProps) {
 
   useEffect(() => {
     if (!session || session?.account) return;
+    console.log({ pathname, session, router });
     if (pathname !== "/onboarding") {
       router.push("/onboarding");
     }
