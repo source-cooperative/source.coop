@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useState } from "react";
 import { ProfileAvatar } from "@/components/features/profiles/ProfileAvatar";
 import { ChevronDownIcon } from "@radix-ui/react-icons";
-import styles from "./Navigation.module.css";
 import { Account } from "@/types/account";
 
 export function AccountDropdown({ account }: { account: Account }) {
@@ -17,7 +16,10 @@ export function AccountDropdown({ account }: { account: Account }) {
           <ProfileAvatar account={account} size="2" />
           <Text>{account.name}</Text>
           <ChevronDownIcon
-            className={styles.chevron}
+            style={{
+              transition: "transform 0.3s ease",
+              transform: isOpen ? "rotate(180deg)" : "rotate(0deg)"
+            }}
             data-state={isOpen ? "open" : "closed"}
           />
         </Flex>

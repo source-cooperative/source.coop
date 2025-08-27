@@ -1,6 +1,5 @@
 import { ObjectDetails } from "./object-browser/ObjectDetails";
 import { DirectoryList } from "./object-browser/DirectoryList";
-import "./ObjectBrowser.module.css";
 import { ProductObject } from "@/types/product_object";
 import { DataConnection, Product, ProductMirror } from "@/types";
 import { Card, Box } from "@radix-ui/themes";
@@ -100,9 +99,9 @@ export async function ObjectBrowser({
     );
   }
 
-  // For directory view, show the contents of the current directory
   return (
     <Card>
+      <Box p="4">
       <SectionHeader title="Product Contents">
         <Box
           style={{
@@ -117,12 +116,12 @@ export async function ObjectBrowser({
           />
         </Box>
       </SectionHeader>
-
-      <DirectoryList
-        items={items}
-        currentPath={currentPath}
-        product={product}
-      />
+        <DirectoryList
+          items={items}
+          currentPath={currentPath}
+          product={product}
+        />
+      </Box>
     </Card>
   );
 }

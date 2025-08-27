@@ -19,6 +19,33 @@ export { metadata };
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                function updateFavicon() {
+                  const isDark = document.documentElement.classList.contains('dark');
+                  const favicon = document.querySelector('link[rel="icon"]');
+                  if (favicon) {
+                    favicon.href = isDark ? '/favicon-dark.ico' : '/favicon.ico';
+                  }
+                }
+                
+                // Update on theme change
+                const observer = new MutationObserver(updateFavicon);
+                observer.observe(document.documentElement, {
+                  attributes: true,
+                  attributeFilter: ['class']
+                });
+                
+                // Initial update
+                updateFavicon();
+              })();
+            `,
+          }}
+        />
+      </head>
       <body className={ibmPlexSans.variable}>
         <ThemeProvider
           attribute="class"
@@ -28,7 +55,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         >
           <NextTopLoader />
           <SessionProvider>
-            <Box style={{ minHeight: "100vh" }}>
+            <Box 
+              style={{ 
+                minHeight: "100vh",
+                background: "var(--gray-1)"
+              }}
+            >
               {/* <Banner /> */}
               <Suspense>
                 <Navigation />

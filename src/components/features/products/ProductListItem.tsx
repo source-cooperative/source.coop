@@ -5,7 +5,6 @@ import type { Product } from "@/types";
 import { DateText } from "@/components/display";
 import { Box, Text, Badge, Heading } from "@radix-ui/themes";
 import { TagList } from "./TagList";
-import styles from "./ProductList.module.css";
 
 interface ProductListItemProps {
   product: Product;
@@ -24,9 +23,23 @@ export function ProductListItem({ product, isSelected }: ProductListItemProps) {
 
   return (
     <Box
-      className={styles.item}
+      asChild
       data-selected={isSelected}
       aria-current={isSelected ? "page" : undefined}
+      style={{
+        textDecoration: "none",
+        color: "inherit",
+        display: "block",
+        padding: "var(--space-4)",
+        borderRadius: "var(--radius-3)",
+          border: "1px solid var(--gray-5)",
+  background: "var(--gray-1)",
+        transition: "border-color 0.15s ease-in-out",
+        outline: "2px solid transparent",
+        outlineOffset: "-1px",
+        marginBottom: "var(--space-4)",
+        contain: "content"
+      }}
     >
       <article>
         <Link href={`/${product.account_id}/${product.product_id}`}>
@@ -41,7 +54,15 @@ export function ProductListItem({ product, isSelected }: ProductListItemProps) {
           </Text>
         )}
 
-        <Box className={styles.metadata}>
+        <Box
+          style={{
+            display: "flex",
+            gap: "1rem",
+            alignItems: "center",
+            fontSize: "0.875rem",
+            color: "var(--gray-11)"
+          }}
+        >
           {product.account?.name && (
             <>
               <Text size="1" color="gray">

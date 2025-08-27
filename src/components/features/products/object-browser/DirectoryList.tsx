@@ -13,7 +13,6 @@ import { MonoText } from "@/components/core";
 import type { FileNode } from "./utils";
 import type { Product } from "@/types";
 import { formatFileSize } from "./utils";
-import styles from "../ObjectBrowser.module.css";
 
 interface DirectoryListProps {
   items: FileNode[];
@@ -74,7 +73,15 @@ function DirectoryRow({
     <Box key={item.path} style={wrapperStyle}>
       <Link
         href={href}
-        className={styles.item}
+        style={{
+          display: "block",
+          padding: "var(--space-0)",
+          color: "var(--gray-11)",
+          textDecoration: "underline",
+          transition: "background-color 100ms ease-in-out, outline-color 100ms ease-in-out",
+          outline: "2px solid transparent",
+          outlineOffset: "-1px"
+        }}
         title={item.name}
         ref={(el: HTMLAnchorElement | null) => {
           if (el && itemRefs) itemRefs.current[index] = el;
@@ -179,7 +186,6 @@ export function DirectoryList({
     >
       {showScrollIndicator && (
         <Box
-          className={styles.scrollIndicator}
           style={{
             position: "fixed",
             bottom: "8px",
@@ -193,6 +199,7 @@ export function DirectoryList({
             alignItems: "center",
             gap: "4px",
             pointerEvents: "none",
+            animation: "bounce 1s infinite",
           }}
         >
           <Text size="1" color="gray">

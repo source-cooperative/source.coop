@@ -24,7 +24,8 @@ export function ProfileAvatar({ account, size = '6' }: ProfileAvatarProps) {
     }
     
     // Use default organization icon for organizations
-    return 'https://source.coop/images/default-org.png';
+    // TODO: Add a local default organization avatar image
+    return undefined; // Let the Avatar component use the fallback
   };
 
   return (

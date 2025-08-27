@@ -15,7 +15,7 @@ export default function NotFound() {
         <LinkBreak2Icon 
           width={48} 
           height={48} 
-          style={{ color: 'var(--gray-8)' }}
+          style={{ color: 'var(--color-text-subtle)' }}
         />
         
         <Heading size="8" mt="5" align="center">

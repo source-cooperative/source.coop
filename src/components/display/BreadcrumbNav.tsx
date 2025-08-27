@@ -16,7 +16,7 @@ export function BreadcrumbNav({ path, fileName, baseUrl = "" }: BreadcrumbNavPro
 
   // Create link styling that doesn't affect layout
   const linkStyle = {
-    color: "var(--gray-11)",
+            color: "var(--gray-11)",
     textDecorationThickness: "1px",
   };
 

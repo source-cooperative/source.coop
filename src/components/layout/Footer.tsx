@@ -9,7 +9,14 @@ export function Footer() {
   const pathname = usePathname();
 
   return (
-    <Box py="4" mt="6" style={{ borderTop: "1px solid var(--gray-5)" }}>
+    <Box 
+      py="4" 
+      mt="6" 
+      style={{ 
+          borderTop: "1px solid var(--gray-5)",
+  background: "var(--gray-1)"
+      }}
+    >
       <Container size="4">
         <Box>
           <Box mb="3">

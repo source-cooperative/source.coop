@@ -16,7 +16,7 @@ function RadixTheme({ children }: { children: React.ReactNode }) {
   // Common theme properties
   const themeProps = {
     accentColor: "gray" as const,
-    grayColor: "gray" as const,
+    grayColor: "olive" as const,
     radius: "none" as const,
     scaling: "110%" as const
   };

@@ -1,7 +1,6 @@
 import { DataList, Flex, IconButton, Tooltip } from "@radix-ui/themes";
 import { CopyIcon, CheckIcon } from "@radix-ui/react-icons";
 import { MonoText } from "@/components/core";
-import styles from "../ObjectBrowser.module.css";
 
 interface DataListItemProps {
   label: string;
@@ -26,7 +25,15 @@ export function DataListItem({
       <DataList.Value>
         <Flex align="center" gap="2">
           <MonoText
-            className={styles.selectableText}
+            style={{
+              padding: "var(--space-1)",
+              cursor: "text",
+              color: "inherit",
+              textDecoration: "none",
+              transition: "background-color 100ms ease-in-out, outline-color 100ms ease-in-out",
+              outline: "2px solid transparent",
+              outlineOffset: "-1px"
+            }}
             data-selected={selectedDataItem === itemKey}
             data-selectable="true"
             data-item={itemKey}

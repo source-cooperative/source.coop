@@ -123,5 +123,5 @@ export const middleware = async (request: NextRequest) => {
 };
 
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|logo|favicon).*)"],
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|favicon-dark.ico|icon.svg|icon-dark.svg|icon-192.png|icon-512.png|apple-touch-icon.png|logo).*)"],
 };
