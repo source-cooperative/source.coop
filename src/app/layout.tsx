@@ -16,7 +16,11 @@ const ibmPlexSans = IBM_Plex_Sans({
 
 export { metadata };
 
-export default async function RootLayout({ children }: { children: React.ReactNode }) {
+interface RootLayoutProps {
+  children: React.ReactNode;
+}
+
+export default async function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={ibmPlexSans.variable}>
