@@ -1,7 +1,7 @@
 "use client";
 import { Button, Link } from "@radix-ui/themes";
 import { usePathname, useRouter } from "next/navigation";
-import { useLayoutEffect } from "react";
+import { useEffect, useState } from "react";
 import { UserSession } from "@/types";
 import { CONFIG } from "@/lib/config";
 
@@ -17,14 +17,17 @@ interface LoginButtonProps {
 export function LoginButton({ session }: LoginButtonProps) {
   const router = useRouter();
   const pathname = usePathname();
+  // Avoid redirection loop bug
+  const [hasRedirected, setHasRedirected] = useState(false);
 
-  useLayoutEffect(() => {
-    if (!session || session?.account) return;
+  useEffect(() => {
+    if (!session || session?.account || hasRedirected) return;
     console.log({ pathname, session, router });
     if (pathname !== "/onboarding") {
       router.push("/onboarding");
+      setHasRedirected(true);
     }
-  }, [pathname, session, router]);
+  }, [pathname, session, router, hasRedirected]);
 
   return (
     <Link href={CONFIG.auth.routes.login}>
