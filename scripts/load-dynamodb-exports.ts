@@ -27,6 +27,8 @@ interface MigrationConfig {
   sourceProfile: string;
   targetProfile: string;
   sourceAccountId: string; // Hardcoded to 939788573396
+  targetIsLocal?: boolean; // New flag for local DynamoDB
+  localEndpoint?: string; // Local DynamoDB endpoint URL
 }
 
 // Product conversion function (for repository tables)
@@ -370,12 +372,11 @@ async function processDataFile(dataBody: any): Promise<any[]> {
     }
 
     gunzip.on("end", () => {
-      console.log(`\n📊 Parse Results:`);
-      console.log(`   Successful parses: ${parseSuccessCount}`);
-      console.log(`   Parse errors: ${parseErrorCount}`);
-      console.log(`   Total items extracted: ${items.length}`);
-      console.log(`   Buffer remaining: ${buffer.length} characters`);
-
+      if (parseErrorCount > 0) {
+        console.log(`\n❌ Parse Errors:`);
+        console.log(`   Successful parses: ${parseSuccessCount}`);
+        console.log(`   Parse errors: ${parseErrorCount}`);
+      }
       resolve(items);
     });
 
@@ -406,9 +407,6 @@ async function processS3Export(
     }
 
     const manifestText = await manifestResponse.Body.transformToString();
-    console.log(
-      `   Manifest content preview: ${manifestText.substring(0, 200)}...`
-    );
 
     // Handle JSONL format (multiple JSON objects on separate lines)
     const manifests = manifestText
@@ -419,7 +417,6 @@ async function processS3Export(
 
     // Single data file format
     for (const manifest of manifests) {
-      console.log(`\nProcessing manifest with ${manifest.itemCount} items...`);
       const dataResponse = await s3Client.send(
         new GetObjectCommand({ Bucket: bucket, Key: manifest.dataFileS3Key })
       );
@@ -520,8 +517,15 @@ async function writeToDynamoDB(
 
 // Main migration function
 async function migrateTable(config: MigrationConfig) {
-  const { tableName, stage, sourceProfile, targetProfile, sourceAccountId } =
-    config;
+  const {
+    tableName,
+    stage,
+    sourceProfile,
+    targetProfile,
+    sourceAccountId,
+    targetIsLocal = false,
+    localEndpoint = "http://localhost:8000",
+  } = config;
 
   // Determine target table name and region
   const isRepositoryTable = tableName.endsWith("-repositories");
@@ -567,10 +571,26 @@ async function migrateTable(config: MigrationConfig) {
     credentials: fromIni({ profile: sourceProfile }),
   });
 
-  const targetDynamoClient = new DynamoDBClient({
-    region: targetRegion,
-    credentials: fromIni({ profile: targetProfile }),
-  });
+  // Initialize target DynamoDB client based on whether it's local or AWS
+  let targetDynamoClient: DynamoDBClient;
+
+  if (targetIsLocal) {
+    console.log(`   Target: Local DynamoDB at ${localEndpoint}`);
+    targetDynamoClient = new DynamoDBClient({
+      region: "local",
+      endpoint: localEndpoint,
+      credentials: {
+        accessKeyId: "local",
+        secretAccessKey: "local",
+      },
+    });
+  } else {
+    console.log(`   Target: AWS DynamoDB in ${targetRegion}`);
+    targetDynamoClient = new DynamoDBClient({
+      region: targetRegion,
+      credentials: fromIni({ profile: targetProfile }),
+    });
+  }
 
   const targetDocClient = DynamoDBDocumentClient.from(targetDynamoClient);
 
@@ -626,7 +646,9 @@ async function migrateTable(config: MigrationConfig) {
       stage,
       targetTableName,
       targetRegion,
-      items.length
+      items.length,
+      targetIsLocal,
+      localEndpoint
     );
     if (!confirmed) {
       console.log("❌ Migration cancelled by user");
@@ -651,7 +673,9 @@ async function confirmMigration(
   stage: string,
   targetTable: string,
   targetRegion: string,
-  itemCount: number
+  itemCount: number,
+  targetIsLocal: boolean,
+  localEndpoint: string
 ): Promise<boolean> {
   const rl = readline.createInterface({
     input: process.stdin,
@@ -663,6 +687,10 @@ async function confirmMigration(
   console.log(`   Target: ${targetTable} (${targetRegion})`);
   console.log(`   Items: ${itemCount}`);
   console.log(`   Stage: ${stage}`);
+  if (targetIsLocal) {
+    console.log(`🏡 LocalMode: true`);
+    console.log(`   LocalEndpoint: ${localEndpoint}`);
+  }
 
   return new Promise((resolve) => {
     rl.question(
@@ -679,9 +707,9 @@ async function confirmMigration(
 async function main() {
   const args = process.argv.slice(2);
 
-  if (args.length !== 4) {
+  if (args.length < 4 || args.length > 6) {
     console.log(
-      "Usage: npm run migrate <table-name> <stage> <source-profile> <target-profile>"
+      "Usage: npm run migrate <table-name> <stage> <source-profile> <target-profile> [--endpoint <url>]"
     );
     console.log("");
     console.log("Examples:");
@@ -689,27 +717,46 @@ async function main() {
     console.log(
       "  npm run migrate sc-repositories prod radiantearth source-proxy"
     );
+    console.log("  npm run migrate sc-accounts local radiantearth local");
+    console.log(
+      "  npm run migrate sc-accounts local radiantearth local --endpoint http://localhost:8000"
+    );
     console.log("");
     console.log("Arguments:");
     console.log(
       "  table-name        Source table (e.g., sc-accounts, sc-repositories)"
     );
-    console.log("  stage             Target stage (dev or prod)");
+    console.log(
+      "  stage             Target stage (dev, prod, or local) - local is only valid when target-profile is 'local'"
+    );
     console.log("  source-profile    AWS profile for SOURCE account (exports)");
-    console.log("  target-profile    AWS profile for TARGET account (tables)");
+    console.log(
+      "  target-profile    AWS profile for TARGET account (or 'local' for local DynamoDB)"
+    );
     console.log("");
-    console.log("Stages:");
+    console.log("Options:");
+    console.log(
+      "  --endpoint <url>  Local DynamoDB endpoint (default: http://localhost:8000)"
+    );
+    console.log("");
+    console.log("Stages (for AWS targets):");
     console.log("  dev  -> Development (us-east-1)");
     console.log("  prod -> Production (us-west-2)");
+    console.log(
+      "  local -> Local development (only valid when target-profile is 'local')"
+    );
     process.exit(1);
   }
 
-  const [tableName, stage, sourceProfile, targetProfile] = args;
+  const [tableName, stage, sourceProfile, targetProfile, ...options] = args;
 
-  if (!["dev", "prod"].includes(stage)) {
-    console.error('Error: Stage must be "dev" or "prod"');
-    process.exit(1);
-  }
+  // Parse options - check if targetProfile is 'local' for local DynamoDB
+  const targetIsLocal = targetProfile === "local";
+  const localEndpointIndex = options.indexOf("--endpoint");
+  const localEndpoint =
+    localEndpointIndex !== -1 && options[localEndpointIndex + 1]
+      ? options[localEndpointIndex + 1]
+      : "http://localhost:8000";
 
   const config: MigrationConfig = {
     tableName,
@@ -717,6 +764,8 @@ async function main() {
     sourceProfile,
     targetProfile,
     sourceAccountId: "939788573396", // Hardcoded source account ID
+    targetIsLocal,
+    localEndpoint,
   };
 
   try {
