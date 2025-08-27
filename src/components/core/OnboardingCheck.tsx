@@ -14,6 +14,7 @@ export function OnboardingCheck({ account }: { account?: Account }) {
   const pathname = usePathname();
 
   useEffect(() => {
+    console.log({ pathname, account });
     if (pathname !== "/onboarding" && !account) {
       redirect("/onboarding");
     }
