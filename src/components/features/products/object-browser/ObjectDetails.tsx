@@ -7,8 +7,9 @@ import {
   Flex,
   IconButton,
   Tooltip,
+  Button,
 } from "@radix-ui/themes";
-import { CopyIcon, CheckIcon } from "@radix-ui/react-icons";
+import { CopyIcon, CheckIcon, DownloadIcon } from "@radix-ui/react-icons";
 import type { ProductObject } from "@/types";
 import type { Product } from "@/types";
 import { SectionHeader } from "@/components/core";
@@ -87,6 +88,8 @@ export function ObjectDetails({
       }, 1500);
     });
   };
+
+
 
   return (
     <Card>
@@ -206,6 +209,21 @@ export function ObjectDetails({
           />
         )}
       </DataList.Root>
+
+      {/* Download Button */}
+      <Box mt="4" style={{ borderTop: "1px solid var(--gray-5)", paddingTop: "var(--space-4)" }}>
+        <Button asChild size="3">
+          <a 
+            href={`https://data.source.coop/${product.account_id}/${product.product_id}/${selectedObject.path}`}
+            download={fileName}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <DownloadIcon />
+            Download {fileName}
+          </a>
+        </Button>
+      </Box>
     </Card>
   );
 }
