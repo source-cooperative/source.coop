@@ -8,7 +8,6 @@ import styles from "./Navigation.module.css";
 import { Account } from "@/types/account";
 import { Skeleton } from "../core/Skeleton";
 import { CONFIG } from "@/lib/config";
-import { useRouter } from "next/navigation";
 import { LOGGER } from "@/lib";
 
 export function AccountDropdownSkeleton() {
@@ -22,7 +21,6 @@ export function AccountDropdownSkeleton() {
 
 export function AccountDropdown({ account }: { account: Account }) {
   const [isOpen, setIsOpen] = useState(false);
-  const router = useRouter();
   const handleLogout = async () => {
     const response = await fetch(CONFIG.auth.routes.logout, {
       method: "GET",
