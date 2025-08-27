@@ -1,5 +1,5 @@
 "use client";
-import { Flex, DropdownMenu, Text, Box } from "@radix-ui/themes";
+import { Flex, DropdownMenu, Text, Box, Button } from "@radix-ui/themes";
 import Link from "next/link";
 import { useState } from "react";
 import { ProfileAvatar } from "@/components/features/profiles/ProfileAvatar";
@@ -7,19 +7,40 @@ import { ChevronDownIcon } from "@radix-ui/react-icons";
 import styles from "./Navigation.module.css";
 import { Account } from "@/types/account";
 import { Skeleton } from "../core/Skeleton";
+import { CONFIG } from "@/lib/config";
+import { useRouter } from "next/navigation";
+import { LOGGER } from "@/lib";
 
 export function AccountDropdownSkeleton() {
   return (
     <Flex align="center" gap="2">
       <Skeleton width={36} height={36} className="rounded-full" />
       <Skeleton width={96} height={32} />
-      <Skeleton width={32} height={32} />
     </Flex>
   );
 }
 
 export function AccountDropdown({ account }: { account: Account }) {
   const [isOpen, setIsOpen] = useState(false);
+  const router = useRouter();
+  const handleLogout = async () => {
+    const response = await fetch(CONFIG.auth.routes.logout, {
+      method: "GET",
+      credentials: "include",
+    });
+    if (!response.ok) {
+      LOGGER.error(
+        `Failed to logout: ${response.status} ${response.statusText}`,
+        {
+          operation: "logout",
+          metadata: { response },
+        }
+      );
+      return;
+    }
+    const { logout_url } = await response.json();
+    window.location.href = logout_url;
+  };
 
   return (
     <DropdownMenu.Root open={isOpen} onOpenChange={setIsOpen}>
@@ -51,9 +72,7 @@ export function AccountDropdown({ account }: { account: Account }) {
         </DropdownMenu.Item>
         <DropdownMenu.Separator />
         <DropdownMenu.Item color="red">
-          <Link className="underline block w-full" href={`/auth/logout`}>
-            Logout
-          </Link>
+          <Text onClick={handleLogout}>Logout</Text>
         </DropdownMenu.Item>
       </DropdownMenu.Content>
     </DropdownMenu.Root>
