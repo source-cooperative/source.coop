@@ -8,8 +8,7 @@ Source Cooperative uses Ory Kratos for authentication, following a server-first 
 1. **Environment Variables** (in `.env.local`):
 ```env
 # Ory project configuration
-NEXT_PUBLIC_ORY_SDK_URL=your-project-api-url
-NEXT_PUBLIC_LOCAL_ORY_SDK_URL=http://localhost:3000
+NEXT_PUBLIC_ORY_SDK_URL=https://{unique-subdomain}.projects.oryapis.com
 ORY_PROJECT_API_KEY=your-access-token
 ```
 
