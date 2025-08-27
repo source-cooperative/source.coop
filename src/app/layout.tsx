@@ -6,7 +6,6 @@ import NextTopLoader from "nextjs-toploader";
 import { IBM_Plex_Sans } from "next/font/google";
 import { Box } from "@radix-ui/themes";
 import { Navigation, Footer /*, Banner*/ } from "@/components/layout";
-import { Suspense } from "react";
 import { metadata } from "./metadata";
 const ibmPlexSans = IBM_Plex_Sans({
   subsets: ["latin"],
@@ -34,9 +33,7 @@ export default async function RootLayout({ children }: RootLayoutProps) {
           <SessionProvider>
             <Box style={{ minHeight: "100vh" }}>
               {/* <Banner /> */}
-              <Suspense>
-                <Navigation />
-              </Suspense>
+              <Navigation />
               <Box asChild my="6">
                 <main>{children}</main>
               </Box>
