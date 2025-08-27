@@ -372,12 +372,11 @@ async function processDataFile(dataBody: any): Promise<any[]> {
     }
 
     gunzip.on("end", () => {
-      console.log(`\n📊 Parse Results:`);
-      console.log(`   Successful parses: ${parseSuccessCount}`);
-      console.log(`   Parse errors: ${parseErrorCount}`);
-      console.log(`   Total items extracted: ${items.length}`);
-      console.log(`   Buffer remaining: ${buffer.length} characters`);
-
+      if (parseErrorCount > 0) {
+        console.log(`\n❌ Parse Errors:`);
+        console.log(`   Successful parses: ${parseSuccessCount}`);
+        console.log(`   Parse errors: ${parseErrorCount}`);
+      }
       resolve(items);
     });
 
@@ -408,9 +407,6 @@ async function processS3Export(
     }
 
     const manifestText = await manifestResponse.Body.transformToString();
-    console.log(
-      `   Manifest content preview: ${manifestText.substring(0, 200)}...`
-    );
 
     // Handle JSONL format (multiple JSON objects on separate lines)
     const manifests = manifestText
@@ -421,7 +417,6 @@ async function processS3Export(
 
     // Single data file format
     for (const manifest of manifests) {
-      console.log(`\nProcessing manifest with ${manifest.itemCount} items...`);
       const dataResponse = await s3Client.send(
         new GetObjectCommand({ Bucket: bucket, Key: manifest.dataFileS3Key })
       );
@@ -651,7 +646,9 @@ async function migrateTable(config: MigrationConfig) {
       stage,
       targetTableName,
       targetRegion,
-      items.length
+      items.length,
+      targetIsLocal,
+      localEndpoint
     );
     if (!confirmed) {
       console.log("❌ Migration cancelled by user");
@@ -676,7 +673,9 @@ async function confirmMigration(
   stage: string,
   targetTable: string,
   targetRegion: string,
-  itemCount: number
+  itemCount: number,
+  targetIsLocal: boolean,
+  localEndpoint: string
 ): Promise<boolean> {
   const rl = readline.createInterface({
     input: process.stdin,
@@ -688,6 +687,10 @@ async function confirmMigration(
   console.log(`   Target: ${targetTable} (${targetRegion})`);
   console.log(`   Items: ${itemCount}`);
   console.log(`   Stage: ${stage}`);
+  if (targetIsLocal) {
+    console.log(`🏡 LocalMode: true`);
+    console.log(`   LocalEndpoint: ${localEndpoint}`);
+  }
 
   return new Promise((resolve) => {
     rl.question(
