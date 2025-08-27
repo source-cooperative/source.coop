@@ -5,18 +5,25 @@ import {
   Heading,
   Flex,
   Link as RadixLink,
+  Table,
+  IconButton,
+  Tooltip,
 } from "@radix-ui/themes";
+import { CopyIcon, CheckIcon } from "@radix-ui/react-icons";
 import Link from "next/link";
 import type {
   IndividualAccount,
   OrganizationalAccount,
   Product,
+  APIKey,
 } from "@/types";
 import { ProfileAvatar } from "./ProfileAvatar";
 import { ProductsList } from "../products/ProductsList";
 import { WebsiteLink } from "./WebsiteLink";
 import { EmailVerificationStatus } from "./EmailVerificationStatus";
 import { IndividualProfileActions } from "./IndividualProfileActions";
+import { MonoText } from "@/components/core";
+import { useState } from "react";
 
 interface IndividualProfileProps {
   account: IndividualAccount;
@@ -24,6 +31,7 @@ interface IndividualProfileProps {
   contributedProducts: Product[];
   organizations: OrganizationalAccount[];
   showWelcome?: boolean;
+  accessKeys?: APIKey[];
 }
 
 export function IndividualProfile({
@@ -32,7 +40,17 @@ export function IndividualProfile({
   contributedProducts,
   organizations,
   showWelcome = false,
+  accessKeys = [],
 }: IndividualProfileProps) {
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+
+  const copyToClipboard = (text: string, keyId: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopiedKey(keyId);
+      setTimeout(() => setCopiedKey(null), 1500);
+    });
+  };
+
   return (
     <Box>
       <IndividualProfileActions account={account} showWelcome={showWelcome} />
@@ -123,6 +141,65 @@ export function IndividualProfile({
           </Grid>
         </Box>
       )}
+
+      <Box mb="6">
+        <Heading size="4" mb="2">
+          Access Keys (legacy)
+        </Heading>
+                 {accessKeys.length > 0 ? (
+           <Table.Root variant="surface">
+             <Table.Header>
+               <Table.Row>
+                 <Table.ColumnHeaderCell>Account</Table.ColumnHeaderCell>
+                 <Table.ColumnHeaderCell>Product</Table.ColumnHeaderCell>
+                 <Table.ColumnHeaderCell>Key</Table.ColumnHeaderCell>
+               </Table.Row>
+             </Table.Header>
+             <Table.Body>
+               {accessKeys.map((key) => (
+                 <Table.Row key={key.access_key_id}>
+                   <Table.Cell>
+                     <RadixLink asChild>
+                       <Link href={`/${key.account_id}`}>
+                         {key.account_id}
+                       </Link>
+                     </RadixLink>
+                   </Table.Cell>
+                   <Table.Cell>
+                     {key.repository_id ? (
+                       <RadixLink asChild>
+                         <Link href={`/${key.account_id}/${key.repository_id}`}>
+                           {key.repository_id}
+                         </Link>
+                       </RadixLink>
+                     ) : (
+                       <Text color="gray">-</Text>
+                     )}
+                   </Table.Cell>
+                   <Table.Cell>
+                     <Flex align="center" gap="2">
+                       <MonoText>{key.access_key_id}</MonoText>
+                       <Tooltip content="Copy to clipboard">
+                         <IconButton
+                           size="1"
+                           variant="ghost"
+                           color={copiedKey === key.access_key_id ? "green" : "gray"}
+                           onClick={() => copyToClipboard(key.access_key_id, key.access_key_id)}
+                           aria-label={`Copy ${key.access_key_id}`}
+                         >
+                           {copiedKey === key.access_key_id ? <CheckIcon /> : <CopyIcon />}
+                         </IconButton>
+                       </Tooltip>
+                     </Flex>
+                   </Table.Cell>
+                 </Table.Row>
+               ))}
+             </Table.Body>
+           </Table.Root>
+         ) : (
+           <Text>No access keys found.</Text>
+         )}
+      </Box>
 
       {ownedProducts.length > 0 && (
         <Box mb="6">
