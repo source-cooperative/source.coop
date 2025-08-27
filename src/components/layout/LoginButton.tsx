@@ -1,7 +1,7 @@
 "use client";
 import { Button, Link } from "@radix-ui/themes";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useLayoutEffect } from "react";
 import { UserSession } from "@/types";
 import { CONFIG } from "@/lib/config";
 
@@ -18,7 +18,7 @@ export function LoginButton({ session }: LoginButtonProps) {
   const router = useRouter();
   const pathname = usePathname();
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!session || session?.account) return;
     console.log({ pathname, session, router });
     if (pathname !== "/onboarding") {
