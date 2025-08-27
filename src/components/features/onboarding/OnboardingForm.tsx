@@ -47,6 +47,10 @@ export function OnboardingForm() {
 
   if (!session && !isSessionLoading) {
     // If no session, redirect to login
+    console.log("No session, redirecting to login", {
+      session,
+      isSessionLoading,
+    });
     router.push(CONFIG.auth.routes.login);
   }
 
