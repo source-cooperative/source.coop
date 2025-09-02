@@ -26,7 +26,7 @@ import { ProfileLocation } from "./ProfileLocation";
 interface OrganizationProfileProps {
   account: OrganizationalAccount;
   products: Product[];
-  owner: IndividualAccount | null;
+  owners: IndividualAccount[];
   admins: IndividualAccount[];
   members: IndividualAccount[];
 }
@@ -34,14 +34,16 @@ interface OrganizationProfileProps {
 export function OrganizationProfile({
   account,
   products,
-  owner,
+  owners,
   admins,
   members,
 }: OrganizationProfileProps) {
   const isAdmin = admins.some(
     (admin) => admin.account_id === account.account_id
   );
-  const isOwner = owner?.account_id === account.account_id;
+  const isOwner = !!owners.find(
+    (owner) => owner.account_id === account.account_id
+  );
   const canEdit = isAdmin || isOwner;
 
   return (
@@ -120,7 +122,7 @@ export function OrganizationProfile({
             Members
           </Heading>
           <OrganizationMembers
-            owner={owner}
+            owners={owners}
             admins={admins}
             members={members}
           />
