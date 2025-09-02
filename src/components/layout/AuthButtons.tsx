@@ -1,6 +1,8 @@
 import { AccountDropdown } from "./AccountDropdown";
 import { getPageSession } from "@/lib/api/utils";
-import { LoginButton } from "./LoginButton";
+import { Button, Callout, Link } from "@radix-ui/themes";
+import { CONFIG } from "@/lib/config";
+import { ExclamationTriangleIcon } from "@radix-ui/react-icons";
 
 export async function AuthButtons() {
   const session = await getPageSession();
@@ -9,5 +11,23 @@ export async function AuthButtons() {
     return <AccountDropdown account={session.account} />;
   }
 
-  return <LoginButton session={session} />;
+  if (session && !session.account) {
+    return (
+      <Callout.Root color="yellow">
+        <Callout.Icon>
+          <ExclamationTriangleIcon />
+        </Callout.Icon>
+        <Callout.Text>
+          You don't have a profile yet. Please click{" "}
+          <Link href="/onboarding">here</Link> to complete your profile.
+        </Callout.Text>
+      </Callout.Root>
+    );
+  }
+
+  return (
+    <Link href={CONFIG.auth.routes.login}>
+      <Button>Log In / Register</Button>
+    </Link>
+  );
 }

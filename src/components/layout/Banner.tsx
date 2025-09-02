@@ -1,9 +1,11 @@
 "use client";
 
 import { Box, Text } from "@radix-ui/themes";
-import Link from "next/link";
 
-export function Banner() {
+interface BannerProps {
+  children: React.ReactNode;
+}
+export function Banner({ children }: BannerProps) {
   return (
     <Box
       style={{
@@ -12,18 +14,7 @@ export function Banner() {
         textAlign: "center",
       }}
     >
-      <Text size="2">
-        NOTE: We are rebuilding Source Cooperative.{" "}
-        <Link
-          href="https://survey.source.coop"
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{ textDecoration: "underline" }}
-        >
-          Please take our survey
-        </Link>{" "}
-        to guide our improvements.
-      </Text>
+      <Text size="2">{children}</Text>
     </Box>
   );
-} 
+}

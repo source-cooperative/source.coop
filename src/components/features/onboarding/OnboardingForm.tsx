@@ -192,8 +192,7 @@ export function OnboardingForm() {
       }
 
       // On success, redirect to profile page
-      await refetch();
-      router.push(`/${account_id}?welcome=true`);
+      window.location.href = `/${account_id}?welcome=true`;
     } catch (err: unknown) {
       LOGGER.error("Onboarding error", {
         operation: "OnboardingForm.handleSubmit",
@@ -205,7 +204,6 @@ export function OnboardingForm() {
           ? err.message
           : "An error occurred. Please try again."
       );
-    } finally {
       setLoading(false);
     }
   };
@@ -332,7 +330,7 @@ export function OnboardingForm() {
         error={error}
         isLoading={loading}
         submitDisabled={
-          usernameStatus === "taken" || usernameStatus === "checking"
+          usernameStatus === "taken" || usernameStatus === "checking" || loading
         }
       />
     </Box>
