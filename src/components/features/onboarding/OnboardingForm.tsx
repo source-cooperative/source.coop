@@ -1,14 +1,14 @@
-'use client';
+"use client";
 
-import { useState, useCallback, useEffect, useMemo } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { Flex, Text, Box, Callout } from '@radix-ui/themes';
-import { MonoText } from '@/components/core/MonoText';
-import { FormWrapper } from '@/components/core/Form';
-import { FormField } from '@/types/form';
-import debounce from 'lodash/debounce';
-import { InfoCircledIcon, CheckCircledIcon } from '@radix-ui/react-icons';
-import { VerificationSuccessCallout } from '@/components/features/auth/VerificationSuccessCallout';
+import { useState, useCallback, useEffect, useMemo } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Flex, Text, Box, Callout } from "@radix-ui/themes";
+import { MonoText } from "@/components/core/MonoText";
+import { FormWrapper } from "@/components/core/Form";
+import { FormField } from "@/types/form";
+import debounce from "lodash/debounce";
+import { InfoCircledIcon, CheckCircledIcon } from "@radix-ui/react-icons";
+import { VerificationSuccessCallout } from "@/components/features/auth/VerificationSuccessCallout";
 import { recordVerificationTimestamp } from "@/lib/actions/account";
 import { CONFIG, LOGGER } from "@/lib";
 import { useSession } from "@ory/elements-react/client";
@@ -44,11 +44,6 @@ export function OnboardingForm() {
     "pending" | "verified"
   >("pending");
   const { session, isLoading: isSessionLoading, refetch } = useSession();
-
-  if (!session && !isSessionLoading) {
-    // If no session, redirect to login
-    router.push(CONFIG.auth.routes.login);
-  }
 
   // Check session on mount
   useEffect(() => {
@@ -197,8 +192,7 @@ export function OnboardingForm() {
       }
 
       // On success, redirect to profile page
-      await refetch();
-      router.push(`/${account_id}?welcome=true`);
+      window.location.href = `/${account_id}?welcome=true`;
     } catch (err: unknown) {
       LOGGER.error("Onboarding error", {
         operation: "OnboardingForm.handleSubmit",
@@ -210,7 +204,6 @@ export function OnboardingForm() {
           ? err.message
           : "An error occurred. Please try again."
       );
-    } finally {
       setLoading(false);
     }
   };
@@ -337,9 +330,9 @@ export function OnboardingForm() {
         error={error}
         isLoading={loading}
         submitDisabled={
-          usernameStatus === "taken" || usernameStatus === "checking"
+          usernameStatus === "taken" || usernameStatus === "checking" || loading
         }
       />
     </Box>
   );
-} 
+}

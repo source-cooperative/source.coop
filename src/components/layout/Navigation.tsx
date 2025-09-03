@@ -1,14 +1,11 @@
-import { Container, Flex, Button } from "@radix-ui/themes";
-import Link from "next/link";
-import { CONFIG } from "@/lib";
-import { AccountDropdown } from "./AccountDropdown";
+import { Container, Flex } from "@radix-ui/themes";
 import { Logo } from "./Logo";
 import styles from "./Navigation.module.css";
-import { getPageSession } from "@/lib/api/utils";
+import { Suspense } from "react";
+import { AuthButtons } from "./AuthButtons";
+import { AccountDropdownSkeleton } from "./AccountDropdown";
 
 export async function Navigation() {
-  const session = await getPageSession();
-
   return (
     <nav className={styles.nav}>
       <Container>
@@ -16,13 +13,9 @@ export async function Navigation() {
           <Logo />
 
           <Flex gap="4" align="center">
-            {session?.account ? (
-              <AccountDropdown account={session.account} />
-            ) : (
-              <Link href={CONFIG.auth.routes.login}>
-                <Button>Log In / Register</Button>
-              </Link>
-            )}
+            <Suspense fallback={<AccountDropdownSkeleton />}>
+              <AuthButtons />
+            </Suspense>
           </Flex>
         </Flex>
       </Container>
