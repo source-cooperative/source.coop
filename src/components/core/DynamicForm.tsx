@@ -11,6 +11,11 @@ export interface FormField {
   required?: boolean;
   description?: string;
   placeholder?: string;
+  isValid?: boolean | null;
+  message?: React.ReactNode;
+  controlled?: boolean; // If true, this field will be controlled by the form
+  onValueChange?: (value: string) => void; // Callback for controlled fields
+  value?: string; // External controlled value
 }
 
 export interface FormState<T> {
@@ -29,6 +34,7 @@ interface DynamicFormProps<T> {
   submitButtonText?: string;
   hiddenFields?: Record<string, string>;
   className?: string;
+  disabled?: boolean;
 }
 
 const style: React.CSSProperties = {
@@ -48,6 +54,7 @@ export function DynamicForm<T>({
   submitButtonText = "Submit",
   hiddenFields = {},
   className,
+  disabled = false,
 }: DynamicFormProps<T>) {
   const [state, formAction, pending] = useActionState(action, {
     message: "",
@@ -55,6 +62,13 @@ export function DynamicForm<T>({
     fieldErrors: {},
     success: false,
   });
+
+  const handleControlledChange = (fieldName: string, value: string) => {
+    const field = fields.find((f) => f.name === fieldName);
+    if (field?.onValueChange) {
+      field.onValueChange(value);
+    }
+  };
   return (
     <Form action={formAction} className={className}>
       {/* Hidden fields */}
@@ -75,7 +89,19 @@ export function DynamicForm<T>({
                   name={field.name}
                   placeholder={field.placeholder}
                   required={field.required}
-                  defaultValue={(state.data.get(field.name) as string) || ""}
+                  {...(field.controlled
+                    ? {
+                        value:
+                          field.value ||
+                          (state.data.get(field.name) as string) ||
+                          "",
+                        onChange: (e) =>
+                          handleControlledChange(field.name, e.target.value),
+                      }
+                    : {
+                        defaultValue:
+                          (state.data.get(field.name) as string) || "",
+                      })}
                   style={{
                     ...style,
                     height: "7rem",
@@ -88,7 +114,16 @@ export function DynamicForm<T>({
                   name={field.name}
                   placeholder={field.placeholder}
                   required={field.required}
-                  defaultValue={(state.data.get(field.name) as string) || ""}
+                  {...(field.controlled
+                    ? {
+                        value: field.value || "",
+                        onChange: (e) =>
+                          handleControlledChange(field.name, e.target.value),
+                      }
+                    : {
+                        defaultValue:
+                          (state.data.get(field.name) as string) || "",
+                      })}
                   style={style}
                 />
               )}
@@ -99,6 +134,10 @@ export function DynamicForm<T>({
                 </Text>
               )}
 
+              {/* Real-time validation feedback */}
+              {field.message && <div>{field.message}</div>}
+
+              {/* Server-side validation errors */}
               {state.fieldErrors?.[field.name]?.map((error, index) => (
                 <Text size="1" color="red" key={`${field.name}-${index}`}>
                   {error}
@@ -110,7 +149,14 @@ export function DynamicForm<T>({
 
         <Flex mt="4" justify="end">
           <Flex direction="column" gap="2">
-            <Button size="3" type="submit" disabled={pending} loading={pending}>
+            <Button
+              size="3"
+              type="submit"
+              disabled={
+                pending || fields.some((field) => field.isValid === false)
+              }
+              loading={pending}
+            >
               {submitButtonText}
             </Button>
             {state?.message && (

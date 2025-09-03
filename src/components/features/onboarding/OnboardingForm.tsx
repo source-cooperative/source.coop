@@ -117,9 +117,10 @@ export function OnboardingForm() {
 
     setUsernameStatus("checking");
     try {
-      const response = await fetch(
-        `/api/accounts/check-username?username=${encodeURIComponent(value)}`
-      );
+      const response = await fetch(`/api/accounts/check-id`, {
+        method: "PUT",
+        body: JSON.stringify({ id: value }),
+      });
       const data: UsernameCheckResponse = await response.json();
       setUsernameStatus(data.available ? "available" : "taken");
     } catch (err) {
