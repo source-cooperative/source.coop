@@ -3,6 +3,8 @@ import { awsCredentialsProvider } from "@vercel/functions/oidc";
 
 const region = process.env.AWS_REGION || "us-east-1";
 
+// In dev, we use middleware to serve auth pages.
+// In production, we use auth.source.coop to serve auth pages.
 const frontendUrl = process.env.NEXT_PUBLIC_ORY_UI_URL || "";
 
 export const CONFIG = {
@@ -34,7 +36,6 @@ export const CONFIG = {
     accessToken: process.env.ORY_PROJECT_API_KEY || "",
 
     routes: {
-      // We use middleware to serve auth pages.
       // https://www.ory.sh/docs/reference/api#tag/frontend/operation/createBrowserLoginFlow
       login: `${frontendUrl}/self-service/login/browser`,
       // https://www.ory.sh/docs/reference/api#tag/frontend/operation/createBrowserLogoutFlow
