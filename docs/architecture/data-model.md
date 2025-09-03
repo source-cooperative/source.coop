@@ -59,13 +59,6 @@ interface ProductMirror {
     is_synced: boolean;
     error?: string;
   };
-  
-  // Monitoring
-  stats: {
-    total_objects: number;
-    total_size: number;
-    last_verified_at: string;
-  };
 }
 ```
 
