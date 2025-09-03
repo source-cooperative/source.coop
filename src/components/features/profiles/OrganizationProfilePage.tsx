@@ -43,27 +43,24 @@ export async function OrganizationProfilePage({
     ).map((account) => [account.account_id, account])
   );
 
-  const ownerMembership = memberships.find(
-    (membership) => membership.role === MembershipRole.Owners
-  );
-  const owner = ownerMembership
-    ? relatedUserAccounts.get(ownerMembership.account_id) || null
-    : null;
-
-  const adminMemberships = memberships.filter(
-    (membership) => membership.role === MembershipRole.Maintainers
-  );
-  const admins = adminMemberships
+  const owners = memberships
+    .filter((membership) => membership.role === MembershipRole.Owners)
     .map((membership) => relatedUserAccounts.get(membership.account_id))
     .filter(
       (account): account is IndividualAccount =>
         !!account && isIndividualAccount(account)
     );
 
-  const memberMemberships = memberships.filter(
-    (membership) => membership.role === MembershipRole.ReadData
-  );
-  const members = memberMemberships
+  const admins = memberships
+    .filter((membership) => membership.role === MembershipRole.Maintainers)
+    .map((membership) => relatedUserAccounts.get(membership.account_id))
+    .filter(
+      (account): account is IndividualAccount =>
+        !!account && isIndividualAccount(account)
+    );
+
+  const members = memberships
+    .filter((membership) => membership.role === MembershipRole.ReadData)
     .map((membership) => relatedUserAccounts.get(membership.account_id))
     .filter(
       (account): account is IndividualAccount =>
@@ -88,7 +85,7 @@ export async function OrganizationProfilePage({
       <OrganizationProfile
         account={account}
         products={products}
-        owner={owner && isIndividualAccount(owner) ? owner : null}
+        owners={owners}
         admins={admins}
         members={members}
       />
