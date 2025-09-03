@@ -116,7 +116,8 @@
       "bio": "This is a user account which owns an organization",
       "location": "United States"
     },
-    "metadata_private": {}
+    "metadata_private": {},
+    "identity_id": "organization_owner_user_identity_id"
   },
   {
     "account_id": "organization-maintainer-user",
@@ -139,7 +140,8 @@
       "bio": "This is a user account which maintains an organization",
       "location": "United States"
     },
-    "metadata_private": {}
+    "metadata_private": {},
+    "identity_id": "organization_maintainer_user_identity_id"
   },
   {
     "account_id": "organization-read-data-user",
@@ -162,7 +164,8 @@
       "bio": "This is a user account which is a ReadData member of an organization",
       "location": "United States"
     },
-    "metadata_private": {}
+    "metadata_private": {},
+    "identity_id": "organization_read_data_user_identity_id"
   },
   {
     "account_id": "repo-member-owner",
@@ -185,7 +188,8 @@
       "bio": "This is a user account which is an owner of a repository",
       "location": "United States"
     },
-    "metadata_private": {}
+    "metadata_private": {},
+    "identity_id": "repo_member_owner_identity_id"
   },
   {
     "account_id": "repo-member-maintainer",
@@ -208,7 +212,8 @@
       "bio": "This is a user account which is a maintainer of a repository",
       "location": "United States"
     },
-    "metadata_private": {}
+    "metadata_private": {},
+    "identity_id": "repo_member_maintainer_identity_id"
   },
   {
     "account_id": "repo-member-read-data",
@@ -231,7 +236,8 @@
       "bio": "This is a user account which is a read data member of a repository",
       "location": "United States"
     },
-    "metadata_private": {}
+    "metadata_private": {},
+    "identity_id": "repo_member_read_data_identity_id"
   },
   {
     "account_id": "repo-member-write-data",
@@ -254,7 +260,8 @@
       "bio": "This is a user account which is a write data member of a repository",
       "location": "United States"
     },
-    "metadata_private": {}
+    "metadata_private": {},
+    "identity_id": "repo_member_write_data_identity_id"
   },
   {
     "account_id": "repo-member-invited",
@@ -276,7 +283,8 @@
       "bio": "This is a user account which is an invited member of a repository",
       "location": "United States"
     },
-    "metadata_private": {}
+    "metadata_private": {},
+    "identity_id": "repo_member_invited_identity_id"
   },
   {
     "account_id": "organization-write-data-user",
@@ -299,7 +307,8 @@
       "bio": "This is a user account which is a WriteData member of an organization",
       "location": "United States"
     },
-    "metadata_private": {}
+    "metadata_private": {},
+    "identity_id": "organization_write_data_user_identity_id"
   },
   {
     "account_id": "organization",
@@ -321,6 +330,32 @@
     "metadata_public": {
       "bio": "This is an organization",
       "location": "United States"
-    }
+    },
+    "metadata_private": {},
+    "identity_id": "organization_identity_id"
+  },
+  {
+    "account_id": "cholmes",
+    "type": "individual",
+    "name": "Chris Holmes",
+    "emails": [
+      {
+        "address": "individual@source.coop",
+        "verified": true,
+        "verified_at": "2020-01-01T00:00:00Z",
+        "is_primary": true,
+        "added_at": "2020-01-01T00:00:00Z"
+      }
+    ],
+    "created_at": "2020-01-01T00:00:00Z",
+    "updated_at": "2020-01-01T00:00:00Z",
+    "disabled": false,
+    "flags": [],
+    "metadata_public": {
+      "bio": "This is chris holmes",
+      "location": "United States"
+    },
+    "metadata_private": {},
+    "identity_id": "cholmes_identity_id"
   }
 ]
