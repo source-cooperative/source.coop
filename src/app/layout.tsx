@@ -5,8 +5,7 @@ import { SessionProvider } from "@ory/elements-react/client";
 import NextTopLoader from "nextjs-toploader";
 import { IBM_Plex_Sans } from "next/font/google";
 import { Box } from "@radix-ui/themes";
-import { Navigation, Footer /*, Banner*/ } from "@/components/layout";
-import { Suspense } from "react";
+import { Navigation, Footer } from "@/components/layout";
 import { metadata } from "./metadata";
 import { getPageSession } from "@/lib/api/utils";
 const ibmPlexSans = IBM_Plex_Sans({
@@ -22,8 +21,6 @@ interface RootLayoutProps {
 }
 
 export default async function RootLayout({ children }: RootLayoutProps) {
-  const session = await getPageSession();
-
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={ibmPlexSans.variable} suppressHydrationWarning>
@@ -36,10 +33,7 @@ export default async function RootLayout({ children }: RootLayoutProps) {
           <NextTopLoader />
           <SessionProvider>
             <Box style={{ minHeight: "100vh" }}>
-              {/* <Banner /> */}
-              <Suspense>
-                <Navigation account={session?.account} />
-              </Suspense>
+              <Navigation />
               <Box asChild my="6">
                 <main>{children}</main>
               </Box>

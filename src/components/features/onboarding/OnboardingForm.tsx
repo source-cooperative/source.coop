@@ -44,11 +44,6 @@ export function OnboardingForm() {
   >("pending");
   const { session, isLoading: isSessionLoading } = useSession();
 
-  if (!session && !isSessionLoading) {
-    // If no session, redirect to login
-    router.push("/");
-  }
-
   // Check session on mount
   useEffect(() => {
     const checkSession = async () => {
@@ -208,7 +203,6 @@ export function OnboardingForm() {
           ? err.message
           : "An error occurred. Please try again."
       );
-    } finally {
       setLoading(false);
     }
   };
@@ -312,7 +306,7 @@ export function OnboardingForm() {
         error={error}
         isLoading={loading}
         submitDisabled={
-          usernameStatus === "taken" || usernameStatus === "checking"
+          usernameStatus === "taken" || usernameStatus === "checking" || loading
         }
       />
     </Box>

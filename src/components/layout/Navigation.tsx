@@ -1,13 +1,11 @@
-import { Container, Flex, Button } from "@radix-ui/themes";
-import Link from "next/link";
-import { CONFIG } from "@/lib";
-import { AccountDropdown } from "./AccountDropdown";
+import { Container, Flex } from "@radix-ui/themes";
 import { Logo } from "./Logo";
 import styles from "./Navigation.module.css";
-import { OnboardingCheck } from "@/components/core/OnboardingCheck";
-import { Account } from "@/types/account";
+import { Suspense } from "react";
+import { AuthButtons } from "./AuthButtons";
+import { AccountDropdownSkeleton } from "./AccountDropdown";
 
-export async function Navigation({ account }: { account?: Account }) {
+export async function Navigation() {
   return (
     <nav className={styles.nav}>
       <Container>
@@ -15,15 +13,10 @@ export async function Navigation({ account }: { account?: Account }) {
           <Logo />
 
           <Flex gap="4" align="center">
-            {account ? (
-              <AccountDropdown account={account} />
-            ) : (
-              <Link href={CONFIG.auth.routes.login}>
-                <Button>Log In / Register</Button>
-              </Link>
-            )}
+            <Suspense fallback={<AccountDropdownSkeleton />}>
+              <AuthButtons />
+            </Suspense>
           </Flex>
-          <OnboardingCheck account={account} />
         </Flex>
       </Container>
     </nav>
