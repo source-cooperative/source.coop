@@ -8,10 +8,6 @@
     "updated_at": "2020-01-01T00:00:00Z",
     "visibility": "public",
     "metadata": {
-      "title": "Regular",
-      "description": "Regular user's repository",
-      "tags": ["mock"],
-      "primary_mirror": "primary-data-connection",
       "mirrors": {
         "primary-data-connection": {
           "storage_type": "s3",
@@ -21,25 +17,16 @@
             "region": "us-east-1",
             "bucket": "source-coop-data"
           },
-          "is_primary": true,
-          "sync_status": {
-            "last_sync_at": "2020-01-01T00:00:00Z",
-            "is_synced": true
-          },
-          "stats": {
-            "total_objects": 100,
-            "total_size": 1024000,
-            "last_verified_at": "2020-01-01T00:00:00Z"
-          }
+          "is_primary": true
         }
       },
+      "primary_mirror": "primary-data-connection",
+      "tags": ["mock"],
       "roles": {}
     },
     "disabled": false,
     "data_mode": "open",
-    "featured": 0,
-    "state": "listed",
-    "published": "2020-01-01T00:00:00Z"
+    "featured": 0
   },
   {
     "product_id": "org-repo-id",
@@ -50,10 +37,6 @@
     "updated_at": "2020-01-01T00:00:00Z",
     "visibility": "public",
     "metadata": {
-      "title": "Organization",
-      "description": "Organization's repository",
-      "tags": ["mock"],
-      "primary_mirror": "primary-data-connection",
       "mirrors": {
         "primary-data-connection": {
           "storage_type": "s3",
@@ -63,25 +46,16 @@
             "region": "us-east-1",
             "bucket": "source-coop-data"
           },
-          "is_primary": true,
-          "sync_status": {
-            "last_sync_at": "2020-01-01T00:00:00Z",
-            "is_synced": true
-          },
-          "stats": {
-            "total_objects": 150,
-            "total_size": 2048000,
-            "last_verified_at": "2020-01-01T00:00:00Z"
-          }
+          "is_primary": true
         }
       },
+      "primary_mirror": "primary-data-connection",
+      "tags": ["mock"],
       "roles": {}
     },
     "disabled": false,
     "data_mode": "open",
-    "featured": 0,
-    "state": "listed",
-    "published": "2020-01-01T00:00:00Z"
+    "featured": 0
   },
   {
     "product_id": "disabled-org-repo-id",
@@ -92,10 +66,6 @@
     "updated_at": "2020-01-01T00:00:00Z",
     "visibility": "restricted",
     "metadata": {
-      "title": "Disabled Repo",
-      "description": "Disabled Organization's repository",
-      "tags": ["mock"],
-      "primary_mirror": "primary-data-connection",
       "mirrors": {
         "primary-data-connection": {
           "storage_type": "s3",
@@ -105,26 +75,16 @@
             "region": "us-east-1",
             "bucket": "source-coop-data"
           },
-          "is_primary": true,
-          "sync_status": {
-            "last_sync_at": "2020-01-01T00:00:00Z",
-            "is_synced": false,
-            "error": "Repository disabled"
-          },
-          "stats": {
-            "total_objects": 0,
-            "total_size": 0,
-            "last_verified_at": "2020-01-01T00:00:00Z"
-          }
+          "is_primary": true
         }
       },
+      "primary_mirror": "primary-data-connection",
+      "tags": ["mock"],
       "roles": {}
     },
     "disabled": true,
     "data_mode": "open",
-    "featured": 0,
-    "state": "listed",
-    "published": "2020-01-01T00:00:00Z"
+    "featured": 0
   },
   {
     "product_id": "unlisted-org-repo-id",
@@ -135,10 +95,6 @@
     "updated_at": "2020-01-01T00:00:00Z",
     "visibility": "unlisted",
     "metadata": {
-      "title": "Unlisted Repo",
-      "description": "Unlisted Organization's repository",
-      "tags": ["mock"],
-      "primary_mirror": "primary-data-connection",
       "mirrors": {
         "primary-data-connection": {
           "storage_type": "s3",
@@ -148,25 +104,16 @@
             "region": "us-east-1",
             "bucket": "source-coop-data"
           },
-          "is_primary": true,
-          "sync_status": {
-            "last_sync_at": "2020-01-01T00:00:00Z",
-            "is_synced": true
-          },
-          "stats": {
-            "total_objects": 75,
-            "total_size": 512000,
-            "last_verified_at": "2020-01-01T00:00:00Z"
-          }
+          "is_primary": true
         }
       },
+      "primary_mirror": "primary-data-connection",
+      "tags": ["mock"],
       "roles": {}
     },
     "disabled": false,
     "data_mode": "open",
-    "featured": 0,
-    "state": "unlisted",
-    "published": "2020-01-01T00:00:00Z"
+    "featured": 0
   },
   {
     "product_id": "featured-org-repo-id",
@@ -177,10 +124,6 @@
     "updated_at": "2020-01-01T00:00:00Z",
     "visibility": "public",
     "metadata": {
-      "title": "Featured Repo",
-      "description": "Featured Organization's repository",
-      "tags": ["mock", "featured"],
-      "primary_mirror": "primary-data-connection",
       "mirrors": {
         "primary-data-connection": {
           "storage_type": "s3",
@@ -190,25 +133,16 @@
             "region": "us-east-1",
             "bucket": "source-coop-data"
           },
-          "is_primary": true,
-          "sync_status": {
-            "last_sync_at": "2020-01-01T00:00:00Z",
-            "is_synced": true
-          },
-          "stats": {
-            "total_objects": 200,
-            "total_size": 4096000,
-            "last_verified_at": "2020-01-01T00:00:00Z"
-          }
+          "is_primary": true
         }
       },
+      "primary_mirror": "primary-data-connection",
+      "tags": ["mock", "featured"],
       "roles": {}
     },
     "disabled": false,
     "data_mode": "open",
-    "featured": 1,
-    "state": "listed",
-    "published": "2020-01-01T00:00:00Z"
+    "featured": 1
   },
   {
     "product_id": "private-org-repo-id",
@@ -219,10 +153,6 @@
     "updated_at": "2020-01-01T00:00:00Z",
     "visibility": "restricted",
     "metadata": {
-      "title": "Private Repo",
-      "description": "Private Organization's repository",
-      "tags": ["mock", "private"],
-      "primary_mirror": "primary-data-connection",
       "mirrors": {
         "primary-data-connection": {
           "storage_type": "s3",
@@ -232,25 +162,16 @@
             "region": "us-east-1",
             "bucket": "source-coop-data"
           },
-          "is_primary": true,
-          "sync_status": {
-            "last_sync_at": "2020-01-01T00:00:00Z",
-            "is_synced": true
-          },
-          "stats": {
-            "total_objects": 50,
-            "total_size": 256000,
-            "last_verified_at": "2020-01-01T00:00:00Z"
-          }
+          "is_primary": true
         }
       },
+      "primary_mirror": "primary-data-connection",
+      "tags": ["mock", "private"],
       "roles": {}
     },
     "disabled": false,
     "data_mode": "private",
-    "featured": 0,
-    "state": "listed",
-    "published": "2020-01-01T00:00:00Z"
+    "featured": 0
   },
   {
     "product_id": "subscription-org-repo-id",
@@ -261,10 +182,6 @@
     "updated_at": "2020-01-01T00:00:00Z",
     "visibility": "restricted",
     "metadata": {
-      "title": "Subscription Repo",
-      "description": "Subscription Organization's repository",
-      "tags": ["mock", "subscription"],
-      "primary_mirror": "primary-data-connection",
       "mirrors": {
         "primary-data-connection": {
           "storage_type": "s3",
@@ -274,24 +191,44 @@
             "region": "us-east-1",
             "bucket": "source-coop-data"
           },
-          "is_primary": true,
-          "sync_status": {
-            "last_sync_at": "2020-01-01T00:00:00Z",
-            "is_synced": true
-          },
-          "stats": {
-            "total_objects": 300,
-            "total_size": 8192000,
-            "last_verified_at": "2020-01-01T00:00:00Z"
-          }
+          "is_primary": true
         }
       },
+      "primary_mirror": "primary-data-connection",
+      "tags": ["mock", "subscription"],
       "roles": {}
     },
     "disabled": false,
     "data_mode": "subscription",
-    "featured": 0,
-    "state": "listed",
-    "published": "2020-01-01T00:00:00Z"
+    "featured": 0
+  },
+  {
+    "product_id": "overture",
+    "account_id": "cholmes",
+    "title": "Overture Open Buildings",
+    "description": "Overture provides several open datasets. This was an experimental re-distribution of their buildings dataset release from mid-2023 transformed into with 'Cloud-Native Geospatial' formats (PMTiles, GeoParquet). They now release all data in those formats, so please use https://docs.overturemaps.org/release/latest/ to get the data.",
+    "created_at": "2020-01-01T00:00:00Z",
+    "updated_at": "2020-01-01T00:00:00Z",
+    "visibility": "public",
+    "metadata": {
+      "mirrors": {
+        "primary-data-connection": {
+          "storage_type": "s3",
+          "connection_id": "primary-data-connection",
+          "prefix": "cholmes/overture/",
+          "config": {
+            "region": "us-east-1",
+            "bucket": "source-coop-data"
+          },
+          "is_primary": true
+        }
+      },
+      "primary_mirror": "primary-data-connection",
+      "tags": ["pmtiles", "geoparquet"],
+      "roles": {}
+    },
+    "disabled": false,
+    "data_mode": "open",
+    "featured": 10
   }
 ]
