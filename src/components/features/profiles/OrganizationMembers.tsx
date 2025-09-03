@@ -44,7 +44,7 @@ export function OrganizationMembers({
 
   // Group members by role for cleaner display
   const memberGroups = [
-    { role: "owner", title: "Owner", members: owners },
+    { role: "owner", title: "Owners", members: owners },
     { role: "admin", title: "Administrators", members: uniqueAdmins },
     { role: "member", title: "Members", members: uniqueMembers },
   ].filter((group) => group.members.length > 0);
