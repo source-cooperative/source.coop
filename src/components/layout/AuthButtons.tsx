@@ -18,7 +18,7 @@ export async function AuthButtons() {
           <ExclamationTriangleIcon />
         </Callout.Icon>
         <Callout.Text>
-          You don't have a profile yet. Please click{" "}
+          You do not yet have a profile. Please click{" "}
           <Link href="/onboarding">here</Link> to complete your profile.
         </Callout.Text>
       </Callout.Root>
