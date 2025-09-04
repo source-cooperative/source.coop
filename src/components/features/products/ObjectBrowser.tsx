@@ -55,13 +55,25 @@ export async function ObjectBrowser({
           break;
       }
     }
+    const sourceUrl = `https://data.source.coop/${product.account?.account_id}/${product.product_id}/${selectedObject.path}`;
     return (
-      <ObjectDetails
-        product={product}
-        selectedObject={selectedObject}
-        selectedDataItem={null}
-        cloudUri={cloudUri}
-      />
+      <>
+        <ObjectDetails
+          product={product}
+          selectedObject={selectedObject}
+          selectedDataItem={null}
+          cloudUri={cloudUri}
+        />
+
+        { cloudUri.endsWith(".pmtiles") ?
+          <Card style={{marginTop:"2rem"}}>
+            <SectionHeader title="Preview"/>
+            <iframe frameBorder="0" width="100%" height="600px" src={`https://pmtiles.io/#url=${sourceUrl}&iframe=true`}>
+              Your browser does not support iframes.
+            </iframe>
+          </Card>
+         : null }
+      </>
     );
   }
 
