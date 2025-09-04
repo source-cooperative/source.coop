@@ -1,6 +1,6 @@
 "use client";
 
-import { Callout } from "@radix-ui/themes";
+import { Box, Callout } from "@radix-ui/themes";
 import { CheckCircledIcon, InfoCircledIcon } from "@radix-ui/react-icons";
 import { useSearchParams } from "next/navigation";
 
@@ -14,29 +14,29 @@ export function EmailVerificationCallout({
   const searchParams = useSearchParams();
   const isVerified = searchParams.has("verified");
 
-  if (!isVerified || showCheckEmail) {
-    return (
-      <Callout.Root color="blue">
-        <Callout.Icon>
-          <InfoCircledIcon />
-        </Callout.Icon>
-        <Callout.Text>
-          Please check your email. We&apos;ve sent you a code to verify your
-          email address.
-        </Callout.Text>
-      </Callout.Root>
-    );
-  }
-
   return (
-    <Callout.Root color="green">
-      <Callout.Icon>
-        <CheckCircledIcon />
-      </Callout.Icon>
-      <Callout.Text>
-        Your email has been successfully verified. Thank you for confirming your
-        account.
-      </Callout.Text>
-    </Callout.Root>
+    <Box mb="6">
+      {!isVerified || showCheckEmail ? (
+        <Callout.Root color="blue">
+          <Callout.Icon>
+            <InfoCircledIcon />
+          </Callout.Icon>
+          <Callout.Text>
+            Please check your email. We&apos;ve sent you a code to verify your
+            email address.
+          </Callout.Text>
+        </Callout.Root>
+      ) : (
+        <Callout.Root color="green">
+          <Callout.Icon>
+            <CheckCircledIcon />
+          </Callout.Icon>
+          <Callout.Text>
+            Your email has been successfully verified. Thank you for confirming
+            your account.
+          </Callout.Text>
+        </Callout.Root>
+      )}
+    </Box>
   );
 }

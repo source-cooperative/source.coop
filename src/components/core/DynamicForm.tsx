@@ -7,7 +7,15 @@ import Form from "next/form";
 export interface FormField {
   label: string;
   name: string;
-  type: "text" | "textarea" | "email" | "url" | "password" | "number" | "tel";
+  type:
+    | "text"
+    | "textarea"
+    | "email"
+    | "url"
+    | "password"
+    | "number"
+    | "tel"
+    | "custom";
   required?: boolean;
   description?: string;
   placeholder?: string;
@@ -16,6 +24,7 @@ export interface FormField {
   controlled?: boolean; // If true, this field will be controlled by the form
   onValueChange?: (value: string) => void; // Callback for controlled fields
   value?: string; // External controlled value
+  customComponent?: React.ReactNode; // Custom component for rendering
 }
 
 export interface FormState<T> {
@@ -35,6 +44,7 @@ interface DynamicFormProps<T> {
   hiddenFields?: Record<string, string>;
   className?: string;
   disabled?: boolean;
+  initialValues?: Record<string, string>; // Initial values for form fields
 }
 
 const style: React.CSSProperties = {
@@ -55,6 +65,7 @@ export function DynamicForm<T>({
   hiddenFields = {},
   className,
   disabled = false,
+  initialValues = {},
 }: DynamicFormProps<T>) {
   const [state, formAction, pending] = useActionState(action, {
     message: "",
@@ -84,7 +95,9 @@ export function DynamicForm<T>({
                 {field.label}
               </Text>
 
-              {field.type === "textarea" ? (
+              {field.type === "custom" ? (
+                field.customComponent
+              ) : field.type === "textarea" ? (
                 <textarea
                   name={field.name}
                   placeholder={field.placeholder}
@@ -100,7 +113,9 @@ export function DynamicForm<T>({
                       }
                     : {
                         defaultValue:
-                          (state.data.get(field.name) as string) || "",
+                          (state.data.get(field.name) as string) ||
+                          initialValues[field.name] ||
+                          "",
                       })}
                   style={{
                     ...style,
@@ -122,7 +137,9 @@ export function DynamicForm<T>({
                       }
                     : {
                         defaultValue:
-                          (state.data.get(field.name) as string) || "",
+                          (state.data.get(field.name) as string) ||
+                          initialValues[field.name] ||
+                          "",
                       })}
                   style={style}
                 />
