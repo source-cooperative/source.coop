@@ -1,9 +1,9 @@
 import { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
-import { getServerSession } from "@ory/nextjs/app";
 import { Container, Box, Heading, Text } from "@radix-ui/themes";
-import { OnboardingForm } from "@/components/features/onboarding/OnboardingForm";
+import { OnboardingForm } from "@/components/features/onboarding";
+import { getPageSession } from "@/lib/api/utils";
 
 export const metadata: Metadata = {
   title: "Complete Your Profile",
@@ -11,6 +11,17 @@ export const metadata: Metadata = {
 };
 
 export default async function OnboardingPage() {
+  const session = await getPageSession();
+  const identityId = session?.identity_id;
+
+  if (!identityId) {
+    redirect("/");
+  }
+
+  if (session?.account) {
+    redirect(`/${session.account.account_id}`);
+  }
+
   return (
     <Container size="2" pt="8" pb="9">
       <Box className="mx-auto max-w-md">
@@ -24,7 +35,7 @@ export default async function OnboardingPage() {
         </Text>
 
         <Suspense>
-          <OnboardingForm />
+          <OnboardingForm identityId={identityId} />
         </Suspense>
       </Box>
     </Container>

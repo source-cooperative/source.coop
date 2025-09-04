@@ -1,4 +1,4 @@
-import { OrganizationCreationForm } from "@/components/features/onboarding/OrganizationCreationForm";
+import { OrganizationCreationForm } from "@/components/features/organizations/OrganizationCreationForm";
 
 interface PageProps {
   params: Promise<{

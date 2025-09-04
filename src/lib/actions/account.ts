@@ -166,12 +166,3 @@ export async function createAccount(
       : `/${account.account_id}`
   );
 }
-
-export async function onboardAccount(formData: FormData): Promise<void> {
-  const session = await getPageSession();
-
-  if (!session?.identity_id) throw new Error("Unauthenticated");
-
-  const account_id = formData.get("account_id") as string;
-  const name = formData.get("name") as string;
-}
