@@ -1,12 +1,9 @@
 import { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
-import { getServerSession } from "@ory/nextjs/app";
 import { Container, Box, Heading, Text } from "@radix-ui/themes";
-import { OnboardingForm } from "@/components/features/onboarding/OnboardingForm";
-import { CONFIG } from "@/lib";
-import { getOryId } from "@/lib/ory";
-import { accountsTable } from "@/lib/clients";
+import { OnboardingForm } from "@/components/features/onboarding";
+import { getPageSession } from "@/lib/api/utils";
 
 export const metadata: Metadata = {
   title: "Complete Your Profile",
@@ -14,20 +11,15 @@ export const metadata: Metadata = {
 };
 
 export default async function OnboardingPage() {
-  const session = await getServerSession();
+  const session = await getPageSession();
+  const identityId = session?.identity_id;
 
-  // If not authenticated, redirect to login
-  if (!session) {
-    redirect(CONFIG.auth.routes.login);
+  if (!identityId) {
+    redirect("/");
   }
 
-  // If has account_id, redirect to profile
-  const oryId = getOryId(session);
-  if (oryId) {
-    const account = await accountsTable.fetchByOryId(oryId);
-    if (account) {
-      redirect(`/${account.account_id}?welcome=true`);
-    }
+  if (session?.account) {
+    redirect(`/${session.account.account_id}`);
   }
 
   return (
@@ -43,7 +35,7 @@ export default async function OnboardingPage() {
         </Text>
 
         <Suspense>
-          <OnboardingForm />
+          <OnboardingForm identityId={identityId} />
         </Suspense>
       </Box>
     </Container>

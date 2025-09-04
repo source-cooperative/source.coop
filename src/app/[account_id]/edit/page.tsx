@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { getServerSession } from "@ory/nextjs/app";
-import { Container, Heading, Text } from "@radix-ui/themes";
+import { Box, Container, Heading, Text } from "@radix-ui/themes";
 import { accountsTable } from "@/lib/clients/database";
 import { getOryId } from "@/lib/ory";
 import { EditProfileForm } from "./EditProfileForm";
@@ -32,8 +32,15 @@ export default async function EditProfilePage({ params }: { params: Params }) {
   }
 
   return (
-    <div className="container mx-auto py-8">
-      <EditProfileForm account={account} />
-    </div>
+    <Container size="2">
+      <Box className="mx-auto max-w-md">
+        <Box mb="5">
+          <Text size="6" weight="bold">
+            Edit Profile
+          </Text>
+        </Box>
+        <EditProfileForm account={account} />
+      </Box>
+    </Container>
   );
 }
