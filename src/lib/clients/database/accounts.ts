@@ -40,8 +40,8 @@ class AccountsTable extends BaseTable {
 
       if (!account) return null;
 
-      LOGGER.debug(`Found account by Ory ID`, {
-        operation: "AccountsTable.fetchByOryId",
+      LOGGER.debug(`Found account by ID`, {
+        operation: "AccountsTable.fetchById",
         context: "database operation",
         metadata: { account_id, account },
       });
