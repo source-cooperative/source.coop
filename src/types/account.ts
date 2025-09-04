@@ -167,7 +167,6 @@ export type AccountProfileResponse = z.infer<
   typeof AccountProfileResponseSchema
 >;
 
-// TODO: We need an individual and organization creation request schema
 export const AccountCreationRequestSchema = z
   .object({
     account_id: z
