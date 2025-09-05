@@ -46,42 +46,7 @@ docs/
 
 ## Development Setup
 
-### Prerequisites
-- Node.js 18+
-- Docker and Docker Compose
-- Git
-- AWS CLI (for local DynamoDB interaction)
-
-### Local Development
-1. Clone the repository
-2. Copy `.env.example` to `.env.local`
-3. Install dependencies: `npm install`
-4. Start development server: `npm run dev`
-
-### Database Setup
-The application requires a DynamoDB instance for data storage. We've added several convenience scripts to manage the local DynamoDB:
-
-```bash
-# Start DynamoDB (will prompt for table initialization if needed)
-npm run start-dynamodb
-
-# Check if DynamoDB is running
-npm run check-dynamodb
-
-# Initialize DynamoDB tables and sample data
-npm run init-local
-```
-
-When you run `npm run dev`, the system automatically:
-1. Checks if DynamoDB is running
-2. Starts DynamoDB if it's not running
-3. Skips initialization if tables already exist
-
-### Development Environment
-- Local DynamoDB running on port 8000
-- Local file storage in `./test-storage`
-- Ory Kratos for authentication
-- Environment variables in `.env.local`
+See the [Development Setup Guide](docs/development/setup.md).
 
 ## Contributing
 
