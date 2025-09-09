@@ -62,11 +62,18 @@ export function AccountDropdown({ account }: { account: Account }) {
           <Link href={`/${account.account_id}/edit`}>Edit Profile</Link>
         </DropdownMenu.Item>
         <DropdownMenu.Separator />
+        {/* TODO: Only show if user has permission to create organizations */}
         <DropdownMenu.Label>Organizations</DropdownMenu.Label>
         <DropdownMenu.Item>
           <Link href={`/${account.account_id}/organization/new`}>
             Create Organization
           </Link>
+        </DropdownMenu.Item>
+        <DropdownMenu.Separator />
+        {/* TODO: Only show if user has permission to create products */}
+        <DropdownMenu.Label>Products</DropdownMenu.Label>
+        <DropdownMenu.Item>
+          <Link href={`/products/new`}>Create Product</Link>
         </DropdownMenu.Item>
         <DropdownMenu.Separator />
         <DropdownMenu.Item color="red">

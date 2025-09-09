@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Box, Text } from "@radix-ui/themes";
 import { DynamicForm, FormField } from "@/components/core";
 import { createAccount } from "@/lib/actions/account";
-import { AccountType } from "@/types";
+import { AccountType, Account } from "@/types";
 import { useAccountIdValidation } from "@/hooks/useAccountIdValidation";
 import { EmailVerificationCallout } from "@/components/features/auth/EmailVerificationCallout";
 
@@ -12,7 +12,7 @@ export function OnboardingForm({ identityId }: { identityId: string }) {
   const [accountId, setAccountId] = useState("");
   const validationState = useAccountIdValidation(accountId);
 
-  const fields: FormField[] = [
+  const fields: FormField<Account>[] = [
     {
       label: "Username",
       name: "account_id",
@@ -22,7 +22,7 @@ export function OnboardingForm({ identityId }: { identityId: string }) {
       placeholder: "Choose a username",
       controlled: true,
       value: accountId,
-      onValueChange: (value) => {
+      onValueChange: (value: string) => {
         const processedValue = value.toLowerCase().replace(/\s+/g, "");
         setAccountId(processedValue);
       },

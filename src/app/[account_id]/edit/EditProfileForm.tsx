@@ -15,6 +15,15 @@ interface EditProfileFormProps {
   account: Account;
 }
 
+interface EditProfileFormData {
+  name: string;
+  email: string;
+  description: string;
+  orcid?: string;
+  websites?: string;
+  bio?: string;
+}
+
 export function EditProfileForm({
   account: initialAccount,
 }: EditProfileFormProps) {
@@ -52,7 +61,7 @@ export function EditProfileForm({
       "",
   };
 
-  const fields: FormField[] = [
+  const fields: FormField<any>[] = [
     {
       label: "Name (Required)",
       name: "name",
