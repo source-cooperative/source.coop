@@ -28,11 +28,10 @@ const RESERVED_USERNAMES = [
   "status",
 ];
 
-export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const username = searchParams.get("username");
+export async function PUT(request: NextRequest) {
+  const account_id = (await request.json()).id;
 
-  if (!username) {
+  if (!account_id) {
     return NextResponse.json(
       { error: "Username is required" },
       { status: 400 }
@@ -41,7 +40,7 @@ export async function GET(request: NextRequest) {
 
   try {
     // Basic validation
-    if (username.length < 3) {
+    if (account_id.length < 3) {
       return NextResponse.json(
         { available: false, error: "Username must be at least 3 characters" },
         { status: 400 }
@@ -49,7 +48,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Check if username is reserved
-    if (RESERVED_USERNAMES.includes(username.toLowerCase())) {
+    if (RESERVED_USERNAMES.includes(account_id.toLowerCase())) {
       return NextResponse.json(
         {
           available: false,
@@ -60,21 +59,21 @@ export async function GET(request: NextRequest) {
     }
 
     // Only allow lowercase alphanumeric characters, hyphens, and underscores
-    if (!/^[a-z0-9_-]+$/.test(username)) {
+    if (!/^[a-z0-9_-]+$/.test(account_id)) {
       return NextResponse.json(
         { available: false, error: "Invalid username format" },
         { status: 400 }
       );
     }
 
-    const account = await accountsTable.fetchById(username);
+    const account = await accountsTable.fetchById(account_id);
     return NextResponse.json({ available: !account });
   } catch (error) {
     LOGGER.error("Error checking username", {
       operation: "check-username.GET",
       context: "username validation",
       error: error,
-      metadata: { username },
+      metadata: { username: account_id },
     });
     return NextResponse.json(
       { error: "Internal server error" },

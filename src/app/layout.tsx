@@ -7,6 +7,7 @@ import { IBM_Plex_Sans } from "next/font/google";
 import { Box } from "@radix-ui/themes";
 import { Navigation, Footer } from "@/components/layout";
 import { metadata } from "./metadata";
+import { getPageSession } from "@/lib/api/utils";
 const ibmPlexSans = IBM_Plex_Sans({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
@@ -22,7 +23,7 @@ interface RootLayoutProps {
 export default async function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={ibmPlexSans.variable}>
+      <body className={ibmPlexSans.variable} suppressHydrationWarning>
         <ThemeProvider
           attribute="class"
           enableSystem={true}

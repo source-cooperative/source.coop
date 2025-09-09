@@ -53,8 +53,11 @@ import {
 } from "@/types";
 import { StatusCodes } from "http-status-codes";
 import { isAuthorized } from "@/lib/api/authz";
-import { generateAccessKeyID, generateSecretAccessKey } from "@/lib/api/utils";
 import { getApiSession } from "@/lib/api/utils";
+import {
+  generateAccessKeyID,
+  generateSecretAccessKey,
+} from "@/lib/actions/crypto";
 import { LOGGER } from "@/lib";
 import { productsTable } from "@/lib/clients/database/products";
 import { apiKeysTable } from "@/lib/clients/database/api-keys";
