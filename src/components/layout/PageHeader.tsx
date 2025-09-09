@@ -13,7 +13,7 @@ export function PageHeader({
 }: PageHeaderProps) {
   return (
     <Box>
-      <Heading size={headingSize} mb="2">
+      <Heading size={headingSize} my="5">
         {title}
       </Heading>
       {description && (

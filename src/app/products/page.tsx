@@ -1,8 +1,8 @@
-import { PageContainer, PageHeader } from "@/components/layout";
+import { PageHeader } from "@/components/layout";
 import { ProductsList } from "@/components/features/products/ProductsList";
 import { ProductsFilters } from "@/components/features/products/ProductsFilters";
 import { getProducts } from "@/lib/actions/products";
-import { Badge, Flex, Text } from "@radix-ui/themes";
+import { Badge, Box, Flex, Text } from "@radix-ui/themes";
 
 export const metadata = {
   title: "Products | Source Cooperative",
@@ -33,7 +33,7 @@ export default async function ProductsPage({
   const hasActiveFilters = search || tags;
 
   return (
-    <PageContainer>
+    <Box>
       <PageHeader title="Products" />
 
       <ProductsFilters />
@@ -57,6 +57,6 @@ export default async function ProductsPage({
       )}
 
       <ProductsList products={result.products} />
-    </PageContainer>
+    </Box>
   );
 }

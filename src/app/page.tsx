@@ -1,6 +1,7 @@
-import { PageContainer, PageHeader } from "@/components/layout";
+import { PageHeader } from "@/components/layout";
 import { ProductsList } from "@/components/features/products/ProductsList";
 import { getProducts } from "@/lib/actions/products";
+import { Box } from "@radix-ui/themes";
 
 export const metadata = {
   title: "Featured Products | Source Cooperative",
@@ -15,9 +16,9 @@ export default async function HomePage() {
   });
 
   return (
-    <PageContainer>
+    <Box>
       <PageHeader title="Featured Products" />
       <ProductsList products={result.products} />
-    </PageContainer>
+    </Box>
   );
 }

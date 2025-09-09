@@ -81,29 +81,16 @@ export const ProductSchema = z
 
 export type Product = z.infer<typeof ProductSchema>;
 
-// Index interfaces for GSIs
-// AccountProductsIndex is used for querying products by account
-export const AccountProductsIndexSchema = z
-  .object({
-    account_id: z.string(), // PK
-    created_at: z.string(), // SK
-    product_id: z.string(), // Projected attribute
-    title: z.string(), // Projected attribute
-    visibility: z.string(), // Projected attribute
-  })
-  .openapi("AccountProductsIndex");
+export const ProductCreationRequestSchema = ProductSchema.omit({
+  created_at: true,
+  updated_at: true,
+  account: true,
+  disabled: true,
+  featured: true,
+  data_mode: true,
+  metadata: true,
+}).openapi("ProductCreationRequest");
 
-export type AccountProductsIndex = z.infer<typeof AccountProductsIndexSchema>;
-
-// PublicProductsIndex is used for querying public products
-export const PublicProductsIndexSchema = z
-  .object({
-    visibility: z.string(), // PK
-    created_at: z.string(), // SK
-    product_id: z.string(), // Projected attribute
-    account_id: z.string(), // Projected attribute
-    title: z.string(), // Projected attribute
-  })
-  .openapi("PublicProductsIndex");
-
-export type PublicProductsIndex = z.infer<typeof PublicProductsIndexSchema>;
+export type ProductCreationRequest = z.infer<
+  typeof ProductCreationRequestSchema
+>;

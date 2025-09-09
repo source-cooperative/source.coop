@@ -11,7 +11,6 @@
  */
 
 import { notFound } from "next/navigation";
-import { Container } from "@radix-ui/themes";
 import { IndividualProfile } from "@/components/features/profiles";
 import { OrganizationProfilePage } from "@/components/features/profiles/OrganizationProfilePage";
 import {
@@ -73,14 +72,12 @@ export default async function AccountPage({ params, searchParams }: PageProps) {
 
   // For individual accounts
   return (
-    <Container size="4" py="6">
-      <IndividualProfile
-        account={account as IndividualAccount}
-        ownedProducts={products}
-        contributedProducts={[]}
-        organizations={organizations}
-        showWelcome={showWelcome}
-      />
-    </Container>
+    <IndividualProfile
+      account={account as IndividualAccount}
+      ownedProducts={products}
+      contributedProducts={[]}
+      organizations={organizations}
+      showWelcome={showWelcome}
+    />
   );
 }
