@@ -42,7 +42,9 @@ export class S3StorageClient implements StorageClient {
         context: "parameter validation",
         metadata: { params },
       });
-      return { objects: [], commonPrefixes: [], isTruncated: false };
+      throw new Error(
+        "Invalid params for listObjects, account_id and product_id are required"
+      );
     }
 
     // Ensure prefix ends with a slash if it's not empty
