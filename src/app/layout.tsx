@@ -4,10 +4,9 @@ import { ThemeProvider } from "@/styles/theme";
 import { SessionProvider } from "@ory/elements-react/client";
 import NextTopLoader from "nextjs-toploader";
 import { IBM_Plex_Sans } from "next/font/google";
-import { Box } from "@radix-ui/themes";
+import { Container } from "@radix-ui/themes";
 import { Navigation, Footer } from "@/components/layout";
 import { metadata } from "./metadata";
-import { getPageSession } from "@/lib/api/utils";
 const ibmPlexSans = IBM_Plex_Sans({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
@@ -32,13 +31,11 @@ export default async function RootLayout({ children }: RootLayoutProps) {
         >
           <NextTopLoader />
           <SessionProvider>
-            <Box style={{ minHeight: "100vh" }}>
-              <Navigation />
-              <Box asChild my="6">
-                <main>{children}</main>
-              </Box>
-              <Footer />
-            </Box>
+            <Navigation />
+            <Container py="4">
+              <main>{children}</main>
+            </Container>
+            <Footer />
           </SessionProvider>
         </ThemeProvider>
       </body>
