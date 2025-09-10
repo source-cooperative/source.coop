@@ -17,6 +17,8 @@ extendZodWithOpenApi(z);
 // Common constants
 export const MIN_ID_LENGTH = 3;
 export const MAX_ID_LENGTH = 40;
+export const MIN_NAME_LENGTH = 3;
+export const MAX_NAME_LENGTH = 100;
 export const ID_REGEX = /^[a-z0-9](?:(?!--)[a-z0-9-])*[a-z0-9]$/;
 
 // Common enums
@@ -25,6 +27,10 @@ export enum AccountFlags {
   CREATE_REPOSITORIES = "create_repositories",
   CREATE_ORGANIZATIONS = "create_organizations",
 }
+
+export const DEFAULT_INDIVIDUAL_FLAGS: AccountFlags[] = [];
+
+export const DEFAULT_ORGANIZATION_FLAGS: AccountFlags[] = [];
 
 export enum RepositoryDataMode {
   Open = "open",

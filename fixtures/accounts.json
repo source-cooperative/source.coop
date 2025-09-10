@@ -331,8 +331,7 @@
       "bio": "This is an organization",
       "location": "United States"
     },
-    "metadata_private": {},
-    "identity_id": "organization_identity_id"
+    "metadata_private": {}
   },
   {
     "account_id": "cholmes",

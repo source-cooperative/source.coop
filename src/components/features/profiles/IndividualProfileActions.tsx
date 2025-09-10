@@ -1,7 +1,7 @@
 "use client";
 
 import { WelcomeCallout } from "./WelcomeCallout";
-import { VerificationSuccessCallout } from "@/components/features/auth/VerificationSuccessCallout";
+import { EmailVerificationCallout } from "@/components/features/auth/EmailVerificationCallout";
 import type { IndividualAccount } from "@/types";
 interface IndividualProfileActionsProps {
   account: IndividualAccount;
@@ -14,7 +14,7 @@ export function IndividualProfileActions({
 }: IndividualProfileActionsProps) {
   return (
     <>
-      <VerificationSuccessCallout />
+      <EmailVerificationCallout />
       <WelcomeCallout show={showWelcome} accountId={account.account_id} />
     </>
   );
