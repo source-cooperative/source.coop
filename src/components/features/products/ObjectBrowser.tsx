@@ -6,9 +6,7 @@ import { DataConnection, Product, ProductMirror } from "@/types";
 import { Card, Box } from "@radix-ui/themes";
 import { SectionHeader } from "@/components/core";
 import { BreadcrumbNav } from "@/components/display";
-import { storage } from "@/lib/clients/storage";
 import { buildDirectoryTree } from "./object-browser/utils";
-import { LOGGER } from "@/lib";
 
 export interface ObjectBrowserProps {
   product: Product;
@@ -18,7 +16,7 @@ export interface ObjectBrowserProps {
     primaryMirror: ProductMirror;
     dataConnection: DataConnection;
   };
-  objects?: ProductObject[]; // Allow parent to pass objects to avoid duplicate calls
+  objects: ProductObject[]; // Allow parent to pass objects to avoid duplicate calls
 }
 
 export async function ObjectBrowser({
@@ -26,42 +24,9 @@ export async function ObjectBrowser({
   initialPath = "",
   selectedObject,
   connectionDetails,
-  objects: providedObjects,
+  objects,
 }: ObjectBrowserProps) {
   const currentPath = initialPath ? initialPath.split("/").filter(Boolean) : [];
-  const pathString = currentPath.join("/");
-
-  // Use provided objects or fetch them if needed
-  let objects: ProductObject[] = [];
-  if (providedObjects) {
-    objects = providedObjects;
-  } else if (!selectedObject || selectedObject.type === "directory") {
-    // Only fetch objects if we don't have them and we're not showing a file
-    try {
-      const prefix =
-        pathString && !pathString.endsWith("/") ? `${pathString}/` : pathString;
-      const result = await storage.listObjects({
-        account_id: product.account_id,
-        product_id: product.product_id,
-        object_path: pathString,
-        prefix,
-        delimiter: "/",
-      });
-      objects = result.objects || [];
-    } catch (error) {
-      LOGGER.error("Error fetching objects", {
-        operation: "ObjectBrowser",
-        context: "object fetching",
-        error: error,
-        metadata: {
-          account_id: product.account_id,
-          product_id: product.product_id,
-          path: pathString,
-        },
-      });
-      objects = [];
-    }
-  }
 
   // Build directory tree
   const root = buildDirectoryTree(objects, currentPath);
@@ -117,7 +82,6 @@ export async function ObjectBrowser({
           />
         </Box>
       </SectionHeader>
-
       <DirectoryList
         items={items}
         currentPath={currentPath}
