@@ -92,9 +92,7 @@ export function useIdValidation(id: string, options: UseIdValidationOptions) {
       setValidationState((prev) => ({ ...prev, isLoading: true, error: null }));
 
       try {
-        let response: Response;
-
-        response = await fetch(
+        const response = await fetch(
           isProductValidation
             ? `/api/v1/products/${debouncedAccountId}/${debouncedId}`
             : `/api/v1/accounts/${debouncedId}`,
