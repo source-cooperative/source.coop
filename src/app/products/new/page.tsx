@@ -3,9 +3,7 @@ import { accountsTable, getPageSession, membershipsTable } from "@/lib";
 import { MembershipState } from "@/types";
 import { Heading, Section, Text } from "@radix-ui/themes";
 
-interface PageProps {}
-
-export default async function NewProductPage({}: PageProps) {
+export default async function NewProductPage() {
   const session = await getPageSession();
   if (!session?.account) {
     return (
