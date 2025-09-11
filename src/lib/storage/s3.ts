@@ -42,75 +42,83 @@ export class S3StorageClient implements StorageClient {
         context: "parameter validation",
         metadata: { params },
       });
-      throw new Error(
-        "Invalid params for listObjects, account_id and product_id are required"
-      );
+      return { objects: [], commonPrefixes: [], isTruncated: false };
     }
 
-    // Ensure prefix ends with a slash if it's not empty
-    const pathPrefix = params.prefix
-      ? params.prefix.endsWith("/")
-        ? params.prefix
-        : params.prefix + "/"
-      : "";
+    try {
+      // Ensure prefix ends with a slash if it's not empty
+      const pathPrefix = params.prefix
+        ? params.prefix.endsWith("/")
+          ? params.prefix
+          : params.prefix + "/"
+        : "";
 
-    const command = new ListObjectsV2Command({
-      Bucket: params.account_id,
-      Prefix: `${params.product_id}/${pathPrefix}`,
-      Delimiter: params.delimiter || "/",
-      MaxKeys: params.maxKeys,
-      ContinuationToken: params.continuationToken,
-    });
+      const command = new ListObjectsV2Command({
+        Bucket: params.account_id,
+        Prefix: `${params.product_id}/${pathPrefix}`,
+        Delimiter: params.delimiter || "/",
+        MaxKeys: params.maxKeys,
+        ContinuationToken: params.continuationToken,
+      });
 
-    const response = await this.s3Client.send(command);
+      const response = await this.s3Client.send(command);
 
-    // Handle files (Contents)
-    const objects = (response.Contents || []).map(
-      (item) =>
-        ({
-          id: item.Key!,
+      // Handle files (Contents)
+      const objects = (response.Contents || []).map(
+        (item) =>
+          ({
+            id: item.Key!,
+            product_id: params.product_id,
+            path: item.Key!.replace(`${params.product_id}/`, ""),
+            size: item.Size || 0,
+            type: "file",
+            created_at:
+              item.LastModified?.toISOString() || new Date().toISOString(),
+            updated_at:
+              item.LastModified?.toISOString() || new Date().toISOString(),
+            checksum: item.ETag || "",
+            metadata: {},
+          } as ProductObject)
+      );
+
+      // Handle directories (CommonPrefixes)
+      const directories = (response.CommonPrefixes || []).map((prefix) => {
+        const path = prefix.Prefix!.replace(`${params.product_id}/`, "");
+        return {
+          id: path,
           product_id: params.product_id,
-          path: item.Key!.replace(`${params.product_id}/`, ""),
-          size: item.Size || 0,
-          type: "file",
-          created_at:
-            item.LastModified?.toISOString() || new Date().toISOString(),
-          updated_at:
-            item.LastModified?.toISOString() || new Date().toISOString(),
-          checksum: item.ETag || "",
+          path: path,
+          size: 0,
+          type: "directory",
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          checksum: "",
           metadata: {},
-        } as ProductObject)
-    );
+          isDirectory: true,
+        } as ProductObject;
+      });
 
-    // Handle directories (CommonPrefixes)
-    const directories = (response.CommonPrefixes || []).map((prefix) => {
-      const path = prefix.Prefix!.replace(`${params.product_id}/`, "");
+      // Combine files and directories
+      const allObjects = [...objects, ...directories];
+
       return {
-        id: path,
-        product_id: params.product_id,
-        path: path,
-        size: 0,
-        type: "directory",
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        checksum: "",
-        metadata: {},
-        isDirectory: true,
-      } as ProductObject;
-    });
-
-    // Combine files and directories
-    const allObjects = [...objects, ...directories];
-
-    return {
-      objects: allObjects,
-      commonPrefixes:
-        response.CommonPrefixes?.map((prefix) =>
-          prefix.Prefix!.replace(`${params.product_id}/`, "")
-        ) || [],
-      isTruncated: response.IsTruncated || false,
-      nextContinuationToken: response.NextContinuationToken,
-    };
+        objects: allObjects,
+        commonPrefixes:
+          response.CommonPrefixes?.map((prefix) =>
+            prefix.Prefix!.replace(`${params.product_id}/`, "")
+          ) || [],
+        isTruncated: response.IsTruncated || false,
+        nextContinuationToken: response.NextContinuationToken,
+      };
+    } catch (error) {
+      LOGGER.error("Error listing objects", {
+        operation: "S3StorageClient.listObjects",
+        context: "S3 operation",
+        error: error,
+        metadata: { params },
+      });
+      return { objects: [], commonPrefixes: [], isTruncated: false };
+    }
   }
 
   async getObject(params: GetObjectParams): Promise<GetObjectResult> {
