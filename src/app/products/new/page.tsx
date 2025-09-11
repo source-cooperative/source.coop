@@ -1,21 +1,37 @@
 import { ProductCreationForm } from "@/components/features/products/ProductCreationForm";
 import { accountsTable, getPageSession, membershipsTable } from "@/lib";
-import { MembershipState } from "@/types";
-import { Heading, Section, Text } from "@radix-ui/themes";
+import { isAuthorized } from "@/lib/api/authz";
+import { Actions, MembershipState } from "@/types";
+import { Section } from "@radix-ui/themes";
+import { NotFoundPage, NotAuthorizedPage } from "@/components/core";
 
 export default async function NewProductPage() {
   const session = await getPageSession();
   if (!session?.account) {
     return (
-      <>
-        <Heading size="6" mb="4">
-          Access Denied
-        </Heading>
+      <NotFoundPage
+        title="Login Required"
+        description="You must be logged in to create a product."
+        actionText="Go to Login"
+        actionHref="/auth/login"
+      />
+    );
+  }
 
-        <Text as="p" size="3" color="gray" className="mb-4">
-          You must be logged in to create a product.
-        </Text>
-      </>
+  // Check if user has permission to create products
+  if (!isAuthorized(session, undefined, Actions.CreateRepository)) {
+    return (
+      <NotAuthorizedPage
+        description={
+          <>
+            You don't have permission to create products.
+            <br />
+            <br />
+            If you believe this is an error, please contact{" "}
+            <code>hello@source.coop</code>.
+          </>
+        }
+      />
     );
   }
 
