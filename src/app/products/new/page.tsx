@@ -25,7 +25,7 @@ export default async function NewProductPage() {
   if (!isAuthorized(session, "*", Actions.CreateRepository)) {
     return (
       <Text>
-        You don't have permission to create products.
+        You do not have permission to create products.
         <br />
         If you believe this is an error, please contact{" "}
         <code>hello@source.coop</code>.
