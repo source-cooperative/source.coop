@@ -1,5 +1,5 @@
 import { OrganizationCreationForm } from "@/components/features/organizations/OrganizationCreationForm";
-import { NotFoundPage } from "@/components/core";
+import { NotFoundPage, FormTitle } from "@/components/core";
 import { getPageSession } from "@/lib/api/utils";
 import { redirect } from "next/navigation";
 
@@ -29,6 +29,12 @@ export default async function NewOrganizationPage({ params }: PageProps) {
   }
 
   return (
-    <OrganizationCreationForm ownerAccountId={session.account.account_id} />
+    <>
+      <FormTitle
+        title="Create New Organization"
+        description="Create a new organization to collaborate with others"
+      />
+      <OrganizationCreationForm ownerAccountId={session.account.account_id} />
+    </>
   );
 }
