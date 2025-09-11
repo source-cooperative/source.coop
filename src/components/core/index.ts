@@ -4,3 +4,4 @@ export { SectionHeader } from "./SectionHeader";
 export { Skeleton } from "./Skeleton";
 export { DynamicForm } from "./DynamicForm";
 export type { FormField } from "./DynamicForm";
+export { StatusPage, NotFoundPage, NotAuthorizedPage } from "./StatusPage";
