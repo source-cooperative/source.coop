@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Box, Text } from "@radix-ui/themes";
+import { Box, Heading, Text } from "@radix-ui/themes";
 import { DynamicForm, FormField } from "@/components/core";
 import { createAccount } from "@/lib/actions/account";
 import { AccountType, Account } from "@/types";
@@ -53,8 +53,16 @@ export function OnboardingForm({ identityId }: { identityId: string }) {
 
   return (
     <Box pt="6">
+      <EmailVerificationCallout showCheckEmail={true} />
       <Box mb="4">
-        <EmailVerificationCallout showCheckEmail={true} />
+        <Heading size="8" mb="1">
+          Complete Your Profile
+        </Heading>
+
+        <Text size="2" color="gray">
+          You&apos;re almost done! Choose a username for your account and tell
+          us your name.
+        </Text>
       </Box>
 
       <DynamicForm

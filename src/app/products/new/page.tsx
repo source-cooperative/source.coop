@@ -48,8 +48,6 @@ export default async function NewProductPage() {
   ];
 
   return (
-    <Section size="1">
-      <ProductCreationForm potentialOwnerAccounts={potentialOwnerAccounts} />
-    </Section>
+    <ProductCreationForm potentialOwnerAccounts={potentialOwnerAccounts} />
   );
 }
