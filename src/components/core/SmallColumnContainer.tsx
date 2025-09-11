@@ -7,5 +7,9 @@ export function SmallColumnContainer({
   children: React.ReactNode;
   maxWidth?: string;
 }) {
-  return <Box style={{ maxWidth, margin: "0 auto" }}>{children}</Box>;
+  return (
+    <Box style={{ maxWidth, margin: "0 auto" }} py="4">
+      {children}
+    </Box>
+  );
 }
