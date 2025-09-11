@@ -56,7 +56,6 @@ export function StatusPage({
   actionHref,
   iconSize = 48,
   containerSize,
-  minHeight = "calc(100vh - 160px)",
   showAction = true,
 }: StatusPageProps) {
   const config = statusConfig[type];
@@ -69,13 +68,7 @@ export function StatusPage({
 
   return (
     <Container size={containerSize}>
-      <Flex
-        direction="column"
-        align="center"
-        justify="center"
-        py="9"
-        style={{ minHeight }}
-      >
+      <Flex direction="column" align="center" justify="center" py="9">
         <IconComponent
           width={iconSize}
           height={iconSize}
