@@ -1,6 +1,7 @@
 import { ProductCreationForm } from "@/components/features/products/ProductCreationForm";
 import { accountsTable, getPageSession, membershipsTable } from "@/lib";
-import { MembershipState } from "@/types";
+import { isAuthorized } from "@/lib/api/authz";
+import { Actions, MembershipState } from "@/types";
 import { Heading, Section, Text } from "@radix-ui/themes";
 
 export default async function NewProductPage() {
@@ -16,6 +17,18 @@ export default async function NewProductPage() {
           You must be logged in to create a product.
         </Text>
       </>
+    );
+  }
+
+  // Check if user has permission to create products
+  if (!isAuthorized(session, "*", Actions.CreateRepository)) {
+    return (
+      <Text>
+        You don't have permission to create products.
+        <br />
+        If you believe this is an error, please contact{" "}
+        <code>hello@source.coop</code>.
+      </Text>
     );
   }
 
