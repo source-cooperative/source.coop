@@ -1,14 +1,16 @@
 "use client";
-import { Flex, DropdownMenu, Text, Box, Button } from "@radix-ui/themes";
-import Link from "next/link";
+import { Flex, DropdownMenu, Text } from "@radix-ui/themes";
 import { useState } from "react";
 import { ProfileAvatar } from "@/components/features/profiles/ProfileAvatar";
 import { ChevronDownIcon } from "@radix-ui/react-icons";
 import styles from "./Navigation.module.css";
-import { Account } from "@/types/account";
+import { UserSession } from "@/types/session";
 import { Skeleton } from "../core/Skeleton";
 import { CONFIG } from "@/lib/config";
 import { LOGGER } from "@/lib";
+import { DropdownSection } from "./DropdownSection";
+import { isAuthorized } from "@/lib/api/authz";
+import { Actions } from "@/types";
 
 export function AccountDropdownSkeleton() {
   return (
@@ -19,8 +21,9 @@ export function AccountDropdownSkeleton() {
   );
 }
 
-export function AccountDropdown({ account }: { account: Account }) {
+export function AccountDropdown({ session }: { session: UserSession }) {
   const [isOpen, setIsOpen] = useState(false);
+
   const handleLogout = async () => {
     const response = await fetch(CONFIG.auth.routes.logout, {
       method: "GET",
@@ -44,8 +47,8 @@ export function AccountDropdown({ account }: { account: Account }) {
     <DropdownMenu.Root open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenu.Trigger>
         <Flex align="center" gap="2" style={{ cursor: "pointer" }}>
-          <ProfileAvatar account={account} size="2" />
-          <Text>{account.name}</Text>
+          <ProfileAvatar account={session.account!} size="2" />
+          <Text>{session.account!.name}</Text>
           <ChevronDownIcon
             className={styles.chevron}
             data-state={isOpen ? "open" : "closed"}
@@ -54,24 +57,49 @@ export function AccountDropdown({ account }: { account: Account }) {
       </DropdownMenu.Trigger>
 
       <DropdownMenu.Content>
-        <DropdownMenu.Label>Account</DropdownMenu.Label>
-        <DropdownMenu.Item>
-          <Link href={`/${account.account_id}`}>View Profile</Link>
-        </DropdownMenu.Item>
-        <DropdownMenu.Item>
-          <Link href={`/${account.account_id}/edit`}>Edit Profile</Link>
-        </DropdownMenu.Item>
-        <DropdownMenu.Separator />
-        <DropdownMenu.Label>Organizations</DropdownMenu.Label>
-        <DropdownMenu.Item>
-          <Link href={`/${account.account_id}/organization/new`}>
-            Create Organization
-          </Link>
-        </DropdownMenu.Item>
-        <DropdownMenu.Separator />
-        <DropdownMenu.Item color="red">
-          <Text onClick={handleLogout}>Logout</Text>
-        </DropdownMenu.Item>
+        <DropdownSection
+          label="Account"
+          items={[
+            {
+              href: `/${session.account!.account_id}`,
+              children: "View Profile",
+            },
+            {
+              href: `/${session.account!.account_id}/edit`,
+              children: "Edit Profile",
+            },
+          ]}
+        />
+        <DropdownSection
+          label="Organizations"
+          items={[
+            {
+              href: `/${session.account!.account_id}/organization/new`,
+              children: "Create Organization",
+              condition: isAuthorized(session, "*", Actions.CreateAccount),
+            },
+          ]}
+        />
+        <DropdownSection
+          label="Products"
+          items={[
+            {
+              href: `/products/new`,
+              children: "Create Product",
+              condition: isAuthorized(session, "*", Actions.CreateRepository),
+            },
+          ]}
+        />
+        <DropdownSection
+          items={[
+            {
+              onClick: handleLogout,
+              children: <Text>Logout</Text>,
+              color: "red",
+            },
+          ]}
+          showSeparator={false}
+        />
       </DropdownMenu.Content>
     </DropdownMenu.Root>
   );

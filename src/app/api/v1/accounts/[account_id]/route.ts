@@ -69,6 +69,48 @@ export async function GET(
 /**
  * @openapi
  * /accounts/{account_id}:
+ *   head:
+ *     tags: [Accounts]
+ *     summary: Check if an account exists
+ *     description: Checks if an account exists.
+ *     parameters:
+ *       - in: path
+ *         name: account_id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The ID of the account to retrieve
+ *     responses:
+ *       200:
+ *         description: Account exists
+ *       404:
+ *         description: Account does not exist
+ *       500:
+ *         description: Internal server error
+ */
+
+export async function HEAD(
+  request: NextRequest,
+  { params }: { params: Promise<{ account_id: string }> }
+) {
+  try {
+    const { account_id } = await params;
+    const account = await accountsTable.fetchById(account_id);
+    if (!account) {
+      return new NextResponse(null, { status: StatusCodes.NOT_FOUND });
+    }
+    return new NextResponse(null, { status: StatusCodes.OK });
+  } catch (err: any) {
+    return NextResponse.json(
+      { error: err.message || "Internal server error" },
+      { status: StatusCodes.INTERNAL_SERVER_ERROR }
+    );
+  }
+}
+
+/**
+ * @openapi
+ * /accounts/{account_id}:
  *   delete:
  *     tags: [Accounts]
  *     summary: Disable an account

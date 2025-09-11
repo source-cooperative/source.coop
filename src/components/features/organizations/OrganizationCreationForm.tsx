@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Container, Box, Heading, Text } from "@radix-ui/themes";
+import { Text } from "@radix-ui/themes";
 import { DynamicForm, FormField } from "@/components/core";
 import { createAccount } from "@/lib/actions/account";
 import { AccountType } from "@/types";
@@ -11,13 +11,21 @@ interface OrganizationCreationFormProps {
   ownerAccountId: string;
 }
 
+interface OrganizationFormData {
+  name: string;
+  account_id: string;
+  description: string;
+  website: string;
+  email: string;
+}
+
 export function OrganizationCreationForm({
   ownerAccountId,
 }: OrganizationCreationFormProps) {
   const [accountId, setAccountId] = useState("");
   const validationState = useAccountIdValidation(accountId);
 
-  const fields: FormField[] = [
+  const fields: FormField<OrganizationFormData>[] = [
     {
       label: "Organization Name",
       name: "name",
@@ -76,28 +84,14 @@ export function OrganizationCreationForm({
   ];
 
   return (
-    <Container>
-      <Box py="9">
-        <Box mb="4">
-          <Heading size="8" mb="1">
-            Create New Organization
-          </Heading>
-
-          <Text size="2" color="gray">
-            Create a new organization to collaborate with others
-          </Text>
-        </Box>
-
-        <DynamicForm
-          fields={fields}
-          action={createAccount}
-          submitButtonText="Create Organization"
-          hiddenFields={{
-            owner_account_id: ownerAccountId,
-            type: AccountType.ORGANIZATION,
-          }}
-        />
-      </Box>
-    </Container>
+    <DynamicForm<OrganizationFormData>
+      fields={fields}
+      action={createAccount}
+      submitButtonText="Create Organization"
+      hiddenFields={{
+        owner_account_id: ownerAccountId,
+        type: AccountType.ORGANIZATION,
+      }}
+    />
   );
 }

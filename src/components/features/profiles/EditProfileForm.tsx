@@ -15,6 +15,15 @@ interface EditProfileFormProps {
   account: Account;
 }
 
+interface EditProfileFormData {
+  name: string;
+  email: string;
+  description: string;
+  orcid?: string;
+  websites?: string;
+  bio?: string;
+}
+
 export function EditProfileForm({
   account: initialAccount,
 }: EditProfileFormProps) {
@@ -41,7 +50,7 @@ export function EditProfileForm({
   };
 
   // Create initial values for the form
-  const initialValues = {
+  const initialValues: EditProfileFormData = {
     name: initialAccount.name || "",
     email:
       initialAccount.emails?.find((email) => email.is_primary)?.address || "",
@@ -52,7 +61,7 @@ export function EditProfileForm({
       "",
   };
 
-  const fields: FormField[] = [
+  const fields: FormField<EditProfileFormData>[] = [
     {
       label: "Name (Required)",
       name: "name",
@@ -76,14 +85,17 @@ export function EditProfileForm({
       label: initialAccount.type === "individual" ? "Bio" : "Description",
       name: "description",
       type: "textarea",
-      placeholder:
-        initialAccount.type === "individual"
-          ? "Tell us about yourself"
-          : "Tell us about your organization",
-      description:
-        initialAccount.type === "individual"
-          ? "A brief description of yourself or your work (220 characters maximum)"
-          : "A brief description of your organization (220 characters maximum)",
+      ...(initialAccount.type === "individual"
+        ? {
+            placeholder: "Tell us about yourself",
+            description:
+              "A brief description of yourself or your work (220 characters maximum)",
+          }
+        : {
+            placeholder: "Tell us about your organization",
+            description:
+              "A brief description of your organization (220 characters maximum)",
+          }),
     },
     ...(initialAccount.type === "individual"
       ? [
@@ -93,7 +105,7 @@ export function EditProfileForm({
             type: "text" as const,
             placeholder: "0000-0002-1825-0097",
             description: "Your ORCID identifier (optional)",
-          },
+          } as const,
         ]
       : []),
     {
@@ -129,7 +141,7 @@ export function EditProfileForm({
   ];
 
   return (
-    <DynamicForm
+    <DynamicForm<EditProfileFormData>
       fields={fields}
       action={updateAccountProfile}
       submitButtonText="Save Changes"
