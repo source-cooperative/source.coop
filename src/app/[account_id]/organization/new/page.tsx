@@ -1,4 +1,3 @@
-import { SmallColumnContainer } from "@/components/core";
 import { OrganizationCreationForm } from "@/components/features/organizations/OrganizationCreationForm";
 
 interface PageProps {
@@ -11,8 +10,6 @@ export default async function NewOrganizationPage({ params }: PageProps) {
   const { account_id } = await params;
 
   return (
-    <SmallColumnContainer>
-      <OrganizationCreationForm ownerAccountId={account_id} />
-    </SmallColumnContainer>
+    <OrganizationCreationForm ownerAccountId={session.account.account_id} />
   );
 }
