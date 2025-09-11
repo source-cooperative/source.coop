@@ -8,60 +8,6 @@ import { dataConnectionsTable, productsTable } from "@/lib/clients/database";
 import { storage } from "@/lib/clients/storage";
 import { DataConnection, ProductMirror } from "@/types";
 import { LOGGER } from "@/lib";
-import { MonoText } from "@/components/core";
-
-function StorageErrorDisplay({ error }: { error: Error }) {
-  const getErrorMessage = (error: Error) => {
-    if (!error) return "Unknown error";
-
-    // Handle AWS SDK errors
-    if (error.name === "NoSuchBucket") {
-      return "The storage bucket does not exist.";
-    }
-    if (error.name === "AccessDenied") {
-      return "Access denied to the storage bucket.";
-    }
-    if (error.name === "InvalidBucketName") {
-      return "Invalid bucket name.";
-    }
-    if (error.name === "NetworkingError") {
-      return "Network error connecting to storage.";
-    }
-
-    // For deserialization errors, try to extract more info
-    if (error.message?.includes("Deserialization error")) {
-      return "Storage service returned an unexpected response format.";
-    }
-
-    // Fallback to the error message if it's reasonable
-    if (
-      error.message &&
-      !error.message.includes("#text") &&
-      !error.message.includes("Deserialization error")
-    ) {
-      return `Error: ${error.message}`;
-    }
-
-    return "Storage service is currently unavailable.";
-  };
-
-  return (
-    <Box>
-      <MonoText color="red">
-        Unable to load directory contents. This may be due to:
-        <br />
-        • The bucket or product not existing
-        <br />
-        • Network connectivity issues
-        <br />
-        • Insufficient permissions
-        <br />
-        <br />
-        {getErrorMessage(error)}
-      </MonoText>
-    </Box>
-  );
-}
 
 export async function generateMetadata({ params }: PageProps) {
   const { account_id, product_id, path } = await params;
@@ -138,7 +84,8 @@ export default async function ProductPathPage({ params }: PageProps) {
               : object_path,
           delimiter: "/",
         })
-        .then((result) => result.objects || []),
+        .then((result) => result.objects || [])
+        .catch(() => []),
     ]);
 
   // Handle product fetch failure
@@ -152,6 +99,8 @@ export default async function ProductPathPage({ params }: PageProps) {
 
   const readme =
     readmeContent.status === "fulfilled" ? readmeContent.value : "";
+
+  const objects = objectsList.status === "fulfilled" ? objectsList.value : [];
 
   let connectionDetails:
     | {
@@ -186,17 +135,13 @@ export default async function ProductPathPage({ params }: PageProps) {
   return (
     <Container>
       <Box mt="4">
-        {objectsList.status === "fulfilled" ? (
-          <ObjectBrowser
-            product={product.value}
-            initialPath={object_path}
-            selectedObject={selectedObject || undefined}
-            objects={objectsList.value}
-            connectionDetails={connectionDetails}
-          />
-        ) : (
-          <StorageErrorDisplay error={objectsList.reason} />
-        )}
+        <ObjectBrowser
+          product={product.value}
+          initialPath={object_path}
+          selectedObject={selectedObject || undefined}
+          objects={objects}
+          connectionDetails={connectionDetails}
+        />
       </Box>
 
       {/* Display README if available and we're at the root */}
