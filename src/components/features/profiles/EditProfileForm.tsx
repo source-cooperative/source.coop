@@ -50,7 +50,7 @@ export function EditProfileForm({
   };
 
   // Create initial values for the form
-  const initialValues = {
+  const initialValues: EditProfileFormData = {
     name: initialAccount.name || "",
     email:
       initialAccount.emails?.find((email) => email.is_primary)?.address || "",
@@ -61,7 +61,7 @@ export function EditProfileForm({
       "",
   };
 
-  const fields: FormField<any>[] = [
+  const fields: FormField<EditProfileFormData>[] = [
     {
       label: "Name (Required)",
       name: "name",
@@ -102,7 +102,7 @@ export function EditProfileForm({
             type: "text" as const,
             placeholder: "0000-0002-1825-0097",
             description: "Your ORCID identifier (optional)",
-          },
+          } as const,
         ]
       : []),
     {
@@ -138,7 +138,7 @@ export function EditProfileForm({
   ];
 
   return (
-    <DynamicForm
+    <DynamicForm<EditProfileFormData>
       fields={fields}
       action={updateAccountProfile}
       submitButtonText="Save Changes"

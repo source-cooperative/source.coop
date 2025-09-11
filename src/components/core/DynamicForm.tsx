@@ -46,7 +46,7 @@ interface DynamicFormProps<T extends Record<string, any>> {
   hiddenFields?: Record<string, string>;
   className?: string;
   disabled?: boolean;
-  initialValues?: Record<string, string>; // Initial values for form fields
+  initialValues?: T; // Initial values for form fields
 }
 
 const style: React.CSSProperties = {
@@ -66,8 +66,7 @@ export function DynamicForm<T extends Record<string, any>>({
   submitButtonText = "Submit",
   hiddenFields = {},
   className,
-  disabled = false,
-  initialValues = {},
+  initialValues,
 }: DynamicFormProps<T>) {
   const [state, formAction, pending] = useActionState(action, {
     message: "",
@@ -119,7 +118,7 @@ export function DynamicForm<T extends Record<string, any>>({
                     : {
                         defaultValue:
                           (state.data.get(String(field.name)) as string) ||
-                          initialValues[String(field.name)] ||
+                          initialValues?.[String(field.name)] ||
                           "",
                       })}
                   style={{
@@ -144,7 +143,7 @@ export function DynamicForm<T extends Record<string, any>>({
                     : {
                         defaultValue:
                           (state.data.get(String(field.name)) as string) ||
-                          initialValues[String(field.name)] ||
+                          initialValues?.[String(field.name)] ||
                           "",
                       })}
                   style={style}
@@ -180,7 +179,7 @@ export function DynamicForm<T extends Record<string, any>>({
                     : {
                         defaultValue:
                           (state.data.get(String(field.name)) as string) ||
-                          initialValues[String(field.name)] ||
+                          initialValues?.[String(field.name)] ||
                           "",
                       })}
                   style={style}

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Text } from "@radix-ui/themes";
 import { DynamicForm, FormField } from "@/components/core";
 import { createAccount } from "@/lib/actions/account";
-import { AccountType, Account } from "@/types";
+import { AccountType } from "@/types";
 import { useAccountIdValidation } from "@/hooks/useAccountIdValidation";
 
 interface OrganizationCreationFormProps {
@@ -84,7 +84,7 @@ export function OrganizationCreationForm({
   ];
 
   return (
-    <DynamicForm
+    <DynamicForm<OrganizationFormData>
       fields={fields}
       action={createAccount}
       submitButtonText="Create Organization"
