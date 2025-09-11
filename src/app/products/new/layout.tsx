@@ -1,11 +1,5 @@
-import { Box } from "@radix-ui/themes";
+import { SmallColumnContainer } from "@/components/core";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  return (
-    <Box
-      style={{ maxWidth: "800px", margin: "0 auto" }}
-    >
-      {children}
-    </Box>
-  );
+  return <SmallColumnContainer>{children}</SmallColumnContainer>;
 }

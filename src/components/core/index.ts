@@ -5,3 +5,4 @@ export { Skeleton } from "./Skeleton";
 export { DynamicForm } from "./DynamicForm";
 export type { FormField } from "./DynamicForm";
 export { StatusPage, NotFoundPage, NotAuthorizedPage } from "./StatusPage";
+export { SmallColumnContainer } from "./SmallColumnContainer";
