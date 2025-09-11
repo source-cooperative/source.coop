@@ -8,11 +8,13 @@ import { AccountType, Account } from "@/types";
 import { useAccountIdValidation } from "@/hooks/useAccountIdValidation";
 import { EmailVerificationCallout } from "@/components/features/auth/EmailVerificationCallout";
 
+type OnboardingFormData = Pick<Account, "account_id" | "name">;
+
 export function OnboardingForm({ identityId }: { identityId: string }) {
   const [accountId, setAccountId] = useState("");
   const validationState = useAccountIdValidation(accountId);
 
-  const fields: FormField<Account>[] = [
+  const fields: FormField<OnboardingFormData>[] = [
     {
       label: "Username",
       name: "account_id",
@@ -54,7 +56,7 @@ export function OnboardingForm({ identityId }: { identityId: string }) {
   return (
     <Box pt="6">
       <EmailVerificationCallout showCheckEmail={true} />
-      <DynamicForm
+      <DynamicForm<OnboardingFormData>
         fields={fields}
         action={createAccount}
         submitButtonText="Complete Profile"
