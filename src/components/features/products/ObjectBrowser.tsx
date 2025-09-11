@@ -65,7 +65,7 @@ export async function ObjectBrowser({
           cloudUri={cloudUri}
         />
 
-        {cloudUri?.endsWith(".pmtiles") && (
+        {cloudUri?.endsWith(".pmtiles") ? (
           <Card style={{ marginTop: "2rem" }}>
             <SectionHeader title="Preview" />
             <iframe
@@ -77,7 +77,19 @@ export async function ObjectBrowser({
               Your browser does not support iframes.
             </iframe>
           </Card>
-        )}
+        ) : cloudUri?.endsWith(".parquet") ? (
+          <Card style={{ marginTop: "2rem" }}>
+            <SectionHeader title="Preview" />
+            <iframe
+              frameBorder="0"
+              width="100%"
+              height="600px"
+              src={`https://hyparam.github.io/demos/hyparquet/?key=${sourceUrl}`}
+            >
+              Your browser does not support iframes.
+            </iframe>
+          </Card>
+        ) : null}
       </>
     );
   }
