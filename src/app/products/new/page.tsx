@@ -19,7 +19,7 @@ export default async function NewProductPage() {
   }
 
   // Check if user has permission to create products
-  if (!isAuthorized(session, undefined, Actions.CreateRepository)) {
+  if (!isAuthorized(session, "*", Actions.CreateRepository)) {
     return (
       <NotAuthorizedPage
         description={
