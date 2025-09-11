@@ -23,7 +23,7 @@ export default async function NewProductPage() {
       <NotAuthorizedPage
         description={
           <>
-            You don't have permission to create products.
+            You do not have permission to create products.
             <br />
             <br />
             If you believe this is an error, please contact{" "}
