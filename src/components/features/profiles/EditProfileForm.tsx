@@ -85,14 +85,17 @@ export function EditProfileForm({
       label: initialAccount.type === "individual" ? "Bio" : "Description",
       name: "description",
       type: "textarea",
-      placeholder:
-        initialAccount.type === "individual"
-          ? "Tell us about yourself"
-          : "Tell us about your organization",
-      description:
-        initialAccount.type === "individual"
-          ? "A brief description of yourself or your work (220 characters maximum)"
-          : "A brief description of your organization (220 characters maximum)",
+      ...(initialAccount.type === "individual"
+        ? {
+            placeholder: "Tell us about yourself",
+            description:
+              "A brief description of yourself or your work (220 characters maximum)",
+          }
+        : {
+            placeholder: "Tell us about your organization",
+            description:
+              "A brief description of your organization (220 characters maximum)",
+          }),
     },
     ...(initialAccount.type === "individual"
       ? [
