@@ -2,7 +2,8 @@ import { ProductCreationForm } from "@/components/features/products/ProductCreat
 import { accountsTable, getPageSession, membershipsTable } from "@/lib";
 import { isAuthorized } from "@/lib/api/authz";
 import { Actions, MembershipState } from "@/types";
-import { Heading, Section, Text } from "@radix-ui/themes";
+import { Heading, Text } from "@radix-ui/themes";
+import { FormTitle } from "@/components/core";
 
 export default async function NewProductPage() {
   const session = await getPageSession();
@@ -45,6 +46,13 @@ export default async function NewProductPage() {
   ];
 
   return (
-    <ProductCreationForm potentialOwnerAccounts={potentialOwnerAccounts} />
+    <>
+      <FormTitle
+        title="Create New Product"
+        description="Create a new product to share with others"
+      />
+
+      <ProductCreationForm potentialOwnerAccounts={potentialOwnerAccounts} />
+    </>
   );
 }

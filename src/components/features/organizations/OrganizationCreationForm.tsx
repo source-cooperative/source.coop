@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Container, Box, Heading, Text } from "@radix-ui/themes";
+import { Text } from "@radix-ui/themes";
 import { DynamicForm, FormField } from "@/components/core";
 import { createAccount } from "@/lib/actions/account";
 import { AccountType, Account } from "@/types";
@@ -84,26 +84,14 @@ export function OrganizationCreationForm({
   ];
 
   return (
-    <>
-      <Box mb="4">
-        <Heading size="8" mb="1">
-          Create New Organization
-        </Heading>
-
-        <Text size="2" color="gray">
-          Create a new organization to collaborate with others
-        </Text>
-      </Box>
-
-      <DynamicForm
-        fields={fields}
-        action={createAccount}
-        submitButtonText="Create Organization"
-        hiddenFields={{
-          owner_account_id: ownerAccountId,
-          type: AccountType.ORGANIZATION,
-        }}
-      />
-    </>
+    <DynamicForm
+      fields={fields}
+      action={createAccount}
+      submitButtonText="Create Organization"
+      hiddenFields={{
+        owner_account_id: ownerAccountId,
+        type: AccountType.ORGANIZATION,
+      }}
+    />
   );
 }

@@ -1,9 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Box, Heading, Text, Spinner, Flex } from "@radix-ui/themes";
+import { Text, Spinner, Flex } from "@radix-ui/themes";
 import { DynamicForm, FormField } from "@/components/core";
-import { createAccount } from "@/lib/actions/account";
 import { Account } from "@/types";
 import { Product } from "@/types/product_v2";
 import { useProductIdValidation } from "@/hooks/useIdValidation";
@@ -95,23 +94,11 @@ export function ProductCreationForm({
   ];
 
   return (
-    <>
-      <Box mb="4">
-        <Heading size="8" mb="1">
-          Create New Product
-        </Heading>
-
-        <Text size="2" color="gray">
-          Create a new product to share with others
-        </Text>
-      </Box>
-
-      <DynamicForm
-        fields={fields}
-        action={createProduct}
-        submitButtonText="Create Product"
-        hiddenFields={{}}
-      />
-    </>
+    <DynamicForm
+      fields={fields}
+      action={createProduct}
+      submitButtonText="Create Product"
+      hiddenFields={{}}
+    />
   );
 }
