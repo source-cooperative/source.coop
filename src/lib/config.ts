@@ -8,6 +8,7 @@ const region = process.env.AWS_REGION || "us-east-1";
 const frontendUrl = process.env.NEXT_PUBLIC_ORY_UI_URL || "";
 
 export const CONFIG = {
+  // Object storage configuration
   storage: {
     type: "S3",
     endpoint: process.env.NEXT_PUBLIC_S3_ENDPOINT,
@@ -17,6 +18,8 @@ export const CONFIG = {
       secretAccessKey: "anonymous",
     },
   } as StorageConfig,
+
+  // DynamoDB configuration
   database: {
     endpoint:
       process.env.DYNAMODB_ENDPOINT ||
@@ -28,6 +31,11 @@ export const CONFIG = {
         })
       : undefined,
   },
+
+  // API Secret for the Data Proxy to access the API
+  apiSecret: process.env.SOURCE_KEY || "",
+
+  // Ory.sh configuration
   auth: {
     api: {
       backendUrl: process.env.NEXT_PUBLIC_ORY_SDK_URL,
@@ -42,9 +50,13 @@ export const CONFIG = {
       logout: `${frontendUrl}/self-service/logout/browser`,
     },
   },
+
+  // Google configuration
   google: {
     siteVerification: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || "",
   },
+
+  // Environment configuration
   environment: {
     isDevelopment: process.env.NODE_ENV === "development",
     stage: process.env.STAGE || "dev",

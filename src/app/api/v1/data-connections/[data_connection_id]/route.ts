@@ -29,7 +29,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Actions, DataConnectionSchema } from "@/types";
 import { StatusCodes } from "http-status-codes";
-import { isAuthorized } from "@/lib/api/authz";
+import { isAdmin, isAuthorized } from "@/lib/api/authz";
 import { getApiSession } from "@/lib/api/utils";
 import { dataConnectionsTable } from "@/lib/clients";
 
@@ -39,6 +39,7 @@ export async function GET(
 ) {
   try {
     const session = await getApiSession(request);
+
     const { data_connection_id } = await params;
     let dataConnection = await dataConnectionsTable.fetchById(
       data_connection_id
@@ -56,9 +57,10 @@ export async function GET(
         { status: StatusCodes.UNAUTHORIZED }
       );
     }
+
     // Sanitize connection if user doesn't have permission to view credentials
     if (
-      request.headers.get("Authorization") !== process.env.SOURCE_KEY &&
+      !isAdmin(session) &&
       !isAuthorized(
         session,
         dataConnection,
