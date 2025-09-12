@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { accountsTable } from "@/lib/clients/database";
-import type { ExtendedSession } from "@/types/session";
 import { getApiSession } from "@/lib/api/utils";
 import { LOGGER } from "@/lib";
+import { isAdmin } from "@/lib/api/authz";
 
 export async function GET(
   request: NextRequest,
@@ -49,63 +49,26 @@ export async function GET(
     }
 
     // Try to get authentication status, but don't require it
-    let isAuthenticated = false;
-    let isAuthenticatedUser = false;
-    let isAdmin = false;
+    const session = await getApiSession(request);
+    const isAuthenticated = !!session?.account && !session.account?.disabled;
+    const isAuthenticatedUser = session?.account?.account_id === account_id;
+    const sessionAccountId = session?.account?.account_id;
 
-    try {
-      // Get all cookies from the request
-      const session = (await getApiSession(request)) as ExtendedSession;
-      if (session) {
-        LOGGER.info("API: Session check", {
-          operation: "accounts.GET",
-          context: "session validation",
-          metadata: {
-            hasSession: !!session,
-            isActive: session?.active,
-            hasIdentity: !!session?.identity,
-            sessionAccountId: session?.identity?.metadata_public?.account_id,
-            requestedAccountId: account_id,
-          },
-        });
-
-        if (session?.active && session.identity) {
-          isAuthenticated = true;
-          const sessionAccountId =
-            session.identity?.metadata_public?.account_id;
-          isAuthenticatedUser = sessionAccountId === account_id;
-          isAdmin = !!session.identity?.metadata_public?.is_admin;
-
-          LOGGER.info("API: Auth status", {
-            operation: "accounts.GET",
-            context: "session validation",
-            metadata: {
-              isAuthenticated,
-              isAuthenticatedUser,
-              isAdmin,
-              sessionAccountId,
-              requestedAccountId: account_id,
-            },
-          });
-        }
-      }
-    } catch (authError) {
-      // Log the actual error for debugging
-      LOGGER.error("API: Auth error", {
-        operation: "accounts.GET",
-        context: "session validation",
-        error: authError,
-      });
-      LOGGER.info("User not authenticated, showing public account data only", {
-        operation: "accounts.GET",
-        context: "session validation",
-        metadata: { account_id },
-      });
-    }
+    LOGGER.debug("API: Auth status", {
+      operation: "accounts.GET",
+      context: "session validation",
+      metadata: {
+        isAuthenticated,
+        isAuthenticatedUser,
+        isAdmin: isAdmin(session),
+        sessionAccountId,
+        requestedAccountId: account_id,
+      },
+    });
 
     // Filter account data based on authentication status
     // If the user is viewing their own account or is an admin, include all fields
-    if (isAuthenticatedUser || isAdmin) {
+    if (isAuthenticatedUser || isAdmin(session)) {
       LOGGER.info("API: Returning full account data", {
         operation: "accounts.GET",
         context: "response",
@@ -194,17 +157,16 @@ export async function PUT(
     }
 
     // Check if user is updating their own account or is an admin
-    const isAdmin = !!session?.account?.metadata_public?.is_admin;
     const isAuthenticatedUser = sessionAccountId === account_id;
 
-    if (!isAuthenticatedUser && !isAdmin) {
+    if (!isAuthenticatedUser && !isAdmin(session)) {
       LOGGER.warn("API: Unauthorized account update attempt", {
         operation: "accounts.PUT",
         context: "authorization",
         metadata: {
           sessionAccountId,
           targetAccountId: account_id,
-          isAdmin,
+          isAdmin: isAdmin(session),
         },
       });
 
@@ -266,20 +228,14 @@ export async function DELETE(
   try {
     const { account_id } = await params;
 
-    // Get the session cookie from the request
-    const sessionCookie = request.cookies.get("ory_kratos_session");
-    if (!sessionCookie) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     // Verify session with Ory
-    const session = (await getApiSession(request)) as ExtendedSession;
-    if (!session?.active) {
+    const session = await getApiSession(request);
+    if (!session?.account || session.account?.disabled) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     // Get user data from session
-    if (!session?.identity) {
+    if (!session?.identity_id) {
       return NextResponse.json(
         { error: "No identity found in session" },
         { status: 400 }
@@ -287,10 +243,12 @@ export async function DELETE(
     }
 
     // Verify the user is authorized (either deleting their own account or is an admin)
-    const sessionAccountId = session.identity.metadata_public?.account_id;
-    const isAdmin = session.identity.metadata_public?.is_admin === true;
+    const sessionAccountId = session.account?.account_id;
 
-    if (!sessionAccountId || (!isAdmin && sessionAccountId !== account_id)) {
+    if (
+      !sessionAccountId ||
+      (!isAdmin(session) && sessionAccountId !== account_id)
+    ) {
       return NextResponse.json(
         { error: "You can only delete your own account" },
         { status: 403 }
@@ -331,7 +289,7 @@ export async function DELETE(
     return NextResponse.json({
       success: true,
       message: "Account deleted successfully",
-      deleted_by: isAdmin ? "admin" : "self",
+      deleted_by: isAdmin(session) ? "admin" : "self",
     });
   } catch (error) {
     LOGGER.error("Account deletion error", {
