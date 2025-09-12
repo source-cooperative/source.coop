@@ -60,7 +60,6 @@ export async function GET(
 
     // Sanitize connection if user doesn't have permission to view credentials
     if (
-      !isAdmin(session) &&
       !isAuthorized(
         session,
         dataConnection,
