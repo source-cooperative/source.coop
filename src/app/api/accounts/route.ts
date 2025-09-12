@@ -2,33 +2,21 @@ import { NextRequest, NextResponse } from "next/server";
 import { CONFIG, LOGGER } from "@/lib";
 import { getApiSession } from "@/lib/api/utils";
 import { AccountType } from "@/types/account";
-import { ExtendedSession } from "@/types/session";
 
 export async function POST(request: NextRequest) {
   try {
     const data = await request.json();
     // Verify the user is authenticated
-    const session = (await getApiSession(request)) as ExtendedSession;
-    if (!session?.active) {
+    const session = await getApiSession(request);
+    if (!session?.account || session.account?.disabled) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-
-    // Get user data from session
-    if (!session.identity) {
-      return NextResponse.json(
-        { error: "No identity found in session" },
-        { status: 400 }
-      );
-    }
-
-    const userId = session.identity.id;
-    const email = session.identity.traits.email;
 
     // Create the account in our database
     const accountData = {
       ...data,
-      email,
-      ory_id: userId,
+      email: session.account.emails?.[0]?.address,
+      ory_id: session.identity_id,
       type: AccountType.INDIVIDUAL,
     };
 
