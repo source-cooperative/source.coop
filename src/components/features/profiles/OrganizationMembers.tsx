@@ -78,13 +78,13 @@ interface MemberLinkProps {
 
 function MemberLink({ member, role: _role }: MemberLinkProps) {
   return (
-    <Link href={`/${member.account_id}`} passHref legacyBehavior>
-      <RadixLink>
+    <RadixLink asChild>
+      <Link href={`/${member.account_id}`}>
         <Flex gap="2" align="center">
           <ProfileAvatar account={member} size="2" />
           <Text size="2">{member.name}</Text>
         </Flex>
-      </RadixLink>
-    </Link>
+      </Link>
+    </RadixLink>
   );
 }
