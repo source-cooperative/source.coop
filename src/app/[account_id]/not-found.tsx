@@ -22,9 +22,6 @@ export default function AccountNotFound({ params }: NotFoundProps) {
           "The requested account could not be found."
         )
       }
-      actionText="Return to Home"
-      iconSize={32}
-      minHeight="60vh"
     />
   );
 }

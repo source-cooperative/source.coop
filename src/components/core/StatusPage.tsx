@@ -56,7 +56,7 @@ export function StatusPage({
   actionHref,
   iconSize = 48,
   containerSize,
-  minHeight = "calc(100vh - 160px)",
+  minHeight = "60vh",
   showAction = true,
 }: StatusPageProps) {
   const config = statusConfig[type];
