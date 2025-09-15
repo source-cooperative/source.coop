@@ -199,7 +199,7 @@ export default async function ProductPathPage({
             <InfoCircledIcon />
           </Callout.Icon>
           <Callout.Text>
-            Your bucket has been created. Contact{" "}
+            Your product has been created. Contact{" "}
             <Link href="mailto:hello@source.coop">hello@source.coop</Link> for
             more information about accessing the bucket.
           </Callout.Text>
