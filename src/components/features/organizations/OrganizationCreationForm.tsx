@@ -5,7 +5,7 @@ import { Text } from "@radix-ui/themes";
 import { DynamicForm, FormField } from "@/components/core";
 import { createAccount } from "@/lib/actions/account";
 import { AccountType } from "@/types";
-import { useAccountIdValidation } from "@/hooks/useAccountIdValidation";
+import { useAccountIdValidation } from "@/hooks/useIdValidation";
 
 interface OrganizationCreationFormProps {
   ownerAccountId: string;

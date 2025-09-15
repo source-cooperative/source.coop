@@ -27,7 +27,7 @@ interface UseIdValidationOptions {
   debounceMs?: number;
 }
 
-export function useIdValidation(id: string, options: UseIdValidationOptions) {
+function useIdValidation(id: string, options: UseIdValidationOptions) {
   const { accountId, productId, minLength = 3, debounceMs = 500 } = options;
 
   const [validationState, setValidationState] = useState<ValidationState>({

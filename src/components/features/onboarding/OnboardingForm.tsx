@@ -5,7 +5,7 @@ import { Box, Text } from "@radix-ui/themes";
 import { DynamicForm, FormField } from "@/components/core";
 import { createAccount } from "@/lib/actions/account";
 import { AccountType, Account } from "@/types";
-import { useAccountIdValidation } from "@/hooks/useAccountIdValidation";
+import { useAccountIdValidation } from "@/hooks/useIdValidation";
 import { EmailVerificationCallout } from "@/components/features/auth/EmailVerificationCallout";
 
 type OnboardingFormData = Pick<Account, "account_id" | "name">;
