@@ -1,18 +1,30 @@
+"use client";
+
 import { NotFoundPage } from "@/components/core";
+import { usePathname } from "next/navigation";
+import { Text } from "@radix-ui/themes";
 
-interface NotFoundProps {
-  params?: {
-    account_id?: string;
-    product_id?: string;
-  };
-}
-
-export default function NotFound({ params }: NotFoundProps) {
-  if (params?.account_id && params?.product_id) {
+export default function NotFound() {
+  const pathname = usePathname();
+  const [account_id, product_id] = pathname.split("/").slice(1, 3);
+  console.log({ account_id, product_id });
+  if (account_id && product_id) {
     return (
       <NotFoundPage
         title="Product Not Found"
-        description={`The product ${params.product_id} was not found in the account ${params.account_id}.`}
+        description={
+          <Text>
+            The product{" "}
+            <strong>
+              <code>{product_id}</code>
+            </strong>{" "}
+            was not found in the account{" "}
+            <strong>
+              <code>{account_id}</code>
+            </strong>
+            .
+          </Text>
+        }
       />
     );
   }
