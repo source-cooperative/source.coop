@@ -1,19 +1,25 @@
-**Related Issue(s):** #
+## What I'm changing
 
+<!--
+  High-level summary of what is achieved by these changes.
 
-**Proposed Changes:**
+  Optional: reference related issues.
+-->
 
-1.
-2.
+## How I did it
 
-**PR Checklist:**
+<!--
+  Lower-level details of the steps taken to achieve goal.
 
-- [ ] This PR is made against the dev branch (all proposed changes except releases should be against dev, not main).
-- [ ] This PR has **no** breaking changes.
-- [ ] I have updated or added new tests to cover the changes in this PR.
-- [ ] I have updated the version in `package.json` to follow the [Semantic Versioning](https://semver.org/) guidelines.
-- [ ] All tests are passing.
-- [ ] I have added my changes to the [CHANGELOG](https://github.com/source-cooperative/source.coop/blob/dev/CHANGELOG.rst)
-      **or** a CHANGELOG entry is not required.
-- [ ] This PR affects the [Source Cooperative Data Proxy](https://github.com/source-cooperative/data.source.coop),
-      and I have opened issue/PR #XXX to track the change.
+  Include:
+    - considerations made when deciding how to implement feature
+    - any changes to API that could impact the Data Proxy
+-->
+
+## How you can test it
+
+<!--
+  Instructions on how a reviewer can verify these changes.
+
+  Consider including screenshots or video demonstrating feature.
+-->
