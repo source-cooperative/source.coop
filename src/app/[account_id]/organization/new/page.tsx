@@ -1,7 +1,8 @@
 import { OrganizationCreationForm } from "@/components/features/organizations/OrganizationCreationForm";
-import { NotFoundPage, FormTitle } from "@/components/core";
+import { FormTitle } from "@/components/core";
 import { getPageSession } from "@/lib/api/utils";
 import { redirect } from "next/navigation";
+import { Container, Heading, Text } from "@radix-ui/themes";
 
 interface PageProps {
   params: Promise<{
@@ -15,12 +16,15 @@ export default async function NewOrganizationPage({ params }: PageProps) {
 
   if (!session?.account) {
     return (
-      <NotFoundPage
-        title="Login Required"
-        description="You must be logged in to create an organization."
-        actionText="Go to Login"
-        actionHref="/auth/login"
-      />
+      <Container size="2" py="6">
+        <Heading size="6" mb="4">
+          Access Denied
+        </Heading>
+
+        <Text as="p" size="3" color="gray" className="mb-4">
+          You must be logged in to create an organization.
+        </Text>
+      </Container>
     );
   }
 
