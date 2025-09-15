@@ -91,11 +91,9 @@ export function StatusPage({
         </Text>
 
         {showAction && (
-          <Link href={finalActionHref} passHref legacyBehavior>
-            <RadixLink size="3" mt="5">
-              {finalActionText}
-            </RadixLink>
-          </Link>
+          <RadixLink size="3" mt="5" asChild>
+            <Link href={finalActionHref}>{finalActionText}</Link>
+          </RadixLink>
         )}
       </Flex>
     </Container>
