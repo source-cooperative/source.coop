@@ -290,7 +290,7 @@ export async function createProduct(
 
   try {
     await productsTable.create(product);
-    redirect(`/${product.account_id}/${product.product_id}`);
+    redirect(`/${product.account_id}/${product.product_id}?success`);
   } catch (error) {
     LOGGER.error("Failed to create product", {
       operation: "createProduct",
