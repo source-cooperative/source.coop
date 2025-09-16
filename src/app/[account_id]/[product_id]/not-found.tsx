@@ -7,7 +7,6 @@ import { Text } from "@radix-ui/themes";
 export default function NotFound() {
   const pathname = usePathname();
   const [account_id, product_id] = pathname.split("/").slice(1, 3);
-  console.log({ account_id, product_id });
   if (account_id && product_id) {
     return (
       <NotFoundPage

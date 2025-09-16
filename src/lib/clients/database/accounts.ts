@@ -73,8 +73,13 @@ class AccountsTable extends BaseTable {
         },
       };
 
-      console.debug(
-        `DB: Fetching ${batch.length} accounts: ${batch.join(", ")}`
+      LOGGER.debug(
+        `DB: Fetching ${batch.length} accounts: ${batch.join(", ")}`,
+        {
+          operation: "AccountsTable.fetchManyByIds",
+          context: "database operation",
+          metadata: { batch },
+        }
       );
       const result = await this.client.send(new BatchGetCommand(batchRequest));
       if (result.Responses?.[this.table]) {
@@ -180,8 +185,9 @@ class AccountsTable extends BaseTable {
 export const isIndividualAccount = (acc: Account): acc is IndividualAccount =>
   acc.type === AccountType.INDIVIDUAL;
 
-export const isOrganizationalAccount = (acc: Account): acc is OrganizationalAccount =>
-  acc.type === AccountType.ORGANIZATION;
+export const isOrganizationalAccount = (
+  acc: Account
+): acc is OrganizationalAccount => acc.type === AccountType.ORGANIZATION;
 
 // Export a singleton instance
 export const accountsTable = new AccountsTable({});
