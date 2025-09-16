@@ -8,7 +8,7 @@ export async function AuthButtons() {
   const session = await getPageSession();
 
   if (session?.account) {
-    return <AccountDropdown account={session.account} />;
+    return <AccountDropdown session={session} />;
   }
 
   if (session && !session.account) {

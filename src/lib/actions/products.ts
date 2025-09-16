@@ -1,8 +1,17 @@
 "use server";
 
 import { productsTable } from "@/lib/clients/database";
-import type { Product } from "@/types";
-import { LOGGER } from "@/lib";
+import {
+  Actions,
+  ProductCreationRequestSchema,
+  type Product,
+  type ProductCreationRequest,
+  ProductDataMode,
+} from "@/types";
+import { getPageSession, LOGGER } from "@/lib";
+import { FormState } from "@/components/core/DynamicForm";
+import { isAuthorized } from "../api/authz";
+import { redirect } from "next/navigation";
 
 export interface PaginatedProductsResult {
   products: Product[];
@@ -223,5 +232,72 @@ export async function getPaginatedProducts(
       error: error,
     });
     throw new Error("Failed to fetch products");
+  }
+}
+
+export async function createProduct(
+  initialState: any,
+  formData: FormData
+): Promise<FormState<ProductCreationRequest>> {
+  const session = await getPageSession();
+
+  if (!session?.identity_id || !session.account) {
+    return {
+      fieldErrors: {},
+      data: formData,
+      message: "Unauthenticated",
+      success: false,
+    };
+  }
+
+  const validatedFields = ProductCreationRequestSchema.safeParse(
+    Object.fromEntries(formData)
+  );
+
+  if (!validatedFields.success) {
+    return {
+      fieldErrors: validatedFields.error.flatten().fieldErrors,
+      data: formData,
+      message: "Invalid form data",
+      success: false,
+    };
+  }
+
+  const product: Product = {
+    ...validatedFields.data,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    disabled: false,
+    featured: 0,
+    data_mode: ProductDataMode.Open,
+    metadata: {
+      // TODO: Add required metadata
+      tags: [],
+      primary_mirror: "",
+      mirrors: {},
+      roles: {},
+    },
+  };
+
+  if (!isAuthorized(session, product, Actions.CreateRepository)) {
+    return {
+      fieldErrors: {},
+      data: formData,
+      message: "Unauthorized to create product",
+      success: false,
+    };
+  }
+
+  try {
+    await productsTable.create(product);
+    redirect(`/${product.account_id}/${product.product_id}?success`);
+  } catch (error) {
+    LOGGER.error("Failed to create product", {
+      operation: "createProduct",
+      context: "product creation",
+      error: error,
+      metadata: { product },
+    });
+    throw error;
   }
 }

@@ -1,9 +1,10 @@
 import { notFound } from "next/navigation";
 import { getServerSession } from "@ory/nextjs/app";
-import { Box, Container, Heading, Text } from "@radix-ui/themes";
 import { accountsTable } from "@/lib/clients/database";
 import { getOryId } from "@/lib/ory";
-import { EditProfileForm } from "./EditProfileForm";
+import { EditProfileForm } from "../../../components/features/profiles/EditProfileForm";
+import { FormTitle } from "@/components/core";
+import { Container, Heading, Text } from "@radix-ui/themes";
 
 type Params = Promise<{ account_id: string }>;
 
@@ -32,15 +33,12 @@ export default async function EditProfilePage({ params }: { params: Params }) {
   }
 
   return (
-    <Container size="2">
-      <Box className="mx-auto max-w-md">
-        <Box mb="5">
-          <Text size="6" weight="bold">
-            Edit Profile
-          </Text>
-        </Box>
-        <EditProfileForm account={account} />
-      </Box>
-    </Container>
+    <>
+      <FormTitle
+        title="Edit Profile"
+        description="Edit your profile to update your publicly visible information"
+      />
+      <EditProfileForm account={account} />
+    </>
   );
 }
