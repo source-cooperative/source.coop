@@ -1,6 +1,7 @@
-import { Box, Card, Grid, Flex } from "@radix-ui/themes";
+import { Box, Card, Grid, Flex, DataList } from "@radix-ui/themes";
 import { SectionHeader, Skeleton } from "@/components/core";
-import ProductContentsLoading from "./(product)/[[...path]]/loading";
+// import { ProductContentsLoading } from "./(product)/[[...path]]/loading";
+import DirectoryListLoading from "./(product)/[[...path]]/loading";
 
 export default function ProductDetailsLoading() {
   return (
@@ -39,43 +40,81 @@ export default function ProductDetailsLoading() {
         <Box width="100%" className="product-meta">
           <Card style={{ height: "100%" }} size={{ initial: "2", sm: "1" }}>
             <SectionHeader title="Product Details">
-              <Box>
+              <DataList.Root>
                 {/* Visibility Badge Skeleton */}
-                <Flex justify="between" align="center" mb="4">
-                  <Skeleton height="16px" width="60px" />
-                  <Skeleton height="20px" width="50px" />
-                </Flex>
+                <DataList.Item>
+                  <DataList.Label>
+                    <Skeleton height="16px" width="60px" />
+                  </DataList.Label>
+                  <DataList.Value>
+                    <Skeleton height="20px" width="50px" />
+                  </DataList.Value>
+                </DataList.Item>
 
                 {/* Owner Skeleton */}
-                <Flex justify="between" align="center" mb="4">
-                  <Skeleton height="16px" width="40px" />
-                  <Flex gap="2" align="center">
-                    <Skeleton
-                      height="24px"
-                      width="24px"
-                      className="rounded-full"
-                    />
-                    <Skeleton height="16px" width="80px" />
-                  </Flex>
-                </Flex>
+                <DataList.Item>
+                  <DataList.Label>
+                    <Skeleton height="16px" width="40px" />
+                  </DataList.Label>
+                  <DataList.Value>
+                    <Flex align="center" gap="2">
+                      <Skeleton
+                        height="36px"
+                        width="36px"
+                        borderRadius="full"
+                      />
+                      <Skeleton height="16px" width="80px" />
+                    </Flex>
+                  </DataList.Value>
+                </DataList.Item>
 
                 {/* Created Date Skeleton */}
-                <Flex justify="between" align="center" mb="4">
-                  <Skeleton height="16px" width="50px" />
-                  <Skeleton height="16px" width="100px" />
-                </Flex>
+                <DataList.Item>
+                  <DataList.Label>
+                    <Skeleton height="16px" width="50px" />
+                  </DataList.Label>
+                  <DataList.Value>
+                    <Skeleton height="16px" width="100px" />
+                  </DataList.Value>
+                </DataList.Item>
 
                 {/* Last Updated Skeleton */}
-                <Flex justify="between" align="center">
-                  <Skeleton height="16px" width="80px" />
-                  <Skeleton height="16px" width="100px" />
-                </Flex>
-              </Box>
+                <DataList.Item>
+                  <DataList.Label>
+                    <Skeleton height="16px" width="80px" />
+                  </DataList.Label>
+                  <DataList.Value>
+                    <Skeleton height="16px" width="100px" />
+                  </DataList.Value>
+                </DataList.Item>
+              </DataList.Root>
             </SectionHeader>
           </Card>
         </Box>
       </Grid>
-      <ProductContentsLoading />
+
+      {/* Product Contents Skeleton */}
+      <Card mt="4">
+        <Box>
+          {/* Breadcrumb Skeleton */}
+          <SectionHeader title="Product Contents">
+            <Flex
+              pb="3"
+              mb="3"
+              style={{
+                borderBottom: "1px solid var(--gray-5)",
+              }}
+            >
+              <Skeleton height="16px" width="60px" />
+              <Skeleton height="16px" width="16px" />
+              <Skeleton height="16px" width="80px" />
+            </Flex>
+          </SectionHeader>
+
+          {/* Directory List Skeleton */}
+          <DirectoryListLoading />
+        </Box>
+      </Card>
     </>
   );
 }
