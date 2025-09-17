@@ -65,26 +65,14 @@ export async function ObjectBrowser({
           cloudUri={cloudUri}
         />
 
-        {cloudUri?.endsWith(".pmtiles") ? (
+        {cloudUri?.endsWith(".parquet") ? (
           <Card style={{ marginTop: "2rem" }}>
             <SectionHeader title="Preview" />
             <iframe
               frameBorder="0"
               width="100%"
               height="600px"
-              src={`https://pmtiles.io/#url=${sourceUrl}&iframe=true`}
-            >
-              Your browser does not support iframes.
-            </iframe>
-          </Card>
-        ) : cloudUri?.endsWith(".parquet") ? (
-          <Card style={{ marginTop: "2rem" }}>
-            <SectionHeader title="Preview" />
-            <iframe
-              frameBorder="0"
-              width="100%"
-              height="600px"
-              src={`https://hyparam.github.io/demos/hyparquet/?key=${sourceUrl}`}
+              src={`https://source-cooperative.github.io/parquet-table/?iframe&url=${sourceUrl}`}
             >
               Your browser does not support iframes.
             </iframe>
