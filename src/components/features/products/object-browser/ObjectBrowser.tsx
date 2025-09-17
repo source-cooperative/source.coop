@@ -52,13 +52,33 @@ export function ObjectBrowser({
           break;
       }
     }
+    const sourceUrl = `https://data.source.coop/${product.account?.account_id}/${product.product_id}/${selectedObject.path}`;
     return (
-      <ObjectDetails
-        product={product}
-        selectedObject={selectedObject}
-        selectedDataItem={null}
-        cloudUri={cloudUri}
-      />
+      <>
+        <ObjectDetails
+          product={product}
+          selectedObject={selectedObject}
+          selectedDataItem={null}
+          cloudUri={cloudUri}
+        />
+
+        {cloudUri?.endsWith(".parquet") ? (
+          <Card style={{ marginTop: "2rem" }}>
+            <SectionHeader title="Preview" />
+            <iframe
+              style={{
+                border: "solid 1px var(--gray-6)",
+                boxSizing: "border-box",
+              }}
+              width="100%"
+              height="600px"
+              src={`https://source-cooperative.github.io/parquet-table/?iframe&url=${sourceUrl}`}
+            >
+              Your browser does not support iframes.
+            </iframe>
+          </Card>
+        ) : null}
+      </>
     );
   }
 
