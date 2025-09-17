@@ -1,12 +1,11 @@
-import { ObjectDetails } from "./object-browser/ObjectDetails";
-import { DirectoryList } from "./object-browser/DirectoryList";
+import { Card } from "@radix-ui/themes";
+import { SectionHeader } from "@/components";
+import { DataConnection, Product, ProductMirror, ProductObject } from "@/types";
+
+import { ObjectDetails } from "./ObjectDetails";
+import { DirectoryList } from "./DirectoryList";
 import "./ObjectBrowser.module.css";
-import { ProductObject } from "@/types/product_object";
-import { DataConnection, Product, ProductMirror } from "@/types";
-import { Card, Box } from "@radix-ui/themes";
-import { SectionHeader } from "@/components/core";
-import { BreadcrumbNav } from "@/components/display";
-import { buildDirectoryTree } from "./object-browser/utils";
+import { buildDirectoryTree } from "./utils";
 
 export interface ObjectBrowserProps {
   product: Product;
@@ -19,7 +18,7 @@ export interface ObjectBrowserProps {
   objects: ProductObject[]; // Allow parent to pass objects to avoid duplicate calls
 }
 
-export async function ObjectBrowser({
+export function ObjectBrowser({
   product,
   initialPath = "",
   selectedObject,
@@ -87,26 +86,6 @@ export async function ObjectBrowser({
 
   // For directory view, show the contents of the current directory
   return (
-    <Card>
-      <SectionHeader title="Product Contents">
-        <Box
-          style={{
-            borderBottom: "1px solid var(--gray-5)",
-            paddingBottom: "var(--space-3)",
-            marginBottom: "var(--space-3)",
-          }}
-        >
-          <BreadcrumbNav
-            path={currentPath}
-            baseUrl={`/${product.account_id}/${product.product_id}`}
-          />
-        </Box>
-      </SectionHeader>
-      <DirectoryList
-        items={items}
-        currentPath={currentPath}
-        product={product}
-      />
-    </Card>
+    <DirectoryList items={items} currentPath={currentPath} product={product} />
   );
 }
