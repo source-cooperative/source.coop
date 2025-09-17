@@ -1274,7 +1274,7 @@ describe("Authorization Tests", () => {
 
     // User Account
     let account: Account = sessions["regular-user"]!.account as Account;
-    expect(isAuthorized(sessions["admin"], account, action)).toBe(false);
+    expect(isAuthorized(sessions["admin"], account, action)).toBe(true);
     expect(
       isAuthorized(sessions["organization-owner-user"], account, action)
     ).toBe(false);
@@ -3479,5 +3479,283 @@ describe("Authorization Tests", () => {
     expect(isAuthorized(sessions["no-account"], dataConnection, action)).toBe(
       false
     );
+  });
+
+  test("Action: account:create with '*' resource", () => {
+    const action = Actions.CreateAccount;
+
+    // Test '*' resource - checks if user can create any organization
+    expect(isAuthorized(sessions["admin"], "*", action)).toBe(true);
+    expect(isAuthorized(sessions["organization-owner-user"], "*", action)).toBe(
+      true
+    );
+    expect(
+      isAuthorized(sessions["organization-maintainer-user"], "*", action)
+    ).toBe(false);
+    expect(
+      isAuthorized(sessions["organization-read-data-user"], "*", action)
+    ).toBe(false);
+    expect(
+      isAuthorized(sessions["organization-write-data-user"], "*", action)
+    ).toBe(false);
+    expect(isAuthorized(sessions["repo-member-owner"], "*", action)).toBe(
+      false
+    );
+    expect(isAuthorized(sessions["repo-member-maintainer"], "*", action)).toBe(
+      false
+    );
+    expect(isAuthorized(sessions["repo-member-read-data"], "*", action)).toBe(
+      false
+    );
+    expect(isAuthorized(sessions["repo-member-write-data"], "*", action)).toBe(
+      false
+    );
+    expect(isAuthorized(sessions["repo-member-invited"], "*", action)).toBe(
+      false
+    );
+    expect(isAuthorized(sessions["disabled"], "*", action)).toBe(false);
+    expect(isAuthorized(sessions["regular-user"], "*", action)).toBe(false);
+    expect(
+      isAuthorized(sessions["create-repositories-user"], "*", action)
+    ).toBe(false);
+    expect(isAuthorized(sessions["anonymous"], "*", action)).toBe(false);
+    expect(isAuthorized(sessions["no-account"], "*", action)).toBe(false);
+  });
+
+  test("Action: repository:create with '*' resource", () => {
+    const action = Actions.CreateRepository;
+
+    // Test '*' resource - checks if user can create any repository
+    expect(isAuthorized(sessions["admin"], "*", action)).toBe(true);
+    expect(isAuthorized(sessions["organization-owner-user"], "*", action)).toBe(
+      true
+    );
+    expect(
+      isAuthorized(sessions["organization-maintainer-user"], "*", action)
+    ).toBe(true);
+    expect(
+      isAuthorized(sessions["organization-read-data-user"], "*", action)
+    ).toBe(false);
+    expect(
+      isAuthorized(sessions["organization-write-data-user"], "*", action)
+    ).toBe(true);
+    expect(isAuthorized(sessions["repo-member-owner"], "*", action)).toBe(
+      false
+    );
+    expect(isAuthorized(sessions["repo-member-maintainer"], "*", action)).toBe(
+      false
+    );
+    expect(isAuthorized(sessions["repo-member-read-data"], "*", action)).toBe(
+      false
+    );
+    expect(isAuthorized(sessions["repo-member-write-data"], "*", action)).toBe(
+      false
+    );
+    expect(isAuthorized(sessions["repo-member-invited"], "*", action)).toBe(
+      false
+    );
+    expect(isAuthorized(sessions["disabled"], "*", action)).toBe(false);
+    expect(isAuthorized(sessions["regular-user"], "*", action)).toBe(false);
+    expect(
+      isAuthorized(sessions["create-repositories-user"], "*", action)
+    ).toBe(true);
+    expect(isAuthorized(sessions["anonymous"], "*", action)).toBe(false);
+    expect(isAuthorized(sessions["no-account"], "*", action)).toBe(false);
+  });
+
+  test("Action: account:create with '*' resource - edge cases", () => {
+    const action = Actions.CreateAccount;
+
+    // Test with null session
+    expect(isAuthorized(null, "*", action)).toBe(false);
+
+    // Test with session but no account
+    expect(isAuthorized(sessions["no-account"], "*", action)).toBe(false);
+
+    // Test with disabled account
+    expect(isAuthorized(sessions["disabled"], "*", action)).toBe(false);
+
+    // Test with anonymous session
+    expect(isAuthorized(sessions["anonymous"], "*", action)).toBe(false);
+  });
+
+  test("Action: repository:create with '*' resource - edge cases", () => {
+    const action = Actions.CreateRepository;
+
+    // Test with null session
+    expect(isAuthorized(null, "*", action)).toBe(false);
+
+    // Test with session but no account
+    expect(isAuthorized(sessions["no-account"], "*", action)).toBe(false);
+
+    // Test with disabled account
+    expect(isAuthorized(sessions["disabled"], "*", action)).toBe(false);
+
+    // Test with anonymous session
+    expect(isAuthorized(sessions["anonymous"], "*", action)).toBe(false);
+  });
+
+  test("Action: account:create with '*' resource - admin privileges", () => {
+    const action = Actions.CreateAccount;
+
+    // Admin should be able to create any organization
+    expect(isAuthorized(sessions["admin"], "*", action)).toBe(true);
+
+    // Test admin with disabled account (should still work)
+    const disabledAdminSession = {
+      ...sessions["admin"],
+      account: {
+        ...sessions["admin"]!.account!,
+        disabled: true,
+      },
+    };
+    expect(isAuthorized(disabledAdminSession, "*", action)).toBe(false);
+  });
+
+  test("Action: repository:create with '*' resource - admin privileges", () => {
+    const action = Actions.CreateRepository;
+
+    // Admin should be able to create any repository
+    expect(isAuthorized(sessions["admin"], "*", action)).toBe(true);
+
+    // Test admin with disabled account (should still work)
+    const disabledAdminSession = {
+      ...sessions["admin"],
+      account: {
+        ...sessions["admin"]!.account!,
+        disabled: true,
+      },
+    };
+    expect(isAuthorized(disabledAdminSession, "*", action)).toBe(false);
+  });
+
+  test("Action: account:create with '*' resource - flag requirements", () => {
+    const action = Actions.CreateAccount;
+
+    // Test user with CREATE_ORGANIZATIONS flag
+    const userWithOrgFlag = {
+      ...sessions["regular-user"],
+      account: {
+        ...sessions["regular-user"]!.account!,
+        flags: [AccountFlags.CREATE_ORGANIZATIONS],
+      },
+    };
+    expect(isAuthorized(userWithOrgFlag, "*", action)).toBe(true);
+
+    // Test user without CREATE_ORGANIZATIONS flag
+    const userWithoutOrgFlag = {
+      ...sessions["regular-user"],
+      account: {
+        ...sessions["regular-user"]!.account!,
+        flags: [],
+      },
+    };
+    expect(isAuthorized(userWithoutOrgFlag, "*", action)).toBe(false);
+
+    // Test user with other flags but not CREATE_ORGANIZATIONS
+    const userWithOtherFlags = {
+      ...sessions["regular-user"],
+      account: {
+        ...sessions["regular-user"]!.account!,
+        flags: [AccountFlags.CREATE_REPOSITORIES],
+      },
+    };
+    expect(isAuthorized(userWithOtherFlags, "*", action)).toBe(false);
+  });
+
+  test("Action: repository:create with '*' resource - flag requirements", () => {
+    const action = Actions.CreateRepository;
+
+    // Test user with CREATE_REPOSITORIES flag
+    const userWithRepoFlag = {
+      ...sessions["regular-user"],
+      account: {
+        ...sessions["regular-user"]!.account!,
+        flags: [AccountFlags.CREATE_REPOSITORIES],
+      },
+    };
+    expect(isAuthorized(userWithRepoFlag, "*", action)).toBe(true);
+
+    // Test user without CREATE_REPOSITORIES flag
+    const userWithoutRepoFlag = {
+      ...sessions["regular-user"],
+      account: {
+        ...sessions["regular-user"]!.account!,
+        flags: [],
+      },
+    };
+    expect(isAuthorized(userWithoutRepoFlag, "*", action)).toBe(false);
+
+    // Test user with other flags but not CREATE_REPOSITORIES
+    const userWithOtherFlags = {
+      ...sessions["regular-user"],
+      account: {
+        ...sessions["regular-user"]!.account!,
+        flags: [AccountFlags.CREATE_ORGANIZATIONS],
+      },
+    };
+    expect(isAuthorized(userWithOtherFlags, "*", action)).toBe(false);
+  });
+
+  test("Action: account:create with '*' resource - multiple flags", () => {
+    const action = Actions.CreateAccount;
+
+    // Test user with both flags
+    const userWithBothFlags = {
+      ...sessions["regular-user"],
+      account: {
+        ...sessions["regular-user"]!.account!,
+        flags: [
+          AccountFlags.CREATE_ORGANIZATIONS,
+          AccountFlags.CREATE_REPOSITORIES,
+        ],
+      },
+    };
+    expect(isAuthorized(userWithBothFlags, "*", action)).toBe(true);
+
+    // Test user with admin flag and other flags
+    const userWithAdminAndOtherFlags = {
+      ...sessions["regular-user"],
+      account: {
+        ...sessions["regular-user"]!.account!,
+        flags: [
+          AccountFlags.ADMIN,
+          AccountFlags.CREATE_ORGANIZATIONS,
+          AccountFlags.CREATE_REPOSITORIES,
+        ],
+      },
+    };
+    expect(isAuthorized(userWithAdminAndOtherFlags, "*", action)).toBe(true);
+  });
+
+  test("Action: repository:create with '*' resource - multiple flags", () => {
+    const action = Actions.CreateRepository;
+
+    // Test user with both flags
+    const userWithBothFlags = {
+      ...sessions["regular-user"],
+      account: {
+        ...sessions["regular-user"]!.account!,
+        flags: [
+          AccountFlags.CREATE_ORGANIZATIONS,
+          AccountFlags.CREATE_REPOSITORIES,
+        ],
+      },
+    };
+    expect(isAuthorized(userWithBothFlags, "*", action)).toBe(true);
+
+    // Test user with admin flag and other flags
+    const userWithAdminAndOtherFlags = {
+      ...sessions["regular-user"],
+      account: {
+        ...sessions["regular-user"]!.account!,
+        flags: [
+          AccountFlags.ADMIN,
+          AccountFlags.CREATE_ORGANIZATIONS,
+          AccountFlags.CREATE_REPOSITORIES,
+        ],
+      },
+    };
+    expect(isAuthorized(userWithAdminAndOtherFlags, "*", action)).toBe(true);
   });
 });

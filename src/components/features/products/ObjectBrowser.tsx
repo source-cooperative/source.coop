@@ -65,7 +65,7 @@ export async function ObjectBrowser({
           cloudUri={cloudUri}
         />
 
-        {cloudUri?.endsWith(".pmtiles") && (
+        {cloudUri?.endsWith(".pmtiles") ? (
           <Card style={{ marginTop: "2rem" }}>
             <SectionHeader title="Preview" />
             <iframe
@@ -77,7 +77,22 @@ export async function ObjectBrowser({
               Your browser does not support iframes.
             </iframe>
           </Card>
-        )}
+        ) : cloudUri?.endsWith(".parquet") ? (
+          <Card style={{ marginTop: "2rem" }}>
+            <SectionHeader title="Preview" />
+            <iframe
+              style={{
+                border: "solid 1px var(--gray-6)",
+                boxSizing: "border-box",
+              }}
+              width="100%"
+              height="600px"
+              src={`https://source-cooperative.github.io/parquet-table/?iframe&url=${sourceUrl}`}
+            >
+              Your browser does not support iframes.
+            </iframe>
+          </Card>
+        ) : null}
       </>
     );
   }

@@ -56,6 +56,7 @@ export function isAuthorized(
     | APIKey
     | Membership
     | DataConnection
+    | "*"
     | undefined,
   action: Actions
 ): boolean {
@@ -65,10 +66,10 @@ export function isAuthorized(
 
   const result = match(action)
     .with(Actions.CreateAccount, () =>
-      createAccount(principal, resource as Account)
+      createAccount(principal, resource as Account | "*")
     )
     .with(Actions.CreateRepository, () =>
-      createRepository(principal, resource as Product)
+      createRepository(principal, resource as Product | "*")
     )
     .with(Actions.DisableAccount, () =>
       disableAccount(principal, resource as Account)
@@ -722,7 +723,7 @@ function listAccount(principal: UserSession | null, account: Account): boolean {
 
 function createRepository(
   principal: UserSession | null,
-  product: Product
+  product: Product | "*"
 ): boolean {
   // If the user does not have an account, they are not authorized
   if (!principal?.account) {
@@ -744,6 +745,11 @@ function createRepository(
     return false;
   }
 
+  // If the product is not provided (ie this is a check if a user can create any product), the user is authorized
+  if (product === "*") {
+    return true;
+  }
+
   // If the repository is under the user's account, they are authorized
   if (principal?.account?.account_id === product.account_id) {
     return true;
@@ -759,8 +765,24 @@ function createRepository(
 
 function createAccount(
   principal: UserSession | null,
-  account: Account
+  account: Account | "*"
 ): boolean {
+  // If the user is disabled, they are not authorized
+  if (principal?.account?.disabled) {
+    return false;
+  }
+
+  // If the user is an admin, they are authorized
+  if (isAdmin(principal)) {
+    return true;
+  }
+
+  if (account === "*") {
+    return !!principal?.account?.flags.includes(
+      AccountFlags.CREATE_ORGANIZATIONS
+    );
+  }
+
   // Handle user creation
   if (account.type === AccountType.INDIVIDUAL) {
     // If the user is not signed in or has already created an account, they are not authorized
@@ -775,11 +797,6 @@ function createAccount(
   if (account.type === AccountType.ORGANIZATION) {
     // If the user does not have an account, they are not authorized
     if (!principal?.account) {
-      return false;
-    }
-
-    // If the user is disabled, they are not authorized
-    if (principal?.account?.disabled) {
       return false;
     }
 

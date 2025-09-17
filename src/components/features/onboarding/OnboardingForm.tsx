@@ -4,15 +4,17 @@ import { useState } from "react";
 import { Box, Text } from "@radix-ui/themes";
 import { DynamicForm, FormField } from "@/components/core";
 import { createAccount } from "@/lib/actions/account";
-import { AccountType } from "@/types";
-import { useAccountIdValidation } from "@/hooks/useAccountIdValidation";
+import { AccountType, Account } from "@/types";
+import { useAccountIdValidation } from "@/hooks/useIdValidation";
 import { EmailVerificationCallout } from "@/components/features/auth/EmailVerificationCallout";
+
+type OnboardingFormData = Pick<Account, "account_id" | "name">;
 
 export function OnboardingForm({ identityId }: { identityId: string }) {
   const [accountId, setAccountId] = useState("");
   const validationState = useAccountIdValidation(accountId);
 
-  const fields: FormField[] = [
+  const fields: FormField<OnboardingFormData>[] = [
     {
       label: "Username",
       name: "account_id",
@@ -22,7 +24,7 @@ export function OnboardingForm({ identityId }: { identityId: string }) {
       placeholder: "Choose a username",
       controlled: true,
       value: accountId,
-      onValueChange: (value) => {
+      onValueChange: (value: string) => {
         const processedValue = value.toLowerCase().replace(/\s+/g, "");
         setAccountId(processedValue);
       },
@@ -53,11 +55,8 @@ export function OnboardingForm({ identityId }: { identityId: string }) {
 
   return (
     <Box pt="6">
-      <Box mb="4">
-        <EmailVerificationCallout showCheckEmail={true} />
-      </Box>
-
-      <DynamicForm
+      <EmailVerificationCallout showCheckEmail={true} />
+      <DynamicForm<OnboardingFormData>
         fields={fields}
         action={createAccount}
         submitButtonText="Complete Profile"

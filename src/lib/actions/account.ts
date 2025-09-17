@@ -14,6 +14,8 @@ import {
   AccountType,
   OrganizationCreationRequestSchema,
   OrganizationCreationRequest,
+  IndividualAccount,
+  OrganizationalAccount,
 } from "@/types";
 import { isAuthorized } from "../api/authz";
 import { getPageSession } from "../api/utils";
@@ -116,19 +118,19 @@ export async function createAccount(
   };
   const newAccount =
     validatedFields.data.type === AccountType.INDIVIDUAL
-      ? {
+      ? ({
           ...baseAccount,
           identity_id: session?.identity_id,
           flags: DEFAULT_INDIVIDUAL_FLAGS,
-        }
-      : {
+        } as IndividualAccount)
+      : ({
           ...baseAccount,
           identity_id: undefined,
           flags: DEFAULT_ORGANIZATION_FLAGS,
-        };
+        } as OrganizationalAccount);
 
   // Check authorization
-  if (!isAuthorized(session, newAccount as Account, Actions.CreateAccount)) {
+  if (!isAuthorized(session, newAccount, Actions.CreateAccount)) {
     LOGGER.warn(`Session unable to create account`, {
       operation: "createAccount",
       metadata: { session, newAccount },
@@ -142,7 +144,7 @@ export async function createAccount(
   }
 
   // Create account
-  const account = await accountsTable.create(newAccount as Account);
+  const account = await accountsTable.create(newAccount);
   LOGGER.info("Successfully created account", {
     operation: "createAccount",
     context: "account creation",
