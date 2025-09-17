@@ -24,6 +24,15 @@ export default function NotFound() {
             .
           </Text>
         }
+        actionText={
+          <>
+            Look for other products by{" "}
+            <strong>
+              <code>{account_id}</code>
+            </strong>
+          </>
+        }
+        actionHref={`/${account_id}`}
       />
     );
   }

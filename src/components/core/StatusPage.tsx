@@ -15,7 +15,7 @@ interface StatusPageProps {
   type: StatusType;
   title?: string;
   description?: ReactNode;
-  actionText?: string;
+  actionText?: ReactNode;
   actionHref?: string;
   iconSize?: number;
   containerSize?: "1" | "2" | "3" | "4";
