@@ -1,4 +1,4 @@
-import type { Product, ProductMirror, ProductRole } from "@/types";
+import type { Product, ProductMirror } from "@/types";
 import {
   PutItemCommand,
   ResourceNotFoundException,
@@ -13,7 +13,6 @@ import {
 } from "@aws-sdk/lib-dynamodb";
 import { accountsTable } from "./accounts";
 import { BaseTable } from "./base";
-import { LOGGER } from "@/lib/logging";
 import { marshall } from "@aws-sdk/util-dynamodb";
 
 class ProductsTable extends BaseTable {
@@ -248,30 +247,6 @@ class ProductsTable extends BaseTable {
         },
         ExpressionAttributeValues: {
           ":mirror": mirror,
-        },
-      })
-    );
-  }
-
-  async updateRole(
-    product_id: string,
-    account_id: string,
-    target_account_id: string,
-    role: ProductRole
-  ): Promise<void> {
-    await this.client.send(
-      new UpdateCommand({
-        TableName: this.table,
-        Key: {
-          product_id,
-          account_id,
-        },
-        UpdateExpression: "SET metadata.roles.#target = :role",
-        ExpressionAttributeNames: {
-          "#target": target_account_id,
-        },
-        ExpressionAttributeValues: {
-          ":role": role,
         },
       })
     );
