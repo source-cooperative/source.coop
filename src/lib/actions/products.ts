@@ -275,7 +275,6 @@ export async function createProduct(
       tags: [],
       primary_mirror: "",
       mirrors: {},
-      roles: {},
     },
   };
 
