@@ -271,10 +271,20 @@ export async function createProduct(
     featured: 0,
     data_mode: ProductDataMode.Open,
     metadata: {
-      // TODO: Add required metadata
       tags: [],
-      primary_mirror: "",
-      mirrors: {},
+      primary_mirror: "aws-opendata-us-west-2",
+      mirrors: {
+        "aws-opendata-us-west-2": {
+          storage_type: "s3",
+          connection_id: "aws-opendata-us-west-2",
+          prefix: `${validatedFields.data.account_id}/${validatedFields.data.product_id}/`,
+          config: {
+            region: "us-west-2",
+            bucket: "aws-opendata-us-west-2",
+          },
+          is_primary: true,
+        },
+      },
       roles: {},
     },
   };
