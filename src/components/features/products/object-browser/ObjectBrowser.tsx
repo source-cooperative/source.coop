@@ -1,8 +1,10 @@
+import { Card } from "@radix-ui/themes";
+import { SectionHeader } from "@/components";
+import { DataConnection, Product, ProductMirror, ProductObject } from "@/types";
+
 import { ObjectDetails } from "./ObjectDetails";
 import { DirectoryList } from "./DirectoryList";
 import "./ObjectBrowser.module.css";
-import { ProductObject } from "@/types/product_object";
-import { DataConnection, Product, ProductMirror } from "@/types";
 import { buildDirectoryTree } from "./utils";
 
 export interface ObjectBrowserProps {
