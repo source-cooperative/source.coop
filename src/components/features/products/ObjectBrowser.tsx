@@ -69,7 +69,10 @@ export async function ObjectBrowser({
           <Card style={{ marginTop: "2rem" }}>
             <SectionHeader title="Preview" />
             <iframe
-              frameBorder="0"
+              style={{
+                border: "solid 1px var(--gray-6)",
+                boxSizing: "border-box",
+              }}
               width="100%"
               height="600px"
               src={`https://source-cooperative.github.io/parquet-table/?iframe&url=${sourceUrl}`}
