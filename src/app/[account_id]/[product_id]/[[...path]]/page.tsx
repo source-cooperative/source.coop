@@ -1,4 +1,4 @@
-import { Container, Box } from "@radix-ui/themes";
+import { Container, Box, Callout, Link } from "@radix-ui/themes";
 import { notFound } from "next/navigation";
 
 import { ObjectBrowser } from "@/components/features/products";
@@ -9,6 +9,7 @@ import { storage } from "@/lib/clients/storage";
 import { DataConnection, ProductMirror } from "@/types";
 import { LOGGER } from "@/lib";
 import { MonoText } from "@/components/core";
+import { InfoCircledIcon } from "@radix-ui/react-icons";
 
 function StorageErrorDisplay({ error }: { error: Error }) {
   const getErrorMessage = (error: Error) => {
@@ -80,11 +81,18 @@ interface PageProps {
     product_id: string;
     path?: string[];
   }>;
+  searchParams: Promise<{
+    success?: string;
+  }>;
 }
 
-export default async function ProductPathPage({ params }: PageProps) {
+export default async function ProductPathPage({
+  params,
+  searchParams,
+}: PageProps) {
   // 1. Get and await params
   const { account_id, product_id, path } = await params;
+  const search = await searchParams;
   const object_path = decodeURIComponent(path?.join("/") || "");
 
   // 2. Run concurrent requests for better performance
@@ -185,6 +193,18 @@ export default async function ProductPathPage({ params }: PageProps) {
 
   return (
     <Container>
+      {!!Object.hasOwn(search, "success") && (
+        <Callout.Root color="blue">
+          <Callout.Icon>
+            <InfoCircledIcon />
+          </Callout.Icon>
+          <Callout.Text>
+            Your product has been created. Contact{" "}
+            <Link href="mailto:hello@source.coop">hello@source.coop</Link> for
+            more information about accessing the bucket.
+          </Callout.Text>
+        </Callout.Root>
+      )}
       <Box mt="4">
         {objectsList.status === "fulfilled" ? (
           <ObjectBrowser
