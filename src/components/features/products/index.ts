@@ -6,7 +6,7 @@ export { ProductHeader } from "./ProductHeader";
 export { ProductSchemaMetadata } from "./ProductSchemaMetadata";
 export { ProductSearchResult } from "./ProductSearchResult";
 export { TagList } from "./TagList";
-export { ObjectBrowser } from "./ObjectBrowser";
+export { ObjectBrowser } from "./object-browser/ObjectBrowser";
 export { ChecksumVerifier } from "./ChecksumVerifier";
 export { ProductsFilters } from "./ProductsFilters";
 export { ProductsList } from "./ProductsList";
