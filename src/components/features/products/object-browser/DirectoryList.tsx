@@ -13,7 +13,7 @@ import { MonoText } from "@/components/core";
 import type { FileNode } from "./utils";
 import type { Product } from "@/types";
 import { formatFileSize } from "./utils";
-import styles from "../ObjectBrowser.module.css";
+import styles from "./ObjectBrowser.module.css";
 
 interface DirectoryListProps {
   items: FileNode[];
