@@ -8,6 +8,7 @@ export * from './features/markdown';
 export * from './features/metadata';
 export * from './features/profiles';
 export * from './features/products';
+export * from "./features/profiles";
 export * from './features/onboarding';
 export * from './features/keyboard';
 
