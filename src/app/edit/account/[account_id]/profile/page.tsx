@@ -1,5 +1,5 @@
-import { Box, Text } from "@radix-ui/themes";
-import { EditProfileForm } from "@/components/features/profiles/EditProfileForm";
+import { Box } from "@radix-ui/themes";
+import { FormTitle, EditProfileForm } from "@/components";
 import { accountsTable, isIndividualAccount } from "@/lib/clients/database";
 import { notFound } from "next/navigation";
 
@@ -16,12 +16,10 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
   }
   return (
     <Box>
-      <Text size="6" weight="bold" mb="2">
-        Public Profile
-      </Text>
-      <Text size="3" color="gray" mb="6">
-        Update your public profile information
-      </Text>
+      <FormTitle
+        title="Public Profile"
+        description="Update your public profile information"
+      />
       {isIndividualAccount(account) ? (
         <EditProfileForm account={account} />
       ) : (

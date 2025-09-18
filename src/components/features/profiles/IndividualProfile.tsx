@@ -5,6 +5,7 @@ import {
   Heading,
   Flex,
   Link as RadixLink,
+  Button,
 } from "@radix-ui/themes";
 import Link from "next/link";
 import type {
@@ -26,6 +27,7 @@ interface IndividualProfileProps {
   contributedProducts: Product[];
   organizations: OrganizationalAccount[];
   showWelcome?: boolean;
+  canEdit: boolean;
 }
 
 export function IndividualProfile({
@@ -34,6 +36,7 @@ export function IndividualProfile({
   contributedProducts,
   organizations,
   showWelcome = false,
+  canEdit,
 }: IndividualProfileProps) {
   return (
     <Box>
@@ -55,6 +58,11 @@ export function IndividualProfile({
               )}
             </Box>
           </Flex>
+          {canEdit && (
+            <Link href={`/edit/account/${account.account_id}/profile`}>
+              <Button>Edit Profile</Button>
+            </Link>
+          )}
         </Flex>
       </Box>
 

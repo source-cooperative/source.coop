@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { Box, Text, Skeleton } from "@radix-ui/themes";
+import { FormTitle } from "@/components/core/FormTitle";
 
 interface ProductAccessPageProps {
   params: Promise<{ account_id: string; product_id: string }>;
@@ -8,12 +9,10 @@ interface ProductAccessPageProps {
 async function ProductAccessPageContent() {
   return (
     <Box>
-      <Text size="6" weight="bold" mb="2">
-        Access Control
-      </Text>
-      <Text size="3" color="gray" mb="6">
-        Manage who can access this product
-      </Text>
+      <FormTitle
+        title="Access Control"
+        description="Manage who can access this product"
+      />
       <Box
         style={{
           padding: "24px",
@@ -30,7 +29,9 @@ async function ProductAccessPageContent() {
   );
 }
 
-export default async function ProductAccessPage({ params }: ProductAccessPageProps) {
+export default async function ProductAccessPage({
+  params,
+}: ProductAccessPageProps) {
   return (
     <Suspense
       fallback={
