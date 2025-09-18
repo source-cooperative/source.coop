@@ -30,10 +30,11 @@ export async function OrganizationProfilePage({
     productsTable.listByAccount(account.account_id),
   ]);
 
-  // Only consider active memberships
-  memberships = memberships.filter(
-    (membership) => membership.state === MembershipState.Member
-  );
+  memberships = memberships
+    // Only consider active memberships
+    .filter((membership) => membership.state === MembershipState.Member)
+    // Only consider memberships that are not product-specific
+    .filter((membership) => membership.repository_id === undefined);
 
   const relatedUserAccounts = new Map(
     (
