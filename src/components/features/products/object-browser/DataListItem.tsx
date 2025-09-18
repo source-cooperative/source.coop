@@ -1,7 +1,7 @@
 import { DataList, Flex, IconButton, Tooltip } from "@radix-ui/themes";
 import { CopyIcon, CheckIcon } from "@radix-ui/react-icons";
 import { MonoText } from "@/components/core";
-import styles from "../ObjectBrowser.module.css";
+import styles from "./ObjectBrowser.module.css";
 
 interface DataListItemProps {
   label: string;

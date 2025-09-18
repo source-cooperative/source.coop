@@ -1,18 +1,10 @@
 "use client";
 
-import {
-  Card,
-  Box,
-  DataList,
-  Flex,
-  IconButton,
-  Tooltip,
-} from "@radix-ui/themes";
+import { DataList, Flex, IconButton, Tooltip } from "@radix-ui/themes";
 import { CopyIcon, CheckIcon } from "@radix-ui/react-icons";
 import type { ProductObject } from "@/types";
 import type { Product } from "@/types";
-import { SectionHeader } from "@/components/core";
-import { DateText, BreadcrumbNav } from "@/components/display";
+import { DateText } from "@/components/display";
 import { ChecksumVerifier } from "../ChecksumVerifier";
 import { formatFileSize } from "./utils";
 import { useState, useEffect } from "react";
@@ -89,123 +81,99 @@ export function ObjectDetails({
   };
 
   return (
-    <Card>
-      <SectionHeader title="Product Contents">
-        <Box
-          style={{
-            borderBottom: "1px solid var(--gray-5)",
-            paddingBottom: "var(--space-3)",
-            marginBottom: "var(--space-3)",
-          }}
-        >
-          <Flex justify="between" align="center">
-            <BreadcrumbNav
-              path={pathParts}
-              fileName={fileName}
-              baseUrl={`/${product.account_id}/${product.product_id}`}
-            />
-          </Flex>
-        </Box>
-      </SectionHeader>
+    <DataList.Root>
+      <DataListItem
+        label="Name"
+        value={fileName}
+        selectedDataItem={selectedDataItem}
+        itemKey="name"
+        copiedField={copiedField}
+        onCopy={copyToClipboard}
+      />
 
-      <DataList.Root>
-        <DataListItem
-          label="Name"
-          value={fileName}
-          selectedDataItem={selectedDataItem}
-          itemKey="name"
-          copiedField={copiedField}
-          onCopy={copyToClipboard}
-        />
+      <DataListItem
+        label="Size"
+        value={formatFileSize(selectedObject.size)}
+        selectedDataItem={selectedDataItem}
+        itemKey="size"
+        copiedField={copiedField}
+        onCopy={copyToClipboard}
+      />
 
-        <DataListItem
-          label="Size"
-          value={formatFileSize(selectedObject.size)}
-          selectedDataItem={selectedDataItem}
-          itemKey="size"
-          copiedField={copiedField}
-          onCopy={copyToClipboard}
-        />
+      <DataListItem
+        label="Content Type"
+        value={selectedObject.mime_type}
+        selectedDataItem={selectedDataItem}
+        itemKey="content_type"
+        copiedField={copiedField}
+        onCopy={copyToClipboard}
+      />
 
-        <DataListItem
-          label="Content Type"
-          value={selectedObject.mime_type}
-          selectedDataItem={selectedDataItem}
-          itemKey="content_type"
-          copiedField={copiedField}
-          onCopy={copyToClipboard}
-        />
+      <DataListItem
+        label="Last Modified"
+        value={<DateText date={selectedObject.updated_at} includeTime={true} />}
+        selectedDataItem={selectedDataItem}
+        itemKey="updated_at"
+        copiedField={copiedField}
+        onCopy={(_, field) => {
+          const dateStr = new Date(selectedObject.updated_at).toLocaleString();
+          copyToClipboard(dateStr, field);
+        }}
+      />
 
-        <DataListItem
-          label="Last Modified"
-          value={
-            <DateText date={selectedObject.updated_at} includeTime={true} />
-          }
-          selectedDataItem={selectedDataItem}
-          itemKey="updated_at"
-          copiedField={copiedField}
-          onCopy={(_, field) => {
-            const dateStr = new Date(
-              selectedObject.updated_at
-            ).toLocaleString();
-            copyToClipboard(dateStr, field);
-          }}
-        />
-
-        {selectedObject.metadata &&
-          selectedObject.metadata.sha256 &&
-          product.account && (
-            <DataList.Item>
-              <DataList.Label minWidth="120px">Checksum</DataList.Label>
-              <DataList.Value>
-                <Flex align="center" gap="2">
-                  <ChecksumVerifier
-                    objectUrl={`/api/${product.account.account_id}/${product.product_id}/objects/${selectedObject.path}`}
-                    expectedHash={selectedObject.metadata.sha256}
-                    algorithm="SHA-256"
-                  />
-                  <Tooltip content="Copy to clipboard">
-                    <IconButton
-                      size="1"
-                      variant="ghost"
-                      color={copiedField === "sha256" ? "green" : "gray"}
-                      onClick={() =>
-                        copyToClipboard(
-                          selectedObject.metadata?.sha256 || "",
-                          "sha256"
-                        )
-                      }
-                      aria-label="Copy SHA-256 checksum"
-                    >
-                      {copiedField === "sha256" ? <CheckIcon /> : <CopyIcon />}
-                    </IconButton>
-                  </Tooltip>
-                </Flex>
-              </DataList.Value>
-            </DataList.Item>
-          )}
-
-        <DataListItem
-          label="Source URL"
-          value={`https://data.source.coop/${product.account?.account_id}/${product.product_id}/${selectedObject.path}`}
-          selectedDataItem={selectedDataItem}
-          itemKey="source_url"
-          copiedField={copiedField}
-          onCopy={copyToClipboard}
-        />
-
-        {/* Cloud URI based on data connection details */}
-        {cloudUri && (
-          <DataListItem
-            label="Cloud URI"
-            value={cloudUri}
-            selectedDataItem={selectedDataItem}
-            itemKey="cloud_uri"
-            copiedField={copiedField}
-            onCopy={copyToClipboard}
-          />
+      {selectedObject.metadata &&
+        selectedObject.metadata.sha256 &&
+        product.account && (
+          <DataList.Item>
+            <DataList.Label minWidth="120px">Checksum</DataList.Label>
+            <DataList.Value>
+              <Flex align="center" gap="2">
+                <ChecksumVerifier
+                  objectUrl={`/api/${product.account.account_id}/${product.product_id}/objects/${selectedObject.path}`}
+                  expectedHash={selectedObject.metadata.sha256}
+                  algorithm="SHA-256"
+                />
+                <Tooltip content="Copy to clipboard">
+                  <IconButton
+                    size="1"
+                    variant="ghost"
+                    color={copiedField === "sha256" ? "green" : "gray"}
+                    onClick={() =>
+                      copyToClipboard(
+                        selectedObject.metadata?.sha256 || "",
+                        "sha256"
+                      )
+                    }
+                    aria-label="Copy SHA-256 checksum"
+                  >
+                    {copiedField === "sha256" ? <CheckIcon /> : <CopyIcon />}
+                  </IconButton>
+                </Tooltip>
+              </Flex>
+            </DataList.Value>
+          </DataList.Item>
         )}
-      </DataList.Root>
-    </Card>
+
+      <DataListItem
+        label="Source URL"
+        value={`https://data.source.coop/${product.account?.account_id}/${product.product_id}/${selectedObject.path}`}
+        selectedDataItem={selectedDataItem}
+        itemKey="source_url"
+        copiedField={copiedField}
+        onCopy={copyToClipboard}
+      />
+
+      {/* Cloud URI based on data connection details */}
+      {cloudUri && (
+        <DataListItem
+          label="Cloud URI"
+          value={cloudUri}
+          selectedDataItem={selectedDataItem}
+          itemKey="cloud_uri"
+          copiedField={copiedField}
+          onCopy={copyToClipboard}
+        />
+      )}
+    </DataList.Root>
   );
 }
