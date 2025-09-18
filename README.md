@@ -1,17 +1,12 @@
-# Source Cooperative 
+# Source Cooperative
 
 A data publishing utility that allows trusted organizations and individuals to share data using standard HTTP methods.
 
 ## Project Status
 
-Source Cooperative is operational and available at [https://source.coop](https://source.coop), providing access to over 800TB of data. 
+Source Cooperative is operational and available at [https://source.coop](https://source.coop), providing access to over 800TB of data.
 
-A new version of the Source Cooperative web app called *S2* is under active development. It is currently only available to be deployed locally and is not yet available in staging or production environments.
-
-### Development Stages
-- **Current**: Local Development (v0.1.0 - v0.3.0)
-- **Planned**: Staging Environment (v0.4.0)
-- **Planned**: Production Release (v0.6.0)
+A new version of the Source Cooperative web app called _S2_ is under active development. It is currently only available to be deployed locally and is not yet available in staging or production environments.
 
 ## Documentation
 
@@ -47,18 +42,21 @@ docs/
 ## Development Setup
 
 ### Prerequisites
-- Node.js 18+
+
+- Node.js 22
 - Docker and Docker Compose
 - Git
 - AWS CLI (for local DynamoDB interaction)
 
 ### Local Development
+
 1. Clone the repository
 2. Copy `.env.example` to `.env.local`
 3. Install dependencies: `npm install`
 4. Start development server: `npm run dev`
 
 ### Database Setup
+
 The application requires a DynamoDB instance for data storage. We've added several convenience scripts to manage the local DynamoDB:
 
 ```bash
@@ -73,11 +71,13 @@ npm run init-local
 ```
 
 When you run `npm run dev`, the system automatically:
+
 1. Checks if DynamoDB is running
 2. Starts DynamoDB if it's not running
 3. Skips initialization if tables already exist
 
 ### Development Environment
+
 - Local DynamoDB running on port 8000
 - Local file storage in `./test-storage`
 - Ory Kratos for authentication
@@ -114,14 +114,17 @@ npm run type-check # Run TypeScript checks
 **Common Issues:**
 
 1. **Build errors**
+
    - Ensure all dependencies are installed
    - Clear `.next` directory and rebuild
+
    ```bash
    rm -rf .next
    npm run build
    ```
 
 2. **Environment variables not working**
+
    - Verify `.env.local` exists and is properly configured
    - Restart the development server
 
@@ -135,4 +138,4 @@ npm run type-check # Run TypeScript checks
 - [Radix UI Documentation](https://www.radix-ui.com/docs/primitives/overview/introduction)
 - [TypeScript Documentation](https://www.typescriptlang.org/docs/)
 
-Copyright 2024 Radiant Earth 
+Copyright 2024 Radiant Earth

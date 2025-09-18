@@ -3,22 +3,33 @@
 ## Local Development Setup
 
 ### Prerequisites
+
 - Docker installed
 - AWS CLI installed (for local DynamoDB operations)
 
 ### Starting Local DynamoDB
+
 ```bash
-docker run -p 8000:8000 amazon/dynamodb-local
+docker compose up
 ```
 
 ### Environment Configuration
+
 Add to `.env.local`:
+
 ```bash
 DYNAMODB_ENDPOINT=http://localhost:8000
 ```
 
+### Admin
+
+Along with a local DynamoDB instance, the project's Docker Compose file also runs an instance of [DynamoDB Admin](https://github.com/aaronshaf/dynamodb-admin) to allow for direct edits to local data. This service is accessible at http://localhost:8001.
+
 ### Table Creation
-Tables are created automatically when the application starts in development mode. For manual creation:
+
+Tables are created automatically when the application starts in development mode.
+
+For manual creation:
 
 ```bash
 # Create Accounts table
@@ -53,97 +64,104 @@ aws dynamodb create-table \
 ## Common Query Patterns
 
 ### Account Operations
+
 ```typescript
 // Get account by ID
 const account = await dynamodb.get({
-  TableName: 'Accounts',
-  Key: { account_id, type }
+  TableName: "Accounts",
+  Key: { account_id, type },
 });
 
 // List accounts by type
 const accounts = await dynamodb.query({
-  TableName: 'Accounts',
-  IndexName: 'GSI1',
-  KeyConditionExpression: '#type = :type',
-  ExpressionAttributeNames: { '#type': 'type' },
-  ExpressionAttributeValues: { ':type': 'organization' }
+  TableName: "Accounts",
+  IndexName: "GSI1",
+  KeyConditionExpression: "#type = :type",
+  ExpressionAttributeNames: { "#type": "type" },
+  ExpressionAttributeValues: { ":type": "organization" },
 });
 ```
 
 ### product Operations
+
 ```typescript
 // Get product by ID
 const product = await dynamodb.get({
-  TableName: 'products',
-  Key: { product_id, account_id }
+  TableName: "products",
+  Key: { product_id, account_id },
 });
 
 // List products for account
 const products = await dynamodb.query({
-  TableName: 'products',
-  IndexName: 'GSI1',
-  KeyConditionExpression: 'account_id = :account_id',
-  ExpressionAttributeValues: { ':account_id': account_id }
+  TableName: "products",
+  IndexName: "GSI1",
+  KeyConditionExpression: "account_id = :account_id",
+  ExpressionAttributeValues: { ":account_id": account_id },
 });
 ```
 
 ## Testing
 
 ### Test Data Setup
+
 ```typescript
 // Create test account
 await dynamodb.put({
-  TableName: 'Accounts',
+  TableName: "Accounts",
   Item: {
-    account_id: 'test-account',
-    type: 'user',
-    name: 'Test User',
-    email: 'test@example.com',
-    created_at: new Date().toISOString()
-  }
+    account_id: "test-account",
+    type: "user",
+    name: "Test User",
+    email: "test@example.com",
+    created_at: new Date().toISOString(),
+  },
 });
 
 // Create test product
 await dynamodb.put({
-  TableName: 'products',
+  TableName: "products",
   Item: {
-    product_id: 'test-repo',
-    account_id: 'test-account',
-    title: 'Test Product',
-    description: 'Test Description',
-    created_at: new Date().toISOString()
-  }
+    product_id: "test-repo",
+    account_id: "test-account",
+    title: "Test Product",
+    description: "Test Description",
+    created_at: new Date().toISOString(),
+  },
 });
 ```
 
 ### Test Cleanup
+
 ```typescript
 // Delete test account
 await dynamodb.delete({
-  TableName: 'Accounts',
-  Key: { account_id: 'test-account', type: 'user' }
+  TableName: "Accounts",
+  Key: { account_id: "test-account", type: "user" },
 });
 
 // Delete test product
 await dynamodb.delete({
-  TableName: 'products',
-  Key: { product_id: 'test-repo', account_id: 'test-account' }
+  TableName: "products",
+  Key: { product_id: "test-repo", account_id: "test-account" },
 });
 ```
 
 ## Best Practices
 
 1. **Query Optimization**
+
    - Use precise queries instead of scans
    - Leverage GSIs for common access patterns
    - Use projection expressions to limit returned attributes
 
 2. **Error Handling**
+
    - Handle conditional check failures
    - Implement retry logic for transient errors
    - Log all DynamoDB errors with context
 
 3. **Data Validation**
+
    - Validate data before writing to DynamoDB
    - Use TypeScript types for type safety
    - Implement schema validation for critical fields
@@ -156,6 +174,7 @@ await dynamodb.delete({
 ## Common Issues
 
 1. **Local DynamoDB Connection**
+
    - Ensure Docker container is running
    - Verify endpoint URL in environment
    - Check AWS credentials are set correctly
@@ -174,11 +193,11 @@ The application uses an optimized database operations framework in `src/lib/db/o
 ```typescript
 // Fetch a single entity by a field value
 async function getEntityByField<T>(
-  tableName: string, 
-  fieldName: string, 
-  fieldValue: string, 
+  tableName: string,
+  fieldName: string,
+  fieldValue: string,
   indexName?: string
-): Promise<T | null>
+): Promise<T | null>;
 
 // Query for a collection of entities
 async function queryEntities<T>(
@@ -188,37 +207,37 @@ async function queryEntities<T>(
   indexName?: string,
   limit?: number,
   expressionNames?: Record<string, string>
-): Promise<T[]>
+): Promise<T[]>;
 
 // Batch fetch entities by IDs (when applicable)
 async function batchGetEntitiesByIds<T>(
   tableName: string,
   idField: string,
   ids: string[]
-): Promise<T[]>
+): Promise<T[]>;
 ```
 
 ### Account Operations
 
 ```typescript
 // Get account by ID
-const account = await accountsTable.fetchById('account123');
+const account = await accountsTable.fetchById("account123");
 
 // Get account by email
-const account = await accountsTable.fetchByEmail('user@example.com');
+const account = await accountsTable.fetchByEmail("user@example.com");
 
 // Get accounts by type
-const organizations = await accountsTable.listByType('organization');
+const organizations = await accountsTable.listByType("organization");
 ```
 
 ### product Operations
 
 ```typescript
 // Get products for an account
-const products = await fetchProductsByAccount('account123');
+const products = await fetchProductsByAccount("account123");
 
 // Get single product
-const product = await fetchProduct('repo123', 'account123');
+const product = await fetchProduct("repo123", "account123");
 
 // Get all products with pagination
 const { products, lastEvaluatedKey } = await fetchProducts(50);
@@ -251,4 +270,4 @@ const success = await updateProduct(product);
 3. **Query Issues**
    - Verify key schema matches query
    - Check expression attribute names/values
-   - Ensure proper use of GSIs 
+   - Ensure proper use of GSIs
