@@ -1,0 +1,43 @@
+.settingsLayout {
+  min-height: 600px;
+}
+
+.settingsSidebar {
+  position: sticky;
+  top: 0;
+  height: fit-content;
+}
+
+.settingsMenuItem {
+  transition: all 0.15s ease;
+}
+
+.settingsMenuItem:hover {
+  background-color: var(--gray-3);
+  color: var(--gray-12);
+}
+
+.settingsMenuItem.active {
+  background-color: var(--accent-3);
+  color: var(--accent-11);
+}
+
+.settingsContent {
+  padding-left: 0;
+}
+
+@media (max-width: 768px) {
+  .settingsLayout {
+    flex-direction: column;
+  }
+  
+  .settingsSidebar {
+    position: static;
+    min-width: unset;
+    max-width: unset;
+  }
+  
+  .settingsContent {
+    padding-left: 0;
+  }
+}
