@@ -1,50 +1,28 @@
-import {
-  Container,
-  Heading,
-  Text,
-  Flex,
-  Link as RadixLink,
-} from "@radix-ui/themes";
-import Link from "next/link";
-import { LinkBreak2Icon } from "@radix-ui/react-icons";
+"use client";
+import { NotFoundPage } from "@/components/core";
+import { Box, Text } from "@radix-ui/themes";
+import { usePathname } from "next/navigation";
 
-interface NotFoundProps {
-  params?: {
-    account_id?: string;
-  };
-}
-
-export default function AccountNotFound({ params }: NotFoundProps) {
+export default function AccountNotFound() {
+  const pathname = usePathname();
+  const [account_id] = pathname.split("/").slice(1, 2);
   return (
-    <Container>
-      <Flex
-        direction="column"
-        align="center"
-        justify="center"
-        gap="4"
-        style={{ minHeight: "60vh" }}
-      >
-        <LinkBreak2Icon width="32" height="32" />
-        <Heading as="h1" size="6">
-          Account Not Found
-        </Heading>
-        <Text as="p" size="3" color="gray">
-          {params?.account_id ? (
-            <>
-              The account <strong>{params.account_id}</strong> could not be
-              found.
-              <br />
-              <br />
+    <NotFoundPage
+      title="Account Not Found"
+      description={
+        account_id ? (
+          <Box>
+            <Text as="p">
+              The account <strong>{account_id}</strong> could not be found.
+            </Text>
+            <Text as="p">
               If you just created this account, please try refreshing the page.
-            </>
-          ) : (
-            "The requested account could not be found."
-          )}
-        </Text>
-        <RadixLink asChild>
-          <Link href="/">Return to Home</Link>
-        </RadixLink>
-      </Flex>
-    </Container>
+            </Text>
+          </Box>
+        ) : (
+          "The requested account could not be found."
+        )
+      }
+    />
   );
 }
