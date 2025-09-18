@@ -13,12 +13,13 @@ export default async function ProfileLayout({
 }: ProfileLayoutProps) {
   const { account_id } = await params;
 
-  return (
-    <AccountSettingsLayoutWrapper
-      accountId={account_id}
-      requiredPermission={Actions.PutAccountProfile}
-    >
-      {children}
-    </AccountSettingsLayoutWrapper>
-  );
+      return (
+        <AccountSettingsLayoutWrapper
+          accountId={account_id}
+          requiredPermission={Actions.PutAccountProfile}
+          currentSettingType="profile"
+        >
+          {children}
+        </AccountSettingsLayoutWrapper>
+      );
 }

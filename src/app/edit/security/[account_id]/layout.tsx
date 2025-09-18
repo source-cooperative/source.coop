@@ -13,12 +13,13 @@ export default async function SecurityLayout({
 }: SecurityLayoutProps) {
   const { account_id } = await params;
 
-  return (
-    <AccountSettingsLayoutWrapper
-      accountId={account_id}
-      requiredPermission={Actions.GetAccount}
-    >
-      {children}
-    </AccountSettingsLayoutWrapper>
-  );
+      return (
+        <AccountSettingsLayoutWrapper
+          accountId={account_id}
+          requiredPermission={Actions.GetAccount}
+          currentSettingType="security"
+        >
+          {children}
+        </AccountSettingsLayoutWrapper>
+      );
 }

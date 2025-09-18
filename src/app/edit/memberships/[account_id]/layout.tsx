@@ -13,13 +13,14 @@ export default async function MembershipsLayout({
 }: MembershipsLayoutProps) {
   const { account_id } = await params;
 
-  return (
-    <AccountSettingsLayoutWrapper
-      accountId={account_id}
-      requiredPermission={Actions.GetMembership}
-      additionalChecks={(account) => account.type === "organization"}
-    >
-      {children}
-    </AccountSettingsLayoutWrapper>
-  );
+      return (
+        <AccountSettingsLayoutWrapper
+          accountId={account_id}
+          requiredPermission={Actions.GetMembership}
+          currentSettingType="memberships"
+          additionalChecks={(account) => account.type === "organization"}
+        >
+          {children}
+        </AccountSettingsLayoutWrapper>
+      );
 }
