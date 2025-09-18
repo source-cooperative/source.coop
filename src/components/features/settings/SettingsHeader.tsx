@@ -12,35 +12,25 @@ import {
 } from "@radix-ui/themes";
 import { ChevronDownIcon, ExternalLinkIcon } from "@radix-ui/react-icons";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { Account } from "@/types";
 
 interface SettingsHeaderProps {
   currentAccount: Account;
   manageableAccounts: Account[];
-  currentSettingType: string;
 }
 
 export function SettingsHeader({
   currentAccount,
   manageableAccounts,
-  currentSettingType,
 }: SettingsHeaderProps) {
   const [isOpen, setIsOpen] = useState(false);
   const router = useRouter();
+  const pathname = usePathname();
 
-  const getAccountTypeLabel = (account: Account) => {
-    return account.type === "organization" ? "Organization" : "Individual";
-  };
-
-  const getAccountInitials = (account: Account) => {
-    return account.name
-      .split(" ")
-      .map((word) => word[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
-  };
+  // Extract current view from pathname (last segment)
+  const pathParts = pathname.split("/");
+  const currentView = pathParts[pathParts.length - 1];
 
   return (
     <Box
@@ -68,7 +58,9 @@ export function SettingsHeader({
                 {currentAccount.name}
               </Text>
               <Text size="2" color="gray">
-                {getAccountTypeLabel(currentAccount)}
+                {currentAccount.type === "organization"
+                  ? "Organization"
+                  : "Individual"}
               </Text>
             </Flex>
             <Text size="2" color="gray">
@@ -86,7 +78,7 @@ export function SettingsHeader({
               <DropdownMenu.Content>
                 {manageableAccounts.map((account) => (
                   <Link
-                    href={`/edit/${currentSettingType}/${account.account_id}`}
+                    href={`/edit/account/${account.account_id}/${currentView}`}
                     onClick={() => setIsOpen(false)}
                     key={account.account_id}
                   >
@@ -163,4 +155,13 @@ export function SettingsHeader({
       </Flex>
     </Box>
   );
+}
+
+function getAccountInitials(account: Account) {
+  return account.name
+    .split(" ")
+    .map((word) => word[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
 }

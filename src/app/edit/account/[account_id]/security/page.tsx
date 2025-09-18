@@ -1,11 +1,10 @@
-import { Suspense } from "react";
-import { Box, Text, Skeleton } from "@radix-ui/themes";
+import { Box, Text } from "@radix-ui/themes";
 
 interface SecurityPageProps {
   params: Promise<{ account_id: string }>;
 }
 
-async function SecurityPageContent() {
+export default async function SecurityPage({ params }: SecurityPageProps) {
   return (
     <Box>
       <Text size="6" weight="bold" mb="2">
@@ -27,21 +26,5 @@ async function SecurityPageContent() {
         </Text>
       </Box>
     </Box>
-  );
-}
-
-export default async function SecurityPage({ params }: SecurityPageProps) {
-  return (
-    <Suspense
-      fallback={
-        <Box>
-          <Skeleton height="32px" width="200px" mb="2" />
-          <Skeleton height="20px" width="300px" mb="6" />
-          <Skeleton height="400px" width="100%" />
-        </Box>
-      }
-    >
-      <SecurityPageContent />
-    </Suspense>
   );
 }

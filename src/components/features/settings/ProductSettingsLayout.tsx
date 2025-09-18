@@ -42,13 +42,6 @@ export function ProductSettingsLayout({
 
   const menuItems: ProductSettingsMenuItem[] = [
     {
-      id: "general",
-      label: "General",
-      href: `/edit/product/${accountId}/${productId}`,
-      icon: <GearIcon width="16" height="16" />,
-      condition: canReadProduct,
-    },
-    {
       id: "access",
       label: "Access",
       href: `/edit/product/${accountId}/${productId}/access`,
@@ -76,7 +69,10 @@ export function ProductSettingsLayout({
   return (
     <Flex gap="6" className={styles.productSettingsLayout}>
       {/* Left sidebar menu */}
-      <Box className={styles.productSettingsSidebar} style={{ minWidth: "200px", maxWidth: "250px" }}>
+      <Box
+        className={styles.productSettingsSidebar}
+        style={{ minWidth: "200px", maxWidth: "250px" }}
+      >
         <Box>
           <Text size="2" weight="bold" color="gray" mb="3">
             Product Settings
@@ -88,7 +84,9 @@ export function ProductSettingsLayout({
                 <Link
                   key={item.id}
                   href={item.href}
-                  className={`${styles.productSettingsMenuItem} ${isActive ? styles.active : ""}`}
+                  className={`${styles.productSettingsMenuItem} ${
+                    isActive ? styles.active : ""
+                  }`}
                   style={{
                     display: "flex",
                     alignItems: "center",
@@ -97,7 +95,9 @@ export function ProductSettingsLayout({
                     borderRadius: "6px",
                     textDecoration: "none",
                     color: isActive ? "var(--accent-11)" : "var(--gray-11)",
-                    backgroundColor: isActive ? "var(--accent-3)" : "transparent",
+                    backgroundColor: isActive
+                      ? "var(--accent-3)"
+                      : "transparent",
                     fontWeight: isActive ? "500" : "400",
                     transition: "all 0.15s ease",
                   }}
@@ -114,7 +114,10 @@ export function ProductSettingsLayout({
       <Separator orientation="vertical" />
 
       {/* Right content area */}
-      <Box className={styles.productSettingsContent} style={{ flex: 1, minWidth: 0 }}>
+      <Box
+        className={styles.productSettingsContent}
+        style={{ flex: 1, minWidth: 0 }}
+      >
         {children}
       </Box>
     </Flex>
