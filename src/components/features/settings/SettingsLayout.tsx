@@ -25,7 +25,6 @@ interface SettingsLayoutProps {
   canReadMembership: boolean;
   currentAccount: Account;
   manageableAccounts: Account[];
-  currentSettingType: string;
 }
 
 export function SettingsLayout({
@@ -36,22 +35,21 @@ export function SettingsLayout({
   canReadMembership,
   currentAccount,
   manageableAccounts,
-  currentSettingType,
 }: SettingsLayoutProps) {
   const pathname = usePathname();
 
   const menuItems: SettingsMenuItem[] = [
     {
-      id: "public-profile",
+      id: "profile",
       label: "Public Profile",
-      href: `/edit/profile/${accountId}`,
+      href: `/edit/account/${accountId}/profile`,
       icon: <PersonIcon width="16" height="16" />,
       condition: canReadAccount,
     },
     {
       id: "security",
       label: "Security",
-      href: `/edit/security/${accountId}`,
+      href: `/edit/account/${accountId}/security`,
       icon: <LockClosedIcon width="16" height="16" />,
       condition: canReadAccount,
     },
@@ -60,7 +58,7 @@ export function SettingsLayout({
           {
             id: "memberships",
             label: "Memberships",
-            href: `/edit/memberships/${accountId}`,
+            href: `/edit/account/${accountId}/memberships`,
             icon: <PersonIcon width="16" height="16" />,
             condition: canReadMembership,
           },
@@ -76,7 +74,6 @@ export function SettingsLayout({
       <SettingsHeader
         currentAccount={currentAccount}
         manageableAccounts={manageableAccounts}
-        currentSettingType={currentSettingType}
       />
 
       <Flex gap="6" className={styles.settingsLayout}>

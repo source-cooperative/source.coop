@@ -1,5 +1,4 @@
-import { Suspense } from "react";
-import { Box, Text, Skeleton, Table, Badge, Button, Flex } from "@radix-ui/themes";
+import { Box, Text, Table, Badge, Button, Flex } from "@radix-ui/themes";
 import { MembershipRole, MembershipState } from "@/types";
 import { accountsTable, membershipsTable } from "@/lib/clients/database";
 import { PersonIcon, PlusIcon } from "@radix-ui/react-icons";
@@ -8,8 +7,9 @@ interface MembershipsPageProps {
   params: Promise<{ account_id: string }>;
 }
 
-async function MembershipsPageContent({ accountId }: { accountId: string }) {
-  const memberships = await membershipsTable.listByAccount(accountId);
+export default async function MembershipsPage({ params }: MembershipsPageProps) {
+  const { account_id } = await params;
+  const memberships = await membershipsTable.listByAccount(account_id);
   const activeMemberships = memberships.filter(
     (membership) => membership.state === MembershipState.Member
   );
@@ -148,23 +148,5 @@ async function MembershipsPageContent({ accountId }: { accountId: string }) {
         </Table.Root>
       )}
     </Box>
-  );
-}
-
-export default async function MembershipsPage({ params }: MembershipsPageProps) {
-  const { account_id } = await params;
-
-  return (
-    <Suspense
-      fallback={
-        <Box>
-          <Skeleton height="32px" width="200px" mb="2" />
-          <Skeleton height="20px" width="300px" mb="6" />
-          <Skeleton height="400px" width="100%" />
-        </Box>
-      }
-    >
-      <MembershipsPageContent accountId={account_id} />
-    </Suspense>
   );
 }

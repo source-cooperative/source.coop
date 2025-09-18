@@ -44,6 +44,7 @@ export function OrganizationProfile({
   const isOwner = !!owners.find(
     (owner) => owner.account_id === account.account_id
   );
+  // TODO: Rework to use authz
   const canEdit = isAdmin || isOwner;
 
   return (
