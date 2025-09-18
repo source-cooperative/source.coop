@@ -64,7 +64,19 @@ export function ObjectBrowser({
           cloudUri={cloudUri}
         />
 
-        {cloudUri?.endsWith(".parquet") ? (
+        {cloudUri?.endsWith(".pmtiles") ? (
+          <Card style={{ marginTop: "2rem" }}>
+            <SectionHeader title="Preview" />
+            <iframe
+              frameBorder="0"
+              width="100%"
+              height="600px"
+              src={`https://pmtiles.io/#url=${sourceUrl}&iframe=true`}
+            >
+              Your browser does not support iframes.
+            </iframe>
+          </Card>
+        ) : cloudUri?.endsWith(".parquet") ? (
           <Card style={{ marginTop: "2rem" }}>
             <SectionHeader title="Preview" />
             <iframe
