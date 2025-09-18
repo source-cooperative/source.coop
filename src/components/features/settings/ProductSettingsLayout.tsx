@@ -4,12 +4,12 @@ import { ReactNode } from "react";
 import { Box, Flex, Text, Separator } from "@radix-ui/themes";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { 
-  GearIcon, 
-  PersonIcon, 
+import {
+  GearIcon,
+  PersonIcon,
   LockClosedIcon,
   GlobeIcon,
-  ArchiveIcon 
+  ArchiveIcon,
 } from "@radix-ui/react-icons";
 import styles from "./ProductSettingsLayout.module.css";
 
@@ -73,42 +73,35 @@ export function ProductSettingsLayout({
         className={styles.productSettingsSidebar}
         style={{ minWidth: "200px", maxWidth: "250px" }}
       >
-        <Box>
-          <Text size="2" weight="bold" color="gray" mb="3">
-            Product Settings
-          </Text>
-          <Flex direction="column" gap="1">
-            {filteredMenuItems.map((item) => {
-              const isActive = pathname === item.href;
-              return (
-                <Link
-                  key={item.id}
-                  href={item.href}
-                  className={`${styles.productSettingsMenuItem} ${
-                    isActive ? styles.active : ""
-                  }`}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    padding: "8px 12px",
-                    borderRadius: "6px",
-                    textDecoration: "none",
-                    color: isActive ? "var(--accent-11)" : "var(--gray-11)",
-                    backgroundColor: isActive
-                      ? "var(--accent-3)"
-                      : "transparent",
-                    fontWeight: isActive ? "500" : "400",
-                    transition: "all 0.15s ease",
-                  }}
-                >
-                  {item.icon}
-                  <Text size="2">{item.label}</Text>
-                </Link>
-              );
-            })}
-          </Flex>
-        </Box>
+        <Flex direction="column" gap="1">
+          {filteredMenuItems.map((item) => {
+            const isActive = pathname === item.href;
+            return (
+              <Link
+                key={item.id}
+                href={item.href}
+                className={`${styles.productSettingsMenuItem} ${
+                  isActive ? styles.active : ""
+                }`}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  padding: "8px 12px",
+                  borderRadius: "6px",
+                  textDecoration: "none",
+                  color: isActive ? "var(--accent-11)" : "var(--gray-11)",
+                  backgroundColor: isActive ? "var(--accent-3)" : "transparent",
+                  fontWeight: isActive ? "500" : "400",
+                  transition: "all 0.15s ease",
+                }}
+              >
+                {item.icon}
+                <Text size="2">{item.label}</Text>
+              </Link>
+            );
+          })}
+        </Flex>
       </Box>
 
       <Separator orientation="vertical" />

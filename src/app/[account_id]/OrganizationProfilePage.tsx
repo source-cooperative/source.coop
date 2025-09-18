@@ -1,5 +1,5 @@
 import { Container } from "@radix-ui/themes";
-import { OrganizationProfile } from "./OrganizationProfile";
+import { OrganizationProfile } from "../../components/features/profiles/OrganizationProfile";
 import {
   accountsTable,
   isIndividualAccount,
@@ -9,10 +9,12 @@ import {
 import {
   type IndividualAccount,
   type OrganizationalAccount,
+  Actions,
   MembershipRole,
   MembershipState,
 } from "@/types";
 import { getPageSession } from "@/lib/api/utils";
+import { isAuthorized } from "@/lib/api/authz";
 
 interface OrganizationProfilePageProps {
   account: OrganizationalAccount;
@@ -89,6 +91,7 @@ export async function OrganizationProfilePage({
         owners={owners}
         admins={admins}
         members={members}
+        canEdit={isAuthorized(session, account, Actions.PutAccountProfile)}
       />
     </Container>
   );

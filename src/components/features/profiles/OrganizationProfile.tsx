@@ -29,6 +29,7 @@ interface OrganizationProfileProps {
   owners: IndividualAccount[];
   admins: IndividualAccount[];
   members: IndividualAccount[];
+  canEdit: boolean;
 }
 
 export function OrganizationProfile({
@@ -37,16 +38,8 @@ export function OrganizationProfile({
   owners,
   admins,
   members,
+  canEdit,
 }: OrganizationProfileProps) {
-  const isAdmin = admins.some(
-    (admin) => admin.account_id === account.account_id
-  );
-  const isOwner = !!owners.find(
-    (owner) => owner.account_id === account.account_id
-  );
-  // TODO: Rework to use authz
-  const canEdit = isAdmin || isOwner;
-
   return (
     <Box>
       <Flex gap="4" mb="6" justify="between" align="start">
@@ -62,7 +55,7 @@ export function OrganizationProfile({
           </Box>
         </Flex>
         {canEdit && (
-          <Link href={`/${account.account_id}/edit`}>
+          <Link href={`/edit/account/${account.account_id}/profile`}>
             <Button>Edit Profile</Button>
           </Link>
         )}

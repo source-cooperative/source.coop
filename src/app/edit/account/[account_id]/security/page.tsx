@@ -1,3 +1,4 @@
+import { FormTitle } from "@/components";
 import { Box, Text } from "@radix-ui/themes";
 
 interface SecurityPageProps {
@@ -7,12 +8,10 @@ interface SecurityPageProps {
 export default async function SecurityPage({ params }: SecurityPageProps) {
   return (
     <Box>
-      <Text size="6" weight="bold" mb="2">
-        Security
-      </Text>
-      <Text size="3" color="gray" mb="6">
-        Manage your account security settings
-      </Text>
+      <FormTitle
+        title="Security"
+        description="Manage your account security settings"
+      />
       <Box
         style={{
           padding: "24px",

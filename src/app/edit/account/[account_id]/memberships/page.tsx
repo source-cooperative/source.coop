@@ -1,13 +1,16 @@
 import { Box, Text, Table, Badge, Button, Flex } from "@radix-ui/themes";
+import { PersonIcon, PlusIcon } from "@radix-ui/react-icons";
 import { MembershipRole, MembershipState } from "@/types";
 import { accountsTable, membershipsTable } from "@/lib/clients/database";
-import { PersonIcon, PlusIcon } from "@radix-ui/react-icons";
+import { FormTitle } from "@/components";
 
 interface MembershipsPageProps {
   params: Promise<{ account_id: string }>;
 }
 
-export default async function MembershipsPage({ params }: MembershipsPageProps) {
+export default async function MembershipsPage({
+  params,
+}: MembershipsPageProps) {
   const { account_id } = await params;
   const memberships = await membershipsTable.listByAccount(account_id);
   const activeMemberships = memberships.filter(
@@ -55,12 +58,10 @@ export default async function MembershipsPage({ params }: MembershipsPageProps) 
     <Box>
       <Flex justify="between" align="center" mb="6">
         <Box>
-          <Text size="6" weight="bold" mb="2">
-            Memberships
-          </Text>
-          <Text size="3" color="gray">
-            Manage organization members and their roles
-          </Text>
+          <FormTitle
+            title="Memberships"
+            description="Manage organization members and their roles"
+          />
         </Box>
         <Button size="2">
           <PlusIcon width="16" height="16" />
@@ -93,12 +94,16 @@ export default async function MembershipsPage({ params }: MembershipsPageProps) 
               <Table.ColumnHeaderCell>Member</Table.ColumnHeaderCell>
               <Table.ColumnHeaderCell>Role</Table.ColumnHeaderCell>
               <Table.ColumnHeaderCell>Joined</Table.ColumnHeaderCell>
-              <Table.ColumnHeaderCell width="100px">Actions</Table.ColumnHeaderCell>
+              <Table.ColumnHeaderCell width="100px">
+                Actions
+              </Table.ColumnHeaderCell>
             </Table.Row>
           </Table.Header>
           <Table.Body>
             {activeMemberships.map((membership) => {
-              const memberAccount = memberAccountsMap.get(membership.account_id);
+              const memberAccount = memberAccountsMap.get(
+                membership.account_id
+              );
               return (
                 <Table.Row key={membership.membership_id}>
                   <Table.Cell>
@@ -114,7 +119,11 @@ export default async function MembershipsPage({ params }: MembershipsPageProps) 
                           justifyContent: "center",
                         }}
                       >
-                        <PersonIcon width="16" height="16" color="var(--gray-9)" />
+                        <PersonIcon
+                          width="16"
+                          height="16"
+                          color="var(--gray-9)"
+                        />
                       </Box>
                       <Box>
                         <Text size="2" weight="medium">
