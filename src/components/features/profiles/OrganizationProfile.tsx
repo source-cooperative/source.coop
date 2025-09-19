@@ -22,6 +22,7 @@ import { OrganizationMembers } from "./OrganizationMembers";
 import { ProfileAvatar } from "./ProfileAvatar";
 import { WebsiteLink } from "./WebsiteLink";
 import { ProfileLocation } from "./ProfileLocation";
+import { editAccountProfileUrl } from "@/lib/urls";
 
 interface OrganizationProfileProps {
   account: OrganizationalAccount;
@@ -29,6 +30,7 @@ interface OrganizationProfileProps {
   owners: IndividualAccount[];
   admins: IndividualAccount[];
   members: IndividualAccount[];
+  canEdit: boolean;
 }
 
 export function OrganizationProfile({
@@ -37,15 +39,8 @@ export function OrganizationProfile({
   owners,
   admins,
   members,
+  canEdit,
 }: OrganizationProfileProps) {
-  const isAdmin = admins.some(
-    (admin) => admin.account_id === account.account_id
-  );
-  const isOwner = !!owners.find(
-    (owner) => owner.account_id === account.account_id
-  );
-  const canEdit = isAdmin || isOwner;
-
   return (
     <Box>
       <Flex gap="4" mb="6" justify="between" align="start">
@@ -61,8 +56,8 @@ export function OrganizationProfile({
           </Box>
         </Flex>
         {canEdit && (
-          <Link href={`/${account.account_id}/edit`}>
-            <Button>Edit Profile</Button>
+          <Link href={editAccountProfileUrl(account.account_id)}>
+            <Button>Edit</Button>
           </Link>
         )}
       </Flex>

@@ -5,6 +5,7 @@ import {
   Heading,
   Flex,
   Link as RadixLink,
+  Button,
 } from "@radix-ui/themes";
 import Link from "next/link";
 import type {
@@ -17,6 +18,7 @@ import { ProductsList } from "../products/ProductsList";
 import { WebsiteLink } from "./WebsiteLink";
 import { EmailVerificationStatus } from "./EmailVerificationStatus";
 import { IndividualProfileActions } from "./IndividualProfileActions";
+import { accountUrl, editAccountProfileUrl } from "@/lib/urls";
 
 interface IndividualProfileProps {
   account: IndividualAccount;
@@ -24,6 +26,7 @@ interface IndividualProfileProps {
   contributedProducts: Product[];
   organizations: OrganizationalAccount[];
   showWelcome?: boolean;
+  canEdit: boolean;
 }
 
 export function IndividualProfile({
@@ -32,6 +35,7 @@ export function IndividualProfile({
   contributedProducts,
   organizations,
   showWelcome = false,
+  canEdit,
 }: IndividualProfileProps) {
   return (
     <Box>
@@ -53,6 +57,11 @@ export function IndividualProfile({
               )}
             </Box>
           </Flex>
+          {canEdit && (
+            <Link href={editAccountProfileUrl(account.account_id)}>
+              <Button>Edit</Button>
+            </Link>
+          )}
         </Flex>
       </Box>
 
@@ -100,7 +109,7 @@ export function IndividualProfile({
           <Grid columns="3" gap="4">
             {organizations.map((org) => (
               <RadixLink asChild key={org.account_id}>
-                <Link href={`/${org.account_id}`}>
+                <Link href={accountUrl(org.account_id)}>
                   <Flex gap="2" align="center">
                     <ProfileAvatar account={org} size="2" />
                     <Text>{org.name}</Text>

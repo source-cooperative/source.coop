@@ -1,6 +1,7 @@
 import { useEffect, useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Product } from "@/types";
+import { productUrl } from "@/lib/urls";
 
 interface UseProductListKeyboardShortcutsOptions {
   products: Product[];
@@ -49,7 +50,7 @@ export function useProductListKeyboardShortcuts({
           event.preventDefault();
           if (products[selectedIndex]) {
             const product = products[selectedIndex];
-            router.push(`/${product.account_id}/${product.product_id}`);
+            router.push(productUrl(product.account_id, product.product_id));
           }
           break;
         case "?":

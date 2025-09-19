@@ -6,6 +6,7 @@ import { DateText } from "@/components/display";
 import { Box, Text, Badge, Heading } from "@radix-ui/themes";
 import { TagList } from "./TagList";
 import styles from "./ProductList.module.css";
+import { accountUrl, productUrl } from "@/lib/urls";
 
 interface ProductListItemProps {
   product: Product;
@@ -29,7 +30,7 @@ export function ProductListItem({ product, isSelected }: ProductListItemProps) {
       aria-current={isSelected ? "page" : undefined}
     >
       <article>
-        <Link href={`/${product.account_id}/${product.product_id}`}>
+        <Link href={productUrl(product.account_id, product.product_id)}>
           <Heading size="5" weight="bold" color="gray" mb="2">
             {product.title}
           </Heading>
@@ -46,7 +47,7 @@ export function ProductListItem({ product, isSelected }: ProductListItemProps) {
             <>
               <Text size="1" color="gray">
                 Provided by{" "}
-                <Link href={`/${product.account_id}`}>
+                <Link href={accountUrl(product.account_id)}>
                   {product.account.name}
                 </Link>
               </Text>

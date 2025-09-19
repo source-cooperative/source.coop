@@ -4,7 +4,6 @@ import { updateOryIdentity } from "@/lib/ory";
 import { LOGGER } from "@/lib/logging";
 import {
   AccountCreationRequestSchema,
-  Account,
   Actions,
   AccountCreationRequest,
   DEFAULT_INDIVIDUAL_FLAGS,
@@ -23,6 +22,7 @@ import { accountsTable, membershipsTable } from "../clients";
 import { FormState } from "@/components/core/DynamicForm";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { accountUrl, editAccountProfileUrl } from "@/lib/urls";
 import { v4 as uuidv4 } from "uuid";
 
 /**
@@ -165,8 +165,8 @@ export async function createAccount(
 
   redirect(
     account.type === AccountType.INDIVIDUAL
-      ? `/${account.account_id}?welcome=true`
-      : `/${account.account_id}`
+      ? accountUrl(account.account_id, "welcome=true")
+      : accountUrl(account.account_id)
   );
 }
 
@@ -292,8 +292,8 @@ export async function updateAccountProfile(
     });
 
     // Revalidate the profile page to show updated data
-    revalidatePath(`/${accountId}`);
-    revalidatePath(`/${accountId}/edit`);
+    revalidatePath(accountUrl(accountId));
+    revalidatePath(editAccountProfileUrl(accountId));
 
     return {
       fieldErrors: {},
