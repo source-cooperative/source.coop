@@ -4,7 +4,7 @@ export * from './display';
 export * from './layout';
 
 // Feature components
-export * from './features/markdown';
+// export * from './features/markdown';  // Avoid problematic import of ./features/markdown/codeConfig
 export * from './features/metadata';
 export * from './features/profiles';
 export * from './features/products';
