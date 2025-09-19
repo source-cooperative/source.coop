@@ -3,6 +3,7 @@ import { getPageSession } from "@/lib/api/utils";
 import { Button, Callout, Link } from "@radix-ui/themes";
 import { CONFIG } from "@/lib/config";
 import { ExclamationTriangleIcon } from "@radix-ui/react-icons";
+import { onboardingUrl } from "@/lib/urls";
 
 export async function AuthButtons() {
   const session = await getPageSession();
@@ -19,7 +20,7 @@ export async function AuthButtons() {
         </Callout.Icon>
         <Callout.Text>
           You do not yet have a profile. Please click{" "}
-          <Link href="/onboarding">here</Link> to complete your profile.
+          <Link href={onboardingUrl()}>here</Link> to complete your profile.
         </Callout.Text>
       </Callout.Root>
     );

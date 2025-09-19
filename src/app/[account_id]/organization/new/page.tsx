@@ -3,6 +3,7 @@ import { FormTitle } from "@/components/core";
 import { getPageSession } from "@/lib/api/utils";
 import { redirect } from "next/navigation";
 import { Container, Heading, Text } from "@radix-ui/themes";
+import { newOrganizationUrl } from "@/lib/urls";
 
 interface PageProps {
   params: Promise<{
@@ -29,7 +30,7 @@ export default async function NewOrganizationPage({ params }: PageProps) {
   }
 
   if (session.account.account_id !== account_id) {
-    redirect(`/${session.account.account_id}/organization/new`);
+    redirect(newOrganizationUrl(session.account.account_id));
   }
 
   return (

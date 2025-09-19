@@ -12,6 +12,7 @@ import { getPageSession, LOGGER } from "@/lib";
 import { FormState } from "@/components/core/DynamicForm";
 import { isAuthorized } from "../api/authz";
 import { redirect } from "next/navigation";
+import { productUrl } from "@/lib/urls";
 
 export interface PaginatedProductsResult {
   products: Product[];
@@ -300,7 +301,7 @@ export async function createProduct(
 
   try {
     await productsTable.create(product);
-    redirect(`/${product.account_id}/${product.product_id}?success`);
+    redirect(productUrl(product.account_id, product.product_id, "success"));
   } catch (error) {
     LOGGER.error("Failed to create product", {
       operation: "createProduct",

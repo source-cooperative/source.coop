@@ -22,6 +22,7 @@ import { OrganizationMembers } from "./OrganizationMembers";
 import { ProfileAvatar } from "./ProfileAvatar";
 import { WebsiteLink } from "./WebsiteLink";
 import { ProfileLocation } from "./ProfileLocation";
+import { editAccountProfileUrl } from "@/lib/urls";
 
 interface OrganizationProfileProps {
   account: OrganizationalAccount;

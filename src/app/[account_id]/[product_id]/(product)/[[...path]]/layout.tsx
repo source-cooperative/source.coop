@@ -10,6 +10,7 @@
 
 import { BreadcrumbNav, ProductHeader, SectionHeader } from "@/components";
 import { productsTable } from "@/lib/clients/database";
+import { productUrl } from "@/lib/urls";
 import { Box, Card } from "@radix-ui/themes";
 import { notFound } from "next/navigation";
 
@@ -19,7 +20,11 @@ interface ProductLayoutProps {
   params: Promise<{ account_id: string; product_id: string; path?: string[] }>;
 }
 
-export default async function ProductLayout({ params, children, readme }: ProductLayoutProps) {
+export default async function ProductLayout({
+  params,
+  children,
+  readme,
+}: ProductLayoutProps) {
   // Then check if product exists
   const { account_id, product_id, path } = await params;
   const product = await productsTable.fetchById(account_id, product_id);
@@ -41,7 +46,7 @@ export default async function ProductLayout({ params, children, readme }: Produc
           >
             <BreadcrumbNav
               path={path?.map((p) => decodeURIComponent(p)) || []}
-              baseUrl={`/${account_id}/${product_id}`}
+              baseUrl={productUrl(account_id, product_id)}
             />
           </Box>
         </SectionHeader>

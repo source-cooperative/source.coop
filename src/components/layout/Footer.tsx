@@ -4,6 +4,7 @@ import { Container, Box, Link as RadixLink } from "@radix-ui/themes";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { MonoText } from "@/components/core";
+import { homeUrl, productListUrl } from "@/lib/urls";
 
 export function Footer() {
   const pathname = usePathname();
@@ -16,7 +17,7 @@ export function Footer() {
             {pathname !== "/" && (
               <Box mb="2">
                 <RadixLink color="gray" underline="always" asChild>
-                  <Link href="/">
+                  <Link href={homeUrl()}>
                     <MonoText size="2">Home</MonoText>
                   </Link>
                 </RadixLink>
@@ -24,7 +25,7 @@ export function Footer() {
             )}
             <Box mb="2">
               <RadixLink color="gray" underline="always" asChild>
-                <Link href="/products">
+                <Link href={productListUrl()}>
                   <MonoText size="2">All Products</MonoText>
                 </Link>
               </RadixLink>

@@ -5,6 +5,7 @@ import { DateText } from "@/components/display";
 import Link from "next/link";
 import { Flex } from "@radix-ui/themes";
 import { ProfileAvatar } from "@/components/features/profiles/ProfileAvatar";
+import { accountUrl } from "@/lib/urls";
 
 interface ProductMetaContentProps {
   product: Product;
@@ -38,7 +39,7 @@ export function ProductMetaContent({ product }: ProductMetaContentProps) {
         <DataList.Label>Owner</DataList.Label>
         <DataList.Value>
           <RadixLink asChild>
-            <Link href={`/${product.account_id}`}>
+            <Link href={accountUrl(product.account_id)}>
               <Flex gap="2" align="center">
                 {product.account && (
                   <ProfileAvatar account={product.account} size="2" />
