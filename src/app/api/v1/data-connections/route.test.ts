@@ -19,6 +19,27 @@ jest.mock("@/lib/api/authz", () => ({
   isAuthorized: jest.fn(),
 }));
 
+jest.mock("@/lib/config", () => ({
+  CONFIG: {
+    storage: {
+      type: "S3",
+      endpoint: "http://localhost:9000",
+      region: "us-east-1",
+      credentials: {
+        accessKeyId: "test",
+        secretAccessKey: "test",
+      },
+    },
+    environment: {
+      isDevelopment: false,
+      stage: "test",
+    },
+    auth: {
+      accessToken: "test-token",
+    },
+  },
+}));
+
 const { GET, POST } = require("./route");
 
 describe("/api/v1/data-connections", () => {
