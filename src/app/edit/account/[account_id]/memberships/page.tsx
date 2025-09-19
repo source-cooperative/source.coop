@@ -1,8 +1,15 @@
 import { Box, Text, Table, Badge, Button, Flex } from "@radix-ui/themes";
 import { PersonIcon, PlusIcon } from "@radix-ui/react-icons";
-import { MembershipRole, MembershipState } from "@/types";
-import { accountsTable, membershipsTable } from "@/lib/clients/database";
+import { Actions, Membership, MembershipRole, MembershipState } from "@/types";
+import {
+  accountsTable,
+  isOrganizationalAccount,
+  membershipsTable,
+} from "@/lib/clients/database";
 import { FormTitle } from "@/components";
+import { notFound, redirect } from "next/navigation";
+import { getPageSession } from "@/lib";
+import { isAuthorized } from "@/lib/api/authz";
 
 interface MembershipsPageProps {
   params: Promise<{ account_id: string }>;
@@ -12,10 +19,34 @@ export default async function MembershipsPage({
   params,
 }: MembershipsPageProps) {
   const { account_id } = await params;
+  const account = await accountsTable.fetchById(account_id);
+  if (!account) {
+    notFound();
+  }
+
+  if (!isOrganizationalAccount(account)) {
+    redirect(`/edit/account/${account_id}/profile`);
+  }
+
+  const userSession = await getPageSession();
+  if (!isAuthorized(userSession, account, Actions.ListAccountMemberships)) {
+    redirect(`/edit/account/${account_id}/profile`);
+  }
+
   const memberships = await membershipsTable.listByAccount(account_id);
-  const activeMemberships = memberships.filter(
-    (membership) => membership.state === MembershipState.Member
-  );
+  const activeMemberships = memberships
+    .filter((membership) => membership.state === MembershipState.Member)
+    .sort((a, b) => {
+      // Define role hierarchy: Owners > Maintainers > Writers > Readers
+      const roleOrder = {
+        [MembershipRole.Owners]: 0,
+        [MembershipRole.Maintainers]: 1,
+        [MembershipRole.WriteData]: 2,
+        [MembershipRole.ReadData]: 3,
+      };
+
+      return roleOrder[a.role] - roleOrder[b.role];
+    });
 
   // Get account details for each membership
   const memberAccountIds = activeMemberships.map((m) => m.account_id);
@@ -54,6 +85,14 @@ export default async function MembershipsPage({
     }
   };
 
+  const canInviteMembership = isAuthorized(
+    userSession,
+    account,
+    Actions.InviteMembership
+  );
+  const canRevokeMembership = (membership: Membership) =>
+    isAuthorized(userSession, membership, Actions.RevokeMembership);
+
   return (
     <Box>
       <Flex justify="between" align="center" mb="6">
@@ -63,7 +102,7 @@ export default async function MembershipsPage({
             description="Manage organization members and their roles"
           />
         </Box>
-        <Button size="2">
+        <Button size="2" disabled={!canInviteMembership}>
           <PlusIcon width="16" height="16" />
           Invite Member
         </Button>
@@ -146,8 +185,14 @@ export default async function MembershipsPage({
                     </Text>
                   </Table.Cell>
                   <Table.Cell>
-                    <Button size="1" variant="soft" color="red">
-                      Remove
+                    <Button
+                      size="1"
+                      variant="soft"
+                      color="red"
+                      disabled={!canRevokeMembership(membership)}
+                      // TODO: Make this actually perform the action
+                    >
+                      Revoke
                     </Button>
                   </Table.Cell>
                 </Table.Row>

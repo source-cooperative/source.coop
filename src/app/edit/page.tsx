@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getPageSession } from "@/lib/api/utils";
-import { accountsTable } from "@/lib/clients/database";
+import { CONFIG } from "@/lib/config";
 
 interface SettingsPageProps {
   params: Promise<{ account_id: string }>;
@@ -9,7 +9,7 @@ interface SettingsPageProps {
 export default async function Redirect({ params }: SettingsPageProps) {
   const session = await getPageSession();
   if (!session) {
-    redirect("/auth/login");
+    redirect(CONFIG.auth.routes.login);
   }
 
   if (!session.account?.account_id) {

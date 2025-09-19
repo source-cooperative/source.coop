@@ -18,7 +18,11 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
     <Box>
       <FormTitle
         title="Public Profile"
-        description="Update your public profile information"
+        description={
+          account.type === "individual"
+            ? "Update your public profile information"
+            : "Update your organization's public profile information"
+        }
       />
       {isIndividualAccount(account) ? (
         <EditProfileForm account={account} />

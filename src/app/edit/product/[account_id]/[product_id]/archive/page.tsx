@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { Box, Text, Skeleton } from "@radix-ui/themes";
+import { FormTitle } from "@/components/core/FormTitle";
 
 interface ProductArchivePageProps {
   params: Promise<{ account_id: string; product_id: string }>;
@@ -8,12 +9,10 @@ interface ProductArchivePageProps {
 async function ProductArchivePageContent() {
   return (
     <Box>
-      <Text size="6" weight="bold" mb="2">
-        Archive Product
-      </Text>
-      <Text size="3" color="gray" mb="6">
-        Archive or delete this product
-      </Text>
+      <FormTitle
+        title="Archive Product"
+        description="Archive or delete this product"
+      />
       <Box
         style={{
           padding: "24px",
@@ -30,7 +29,9 @@ async function ProductArchivePageContent() {
   );
 }
 
-export default async function ProductArchivePage({ params }: ProductArchivePageProps) {
+export default async function ProductArchivePage({
+  params,
+}: ProductArchivePageProps) {
   return (
     <Suspense
       fallback={

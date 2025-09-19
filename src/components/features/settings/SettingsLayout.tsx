@@ -1,15 +1,14 @@
 "use client";
 
 import { ReactNode } from "react";
-import { Box, Flex, Text, Separator } from "@radix-ui/themes";
+import { Box, Flex, Text } from "@radix-ui/themes";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { PersonIcon, LockClosedIcon } from "@radix-ui/react-icons";
 import { Account } from "@/types";
 import { SettingsHeader } from "./SettingsHeader";
 import styles from "./SettingsLayout.module.css";
 
-interface SettingsMenuItem {
+export interface SettingsMenuItem {
   id: string;
   label: string;
   href: string;
@@ -19,62 +18,34 @@ interface SettingsMenuItem {
 
 interface SettingsLayoutProps {
   children: ReactNode;
-  accountId: string;
-  accountType: "individual" | "organization";
-  canReadAccount: boolean;
-  canReadMembership: boolean;
-  currentAccount: Account;
-  manageableAccounts: Account[];
+  menuItems: SettingsMenuItem[];
+  showHeader?: boolean;
+  currentAccount?: Account;
+  manageableAccounts?: Account[];
+  sidebarTitle?: string;
 }
 
 export function SettingsLayout({
   children,
-  accountId,
-  accountType,
-  canReadAccount,
-  canReadMembership,
+  menuItems,
+  showHeader = false,
   currentAccount,
-  manageableAccounts,
+  manageableAccounts = [],
+  sidebarTitle,
 }: SettingsLayoutProps) {
   const pathname = usePathname();
-
-  const menuItems: SettingsMenuItem[] = [
-    {
-      id: "profile",
-      label: "Public Profile",
-      href: `/edit/account/${accountId}/profile`,
-      icon: <PersonIcon width="16" height="16" />,
-      condition: canReadAccount,
-    },
-    {
-      id: "security",
-      label: "Security",
-      href: `/edit/account/${accountId}/security`,
-      icon: <LockClosedIcon width="16" height="16" />,
-      condition: canReadAccount,
-    },
-    ...(accountType === "organization"
-      ? [
-          {
-            id: "memberships",
-            label: "Memberships",
-            href: `/edit/account/${accountId}/memberships`,
-            icon: <PersonIcon width="16" height="16" />,
-            condition: canReadMembership,
-          },
-        ]
-      : []),
-  ];
 
   const filteredMenuItems = menuItems.filter((item) => item.condition);
 
   return (
     <Box>
       {/* Header with account info and switcher */}
-      <SettingsHeader
-        currentAccount={currentAccount}
-        manageableAccounts={manageableAccounts}
-      />
+      {showHeader && currentAccount && (
+        <SettingsHeader
+          currentAccount={currentAccount}
+          manageableAccounts={manageableAccounts}
+        />
+      )}
 
       <Flex gap="6" className={styles.settingsLayout}>
         {/* Left sidebar menu */}
@@ -86,6 +57,11 @@ export function SettingsLayout({
           }}
         >
           <Flex direction="column" gap="1">
+            {sidebarTitle && (
+              <Text size="2" weight="bold" color="gray" mb="3">
+                {sidebarTitle}
+              </Text>
+            )}
             {filteredMenuItems.map((item) => {
               const isActive = pathname === item.href;
               return (
