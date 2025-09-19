@@ -75,6 +75,7 @@ export enum Actions {
 
   CreateAccount = "account:create",
   DisableAccount = "account:disable",
+  // TODO: Need permission for editing account
   GetAccount = "account:get",
   ListAccount = "account:list",
   ListAccountAPIKeys = "account:listAPIKeys",

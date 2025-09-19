@@ -25,7 +25,6 @@ export function SettingsHeader({
   manageableAccounts,
 }: SettingsHeaderProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const router = useRouter();
   const pathname = usePathname();
 
   // Extract current view from pathname (last segment)
