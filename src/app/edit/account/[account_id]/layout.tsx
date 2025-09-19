@@ -11,7 +11,7 @@ import { PersonIcon, LockClosedIcon } from "@radix-ui/react-icons";
 
 interface AccountLayoutProps {
   children: ReactNode;
-  params: { account_id: string };
+  params: Promise<{ account_id: string }>;
 }
 
 export default async function AccountLayout({
