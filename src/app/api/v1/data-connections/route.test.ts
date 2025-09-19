@@ -19,6 +19,7 @@ jest.mock("@/lib/api/authz", () => ({
   isAuthorized: jest.fn(),
 }));
 
+
 const { GET, POST } = require("./route");
 
 describe("/api/v1/data-connections", () => {

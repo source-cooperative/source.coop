@@ -1,124 +1,45 @@
 "use client";
 
-import { Box, Text, Flex } from "@radix-ui/themes";
-import {
-  ChevronRightIcon,
-  FileIcon,
-  ChevronDownIcon,
-} from "@radix-ui/react-icons";
-import Link from "next/link";
+import { Box, Text } from "@radix-ui/themes";
+import { ChevronDownIcon } from "@radix-ui/react-icons";
 import { useRef, useState, useEffect } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { MonoText } from "@/components/core";
-import type { FileNode } from "./utils";
-import type { Product } from "@/types";
-import { formatFileSize } from "./utils";
+import { buildDirectoryTree, type FileNode } from "./utils";
+import type { Product, ProductObject } from "@/types";
 import styles from "./ObjectBrowser.module.css";
+import { DirectoryRow } from "./DirectoryRow";
 
 interface DirectoryListProps {
-  items: FileNode[];
-  currentPath: string[];
   product: Product;
+  objects: ProductObject[]; // Allow parent to pass objects to avoid duplicate calls
+  path: string[];
   focusedIndex?: number;
   setFocusedIndex?: (index: number) => void;
 }
 
-interface DirectoryRowProps {
-  item: FileNode;
-  index: number;
-  itemsLength: number;
-  product: Product;
-  currentPath: string[];
-  focusedIndex?: number;
-  setFocusedIndex?: (index: number) => void;
-  itemRefs?: React.MutableRefObject<(HTMLAnchorElement | null)[]>;
-  virtualRow?: { start: number };
-}
-
-const ITEM_HEIGHT = 40;
 const MAX_VISIBLE_ITEMS = 20;
+const ITEM_HEIGHT = 40;
 
-function DirectoryRow({
-  item,
-  index,
-  itemsLength,
-  product,
-  currentPath,
-  focusedIndex,
-  setFocusedIndex,
-  itemRefs,
-  virtualRow,
-}: DirectoryRowProps) {
-  const href = item.isDirectory
-    ? `/${product.account_id}/${product.product_id}/${[
-        ...currentPath,
-        item.name,
-      ].join("/")}`
-    : `/${product.account_id}/${product.product_id}/${item.path}`;
-
-  const wrapperStyle = virtualRow
-    ? {
-        position: "absolute" as const,
-        top: 0,
-        transform: `translateY(${virtualRow.start}px)`,
-        left: 0,
-        width: "100%",
-        height: `${ITEM_HEIGHT}px`,
-        willChange: "transform" as const,
-      }
-    : {
-        marginBottom: index < itemsLength - 1 ? "var(--space-2)" : 0,
-      };
-
-  return (
-    <Box key={item.path} style={wrapperStyle}>
-      <Link
-        href={href}
-        className={styles.item}
-        title={item.name}
-        ref={(el: HTMLAnchorElement | null) => {
-          if (el && itemRefs) itemRefs.current[index] = el;
-        }}
-        onFocus={() => setFocusedIndex?.(index)}
-        data-focused={focusedIndex === index}
-      >
-        <Flex justify="between" align="center" style={{ width: "100%" }}>
-          <Flex align="center" gap="2" style={{ minWidth: 0, flex: 1 }}>
-            {item.isDirectory ? (
-              <ChevronRightIcon width={16} height={16} />
-            ) : (
-              <FileIcon width={16} height={16} />
-            )}
-            <MonoText
-              style={{
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-                minWidth: 0,
-                flex: 1,
-              }}
-            >
-              {item.name}
-            </MonoText>
-          </Flex>
-          {!item.isDirectory && item.size > 0 && (
-            <MonoText style={{ flexShrink: 0, marginLeft: "var(--space-2)" }}>
-              {formatFileSize(item.size)}
-            </MonoText>
-          )}
-        </Flex>
-      </Link>
-    </Box>
-  );
+function getSortedItems(objects: ProductObject[], path: string[]) {
+  const tree = buildDirectoryTree(objects, path);
+  return Object.values(tree).sort((a, b) => {
+    // Directories first, then alphabetically
+    if (a.isDirectory && !b.isDirectory) return -1;
+    return a.name.toLowerCase().localeCompare(b.name.toLowerCase());
+  });
 }
 
 export function DirectoryList({
-  items,
-  currentPath,
+  objects,
+  path,
   product,
   focusedIndex = 0,
   setFocusedIndex,
 }: DirectoryListProps) {
+  const items = getSortedItems(objects, path);
+  console.log("items", items);
+
   const parentRef = useRef<HTMLDivElement>(null);
   const [showScrollIndicator, setShowScrollIndicator] = useState(false);
   const itemRefs = useRef<(HTMLAnchorElement | null)[]>([]);
@@ -222,8 +143,9 @@ export function DirectoryList({
                   item={items[virtualRow.index]}
                   index={virtualRow.index}
                   itemsLength={items.length}
+                  itemHeight={ITEM_HEIGHT}
                   product={product}
-                  currentPath={currentPath}
+                  path={path}
                   focusedIndex={focusedIndex}
                   setFocusedIndex={setFocusedIndex}
                   itemRefs={itemRefs}
@@ -236,8 +158,9 @@ export function DirectoryList({
                 item={item}
                 index={index}
                 itemsLength={items.length}
+                itemHeight={ITEM_HEIGHT}
                 product={product}
-                currentPath={currentPath}
+                path={path}
                 focusedIndex={focusedIndex}
                 setFocusedIndex={setFocusedIndex}
                 itemRefs={itemRefs}

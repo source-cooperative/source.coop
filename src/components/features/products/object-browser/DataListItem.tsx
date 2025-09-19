@@ -6,7 +6,6 @@ import styles from "./ObjectBrowser.module.css";
 interface DataListItemProps {
   label: string;
   value: string | React.ReactNode;
-  selectedDataItem: string | null;
   itemKey: string;
   copiedField: string | null;
   onCopy: (text: string, field: string) => void;
@@ -15,7 +14,6 @@ interface DataListItemProps {
 export function DataListItem({
   label,
   value,
-  selectedDataItem,
   itemKey,
   copiedField,
   onCopy,
@@ -27,7 +25,6 @@ export function DataListItem({
         <Flex align="center" gap="2">
           <MonoText
             className={styles.selectableText}
-            data-selected={selectedDataItem === itemKey}
             data-selectable="true"
             data-item={itemKey}
           >

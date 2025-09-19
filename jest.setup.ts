@@ -21,3 +21,26 @@ global.Response = Response;
 global.Headers = Headers;
 // @ts-ignore
 global.fetch = fetch;
+
+// Global mock for @/lib/config - can be overridden in individual test files
+jest.mock("@/lib/config", () => ({
+  CONFIG: {
+    storage: {
+      type: "S3",
+      endpoint: "http://localhost:9000",
+      region: "us-east-1",
+      credentials: {
+        accessKeyId: "test",
+        secretAccessKey: "test",
+      },
+    },
+    environment: {
+      isDevelopment: false,
+      stage: "test",
+    },
+    auth: {
+      accessToken: "test-token",
+    },
+    apiSecret: "test-source-key-123",
+  },
+}));

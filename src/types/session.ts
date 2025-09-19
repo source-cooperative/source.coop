@@ -13,7 +13,6 @@ import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
 import { z } from "zod";
 import { IndividualAccountSchema } from "./account";
 import { MembershipSchema } from "./membership";
-import type { Session, Identity } from "@ory/client";
 
 extendZodWithOpenApi(z);
 
@@ -26,14 +25,3 @@ export const UserSessionSchema = z
   .openapi("UserSession");
 
 export type UserSession = z.infer<typeof UserSessionSchema>;
-
-export interface SessionMetadata {
-  account_id?: string;
-  is_admin?: boolean;
-}
-
-export interface ExtendedSession extends Session {
-  identity?: Identity & {
-    metadata_public?: SessionMetadata;
-  };
-}
