@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { SettingsLayout } from "@/components/features/settings";
+import { SettingsHeader, SettingsLayout } from "@/components/features/settings";
 import { getPageSession } from "@/lib/api/utils";
 import { isAuthorized } from "@/lib/api/authz";
 import { Actions, Account } from "@/types";
@@ -98,14 +98,12 @@ export default async function AccountLayout({
   ];
 
   return (
-    <SettingsLayout
-      menuItems={menuItems}
-      showHeader={true}
-      currentAccount={accountToEdit}
-      manageableAccounts={manageableAccounts}
-      sidebarTitle="Settings"
-    >
-      {children}
-    </SettingsLayout>
+    <>
+      <SettingsHeader
+        currentAccount={accountToEdit}
+        manageableAccounts={manageableAccounts}
+      />
+      <SettingsLayout menuItems={menuItems}>{children}</SettingsLayout>
+    </>
   );
 }

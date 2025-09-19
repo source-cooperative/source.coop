@@ -12,7 +12,7 @@ import {
 } from "@radix-ui/themes";
 import { ChevronDownIcon, ExternalLinkIcon } from "@radix-ui/react-icons";
 import Link from "next/link";
-import { useRouter, usePathname } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { Account } from "@/types";
 
 interface SettingsHeaderProps {
