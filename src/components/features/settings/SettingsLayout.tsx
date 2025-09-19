@@ -19,34 +19,15 @@ export interface SettingsMenuItem {
 interface SettingsLayoutProps {
   children: ReactNode;
   menuItems: SettingsMenuItem[];
-  showHeader?: boolean;
-  currentAccount?: Account;
-  manageableAccounts?: Account[];
-  sidebarTitle?: string;
 }
 
-export function SettingsLayout({
-  children,
-  menuItems,
-  showHeader = false,
-  currentAccount,
-  manageableAccounts = [],
-  sidebarTitle,
-}: SettingsLayoutProps) {
+export function SettingsLayout({ children, menuItems }: SettingsLayoutProps) {
   const pathname = usePathname();
 
   const filteredMenuItems = menuItems.filter((item) => item.condition);
 
   return (
     <Box>
-      {/* Header with account info and switcher */}
-      {showHeader && currentAccount && (
-        <SettingsHeader
-          currentAccount={currentAccount}
-          manageableAccounts={manageableAccounts}
-        />
-      )}
-
       <Flex gap="6" className={styles.settingsLayout}>
         {/* Left sidebar menu */}
         <Box
@@ -57,11 +38,6 @@ export function SettingsLayout({
           }}
         >
           <Flex direction="column" gap="1">
-            {sidebarTitle && (
-              <Text size="2" weight="bold" color="gray" mb="3">
-                {sidebarTitle}
-              </Text>
-            )}
             {filteredMenuItems.map((item) => {
               const isActive = pathname === item.href;
               return (
