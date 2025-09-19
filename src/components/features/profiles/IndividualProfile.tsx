@@ -59,7 +59,7 @@ export function IndividualProfile({
             </Box>
           </Flex>
           {canEdit && (
-            <Link href={`/edit/account/${account.account_id}/profile`}>
+            <Link href={editAccountProfileUrl(account.account_id)}>
               <Button>Edit</Button>
             </Link>
           )}

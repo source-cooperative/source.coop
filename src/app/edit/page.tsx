@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getPageSession } from "@/lib/api/utils";
-import { CONFIG } from "@/lib/config";
+import { editProfileUrl, homeUrl, loginUrl } from "@/lib/urls";
 
 interface SettingsPageProps {
   params: Promise<{ account_id: string }>;
@@ -9,13 +9,13 @@ interface SettingsPageProps {
 export default async function Redirect({ params }: SettingsPageProps) {
   const session = await getPageSession();
   if (!session) {
-    redirect(CONFIG.auth.routes.login);
+    redirect(loginUrl());
   }
 
   if (!session.account?.account_id) {
-    redirect("/");
+    redirect(homeUrl());
   }
 
   // Redirect to the profile page as the default settings page
-  redirect(`/edit/profile/${session.account.account_id}`);
+  redirect(editProfileUrl(session.account.account_id));
 }
