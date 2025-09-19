@@ -1,5 +1,8 @@
 import { ReactNode } from "react";
-import { SettingsHeader, SettingsLayout } from "@/components/features/settings";
+import {
+  AccountSelector,
+  SettingsLayout,
+} from "@/components/features/settings";
 import { getPageSession } from "@/lib/api/utils";
 import { isAuthorized } from "@/lib/api/authz";
 import { Actions, Account } from "@/types";
@@ -99,7 +102,7 @@ export default async function AccountLayout({
 
   return (
     <>
-      <SettingsHeader
+      <AccountSelector
         currentAccount={accountToEdit}
         manageableAccounts={manageableAccounts}
       />

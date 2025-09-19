@@ -4,8 +4,6 @@ import { ReactNode } from "react";
 import { Box, Flex, Text } from "@radix-ui/themes";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Account } from "@/types";
-import { SettingsHeader } from "./SettingsHeader";
 import styles from "./SettingsLayout.module.css";
 
 export interface SettingsMenuItem {

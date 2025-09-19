@@ -14,16 +14,18 @@ import { ChevronDownIcon, ExternalLinkIcon } from "@radix-ui/react-icons";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Account } from "@/types";
+import { MonoText } from "@/components";
+import { accountUrl } from "@/lib/urls";
 
-interface SettingsHeaderProps {
+interface AccountSelectorProps {
   currentAccount: Account;
   manageableAccounts: Account[];
 }
 
-export function SettingsHeader({
+export function AccountSelector({
   currentAccount,
   manageableAccounts,
-}: SettingsHeaderProps) {
+}: AccountSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
 
@@ -62,16 +64,16 @@ export function SettingsHeader({
                   : "Individual"}
               </Text>
             </Flex>
-            <Text size="2" color="gray">
+            <MonoText size="2" color="gray">
               @{currentAccount.account_id}
-            </Text>
+            </MonoText>
           </Box>
 
           {manageableAccounts.length > 1 && (
             <DropdownMenu.Root open={isOpen} onOpenChange={setIsOpen}>
               <DropdownMenu.Trigger>
                 <Button variant="ghost" size="2">
-                  <ChevronDownIcon width="16" height="16" />
+                  <ChevronDownIcon data-state={isOpen ? "open" : "closed"} />
                 </Button>
               </DropdownMenu.Trigger>
               <DropdownMenu.Content>
@@ -138,7 +140,7 @@ export function SettingsHeader({
 
         {/* Right side - Link to profile */}
         <RadixLink
-          href={`/${currentAccount.account_id}`}
+          href={accountUrl(currentAccount.account_id)}
           style={{
             display: "flex",
             alignItems: "center",
