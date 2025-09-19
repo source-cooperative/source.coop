@@ -97,13 +97,7 @@ export default async function ProductLayout({
 
 function ProductHeader({ product }: { product: Product }) {
   return (
-    <Box
-      style={{
-        borderBottom: "1px solid var(--gray-6)",
-        paddingBottom: "16px",
-        marginBottom: "24px",
-      }}
-    >
+    <Box mb="5" pb="4" style={{ borderBottom: "1px solid var(--gray-6)" }}>
       <Flex align="center" gap="3">
         <Button variant="ghost" asChild>
           <Link href={`/${product.account_id}`}>

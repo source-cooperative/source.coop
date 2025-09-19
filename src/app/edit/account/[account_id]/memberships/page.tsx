@@ -1,4 +1,4 @@
-import { Box, Text, Table, Badge, Button, Flex } from "@radix-ui/themes";
+import { Box, Text, Table, Badge, Button, Flex, Link } from "@radix-ui/themes";
 import { PersonIcon, PlusIcon } from "@radix-ui/react-icons";
 import { Actions, Membership, MembershipRole, MembershipState } from "@/types";
 import {
@@ -6,10 +6,11 @@ import {
   isOrganizationalAccount,
   membershipsTable,
 } from "@/lib/clients/database";
-import { FormTitle } from "@/components";
+import { FormTitle, MonoText } from "@/components";
 import { notFound, redirect } from "next/navigation";
 import { getPageSession } from "@/lib";
 import { isAuthorized } from "@/lib/api/authz";
+import { accountUrl } from "@/lib/urls";
 
 interface MembershipsPageProps {
   params: Promise<{ account_id: string }>;
@@ -168,9 +169,12 @@ export default async function MembershipsPage({
                         <Text size="2" weight="medium">
                           {memberAccount?.name || "Unknown User"}
                         </Text>
-                        <Text size="1" color="gray">
-                          @{memberAccount?.account_id || membership.account_id}
-                        </Text>
+                        <Link href={accountUrl(membership.account_id)}>
+                          <MonoText size="1" color="gray" ml="1">
+                            @
+                            {memberAccount?.account_id || membership.account_id}
+                          </MonoText>
+                        </Link>
                       </Box>
                     </Flex>
                   </Table.Cell>
