@@ -2,9 +2,9 @@ import { Suspense } from "react";
 import { notFound } from "next/navigation";
 
 import DirectoryListLoading from "./loading";
-import { ObjectBrowser } from "@/components";
 import { LOGGER, storage, dataConnectionsTable, productsTable } from "@/lib";
 import { DataConnection, ProductMirror } from "@/types";
+import { DirectoryList, ObjectSummary, ObjectPreview } from "@/components";
 
 export async function generateMetadata({ params }: PageProps) {
   const { account_id, product_id, path } = await params;
@@ -34,14 +34,27 @@ export default async function ProductPathPage({ params }: PageProps) {
   const { product, objectsList, objectInfo, connectionDetails } =
     await fetchProduct(account_id, product_id, objectPath);
 
+  if (objectInfo?.type === "file") {
+    const sourceUrl = `https://data.source.coop/${product.account?.account_id}/${product.product_id}/${objectInfo.path}`;
+
+    return (
+      <Suspense fallback={<DirectoryListLoading />}>
+        <ObjectSummary
+          product={product}
+          objectInfo={objectInfo}
+          connectionDetails={connectionDetails}
+        />
+        <ObjectPreview sourceUrl={sourceUrl} />
+      </Suspense>
+    );
+  }
+
   return (
     <Suspense fallback={<DirectoryListLoading />}>
-      <ObjectBrowser
+      <DirectoryList
         product={product}
-        initialPath={objectPath}
-        selectedObject={objectInfo}
         objects={objectsList}
-        connectionDetails={connectionDetails}
+        path={objectPath.split("/").filter(Boolean)}
       />
     </Suspense>
   );
