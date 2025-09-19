@@ -1,11 +1,10 @@
 import { Heading, Text, Box, Flex, Button } from "@radix-ui/themes";
-import { Pencil1Icon } from "@radix-ui/react-icons";
 import { Actions, type Product } from "@/types";
 import { TagList } from "./TagList";
 import Link from "next/link";
-import { accountsTable } from "@/lib/clients/database";
 import { isAuthorized } from "@/lib/api/authz";
 import { getPageSession } from "@/lib/api/utils";
+import { editProductUrl } from "@/lib/urls";
 
 interface ProductSummaryCardProps {
   product: Product;
@@ -18,9 +17,7 @@ export async function ProductSummaryCard({ product }: ProductSummaryCardProps) {
       <Flex align="center" justify="between" mb="2">
         <Heading size="8">{product.title}</Heading>
         {isAuthorized(session, product, Actions.PutRepository) && (
-          <Link
-            href={`/edit/product/${product.account_id}/${product.product_id}`}
-          >
+          <Link href={editProductUrl(product.account_id, product.product_id)}>
             <Button>Edit</Button>
           </Link>
         )}

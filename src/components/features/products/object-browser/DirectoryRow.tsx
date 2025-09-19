@@ -7,6 +7,7 @@ import { MonoText } from "@/components/core";
 import type { FileNode } from "./utils";
 import type { Product } from "@/types";
 import { formatFileSize } from "./utils";
+import { objectUrl } from "@/lib/urls";
 import styles from "./ObjectBrowser.module.css";
 
 interface DirectoryRowProps {
@@ -35,10 +36,12 @@ export function DirectoryRow({
   virtualRow,
 }: DirectoryRowProps) {
   const href = item.isDirectory
-    ? `/${product.account_id}/${product.product_id}/${[...path, item.name].join(
-        "/"
-      )}`
-    : `/${product.account_id}/${product.product_id}/${item.path}`;
+    ? objectUrl(
+        product.account_id,
+        product.product_id,
+        [...path, item.name].join("/")
+      )
+    : objectUrl(product.account_id, product.product_id, item.path);
 
   const wrapperStyle = virtualRow
     ? {

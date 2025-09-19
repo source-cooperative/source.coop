@@ -1,4 +1,5 @@
 import type { Product } from "@/types";
+import { productUrl } from "@/lib/urls";
 
 // For injecting schema.org metadata
 export function ProductSchemaMetadata({ product }: { product: Product }) {
@@ -9,7 +10,10 @@ export function ProductSchemaMetadata({ product }: { product: Product }) {
     name: product.title,
     description: product.description,
     url: account
-      ? `https://yourdomain.com/${account.account_id}/${product.product_id}`
+      ? `https://yourdomain.com${productUrl(
+          account.account_id,
+          product.product_id
+        )}`
       : "",
     dateModified: product.updated_at,
     dateCreated: product.created_at,

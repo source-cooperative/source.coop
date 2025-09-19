@@ -22,6 +22,7 @@ import { OrganizationMembers } from "./OrganizationMembers";
 import { ProfileAvatar } from "./ProfileAvatar";
 import { WebsiteLink } from "./WebsiteLink";
 import { ProfileLocation } from "./ProfileLocation";
+import { editAccountProfileUrl } from "@/lib/urls";
 
 interface OrganizationProfileProps {
   account: OrganizationalAccount;
@@ -55,7 +56,7 @@ export function OrganizationProfile({
           </Box>
         </Flex>
         {canEdit && (
-          <Link href={`/edit/account/${account.account_id}/profile`}>
+          <Link href={editAccountProfileUrl(account.account_id)}>
             <Button>Edit</Button>
           </Link>
         )}

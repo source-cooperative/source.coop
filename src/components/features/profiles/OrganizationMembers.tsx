@@ -2,6 +2,7 @@ import { Box, Text, Link as RadixLink, Flex } from "@radix-ui/themes";
 import Link from "next/link";
 import type { IndividualAccount } from "@/types";
 import { ProfileAvatar } from "./ProfileAvatar";
+import { accountUrl } from "@/lib/urls";
 
 interface OrganizationMembersProps {
   owners: IndividualAccount[];
@@ -79,7 +80,7 @@ interface MemberLinkProps {
 function MemberLink({ member, role: _role }: MemberLinkProps) {
   return (
     <RadixLink asChild>
-      <Link href={`/${member.account_id}`}>
+      <Link href={accountUrl(member.account_id)}>
         <Flex gap="2" align="center">
           <ProfileAvatar account={member} size="2" />
           <Text size="2">{member.name}</Text>

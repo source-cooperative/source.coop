@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
+import { homeUrl, accountUrl, objectUrl } from "@/lib/urls";
 
 interface UseKeyboardShortcutsProps {
   onShowHelp?: () => void;
@@ -46,15 +47,17 @@ export function useKeyboardShortcuts({ onShowHelp }: UseKeyboardShortcutsProps =
         if (segments.length === 0) {
           // At root - do nothing
           return;
-        } else if (segments.length === 1) {
+        } else         if (segments.length === 1) {
           // On profile page - go to root
-          router.push('/');
+          router.push(homeUrl());
         } else if (segments.length === 2) {
           // On repository page - go to profile
-          router.push(`/${segments[0]}`);
+          router.push(accountUrl(segments[0]));
         } else {
           // In object browser - go up one level
-          router.push(`/${segments[0]}/${segments[1]}/${segments.slice(2, -1).join('/')}`);
+          router.push(
+            objectUrl(segments[0], segments[1], segments.slice(2, -1).join("/"))
+          );
         }
         return;
       }

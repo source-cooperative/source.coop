@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { LOGGER } from "@/lib";
+import { onboardingUrl } from "@/lib/urls";
 
 export default async function EmailVerifiedPage() {
   LOGGER.info("Email verification page loaded", {
@@ -13,5 +14,5 @@ export default async function EmailVerifiedPage() {
     operation: "EmailVerifiedPage",
     context: "redirect",
   });
-  redirect("/onboarding?verified=true");
+  redirect(onboardingUrl("verified=true"));
 }

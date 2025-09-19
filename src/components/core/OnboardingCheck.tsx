@@ -3,6 +3,7 @@
 import { redirect, usePathname } from "next/navigation";
 import { Account } from "@/types/account";
 import { useEffect } from "react";
+import { homeUrl, onboardingUrl } from "@/lib/urls";
 
 /**
  * Simple client-side check to redirect to onboarding if the user is not on the
@@ -13,11 +14,11 @@ import { useEffect } from "react";
 export function OnboardingCheck({ account }: { account?: Account }) {
   useEffect(() => {
     if (pathname !== "/onboarding" && !account) {
-      redirect("/onboarding");
+      redirect(onboardingUrl());
     }
 
     if (pathname === "/onboarding" && account) {
-      redirect("/");
+      redirect(homeUrl());
     }
   }, []);
 

@@ -13,6 +13,14 @@ import {
   Pencil1Icon,
 } from "@radix-ui/react-icons";
 import { MonoText } from "@/components";
+import {
+  accountUrl,
+  productUrl,
+  editProductDetailsUrl,
+  editProductAccessUrl,
+  editProductVisibilityUrl,
+  editProductArchiveUrl,
+} from "@/lib/urls";
 import { Box, Flex, Text, Button } from "@radix-ui/themes";
 import Link from "next/link";
 
@@ -60,28 +68,28 @@ export default async function ProductLayout({
     {
       id: "details",
       label: "Details",
-      href: `/edit/product/${account_id}/${product_id}/details`,
+      href: editProductDetailsUrl(account_id, product_id),
       icon: <Pencil1Icon width="16" height="16" />,
       condition: canEditProduct,
     },
     {
       id: "access",
       label: "Access",
-      href: `/edit/product/${account_id}/${product_id}/access`,
+      href: editProductAccessUrl(account_id, product_id),
       icon: <LockClosedIcon width="16" height="16" />,
       condition: canReadMembership,
     },
     {
       id: "visibility",
       label: "Visibility",
-      href: `/edit/product/${account_id}/${product_id}/visibility`,
+      href: editProductVisibilityUrl(account_id, product_id),
       icon: <GlobeIcon width="16" height="16" />,
       condition: canReadProduct,
     },
     {
       id: "archive",
       label: "Archive",
-      href: `/edit/product/${account_id}/${product_id}/archive`,
+      href: editProductArchiveUrl(account_id, product_id),
       icon: <ArchiveIcon width="16" height="16" />,
       condition: canUpdateProduct,
     },
@@ -100,7 +108,7 @@ function ProductHeader({ product }: { product: Product }) {
     <Box mb="5" pb="4" style={{ borderBottom: "1px solid var(--gray-6)" }}>
       <Flex align="center" gap="3">
         <Button variant="ghost" asChild>
-          <Link href={`/${product.account_id}`}>
+          <Link href={accountUrl(product.account_id)}>
             <MonoText>{product.account_id}</MonoText>
           </Link>
         </Button>
@@ -108,7 +116,7 @@ function ProductHeader({ product }: { product: Product }) {
           /
         </Text>
         <Button variant="ghost" asChild>
-          <Link href={`/${product.account_id}/${product.product_id}`}>
+          <Link href={productUrl(product.account_id, product.product_id)}>
             <MonoText>{product.product_id}</MonoText>
           </Link>
         </Button>

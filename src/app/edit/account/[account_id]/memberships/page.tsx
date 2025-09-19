@@ -10,7 +10,7 @@ import { FormTitle, MonoText } from "@/components";
 import { notFound, redirect } from "next/navigation";
 import { getPageSession } from "@/lib";
 import { isAuthorized } from "@/lib/api/authz";
-import { accountUrl } from "@/lib/urls";
+import { accountUrl, editAccountProfileUrl } from "@/lib/urls";
 
 interface MembershipsPageProps {
   params: Promise<{ account_id: string }>;
@@ -26,12 +26,12 @@ export default async function MembershipsPage({
   }
 
   if (!isOrganizationalAccount(account)) {
-    redirect(`/edit/account/${account_id}/profile`);
+    redirect(editAccountProfileUrl(account_id));
   }
 
   const userSession = await getPageSession();
   if (!isAuthorized(userSession, account, Actions.ListAccountMemberships)) {
-    redirect(`/edit/account/${account_id}/profile`);
+    redirect(editAccountProfileUrl(account_id));
   }
 
   const memberships = await membershipsTable.listByAccount(account_id);

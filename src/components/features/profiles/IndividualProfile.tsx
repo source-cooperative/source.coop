@@ -18,6 +18,7 @@ import { ProductsList } from "../products/ProductsList";
 import { WebsiteLink } from "./WebsiteLink";
 import { EmailVerificationStatus } from "./EmailVerificationStatus";
 import { IndividualProfileActions } from "./IndividualProfileActions";
+import { accountUrl, editAccountProfileUrl } from "@/lib/urls";
 
 interface IndividualProfileProps {
   account: IndividualAccount;
@@ -57,7 +58,7 @@ export function IndividualProfile({
             </Box>
           </Flex>
           {canEdit && (
-            <Link href={`/edit/account/${account.account_id}/profile`}>
+            <Link href={editAccountProfileUrl(account.account_id)}>
               <Button>Edit</Button>
             </Link>
           )}
@@ -108,7 +109,7 @@ export function IndividualProfile({
           <Grid columns="3" gap="4">
             {organizations.map((org) => (
               <RadixLink asChild key={org.account_id}>
-                <Link href={`/${org.account_id}`}>
+                <Link href={accountUrl(org.account_id)}>
                   <Flex gap="2" align="center">
                     <ProfileAvatar account={org} size="2" />
                     <Text>{org.name}</Text>

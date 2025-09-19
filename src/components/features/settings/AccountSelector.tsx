@@ -15,7 +15,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Account } from "@/types";
 import { MonoText } from "@/components";
-import { accountUrl } from "@/lib/urls";
+import { accountUrl, editAccountViewUrl } from "@/lib/urls";
 
 interface AccountSelectorProps {
   currentAccount: Account;
@@ -79,7 +79,7 @@ export function AccountSelector({
               <DropdownMenu.Content>
                 {manageableAccounts.map((account) => (
                   <Link
-                    href={`/edit/account/${account.account_id}/${currentView}`}
+                    href={editAccountViewUrl(account.account_id, currentView)}
                     onClick={() => setIsOpen(false)}
                     key={account.account_id}
                   >

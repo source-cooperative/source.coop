@@ -1,8 +1,9 @@
-'use client';
+"use client";
 
-import { Callout } from '@radix-ui/themes';
-import Link from 'next/link';
-import { InfoCircledIcon } from '@radix-ui/react-icons';
+import { Callout } from "@radix-ui/themes";
+import Link from "next/link";
+import { InfoCircledIcon } from "@radix-ui/react-icons";
+import { editAccountProfileUrl } from "@/lib/urls";
 
 interface WelcomeCalloutProps {
   show: boolean;
@@ -18,11 +19,15 @@ export function WelcomeCallout({ show, accountId }: WelcomeCalloutProps) {
         <InfoCircledIcon />
       </Callout.Icon>
       <Callout.Text>
-        Welcome to Source Cooperative. This is your profile page.{' '}
-        <Link href={`/${accountId}/edit`} style={{ textDecoration: 'underline' }}>
+        Welcome to Source Cooperative. This is your profile page.{" "}
+        <Link
+          href={editAccountProfileUrl(accountId)}
+          style={{ textDecoration: "underline" }}
+        >
           Edit it to add more details
-        </Link>.
+        </Link>
+        .
       </Callout.Text>
     </Callout.Root>
   );
-} 
+}

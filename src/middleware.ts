@@ -2,6 +2,7 @@ import { getServerSession } from "@ory/nextjs/app";
 import { createOryMiddleware } from "@ory/nextjs/middleware";
 import { NextRequest, NextResponse } from "next/server";
 import { getOryId, accountsTable, LOGGER } from "@/lib";
+import { productUrl } from "@/lib/urls";
 
 /**
  * Handle requests to legacy repository description paths.
@@ -25,7 +26,7 @@ const handleLegacyRedirects = (request: NextRequest): NextResponse | null => {
       // pathParts[4] = "description" or "access"
       const ownerId = pathParts[2];
       const repoId = pathParts[3];
-      const newPath = `/${ownerId}/${repoId}`;
+      const newPath = productUrl(ownerId, repoId);
       LOGGER.debug("Redirecting to new path", {
         operation: "handle_legacy_redirects",
         context: __filename,

@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import type { Product } from "@/types";
 import type { ProductObject } from '@/types/product_object';
 import { useKeyboardShortcuts } from './useKeyboardShortcuts';
+import { objectUrl } from "@/lib/urls";
 
 interface FileNode {
   name: string;
@@ -143,7 +144,13 @@ export function useObjectBrowserKeyboardShortcuts({
             e.preventDefault();
             // Copy permanent link
             if (selectedObject) {
-              const url = window.location.origin + `/${product.account_id}/${product.product_id}/${selectedObject.path}`;
+              const url =
+                window.location.origin +
+                objectUrl(
+                  product.account_id,
+                  product.product_id,
+                  selectedObject.path
+                );
               navigator.clipboard.writeText(url);
             }
             break;

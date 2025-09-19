@@ -1,6 +1,7 @@
 "use client";
 
 import { NotFoundPage } from "@/components/core";
+import { accountUrl } from "@/lib/urls";
 import { usePathname } from "next/navigation";
 import { Text } from "@radix-ui/themes";
 
@@ -32,7 +33,7 @@ export default function NotFound() {
             </strong>
           </>
         }
-        actionHref={`/${account_id}`}
+        actionHref={accountUrl(account_id)}
       />
     );
   }

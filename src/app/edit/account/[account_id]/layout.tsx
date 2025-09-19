@@ -11,6 +11,11 @@ import { notFound, redirect } from "next/navigation";
 import { MembershipRole, MembershipState } from "@/types";
 import { CONFIG } from "@/lib/config";
 import { PersonIcon, LockClosedIcon } from "@radix-ui/react-icons";
+import {
+  editAccountProfileUrl,
+  editAccountSecurityUrl,
+  editAccountMembershipsUrl,
+} from "@/lib/urls";
 
 interface AccountLayoutProps {
   children: ReactNode;
@@ -76,14 +81,14 @@ export default async function AccountLayout({
     {
       id: "profile",
       label: "Public Profile",
-      href: `/edit/account/${account_id}/profile`,
+      href: editAccountProfileUrl(account_id),
       icon: <PersonIcon width="16" height="16" />,
       condition: canReadAccount,
     },
     {
       id: "security",
       label: "Security",
-      href: `/edit/account/${account_id}/security`,
+      href: editAccountSecurityUrl(account_id),
       icon: <LockClosedIcon width="16" height="16" />,
       condition: canReadAccount,
     },
@@ -92,7 +97,7 @@ export default async function AccountLayout({
           {
             id: "memberships",
             label: "Memberships",
-            href: `/edit/account/${account_id}/memberships`,
+            href: editAccountMembershipsUrl(account_id),
             icon: <PersonIcon width="16" height="16" />,
             condition: canReadMembership,
           },
