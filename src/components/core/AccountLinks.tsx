@@ -11,26 +11,6 @@ interface AccountDisplayProps {
   showHoverCard?: boolean;
 }
 
-export function AccountDisplay(props: AccountDisplayProps) {
-  return (
-    <AccountInfoHoverCard {...props}>
-      <Flex align="center" gap="3">
-        <ProfileAvatar account={props.account} size="2" />
-        <Flex direction="column" gap="1">
-          <Text size="2" weight="medium">
-            {props.account?.name || "Unknown User"}
-          </Text>
-          <Link href={accountUrl(props.account.account_id)}>
-            <MonoText size="1" color="gray">
-              @{props.account.account_id}
-            </MonoText>
-          </Link>
-        </Flex>
-      </Flex>
-    </AccountInfoHoverCard>
-  );
-}
-
 export function AvatarLinkCompact({
   showAccountId = false,
   link = true,
