@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import React, { useActionState } from "react";
 import { Button, Text, Flex } from "@radix-ui/themes";
 import Form from "next/form";
 
@@ -47,6 +47,7 @@ interface DynamicFormProps<T extends Record<string, any>> {
   className?: string;
   disabled?: boolean;
   initialValues?: T; // Initial values for form fields
+  onSuccess?: () => void; // Callback when form submission is successful
 }
 
 const style: React.CSSProperties = {
@@ -67,6 +68,7 @@ export function DynamicForm<T extends Record<string, any>>({
   hiddenFields = {},
   className,
   initialValues,
+  onSuccess,
 }: DynamicFormProps<T>) {
   const [state, formAction, pending] = useActionState(action, {
     message: "",
@@ -81,6 +83,13 @@ export function DynamicForm<T extends Record<string, any>>({
       field.onValueChange(value);
     }
   };
+
+  // Call onSuccess when form submission is successful
+  React.useEffect(() => {
+    if (state.success && onSuccess) {
+      onSuccess();
+    }
+  }, [state.success, onSuccess]);
   return (
     <Form action={formAction} className={className}>
       {/* Hidden fields */}

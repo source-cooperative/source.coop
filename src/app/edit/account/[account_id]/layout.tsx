@@ -13,7 +13,7 @@ import { CONFIG } from "@/lib/config";
 import { PersonIcon, LockClosedIcon } from "@radix-ui/react-icons";
 import {
   editAccountProfileUrl,
-  editAccountSecurityUrl,
+  editAccountPermissionsUrl,
   editAccountMembershipsUrl,
 } from "@/lib/urls";
 
@@ -85,13 +85,6 @@ export default async function AccountLayout({
       icon: <PersonIcon width="16" height="16" />,
       condition: canReadAccount,
     },
-    {
-      id: "security",
-      label: "Security",
-      href: editAccountSecurityUrl(account_id),
-      icon: <LockClosedIcon width="16" height="16" />,
-      condition: canReadAccount,
-    },
     ...(accountToEdit.type === "organization"
       ? [
           {
@@ -102,7 +95,19 @@ export default async function AccountLayout({
             condition: canReadMembership,
           },
         ]
-      : []),
+      : [
+          {
+            id: "permissions",
+            label: "Permissions",
+            href: editAccountPermissionsUrl(account_id),
+            icon: <LockClosedIcon width="16" height="16" />,
+            condition: isAuthorized(
+              userSession,
+              accountToEdit,
+              Actions.GetAccount
+            ),
+          },
+        ]),
   ];
 
   return (

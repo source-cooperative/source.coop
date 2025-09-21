@@ -1,12 +1,18 @@
-import { Box, Text, Table, Badge, Button, Flex, Link } from "@radix-ui/themes";
-import { PersonIcon, PlusIcon } from "@radix-ui/react-icons";
+import { Box, Text, Table, Badge, Flex, Link } from "@radix-ui/themes";
+import { PersonIcon } from "@radix-ui/react-icons";
 import { Actions, Membership, MembershipRole, MembershipState } from "@/types";
 import {
   accountsTable,
   isOrganizationalAccount,
   membershipsTable,
 } from "@/lib/clients/database";
-import { FormTitle, MonoText } from "@/components";
+import {
+  FormTitle,
+  InviteMemberForm,
+  InlineRoleSelector,
+  InlineStateSelector,
+  MemberDisplay,
+} from "@/components";
 import { notFound, redirect } from "next/navigation";
 import { getPageSession } from "@/lib";
 import { isAuthorized } from "@/lib/api/authz";
@@ -56,36 +62,6 @@ export default async function MembershipsPage({
     memberAccounts.map((acc) => [acc.account_id, acc])
   );
 
-  const getRoleBadgeColor = (role: MembershipRole) => {
-    switch (role) {
-      case MembershipRole.Owners:
-        return "red";
-      case MembershipRole.Maintainers:
-        return "blue";
-      case MembershipRole.WriteData:
-        return "green";
-      case MembershipRole.ReadData:
-        return "gray";
-      default:
-        return "gray";
-    }
-  };
-
-  const getRoleDisplayName = (role: MembershipRole) => {
-    switch (role) {
-      case MembershipRole.Owners:
-        return "Owner";
-      case MembershipRole.Maintainers:
-        return "Maintainer";
-      case MembershipRole.WriteData:
-        return "Writer";
-      case MembershipRole.ReadData:
-        return "Reader";
-      default:
-        return role;
-    }
-  };
-
   const canInviteMembership = isAuthorized(
     userSession,
     account,
@@ -103,10 +79,7 @@ export default async function MembershipsPage({
             description="Manage organization members and their roles"
           />
         </Box>
-        <Button size="2" disabled={!canInviteMembership}>
-          <PlusIcon width="16" height="16" />
-          Invite Member
-        </Button>
+        {canInviteMembership && <InviteMemberForm organization={account} />}
       </Flex>
 
       {activeMemberships.length === 0 ? (
@@ -132,10 +105,12 @@ export default async function MembershipsPage({
           <Table.Header>
             <Table.Row>
               <Table.ColumnHeaderCell>Member</Table.ColumnHeaderCell>
-              <Table.ColumnHeaderCell>Role</Table.ColumnHeaderCell>
               <Table.ColumnHeaderCell>Joined</Table.ColumnHeaderCell>
-              <Table.ColumnHeaderCell width="100px">
-                Actions
+              <Table.ColumnHeaderCell width="120px">
+                Role
+              </Table.ColumnHeaderCell>
+              <Table.ColumnHeaderCell width="120px">
+                Status
               </Table.ColumnHeaderCell>
             </Table.Row>
           </Table.Header>
@@ -165,23 +140,18 @@ export default async function MembershipsPage({
                           color="var(--gray-9)"
                         />
                       </Box>
-                      <Box>
+                      <Flex direction="column" gap="1">
                         <Text size="2" weight="medium">
                           {memberAccount?.name || "Unknown User"}
                         </Text>
                         <Link href={accountUrl(membership.account_id)}>
-                          <MonoText size="1" color="gray" ml="1">
+                          <MonoText size="1" color="gray">
                             @
                             {memberAccount?.account_id || membership.account_id}
                           </MonoText>
                         </Link>
-                      </Box>
+                      </Flex>
                     </Flex>
-                  </Table.Cell>
-                  <Table.Cell>
-                    <Badge color={getRoleBadgeColor(membership.role)}>
-                      {getRoleDisplayName(membership.role)}
-                    </Badge>
                   </Table.Cell>
                   <Table.Cell>
                     <Text size="2" color="gray">
@@ -189,15 +159,16 @@ export default async function MembershipsPage({
                     </Text>
                   </Table.Cell>
                   <Table.Cell>
-                    <Button
-                      size="1"
-                      variant="soft"
-                      color="red"
+                    <InlineRoleSelector
+                      membership={membership}
                       disabled={!canRevokeMembership(membership)}
-                      // TODO: Make this actually perform the action
-                    >
-                      Revoke
-                    </Button>
+                    />
+                  </Table.Cell>
+                  <Table.Cell>
+                    <InlineStateSelector
+                      membership={membership}
+                      disabled={!canRevokeMembership(membership)}
+                    />
                   </Table.Cell>
                 </Table.Row>
               );

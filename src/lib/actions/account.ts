@@ -15,6 +15,8 @@ import {
   OrganizationCreationRequest,
   IndividualAccount,
   OrganizationalAccount,
+  AccountFlags,
+  AccountFlagsSchema,
 } from "@/types";
 import { isAuthorized } from "../api/authz";
 import { getPageSession } from "../api/utils";
@@ -312,6 +314,114 @@ export async function updateAccountProfile(
       fieldErrors: {},
       data: formData,
       message: "Failed to update profile. Please try again.",
+      success: false,
+    };
+  }
+}
+
+/**
+ * Updates an account's flags.
+ *
+ * @param initialState - The initial state of the form.
+ * @param formData - The form data containing the flags to update.
+ */
+export async function updateAccountFlags(
+  initialState: any,
+  formData: FormData
+): Promise<FormState<any>> {
+  const session = await getPageSession();
+
+  if (!session?.identity_id) {
+    return {
+      fieldErrors: {},
+      data: formData,
+      message: "Unauthenticated",
+      success: false,
+    };
+  }
+
+  const accountId = formData.get("account_id") as string;
+  if (!accountId) {
+    return {
+      fieldErrors: {},
+      data: formData,
+      message: "Account ID is required",
+      success: false,
+    };
+  }
+
+  try {
+    // Get the current account
+    const currentAccount = await accountsTable.fetchById(accountId);
+    if (!currentAccount) {
+      return {
+        fieldErrors: {},
+        data: formData,
+        message: "Account not found",
+        success: false,
+      };
+    }
+
+    // Check authorization
+    if (!isAuthorized(session, currentAccount, Actions.PutAccountFlags)) {
+      return {
+        fieldErrors: {},
+        data: formData,
+        message: "Unauthorized to update this account's flags",
+        success: false,
+      };
+    }
+
+    // Extract flags from form data
+    const flags: AccountFlags[] = [];
+    for (const [key, value] of formData.entries()) {
+      if (key.startsWith("flag_") && value === "on") {
+        const flagValue = key.replace("flag_", "") as AccountFlags;
+        if (Object.values(AccountFlags).includes(flagValue)) {
+          flags.push(flagValue);
+        }
+      }
+    }
+
+    // Validate flags
+    const validatedFlags = AccountFlagsSchema.parse(flags);
+
+    // Build update data
+    const updateData = {
+      ...currentAccount,
+      flags: validatedFlags,
+      updated_at: new Date().toISOString(),
+    };
+
+    // Update the account
+    await accountsTable.update(updateData);
+
+    LOGGER.info("Successfully updated account flags", {
+      operation: "updateAccountFlags",
+      context: "flags update",
+      metadata: { account_id: accountId, flags: validatedFlags },
+    });
+
+    // Revalidate the permissions page to show updated data
+    revalidatePath(editAccountProfileUrl(accountId));
+
+    return {
+      fieldErrors: {},
+      data: formData,
+      message: "Account flags updated successfully!",
+      success: true,
+    };
+  } catch (error) {
+    LOGGER.error("Error updating account flags", {
+      operation: "updateAccountFlags",
+      context: "flags update",
+      error: error,
+    });
+
+    return {
+      fieldErrors: {},
+      data: formData,
+      message: "Failed to update account flags. Please try again.",
       success: false,
     };
   }

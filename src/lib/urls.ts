@@ -29,8 +29,8 @@ export const editAccountUrl = (account_id: string) =>
   `/edit/account/${account_id}`;
 export const editAccountProfileUrl = (account_id: string) =>
   `/edit/account/${account_id}/profile`;
-export const editAccountSecurityUrl = (account_id: string) =>
-  `/edit/account/${account_id}/security`;
+export const editAccountPermissionsUrl = (account_id: string) =>
+  `/edit/account/${account_id}/permissions`;
 export const editAccountMembershipsUrl = (account_id: string) =>
   `/edit/account/${account_id}/memberships`;
 export const editAccountViewUrl = (account_id: string, view: string) =>
