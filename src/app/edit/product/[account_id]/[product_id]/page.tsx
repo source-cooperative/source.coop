@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { editProductAccessUrl } from "@/lib/urls";
+import { editProductDetailsUrl } from "@/lib/urls";
 
 interface ProductSettingsPageProps {
   params: Promise<{ account_id: string; product_id: string }>;
@@ -10,6 +10,6 @@ export default async function ProductSettingsPage({
 }: ProductSettingsPageProps) {
   const { account_id, product_id } = await params;
 
-  // Redirect to the first available view (access)
-  redirect(editProductAccessUrl(account_id, product_id));
+  // Redirect to the most commonly permitted view (product details)
+  redirect(editProductDetailsUrl(account_id, product_id));
 }
