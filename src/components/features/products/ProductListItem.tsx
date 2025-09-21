@@ -6,7 +6,8 @@ import { DateText } from "@/components/display";
 import { Box, Text, Badge, Heading } from "@radix-ui/themes";
 import { TagList } from "./TagList";
 import styles from "./ProductList.module.css";
-import { accountUrl, productUrl } from "@/lib/urls";
+import { productUrl } from "@/lib/urls";
+import { DisplayNameLink } from "@/components/core";
 
 interface ProductListItemProps {
   product: Product;
@@ -46,10 +47,7 @@ export function ProductListItem({ product, isSelected }: ProductListItemProps) {
           {product.account?.name && (
             <>
               <Text size="1" color="gray">
-                Provided by{" "}
-                <Link href={accountUrl(product.account_id)}>
-                  {product.account.name}
-                </Link>
+                Provided by <DisplayNameLink account={product.account!} />
               </Text>
               {" • "}
             </>
