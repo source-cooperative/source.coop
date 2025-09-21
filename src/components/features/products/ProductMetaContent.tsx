@@ -1,4 +1,4 @@
-import { DataList, Badge, Link as RadixLink } from "@radix-ui/themes";
+import { DataList, Badge } from "@radix-ui/themes";
 import type { Product } from "@/types";
 import { AvatarLinkCompact } from "@/components/core";
 import { DateText } from "@/components/display";
