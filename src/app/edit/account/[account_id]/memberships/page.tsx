@@ -1,4 +1,4 @@
-import { Box, Text, Table, Badge, Flex, Link } from "@radix-ui/themes";
+import { Box, Text, Table, Flex } from "@radix-ui/themes";
 import { PersonIcon } from "@radix-ui/react-icons";
 import { Actions, Membership, MembershipRole, MembershipState } from "@/types";
 import {
@@ -11,12 +11,12 @@ import {
   InviteMemberForm,
   InlineRoleSelector,
   InlineStateSelector,
-  MemberDisplay,
+  AvatarLinkCompact,
 } from "@/components";
 import { notFound, redirect } from "next/navigation";
 import { getPageSession } from "@/lib";
 import { isAuthorized } from "@/lib/api/authz";
-import { accountUrl, editAccountProfileUrl } from "@/lib/urls";
+import { editAccountProfileUrl } from "@/lib/urls";
 
 interface MembershipsPageProps {
   params: Promise<{ account_id: string }>;
@@ -106,12 +106,8 @@ export default async function MembershipsPage({
             <Table.Row>
               <Table.ColumnHeaderCell>Member</Table.ColumnHeaderCell>
               <Table.ColumnHeaderCell>Joined</Table.ColumnHeaderCell>
-              <Table.ColumnHeaderCell width="120px">
-                Role
-              </Table.ColumnHeaderCell>
-              <Table.ColumnHeaderCell width="120px">
-                Status
-              </Table.ColumnHeaderCell>
+              <Table.ColumnHeaderCell>Role</Table.ColumnHeaderCell>
+              <Table.ColumnHeaderCell>Status</Table.ColumnHeaderCell>
             </Table.Row>
           </Table.Header>
           <Table.Body>
@@ -122,36 +118,7 @@ export default async function MembershipsPage({
               return (
                 <Table.Row key={membership.membership_id}>
                   <Table.Cell>
-                    <Flex align="center" gap="3">
-                      <Box
-                        style={{
-                          width: "32px",
-                          height: "32px",
-                          borderRadius: "50%",
-                          backgroundColor: "var(--gray-4)",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                        }}
-                      >
-                        <PersonIcon
-                          width="16"
-                          height="16"
-                          color="var(--gray-9)"
-                        />
-                      </Box>
-                      <Flex direction="column" gap="1">
-                        <Text size="2" weight="medium">
-                          {memberAccount?.name || "Unknown User"}
-                        </Text>
-                        <Link href={accountUrl(membership.account_id)}>
-                          <MonoText size="1" color="gray">
-                            @
-                            {memberAccount?.account_id || membership.account_id}
-                          </MonoText>
-                        </Link>
-                      </Flex>
-                    </Flex>
+                    <AvatarLinkCompact account={memberAccount!} />
                   </Table.Cell>
                   <Table.Cell>
                     <Text size="2" color="gray">
