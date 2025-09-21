@@ -116,12 +116,3 @@ export function AccountSelector({
     </Box>
   );
 }
-
-function getAccountInitials(account: Account) {
-  return account.name
-    .split(" ")
-    .map((word) => word[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
-}
