@@ -99,7 +99,7 @@ export function InlineRoleSelector({
           </Badge>
         </Flex>
       </Select.Trigger>
-      <Select.Content>
+      <Select.Content variant="soft">
         <Select.Item value={MembershipRole.Owners}>
           <Badge color={getRoleBadgeColor(MembershipRole.Owners)}>Owner</Badge>
         </Select.Item>

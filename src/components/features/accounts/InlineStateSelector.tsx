@@ -48,10 +48,13 @@ export function InlineStateSelector({
 
     // Validate state transitions based on business rules
     const currentState = membership.state;
-    const isValidTransition = 
-      (currentState === MembershipState.Member && newState === MembershipState.Revoked) ||
-      (currentState === MembershipState.Revoked && newState === MembershipState.Invited) ||
-      (currentState === MembershipState.Invited && newState === MembershipState.Revoked);
+    const isValidTransition =
+      (currentState === MembershipState.Member &&
+        newState === MembershipState.Revoked) ||
+      (currentState === MembershipState.Revoked &&
+        newState === MembershipState.Invited) ||
+      (currentState === MembershipState.Invited &&
+        newState === MembershipState.Revoked);
 
     if (!isValidTransition) {
       console.warn("Invalid state transition:", currentState, "->", newState);
@@ -64,9 +67,9 @@ export function InlineStateSelector({
         // Use the revoke action for revoked state
         const formData = new FormData();
         formData.append("membership_id", membership.membership_id);
-        
+
         const result = await revokeMembership(null, formData);
-        
+
         if (result.success) {
           setCurrentState(newState);
         } else {
@@ -111,20 +114,27 @@ export function InlineStateSelector({
           </Badge>
         </Flex>
       </Select.Trigger>
-      <Select.Content>
-        <Select.Item 
+      <Select.Content variant="soft">
+        <Select.Item
           value={MembershipState.Member}
-          disabled={currentState === MembershipState.Invited}
+          disabled={
+            currentState === MembershipState.Invited ||
+            // Can't invite a revoked member (must invite)
+            currentState === MembershipState.Revoked
+          }
         >
           <Badge color="green">Member</Badge>
         </Select.Item>
-        <Select.Item 
+        <Select.Item
           value={MembershipState.Invited}
-          disabled={currentState === MembershipState.Member}
+          disabled={
+            // Can't invite a current member
+            currentState === MembershipState.Member
+          }
         >
           <Badge color="blue">Invited</Badge>
         </Select.Item>
-        <Select.Item 
+        <Select.Item
           value={MembershipState.Revoked}
           disabled={currentState === MembershipState.Revoked}
         >
