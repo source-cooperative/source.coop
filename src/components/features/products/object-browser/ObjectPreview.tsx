@@ -7,10 +7,7 @@ interface ObjectPreviewProps {
   sourceUrl: string;
 }
 
-const getIframeSrc = (sourceUrl: string) => {
-  const { resolvedTheme } = useTheme();
-  const theme = resolvedTheme === 'dark' ? 'dark' : 'light';
-
+const getIframeSrc = ({sourceUrl, theme}: ObjectPreviewProps & {theme: 'dark' | 'light'}) => {
   switch (sourceUrl.split(".").pop()) {
     case "pmtiles":
       // TODO(SL): add support for theme param in pmtiles.io?
@@ -22,8 +19,11 @@ const getIframeSrc = (sourceUrl: string) => {
   }
 };
 
-export function ObjectPreview({ sourceUrl: cloudUri }: ObjectPreviewProps) {
-  const iframeSrc = getIframeSrc(cloudUri);
+export function ObjectPreview({ sourceUrl }: ObjectPreviewProps) {
+  const { resolvedTheme } = useTheme();
+  const theme = resolvedTheme === 'dark' ? 'dark' : 'light';
+
+  const iframeSrc = getIframeSrc({ sourceUrl, theme });
   if (iframeSrc) {
     return (
       <Box mt="4">
