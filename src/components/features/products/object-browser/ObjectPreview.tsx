@@ -28,15 +28,10 @@ const getIframeAttributes = (
 export function ObjectPreview({ sourceUrl: cloudUri }: ObjectPreviewProps) {
   const iframeProps = getIframeAttributes(cloudUri);
   if (iframeProps) {
-    const {src, style} = iframeProps;
+    const { src, style } = iframeProps;
     return (
       <Box mt="4">
-        <iframe
-          width="100%"
-          height="600px"
-          style={style}
-          src={src}
-        >
+        <iframe width="100%" height="600px" style={style} src={src}>
           Your browser does not support iframes.
         </iframe>
       </Box>
