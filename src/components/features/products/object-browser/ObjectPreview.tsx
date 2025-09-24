@@ -1,28 +1,42 @@
 "use client";
 
 import { Box } from "@radix-ui/themes";
+import type { CSSProperties } from "react";
 
 interface ObjectPreviewProps {
   sourceUrl: string;
 }
 
-const getIframeSrc = (sourceUrl: string) => {
+const getIframeAttributes = (
+  sourceUrl: string
+): { src: string; style?: CSSProperties } | null => {
   switch (sourceUrl.split(".").pop()) {
     case "pmtiles":
-      return `https://pmtiles.io/#url=${sourceUrl}&iframe=true`;
+      return {
+        src: `https://pmtiles.io/#url=${sourceUrl}&iframe=true`,
+        style: { border: "none" },
+      };
     case "parquet":
-      return `https://source-cooperative.github.io/parquet-table/?iframe&url=${sourceUrl}`;
+      return {
+        src: `https://source-cooperative.github.io/parquet-table/?iframe&url=${sourceUrl}`,
+      };
     default:
       return null;
   }
 };
 
 export function ObjectPreview({ sourceUrl: cloudUri }: ObjectPreviewProps) {
-  const iframeSrc = getIframeSrc(cloudUri);
-  if (iframeSrc) {
+  const iframeProps = getIframeAttributes(cloudUri);
+  if (iframeProps) {
+    const {src, style} = iframeProps;
     return (
       <Box mt="4">
-        <iframe width="100%" height="600px" style={{ border: "none" }} src={iframeSrc}>
+        <iframe
+          width="100%"
+          height="600px"
+          style={style}
+          src={src}
+        >
           Your browser does not support iframes.
         </iframe>
       </Box>
