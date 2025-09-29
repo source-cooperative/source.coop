@@ -18,7 +18,7 @@ const getIframeAttributes = (
       };
     case "parquet":
       return {
-        src: `https://source-cooperative.github.io/parquet-table/?iframe&url=${sourceUrl}`,
+        src: `https://source-cooperative.github.io/parquet-table/?iframe=true&url=${sourceUrl}`,
         style: { border: "1px solid var(--gray-5)" },
       };
     default:
