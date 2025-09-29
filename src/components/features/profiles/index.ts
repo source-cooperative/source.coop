@@ -1,4 +1,5 @@
 export { AccountList } from './AccountList';
+export { EditProfileForm } from "./EditProfileForm";
 export { IndividualProfile } from './IndividualProfile';
 export { OrganizationProfile } from './OrganizationProfile';
 export { OrganizationMembers } from './OrganizationMembers';

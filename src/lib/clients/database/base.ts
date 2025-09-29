@@ -13,7 +13,11 @@ export abstract class BaseTable {
       this.client = client;
     } else {
       const dbClient = new DynamoDBClient(CONFIG.database);
-      this.client = DynamoDBDocumentClient.from(dbClient);
+      this.client = DynamoDBDocumentClient.from(dbClient, {
+        marshallOptions: {
+          removeUndefinedValues: true,
+        },
+      });
     }
   }
 

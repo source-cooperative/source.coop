@@ -40,85 +40,14 @@ const handleLegacyRedirects = (request: NextRequest): NextResponse | null => {
   return null;
 };
 
-/**
- * Send authenticated users to the onboarding page if they don't have an account.
- * @param request
- * @returns response or null
- */
-const handleOnboarding = async (
-  request: NextRequest
-): Promise<NextResponse | null> => {
-  if (request.nextUrl.pathname !== "/onboarding") return null;
-
-  const session = await getServerSession();
-  if (!session) return null;
-  const oryId = getOryId(session);
-  if (!oryId) return null;
-  const account = await accountsTable.fetchByOryId(oryId);
-
-  if (!account) {
-    LOGGER.debug("Redirecting to onboarding", {
-      operation: "handle_onboarding",
-      context: __filename,
-      metadata: {
-        oryId,
-        account,
-      },
-    });
-    return NextResponse.redirect(new URL("/onboarding", request.url));
-  }
-
-  return null;
-};
-
-/**
- * Ensure that authenticated users have an email address.
- * @param request
- * @returns void
- */
-const addEmailToAccount = async (request: NextRequest): Promise<void> => {
-  const session = await getServerSession();
-  if (!session) return;
-  const oryId = getOryId(session);
-  if (!oryId) return;
-  const account = await accountsTable.fetchByOryId(oryId);
-
-  if (!account) return;
-  if (!account.emails) return;
-  if (account.emails.length > 0) return;
-  if (!session.identity?.traits.email) return;
-
-  account.emails = [
-    {
-      address: session.identity.traits.email,
-      verified: false,
-      is_primary: true,
-      added_at: new Date().toISOString(),
-    },
-  ];
-
-  try {
-    await accountsTable.update(account);
-  } catch (error) {
-    LOGGER.error("Failed to add email to account", {
-      operation: "add_email_to_account",
-      context: __filename,
-      error,
-    });
-  }
-};
+const ory = createOryMiddleware({});
 
 export const middleware = async (request: NextRequest) => {
   // Handle legacy redirects first
   const redirect = handleLegacyRedirects(request);
   if (redirect) return redirect;
 
-  // Handle authentication and account management
-  // const onboardingRedirect = await handleOnboarding(request);
-  await addEmailToAccount(request);
-
   // Run Ory middleware last
-  const ory = await createOryMiddleware({});
   return ory(request);
 };
 

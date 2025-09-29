@@ -1,166 +1,45 @@
 "use client";
 
-import { Box, Text, Flex, Button, Grid } from "@radix-ui/themes";
-import {
-  ChevronRightIcon,
-  FileIcon,
-  ChevronDownIcon,
-  DownloadIcon,
-} from "@radix-ui/react-icons";
-import Link from "next/link";
+import { Box, Text } from "@radix-ui/themes";
+import { ChevronDownIcon } from "@radix-ui/react-icons";
 import { useRef, useState, useEffect } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { MonoText } from "@/components/core";
-import type { FileNode } from "./utils";
-import type { Product } from "@/types";
-import { formatFileSize } from "./utils";
-import styles from "../ObjectBrowser.module.css";
+import { buildDirectoryTree, type FileNode } from "./utils";
+import type { Product, ProductObject } from "@/types";
+import styles from "./ObjectBrowser.module.css";
+import { DirectoryRow } from "./DirectoryRow";
 
 interface DirectoryListProps {
-  items: FileNode[];
-  currentPath: string[];
   product: Product;
+  objects: ProductObject[]; // Allow parent to pass objects to avoid duplicate calls
+  path: string[];
   focusedIndex?: number;
   setFocusedIndex?: (index: number) => void;
 }
 
-interface DirectoryRowProps {
-  item: FileNode;
-  index: number;
-  itemsLength: number;
-  product: Product;
-  currentPath: string[];
-  focusedIndex?: number;
-  setFocusedIndex?: (index: number) => void;
-  itemRefs?: React.MutableRefObject<(HTMLAnchorElement | null)[]>;
-  virtualRow?: { start: number };
-}
-
-const ITEM_HEIGHT = 40;
 const MAX_VISIBLE_ITEMS = 20;
+const ITEM_HEIGHT = 40;
 
-function DirectoryRow({
-  item,
-  index,
-  itemsLength,
-  product,
-  currentPath,
-  focusedIndex,
-  setFocusedIndex,
-  itemRefs,
-  virtualRow,
-}: DirectoryRowProps) {
-  const href = item.isDirectory
-    ? `/${product.account_id}/${product.product_id}/${[
-        ...currentPath,
-        item.name,
-      ].join("/")}`
-    : `/${product.account_id}/${product.product_id}/${item.path}`;
-
-  const wrapperStyle = virtualRow
-    ? {
-        position: "absolute" as const,
-        top: 0,
-        transform: `translateY(${virtualRow.start}px)`,
-        left: 0,
-        width: "100%",
-        height: `${ITEM_HEIGHT}px`,
-        willChange: "transform" as const,
-      }
-    : {
-        marginBottom: index < itemsLength - 1 ? "var(--space-2)" : 0,
-      };
-
-
-
-  return (
-    <Box key={item.path} style={wrapperStyle}>
-      <Grid columns="10" gap="0" align="center" style={{ width: "100%" }}>
-        {/* Icon and Name - Columns 1-7 */}
-        <Box gridColumn="1 / 8">
-          <Link
-            href={href}
-            className={styles.item}
-            title={item.name}
-            ref={(el: HTMLAnchorElement | null) => {
-              if (el && itemRefs) itemRefs.current[index] = el;
-            }}
-            onFocus={() => setFocusedIndex?.(index)}
-            data-focused={focusedIndex === index}
-            style={{ display: "flex", alignItems: "center", gap: "var(--space-2)", width: "100%" }}
-          >
-            {item.isDirectory ? (
-              <ChevronRightIcon width={16} height={16} />
-            ) : (
-              <FileIcon width={16} height={16} />
-            )}
-            <MonoText
-              style={{
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-                flex: 1,
-              }}
-            >
-              {item.name}
-            </MonoText>
-          </Link>
-        </Box>
-
-        {/* Size - Column 8 */}
-        <Box gridColumn="8" style={{ textAlign: "right" }}>
-          {!item.isDirectory && item.size > 0 && (
-            <MonoText>
-              {formatFileSize(item.size)}
-            </MonoText>
-          )}
-        </Box>
-
-        {/* Download Button - Column 9 */}
-        <Box gridColumn="9" style={{ textAlign: "center", display: "flex", alignItems: "center", justifyContent: "center" }}>
-          {!item.isDirectory && (
-            <Button
-              variant="ghost"
-              size="1"
-              asChild
-              style={{
-                cursor: "pointer",
-                padding: "4px",
-                minWidth: "auto",
-                height: "auto",
-              }}
-              title="Download file"
-            >
-              <a 
-                href={`https://data.source.coop/${product.account_id}/${product.product_id}/${item.path}`}
-                download={item.name}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <DownloadIcon width={14} height={14} />
-                <Text size="1" style={{ marginLeft: "var(--space-1)" }}>Download</Text>
-              </a>
-            </Button>
-          )}
-        </Box>
-
-        {/* Reserved for future button - Column 10 */}
-        <Box gridColumn="10" style={{ textAlign: "center" }}>
-          {/* Reserved space for future button */}
-        </Box>
-      </Grid>
-    </Box>
-  );
+function getSortedItems(objects: ProductObject[], path: string[]) {
+  const tree = buildDirectoryTree(objects, path);
+  return Object.values(tree).sort((a, b) => {
+    // Directories first, then alphabetically
+    if (a.isDirectory && !b.isDirectory) return -1;
+    return a.name.toLowerCase().localeCompare(b.name.toLowerCase());
+  });
 }
 
 export function DirectoryList({
-  items,
-  currentPath,
+  objects,
+  path,
   product,
   focusedIndex = 0,
   setFocusedIndex,
 }: DirectoryListProps) {
+  const items = getSortedItems(objects, path);
+  console.log("items", items);
+
   const parentRef = useRef<HTMLDivElement>(null);
   const [showScrollIndicator, setShowScrollIndicator] = useState(false);
   const itemRefs = useRef<(HTMLAnchorElement | null)[]>([]);
@@ -264,8 +143,9 @@ export function DirectoryList({
                   item={items[virtualRow.index]}
                   index={virtualRow.index}
                   itemsLength={items.length}
+                  itemHeight={ITEM_HEIGHT}
                   product={product}
-                  currentPath={currentPath}
+                  path={path}
                   focusedIndex={focusedIndex}
                   setFocusedIndex={setFocusedIndex}
                   itemRefs={itemRefs}
@@ -278,8 +158,9 @@ export function DirectoryList({
                 item={item}
                 index={index}
                 itemsLength={items.length}
+                itemHeight={ITEM_HEIGHT}
                 product={product}
-                currentPath={currentPath}
+                path={path}
                 focusedIndex={focusedIndex}
                 setFocusedIndex={setFocusedIndex}
                 itemRefs={itemRefs}

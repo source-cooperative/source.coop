@@ -8,6 +8,8 @@ import {
   APIKeySchema,
   Product,
   ProductSchema,
+  DataConnection,
+  DataConnectionSchema,
 } from "@/types";
 import { AccountType } from "@/types/account";
 import { Account } from "@/types/account";
@@ -50,23 +52,28 @@ function loadAndValidateJson<T extends z.ZodType>(
 }
 
 export const accounts: Account[] = loadAndValidateJson(
-  path.join("src/mock", "accounts.json"),
+  path.join("fixtures", "accounts.json"),
   z.array(AccountSchema)
 );
 
-export const products: Product[] = loadAndValidateJson(
-  path.join("src/mock", "products.json"),
-  z.array(ProductSchema)
+export const apiKeys: APIKey[] = loadAndValidateJson(
+  path.join("fixtures", "api-keys.json"),
+  z.array(APIKeySchema)
 );
 
 export const memberships: Membership[] = loadAndValidateJson(
-  path.join("src/mock", "memberships.json"),
+  path.join("fixtures", "memberships.json"),
   z.array(MembershipSchema)
 );
 
-export const apiKeys: APIKey[] = loadAndValidateJson(
-  path.join("src/mock", "api-keys.json"),
-  z.array(APIKeySchema)
+export const products: Product[] = loadAndValidateJson(
+  path.join("fixtures", "products.json"),
+  z.array(ProductSchema)
+);
+
+export const dataConnections: DataConnection[] = loadAndValidateJson(
+  path.join("fixtures", "data-connections.json"),
+  z.array(DataConnectionSchema)
 );
 
 export const sessions: Record<string, UserSession | null> = {

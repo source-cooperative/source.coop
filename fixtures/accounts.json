@@ -1,0 +1,360 @@
+[
+  {
+    "account_id": "admin",
+    "type": "individual",
+    "name": "Admin User",
+    "emails": [
+      {
+        "address": "admin@source.coop",
+        "verified": true,
+        "verified_at": "2020-01-01T00:00:00Z",
+        "is_primary": true,
+        "added_at": "2020-01-01T00:00:00Z"
+      }
+    ],
+    "created_at": "2020-01-01T00:00:00Z",
+    "updated_at": "2020-01-01T00:00:00Z",
+    "disabled": false,
+    "flags": ["admin"],
+    "metadata_public": {
+      "bio": "This is an admin user account",
+      "location": "United States"
+    },
+    "metadata_private": {},
+    "identity_id": "admin_identity_id"
+  },
+  {
+    "account_id": "disabled",
+    "type": "individual",
+    "name": "Disabled User",
+    "emails": [
+      {
+        "address": "disabled@source.coop",
+        "verified": true,
+        "verified_at": "2020-01-01T00:00:00Z",
+        "is_primary": true,
+        "added_at": "2020-01-01T00:00:00Z"
+      }
+    ],
+    "created_at": "2020-01-01T00:00:00Z",
+    "updated_at": "2020-01-01T00:00:00Z",
+    "disabled": true,
+    "flags": ["admin", "create_repositories"],
+    "metadata_public": {
+      "bio": "This is a disabled user account",
+      "location": "United States"
+    },
+    "metadata_private": {},
+    "identity_id": "disabled_identity_id"
+  },
+  {
+    "account_id": "regular-user",
+    "type": "individual",
+    "name": "Regular User",
+    "emails": [
+      {
+        "address": "regular@source.coop",
+        "verified": true,
+        "verified_at": "2020-01-01T00:00:00Z",
+        "is_primary": true,
+        "added_at": "2020-01-01T00:00:00Z"
+      }
+    ],
+    "created_at": "2020-01-01T00:00:00Z",
+    "updated_at": "2020-01-01T00:00:00Z",
+    "disabled": false,
+    "flags": [],
+    "metadata_public": {
+      "bio": "This is a regular user account",
+      "location": "United States"
+    },
+    "metadata_private": {},
+    "identity_id": "regular_user_identity_id"
+  },
+  {
+    "account_id": "create-repositories-user",
+    "type": "individual",
+    "name": "Create Repositories User",
+    "emails": [
+      {
+        "address": "createRepositories@source.coop",
+        "verified": true,
+        "verified_at": "2020-01-01T00:00:00Z",
+        "is_primary": true,
+        "added_at": "2020-01-01T00:00:00Z"
+      }
+    ],
+    "created_at": "2020-01-01T00:00:00Z",
+    "updated_at": "2020-01-01T00:00:00Z",
+    "disabled": false,
+    "flags": ["create_repositories"],
+    "metadata_public": {
+      "bio": "This is a user account which has the create_repositories flag",
+      "location": "United States"
+    },
+    "metadata_private": {},
+    "identity_id": "create_repositories_user_identity_id"
+  },
+  {
+    "account_id": "organization-owner-user",
+    "type": "individual",
+    "name": "Organization Owner User",
+    "emails": [
+      {
+        "address": "organizationOwner@source.coop",
+        "verified": true,
+        "verified_at": "2020-01-01T00:00:00Z",
+        "is_primary": true,
+        "added_at": "2020-01-01T00:00:00Z"
+      }
+    ],
+    "created_at": "2020-01-01T00:00:00Z",
+    "updated_at": "2020-01-01T00:00:00Z",
+    "disabled": false,
+    "flags": ["create_repositories", "create_organizations"],
+    "metadata_public": {
+      "bio": "This is a user account which owns an organization",
+      "location": "United States"
+    },
+    "metadata_private": {},
+    "identity_id": "organization_owner_user_identity_id"
+  },
+  {
+    "account_id": "organization-maintainer-user",
+    "type": "individual",
+    "name": "Organization Maintainer User",
+    "emails": [
+      {
+        "address": "organizationMaintainer@source.coop",
+        "verified": true,
+        "verified_at": "2020-01-01T00:00:00Z",
+        "is_primary": true,
+        "added_at": "2020-01-01T00:00:00Z"
+      }
+    ],
+    "created_at": "2020-01-01T00:00:00Z",
+    "updated_at": "2020-01-01T00:00:00Z",
+    "disabled": false,
+    "flags": ["create_repositories"],
+    "metadata_public": {
+      "bio": "This is a user account which maintains an organization",
+      "location": "United States"
+    },
+    "metadata_private": {},
+    "identity_id": "organization_maintainer_user_identity_id"
+  },
+  {
+    "account_id": "organization-read-data-user",
+    "type": "individual",
+    "name": "Organization Read Data User",
+    "emails": [
+      {
+        "address": "organizationReadData@source.coop",
+        "verified": true,
+        "verified_at": "2020-01-01T00:00:00Z",
+        "is_primary": true,
+        "added_at": "2020-01-01T00:00:00Z"
+      }
+    ],
+    "created_at": "2020-01-01T00:00:00Z",
+    "updated_at": "2020-01-01T00:00:00Z",
+    "disabled": false,
+    "flags": [],
+    "metadata_public": {
+      "bio": "This is a user account which is a ReadData member of an organization",
+      "location": "United States"
+    },
+    "metadata_private": {},
+    "identity_id": "organization_read_data_user_identity_id"
+  },
+  {
+    "account_id": "repo-member-owner",
+    "type": "individual",
+    "name": "Repository Member Owner",
+    "emails": [
+      {
+        "address": "repositoryMemberOwner@source.coop",
+        "verified": true,
+        "verified_at": "2020-01-01T00:00:00Z",
+        "is_primary": true,
+        "added_at": "2020-01-01T00:00:00Z"
+      }
+    ],
+    "created_at": "2020-01-01T00:00:00Z",
+    "updated_at": "2020-01-01T00:00:00Z",
+    "disabled": false,
+    "flags": [],
+    "metadata_public": {
+      "bio": "This is a user account which is an owner of a repository",
+      "location": "United States"
+    },
+    "metadata_private": {},
+    "identity_id": "repo_member_owner_identity_id"
+  },
+  {
+    "account_id": "repo-member-maintainer",
+    "type": "individual",
+    "name": "Repository Member Maintainer",
+    "emails": [
+      {
+        "address": "repositoryMemberMaintainer@source.coop",
+        "verified": true,
+        "verified_at": "2020-01-01T00:00:00Z",
+        "is_primary": true,
+        "added_at": "2020-01-01T00:00:00Z"
+      }
+    ],
+    "created_at": "2020-01-01T00:00:00Z",
+    "updated_at": "2020-01-01T00:00:00Z",
+    "disabled": false,
+    "flags": [],
+    "metadata_public": {
+      "bio": "This is a user account which is a maintainer of a repository",
+      "location": "United States"
+    },
+    "metadata_private": {},
+    "identity_id": "repo_member_maintainer_identity_id"
+  },
+  {
+    "account_id": "repo-member-read-data",
+    "type": "individual",
+    "name": "Repository Member Read Data",
+    "emails": [
+      {
+        "address": "repositoryMemberReadData@source.coop",
+        "verified": true,
+        "verified_at": "2020-01-01T00:00:00Z",
+        "is_primary": true,
+        "added_at": "2020-01-01T00:00:00Z"
+      }
+    ],
+    "created_at": "2020-01-01T00:00:00Z",
+    "updated_at": "2020-01-01T00:00:00Z",
+    "disabled": false,
+    "flags": [],
+    "metadata_public": {
+      "bio": "This is a user account which is a read data member of a repository",
+      "location": "United States"
+    },
+    "metadata_private": {},
+    "identity_id": "repo_member_read_data_identity_id"
+  },
+  {
+    "account_id": "repo-member-write-data",
+    "type": "individual",
+    "name": "Repository Member Write Data",
+    "emails": [
+      {
+        "address": "repositoryMemberWriteData@source.coop",
+        "verified": true,
+        "verified_at": "2020-01-01T00:00:00Z",
+        "is_primary": true,
+        "added_at": "2020-01-01T00:00:00Z"
+      }
+    ],
+    "created_at": "2020-01-01T00:00:00Z",
+    "updated_at": "2020-01-01T00:00:00Z",
+    "disabled": false,
+    "flags": [],
+    "metadata_public": {
+      "bio": "This is a user account which is a write data member of a repository",
+      "location": "United States"
+    },
+    "metadata_private": {},
+    "identity_id": "repo_member_write_data_identity_id"
+  },
+  {
+    "account_id": "repo-member-invited",
+    "type": "individual",
+    "name": "Repository Member Invited",
+    "emails": [
+      {
+        "address": "repositoryMemberInvited@source.coop",
+        "verified": false,
+        "is_primary": true,
+        "added_at": "2020-01-01T00:00:00Z"
+      }
+    ],
+    "created_at": "2020-01-01T00:00:00Z",
+    "updated_at": "2020-01-01T00:00:00Z",
+    "disabled": false,
+    "flags": [],
+    "metadata_public": {
+      "bio": "This is a user account which is an invited member of a repository",
+      "location": "United States"
+    },
+    "metadata_private": {},
+    "identity_id": "repo_member_invited_identity_id"
+  },
+  {
+    "account_id": "organization-write-data-user",
+    "type": "individual",
+    "name": "Organization Write Data User",
+    "emails": [
+      {
+        "address": "organizationWriteData@source.coop",
+        "verified": true,
+        "verified_at": "2020-01-01T00:00:00Z",
+        "is_primary": true,
+        "added_at": "2020-01-01T00:00:00Z"
+      }
+    ],
+    "created_at": "2020-01-01T00:00:00Z",
+    "updated_at": "2020-01-01T00:00:00Z",
+    "disabled": false,
+    "flags": ["create_repositories"],
+    "metadata_public": {
+      "bio": "This is a user account which is a WriteData member of an organization",
+      "location": "United States"
+    },
+    "metadata_private": {},
+    "identity_id": "organization_write_data_user_identity_id"
+  },
+  {
+    "account_id": "organization",
+    "type": "organization",
+    "name": "Organization",
+    "emails": [
+      {
+        "address": "organization@source.coop",
+        "verified": true,
+        "verified_at": "2020-01-01T00:00:00Z",
+        "is_primary": true,
+        "added_at": "2020-01-01T00:00:00Z"
+      }
+    ],
+    "created_at": "2020-01-01T00:00:00Z",
+    "updated_at": "2020-01-01T00:00:00Z",
+    "disabled": false,
+    "flags": [],
+    "metadata_public": {
+      "bio": "This is an organization",
+      "location": "United States"
+    },
+    "metadata_private": {}
+  },
+  {
+    "account_id": "cholmes",
+    "type": "individual",
+    "name": "Chris Holmes",
+    "emails": [
+      {
+        "address": "individual@source.coop",
+        "verified": true,
+        "verified_at": "2020-01-01T00:00:00Z",
+        "is_primary": true,
+        "added_at": "2020-01-01T00:00:00Z"
+      }
+    ],
+    "created_at": "2020-01-01T00:00:00Z",
+    "updated_at": "2020-01-01T00:00:00Z",
+    "disabled": false,
+    "flags": [],
+    "metadata_public": {
+      "bio": "This is chris holmes",
+      "location": "United States"
+    },
+    "metadata_private": {},
+    "identity_id": "cholmes_identity_id"
+  }
+]

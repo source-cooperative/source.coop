@@ -1,9 +1,8 @@
 import { notFound } from "next/navigation";
 import { getServerSession } from "@ory/nextjs/app";
-import { Container, Heading, Text } from "@radix-ui/themes";
 import { accountsTable } from "@/lib/clients/database";
 import { getOryId } from "@/lib/ory";
-import { EditProfileForm } from "./EditProfileForm";
+import { NotAuthorizedPage, EditProfileForm, FormTitle } from "@/components";
 
 type Params = Promise<{ account_id: string }>;
 
@@ -19,21 +18,17 @@ export default async function EditProfilePage({ params }: { params: Params }) {
   // Can only edit your own profile
   if (session && account.identity_id !== getOryId(session)) {
     return (
-      <Container size="2" py="6">
-        <Heading size="6" mb="4">
-          Access Denied
-        </Heading>
-
-        <Text as="p" size="3" color="gray" className="mb-4">
-          You do not have permission to edit this profile.
-        </Text>
-      </Container>
+      <NotAuthorizedPage description="You do not have permission to edit this profile." />
     );
   }
 
   return (
-    <div className="container mx-auto py-8">
+    <>
+      <FormTitle
+        title="Edit Profile"
+        description="Edit your profile to update your publicly visible information"
+      />
       <EditProfileForm account={account} />
-    </div>
+    </>
   );
 }

@@ -158,13 +158,6 @@ interface NewRepository {
           is_synced: boolean;
           error?: string;
         };
-        
-        // Monitoring
-        stats: {
-          total_objects: number;
-          total_size: number;
-          last_verified_at: string;
-        };
       }
     };
     primary_mirror: string;      // Key of the primary mirror (e.g., "aws-us-east-1")
@@ -274,11 +267,6 @@ function migrateRepository(oldRepo: OldRepository): NewRepository {
           sync_status: {
             last_sync_at: now,
             is_synced: true
-          },
-          stats: {
-            total_objects: 0,
-            total_size: 0,
-            last_verified_at: now
           }
         }
       }), {}),

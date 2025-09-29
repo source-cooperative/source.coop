@@ -4,9 +4,8 @@ import { ThemeProvider } from "@/styles/theme";
 import { SessionProvider } from "@ory/elements-react/client";
 import NextTopLoader from "nextjs-toploader";
 import { IBM_Plex_Sans } from "next/font/google";
-import { Box } from "@radix-ui/themes";
-import { Navigation, Footer /*, Banner*/ } from "@/components/layout";
-import { Suspense } from "react";
+import { Container } from "@radix-ui/themes";
+import { Navigation, Footer } from "@/components/layout";
 import { metadata } from "./metadata";
 const ibmPlexSans = IBM_Plex_Sans({
   subsets: ["latin"],
@@ -16,10 +15,14 @@ const ibmPlexSans = IBM_Plex_Sans({
 
 export { metadata };
 
-export default async function RootLayout({ children }: { children: React.ReactNode }) {
+interface RootLayoutProps {
+  children: React.ReactNode;
+}
+
+export default async function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={ibmPlexSans.variable}>
+      <body className={ibmPlexSans.variable} suppressHydrationWarning>
         <ThemeProvider
           attribute="class"
           enableSystem={true}
@@ -28,16 +31,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         >
           <NextTopLoader />
           <SessionProvider>
-            <Box style={{ minHeight: "100vh" }}>
-              {/* <Banner /> */}
-              <Suspense>
-                <Navigation />
-              </Suspense>
-              <Box asChild my="6">
-                <main>{children}</main>
-              </Box>
-              <Footer />
-            </Box>
+            <Navigation />
+            <Container py="4">
+              <main>{children}</main>
+            </Container>
+            <Footer />
           </SessionProvider>
         </ThemeProvider>
       </body>

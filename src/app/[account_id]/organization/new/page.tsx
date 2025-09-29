@@ -1,7 +1,8 @@
-import { Container, Box, Heading, Text } from "@radix-ui/themes";
-import { createOrganization } from "./actions";
-import { DynamicForm, FormField } from "@/components/core";
-import { createAccount } from "@/lib/actions/accounts";
+import { OrganizationCreationForm } from "@/components/features/organizations/OrganizationCreationForm";
+import { FormTitle } from "@/components/core";
+import { getPageSession } from "@/lib/api/utils";
+import { redirect } from "next/navigation";
+import { Container, Heading, Text } from "@radix-ui/themes";
 
 interface PageProps {
   params: Promise<{
@@ -11,60 +12,33 @@ interface PageProps {
 
 export default async function NewOrganizationPage({ params }: PageProps) {
   const { account_id } = await params;
+  const session = await getPageSession();
 
-  const fields: FormField[] = [
-    {
-      label: "Organization Name",
-      name: "name",
-      type: "text",
-      required: true,
-      description: "The name of your organization",
-      placeholder: "Enter organization name",
-    },
-    {
-      label: "Description",
-      name: "description",
-      type: "textarea",
-      required: true,
-      description: "A brief description of your organization",
-      placeholder: "Describe your organization",
-    },
-    {
-      label: "Website",
-      name: "website",
-      type: "url",
-      description: "Your organization's website (optional)",
-      placeholder: "https://example.com",
-    },
-    {
-      label: "Email",
-      name: "email",
-      type: "email",
-      description: "Contact email for your organization (optional)",
-      placeholder: "contact@example.com",
-    },
-  ];
+  if (!session?.account) {
+    return (
+      <Container size="2" py="6">
+        <Heading size="6" mb="4">
+          Access Denied
+        </Heading>
+
+        <Text as="p" size="3" color="gray" className="mb-4">
+          You must be logged in to create an organization.
+        </Text>
+      </Container>
+    );
+  }
+
+  if (session.account.account_id !== account_id) {
+    redirect(`/${session.account.account_id}/organization/new`);
+  }
 
   return (
-    <Container>
-      <Box py="9">
-        <Box mb="4">
-          <Heading size="8" mb="1">
-            Create New Organization
-          </Heading>
-
-          <Text size="2" color="gray">
-            Create a new organization to collaborate with others
-          </Text>
-        </Box>
-
-        <DynamicForm
-          fields={fields}
-          action={createAccount}
-          submitButtonText="Create Organization"
-          hiddenFields={{ owner_account_id: account_id }}
-        />
-      </Box>
-    </Container>
+    <>
+      <FormTitle
+        title="Create New Organization"
+        description="Create a new organization to collaborate with others"
+      />
+      <OrganizationCreationForm ownerAccountId={session.account.account_id} />
+    </>
   );
 }

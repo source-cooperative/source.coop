@@ -67,14 +67,7 @@ export function IndividualProfile({
                     : "Websites"}
                 </Text>
                 {account.metadata_public.domains.map((domain, index) => (
-                  <Box
-                    key={index}
-                    mb={
-                      index < (account.metadata_public.domains?.length ?? 0) - 1
-                        ? "2"
-                        : "0"
-                    }
-                  >
+                  <Box key={index} mb="2">
                     <WebsiteLink url={domain.domain} />
                   </Box>
                 ))}
@@ -106,19 +99,14 @@ export function IndividualProfile({
           </Heading>
           <Grid columns="3" gap="4">
             {organizations.map((org) => (
-              <Link
-                key={org.account_id}
-                href={`/${org.account_id}`}
-                passHref
-                legacyBehavior
-              >
-                <RadixLink>
+              <RadixLink asChild key={org.account_id}>
+                <Link href={`/${org.account_id}`}>
                   <Flex gap="2" align="center">
                     <ProfileAvatar account={org} size="2" />
                     <Text>{org.name}</Text>
                   </Flex>
-                </RadixLink>
-              </Link>
+                </Link>
+              </RadixLink>
             ))}
           </Grid>
         </Box>

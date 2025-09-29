@@ -6,11 +6,11 @@ import {
   BatchGetCommand,
 } from "@aws-sdk/lib-dynamodb";
 import { ResourceNotFoundException } from "@aws-sdk/client-dynamodb";
-import type {
-  Account,
+import {
+  type Account,
   AccountType,
-  IndividualAccount,
-  OrganizationalAccount,
+  type IndividualAccount,
+  type OrganizationalAccount,
 } from "@/types";
 
 import { BaseTable } from "./base";
@@ -36,16 +36,16 @@ class AccountsTable extends BaseTable {
         })
       );
 
-      if (result.Items?.length) {
-        LOGGER.debug(`Found account for ID`, {
-          operation: "AccountsTable.fetchById",
-          context: "database operation",
-          metadata: { account_id },
-        });
-        return result.Items[0] as Account;
-      }
+      const account = result.Items?.pop();
 
-      return null;
+      if (!account) return null;
+
+      LOGGER.debug(`Found account by ID`, {
+        operation: "AccountsTable.fetchById",
+        context: "database operation",
+        metadata: { account_id, account },
+      });
+      return account as Account;
     } catch (error) {
       if (error instanceof ResourceNotFoundException) return null;
 
@@ -73,8 +73,13 @@ class AccountsTable extends BaseTable {
         },
       };
 
-      console.debug(
-        `DB: Fetching ${batch.length} accounts: ${batch.join(", ")}`
+      LOGGER.debug(
+        `DB: Fetching ${batch.length} accounts: ${batch.join(", ")}`,
+        {
+          operation: "AccountsTable.fetchManyByIds",
+          context: "database operation",
+          metadata: { batch },
+        }
       );
       const result = await this.client.send(new BatchGetCommand(batchRequest));
       if (result.Responses?.[this.table]) {
@@ -85,7 +90,7 @@ class AccountsTable extends BaseTable {
     return accountBatches;
   }
 
-  async fetchByOryId(identity_id: string): Promise<Account | null> {
+  async fetchByOryId(identity_id: string): Promise<IndividualAccount | null> {
     try {
       LOGGER.debug(`Trying to fetch account by Ory ID`, {
         operation: "AccountsTable.fetchByOryId",
@@ -103,16 +108,18 @@ class AccountsTable extends BaseTable {
         })
       );
 
-      if (result.Items && result.Items.length > 0) {
-        LOGGER.debug(`Found account by Ory ID`, {
-          operation: "AccountsTable.fetchByOryId",
-          context: "database operation",
-          metadata: { identity_id },
-        });
-        return result.Items[0] as Account;
-      }
+      const account = result.Items?.filter((item) =>
+        isIndividualAccount(item as Account)
+      )?.pop();
 
-      return null;
+      if (!account) return null;
+
+      LOGGER.debug(`Found account by Ory ID`, {
+        operation: "AccountsTable.fetchByOryId",
+        context: "database operation",
+        metadata: { identity_id, account },
+      });
+      return account as IndividualAccount;
     } catch (error) {
       if (error instanceof ResourceNotFoundException) return null;
 
@@ -176,11 +183,11 @@ class AccountsTable extends BaseTable {
 
 // Type guards
 export const isIndividualAccount = (acc: Account): acc is IndividualAccount =>
-  acc.type === "individual";
+  acc.type === AccountType.INDIVIDUAL;
 
 export const isOrganizationalAccount = (
   acc: Account
-): acc is OrganizationalAccount => acc.type === "organization";
+): acc is OrganizationalAccount => acc.type === AccountType.ORGANIZATION;
 
 // Export a singleton instance
 export const accountsTable = new AccountsTable({});

@@ -1,21 +1,21 @@
-import { Box, Text, Link as RadixLink, Flex } from '@radix-ui/themes';
-import Link from 'next/link';
+import { Box, Text, Link as RadixLink, Flex } from "@radix-ui/themes";
+import Link from "next/link";
 import type { IndividualAccount } from "@/types";
 import { ProfileAvatar } from "./ProfileAvatar";
 
 interface OrganizationMembersProps {
-  owner: IndividualAccount | null;
+  owners: IndividualAccount[];
   admins: IndividualAccount[];
   members: IndividualAccount[];
 }
 
 export function OrganizationMembers({
-  owner,
+  owners,
   admins,
   members,
 }: OrganizationMembersProps) {
   // Calculate total to show
-  const totalMembers = (owner ? 1 : 0) + admins.length + members.length;
+  const totalMembers = owners.length + admins.length + members.length;
 
   // If no members to show, display a message
   if (totalMembers === 0) {
@@ -44,7 +44,7 @@ export function OrganizationMembers({
 
   // Group members by role for cleaner display
   const memberGroups = [
-    { role: "owner", title: "Owner", members: owner ? [owner] : [] },
+    { role: "owner", title: "Owners", members: owners },
     { role: "admin", title: "Administrators", members: uniqueAdmins },
     { role: "member", title: "Members", members: uniqueMembers },
   ].filter((group) => group.members.length > 0);
@@ -78,13 +78,13 @@ interface MemberLinkProps {
 
 function MemberLink({ member, role: _role }: MemberLinkProps) {
   return (
-    <Link href={`/${member.account_id}`} passHref legacyBehavior>
-      <RadixLink>
+    <RadixLink asChild>
+      <Link href={`/${member.account_id}`}>
         <Flex gap="2" align="center">
           <ProfileAvatar account={member} size="2" />
           <Text size="2">{member.name}</Text>
         </Flex>
-      </RadixLink>
-    </Link>
+      </Link>
+    </RadixLink>
   );
-} 
+}
