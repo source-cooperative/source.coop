@@ -1,7 +1,7 @@
 "use client";
 
-import { DataList, Flex, IconButton, Tooltip } from "@radix-ui/themes";
-import { CopyIcon, CheckIcon } from "@radix-ui/react-icons";
+import { DataList, Flex, IconButton, Tooltip, Button, Box } from "@radix-ui/themes";
+import { CopyIcon, CheckIcon, DownloadIcon } from "@radix-ui/react-icons";
 import type {
   DataConnection,
   Product,
@@ -12,7 +12,7 @@ import { DateText } from "@/components/display";
 import { ChecksumVerifier } from "../ChecksumVerifier";
 import { formatFileSize } from "./utils";
 import { useState } from "react";
-import { DataListItem } from "./DataListItem";
+import { MonoText, SectionHeader } from "@/components/core";
 
 interface ObjectSummaryProps {
   product: Product;
@@ -50,41 +50,38 @@ export function ObjectSummary({
   };
 
   return (
+    <>
+    <SectionHeader title="Object details">
     <DataList.Root>
-      <DataListItem
-        label="Name"
-        value={objectInfo.path.split("/").filter(Boolean).pop()}
-        itemKey="name"
-        copiedField={copiedField}
-        onCopy={copyToClipboard}
-      />
+      <DataList.Item>
+        <DataList.Label>Name</DataList.Label>
+        <DataList.Value>
+          <MonoText>{objectInfo.path.split("/").filter(Boolean).pop()}</MonoText>
+        </DataList.Value>
+      </DataList.Item>
 
-      <DataListItem
-        label="Size"
-        value={formatFileSize(objectInfo.size)}
-        itemKey="size"
-        copiedField={copiedField}
-        onCopy={copyToClipboard}
-      />
+      <DataList.Item>
+        <DataList.Label>Size</DataList.Label>
+        <DataList.Value>
+          <MonoText>{formatFileSize(objectInfo.size)}</MonoText>
+        </DataList.Value>
+      </DataList.Item>
 
-      <DataListItem
-        label="Content Type"
-        value={objectInfo.mime_type}
-        itemKey="content_type"
-        copiedField={copiedField}
-        onCopy={copyToClipboard}
-      />
+      <DataList.Item>
+        <DataList.Label>Content Type</DataList.Label>
+        <DataList.Value>
+          <MonoText>{objectInfo.mime_type}</MonoText>
+        </DataList.Value>
+      </DataList.Item>
 
-      <DataListItem
-        label="Last Modified"
-        value={<DateText date={objectInfo.updated_at} includeTime={true} />}
-        itemKey="updated_at"
-        copiedField={copiedField}
-        onCopy={(_, field) => {
-          const dateStr = new Date(objectInfo.updated_at).toLocaleString();
-          copyToClipboard(dateStr, field);
-        }}
-      />
+      <DataList.Item>
+        <DataList.Label>Last Modified</DataList.Label>
+        <DataList.Value>
+          <MonoText>
+            <DateText date={objectInfo.updated_at} includeTime={true} />
+          </MonoText>
+        </DataList.Value>
+      </DataList.Item>
 
       {objectInfo.metadata && objectInfo.metadata.sha256 && product.account && (
         <DataList.Item>
@@ -114,24 +111,61 @@ export function ObjectSummary({
         </DataList.Item>
       )}
 
-      <DataListItem
-        label="Source URL"
-        value={`https://data.source.coop/${product.account?.account_id}/${product.product_id}/${objectInfo.path}`}
-        itemKey="source_url"
-        copiedField={copiedField}
-        onCopy={copyToClipboard}
-      />
-
-      {/* Cloud URI based on data connection details */}
-      {cloudUri && (
-        <DataListItem
-          label="Cloud URI"
-          value={cloudUri}
-          itemKey="cloud_uri"
-          copiedField={copiedField}
-          onCopy={copyToClipboard}
-        />
-      )}
     </DataList.Root>
+
+    {/* Action Buttons */}
+    <Box mt="4" style={{ paddingTop: "var(--space-4)" }}>
+      <Flex gap="3" align="center">
+        {/* Primary Download Button */}
+        <Button
+          variant="solid"
+          size="3"
+          asChild
+        >
+          <a 
+            href={`https://data.source.coop/${product.account_id}/${product.product_id}/${objectInfo.path}`}
+            download={objectInfo.path.split("/").filter(Boolean).pop()}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <DownloadIcon />
+            Download
+          </a>
+        </Button>
+        
+        {/* Secondary Copy URL Button */}
+        <Button
+          variant="outline"
+          size="3"
+          color={copiedField === "source_url" ? "green" : "gray"}
+          onClick={() => {
+            copyToClipboard(
+              `https://data.source.coop/${product.account_id}/${product.product_id}/${objectInfo.path}`,
+              "source_url"
+            );
+          }}
+        >
+          {copiedField === "source_url" ? <CheckIcon /> : <CopyIcon />}
+          Copy URL
+        </Button>
+        
+        {/* Secondary Copy Cloud URI Button (if available) */}
+        {cloudUri && (
+          <Button
+            variant="outline"
+            size="3"
+            color={copiedField === "cloud_uri" ? "green" : "gray"}
+            onClick={() => {
+              copyToClipboard(cloudUri, "cloud_uri");
+            }}
+          >
+            {copiedField === "cloud_uri" ? <CheckIcon /> : <CopyIcon />}
+            Copy Cloud URI
+          </Button>
+        )}
+      </Flex>
+    </Box>
+    </SectionHeader>
+    </>
   );
 }

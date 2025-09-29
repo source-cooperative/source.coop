@@ -2,6 +2,7 @@
 
 import { Box } from "@radix-ui/themes";
 import type { CSSProperties } from "react";
+import { SectionHeader } from "@/components/core";
 
 interface ObjectPreviewProps {
   sourceUrl: string;
@@ -31,9 +32,11 @@ export function ObjectPreview({ sourceUrl: cloudUri }: ObjectPreviewProps) {
     const { src, style } = iframeProps;
     return (
       <Box mt="4">
-        <iframe width="100%" height="600px" style={style} src={src}>
-          Your browser does not support iframes.
-        </iframe>
+        <SectionHeader title="Object preview">
+          <iframe width="100%" height="600px" style={style} src={src}>
+            Your browser does not support iframes.
+          </iframe>
+        </SectionHeader>
       </Box>
     );
   }
