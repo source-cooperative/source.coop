@@ -1,7 +1,13 @@
 "use client";
 
-import { Box, Flex, Button, Tooltip } from "@radix-ui/themes";
-import { ChevronRightIcon, FileIcon, DownloadIcon, CopyIcon, CheckIcon } from "@radix-ui/react-icons";
+import { Box, Flex, Tooltip, IconButton } from "@radix-ui/themes";
+import {
+  ChevronRightIcon,
+  FileIcon,
+  DownloadIcon,
+  CopyIcon,
+  CheckIcon,
+} from "@radix-ui/react-icons";
 import Link from "next/link";
 import { MonoText } from "@/components/core";
 import type { FileNode } from "./utils";
@@ -37,7 +43,7 @@ export function DirectoryRow({
   virtualRow,
 }: DirectoryRowProps) {
   const [copiedField, setCopiedField] = useState<string | null>(null);
-  
+
   const href = item.isDirectory
     ? objectUrl(
         product.account_id,
@@ -82,7 +88,13 @@ export function DirectoryRow({
             }}
             onFocus={() => setFocusedIndex?.(index)}
             data-focused={focusedIndex === index}
-            style={{ display: "flex", alignItems: "center", gap: "var(--space-2)", minWidth: 0, flex: 1 }}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "var(--space-2)",
+              minWidth: 0,
+              flex: 1,
+            }}
           >
             {item.isDirectory ? (
               <ChevronRightIcon width={16} height={16} />
@@ -102,7 +114,7 @@ export function DirectoryRow({
             </MonoText>
           </Link>
         </Box>
-        
+
         <Box>
           <Flex align="center" gap="2">
             {/* File size */}
@@ -111,19 +123,19 @@ export function DirectoryRow({
                 {formatFileSize(item.size)}
               </MonoText>
             )}
-            
+
             {/* Two buttons for files */}
             {!item.isDirectory && (
               <Flex gap="1">
                 {/* Primary Download Button */}
                 <Tooltip content={`Download ${item.name}`}>
-                  <Button
+                  <IconButton
                     variant="solid"
                     size="1"
                     asChild
                     style={{ minWidth: "auto" }}
                   >
-                    <a 
+                    <a
                       href={`https://data.source.coop/${product.account_id}/${product.product_id}/${item.path}`}
                       download={item.name}
                       target="_blank"
@@ -132,13 +144,13 @@ export function DirectoryRow({
                     >
                       <DownloadIcon width={14} height={14} />
                     </a>
-                  </Button>
+                  </IconButton>
                 </Tooltip>
-                
+
                 {/* Secondary Copy URL Button */}
                 <Tooltip content={`Copy URL to clipboard`}>
-                  <Button
-                    variant="outline"
+                  <IconButton
+                    variant="surface"
                     size="1"
                     color={copiedField === `url-${index}` ? "green" : "gray"}
                     onClick={(e) => {
@@ -148,10 +160,14 @@ export function DirectoryRow({
                         `url-${index}`
                       );
                     }}
-                    style={{ minWidth: "auto" }}
+                    style={{ minWidth: "auto", cursor: "pointer" }}
                   >
-                    {copiedField === `url-${index}` ? <CheckIcon /> : <CopyIcon />}
-                  </Button>
+                    {copiedField === `url-${index}` ? (
+                      <CheckIcon />
+                    ) : (
+                      <CopyIcon />
+                    )}
+                  </IconButton>
                 </Tooltip>
               </Flex>
             )}
