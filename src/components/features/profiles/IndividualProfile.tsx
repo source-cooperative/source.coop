@@ -6,7 +6,6 @@ import {
   Flex,
   Link as RadixLink,
 } from "@radix-ui/themes";
-import Link from "next/link";
 import type {
   IndividualAccount,
   OrganizationalAccount,
@@ -43,7 +42,7 @@ export function IndividualProfile({
       {isOwner && (
         <>
           {!primaryEmail?.verified && <EmailVerificationCallout />}
-          <WelcomeCallout show={showWelcome} accountId={account.account_id} />
+          {showWelcome && <WelcomeCallout accountId={account.account_id} />}
         </>
       )}
 
