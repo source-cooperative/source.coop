@@ -57,19 +57,19 @@ export async function AccountFlagsForm({
                       // }
                       id={`flag-${flag}`}
                     />
-                    <Box>
+                    <Flex direction="column" gap="1">
                       <Text
-                        size="3"
+                        size="2"
                         weight="medium"
                         as="label"
                         htmlFor={`flag-${flag}`}
                       >
                         {getFlagDisplayName(flag)}
                       </Text>
-                      <Text size="2" color="gray" mt="1">
+                      <Text size="1" color="gray" mt="1">
                         {getFlagDescription(flag)}
                       </Text>
-                    </Box>
+                    </Flex>
                   </Flex>
                 </Card>
               ))}
