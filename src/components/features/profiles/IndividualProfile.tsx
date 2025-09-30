@@ -16,12 +16,13 @@ import { ProfileAvatar } from "./ProfileAvatar";
 import { ProductsList } from "../products/ProductsList";
 import { WebsiteLink } from "./WebsiteLink";
 import { EmailVerificationStatus } from "./EmailVerificationStatus";
-import { IndividualProfileActions } from "./IndividualProfileActions";
-import { editAccountProfileUrl } from "@/lib/urls";
 import { AvatarLinkCompact } from "@/components/core";
+import { EmailVerificationCallout } from "../auth/EmailVerificationCallout";
+import { WelcomeCallout } from "./WelcomeCallout";
 
 interface IndividualProfileProps {
   account: IndividualAccount;
+  isOwner: boolean; // Whether the current user is the owner of the account
   ownedProducts: Product[];
   contributedProducts: Product[];
   organizations: OrganizationalAccount[];
@@ -30,14 +31,21 @@ interface IndividualProfileProps {
 
 export function IndividualProfile({
   account,
+  isOwner,
   ownedProducts,
   contributedProducts,
   organizations,
   showWelcome = false,
 }: IndividualProfileProps) {
+  const primaryEmail = account.emails?.find((email) => email.is_primary);
   return (
     <Box>
-      <IndividualProfileActions account={account} showWelcome={showWelcome} />
+      {isOwner && (
+        <>
+          {!primaryEmail?.verified && <EmailVerificationCallout />}
+          <WelcomeCallout show={showWelcome} accountId={account.account_id} />
+        </>
+      )}
 
       <Box mb="6">
         <Flex gap="4" align="center" justify="between">
@@ -46,7 +54,7 @@ export function IndividualProfile({
             <Box>
               <Flex gap="2" align="center">
                 <Heading size="8">{account.name}</Heading>
-                <EmailVerificationStatus account={account} />
+                <EmailVerificationStatus email={primaryEmail} />
               </Flex>
               {account.metadata_public.bio && (
                 <Text size="3" color="gray">

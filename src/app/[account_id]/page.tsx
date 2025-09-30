@@ -19,7 +19,7 @@ import {
   membershipsTable,
   productsTable,
 } from "@/lib/clients/database";
-import { getServerSession } from "@ory/nextjs/app";
+import { getPageSession } from "@/lib/api/utils";
 import { getOryId } from "@/lib/ory";
 import { IndividualAccount, Actions } from "@/types";
 import { isAuthorized } from "@/lib/api/authz";
@@ -48,9 +48,9 @@ export default async function AccountPage({ params, searchParams }: PageProps) {
   }
 
   // Get session to check authentication status
-  const session = await getServerSession();
-  const isAuthenticated = !!session?.active;
-  const isAccountOwner = session && getOryId(session) === account.identity_id;
+  const session = await getPageSession();
+  const isAuthenticated = !!session?.account;
+  const isAccountOwner = session && session.identity_id === account.identity_id;
 
   // If this is an organization, use the organization profile page
   if (isOrganizationalAccount(account)) {
@@ -81,6 +81,7 @@ export default async function AccountPage({ params, searchParams }: PageProps) {
   return (
     <IndividualProfile
       account={account as IndividualAccount}
+      isOwner={isAccountOwner ?? false}
       ownedProducts={products}
       contributedProducts={[]}
       organizations={organizations}

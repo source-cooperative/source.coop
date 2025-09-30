@@ -740,8 +740,6 @@ function createRepository(
     return true;
   }
 
-  console.log("principal?.account?.flags", principal?.account?.flags);
-
   // If the user does not have the create repositories flag, they are not authorized
   if (!principal?.account?.flags.includes(AccountFlags.CREATE_REPOSITORIES)) {
     return false;

@@ -9,19 +9,13 @@
  * @requires @asteasolutions/zod-to-openapi
  */
 
-import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
-import { z } from "zod";
-import { IndividualAccountSchema } from "./account";
-import { MembershipSchema } from "./membership";
+import { IndividualAccount } from "./account";
+import { Membership } from "./membership";
+import type { Session } from "@ory/client-fetch";
 
-extendZodWithOpenApi(z);
-
-export const UserSessionSchema = z
-  .object({
-    identity_id: z.optional(z.string()).openapi({ example: "identity-id" }),
-    account: z.optional(IndividualAccountSchema),
-    memberships: z.optional(z.array(MembershipSchema)),
-  })
-  .openapi("UserSession");
-
-export type UserSession = z.infer<typeof UserSessionSchema>;
+export interface UserSession {
+  identity_id: string | null;
+  account?: IndividualAccount;
+  memberships?: Membership[];
+  orySession?: Session;
+}
