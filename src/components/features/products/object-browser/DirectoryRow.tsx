@@ -1,6 +1,6 @@
 "use client";
 
-import { Box, Flex, Button } from "@radix-ui/themes";
+import { Box, Flex, Button, Tooltip } from "@radix-ui/themes";
 import { ChevronRightIcon, FileIcon, DownloadIcon, CopyIcon, CheckIcon } from "@radix-ui/react-icons";
 import Link from "next/link";
 import { MonoText } from "@/components/core";
@@ -113,41 +113,43 @@ export function DirectoryRow({
             {!item.isDirectory && (
               <Flex gap="1">
                 {/* Primary Download Button */}
-                <Button
-                  variant="solid"
-                  size="1"
-                  asChild
-                  style={{ minWidth: "auto" }}
-                >
-                  <a 
-                    href={`https://data.source.coop/${product.account_id}/${product.product_id}/${item.path}`}
-                    download={item.name}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={(e) => e.stopPropagation()}
+                <Tooltip content={`Download ${item.name}`}>
+                  <Button
+                    variant="solid"
+                    size="1"
+                    asChild
+                    style={{ minWidth: "auto" }}
                   >
-                    <DownloadIcon width={14} height={14} />
-                    Download
-                  </a>
-                </Button>
+                    <a 
+                      href={`https://data.source.coop/${product.account_id}/${product.product_id}/${item.path}`}
+                      download={item.name}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <DownloadIcon width={14} height={14} />
+                    </a>
+                  </Button>
+                </Tooltip>
                 
                 {/* Secondary Copy URL Button */}
-                <Button
-                  variant="outline"
-                  size="1"
-                  color={copiedField === `url-${index}` ? "green" : "gray"}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    copyToClipboard(
-                      `https://data.source.coop/${product.account_id}/${product.product_id}/${item.path}`,
-                      `url-${index}`
-                    );
-                  }}
-                  style={{ minWidth: "auto" }}
-                >
-                  {copiedField === `url-${index}` ? <CheckIcon /> : <CopyIcon />}
-                  Copy URL
-                </Button>
+                <Tooltip content={`Copy URL to clipboard`}>
+                  <Button
+                    variant="outline"
+                    size="1"
+                    color={copiedField === `url-${index}` ? "green" : "gray"}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      copyToClipboard(
+                        `https://data.source.coop/${product.account_id}/${product.product_id}/${item.path}`,
+                        `url-${index}`
+                      );
+                    }}
+                    style={{ minWidth: "auto" }}
+                  >
+                    {copiedField === `url-${index}` ? <CheckIcon /> : <CopyIcon />}
+                  </Button>
+                </Tooltip>
               </Flex>
             )}
           </Flex>

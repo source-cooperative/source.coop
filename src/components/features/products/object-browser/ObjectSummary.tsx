@@ -12,7 +12,7 @@ import { DateText } from "@/components/display";
 import { ChecksumVerifier } from "../ChecksumVerifier";
 import { formatFileSize } from "./utils";
 import { useState } from "react";
-import { MonoText, SectionHeader } from "@/components/core";
+import { MonoText } from "@/components/core";
 
 interface ObjectSummaryProps {
   product: Product;
@@ -51,7 +51,6 @@ export function ObjectSummary({
 
   return (
     <>
-    <SectionHeader title="Object details">
     <DataList.Root>
       <DataList.Item>
         <DataList.Label>Name</DataList.Label>
@@ -111,61 +110,75 @@ export function ObjectSummary({
         </DataList.Item>
       )}
 
+      <DataList.Item>
+        <DataList.Label>Source URL</DataList.Label>
+        <DataList.Value>
+          <Flex align="center" gap="2">
+            <MonoText style={{ wordBreak: "break-all" }}>
+              {`https://data.source.coop/${product.account_id}/${product.product_id}/${objectInfo.path}`}
+            </MonoText>
+            <Tooltip content="Copy to clipboard">
+              <IconButton
+                size="1"
+                variant="ghost"
+                color={copiedField === "source_url" ? "green" : "gray"}
+                onClick={() =>
+                  copyToClipboard(
+                    `https://data.source.coop/${product.account_id}/${product.product_id}/${objectInfo.path}`,
+                    "source_url"
+                  )
+                }
+                aria-label="Copy Source URL"
+              >
+                {copiedField === "source_url" ? <CheckIcon /> : <CopyIcon />}
+              </IconButton>
+            </Tooltip>
+          </Flex>
+        </DataList.Value>
+      </DataList.Item>
+
+      {cloudUri && (
+        <DataList.Item>
+          <DataList.Label>Cloud URI</DataList.Label>
+          <DataList.Value>
+            <Flex align="center" gap="2">
+              <MonoText style={{ wordBreak: "break-all" }}>{cloudUri}</MonoText>
+              <Tooltip content="Copy to clipboard">
+                <IconButton
+                  size="1"
+                  variant="ghost"
+                  color={copiedField === "cloud_uri" ? "green" : "gray"}
+                  onClick={() => copyToClipboard(cloudUri, "cloud_uri")}
+                  aria-label="Copy Cloud URI"
+                >
+                  {copiedField === "cloud_uri" ? <CheckIcon /> : <CopyIcon />}
+                </IconButton>
+              </Tooltip>
+            </Flex>
+          </DataList.Value>
+        </DataList.Item>
+      )}
+
     </DataList.Root>
 
-    {/* Action Buttons */}
+    {/* Download Button */}
     <Box mt="4" style={{ paddingTop: "var(--space-4)" }}>
-      <Flex gap="3" align="center">
-        {/* Primary Download Button */}
-        <Button
-          variant="solid"
-          size="3"
-          asChild
+      <Button
+        variant="solid"
+        size="3"
+        asChild
+      >
+        <a 
+          href={`https://data.source.coop/${product.account_id}/${product.product_id}/${objectInfo.path}`}
+          download={objectInfo.path.split("/").filter(Boolean).pop()}
+          target="_blank"
+          rel="noopener noreferrer"
         >
-          <a 
-            href={`https://data.source.coop/${product.account_id}/${product.product_id}/${objectInfo.path}`}
-            download={objectInfo.path.split("/").filter(Boolean).pop()}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <DownloadIcon />
-            Download
-          </a>
-        </Button>
-        
-        {/* Secondary Copy URL Button */}
-        <Button
-          variant="outline"
-          size="3"
-          color={copiedField === "source_url" ? "green" : "gray"}
-          onClick={() => {
-            copyToClipboard(
-              `https://data.source.coop/${product.account_id}/${product.product_id}/${objectInfo.path}`,
-              "source_url"
-            );
-          }}
-        >
-          {copiedField === "source_url" ? <CheckIcon /> : <CopyIcon />}
-          Copy URL
-        </Button>
-        
-        {/* Secondary Copy Cloud URI Button (if available) */}
-        {cloudUri && (
-          <Button
-            variant="outline"
-            size="3"
-            color={copiedField === "cloud_uri" ? "green" : "gray"}
-            onClick={() => {
-              copyToClipboard(cloudUri, "cloud_uri");
-            }}
-          >
-            {copiedField === "cloud_uri" ? <CheckIcon /> : <CopyIcon />}
-            Copy Cloud URI
-          </Button>
-        )}
-      </Flex>
+          <DownloadIcon />
+          Download
+        </a>
+      </Button>
     </Box>
-    </SectionHeader>
     </>
   );
 }
