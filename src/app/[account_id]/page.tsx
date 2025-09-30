@@ -29,6 +29,13 @@ type PageProps = {
   searchParams: Promise<{ welcome?: string }>;
 };
 
+export async function generateMetadata({ params }: PageProps) {
+  const { account_id } = await params;
+  const account = await accountsTable.fetchById(account_id);
+  const title = account!.name;
+  return { title, description: title };
+}
+
 export default async function AccountPage({ params, searchParams }: PageProps) {
   const { account_id } = await params;
   const { welcome } = await searchParams;
