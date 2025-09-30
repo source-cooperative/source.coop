@@ -28,7 +28,8 @@ export const objectUrl = (
 export const editAccountUrl = (account_id: string) =>
   `/edit/account/${account_id}`;
 export const editAccountProfileUrl = (account_id: string) =>
-  `/edit/account/${account_id}/profile`;
+  // `/edit/account/${account_id}/profile`;
+  `/${account_id}/edit`; // TODO: Update to conform with admin menu
 export const editAccountSecurityUrl = (account_id: string) =>
   `/edit/account/${account_id}/security`;
 export const editAccountMembershipsUrl = (account_id: string) =>
