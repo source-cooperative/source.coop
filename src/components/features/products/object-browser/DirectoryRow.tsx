@@ -1,7 +1,7 @@
 "use client";
 
-import { Box, Flex } from "@radix-ui/themes";
-import { ChevronRightIcon, FileIcon } from "@radix-ui/react-icons";
+import { Box, Flex, Button, Tooltip } from "@radix-ui/themes";
+import { ChevronRightIcon, FileIcon, DownloadIcon, CopyIcon, CheckIcon } from "@radix-ui/react-icons";
 import Link from "next/link";
 import { MonoText } from "@/components/core";
 import type { FileNode } from "./utils";
@@ -9,6 +9,7 @@ import type { Product } from "@/types";
 import { formatFileSize } from "./utils";
 import { objectUrl } from "@/lib/urls";
 import styles from "./ObjectBrowser.module.css";
+import { useState } from "react";
 
 interface DirectoryRowProps {
   item: FileNode;
@@ -35,6 +36,8 @@ export function DirectoryRow({
   itemRefs,
   virtualRow,
 }: DirectoryRowProps) {
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+  
   const href = item.isDirectory
     ? objectUrl(
         product.account_id,
@@ -42,6 +45,15 @@ export function DirectoryRow({
         [...path, item.name].join("/")
       )
     : objectUrl(product.account_id, product.product_id, item.path);
+
+  const copyToClipboard = (text: string, field: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopiedField(field);
+      setTimeout(() => {
+        setCopiedField(null);
+      }, 1500);
+    });
+  };
 
   const wrapperStyle = virtualRow
     ? {
@@ -59,18 +71,19 @@ export function DirectoryRow({
 
   return (
     <Box key={item.path} style={wrapperStyle}>
-      <Link
-        href={href}
-        className={styles.item}
-        title={item.name}
-        ref={(el: HTMLAnchorElement | null) => {
-          if (el && itemRefs) itemRefs.current[index] = el;
-        }}
-        onFocus={() => setFocusedIndex?.(index)}
-        data-focused={focusedIndex === index}
-      >
-        <Flex justify="between" align="center" style={{ width: "100%" }}>
-          <Flex align="center" gap="2" style={{ minWidth: 0, flex: 1 }}>
+      <Flex justify="between" align="center" style={{ width: "100%" }}>
+        <Box style={{ minWidth: 0, flex: 1 }}>
+          <Link
+            href={href}
+            className={styles.item}
+            title={item.name}
+            ref={(el: HTMLAnchorElement | null) => {
+              if (el && itemRefs) itemRefs.current[index] = el;
+            }}
+            onFocus={() => setFocusedIndex?.(index)}
+            data-focused={focusedIndex === index}
+            style={{ display: "flex", alignItems: "center", gap: "var(--space-2)", minWidth: 0, flex: 1 }}
+          >
             {item.isDirectory ? (
               <ChevronRightIcon width={16} height={16} />
             ) : (
@@ -87,14 +100,64 @@ export function DirectoryRow({
             >
               {item.name}
             </MonoText>
+          </Link>
+        </Box>
+        
+        <Box>
+          <Flex align="center" gap="2">
+            {/* File size */}
+            {!item.isDirectory && item.size > 0 && (
+              <MonoText color="gray" size="1" style={{ flexShrink: 0 }}>
+                {formatFileSize(item.size)}
+              </MonoText>
+            )}
+            
+            {/* Two buttons for files */}
+            {!item.isDirectory && (
+              <Flex gap="1">
+                {/* Primary Download Button */}
+                <Tooltip content={`Download ${item.name}`}>
+                  <Button
+                    variant="solid"
+                    size="1"
+                    asChild
+                    style={{ minWidth: "auto" }}
+                  >
+                    <a 
+                      href={`https://data.source.coop/${product.account_id}/${product.product_id}/${item.path}`}
+                      download={item.name}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <DownloadIcon width={14} height={14} />
+                    </a>
+                  </Button>
+                </Tooltip>
+                
+                {/* Secondary Copy URL Button */}
+                <Tooltip content={`Copy URL to clipboard`}>
+                  <Button
+                    variant="outline"
+                    size="1"
+                    color={copiedField === `url-${index}` ? "green" : "gray"}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      copyToClipboard(
+                        `https://data.source.coop/${product.account_id}/${product.product_id}/${item.path}`,
+                        `url-${index}`
+                      );
+                    }}
+                    style={{ minWidth: "auto" }}
+                  >
+                    {copiedField === `url-${index}` ? <CheckIcon /> : <CopyIcon />}
+                  </Button>
+                </Tooltip>
+              </Flex>
+            )}
           </Flex>
-          {!item.isDirectory && item.size > 0 && (
-            <MonoText style={{ flexShrink: 0, marginLeft: "var(--space-2)" }}>
-              {formatFileSize(item.size)}
-            </MonoText>
-          )}
-        </Flex>
-      </Link>
+        </Box>
+      </Flex>
     </Box>
   );
 }
