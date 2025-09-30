@@ -17,6 +17,8 @@ import { ProductsList } from "../products/ProductsList";
 import { WebsiteLink } from "./WebsiteLink";
 import { EmailVerificationStatus } from "./EmailVerificationStatus";
 import { IndividualProfileActions } from "./IndividualProfileActions";
+import { editAccountProfileUrl } from "@/lib/urls";
+import { AvatarLinkCompact } from "@/components/core";
 
 interface IndividualProfileProps {
   account: IndividualAccount;
@@ -99,14 +101,7 @@ export function IndividualProfile({
           </Heading>
           <Grid columns="3" gap="4">
             {organizations.map((org) => (
-              <RadixLink asChild key={org.account_id}>
-                <Link href={`/${org.account_id}`}>
-                  <Flex gap="2" align="center">
-                    <ProfileAvatar account={org} size="2" />
-                    <Text>{org.name}</Text>
-                  </Flex>
-                </Link>
-              </RadixLink>
+              <AvatarLinkCompact account={org} key={org.account_id} />
             ))}
           </Grid>
         </Box>

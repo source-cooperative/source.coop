@@ -11,6 +11,12 @@ import { LOGGER } from "@/lib";
 import { DropdownSection } from "./DropdownSection";
 import { isAuthorized } from "@/lib/api/authz";
 import { Actions } from "@/types";
+import {
+  accountUrl,
+  editAccountProfileUrl,
+  newOrganizationUrl,
+  newProductUrl,
+} from "@/lib/urls";
 
 export function AccountDropdownSkeleton() {
   return (
@@ -61,11 +67,11 @@ export function AccountDropdown({ session }: { session: UserSession }) {
           label="Account"
           items={[
             {
-              href: `/${session.account!.account_id}`,
+              href: accountUrl(session.account!.account_id),
               children: "View Profile",
             },
             {
-              href: `/${session.account!.account_id}/edit`,
+              href: editAccountProfileUrl(session.account!.account_id),
               children: "Edit Profile",
             },
           ]}
@@ -74,7 +80,7 @@ export function AccountDropdown({ session }: { session: UserSession }) {
           label="Organizations"
           items={[
             {
-              href: `/${session.account!.account_id}/organization/new`,
+              href: newOrganizationUrl(session.account!.account_id),
               children: "Create Organization",
               condition: isAuthorized(session, "*", Actions.CreateAccount),
             },
@@ -84,7 +90,7 @@ export function AccountDropdown({ session }: { session: UserSession }) {
           label="Products"
           items={[
             {
-              href: `/products/new`,
+              href: newProductUrl(),
               children: "Create Product",
               condition: isAuthorized(session, "*", Actions.CreateRepository),
             },

@@ -1,5 +1,5 @@
 import { storage } from "@/lib";
-import { MarkdownViewer } from "@/components";
+import { MarkdownViewer } from "@/components/features/markdown";
 
 interface ProductPathComponentProps {
   account_id: string;

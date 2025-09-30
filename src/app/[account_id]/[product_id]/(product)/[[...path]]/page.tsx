@@ -2,7 +2,13 @@ import { Suspense } from "react";
 import { notFound } from "next/navigation";
 
 import DirectoryListLoading from "./loading";
-import { LOGGER, storage, dataConnectionsTable, productsTable } from "@/lib";
+import {
+  LOGGER,
+  storage,
+  dataConnectionsTable,
+  productsTable,
+  CONFIG,
+} from "@/lib";
 import { DataConnection, ProductMirror } from "@/types";
 import { DirectoryList, ObjectSummary, ObjectPreview } from "@/components";
 
@@ -35,7 +41,7 @@ export default async function ProductPathPage({ params }: PageProps) {
     await fetchProduct(account_id, product_id, objectPath);
 
   if (objectInfo?.type === "file") {
-    const sourceUrl = `https://data.source.coop/${product.account?.account_id}/${product.product_id}/${objectInfo.path}`;
+    const sourceUrl = `${CONFIG.storage.endpoint}/${product.account?.account_id}/${product.product_id}/${objectInfo.path}`;
 
     return (
       <Suspense fallback={<DirectoryListLoading />}>
