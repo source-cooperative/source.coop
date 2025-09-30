@@ -46,7 +46,7 @@ interface DynamicFormProps<T extends Record<string, any>> {
   hiddenFields?: Record<string, string>;
   className?: string;
   disabled?: boolean;
-  initialValues?: T; // Initial values for form fields
+  initialValues?: Partial<T>; // Initial values for form fields
   onSuccess?: () => void; // Callback when form submission is successful
 }
 

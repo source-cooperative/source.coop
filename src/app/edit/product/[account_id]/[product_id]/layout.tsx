@@ -12,7 +12,7 @@ import {
   ArchiveIcon,
   Pencil1Icon,
 } from "@radix-ui/react-icons";
-import { MonoText } from "@/components";
+import { AvatarLinkCompact, MonoText } from "@/components";
 import {
   accountUrl,
   productUrl,
@@ -107,13 +107,9 @@ function ProductHeader({ product }: { product: Product }) {
   return (
     <Box mb="5" pb="4" style={{ borderBottom: "1px solid var(--gray-6)" }}>
       <Flex align="center" gap="3">
-        <Button variant="ghost" asChild>
-          <Link href={accountUrl(product.account_id)}>
-            <MonoText>{product.account_id}</MonoText>
-          </Link>
-        </Button>
+        <AvatarLinkCompact account={product.account!} />
         <Text size="2" color="gray" style={{ userSelect: "none" }}>
-          /
+          &gt;
         </Text>
         <Button variant="ghost" asChild>
           <Link href={productUrl(product.account_id, product.product_id)}>

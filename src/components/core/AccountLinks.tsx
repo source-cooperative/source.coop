@@ -14,19 +14,21 @@ interface AccountDisplayProps {
 export function AvatarLinkCompact({
   showAccountId = false,
   link = true,
+  avatarSize = "2",
+  nameSize = "2",
   ...props
 }: AccountDisplayProps & {
   showHoverCard?: boolean;
   showAccountId?: boolean;
   link?: boolean;
+  avatarSize?: React.ComponentProps<typeof ProfileAvatar>["size"];
+  nameSize?: React.ComponentProps<typeof Text>["size"];
 }) {
   const content = (
-    <>
-      <ProfileAvatar account={props.account} size="2" />
-      <Text size="2" ml="2">
-        {props.account.name}
-      </Text>
-    </>
+    <Flex align="center" gap="2">
+      <ProfileAvatar account={props.account} size={avatarSize} />
+      <Text size={nameSize}>{props.account.name}</Text>
+    </Flex>
   );
 
   return (

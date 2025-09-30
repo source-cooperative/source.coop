@@ -55,34 +55,15 @@ export function AccountSelector({
               </Flex>
             </DropdownMenu.Trigger>
 
-            <DropdownMenu.Content>
+            <DropdownMenu.Content variant="soft">
               {manageableAccounts.map((account) => (
-                <Link
-                  href={editAccountViewUrl(account.account_id, currentView)}
-                  onClick={() => setIsOpen(false)}
-                  key={account.account_id}
-                >
-                  <Box my="1">
+                <Box key={account.account_id} px="0" my="1">
+                  <Link
+                    href={editAccountViewUrl(account.account_id, currentView)}
+                    onClick={() => setIsOpen(false)}
+                  >
                     <DropdownMenu.Item
-                      style={{
-                        cursor: "pointer",
-                        backgroundColor:
-                          account.account_id === currentAccount.account_id
-                            ? "var(--accent-3)"
-                            : undefined,
-                        transition: "background-color 0.15s ease",
-                      }}
-                      onMouseEnter={(e) => {
-                        if (account.account_id !== currentAccount.account_id) {
-                          e.currentTarget.style.backgroundColor =
-                            "var(--accent-4)";
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (account.account_id !== currentAccount.account_id) {
-                          e.currentTarget.style.backgroundColor = "transparent";
-                        }
-                      }}
+                      style={{ cursor: "pointer", padding: "0rem" }}
                     >
                       <AvatarLinkCompact
                         account={account}
@@ -90,27 +71,19 @@ export function AccountSelector({
                         showHoverCard={false}
                       />
                     </DropdownMenu.Item>
-                  </Box>
-                </Link>
+                  </Link>
+                </Box>
               ))}
             </DropdownMenu.Content>
           </DropdownMenu.Root>
         </Flex>
 
         {/* Right side - Link to profile */}
-        <RadixLink
-          href={accountUrl(currentAccount.account_id)}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "6px",
-            textDecoration: "none",
-            color: "var(--gray-11)",
-            fontSize: "14px",
-          }}
-        >
-          <Text size="2">View Profile</Text>
-          <ExternalLinkIcon width="14" height="14" />
+        <RadixLink href={accountUrl(currentAccount.account_id)}>
+          <Flex align="center" gap="2">
+            <Text size="1">View Profile</Text>
+            <ExternalLinkIcon width="14" height="14" />
+          </Flex>
         </RadixLink>
       </Flex>
     </Box>
