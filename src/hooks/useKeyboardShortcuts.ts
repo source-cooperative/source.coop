@@ -73,7 +73,7 @@ export function useKeyboardShortcuts({ onShowHelp }: UseKeyboardShortcutsProps =
       if (awaitingSecondKey === 'g') {
         e.preventDefault();
         if (e.key === 'h' || e.key === 'H') {
-          router.push('/');
+          router.push(homeUrl());
         }
         setAwaitingSecondKey(null);
         return;

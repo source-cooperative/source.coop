@@ -38,7 +38,6 @@ export function DirectoryList({
   setFocusedIndex,
 }: DirectoryListProps) {
   const items = getSortedItems(objects, path);
-  console.log("items", items);
 
   const parentRef = useRef<HTMLDivElement>(null);
   const [showScrollIndicator, setShowScrollIndicator] = useState(false);
