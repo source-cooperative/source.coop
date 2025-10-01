@@ -71,10 +71,10 @@ export function EditProfileForm({
       description: "This is the name that will be displayed on your profile",
     },
     {
-      label: "Email (Required)",
+      label: "Email",
       name: "email",
       type: "email",
-      required: true,
+      readOnly: true,
       placeholder: "you@example.com",
       description:
         initialAccount.type === "individual"

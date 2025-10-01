@@ -18,6 +18,7 @@ export interface FormField<T extends Record<string, any>> {
     | "select"
     | "custom";
   required?: boolean;
+  readOnly?: boolean;
   description?: string;
   placeholder?: string;
   isValid?: boolean | null;
@@ -112,6 +113,7 @@ export function DynamicForm<T extends Record<string, any>>({
                   name={String(field.name)}
                   placeholder={field.placeholder}
                   required={field.required}
+                  disabled={field.readOnly}
                   {...(field.controlled
                     ? {
                         value:
@@ -140,6 +142,7 @@ export function DynamicForm<T extends Record<string, any>>({
                 <select
                   name={String(field.name)}
                   required={field.required}
+                  disabled={field.readOnly}
                   {...(field.controlled
                     ? {
                         value: field.value || "",
@@ -175,6 +178,7 @@ export function DynamicForm<T extends Record<string, any>>({
                   type={field.type}
                   name={String(field.name)}
                   placeholder={field.placeholder}
+                  disabled={field.readOnly}
                   required={field.required}
                   {...(field.controlled
                     ? {
