@@ -72,10 +72,10 @@ export function EditProfileForm({
     },
     // TODO: Should the user be allowed to change their email address? Or does Ory require that to stay the same?
     {
-      label: "Email (Required)",
+      label: "Email",
       name: "email",
       type: "email",
-      required: true,
+      readOnly: true,
       placeholder: "you@example.com",
       description:
         initialAccount.type === "individual"
