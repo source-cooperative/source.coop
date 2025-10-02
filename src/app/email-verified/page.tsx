@@ -58,8 +58,8 @@ export default async function EmailVerifiedPage() {
         mb="4"
         style={{ maxWidth: "500px" }}
       >
-        We couldn't verify your email address. Please check your email and click
-        the verification link, or try again.
+        We couldn&apos;t verify your email address. Please check your email and
+        click the verification link, or try again.
       </Text>
 
       <Card size="2" mb="4" style={{ width: "100%", maxWidth: "400px" }}>
