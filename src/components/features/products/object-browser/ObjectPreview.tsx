@@ -18,7 +18,8 @@ const getIframeAttributes = (
       };
     case "parquet":
       return {
-        src: `https://source-cooperative.github.io/parquet-table/?iframe&url=${sourceUrl}`,
+        src: `https://source-cooperative.github.io/parquet-table/?iframe=true&url=${sourceUrl}`,
+        style: { border: "1px solid var(--gray-5)" },
       };
     default:
       return null;
@@ -30,7 +31,7 @@ export function ObjectPreview({ sourceUrl: cloudUri }: ObjectPreviewProps) {
   if (iframeProps) {
     const { src, style } = iframeProps;
     return (
-      <Box mt="4">
+      <Box mt="4" pt="4" style={{ borderTop: "1px solid var(--gray-6)" }}>
         <iframe width="100%" height="600px" style={style} src={src}>
           Your browser does not support iframes.
         </iframe>
