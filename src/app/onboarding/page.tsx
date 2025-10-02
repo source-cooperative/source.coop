@@ -23,8 +23,6 @@ export default async function OnboardingPage({
     redirect(homeUrl());
   }
 
-  console.log({ query });
-
   if (session?.account) {
     redirect(
       `${accountUrl(session.account.account_id)}${
