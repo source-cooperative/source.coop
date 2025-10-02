@@ -108,11 +108,16 @@ async function authenticateWithApiKey(
   // Retrieve and filter memberships for the user
   const memberships = await membershipsTable.listByUser(account.account_id);
   const filteredMemberships = memberships.filter((membership) =>
-    isAuthorized({ account }, membership, Actions.GetMembership)
+    isAuthorized(
+      { account, identity_id: account.identity_id },
+      membership,
+      Actions.GetMembership
+    )
   );
 
   // Return the user session
   return {
+    identity_id: account.identity_id,
     account,
     memberships: filteredMemberships,
   };
@@ -146,32 +151,37 @@ export async function getApiSession(
  * @returns A Promise that resolves to a UserSession object if a valid session exists, or null if not authenticated.
  */
 export async function getPageSession(): Promise<UserSession | null> {
-  const session = await getServerSession();
-  if (!session) {
+  const orySession = await getServerSession();
+  if (!orySession) {
     return null;
   }
 
-  const oryId = getOryId(session);
-  if (!oryId) {
+  const identity_id = getOryId(orySession);
+  if (!identity_id) {
     return null;
   }
 
   // Fetch account information for the user
-  const account = await accountsTable.fetchByOryId(oryId);
+  const account = await accountsTable.fetchByOryId(identity_id);
 
   if (!account || account.disabled || !isIndividualAccount(account)) {
-    return { identity_id: oryId };
+    return { orySession, identity_id };
   }
 
   // Retrieve and filter memberships for the user
   const memberships = await membershipsTable.listByUser(account.account_id);
   const filteredMemberships = memberships.filter((membership) =>
-    isAuthorized({ account }, membership, Actions.GetMembership)
+    isAuthorized(
+      { orySession, account, identity_id },
+      membership,
+      Actions.GetMembership
+    )
   );
 
   // Return the user session
   return {
-    identity_id: oryId,
+    identity_id,
+    orySession,
     account,
     memberships: filteredMemberships,
   };
