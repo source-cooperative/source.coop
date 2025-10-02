@@ -10,16 +10,27 @@ export const metadata: Metadata = {
   description: "Choose your username and set up your profile",
 };
 
-export default async function OnboardingPage() {
+export default async function OnboardingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ verified?: string }>;
+}) {
   const session = await getPageSession();
   const identityId = session?.identity_id;
+  const query = await searchParams;
 
   if (!identityId) {
     redirect(homeUrl());
   }
 
+  console.log({ query });
+
   if (session?.account) {
-    redirect(accountUrl(session.account.account_id));
+    redirect(
+      `${accountUrl(session.account.account_id)}${
+        Object.keys(query).includes("verified") ? "?verified" : ""
+      }`
+    );
   }
 
   return (

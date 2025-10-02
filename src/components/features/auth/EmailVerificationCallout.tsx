@@ -1,8 +1,9 @@
 "use client";
 
-import { Box, Callout } from "@radix-ui/themes";
+import { Box, Callout, Link } from "@radix-ui/themes";
 import { CheckCircledIcon, InfoCircledIcon } from "@radix-ui/react-icons";
 import { useSearchParams } from "next/navigation";
+import { verifyEmailUrl } from "@/lib";
 
 interface EmailVerificationCalloutProps {
   showCheckEmail?: boolean;
@@ -23,7 +24,9 @@ export function EmailVerificationCallout({
           </Callout.Icon>
           <Callout.Text>
             Please check your email. We&apos;ve sent you a code to verify your
-            email address.
+            email address. Alternatively, you can click{" "}
+            <Link href={verifyEmailUrl()}>here</Link> to verify your email
+            address.
           </Callout.Text>
         </Callout.Root>
       ) : (

@@ -20,7 +20,6 @@ import {
   productsTable,
 } from "@/lib/clients/database";
 import { getPageSession } from "@/lib/api/utils";
-import { getOryId } from "@/lib/ory";
 import { IndividualAccount, Actions } from "@/types";
 import { isAuthorized } from "@/lib/api/authz";
 
