@@ -182,7 +182,6 @@ export async function updateAccountProfile(
 
     // Extract and process form data
     const name = formData.get("name") as string;
-    const email = formData.get("email") as string;
     const description = formData.get("description") as string;
     const orcid = formData.get("orcid") as string;
 
@@ -216,24 +215,10 @@ export async function updateAccountProfile(
         };
       });
 
-    const emails: AccountEmail[] = [
-      currentAccount.emails?.[0].address === email
-        ? currentAccount.emails?.[0]
-        : {
-            // NOTE: If email address changes, we need it to be re-verified
-            address: email,
-            verified: false,
-            is_primary: true,
-            added_at: new Date().toISOString(),
-            verified_at: undefined,
-          },
-    ];
-
     // Build update data
     const updateData = {
       ...currentAccount,
       name,
-      emails,
       metadata_public: {
         ...currentAccount.metadata_public,
         bio: description || undefined,
