@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import React, { useActionState } from "react";
 import { Button, Text, Flex } from "@radix-ui/themes";
 import Form from "next/form";
 
@@ -18,6 +18,7 @@ export interface FormField<T extends Record<string, any>> {
     | "select"
     | "custom";
   required?: boolean;
+  readOnly?: boolean;
   description?: string;
   placeholder?: string;
   isValid?: boolean | null;
@@ -46,7 +47,8 @@ interface DynamicFormProps<T extends Record<string, any>> {
   hiddenFields?: Record<string, string>;
   className?: string;
   disabled?: boolean;
-  initialValues?: T; // Initial values for form fields
+  initialValues?: Partial<T>; // Initial values for form fields
+  onSuccess?: () => void; // Callback when form submission is successful
 }
 
 const style: React.CSSProperties = {
@@ -67,6 +69,7 @@ export function DynamicForm<T extends Record<string, any>>({
   hiddenFields = {},
   className,
   initialValues,
+  onSuccess,
 }: DynamicFormProps<T>) {
   const [state, formAction, pending] = useActionState(action, {
     message: "",
@@ -81,6 +84,13 @@ export function DynamicForm<T extends Record<string, any>>({
       field.onValueChange(value);
     }
   };
+
+  // Call onSuccess when form submission is successful
+  React.useEffect(() => {
+    if (state.success && onSuccess) {
+      onSuccess();
+    }
+  }, [state.success, onSuccess]);
   return (
     <Form action={formAction} className={className}>
       {/* Hidden fields */}
@@ -103,6 +113,7 @@ export function DynamicForm<T extends Record<string, any>>({
                   name={String(field.name)}
                   placeholder={field.placeholder}
                   required={field.required}
+                  disabled={field.readOnly}
                   {...(field.controlled
                     ? {
                         value:
@@ -131,6 +142,7 @@ export function DynamicForm<T extends Record<string, any>>({
                 <select
                   name={String(field.name)}
                   required={field.required}
+                  disabled={field.readOnly}
                   {...(field.controlled
                     ? {
                         value: field.value || "",
@@ -166,6 +178,7 @@ export function DynamicForm<T extends Record<string, any>>({
                   type={field.type}
                   name={String(field.name)}
                   placeholder={field.placeholder}
+                  disabled={field.readOnly}
                   required={field.required}
                   {...(field.controlled
                     ? {

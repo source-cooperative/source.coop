@@ -14,8 +14,7 @@ export const newProductUrl = () => "/products/new";
 
 // Auth URLs
 export const loginUrl = () => CONFIG.auth.routes.login;
-export const onboardingUrl = (params?: string) =>
-  `/onboarding` + (params ? `?${params}` : "");
+export const onboardingUrl = () => "/onboarding";
 
 // Object URLs
 export const objectUrl = (
@@ -28,10 +27,9 @@ export const objectUrl = (
 export const editAccountUrl = (account_id: string) =>
   `/edit/account/${account_id}`;
 export const editAccountProfileUrl = (account_id: string) =>
-  // `/edit/account/${account_id}/profile`;
-  `/${account_id}/edit`; // TODO: Update to conform with admin menu
-export const editAccountSecurityUrl = (account_id: string) =>
-  `/edit/account/${account_id}/security`;
+  `/edit/account/${account_id}/profile`;
+export const editAccountPermissionsUrl = (account_id: string) =>
+  `/edit/account/${account_id}/permissions`;
 export const editAccountMembershipsUrl = (account_id: string) =>
   `/edit/account/${account_id}/memberships`;
 export const editAccountViewUrl = (account_id: string, view: string) =>
@@ -54,3 +52,8 @@ export const editProfileUrl = (account_id: string) =>
 // Organization URLs
 export const newOrganizationUrl = (account_id: string) =>
   `/${account_id}/organization/new`;
+
+// External URLs
+export const verifyEmailUrl = () =>
+  // `${CONFIG.auth.api.frontendUrl}/ui/verification`;
+  `${CONFIG.auth.api.frontendUrl}/self-service/verification/browser`;

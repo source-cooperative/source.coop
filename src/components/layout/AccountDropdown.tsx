@@ -100,7 +100,7 @@ export function AccountDropdown({ session }: { session: UserSession }) {
           items={[
             {
               onClick: handleLogout,
-              children: <Text>Logout</Text>,
+              children: "Logout",
               color: "red",
             },
           ]}

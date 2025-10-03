@@ -12,7 +12,8 @@ import { getPageSession, LOGGER } from "@/lib";
 import { FormState } from "@/components/core/DynamicForm";
 import { isAuthorized } from "../api/authz";
 import { redirect } from "next/navigation";
-import { productUrl } from "@/lib/urls";
+import { revalidatePath } from "next/cache";
+import { productUrl, editProductDetailsUrl } from "@/lib/urls";
 
 export interface PaginatedProductsResult {
   products: Product[];
@@ -310,5 +311,107 @@ export async function createProduct(
       metadata: { product },
     });
     throw error;
+  }
+}
+
+export async function updateProduct(
+  initialState: any,
+  formData: FormData
+): Promise<FormState<Partial<Product>>> {
+  const session = await getPageSession();
+
+  if (!session?.identity_id || !session.account) {
+    return {
+      fieldErrors: {},
+      data: formData,
+      message: "Unauthenticated",
+      success: false,
+    };
+  }
+
+  const accountId = formData.get("account_id") as string;
+  const productId = formData.get("product_id") as string;
+
+  if (!accountId || !productId) {
+    return {
+      fieldErrors: {},
+      data: formData,
+      message: "Account ID and Product ID are required",
+      success: false,
+    };
+  }
+
+  try {
+    // Get the current product
+    const currentProduct = await productsTable.fetchById(accountId, productId);
+    if (!currentProduct) {
+      return {
+        fieldErrors: {},
+        data: formData,
+        message: "Product not found",
+        success: false,
+      };
+    }
+
+    // Check authorization
+    if (!isAuthorized(session, currentProduct, Actions.PutRepository)) {
+      return {
+        fieldErrors: {},
+        data: formData,
+        message: "Unauthorized to update this product",
+        success: false,
+      };
+    }
+
+    // Extract form data
+    const title = formData.get("title") as string;
+    const description = formData.get("description") as string;
+    const visibility = formData.get("visibility") as
+      | "public"
+      | "unlisted"
+      | "restricted";
+
+    // Build update data
+    const updateData = {
+      ...currentProduct,
+      title: title || currentProduct.title,
+      description: description || currentProduct.description,
+      visibility: visibility || currentProduct.visibility,
+      updated_at: new Date().toISOString(),
+    };
+
+    // Update the product
+    await productsTable.update(updateData);
+
+    LOGGER.info("Successfully updated product", {
+      operation: "updateProduct",
+      context: "product update",
+      metadata: { accountId, productId },
+    });
+
+    // Revalidate the product page to show updated data
+    revalidatePath(productUrl(accountId, productId));
+    revalidatePath(editProductDetailsUrl(accountId, productId));
+
+    return {
+      fieldErrors: {},
+      data: formData,
+      message: "Product updated successfully!",
+      success: true,
+    };
+  } catch (error) {
+    LOGGER.error("Error updating product", {
+      operation: "updateProduct",
+      context: "product update",
+      error: error,
+      metadata: { accountId, productId },
+    });
+
+    return {
+      fieldErrors: {},
+      data: formData,
+      message: "Failed to update product. Please try again.",
+      success: false,
+    };
   }
 }
