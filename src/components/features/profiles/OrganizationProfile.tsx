@@ -7,9 +7,7 @@ import {
   Link as RadixLink,
   Flex,
   Grid,
-  Button,
 } from "@radix-ui/themes";
-import Link from "next/link";
 import type {
   IndividualAccount,
   OrganizationalAccount,
@@ -23,6 +21,7 @@ import { ProfileAvatar } from "./ProfileAvatar";
 import { WebsiteLink } from "./WebsiteLink";
 import { ProfileLocation } from "./ProfileLocation";
 import { editAccountProfileUrl } from "@/lib/urls";
+import { EditButton } from "@/components/core";
 
 interface OrganizationProfileProps {
   account: OrganizationalAccount;
@@ -56,9 +55,7 @@ export function OrganizationProfile({
           </Box>
         </Flex>
         {canEdit && (
-          <Link href={editAccountProfileUrl(account.account_id)}>
-            <Button>Edit</Button>
-          </Link>
+          <EditButton href={editAccountProfileUrl(account.account_id)} />
         )}
       </Flex>
 
