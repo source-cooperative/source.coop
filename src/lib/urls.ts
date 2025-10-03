@@ -14,8 +14,7 @@ export const newProductUrl = () => "/products/new";
 
 // Auth URLs
 export const loginUrl = () => CONFIG.auth.routes.login;
-export const onboardingUrl = (params?: string) =>
-  `/onboarding` + (params ? `?${params}` : "");
+export const onboardingUrl = () => "/onboarding";
 
 // Object URLs
 export const objectUrl = (
@@ -53,3 +52,8 @@ export const editProfileUrl = (account_id: string) =>
 // Organization URLs
 export const newOrganizationUrl = (account_id: string) =>
   `/${account_id}/organization/new`;
+
+// External URLs
+export const verifyEmailUrl = () =>
+  // `${CONFIG.auth.api.frontendUrl}/ui/verification`;
+  `${CONFIG.auth.api.frontendUrl}/self-service/verification/browser`;
