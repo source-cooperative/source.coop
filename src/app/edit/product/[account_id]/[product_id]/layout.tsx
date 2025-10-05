@@ -6,21 +6,9 @@ import { Actions, Product } from "@/types";
 import { productsTable } from "@/lib/clients/database";
 import { notFound, redirect } from "next/navigation";
 import { CONFIG } from "@/lib/config";
-import {
-  LockClosedIcon,
-  GlobeIcon,
-  ArchiveIcon,
-  Pencil1Icon,
-  ExternalLinkIcon,
-} from "@radix-ui/react-icons";
+import { Pencil1Icon, ExternalLinkIcon } from "@radix-ui/react-icons";
 import { AvatarLinkCompact, MonoText } from "@/components";
-import {
-  productUrl,
-  editProductDetailsUrl,
-  editProductAccessUrl,
-  editProductVisibilityUrl,
-  editProductArchiveUrl,
-} from "@/lib/urls";
+import { productUrl, editProductDetailsUrl } from "@/lib/urls";
 import { Box, Flex, Text, Button, Link as RadixLink } from "@radix-ui/themes";
 import Link from "next/link";
 
@@ -52,17 +40,6 @@ export default async function ProductLayout({
   }
 
   const canEditProduct = isAuthorized(session, product, Actions.PutRepository);
-  const canReadProduct = isAuthorized(session, product, Actions.GetRepository);
-  const canReadMembership = isAuthorized(
-    session,
-    product,
-    Actions.GetMembership
-  );
-  const canUpdateProduct = isAuthorized(
-    session,
-    product,
-    Actions.PutRepository
-  );
 
   const menuItems = [
     {
@@ -71,27 +48,6 @@ export default async function ProductLayout({
       href: editProductDetailsUrl(account_id, product_id),
       icon: <Pencil1Icon width="16" height="16" />,
       condition: canEditProduct,
-    },
-    {
-      id: "access",
-      label: "Access",
-      href: editProductAccessUrl(account_id, product_id),
-      icon: <LockClosedIcon width="16" height="16" />,
-      condition: canReadMembership,
-    },
-    {
-      id: "visibility",
-      label: "Visibility",
-      href: editProductVisibilityUrl(account_id, product_id),
-      icon: <GlobeIcon width="16" height="16" />,
-      condition: canReadProduct,
-    },
-    {
-      id: "archive",
-      label: "Archive",
-      href: editProductArchiveUrl(account_id, product_id),
-      icon: <ArchiveIcon width="16" height="16" />,
-      condition: canUpdateProduct,
     },
   ];
 
