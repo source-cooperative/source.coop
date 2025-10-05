@@ -23,7 +23,11 @@ import { accountsTable, membershipsTable } from "../clients";
 import { FormState } from "@/components/core/DynamicForm";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { accountUrl, editAccountProfileUrl } from "@/lib/urls";
+import {
+  accountUrl,
+  editAccountPermissionsUrl,
+  editAccountProfileUrl,
+} from "@/lib/urls";
 import { v4 as uuidv4 } from "uuid";
 
 /**
@@ -317,29 +321,21 @@ export async function updateAccountFlags(
       };
     }
 
-    // Extract flags from form data
-    const flags: AccountFlags[] = [];
-    for (const [key, value] of formData.entries()) {
-      if (key.startsWith("flag_") && value === "on") {
-        const flagValue = key.replace("flag_", "") as AccountFlags;
-        if (Object.values(AccountFlags).includes(flagValue)) {
-          flags.push(flagValue);
-        }
-      }
-    }
+    // Extract flags from form data - now using boolean values
+    const flags = Array.from(formData.entries())
+      .filter(([key]) => key !== "account_id")
+      .filter(([key, value]) => value === "on")
+      .map(([key]) => key as AccountFlags);
 
     // Validate flags
     const validatedFlags = AccountFlagsSchema.parse(flags);
 
-    // Build update data
-    const updateData = {
+    // Update the account
+    await accountsTable.update({
       ...currentAccount,
       flags: validatedFlags,
       updated_at: new Date().toISOString(),
-    };
-
-    // Update the account
-    await accountsTable.update(updateData);
+    });
 
     LOGGER.info("Successfully updated account flags", {
       operation: "updateAccountFlags",
@@ -348,7 +344,7 @@ export async function updateAccountFlags(
     });
 
     // Revalidate the permissions page to show updated data
-    revalidatePath(editAccountProfileUrl(accountId));
+    revalidatePath(editAccountPermissionsUrl(accountId));
 
     return {
       fieldErrors: {},

@@ -35,7 +35,7 @@ export default async function PermissionsPage({ params }: SecurityPageProps) {
         title="Permissions"
         description="Manage this account's permissions and capabilities"
       />
-      <AccountFlagsForm account={account} />
+      <AccountFlagsForm session={session} account={account} />
     </Box>
   );
 }

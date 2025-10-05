@@ -1,120 +1,99 @@
-// import { useState } from "react";
-import { Account, AccountFlags, Actions } from "@/types";
-import { Box, Text, Flex, Checkbox, Card } from "@radix-ui/themes";
-import { DynamicForm, FormField } from "@/components/core";
+"use client";
+
+import { Account, AccountFlags, Actions, UserSession } from "@/types";
+import { Text, Flex, Checkbox } from "@radix-ui/themes";
+import { Label } from "radix-ui";
+import { DynamicForm } from "@/components/core";
 import { updateAccountFlags } from "@/lib/actions/account";
 import { isAuthorized } from "@/lib/api/authz";
-import { getPageSession } from "@/lib/api/utils";
+import { useState, useEffect } from "react";
 
 interface AccountFlagsFormProps {
+  session: UserSession;
   account: Account;
 }
 
-interface AccountFlagsFormData {
-  flags: AccountFlags[];
-}
+// Dynamically create form data type from AccountFlags enum
+type AccountFlagsFormData = {
+  [K in AccountFlags]: boolean;
+};
 
-export async function AccountFlagsForm({
-  account: initialAccount,
-}: AccountFlagsFormProps) {
-  const session = await getPageSession();
-  // const [selectedFlags, setSelectedFlags] = useState<AccountFlags[]>(
-  //   initialAccount.flags || []
-  // );
+export function AccountFlagsForm({ session, account }: AccountFlagsFormProps) {
+  // Create initial values for the form dynamically
+  const initialValues = Object.fromEntries(
+    Object.values(AccountFlags).map((flag) => [
+      flag,
+      account.flags?.includes(flag) || false,
+    ])
+  ) as AccountFlagsFormData;
 
-  // const handleFlagChange = (flag: AccountFlags, checked: boolean) => {
-  //   if (checked) {
-  //     setSelectedFlags((prev) => [...prev, flag]);
-  //   } else {
-  //     setSelectedFlags((prev) => prev.filter((f) => f !== flag));
-  //   }
-  // };
+  // To avoid a bug where the checkboxes are reverting to the initial values after form
+  // submission, we track the current flag values for controlled checkboxes
+  const [flagValues, setFlagValues] = useState(initialValues);
+  useEffect(() => {
+    setFlagValues(
+      Object.fromEntries(
+        Object.values(AccountFlags).map((flag) => [
+          flag,
+          flagValues[flag] || false,
+        ])
+      ) as AccountFlagsFormData
+    );
+  }, [account.flags, account.updated_at]);
 
-  // Create initial values for the form
-  const initialValues: AccountFlagsFormData = {
-    flags: initialAccount.flags || [],
-  };
+  // Flag configurations with display names and descriptions
+  const fields = [
+    [
+      AccountFlags.CREATE_REPOSITORIES,
+      "Create Repositories",
+      "Allows this account to create new repositories and manage repository settings.",
+    ],
+    [
+      AccountFlags.CREATE_ORGANIZATIONS,
+      "Create Organizations",
+      "Allows this account to create new organizations and manage organizational accounts.",
+    ],
+    [
+      AccountFlags.ADMIN,
+      "Administrator",
+      "Full administrative access to the platform. Can manage all accounts, repositories, and system settings.",
+    ],
+  ] as const;
+
+  const disabled = !isAuthorized(session, account, Actions.PutAccountFlags);
+  console.log({ disabled });
 
   return (
     <DynamicForm<AccountFlagsFormData>
-      fields={[
-        {
-          label: "Account Flags",
-          name: "flags",
-          type: "custom",
-          description:
-            "Select the permissions and capabilities for this account",
-          customComponent: (
-            <Flex direction="column" gap="3">
-              {Object.values(AccountFlags).map((flag) => (
-                <Card key={flag} variant="surface" size="2">
-                  <Flex align="center" gap="3">
-                    <Checkbox
-                      checked={initialValues.flags.includes(flag)}
-                      // onCheckedChange={(checked) =>
-                      //   // handleFlagChange(flag, checked as boolean)
-                      //   console.log(flag, checked)
-                      // }
-                      id={`flag-${flag}`}
-                    />
-                    <Flex direction="column" gap="1">
-                      <Text
-                        size="2"
-                        weight="medium"
-                        as="label"
-                        htmlFor={`flag-${flag}`}
-                      >
-                        {getFlagDisplayName(flag)}
-                      </Text>
-                      <Text size="1" color="gray" mt="1">
-                        {getFlagDescription(flag)}
-                      </Text>
-                    </Flex>
-                  </Flex>
-                </Card>
-              ))}
+      fields={fields.map(([name, displayName, description]) => ({
+        name,
+        description,
+        type: "custom" as const,
+        customComponent: (
+          <Label.Root htmlFor={name}>
+            <Flex align="center" gap="2">
+              <Checkbox
+                name={name}
+                id={name}
+                checked={flagValues[name]}
+                disabled={disabled}
+                onCheckedChange={(checked) =>
+                  setFlagValues((prev) => ({
+                    ...prev,
+                    [name]: checked === true,
+                  }))
+                }
+              />
+              <Text size="2">{displayName}</Text>
             </Flex>
-          ),
-        },
-      ]}
+          </Label.Root>
+        ),
+      }))}
       action={updateAccountFlags}
-      disabled={!isAuthorized(session, initialAccount, Actions.PutAccountFlags)}
-      submitButtonText="Update Flags"
+      disabled={disabled}
+      submitButtonText="Update"
       initialValues={initialValues}
-      hiddenFields={{
-        account_id: initialAccount.account_id,
-        // Add selected flags as hidden fields
-        ...initialValues.flags.reduce((acc, flag) => {
-          acc[`flag_${flag}`] = "on";
-          return acc;
-        }, {} as Record<string, string>),
-      }}
+      hiddenFields={{ account_id: account.account_id }}
     />
   );
-}
-
-function getFlagDisplayName(flag: AccountFlags): string {
-  switch (flag) {
-    case AccountFlags.ADMIN:
-      return "Administrator";
-    case AccountFlags.CREATE_REPOSITORIES:
-      return "Create Repositories";
-    case AccountFlags.CREATE_ORGANIZATIONS:
-      return "Create Organizations";
-    default:
-      return flag;
-  }
-}
-
-function getFlagDescription(flag: AccountFlags): string {
-  switch (flag) {
-    case AccountFlags.ADMIN:
-      return "Full administrative access to the platform. Can manage all accounts, repositories, and system settings.";
-    case AccountFlags.CREATE_REPOSITORIES:
-      return "Allows this account to create new repositories and manage repository settings.";
-    case AccountFlags.CREATE_ORGANIZATIONS:
-      return "Allows this account to create new organizations and manage organizational accounts.";
-    default:
-      return "";
-  }
 }
