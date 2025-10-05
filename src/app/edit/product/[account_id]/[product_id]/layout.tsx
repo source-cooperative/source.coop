@@ -14,7 +14,7 @@ import Link from "next/link";
 
 interface ProductLayoutProps {
   children: ReactNode;
-  params: { account_id: string; product_id: string };
+  params: Promise<{ account_id: string; product_id: string }>;
 }
 
 export default async function ProductLayout({
@@ -63,7 +63,7 @@ function ProductHeader({ product }: { product: Product }) {
   return (
     <Box mb="5" pb="4" style={{ borderBottom: "1px solid var(--gray-6)" }}>
       <Flex justify="between" align="center">
-        {/* Left side - Product account and id */}
+        {/* Left side - Product account and id */}H
         <Flex align="center" gap="3">
           <AvatarLinkCompact account={product.account!} />
           <Text size="2" color="gray" style={{ userSelect: "none" }}>
@@ -75,7 +75,6 @@ function ProductHeader({ product }: { product: Product }) {
             </Link>
           </Button>
         </Flex>
-
         {/* Right side - Link to product */}
         <RadixLink href={productUrl(product.account_id, product.product_id)}>
           <Flex align="center" gap="2">

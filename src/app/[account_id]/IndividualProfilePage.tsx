@@ -45,6 +45,7 @@ export async function IndividualProfilePage({
   return (
     <IndividualProfile
       account={account as IndividualAccount}
+      isOwner={session?.account?.account_id === account.account_id}
       ownedProducts={products}
       contributedProducts={[]}
       organizations={organizations}
