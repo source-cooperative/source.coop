@@ -10,7 +10,7 @@ import { Actions } from "@/types";
 import { accountsTable } from "@/lib/clients/database";
 import { notFound, redirect } from "next/navigation";
 import { CONFIG } from "@/lib/config";
-import { PersonIcon, LockClosedIcon } from "@radix-ui/react-icons";
+import { PersonIcon, LockClosedIcon, Pencil1Icon } from "@radix-ui/react-icons";
 import {
   editAccountProfileUrl,
   editAccountPermissionsUrl,
@@ -65,9 +65,9 @@ export default async function AccountLayout({
   const menuItems = [
     {
       id: "profile",
-      label: "Public Profile",
+      label: "Details",
       href: editAccountProfileUrl(account_id),
-      icon: <PersonIcon width="16" height="16" />,
+      icon: <Pencil1Icon width="16" height="16" />,
       condition: canReadAccount,
     },
     ...(accountToEdit.type === "organization"

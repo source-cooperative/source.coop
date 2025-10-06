@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { Pencil1Icon } from "@radix-ui/react-icons";
+import { Pencil1Icon, PersonIcon } from "@radix-ui/react-icons";
 import { Flex } from "@radix-ui/themes";
 import {
   SettingsLayout,
@@ -14,7 +14,11 @@ import { productsTable } from "@/lib/clients/database";
 import { notFound, redirect } from "next/navigation";
 import { CONFIG } from "@/lib/config";
 import { ExternalLink } from "@/components";
-import { productUrl, editProductDetailsUrl } from "@/lib/urls";
+import {
+  productUrl,
+  editProductDetailsUrl,
+  editProductMembershipsUrl,
+} from "@/lib/urls";
 import { getManageableAccounts } from "@/lib/clients/lookups";
 
 interface ProductLayoutProps {
@@ -56,6 +60,11 @@ export default async function ProductLayout({
   );
 
   const canEditProduct = isAuthorized(session, product, Actions.PutRepository);
+  const canReadMembership = isAuthorized(
+    session,
+    product,
+    Actions.ListRepositoryMemberships
+  );
 
   const menuItems = [
     {
@@ -64,6 +73,13 @@ export default async function ProductLayout({
       href: editProductDetailsUrl(account_id, product_id),
       icon: <Pencil1Icon width="16" height="16" />,
       condition: canEditProduct,
+    },
+    {
+      id: "memberships",
+      label: "Memberships",
+      href: editProductMembershipsUrl(account_id, product_id),
+      icon: <PersonIcon width="16" height="16" />,
+      condition: canReadMembership,
     },
   ];
 
