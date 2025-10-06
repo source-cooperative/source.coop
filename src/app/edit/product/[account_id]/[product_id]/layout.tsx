@@ -1,16 +1,21 @@
 import { ReactNode } from "react";
-import { SettingsLayout } from "@/components/features/settings";
+import { Pencil1Icon } from "@radix-ui/react-icons";
+import { Flex } from "@radix-ui/themes";
+import {
+  SettingsLayout,
+  ProductSelector,
+  SettingsHeader,
+  AccountSelector,
+} from "@/components/features/settings";
 import { getPageSession } from "@/lib/api/utils";
 import { isAuthorized } from "@/lib/api/authz";
-import { Actions, Product } from "@/types";
+import { Actions } from "@/types";
 import { productsTable } from "@/lib/clients/database";
 import { notFound, redirect } from "next/navigation";
 import { CONFIG } from "@/lib/config";
-import { Pencil1Icon, ExternalLinkIcon } from "@radix-ui/react-icons";
-import { AvatarLinkCompact, MonoText } from "@/components";
+import { ExternalLink } from "@/components";
 import { productUrl, editProductDetailsUrl } from "@/lib/urls";
-import { Box, Flex, Text, Button, Link as RadixLink } from "@radix-ui/themes";
-import Link from "next/link";
+import { getManageableAccounts } from "@/lib/clients/lookups";
 
 interface ProductLayoutProps {
   children: ReactNode;
@@ -39,6 +44,17 @@ export default async function ProductLayout({
     notFound();
   }
 
+  const manageableAccounts = await getManageableAccounts(session.account);
+
+  // Get manageable products for the dropdown
+  // Fetch all products for this account that the user can manage
+  let { products: manageableProducts } = await productsTable.listByAccount(
+    account_id
+  );
+  manageableProducts = manageableProducts.filter((p) =>
+    isAuthorized(session, p, Actions.PutRepository)
+  );
+
   const canEditProduct = isAuthorized(session, product, Actions.PutRepository);
 
   const menuItems = [
@@ -53,36 +69,23 @@ export default async function ProductLayout({
 
   return (
     <>
-      <ProductHeader product={product} />
+      <SettingsHeader>
+        <Flex align="center" gap="4">
+          <AccountSelector
+            currentAccount={product.account!}
+            manageableAccounts={manageableAccounts}
+          />
+          <ProductSelector
+            currentProduct={product}
+            manageableProducts={manageableProducts}
+          />
+        </Flex>
+
+        <ExternalLink href={productUrl(product.account_id, product.product_id)}>
+          View Product
+        </ExternalLink>
+      </SettingsHeader>
       <SettingsLayout menuItems={menuItems}>{children}</SettingsLayout>
     </>
-  );
-}
-
-function ProductHeader({ product }: { product: Product }) {
-  return (
-    <Box mb="5" pb="4" style={{ borderBottom: "1px solid var(--gray-6)" }}>
-      <Flex justify="between" align="center">
-        {/* Left side - Product account and id */}H
-        <Flex align="center" gap="3">
-          <AvatarLinkCompact account={product.account!} />
-          <Text size="2" color="gray" style={{ userSelect: "none" }}>
-            &gt;
-          </Text>
-          <Button variant="ghost" asChild>
-            <Link href={productUrl(product.account_id, product.product_id)}>
-              <MonoText>{product.product_id}</MonoText>
-            </Link>
-          </Button>
-        </Flex>
-        {/* Right side - Link to product */}
-        <RadixLink href={productUrl(product.account_id, product.product_id)}>
-          <Flex align="center" gap="2">
-            <Text size="1">View Product</Text>
-            <ExternalLinkIcon width="14" height="14" />
-          </Flex>
-        </RadixLink>
-      </Flex>
-    </Box>
   );
 }

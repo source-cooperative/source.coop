@@ -1,91 +1,62 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Box,
-  Flex,
-  Text,
-  DropdownMenu,
-  Link as RadixLink,
-} from "@radix-ui/themes";
-import { ExternalLinkIcon } from "@radix-ui/react-icons";
+import { Flex, DropdownMenu } from "@radix-ui/themes";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Account } from "@/types";
 import { AvatarLinkCompact } from "@/components";
-import { accountUrl, editAccountViewUrl } from "@/lib/urls";
+import { editAccountViewUrl } from "@/lib/urls";
 import { ChevronIcon } from "@/components/icons";
 
 interface AccountSelectorProps {
   currentAccount: Account;
   manageableAccounts: Account[];
+  linkToSameView?: boolean;
 }
 
 export function AccountSelector({
   currentAccount,
   manageableAccounts,
+  linkToSameView = false,
 }: AccountSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
 
-  // Extract current view from pathname (last segment)
-  const pathParts = pathname.split("/");
-  const currentView = pathParts[pathParts.length - 1];
-
   return (
-    <Box
-      style={{
-        borderBottom: "1px solid var(--gray-6)",
-        paddingBottom: "16px",
-        marginBottom: "24px",
-      }}
-    >
-      <Flex justify="between" align="center">
-        {/* Left side - Account info and switcher */}
-        <Flex align="center" gap="4">
-          <DropdownMenu.Root open={isOpen} onOpenChange={setIsOpen}>
-            <DropdownMenu.Trigger>
-              <Flex align="center" gap="2" style={{ cursor: "pointer" }}>
-                <AvatarLinkCompact
-                  account={currentAccount}
-                  link={false}
-                  showHoverCard={false}
-                />
-                <ChevronIcon isOpen={isOpen} />
-              </Flex>
-            </DropdownMenu.Trigger>
-
-            <DropdownMenu.Content variant="soft">
-              {manageableAccounts.map((account) => (
-                <Box key={account.account_id} px="0" my="1">
-                  <Link
-                    href={editAccountViewUrl(account.account_id, currentView)}
-                    onClick={() => setIsOpen(false)}
-                  >
-                    <DropdownMenu.Item
-                      style={{ cursor: "pointer", padding: "0rem" }}
-                    >
-                      <AvatarLinkCompact
-                        account={account}
-                        link={false}
-                        showHoverCard={false}
-                      />
-                    </DropdownMenu.Item>
-                  </Link>
-                </Box>
-              ))}
-            </DropdownMenu.Content>
-          </DropdownMenu.Root>
+    <DropdownMenu.Root open={isOpen} onOpenChange={setIsOpen}>
+      <DropdownMenu.Trigger>
+        <Flex align="center" gap="2" style={{ cursor: "pointer" }}>
+          <AvatarLinkCompact
+            account={currentAccount}
+            link={false}
+            showHoverCard={false}
+          />
+          <ChevronIcon isOpen={isOpen} />
         </Flex>
+      </DropdownMenu.Trigger>
 
-        {/* Right side - Link to profile */}
-        <RadixLink href={accountUrl(currentAccount.account_id)}>
-          <Flex align="center" gap="2">
-            <Text size="1">View Profile</Text>
-            <ExternalLinkIcon width="14" height="14" />
-          </Flex>
-        </RadixLink>
-      </Flex>
-    </Box>
+      <DropdownMenu.Content variant="soft">
+        {manageableAccounts.map((account) => (
+          <DropdownMenu.Item key={account.account_id}>
+            <Link
+              href={editAccountViewUrl(
+                account.account_id,
+                // We want to send user to the same view they are in, but for different account
+                linkToSameView ? pathname.split("/").pop()! : ""
+              )}
+              onClick={() => setIsOpen(false)}
+            >
+              <AvatarLinkCompact
+                account={account}
+                link={false}
+                showHoverCard={false}
+                size="1"
+              />
+            </Link>
+          </DropdownMenu.Item>
+        ))}
+      </DropdownMenu.Content>
+    </DropdownMenu.Root>
   );
 }

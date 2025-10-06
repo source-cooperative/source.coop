@@ -1,5 +1,5 @@
 // For product detail page header
-import { Grid, Box, Button } from "@radix-ui/themes";
+import { Grid, Box } from "@radix-ui/themes";
 import type { Product } from "@/types";
 import { ProductSummaryCard } from "./ProductSummaryCard";
 import { ProductMetaCard } from "./ProductMetaCard";

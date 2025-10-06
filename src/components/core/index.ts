@@ -8,4 +8,5 @@ export type { FormField } from "./DynamicForm";
 export { SmallColumnContainer } from "./SmallColumnContainer";
 export { StatusPage, NotFoundPage, NotAuthorizedPage } from "./StatusPage";
 export { EditButton } from "./EditButton";
+export { ExternalLink } from "./ExternalLink";
 export * from "./AccountLinks";

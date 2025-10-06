@@ -2,20 +2,23 @@ import { ReactNode } from "react";
 import {
   AccountSelector,
   SettingsLayout,
+  SettingsHeader,
 } from "@/components/features/settings";
 import { getPageSession } from "@/lib/api/utils";
 import { isAuthorized } from "@/lib/api/authz";
-import { Actions, Account } from "@/types";
-import { accountsTable, membershipsTable } from "@/lib/clients/database";
+import { Actions } from "@/types";
+import { accountsTable } from "@/lib/clients/database";
 import { notFound, redirect } from "next/navigation";
-import { MembershipRole, MembershipState } from "@/types";
 import { CONFIG } from "@/lib/config";
 import { PersonIcon, LockClosedIcon } from "@radix-ui/react-icons";
 import {
   editAccountProfileUrl,
   editAccountPermissionsUrl,
   editAccountMembershipsUrl,
+  accountUrl,
 } from "@/lib/urls";
+import { ExternalLink } from "@/components";
+import { getManageableAccounts } from "@/lib/clients/lookups";
 
 interface AccountLayoutProps {
   children: ReactNode;
@@ -46,25 +49,7 @@ export default async function AccountLayout({
   }
 
   // Get manageable accounts for the dropdown
-  const memberships = await membershipsTable.listByUser(
-    userSession.account.account_id
-  );
-  const manageableAccounts: Account[] = [
-    userSession.account,
-    ...(await accountsTable.fetchManyByIds(
-      memberships
-        // Filter for active memberships
-        .filter(({ state }) => state === MembershipState.Member)
-        // Filter for owner or maintainer roles
-        .filter(({ role }) =>
-          [MembershipRole.Owners, MembershipRole.Maintainers].includes(role)
-        )
-        // Filter for organization-level memberships (not product-specific)
-        .filter(({ repository_id }) => repository_id === undefined)
-        // Get the account IDs
-        .map((membership) => membership.membership_account_id)
-    )),
-  ];
+  const manageableAccounts = await getManageableAccounts(userSession.account);
 
   const canReadAccount = isAuthorized(
     userSession,
@@ -112,10 +97,18 @@ export default async function AccountLayout({
 
   return (
     <>
-      <AccountSelector
-        currentAccount={accountToEdit}
-        manageableAccounts={manageableAccounts}
-      />
+      <SettingsHeader>
+        <AccountSelector
+          currentAccount={accountToEdit}
+          manageableAccounts={manageableAccounts}
+          linkToSameView
+        />
+
+        <ExternalLink href={accountUrl(accountToEdit.account_id)}>
+          View Profile
+        </ExternalLink>
+      </SettingsHeader>
+
       <SettingsLayout menuItems={menuItems}>{children}</SettingsLayout>
     </>
   );

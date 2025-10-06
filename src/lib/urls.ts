@@ -36,6 +36,11 @@ export const editAccountViewUrl = (account_id: string, view: string) =>
   `/edit/account/${account_id}/${view}`;
 export const editProductUrl = (account_id: string, product_id: string) =>
   `/edit/product/${account_id}/${product_id}`;
+export const editProductViewUrl = (
+  account_id: string,
+  product_id: string,
+  view: string
+) => `/edit/product/${account_id}/${product_id}/${view}`;
 export const editProductDetailsUrl = (account_id: string, product_id: string) =>
   `/edit/product/${account_id}/${product_id}/details`;
 export const editProductAccessUrl = (account_id: string, product_id: string) =>
