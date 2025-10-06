@@ -44,7 +44,7 @@ interface DynamicFormProps<T extends Record<string, any>> {
     formData: FormData
   ) => Promise<FormState<T>> | FormState<T>;
   submitButtonText?: string;
-  hiddenFields?: Record<string, string>;
+  hiddenFields?: Record<string, string | undefined>;
   className?: string;
   disabled?: boolean;
   initialValues?: Partial<T>; // Initial values for form fields

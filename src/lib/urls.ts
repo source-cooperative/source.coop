@@ -43,14 +43,10 @@ export const editProductViewUrl = (
 ) => `/edit/product/${account_id}/${product_id}/${view}`;
 export const editProductDetailsUrl = (account_id: string, product_id: string) =>
   `/edit/product/${account_id}/${product_id}/details`;
-export const editProductAccessUrl = (account_id: string, product_id: string) =>
-  `/edit/product/${account_id}/${product_id}/access`;
-export const editProductVisibilityUrl = (
+export const editProductMembershipsUrl = (
   account_id: string,
   product_id: string
-) => `/edit/product/${account_id}/${product_id}/visibility`;
-export const editProductArchiveUrl = (account_id: string, product_id: string) =>
-  `/edit/product/${account_id}/${product_id}/archive`;
+) => `/edit/product/${account_id}/${product_id}/memberships`;
 export const editProfileUrl = (account_id: string) =>
   `/edit/profile/${account_id}`;
 

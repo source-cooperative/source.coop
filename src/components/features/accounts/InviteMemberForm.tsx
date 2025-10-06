@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Account, MembershipRole } from "@/types";
+import { Account, MembershipRole, Product } from "@/types";
 import { Flex, Button, Dialog } from "@radix-ui/themes";
 import { DynamicForm, FormField } from "@/components/core";
 import { inviteMember } from "@/lib/actions/memberships";
@@ -9,14 +9,19 @@ import { PlusIcon } from "@radix-ui/react-icons";
 
 interface InviteMemberFormProps {
   organization: Account;
+  product?: Product;
 }
 
 interface InviteMemberFormData {
   account_id: string;
   role: MembershipRole;
+  product_id?: string;
 }
 
-export function InviteMemberForm({ organization }: InviteMemberFormProps) {
+export function InviteMemberForm({
+  organization,
+  product,
+}: InviteMemberFormProps) {
   const [open, setOpen] = useState(false);
 
   const fields: FormField<InviteMemberFormData>[] = [
@@ -69,7 +74,10 @@ export function InviteMemberForm({ organization }: InviteMemberFormProps) {
           submitButtonText="Send Invitation"
           initialValues={initialValues}
           hiddenFields={{
-            organization_id: organization.account_id,
+            organization_id: product
+              ? product.account_id
+              : organization.account_id,
+            product_id: product?.product_id,
           }}
           onSuccess={() => setOpen(false)}
         />

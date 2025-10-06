@@ -1,9 +1,9 @@
 import { Box, Flex } from "@radix-ui/themes";
-import { Actions, Membership, MembershipRole, MembershipState } from "@/types";
+import { Actions, Membership, MembershipRole } from "@/types";
 import {
   accountsTable,
-  isOrganizationalAccount,
   membershipsTable,
+  productsTable,
 } from "@/lib/clients/database";
 import { FormTitle, InviteMemberForm, MembershipsTable } from "@/components";
 import { notFound, redirect } from "next/navigation";
@@ -12,43 +12,42 @@ import { isAuthorized } from "@/lib/api/authz";
 import { editAccountProfileUrl } from "@/lib/urls";
 
 interface MembershipsPageProps {
-  params: Promise<{ account_id: string }>;
+  params: Promise<{ account_id: string; product_id: string }>;
 }
 
 export default async function MembershipsPage({
   params,
 }: MembershipsPageProps) {
-  const { account_id } = await params;
+  const { account_id, product_id } = await params;
   const account = await accountsTable.fetchById(account_id);
   if (!account) {
     notFound();
   }
-
-  if (!isOrganizationalAccount(account)) {
-    redirect(editAccountProfileUrl(account_id));
+  const product = await productsTable.fetchById(account_id, product_id);
+  if (!product) {
+    notFound();
   }
 
   const userSession = await getPageSession();
-  if (!isAuthorized(userSession, account, Actions.ListAccountMemberships)) {
+  if (!isAuthorized(userSession, product, Actions.ListRepositoryMemberships)) {
     redirect(editAccountProfileUrl(account_id));
   }
 
-  const memberships = await membershipsTable.listByAccount(account_id);
-  const activeMemberships = memberships
-    .filter(
-      (membership) => !membership.repository_id // Only show organization-level memberships, not repository-specific ones
-    )
-    .sort((a, b) => {
-      // Define role hierarchy: Owners > Maintainers > Writers > Readers
-      const roleOrder = {
-        [MembershipRole.Owners]: 0,
-        [MembershipRole.Maintainers]: 1,
-        [MembershipRole.WriteData]: 2,
-        [MembershipRole.ReadData]: 3,
-      };
+  const memberships = await membershipsTable.listByAccount(
+    account_id,
+    product_id
+  );
+  const activeMemberships = memberships.sort((a, b) => {
+    // Define role hierarchy: Owners > Maintainers > Writers > Readers
+    const roleOrder = {
+      [MembershipRole.Owners]: 0,
+      [MembershipRole.Maintainers]: 1,
+      [MembershipRole.WriteData]: 2,
+      [MembershipRole.ReadData]: 3,
+    };
 
-      return roleOrder[a.role] - roleOrder[b.role];
-    });
+    return roleOrder[a.role] - roleOrder[b.role];
+  });
 
   // Get account details for each membership
   const memberAccountIds = activeMemberships.map((m) => m.account_id);
@@ -71,10 +70,12 @@ export default async function MembershipsPage({
         <Box>
           <FormTitle
             title="Memberships"
-            description="Manage organization members and their roles"
+            description="Manage product members and their roles"
           />
         </Box>
-        {canInviteMembership && <InviteMemberForm organization={account} />}
+        {canInviteMembership && (
+          <InviteMemberForm organization={account} product={product} />
+        )}
       </Flex>
 
       <MembershipsTable
@@ -82,7 +83,7 @@ export default async function MembershipsPage({
         memberAccountsMap={memberAccountsMap}
         canRevokeMembership={canRevokeMembership}
         emptyStateMessage="No members yet"
-        emptyStateDescription="Invite people to join your organization"
+        emptyStateDescription="Invite people to join your product"
       />
     </Box>
   );
