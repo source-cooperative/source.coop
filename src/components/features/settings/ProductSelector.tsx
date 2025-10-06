@@ -65,13 +65,8 @@ function ProductDisplay({
   selected?: boolean;
 }) {
   return (
-    <>
-      <Text size="2" color="gray" weight={selected ? "bold" : "regular"} mx="1">
-        {product.title}
-      </Text>
-      <Text size="1" color="gray">
-        <MonoText>{product.product_id}</MonoText>
-      </Text>
-    </>
+    <Text size="2" color="gray" weight={selected ? "bold" : "regular"}>
+      {product.title}
+    </Text>
   );
 }
