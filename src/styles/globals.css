@@ -114,3 +114,7 @@ a:hover {
     opacity: 0.5;
   }
 }
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}

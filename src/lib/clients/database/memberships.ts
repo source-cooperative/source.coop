@@ -117,22 +117,41 @@ export class MembershipsTable extends BaseTable {
 
   async update(membership: Membership): Promise<Membership> {
     try {
+      // Build UpdateExpression - only include repository_id if it exists
+      const updateParts = [
+        "account_id = :account_id",
+        "membership_account_id = :membership_account_id",
+        "#role = :role",
+        "#state = :state",
+        "state_changed = :state_changed",
+      ];
+
+      const expressionAttributeValues: Record<string, any> = {
+        ":account_id": membership.account_id,
+        ":membership_account_id": membership.membership_account_id,
+        ":role": membership.role,
+        ":state": membership.state,
+        ":state_changed": membership.state_changed,
+      };
+
+      // Only include repository_id if it exists
+      if (membership.repository_id !== undefined) {
+        updateParts.push("repository_id = :repository_id");
+        expressionAttributeValues[":repository_id"] = membership.repository_id;
+      }
+
       const result = await this.client.send(
         new UpdateCommand({
           TableName: this.table,
           Key: {
             membership_id: membership.membership_id,
           },
-          UpdateExpression:
-            "SET account_id = :account_id, membership_account_id = :membership_account_id, repository_id = :repository_id, role = :role, state = :state, state_changed = :state_changed",
-          ExpressionAttributeValues: {
-            ":account_id": membership.account_id,
-            ":membership_account_id": membership.membership_account_id,
-            ":repository_id": membership.repository_id,
-            ":role": membership.role,
-            ":state": membership.state,
-            ":state_changed": membership.state_changed,
+          UpdateExpression: `SET ${updateParts.join(", ")}`,
+          ExpressionAttributeNames: {
+            "#role": "role", // role is a reserved word in DynamoDB
+            "#state": "state", // state is also a reserved word in DynamoDB
           },
+          ExpressionAttributeValues: expressionAttributeValues,
           ReturnValues: "ALL_NEW",
         })
       );

@@ -2,8 +2,20 @@
 
 import { useState } from "react";
 import { Membership, MembershipRole } from "@/types";
-import { Badge, Select, Flex, BadgeProps } from "@radix-ui/themes";
+import {
+  Badge,
+  Select,
+  Flex,
+  BadgeProps,
+  Text,
+  Callout,
+} from "@radix-ui/themes";
 import { updateMemberRole } from "@/lib/actions/memberships";
+import {
+  CheckCircledIcon,
+  CrossCircledIcon,
+  UpdateIcon,
+} from "@radix-ui/react-icons";
 
 interface InlineRoleSelectorProps {
   membership: Membership;
@@ -16,6 +28,8 @@ export function InlineRoleSelector({
 }: InlineRoleSelectorProps) {
   const [isUpdating, setIsUpdating] = useState(false);
   const [currentRole, setCurrentRole] = useState(membership.role);
+  const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
+  const [errorMessage, setErrorMessage] = useState<string>("");
 
   const getRoleBadgeColor = (role: MembershipRole): BadgeProps["color"] => {
     switch (role) {
@@ -51,6 +65,9 @@ export function InlineRoleSelector({
     if (newRole === membership.role || isUpdating) return;
 
     setIsUpdating(true);
+    setStatus("idle");
+    setErrorMessage("");
+    
     try {
       const formData = new FormData();
       formData.append("membership_id", membership.membership_id);
@@ -60,16 +77,30 @@ export function InlineRoleSelector({
 
       if (result.success) {
         setCurrentRole(newRole);
-        // The page will revalidate automatically due to revalidatePath in the action
+        setStatus("success");
+        // Clear success status after 2 seconds
+        setTimeout(() => setStatus("idle"), 2000);
       } else {
         // Revert on error
         setCurrentRole(membership.role);
-        console.error("Failed to update role:", result.message);
+        setStatus("error");
+        setErrorMessage(result.message || "Failed to update role");
+        // Clear error status after 5 seconds
+        setTimeout(() => {
+          setStatus("idle");
+          setErrorMessage("");
+        }, 5000);
       }
     } catch (error) {
       // Revert on error
       setCurrentRole(membership.role);
-      console.error("Failed to update role:", error);
+      setStatus("error");
+      setErrorMessage("Network error occurred");
+      // Clear error status after 5 seconds
+      setTimeout(() => {
+        setStatus("idle");
+        setErrorMessage("");
+      }, 5000);
     } finally {
       setIsUpdating(false);
     }
@@ -84,41 +115,60 @@ export function InlineRoleSelector({
   }
 
   return (
-    <Select.Root
-      value={currentRole}
-      onValueChange={handleRoleChange}
-      disabled={isUpdating}
-    >
-      <Select.Trigger
-        variant="ghost"
-        style={{ cursor: disabled ? "default" : "pointer" }}
+    <Flex direction="column" gap="1">
+      <Select.Root
+        value={currentRole}
+        onValueChange={handleRoleChange}
+        disabled={isUpdating}
       >
-        <Flex align="center" gap="2">
-          <Badge color={getRoleBadgeColor(currentRole)}>
-            {getRoleDisplayName(currentRole)}
-          </Badge>
-        </Flex>
-      </Select.Trigger>
-      <Select.Content variant="soft">
-        <Select.Item value={MembershipRole.Owners}>
-          <Badge color={getRoleBadgeColor(MembershipRole.Owners)}>Owner</Badge>
-        </Select.Item>
-        <Select.Item value={MembershipRole.Maintainers}>
-          <Badge color={getRoleBadgeColor(MembershipRole.Maintainers)}>
-            Maintainer
-          </Badge>
-        </Select.Item>
-        <Select.Item value={MembershipRole.WriteData}>
-          <Badge color={getRoleBadgeColor(MembershipRole.WriteData)}>
-            Writer
-          </Badge>
-        </Select.Item>
-        <Select.Item value={MembershipRole.ReadData}>
-          <Badge color={getRoleBadgeColor(MembershipRole.ReadData)}>
-            Reader
-          </Badge>
-        </Select.Item>
-      </Select.Content>
-    </Select.Root>
+        <Select.Trigger
+          variant="ghost"
+          style={{ cursor: disabled ? "default" : "pointer" }}
+        >
+          <Flex align="center" gap="2">
+            <Badge color={getRoleBadgeColor(currentRole)}>
+              {getRoleDisplayName(currentRole)}
+            </Badge>
+            {isUpdating && (
+              <UpdateIcon className="animate-spin" width="12" height="12" />
+            )}
+            {status === "success" && (
+              <CheckCircledIcon width="12" height="12" color="var(--green-9)" />
+            )}
+            {status === "error" && (
+              <CrossCircledIcon width="12" height="12" color="var(--red-9)" />
+            )}
+          </Flex>
+        </Select.Trigger>
+        <Select.Content variant="soft">
+          <Select.Item value={MembershipRole.Owners}>
+            <Badge color={getRoleBadgeColor(MembershipRole.Owners)}>
+              Owner
+            </Badge>
+          </Select.Item>
+          <Select.Item value={MembershipRole.Maintainers}>
+            <Badge color={getRoleBadgeColor(MembershipRole.Maintainers)}>
+              Maintainer
+            </Badge>
+          </Select.Item>
+          <Select.Item value={MembershipRole.WriteData}>
+            <Badge color={getRoleBadgeColor(MembershipRole.WriteData)}>
+              Writer
+            </Badge>
+          </Select.Item>
+          <Select.Item value={MembershipRole.ReadData}>
+            <Badge color={getRoleBadgeColor(MembershipRole.ReadData)}>
+              Reader
+            </Badge>
+          </Select.Item>
+        </Select.Content>
+      </Select.Root>
+
+      {status === "error" && errorMessage && (
+        <Text size="1" color="red">
+          {errorMessage}
+        </Text>
+      )}
+    </Flex>
   );
 }
