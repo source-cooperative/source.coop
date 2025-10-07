@@ -2,20 +2,29 @@
 
 import { useState } from "react";
 import { Membership, MembershipRole } from "@/types";
-import {
-  Badge,
-  Select,
-  Flex,
-  BadgeProps,
-  Text,
-  Callout,
-} from "@radix-ui/themes";
+import { Badge, Select, Flex, BadgeProps, Text } from "@radix-ui/themes";
 import { updateMemberRole } from "@/lib/actions/memberships";
 import {
   CheckCircledIcon,
   CrossCircledIcon,
   UpdateIcon,
 } from "@radix-ui/react-icons";
+
+interface RoleBadgeProps {
+  role: MembershipRole;
+}
+
+function RoleBadge({ role }: RoleBadgeProps) {
+  const roleBadgeMap: Record<MembershipRole, [string, BadgeProps["color"]]> = {
+    [MembershipRole.Owners]: ["Owner", "amber"],
+    [MembershipRole.Maintainers]: ["Maintainer", "iris"],
+    [MembershipRole.WriteData]: ["Writer", "green"],
+    [MembershipRole.ReadData]: ["Reader", "blue"],
+  };
+  const [displayName, color] = roleBadgeMap[role] || [role, "gray"];
+
+  return <Badge color={color}>{displayName}</Badge>;
+}
 
 interface InlineRoleSelectorProps {
   membership: Membership;
@@ -31,43 +40,13 @@ export function InlineRoleSelector({
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState<string>("");
 
-  const getRoleBadgeColor = (role: MembershipRole): BadgeProps["color"] => {
-    switch (role) {
-      case MembershipRole.Owners:
-        return "amber";
-      case MembershipRole.Maintainers:
-        return "iris";
-      case MembershipRole.WriteData:
-        return "green";
-      case MembershipRole.ReadData:
-        return "blue";
-      default:
-        return "gray";
-    }
-  };
-
-  const getRoleDisplayName = (role: MembershipRole): string => {
-    switch (role) {
-      case MembershipRole.Owners:
-        return "Owner";
-      case MembershipRole.Maintainers:
-        return "Maintainer";
-      case MembershipRole.WriteData:
-        return "Writer";
-      case MembershipRole.ReadData:
-        return "Reader";
-      default:
-        return role;
-    }
-  };
-
   const handleRoleChange = async (newRole: MembershipRole) => {
     if (newRole === membership.role || isUpdating) return;
 
     setIsUpdating(true);
     setStatus("idle");
     setErrorMessage("");
-    
+
     try {
       const formData = new FormData();
       formData.append("membership_id", membership.membership_id);
@@ -107,11 +86,7 @@ export function InlineRoleSelector({
   };
 
   if (disabled) {
-    return (
-      <Badge color={getRoleBadgeColor(currentRole)}>
-        {getRoleDisplayName(currentRole)}
-      </Badge>
-    );
+    return <RoleBadge role={currentRole} />;
   }
 
   return (
@@ -126,9 +101,7 @@ export function InlineRoleSelector({
           style={{ cursor: disabled ? "default" : "pointer" }}
         >
           <Flex align="center" gap="2">
-            <Badge color={getRoleBadgeColor(currentRole)}>
-              {getRoleDisplayName(currentRole)}
-            </Badge>
+            <RoleBadge role={currentRole} />
             {isUpdating && (
               <UpdateIcon className="animate-spin" width="12" height="12" />
             )}
@@ -142,24 +115,16 @@ export function InlineRoleSelector({
         </Select.Trigger>
         <Select.Content variant="soft">
           <Select.Item value={MembershipRole.Owners}>
-            <Badge color={getRoleBadgeColor(MembershipRole.Owners)}>
-              Owner
-            </Badge>
+            <RoleBadge role={MembershipRole.Owners} />
           </Select.Item>
           <Select.Item value={MembershipRole.Maintainers}>
-            <Badge color={getRoleBadgeColor(MembershipRole.Maintainers)}>
-              Maintainer
-            </Badge>
+            <RoleBadge role={MembershipRole.Maintainers} />
           </Select.Item>
           <Select.Item value={MembershipRole.WriteData}>
-            <Badge color={getRoleBadgeColor(MembershipRole.WriteData)}>
-              Writer
-            </Badge>
+            <RoleBadge role={MembershipRole.WriteData} />
           </Select.Item>
           <Select.Item value={MembershipRole.ReadData}>
-            <Badge color={getRoleBadgeColor(MembershipRole.ReadData)}>
-              Reader
-            </Badge>
+            <RoleBadge role={MembershipRole.ReadData} />
           </Select.Item>
         </Select.Content>
       </Select.Root>
