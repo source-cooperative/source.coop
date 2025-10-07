@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Membership, MembershipState } from "@/types";
-import { Select, Flex, Text, Badge } from "@radix-ui/themes";
+import { Select, Flex, Text, Badge, BadgeProps } from "@radix-ui/themes";
 import { revokeMembership } from "@/lib/actions/memberships";
 import {
   CheckCircledIcon,
@@ -15,6 +15,17 @@ interface InlineStateSelectorProps {
   disabled?: boolean;
 }
 
+function StateBadge({ state }: { state: MembershipState }) {
+  const stateBadgeMap: Record<MembershipState, [string, BadgeProps["color"]]> =
+    {
+      [MembershipState.Member]: ["Member", "green"],
+      [MembershipState.Invited]: ["Invited", "blue"],
+      [MembershipState.Revoked]: ["Revoked", "red"],
+    };
+  const [displayName, color] = stateBadgeMap[state] || [state, "gray"];
+  return <Badge color={color}>{displayName}</Badge>;
+}
+
 export function InlineStateSelector({
   membership,
   disabled = false,
@@ -23,32 +34,6 @@ export function InlineStateSelector({
   const [currentState, setCurrentState] = useState(membership.state);
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState<string>("");
-
-  const getStateBadgeColor = (state: MembershipState) => {
-    switch (state) {
-      case MembershipState.Member:
-        return "green";
-      case MembershipState.Invited:
-        return "blue";
-      case MembershipState.Revoked:
-        return "red";
-      default:
-        return "gray";
-    }
-  };
-
-  const getStateDisplayName = (state: MembershipState) => {
-    switch (state) {
-      case MembershipState.Member:
-        return "Member";
-      case MembershipState.Invited:
-        return "Invited";
-      case MembershipState.Revoked:
-        return "Revoked";
-      default:
-        return state;
-    }
-  };
 
   const handleStateChange = async (newState: MembershipState) => {
     if (newState === membership.state || isUpdating) return;
@@ -123,11 +108,7 @@ export function InlineStateSelector({
   };
 
   if (disabled) {
-    return (
-      <Badge color={getStateBadgeColor(currentState)}>
-        {getStateDisplayName(currentState)}
-      </Badge>
-    );
+    return <StateBadge state={currentState} />;
   }
 
   return (
@@ -142,9 +123,7 @@ export function InlineStateSelector({
           style={{ cursor: disabled ? "default" : "pointer" }}
         >
           <Flex align="center" gap="2">
-            <Badge color={getStateBadgeColor(currentState)}>
-              {getStateDisplayName(currentState)}
-            </Badge>
+            <StateBadge state={currentState} />
             {isUpdating && (
               <UpdateIcon className="animate-spin" width="12" height="12" />
             )}
@@ -165,7 +144,7 @@ export function InlineStateSelector({
               currentState === MembershipState.Revoked
             }
           >
-            <Badge color="green">Member</Badge>
+            <StateBadge state={MembershipState.Member} />
           </Select.Item>
           <Select.Item
             value={MembershipState.Invited}
@@ -174,13 +153,13 @@ export function InlineStateSelector({
               currentState === MembershipState.Member
             }
           >
-            <Badge color="blue">Invited</Badge>
+            <StateBadge state={MembershipState.Invited} />
           </Select.Item>
           <Select.Item
             value={MembershipState.Revoked}
             disabled={currentState === MembershipState.Revoked}
           >
-            <Badge color="red">Revoked</Badge>
+            <StateBadge state={MembershipState.Revoked} />
           </Select.Item>
         </Select.Content>
       </Select.Root>
