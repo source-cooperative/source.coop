@@ -4,7 +4,6 @@ import { useState } from "react";
 import { Flex, Text, DropdownMenu } from "@radix-ui/themes";
 import Link from "next/link";
 import { Product } from "@/types";
-import { MonoText } from "@/components";
 import { editProductViewUrl } from "@/lib/urls";
 import { ChevronIcon } from "@/components/icons";
 import { usePathname } from "next/navigation";
@@ -28,6 +27,7 @@ export function ProductSelector({
   return (
     <DropdownMenu.Root open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenu.Trigger>
+        {/* TODO: Handle empty state */}
         <Flex align="center" gap="2" style={{ cursor: "pointer" }}>
           <ProductDisplay product={currentProduct} />
           <ChevronIcon isOpen={isOpen} />
@@ -35,6 +35,7 @@ export function ProductSelector({
       </DropdownMenu.Trigger>
 
       <DropdownMenu.Content variant="soft">
+        {/* TODO: Handle empty state */}
         {manageableProducts.map((product) => (
           <DropdownMenu.Item key={product.product_id}>
             <Link

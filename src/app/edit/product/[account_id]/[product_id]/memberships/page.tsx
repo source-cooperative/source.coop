@@ -20,7 +20,8 @@ export default async function MembershipsPage({
 }: MembershipsPageProps) {
   const { account_id, product_id } = await params;
   const account = await accountsTable.fetchById(account_id);
-  if (!account) {
+  const userSession = await getPageSession();
+  if (!account || !userSession) {
     notFound();
   }
   const product = await productsTable.fetchById(account_id, product_id);
@@ -28,7 +29,6 @@ export default async function MembershipsPage({
     notFound();
   }
 
-  const userSession = await getPageSession();
   if (!isAuthorized(userSession, product, Actions.ListRepositoryMemberships)) {
     redirect(editAccountProfileUrl(account_id));
   }
@@ -61,8 +61,6 @@ export default async function MembershipsPage({
     account,
     Actions.InviteMembership
   );
-  const canRevokeMembership = (membership: Membership) =>
-    isAuthorized(userSession, membership, Actions.RevokeMembership);
 
   return (
     <Box>
@@ -81,7 +79,7 @@ export default async function MembershipsPage({
       <MembershipsTable
         memberships={activeMemberships}
         memberAccountsMap={memberAccountsMap}
-        canRevokeMembership={canRevokeMembership}
+        userSession={userSession}
         emptyStateMessage="No members yet"
         emptyStateDescription="Invite people to join your product"
       />

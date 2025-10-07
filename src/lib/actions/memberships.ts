@@ -91,7 +91,8 @@ export async function inviteMember(
     };
 
     // Validate the invitation
-    const validatedInvitation = MembershipInvitationSchema.parse(membershipInvitation);
+    const validatedInvitation =
+      MembershipInvitationSchema.parse(membershipInvitation);
 
     // Create the membership object
     const membership: Membership = {
@@ -113,7 +114,9 @@ export async function inviteMember(
     }
 
     // Check if user is already a member or has pending invitation
-    const existingMemberships = await membershipsTable.listByAccount(organizationId);
+    const existingMemberships = await membershipsTable.listByAccount(
+      organizationId
+    );
     const existingMembership = existingMemberships.find(
       (m) =>
         m.account_id === accountId &&
@@ -158,101 +161,6 @@ export async function inviteMember(
       fieldErrors: {},
       data: formData,
       message: "Failed to invite member. Please try again.",
-      success: false,
-    };
-  }
-}
-
-/**
- * Updates a member's role in an organization.
- *
- * @param initialState - The initial state of the form.
- * @param formData - The form data containing the role update.
- */
-export async function updateMemberRole(
-  initialState: any,
-  formData: FormData
-): Promise<FormState<any>> {
-  const session = await getPageSession();
-
-  if (!session?.identity_id) {
-    return {
-      fieldErrors: {},
-      data: formData,
-      message: "Unauthenticated",
-      success: false,
-    };
-  }
-
-  const membershipId = formData.get("membership_id") as string;
-  const newRole = formData.get("role") as MembershipRole;
-
-  if (!membershipId || !newRole) {
-    return {
-      fieldErrors: {},
-      data: formData,
-      message: "Missing required fields",
-      success: false,
-    };
-  }
-
-  try {
-    // Get the existing membership
-    const existingMembership = await membershipsTable.fetchById(membershipId);
-    if (!existingMembership) {
-      return {
-        fieldErrors: {},
-        data: formData,
-        message: "Membership not found",
-        success: false,
-      };
-    }
-
-    // Check authorization
-    if (!isAuthorized(session, existingMembership, Actions.UpdateMembershipRole)) {
-      return {
-        fieldErrors: {},
-        data: formData,
-        message: "Unauthorized to update this membership",
-        success: false,
-      };
-    }
-
-    // Update the membership role
-    const updatedMembership = {
-      ...existingMembership,
-      role: newRole as MembershipRole,
-      state_changed: new Date().toISOString(),
-    };
-
-    await membershipsTable.update(updatedMembership);
-
-    LOGGER.info("Successfully updated member role", {
-      operation: "updateMemberRole",
-      context: "membership update",
-      metadata: { membershipId, newRole },
-    });
-
-    // Revalidate the memberships page
-    revalidatePath(editAccountProfileUrl(existingMembership.membership_account_id));
-
-    return {
-      fieldErrors: {},
-      data: formData,
-      message: "Member role updated successfully!",
-      success: true,
-    };
-  } catch (error) {
-    LOGGER.error("Error updating member role", {
-      operation: "updateMemberRole",
-      context: "membership update",
-      error: error,
-    });
-
-    return {
-      fieldErrors: {},
-      data: formData,
-      message: "Failed to update member role. Please try again.",
       success: false,
     };
   }
@@ -328,7 +236,9 @@ export async function revokeMembership(
     });
 
     // Revalidate the memberships page
-    revalidatePath(editAccountProfileUrl(existingMembership.membership_account_id));
+    revalidatePath(
+      editAccountProfileUrl(existingMembership.membership_account_id)
+    );
 
     return {
       fieldErrors: {},

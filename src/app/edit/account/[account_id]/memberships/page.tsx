@@ -20,7 +20,8 @@ export default async function MembershipsPage({
 }: MembershipsPageProps) {
   const { account_id } = await params;
   const account = await accountsTable.fetchById(account_id);
-  if (!account) {
+  const userSession = await getPageSession();
+  if (!account || !userSession) {
     notFound();
   }
 
@@ -28,7 +29,6 @@ export default async function MembershipsPage({
     redirect(editAccountProfileUrl(account_id));
   }
 
-  const userSession = await getPageSession();
   if (!isAuthorized(userSession, account, Actions.ListAccountMemberships)) {
     redirect(editAccountProfileUrl(account_id));
   }
@@ -62,8 +62,6 @@ export default async function MembershipsPage({
     account,
     Actions.InviteMembership
   );
-  const canRevokeMembership = (membership: Membership) =>
-    isAuthorized(userSession, membership, Actions.RevokeMembership);
 
   return (
     <Box>
@@ -80,7 +78,7 @@ export default async function MembershipsPage({
       <MembershipsTable
         memberships={activeMemberships}
         memberAccountsMap={memberAccountsMap}
-        canRevokeMembership={canRevokeMembership}
+        userSession={userSession}
         emptyStateMessage="No members yet"
         emptyStateDescription="Invite people to join your organization"
       />
