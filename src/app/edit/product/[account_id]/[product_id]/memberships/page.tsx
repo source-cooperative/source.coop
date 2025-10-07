@@ -11,13 +11,16 @@ import { getPageSession } from "@/lib";
 import { isAuthorized } from "@/lib/api/authz";
 import { editAccountProfileUrl } from "@/lib/urls";
 
-interface MembershipsPageProps {
+export async function generateMetadata({ params }: PageProps) {
+  const { account_id, product_id } = await params;
+  const product = await productsTable.fetchById(account_id, product_id);
+  return { title: `Edit ${product!.title} memberships` };
+}
+interface PageProps {
   params: Promise<{ account_id: string; product_id: string }>;
 }
 
-export default async function MembershipsPage({
-  params,
-}: MembershipsPageProps) {
+export default async function MembershipsPage({ params }: PageProps) {
   const { account_id, product_id } = await params;
   const account = await accountsTable.fetchById(account_id);
   const userSession = await getPageSession();

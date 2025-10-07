@@ -9,11 +9,16 @@ import { Actions } from "@/types";
 import { editAccountProfileUrl } from "@/lib/urls";
 import { redirect } from "next/navigation";
 
-interface SecurityPageProps {
+export async function generateMetadata({ params }: PageProps) {
+  const { account_id } = await params;
+  const account = await accountsTable.fetchById(account_id);
+  return { title: `Edit ${account!.name} permissions` };
+}
+interface PageProps {
   params: Promise<{ account_id: string }>;
 }
 
-export default async function PermissionsPage({ params }: SecurityPageProps) {
+export default async function PermissionsPage({ params }: PageProps) {
   const { account_id } = await params;
   const session = await getPageSession();
   if (!session?.account) {
