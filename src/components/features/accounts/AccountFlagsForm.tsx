@@ -5,7 +5,7 @@ import { Text, Flex, Checkbox } from "@radix-ui/themes";
 import { Label } from "radix-ui";
 import { DynamicForm } from "@/components/core";
 import { updateAccountFlags } from "@/lib/actions/account";
-import { isAuthorized } from "@/lib/api/authz";
+import { isAdmin, isAuthorized } from "@/lib/api/authz";
 import { useState, useEffect } from "react";
 
 interface AccountFlagsFormProps {
@@ -42,7 +42,7 @@ export function AccountFlagsForm({ session, account }: AccountFlagsFormProps) {
   }, [account.flags, account.updated_at]);
 
   // Flag configurations with display names and descriptions
-  const fields = [
+  let fields: Array<[AccountFlags, string, string]> = [
     [
       AccountFlags.CREATE_REPOSITORIES,
       "Create Repositories",
@@ -53,15 +53,17 @@ export function AccountFlagsForm({ session, account }: AccountFlagsFormProps) {
       "Create Organizations",
       "Allows this account to create new organizations and manage organizational accounts.",
     ],
-    [
+  ];
+
+  if (isAdmin(session)) {
+    fields.push([
       AccountFlags.ADMIN,
       "Administrator",
       "Full administrative access to the platform. Can manage all accounts, repositories, and system settings.",
-    ],
-  ] as const;
+    ]);
+  }
 
   const disabled = !isAuthorized(session, account, Actions.PutAccountFlags);
-  console.log({ disabled });
 
   return (
     <DynamicForm<AccountFlagsFormData>
