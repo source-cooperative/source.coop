@@ -1,18 +1,13 @@
-"use client";
-
 import { Callout } from "@radix-ui/themes";
 import Link from "next/link";
 import { InfoCircledIcon } from "@radix-ui/react-icons";
 import { editAccountProfileUrl } from "@/lib/urls";
 
 interface WelcomeCalloutProps {
-  show: boolean;
   accountId: string;
 }
 
-export function WelcomeCallout({ show, accountId }: WelcomeCalloutProps) {
-  if (!show) return null;
-
+export function WelcomeCallout({ accountId }: WelcomeCalloutProps) {
   return (
     <Callout.Root color="blue" mb="6">
       <Callout.Icon>
