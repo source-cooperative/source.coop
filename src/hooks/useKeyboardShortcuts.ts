@@ -47,7 +47,7 @@ export function useKeyboardShortcuts({ onShowHelp }: UseKeyboardShortcutsProps =
         if (segments.length === 0) {
           // At root - do nothing
           return;
-        } else         if (segments.length === 1) {
+        } else if (segments.length === 1) {
           // On profile page - go to root
           router.push(homeUrl());
         } else if (segments.length === 2) {
