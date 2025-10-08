@@ -40,6 +40,7 @@ export async function inviteMember(
   }
 
   const organizationId = formData.get("organization_id") as string;
+  const productId = formData.get("product_id") as string;
   const accountId = formData.get("account_id") as string;
   const role = formData.get("role") as MembershipRole;
 
@@ -99,6 +100,7 @@ export async function inviteMember(
       ...validatedInvitation,
       membership_id: uuidv4(),
       membership_account_id: organizationId,
+      repository_id: productId,
       state: MembershipState.Invited,
       state_changed: new Date().toISOString(),
     };
@@ -115,7 +117,8 @@ export async function inviteMember(
 
     // Check if user is already a member or has pending invitation
     const existingMemberships = await membershipsTable.listByAccount(
-      organizationId
+      organizationId,
+      productId
     );
     const existingMembership = existingMemberships.find(
       (m) =>
