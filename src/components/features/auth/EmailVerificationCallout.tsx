@@ -24,7 +24,7 @@ export function EmailVerificationCallout({
           </Callout.Icon>
           <Callout.Text>
             Please check your email. We&apos;ve sent you a code to verify your
-            email address. Alternatively, you can click{" "}
+            email address. Or, you can click{" "}
             <Link href={verifyEmailUrl()}>here</Link> to verify your email
             address.
           </Callout.Text>
