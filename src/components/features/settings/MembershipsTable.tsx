@@ -43,21 +43,17 @@ export function MembershipsTable({
     success: false,
   });
 
-  // Sort memberships: active first, then revoked
+  // Sort memberships: invited first, then members, then revoked last
   const sortedMemberships = [...memberships].sort((a, b) => {
-    if (
-      a.state === MembershipState.Revoked &&
-      b.state !== MembershipState.Revoked
-    ) {
-      return 1; // a comes after b
-    }
-    if (
-      a.state !== MembershipState.Revoked &&
-      b.state === MembershipState.Revoked
-    ) {
-      return -1; // a comes before b
-    }
-    return 0; // maintain original order within each group
+    // Define priority order: invited (0), member (1), revoked (2)
+    const getPriority = (state: MembershipState) => {
+      if (state === MembershipState.Invited) return 0;
+      if (state === MembershipState.Member) return 1;
+      if (state === MembershipState.Revoked) return 2;
+      return 3; // fallback for unknown states
+    };
+
+    return getPriority(a.state) - getPriority(b.state);
   });
 
   if (memberships.length === 0) {
