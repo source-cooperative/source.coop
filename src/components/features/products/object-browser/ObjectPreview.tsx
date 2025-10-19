@@ -23,7 +23,7 @@ const getIframeAttributes = (
       };
     case "tif":
       return {
-        src: `https://cogeo.org/viewer/#url=${sourceUrl}`
+        src: `https://cogeo.org/viewer/#url=${sourceUrl}`,
         style: { border: "none" },
       }
     default:
