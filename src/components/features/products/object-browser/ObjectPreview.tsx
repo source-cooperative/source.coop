@@ -21,6 +21,20 @@ const getIframeAttributes = (
         src: `https://source-cooperative.github.io/parquet-table/?iframe=true&url=${sourceUrl}`,
         style: { border: "1px solid var(--gray-5)" },
       };
+    case "txt":
+    case "md":
+    case "html":
+    case "css":
+    case "js":
+    case "jsx":
+    case "ts":
+    case "tsx":
+    case "yaml":
+    case "json":
+      return {
+        src: `https://alukach.com/viewers/text/?url=${sourceUrl}`,
+        style: { border: "none" },
+      };
     default:
       return null;
   }
