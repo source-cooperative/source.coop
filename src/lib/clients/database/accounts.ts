@@ -140,30 +140,48 @@ class AccountsTable extends BaseTable {
   }
 
   async update(account: Account): Promise<Account> {
+    const updateParts = [
+      "#name = :name",
+      "#type = :type",
+      "emails = :emails",
+      "updated_at = :updated_at",
+      "disabled = :disabled",
+      "flags = :flags",
+      "metadata_public = :metadata_public",
+      "metadata_private = :metadata_private",
+    ];
+
+    const expressionAttributeValues: Record<string, any> = {
+      ":type": account.type,
+      ":name": account.name,
+      ":emails": account.emails,
+      ":updated_at": new Date().toISOString(),
+      ":disabled": account.disabled,
+      ":flags": account.flags,
+      ":metadata_public": account.metadata_public,
+      ":metadata_private": account.metadata_private,
+    };
+
+    // Only include identity_id if it exists (for Individual accounts)
+    const identityId =
+      account.identity_id || account.metadata_private?.identity_id;
+    if (identityId) {
+      updateParts.push("identity_id = :identity_id");
+      expressionAttributeValues[":identity_id"] = identityId;
+    }
+
     const result = await this.client.send(
       new UpdateCommand({
         TableName: this.table,
         Key: {
           account_id: account.account_id,
         },
-        UpdateExpression:
-          "SET #name = :name, #type = :type, emails = :emails, updated_at = :updated_at, disabled = :disabled, flags = :flags, metadata_public = :metadata_public, metadata_private = :metadata_private, identity_id = :identity_id",
+        UpdateExpression: `SET ${updateParts.join(", ")}`,
         ExpressionAttributeNames: {
           "#name": "name", // name is a reserved word in DynamoDB
           "#type": "type", // type is also a reserved word in DynamoDB
         },
-        ExpressionAttributeValues: {
-          ":type": account.type,
-          ":name": account.name,
-          ":emails": account.emails,
-          ":updated_at": new Date().toISOString(),
-          ":disabled": account.disabled,
-          ":flags": account.flags,
-          ":metadata_public": account.metadata_public,
-          ":metadata_private": account.metadata_private,
-          ":identity_id":
-            account.identity_id || account.metadata_private?.identity_id,
-        },
+        ExpressionAttributeValues: expressionAttributeValues,
         ReturnValues: "ALL_NEW",
       })
     );
