@@ -140,27 +140,40 @@ class AccountsTable extends BaseTable {
   }
 
   async update(account: Account): Promise<Account> {
-    const updateParts = [
-      "#name = :name",
-      "#type = :type",
-      "emails = :emails",
-      "updated_at = :updated_at",
-      "disabled = :disabled",
-      "flags = :flags",
-      "metadata_public = :metadata_public",
-      "metadata_private = :metadata_private",
-    ];
+    const updateParts: string[] = [];
+    const expressionAttributeValues: Record<string, any> = {};
 
-    const expressionAttributeValues: Record<string, any> = {
-      ":type": account.type,
-      ":name": account.name,
-      ":emails": account.emails,
-      ":updated_at": new Date().toISOString(),
-      ":disabled": account.disabled,
-      ":flags": account.flags,
-      ":metadata_public": account.metadata_public,
-      ":metadata_private": account.metadata_private,
-    };
+    // Always update these core fields
+    updateParts.push("#name = :name", "#type = :type", "updated_at = :updated_at");
+    expressionAttributeValues[":type"] = account.type;
+    expressionAttributeValues[":name"] = account.name;
+    expressionAttributeValues[":updated_at"] = new Date().toISOString();
+
+    // Conditionally add fields that might be undefined
+    if (account.emails !== undefined) {
+      updateParts.push("emails = :emails");
+      expressionAttributeValues[":emails"] = account.emails;
+    }
+
+    if (account.disabled !== undefined) {
+      updateParts.push("disabled = :disabled");
+      expressionAttributeValues[":disabled"] = account.disabled;
+    }
+
+    if (account.flags !== undefined) {
+      updateParts.push("flags = :flags");
+      expressionAttributeValues[":flags"] = account.flags;
+    }
+
+    if (account.metadata_public !== undefined) {
+      updateParts.push("metadata_public = :metadata_public");
+      expressionAttributeValues[":metadata_public"] = account.metadata_public;
+    }
+
+    if (account.metadata_private !== undefined) {
+      updateParts.push("metadata_private = :metadata_private");
+      expressionAttributeValues[":metadata_private"] = account.metadata_private;
+    }
 
     // Only include identity_id if it exists (for Individual accounts)
     const identityId =
