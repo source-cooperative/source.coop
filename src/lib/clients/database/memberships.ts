@@ -63,29 +63,43 @@ export class MembershipsTable extends BaseTable {
   // TODO: support filtering by state
   async listByAccount(
     membershipAccountId: string,
-    repositoryId?: string
+    repositoryId?: string,
+    all: boolean = false
   ): Promise<Membership[]> {
     try {
+      const query = repositoryId
+        ? {
+            IndexName: "membership_account_id_repository_id",
+            KeyConditionExpression:
+              "membership_account_id = :membership_account_id AND repository_id = :repository_id",
+            ExpressionAttributeValues: {
+              ":membership_account_id": membershipAccountId,
+              ":repository_id": repositoryId,
+            },
+          }
+        : all
+        ? // If we want all memberships for an org, return records regardless of repository_id
+          {
+            IndexName: "membership_account_id",
+            KeyConditionExpression:
+              "membership_account_id = :membership_account_id",
+            ExpressionAttributeValues: {
+              ":membership_account_id": membershipAccountId,
+            },
+          }
+        : // Otherwise, return only org-level memberships (no repository_id)
+          {
+            IndexName: "membership_account_id",
+            KeyConditionExpression:
+              "membership_account_id = :membership_account_id",
+            ExpressionAttributeValues: {
+              ":membership_account_id": membershipAccountId,
+            },
+            FilterExpression: "attribute_not_exists(repository_id)",
+          };
       const command = new QueryCommand({
         TableName: this.table,
-        ...(repositoryId
-          ? {
-              IndexName: "membership_account_id_repository_id",
-              KeyConditionExpression:
-                "membership_account_id = :membership_account_id AND repository_id = :repository_id",
-              ExpressionAttributeValues: {
-                ":membership_account_id": membershipAccountId,
-                ":repository_id": repositoryId,
-              },
-            }
-          : {
-              IndexName: "membership_account_id",
-              KeyConditionExpression:
-                "membership_account_id = :membership_account_id",
-              ExpressionAttributeValues: {
-                ":membership_account_id": membershipAccountId,
-              },
-            }),
+        ...query,
       });
       const result = await this.client.send(command);
       return result.Items?.map((item) => item as Membership) ?? [];
@@ -103,7 +117,12 @@ export class MembershipsTable extends BaseTable {
       await this.client.send(
         new PutCommand({
           TableName: this.table,
-          Item: membership,
+          Item: {
+            ...membership,
+            // Remove repository_id if it's an empty string or undefined
+            // DynamoDB doesn't allow empty strings as key values in indexes
+            repository_id: membership.repository_id || undefined,
+          },
         })
       );
       return membership;
@@ -158,36 +177,6 @@ export class MembershipsTable extends BaseTable {
       return result.Attributes as Membership;
     } catch (error) {
       this.logError("update", error, {
-        membershipId: membership.membership_id,
-      });
-      throw error;
-    }
-  }
-
-  // Legacy method for backward compatibility - renamed to upsert
-  async upsert(
-    membership: Membership,
-    checkIfExists: boolean = false
-  ): Promise<[Membership, boolean]> {
-    try {
-      const command = new PutItemCommand({
-        TableName: this.table,
-        Item: marshall(membership),
-        ConditionExpression: checkIfExists
-          ? "attribute_not_exists(membership_id)"
-          : undefined,
-      });
-
-      await this.client.send(command);
-      return [membership, true];
-    } catch (error) {
-      if (
-        error instanceof Error &&
-        error.name === "ConditionalCheckFailedException"
-      ) {
-        return [membership, false];
-      }
-      this.logError("upsert", error, {
         membershipId: membership.membership_id,
       });
       throw error;
