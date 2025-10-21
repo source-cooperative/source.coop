@@ -1,5 +1,5 @@
 import { Box, Flex } from "@radix-ui/themes";
-import { Actions, Membership, MembershipRole, MembershipState } from "@/types";
+import { Actions, MembershipRole } from "@/types";
 import {
   accountsTable,
   isOrganizationalAccount,

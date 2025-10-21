@@ -30,12 +30,7 @@ export default async function ProfilePage({ params }: PageProps) {
             : "Update your organization's public profile information"
         }
       />
-      {isIndividualAccount(account) ? (
-        <EditProfileForm account={account} />
-      ) : (
-        // TODO: Not sure if this view supports organizations
-        <EditProfileForm account={account} />
-      )}
+      <EditProfileForm account={account} />
     </Box>
   );
 }
