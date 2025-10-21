@@ -23,14 +23,12 @@ export async function generateMetadata({ params }: PageProps) {
   return { title, description };
 }
 
-interface ProductPathComponentProps {
-  account_id: string;
-  product_id: string;
-  path?: string[];
-}
-
 interface PageProps {
-  params: Promise<ProductPathComponentProps>;
+  params: Promise<{
+    account_id: string;
+    product_id: string;
+    path?: string[];
+  }>;
 }
 
 export default async function ProductPathPage({ params }: PageProps) {

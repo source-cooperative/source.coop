@@ -11,11 +11,12 @@ import type {
   OrganizationalAccount,
   Product,
 } from "@/types";
+import { editAccountProfileUrl } from "@/lib/urls";
 import { ProfileAvatar } from "./ProfileAvatar";
 import { ProductsList } from "../products/ProductsList";
 import { WebsiteLink } from "./WebsiteLink";
 import { EmailVerificationStatus } from "./EmailVerificationStatus";
-import { AvatarLinkCompact } from "@/components/core";
+import { AvatarLinkCompact, EditButton } from "@/components/core";
 import { EmailVerificationCallout } from "../auth/EmailVerificationCallout";
 import { WelcomeCallout } from "./WelcomeCallout";
 
@@ -26,6 +27,7 @@ interface IndividualProfileProps {
   contributedProducts: Product[];
   organizations: OrganizationalAccount[];
   showWelcome?: boolean;
+  canEdit: boolean;
 }
 
 export function IndividualProfile({
@@ -35,6 +37,7 @@ export function IndividualProfile({
   contributedProducts,
   organizations,
   showWelcome = false,
+  canEdit,
 }: IndividualProfileProps) {
   const primaryEmail = account.emails?.find((email) => email.is_primary);
   return (
@@ -62,6 +65,9 @@ export function IndividualProfile({
               )}
             </Box>
           </Flex>
+          {canEdit && (
+            <EditButton href={editAccountProfileUrl(account.account_id)} />
+          )}
         </Flex>
       </Box>
 
