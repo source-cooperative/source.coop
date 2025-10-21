@@ -53,7 +53,11 @@ export default async function ProductLayout({
         {children}
       </Card>
 
-      {path === undefined && readme}
+      {path === undefined && (
+        <Card mt="4">
+          <SectionHeader title="README">readme</SectionHeader>
+        </Card>
+      )}
     </>
   );
 }
