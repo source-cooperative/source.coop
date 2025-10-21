@@ -1,5 +1,5 @@
 export { useDebounce } from "./useDebounce";
-export { useIdValidation } from "./useIdValidation";
+export * from "./useIdValidation";
 export { useKeyboardShortcuts } from "./useKeyboardShortcuts";
 export { useObjectBrowserKeyboardShortcuts } from "./useObjectBrowserKeyboardShortcuts";
 export { useProductListKeyboardShortcuts } from "./useProductListKeyboardShortcuts";
