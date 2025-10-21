@@ -42,7 +42,7 @@ export function AccountFlagsForm({ session, account }: AccountFlagsFormProps) {
   }, [account.flags, account.updated_at]);
 
   // Flag configurations with display names and descriptions
-  let fields: Array<[AccountFlags, string, string]> = [
+  const fields: Array<[AccountFlags, string, string]> = [
     [
       AccountFlags.CREATE_REPOSITORIES,
       "Create Repositories",
