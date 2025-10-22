@@ -8,10 +8,18 @@
  * we need to use a parent route-group to handle these cases.
  */
 
-import { BreadcrumbNav, ProductHeader, SectionHeader } from "@/components";
+import {
+  BreadcrumbNav,
+  FetchCredentialsButton,
+  ProductHeader,
+  SectionHeader,
+} from "@/components";
+import { getPageSession } from "@/lib";
+import { isAuthorized } from "@/lib/api/authz";
 import { productsTable } from "@/lib/clients/database";
 import { productUrl } from "@/lib/urls";
-import { Box, Card } from "@radix-ui/themes";
+import { Actions } from "@/types/shared";
+import { Box, Card, Flex } from "@radix-ui/themes";
 import { notFound } from "next/navigation";
 
 interface ProductLayoutProps {
@@ -27,6 +35,7 @@ export default async function ProductLayout({
 }: ProductLayoutProps) {
   // Then check if product exists
   const { account_id, product_id, path } = await params;
+  const session = await getPageSession();
   const product = await productsTable.fetchById(account_id, product_id);
   if (!product) {
     notFound();
@@ -44,10 +53,15 @@ export default async function ProductLayout({
               borderBottom: "1px solid var(--gray-5)",
             }}
           >
-            <BreadcrumbNav
-              path={path?.map((p) => decodeURIComponent(p)) || []}
-              baseUrl={productUrl(account_id, product_id)}
-            />
+            <Flex direction="row" gap="2" align="center" justify="between">
+              <BreadcrumbNav
+                path={path?.map((p) => decodeURIComponent(p)) || []}
+                baseUrl={productUrl(account_id, product_id)}
+              />
+              {isAuthorized(session, product, Actions.WriteRepositoryData) && (
+                <FetchCredentialsButton />
+              )}
+            </Flex>
           </Box>
         </SectionHeader>
         {children}
