@@ -7,7 +7,7 @@ export interface VercelConstructProps {
   readonly projectName: string;
   readonly stage: string;
   readonly vercelEnvironment: string[];
-  readonly s3Bucket: s3.IBucket;
+  readonly writableBuckets: string[];
 }
 
 export class VercelConstruct extends Construct {
@@ -50,16 +50,14 @@ export class VercelConstruct extends Construct {
 
     // Grant permissions for multipart uploads and reads
     // (session policies will further restrict access to specific prefixes)
-    props.s3Bucket.grantReadWrite(this.s3AccessRole);
-
-    this.s3AccessRole.addToPolicy(
-      new iam.PolicyStatement({
-        sid: "AllowListBucket",
-        effect: iam.Effect.ALLOW,
-        actions: ["s3:ListBucket"],
-        resources: [props.s3Bucket.bucketArn],
-      })
-    );
+    for (const bucketName in props.writableBuckets) {
+      const bucket = s3.Bucket.fromBucketName(
+        this,
+        `bucket-${bucketName}`,
+        bucketName
+      );
+      bucket.grantReadWrite(this.s3AccessRole);
+    }
 
     // Output the role ARN for reference
     new cdk.CfnOutput(this, "VercelRoleArn", {
