@@ -50,7 +50,9 @@ export class VercelConstruct extends Construct {
 
     // Grant permissions for multipart uploads and reads
     // (session policies will further restrict access to specific prefixes)
+    console.log({ writableBuckets: props.writableBuckets });
     for (const bucketName in props.writableBuckets) {
+      console.log({ bucketName });
       const bucket = s3.Bucket.fromBucketName(
         this,
         `bucket-${bucketName}`,
