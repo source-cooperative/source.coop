@@ -5,7 +5,9 @@ import {
   UploadIcon,
 } from "@radix-ui/react-icons";
 import { IconButton, Spinner, Tooltip, Flex } from "@radix-ui/themes";
-import { useS3Credentials } from "./context";
+import { useS3Credentials, CredentialsScope } from "./CredentialsProvider";
+import { useUploadManager } from "./UploadProvider";
+import { useMemo } from "react";
 
 interface TootltipIconButtonProps {
   tooltip: string;
@@ -35,9 +37,19 @@ const TootltipIconButton = ({
   </Tooltip>
 );
 
-export const FetchCredentialsButton = () => {
-  const { fetchCredentials, status, s3Credentials, clearCredentials } =
+interface FetchCredentialsButtonProps {
+  scope: CredentialsScope;
+}
+
+export const FetchCredentialsButton = ({
+  scope,
+}: FetchCredentialsButtonProps) => {
+  const { getCredentials, getStatus, fetchCredentials, clearCredentials } =
     useS3Credentials();
+  const { uploadFiles } = useUploadManager();
+
+  const s3Credentials = getCredentials(scope);
+  const status = getStatus(scope);
 
   if (status === "loading") {
     return (
@@ -56,8 +68,8 @@ export const FetchCredentialsButton = () => {
       input.onchange = (e) => {
         const files = (e.target as HTMLInputElement).files;
         if (files) {
-          // TODO: Handle file upload
-          console.log("Selected files:", files);
+          // Use the upload manager to handle files with scope
+          uploadFiles(Array.from(files), "", scope);
         }
       };
       input.click();
@@ -75,7 +87,7 @@ export const FetchCredentialsButton = () => {
         </TootltipIconButton>
         <TootltipIconButton
           tooltip="Disable uploads"
-          onClick={clearCredentials}
+          onClick={() => clearCredentials(scope)}
         >
           <LockOpen1Icon />
         </TootltipIconButton>
@@ -84,7 +96,10 @@ export const FetchCredentialsButton = () => {
   }
 
   return (
-    <TootltipIconButton tooltip="Enable uploads." onClick={fetchCredentials}>
+    <TootltipIconButton
+      tooltip="Enable uploads."
+      onClick={() => fetchCredentials(scope)}
+    >
       <LockClosedIcon />
     </TootltipIconButton>
   );

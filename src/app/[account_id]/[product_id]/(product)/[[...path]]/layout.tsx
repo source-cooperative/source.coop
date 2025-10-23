@@ -59,7 +59,9 @@ export default async function ProductLayout({
                 baseUrl={productUrl(account_id, product_id)}
               />
               {isAuthorized(session, product, Actions.WriteRepositoryData) && (
-                <FetchCredentialsButton />
+                <FetchCredentialsButton
+                  scope={{ accountId: account_id, productId: product_id }}
+                />
               )}
             </Flex>
           </Box>
