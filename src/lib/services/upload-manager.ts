@@ -132,6 +132,7 @@ export class UploadManager {
    * Process a single upload
    */
   private async processUpload(item: ScopedUploadItem): Promise<void> {
+    
     const s3Service = this.getS3Service(item.scope);
 
     if (!s3Service) return;
@@ -177,14 +178,30 @@ export class UploadManager {
       this.queue.markInactive(item.id);
 
       // Start next upload if available
-      if (this.queue.getQueueSize() > 0) {
-        const nextItem = this.queue.dequeue();
-        if (nextItem) {
-          this.queue.markActive(nextItem.id);
-          this.processUpload(nextItem);
-        }
-      }
+      this.processNextUpload();
     }
+  }
+
+  /**
+   * Process the next available upload
+   */
+  private processNextUpload(): void {
+    const availableSlots = this.queue.getAvailableSlots();
+    if (availableSlots <= 0) return;
+
+    const queuedItems = this.queue.getQueuedItems();
+    if (queuedItems.length === 0) return;
+
+    // Process the first queued item
+    const item = queuedItems[0];
+    
+    // Double-check that the item is still queued
+    if (item.status !== "queued") {
+      return;
+    }
+
+    this.queue.markActive(item.id);
+    this.processUpload(item);
   }
 
   /**
@@ -218,17 +235,33 @@ export class UploadManager {
     }));
 
     // Add to global queue
+    LOGGER.debug("Adding uploads to queue", {
+      operation: "uploadFiles",
+      context: "queueing uploads",
+      metadata: { newItems },
+    });
     this.queue.enqueue(newItems);
     this.notifyListeners();
 
     // Start processing available slots
     const availableSlots = this.queue.getAvailableSlots();
-    for (let i = 0; i < availableSlots; i++) {
-      const item = this.queue.dequeue();
-      if (item) {
-        this.queue.markActive(item.id);
-        this.processUpload(item);
+    const queuedItems = this.queue.getQueuedItems();
+
+    for (let i = 0; i < availableSlots && i < queuedItems.length; i++) {
+      const item = queuedItems[i];
+
+      // Double-check that the item is still queued (not already being processed)
+      if (item.status !== "queued") {
+        continue;
       }
+
+      // Additional check: make sure the item is not already active
+      if (this.queue.isActive(item.id)) {
+        continue;
+      }
+
+      this.queue.markActive(item.id);
+      this.processUpload(item);
     }
   }
 
@@ -357,12 +390,13 @@ export class UploadManager {
    * Get uploads for a specific scope
    */
   getUploadsForScope(scope: CredentialsScope): ScopedUploadItem[] {
-    const allUploads = this.queue.getAllUploads();
-    return allUploads.filter(
-      (upload) =>
-        upload.scope?.accountId === scope.accountId &&
-        upload.scope?.productId === scope.productId
-    );
+    return this.queue
+      .getAllUploads()
+      .filter(
+        (upload) =>
+          upload.scope?.accountId === scope.accountId &&
+          upload.scope?.productId === scope.productId
+      );
   }
 
   /**

@@ -1,7 +1,14 @@
 "use client";
 
 import { LOGGER } from "@/lib";
-import { createContext, useContext, useState, ReactNode, useMemo } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  ReactNode,
+  useMemo,
+  useCallback,
+} from "react";
 
 export interface S3Credentials {
   accessKeyId: string;
@@ -92,7 +99,10 @@ export function S3CredentialsProvider({ children }: { children: ReactNode }) {
     return result;
   }, [credentialsMap]);
 
-  const getAllCredentials = () => credentialsMapMemo;
+  const getAllCredentials = useCallback(
+    () => credentialsMapMemo,
+    [credentialsMapMemo]
+  );
 
   const fetchCredentials = async (scope: CredentialsScope) => {
     const key = getScopeKey(scope);
@@ -108,7 +118,7 @@ export function S3CredentialsProvider({ children }: { children: ReactNode }) {
 
     try {
       // Simulate fetching credentials for specific scope
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       // TODO: Replace with real credentials fetching logic that uses scope
       const credentials: S3Credentials = {

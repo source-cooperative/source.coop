@@ -53,6 +53,13 @@ export class UploadQueueManager {
   }
 
   /**
+   * Get items that are queued (not active, completed, or failed)
+   */
+  getQueuedItems(): ScopedUploadItem[] {
+    return this.queue.filter((item) => item.status === "queued");
+  }
+
+  /**
    * Check if we can start a new upload (haven't reached max concurrent)
    */
   canStartUpload(): boolean {
@@ -64,6 +71,8 @@ export class UploadQueueManager {
    */
   markActive(id: string): void {
     this.activeUploads.add(id);
+    // Update the item's status to uploading using the update method
+    this.updateUploadStatus(id, { status: "uploading" });
   }
 
   /**
@@ -71,6 +80,14 @@ export class UploadQueueManager {
    */
   markInactive(id: string): void {
     this.activeUploads.delete(id);
+    // Note: Don't change status here as it might be completed, failed, or cancelled
+  }
+
+  /**
+   * Check if an upload is currently active
+   */
+  isActive(id: string): boolean {
+    return this.activeUploads.has(id);
   }
 
   /**
@@ -85,13 +102,6 @@ export class UploadQueueManager {
    */
   getActiveCount(): number {
     return this.activeUploads.size;
-  }
-
-  /**
-   * Check if upload is active
-   */
-  isActive(id: string): boolean {
-    return this.activeUploads.has(id);
   }
 
   /**
