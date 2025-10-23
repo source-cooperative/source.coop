@@ -35,7 +35,7 @@ export class S3UploadService {
   constructor(config: S3UploadConfig) {
     this.config = config;
     this.chunkSize = config.chunkSize || 5 * 1024 * 1024; // 5MB default
-    this.maxConcurrent = config.maxConcurrent || 5;
+    this.maxConcurrent = config.maxConcurrent || 4;
 
     this.client = new S3Client({
       region: config.region,

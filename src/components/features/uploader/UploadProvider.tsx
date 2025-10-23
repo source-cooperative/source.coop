@@ -53,9 +53,9 @@ interface UploadProviderProps {
 export function UploadProvider({ children }: UploadProviderProps) {
   const { getAllCredentials } = useS3Credentials();
   const [uploads, setUploads] = useState<ScopedUploadItem[]>([]);
-  const [s3Services, setS3Services] = useState<
-    Map<string, S3UploadService | MockS3UploadService>
-  >(new Map());
+  const [s3Services, setS3Services] = useState<Map<string, S3UploadService>>(
+    new Map()
+  );
 
   // Create upload queue once
   const queueRef = useRef<UploadQueueManager>();
@@ -90,12 +90,7 @@ export function UploadProvider({ children }: UploadProviderProps) {
       for (const [scope, credentials] of getAllCredentials()) {
         const key = `${scope.accountId}:${scope.productId}`;
         if (!next.has(key)) {
-          next.set(
-            key,
-            credentials.accessKeyId === "MOCK_UPLOAD"
-              ? new MockS3UploadService(credentials)
-              : new S3UploadService(credentials)
-          );
+          next.set(key, new S3UploadService(credentials));
         }
       }
       return next;

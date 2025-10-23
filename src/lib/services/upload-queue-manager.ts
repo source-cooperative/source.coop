@@ -1,6 +1,5 @@
 import type { Upload } from "@aws-sdk/lib-storage";
 import type { S3UploadService } from "./s3-upload";
-import type { MockS3UploadService } from "./s3-upload.mock";
 import type { CredentialsScope } from "@/components/features/uploader/CredentialsProvider";
 
 export type UploadStatus =
@@ -19,7 +18,7 @@ export interface QueuedUpload {
   status: UploadStatus;
   error?: string;
   scope: CredentialsScope;
-  s3Service: S3UploadService | MockS3UploadService;
+  s3Service: S3UploadService;
   uploadInstance?: Upload;
 }
 
@@ -44,7 +43,7 @@ export class UploadQueueManager {
     files: File[],
     prefix: string,
     scope: CredentialsScope,
-    s3Service: S3UploadService | MockS3UploadService
+    s3Service: S3UploadService
   ) {
     const newItems: QueuedUpload[] = files.map((file, i) => ({
       id: `${Date.now()}-${i}`,
