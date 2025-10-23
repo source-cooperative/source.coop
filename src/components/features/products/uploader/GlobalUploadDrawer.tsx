@@ -32,9 +32,7 @@ export function GlobalUploadDrawer({ open, onOpenChange }: GlobalUploadDrawerPro
     uploads,
     cancelUpload,
     retryUpload,
-    clearCompleted,
-    clearErrors,
-    removeCancelled,
+    clearUploads,
     getUploadsByScope,
   } = useUploadManager();
 
@@ -42,10 +40,13 @@ export function GlobalUploadDrawer({ open, onOpenChange }: GlobalUploadDrawerPro
 
   // Group uploads by scope (memoized for performance)
   const uploadsByScope = useMemo(() => getUploadsByScope(), [uploads]);
-  const scopes = useMemo(() => Array.from(uploadsByScope.keys()), [uploadsByScope]);
+  const scopes = useMemo(
+    () => Array.from(uploadsByScope.keys()),
+    [uploadsByScope]
+  );
 
   // Get uploads to display (filtered by selected scope if any)
-  const displayUploads = selectedScope 
+  const displayUploads = selectedScope
     ? uploadsByScope.get(selectedScope) || []
     : uploads;
 
@@ -84,7 +85,7 @@ export function GlobalUploadDrawer({ open, onOpenChange }: GlobalUploadDrawerPro
   };
 
   const formatScopeName = (scopeKey: string) => {
-    const [accountId, productId] = scopeKey.split(':');
+    const [accountId, productId] = scopeKey.split(":");
     return `${accountId}/${productId}`;
   };
 
@@ -95,7 +96,7 @@ export function GlobalUploadDrawer({ open, onOpenChange }: GlobalUploadDrawerPro
   };
 
   const canRetry = (upload: ScopedUploadItem) => upload.status === "error";
-  const canCancel = (upload: ScopedUploadItem) => 
+  const canCancel = (upload: ScopedUploadItem) =>
     upload.status === "uploading" || upload.status === "queued";
 
   return (
@@ -223,7 +224,8 @@ export function GlobalUploadDrawer({ open, onOpenChange }: GlobalUploadDrawerPro
                     size="1"
                     variant="soft"
                     onClick={() =>
-                      clearCompleted(
+                      clearUploads(
+                        "completed",
                         selectedScope
                           ? {
                               accountId: selectedScope.split(":")[0],
@@ -240,7 +242,8 @@ export function GlobalUploadDrawer({ open, onOpenChange }: GlobalUploadDrawerPro
                     variant="soft"
                     color="red"
                     onClick={() =>
-                      clearErrors(
+                      clearUploads(
+                        "error",
                         selectedScope
                           ? {
                               accountId: selectedScope.split(":")[0],
@@ -257,7 +260,8 @@ export function GlobalUploadDrawer({ open, onOpenChange }: GlobalUploadDrawerPro
                     variant="soft"
                     color="gray"
                     onClick={() =>
-                      removeCancelled(
+                      clearUploads(
+                        "cancelled",
                         selectedScope
                           ? {
                               accountId: selectedScope.split(":")[0],
