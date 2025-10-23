@@ -920,7 +920,7 @@ describe("Authorization Tests", () => {
 
     // Organization Repository
     let repo = mappedProducts["organization"]["org-repo-id"];
-    expect(isAuthorized(sessions["admin"], repo, action)).toBe(false);
+    expect(isAuthorized(sessions["admin"], repo, action)).toBe(true);
     expect(
       isAuthorized(sessions["organization-owner-user"], repo, action)
     ).toBe(true);
@@ -958,7 +958,7 @@ describe("Authorization Tests", () => {
 
     // Regular User Repository
     repo = mappedProducts["create-repositories-user"]["regular-user-repo-id"];
-    expect(isAuthorized(sessions["admin"], repo, action)).toBe(false);
+    expect(isAuthorized(sessions["admin"], repo, action)).toBe(true);
     expect(
       isAuthorized(sessions["organization-owner-user"], repo, action)
     ).toBe(false);
@@ -1034,7 +1034,7 @@ describe("Authorization Tests", () => {
 
     // Private Repository
     repo = mappedProducts["organization"]["private-org-repo-id"];
-    expect(isAuthorized(sessions["admin"], repo, action)).toBe(false);
+    expect(isAuthorized(sessions["admin"], repo, action)).toBe(true);
     expect(
       isAuthorized(sessions["organization-owner-user"], repo, action)
     ).toBe(true);
@@ -1072,7 +1072,7 @@ describe("Authorization Tests", () => {
 
     // Unlisted Repository
     repo = mappedProducts["organization"]["unlisted-org-repo-id"];
-    expect(isAuthorized(sessions["admin"], repo, action)).toBe(false);
+    expect(isAuthorized(sessions["admin"], repo, action)).toBe(true);
     expect(
       isAuthorized(sessions["organization-owner-user"], repo, action)
     ).toBe(true);
