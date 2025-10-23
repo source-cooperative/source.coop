@@ -77,10 +77,9 @@ export function UploadProvider({ children }: UploadProviderProps) {
     const credentialsMap = getAllCredentials();
 
     credentialsMap.forEach((credentials, scope) => {
-      console.log({ scope, credentials });
       uploadManager.initializeS3Service(scope, credentials);
     });
-  }, [getAllCredentials()]);
+  }, [getAllCredentials]);
 
   // Subscribe to upload manager state changes
   useEffect(() => {
