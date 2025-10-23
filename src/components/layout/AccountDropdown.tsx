@@ -1,24 +1,25 @@
 "use client";
-import { Flex, DropdownMenu, Text, Box } from "@radix-ui/themes";
 import { useState } from "react";
-import { ProfileAvatar } from "@/components/features/profiles/ProfileAvatar";
+import { Flex, DropdownMenu, Text, Box } from "@radix-ui/themes";
 import { ChevronDownIcon } from "@radix-ui/react-icons";
 import styles from "./Navigation.module.css";
-import { UserSession } from "@/types/session";
-import { Skeleton } from "../core/Skeleton";
-import { CONFIG } from "@/lib/config";
-import { LOGGER } from "@/lib";
-import { DropdownSection } from "./DropdownSection";
-import { isAuthorized } from "@/lib/api/authz";
-import { Actions } from "@/types";
 import {
+  LOGGER,
+  CONFIG,
   accountUrl,
   editAccountProfileUrl,
   newOrganizationUrl,
   newProductUrl,
-} from "@/lib/urls";
-import { UploadsSubmenu } from "./UploadsSubmenu";
-import { UploadBadge } from "./UploadBadge";
+} from "@/lib";
+import { DropdownSection } from "./DropdownSection";
+import { isAuthorized } from "@/lib/api/authz";
+import { Actions, UserSession } from "@/types";
+import {
+  ProfileAvatar,
+  UploadsSubmenu,
+  UploadBadge,
+  Skeleton,
+} from "@/components";
 
 export function AccountDropdownSkeleton() {
   return (

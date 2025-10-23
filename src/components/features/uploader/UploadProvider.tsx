@@ -7,37 +7,25 @@ import {
   useState,
   useEffect,
   useCallback,
+  useRef,
 } from "react";
 import { S3UploadService } from "@/lib/services/s3-upload";
 import { MockS3UploadService } from "@/lib/services/s3-upload.mock";
 import { useS3Credentials } from "./CredentialsProvider";
 import type { CredentialsScope } from "./CredentialsProvider";
 import { useBeforeUnload } from "@/hooks/useBeforeUnload";
+import {
+  UploadQueueManager,
+  type QueuedUpload,
+  type UploadStatus,
+} from "@/lib/services/upload-queue-manager";
 
-// Type definitions
-export type UploadStatus =
-  | "queued"
-  | "uploading"
-  | "completed"
-  | "error"
-  | "cancelled";
-export type { CredentialsScope };
-
-export interface ScopedUploadItem {
-  id: string;
-  file: File;
-  key: string;
-  uploadedBytes: number;
-  totalBytes: number;
-  status: UploadStatus;
-  error?: string;
-  scope: CredentialsScope;
-}
+export type { UploadStatus, CredentialsScope };
+export type ScopedUploadItem = QueuedUpload;
 
 export interface UploadManagerState {
   uploads: ScopedUploadItem[];
   uploadEnabled: boolean;
-  isUploading: boolean;
   hasActiveUploads: boolean;
 }
 
@@ -68,13 +56,26 @@ export function UploadProvider({ children }: UploadProviderProps) {
   const [s3Services, setS3Services] = useState<
     Map<string, S3UploadService | MockS3UploadService>
   >(new Map());
-  const [activeUploads, setActiveUploads] = useState<Set<string>>(new Set());
-  const [maxConcurrent] = useState(5);
+
+  // Create upload queue once
+  const queueRef = useRef<UploadQueueManager>();
+  if (!queueRef.current) {
+    queueRef.current = new UploadQueueManager(5);
+  }
+
+  // Queue notifies React when it changes
+  useEffect(() => {
+    queueRef.current!.onChange = () => {
+      setUploads(queueRef.current!.getAll());
+    };
+  }, []);
 
   // Derived state
   const uploadEnabled = s3Services.size > 0;
-  const isUploading = activeUploads.size > 0;
-  const hasActiveUploads = activeUploads.size > 0;
+  const activeUploads = uploads.filter(
+    (u) => u.status === "uploading" || u.status === "queued"
+  );
+  const hasActiveUploads = activeUploads.length > 0;
 
   // Warn before leaving page if uploads are in progress
   useBeforeUnload(
@@ -84,10 +85,9 @@ export function UploadProvider({ children }: UploadProviderProps) {
 
   // Sync credentials to S3 services
   useEffect(() => {
-    const credentialsMap = getAllCredentials();
     setS3Services((prev) => {
       const next = new Map(prev);
-      credentialsMap.forEach((credentials, scope) => {
+      for (const [scope, credentials] of getAllCredentials()) {
         const key = `${scope.accountId}:${scope.productId}`;
         if (!next.has(key)) {
           next.set(
@@ -97,7 +97,7 @@ export function UploadProvider({ children }: UploadProviderProps) {
               : new S3UploadService(credentials)
           );
         }
-      });
+      }
       return next;
     });
   }, [getAllCredentials]);
@@ -107,170 +107,50 @@ export function UploadProvider({ children }: UploadProviderProps) {
     return s3Services.get(key) || null;
   };
 
-  const updateUpload = (id: string, updates: Partial<ScopedUploadItem>) => {
-    setUploads((prev) =>
-      prev.map((u) => (u.id === id ? { ...u, ...updates } : u))
-    );
-  };
-
   const uploadFiles = useCallback(
-    async (files: File[], prefix: string, scope: CredentialsScope) => {
-      if (files.length === 0) return;
+    (files: File[], prefix: string, scope: CredentialsScope) => {
+      if (files.length === 0) return Promise.resolve();
 
       const s3Service = getS3Service(scope);
       if (!s3Service) {
         console.error(
           `No S3 service available for scope ${scope.accountId}:${scope.productId}`
         );
-        return;
+        return Promise.resolve();
       }
 
-      // Create and add upload items
-      const newUploads: ScopedUploadItem[] = files.map((file, index) => ({
-        id: `${Date.now()}-${index}`,
-        file,
-        key: prefix ? `${prefix}/${file.name}` : file.name,
-        uploadedBytes: 0,
-        totalBytes: file.size,
-        status: "queued",
-        scope,
-      }));
-
-      setUploads((prev) => [...prev, ...newUploads]);
-
-      // Process uploads with concurrency control
-      for (const upload of newUploads) {
-        while (activeUploads.size >= maxConcurrent) {
-          await new Promise((resolve) => setTimeout(resolve, 100));
-        }
-
-        // Mark as active and start upload
-        setActiveUploads((prev) => new Set(prev).add(upload.id));
-        updateUpload(upload.id, { status: "uploading" });
-
-        try {
-          const { promise } = await s3Service.uploadFile({
-            file: upload.file,
-            key: upload.key,
-            onProgress: (uploadedBytes) =>
-              updateUpload(upload.id, { uploadedBytes, status: "uploading" }),
-          });
-
-          await promise;
-          updateUpload(upload.id, {
-            status: "completed",
-            uploadedBytes: upload.totalBytes,
-          });
-        } catch (error) {
-          updateUpload(upload.id, {
-            status: "error",
-            error: error instanceof Error ? error.message : "Upload failed",
-          });
-        } finally {
-          setActiveUploads((prev) => {
-            const next = new Set(prev);
-            next.delete(upload.id);
-            return next;
-          });
-        }
-      }
+      queueRef.current!.add(files, prefix, scope, s3Service);
+      return Promise.resolve();
     },
-    [s3Services, activeUploads.size, maxConcurrent]
+    [s3Services]
   );
 
   const cancelUpload = useCallback(async (id: string) => {
-    updateUpload(id, { status: "cancelled" });
-    setActiveUploads((prev) => {
-      const next = new Set(prev);
-      next.delete(id);
-      return next;
-    });
+    queueRef.current!.cancel(id);
   }, []);
 
   const cancelAllUploads = useCallback(async (scope?: CredentialsScope) => {
-    setUploads((prev) =>
-      prev.map((upload) => {
-        if (
-          scope &&
-          (upload.scope.accountId !== scope.accountId ||
-            upload.scope.productId !== scope.productId)
-        ) {
-          return upload;
-        }
-        if (upload.status === "uploading" || upload.status === "queued") {
-          return { ...upload, status: "cancelled" };
-        }
-        return upload;
-      })
-    );
-    setActiveUploads(new Set());
+    queueRef.current!.cancelAll(scope);
   }, []);
 
-  const retryUpload = useCallback(
-    async (id: string) => {
-      const upload = uploads.find((u) => u.id === id);
-      if (!upload) return;
-
-      const s3Service = getS3Service(upload.scope);
-      if (!s3Service) return;
-
-      updateUpload(id, {
-        status: "queued",
-        uploadedBytes: 0,
-        error: undefined,
-      });
-      await uploadFiles(
-        [upload.file],
-        upload.key.replace(upload.file.name, ""),
-        upload.scope
-      );
-    },
-    [uploads, uploadFiles]
-  );
+  const retryUpload = useCallback(async (id: string) => {
+    await queueRef.current!.retry(id);
+  }, []);
 
   const clearUploads = useCallback(
     (status?: UploadStatus, scope?: CredentialsScope) => {
-      setUploads((prev) =>
-        prev.filter((upload) => {
-          if (
-            scope &&
-            (upload.scope.accountId !== scope.accountId ||
-              upload.scope.productId !== scope.productId)
-          ) {
-            return true;
-          }
-          return status ? upload.status !== status : true;
-        })
-      );
+      queueRef.current!.clear(status, scope);
     },
     []
   );
 
   const clearAllUploads = useCallback((scope?: CredentialsScope) => {
-    if (scope) {
-      setUploads((prev) =>
-        prev.filter(
-          (upload) =>
-            upload.scope.accountId !== scope.accountId ||
-            upload.scope.productId !== scope.productId
-        )
-      );
-    } else {
-      setUploads([]);
-    }
-    setActiveUploads(new Set());
+    queueRef.current!.clear(undefined, scope);
   }, []);
 
-  const getUploadsForScope = useCallback(
-    (scope: CredentialsScope) => {
-      return uploads.filter(
-        (upload) =>
-          upload.scope.accountId === scope.accountId &&
-          upload.scope.productId === scope.productId
-      );
-    },
-    [uploads]
-  );
+  const getUploadsForScope = useCallback((scope: CredentialsScope) => {
+    return queueRef.current!.getForScope(scope);
+  }, []);
 
   const getUploadsByScope = useCallback(() => {
     const result = new Map<string, ScopedUploadItem[]>();
@@ -285,7 +165,6 @@ export function UploadProvider({ children }: UploadProviderProps) {
   const contextValue: UploadContextType = {
     uploads,
     uploadEnabled,
-    isUploading,
     hasActiveUploads,
     uploadFiles,
     cancelUpload,

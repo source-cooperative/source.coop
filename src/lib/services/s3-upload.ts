@@ -50,11 +50,10 @@ export class S3UploadService {
   /**
    * Upload a single file to S3
    */
-  async uploadFile({
-    file,
-    key,
-    onProgress,
-  }: S3UploadParams): Promise<{ upload: Upload; promise: Promise<S3UploadResult> }> {
+  async uploadFile({ file, key, onProgress }: S3UploadParams): Promise<{
+    upload: Upload;
+    result: Promise<S3UploadResult>;
+  }> {
     const isLargeFile = file.size > this.chunkSize;
 
     const upload = new Upload({
@@ -78,12 +77,13 @@ export class S3UploadService {
       });
     }
 
-    const promise = upload.done().then((result) => ({
-      key,
-      etag: result.ETag,
-    }));
-
-    return { upload, promise };
+    return {
+      upload,
+      result: upload.done().then((result) => ({
+        key,
+        etag: result.ETag,
+      })),
+    };
   }
 
   /**

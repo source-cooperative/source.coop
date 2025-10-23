@@ -20,7 +20,10 @@ export class MockS3UploadService {
     file,
     key,
     onProgress,
-  }: S3UploadParams): Promise<{ upload: Upload; promise: Promise<S3UploadResult> }> {
+  }: S3UploadParams): Promise<{
+    upload: Upload;
+    result: Promise<S3UploadResult>;
+  }> {
     console.log(`📤 [MOCK] Starting upload: ${file.name} → ${key}`);
 
     // Create a fake abort controller for cancellation
@@ -36,7 +39,7 @@ export class MockS3UploadService {
       },
     } as Upload;
 
-    const promise = new Promise<S3UploadResult>((resolve, reject) => {
+    const result = new Promise<S3UploadResult>((resolve, reject) => {
       const totalBytes = file.size;
       let uploadedBytes = 0;
 
@@ -74,7 +77,7 @@ export class MockS3UploadService {
       });
     });
 
-    return { upload: mockUpload, promise };
+    return { upload: mockUpload, result };
   }
 
   /**
