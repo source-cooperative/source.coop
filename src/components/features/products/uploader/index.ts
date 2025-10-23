@@ -6,5 +6,3 @@ export type {
   CredentialsScope,
   UploadStatus,
 } from "./UploadProvider";
-export * from "./GlobalUploadDrawer";
-export * from "./useGlobalUploadDrawer";

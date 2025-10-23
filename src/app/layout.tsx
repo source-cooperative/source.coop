@@ -36,14 +36,14 @@ export default async function RootLayout({ children }: RootLayoutProps) {
         >
           <NextTopLoader />
           <SessionProvider>
-            <Navigation />
-            <Container py="4">
-              <S3CredentialsProvider>
-                <UploadProvider>
+            <S3CredentialsProvider>
+              <UploadProvider>
+                <Navigation />
+                <Container py="4">
                   <main>{children}</main>
-                </UploadProvider>
-              </S3CredentialsProvider>
-            </Container>
+                </Container>
+              </UploadProvider>
+            </S3CredentialsProvider>
             <Footer />
           </SessionProvider>
         </ThemeProvider>

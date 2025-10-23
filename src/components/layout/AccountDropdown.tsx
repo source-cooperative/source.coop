@@ -1,5 +1,5 @@
 "use client";
-import { Flex, DropdownMenu, Text } from "@radix-ui/themes";
+import { Flex, DropdownMenu, Text, Box } from "@radix-ui/themes";
 import { useState } from "react";
 import { ProfileAvatar } from "@/components/features/profiles/ProfileAvatar";
 import { ChevronDownIcon } from "@radix-ui/react-icons";
@@ -17,6 +17,8 @@ import {
   newOrganizationUrl,
   newProductUrl,
 } from "@/lib/urls";
+import { UploadsSubmenu } from "./UploadsSubmenu";
+import { UploadBadge } from "./UploadBadge";
 
 export function AccountDropdownSkeleton() {
   return (
@@ -53,7 +55,10 @@ export function AccountDropdown({ session }: { session: UserSession }) {
     <DropdownMenu.Root open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenu.Trigger>
         <Flex align="center" gap="2" style={{ cursor: "pointer" }}>
-          <ProfileAvatar account={session.account!} size="2" />
+          <Box style={{ position: "relative" }}>
+            <ProfileAvatar account={session.account!} size="2" />
+            <UploadBadge />
+          </Box>
           <Text>{session.account!.name}</Text>
           <ChevronDownIcon
             className={styles.chevron}
@@ -96,6 +101,7 @@ export function AccountDropdown({ session }: { session: UserSession }) {
             },
           ]}
         />
+        <UploadsSubmenu />
         <DropdownSection
           items={[
             {

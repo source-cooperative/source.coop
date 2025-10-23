@@ -12,6 +12,7 @@ import { S3UploadService } from "@/lib/services/s3-upload";
 import { MockS3UploadService } from "@/lib/services/s3-upload.mock";
 import { useS3Credentials } from "./CredentialsProvider";
 import type { CredentialsScope } from "./CredentialsProvider";
+import { useBeforeUnload } from "@/hooks/useBeforeUnload";
 
 // Type definitions
 export type UploadStatus =
@@ -38,7 +39,6 @@ export interface UploadManagerState {
   uploadEnabled: boolean;
   isUploading: boolean;
   hasActiveUploads: boolean;
-  scopes: CredentialsScope[];
 }
 
 interface UploadContextType extends UploadManagerState {
@@ -75,10 +75,12 @@ export function UploadProvider({ children }: UploadProviderProps) {
   const uploadEnabled = s3Services.size > 0;
   const isUploading = activeUploads.size > 0;
   const hasActiveUploads = activeUploads.size > 0;
-  const scopes = Array.from(s3Services.keys()).map((key) => {
-    const [accountId, productId] = key.split(":");
-    return { accountId, productId };
-  });
+
+  // Warn before leaving page if uploads are in progress
+  useBeforeUnload(
+    hasActiveUploads,
+    "You have uploads in progress that will be lost if you leave."
+  );
 
   // Sync credentials to S3 services
   useEffect(() => {
@@ -127,7 +129,7 @@ export function UploadProvider({ children }: UploadProviderProps) {
       const newUploads: ScopedUploadItem[] = files.map((file, index) => ({
         id: `${Date.now()}-${index}`,
         file,
-        key: `${prefix}${file.name}`,
+        key: prefix ? `${prefix}/${file.name}` : file.name,
         uploadedBytes: 0,
         totalBytes: file.size,
         status: "queued",
@@ -285,7 +287,6 @@ export function UploadProvider({ children }: UploadProviderProps) {
     uploadEnabled,
     isUploading,
     hasActiveUploads,
-    scopes,
     uploadFiles,
     cancelUpload,
     cancelAllUploads,
