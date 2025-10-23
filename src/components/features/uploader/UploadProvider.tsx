@@ -10,7 +10,6 @@ import {
   useRef,
 } from "react";
 import { S3UploadService } from "@/lib/services/s3-upload";
-import { MockS3UploadService } from "@/lib/services/s3-upload.mock";
 import { useS3Credentials } from "./CredentialsProvider";
 import type { CredentialsScope } from "./CredentialsProvider";
 import { useBeforeUnload } from "@/hooks/useBeforeUnload";
