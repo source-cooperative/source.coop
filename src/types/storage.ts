@@ -1,4 +1,4 @@
-import { ProductObject } from './product_object';
+import { ProductObject } from "./product_object";
 
 // Configuration for connecting to the provider
 export interface StorageConfig {
@@ -8,14 +8,14 @@ export interface StorageConfig {
     accessKeyId: string;
     secretAccessKey: string;
   };
-  options?: Record<string, unknown>;
+  uploadAccessRoleArn?: string;
 }
 
 // Path construction types and utilities
 export interface ObjectPath {
-  account_id: string;     // Matches Account interface
-  product_id: string;  // Matches Product interface
-  object_path: string;    // The actual path within the product
+  account_id: string; // Matches Account interface
+  product_id: string; // Matches Product interface
+  object_path: string; // The actual path within the product
 }
 
 export interface ListObjectsParams extends ObjectPath {
