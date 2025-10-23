@@ -112,7 +112,7 @@ export function S3CredentialsProvider({ children }: { children: ReactNode }) {
 
       // TODO: Replace with real credentials fetching logic that uses scope
       const credentials: S3Credentials = {
-        accessKeyId: `FAKE_ACCESS_KEY_${scope.accountId}_${scope.productId}`,
+        accessKeyId: "MOCK_UPLOAD", // This triggers mock upload service
         secretAccessKey: `FAKE_SECRET_${scope.accountId}_${scope.productId}`,
         sessionToken: `FAKE_TOKEN_${scope.accountId}_${scope.productId}`,
         bucket: `bucket-${scope.accountId}-${scope.productId}`,
