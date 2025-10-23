@@ -33,7 +33,7 @@ export class UploadQueueManager {
   private maxConcurrent: number;
   public onChange: () => void = () => {};
 
-  constructor(maxConcurrent = 5) {
+  constructor(maxConcurrent = 2) {
     this.maxConcurrent = maxConcurrent;
   }
 
@@ -167,47 +167,54 @@ export class UploadQueueManager {
   }
 
   /**
-   * Process the upload queue
+   * Process the upload queue - fills all available slots
    */
-  private async process() {
-    // Find next queued item
-    const next = this.items.find((i) => i.status === "queued");
-    if (!next) return;
+  private process() {
+    // Fill all available slots up to maxConcurrent
+    while (this.activeIds.size < this.maxConcurrent) {
+      const next = this.items.find((i) => i.status === "queued");
+      if (!next) break; // No more queued items
 
-    // Check concurrency limit
-    if (this.activeIds.size >= this.maxConcurrent) return;
+      // Mark as active immediately
+      this.activeIds.add(next.id);
+      next.status = "uploading";
+      this.onChange();
 
-    // Mark as active and uploading
-    this.activeIds.add(next.id);
-    next.status = "uploading";
-    this.onChange();
+      // Start upload without awaiting (fire-and-forget for concurrency)
+      this.startUpload(next);
+    }
+  }
 
+  /**
+   * Start a single upload
+   */
+  private async startUpload(item: QueuedUpload) {
     try {
-      const { upload, result } = await next.s3Service.uploadFile({
-        file: next.file,
-        key: next.key,
+      const { upload, result } = await item.s3Service.uploadFile({
+        file: item.file,
+        key: item.key,
         onProgress: (uploadedBytes) => {
-          next.uploadedBytes = uploadedBytes;
+          item.uploadedBytes = uploadedBytes;
           this.onChange();
         },
       });
 
-      next.uploadInstance = upload;
-      const r = await result;
+      item.uploadInstance = upload;
+      await result;
 
-      next.status = "completed";
-      next.uploadedBytes = next.totalBytes;
+      item.status = "completed";
+      item.uploadedBytes = item.totalBytes;
     } catch (error) {
       // Only mark as error if the upload wasn't interrupted (still uploading)
-      if (next.status === "uploading") {
-        next.status = "error";
-        next.error = error instanceof Error ? error.message : "Upload failed";
+      if (item.status === "uploading") {
+        item.status = "error";
+        item.error = error instanceof Error ? error.message : "Upload failed";
       }
     } finally {
-      this.activeIds.delete(next.id);
-      next.uploadInstance = undefined;
+      this.activeIds.delete(item.id);
+      item.uploadInstance = undefined;
       this.onChange();
-      this.process(); // Process next upload
+      this.process(); // Fill the slot we just freed up
     }
   }
 }
