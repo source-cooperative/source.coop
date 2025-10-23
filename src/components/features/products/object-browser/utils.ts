@@ -1,5 +1,5 @@
 import type { ProductObject } from "@/types";
-import type { ScopedUploadItem } from "@/components/features/products/uploader";
+import type { ScopedUploadItem } from "@/components/features/uploader";
 
 export interface FileNode {
   name: string;

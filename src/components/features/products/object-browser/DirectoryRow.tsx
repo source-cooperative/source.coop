@@ -18,7 +18,7 @@ import { formatFileSize } from "./utils";
 import { objectUrl } from "@/lib/urls";
 import styles from "./ObjectBrowser.module.css";
 import { useState } from "react";
-import { useUploadManager } from "@/components/features/products/uploader";
+import { useUploadManager } from "@/components/features/uploader";
 
 interface DirectoryRowProps {
   item: FileNode;

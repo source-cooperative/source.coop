@@ -1,7 +1,7 @@
 "use client";
 import { Badge } from "@radix-ui/themes";
 import { useMemo } from "react";
-import { useUploadManager } from "@/components/features/products/uploader/UploadProvider";
+import { useUploadManager } from "@/components/features/uploader/UploadProvider";
 
 /**
  * Badge indicator showing count of active uploads

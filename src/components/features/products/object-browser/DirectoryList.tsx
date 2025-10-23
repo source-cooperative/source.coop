@@ -10,7 +10,7 @@ import { asFileNodes, mergeUploadsWithFiles } from "./utils";
 import type { Product, ProductObject } from "@/types";
 import styles from "./ObjectBrowser.module.css";
 import { DirectoryRow } from "./DirectoryRow";
-import { useUploadManager } from "@/components/features/products/uploader";
+import { useUploadManager } from "@/components/features/uploader";
 
 interface DirectoryListProps {
   product: Product;

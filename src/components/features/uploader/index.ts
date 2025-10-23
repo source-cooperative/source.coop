@@ -6,3 +6,5 @@ export type {
   CredentialsScope,
   UploadStatus,
 } from "./UploadProvider";
+export * from "./UploadBadge";
+export * from "./UploadsSubmenu";
