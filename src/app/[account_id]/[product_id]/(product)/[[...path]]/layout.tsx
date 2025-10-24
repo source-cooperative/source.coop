@@ -61,6 +61,7 @@ export default async function ProductLayout({
               {isAuthorized(session, product, Actions.WriteRepositoryData) && (
                 <FetchCredentialsButton
                   scope={{ accountId: account_id, productId: product_id }}
+                  prefix={path ? path.join("/") : ""}
                 />
               )}
             </Flex>

@@ -39,14 +39,16 @@ const TootltipIconButton = ({
 
 interface FetchCredentialsButtonProps {
   scope: CredentialsScope;
+  prefix: string;
 }
 
 export const FetchCredentialsButton = ({
   scope,
+  prefix,
 }: FetchCredentialsButtonProps) => {
   const { getCredentials, getStatus, fetchCredentials, clearCredentials } =
     useS3Credentials();
-  const { uploadFiles } = useUploadManager();
+  const { uploadFiles, uploadEnabled } = useUploadManager();
 
   const s3Credentials = getCredentials(scope);
   const status = getStatus(scope);
@@ -66,10 +68,11 @@ export const FetchCredentialsButton = ({
       input.type = "file";
       input.multiple = true;
       input.onchange = (e) => {
+        if (!uploadEnabled) return;
         const files = (e.target as HTMLInputElement).files;
         if (files) {
           // Use the upload manager to handle files with scope
-          uploadFiles(Array.from(files), "", scope);
+          uploadFiles(Array.from(files), prefix, scope);
         }
       };
       input.click();

@@ -53,15 +53,6 @@ export default async function ProductPathPage({ params }: PageProps) {
     );
   }
 
-  console.log({
-    product,
-    objectsList,
-    filteredObjectsList: objectsList.filter(
-      // Exclude the current directory object
-      (obj) => obj.path.replace(/\/$/, "") !== objectPath
-    ),
-    prefix: objectPath,
-  });
   return (
     <Suspense fallback={<DirectoryListLoading />}>
       <DirectoryList
