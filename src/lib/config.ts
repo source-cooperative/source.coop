@@ -18,8 +18,11 @@ export const CONFIG = {
       secretAccessKey: "anonymous",
     },
     // Optional role to use when granting temporary upload credentials
-    uploadAccessRoleArn: process.env.AWS_UPLOAD_ACCESS_ROLE_ARN,
   } as StorageConfig,
+
+  uploads: {
+    accessRoleArn: process.env.AWS_UPLOAD_ACCESS_ROLE_ARN,
+  },
 
   // DynamoDB configuration
   database: {

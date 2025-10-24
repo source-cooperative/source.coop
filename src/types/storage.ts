@@ -8,7 +8,6 @@ export interface StorageConfig {
     accessKeyId: string;
     secretAccessKey: string;
   };
-  uploadAccessRoleArn?: string;
 }
 
 // Path construction types and utilities

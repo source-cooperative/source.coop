@@ -85,14 +85,17 @@ export async function getTemporaryCredentials({
   // Construct S3 path: accountId/productId/prefix/*
 
   try {
-    const stsClient = new STSClient({ region });
+    const stsClient = new STSClient({
+      region,
+      credentials: CONFIG.database.credentials,
+    });
 
     const s3Path = [accountId, productId, prefix].filter(Boolean).join("/");
 
     // Use AssumeRole to get temporary credentials
     const response = await stsClient.send(
       new AssumeRoleCommand({
-        RoleArn: CONFIG.storage.uploadAccessRoleArn,
+        RoleArn: CONFIG.uploads.accessRoleArn,
         RoleSessionName: `upload-${accountId}-${productId}-${Date.now()}`,
         DurationSeconds: durationSeconds,
         // Create session policy to scope permissions
