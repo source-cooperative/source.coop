@@ -3,8 +3,8 @@
 import { STSClient, AssumeRoleCommand } from "@aws-sdk/client-sts";
 import { getPageSession } from "@/lib/api/utils";
 import { isAuthorized } from "@/lib/api/authz";
-import { Actions } from "@/types";
-import { CONFIG, LOGGER, productsTable } from "@/lib";
+import { Actions, DataProvider } from "@/types";
+import { CONFIG, dataConnectionsTable, LOGGER, productsTable } from "@/lib";
 import { z } from "zod";
 
 export interface TemporaryCredentials {
@@ -46,26 +46,30 @@ export async function getTemporaryCredentials({
 
   // Check authorization
   const product = await productsTable.fetchById(accountId, productId);
-  if (!product) {
+  if (!product)
     throw new Error(
       `Product ${accountId}/${productId} not found for temporary credentials`
     );
-  }
 
-  if (!isAuthorized(session, product, Actions.WriteRepositoryData)) {
+  if (!isAuthorized(session, product, Actions.WriteRepositoryData))
     throw new Error(
       `Unauthorized: User does not have permission to upload to ${accountId}/${productId}`
     );
-  }
 
-  // Get connection details from primary mirror
+  // TODO: Ideally, we would be able to read this directly from the product, however the product mirrors seem to have incorrect bucket values
+  const dataConnection = await dataConnectionsTable.fetchById(
+    product.metadata.primary_mirror
+  );
+  if (!dataConnection)
+    throw new Error(
+      `Data connection ${product.metadata.primary_mirror} not found`
+    );
+  if (dataConnection.details.provider !== DataProvider.S3)
+    throw new Error("Non-S3 providers are not supported.");
+
   const primaryMirror =
     product.metadata.mirrors[product.metadata.primary_mirror];
-  if (primaryMirror.storage_type !== "s3") {
-    throw new Error(
-      `Product ${accountId}/${productId} does not use S3 storage`
-    );
-  }
+
   const { bucket, region, prefix } = z
     .object({
       bucket: z.string(),
@@ -73,8 +77,8 @@ export async function getTemporaryCredentials({
       prefix: z.string(),
     })
     .parse({
-      bucket: primaryMirror.config.bucket,
-      region: primaryMirror.config.region,
+      bucket: dataConnection.details.bucket,
+      region: dataConnection.details.region,
       prefix: primaryMirror.prefix,
     });
 
