@@ -1,6 +1,6 @@
 "use client";
 
-import { LOGGER } from "@/lib";
+import { LOGGER, getTemporaryCredentials } from "@/lib";
 import {
   createContext,
   useContext,
@@ -120,14 +120,7 @@ export function S3CredentialsProvider({ children }: { children: ReactNode }) {
       // Simulate fetching credentials for specific scope
       await new Promise((resolve) => setTimeout(resolve, 100));
 
-      // TODO: Replace with real credentials fetching logic that uses scope
-      const credentials: S3Credentials = {
-        accessKeyId: "MOCK_UPLOAD", // This triggers mock upload service
-        secretAccessKey: `FAKE_SECRET_${scope.accountId}_${scope.productId}`,
-        sessionToken: `FAKE_TOKEN_${scope.accountId}_${scope.productId}`,
-        bucket: `bucket-${scope.accountId}-${scope.productId}`,
-        region: "us-east-1",
-      };
+      const credentials = await getTemporaryCredentials(scope);
 
       LOGGER.debug("Setting credentials for scope", {
         operation: "setCredentials",
