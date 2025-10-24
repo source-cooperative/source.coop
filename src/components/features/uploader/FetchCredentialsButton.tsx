@@ -4,38 +4,9 @@ import {
   LockOpen1Icon,
   UploadIcon,
 } from "@radix-ui/react-icons";
-import { IconButton, Spinner, Tooltip, Flex } from "@radix-ui/themes";
+import { Spinner, Button, DropdownMenu } from "@radix-ui/themes";
 import { useS3Credentials, CredentialsScope } from "./CredentialsProvider";
 import { useUploadManager } from "./UploadProvider";
-import { useMemo } from "react";
-
-interface TootltipIconButtonProps {
-  tooltip: string;
-  children: React.ReactNode;
-  onClick?: () => void;
-  disabled?: boolean;
-  variant?: React.ComponentProps<typeof IconButton>["variant"];
-  radius?: React.ComponentProps<typeof IconButton>["radius"];
-}
-const TootltipIconButton = ({
-  tooltip,
-  children,
-  onClick,
-  disabled,
-  variant = "ghost",
-  radius = "full",
-}: TootltipIconButtonProps) => (
-  <Tooltip content={tooltip}>
-    <IconButton
-      variant={variant}
-      radius={radius}
-      onClick={onClick}
-      disabled={disabled}
-    >
-      {children}
-    </IconButton>
-  </Tooltip>
-);
 
 interface FetchCredentialsButtonProps {
   scope: CredentialsScope;
@@ -52,58 +23,80 @@ export const FetchCredentialsButton = ({
 
   const s3Credentials = getCredentials(scope);
   const status = getStatus(scope);
+  const isEditMode = !!s3Credentials;
+  const isLoading = status === "loading";
 
-  if (status === "loading") {
-    return (
-      <TootltipIconButton tooltip="Fetching credentials..." disabled>
-        <Spinner />
-      </TootltipIconButton>
-    );
-  }
+  const handleEnableEdit = () => {
+    if (!isLoading && !isEditMode) {
+      fetchCredentials(scope);
+    }
+  };
 
-  if (s3Credentials) {
-    const handleUploadClick = () => {
-      // Trigger file picker
-      const input = document.createElement("input");
-      input.type = "file";
-      input.multiple = true;
-      input.onchange = (e) => {
-        if (!uploadEnabled) return;
-        const files = (e.target as HTMLInputElement).files;
-        if (files) {
-          // Use the upload manager to handle files with scope
-          uploadFiles(Array.from(files), prefix, scope);
-        }
-      };
-      input.click();
+  const handleDisableEdit = () => {
+    if (!isLoading && isEditMode) {
+      clearCredentials(scope);
+    }
+  };
+
+  const handleUploadClick = () => {
+    if (!uploadEnabled || !isEditMode) return;
+
+    // Trigger file picker
+    const input = document.createElement("input");
+    input.type = "file";
+    input.multiple = true;
+    input.onchange = (e) => {
+      const files = (e.target as HTMLInputElement).files;
+      if (files) {
+        uploadFiles(Array.from(files), prefix, scope);
+      }
     };
-
-    return (
-      <Flex gap="2" align="center">
-        <TootltipIconButton
-          tooltip="Upload files"
-          onClick={handleUploadClick}
-          variant="soft"
-          radius="small"
-        >
-          <UploadIcon />
-        </TootltipIconButton>
-        <TootltipIconButton
-          tooltip="Disable uploads"
-          onClick={() => clearCredentials(scope)}
-        >
-          <LockOpen1Icon />
-        </TootltipIconButton>
-      </Flex>
-    );
-  }
+    input.click();
+  };
 
   return (
-    <TootltipIconButton
-      tooltip="Enable uploads."
-      onClick={() => fetchCredentials(scope)}
-    >
-      <LockClosedIcon />
-    </TootltipIconButton>
+    <DropdownMenu.Root>
+      <DropdownMenu.Trigger>
+        <Button variant="ghost" size="1" disabled={isLoading} mr="1">
+          {isLoading ? (
+            <Spinner />
+          ) : isEditMode ? (
+            <LockOpen1Icon />
+          ) : (
+            <LockClosedIcon />
+          )}
+          <DropdownMenu.TriggerIcon />
+        </Button>
+      </DropdownMenu.Trigger>
+      <DropdownMenu.Content size="1">
+        <DropdownMenu.CheckboxItem
+          checked={isEditMode}
+          onCheckedChange={handleEnableEdit}
+          disabled={isLoading || isEditMode}
+        >
+          Edit Mode
+        </DropdownMenu.CheckboxItem>
+        <DropdownMenu.CheckboxItem
+          checked={!isEditMode}
+          onCheckedChange={handleDisableEdit}
+          disabled={isLoading || !isEditMode}
+        >
+          Read Only
+        </DropdownMenu.CheckboxItem>
+
+        {isEditMode && (
+          <>
+            <DropdownMenu.Separator />
+            <DropdownMenu.Item
+              onClick={handleUploadClick}
+              disabled={!uploadEnabled}
+            >
+              <UploadIcon />
+              Upload Files
+            </DropdownMenu.Item>
+          </>
+        )}
+      </DropdownMenu.Content>
+    </DropdownMenu.Root>
   );
 };

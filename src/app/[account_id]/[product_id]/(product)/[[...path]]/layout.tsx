@@ -45,7 +45,17 @@ export default async function ProductLayout({
     <>
       <ProductHeader product={product} />
       <Card mt="4">
-        <SectionHeader title="Product Contents">
+        <SectionHeader
+          title="Product Contents"
+          rightButton={
+            isAuthorized(session, product, Actions.WriteRepositoryData) && (
+              <FetchCredentialsButton
+                scope={{ accountId: account_id, productId: product_id }}
+                prefix={path ? path.join("/") : ""}
+              />
+            )
+          }
+        >
           <Box
             pb="3"
             mb="3"
@@ -58,12 +68,6 @@ export default async function ProductLayout({
                 path={path?.map((p) => decodeURIComponent(p)) || []}
                 baseUrl={productUrl(account_id, product_id)}
               />
-              {isAuthorized(session, product, Actions.WriteRepositoryData) && (
-                <FetchCredentialsButton
-                  scope={{ accountId: account_id, productId: product_id }}
-                  prefix={path ? path.join("/") : ""}
-                />
-              )}
             </Flex>
           </Box>
         </SectionHeader>
