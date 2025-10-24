@@ -384,6 +384,10 @@ function writeRepositoryData(
     return true;
   }
 
+  if (isAdmin(principal)) {
+    return true;
+  }
+
   // If the user is an owner or maintainer of the repository, they are authorized
   return hasRole(
     principal,

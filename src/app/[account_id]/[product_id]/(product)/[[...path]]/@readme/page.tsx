@@ -28,7 +28,7 @@ export default async function ProductPathPage({ params }: PageProps) {
     LOGGER.debug("Error fetching README", {
       operation: "ProductPathPage",
       context: "README fetch",
-      metadata: { ...lookupDetails, error },
+      metadata: { ...lookupDetails, error: (error as Error).toString() },
     });
   }
   return readme && <MarkdownViewer content={readme} />;

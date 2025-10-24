@@ -21,6 +21,5 @@ export interface ProductObject {
   checksum: string;
   content?: Buffer | string; // Added for storage client responses
   metadata?: ProductObjectMetadata;
-  name?: string; // Name of the file or directory
   isDirectory?: boolean; // Whether this is a directory
 } 

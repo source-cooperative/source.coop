@@ -11,3 +11,4 @@ export * from "./ChecksumVerifier";
 export * from "./ProductsFilters";
 export * from "./ProductsList";
 export * from "./ProductsSkeleton";
+export * from "../uploader";

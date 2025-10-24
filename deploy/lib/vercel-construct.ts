@@ -1,15 +1,18 @@
 import * as cdk from "aws-cdk-lib";
 import * as iam from "aws-cdk-lib/aws-iam";
+import * as s3 from "aws-cdk-lib/aws-s3";
 import { Construct } from "constructs";
 
 export interface VercelConstructProps {
   readonly projectName: string;
   readonly stage: string;
   readonly vercelEnvironment: string[];
+  readonly writableBuckets: string[];
 }
 
 export class VercelConstruct extends Construct {
   public readonly vercelRole: iam.Role;
+  public readonly s3AccessRole: iam.Role;
 
   constructor(scope: Construct, id: string, props: VercelConstructProps) {
     super(scope, id);
@@ -35,10 +38,38 @@ export class VercelConstruct extends Construct {
       ),
     });
 
+    this.s3AccessRole = new iam.Role(this, "s3-upload-role", {
+      roleName: `SourceFrontend-S3UploadAccess-${props.stage}`,
+      description:
+        "Role used by Vercel to generate temporary credentials for S3 uploads",
+      assumedBy: this.vercelRole,
+    });
+
+    // Grant Vercel role permission to assume this role
+    this.s3AccessRole.grantAssumeRole(this.vercelRole);
+
+    // Grant permissions for multipart uploads and reads
+    // (session policies will further restrict access to specific prefixes)
+    for (const bucketName of props.writableBuckets) {
+      const bucket = s3.Bucket.fromBucketName(
+        this,
+        `bucket-${bucketName}`,
+        bucketName
+      );
+      bucket.grantReadWrite(this.s3AccessRole);
+    }
+
     // Output the role ARN for reference
     new cdk.CfnOutput(this, "VercelRoleArn", {
       value: this.vercelRole.roleArn,
       description: "ARN of the Vercel IAM role",
+    });
+
+    new cdk.CfnOutput(this, "S3UploadAccessRoleArn", {
+      value: this.s3AccessRole.roleArn,
+      description:
+        "ARN of the S3 upload access role for STS temporary credentials",
+      exportName: `SourceFrontend-S3UploadAccessRoleArn-${props.stage}`,
     });
   }
 }
