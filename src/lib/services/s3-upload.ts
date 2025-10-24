@@ -4,6 +4,7 @@ import { Upload } from "@aws-sdk/lib-storage";
 export interface S3UploadConfig {
   bucket: string;
   region: string;
+  prefix: string;
   accessKeyId: string;
   secretAccessKey: string;
   sessionToken: string;
@@ -60,7 +61,7 @@ export class S3UploadService {
       client: this.client,
       params: {
         Bucket: this.config.bucket,
-        Key: key,
+        Key: `${this.config.prefix}${key}`,
         Body: file,
         ContentType: file.type || "application/octet-stream",
         ...(isLargeFile && { ChecksumAlgorithm: "CRC32" }),

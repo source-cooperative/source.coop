@@ -14,6 +14,7 @@ export interface TemporaryCredentials {
   expiration: string;
   bucket: string;
   region: string;
+  prefix: string;
 }
 
 export interface GetCredentialsParams {
@@ -79,7 +80,7 @@ export async function getTemporaryCredentials({
     .parse({
       bucket: dataConnection.details.bucket,
       region: dataConnection.details.region,
-      prefix: primaryMirror.prefix,
+      prefix: primaryMirror.prefix, // "{ account_id }/{ repository_id }/"
     });
 
   // Construct S3 path: accountId/productId/prefix/*
@@ -89,8 +90,6 @@ export async function getTemporaryCredentials({
       region,
       credentials: CONFIG.database.credentials,
     });
-
-    const s3Path = [accountId, productId, prefix].filter(Boolean).join("/");
 
     // Use AssumeRole to get temporary credentials
     const response = await stsClient.send(
@@ -112,7 +111,7 @@ export async function getTemporaryCredentials({
                 "s3:AbortMultipartUpload",
                 "s3:ListMultipartUploadParts",
               ],
-              Resource: `arn:aws:s3:::${bucket}/${s3Path}/*`,
+              Resource: `arn:aws:s3:::${bucket}/${prefix}*`,
             },
             {
               Sid: "AllowListBucket",
@@ -121,7 +120,7 @@ export async function getTemporaryCredentials({
               Resource: `arn:aws:s3:::${bucket}`,
               Condition: {
                 StringLike: {
-                  "s3:prefix": [`${s3Path}/*`],
+                  "s3:prefix": [`${prefix}*`],
                 },
               },
             },
@@ -152,6 +151,7 @@ export async function getTemporaryCredentials({
       expiration: response.Credentials.Expiration!.toISOString(),
       bucket,
       region,
+      prefix,
     };
   } catch (error) {
     LOGGER.error("Failed to generate temporary credentials", {

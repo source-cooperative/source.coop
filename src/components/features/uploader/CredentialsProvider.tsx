@@ -1,6 +1,6 @@
 "use client";
 
-import { LOGGER, getTemporaryCredentials } from "@/lib";
+import { LOGGER, TemporaryCredentials, getTemporaryCredentials } from "@/lib";
 import {
   createContext,
   useContext,
@@ -10,34 +10,26 @@ import {
   useCallback,
 } from "react";
 
-export interface S3Credentials {
-  accessKeyId: string;
-  secretAccessKey: string;
-  sessionToken: string;
-  bucket: string;
-  region: string;
-}
-
 export interface CredentialsScope {
   accountId: string;
   productId: string;
 }
 
 interface CredentialsEntry {
-  credentials: S3Credentials;
+  credentials: TemporaryCredentials;
   status: "loading" | "success" | "failed";
   timestamp: number;
 }
 
 interface CredentialsContextType {
-  getCredentials: (scope: CredentialsScope) => S3Credentials | undefined;
+  getCredentials: (scope: CredentialsScope) => TemporaryCredentials | undefined;
   getStatus: (
     scope: CredentialsScope
   ) => "loading" | "success" | "failed" | undefined;
   fetchCredentials: (scope: CredentialsScope) => Promise<void>;
   clearCredentials: (scope: CredentialsScope) => void;
   clearAllCredentials: () => void;
-  getAllCredentials: () => Map<CredentialsScope, S3Credentials>;
+  getAllCredentials: () => Map<CredentialsScope, TemporaryCredentials>;
 }
 
 const CredentialsContext = createContext<CredentialsContextType | undefined>(
@@ -56,7 +48,7 @@ export function S3CredentialsProvider({ children }: { children: ReactNode }) {
 
   const getCredentials = (
     scope: CredentialsScope
-  ): S3Credentials | undefined => {
+  ): TemporaryCredentials | undefined => {
     const key = getScopeKey(scope);
     const entry = credentialsMap.get(key);
     return entry?.status === "success" ? entry.credentials : undefined;
@@ -84,7 +76,7 @@ export function S3CredentialsProvider({ children }: { children: ReactNode }) {
   };
 
   const credentialsMapMemo = useMemo(() => {
-    const result = new Map<CredentialsScope, S3Credentials>();
+    const result = new Map<CredentialsScope, TemporaryCredentials>();
 
     credentialsMap.forEach((credentials, scopeKey) => {
       const [accountId, productId] = scopeKey.split(":");
@@ -110,7 +102,7 @@ export function S3CredentialsProvider({ children }: { children: ReactNode }) {
     // Set loading status
     setCredentialsMap((prev) =>
       new Map(prev).set(key, {
-        credentials: {} as S3Credentials, // Placeholder
+        credentials: {} as TemporaryCredentials, // Placeholder
         status: "loading",
         timestamp: Date.now(),
       })
@@ -143,7 +135,7 @@ export function S3CredentialsProvider({ children }: { children: ReactNode }) {
       });
       setCredentialsMap((prev) =>
         new Map(prev).set(key, {
-          credentials: {} as S3Credentials, // Placeholder
+          credentials: {} as TemporaryCredentials, // Placeholder
           status: "failed",
           timestamp: Date.now(),
         })
