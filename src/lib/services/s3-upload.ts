@@ -55,8 +55,6 @@ export class S3UploadService {
     upload: Upload;
     result: Promise<S3UploadResult>;
   }> {
-    const isLargeFile = file.size > this.chunkSize;
-
     const upload = new Upload({
       client: this.client,
       params: {
@@ -64,7 +62,6 @@ export class S3UploadService {
         Key: `${this.config.prefix}${key}`,
         Body: file,
         ContentType: file.type || "application/octet-stream",
-        ...(isLargeFile && { ChecksumAlgorithm: "CRC32" }),
       },
       queueSize: this.maxConcurrent,
       partSize: this.chunkSize,
