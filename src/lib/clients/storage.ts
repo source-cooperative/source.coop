@@ -1,20 +1,19 @@
-import { S3StorageClient } from "../storage/s3";
-import { CONFIG } from "@/lib/config";
-import { LOGGER } from "@/lib/logging";
+import { CONFIG, LOGGER } from "@/lib";
 import type { StorageClient, StorageConfig } from "@/types/storage";
+import { S3StorageClient } from "../storage/s3";
 
 function createStorageClient(config: StorageConfig): StorageClient {
   LOGGER.debug("Creating storage client with config", {
     operation: "createStorageClient",
     context: "storage client initialization",
-    metadata: { config }
+    metadata: { config },
   });
 
   if (!config.endpoint || config.endpoint.trim() === "") {
     LOGGER.error("Storage endpoint is missing in CONFIG", {
       operation: "createStorageClient",
       context: "configuration validation",
-      metadata: { CONFIG }
+      metadata: { CONFIG },
     });
     throw new Error("Storage endpoint is not configured");
   }

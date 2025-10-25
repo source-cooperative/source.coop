@@ -14,6 +14,7 @@ import {
   ProductHeader,
   SectionHeader,
 } from "@/components";
+import { JumpToPrefix } from "@/components/features/products/JumpToPrefix";
 import { getPageSession } from "@/lib";
 import { isAuthorized } from "@/lib/api/authz";
 import { productsTable } from "@/lib/clients/database";
@@ -66,6 +67,12 @@ export default async function ProductLayout({
             <Flex direction="row" gap="2" align="center" justify="between">
               <BreadcrumbNav
                 path={path?.map((p) => decodeURIComponent(p)) || []}
+                baseUrl={productUrl(account_id, product_id)}
+              />
+              <JumpToPrefix
+                accountId={account_id}
+                productId={product_id}
+                currentPath={path || []}
                 baseUrl={productUrl(account_id, product_id)}
               />
             </Flex>
