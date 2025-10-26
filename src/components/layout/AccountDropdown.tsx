@@ -1,5 +1,5 @@
 "use client";
-import { Flex, DropdownMenu, Text } from "@radix-ui/themes";
+import { Box, Flex, DropdownMenu, Text } from "@radix-ui/themes";
 import { useState } from "react";
 import { ProfileAvatar } from "@/components/features/profiles/ProfileAvatar";
 import { ChevronDownIcon } from "@radix-ui/react-icons";
@@ -54,7 +54,9 @@ export function AccountDropdown({ session }: { session: UserSession }) {
       <DropdownMenu.Trigger>
         <Flex align="center" gap="2" style={{ cursor: "pointer" }}>
           <ProfileAvatar account={session.account!} size="2" />
-          <Text>{session.account!.name}</Text>
+          <Box display={{ initial: "none", sm: "block" }}>
+            <Text>{session.account!.name}</Text>
+          </Box>
           <ChevronDownIcon
             className={styles.chevron}
             data-state={isOpen ? "open" : "closed"}
