@@ -18,6 +18,10 @@ export function Logo() {
       width={243}
       height={74}
       priority
+      style={{
+        width: "auto",
+        height: "clamp(52px, 16vw, 74px)", // Scale logo
+      }}
     />
   );
 
