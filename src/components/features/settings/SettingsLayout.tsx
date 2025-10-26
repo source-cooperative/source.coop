@@ -32,7 +32,6 @@ export function SettingsLayout({ children, menuItems }: SettingsLayoutProps) {
           className={styles.settingsSidebar}
           style={{
             minWidth: "200px",
-            maxWidth: "250px",
           }}
         >
           <Flex direction="column" gap="1">
@@ -69,17 +68,7 @@ export function SettingsLayout({ children, menuItems }: SettingsLayoutProps) {
         </Box>
 
         {/* Right content area */}
-        <Box
-          className={styles.settingsContent}
-          style={{
-            flex: 1,
-            minWidth: 0,
-            borderLeft: "1px solid var(--gray-6)",
-            paddingLeft: "2em",
-          }}
-        >
-          {children}
-        </Box>
+        <Box className={styles.settingsContent}>{children}</Box>
       </Flex>
     </Box>
   );
