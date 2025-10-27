@@ -9,11 +9,13 @@ import { ProfileAvatar } from "../features/profiles";
 interface AccountDisplayProps {
   account: Account;
   showHoverCard?: boolean;
+  size?: React.ComponentProps<typeof ProfileAvatar>["size"];
 }
 
 export function AvatarLinkCompact({
   showAccountId = false,
   link = true,
+  size = "2",
   ...props
 }: AccountDisplayProps & {
   showHoverCard?: boolean;
@@ -22,7 +24,7 @@ export function AvatarLinkCompact({
 }) {
   const content = (
     <>
-      <ProfileAvatar account={props.account} size="2" />
+      <ProfileAvatar account={props.account} size={size} />
       <Text size="2" ml="2">
         {props.account.name}
       </Text>
