@@ -15,6 +15,7 @@ import {
 import { CopyIcon, CheckIcon } from "@radix-ui/react-icons";
 import React, { useState } from "react";
 import { MonoText } from "@/components/core";
+import { Icon } from "@radix-ui/react-select";
 
 interface ViewCredentialsDialogProps {
   credentials: TemporaryCredentials;
@@ -74,19 +75,46 @@ export function ViewCredentialsDialog({
           </Box>
         </Tabs.Root>
 
-        <DataList.Root size="1">
-          {Object.entries({
-            Expires: new Date(credentials.expiration).toLocaleString(),
-            Region: <MonoText>{credentials.region}</MonoText>,
-            Bucket: <MonoText>{credentials.bucket}</MonoText>,
-            Prefix: <MonoText>{credentials.prefix}</MonoText>,
-          }).map(([key, value]) => (
-            <DataList.Item align="center" key={key}>
-              <DataList.Label>{key}</DataList.Label>
-              <DataList.Value>{value}</DataList.Value>
-            </DataList.Item>
-          ))}
-        </DataList.Root>
+        <Box mb="4">
+          <Box mb="2">
+            <Text size="2" color="gray" weight="bold">
+              Boundaries
+            </Text>
+          </Box>
+          <DataList.Root size="1">
+            {(
+              [
+                [
+                  "Expires",
+                  <span title={credentials.expiration}>
+                    {new Date(credentials.expiration).toLocaleString()}
+                  </span>,
+                  credentials.expiration,
+                ],
+                [
+                  "Bucket",
+                  <MonoText>{credentials.bucket}</MonoText>,
+                  credentials.bucket,
+                ],
+                [
+                  "Prefix",
+                  <MonoText>{credentials.prefix}</MonoText>,
+                  credentials.prefix,
+                ],
+              ] as const
+            ).map(([label, element, content]) => (
+              <DataList.Item align="center" key={label}>
+                <DataList.Label>{label}</DataList.Label>
+                <DataList.Value>
+                  <Flex align="center" gap="2">
+                    {element}
+                    <CopyButton content={content} variant="ghost" />
+                  </Flex>
+                </DataList.Value>
+              </DataList.Item>
+            ))}
+          </DataList.Root>
+        </Box>
 
         <Flex gap="3" mt="4" justify="end">
           <Dialog.Close>
@@ -106,7 +134,7 @@ function CodeBlock({ children }: React.PropsWithChildren) {
       style={{
         backgroundColor: "var(--gray-1)",
         borderRadius: "var(--radius-2)",
-        padding: "var(--space-3)",
+        padding: "var(--space-2)",
         overflow: "auto",
         maxHeight: "400px",
         fontSize: ".85rem",
@@ -115,6 +143,29 @@ function CodeBlock({ children }: React.PropsWithChildren) {
     >
       <pre>{children}</pre>
     </Box>
+  );
+}
+
+interface CopyButtonProps {
+  content: string;
+  variant?: React.ComponentProps<typeof IconButton>["variant"];
+}
+
+function CopyButton({ content, variant = "soft" }: CopyButtonProps) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(content);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <Tooltip content={copied ? "Copied!" : "Copy to clipboard"}>
+      <IconButton size="1" variant={variant} onClick={handleCopy}>
+        {copied ? <CheckIcon /> : <CopyIcon />}
+      </IconButton>
+    </Tooltip>
   );
 }
 
@@ -129,18 +180,10 @@ function CredentialsTabContent({
   title,
   content,
 }: CredentialsTabContentProps) {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = async () => {
-    await navigator.clipboard.writeText(content);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
   return (
     <Tabs.Content value={value}>
       <Flex direction="column" gap="2">
-        <Text size="2" weight="regular" color="gray">
+        <Text size="1" weight="regular" color="gray">
           {title}
         </Text>
         <Box style={{ position: "relative" }}>
@@ -152,11 +195,7 @@ function CredentialsTabContent({
               zIndex: 1,
             }}
           >
-            <Tooltip content={copied ? "Copied!" : "Copy to clipboard"}>
-              <IconButton size="1" variant="soft" onClick={handleCopy}>
-                {copied ? <CheckIcon /> : <CopyIcon />}
-              </IconButton>
-            </Tooltip>
+            <CopyButton content={content} />
           </Box>
           <CodeBlock>{content}</CodeBlock>
         </Box>
