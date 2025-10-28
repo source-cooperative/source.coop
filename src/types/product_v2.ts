@@ -24,26 +24,12 @@ export const ProductMirrorSchema = z
 
 export type ProductMirror = z.infer<typeof ProductMirrorSchema>;
 
-// Role assignment for product access
-// ProductRole describes a role granted to an account for a product
-export const ProductRoleSchema = z
-  .object({
-    account_id: z.string(),
-    role: z.enum(["admin", "contributor", "viewer"]),
-    granted_at: z.string(),
-    granted_by: z.string(), // account_id of who granted the role
-  })
-  .openapi("ProductRole");
-
-export type ProductRole = z.infer<typeof ProductRoleSchema>;
-
 // Metadata for a product, including mirrors, roles, and tags
 export const ProductMetadataSchema = z
   .object({
     mirrors: z.record(ProductMirrorSchema),
     primary_mirror: z.string(), // Key of the primary mirror (e.g., "aws-us-east-1")
     tags: z.array(z.string()).optional(),
-    roles: z.record(ProductRoleSchema),
   })
   .openapi("ProductMetadata");
 

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Actions, RepositoryUpdateRequestSchema } from "@/types";
+import { Actions } from "@/types";
 import { isAuthorized } from "@/lib/api/authz";
 import { StatusCodes } from "http-status-codes";
 import { getApiSession } from "@/lib/api/utils";
@@ -132,42 +132,42 @@ export async function GET(
  *       '500':
  *         $ref: '#/components/responses/InternalServerError'
  */
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ account_id: string; repository_id: string }> }
-) {
-  try {
-    const session = await getApiSession(request);
-    const { account_id, repository_id } = await params;
-    const repository = await productsTable.fetchById(account_id, repository_id);
-    if (!repository) {
-      return NextResponse.json(
-        {
-          error: `Repository with ID ${account_id}/${repository_id} not found`,
-        },
-        { status: StatusCodes.NOT_FOUND }
-      );
-    }
-    const repositoryUpdate = RepositoryUpdateRequestSchema.parse(
-      await request.json()
-    );
-    if (!isAuthorized(session, repository, Actions.PutRepository)) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: StatusCodes.UNAUTHORIZED }
-      );
-    }
-    // repository.meta = repositoryUpdate.meta; // TODO: Fix this
-    // repository.state = repositoryUpdate.state; // TODO: Fix this
-    await productsTable.update(repository);
-    return NextResponse.json(repository, { status: StatusCodes.OK });
-  } catch (err: any) {
-    return NextResponse.json(
-      { error: err.message || "Internal server error" },
-      { status: StatusCodes.INTERNAL_SERVER_ERROR }
-    );
-  }
-}
+// export async function PUT(
+//   request: NextRequest,
+//   { params }: { params: Promise<{ account_id: string; repository_id: string }> }
+// ) {
+//   try {
+//     const session = await getApiSession(request);
+//     const { account_id, repository_id } = await params;
+//     const repository = await productsTable.fetchById(account_id, repository_id);
+//     if (!repository) {
+//       return NextResponse.json(
+//         {
+//           error: `Repository with ID ${account_id}/${repository_id} not found`,
+//         },
+//         { status: StatusCodes.NOT_FOUND }
+//       );
+//     }
+//     const repositoryUpdate = RepositoryUpdateRequestSchema.parse(
+//       await request.json()
+//     );
+//     if (!isAuthorized(session, repository, Actions.PutRepository)) {
+//       return NextResponse.json(
+//         { error: "Unauthorized" },
+//         { status: StatusCodes.UNAUTHORIZED }
+//       );
+//     }
+//     // repository.meta = repositoryUpdate.meta; // TODO: Fix this
+//     // repository.state = repositoryUpdate.state; // TODO: Fix this
+//     await productsTable.update(repository);
+//     return NextResponse.json(repository, { status: StatusCodes.OK });
+//   } catch (err: any) {
+//     return NextResponse.json(
+//       { error: err.message || "Internal server error" },
+//       { status: StatusCodes.INTERNAL_SERVER_ERROR }
+//     );
+//   }
+// }
 
 /**
  * @openapi
