@@ -86,19 +86,19 @@ export function ViewCredentialsDialog({
               [
                 [
                   "Expires",
-                  <span title={credentials.expiration}>
+                  <span key="expires" title={credentials.expiration}>
                     {new Date(credentials.expiration).toLocaleString()}
                   </span>,
                   credentials.expiration,
                 ],
                 [
                   "Bucket",
-                  <MonoText>{credentials.bucket}</MonoText>,
+                  <MonoText key="bucket">{credentials.bucket}</MonoText>,
                   credentials.bucket,
                 ],
                 [
                   "Prefix",
-                  <MonoText>{credentials.prefix}</MonoText>,
+                  <MonoText key="prefix">{credentials.prefix}</MonoText>,
                   credentials.prefix,
                 ],
               ] as const
