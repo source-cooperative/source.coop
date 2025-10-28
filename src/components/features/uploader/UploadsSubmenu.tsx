@@ -37,8 +37,6 @@ export function UploadsSubmenu() {
     return null;
   }
 
-  console.log({ activeUploads });
-
   return (
     <>
       <DropdownMenu.Sub>

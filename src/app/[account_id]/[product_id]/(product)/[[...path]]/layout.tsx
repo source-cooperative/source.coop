@@ -14,6 +14,7 @@ import {
   ProductHeader,
   SectionHeader,
 } from "@/components";
+import { Dropzone } from "@/components";
 import { getPageSession } from "@/lib";
 import { isAuthorized } from "@/lib/api/authz";
 import { productsTable } from "@/lib/clients/database";
@@ -41,39 +42,43 @@ export default async function ProductLayout({
     notFound();
   }
 
+  const prefix = path ? path.join("/") : "";
   return (
     <>
       <ProductHeader product={product} />
-      <Card mt="4">
-        <SectionHeader
-          title="Product Contents"
-          rightButton={
-            isAuthorized(session, product, Actions.WriteRepositoryData) && (
-              <FetchCredentialsButton
-                scope={{ accountId: account_id, productId: product_id }}
-                prefix={path ? path.join("/") : ""}
-              />
-            )
-          }
-        >
-          <Box
-            pb="3"
-            mb="3"
-            style={{
-              borderBottom: "1px solid var(--gray-5)",
-            }}
-          >
-            <Flex direction="row" gap="2" align="center" justify="between">
-              <BreadcrumbNav
-                path={path?.map((p) => decodeURIComponent(p)) || []}
-                baseUrl={productUrl(account_id, product_id)}
-              />
-            </Flex>
-          </Box>
-        </SectionHeader>
-        {children}
-      </Card>
-
+      <Box mt="4">
+        <Dropzone product={product} prefix={prefix}>
+          <Card>
+            <SectionHeader
+              title="Product Contents"
+              rightButton={
+                isAuthorized(session, product, Actions.WriteRepositoryData) && (
+                  <FetchCredentialsButton
+                    scope={{ accountId: account_id, productId: product_id }}
+                    prefix={prefix}
+                  />
+                )
+              }
+            >
+              <Box
+                pb="3"
+                mb="3"
+                style={{
+                  borderBottom: "1px solid var(--gray-5)",
+                }}
+              >
+                <Flex direction="row" gap="2" align="center" justify="between">
+                  <BreadcrumbNav
+                    path={path?.map((p) => decodeURIComponent(p)) || []}
+                    baseUrl={productUrl(account_id, product_id)}
+                  />
+                </Flex>
+              </Box>
+            </SectionHeader>
+            {children}
+          </Card>
+        </Dropzone>
+      </Box>
       {path === undefined && readme}
     </>
   );

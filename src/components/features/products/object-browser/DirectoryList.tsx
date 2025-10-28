@@ -1,9 +1,8 @@
 "use client";
 
 import { Box, Text } from "@radix-ui/themes";
-import { ChevronDownIcon, UploadIcon } from "@radix-ui/react-icons";
+import { ChevronDownIcon } from "@radix-ui/react-icons";
 import { useRef, useState, useEffect } from "react";
-import { useDropzone } from "react-dropzone";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { MonoText } from "@/components/core";
 import { asFileNodes, mergeUploadsWithFiles } from "./utils";
@@ -35,8 +34,7 @@ export function DirectoryList({
   const [showScrollIndicator, setShowScrollIndicator] = useState(false);
   const itemRefs = useRef<(HTMLAnchorElement | null)[]>([]);
 
-  // Dropzone for file uploads
-  const { uploadFiles, getUploadsForScope, uploadEnabled } = useUploadManager();
+  const { getUploadsForScope } = useUploadManager();
 
   // Get uploads for this specific product scope
   const scope = {
@@ -68,16 +66,6 @@ export function DirectoryList({
       item?.uploadProgress && item.uploadProgress.status !== "completed";
     return isUploading ? UPLOADING_ITEM_HEIGHT : ITEM_HEIGHT;
   };
-
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop: (files) => {
-      if (!uploadEnabled) return;
-      uploadFiles(files, prefix, scope);
-    },
-    noClick: true, // Don't open file browser on click
-    // noKeyboard: true,
-    disabled: !uploadEnabled,
-  });
 
   // Check if we need to show scroll indicator
   useEffect(() => {
@@ -117,145 +105,85 @@ export function DirectoryList({
 
   return (
     <Box
-      {...(uploadEnabled ? getRootProps() : {})}
-      style={{
-        position: "relative",
-        ...(isDragActive && uploadEnabled
+      ref={parentRef}
+      style={
+        isVirtualized
           ? {
-              border: "3px dashed var(--accent-9)",
-              borderRadius: "var(--radius-2)",
-              padding: "4px",
+              maxHeight: `${Math.min(
+                items.length * ITEM_HEIGHT,
+                MAX_VISIBLE_ITEMS * ITEM_HEIGHT
+              )}px`,
+              overflow: "auto",
+              willChange: "transform",
+              position: "relative",
             }
-          : {}),
-      }}
+          : { position: "relative" }
+      }
     >
-      <input {...getInputProps()} />
-      <style>{`
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-      `}</style>
-      {isDragActive && uploadEnabled && (
-        <Box
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: "rgba(0, 0, 0, 0.65)",
-            borderRadius: "var(--radius-2)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 100,
-            pointerEvents: "none",
-            animation: "fadeIn 0.2s ease",
-          }}
-        >
-          <Box
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              gap: "16px",
-            }}
-          >
-            <UploadIcon width={48} height={48} color="white" />
-            <Text
-              size="6"
-              weight="medium"
-              style={{
-                color: "white",
-              }}
-            >
-              Drop files here to upload
-            </Text>
-          </Box>
+      {items.length === 0 && (
+        <Box p="4">
+          <MonoText color="gray">This directory is empty.</MonoText>
         </Box>
       )}
-      <Box
-        ref={parentRef}
-        style={
-          isVirtualized
-            ? {
-                maxHeight: `${Math.min(
-                  items.length * ITEM_HEIGHT,
-                  MAX_VISIBLE_ITEMS * ITEM_HEIGHT
-                )}px`,
-                overflow: "auto",
-                willChange: "transform",
-                position: "relative",
-              }
-            : { position: "relative" }
-        }
-      >
-        {items.length === 0 && (
-          <Box p="4">
-            <MonoText color="gray">This directory is empty.</MonoText>
-          </Box>
-        )}
 
-        {showScrollIndicator && (
-          <Box
-            className={styles.scrollIndicator}
-            style={{
-              position: "fixed",
-              bottom: "8px",
-              left: "50%",
-              transform: "translateX(-50%)",
-              zIndex: 10,
-              background: "var(--gray-3)",
-              borderRadius: "var(--radius-2)",
-              padding: "4px 8px",
-              display: "flex",
-              alignItems: "center",
-              gap: "4px",
-              pointerEvents: "none",
-            }}
-          >
-            <Text size="1" color="gray">
-              Scroll for more
-            </Text>
-            <ChevronDownIcon width={12} height={12} />
-          </Box>
-        )}
-
+      {showScrollIndicator && (
         <Box
+          className={styles.scrollIndicator}
           style={{
-            width: "100%",
-            ...(isVirtualized
-              ? {
-                  height: `${rowVirtualizer.getTotalSize()}px`,
-                  position: "relative",
-                }
-              : {}),
+            position: "fixed",
+            bottom: "8px",
+            left: "50%",
+            transform: "translateX(-50%)",
+            zIndex: 10,
+            background: "var(--gray-3)",
+            borderRadius: "var(--radius-2)",
+            padding: "4px 8px",
+            display: "flex",
+            alignItems: "center",
+            gap: "4px",
+            pointerEvents: "none",
           }}
         >
-          {isVirtualized
-            ? rowVirtualizer
-                .getVirtualItems()
-                .map((virtualRow) => (
-                  <DirectoryRow
-                    key={items[virtualRow.index].path}
-                    item={items[virtualRow.index]}
-                    index={virtualRow.index}
-                    itemHeight={virtualRow.size}
-                    virtualRow={{ start: virtualRow.start }}
-                    {...rowProps}
-                  />
-                ))
-            : items.map((item, index) => (
+          <Text size="1" color="gray">
+            Scroll for more
+          </Text>
+          <ChevronDownIcon width={12} height={12} />
+        </Box>
+      )}
+
+      <Box
+        style={{
+          width: "100%",
+          ...(isVirtualized
+            ? {
+                height: `${rowVirtualizer.getTotalSize()}px`,
+                position: "relative",
+              }
+            : {}),
+        }}
+      >
+        {isVirtualized
+          ? rowVirtualizer
+              .getVirtualItems()
+              .map((virtualRow) => (
                 <DirectoryRow
-                  key={item.path}
-                  item={item}
-                  index={index}
-                  itemHeight={getItemHeight(index)}
+                  key={items[virtualRow.index].path}
+                  item={items[virtualRow.index]}
+                  index={virtualRow.index}
+                  itemHeight={virtualRow.size}
+                  virtualRow={{ start: virtualRow.start }}
                   {...rowProps}
                 />
-              ))}
-        </Box>
+              ))
+          : items.map((item, index) => (
+              <DirectoryRow
+                key={item.path}
+                item={item}
+                index={index}
+                itemHeight={getItemHeight(index)}
+                {...rowProps}
+              />
+            ))}
       </Box>
     </Box>
   );

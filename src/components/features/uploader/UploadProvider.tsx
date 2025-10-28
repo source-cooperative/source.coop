@@ -22,13 +22,11 @@ import {
 export type { UploadStatus, CredentialsScope };
 export type ScopedUploadItem = QueuedUpload;
 
-export interface UploadManagerState {
+interface UploadContextType {
   uploads: ScopedUploadItem[];
+  // uploadEnabled: (scope: CredentialsScope) => boolean;
   uploadEnabled: boolean;
   hasActiveUploads: boolean;
-}
-
-interface UploadContextType extends UploadManagerState {
   uploadFiles: (
     files: File[],
     prefix: string,
