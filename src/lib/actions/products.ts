@@ -287,7 +287,6 @@ export async function createProduct(
           is_primary: true,
         },
       },
-      roles: {},
     },
   };
 

@@ -10,12 +10,6 @@ import {
   MembershipInvitationSchema,
   MembershipSchema,
   RedactedAPIKeySchema,
-  RepositoryCreationRequestSchema,
-  RepositoryMetaSchema,
-  RepositorySchema,
-  RepositoryUpdateRequestSchema,
-  RepositoryListSchema,
-  RepositoryFeaturedUpdateRequestSchema,
 } from "@/types";
 import { AccountSchema } from "@/types/account";
 
@@ -47,12 +41,6 @@ export async function GET(_req: NextRequest) {
     RedactedAPIKeySchema,
     MembershipInvitationSchema,
     DataConnectionSchema,
-    RepositoryCreationRequestSchema,
-    RepositorySchema,
-    RepositoryMetaSchema,
-    RepositoryUpdateRequestSchema,
-    RepositoryListSchema,
-    RepositoryFeaturedUpdateRequestSchema,
   ]);
   if (!openapiSpecification["components"]) {
     openapiSpecification["components"] = {};
