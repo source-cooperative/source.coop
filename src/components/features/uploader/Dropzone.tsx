@@ -4,7 +4,10 @@ import { Box, Text } from "@radix-ui/themes";
 import { UploadIcon } from "@radix-ui/react-icons";
 import { useDropzone } from "react-dropzone";
 import type { Product } from "@/types";
-import { useUploadManager } from "@/components/features/uploader";
+import {
+  useS3Credentials,
+  useUploadManager,
+} from "@/components/features/uploader";
 
 interface DirectoryListProps {
   product: Product;
@@ -16,7 +19,12 @@ export function Dropzone({
   product,
   children,
 }: React.PropsWithChildren<DirectoryListProps>) {
-  const { uploadFiles, uploadEnabled } = useUploadManager();
+  const { getCredentials } = useS3Credentials();
+  const { uploadFiles } = useUploadManager();
+  const uploadEnabled = getCredentials({
+    productId: product.product_id,
+    accountId: product.account_id,
+  });
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop: (files) => {
       if (!uploadEnabled) return;

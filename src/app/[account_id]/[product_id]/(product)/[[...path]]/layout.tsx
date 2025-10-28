@@ -41,8 +41,8 @@ export default async function ProductLayout({
   if (!product) {
     notFound();
   }
-
   const prefix = path ? path.join("/") : "";
+
   return (
     <>
       <ProductHeader product={product} />

@@ -22,7 +22,7 @@ export const FetchCredentialsButton = ({
 }: FetchCredentialsButtonProps) => {
   const { getCredentials, getStatus, fetchCredentials, clearCredentials } =
     useS3Credentials();
-  const { uploadFiles, uploadEnabled } = useUploadManager();
+  const { uploadFiles } = useUploadManager();
   const [showCredentialsDialog, setShowCredentialsDialog] = useState(false);
 
   const s3Credentials = getCredentials(scope);
@@ -43,7 +43,7 @@ export const FetchCredentialsButton = ({
   };
 
   const handleUploadClick = () => {
-    if (!uploadEnabled || !isEditMode) return;
+    if (!s3Credentials || !isEditMode) return;
 
     // Trigger file picker
     const input = document.createElement("input");
@@ -106,7 +106,7 @@ export const FetchCredentialsButton = ({
         {isEditMode && (
           <DropdownMenu.Item
             onClick={handleUploadClick}
-            disabled={!uploadEnabled}
+            disabled={!s3Credentials}
           >
             <UploadIcon />
             Upload Files

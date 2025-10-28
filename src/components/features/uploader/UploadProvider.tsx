@@ -24,8 +24,6 @@ export type ScopedUploadItem = QueuedUpload;
 
 interface UploadContextType {
   uploads: ScopedUploadItem[];
-  // uploadEnabled: (scope: CredentialsScope) => boolean;
-  uploadEnabled: boolean;
   hasActiveUploads: boolean;
   uploadFiles: (
     files: File[],
@@ -46,6 +44,9 @@ const UploadContext = createContext<UploadContextType | undefined>(undefined);
 interface UploadProviderProps {
   children: ReactNode;
 }
+
+const s3ServiceKey = (scope: CredentialsScope) =>
+  `${scope.accountId}:${scope.productId}`;
 
 export function UploadProvider({ children }: UploadProviderProps) {
   const { getAllCredentials } = useS3Credentials();
@@ -68,7 +69,6 @@ export function UploadProvider({ children }: UploadProviderProps) {
   }, []);
 
   // Derived state
-  const uploadEnabled = s3Services.size > 0;
   const activeUploads = uploads.filter(
     (u) => u.status === "uploading" || u.status === "queued"
   );
@@ -85,7 +85,7 @@ export function UploadProvider({ children }: UploadProviderProps) {
     setS3Services((prev) => {
       const next = new Map(prev);
       for (const [scope, credentials] of getAllCredentials()) {
-        const key = `${scope.accountId}:${scope.productId}`;
+        const key = s3ServiceKey(scope);
         if (!next.has(key)) {
           next.set(key, new S3UploadService(credentials));
         }
@@ -106,7 +106,7 @@ export function UploadProvider({ children }: UploadProviderProps) {
       const s3Service = getS3Service(scope);
       if (!s3Service) {
         console.error(
-          `No S3 service available for scope ${scope.accountId}:${scope.productId}`
+          `No S3 service available for scope ${s3ServiceKey(scope)}`
         );
         return Promise.resolve();
       }
@@ -156,7 +156,6 @@ export function UploadProvider({ children }: UploadProviderProps) {
 
   const contextValue: UploadContextType = {
     uploads,
-    uploadEnabled,
     hasActiveUploads,
     uploadFiles,
     cancelUpload,
