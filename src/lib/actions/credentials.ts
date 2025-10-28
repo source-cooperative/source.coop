@@ -105,6 +105,8 @@ export async function getTemporaryCredentials({
               Sid: "AllowUploadToPrefix",
               Effect: "Allow",
               Action: [
+                "s3:Abort*",
+                "s3:DeleteObject*",
                 "s3:PutObject",
                 "s3:PutObjectAcl",
                 "s3:GetObject",
