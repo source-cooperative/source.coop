@@ -12,6 +12,8 @@ import { getPageSession, LOGGER } from "@/lib";
 import { FormState } from "@/components/core/DynamicForm";
 import { isAuthorized } from "../api/authz";
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
+import { productUrl, editProductDetailsUrl } from "@/lib/urls";
 
 export interface PaginatedProductsResult {
   products: Product[];
@@ -271,10 +273,21 @@ export async function createProduct(
     featured: 0,
     data_mode: ProductDataMode.Open,
     metadata: {
-      // TODO: Add required metadata
       tags: [],
-      primary_mirror: "",
-      mirrors: {},
+      primary_mirror: "aws-opendata-us-west-2",
+      mirrors: {
+        "aws-opendata-us-west-2": {
+          storage_type: "s3",
+          connection_id: "aws-opendata-us-west-2",
+          prefix: `${validatedFields.data.account_id}/${validatedFields.data.product_id}/`,
+          config: {
+            region: "us-west-2",
+            bucket: "aws-opendata-us-west-2",
+          },
+          is_primary: true,
+        },
+      },
+      roles: {},
     },
   };
 
@@ -289,7 +302,7 @@ export async function createProduct(
 
   try {
     await productsTable.create(product);
-    redirect(`/${product.account_id}/${product.product_id}?success`);
+    redirect(productUrl(product.account_id, product.product_id, "success"));
   } catch (error) {
     LOGGER.error("Failed to create product", {
       operation: "createProduct",
@@ -298,5 +311,107 @@ export async function createProduct(
       metadata: { product },
     });
     throw error;
+  }
+}
+
+export async function updateProduct(
+  initialState: any,
+  formData: FormData
+): Promise<FormState<Partial<Product>>> {
+  const session = await getPageSession();
+
+  if (!session?.identity_id || !session.account) {
+    return {
+      fieldErrors: {},
+      data: formData,
+      message: "Unauthenticated",
+      success: false,
+    };
+  }
+
+  const accountId = formData.get("account_id") as string;
+  const productId = formData.get("product_id") as string;
+
+  if (!accountId || !productId) {
+    return {
+      fieldErrors: {},
+      data: formData,
+      message: "Account ID and Product ID are required",
+      success: false,
+    };
+  }
+
+  try {
+    // Get the current product
+    const currentProduct = await productsTable.fetchById(accountId, productId);
+    if (!currentProduct) {
+      return {
+        fieldErrors: {},
+        data: formData,
+        message: "Product not found",
+        success: false,
+      };
+    }
+
+    // Check authorization
+    if (!isAuthorized(session, currentProduct, Actions.PutRepository)) {
+      return {
+        fieldErrors: {},
+        data: formData,
+        message: "Unauthorized to update this product",
+        success: false,
+      };
+    }
+
+    // Extract form data
+    const title = formData.get("title") as string;
+    const description = formData.get("description") as string;
+    const visibility = formData.get("visibility") as
+      | "public"
+      | "unlisted"
+      | "restricted";
+
+    // Build update data
+    const updateData = {
+      ...currentProduct,
+      title: title || currentProduct.title,
+      description: description || currentProduct.description,
+      visibility: visibility || currentProduct.visibility,
+      updated_at: new Date().toISOString(),
+    };
+
+    // Update the product
+    await productsTable.update(updateData);
+
+    LOGGER.info("Successfully updated product", {
+      operation: "updateProduct",
+      context: "product update",
+      metadata: { accountId, productId },
+    });
+
+    // Revalidate the product page to show updated data
+    revalidatePath(productUrl(accountId, productId));
+    revalidatePath(editProductDetailsUrl(accountId, productId));
+
+    return {
+      fieldErrors: {},
+      data: formData,
+      message: "Product updated successfully!",
+      success: true,
+    };
+  } catch (error) {
+    LOGGER.error("Error updating product", {
+      operation: "updateProduct",
+      context: "product update",
+      error: error,
+      metadata: { accountId, productId },
+    });
+
+    return {
+      fieldErrors: {},
+      data: formData,
+      message: "Failed to update product. Please try again.",
+      success: false,
+    };
   }
 }

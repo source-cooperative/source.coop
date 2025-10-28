@@ -1,9 +1,10 @@
-'use client';
+"use client";
 
-import { Container, Box, Link as RadixLink } from '@radix-ui/themes';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { MonoText } from '@/components/core';
+import { Container, Box, Link as RadixLink } from "@radix-ui/themes";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { MonoText } from "@/components/core";
+import { homeUrl, productListUrl } from "@/lib/urls";
 
 export function Footer() {
   const pathname = usePathname();
@@ -15,19 +16,19 @@ export function Footer() {
           <Box mb="3">
             {pathname !== "/" && (
               <Box mb="2">
-                <Link href="/" passHref legacyBehavior>
-                  <RadixLink color="gray" underline="always">
+                <RadixLink color="gray" underline="always" asChild>
+                  <Link href={homeUrl()}>
                     <MonoText size="2">Home</MonoText>
-                  </RadixLink>
-                </Link>
+                  </Link>
+                </RadixLink>
               </Box>
             )}
             <Box mb="2">
-              <Link href="/products" passHref legacyBehavior>
-                <RadixLink color="gray" underline="always">
+              <RadixLink color="gray" underline="always" asChild>
+                <Link href={productListUrl()}>
                   <MonoText size="2">All Products</MonoText>
-                </RadixLink>
-              </Link>
+                </Link>
+              </RadixLink>
             </Box>
             <Box>
               <RadixLink
@@ -67,4 +68,4 @@ export function Footer() {
       </Container>
     </Box>
   );
-} 
+}

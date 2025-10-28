@@ -4,6 +4,7 @@ import Link from 'next/link';
 import DOMPurify from 'isomorphic-dompurify';
 import type { Product } from "@/types";
 import { DateText } from '@/components/display';
+import { productUrl } from "@/lib/urls";
 
 interface ProductSearchResultProps {
   product: Product;
@@ -20,15 +21,18 @@ export function ProductSearchResult({ product, highlight }: ProductSearchResultP
     product.description;
 
   return (
-    <Link href={`/${product.account_id}/${product.product_id}`}>
+    <Link href={productUrl(product.account_id, product.product_id)}>
       <Card>
         <Flex direction="column" gap="2">
-          <Text size="5" weight="bold" 
-            dangerouslySetInnerHTML={{ __html: sanitizedTitle }} 
+          <Text
+            size="5"
+            weight="bold"
+            dangerouslySetInnerHTML={{ __html: sanitizedTitle }}
           />
           {(highlight?.description || product.description) && (
-            <Text color="gray" 
-              dangerouslySetInnerHTML={{ __html: sanitizedDescription }} 
+            <Text
+              color="gray"
+              dangerouslySetInnerHTML={{ __html: sanitizedDescription }}
             />
           )}
           <Flex gap="3" align="center">
@@ -38,8 +42,8 @@ export function ProductSearchResult({ product, highlight }: ProductSearchResultP
             <Text size="2" color="blue">
               {product.account?.name}
             </Text>
-            <Badge color={product.visibility === 'public' ? "green" : "red"}>
-              {product.visibility === 'public' ? "Public" : "Private"}
+            <Badge color={product.visibility === "public" ? "green" : "red"}>
+              {product.visibility === "public" ? "Public" : "Private"}
             </Badge>
           </Flex>
         </Flex>

@@ -78,7 +78,6 @@ const BaseAccountProfileSchema = z.object({
 
 const IndividualAccountProfileSchema = BaseAccountProfileSchema.extend({
   orcid: z.optional(z.string()),
-  is_admin: z.boolean().optional(),
 });
 
 const OrganizationalAccountProfileSchema = BaseAccountProfileSchema.extend({

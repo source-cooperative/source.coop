@@ -3,22 +3,32 @@ import { redirect } from "next/navigation";
 import { OnboardingForm } from "@/components/features/onboarding";
 import { getPageSession } from "@/lib/api/utils";
 import { FormTitle } from "@/components/core";
+import { homeUrl, accountUrl } from "@/lib/urls";
 
 export const metadata: Metadata = {
   title: "Complete Your Profile",
   description: "Choose your username and set up your profile",
 };
 
-export default async function OnboardingPage() {
+export default async function OnboardingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ verified?: string }>;
+}) {
   const session = await getPageSession();
   const identityId = session?.identity_id;
+  const query = await searchParams;
 
   if (!identityId) {
-    redirect("/");
+    redirect(homeUrl());
   }
 
   if (session?.account) {
-    redirect(`/${session.account.account_id}`);
+    redirect(
+      `${accountUrl(session.account.account_id)}${
+        Object.keys(query).includes("verified") ? "?verified" : ""
+      }`
+    );
   }
 
   return (

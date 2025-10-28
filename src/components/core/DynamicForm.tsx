@@ -1,11 +1,11 @@
 "use client";
 
-import { useActionState } from "react";
+import React, { useActionState } from "react";
 import { Button, Text, Flex } from "@radix-ui/themes";
 import Form from "next/form";
 
 export interface FormField<T extends Record<string, any>> {
-  label: string;
+  label?: string;
   name: keyof T;
   type:
     | "text"
@@ -18,6 +18,7 @@ export interface FormField<T extends Record<string, any>> {
     | "select"
     | "custom";
   required?: boolean;
+  readOnly?: boolean;
   description?: string;
   placeholder?: string;
   isValid?: boolean | null;
@@ -43,10 +44,11 @@ interface DynamicFormProps<T extends Record<string, any>> {
     formData: FormData
   ) => Promise<FormState<T>> | FormState<T>;
   submitButtonText?: string;
-  hiddenFields?: Record<string, string>;
+  hiddenFields?: Record<string, string | undefined>;
   className?: string;
   disabled?: boolean;
-  initialValues?: T; // Initial values for form fields
+  initialValues?: Partial<T>; // Initial values for form fields
+  onSuccess?: () => void; // Callback when form submission is successful
 }
 
 const style: React.CSSProperties = {
@@ -63,10 +65,12 @@ const style: React.CSSProperties = {
 export function DynamicForm<T extends Record<string, any>>({
   fields,
   action,
+  disabled,
   submitButtonText = "Submit",
   hiddenFields = {},
   className,
   initialValues,
+  onSuccess,
 }: DynamicFormProps<T>) {
   const [state, formAction, pending] = useActionState(action, {
     message: "",
@@ -81,6 +85,14 @@ export function DynamicForm<T extends Record<string, any>>({
       field.onValueChange(value);
     }
   };
+
+  // Call onSuccess when form submission is successful
+  React.useEffect(() => {
+    if (state.success && onSuccess) {
+      onSuccess();
+    }
+  }, [state.success, onSuccess]);
+
   return (
     <Form action={formAction} className={className}>
       {/* Hidden fields */}
@@ -92,9 +104,11 @@ export function DynamicForm<T extends Record<string, any>>({
         {fields.map((field) => (
           <div key={String(field.name)}>
             <Flex direction="column" gap="1">
-              <Text size="3" weight="medium">
-                {field.label}
-              </Text>
+              {field.label && (
+                <Text size="3" weight="medium">
+                  {field.label}
+                </Text>
+              )}
 
               {field.type === "custom" ? (
                 field.customComponent
@@ -103,6 +117,7 @@ export function DynamicForm<T extends Record<string, any>>({
                   name={String(field.name)}
                   placeholder={field.placeholder}
                   required={field.required}
+                  disabled={field.readOnly || disabled}
                   {...(field.controlled
                     ? {
                         value:
@@ -131,6 +146,7 @@ export function DynamicForm<T extends Record<string, any>>({
                 <select
                   name={String(field.name)}
                   required={field.required}
+                  disabled={field.readOnly || disabled}
                   {...(field.controlled
                     ? {
                         value: field.value || "",
@@ -166,6 +182,7 @@ export function DynamicForm<T extends Record<string, any>>({
                   type={field.type}
                   name={String(field.name)}
                   placeholder={field.placeholder}
+                  disabled={field.readOnly || disabled}
                   required={field.required}
                   {...(field.controlled
                     ? {
@@ -211,25 +228,27 @@ export function DynamicForm<T extends Record<string, any>>({
           </div>
         ))}
 
-        <Flex mt="4" justify="end">
-          <Flex direction="column" gap="2">
-            <Button
-              size="3"
-              type="submit"
-              disabled={
-                pending || fields.some((field) => field.isValid === false)
-              }
-              loading={pending}
-            >
-              {submitButtonText}
-            </Button>
-            {state?.message && (
-              <Text size="1" color={state.success ? "green" : "red"}>
-                {state.message}
-              </Text>
-            )}
+        {!disabled && (
+          <Flex mt="4" justify="end">
+            <Flex direction="column" gap="2">
+              <Button
+                size="3"
+                type="submit"
+                disabled={
+                  pending || fields.some((field) => field.isValid === false)
+                }
+                loading={pending}
+              >
+                {submitButtonText}
+              </Button>
+              {state?.message && (
+                <Text size="1" color={state.success ? "green" : "red"}>
+                  {state.message}
+                </Text>
+              )}
+            </Flex>
           </Flex>
-        </Flex>
+        )}
       </Flex>
     </Form>
   );

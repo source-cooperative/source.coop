@@ -33,23 +33,26 @@
 import { NextRequest, NextResponse } from "next/server";
 import { StatusCodes } from "http-status-codes";
 import { apiKeysTable } from "@/lib/clients/database";
+import { getApiSession } from "@/lib/api/utils";
+import { isAdmin } from "@/lib/api/authz";
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ access_key_id: string }> }
 ) {
   try {
-    const authorization = request.headers.get("Authorization");
-    if (!authorization) {
+    const session = await getApiSession(request);
+    if (!session) {
       return NextResponse.json(
-        { error: "Authorization header is required" },
+        { error: "Unauthorized" },
         { status: StatusCodes.UNAUTHORIZED }
       );
     }
-    if (authorization !== process.env.SOURCE_KEY) {
+
+    if (!isAdmin(session)) {
       return NextResponse.json(
-        { error: "Invalid authorization header" },
-        { status: StatusCodes.UNAUTHORIZED }
+        { error: "Forbidden" },
+        { status: StatusCodes.FORBIDDEN }
       );
     }
 

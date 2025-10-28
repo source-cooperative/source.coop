@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { Flex } from '@radix-ui/themes';
-import Link from 'next/link';
-import { ChevronRightIcon } from '@radix-ui/react-icons';
-import { MonoText } from '@/components/core';
+import { Flex } from "@radix-ui/themes";
+import Link from "next/link";
+import { ChevronRightIcon } from "@radix-ui/react-icons";
+import { MonoText } from "@/components/core";
 
 interface BreadcrumbNavProps {
   path: string[];
@@ -11,7 +11,11 @@ interface BreadcrumbNavProps {
   baseUrl?: string;
 }
 
-export function BreadcrumbNav({ path, fileName, baseUrl = "" }: BreadcrumbNavProps) {
+export function BreadcrumbNav({
+  path,
+  fileName,
+  baseUrl = "",
+}: BreadcrumbNavProps) {
   const isRoot = path.length === 0 && !fileName;
 
   // Create link styling that doesn't affect layout

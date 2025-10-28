@@ -1,10 +1,8 @@
 "use server";
 
-import { updateOryIdentity } from "@/lib/ory";
 import { LOGGER } from "@/lib/logging";
 import {
   AccountCreationRequestSchema,
-  Account,
   Actions,
   AccountCreationRequest,
   DEFAULT_INDIVIDUAL_FLAGS,
@@ -16,6 +14,8 @@ import {
   OrganizationCreationRequest,
   IndividualAccount,
   OrganizationalAccount,
+  AccountFlags,
+  AccountFlagsSchema,
 } from "@/types";
 import { isAuthorized } from "../api/authz";
 import { getPageSession } from "../api/utils";
@@ -23,50 +23,12 @@ import { accountsTable, membershipsTable } from "../clients";
 import { FormState } from "@/components/core/DynamicForm";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import {
+  accountUrl,
+  editAccountPermissionsUrl,
+  editAccountProfileUrl,
+} from "@/lib/urls";
 import { v4 as uuidv4 } from "uuid";
-
-/**
- * Server action to record email verification timestamp
- */
-export async function recordVerificationTimestamp(identityId: string) {
-  try {
-    if (!identityId) {
-      throw new Error("Missing identity_id parameter");
-    }
-
-    LOGGER.info("Recording verification timestamp for identity", {
-      operation: "recordVerificationTimestamp",
-      context: "email verification",
-      metadata: { identityId },
-    });
-
-    // Update the identity metadata with the verification timestamp
-    const now = new Date().toISOString();
-    await updateOryIdentity(identityId, {
-      metadata_public: {
-        email_verified_at: now,
-      },
-    });
-
-    LOGGER.info("Successfully recorded verification timestamp", {
-      operation: "recordVerificationTimestamp",
-      context: "email verification",
-      metadata: { identityId },
-    });
-
-    return {
-      success: true,
-      timestamp: now,
-    };
-  } catch (error) {
-    LOGGER.error("Error recording verification timestamp", {
-      operation: "recordVerificationTimestamp",
-      context: "email verification",
-      error: error,
-    });
-    throw new Error("Failed to record verification timestamp");
-  }
-}
 
 /**
  * Creates a new account.
@@ -165,8 +127,8 @@ export async function createAccount(
 
   redirect(
     account.type === AccountType.INDIVIDUAL
-      ? `/${account.account_id}?welcome=true`
-      : `/${account.account_id}`
+      ? accountUrl(account.account_id, "welcome=true")
+      : accountUrl(account.account_id)
   );
 }
 
@@ -225,7 +187,6 @@ export async function updateAccountProfile(
 
     // Extract and process form data
     const name = formData.get("name") as string;
-    const email = formData.get("email") as string;
     const description = formData.get("description") as string;
     const orcid = formData.get("orcid") as string;
 
@@ -263,16 +224,6 @@ export async function updateAccountProfile(
     const updateData = {
       ...currentAccount,
       name,
-      emails: [
-        {
-          address: email,
-          verified: currentAccount.emails?.[0]?.verified || false,
-          is_primary: true,
-          added_at:
-            currentAccount.emails?.[0]?.added_at || new Date().toISOString(),
-          verified_at: currentAccount.emails?.[0]?.verified_at,
-        },
-      ],
       metadata_public: {
         ...currentAccount.metadata_public,
         bio: description || undefined,
@@ -292,8 +243,8 @@ export async function updateAccountProfile(
     });
 
     // Revalidate the profile page to show updated data
-    revalidatePath(`/${accountId}`);
-    revalidatePath(`/${accountId}/edit`);
+    revalidatePath(accountUrl(accountId));
+    revalidatePath(editAccountProfileUrl(accountId));
 
     return {
       fieldErrors: {},
@@ -312,6 +263,106 @@ export async function updateAccountProfile(
       fieldErrors: {},
       data: formData,
       message: "Failed to update profile. Please try again.",
+      success: false,
+    };
+  }
+}
+
+/**
+ * Updates an account's flags.
+ *
+ * @param initialState - The initial state of the form.
+ * @param formData - The form data containing the flags to update.
+ */
+export async function updateAccountFlags(
+  initialState: any,
+  formData: FormData
+): Promise<FormState<any>> {
+  const session = await getPageSession();
+
+  if (!session?.identity_id) {
+    return {
+      fieldErrors: {},
+      data: formData,
+      message: "Unauthenticated",
+      success: false,
+    };
+  }
+
+  const accountId = formData.get("account_id") as string;
+  if (!accountId) {
+    return {
+      fieldErrors: {},
+      data: formData,
+      message: "Account ID is required",
+      success: false,
+    };
+  }
+
+  try {
+    // Get the current account
+    const currentAccount = await accountsTable.fetchById(accountId);
+    if (!currentAccount) {
+      return {
+        fieldErrors: {},
+        data: formData,
+        message: "Account not found",
+        success: false,
+      };
+    }
+
+    // Check authorization
+    if (!isAuthorized(session, currentAccount, Actions.PutAccountFlags)) {
+      return {
+        fieldErrors: {},
+        data: formData,
+        message: "Unauthorized to update this account's flags",
+        success: false,
+      };
+    }
+
+    // Extract flags from form data - now using boolean values
+    const flags = Array.from(formData.entries())
+      .filter(([key]) => key !== "account_id")
+      .filter(([key, value]) => value === "on")
+      .map(([key]) => key as AccountFlags);
+
+    // Validate flags
+    const validatedFlags = AccountFlagsSchema.parse(flags);
+
+    // Update the account
+    await accountsTable.update({
+      ...currentAccount,
+      flags: validatedFlags,
+      updated_at: new Date().toISOString(),
+    });
+
+    LOGGER.info("Successfully updated account flags", {
+      operation: "updateAccountFlags",
+      context: "flags update",
+      metadata: { account_id: accountId, flags: validatedFlags },
+    });
+
+    // Revalidate the permissions page to show updated data
+    revalidatePath(editAccountPermissionsUrl(accountId));
+
+    return {
+      fieldErrors: {},
+      data: formData,
+      message: "Account flags updated successfully!",
+      success: true,
+    };
+  } catch (error) {
+    LOGGER.error("Error updating account flags", {
+      operation: "updateAccountFlags",
+      context: "flags update",
+      error: error,
+    });
+
+    return {
+      fieldErrors: {},
+      data: formData,
+      message: "Failed to update account flags. Please try again.",
       success: false,
     };
   }

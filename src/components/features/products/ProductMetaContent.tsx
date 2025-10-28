@@ -1,10 +1,7 @@
-import { DataList, Badge, Link as RadixLink } from '@radix-ui/themes';
+import { DataList, Badge } from "@radix-ui/themes";
 import type { Product } from "@/types";
-import { MonoText } from "@/components/core";
-import { DateText } from '@/components/display';
-import Link from 'next/link';
-import { Flex } from '@radix-ui/themes';
-import { ProfileAvatar } from '@/components/features/profiles/ProfileAvatar';
+import { AvatarLinkCompact } from "@/components/core";
+import { DateText } from "@/components/display";
 
 interface ProductMetaContentProps {
   product: Product;
@@ -37,18 +34,7 @@ export function ProductMetaContent({ product }: ProductMetaContentProps) {
       <DataList.Item style={{ alignItems: "center" }}>
         <DataList.Label>Owner</DataList.Label>
         <DataList.Value>
-          <Link href={`/${product.account_id}`} passHref legacyBehavior>
-            <RadixLink>
-              <Flex gap="2" align="center">
-                {product.account && (
-                  <ProfileAvatar account={product.account} size="2" />
-                )}
-                <MonoText>
-                  {product.account?.name || product.account_id}
-                </MonoText>
-              </Flex>
-            </RadixLink>
-          </Link>
+          <AvatarLinkCompact account={product.account!} />
         </DataList.Value>
       </DataList.Item>
 
@@ -67,4 +53,4 @@ export function ProductMetaContent({ product }: ProductMetaContentProps) {
       </DataList.Item>
     </DataList.Root>
   );
-} 
+}

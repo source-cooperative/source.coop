@@ -45,7 +45,7 @@ export function MarkdownViewer({ content }: MarkdownViewerProps) {
   }
 
   return (
-    <Card>
+    <Card mt="4">
       <SectionHeader title="README">
         <ReactMarkdown
           remarkPlugins={[remarkGfm]}

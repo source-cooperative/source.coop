@@ -73,8 +73,13 @@ class AccountsTable extends BaseTable {
         },
       };
 
-      console.debug(
-        `DB: Fetching ${batch.length} accounts: ${batch.join(", ")}`
+      LOGGER.debug(
+        `DB: Fetching ${batch.length} accounts: ${batch.join(", ")}`,
+        {
+          operation: "AccountsTable.fetchManyByIds",
+          context: "database operation",
+          metadata: { batch },
+        }
       );
       const result = await this.client.send(new BatchGetCommand(batchRequest));
       if (result.Responses?.[this.table]) {
@@ -135,30 +140,61 @@ class AccountsTable extends BaseTable {
   }
 
   async update(account: Account): Promise<Account> {
+    const updateParts: string[] = [];
+    const expressionAttributeValues: Record<string, any> = {};
+
+    // Always update these core fields
+    updateParts.push("#name = :name", "#type = :type", "updated_at = :updated_at");
+    expressionAttributeValues[":type"] = account.type;
+    expressionAttributeValues[":name"] = account.name;
+    expressionAttributeValues[":updated_at"] = new Date().toISOString();
+
+    // Conditionally add fields that might be undefined
+    if (account.emails !== undefined) {
+      updateParts.push("emails = :emails");
+      expressionAttributeValues[":emails"] = account.emails;
+    }
+
+    if (account.disabled !== undefined) {
+      updateParts.push("disabled = :disabled");
+      expressionAttributeValues[":disabled"] = account.disabled;
+    }
+
+    if (account.flags !== undefined) {
+      updateParts.push("flags = :flags");
+      expressionAttributeValues[":flags"] = account.flags;
+    }
+
+    if (account.metadata_public !== undefined) {
+      updateParts.push("metadata_public = :metadata_public");
+      expressionAttributeValues[":metadata_public"] = account.metadata_public;
+    }
+
+    if (account.metadata_private !== undefined) {
+      updateParts.push("metadata_private = :metadata_private");
+      expressionAttributeValues[":metadata_private"] = account.metadata_private;
+    }
+
+    // Only include identity_id if it exists (for Individual accounts)
+    const identityId =
+      account.identity_id || account.metadata_private?.identity_id;
+    if (identityId) {
+      updateParts.push("identity_id = :identity_id");
+      expressionAttributeValues[":identity_id"] = identityId;
+    }
+
     const result = await this.client.send(
       new UpdateCommand({
         TableName: this.table,
         Key: {
           account_id: account.account_id,
         },
-        UpdateExpression:
-          "SET #name = :name, #type = :type, emails = :emails, updated_at = :updated_at, disabled = :disabled, flags = :flags, metadata_public = :metadata_public, metadata_private = :metadata_private, identity_id = :identity_id",
+        UpdateExpression: `SET ${updateParts.join(", ")}`,
         ExpressionAttributeNames: {
           "#name": "name", // name is a reserved word in DynamoDB
           "#type": "type", // type is also a reserved word in DynamoDB
         },
-        ExpressionAttributeValues: {
-          ":type": account.type,
-          ":name": account.name,
-          ":emails": account.emails,
-          ":updated_at": new Date().toISOString(),
-          ":disabled": account.disabled,
-          ":flags": account.flags,
-          ":metadata_public": account.metadata_public,
-          ":metadata_private": account.metadata_private,
-          ":identity_id":
-            account.identity_id || account.metadata_private?.identity_id,
-        },
+        ExpressionAttributeValues: expressionAttributeValues,
         ReturnValues: "ALL_NEW",
       })
     );
@@ -180,8 +216,9 @@ class AccountsTable extends BaseTable {
 export const isIndividualAccount = (acc: Account): acc is IndividualAccount =>
   acc.type === AccountType.INDIVIDUAL;
 
-export const isOrganizationalAccount = (acc: Account): acc is OrganizationalAccount =>
-  acc.type === AccountType.ORGANIZATION;
+export const isOrganizationalAccount = (
+  acc: Account
+): acc is OrganizationalAccount => acc.type === AccountType.ORGANIZATION;
 
 // Export a singleton instance
 export const accountsTable = new AccountsTable({});

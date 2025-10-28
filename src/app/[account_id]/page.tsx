@@ -11,73 +11,34 @@
  */
 
 import { notFound } from "next/navigation";
-import { IndividualProfile } from "@/components/features/profiles";
-import { OrganizationProfilePage } from "@/components/features/profiles/OrganizationProfilePage";
-import {
-  accountsTable,
-  isOrganizationalAccount,
-  membershipsTable,
-  productsTable,
-} from "@/lib/clients/database";
-import { getServerSession } from "@ory/nextjs/app";
-import { getOryId } from "@/lib/ory";
-import { IndividualAccount, Actions } from "@/types";
-import { isAuthorized } from "@/lib/api/authz";
+import { OrganizationProfilePage } from "@/app/[account_id]/OrganizationProfilePage";
+import { accountsTable, isOrganizationalAccount } from "@/lib/clients/database";
+import { IndividualProfilePage } from "./IndividualProfilePage";
 
 type PageProps = {
   params: Promise<{ account_id: string }>;
   searchParams: Promise<{ welcome?: string }>;
 };
 
+export async function generateMetadata({ params }: PageProps) {
+  const { account_id } = await params;
+  const account = await accountsTable.fetchById(account_id);
+  const title = account!.name;
+  return { title, description: title };
+}
+
 export default async function AccountPage({ params, searchParams }: PageProps) {
   const { account_id } = await params;
-  const { welcome } = await searchParams;
-  const showWelcome = welcome === "true";
+  const showWelcome = Object.hasOwn(await searchParams, "welcome");
 
-  // Get account data
   const account = await accountsTable.fetchById(account_id);
   if (!account) {
     notFound();
   }
 
-  // Get session to check authentication status
-  const session = await getServerSession();
-  const isAuthenticated = !!session?.active;
-  const isAccountOwner = session && getOryId(session) === account.identity_id;
-
-  // If this is an organization, use the organization profile page
-  if (isOrganizationalAccount(account)) {
-    return <OrganizationProfilePage account={account} />;
-  }
-
-  // Get repositories for individual account
-  let { products, lastEvaluatedKey } = await productsTable.listByAccount(
-    account_id,
-    1000
-  );
-
-  // Filter products based on authentication status
-  if (!isAuthenticated || !isAccountOwner) {
-    products = products.filter((product) => product.visibility === "public");
-  }
-
-  const memberships = (await membershipsTable.listByUser(account_id)).filter(
-    (membership) => isAuthorized(account, membership, Actions.GetMembership)
-  );
-  const organizations = (
-    await accountsTable.fetchManyByIds(
-      memberships.map((membership) => membership.membership_account_id)
-    )
-  ).filter(isOrganizationalAccount);
-
-  // For individual accounts
-  return (
-    <IndividualProfile
-      account={account as IndividualAccount}
-      ownedProducts={products}
-      contributedProducts={[]}
-      organizations={organizations}
-      showWelcome={showWelcome}
-    />
+  return isOrganizationalAccount(account) ? (
+    <OrganizationProfilePage account={account} />
+  ) : (
+    <IndividualProfilePage account={account} showWelcome={showWelcome} />
   );
 }
