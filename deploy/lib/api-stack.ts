@@ -33,7 +33,6 @@ export class ApiStack extends cdk.Stack {
             "eu-west-2",
             "eu-west-3",
             "sa-east-1",
-            "tokyo",
             "us-east-1",
             "us-east-2",
             "us-west-1",
