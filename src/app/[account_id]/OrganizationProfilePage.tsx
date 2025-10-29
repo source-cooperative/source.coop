@@ -1,5 +1,6 @@
-import { Container } from "@radix-ui/themes";
+import { Container, Box } from "@radix-ui/themes";
 import { OrganizationProfile } from "../../components/features/profiles/OrganizationProfile";
+import { PendingInvitationBanner } from "@/components";
 import {
   accountsTable,
   isIndividualAccount,
@@ -15,6 +16,7 @@ import {
 } from "@/types";
 import { getPageSession } from "@/lib/api/utils";
 import { isAuthorized } from "@/lib/api/authz";
+import { getPendingInvitation } from "@/lib/actions/memberships";
 
 interface OrganizationProfilePageProps {
   account: OrganizationalAccount;
@@ -83,16 +85,29 @@ export async function OrganizationProfilePage({
     products = products.filter((product) => product.visibility === "public");
   }
 
+  // Check for pending invitation
+  const pendingInvitation = await getPendingInvitation(account.account_id);
+
   return (
-    <Container size="4" py="6">
-      <OrganizationProfile
-        account={account}
-        products={products}
-        owners={owners}
-        admins={admins}
-        members={members}
-        canEdit={isAuthorized(session, account, Actions.PutAccountProfile)}
-      />
+    <Container size="4">
+      {/* Show pending invitation banner if exists */}
+      {pendingInvitation && (
+        <PendingInvitationBanner
+          invitation={pendingInvitation}
+          organizationName={account.name}
+        />
+      )}
+
+      <Box py="6">
+        <OrganizationProfile
+          account={account}
+          products={products}
+          owners={owners}
+          admins={admins}
+          members={members}
+          canEdit={isAuthorized(session, account, Actions.PutAccountProfile)}
+        />
+      </Box>
     </Container>
   );
 }

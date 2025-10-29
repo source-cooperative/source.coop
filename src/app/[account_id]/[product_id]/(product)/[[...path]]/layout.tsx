@@ -8,11 +8,17 @@
  * we need to use a parent route-group to handle these cases.
  */
 
-import { BreadcrumbNav, ProductHeader, SectionHeader } from "@/components";
+import {
+  BreadcrumbNav,
+  ProductHeader,
+  SectionHeader,
+  PendingInvitationBanner,
+} from "@/components";
 import { productsTable } from "@/lib/clients/database";
 import { productUrl } from "@/lib/urls";
 import { Box, Card } from "@radix-ui/themes";
 import { notFound } from "next/navigation";
+import { getPendingInvitation } from "@/lib/actions/memberships";
 
 interface ProductLayoutProps {
   children: React.ReactNode;
@@ -32,9 +38,24 @@ export default async function ProductLayout({
     notFound();
   }
 
+  // Check for pending invitation
+  const pendingInvitation = await getPendingInvitation(account_id, product_id);
+
   return (
     <>
-      <ProductHeader product={product} />
+      {/* Show pending invitation banner if exists */}
+      {pendingInvitation && (
+        <PendingInvitationBanner
+          invitation={pendingInvitation}
+          organizationName={product.account?.name || account_id}
+          productName={product.title || product_id}
+        />
+      )}
+
+      <Box mt="4">
+        <ProductHeader product={product} />
+      </Box>
+
       <Card mt="4">
         <SectionHeader title="Product Contents">
           <Box

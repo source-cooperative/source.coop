@@ -1,5 +1,21 @@
 [
   {
+    "data_connection_id": "aws-opendata-us-west-2",
+    "name": "Staging Bucket",
+    "prefix_template": "{account_id}/{repository_id}/",
+    "read_only": false,
+    "allowed_data_modes": ["open", "private", "subscription"],
+    "details": {
+      "provider": "s3",
+      "bucket": "dev.us-west-2.opendata.source.coop",
+      "base_prefix": "",
+      "region": "us-west-2"
+    },
+    "authentication": {
+      "type": "s3_ecs_task_role"
+    }
+  },
+  {
     "data_connection_id": "primary-data-connection",
     "name": "Primary Data Connection",
     "prefix_template": "{account_id}/{repository_id}/",

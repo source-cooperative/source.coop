@@ -25,7 +25,7 @@ import { v4 as uuidv4 } from "uuid";
  * @param formData - The form data containing the invitation details.
  */
 export async function inviteMember(
-  initialState: any,
+  _initialState: any,
   formData: FormData
 ): Promise<FormState<any>> {
   const session = await getPageSession();
@@ -170,13 +170,173 @@ export async function inviteMember(
 }
 
 /**
+ * Accepts a membership invitation.
+ *
+ * @param membershipId - The membership ID to accept.
+ * @returns Result indicating success or failure
+ */
+export async function acceptInvitation(
+  membershipId: string
+): Promise<{ success: boolean; error?: string }> {
+  const session = await getPageSession();
+
+  if (!session?.identity_id) {
+    return { success: false, error: "Unauthenticated" };
+  }
+
+  try {
+    const membership = await membershipsTable.fetchById(membershipId);
+    if (!membership) {
+      return { success: false, error: "Membership not found" };
+    }
+
+    if (!isAuthorized(session, membership, Actions.AcceptMembership)) {
+      return { success: false, error: "Unauthorized to accept this invitation" };
+    }
+
+    if (
+      membership.state === MembershipState.Member ||
+      membership.state === MembershipState.Revoked
+    ) {
+      return { success: false, error: "Membership is not in a pending state" };
+    }
+
+    await membershipsTable.update({
+      ...membership,
+      state: MembershipState.Member,
+      state_changed: new Date().toISOString(),
+    });
+
+    LOGGER.info("Successfully accepted invitation", {
+      operation: "acceptInvitation",
+      context: "membership acceptance",
+      metadata: { membershipId },
+    });
+
+    // Revalidate relevant paths
+    revalidatePath(editAccountProfileUrl(membership.membership_account_id));
+
+    return { success: true };
+  } catch (error) {
+    LOGGER.error("Error accepting invitation", {
+      operation: "acceptInvitation",
+      context: "membership acceptance",
+      error: error,
+    });
+
+    return { success: false, error: "Failed to accept invitation" };
+  }
+}
+
+/**
+ * Rejects a membership invitation.
+ *
+ * @param membershipId - The membership ID to reject.
+ * @returns Result indicating success or failure
+ */
+export async function rejectInvitation(
+  membershipId: string
+): Promise<{ success: boolean; error?: string }> {
+  const session = await getPageSession();
+
+  if (!session?.identity_id) {
+    return { success: false, error: "Unauthenticated" };
+  }
+
+  try {
+    const membership = await membershipsTable.fetchById(membershipId);
+    if (!membership) {
+      return { success: false, error: "Membership not found" };
+    }
+
+    if (!isAuthorized(session, membership, Actions.RejectMembership)) {
+      return { success: false, error: "Unauthorized to reject this invitation" };
+    }
+
+    if (
+      membership.state === MembershipState.Member ||
+      membership.state === MembershipState.Revoked
+    ) {
+      return { success: false, error: "Membership is not in a pending state" };
+    }
+
+    await membershipsTable.update({
+      ...membership,
+      state: MembershipState.Revoked,
+      state_changed: new Date().toISOString(),
+    });
+
+    LOGGER.info("Successfully rejected invitation", {
+      operation: "rejectInvitation",
+      context: "membership rejection",
+      metadata: { membershipId },
+    });
+
+    // Revalidate relevant paths
+    revalidatePath(editAccountProfileUrl(membership.membership_account_id));
+
+    return { success: true };
+  } catch (error) {
+    LOGGER.error("Error rejecting invitation", {
+      operation: "rejectInvitation",
+      context: "membership rejection",
+      error: error,
+    });
+
+    return { success: false, error: "Failed to reject invitation" };
+  }
+}
+
+/**
+ * Fetches pending invitations for a specific scope (organization or product)
+ *
+ * @param membershipAccountId - The organization account ID
+ * @param repositoryId - Optional product ID
+ * @returns List of pending invitations
+ */
+export async function getPendingInvitation(
+  membershipAccountId: string,
+  repositoryId?: string
+): Promise<Membership | null> {
+  const session = await getPageSession();
+
+  if (!session?.account?.account_id) {
+    return null;
+  }
+
+  try {
+    // Get all memberships for the current user
+    const userMemberships = await membershipsTable.listByUser(
+      session.account.account_id
+    );
+
+    // Filter for pending invitations matching the scope
+    const pendingInvitation = userMemberships.find(
+      (m) =>
+        m.state === MembershipState.Invited &&
+        m.membership_account_id === membershipAccountId &&
+        (repositoryId ? m.repository_id === repositoryId : !m.repository_id)
+    );
+
+    return pendingInvitation || null;
+  } catch (error) {
+    LOGGER.error("Error fetching pending invitation", {
+      operation: "getPendingInvitation",
+      context: "invitation retrieval",
+      error: error,
+    });
+    return null;
+  }
+}
+
+/**
  * Revokes a member's access to an organization.
  *
- * @param initialState - The initial state of the form.
+ * @param _initialState - The initial state of the form.
  * @param formData - The form data containing the membership to revoke.
  */
 export async function revokeMembership(
-  initialState: any,
+  _initialState: any,
   formData: FormData
 ): Promise<FormState<any>> {
   const session = await getPageSession();
