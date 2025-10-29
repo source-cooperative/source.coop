@@ -97,6 +97,5 @@ export interface ProductObject {
     sha1?: string;
     [key: string]: string | number | boolean | null | undefined; // More specific types for metadata values
   };
-  name?: string; // Name of the file or directory
   isDirectory?: boolean; // Whether this is a directory
 }

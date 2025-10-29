@@ -5,7 +5,12 @@ import { SessionProvider } from "@ory/elements-react/client";
 import NextTopLoader from "nextjs-toploader";
 import { IBM_Plex_Sans } from "next/font/google";
 import { Container } from "@radix-ui/themes";
-import { Navigation, Footer } from "@/components/layout";
+import {
+  S3CredentialsProvider,
+  UploadProvider,
+  Navigation,
+  Footer,
+} from "@/components";
 import { metadata } from "./metadata";
 const ibmPlexSans = IBM_Plex_Sans({
   subsets: ["latin"],
@@ -31,10 +36,14 @@ export default async function RootLayout({ children }: RootLayoutProps) {
         >
           <NextTopLoader />
           <SessionProvider>
-            <Navigation />
-            <Container py="4">
-              <main>{children}</main>
-            </Container>
+            <S3CredentialsProvider>
+              <UploadProvider>
+                <Navigation />
+                <Container py="4">
+                  <main>{children}</main>
+                </Container>
+              </UploadProvider>
+            </S3CredentialsProvider>
             <Footer />
           </SessionProvider>
         </ThemeProvider>

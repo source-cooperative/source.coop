@@ -8,7 +8,6 @@ export interface StorageConfig {
     accessKeyId: string;
     secretAccessKey: string;
   };
-  options?: Record<string, unknown>;
 }
 
 // Path construction types and utilities

@@ -1,22 +1,25 @@
 "use client";
-import { Box, Flex, DropdownMenu, Text } from "@radix-ui/themes";
 import { useState } from "react";
-import { ProfileAvatar } from "@/components/features/profiles/ProfileAvatar";
+import { Flex, DropdownMenu, Text, Box } from "@radix-ui/themes";
 import { ChevronDownIcon } from "@radix-ui/react-icons";
 import styles from "./Navigation.module.css";
-import { UserSession } from "@/types/session";
-import { Skeleton } from "../core/Skeleton";
-import { CONFIG } from "@/lib/config";
-import { LOGGER } from "@/lib";
-import { DropdownSection } from "./DropdownSection";
-import { isAuthorized } from "@/lib/api/authz";
-import { Actions } from "@/types";
 import {
+  LOGGER,
+  CONFIG,
   accountUrl,
   editAccountProfileUrl,
   newOrganizationUrl,
   newProductUrl,
-} from "@/lib/urls";
+} from "@/lib";
+import { DropdownSection } from "./DropdownSection";
+import { isAuthorized } from "@/lib/api/authz";
+import { Actions, UserSession } from "@/types";
+import {
+  ProfileAvatar,
+  UploadsSubmenu,
+  UploadBadge,
+  Skeleton,
+} from "@/components";
 
 export function AccountDropdownSkeleton() {
   return (
@@ -53,7 +56,10 @@ export function AccountDropdown({ session }: { session: UserSession }) {
     <DropdownMenu.Root open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenu.Trigger>
         <Flex align="center" gap="2" style={{ cursor: "pointer" }}>
-          <ProfileAvatar account={session.account!} size="2" />
+          <Box style={{ position: "relative" }}>
+            <ProfileAvatar account={session.account!} size="2" />
+            <UploadBadge />
+          </Box>
           <Box display={{ initial: "none", sm: "block" }}>
             <Text>{session.account!.name}</Text>
           </Box>
@@ -98,6 +104,7 @@ export function AccountDropdown({ session }: { session: UserSession }) {
             },
           ]}
         />
+        <UploadsSubmenu />
         <DropdownSection
           items={[
             {
