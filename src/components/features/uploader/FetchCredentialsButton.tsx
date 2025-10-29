@@ -42,14 +42,14 @@ export const FetchCredentialsButton = ({
     }
   };
 
-  const handleUploadClick = () => {
+  const handleUploadClick = (isDirectory: boolean) => () => {
     if (!s3Credentials || !isEditMode) return;
 
     // Trigger file picker
     const input = document.createElement("input");
     input.type = "file";
     input.multiple = true;
-    input.webkitdirectory = true;
+    input.webkitdirectory = isDirectory;
     input.onchange = (e) => {
       const files = (e.target as HTMLInputElement).files;
       if (files) {
@@ -105,13 +105,22 @@ export const FetchCredentialsButton = ({
         </DropdownMenu.Item>
 
         {isEditMode && (
-          <DropdownMenu.Item
-            onClick={handleUploadClick}
-            disabled={!s3Credentials}
-          >
-            <UploadIcon />
-            Upload Files
-          </DropdownMenu.Item>
+          <>
+            <DropdownMenu.Item
+              onClick={handleUploadClick(false)}
+              disabled={!s3Credentials}
+            >
+              <UploadIcon />
+              Upload Files
+            </DropdownMenu.Item>
+            <DropdownMenu.Item
+              onClick={handleUploadClick(true)}
+              disabled={!s3Credentials}
+            >
+              <UploadIcon />
+              Upload Directory
+            </DropdownMenu.Item>
+          </>
         )}
       </DropdownMenu.Content>
       {s3Credentials && (
