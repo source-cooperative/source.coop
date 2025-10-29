@@ -49,57 +49,46 @@ export function mergeUploadsWithFiles(
   const normalizedPrefix = currentPrefix.replace(/\/$/, "");
 
   for (const upload of uploads) {
-    // Get the path relative to the current prefix
-    const uploadPath = upload.key;
-
     // Check if upload is under the current prefix
-    if (!uploadPath.startsWith(normalizedPrefix)) continue;
+    if (!upload.key.startsWith(normalizedPrefix)) continue;
 
     // Get the relative path from the current prefix
-    const relativePath = normalizedPrefix
-      ? uploadPath.slice(normalizedPrefix.length).replace(/^\//, "")
-      : uploadPath;
+    const prefixLength = normalizedPrefix ? normalizedPrefix.length + 1 : 0;
+    const relativePath = upload.key.slice(prefixLength);
 
     // Split into segments to find what should be shown in this directory
     const segments = relativePath.split("/").filter(Boolean);
     if (segments.length === 0) continue;
 
-    // Show the immediate child (file or directory)
-    const immediateChild = segments[0];
-    const isDirectChild = segments.length === 1;
-    const childPath = normalizedPrefix
-      ? `${normalizedPrefix}/${immediateChild}${isDirectChild ? "" : "/"}`
-      : `${immediateChild}${isDirectChild ? "" : "/"}`;
+    const name = segments[0];
+    const isFile = segments.length === 1;
 
-    if (isDirectChild) {
-      // This is a file directly in the current directory
-      files.set(immediateChild, {
-        // Get existing file or create a new one
-        ...(files.get(immediateChild) || {
-          name: immediateChild,
-          path: uploadPath,
+    if (isFile) {
+      // File directly in current directory - show with upload progress
+      files.set(name, {
+        ...(files.get(name) || {
+          name,
+          path: upload.key,
           size: upload.totalBytes,
           updated_at: new Date().toISOString(),
           isDirectory: false,
         }),
-        // Add upload progress
         uploadProgress: {
           uploadedBytes: upload.uploadedBytes,
           status: upload.status,
           error: upload.error,
         },
       });
-    } else {
-      // This is a nested file, show its parent directory
-      if (!files.has(immediateChild)) {
-        files.set(immediateChild, {
-          name: immediateChild,
-          path: childPath,
-          size: 0,
-          updated_at: new Date().toISOString(),
-          isDirectory: true,
-        });
-      }
+    } else if (!files.has(name)) {
+      // Nested file - show parent directory
+      const dirPath = normalizedPrefix ? `${normalizedPrefix}/${name}/` : `${name}/`;
+      files.set(name, {
+        name,
+        path: dirPath,
+        size: 0,
+        updated_at: new Date().toISOString(),
+        isDirectory: true,
+      });
     }
   }
 
