@@ -1,4 +1,4 @@
-import { ProductObject } from './product_object';
+import { ProductObject } from "./product";
 
 // Configuration for connecting to the provider
 export interface StorageConfig {
@@ -13,9 +13,9 @@ export interface StorageConfig {
 
 // Path construction types and utilities
 export interface ObjectPath {
-  account_id: string;     // Matches Account interface
-  product_id: string;  // Matches Product interface
-  object_path: string;    // The actual path within the product
+  account_id: string; // Matches Account interface
+  product_id: string; // Matches Product interface
+  object_path: string; // The actual path within the product
 }
 
 export interface ListObjectsParams extends ObjectPath {
