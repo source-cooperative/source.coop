@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Text, Spinner, Flex } from "@radix-ui/themes";
 import { DynamicForm, FormField } from "@/components/core";
 import { Account } from "@/types";
-import { Product } from "@/types/product_v2";
+import { Product } from "@/types/product";
 import { useProductIdValidation } from "@/hooks/useIdValidation";
 import { createProduct, updateProduct } from "@/lib/actions/products";
 

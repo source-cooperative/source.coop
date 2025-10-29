@@ -80,3 +80,22 @@ export const ProductCreationRequestSchema = ProductSchema.omit({
 export type ProductCreationRequest = z.infer<
   typeof ProductCreationRequestSchema
 >;
+
+export interface ProductObject {
+  id: string;
+  product_id: string;
+  path: string;
+  size: number;
+  type?: "directory" | "file" | string; // For MIME types or other custom types
+  mime_type?: string; // Optional explicit MIME type for files
+  created_at: string;
+  updated_at: string;
+  checksum: string;
+  content?: Buffer | string; // Added for storage client responses
+  metadata?: {
+    sha256?: string;
+    sha1?: string;
+    [key: string]: string | number | boolean | null | undefined; // More specific types for metadata values
+  };
+  isDirectory?: boolean; // Whether this is a directory
+}

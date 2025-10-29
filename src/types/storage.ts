@@ -1,4 +1,4 @@
-import { ProductObject } from "./product_object";
+import { ProductObject } from "./product";
 
 // Configuration for connecting to the provider
 export interface StorageConfig {

@@ -60,7 +60,9 @@ export function AccountDropdown({ session }: { session: UserSession }) {
             <ProfileAvatar account={session.account!} size="2" />
             <UploadBadge />
           </Box>
-          <Text>{session.account!.name}</Text>
+          <Box display={{ initial: "none", sm: "block" }}>
+            <Text>{session.account!.name}</Text>
+          </Box>
           <ChevronDownIcon
             className={styles.chevron}
             data-state={isOpen ? "open" : "closed"}
