@@ -11,6 +11,7 @@
 import {
   BreadcrumbNav,
   FetchCredentialsButton,
+  PendingInvitationBanner,
   ProductHeader,
   SectionHeader,
 } from "@/components";
@@ -22,6 +23,7 @@ import { productUrl } from "@/lib/urls";
 import { Actions } from "@/types/shared";
 import { Box, Card, Flex } from "@radix-ui/themes";
 import { notFound } from "next/navigation";
+import { getPendingInvitation } from "@/lib/actions/memberships";
 
 interface ProductLayoutProps {
   children: React.ReactNode;
@@ -43,9 +45,23 @@ export default async function ProductLayout({
   }
   const prefix = path ? path.join("/") : "";
 
+  // Check for pending invitation
+  const pendingInvitation = await getPendingInvitation(account_id, product_id);
+
   return (
     <>
-      <ProductHeader product={product} />
+      {/* Show pending invitation banner if exists */}
+      {pendingInvitation && (
+        <PendingInvitationBanner
+          invitation={pendingInvitation}
+          organizationName={product.account?.name || account_id}
+          productName={product.title || product_id}
+        />
+      )}
+
+      <Box mt="4">
+        <ProductHeader product={product} />
+      </Box>
       <Box mt="4">
         <Dropzone product={product} prefix={prefix}>
           <Card>
