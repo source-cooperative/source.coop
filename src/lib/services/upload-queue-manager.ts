@@ -48,7 +48,7 @@ export class UploadQueueManager {
     const newItems: QueuedUpload[] = files.map((file, i) => ({
       id: `${Date.now()}-${i}`,
       file,
-      key: prefix ? `${prefix}/${file.name}` : file.name,
+      key: prefix ? `${prefix}/${file.webkitRelativePath || file.name}` : (file.webkitRelativePath || file.name),
       status: "queued",
       uploadedBytes: 0,
       totalBytes: file.size,

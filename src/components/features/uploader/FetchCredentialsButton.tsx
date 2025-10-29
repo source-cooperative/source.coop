@@ -49,6 +49,7 @@ export const FetchCredentialsButton = ({
     const input = document.createElement("input");
     input.type = "file";
     input.multiple = true;
+    input.webkitdirectory = true;
     input.onchange = (e) => {
       const files = (e.target as HTMLInputElement).files;
       if (files) {
