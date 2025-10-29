@@ -54,103 +54,100 @@ export function UploadsSubmenu() {
         >
           <ScrollArea style={{ maxHeight: "300px" }}>
             <Flex direction="column" gap="2">
-              {activeUploads.map((upload) => (
-                <Flex
-                  direction="column"
-                  gap="2"
-                  key={upload.id}
-                  style={{
-                    padding: "var(--space-2)",
-                    backgroundColor: "var(--gray-2)",
-                    borderRadius: "var(--radius-2)",
-                  }}
-                >
-                  {/* File name and scope */}
-                  <Flex justify="between" align="start">
-                    <Flex direction="column" style={{ flex: 1, minWidth: 0 }}>
-                      <Text
-                        size="2"
-                        weight="medium"
-                        style={{
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                        }}
+              {activeUploads.map((upload) => {
+                const uploadPrefix =
+                  productUrl(upload.scope.accountId, upload.scope.productId) +
+                  "/" +
+                  upload.key.split("/").slice(0, -1).join("/");
+                return (
+                  <Flex
+                    direction="column"
+                    gap="2"
+                    key={upload.id}
+                    style={{
+                      padding: "var(--space-2)",
+                      backgroundColor: "var(--gray-2)",
+                      borderRadius: "var(--radius-2)",
+                    }}
+                  >
+                    {/* File name and scope */}
+                    <Flex justify="between" align="start">
+                      <Flex direction="column" style={{ flex: 1, minWidth: 0 }}>
+                        <Text
+                          size="2"
+                          weight="medium"
+                          style={{
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {upload.key.split("/").pop()}
+                        </Text>
+                        <Link size="1" color="gray" asChild>
+                          <NextLink href={uploadPrefix}>
+                            {uploadPrefix}
+                          </NextLink>
+                        </Link>
+                      </Flex>
+                      <Flex gap="1">
+                        {upload.status === "error" && (
+                          <IconButton
+                            size="1"
+                            variant="ghost"
+                            color="blue"
+                            onClick={() => retryUpload(upload.id)}
+                          >
+                            <ReloadIcon />
+                          </IconButton>
+                        )}
+                        {(upload.status === "uploading" ||
+                          upload.status === "queued") && (
+                          <IconButton
+                            size="1"
+                            variant="ghost"
+                            color="red"
+                            onClick={() => cancelUpload(upload.id)}
+                          >
+                            <Cross2Icon />
+                          </IconButton>
+                        )}
+                      </Flex>
+                    </Flex>
+
+                    {/* Status and size */}
+                    <Flex align="center" gap="2">
+                      <Badge
+                        color={getStatusColor(upload.status)}
+                        variant="soft"
+                        size="1"
                       >
-                        {upload.key.split("/").pop()}
+                        {getStatusIcon(upload.status)}
+                        {upload.status}
+                      </Badge>
+                      <Text size="1" color="gray">
+                        {formatBytes(upload.uploadedBytes)} /{" "}
+                        {formatBytes(upload.totalBytes)}
                       </Text>
-                      <Link size="1" color="gray" asChild>
-                        <NextLink
-                          href={
-                            productUrl(
-                              upload.scope.accountId,
-                              upload.scope.productId
-                            ) +
-                            "/" +
-                            upload.key.split("/").slice(0, -1).join("/")
-                          }
-                        >
-                          {upload.scope.accountId}/{upload.scope.productId}
-                        </NextLink>
-                      </Link>
                     </Flex>
-                    <Flex gap="1">
-                      {upload.status === "error" && (
-                        <IconButton
-                          size="1"
-                          variant="ghost"
-                          color="blue"
-                          onClick={() => retryUpload(upload.id)}
-                        >
-                          <ReloadIcon />
-                        </IconButton>
-                      )}
-                      {(upload.status === "uploading" ||
-                        upload.status === "queued") && (
-                        <IconButton
-                          size="1"
-                          variant="ghost"
-                          color="red"
-                          onClick={() => cancelUpload(upload.id)}
-                        >
-                          <Cross2Icon />
-                        </IconButton>
-                      )}
-                    </Flex>
+
+                    {/* Progress bar */}
+                    {upload.status === "uploading" && (
+                      <Progress
+                        value={(upload.uploadedBytes / upload.totalBytes) * 100}
+                        size="1"
+                      />
+                    )}
+
+                    {/* Error message */}
+                    {upload.error && (
+                      <Text size="1" color="red">
+                        {upload.error}
+                      </Text>
+                    )}
                   </Flex>
-
-                  {/* Status and size */}
-                  <Flex align="center" gap="2">
-                    <Badge
-                      color={getStatusColor(upload.status)}
-                      variant="soft"
-                      size="1"
-                    >
-                      {getStatusIcon(upload.status)}
-                      {upload.status}
-                    </Badge>
-                    <Text size="1" color="gray">
-                      {formatBytes(upload.uploadedBytes)} /{" "}
-                      {formatBytes(upload.totalBytes)}
-                    </Text>
-                  </Flex>
-
-                  {/* Progress bar */}
-                  {upload.status === "uploading" && (
-                    <Progress
-                      value={(upload.uploadedBytes / upload.totalBytes) * 100}
-                      size="1"
-                    />
-                  )}
-
-                  {/* Error message */}
-                  {upload.error && (
-                    <Text size="1" color="red">
-                      {upload.error}
-                    </Text>
-                  )}
-                </Flex>
-              ))}
+                );
+              })}
             </Flex>
           </ScrollArea>
         </DropdownMenu.SubContent>
