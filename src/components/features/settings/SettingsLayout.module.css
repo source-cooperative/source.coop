@@ -25,6 +25,7 @@
 .settingsContent {
   padding-left: 2em;
   border-left: 1px solid var(--gray-6);
+  width: 100%;
 }
 
 /* Mobile */
