@@ -85,8 +85,8 @@ export function ViewCredentialsDialog({
             {(
               [
                 [
-                  "Expires",
-                  <span key="expires" title={credentials.expiration}>
+                  "Expiration",
+                  <span key="expiration" title={credentials.expiration}>
                     {new Date(credentials.expiration).toLocaleString()}
                   </span>,
                   credentials.expiration,
