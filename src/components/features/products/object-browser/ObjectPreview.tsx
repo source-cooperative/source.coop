@@ -21,6 +21,11 @@ const getIframeAttributes = (
         src: `https://source-cooperative.github.io/parquet-table/?iframe=true&url=${sourceUrl}`,
         style: { border: "1px solid var(--gray-5)" },
       };
+    case "tif":
+      return {
+        src: `https://cogeo.org/viewer/#url=${sourceUrl}`,
+        style: { border: "none" },
+      }
     default:
       return null;
   }
