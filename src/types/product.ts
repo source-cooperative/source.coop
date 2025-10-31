@@ -1,172 +1,101 @@
-// TODO: Merge this with product_v2.ts
-/**
- * @fileoverview Type definitions and schemas for Product entities.
- *
- * This module defines the core data structures, enums, and Zod schemas used for
- * product management in the Source Cooperative application.
- *
- * @module types/product
- * @requires zod
- * @requires @asteasolutions/zod-to-openapi
- */
-
 import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
 import { z } from "zod";
-import {
-  MIN_ID_LENGTH,
-  MAX_ID_LENGTH,
-  ID_REGEX,
-  RepositoryDataModeSchema,
-} from "./shared";
+import { AccountSchema } from "@/types/account";
 
 extendZodWithOpenApi(z);
 
-export const RepositoryMirrorSchema = z
+// Mirror configuration and status tracking
+// ProductMirror describes a storage mirror for a product, including config, sync status, and stats.
+export const ProductMirrorSchema = z
   .object({
-    data_connection_id: z.string(),
-    prefix: z.string(),
-  })
-  .openapi("RepositoryMirror");
-
-export type RepositoryMirror = z.infer<typeof RepositoryMirrorSchema>;
-
-export const RepositoryDataSchema = z
-  .object({
-    primary_mirror: z.string({
-      required_error: "Primary mirror is required",
-      invalid_type_error: "Primary mirror must be a string",
+    storage_type: z.enum(["s3", "azure", "gcs", "minio", "ceph"]),
+    connection_id: z.string(), // Reference to storage connection config
+    prefix: z.string(), // Format: "{account_id}/{product_id}/"
+    config: z.object({
+      region: z.string().optional(), // For S3/GCS
+      bucket: z.string().optional(), // For S3/GCS
+      container: z.string().optional(), // For Azure
+      endpoint: z.string().optional(), // For MinIO/Ceph
     }),
-    mirrors: z.record(RepositoryMirrorSchema),
+    // Mirror-specific settings
+    is_primary: z.boolean(), // Is this the primary mirror?
   })
-  .openapi("RepositoryData");
+  .openapi("ProductMirror");
 
-export const RepositoryMetaSchema = z
+export type ProductMirror = z.infer<typeof ProductMirrorSchema>;
+
+// Metadata for a product, including mirrors, roles, and tags
+export const ProductMetadataSchema = z
   .object({
-    title: z.preprocess(
-      (title) => {
-        if (!title || typeof title !== "string") return undefined;
-        return title === "" ? undefined : title;
-      },
-      z.string({
-        required_error: "Title is required",
-        invalid_type_error: "Title must be a string",
-      })
-    ),
-    description: z.preprocess(
-      (description) => {
-        if (!description || typeof description !== "string") return undefined;
-        return description === "" ? undefined : description;
-      },
-      z.string({
-        required_error: "Description is required",
-        invalid_type_error: "Description must be a string",
-      })
-    ),
-    tags: z
-      .string()
-      .transform((value) => value.split(","))
-      .pipe(z.string().trim().array()),
+    mirrors: z.record(ProductMirrorSchema),
+    primary_mirror: z.string(), // Key of the primary mirror (e.g., "aws-us-east-1")
+    tags: z.array(z.string()).optional(),
   })
-  .openapi("RepositoryMeta");
+  .openapi("ProductMetadata");
 
-export type RepositoryMeta = z.infer<typeof RepositoryMetaSchema>;
+export type ProductMetadata = z.infer<typeof ProductMetadataSchema>;
 
-export type RepositoryListResponse = {
-  repositories: Repository[];
-  next?: string;
-  count: number;
-};
-
-export enum RepositoryState {
-  Listed = "listed",
-  Unlisted = "unlisted",
+export enum ProductDataMode {
+  Open = "open",
+  Subscription = "subscription",
+  Private = "private",
 }
-
-export const RepositoryStateSchema = z
-  .nativeEnum(RepositoryState, {
-    errorMap: () => ({ message: "Invalid repository mode" }),
+export const ProductDataModeSchema = z
+  .nativeEnum(ProductDataMode, {
+    errorMap: () => ({ message: "Invalid product data mode" }),
   })
-  .openapi("RepositoryState");
+  .openapi("ProductDataMode");
 
-export enum RepositoryFeatured {
-  Featured = 1,
-  NotFeatured = 0,
-}
-
-export const RepositorySchema = z
+// Main product interface matching new schema
+// Product is the main product entity, including metadata and optional account
+export const ProductSchema = z
   .object({
-    account_id: z
-      .string()
-      .min(MIN_ID_LENGTH)
-      .max(MAX_ID_LENGTH)
-      .toLowerCase()
-      .regex(ID_REGEX, "Invalid account ID format"),
-    repository_id: z
-      .string({
-        required_error: "Repository ID is required",
-        invalid_type_error: "Repository ID must be a string",
-      })
-      .min(MIN_ID_LENGTH, "Repository ID must be at least 3 characters long")
-      .max(MAX_ID_LENGTH, "Repository ID may not be longer than 40 characters")
-      .toLowerCase()
-      .regex(ID_REGEX, "Invalid repository ID format"),
-    state: RepositoryStateSchema,
-    data_mode: RepositoryDataModeSchema,
-    featured: z.nativeEnum(RepositoryFeatured, {
-      errorMap: () => ({ message: "Invalid featured value" }),
-    }),
-    meta: RepositoryMetaSchema,
-    data: RepositoryDataSchema,
-    published: z.string().datetime({ offset: true }),
+    product_id: z.string(), // Partition Key
+    account_id: z.string(), // Sort Key
+    title: z.string(),
+    description: z.string(),
+    created_at: z.string(),
+    updated_at: z.string(),
+    visibility: z.enum(["public", "unlisted", "restricted"]),
+    metadata: ProductMetadataSchema,
+    account: AccountSchema.optional(),
     disabled: z.boolean(),
+    featured: z.number(),
+    data_mode: ProductDataModeSchema,
   })
-  .openapi("Repository");
+  .openapi("Product");
 
-// TODO: This should be renamed to Product
-export type Repository = z.infer<typeof RepositorySchema>;
+export type Product = z.infer<typeof ProductSchema>;
 
-export const RepositoryListSchema = z
-  .object({
-    repositories: z.array(RepositorySchema),
-    next: z.optional(z.string()),
-  })
-  .openapi("RepositoryListResponse");
-
-export type RepositoryList = z.infer<typeof RepositoryListSchema>;
-
-export const RepositoryCreationRequestSchema = RepositorySchema.pick({
-  repository_id: true,
-  data_mode: true,
-  meta: true,
-})
-  .extend({
-    data_connection_id: z
-      .string()
-      .min(MIN_ID_LENGTH)
-      .max(MAX_ID_LENGTH)
-      .toLowerCase()
-      .regex(ID_REGEX, "Invalid data connection ID format")
-      .openapi({ example: "data-connection-id" }),
-  })
-  .openapi("RepositoryCreationRequest");
-
-export type RepositoryCreationRequest = z.infer<
-  typeof RepositoryCreationRequestSchema
->;
-
-export const RepositoryUpdateRequestSchema = RepositorySchema.pick({
-  meta: true,
-  state: true,
-}).openapi("RepositoryUpdateRequest");
-
-export type RepositoryUpdateRequest = z.infer<
-  typeof RepositoryUpdateRequestSchema
->;
-
-export const RepositoryFeaturedUpdateRequestSchema = RepositorySchema.pick({
+export const ProductCreationRequestSchema = ProductSchema.omit({
+  created_at: true,
+  updated_at: true,
+  account: true,
+  disabled: true,
   featured: true,
-}).openapi("RepositoryFeaturedUpdateRequest");
+  data_mode: true,
+  metadata: true,
+}).openapi("ProductCreationRequest");
 
-export type RepositoryFeaturedUpdateRequest = z.infer<
-  typeof RepositoryFeaturedUpdateRequestSchema
+export type ProductCreationRequest = z.infer<
+  typeof ProductCreationRequestSchema
 >;
+
+export interface ProductObject {
+  id: string;
+  product_id: string;
+  path: string;
+  size: number;
+  type?: "directory" | "file" | string; // For MIME types or other custom types
+  mime_type?: string; // Optional explicit MIME type for files
+  created_at: string;
+  updated_at: string;
+  checksum: string;
+  content?: Buffer | string; // Added for storage client responses
+  metadata?: {
+    sha256?: string;
+    sha1?: string;
+    [key: string]: string | number | boolean | null | undefined; // More specific types for metadata values
+  };
+  isDirectory?: boolean; // Whether this is a directory
+}

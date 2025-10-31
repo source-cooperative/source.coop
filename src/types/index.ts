@@ -4,8 +4,6 @@ export * from "./api-key";
 export * from "./data-connection";
 export * from "./membership";
 export * from "./product";
-export * from "./product_v2";
-export * from "./product_object";
 export * from "./session";
 export * from "./storage";
 export * from "./form";

@@ -1,4 +1,5 @@
-import type { ProductObject } from '@/types';
+import type { ProductObject } from "@/types";
+import type { ScopedUploadItem } from "@/components/features/uploader";
 
 export interface FileNode {
   name: string;
@@ -7,95 +8,89 @@ export interface FileNode {
   updated_at: string;
   isDirectory: boolean;
   object?: ProductObject;
+  // Upload progress fields (only present during upload)
+  uploadProgress?: {
+    uploadedBytes: number;
+    status: ScopedUploadItem["status"];
+    error?: string;
+  };
+}
+
+export const asFileNodes = (objects: ProductObject[]): FileNode[] =>
+  objects.map((obj) => ({
+    name: obj.path.replace(/\/+$/, "").split("/").pop()!, // Get last segment of path
+    path: obj.path,
+    size: obj.size,
+    updated_at: obj.updated_at,
+    isDirectory: obj.type === "directory",
+    object: obj,
+  }));
+
+export function formatFileSize(bytes: number): string {
+  if (bytes === 0) return "0 Bytes";
+  const k = 1024;
+  const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
 }
 
 /**
- * Detect if a path represents a directory by:
- * 1. Checking if it has an explicit directory type
- * 2. Checking if any objects exist under this path
- * This handles cases like:
- * - /climate.zarr/ (directory with file-like name)
- * - /path.with.dots/nested/files (paths with dots)
- * - /path/with/trailing/slash/ (normalize slashes)
+ * Merge upload progress items with existing file nodes
+ * Shows files that are currently uploading alongside completed files
  */
-export function isDirectory(objects: ProductObject[], path: string): boolean {
-  // Normalize path to not end with slash for comparison
-  const normalizedPath = path.endsWith('/') ? path.slice(0, -1) : path;
-  
-  // First check if we have an explicit directory type
-  const exactMatch = objects.find(obj => {
-    const objPath = obj.path.endsWith('/') ? obj.path.slice(0, -1) : obj.path;
-    return objPath === normalizedPath;
-  });
-  if (exactMatch?.type === 'directory') return true;
-  
-  // Then check if any objects exist under this path
-  const prefix = normalizedPath + '/';
-  return objects.some(obj => obj.path.startsWith(prefix));
-}
+export function mergeUploadsWithFiles(
+  fileNodes: FileNode[],
+  uploads: ScopedUploadItem[],
+  currentPrefix: string
+): FileNode[] {
+  const files = new Map(fileNodes.map((file) => [file.name, file]));
 
-export function buildDirectoryTree(objects: ProductObject[], currentPath: string[] = []) {
-  const root: { [key: string]: FileNode } = {};
-  const prefix = currentPath.length > 0 ? currentPath.join('/') + '/' : '';
-  
-  // Filter objects for current directory level only
-  objects.forEach(obj => {
-    // Skip if doesn't match prefix
-    if (prefix && !obj.path.startsWith(prefix)) return;
-    
-    // Get relative path from current directory
-    const relativePath = obj.path.slice(prefix.length);
-    if (!relativePath) return;
-    
-    // Get path parts
-    const parts = relativePath.split('/');
-    if (!parts[0]) return;
-    
-    // If we have more than one part, this is a nested path
-    // We only want to show direct children of the current directory
-    if (parts.length > 1) {
-      const nodeName = parts[0];
-      if (!root[nodeName]) {
-        root[nodeName] = {
-          name: nodeName,
-          path: prefix + nodeName,
-          size: 0,
+  // Normalize prefix to ensure consistent comparison
+  const normalizedPrefix = currentPrefix.replace(/\/$/, "");
+
+  for (const upload of uploads) {
+    // Check if upload is under the current prefix
+    if (!upload.key.startsWith(normalizedPrefix)) continue;
+
+    // Get the relative path from the current prefix
+    const prefixLength = normalizedPrefix ? normalizedPrefix.length + 1 : 0;
+    const relativePath = upload.key.slice(prefixLength);
+
+    // Split into segments to find what should be shown in this directory
+    const segments = relativePath.split("/").filter(Boolean);
+    if (segments.length === 0) continue;
+
+    const name = segments[0];
+    const isFile = segments.length === 1;
+
+    if (isFile) {
+      // File directly in current directory - show with upload progress
+      files.set(name, {
+        ...(files.get(name) || {
+          name,
+          path: upload.key,
+          size: upload.totalBytes,
           updated_at: new Date().toISOString(),
-          isDirectory: true
-        };
-      }
-      return;
+          isDirectory: false,
+        }),
+        uploadProgress: {
+          uploadedBytes: upload.uploadedBytes,
+          status: upload.status,
+          error: upload.error,
+        },
+      });
+    } else if (!files.has(name)) {
+      // Nested file - show parent directory
+      const dirPath = normalizedPrefix ? `${normalizedPrefix}/${name}/` : `${name}/`;
+      files.set(name, {
+        name,
+        path: dirPath,
+        size: 0,
+        updated_at: new Date().toISOString(),
+        isDirectory: true,
+      });
     }
-    
-    // This is a direct child of the current directory
-    const nodeName = parts[0];
-    // Only add if we haven't seen this name before or if it's a file (files take precedence)
-    if (!root[nodeName] || !root[nodeName].isDirectory) {
-      root[nodeName] = {
-        name: nodeName,
-        path: obj.path,
-        size: obj.size,
-        updated_at: obj.updated_at,
-        isDirectory: obj.type === 'directory',
-        object: obj
-      };
-    }
-  });
+  }
 
-  return root;
+  return Array.from(files.values());
 }
-
-export function formatFileSize(bytes: number): string {
-  if (bytes === 0) return '0 Bytes';
-  const k = 1024;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-}
-
-export function getContainerHeight(itemCount: number, itemHeight: number, maxItems: number) {
-  return Math.min(
-    Math.max(itemCount * itemHeight, itemHeight), 
-    maxItems * itemHeight
-  );
-} 

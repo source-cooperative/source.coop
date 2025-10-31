@@ -57,8 +57,11 @@ export default async function ProductPathPage({ params }: PageProps) {
     <Suspense fallback={<DirectoryListLoading />}>
       <DirectoryList
         product={product}
-        objects={objectsList}
-        path={objectPath.split("/").filter(Boolean)}
+        objects={objectsList.filter(
+          // Exclude the current directory object
+          (obj) => obj.path.replace(/\/$/, "") !== objectPath
+        )}
+        prefix={objectPath}
       />
     </Suspense>
   );
