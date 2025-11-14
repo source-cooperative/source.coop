@@ -13,7 +13,7 @@ const getIframeAttributes = (
   switch (sourceUrl.split(".").pop()) {
     case "pmtiles":
       return {
-        src: `https://pmtiles.io/#url=${sourceUrl}&iframe=true`,
+        src: `https://pmtiles.io/#iframe=true&url=${sourceUrl}`,
         style: { border: "none" },
       };
     case "parquet":
@@ -23,7 +23,7 @@ const getIframeAttributes = (
       };
     case "tif":
       return {
-        src: `https://cogeo.org/viewer/#url=${sourceUrl}`,
+        src: `https://cogeo.org/viewer/#iframe=true&url=${sourceUrl}`,
         style: { border: "none" },
       }
     default:
