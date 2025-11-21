@@ -21,6 +21,12 @@ const getIframeAttributes = (
         src: `https://source-cooperative.github.io/parquet-table/?iframe=true&url=${sourceUrl}`,
         style: { border: "1px solid var(--gray-5)" },
       };
+    case "csv":
+    case "tsv":
+      return {
+        src: `https://source-cooperative.github.io/csv-table/?iframe=true&url=${sourceUrl}`,
+        style: { border: "1px solid var(--gray-5)" },
+      };
     default:
       return null;
   }
