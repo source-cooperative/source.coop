@@ -98,7 +98,7 @@ export default async function ProductLayout({
 
       {path === undefined && (
         <Card mt="4">
-          <SectionHeader title="README">readme</SectionHeader>
+          <SectionHeader title="README">{readme}</SectionHeader>
         </Card>
       )}
     </>
