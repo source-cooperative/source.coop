@@ -96,11 +96,7 @@ export default async function ProductLayout({
         </Dropzone>
       </Box>
 
-      {path === undefined && (
-        <Card mt="4">
-          <SectionHeader title="README">{readme}</SectionHeader>
-        </Card>
-      )}
+      {readme}
     </>
   );
 }

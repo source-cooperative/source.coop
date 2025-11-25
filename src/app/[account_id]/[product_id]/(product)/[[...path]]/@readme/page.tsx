@@ -1,9 +1,12 @@
 import { LOGGER, storage } from "@/lib";
+import { SectionHeader } from "@/components";
 import { MarkdownViewer } from "@/components/features/markdown";
+import { Card } from "@radix-ui/themes";
 
 interface ProductPathComponentProps {
   account_id: string;
   product_id: string;
+  path?: string[];
 }
 
 interface PageProps {
@@ -11,11 +14,12 @@ interface PageProps {
 }
 
 export default async function ProductPathPage({ params }: PageProps) {
-  const { account_id, product_id } = await params;
+  const { account_id, product_id, path = [] } = await params;
+  const object_path = [...path, "README.md"].join("/");
   const lookupDetails = {
     account_id,
     product_id,
-    object_path: "README.md",
+    object_path,
   };
 
   let readme: string | undefined;
@@ -30,6 +34,12 @@ export default async function ProductPathPage({ params }: PageProps) {
       context: "README fetch",
       metadata: { ...lookupDetails, error: (error as Error).toString() },
     });
+    return null;
   }
-  return readme && <MarkdownViewer content={readme} />;
+  return (
+    <Card mt="4">
+      <SectionHeader title="README" />
+      <MarkdownViewer content={readme!} />
+    </Card>
+  );
 }
