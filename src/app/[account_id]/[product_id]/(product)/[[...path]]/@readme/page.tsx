@@ -4,6 +4,7 @@ import { MarkdownViewer } from "@/components/features/markdown";
 interface ProductPathComponentProps {
   account_id: string;
   product_id: string;
+  path?: string[];
 }
 
 interface PageProps {
@@ -11,11 +12,12 @@ interface PageProps {
 }
 
 export default async function ProductPathPage({ params }: PageProps) {
-  const { account_id, product_id } = await params;
+  const { account_id, product_id, path = [] } = await params;
+  const object_path = [...path, "README.md"].join("/");
   const lookupDetails = {
     account_id,
     product_id,
-    object_path: "README.md",
+    object_path,
   };
 
   let readme: string | undefined;
