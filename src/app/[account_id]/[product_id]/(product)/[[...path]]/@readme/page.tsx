@@ -1,5 +1,7 @@
 import { LOGGER, storage } from "@/lib";
+import { SectionHeader } from "@/components";
 import { MarkdownViewer } from "@/components/features/markdown";
+import { Card } from "@radix-ui/themes";
 
 interface ProductPathComponentProps {
   account_id: string;
@@ -32,6 +34,12 @@ export default async function ProductPathPage({ params }: PageProps) {
       context: "README fetch",
       metadata: { ...lookupDetails, error: (error as Error).toString() },
     });
+    return null;
   }
-  return readme && <MarkdownViewer content={readme} />;
+  return (
+    <Card mt="4">
+      <SectionHeader title="README" />
+      <MarkdownViewer content={readme!} />
+    </Card>
+  );
 }
