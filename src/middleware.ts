@@ -1,8 +1,26 @@
-import { getServerSession } from "@ory/nextjs/app";
 import { createOryMiddleware } from "@ory/nextjs/middleware";
 import { NextRequest, NextResponse } from "next/server";
-import { getOryId, accountsTable, LOGGER } from "@/lib";
+import { LOGGER } from "@/lib";
 import { productUrl } from "@/lib/urls";
+
+/**
+ * Ignore Chrome DevTools requests by returning 404.
+ * https://developer.chrome.com/docs/devtools/automatic-workspaces#how_does_automatic_workspace_connection_work
+ * https://stackoverflow.com/a/79630217
+ *
+ * @param request
+ * @returns response or null
+ */
+const handleChromeDevTools = (request: NextRequest): NextResponse | null => {
+  if (
+    request.method === "GET" &&
+    request.nextUrl.pathname ===
+      "/.well-known/appspecific/com.chrome.devtools.json"
+  ) {
+    return new NextResponse(null, { status: 404 });
+  }
+  return null;
+};
 
 /**
  * Handle requests to legacy repository description paths.
@@ -44,12 +62,10 @@ const handleLegacyRedirects = (request: NextRequest): NextResponse | null => {
 const ory = createOryMiddleware({});
 
 export const middleware = async (request: NextRequest) => {
-  // Handle legacy redirects first
-  const redirect = handleLegacyRedirects(request);
-  if (redirect) return redirect;
-
-  // Run Ory middleware last
-  return ory(request);
+  for (const handler of [handleLegacyRedirects, handleChromeDevTools, ory]) {
+    const response = await handler(request);
+    if (response) return response;
+  }
 };
 
 export const config = {
