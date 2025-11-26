@@ -39,7 +39,7 @@ export default async function ProductPathPage({ params }: PageProps) {
   return (
     <Card mt="4">
       <SectionHeader title="README" />
-      <MarkdownViewer content={readme!} />
+      {readme && <MarkdownViewer content={readme} />}
     </Card>
   );
 }

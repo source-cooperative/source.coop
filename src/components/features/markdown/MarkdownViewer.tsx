@@ -1,13 +1,20 @@
-import { Text, Heading, Link as RadixLink, Table } from "@radix-ui/themes";
-import ReactMarkdown from "react-markdown";
+import {
+  Text,
+  Heading,
+  Link as RadixLink,
+  Table,
+  Theme,
+} from "@radix-ui/themes";
+import { MarkdownAsync } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
 import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
-import { Code } from "./codeConfig";
-import "@/styles/MarkdownViewer.css";
+import rehypeStarryNight from "rehype-starry-night";
+import "@/styles/starry-night-theme.css";
 
 interface MarkdownViewerProps {
   content: string;
+  clientSide?: boolean;
 }
 
 // Utility function to convert heading text to URL-friendly ID
@@ -20,17 +27,7 @@ function generateHeadingId(text: string): string {
     .trim();
 }
 
-// Sanitization schema that allows images while maintaining security
-const sanitizeSchema = {
-  ...defaultSchema,
-  attributes: {
-    ...defaultSchema.attributes,
-    img: ["src", "alt", "title", "width", "height"],
-  },
-  tagNames: [...(defaultSchema.tagNames || []), "img"],
-};
-
-export function MarkdownViewer({ content }: MarkdownViewerProps) {
+export async function MarkdownViewer({ content }: MarkdownViewerProps) {
   if (typeof content !== "string") {
     throw new Error(
       `MarkdownViewer expects string content, got ${typeof content}`
@@ -38,9 +35,24 @@ export function MarkdownViewer({ content }: MarkdownViewerProps) {
   }
 
   return (
-    <ReactMarkdown
+    <MarkdownAsync
       remarkPlugins={[remarkGfm]}
-      rehypePlugins={[rehypeRaw, [rehypeSanitize, sanitizeSchema]]}
+      rehypePlugins={[
+        rehypeRaw,
+        [
+          rehypeSanitize,
+          // Sanitization schema that allows images while maintaining security
+          {
+            ...defaultSchema,
+            attributes: {
+              ...defaultSchema.attributes,
+              img: ["src", "alt", "title", "width", "height"],
+            },
+            tagNames: [...(defaultSchema.tagNames || []), "img"],
+          },
+        ],
+        rehypeStarryNight,
+      ]}
       components={{
         h1: ({ children }) => (
           <Heading size="8" mb="4" id={generateHeadingId(String(children))}>
@@ -92,22 +104,14 @@ export function MarkdownViewer({ content }: MarkdownViewerProps) {
           <Table.ColumnHeaderCell>{children}</Table.ColumnHeaderCell>
         ),
         td: ({ children }) => <Table.Cell>{children}</Table.Cell>,
-        code({ className, children }) {
-          const match = /language-(\w+)/.exec(className || "");
-          const lang = match ? match[1] : "";
-          const codeContent = String(children).replace(/\n$/, "");
-
-          // Handle inline code - check if it's single line and has no language class
-          if (!className && !codeContent.includes("\n")) {
-            return <code className="inline-code">{children}</code>;
-          }
-
-          // Use Bright for code blocks (multiline or has language class)
-          return <Code lang={lang}>{codeContent}</Code>;
-        },
+        code: ({ children }) => (
+          <Theme scaling="90%">
+            <code>{children}</code>
+          </Theme>
+        ),
       }}
     >
       {content}
-    </ReactMarkdown>
+    </MarkdownAsync>
   );
 }

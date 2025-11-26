@@ -20,7 +20,7 @@ import { ChecksumVerifier } from "../ChecksumVerifier";
 import { formatFileSize } from "./utils";
 import { useState } from "react";
 import { MonoText } from "@/components/core";
-import { CONFIG } from "@/lib/config";
+import { fileSourceUrl } from "@/lib";
 
 interface ObjectSummaryProps {
   product: Product;
@@ -44,7 +44,7 @@ export function ObjectSummary({
       : details?.provider === "s3"
       ? `s3://${details.bucket}/${prefix}${objectInfo.path}`
       : undefined;
-  const sourceUrl = `${CONFIG.storage.endpoint}/${product.account_id}/${product.product_id}/${objectInfo.path}`;
+  const sourceUrl = fileSourceUrl(product, objectInfo);
 
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const copyToClipboard = (text: string | undefined, field: string) => {

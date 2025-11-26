@@ -8,6 +8,7 @@ import {
   dataConnectionsTable,
   productsTable,
   CONFIG,
+  fileSourceUrl,
 } from "@/lib";
 import { DataConnection, ProductMirror } from "@/types";
 import { DirectoryList, ObjectSummary, ObjectPreview } from "@/components";
@@ -39,8 +40,6 @@ export default async function ProductPathPage({ params }: PageProps) {
     await fetchProduct(account_id, product_id, objectPath);
 
   if (objectInfo?.type === "file") {
-    const sourceUrl = `${CONFIG.storage.endpoint}/${product.account?.account_id}/${product.product_id}/${objectInfo.path}`;
-
     return (
       <Suspense fallback={<DirectoryListLoading />}>
         <ObjectSummary
@@ -48,7 +47,7 @@ export default async function ProductPathPage({ params }: PageProps) {
           objectInfo={objectInfo}
           connectionDetails={connectionDetails}
         />
-        <ObjectPreview sourceUrl={sourceUrl} />
+        <ObjectPreview sourceUrl={fileSourceUrl(product, objectInfo)} />
       </Suspense>
     );
   }

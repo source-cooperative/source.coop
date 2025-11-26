@@ -23,6 +23,19 @@ const handleChromeDevTools = (request: NextRequest): NextResponse | null => {
 };
 
 /**
+ * Ignore favicon requests by returning 404.
+ *
+ * @param request
+ * @returns response or null
+ */
+const handleFavicons = (request: NextRequest): NextResponse | null => {
+  if (request.method === "GET" && request.nextUrl.pathname === "/favicon.ico") {
+    return new NextResponse(null, { status: 404 });
+  }
+  return null;
+};
+
+/**
  * Handle requests to legacy repository description paths.
  * @param request
  * @returns response or null
@@ -59,15 +72,18 @@ const handleLegacyRedirects = (request: NextRequest): NextResponse | null => {
   return null;
 };
 
-const ory = createOryMiddleware({});
-
 export const middleware = async (request: NextRequest) => {
-  for (const handler of [handleLegacyRedirects, handleChromeDevTools, ory]) {
+  for (const handler of [
+    handleLegacyRedirects,
+    handleChromeDevTools,
+    handleFavicons,
+    createOryMiddleware({}),
+  ]) {
     const response = await handler(request);
     if (response) return response;
   }
 };
 
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|logo|favicon).*)"],
+  matcher: ["/((?!api|_next/static|_next/image|logo).*)"],
 };

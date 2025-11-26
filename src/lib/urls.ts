@@ -1,3 +1,4 @@
+import { Product } from "@/types";
 import { CONFIG } from "./config";
 
 // Public URLs
@@ -58,3 +59,6 @@ export const newOrganizationUrl = (account_id: string) =>
 export const verifyEmailUrl = () =>
   // `${CONFIG.auth.api.frontendUrl}/ui/verification`;
   `${CONFIG.auth.api.frontendUrl}/self-service/verification/browser`;
+
+export const fileSourceUrl = (product: Product, objectInfo: { path: string }) =>
+  `${CONFIG.storage.endpoint}/${product.account_id}/${product.product_id}/${objectInfo.path}`;

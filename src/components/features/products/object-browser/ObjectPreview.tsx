@@ -1,7 +1,7 @@
 "use client";
-
 import { Box } from "@radix-ui/themes";
-import type { CSSProperties } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
+import { MarkdownViewer } from "@/components/features/markdown";
 
 interface ObjectPreviewProps {
   sourceUrl: string;
@@ -32,8 +32,27 @@ const getIframeAttributes = (
   }
 };
 
-export function ObjectPreview({ sourceUrl: cloudUri }: ObjectPreviewProps) {
-  const iframeProps = getIframeAttributes(cloudUri);
+function AsyncMarkdownViewer({ sourceUrl }: { sourceUrl: string }) {
+  const [readme, setReadme] = useState<string>("Loading...");
+  useEffect(() => {
+    fetch(sourceUrl)
+      .then((res) => res.text())
+      .then((data) => setReadme(data))
+      .catch(() => setReadme("Error loading README"));
+  }, [sourceUrl]);
+
+  return <MarkdownViewer content={readme} />;
+}
+
+export function ObjectPreview({ sourceUrl }: ObjectPreviewProps) {
+  if (sourceUrl.endsWith(".md") || sourceUrl.endsWith(".markdown")) {
+    return (
+      <Box mt="4" pt="4" style={{ borderTop: "1px solid var(--gray-6)" }}>
+        <AsyncMarkdownViewer sourceUrl={sourceUrl} />
+      </Box>
+    );
+  }
+  const iframeProps = getIframeAttributes(sourceUrl);
   if (iframeProps) {
     const { src, style } = iframeProps;
     return (
