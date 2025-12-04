@@ -1,4 +1,5 @@
 import { ImageResponse } from "next/og";
+import Logo from "public/logo/logotype-light.svg";
 
 export const ogImageSize = {
   width: 1200,
@@ -22,54 +23,53 @@ export function OpenGraphImage({
     (
       <div
         style={{
-          fontSize: 64,
-          background: "linear-gradient(to bottom right, #1e3a8a, #3b82f6)",
-          width: "100%",
           height: "100%",
+          width: "100%",
           display: "flex",
-          flexDirection: "column",
+          textAlign: "center",
           alignItems: "center",
           justifyContent: "center",
-          color: "white",
-          padding: "40px",
+          flexDirection: "column",
+          flexWrap: "nowrap",
+          backgroundColor: "white",
+          backgroundSize: "100px 100px",
         }}
       >
         <div
           style={{
-            fontSize: 80,
-            fontWeight: "bold",
-            marginBottom: subtitle ? 20 : 0,
-            textAlign: "center",
-            maxWidth: "90%",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
           }}
         >
-          {title}
+          <Logo />
+        </div>
+        <div
+          style={{
+            display: "flex",
+            fontSize: 40,
+            fontStyle: "normal",
+            color: "black",
+            marginTop: 30,
+            lineHeight: 1.8,
+            whiteSpace: "pre-wrap",
+          }}
+        >
+          <b>{title}</b>
         </div>
         {subtitle && (
           <div
             style={{
-              fontSize: 40,
-              opacity: 0.8,
-              textAlign: "center",
-              maxWidth: "90%",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
+              display: "flex",
+              fontSize: 20,
+              fontStyle: "normal",
+              color: "black",
+              marginTop: 30,
+              lineHeight: 1.8,
+              whiteSpace: "pre-wrap",
             }}
           >
             {subtitle}
-          </div>
-        )}
-        {footer && (
-          <div
-            style={{
-              fontSize: 28,
-              opacity: 0.6,
-              marginTop: 30,
-            }}
-          >
-            {footer}
           </div>
         )}
       </div>
