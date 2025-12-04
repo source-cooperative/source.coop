@@ -23,8 +23,29 @@ type PageProps = {
 export async function generateMetadata({ params }: PageProps) {
   const { account_id } = await params;
   const account = await accountsTable.fetchById(account_id);
-  const title = account!.name;
-  return { title, description: title };
+  const title = account?.name || "Account";
+  const description = account?.name
+    ? `${account.name} on Source.coop`
+    : "Account on Source.coop";
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      type: "profile",
+      // TODO: Add account image here
+      // images: [{ url: account.imageUrl }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      // TODO: Add account image here
+      // images: [account.imageUrl],
+    },
+  };
 }
 
 export default async function AccountPage({ params, searchParams }: PageProps) {

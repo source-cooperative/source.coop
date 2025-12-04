@@ -20,7 +20,24 @@ export async function generateMetadata({ params }: PageProps) {
     title = `${path.join("/")} | ${title}`;
   }
   const description = product?.description || "A product on Source.coop";
-  return { title, description };
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      type: "website",
+      // TODO: Add product image here
+      // images: [{ url: product.imageUrl }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      // TODO: Add product image here
+      // images: [product.imageUrl],
+    },
+  };
 }
 
 interface PageProps {
