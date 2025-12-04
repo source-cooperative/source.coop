@@ -29,6 +29,11 @@ export default async function ProductPathPage({ params }: PageProps) {
     readme =
       result.data instanceof Buffer ? result.data.toString("utf-8") : undefined;
   } catch (error) {
+    LOGGER.debug("Error fetching README", {
+      operation: "ProductPathPage",
+      context: "README fetch",
+      metadata: { ...lookupDetails, error: (error as Error).toString() },
+    });
     return null;
   }
   return (
