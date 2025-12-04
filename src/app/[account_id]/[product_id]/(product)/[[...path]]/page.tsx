@@ -15,7 +15,7 @@ import { DirectoryList, ObjectSummary, ObjectPreview } from "@/components";
 export async function generateMetadata({ params }: PageProps) {
   const { account_id, product_id, path } = await params;
   const product = await productsTable.fetchById(account_id, product_id);
-  let title = product?.title || "Untitled Product";
+  let title = `${product?.title || "Untitled Product"} | Source Cooperative`;
   if (path) {
     title = `${path.join("/")} | ${title}`;
   }

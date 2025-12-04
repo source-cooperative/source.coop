@@ -34,15 +34,15 @@ describe("Account Page Metadata", () => {
 
     const metadata = await generateMetadata({ params });
 
-    expect(metadata.title).toBe("Test Account");
+    expect(metadata.title).toBe("Test Account | Source Cooperative");
     expect(metadata.description).toBe("Test Account on Source.coop");
     expect(metadata.openGraph).toBeDefined();
-    expect(metadata.openGraph?.title).toBe("Test Account");
+    expect(metadata.openGraph?.title).toBe("Test Account | Source Cooperative");
     expect(metadata.openGraph?.description).toBe("Test Account on Source.coop");
     expect(metadata.openGraph?.type).toBe("profile");
     expect(metadata.twitter).toBeDefined();
     expect(metadata.twitter?.card).toBe("summary_large_image");
-    expect(metadata.twitter?.title).toBe("Test Account");
+    expect(metadata.twitter?.title).toBe("Test Account | Source Cooperative");
     expect(metadata.twitter?.description).toBe("Test Account on Source.coop");
   });
 
@@ -55,9 +55,9 @@ describe("Account Page Metadata", () => {
 
     const metadata = await generateMetadata({ params });
 
-    expect(metadata.title).toBe("Account");
+    expect(metadata.title).toBe("Account | Source Cooperative");
     expect(metadata.description).toBe("Account on Source.coop");
-    expect(metadata.openGraph?.title).toBe("Account");
+    expect(metadata.openGraph?.title).toBe("Account | Source Cooperative");
     expect(metadata.openGraph?.description).toBe("Account on Source.coop");
     expect(metadata.openGraph?.type).toBe("profile");
   });

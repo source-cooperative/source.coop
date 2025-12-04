@@ -23,7 +23,7 @@ type PageProps = {
 export async function generateMetadata({ params }: PageProps) {
   const { account_id } = await params;
   const account = await accountsTable.fetchById(account_id);
-  const title = account?.name || "Account";
+  const title = `${account?.name || "Account"} | Source Cooperative`;
   const description = account?.name
     ? `${account.name} on Source.coop`
     : "Account on Source.coop";

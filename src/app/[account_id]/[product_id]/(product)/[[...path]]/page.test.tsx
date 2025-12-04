@@ -42,15 +42,15 @@ describe("Product Page Metadata", () => {
 
     const metadata = await generateMetadata({ params });
 
-    expect(metadata.title).toBe("Test Product");
+    expect(metadata.title).toBe("Test Product | Source Cooperative");
     expect(metadata.description).toBe("A test product description");
     expect(metadata.openGraph).toBeDefined();
-    expect(metadata.openGraph?.title).toBe("Test Product");
+    expect(metadata.openGraph?.title).toBe("Test Product | Source Cooperative");
     expect(metadata.openGraph?.description).toBe("A test product description");
     expect(metadata.openGraph?.type).toBe("website");
     expect(metadata.twitter).toBeDefined();
     expect(metadata.twitter?.card).toBe("summary_large_image");
-    expect(metadata.twitter?.title).toBe("Test Product");
+    expect(metadata.twitter?.title).toBe("Test Product | Source Cooperative");
     expect(metadata.twitter?.description).toBe("A test product description");
   });
 
@@ -71,9 +71,13 @@ describe("Product Page Metadata", () => {
 
     const metadata = await generateMetadata({ params });
 
-    expect(metadata.title).toBe("folder/subfolder | Test Product");
+    expect(metadata.title).toBe(
+      "folder/subfolder | Test Product | Source Cooperative"
+    );
     expect(metadata.description).toBe("A test product description");
-    expect(metadata.openGraph?.title).toBe("folder/subfolder | Test Product");
+    expect(metadata.openGraph?.title).toBe(
+      "folder/subfolder | Test Product | Source Cooperative"
+    );
     expect(metadata.openGraph?.description).toBe("A test product description");
   });
 
@@ -87,9 +91,11 @@ describe("Product Page Metadata", () => {
 
     const metadata = await generateMetadata({ params });
 
-    expect(metadata.title).toBe("Untitled Product");
+    expect(metadata.title).toBe("Untitled Product | Source Cooperative");
     expect(metadata.description).toBe("A product on Source.coop");
-    expect(metadata.openGraph?.title).toBe("Untitled Product");
+    expect(metadata.openGraph?.title).toBe(
+      "Untitled Product | Source Cooperative"
+    );
     expect(metadata.openGraph?.description).toBe("A product on Source.coop");
   });
 });
