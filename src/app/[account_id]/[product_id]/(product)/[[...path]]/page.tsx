@@ -27,15 +27,11 @@ export async function generateMetadata({ params }: PageProps) {
       title,
       description,
       type: "website",
-      // TODO: Add product image here
-      // images: [{ url: product.imageUrl }],
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
-      // TODO: Add product image here
-      // images: [product.imageUrl],
     },
   };
 }

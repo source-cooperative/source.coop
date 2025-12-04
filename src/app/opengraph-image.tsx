@@ -1,0 +1,15 @@
+import {
+  OpenGraphImage,
+  ogImageSize,
+  ogImageContentType,
+} from "@/components/og/OpenGraphImage";
+
+export const size = ogImageSize;
+export const contentType = ogImageContentType;
+
+export default async function Image() {
+  return OpenGraphImage({
+    title: "Source Cooperative",
+    subtitle: "Featured Products",
+  });
+}

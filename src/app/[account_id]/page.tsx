@@ -35,15 +35,11 @@ export async function generateMetadata({ params }: PageProps) {
       title,
       description,
       type: "profile",
-      // TODO: Add account image here
-      // images: [{ url: account.imageUrl }],
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
-      // TODO: Add account image here
-      // images: [account.imageUrl],
     },
   };
 }

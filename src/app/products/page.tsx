@@ -11,15 +11,11 @@ export const metadata = {
     title: "Products | Source Cooperative",
     description: "Browse and discover public data products on Source.coop",
     type: "website",
-    // TODO: Add image here
-    // images: [{ url: '/og-image.png' }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Products | Source Cooperative",
     description: "Browse and discover public data products on Source.coop",
-    // TODO: Add image here
-    // images: ['/og-image.png'],
   },
 };
 
