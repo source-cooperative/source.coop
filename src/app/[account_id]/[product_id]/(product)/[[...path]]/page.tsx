@@ -7,7 +7,7 @@ import {
   storage,
   dataConnectionsTable,
   productsTable,
-  CONFIG,
+  fileSourceUrl,
 } from "@/lib";
 import { DataConnection, ProductMirror } from "@/types";
 import { DirectoryList, ObjectSummary, ObjectPreview } from "@/components";
@@ -38,31 +38,27 @@ export default async function ProductPathPage({ params }: PageProps) {
   const { product, objectsList, objectInfo, connectionDetails } =
     await fetchProduct(account_id, product_id, objectPath);
 
-  if (objectInfo?.type === "file") {
-    const sourceUrl = `${CONFIG.storage.endpoint}/${product.account?.account_id}/${product.product_id}/${objectInfo.path}`;
-
-    return (
-      <Suspense fallback={<DirectoryListLoading />}>
-        <ObjectSummary
-          product={product}
-          objectInfo={objectInfo}
-          connectionDetails={connectionDetails}
-        />
-        <ObjectPreview sourceUrl={sourceUrl} />
-      </Suspense>
-    );
-  }
-
   return (
     <Suspense fallback={<DirectoryListLoading />}>
-      <DirectoryList
-        product={product}
-        objects={objectsList.filter(
-          // Exclude the current directory object
-          (obj) => obj.path.replace(/\/$/, "") !== objectPath
-        )}
-        prefix={objectPath}
-      />
+      {objectInfo?.type === "file" ? (
+        <>
+          <ObjectSummary
+            product={product}
+            objectInfo={objectInfo}
+            connectionDetails={connectionDetails}
+          />
+          <ObjectPreview sourceUrl={fileSourceUrl(product, objectInfo)} />
+        </>
+      ) : (
+        <DirectoryList
+          product={product}
+          objects={objectsList.filter(
+            // Exclude the current directory object
+            (obj) => obj.path.replace(/\/$/, "") !== objectPath
+          )}
+          prefix={objectPath}
+        />
+      )}
     </Suspense>
   );
 }
