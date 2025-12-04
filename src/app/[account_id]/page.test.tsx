@@ -55,10 +55,12 @@ describe("Account Page Metadata", () => {
 
     const metadata = await generateMetadata({ params });
 
-    expect(metadata.title).toBe("Account | Source Cooperative");
-    expect(metadata.description).toBe("Account on Source.coop");
-    expect(metadata.openGraph?.title).toBe("Account | Source Cooperative");
-    expect(metadata.openGraph?.description).toBe("Account on Source.coop");
+    expect(metadata.title).toBe("Account Not Found | Source Cooperative");
+    expect(metadata.description).toBe("Account Not Found");
+    expect(metadata.openGraph?.title).toBe(
+      "Account Not Found | Source Cooperative"
+    );
+    expect(metadata.openGraph?.description).toBe("Account Not Found");
     expect(metadata.openGraph?.type).toBe("profile");
   });
 });
