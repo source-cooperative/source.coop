@@ -1,8 +1,5 @@
-"use client";
-
 import { NotFoundPage } from "@/components/core";
 import { accountUrl } from "@/lib/urls";
-import { usePathname } from "next/navigation";
 import { Text } from "@radix-ui/themes";
 import type { Metadata } from "next";
 
@@ -21,9 +18,16 @@ export const metadata: Metadata = {
   },
 };
 
-export default function NotFound() {
-  const pathname = usePathname();
-  const [account_id, product_id] = pathname.split("/").slice(1, 3);
+interface NotFoundProps {
+  params: Promise<{
+    account_id: string;
+    product_id: string;
+  }>;
+}
+
+export default async function NotFound({ params }: NotFoundProps) {
+  const { account_id, product_id } = await params;
+
   if (account_id && product_id) {
     return (
       <NotFoundPage
