@@ -1,5 +1,5 @@
 import { ImageResponse } from "next/og";
-import Logo from "public/logo/logotype-light.svg";
+import Logo from "public/logo/logotype-dark.svg";
 
 export const ogImageSize = {
   width: 1200,
