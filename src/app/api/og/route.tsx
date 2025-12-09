@@ -2,9 +2,9 @@ import { NextRequest } from "next/server";
 import { LOGGER, accountUrl, productUrl } from "@/lib";
 import { getBaseUrl } from "@/lib/baseUrl";
 import { OpenGraphImage } from "@/components/og/OpenGraphImage";
+import { OGAvatar } from "@/components/og/OGAvatar";
 import { accountsTable, productsTable } from "@/lib/clients/database";
 import { AccountType } from "@/types/account";
-import { ProfileAvatar } from "@/components";
 
 /**
  * OpenGraph Image Generator
@@ -98,7 +98,7 @@ async function generateAccountImage(accountId: string, host: string) {
     title: accountName,
     subtitle: bio,
     footer: accountTypeLabel,
-    avatar: <ProfileAvatar account={account} size="9" />,
+    avatar: <OGAvatar account={account} size={350} />,
     url: accountUrl(accountId),
     host,
   });

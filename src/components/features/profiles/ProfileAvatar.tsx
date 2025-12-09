@@ -1,3 +1,5 @@
+"use client";
+
 import { Avatar } from "@radix-ui/themes";
 import md5 from "md5";
 import type { Account } from "@/types";
