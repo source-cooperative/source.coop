@@ -66,7 +66,7 @@ export async function GET(req: NextRequest) {
         }
         return generateFileImage(accountId, productId, path);
 
-      default:
+      default: {
         // Try custom parameters
         const customImage = generateCustomImage(searchParams);
         if (customImage) {
@@ -75,6 +75,7 @@ export async function GET(req: NextRequest) {
 
         // Return default
         return generateDefaultImage();
+      }
     }
   } catch (e: unknown) {
     const errorMessage = e instanceof Error ? e.message : "Unknown error";
