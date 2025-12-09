@@ -10,7 +10,6 @@ import { AccountType } from "@/types/account";
 import { getProfileImage } from "@/lib/api/utils";
 
 export const runtime = "edge";
-export const size = ogImageSize;
 export const contentType = ogImageContentType;
 
 /**
