@@ -1,4 +1,6 @@
+import { Avatar } from "@radix-ui/themes";
 import { ImageResponse } from "next/og";
+import React from "react";
 
 const ogImageSize = {
   width: 1200,
@@ -9,7 +11,7 @@ interface OpenGraphImageProps {
   title: string;
   subtitle?: string;
   footer?: string;
-  avatarUrl?: string;
+  image?: React.ReactNode;
   url?: string;
   host?: string;
 }
@@ -35,7 +37,7 @@ export async function OpenGraphImage({
   title,
   subtitle,
   footer,
-  avatarUrl,
+  image,
   url,
   host = "source.coop",
 }: OpenGraphImageProps) {
@@ -155,7 +157,7 @@ export async function OpenGraphImage({
         </div>
 
         {/* Right side - Avatar */}
-        {avatarUrl && (
+        {image && (
           <div
             style={{
               display: "flex",
@@ -163,15 +165,7 @@ export async function OpenGraphImage({
               justifyContent: "center",
             }}
           >
-            <img
-              src={avatarUrl}
-              alt="Avatar"
-              width={350}
-              height={350}
-              style={{
-                borderRadius: "5%",
-              }}
-            />
+            {image}
           </div>
         )}
       </div>

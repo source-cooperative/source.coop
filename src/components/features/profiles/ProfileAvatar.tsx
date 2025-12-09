@@ -10,24 +10,23 @@ interface ProfileAvatarProps {
 }
 
 export function ProfileAvatar({ account, size = "6" }: ProfileAvatarProps) {
+  let avatarSrc: string | undefined;
   // Get avatar source URL
-  const getAvatarSrc = () => {
-    if (account.type === "individual") {
-      // Use Gravatar for individuals
-      const primaryEmail = account.emails?.find(
-        (email) => email.is_primary
-      )?.address;
-      if (primaryEmail) {
-        const hash = md5(primaryEmail.toLowerCase().trim());
-        return `https://www.gravatar.com/avatar/${hash}?d=identicon&s=200`;
-      }
+  if (account.type === "individual") {
+    // Use Gravatar for individuals
+    const primaryEmail = account.emails?.find(
+      (email) => email.is_primary
+    )?.address;
+    if (primaryEmail) {
+      const hash = md5(primaryEmail.toLowerCase().trim());
+      avatarSrc = `https://www.gravatar.com/avatar/${hash}?d=identicon&s=200`;
     }
-  };
+  }
 
   return (
     <Avatar
       size={size}
-      src={getAvatarSrc()}
+      src={avatarSrc}
       fallback={account.name?.[0]?.toUpperCase() || ""}
       radius={account.type === "individual" ? "full" : "medium"}
     />

@@ -5,6 +5,7 @@ import { OpenGraphImage } from "@/components/og/OpenGraphImage";
 import { accountsTable, productsTable } from "@/lib/clients/database";
 import { AccountType } from "@/types/account";
 import { getProfileImage } from "@/lib/api/utils";
+import { ProfileAvatar } from "@/components";
 
 export const runtime = "edge";
 
@@ -96,20 +97,11 @@ async function generateAccountImage(accountId: string, host: string) {
   const accountTypeLabel =
     account.type === AccountType.INDIVIDUAL ? "Individual" : "Organization";
 
-  // Get avatar URL from Gravatar
-  let avatarUrl: string | undefined;
-  if (account.type === AccountType.INDIVIDUAL) {
-    const primaryEmail = account.emails?.find((e) => e.is_primary)?.address;
-    if (primaryEmail) {
-      avatarUrl = `${getProfileImage(primaryEmail)}?d=identicon&s=200`;
-    }
-  }
-
   return OpenGraphImage({
     title: accountName,
     subtitle: bio,
     footer: accountTypeLabel,
-    avatarUrl,
+    image: <ProfileAvatar account={account} />,
     url: accountUrl(accountId),
     host,
   });
