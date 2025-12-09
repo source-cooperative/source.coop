@@ -16,9 +16,6 @@ export const runtime = "edge";
  * Product
  * /api/og?type=product&account_id=cholmes&product_id=landsat
  *
- * File
- * /api/og?type=file&account_id=cholmes&product_id=landsat&path=data/scene.tif
- *
  * Custom
  * /api/og?title=My Title&subtitle=Description&footer=Context
  *
@@ -32,7 +29,6 @@ export async function GET(req: NextRequest) {
     const type = searchParams.get("type");
     const accountId = searchParams.get("account_id");
     const productId = searchParams.get("product_id");
-    const path = searchParams.get("path");
 
     switch (type) {
       case "account":
@@ -50,15 +46,6 @@ export async function GET(req: NextRequest) {
           });
         }
         return generateProductImage(accountId, productId);
-
-      case "file":
-        if (!accountId || !productId || !path) {
-          return new Response(
-            "Missing account_id, product_id, or path parameter",
-            { status: 400 }
-          );
-        }
-        return generateFileImage(accountId, productId, path);
 
       default: {
         // Try custom parameters
@@ -139,33 +126,6 @@ async function generateProductImage(accountId: string, productId: string) {
     subtitle: product.description,
     footer: `by ${product.account?.name || accountId}`,
     url: productUrl(accountId, productId),
-  });
-}
-
-/**
- * Generate OpenGraph image for a file
- */
-async function generateFileImage(
-  accountId: string,
-  productId: string,
-  path: string
-) {
-  const product = await productsTable.fetchById(accountId, productId);
-
-  if (!product) {
-    return OpenGraphImage({
-      title: "Product Not Found",
-    });
-  }
-
-  // Extract file name from path
-  const fileName = path.split("/").pop() || path;
-
-  return OpenGraphImage({
-    title: fileName,
-    subtitle: product.title,
-    footer: `in ${accountId}/${productId}`,
-    url: `${accountId}/${productId}/${path}`,
   });
 }
 

@@ -1,9 +1,12 @@
+import { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { Box } from "@radix-ui/themes";
 import { FormTitle, EditProfileForm } from "@/components";
 import { accountsTable, isIndividualAccount } from "@/lib/clients/database";
-import { notFound } from "next/navigation";
 
-export async function generateMetadata({ params }: PageProps) {
+export async function generateMetadata({
+  params,
+}: PageProps): Promise<Metadata> {
   const { account_id } = await params;
   const account = await accountsTable.fetchById(account_id);
   return { title: `Edit ${account!.name} profile` };

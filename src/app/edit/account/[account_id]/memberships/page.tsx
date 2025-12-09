@@ -1,3 +1,4 @@
+import { Metadata } from "next";
 import { Box, Flex } from "@radix-ui/themes";
 import { Actions, MembershipRole } from "@/types";
 import {
@@ -11,7 +12,9 @@ import { getPageSession } from "@/lib";
 import { isAuthorized } from "@/lib/api/authz";
 import { editAccountProfileUrl } from "@/lib/urls";
 
-export async function generateMetadata({ params }: PageProps) {
+export async function generateMetadata({
+  params,
+}: PageProps): Promise<Metadata> {
   const { account_id } = await params;
   const account = await accountsTable.fetchById(account_id);
   return { title: `Edit ${account!.name} memberships` };
