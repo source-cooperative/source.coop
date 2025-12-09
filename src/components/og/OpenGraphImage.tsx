@@ -63,7 +63,7 @@ export async function OpenGraphImage({
             display: "flex",
             flexDirection: "column",
             justifyContent: "space-between",
-            maxWidth: "65%",
+            maxWidth: avatar ? "65%" : "100%",
             padding: "0 20px",
           }}
         >
