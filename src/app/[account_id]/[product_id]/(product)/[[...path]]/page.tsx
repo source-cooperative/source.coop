@@ -11,15 +11,22 @@ import {
 } from "@/lib";
 import { DataConnection, ProductMirror } from "@/types";
 import { DirectoryList, ObjectSummary, ObjectPreview } from "@/components";
+import { Metadata } from "next";
 
-export async function generateMetadata({ params }: PageProps) {
+export async function generateMetadata({
+  params,
+}: PageProps): Promise<Metadata> {
   const { account_id, product_id, path } = await params;
   const product = await productsTable.fetchById(account_id, product_id);
   let title = `${product?.title || "Untitled Product"} | Source Cooperative`;
-  if (path) {
-    title = `${path.join("/")} | ${title}`;
+  const pathString = path ? path.join("/") : "";
+  if (pathString) {
+    title = `${pathString} | ${title}`;
   }
   const description = product?.description || "A product on Source.coop";
+  const image = pathString
+    ? `/api/og?type=file&account_id=${account_id}&product_id=${product_id}&path=${pathString}`
+    : `/api/og?type=product&account_id=${account_id}&product_id=${product_id}`;
   return {
     title,
     description,
@@ -27,6 +34,7 @@ export async function generateMetadata({ params }: PageProps) {
       title,
       description,
       type: "website",
+      images: [image],
     },
     twitter: {
       card: "summary_large_image",
