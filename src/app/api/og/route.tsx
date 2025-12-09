@@ -10,7 +10,6 @@ import { AccountType } from "@/types/account";
 import { getProfileImage } from "@/lib/api/utils";
 
 export const runtime = "edge";
-export const contentType = ogImageContentType;
 
 /**
  * OpenGraph Image Generator
