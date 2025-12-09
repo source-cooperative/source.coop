@@ -61,7 +61,6 @@ export async function OpenGraphImage({
           style={{
             display: "flex",
             flexDirection: "column",
-            // justifyContent: "center",
             justifyContent: "space-between",
             maxWidth: "65%",
             padding: "0 20px",
@@ -92,8 +91,9 @@ export async function OpenGraphImage({
                 style={{
                   display: "-webkit-box",
                   WebkitBoxOrient: "vertical",
-                  WebkitLineClamp: 3,
+                  WebkitLineClamp: 2,
                   overflow: "hidden",
+                  textOverflow: "ellipsis",
                   fontSize: 32,
                   color: "#666666",
                   lineHeight: 1.4,
