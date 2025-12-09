@@ -11,6 +11,7 @@ interface OpenGraphImageProps {
   footer?: string;
   avatarUrl?: string;
   url?: string;
+  host?: string;
 }
 
 async function loadGoogleFont(font: string) {
@@ -36,10 +37,11 @@ export async function OpenGraphImage({
   footer,
   avatarUrl,
   url,
+  host = "source.coop",
 }: OpenGraphImageProps) {
   const displayUrl = url
-    ? `source.coop/${url.startsWith("/") ? url.slice(1) : url}`
-    : "source.coop";
+    ? `${host}/${url.startsWith("/") ? url.slice(1) : url}`
+    : host;
   return new ImageResponse(
     (
       <div

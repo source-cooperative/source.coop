@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { LOGGER, accountUrl, productUrl } from "@/lib";
+import { LOGGER, accountUrl, getBaseUrl, productUrl } from "@/lib";
 import { OpenGraphImage } from "@/components/og/OpenGraphImage";
 import { accountsTable, productsTable } from "@/lib/clients/database";
 import { AccountType } from "@/types/account";
@@ -30,6 +30,9 @@ export async function GET(req: NextRequest) {
     const accountId = searchParams.get("account_id");
     const productId = searchParams.get("product_id");
 
+    // Extract host from request headers
+    const host = new URL(await getBaseUrl()).host;
+
     switch (type) {
       case "account":
         if (!accountId) {
@@ -37,7 +40,7 @@ export async function GET(req: NextRequest) {
             status: 400,
           });
         }
-        return generateAccountImage(accountId);
+        return generateAccountImage(accountId, host);
 
       case "product":
         if (!accountId || !productId) {
@@ -45,17 +48,17 @@ export async function GET(req: NextRequest) {
             status: 400,
           });
         }
-        return generateProductImage(accountId, productId);
+        return generateProductImage(accountId, productId, host);
 
       default: {
         // Try custom parameters
-        const customImage = generateCustomImage(searchParams);
+        const customImage = generateCustomImage(searchParams, host);
         if (customImage) {
           return customImage;
         }
 
         // Return default
-        return generateDefaultImage();
+        return generateDefaultImage(host);
       }
     }
   } catch (e: unknown) {
@@ -77,12 +80,13 @@ export async function GET(req: NextRequest) {
 /**
  * Generate OpenGraph image for an account
  */
-async function generateAccountImage(accountId: string) {
+async function generateAccountImage(accountId: string, host: string) {
   const account = await accountsTable.fetchById(accountId);
 
   if (!account) {
     return OpenGraphImage({
       title: "Account Not Found",
+      host,
     });
   }
 
@@ -106,18 +110,24 @@ async function generateAccountImage(accountId: string) {
     footer: accountTypeLabel,
     avatarUrl,
     url: accountUrl(accountId),
+    host,
   });
 }
 
 /**
  * Generate OpenGraph image for a product
  */
-async function generateProductImage(accountId: string, productId: string) {
+async function generateProductImage(
+  accountId: string,
+  productId: string,
+  host: string
+) {
   const product = await productsTable.fetchById(accountId, productId);
 
   if (!product) {
     return OpenGraphImage({
       title: "Product Not Found",
+      host,
     });
   }
 
@@ -126,13 +136,14 @@ async function generateProductImage(accountId: string, productId: string) {
     subtitle: product.description,
     footer: `by ${product.account?.name || accountId}`,
     url: productUrl(accountId, productId),
+    host,
   });
 }
 
 /**
  * Generate OpenGraph image with custom parameters
  */
-function generateCustomImage(searchParams: URLSearchParams) {
+function generateCustomImage(searchParams: URLSearchParams, host: string) {
   const title = searchParams.get("title");
   const subtitle = searchParams.get("subtitle");
   const footer = searchParams.get("footer");
@@ -147,15 +158,17 @@ function generateCustomImage(searchParams: URLSearchParams) {
     subtitle: subtitle || undefined,
     footer: footer || undefined,
     url: url || undefined,
+    host,
   });
 }
 
 /**
  * Generate default OpenGraph image
  */
-function generateDefaultImage() {
+function generateDefaultImage(host: string) {
   return OpenGraphImage({
     title: "Source Cooperative",
     subtitle: "Geospatial Data Repository",
+    host,
   });
 }
