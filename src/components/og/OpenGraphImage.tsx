@@ -1,11 +1,9 @@
 import { ImageResponse } from "next/og";
 
-export const ogImageSize = {
+const ogImageSize = {
   width: 1200,
   height: 390,
 };
-
-export const ogImageContentType = "image/png";
 
 interface OpenGraphImageProps {
   title: string;
@@ -90,7 +88,10 @@ export async function OpenGraphImage({
             {subtitle && (
               <div
                 style={{
-                  display: "flex",
+                  display: "-webkit-box",
+                  WebkitBoxOrient: "vertical",
+                  WebkitLineClamp: 3,
+                  overflow: "hidden",
                   fontSize: 32,
                   color: "#666666",
                   lineHeight: 1.4,
@@ -124,6 +125,8 @@ export async function OpenGraphImage({
               </div>
             )}
           </div>
+
+          {/* Link to URL */}
           <div
             style={{
               display: "flex",

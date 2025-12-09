@@ -1,10 +1,6 @@
 import { NextRequest } from "next/server";
 import { LOGGER, accountUrl, productUrl } from "@/lib";
-import {
-  OpenGraphImage,
-  ogImageSize,
-  ogImageContentType,
-} from "@/components/og/OpenGraphImage";
+import { OpenGraphImage } from "@/components/og/OpenGraphImage";
 import { accountsTable, productsTable } from "@/lib/clients/database";
 import { AccountType } from "@/types/account";
 import { getProfileImage } from "@/lib/api/utils";
