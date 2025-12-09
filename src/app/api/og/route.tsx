@@ -4,10 +4,7 @@ import { getBaseUrl } from "@/lib/baseUrl";
 import { OpenGraphImage } from "@/components/og/OpenGraphImage";
 import { accountsTable, productsTable } from "@/lib/clients/database";
 import { AccountType } from "@/types/account";
-import { getProfileImage } from "@/lib/api/utils";
 import { ProfileAvatar } from "@/components";
-
-export const runtime = "edge";
 
 /**
  * OpenGraph Image Generator
@@ -101,7 +98,7 @@ async function generateAccountImage(accountId: string, host: string) {
     title: accountName,
     subtitle: bio,
     footer: accountTypeLabel,
-    image: <ProfileAvatar account={account} />,
+    avatar: <ProfileAvatar account={account} size="9" />,
     url: accountUrl(accountId),
     host,
   });
