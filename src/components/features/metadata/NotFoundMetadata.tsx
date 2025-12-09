@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { CONFIG, getBaseUrl } from "@/lib";
+import { CONFIG } from "@/lib";
+import { getBaseUrl } from "@/lib/baseUrl";
 
 interface NotFoundMetadataProps {
   title?: string;

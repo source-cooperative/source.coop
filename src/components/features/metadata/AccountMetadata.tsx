@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { Account } from "@/types";
-import { CONFIG, getBaseUrl } from "@/lib";
+import { CONFIG } from "@/lib";
+import { getBaseUrl } from "@/lib/baseUrl";
 import { AccountType } from "@/types/account";
 
 interface AccountMetadataProps {
@@ -17,7 +18,9 @@ export async function generateAccountMetadata({
   const title = `${account.name} · ${accountType} · Source Cooperative`;
   const description =
     account.metadata_public.bio ||
-    `${account.name} is ${account.type === AccountType.INDIVIDUAL ? "an" : "an"} ${accountType.toLowerCase()} on Source Cooperative`;
+    `${account.name} is ${
+      account.type === AccountType.INDIVIDUAL ? "an" : "an"
+    } ${accountType.toLowerCase()} on Source Cooperative`;
   const url = `${baseUrl}/${account.account_id}`;
 
   // Generate OG image URL

@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
-import { LOGGER, accountUrl, getBaseUrl, productUrl } from "@/lib";
+import { LOGGER, accountUrl, productUrl } from "@/lib";
+import { getBaseUrl } from "@/lib/baseUrl";
 import { OpenGraphImage } from "@/components/og/OpenGraphImage";
 import { accountsTable, productsTable } from "@/lib/clients/database";
 import { AccountType } from "@/types/account";

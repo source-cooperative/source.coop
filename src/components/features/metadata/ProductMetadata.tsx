@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { Product } from "@/types";
-import { CONFIG, getBaseUrl } from "@/lib";
+import { CONFIG } from "@/lib";
+import { getBaseUrl } from "@/lib/baseUrl";
 
 interface ProductMetadataProps {
   product: Product;
