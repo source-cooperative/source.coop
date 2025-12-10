@@ -98,7 +98,7 @@ async function generateAccountImage(accountId: string, host: string) {
     title: accountName,
     subtitle: bio,
     footer: accountTypeLabel,
-    avatar: <OGAvatar account={account} size={250} />,
+    avatar: <OGAvatar account={account} size={400} />,
     url: accountUrl(accountId),
     host,
   });

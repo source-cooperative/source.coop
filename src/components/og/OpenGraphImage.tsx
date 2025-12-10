@@ -3,7 +3,7 @@ import React from "react";
 
 const ogImageSize = {
   width: 1200,
-  height: 390,
+  height: 627,
 };
 
 interface OpenGraphImageProps {
@@ -47,9 +47,10 @@ export async function OpenGraphImage({
     (
       <div
         style={{
-          backgroundColor: "#FFFFFF",
+          backgroundColor: "#FFF",
           padding: "20px 30px",
           fontFamily: "'IBM Plex Sans', sans-serif",
+          height: "100%",
 
           display: "flex",
           flex: 1,
@@ -63,7 +64,7 @@ export async function OpenGraphImage({
             display: "flex",
             flexDirection: "column",
             justifyContent: "space-between",
-            maxWidth: avatar ? "65%" : "100%",
+            flex: 1,
             padding: "0 20px",
           }}
         >
@@ -71,14 +72,15 @@ export async function OpenGraphImage({
             style={{
               display: "flex",
               flexDirection: "column",
+              flex: 1,
             }}
           >
             {/* Account name */}
             <h1
               style={{
                 display: "flex",
-                fontSize: 72,
-                color: "#000000",
+                fontSize: 100,
+                color: "#000",
                 lineHeight: 1.1,
                 marginBottom: 16,
               }}
@@ -90,44 +92,44 @@ export async function OpenGraphImage({
             {subtitle && (
               <div
                 style={{
-                  display: "-webkit-box",
-                  WebkitBoxOrient: "vertical",
-                  WebkitLineClamp: 2,
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
                   fontSize: 32,
-                  color: "#666666",
+                  color: "#666",
                   lineHeight: 1.4,
-                  marginBottom: 24,
+                  flex: 1,
+                  minHeight: 0,
+                  overflow: "hidden",
+                  // NOTE: There's no way to have both "grow as needed" AND "show ellipsis
+                  // when truncated" because ellipsis requires a fixed line clamp in the
+                  // Satori renderer that next/og uses.
                 }}
               >
                 {subtitle}
               </div>
             )}
+          </div>
 
-            {/* Account type badge */}
-            {footer && (
+          {/* Account type badge */}
+          {footer && (
+            <div
+              style={{
+                display: "flex",
+                marginBottom: 12,
+              }}
+            >
               <div
                 style={{
                   display: "flex",
-                  alignItems: "center",
+                  fontSize: 24,
+                  color: "#666",
+                  backgroundColor: "#F5F5F5",
+                  padding: "8px 20px",
+                  borderRadius: 8,
                 }}
               >
-                <div
-                  style={{
-                    display: "flex",
-                    fontSize: 24,
-                    color: "#666666",
-                    backgroundColor: "#F5F5F5",
-                    padding: "8px 20px",
-                    borderRadius: 8,
-                  }}
-                >
-                  <small>{footer}</small>
-                </div>
+                <small>{footer}</small>
               </div>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* Link to URL */}
           <div
