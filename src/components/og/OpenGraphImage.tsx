@@ -3,7 +3,7 @@ import React from "react";
 
 const ogImageSize = {
   width: 1200,
-  height: 627,
+  height: 630,
 };
 
 interface OpenGraphImageProps {
