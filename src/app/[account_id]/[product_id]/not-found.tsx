@@ -1,41 +1,21 @@
-"use client";
-
 import { NotFoundPage } from "@/components/core";
-import { accountUrl } from "@/lib/urls";
-import { usePathname } from "next/navigation";
-import { Text } from "@radix-ui/themes";
+import type { Metadata } from "next";
 
-export default function NotFound() {
-  const pathname = usePathname();
-  const [account_id, product_id] = pathname.split("/").slice(1, 3);
-  if (account_id && product_id) {
-    return (
-      <NotFoundPage
-        title="Product Not Found"
-        description={
-          <Text>
-            The product{" "}
-            <strong>
-              <code>{product_id}</code>
-            </strong>{" "}
-            was not found in the account{" "}
-            <strong>
-              <code>{account_id}</code>
-            </strong>
-            .
-          </Text>
-        }
-        actionText={
-          <>
-            Look for other products by{" "}
-            <strong>
-              <code>{account_id}</code>
-            </strong>
-          </>
-        }
-        actionHref={accountUrl(account_id)}
-      />
-    );
-  }
+export const metadata: Metadata = {
+  title: "Product Not Found | Source Cooperative",
+  description: "The requested product could not be found.",
+  openGraph: {
+    title: "Product Not Found | Source Cooperative",
+    description: "The requested product could not be found.",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Product Not Found | Source Cooperative",
+    description: "The requested product could not be found.",
+  },
+};
+
+export default async function NotFound() {
   return <NotFoundPage title="Not Found" />;
 }

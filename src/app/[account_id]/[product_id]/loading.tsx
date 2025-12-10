@@ -1,6 +1,5 @@
 import { Box, Card, Grid, Flex, DataList } from "@radix-ui/themes";
 import { SectionHeader, Skeleton } from "@/components/core";
-// import { ProductContentsLoading } from "./(product)/[[...path]]/loading";
 import DirectoryListLoading from "./(product)/[[...path]]/loading";
 
 export default function ProductDetailsLoading() {

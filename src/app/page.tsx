@@ -6,6 +6,16 @@ import { Box } from "@radix-ui/themes";
 export const metadata = {
   title: "Featured Products | Source Cooperative",
   description: "Browse and discover public data products on Source.coop",
+  openGraph: {
+    title: "Featured Products | Source Cooperative",
+    description: "Browse and discover public data products on Source.coop",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Featured Products | Source Cooperative",
+    description: "Browse and discover public data products on Source.coop",
+  },
 };
 
 export default async function HomePage() {

@@ -1,8 +1,11 @@
+import { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { ProductCreationForm } from "@/components/features/products/ProductCreationForm";
 import { productsTable, accountsTable } from "@/lib/clients/database";
-import { notFound } from "next/navigation";
 
-export async function generateMetadata({ params }: PageProps) {
+export async function generateMetadata({
+  params,
+}: PageProps): Promise<Metadata> {
   const { account_id, product_id } = await params;
   const product = await productsTable.fetchById(account_id, product_id);
   return { title: `Edit ${product!.title} details` };

@@ -7,6 +7,16 @@ import { Badge, Box, Flex, Text } from "@radix-ui/themes";
 export const metadata = {
   title: "Products | Source Cooperative",
   description: "Browse and discover public data products on Source.coop",
+  openGraph: {
+    title: "Products | Source Cooperative",
+    description: "Browse and discover public data products on Source.coop",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Products | Source Cooperative",
+    description: "Browse and discover public data products on Source.coop",
+  },
 };
 
 interface ProductsPageProps {

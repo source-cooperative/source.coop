@@ -1,3 +1,5 @@
+import { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { FormTitle, AccountFlagsForm } from "@/components";
 import { accountsTable, isOrganizationalAccount } from "@/lib/clients";
 import { Box } from "@radix-ui/themes";
@@ -7,9 +9,10 @@ import { notFound } from "next/navigation";
 import { isAuthorized } from "@/lib/api/authz";
 import { Actions } from "@/types";
 import { editAccountProfileUrl } from "@/lib/urls";
-import { redirect } from "next/navigation";
 
-export async function generateMetadata({ params }: PageProps) {
+export async function generateMetadata({
+  params,
+}: PageProps): Promise<Metadata> {
   const { account_id } = await params;
   const account = await accountsTable.fetchById(account_id);
   return { title: `Edit ${account!.name} permissions` };

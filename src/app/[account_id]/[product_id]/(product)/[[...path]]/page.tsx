@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import DirectoryListLoading from "./loading";
@@ -7,20 +8,25 @@ import {
   storage,
   dataConnectionsTable,
   productsTable,
-  CONFIG,
+  fileSourceUrl,
 } from "@/lib";
 import { DataConnection, ProductMirror } from "@/types";
-import { DirectoryList, ObjectSummary, ObjectPreview } from "@/components";
+import {
+  DirectoryList,
+  ObjectSummary,
+  ObjectPreview,
+  generateProductMetadata,
+} from "@/components";
 
-export async function generateMetadata({ params }: PageProps) {
-  const { account_id, product_id, path } = await params;
+export async function generateMetadata({
+  params,
+}: PageProps): Promise<Metadata> {
+  const { account_id, product_id } = await params;
   const product = await productsTable.fetchById(account_id, product_id);
-  let title = product?.title || "Untitled Product";
-  if (path) {
-    title = `${path.join("/")} | ${title}`;
+  if (!product) {
+    notFound();
   }
-  const description = product?.description || "A product on Source.coop";
-  return { title, description };
+  return generateProductMetadata({ product });
 }
 
 interface PageProps {
@@ -38,31 +44,27 @@ export default async function ProductPathPage({ params }: PageProps) {
   const { product, objectsList, objectInfo, connectionDetails } =
     await fetchProduct(account_id, product_id, objectPath);
 
-  if (objectInfo?.type === "file") {
-    const sourceUrl = `${CONFIG.storage.endpoint}/${product.account?.account_id}/${product.product_id}/${objectInfo.path}`;
-
-    return (
-      <Suspense fallback={<DirectoryListLoading />}>
-        <ObjectSummary
-          product={product}
-          objectInfo={objectInfo}
-          connectionDetails={connectionDetails}
-        />
-        <ObjectPreview sourceUrl={sourceUrl} />
-      </Suspense>
-    );
-  }
-
   return (
     <Suspense fallback={<DirectoryListLoading />}>
-      <DirectoryList
-        product={product}
-        objects={objectsList.filter(
-          // Exclude the current directory object
-          (obj) => obj.path.replace(/\/$/, "") !== objectPath
-        )}
-        prefix={objectPath}
-      />
+      {objectInfo?.type === "file" ? (
+        <>
+          <ObjectSummary
+            product={product}
+            objectInfo={objectInfo}
+            connectionDetails={connectionDetails}
+          />
+          <ObjectPreview sourceUrl={fileSourceUrl(product, objectInfo)} />
+        </>
+      ) : (
+        <DirectoryList
+          product={product}
+          objects={objectsList.filter(
+            // Exclude the current directory object
+            (obj) => obj.path.replace(/\/$/, "") !== objectPath
+          )}
+          prefix={objectPath}
+        />
+      )}
     </Suspense>
   );
 }
