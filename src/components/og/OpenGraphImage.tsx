@@ -123,7 +123,7 @@ export async function OpenGraphImage({
                     borderRadius: 8,
                   }}
                 >
-                  {footer}
+                  <small>{footer}</small>
                 </div>
               </div>
             )}
