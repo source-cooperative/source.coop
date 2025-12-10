@@ -42,6 +42,7 @@ export async function generateProductMetadata({
           alt: title,
         },
       ],
+      siteName: "Source Cooperative",
     },
     twitter: {
       card: "summary_large_image",
