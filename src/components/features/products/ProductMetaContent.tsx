@@ -51,6 +51,13 @@ export function ProductMetaContent({ product }: ProductMetaContentProps) {
           <DateText date={product.updated_at} />
         </DataList.Value>
       </DataList.Item>
+
+      {product.metadata.doi && (
+        <DataList.Item>
+          <DataList.Label>DOI</DataList.Label>
+          <DataList.Value>{product.metadata.doi}</DataList.Value>
+        </DataList.Item>
+      )}
     </DataList.Root>
   );
 }

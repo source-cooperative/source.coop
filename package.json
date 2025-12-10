@@ -10,6 +10,7 @@
     "lint:fix": "ESLINT_USE_FLAT_CONFIG=false next lint --fix",
     "init-local": "tsx scripts/init-local.ts",
     "migrate": "tsx scripts/load-dynamodb-exports.ts",
+    "import-dois": "tsx scripts/import-dois.ts",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",

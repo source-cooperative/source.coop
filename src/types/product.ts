@@ -30,6 +30,7 @@ export const ProductMetadataSchema = z
     mirrors: z.record(ProductMirrorSchema),
     primary_mirror: z.string(), // Key of the primary mirror (e.g., "aws-us-east-1")
     tags: z.array(z.string()).optional(),
+    doi: z.string().optional(), // Digital Object Identifier
   })
   .openapi("ProductMetadata");
 
