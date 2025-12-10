@@ -44,6 +44,7 @@ export async function generateAccountMetadata({
           alt: title,
         },
       ],
+      siteName: "Source Cooperative",
     },
     twitter: {
       card: "summary_large_image",

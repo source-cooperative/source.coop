@@ -25,6 +25,7 @@ export async function generateNotFoundMetadata({
       description,
       type: "website",
       url: canonicalUrl,
+      siteName: "Source Cooperative",
     },
     twitter: {
       card: "summary",
