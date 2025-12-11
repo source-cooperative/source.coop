@@ -1,14 +1,7 @@
 "use client";
 
-import {
-  DataList,
-  Flex,
-  IconButton,
-  Tooltip,
-  Button,
-  Box,
-} from "@radix-ui/themes";
-import { CopyIcon, CheckIcon, DownloadIcon } from "@radix-ui/react-icons";
+import { DataList, Flex, Button, Box } from "@radix-ui/themes";
+import { DownloadIcon } from "@radix-ui/react-icons";
 import type {
   DataConnection,
   Product,
@@ -18,8 +11,7 @@ import type {
 import { DateText } from "@/components/display";
 import { ChecksumVerifier } from "../ChecksumVerifier";
 import { formatFileSize } from "./utils";
-import { useState } from "react";
-import { MonoText } from "@/components/core";
+import { MonoText, CopyToClipboard } from "@/components/core";
 import { fileSourceUrl } from "@/lib";
 
 interface ObjectSummaryProps {
@@ -45,18 +37,6 @@ export function ObjectSummary({
       ? `s3://${details.bucket}/${prefix}${objectInfo.path}`
       : undefined;
   const sourceUrl = fileSourceUrl(product, objectInfo);
-
-  const [copiedField, setCopiedField] = useState<string | null>(null);
-  const copyToClipboard = (text: string | undefined, field: string) => {
-    navigator.clipboard.writeText(text || "").then(() => {
-      setCopiedField(field);
-
-      // Reset the copied field after animation time
-      setTimeout(() => {
-        setCopiedField(null);
-      }, 1500);
-    });
-  };
 
   return (
     <>
@@ -105,22 +85,7 @@ export function ObjectSummary({
                     expectedHash={objectInfo.metadata.sha256}
                     algorithm="SHA-256"
                   />
-                  <Tooltip content="Copy to clipboard">
-                    <IconButton
-                      size="1"
-                      variant="ghost"
-                      color={copiedField === "sha256" ? "green" : "gray"}
-                      onClick={() =>
-                        copyToClipboard(
-                          objectInfo.metadata?.sha256 || "",
-                          "sha256"
-                        )
-                      }
-                      aria-label="Copy SHA-256 checksum"
-                    >
-                      {copiedField === "sha256" ? <CheckIcon /> : <CopyIcon />}
-                    </IconButton>
-                  </Tooltip>
+                  <CopyToClipboard text={objectInfo.metadata.sha256} />
                 </Flex>
               </DataList.Value>
             </DataList.Item>
@@ -133,17 +98,7 @@ export function ObjectSummary({
               <MonoText style={{ wordBreak: "break-all" }}>
                 {sourceUrl}
               </MonoText>
-              <Tooltip content="Copy to clipboard">
-                <IconButton
-                  size="1"
-                  variant="ghost"
-                  color={copiedField === "source_url" ? "green" : "gray"}
-                  onClick={() => copyToClipboard(sourceUrl, "source_url")}
-                  aria-label="Copy Source URL"
-                >
-                  {copiedField === "source_url" ? <CheckIcon /> : <CopyIcon />}
-                </IconButton>
-              </Tooltip>
+              <CopyToClipboard text={sourceUrl} />
             </Flex>
           </DataList.Value>
         </DataList.Item>
@@ -156,17 +111,7 @@ export function ObjectSummary({
                 <MonoText style={{ wordBreak: "break-all" }}>
                   {cloudUri}
                 </MonoText>
-                <Tooltip content="Copy to clipboard">
-                  <IconButton
-                    size="1"
-                    variant="ghost"
-                    color={copiedField === "cloud_uri" ? "green" : "gray"}
-                    onClick={() => copyToClipboard(cloudUri, "cloud_uri")}
-                    aria-label="Copy Cloud URI"
-                  >
-                    {copiedField === "cloud_uri" ? <CheckIcon /> : <CopyIcon />}
-                  </IconButton>
-                </Tooltip>
+                <CopyToClipboard text={cloudUri} />
               </Flex>
             </DataList.Value>
           </DataList.Item>

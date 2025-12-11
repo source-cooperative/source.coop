@@ -1,6 +1,6 @@
 import { DataList, Badge } from "@radix-ui/themes";
 import type { Product } from "@/types";
-import { AvatarLinkCompact, MonoText } from "@/components/core";
+import { AvatarLinkCompact } from "@/components/core";
 import { DateText } from "@/components/display";
 
 interface ProductMetaContentProps {
@@ -51,15 +51,6 @@ export function ProductMetaContent({ product }: ProductMetaContentProps) {
           <DateText date={product.updated_at} />
         </DataList.Value>
       </DataList.Item>
-
-      {product.metadata.doi && (
-        <DataList.Item>
-          <DataList.Label>DOI</DataList.Label>
-          <DataList.Value>
-            <MonoText>{product.metadata.doi}</MonoText>
-          </DataList.Value>
-        </DataList.Item>
-      )}
     </DataList.Root>
   );
 }
