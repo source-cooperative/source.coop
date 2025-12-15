@@ -46,6 +46,7 @@ export class ApiStack extends cdk.Stack {
     // CloudFront distribution should be manually configured
     const assets = new AssetsConstruct(this, "assets", {
       stage: props.stage,
+      isProduction,
       removalPolicy: isProduction
         ? cdk.RemovalPolicy.RETAIN
         : cdk.RemovalPolicy.DESTROY,
