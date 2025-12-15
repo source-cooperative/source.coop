@@ -3,6 +3,7 @@ import * as s3 from "aws-cdk-lib/aws-s3";
 import { Construct } from "constructs";
 
 export interface AssetsConstructProps {
+  readonly isProduction: boolean;
   readonly stage: string;
   readonly removalPolicy?: cdk.RemovalPolicy;
 }
@@ -28,7 +29,9 @@ export class AssetsConstruct extends Construct {
     const { stage, removalPolicy = cdk.RemovalPolicy.RETAIN } = props;
 
     // Create S3 bucket for assets
-    this.bucketName = `sc-${stage}-assets`;
+    this.bucketName = props.isProduction
+      ? `assets.source.coop`
+      : `assets.${stage}.source.coop`;
     this.bucket = new s3.Bucket(this, "assets-bucket", {
       bucketName: this.bucketName,
       removalPolicy,
