@@ -107,23 +107,12 @@ export function ProfileImageUpload({
 
   return (
     <Box>
-      <Flex direction="column" gap="4">
+      <Flex direction="column" gap="2">
         {/* Title and description */}
         <Box>
-          <Box>
-            <Text size="3" weight="medium">
-              Profile Picture
-            </Text>
-          </Box>
-          <Box>
-            <Text size="1" color="gray">
-              {account.metadata_public?.profile_image
-                ? "Upload a new image to replace your current profile picture"
-                : account.type === "individual"
-                ? "Currently using Gravatar. Upload a custom image."
-                : "Upload an image for your organization"}
-            </Text>
-          </Box>
+          <Text size="3" weight="medium">
+            Profile Picture
+          </Text>
         </Box>
 
         {/* Current avatar preview */}
@@ -158,6 +147,16 @@ export function ProfileImageUpload({
           </Button>
           <Text size="1" color="gray" ml="3">
             Max size: 5MB. Supported: JPG, PNG, WebP, GIF
+          </Text>
+        </Box>
+
+        <Box>
+          <Text size="1" color="gray">
+            {account.metadata_public?.profile_image
+              ? "Upload a new image to replace your current profile picture"
+              : account.type === "individual"
+              ? "Currently using Gravatar. Upload a custom image."
+              : "Upload an image for your organization"}
           </Text>
         </Box>
 
