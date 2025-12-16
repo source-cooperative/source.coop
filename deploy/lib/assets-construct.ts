@@ -50,7 +50,13 @@ export class AssetsConstruct extends Construct {
             s3.HttpMethods.POST,
             s3.HttpMethods.HEAD,
           ],
-          allowedOrigins: ["*.vercel.app", "*.source.coop"],
+          allowedOrigins: [
+            "*.vercel.app",
+            "*.source.coop",
+            "localhost:3000",
+            "localhost:3001",
+            "localhost:3002",
+          ],
           allowedHeaders: ["*"],
           exposedHeaders: ["ETag"],
           maxAge: 3000,
@@ -59,20 +65,25 @@ export class AssetsConstruct extends Construct {
     });
 
     // Create CloudFront distribution
-    this.distribution = new cloudfront.Distribution(this, "assets-distribution", {
-      defaultBehavior: {
-        origin: new origins.S3Origin(this.bucket),
-        viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
-        allowedMethods: cloudfront.AllowedMethods.ALLOW_GET_HEAD_OPTIONS,
-        cachedMethods: cloudfront.CachedMethods.CACHE_GET_HEAD_OPTIONS,
-        cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED,
-        compress: true,
-      },
-      comment: `Assets CDN for ${stage}`,
-      enabled: true,
-      httpVersion: cloudfront.HttpVersion.HTTP2_AND_3,
-      priceClass: cloudfront.PriceClass.PRICE_CLASS_100, // Use only North America and Europe edge locations
-    });
+    this.distribution = new cloudfront.Distribution(
+      this,
+      "assets-distribution",
+      {
+        defaultBehavior: {
+          origin: new origins.S3Origin(this.bucket),
+          viewerProtocolPolicy:
+            cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+          allowedMethods: cloudfront.AllowedMethods.ALLOW_GET_HEAD_OPTIONS,
+          cachedMethods: cloudfront.CachedMethods.CACHE_GET_HEAD_OPTIONS,
+          cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED,
+          compress: true,
+        },
+        comment: `Assets CDN for ${stage}`,
+        enabled: true,
+        httpVersion: cloudfront.HttpVersion.HTTP2_AND_3,
+        priceClass: cloudfront.PriceClass.PRICE_CLASS_100, // Use only North America and Europe edge locations
+      }
+    );
 
     this.distributionDomainName = this.distribution.distributionDomainName;
 
