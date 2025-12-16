@@ -60,7 +60,7 @@ export class AssetsConstruct extends Construct {
       "assets-distribution",
       {
         defaultBehavior: {
-          origin: origins.S3BucketOrigin.withBucketDefaults(this.bucket),
+          origin: origins.S3BucketOrigin.withOriginAccessIdentity(this.bucket),
           viewerProtocolPolicy:
             cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
           allowedMethods: cloudfront.AllowedMethods.ALLOW_GET_HEAD_OPTIONS,
