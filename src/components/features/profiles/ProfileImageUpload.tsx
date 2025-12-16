@@ -9,6 +9,7 @@ import {
   getProfileImageUploadUrl,
   updateProfileImage,
 } from "@/lib/actions/profile-image";
+import { CONFIG } from "@/lib/config";
 
 interface ProfileImageUploadProps {
   account: Account;
@@ -39,9 +40,7 @@ export function ProfileImageUpload({
 
     // Validate file type
     if (!ALLOWED_TYPES.includes(file.type)) {
-      setError(
-        `Invalid file type. Allowed types: ${ALLOWED_TYPES.join(", ")}`
-      );
+      setError(`Invalid file type. Allowed types: ${ALLOWED_TYPES.join(", ")}`);
       return;
     }
 
@@ -80,7 +79,7 @@ export function ProfileImageUpload({
       setSuccess(true);
 
       // Construct the image URL using CloudFront domain
-      const assetsDomain = process.env.NEXT_PUBLIC_ASSETS_DOMAIN;
+      const assetsDomain = CONFIG.assets.domain;
       const imageUrl = assetsDomain ? `https://${assetsDomain}/${key}` : "";
 
       if (onUploadComplete && imageUrl) {

@@ -193,9 +193,7 @@ export async function updateProfileImage(
     // Construct public URL for the image using CloudFront domain
     const assetsDomain = CONFIG.assets.domain;
     if (!assetsDomain) {
-      throw new Error(
-        "ASSETS_DOMAIN or NEXT_PUBLIC_ASSETS_DOMAIN environment variable not set"
-      );
+      throw new Error("ASSETS_DOMAIN environment variable not set");
     }
     const imageUrl = `https://${assetsDomain}/${imageKey}`;
 

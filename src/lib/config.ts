@@ -27,7 +27,7 @@ export const CONFIG = {
   // Assets (profile images, etc.) configuration
   assets: {
     bucket: process.env.ASSETS_BUCKET,
-    domain: process.env.ASSETS_DOMAIN || process.env.NEXT_PUBLIC_ASSETS_DOMAIN,
+    domain: process.env.ASSETS_DOMAIN,
     region: region,
   },
 
