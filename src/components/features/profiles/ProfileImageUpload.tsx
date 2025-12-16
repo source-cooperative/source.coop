@@ -108,14 +108,15 @@ export function ProfileImageUpload({
   return (
     <Box>
       <Flex direction="column" gap="4">
-        {/* Current avatar preview */}
-        <Flex align="center" gap="4">
-          <ProfileAvatar account={account} size="9" />
+        {/* Title and description */}
+        <Box>
           <Box>
             <Text size="3" weight="medium">
               Profile Picture
             </Text>
-            <Text size="2" color="gray">
+          </Box>
+          <Box>
+            <Text size="1" color="gray">
               {account.metadata_public?.profile_image
                 ? "Upload a new image to replace your current profile picture"
                 : account.type === "individual"
@@ -123,6 +124,11 @@ export function ProfileImageUpload({
                 : "Upload an image for your organization"}
             </Text>
           </Box>
+        </Box>
+
+        {/* Current avatar preview */}
+        <Flex>
+          <ProfileAvatar account={account} size="7" />
         </Flex>
 
         {/* Upload button */}
