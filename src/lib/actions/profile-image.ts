@@ -119,6 +119,7 @@ export async function getProfileImageUploadUrl({
       Bucket: CONFIG.assets.bucket,
       Key: key,
       ContentType: contentType,
+      ContentLength: fileSize, // Enforce exact file size in the presigned URL
       // Add metadata for tracking
       Metadata: {
         uploadedBy: session.account.account_id,
