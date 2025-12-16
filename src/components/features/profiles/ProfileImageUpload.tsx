@@ -1,13 +1,15 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Box, Button, Flex, Text } from "@radix-ui/themes";
-import { ImageIcon, UploadIcon } from "@radix-ui/react-icons";
+import { useRouter } from "next/navigation";
+import { Box, Button, Flex, Text, AlertDialog } from "@radix-ui/themes";
+import { ImageIcon, UploadIcon, TrashIcon } from "@radix-ui/react-icons";
 import { Account } from "@/types";
 import { ProfileAvatar } from "./ProfileAvatar";
 import {
   getProfileImageUploadUrl,
   updateProfileImage,
+  deleteProfileImage,
 } from "@/lib/actions/profile-image";
 import { CONFIG } from "@/lib/config";
 
@@ -23,10 +25,14 @@ export function ProfileImageUpload({
   account,
   onUploadComplete,
 }: ProfileImageUploadProps) {
+  const router = useRouter();
   const [uploading, setUploading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const hasCustomImage = !!account.metadata_public?.profile_image;
 
   const handleFileSelect = async (
     event: React.ChangeEvent<HTMLInputElement>
@@ -74,6 +80,7 @@ export function ProfileImageUpload({
       }
 
       // Update account with new profile image
+      // This also calls revalidatePath to refresh the cache
       await updateProfileImage(account.account_id, key);
 
       setSuccess(true);
@@ -86,10 +93,8 @@ export function ProfileImageUpload({
         onUploadComplete(imageUrl);
       }
 
-      // Refresh the page after a short delay to show the new image
-      setTimeout(() => {
-        window.location.reload();
-      }, 1500);
+      // Refresh the router cache to show the new image
+      router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upload failed");
     } finally {
@@ -103,6 +108,29 @@ export function ProfileImageUpload({
 
   const handleButtonClick = () => {
     fileInputRef.current?.click();
+  };
+
+  const handleDelete = async () => {
+    // Reset states
+    setError(null);
+    setSuccess(false);
+
+    try {
+      setDeleting(true);
+
+      // Delete the profile image
+      // This also calls revalidatePath to refresh the cache
+      await deleteProfileImage(account.account_id);
+
+      setSuccess(true);
+
+      // Refresh the router cache to show the default avatar
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Delete failed");
+    } finally {
+      setDeleting(false);
+    }
   };
 
   return (
@@ -120,8 +148,8 @@ export function ProfileImageUpload({
           <ProfileAvatar account={account} size="7" />
         </Flex>
 
-        {/* Upload button */}
-        <Box>
+        {/* Upload and Delete buttons */}
+        <Flex gap="2" align="center">
           <input
             ref={fileInputRef}
             type="file"
@@ -133,7 +161,7 @@ export function ProfileImageUpload({
             type="button"
             variant="soft"
             onClick={handleButtonClick}
-            disabled={uploading}
+            disabled={uploading || deleting}
           >
             {uploading ? (
               <>
@@ -145,15 +173,63 @@ export function ProfileImageUpload({
               </>
             )}
           </Button>
-          <Text size="1" color="gray" ml="3">
+
+          {hasCustomImage && (
+            <AlertDialog.Root>
+              <AlertDialog.Trigger>
+                <Button
+                  type="button"
+                  variant="soft"
+                  color="red"
+                  disabled={uploading || deleting}
+                >
+                  {deleting ? (
+                    <>
+                      <TrashIcon /> Deleting...
+                    </>
+                  ) : (
+                    <>
+                      <TrashIcon /> Remove Image
+                    </>
+                  )}
+                </Button>
+              </AlertDialog.Trigger>
+              <AlertDialog.Content maxWidth="450px">
+                <AlertDialog.Title>Remove Profile Image</AlertDialog.Title>
+                <AlertDialog.Description size="2">
+                  Are you sure you want to remove your profile image?
+                  {account.type === "individual"
+                    ? " Your account will fall back to using your Gravatar."
+                    : " Your organization will display the default icon."}
+                </AlertDialog.Description>
+
+                <Flex gap="3" mt="4" justify="end">
+                  <AlertDialog.Cancel>
+                    <Button variant="soft" color="gray">
+                      Cancel
+                    </Button>
+                  </AlertDialog.Cancel>
+                  <AlertDialog.Action>
+                    <Button variant="solid" color="red" onClick={handleDelete}>
+                      Remove Image
+                    </Button>
+                  </AlertDialog.Action>
+                </Flex>
+              </AlertDialog.Content>
+            </AlertDialog.Root>
+          )}
+        </Flex>
+
+        <Box>
+          <Text size="1" color="gray">
             Max size: 5MB. Supported: JPG, PNG, WebP, GIF
           </Text>
         </Box>
 
         <Box>
           <Text size="1" color="gray">
-            {account.metadata_public?.profile_image
-              ? "Upload a new image to replace your current profile picture"
+            {hasCustomImage
+              ? "Upload a new image to replace your current profile picture, or remove it to use the default."
               : account.type === "individual"
               ? "Currently using Gravatar. Upload a custom image."
               : "Upload an image for your organization"}
@@ -170,7 +246,8 @@ export function ProfileImageUpload({
             }}
           >
             <Text size="2" color="green">
-              ✓ Profile image uploaded successfully! Refreshing...
+              ✓ {deleting ? "Profile image removed" : "Profile image uploaded"}{" "}
+              successfully!
             </Text>
           </Box>
         )}

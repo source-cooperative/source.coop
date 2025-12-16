@@ -1,11 +1,17 @@
 "use server";
 
-import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import {
+  PutObjectCommand,
+  DeleteObjectCommand,
+  S3Client,
+} from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { revalidatePath } from "next/cache";
 import { getPageSession } from "@/lib/api/utils";
 import { isAuthorized } from "@/lib/api/authz";
 import { Actions } from "@/types";
 import { CONFIG, accountsTable, LOGGER } from "@/lib";
+import { accountUrl, editAccountProfileUrl } from "@/lib/urls";
 
 /**
  * Supported image MIME types for profile pictures
@@ -216,6 +222,10 @@ export async function updateProfileImage(
         imageUrl,
       },
     });
+
+    // Revalidate the account pages to show the new image
+    revalidatePath(accountUrl(accountId));
+    revalidatePath(editAccountProfileUrl(accountId));
   } catch (error) {
     LOGGER.error("Failed to update profile image", {
       operation: "updateProfileImage",
@@ -223,6 +233,103 @@ export async function updateProfileImage(
     });
     throw new Error(
       `Failed to update profile image: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`
+    );
+  }
+}
+
+/**
+ * Delete profile image from S3 and remove from account metadata
+ *
+ * This will:
+ * 1. Delete all profile image files from S3 (profile-images/{account_id}/*)
+ * 2. Remove the profile_image field from account metadata
+ * 3. For individual accounts, they will fall back to Gravatar
+ * 4. For organization accounts, they will show the default organization icon
+ *
+ * @param accountId - Account identifier
+ * @throws Error if user is not authorized or deletion fails
+ */
+export async function deleteProfileImage(accountId: string): Promise<void> {
+  // Authenticate user
+  const session = await getPageSession();
+  if (!session?.account) {
+    throw new Error("Unauthorized: No valid session");
+  }
+
+  // Check authorization
+  const account = await accountsTable.fetchById(accountId);
+  if (!account) {
+    throw new Error(`Account ${accountId} not found`);
+  }
+
+  if (!isAuthorized(session, account, Actions.PutAccountProfile)) {
+    throw new Error(
+      `Unauthorized: User does not have permission to update account ${accountId}`
+    );
+  }
+
+  try {
+    // Create S3 client with credentials
+    const s3Client = new S3Client({
+      region: CONFIG.assets.region,
+      credentials: CONFIG.database.credentials,
+    });
+
+    // Delete all possible image file extensions
+    const extensions = ["jpg", "jpeg", "png", "webp", "gif"];
+    const deletePromises = extensions.map(async (ext) => {
+      const key = `profile-images/${accountId}/avatar.${ext}`;
+      try {
+        const deleteCommand = new DeleteObjectCommand({
+          Bucket: CONFIG.assets.bucket,
+          Key: key,
+        });
+        await s3Client.send(deleteCommand);
+        LOGGER.info("Deleted profile image file from S3", {
+          operation: "deleteProfileImage",
+          metadata: { accountId, key },
+        });
+      } catch (error) {
+        // Ignore errors for files that don't exist
+        if ((error as any)?.name !== "NoSuchKey") {
+          LOGGER.warn("Error deleting profile image file", {
+            operation: "deleteProfileImage",
+            metadata: { accountId, key, error },
+          });
+        }
+      }
+    });
+
+    // Wait for all deletions to complete
+    await Promise.all(deletePromises);
+
+    // Remove profile_image from account metadata
+    const { profile_image, ...remainingMetadata } =
+      account.metadata_public || {};
+
+    await accountsTable.update({
+      ...account,
+      metadata_public: remainingMetadata,
+      updated_at: new Date().toISOString(),
+    });
+
+    LOGGER.info("Removed profile image from account metadata", {
+      operation: "deleteProfileImage",
+      metadata: { accountId },
+    });
+
+    // Revalidate the account pages to show the default avatar
+    revalidatePath(accountUrl(accountId));
+    revalidatePath(editAccountProfileUrl(accountId));
+  } catch (error) {
+    LOGGER.error("Failed to delete profile image", {
+      operation: "deleteProfileImage",
+      metadata: { accountId, error },
+    });
+    throw new Error(
+      `Failed to delete profile image: ${
         error instanceof Error ? error.message : "Unknown error"
       }`
     );
