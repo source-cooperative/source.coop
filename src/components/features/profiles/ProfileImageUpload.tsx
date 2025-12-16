@@ -135,17 +135,26 @@ export function ProfileImageUpload({
 
   return (
     <Box>
-      <Flex direction="column" gap="2">
-        {/* Title and description */}
+      <Flex direction="column" gap="4">
+        {/* Description Section */}
         <Box>
-          <Text size="3" weight="medium">
-            Profile Picture
-          </Text>
+          <Flex direction="column" gap="2">
+            <Text size="3" weight="medium">
+              {account.type === "individual"
+                ? "Your Profile Picture"
+                : "Organization Profile Picture"}
+            </Text>
+            <Text size="2" color="gray">
+              {account.type === "individual"
+                ? "Upload a profile picture to personalize your account. If no custom image is uploaded, your Gravatar will be displayed."
+                : "Upload a profile picture for your organization. If no custom image is uploaded, a default icon will be displayed."}
+            </Text>
+          </Flex>
         </Box>
 
         {/* Current avatar preview */}
         <Flex>
-          <ProfileAvatar account={account} size="7" />
+          <ProfileAvatar account={account} size="9" />
         </Flex>
 
         {/* Upload and Delete buttons */}
@@ -220,22 +229,6 @@ export function ProfileImageUpload({
           )}
         </Flex>
 
-        <Box>
-          <Text size="1" color="gray">
-            Max size: 5MB. Supported: JPG, PNG, WebP, GIF
-          </Text>
-        </Box>
-
-        <Box>
-          <Text size="1" color="gray">
-            {hasCustomImage
-              ? "Upload a new image to replace your current profile picture, or remove it to use the default."
-              : account.type === "individual"
-              ? "Currently using Gravatar. Upload a custom image."
-              : "Upload an image for your organization"}
-          </Text>
-        </Box>
-
         {/* Success message */}
         {success && (
           <Box
@@ -266,6 +259,33 @@ export function ProfileImageUpload({
             </Text>
           </Box>
         )}
+
+        {/* Image Guidelines */}
+        <Box
+          p="3"
+          style={{
+            backgroundColor: "var(--gray-3)",
+            borderRadius: "var(--radius-2)",
+          }}
+        >
+          <Flex direction="column" gap="2">
+            <Text size="2" weight="medium">
+              Image Guidelines
+            </Text>
+            <Text size="1" color="gray">
+              • Recommended dimensions: 400x400 pixels or larger
+            </Text>
+            <Text size="1" color="gray">
+              • Square images work best for profile pictures
+            </Text>
+            <Text size="1" color="gray">
+              • Supported formats: JPG, PNG, WebP, GIF
+            </Text>
+            <Text size="1" color="gray">
+              • Maximum file size: 5MB
+            </Text>
+          </Flex>
+        </Box>
       </Flex>
     </Box>
   );

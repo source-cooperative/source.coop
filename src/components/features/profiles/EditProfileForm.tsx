@@ -2,11 +2,10 @@
 
 import { useState } from "react";
 import { Account } from "@/types";
-import { Button, Flex, Text, Box, TextField, Tooltip, Separator } from "@radix-ui/themes";
+import { Button, Flex, Text, Box, TextField, Tooltip } from "@radix-ui/themes";
 import { TrashIcon } from "@radix-ui/react-icons";
 import { DynamicForm, FormField } from "@/components/core";
 import { updateAccountProfile } from "@/lib/actions/account";
-import { ProfileImageUpload } from "./ProfileImageUpload";
 
 interface Website {
   url: string;
@@ -142,30 +141,20 @@ export function EditProfileForm({
   ];
 
   return (
-    <Flex direction="column" gap="6">
-      {/* Profile Image Upload Section */}
-      <Box>
-        <ProfileImageUpload account={initialAccount} />
-      </Box>
-
-      <Separator size="4" />
-
-      {/* Profile Information Form */}
-      <DynamicForm<EditProfileFormData>
-        fields={fields}
-        action={updateAccountProfile}
-        submitButtonText="Save Changes"
-        initialValues={initialValues}
-        hiddenFields={{
-          account_id: initialAccount.account_id,
-          // Add websites as hidden fields
-          ...websites.reduce((acc, website, index) => {
-            acc[`websites_${index}`] = website.url;
-            return acc;
-          }, {} as Record<string, string>),
-        }}
-      />
-    </Flex>
+    <DynamicForm<EditProfileFormData>
+      fields={fields}
+      action={updateAccountProfile}
+      submitButtonText="Save Changes"
+      initialValues={initialValues}
+      hiddenFields={{
+        account_id: initialAccount.account_id,
+        // Add websites as hidden fields
+        ...websites.reduce((acc, website, index) => {
+          acc[`websites_${index}`] = website.url;
+          return acc;
+        }, {} as Record<string, string>),
+      }}
+    />
   );
 }
 
