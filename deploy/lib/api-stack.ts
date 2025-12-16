@@ -9,6 +9,7 @@ export class ApiStack extends cdk.Stack {
     super(scope, id, props);
 
     const isProduction = props.stage === "prod";
+    const isStaging = props.stage === "dev" || props.stage === "staging";
 
     // Create database resources
     const database = new DatabaseConstruct(this, "database", {
@@ -44,8 +45,11 @@ export class ApiStack extends cdk.Stack {
 
     // Create assets bucket
     const assets = new AssetsConstruct(this, "assets", {
-      stage: props.stage,
-      isProduction,
+      bucketName: isProduction
+        ? `assets.source.coop`
+        : isStaging
+        ? `assets.staging.source.coop`
+        : `assets.${props.stage}.source.coop`,
       removalPolicy: isProduction
         ? cdk.RemovalPolicy.RETAIN
         : cdk.RemovalPolicy.DESTROY,
