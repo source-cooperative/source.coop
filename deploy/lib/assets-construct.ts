@@ -6,6 +6,7 @@ import { Construct } from "constructs";
 
 export interface AssetsConstructProps {
   readonly bucketName: string;
+  readonly allowedOrigins: string[];
   readonly removalPolicy?: cdk.RemovalPolicy;
 }
 
@@ -45,13 +46,7 @@ export class AssetsConstruct extends Construct {
             s3.HttpMethods.POST,
             s3.HttpMethods.HEAD,
           ],
-          allowedOrigins: [
-            "*.vercel.app",
-            "*.source.coop",
-            "localhost:3000",
-            "localhost:3001",
-            "localhost:3002",
-          ],
+          allowedOrigins: props.allowedOrigins,
           allowedHeaders: ["*"],
           exposedHeaders: ["ETag"],
           maxAge: 3000,
@@ -65,7 +60,7 @@ export class AssetsConstruct extends Construct {
       "assets-distribution",
       {
         defaultBehavior: {
-          origin: new origins.S3Origin(this.bucket),
+          origin: origins.S3BucketOrigin.withBucketDefaults(this.bucket),
           viewerProtocolPolicy:
             cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
           allowedMethods: cloudfront.AllowedMethods.ALLOW_GET_HEAD_OPTIONS,

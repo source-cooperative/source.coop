@@ -44,16 +44,23 @@ export class ApiStack extends cdk.Stack {
     ).map((region) => `${region}.opendata.source.coop`);
 
     // Create assets bucket
-    const assets = new AssetsConstruct(this, "assets", {
-      bucketName: isProduction
-        ? `assets.source.coop`
-        : isStaging
-        ? `assets.staging.source.coop`
-        : `assets.${props.stage}.source.coop`,
-      removalPolicy: isProduction
-        ? cdk.RemovalPolicy.RETAIN
-        : cdk.RemovalPolicy.DESTROY,
-    });
+    const assets = new AssetsConstruct(
+      this,
+      "assets",
+      isProduction
+        ? {
+            bucketName: `assets.source.coop`,
+            allowedOrigins: ["https://source.coop"],
+            removalPolicy: cdk.RemovalPolicy.RETAIN,
+          }
+        : {
+            bucketName: isStaging
+              ? `assets.staging.source.coop`
+              : `assets.${props.stage}.source.coop`,
+            allowedOrigins: ["*"],
+            removalPolicy: cdk.RemovalPolicy.DESTROY,
+          }
+    );
 
     // Create Vercel role with OIDC trust relationship
     const vercel = new VercelConstruct(this, "vercel", {
