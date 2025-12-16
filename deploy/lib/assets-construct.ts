@@ -1,5 +1,7 @@
 import * as cdk from "aws-cdk-lib";
 import * as s3 from "aws-cdk-lib/aws-s3";
+import * as cloudfront from "aws-cdk-lib/aws-cloudfront";
+import * as origins from "aws-cdk-lib/aws-cloudfront-origins";
 import { Construct } from "constructs";
 
 export interface AssetsConstructProps {
@@ -14,14 +16,14 @@ export interface AssetsConstructProps {
  * Features:
  * - S3 bucket with versioning and server-side encryption
  * - CORS configuration for web uploads
- * - Public read access for assets
- *
- * Note: CloudFront distribution should be manually configured to serve this bucket
- * with custom domain and SSL certificate.
+ * - CloudFront distribution for CDN delivery
+ * - Origin Access Control for secure S3 access
  */
 export class AssetsConstruct extends Construct {
   public readonly bucket: s3.Bucket;
   public readonly bucketName: string;
+  public readonly distribution: cloudfront.Distribution;
+  public readonly distributionDomainName: string;
 
   constructor(scope: Construct, id: string, props: AssetsConstructProps) {
     super(scope, id);
@@ -38,13 +40,8 @@ export class AssetsConstruct extends Construct {
       autoDeleteObjects: removalPolicy === cdk.RemovalPolicy.DESTROY,
       versioned: true,
       encryption: s3.BucketEncryption.S3_MANAGED,
-      publicReadAccess: true,
-      blockPublicAccess: new s3.BlockPublicAccess({
-        blockPublicAcls: false,
-        blockPublicPolicy: false,
-        ignorePublicAcls: false,
-        restrictPublicBuckets: false,
-      }),
+      publicReadAccess: false, // CloudFront will access via OAC
+      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
       cors: [
         {
           allowedMethods: [
@@ -60,6 +57,24 @@ export class AssetsConstruct extends Construct {
         },
       ],
     });
+
+    // Create CloudFront distribution
+    this.distribution = new cloudfront.Distribution(this, "assets-distribution", {
+      defaultBehavior: {
+        origin: new origins.S3Origin(this.bucket),
+        viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+        allowedMethods: cloudfront.AllowedMethods.ALLOW_GET_HEAD_OPTIONS,
+        cachedMethods: cloudfront.CachedMethods.CACHE_GET_HEAD_OPTIONS,
+        cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED,
+        compress: true,
+      },
+      comment: `Assets CDN for ${stage}`,
+      enabled: true,
+      httpVersion: cloudfront.HttpVersion.HTTP2_AND_3,
+      priceClass: cloudfront.PriceClass.PRICE_CLASS_100, // Use only North America and Europe edge locations
+    });
+
+    this.distributionDomainName = this.distribution.distributionDomainName;
 
     // Outputs
     new cdk.CfnOutput(this, "AssetsBucketName", {
@@ -78,6 +93,18 @@ export class AssetsConstruct extends Construct {
       value: this.bucket.bucketDomainName,
       description: "Domain name of the assets S3 bucket",
       exportName: `sc-${stage}-assets-bucket-domain`,
+    });
+
+    new cdk.CfnOutput(this, "AssetsDistributionId", {
+      value: this.distribution.distributionId,
+      description: "CloudFront distribution ID for assets",
+      exportName: `sc-${stage}-assets-distribution-id`,
+    });
+
+    new cdk.CfnOutput(this, "AssetsDistributionDomainName", {
+      value: this.distributionDomainName,
+      description: "CloudFront distribution domain name for assets",
+      exportName: `sc-${stage}-assets-distribution-domain`,
     });
   }
 }

@@ -43,7 +43,6 @@ export class ApiStack extends cdk.Stack {
     ).map((region) => `${region}.opendata.source.coop`);
 
     // Create assets bucket
-    // CloudFront distribution should be manually configured
     const assets = new AssetsConstruct(this, "assets", {
       stage: props.stage,
       isProduction,
