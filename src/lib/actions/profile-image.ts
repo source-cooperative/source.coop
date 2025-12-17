@@ -240,10 +240,26 @@ export async function updateProfileImage(
 }
 
 /**
+ * Extract S3 key from image URL
+ *
+ * @param imageUrl - Full URL to the image (e.g., https://assets.domain.com/path/to/image.jpg)
+ * @returns S3 object key (e.g., path/to/image.jpg)
+ */
+function getKeyFromImageUrl(imageUrl: string): string {
+  try {
+    const url = new URL(imageUrl);
+    // Remove leading slash from pathname to get the key
+    return url.pathname.slice(1);
+  } catch (error) {
+    throw new Error(`Invalid image URL: ${imageUrl}`);
+  }
+}
+
+/**
  * Delete profile image from S3 and remove from account metadata
  *
  * This will:
- * 1. Delete all profile image files from S3 (profile-images/{account_id}/*)
+ * 1. Delete the specific profile image file from S3 based on the stored URL
  * 2. Remove the profile_image field from account metadata
  * 3. For individual accounts, they will fall back to Gravatar
  * 4. For organization accounts, they will show the default organization icon
@@ -271,39 +287,34 @@ export async function deleteProfileImage(accountId: string): Promise<void> {
   }
 
   try {
+    // Get the current profile image URL from account metadata
+    const profileImageUrl = account.metadata_public?.profile_image;
+
+    if (!profileImageUrl) {
+      throw new Error("No profile image to delete");
+    }
+
     // Create S3 client with credentials
     const s3Client = new S3Client({
       region: CONFIG.assets.region,
       credentials: CONFIG.database.credentials,
     });
 
-    // Delete all possible image file extensions
-    const extensions = ["jpg", "jpeg", "png", "webp", "gif"];
-    const deletePromises = extensions.map(async (ext) => {
-      const key = `profile-images/${accountId}/avatar.${ext}`;
-      try {
-        const deleteCommand = new DeleteObjectCommand({
-          Bucket: CONFIG.assets.bucket,
-          Key: key,
-        });
-        await s3Client.send(deleteCommand);
-        LOGGER.info("Deleted profile image file from S3", {
-          operation: "deleteProfileImage",
-          metadata: { accountId, key },
-        });
-      } catch (error) {
-        // Ignore errors for files that don't exist
-        if ((error as any)?.name !== "NoSuchKey") {
-          LOGGER.warn("Error deleting profile image file", {
-            operation: "deleteProfileImage",
-            metadata: { accountId, key, error },
-          });
-        }
-      }
+    // Extract the S3 key from the image URL
+    const key = getKeyFromImageUrl(profileImageUrl);
+
+    // Delete the specific image file
+    const deleteCommand = new DeleteObjectCommand({
+      Bucket: CONFIG.assets.bucket,
+      Key: key,
     });
 
-    // Wait for all deletions to complete
-    await Promise.all(deletePromises);
+    await s3Client.send(deleteCommand);
+
+    LOGGER.info("Deleted profile image file from S3", {
+      operation: "deleteProfileImage",
+      metadata: { accountId, key, imageUrl: profileImageUrl },
+    });
 
     // Remove profile_image from account metadata
     const { profile_image, ...remainingMetadata } =
