@@ -109,9 +109,11 @@ export async function getProfileImageUploadUrl({
     );
   }
 
-  // Generate object key: profile-images/{account_id}/avatar.{ext}
+  // Generate object key with timestamp for cache-busting: profile-images/{account_id}/avatar-{timestamp}.{ext}
+  // This ensures each upload gets a unique URL, bypassing CloudFront cache
   const extension = getExtensionFromMimeType(contentType);
-  const key = `profile-images/${accountId}/avatar.${extension}`;
+  const timestamp = Date.now();
+  const key = `profile-images/${accountId}/avatar-${timestamp}.${extension}`;
 
   try {
     // Create S3 client with credentials
@@ -170,8 +172,13 @@ export async function getProfileImageUploadUrl({
 /**
  * Update account profile with the new profile image URL
  *
+ * This will:
+ * 1. Delete the old profile image from S3 (if one exists)
+ * 2. Update account metadata with the new profile image URL
+ * 3. Revalidate cached pages to show the new image
+ *
  * @param accountId - Account identifier
- * @param imageKey - S3 object key for the uploaded image
+ * @param imageKey - S3 object key for the uploaded image (includes timestamp for cache-busting)
  * @throws Error if user is not authorized
  */
 export async function updateProfileImage(
@@ -197,6 +204,36 @@ export async function updateProfileImage(
   }
 
   try {
+    // Delete old profile image if it exists
+    const oldProfileImageUrl = account.metadata_public?.profile_image;
+    if (oldProfileImageUrl) {
+      try {
+        const s3Client = new S3Client({
+          region: CONFIG.assets.region,
+          credentials: CONFIG.database.credentials,
+        });
+
+        const oldKey = getKeyFromImageUrl(oldProfileImageUrl);
+        const deleteCommand = new DeleteObjectCommand({
+          Bucket: CONFIG.assets.bucket,
+          Key: oldKey,
+        });
+
+        await s3Client.send(deleteCommand);
+
+        LOGGER.info("Deleted old profile image from S3", {
+          operation: "updateProfileImage",
+          metadata: { accountId, oldKey, oldImageUrl: oldProfileImageUrl },
+        });
+      } catch (error) {
+        // Log but don't fail if old image deletion fails
+        LOGGER.warn("Failed to delete old profile image", {
+          operation: "updateProfileImage",
+          metadata: { accountId, oldImageUrl: oldProfileImageUrl, error },
+        });
+      }
+    }
+
     // Construct public URL for the image using CloudFront domain
     const assetsDomain = CONFIG.assets.domain;
     if (!assetsDomain) {
