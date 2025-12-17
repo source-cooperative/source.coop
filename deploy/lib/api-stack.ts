@@ -85,6 +85,7 @@ export class ApiStack extends cdk.Stack {
 
     // Grant Vercel role write access to assets bucket (for profile image uploads)
     assets.bucket.grantPut(vercel.vercelRole);
+    assets.bucket.grantDelete(vercel.vercelRole);
   }
 }
 
