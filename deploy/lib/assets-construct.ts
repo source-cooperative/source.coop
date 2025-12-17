@@ -37,13 +37,7 @@ export class AssetsConstruct extends Construct {
       versioned: true,
       encryption: s3.BucketEncryption.S3_MANAGED,
       publicReadAccess: false, // CloudFront will access via OAC
-      // Allow presigned URL uploads while blocking other public access
-      blockPublicAccess: new s3.BlockPublicAccess({
-        blockPublicAcls: true,
-        blockPublicPolicy: true,
-        ignorePublicAcls: true,
-        restrictPublicBuckets: false, // Allow presigned URLs to work
-      }),
+      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
       cors: [
         {
           allowedMethods: [
@@ -53,19 +47,8 @@ export class AssetsConstruct extends Construct {
             s3.HttpMethods.HEAD,
           ],
           allowedOrigins: props.allowedOrigins,
-          allowedHeaders: [
-            "*",
-            // Explicitly allow common headers to ensure CORS works
-            "Content-Type",
-            "Content-Length",
-            "Authorization",
-            "x-amz-*",
-          ],
-          exposedHeaders: [
-            "ETag",
-            "x-amz-request-id",
-            "x-amz-id-2",
-          ],
+          allowedHeaders: ["*"],
+          exposedHeaders: ["ETag"],
           maxAge: 3000,
         },
       ],
