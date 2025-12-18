@@ -48,25 +48,59 @@ import {
 } from "@/types";
 import { match } from "ts-pattern";
 
-export function isAuthorized(
-  principal: UserSession,
-  resource: Pick<Membership, "membership_account_id" | "repository_id">,
-  action: Actions.InviteMembership)
-  : boolean;
+// Type mapping: which resource type is required for each action
+type ActionResourceMap = {
+  // Account actions
+  [Actions.GetAccount]: Account;
+  [Actions.GetAccountProfile]: Account;
+  [Actions.PutAccountProfile]: Account;
+  [Actions.GetAccountFlags]: Account;
+  [Actions.PutAccountFlags]: Account;
+  [Actions.ListAccount]: Account;
+  [Actions.DisableAccount]: Account;
+  [Actions.ListAccountAPIKeys]: Account;
+  [Actions.ListAccountMemberships]: Account;
+  [Actions.CreateAccount]: Account | "*";
 
+  // Product/Repository actions
+  [Actions.GetRepository]: Product;
+  [Actions.ListRepository]: Product;
+  [Actions.PutRepository]: Product;
+  [Actions.DisableRepository]: Product;
+  [Actions.ReadRepositoryData]: Product;
+  [Actions.WriteRepositoryData]: Product;
+  [Actions.ListRepositoryAPIKeys]: Product;
+  [Actions.ListRepositoryMemberships]: Product;
+  [Actions.CreateRepository]: Product | "*";
 
-export function isAuthorized(
+  // API Key actions
+  [Actions.GetAPIKey]: APIKey;
+  [Actions.CreateAPIKey]: APIKey;
+  [Actions.RevokeAPIKey]: APIKey;
+
+  // Membership actions
+  [Actions.GetMembership]: Membership;
+  [Actions.AcceptMembership]: Membership;
+  [Actions.RejectMembership]: Membership;
+  [Actions.RevokeMembership]: Membership;
+  [Actions.UpdateMembershipRole]: Membership;
+  [Actions.InviteMembership]: Pick<Membership, "membership_account_id" | "repository_id">;
+
+  // Data Connection actions
+  [Actions.GetDataConnection]: DataConnection;
+  [Actions.CreateDataConnection]: DataConnection;
+  [Actions.DisableDataConnection]: DataConnection;
+  [Actions.UseDataConnection]: DataConnection;
+  [Actions.ViewDataConnectionCredentials]: DataConnection;
+  [Actions.PutDataConnection]: DataConnection;
+  [Actions.DeleteDataConnection]: DataConnection;
+};
+
+// Type-safe isAuthorized function
+export function isAuthorized<A extends Actions>(
   principal: UserSession | null,
-  resource:
-    | Account
-    | Product
-    | APIKey
-    | Membership
-    | Pick<Membership, "membership_account_id" | "repository_id">
-    | DataConnection
-    | "*"
-    | undefined,
-  action: Actions
+  resource: ActionResourceMap[A] | undefined,
+  action: A
 ): boolean {
   if (resource === undefined) {
     return false;
@@ -139,7 +173,10 @@ export function isAuthorized(
       revokeMembership(principal, resource as Membership)
     )
     .with(Actions.InviteMembership, () =>
-      inviteMembership(principal, resource as Pick<Membership, "membership_account_id" | "repository_id">)
+      inviteMembership(
+        principal,
+        resource as Pick<Membership, "membership_account_id" | "repository_id">
+      )
     )
     .with(Actions.ListRepositoryAPIKeys, () =>
       listRepositoryAPIKeys(principal, resource as Product)
@@ -332,8 +369,6 @@ function getAccountFlags(
     [MembershipRole.Owners, MembershipRole.Maintainers],
     account.account_id
   );
-
-  return false;
 }
 
 function putAccountProfile(
@@ -1160,7 +1195,7 @@ function revokeMembership(
 
 function inviteMembership(
   principal: UserSession | null,
-  membership: Pick<Membership, "membership_account_id" | "repository_id">,
+  membership: Pick<Membership, "membership_account_id" | "repository_id">
 ): boolean {
   // If the user is disabled, they are not authorized
   if (principal?.account?.disabled) {
