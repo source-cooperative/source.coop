@@ -84,7 +84,10 @@ type ActionResourceMap = {
   [Actions.RejectMembership]: Membership;
   [Actions.RevokeMembership]: Membership;
   [Actions.UpdateMembershipRole]: Membership;
-  [Actions.InviteMembership]: Pick<Membership, "membership_account_id" | "repository_id">;
+  [Actions.InviteMembership]: Pick<
+    Membership,
+    "membership_account_id" | "repository_id"
+  >;
 
   // Data Connection actions
   [Actions.GetDataConnection]: DataConnection;
@@ -96,118 +99,317 @@ type ActionResourceMap = {
   [Actions.DeleteDataConnection]: DataConnection;
 };
 
-// Type-safe isAuthorized function
-export function isAuthorized<A extends Actions>(
+// Type helper to extract resource type from ActionResourceMap
+type ResourceForAction<A extends Actions> = ActionResourceMap[A];
+
+// Function overload signatures for type safety without generic inference overhead
+// Account action overloads
+export function isAuthorized(
   principal: UserSession | null,
-  resource: ActionResourceMap[A] | undefined,
-  action: A
+  resource: Account,
+  action: Actions.GetAccount
+): boolean;
+export function isAuthorized(
+  principal: UserSession | null,
+  resource: Account,
+  action: Actions.GetAccountProfile
+): boolean;
+export function isAuthorized(
+  principal: UserSession | null,
+  resource: Account,
+  action: Actions.PutAccountProfile
+): boolean;
+export function isAuthorized(
+  principal: UserSession | null,
+  resource: Account,
+  action: Actions.GetAccountFlags
+): boolean;
+export function isAuthorized(
+  principal: UserSession | null,
+  resource: Account,
+  action: Actions.PutAccountFlags
+): boolean;
+export function isAuthorized(
+  principal: UserSession | null,
+  resource: Account,
+  action: Actions.ListAccount
+): boolean;
+export function isAuthorized(
+  principal: UserSession | null,
+  resource: Account,
+  action: Actions.DisableAccount
+): boolean;
+export function isAuthorized(
+  principal: UserSession | null,
+  resource: Account,
+  action: Actions.ListAccountAPIKeys
+): boolean;
+export function isAuthorized(
+  principal: UserSession | null,
+  resource: Account,
+  action: Actions.ListAccountMemberships
+): boolean;
+export function isAuthorized(
+  principal: UserSession | null,
+  resource: Account | "*",
+  action: Actions.CreateAccount
+): boolean;
+
+// Product/Repository action overloads
+export function isAuthorized(
+  principal: UserSession | null,
+  resource: Product,
+  action: Actions.GetRepository
+): boolean;
+export function isAuthorized(
+  principal: UserSession | null,
+  resource: Product,
+  action: Actions.ListRepository
+): boolean;
+export function isAuthorized(
+  principal: UserSession | null,
+  resource: Product,
+  action: Actions.PutRepository
+): boolean;
+export function isAuthorized(
+  principal: UserSession | null,
+  resource: Product,
+  action: Actions.DisableRepository
+): boolean;
+export function isAuthorized(
+  principal: UserSession | null,
+  resource: Product,
+  action: Actions.ReadRepositoryData
+): boolean;
+export function isAuthorized(
+  principal: UserSession | null,
+  resource: Product,
+  action: Actions.WriteRepositoryData
+): boolean;
+export function isAuthorized(
+  principal: UserSession | null,
+  resource: Product,
+  action: Actions.ListRepositoryAPIKeys
+): boolean;
+export function isAuthorized(
+  principal: UserSession | null,
+  resource: Product,
+  action: Actions.ListRepositoryMemberships
+): boolean;
+export function isAuthorized(
+  principal: UserSession | null,
+  resource: Product | "*",
+  action: Actions.CreateRepository
+): boolean;
+
+// API Key action overloads
+export function isAuthorized(
+  principal: UserSession | null,
+  resource: APIKey,
+  action: Actions.GetAPIKey
+): boolean;
+export function isAuthorized(
+  principal: UserSession | null,
+  resource: APIKey,
+  action: Actions.CreateAPIKey
+): boolean;
+export function isAuthorized(
+  principal: UserSession | null,
+  resource: APIKey,
+  action: Actions.RevokeAPIKey
+): boolean;
+
+// Membership action overloads
+export function isAuthorized(
+  principal: UserSession | null,
+  resource: Membership,
+  action: Actions.GetMembership
+): boolean;
+export function isAuthorized(
+  principal: UserSession | null,
+  resource: Membership,
+  action: Actions.AcceptMembership
+): boolean;
+export function isAuthorized(
+  principal: UserSession | null,
+  resource: Membership,
+  action: Actions.RejectMembership
+): boolean;
+export function isAuthorized(
+  principal: UserSession | null,
+  resource: Membership,
+  action: Actions.RevokeMembership
+): boolean;
+export function isAuthorized(
+  principal: UserSession | null,
+  resource: Membership,
+  action: Actions.UpdateMembershipRole
+): boolean;
+export function isAuthorized(
+  principal: UserSession | null,
+  resource: Pick<Membership, "membership_account_id" | "repository_id">,
+  action: Actions.InviteMembership
+): boolean;
+
+// Data Connection action overloads
+export function isAuthorized(
+  principal: UserSession | null,
+  resource: DataConnection,
+  action: Actions.GetDataConnection
+): boolean;
+export function isAuthorized(
+  principal: UserSession | null,
+  resource: DataConnection,
+  action: Actions.CreateDataConnection
+): boolean;
+export function isAuthorized(
+  principal: UserSession | null,
+  resource: DataConnection,
+  action: Actions.DisableDataConnection
+): boolean;
+export function isAuthorized(
+  principal: UserSession | null,
+  resource: DataConnection,
+  action: Actions.UseDataConnection
+): boolean;
+export function isAuthorized(
+  principal: UserSession | null,
+  resource: DataConnection,
+  action: Actions.ViewDataConnectionCredentials
+): boolean;
+export function isAuthorized(
+  principal: UserSession | null,
+  resource: DataConnection,
+  action: Actions.PutDataConnection
+): boolean;
+export function isAuthorized(
+  principal: UserSession | null,
+  resource: DataConnection,
+  action: Actions.DeleteDataConnection
+): boolean;
+
+// Implementation signature - uses union of all possible resource types
+export function isAuthorized(
+  principal: UserSession | null,
+  resource: ResourceForAction<Actions> | undefined,
+  action: Actions
 ): boolean {
   if (resource === undefined) {
     return false;
   }
 
-  const result = match(action)
-    .with(Actions.CreateAccount, () =>
-      createAccount(principal, resource as Account | "*")
-    )
-    .with(Actions.CreateRepository, () =>
-      createRepository(principal, resource as Product | "*")
-    )
-    .with(Actions.DisableAccount, () =>
-      disableAccount(principal, resource as Account)
-    )
-    .with(Actions.DisableRepository, () =>
-      disableRepository(principal, resource as Product)
-    )
-    .with(Actions.GetAccountProfile, () =>
-      getAccountProfile(principal, resource as Account)
-    )
-    .with(Actions.PutRepository, () =>
-      putRepository(principal, resource as Product)
-    )
-    .with(Actions.ListRepository, () =>
-      listRepository(principal, resource as Product)
-    )
-    .with(Actions.ListAccount, () =>
-      listAccount(principal, resource as Account)
-    )
-    .with(Actions.GetRepository, () =>
-      getRepository(principal, resource as Product)
-    )
-    .with(Actions.GetAccount, () => getAccount(principal, resource as Account))
-    .with(Actions.ReadRepositoryData, () =>
-      readRepositoryData(principal, resource as Product)
-    )
-    .with(Actions.WriteRepositoryData, () =>
-      writeRepositoryData(principal, resource as Product)
-    )
-    .with(Actions.PutAccountProfile, () =>
-      putAccountProfile(principal, resource as Account)
-    )
-    .with(Actions.GetAccountFlags, () =>
-      getAccountFlags(principal, resource as Account)
-    )
-    .with(Actions.PutAccountFlags, () =>
-      putAccountFlags(principal, resource as Account)
-    )
-    .with(Actions.ListAccountAPIKeys, () =>
-      listAccountAPIKeys(principal, resource as Account)
-    )
-    .with(Actions.GetAPIKey, () => getAPIKey(principal, resource as APIKey))
-    .with(Actions.CreateAPIKey, () =>
-      createAPIKey(principal, resource as APIKey)
-    )
-    .with(Actions.RevokeAPIKey, () =>
-      revokeAPIKey(principal, resource as APIKey)
-    )
-    .with(Actions.GetMembership, () =>
-      getMembership(principal, resource as Membership)
-    )
-    .with(Actions.AcceptMembership, () =>
-      acceptMembership(principal, resource as Membership)
-    )
-    .with(Actions.RejectMembership, () =>
-      rejectMembership(principal, resource as Membership)
-    )
-    .with(Actions.RevokeMembership, () =>
-      revokeMembership(principal, resource as Membership)
-    )
-    .with(Actions.InviteMembership, () =>
-      inviteMembership(
-        principal,
-        resource as Pick<Membership, "membership_account_id" | "repository_id">
+  // Match on action only, using type assertion with proper type narrowing context
+  // This avoids the generic parameter overhead while maintaining exhaustiveness checking
+  return (
+    match(action)
+      .with(Actions.CreateAccount, () =>
+        createAccount(principal, resource as ResourceForAction<Actions.CreateAccount>)
       )
-    )
-    .with(Actions.ListRepositoryAPIKeys, () =>
-      listRepositoryAPIKeys(principal, resource as Product)
-    )
-    .with(Actions.ListRepositoryMemberships, () =>
-      listRepositoryMemberships(principal, resource as Product)
-    )
-    .with(Actions.ListAccountMemberships, () =>
-      listAccountMemberships(principal, resource as Account)
-    )
-    .with(Actions.GetDataConnection, () =>
-      getDataConnection(principal, resource as DataConnection)
-    )
-    .with(Actions.CreateDataConnection, () =>
-      createDataConnection(principal, resource as DataConnection)
-    )
-    .with(Actions.DisableDataConnection, () =>
-      disableDataConnection(principal, resource as DataConnection)
-    )
-    .with(Actions.UseDataConnection, () =>
-      useDataConnection(principal, resource as DataConnection)
-    )
-    .with(Actions.ViewDataConnectionCredentials, () =>
-      viewDataConnectionCredentials(principal, resource as DataConnection)
-    )
-    .with(Actions.PutDataConnection, () =>
-      putDataConnection(principal, resource as DataConnection)
-    )
-    .otherwise(() => false);
-
-  return result;
+      .with(Actions.CreateRepository, () =>
+        createRepository(principal, resource as ResourceForAction<Actions.CreateRepository>)
+      )
+      .with(Actions.DisableAccount, () =>
+        disableAccount(principal, resource as ResourceForAction<Actions.DisableAccount>)
+      )
+      .with(Actions.DisableRepository, () =>
+        disableRepository(principal, resource as ResourceForAction<Actions.DisableRepository>)
+      )
+      .with(Actions.GetAccountProfile, () =>
+        getAccountProfile(principal, resource as ResourceForAction<Actions.GetAccountProfile>)
+      )
+      .with(Actions.PutRepository, () =>
+        putRepository(principal, resource as ResourceForAction<Actions.PutRepository>)
+      )
+      .with(Actions.ListRepository, () =>
+        listRepository(principal, resource as ResourceForAction<Actions.ListRepository>)
+      )
+      .with(Actions.ListAccount, () =>
+        listAccount(principal, resource as ResourceForAction<Actions.ListAccount>)
+      )
+      .with(Actions.GetRepository, () =>
+        getRepository(principal, resource as ResourceForAction<Actions.GetRepository>)
+      )
+      .with(Actions.GetAccount, () =>
+        getAccount(principal, resource as ResourceForAction<Actions.GetAccount>)
+      )
+      .with(Actions.ReadRepositoryData, () =>
+        readRepositoryData(principal, resource as ResourceForAction<Actions.ReadRepositoryData>)
+      )
+      .with(Actions.WriteRepositoryData, () =>
+        writeRepositoryData(principal, resource as ResourceForAction<Actions.WriteRepositoryData>)
+      )
+      .with(Actions.PutAccountProfile, () =>
+        putAccountProfile(principal, resource as ResourceForAction<Actions.PutAccountProfile>)
+      )
+      .with(Actions.GetAccountFlags, () =>
+        getAccountFlags(principal, resource as ResourceForAction<Actions.GetAccountFlags>)
+      )
+      .with(Actions.PutAccountFlags, () =>
+        putAccountFlags(principal, resource as ResourceForAction<Actions.PutAccountFlags>)
+      )
+      .with(Actions.ListAccountAPIKeys, () =>
+        listAccountAPIKeys(principal, resource as ResourceForAction<Actions.ListAccountAPIKeys>)
+      )
+      .with(Actions.GetAPIKey, () =>
+        getAPIKey(principal, resource as ResourceForAction<Actions.GetAPIKey>)
+      )
+      .with(Actions.CreateAPIKey, () =>
+        createAPIKey(principal, resource as ResourceForAction<Actions.CreateAPIKey>)
+      )
+      .with(Actions.RevokeAPIKey, () =>
+        revokeAPIKey(principal, resource as ResourceForAction<Actions.RevokeAPIKey>)
+      )
+      .with(Actions.GetMembership, () =>
+        getMembership(principal, resource as ResourceForAction<Actions.GetMembership>)
+      )
+      .with(Actions.AcceptMembership, () =>
+        acceptMembership(principal, resource as ResourceForAction<Actions.AcceptMembership>)
+      )
+      .with(Actions.RejectMembership, () =>
+        rejectMembership(principal, resource as ResourceForAction<Actions.RejectMembership>)
+      )
+      .with(Actions.RevokeMembership, () =>
+        revokeMembership(principal, resource as ResourceForAction<Actions.RevokeMembership>)
+      )
+      .with(Actions.InviteMembership, () =>
+        inviteMembership(principal, resource as ResourceForAction<Actions.InviteMembership>)
+      )
+      .with(Actions.ListRepositoryAPIKeys, () =>
+        listRepositoryAPIKeys(principal, resource as ResourceForAction<Actions.ListRepositoryAPIKeys>)
+      )
+      .with(Actions.ListRepositoryMemberships, () =>
+        listRepositoryMemberships(principal, resource as ResourceForAction<Actions.ListRepositoryMemberships>)
+      )
+      .with(Actions.ListAccountMemberships, () =>
+        listAccountMemberships(principal, resource as ResourceForAction<Actions.ListAccountMemberships>)
+      )
+      .with(Actions.GetDataConnection, () =>
+        getDataConnection(principal, resource as ResourceForAction<Actions.GetDataConnection>)
+      )
+      .with(Actions.CreateDataConnection, () =>
+        createDataConnection(principal, resource as ResourceForAction<Actions.CreateDataConnection>)
+      )
+      .with(Actions.DisableDataConnection, () =>
+        disableDataConnection(principal, resource as ResourceForAction<Actions.DisableDataConnection>)
+      )
+      .with(Actions.UseDataConnection, () =>
+        useDataConnection(principal, resource as ResourceForAction<Actions.UseDataConnection>)
+      )
+      .with(Actions.ViewDataConnectionCredentials, () =>
+        viewDataConnectionCredentials(principal, resource as ResourceForAction<Actions.ViewDataConnectionCredentials>)
+      )
+      .with(Actions.PutDataConnection, () =>
+        putDataConnection(principal, resource as ResourceForAction<Actions.PutDataConnection>)
+      )
+      .with(Actions.DeleteDataConnection, () =>
+        deleteDataConnection(principal, resource as ResourceForAction<Actions.DeleteDataConnection>)
+      )
+      .with(Actions.UpdateMembershipRole, () =>
+        updateMembershipRole(principal, resource as ResourceForAction<Actions.UpdateMembershipRole>)
+      )
+      // exhaustive ensures all Actions enum values are covered
+      .exhaustive()
+  );
 }
 
 function getDataConnection(
@@ -292,6 +494,21 @@ function viewDataConnectionCredentials(
 }
 
 function putDataConnection(
+  principal: UserSession | null,
+  _dataConnection: DataConnection
+): boolean {
+  if (principal?.account?.disabled) {
+    return false;
+  }
+
+  if (isAdmin(principal)) {
+    return true;
+  }
+
+  return false;
+}
+
+function deleteDataConnection(
   principal: UserSession | null,
   _dataConnection: DataConnection
 ): boolean {
@@ -1181,6 +1398,29 @@ function revokeMembership(
 
   // If the membership pertains to the principal's account, they are authorized
   if (principal?.account?.account_id === membership.account_id) {
+    return true;
+  }
+
+  // If the user is an owner or maintainer of the organization or repository, they are authorized
+  return hasRole(
+    principal,
+    [MembershipRole.Owners, MembershipRole.Maintainers],
+    membership.membership_account_id,
+    membership.repository_id
+  );
+}
+
+function updateMembershipRole(
+  principal: UserSession | null,
+  membership: Membership
+): boolean {
+  // If the user is disabled, they are not authorized
+  if (principal?.account?.disabled) {
+    return false;
+  }
+
+  // If the user is an admin, they are authorized
+  if (isAdmin(principal)) {
     return true;
   }
 
