@@ -24,6 +24,13 @@ export const CONFIG = {
     accessRoleArn: process.env.AWS_UPLOAD_ACCESS_ROLE_ARN,
   },
 
+  // Assets (profile images, etc.) configuration
+  assets: {
+    bucket: process.env.ASSETS_BUCKET,
+    domain: process.env.ASSETS_DOMAIN,
+    region: region,
+  },
+
   // DynamoDB configuration
   database: {
     endpoint:

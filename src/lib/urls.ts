@@ -28,6 +28,8 @@ export const editAccountUrl = (account_id: string) =>
   `/edit/account/${account_id}`;
 export const editAccountProfileUrl = (account_id: string) =>
   `/edit/account/${account_id}/profile`;
+export const editAccountProfilePictureUrl = (account_id: string) =>
+  `/edit/account/${account_id}/profile-picture`;
 export const editAccountPermissionsUrl = (account_id: string) =>
   `/edit/account/${account_id}/permissions`;
 export const editAccountMembershipsUrl = (account_id: string) =>
