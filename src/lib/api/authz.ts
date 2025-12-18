@@ -49,12 +49,20 @@ import {
 import { match } from "ts-pattern";
 
 export function isAuthorized(
+  principal: UserSession,
+  resource: Pick<Membership, "membership_account_id" | "repository_id">,
+  action: Actions.InviteMembership)
+  : boolean;
+
+
+export function isAuthorized(
   principal: UserSession | null,
   resource:
     | Account
     | Product
     | APIKey
     | Membership
+    | Pick<Membership, "membership_account_id" | "repository_id">
     | DataConnection
     | "*"
     | undefined,
@@ -131,7 +139,7 @@ export function isAuthorized(
       revokeMembership(principal, resource as Membership)
     )
     .with(Actions.InviteMembership, () =>
-      inviteMembership(principal, resource as Membership)
+      inviteMembership(principal, resource as Pick<Membership, "membership_account_id" | "repository_id">)
     )
     .with(Actions.ListRepositoryAPIKeys, () =>
       listRepositoryAPIKeys(principal, resource as Product)
@@ -1152,7 +1160,7 @@ function revokeMembership(
 
 function inviteMembership(
   principal: UserSession | null,
-  membership: Membership
+  membership: Pick<Membership, "membership_account_id" | "repository_id">,
 ): boolean {
   // If the user is disabled, they are not authorized
   if (principal?.account?.disabled) {

@@ -1,6 +1,6 @@
 import { Metadata } from "next";
 import { Box, Flex } from "@radix-ui/themes";
-import { Actions, MembershipRole } from "@/types";
+import { Actions, Membership, MembershipRole, MembershipState } from "@/types";
 import {
   accountsTable,
   isOrganizationalAccount,
@@ -66,7 +66,7 @@ export default async function MembershipsPage({ params }: PageProps) {
 
   const canInviteMembership = isAuthorized(
     userSession,
-    account,
+    { membership_account_id: account.account_id, repository_id: undefined },
     Actions.InviteMembership
   );
 
