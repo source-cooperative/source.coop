@@ -64,7 +64,10 @@ export default async function MembershipsPage({ params }: PageProps) {
 
   const canInviteMembership = isAuthorized(
     userSession,
-    account,
+    {
+      membership_account_id: account.account_id,
+      repository_id: product.product_id,
+    },
     Actions.InviteMembership
   );
 
