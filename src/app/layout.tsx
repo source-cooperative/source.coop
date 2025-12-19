@@ -10,8 +10,10 @@ import {
   UploadProvider,
   Navigation,
   Footer,
+  LandingPage,
 } from "@/components";
 import { metadata } from "./metadata";
+import { getPageSession } from "@/lib/api/utils";
 const ibmPlexSans = IBM_Plex_Sans({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
@@ -25,6 +27,8 @@ interface RootLayoutProps {
 }
 
 export default async function RootLayout({ children }: RootLayoutProps) {
+  const session = await getPageSession();
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={ibmPlexSans.variable} suppressHydrationWarning>
@@ -36,15 +40,21 @@ export default async function RootLayout({ children }: RootLayoutProps) {
         >
           <NextTopLoader />
           <SessionProvider>
-            <S3CredentialsProvider>
-              <UploadProvider>
-                <Navigation />
-                <Container py="4">
-                  <main>{children}</main>
-                </Container>
-              </UploadProvider>
-            </S3CredentialsProvider>
-            <Footer />
+            {!session ? (
+              <LandingPage />
+            ) : (
+              <>
+                <S3CredentialsProvider>
+                  <UploadProvider>
+                    <Navigation />
+                    <Container py="4">
+                      <main>{children}</main>
+                    </Container>
+                  </UploadProvider>
+                </S3CredentialsProvider>
+                <Footer />
+              </>
+            )}
           </SessionProvider>
         </ThemeProvider>
       </body>

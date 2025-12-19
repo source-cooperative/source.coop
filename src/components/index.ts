@@ -15,3 +15,6 @@ export * from "./features/organizations";
 export * from "./features/products";
 export * from "./features/profiles";
 export * from "./features/settings";
+
+// Marketing components
+export * from "./marketing";
