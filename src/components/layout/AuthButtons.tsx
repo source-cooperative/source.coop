@@ -1,13 +1,15 @@
 import { AccountDropdown } from "./AccountDropdown";
-import { getPageSession } from "@/lib/api/utils";
 import { Button, Callout, Link } from "@radix-ui/themes";
 import { CONFIG } from "@/lib/config";
 import { ExclamationTriangleIcon } from "@radix-ui/react-icons";
 import { onboardingUrl } from "@/lib/urls";
+import { UserSession } from "@/types";
 
-export async function AuthButtons() {
-  const session = await getPageSession();
+interface AuthButtonsProps {
+  session: UserSession | null;
+}
 
+export function AuthButtons({ session }: AuthButtonsProps) {
   if (session?.account) {
     return <AccountDropdown session={session} />;
   }

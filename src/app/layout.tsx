@@ -5,12 +5,9 @@ import { SessionProvider } from "@ory/elements-react/client";
 import NextTopLoader from "nextjs-toploader";
 import { IBM_Plex_Sans } from "next/font/google";
 import { Container } from "@radix-ui/themes";
-import {
-  S3CredentialsProvider,
-  UploadProvider,
-  Navigation,
-  Footer,
-} from "@/components";
+import { S3CredentialsProvider, UploadProvider, Footer } from "@/components";
+import { Navigation } from "@/components/layout/Navigation";
+import { getPageSession } from "@/lib/api/utils";
 import { metadata } from "./metadata";
 const ibmPlexSans = IBM_Plex_Sans({
   subsets: ["latin"],
@@ -25,6 +22,8 @@ interface RootLayoutProps {
 }
 
 export default async function RootLayout({ children }: RootLayoutProps) {
+  const session = await getPageSession();
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={ibmPlexSans.variable} suppressHydrationWarning>
@@ -38,7 +37,7 @@ export default async function RootLayout({ children }: RootLayoutProps) {
           <SessionProvider>
             <S3CredentialsProvider>
               <UploadProvider>
-                <Navigation />
+                <Navigation session={session} />
                 <Container py="4">
                   <main>{children}</main>
                 </Container>
