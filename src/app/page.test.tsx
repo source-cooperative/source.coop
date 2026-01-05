@@ -1,4 +1,7 @@
-// Mock all component imports to avoid importing react-markdown and other problematic dependencies
+// Mock the markdown component to avoid importing react-markdown and other problematic dependencies
+jest.mock("@/components/features/markdown/MarkdownViewer", () => ({
+  MarkdownViewer: jest.fn(() => null),
+}));
 jest.mock("@/components/layout", () => ({}));
 jest.mock("@/components/features/products/ProductsList", () => ({}));
 jest.mock("@/lib/actions/products", () => ({
