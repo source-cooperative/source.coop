@@ -10,7 +10,8 @@ import { FormTitle, InviteMemberForm, MembershipsTable } from "@/components";
 import { notFound, redirect } from "next/navigation";
 import { getPageSession } from "@/lib";
 import { isAuthorized } from "@/lib/api/authz";
-import { editAccountProfileUrl } from "@/lib/urls";
+import { editAccountProfileUrl, editAccountMembershipsUrl } from "@/lib/urls";
+import Link from "next/link";
 
 export async function generateMetadata({
   params,
@@ -111,9 +112,14 @@ export default async function MembershipsPage({ params }: PageProps) {
       />
 
       <Box mt="8">
-        <Text size="4" weight="medium" mb="4">
-          Organization Members
-        </Text>
+        <Flex justify="between" align="start" mb="4">
+          <Text size="4" weight="medium">
+            The following users have access to this product through their
+            <Link href={editAccountMembershipsUrl(account_id)}>
+              organization membership
+            </Link>
+          </Text>
+        </Flex>
         <MembershipsTable
           memberships={activeOrgMemberships}
           memberAccountsMap={memberAccountsMap}
