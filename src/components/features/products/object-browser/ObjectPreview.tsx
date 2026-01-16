@@ -27,6 +27,11 @@ const getIframeAttributes = (
         src: `https://source-cooperative.github.io/csv-table/?iframe=true&url=${sourceUrl}`,
         style: { border: "1px solid var(--gray-5)" },
       };
+    case "json":
+      return {
+        src: `https://moregeo-it.github.io/stac-web-component/#${sourceUrl}`,
+        style: { border: "none" },
+      };
     default:
       return null;
   }
