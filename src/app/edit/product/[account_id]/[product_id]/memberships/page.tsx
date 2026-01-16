@@ -114,10 +114,13 @@ export default async function MembershipsPage({ params }: PageProps) {
       <Box mt="8">
         <Flex justify="between" align="start" mb="4">
           <Text size="4" weight="medium">
-            The following users have access to this product through their
+            Organization Members
+          </Text>
+          <Text size="2" color="gray">
+            The following users have access to the product through their{" "}
             <Link href={editAccountMembershipsUrl(account_id)}>
               organization membership
-            </Link>
+            </Link>.
           </Text>
         </Flex>
         <MembershipsTable
