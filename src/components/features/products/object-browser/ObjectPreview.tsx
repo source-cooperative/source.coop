@@ -39,6 +39,14 @@ const getIframeAttributes = (
         src: `https://source-cooperative.github.io/image-viewer/?url=${sourceUrl}`,
         style: { border: "1px solid var(--gray-5)" },
       };
+    case "glb":
+    case "gltf":
+    case "obj":
+    case "stl":
+      return {
+        src: `https://source-cooperative.github.io/model-viewer/?url=${sourceUrl}`,
+        style: { border: "1px solid var(--gray-5)" },
+      };
     default:
       return null;
   }
