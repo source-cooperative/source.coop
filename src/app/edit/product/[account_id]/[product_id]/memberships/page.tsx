@@ -1,6 +1,6 @@
 import { Metadata } from "next";
 import { Box, Flex, Text } from "@radix-ui/themes";
-import { Actions, Membership, MembershipRole } from "@/types";
+import { Actions, MembershipRole, MembershipState } from "@/types";
 import {
   accountsTable,
   membershipsTable,
@@ -56,17 +56,18 @@ export default async function MembershipsPage({ params }: PageProps) {
     return roleOrder[a.role] - roleOrder[b.role];
   });
 
-  const orgMemberships = await membershipsTable.listByAccount(account_id);
-  const activeOrgMemberships = orgMemberships.sort((a, b) => {
-    const roleOrder = {
-      [MembershipRole.Owners]: 0,
-      [MembershipRole.Maintainers]: 1,
-      [MembershipRole.WriteData]: 2,
-      [MembershipRole.ReadData]: 3,
-    };
+  const activeOrgMemberships = (await membershipsTable.listByAccount(account_id))
+    .filter((m) => m.state === MembershipState.Member)
+    .sort((a, b) => {
+      const roleOrder = {
+        [MembershipRole.Owners]: 0,
+        [MembershipRole.Maintainers]: 1,
+        [MembershipRole.WriteData]: 2,
+        [MembershipRole.ReadData]: 3,
+      };
 
-    return roleOrder[a.role] - roleOrder[b.role];
-  });
+      return roleOrder[a.role] - roleOrder[b.role];
+    });
 
   // Get account details for each membership
   const memberAccountIds = [
@@ -92,37 +93,41 @@ export default async function MembershipsPage({ params }: PageProps) {
   return (
     <Box>
       <Flex justify="between" align="center" mb="6">
-        <Box>
-          <FormTitle
-            title="Memberships"
-            description="Manage product members and their roles"
-          />
-        </Box>
+        <FormTitle
+          title="Memberships"
+          description="Manage product members and their roles"
+        />
         {canInviteMembership && (
           <InviteMemberForm organization={account} product={product} />
         )}
       </Flex>
 
-      <MembershipsTable
-        memberships={activeMemberships}
-        memberAccountsMap={memberAccountsMap}
-        userSession={userSession}
-        emptyStateMessage="No members yet"
-        emptyStateDescription="Invite people to join your product"
-      />
+      <Box>
+        <Text size="4" weight="medium" as="p">
+          Product Members
+        </Text>
+        <Text size="2" color="gray">
+          The following users have been explicitly granted access to the product
+        </Text>
+        <MembershipsTable
+          memberships={activeMemberships}
+          memberAccountsMap={memberAccountsMap}
+          userSession={userSession}
+          emptyStateMessage="No members yet"
+          emptyStateDescription="Invite people to join your product"
+        />
+      </Box>
 
       <Box mt="8">
-        <Flex justify="between" align="start" mb="4">
-          <Text size="4" weight="medium">
-            Organization Members
-          </Text>
-          <Text size="2" color="gray">
-            The following users have access to the product through their{" "}
-            <Link href={editAccountMembershipsUrl(account_id)}>
-              organization membership
-            </Link>.
-          </Text>
-        </Flex>
+        <Text size="4" weight="medium" as="p">
+          Organization Members
+        </Text>
+        <Text size="2" color="gray">
+          The following users have implicit access to the product via their{" "}
+          <Link href={editAccountMembershipsUrl(account_id)}>
+            organization membership
+          </Link>
+        </Text>
         <MembershipsTable
           memberships={activeOrgMemberships}
           memberAccountsMap={memberAccountsMap}
