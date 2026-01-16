@@ -1,6 +1,6 @@
 import { Metadata } from "next";
-import { Box, Flex } from "@radix-ui/themes";
-import { Actions, Membership, MembershipRole } from "@/types";
+import { Box, Flex, Text } from "@radix-ui/themes";
+import { Actions, MembershipRole, MembershipState } from "@/types";
 import {
   accountsTable,
   membershipsTable,
@@ -10,7 +10,8 @@ import { FormTitle, InviteMemberForm, MembershipsTable } from "@/components";
 import { notFound, redirect } from "next/navigation";
 import { getPageSession } from "@/lib";
 import { isAuthorized } from "@/lib/api/authz";
-import { editAccountProfileUrl } from "@/lib/urls";
+import { editAccountProfileUrl, editAccountMembershipsUrl } from "@/lib/urls";
+import Link from "next/link";
 
 export async function generateMetadata({
   params,
@@ -55,8 +56,26 @@ export default async function MembershipsPage({ params }: PageProps) {
     return roleOrder[a.role] - roleOrder[b.role];
   });
 
+  const activeOrgMemberships = (await membershipsTable.listByAccount(account_id))
+    .filter((m) => m.state === MembershipState.Member)
+    .sort((a, b) => {
+      const roleOrder = {
+        [MembershipRole.Owners]: 0,
+        [MembershipRole.Maintainers]: 1,
+        [MembershipRole.WriteData]: 2,
+        [MembershipRole.ReadData]: 3,
+      };
+
+      return roleOrder[a.role] - roleOrder[b.role];
+    });
+
   // Get account details for each membership
-  const memberAccountIds = activeMemberships.map((m) => m.account_id);
+  const memberAccountIds = [
+    ...new Set([
+      ...activeMemberships.map((m) => m.account_id),
+      ...activeOrgMemberships.map((m) => m.account_id),
+    ]),
+  ];
   const memberAccounts = await accountsTable.fetchManyByIds(memberAccountIds);
   const memberAccountsMap = new Map(
     memberAccounts.map((acc) => [acc.account_id, acc])
@@ -74,24 +93,50 @@ export default async function MembershipsPage({ params }: PageProps) {
   return (
     <Box>
       <Flex justify="between" align="center" mb="6">
-        <Box>
-          <FormTitle
-            title="Memberships"
-            description="Manage product members and their roles"
-          />
-        </Box>
+        <FormTitle
+          title="Memberships"
+          description="Manage product members and their roles"
+        />
         {canInviteMembership && (
           <InviteMemberForm organization={account} product={product} />
         )}
       </Flex>
 
-      <MembershipsTable
-        memberships={activeMemberships}
-        memberAccountsMap={memberAccountsMap}
-        userSession={userSession}
-        emptyStateMessage="No members yet"
-        emptyStateDescription="Invite people to join your product"
-      />
+      <Box>
+        <Text size="4" weight="medium" as="p">
+          Product Members
+        </Text>
+        <Text size="2" color="gray">
+          The following users have been explicitly granted access to this product
+        </Text>
+        <MembershipsTable
+          memberships={activeMemberships}
+          memberAccountsMap={memberAccountsMap}
+          userSession={userSession}
+          emptyStateMessage="No members yet"
+          emptyStateDescription="Invite people to join your product"
+        />
+      </Box>
+
+      <Box mt="8">
+        <Text size="4" weight="medium" as="p">
+          Organization Members
+        </Text>
+        <Text size="2" color="gray">
+          The following users have implicit access to this product via their{" "}
+          <Link href={editAccountMembershipsUrl(account_id)}>
+            organization membership
+          </Link>
+        </Text>
+        <MembershipsTable
+          memberships={activeOrgMemberships}
+          memberAccountsMap={memberAccountsMap}
+          userSession={userSession}
+          emptyStateMessage="No organization members"
+          emptyStateDescription="Organization has no members"
+          editable={false}
+        />
+      </Box>
     </Box>
   );
 }
