@@ -1,5 +1,5 @@
 import { Metadata } from "next";
-import { Box, Flex } from "@radix-ui/themes";
+import { Box, Flex, Text } from "@radix-ui/themes";
 import { Actions, Membership, MembershipRole } from "@/types";
 import {
   accountsTable,
@@ -55,8 +55,25 @@ export default async function MembershipsPage({ params }: PageProps) {
     return roleOrder[a.role] - roleOrder[b.role];
   });
 
+  const orgMemberships = await membershipsTable.listByAccount(account_id);
+  const activeOrgMemberships = orgMemberships.sort((a, b) => {
+    const roleOrder = {
+      [MembershipRole.Owners]: 0,
+      [MembershipRole.Maintainers]: 1,
+      [MembershipRole.WriteData]: 2,
+      [MembershipRole.ReadData]: 3,
+    };
+
+    return roleOrder[a.role] - roleOrder[b.role];
+  });
+
   // Get account details for each membership
-  const memberAccountIds = activeMemberships.map((m) => m.account_id);
+  const memberAccountIds = [
+    ...new Set([
+      ...activeMemberships.map((m) => m.account_id),
+      ...activeOrgMemberships.map((m) => m.account_id),
+    ]),
+  ];
   const memberAccounts = await accountsTable.fetchManyByIds(memberAccountIds);
   const memberAccountsMap = new Map(
     memberAccounts.map((acc) => [acc.account_id, acc])
@@ -92,6 +109,20 @@ export default async function MembershipsPage({ params }: PageProps) {
         emptyStateMessage="No members yet"
         emptyStateDescription="Invite people to join your product"
       />
+
+      <Box mt="8">
+        <Text size="4" weight="medium" mb="4">
+          Organization Members
+        </Text>
+        <MembershipsTable
+          memberships={activeOrgMemberships}
+          memberAccountsMap={memberAccountsMap}
+          userSession={userSession}
+          emptyStateMessage="No organization members"
+          emptyStateDescription="Organization has no members"
+          showActions={false}
+        />
+      </Box>
     </Box>
   );
 }

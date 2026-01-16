@@ -22,6 +22,7 @@ interface MembershipsTableProps {
   userSession: UserSession;
   emptyStateMessage: string;
   emptyStateDescription: string;
+  showActions?: boolean;
 }
 
 export function MembershipsTable({
@@ -30,6 +31,7 @@ export function MembershipsTable({
   userSession,
   emptyStateMessage,
   emptyStateDescription,
+  showActions = true,
 }: MembershipsTableProps) {
   // Helper function to check if user can revoke a membership
   const canRevokeMembership = (membership: Membership) =>
@@ -79,7 +81,7 @@ export function MembershipsTable({
   return (
     <>
       {/* Hidden forms outside the table */}
-      {memberships.map((membership) => {
+      {showActions && memberships.map((membership) => {
         const formId = `membership-form-${membership.membership_id}`;
         return (
           <Form
@@ -104,7 +106,7 @@ export function MembershipsTable({
             <Table.ColumnHeaderCell>Role</Table.ColumnHeaderCell>
             <Table.ColumnHeaderCell>Status</Table.ColumnHeaderCell>
             <Table.ColumnHeaderCell>Last Updated</Table.ColumnHeaderCell>
-            <Table.ColumnHeaderCell>Actions</Table.ColumnHeaderCell>
+            {showActions && <Table.ColumnHeaderCell>Actions</Table.ColumnHeaderCell>}
           </Table.Row>
         </Table.Header>
         <Table.Body>
@@ -164,22 +166,24 @@ export function MembershipsTable({
                     {new Date(membership.state_changed).toLocaleDateString()}
                   </Text>
                 </Table.Cell>
-                <Table.Cell>
-                  <Button
-                    type="submit"
-                    form={formId}
-                    size="1"
-                    variant="soft"
-                    color="red"
-                    disabled={
-                      !canRevokeMembership(membership) ||
-                      pending ||
-                      membership.state === MembershipState.Revoked
-                    }
-                  >
-                    Revoke
-                  </Button>
-                </Table.Cell>
+                {showActions && (
+                  <Table.Cell>
+                    <Button
+                      type="submit"
+                      form={formId}
+                      size="1"
+                      variant="soft"
+                      color="red"
+                      disabled={
+                        !canRevokeMembership(membership) ||
+                        pending ||
+                        membership.state === MembershipState.Revoked
+                      }
+                    >
+                      Revoke
+                    </Button>
+                  </Table.Cell>
+                )}
               </Table.Row>
             );
           })}
