@@ -27,6 +27,18 @@ const getIframeAttributes = (
         src: `https://source-cooperative.github.io/csv-table/?iframe=true&url=${sourceUrl}`,
         style: { border: "1px solid var(--gray-5)" },
       };
+    case "avif":
+    case "bmp":
+    case "gif":
+    case "jpg":
+    case "jpeg":
+    case "svg":
+    case "tiff":
+    case "webp":
+      return {
+        src: `https://source-cooperative.github.io/image-viewer/?url=${sourceUrl}`,
+        style: { border: "1px solid var(--gray-5)" },
+      };
     default:
       return null;
   }
