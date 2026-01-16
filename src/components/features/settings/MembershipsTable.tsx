@@ -22,7 +22,7 @@ interface MembershipsTableProps {
   userSession: UserSession;
   emptyStateMessage: string;
   emptyStateDescription: string;
-  showActions?: boolean;
+  editable?: boolean;
 }
 
 export function MembershipsTable({
@@ -31,7 +31,7 @@ export function MembershipsTable({
   userSession,
   emptyStateMessage,
   emptyStateDescription,
-  showActions = true,
+  editable = true,
 }: MembershipsTableProps) {
   // Helper function to check if user can revoke a membership
   const canRevokeMembership = (membership: Membership) =>
@@ -81,7 +81,7 @@ export function MembershipsTable({
   return (
     <>
       {/* Hidden forms outside the table */}
-      {showActions && memberships.map((membership) => {
+      {editable && memberships.map((membership) => {
         const formId = `membership-form-${membership.membership_id}`;
         return (
           <Form
@@ -104,9 +104,11 @@ export function MembershipsTable({
           <Table.Row>
             <Table.ColumnHeaderCell>Member</Table.ColumnHeaderCell>
             <Table.ColumnHeaderCell>Role</Table.ColumnHeaderCell>
-            <Table.ColumnHeaderCell>Status</Table.ColumnHeaderCell>
-            <Table.ColumnHeaderCell>Last Updated</Table.ColumnHeaderCell>
-            {showActions && <Table.ColumnHeaderCell>Actions</Table.ColumnHeaderCell>}
+            {editable && <>
+              <Table.ColumnHeaderCell>Status</Table.ColumnHeaderCell>
+              <Table.ColumnHeaderCell>Last Updated</Table.ColumnHeaderCell>
+              <Table.ColumnHeaderCell>Actions</Table.ColumnHeaderCell>
+            </>}
           </Table.Row>
         </Table.Header>
         <Table.Body>
@@ -141,32 +143,32 @@ export function MembershipsTable({
                     }[membership.role] || "Unknown"}
                   </Badge>
                 </Table.Cell>
-                <Table.Cell>
-                  <Text
-                    size="2"
-                    color={
-                      ({
-                        [MembershipState.Member]: "green",
-                        [MembershipState.Invited]: "blue",
-                        [MembershipState.Revoked]: "red",
-                      }[membership.state] || "gray") as React.ComponentProps<
-                        typeof Text
-                      >["color"]
-                    }
-                  >
-                    {{
-                      [MembershipState.Member]: "Member",
-                      [MembershipState.Invited]: "Invited",
-                      [MembershipState.Revoked]: "Revoked",
-                    }[membership.state] || "Unknown"}
-                  </Text>
-                </Table.Cell>
-                <Table.Cell>
-                  <Text size="2" color="gray">
-                    {new Date(membership.state_changed).toLocaleDateString()}
-                  </Text>
-                </Table.Cell>
-                {showActions && (
+                {editable && <>
+                  <Table.Cell>
+                    <Text
+                      size="2"
+                      color={
+                        ({
+                          [MembershipState.Member]: "green",
+                          [MembershipState.Invited]: "blue",
+                          [MembershipState.Revoked]: "red",
+                        }[membership.state] || "gray") as React.ComponentProps<
+                          typeof Text
+                        >["color"]
+                      }
+                    >
+                      {{
+                        [MembershipState.Member]: "Member",
+                        [MembershipState.Invited]: "Invited",
+                        [MembershipState.Revoked]: "Revoked",
+                      }[membership.state] || "Unknown"}
+                    </Text>
+                  </Table.Cell>
+                  <Table.Cell>
+                    <Text size="2" color="gray">
+                      {new Date(membership.state_changed).toLocaleDateString()}
+                    </Text>
+                  </Table.Cell>
                   <Table.Cell>
                     <Button
                       type="submit"
@@ -183,7 +185,7 @@ export function MembershipsTable({
                       Revoke
                     </Button>
                   </Table.Cell>
-                )}
+                </>}
               </Table.Row>
             );
           })}

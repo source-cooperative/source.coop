@@ -107,7 +107,7 @@ export default async function MembershipsPage({ params }: PageProps) {
           Product Members
         </Text>
         <Text size="2" color="gray">
-          The following users have been explicitly granted access to the product
+          The following users have been explicitly granted access to this product
         </Text>
         <MembershipsTable
           memberships={activeMemberships}
@@ -123,7 +123,7 @@ export default async function MembershipsPage({ params }: PageProps) {
           Organization Members
         </Text>
         <Text size="2" color="gray">
-          The following users have implicit access to the product via their{" "}
+          The following users have implicit access to this product via their{" "}
           <Link href={editAccountMembershipsUrl(account_id)}>
             organization membership
           </Link>
@@ -134,7 +134,7 @@ export default async function MembershipsPage({ params }: PageProps) {
           userSession={userSession}
           emptyStateMessage="No organization members"
           emptyStateDescription="Organization has no members"
-          showActions={false}
+          editable={false}
         />
       </Box>
     </Box>
