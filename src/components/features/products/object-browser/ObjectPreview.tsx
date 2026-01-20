@@ -33,6 +33,7 @@ const getIframeAttributes = (
     case "jpg":
     case "jpeg":
     case "svg":
+    case "tif":
     case "tiff":
     case "webp":
       return {
