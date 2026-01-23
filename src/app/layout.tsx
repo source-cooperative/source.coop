@@ -39,9 +39,9 @@ export default async function RootLayout({ children }: RootLayoutProps) {
             <S3CredentialsProvider>
               <UploadProvider>
                 <Navigation />
-                <Container py="4">
+                {/* <Container py="4" m="0"> */}
                   <main>{children}</main>
-                </Container>
+                {/* </Container> */}
               </UploadProvider>
             </S3CredentialsProvider>
             <Footer />

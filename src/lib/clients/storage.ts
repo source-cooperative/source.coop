@@ -23,7 +23,7 @@ function createStorageClient(config: StorageConfig): StorageClient {
   return new S3StorageClient({
     endpoint: config.endpoint,
     region: config.region,
-    credentials: config.credentials,
+    // credentials: config.credentials,
   });
 }
 
