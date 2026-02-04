@@ -1,7 +1,17 @@
 /* Landing Page Styles */
+/* 
+TODO: This causes an error:
+
+Syntax error: Selector "body" is not pure (pure selectors must contain at least one local class or id)
+
+> 2 | body {
+    | ^
+  3 |   margin: 0;
+  4 | }
+
 body {
   margin: 0;
-}
+} */
 .landing {
   background: var(--gray-3);
   max-width: none;
