@@ -235,18 +235,20 @@ export default async function Landing() {
               <Accordion.Header>
                 <Accordion.Trigger className={styles.AccordionTrigger}>
                   <span>
-                    <Heading size="3" as="h4">vs. Cloud object storage</Heading>
+                    <Heading size="3" as="h4">
+                      vs. Cloud object storage
+                    </Heading>
                   </span>
                   <ChevronDownIcon className="AccordionChevron" aria-hidden />
                 </Accordion.Trigger>
               </Accordion.Header>
               <Accordion.Content>
                 While object storage services like Amazon S3, Google Cloud
-                Storage, and Azure Blob Storage can store data, they don't make
-                it discoverable or accessible to others. Source is a utility
-                built on top of cloud object storage services that provides a
-                public catalog, standardized access, and community visibility
-                that raw cloud storage can't offer.
+                Storage, and Azure Blob Storage can store data, they don&apos;t
+                make it discoverable or accessible to others. Source is a
+                utility built on top of cloud object storage services that
+                provides a public catalog, standardized access, and community
+                visibility that raw cloud storage can&apos;t offer.
               </Accordion.Content>
             </Accordion.Item>
             <Accordion.Item className="AccordionItem" value="item-2">
@@ -256,11 +258,11 @@ export default async function Landing() {
               </Accordion.Header>
               <Accordion.Content>
                 While object storage services like Amazon S3, Google Cloud
-                Storage, and Azure Blob Storage can store data, they don't make
-                it discoverable or accessible to others. Source is a utility
-                built on top of cloud object storage services that provides a
-                public catalog, standardized access, and community visibility
-                that raw cloud storage can't offer.
+                Storage, and Azure Blob Storage can store data, they don&apos;t
+                make it discoverable or accessible to others. Source is a
+                utility built on top of cloud object storage services that
+                provides a public catalog, standardized access, and community
+                visibility that raw cloud storage can&apos;t offer.
               </Accordion.Content>
             </Accordion.Item>
             <Accordion.Item className="AccordionItem" value="item-3">
@@ -270,11 +272,11 @@ export default async function Landing() {
               </Accordion.Header>
               <Accordion.Content>
                 While object storage services like Amazon S3, Google Cloud
-                Storage, and Azure Blob Storage can store data, they don't make
-                it discoverable or accessible to others. Source is a utility
-                built on top of cloud object storage services that provides a
-                public catalog, standardized access, and community visibility
-                that raw cloud storage can't offer.
+                Storage, and Azure Blob Storage can store data, they don&apos;t
+                make it discoverable or accessible to others. Source is a
+                utility built on top of cloud object storage services that
+                provides a public catalog, standardized access, and community
+                visibility that raw cloud storage can&apos;t offer.
               </Accordion.Content>
             </Accordion.Item>
           </Accordion.Root>
