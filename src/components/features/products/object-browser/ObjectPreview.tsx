@@ -109,13 +109,9 @@ export async function ObjectPreview({
 export function ObjectPreviewLoading() {
   return (
     <Skeleton>
-      <Box
-        mt="4"
-        pt="4"
-        style={{ borderTop: "1px solid var(--gray-6)" }}
-        width="100%"
-        height="600px"
-      />
+      <Box mt="4" pt="4" style={{ borderTop: "1px solid var(--gray-6)" }}>
+        <Box width="100%" height="600px" />
+      </Box>
     </Skeleton>
   );
 }
