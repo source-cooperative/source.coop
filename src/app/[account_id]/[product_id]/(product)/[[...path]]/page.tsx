@@ -14,9 +14,9 @@ import { DataConnection, ProductMirror } from "@/types";
 import {
   DirectoryList,
   ObjectSummary,
-  ObjectPreview,
   generateProductMetadata,
 } from "@/components";
+import { ObjectPreview } from "@/components/features/products/object-browser/ObjectPreview";
 
 export async function generateMetadata({
   params,
@@ -53,14 +53,16 @@ export default async function ProductPathPage({ params }: PageProps) {
             objectInfo={objectInfo}
             connectionDetails={connectionDetails}
           />
-          <ObjectPreview sourceUrl={fileSourceUrl(product, objectInfo)} />
+          <Suspense>
+            <ObjectPreview sourceUrl={fileSourceUrl(product, objectInfo)} />
+          </Suspense>
         </>
       ) : (
         <DirectoryList
           product={product}
           objects={objectsList.filter(
             // Exclude the current directory object
-            (obj) => obj.path.replace(/\/$/, "") !== objectPath
+            (obj) => obj.path.replace(/\/$/, "") !== objectPath,
           )}
           prefix={objectPath}
         />
@@ -72,7 +74,7 @@ export default async function ProductPathPage({ params }: PageProps) {
 export async function fetchProduct(
   account_id: string,
   product_id: string,
-  object_path: string
+  object_path: string,
 ) {
   // 1. Get and await params
   const isRoot = !object_path;
@@ -125,7 +127,7 @@ export async function fetchProduct(
     const primaryMirror =
       product.value.metadata.mirrors[product.value.metadata.primary_mirror];
     const dataConnection = await dataConnectionsTable.fetchById(
-      primaryMirror.connection_id
+      primaryMirror.connection_id,
     );
     if (!dataConnection) {
       LOGGER.error("Data connection not found", {

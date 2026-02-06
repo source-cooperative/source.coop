@@ -29,6 +29,7 @@
     "@aws-sdk/lib-dynamodb": "^3.767.0",
     "@aws-sdk/lib-storage": "^3.914.0",
     "@aws-sdk/s3-request-presigner": "^3.914.0",
+    "@duckdb/node-api": "^1.4.4-r.1",
     "@ory/client": "^1.21.3",
     "@ory/elements-react": "^1.0.0-next.41",
     "@ory/nextjs": "^1.0.0-rc.0",
