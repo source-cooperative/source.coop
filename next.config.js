@@ -23,9 +23,6 @@ const nextConfig = {
     },
   },
   serverExternalPackages: ["@duckdb/node-api"],
-  experimental: {
-    useCache: true,
-  },
 };
 
 export default nextConfig;
