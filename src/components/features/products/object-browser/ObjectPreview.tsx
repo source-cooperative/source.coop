@@ -11,6 +11,10 @@ interface ObjectPreviewProps {
 const isStacGeoParquet = async (sourceUrl: string): Promise<boolean> => {
   try {
     const db = await DuckDBConnection.create();
+    // Vercel: /tmp is the only writable location
+    await db.run("SET home_directory='/tmp'");
+    await db.run("SET extension_directory='/tmp/duckdb_extensions'");
+
     const reader = await db.runAndReadAll(
       `
         SELECT stac_version
