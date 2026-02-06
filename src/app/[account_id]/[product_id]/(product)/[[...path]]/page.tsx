@@ -16,7 +16,10 @@ import {
   ObjectSummary,
   generateProductMetadata,
 } from "@/components";
-import { ObjectPreview } from "@/components/features/products/object-browser/ObjectPreview";
+import {
+  ObjectPreview,
+  ObjectPreviewLoading,
+} from "@/components/features/products/object-browser/ObjectPreview";
 
 export async function generateMetadata({
   params,
@@ -53,7 +56,7 @@ export default async function ProductPathPage({ params }: PageProps) {
             objectInfo={objectInfo}
             connectionDetails={connectionDetails}
           />
-          <Suspense>
+          <Suspense fallback={<ObjectPreviewLoading />}>
             <ObjectPreview sourceUrl={fileSourceUrl(product, objectInfo)} />
           </Suspense>
         </>

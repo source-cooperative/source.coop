@@ -1,6 +1,6 @@
 import "server-only";
 
-import { Box } from "@radix-ui/themes";
+import { Box, Skeleton } from "@radix-ui/themes";
 import type { CSSProperties } from "react";
 import { DuckDBConnection } from "@duckdb/node-api";
 
@@ -11,6 +11,7 @@ interface ObjectPreviewProps {
 const isStacGeoParquet = async (sourceUrl: string): Promise<boolean> => {
   try {
     const db = await DuckDBConnection.create();
+
     // Vercel: /tmp is the only writable location
     await db.run("SET home_directory='/tmp'");
     await db.run("SET extension_directory='/tmp/duckdb_extensions'");
@@ -103,4 +104,18 @@ export async function ObjectPreview({
       </Box>
     );
   }
+}
+
+export function ObjectPreviewLoading() {
+  return (
+    <Skeleton>
+      <Box
+        mt="4"
+        pt="4"
+        style={{ borderTop: "1px solid var(--gray-6)" }}
+        width="100%"
+        height="600px"
+      />
+    </Skeleton>
+  );
 }
