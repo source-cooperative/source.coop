@@ -3,6 +3,7 @@ import "server-only";
 import { Box, Skeleton } from "@radix-ui/themes";
 import type { CSSProperties } from "react";
 import { DuckDBConnection } from "@duckdb/node-api";
+import { cacheLife } from "next/cache";
 
 interface ObjectPreviewProps {
   sourceUrl: string;
@@ -93,6 +94,11 @@ const getIframeAttributes = async (
 export async function ObjectPreview({
   sourceUrl: cloudUri,
 }: ObjectPreviewProps) {
+  "use cache";
+  cacheLife({
+    stale: 60 * 60 * 24 * 7, // Cache for 1 week
+    revalidate: 60 * 60, // Background-refresh every hour
+  });
   const iframeProps = await getIframeAttributes(cloudUri);
   if (iframeProps) {
     const { src, style } = iframeProps;
