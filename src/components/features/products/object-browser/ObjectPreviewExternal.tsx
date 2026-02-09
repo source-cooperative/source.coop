@@ -11,8 +11,8 @@ interface ObjectPreviewExternalProps {
 
 const getIframeAttributes = (
   sourceUrl: string,
+  extension?: string,
 ): { src: string; style?: CSSProperties } | null => {
-  const extension = getExtension(sourceUrl);
   switch (extension) {
     case "pmtiles":
       return {
@@ -63,22 +63,35 @@ const getIframeAttributes = (
 
 export function ObjectPreviewExternal(props: ObjectPreviewExternalProps) {
   const cloudUri = fileSourceUrl(props);
-  const iframeProps = getIframeAttributes(cloudUri);
+  const extension = getExtension(cloudUri);
+  const iframeProps = getIframeAttributes(cloudUri, extension);
 
-  if (iframeProps) {
-    const { src, style } = iframeProps;
+  if (!iframeProps) {
     return (
       <Box mt="4" pt="4" style={{ borderTop: "1px solid var(--gray-6)" }}>
-        <iframe
-          width="100%"
-          height="600px"
-          style={style}
-          src={src}
-          title={`Preview of ${props.object_path}`}
-        >
-          Your browser does not support iframes.
-        </iframe>
+        <p>
+          No preview available for file type "{extension}".{" "}
+          <a href="https://github.com/source-cooperative/source.coop/issues">
+            Open an issue
+          </a>{" "}
+          if you would like support for this file type.
+        </p>
       </Box>
     );
   }
+
+  const { src, style } = iframeProps;
+  return (
+    <Box mt="4" pt="4" style={{ borderTop: "1px solid var(--gray-6)" }}>
+      <iframe
+        width="100%"
+        height="600px"
+        style={style}
+        src={src}
+        title={`Preview of ${props.object_path}`}
+      >
+        Your browser does not support iframes.
+      </iframe>
+    </Box>
+  );
 }
