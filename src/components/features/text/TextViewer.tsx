@@ -1,5 +1,13 @@
-import { Code } from "@radix-ui/themes";
-
 export function TextViewer({ content }: { content: string }) {
-  return <Code>{content}</Code>;
+  return (
+    <pre
+      style={{
+        whiteSpace: "pre-wrap",
+        wordBreak: "break-word",
+        fontFamily: "inherit",
+      }}
+    >
+      {content}
+    </pre>
+  );
 }
