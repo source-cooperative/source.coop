@@ -8,7 +8,6 @@ import {
   storage,
   dataConnectionsTable,
   productsTable,
-  fileSourceUrl,
 } from "@/lib";
 import { DataConnection, ProductMirror } from "@/types";
 import {
@@ -53,7 +52,7 @@ export default async function ProductPathPage({ params }: PageProps) {
             objectInfo={objectInfo}
             connectionDetails={connectionDetails}
           />
-          <ObjectPreview sourceUrl={fileSourceUrl(product, objectInfo)} />
+          <ObjectPreview account_id={account_id} product_id={product_id} object_path={objectPath} />
         </>
       ) : (
         <DirectoryList
