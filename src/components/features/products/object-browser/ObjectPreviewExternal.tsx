@@ -1,5 +1,5 @@
 import { fileSourceUrl } from "@/lib/urls";
-import { Box } from "@radix-ui/themes";
+import { Box, Code } from "@radix-ui/themes";
 import type { CSSProperties } from "react";
 import { getExtension } from "@/lib/files";
 
@@ -70,7 +70,7 @@ export function ObjectPreviewExternal(props: ObjectPreviewExternalProps) {
     return (
       <Box mt="4" pt="4" style={{ borderTop: "1px solid var(--gray-6)" }}>
         <p>
-          No preview available for file type "{extension}".{" "}
+          No preview available for file type <Code>.{extension}</Code>.{" "}
           <a href="https://github.com/source-cooperative/source.coop/issues">
             Open an issue
           </a>{" "}
