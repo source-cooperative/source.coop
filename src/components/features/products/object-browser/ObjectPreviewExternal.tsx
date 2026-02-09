@@ -1,6 +1,7 @@
 import { fileSourceUrl } from "@/lib/urls";
 import { Box } from "@radix-ui/themes";
 import type { CSSProperties } from "react";
+import { getExtension } from "@/lib/files";
 
 interface ObjectPreviewExternalProps {
   account_id: string;
@@ -11,7 +12,8 @@ interface ObjectPreviewExternalProps {
 const getIframeAttributes = (
   sourceUrl: string,
 ): { src: string; style?: CSSProperties } | null => {
-  switch (sourceUrl.split(".").pop()) {
+  const extension = getExtension(sourceUrl);
+  switch (extension) {
     case "pmtiles":
       return {
         src: `https://pmtiles.io/#url=${sourceUrl}&iframe=true`,
