@@ -3,13 +3,7 @@ import { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import DirectoryListLoading from "./loading";
-import {
-  LOGGER,
-  storage,
-  dataConnectionsTable,
-  productsTable,
-  fileSourceUrl,
-} from "@/lib";
+import { LOGGER, storage, dataConnectionsTable, productsTable } from "@/lib";
 import { DataConnection, ProductMirror } from "@/types";
 import {
   DirectoryList,
@@ -57,7 +51,11 @@ export default async function ProductPathPage({ params }: PageProps) {
             connectionDetails={connectionDetails}
           />
           <Suspense fallback={<ObjectPreviewLoading />}>
-            <ObjectPreview sourceUrl={fileSourceUrl(product, objectInfo)} />
+            <ObjectPreview
+              account_id={account_id}
+              product_id={product_id}
+              object_path={objectPath}
+            />
           </Suspense>
         </>
       ) : (
