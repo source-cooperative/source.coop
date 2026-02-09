@@ -6,7 +6,9 @@ import {
   membershipsTable,
   productsTable,
 } from "@/lib/clients/database";
-import { FormTitle, InviteMemberForm, MembershipsTable } from "@/components";
+import { FormTitle } from "@/components/core/FormTitle";
+import { InviteMemberForm } from "@/components/features/accounts/InviteMemberForm";
+import { MembershipsTable } from "@/components/features/settings/MembershipsTable";
 import { notFound, redirect } from "next/navigation";
 import { getPageSession } from "@/lib";
 import { isAuthorized } from "@/lib/api/authz";

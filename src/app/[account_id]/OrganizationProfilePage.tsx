@@ -1,6 +1,6 @@
 import { Container, Box } from "@radix-ui/themes";
 import { OrganizationProfile } from "../../components/features/profiles/OrganizationProfile";
-import { PendingInvitationBanner } from "@/components";
+import { PendingInvitationBanner } from "@/components/features/memberships/PendingInvitationBanner";
 import {
   accountsTable,
   isIndividualAccount,

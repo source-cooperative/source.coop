@@ -5,15 +5,13 @@ import { notFound } from "next/navigation";
 import DirectoryListLoading from "./loading";
 import { LOGGER, storage, dataConnectionsTable, productsTable } from "@/lib";
 import { DataConnection, ProductMirror } from "@/types";
-import {
-  DirectoryList,
-  ObjectSummary,
-  generateProductMetadata,
-} from "@/components";
+import { DirectoryList } from "@/components/features/products/object-browser/DirectoryList";
+import { ObjectSummary } from "@/components/features/products/object-browser/ObjectSummary";
 import {
   ObjectPreview,
   ObjectPreviewLoading,
 } from "@/components/features/products/object-browser/ObjectPreview";
+import { generateProductMetadata } from "@/components/features/metadata/ProductMetadata";
 
 export async function generateMetadata({
   params,

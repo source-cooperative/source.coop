@@ -1,5 +1,3 @@
-"use client";
-
 import { DataList, Flex, Button, Box } from "@radix-ui/themes";
 import { DownloadIcon } from "@radix-ui/react-icons";
 import type {
