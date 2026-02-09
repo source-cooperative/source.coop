@@ -2,15 +2,25 @@
 
 // Mock component imports first
 jest.mock("./loading", () => ({}));
-jest.mock("@/components", () => {
+jest.mock("@/components/features/metadata/ProductMetadata", () => {
   const { generateProductMetadata } = jest.requireActual(
-    "@/components/features/metadata/ProductMetadata"
+    "@/components/features/metadata/ProductMetadata",
   );
+  return { generateProductMetadata };
+});
+jest.mock("@/components/features/products/object-browser/DirectoryList", () => {
   return {
     DirectoryList: jest.fn(),
+  };
+});
+jest.mock("@/components/features/products/object-browser/ObjectSummary", () => {
+  return {
     ObjectSummary: jest.fn(),
+  };
+});
+jest.mock("@/components/features/products/object-browser/ObjectPreview", () => {
+  return {
     ObjectPreview: jest.fn(),
-    generateProductMetadata,
   };
 });
 
