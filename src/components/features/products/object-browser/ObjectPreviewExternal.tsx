@@ -11,7 +11,7 @@ interface ObjectPreviewExternalProps {
 
 const getIframeAttributes = (
   sourceUrl: string,
-  extension?: string,
+  extension: string,
 ): { src: string; style?: CSSProperties } | null => {
   const url = encodeURIComponent(sourceUrl);
   switch (extension) {
@@ -65,8 +65,12 @@ const getIframeAttributes = (
 export function ObjectPreviewExternal(props: ObjectPreviewExternalProps) {
   const cloudUri = fileSourceUrl(props);
   const extension = getExtension(cloudUri);
-  const iframeProps = getIframeAttributes(cloudUri, extension);
 
+  if (!extension) {
+    return null;
+  }
+
+  const iframeProps = getIframeAttributes(cloudUri, extension);
   if (!iframeProps) {
     return (
       <Box mt="4" pt="4" style={{ borderTop: "1px solid var(--gray-6)" }}>
