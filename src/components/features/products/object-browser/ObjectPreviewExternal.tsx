@@ -69,7 +69,13 @@ export function ObjectPreviewExternal(props: ObjectPreviewExternalProps) {
     const { src, style } = iframeProps;
     return (
       <Box mt="4" pt="4" style={{ borderTop: "1px solid var(--gray-6)" }}>
-        <iframe width="100%" height="600px" style={style} src={src}>
+        <iframe
+          width="100%"
+          height="600px"
+          style={style}
+          src={src}
+          title={`Preview of ${props.object_path}`}
+        >
           Your browser does not support iframes.
         </iframe>
       </Box>
