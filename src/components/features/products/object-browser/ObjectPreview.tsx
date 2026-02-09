@@ -1,4 +1,7 @@
-import { canRenderInternally, ObjectPreviewInternal } from "./ObjectPreviewInternal";
+import {
+  canRenderInternally,
+  ObjectPreviewInternal,
+} from "./ObjectPreviewInternal";
 import { ObjectPreviewExternal } from "./ObjectPreviewExternal";
 
 interface ObjectPreviewProps {

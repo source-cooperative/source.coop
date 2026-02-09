@@ -1,5 +1,3 @@
-"use client";
-
 import { fileSourceUrl } from "@/lib/urls";
 import { Box } from "@radix-ui/themes";
 import type { CSSProperties } from "react";
@@ -11,7 +9,7 @@ interface ObjectPreviewExternalProps {
 }
 
 const getIframeAttributes = (
-  sourceUrl: string
+  sourceUrl: string,
 ): { src: string; style?: CSSProperties } | null => {
   switch (sourceUrl.split(".").pop()) {
     case "pmtiles":

@@ -8,14 +8,12 @@
  * we need to use a parent route-group to handle these cases.
  */
 
-import {
-  BreadcrumbNav,
-  FetchCredentialsButton,
-  PendingInvitationBanner,
-  ProductHeader,
-  SectionHeader,
-} from "@/components";
-import { Dropzone } from "@/components";
+import { BreadcrumbNav } from "@/components/display/BreadcrumbNav";
+import { FetchCredentialsButton } from "@/components/features/uploader/FetchCredentialsButton";
+import { PendingInvitationBanner } from "@/components/features/memberships/PendingInvitationBanner";
+import { ProductHeader } from "@/components/features/products/ProductHeader";
+import { SectionHeader } from "@/components/core/SectionHeader";
+import { Dropzone } from "@/components/features/uploader/Dropzone";
 import { getPageSession } from "@/lib";
 import { isAuthorized } from "@/lib/api/authz";
 import { productsTable } from "@/lib/clients/database";

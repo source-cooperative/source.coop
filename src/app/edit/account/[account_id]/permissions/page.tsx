@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { FormTitle, AccountFlagsForm } from "@/components";
+import { FormTitle } from "@/components/core/FormTitle";
+import { AccountFlagsForm } from "@/components/features/accounts/AccountFlagsForm";
 import { accountsTable, isOrganizationalAccount } from "@/lib/clients";
 import { Box } from "@radix-ui/themes";
 import { getPageSession } from "@/lib/api/utils";
