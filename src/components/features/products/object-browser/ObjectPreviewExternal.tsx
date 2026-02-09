@@ -64,7 +64,8 @@ const getIframeAttributes = (
 export function ObjectPreviewExternal(props: ObjectPreviewExternalProps) {
   const cloudUri = fileSourceUrl(props);
   const extension = getExtension(cloudUri);
-  const iframeProps = getIframeAttributes(cloudUri, extension);
+  const encodedCloudUri = encodeURIComponent(cloudUri);
+  const iframeProps = getIframeAttributes(encodedCloudUri, extension);
 
   if (!iframeProps) {
     return (
