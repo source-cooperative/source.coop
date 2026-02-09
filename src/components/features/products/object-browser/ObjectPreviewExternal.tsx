@@ -90,8 +90,6 @@ export function ObjectPreviewExternal(props: ObjectPreviewExternalProps) {
         style={style}
         src={src}
         title={`Preview of ${props.object_path}`}
-        sandbox="allow-scripts allow-downloads allow-same-origin"
-        referrerPolicy="no-referrer"
         loading="lazy"
       >
         Your browser does not support iframes.
