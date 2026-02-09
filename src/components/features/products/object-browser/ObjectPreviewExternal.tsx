@@ -3,6 +3,7 @@ import "server-only";
 import { fileSourceUrl } from "@/lib/urls";
 import { Box } from "@radix-ui/themes";
 import type { CSSProperties } from "react";
+import { getExtension } from "@/lib/files";
 import { DuckDBConnection } from "@duckdb/node-api";
 
 const isStacGeoParquet = async (sourceUrl: string): Promise<boolean> => {
@@ -39,7 +40,8 @@ interface ObjectPreviewExternalProps {
 const getIframeAttributes = async (
   sourceUrl: string,
 ): Promise<{ src: string; style?: CSSProperties } | null> => {
-  switch (sourceUrl.split(".").pop()) {
+  const extension = getExtension(sourceUrl);
+  switch (extension) {
     case "pmtiles":
       return {
         src: `https://pmtiles.io/#url=${sourceUrl}&iframe=true`,
