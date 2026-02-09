@@ -4,6 +4,8 @@ import { MarkdownViewer } from "@/components/features/markdown/MarkdownViewer";
 import { TextViewer } from "@/components/features/text/TextViewer";
 import { getExtension } from "@/lib/files";
 
+const MAX_PREVIEW_SIZE = 10 * 1024 * 1024; // 10 MB
+
 interface ObjectPreviewInternalProps {
   account_id: string;
   product_id: string;
@@ -25,7 +27,26 @@ export const canRenderInternally = (object_path: string): boolean => {
 export async function ObjectPreviewInternal(props: ObjectPreviewInternalProps) {
   let content: string | undefined;
   try {
-    await storage.headObject(props);
+    const head = await storage.headObject(props);
+    if (!head.contentLength) {
+      LOGGER.debug(`Object has no content`, {
+        operation: "ObjectPreviewInternal",
+        context: "object fetch",
+        metadata: { ...props },
+      });
+      return null;
+    }
+    if (head.contentLength > MAX_PREVIEW_SIZE) {
+      LOGGER.debug(
+        `Object too large to preview (${head.contentLength} bytes)`,
+        {
+          operation: "ObjectPreviewInternal",
+          context: "object fetch",
+          metadata: { ...props, contentLength: head.contentLength },
+        },
+      );
+      return null;
+    }
     const result = await storage.getObject(props);
     content =
       result.data instanceof Buffer ? result.data.toString("utf-8") : undefined;
