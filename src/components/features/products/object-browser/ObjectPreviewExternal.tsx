@@ -13,21 +13,22 @@ const getIframeAttributes = (
   sourceUrl: string,
   extension?: string,
 ): { src: string; style?: CSSProperties } | null => {
+  const url = encodeURIComponent(sourceUrl);
   switch (extension) {
     case "pmtiles":
       return {
-        src: `https://pmtiles.io/#url=${sourceUrl}&iframe=true`,
+        src: `https://pmtiles.io/#url=${url}&iframe=true`,
         style: { border: "none" },
       };
     case "parquet":
       return {
-        src: `https://source-cooperative.github.io/parquet-table/?iframe=true&url=${sourceUrl}`,
+        src: `https://source-cooperative.github.io/parquet-table/?iframe=true&url=${url}`,
         style: { border: "1px solid var(--gray-5)" },
       };
     case "csv":
     case "tsv":
       return {
-        src: `https://source-cooperative.github.io/csv-table/?iframe=true&url=${sourceUrl}`,
+        src: `https://source-cooperative.github.io/csv-table/?iframe=true&url=${url}`,
         style: { border: "1px solid var(--gray-5)" },
       };
     case "avif":
@@ -40,7 +41,7 @@ const getIframeAttributes = (
     case "tiff":
     case "webp":
       return {
-        src: `https://source-cooperative.github.io/image-viewer/?url=${sourceUrl}`,
+        src: `https://source-cooperative.github.io/image-viewer/?url=${url}`,
         style: { border: "1px solid var(--gray-5)" },
       };
     case "glb":
@@ -48,12 +49,12 @@ const getIframeAttributes = (
     case "obj":
     case "stl":
       return {
-        src: `https://source-cooperative.github.io/model-viewer/?url=${sourceUrl}`,
+        src: `https://source-cooperative.github.io/model-viewer/?url=${url}`,
         style: { border: "1px solid var(--gray-5)" },
       };
     case "zip":
       return {
-        src: `https://source-cooperative.github.io/zip-viewer/?url=${sourceUrl}`,
+        src: `https://source-cooperative.github.io/zip-viewer/?url=${url}`,
         style: { border: "1px solid var(--gray-5)" },
       };
     default:
@@ -64,8 +65,7 @@ const getIframeAttributes = (
 export function ObjectPreviewExternal(props: ObjectPreviewExternalProps) {
   const cloudUri = fileSourceUrl(props);
   const extension = getExtension(cloudUri);
-  const encodedCloudUri = encodeURIComponent(cloudUri);
-  const iframeProps = getIframeAttributes(encodedCloudUri, extension);
+  const iframeProps = getIframeAttributes(cloudUri, extension);
 
   if (!iframeProps) {
     return (
