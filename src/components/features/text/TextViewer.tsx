@@ -4,7 +4,6 @@ export function TextViewer({ content }: { content: string }) {
       style={{
         whiteSpace: "pre-wrap",
         wordBreak: "break-word",
-        fontFamily: "inherit",
       }}
     >
       {content}
