@@ -7,6 +7,18 @@
   contain: content;
 }
 
+.gridList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(28rem, 1fr));
+  gap: var(--space-4);
+  position: relative;
+  contain: content;
+}
+
 .viewport {
   width: 100%;
   height: calc(100vh - 400px);
@@ -32,6 +44,9 @@
   outline-offset: -1px;
   margin-bottom: var(--space-4);
   contain: content;
+}
+.gridList .item {
+  border-style: dashed;
 }
 
 .item:hover:not([data-highlighted="true"]):not([data-selected="true"]) {
