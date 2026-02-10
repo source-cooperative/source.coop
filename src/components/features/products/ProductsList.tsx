@@ -10,7 +10,7 @@ import styles from "./ProductList.module.css";
 
 interface ProductsListProps {
   products: Product[];
-  grid: boolean;
+  grid?: boolean;
 }
 
 export function ProductsList({ products, grid = false }: ProductsListProps) {

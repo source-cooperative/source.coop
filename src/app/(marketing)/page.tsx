@@ -19,6 +19,7 @@ import {
 } from "@radix-ui/themes";
 import { ThemeInverseComponent } from "@/components/layout/ThemeInverseComponent";
 import styles from "./Landing.module.css";
+import { productListUrl } from "@/lib/urls";
 
 function SectionSubheading({ children }: { children: React.ReactNode }) {
   return (
@@ -58,22 +59,26 @@ export default async function Landing() {
                   cloud expertise, lock-in or costs.
                 </Text>
                 <Flex gap="4" direction={{ xs: "column", sm: "row" }}>
-                  <Button
-                    size="3"
-                    className={styles.subheading}
-                    variant="outline"
-                    highContrast
-                  >
-                    Read the docs &rarr;
-                  </Button>
-                  <Button
-                    size="3"
-                    className={styles.subheading}
-                    variant="solid"
-                    highContrast
-                  >
-                    Explore Data Products &rarr;
-                  </Button>
+                  <Link href="https://docs.source.coop">
+                    <Button
+                      size="3"
+                      className={styles.subheading}
+                      variant="outline"
+                      highContrast
+                    >
+                      Read the docs &rarr;
+                    </Button>
+                  </Link>
+                  <Link href={productListUrl()}>
+                    <Button
+                      size="3"
+                      className={styles.subheading}
+                      variant="solid"
+                      highContrast
+                    >
+                      Explore Data Products &rarr;
+                    </Button>
+                  </Link>
                 </Flex>
               </Flex>
               <Flex display={{ xs: "none", sm: "flex" }}>
@@ -242,22 +247,23 @@ export default async function Landing() {
               direction={{ xs: "column", md: "row" }}
               align="start"
             >
-              <Box>
+              <Box flexBasis="50%">
                 <SectionSubheading>Case Studies</SectionSubheading>
                 <Heading size="8" mb="6">
                   Open Source, Governed, and Trusted By These Teams
                 </Heading>
               </Box>
-              <Box className={styles.caseStudy} p="4">
+              <Box className={styles.caseStudy} p="4" flexBasis="50%">
                 <Blockquote size="2" mb="2">
-                  "We can solve this question for ourselves, but the point of
-                  our work is to bring the world's attention to these rural
-                  communities and their needs. We want to make sure the data we
-                  develop and the insights we generate are accessible to other
-                  organizations and people. That's what brought us to Source."
+                  &quot;We can solve this question for ourselves, but the point
+                  of our work is to bring the world&apos;s attention to these
+                  rural communities and their needs. We want to make sure the
+                  data we develop and the insights we generate are accessible to
+                  other organizations and people. That&apos;s what brought us to
+                  Source.&quot;
                 </Blockquote>
                 <Text weight="bold" size="2">
-                  — Cameron Kruse, Bridges to Prosperity Director of Digital
+                  — Cameron Kruse, Bridges to Prosperity Director of Digital
                   Technology
                 </Text>
                 <Box>
