@@ -12,8 +12,8 @@ export function Logo() {
 
   const logoImage = (
     <ThemeAwareImage
-      lightSrc="/logo/logotype-light.svg"
-      darkSrc="/logo/logotype-dark.svg"
+      lightSrc="/logo/logolockup-light.svg"
+      darkSrc="/logo/logolockup-dark.svg"
       alt="Source Cooperative"
       width={243}
       height={74}

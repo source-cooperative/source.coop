@@ -10,9 +10,10 @@ import styles from "./ProductList.module.css";
 
 interface ProductsListProps {
   products: Product[];
+  grid?: boolean;
 }
 
-export function ProductsList({ products }: ProductsListProps) {
+export function ProductsList({ products, grid = false }: ProductsListProps) {
   const [showHelp, setShowHelp] = useState(false);
 
   const { selectedIndex } = useProductListKeyboardShortcuts({
@@ -33,7 +34,7 @@ export function ProductsList({ products }: ProductsListProps) {
   return (
     <Box>
       <nav aria-label="Product list">
-        <ul className={styles.list} role="listbox">
+        <ul className={grid ? styles.gridList : styles.list} role="listbox">
           {products.map((product, index) => (
             <li
               key={`${product.account_id}/${product.product_id}`}

@@ -12,7 +12,7 @@
 
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { OrganizationProfilePage } from "@/app/[account_id]/OrganizationProfilePage";
+import { OrganizationProfilePage } from "@/app/(app)/[account_id]/OrganizationProfilePage";
 import { accountsTable, isOrganizationalAccount } from "@/lib/clients/database";
 import { IndividualProfilePage } from "./IndividualProfilePage";
 import {

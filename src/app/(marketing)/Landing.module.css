@@ -1,0 +1,64 @@
+.landing {
+  background: var(--gray-1);
+  overflow: hidden
+}
+.landingInner {
+  border: 1px solid var(--gray-7);
+  border-top: 0;
+  border-bottom: 0;
+}
+.landing a {
+  font-family: var(--heading-font-family);
+  text-decoration: underline;
+  text-transform: uppercase;
+}
+
+.subheading {
+  text-transform: uppercase;
+  font-family: var(--heading-font-family);
+  font-weight: bold;
+  letter-spacing: 0.5px;
+}
+
+.heroSection {
+}
+.heroContent {
+  
+}
+.heroImage {
+  mix-blend-mode: difference;
+}
+.productsSection {
+  border-bottom: 1px dashed var(--gray-9);
+  border-top: 1px dashed var(--gray-9);
+}
+.sectionDark {
+  background: var(--gray-12);
+  color: var(--gray-1);
+}
+.tout {
+  border-top: 1px solid var(--gray-7);
+}
+.toutPrice p:first-of-type {
+  font-family: "Berkeley Mono";
+  font-size: 0.75rem;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: 0.03rem;
+  text-transform: uppercase;
+}
+.toutHost p:first-of-type {
+  font-size: 8rem;
+  line-height: 100%;
+  margin: 0;
+}
+
+.priceAsterisk {
+  font-family: var(--heading-font-family);
+  font-style: normal;
+  letter-spacing: 0.03rem;
+}
+.caseStudy {
+  border: 1px dashed var(--gray-7);
+}

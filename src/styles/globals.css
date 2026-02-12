@@ -1,30 +1,30 @@
 @font-face {
-  font-family: 'Berkeley Mono';
-  src: url('/fonts/BerkeleyMono-Regular.woff2') format('woff2');
+  font-family: "Berkeley Mono";
+  src: url("/fonts/BerkeleyMono-Regular.woff2") format("woff2");
   font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'Berkeley Mono';
-  src: url('/fonts/BerkeleyMono-Bold.woff2') format('woff2');
+  font-family: "Berkeley Mono";
+  src: url("/fonts/BerkeleyMono-Bold.woff2") format("woff2");
   font-weight: 700;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'Berkeley Mono';
-  src: url('/fonts/BerkeleyMono-Italic.woff2') format('woff2');
+  font-family: "Berkeley Mono";
+  src: url("/fonts/BerkeleyMono-Italic.woff2") format("woff2");
   font-weight: 400;
   font-style: italic;
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'Berkeley Mono';
-  src: url('/fonts/BerkeleyMono-BoldItalic.woff2') format('woff2');
+  font-family: "Berkeley Mono";
+  src: url("/fonts/BerkeleyMono-BoldItalic.woff2") format("woff2");
   font-weight: 700;
   font-style: italic;
   font-display: swap;
@@ -32,7 +32,8 @@
 
 :root .radix-themes {
   --default-font-family: var(--font-ibm-plex);
-  --code-font-family: 'Berkeley Mono', Menlo, Consolas, monospace;
+  --heading-font-family: "Berkeley Mono", Menlo, Consolas, monospace;
+  --code-font-family: "Berkeley Mono", Menlo, Consolas, monospace;
   --cursor-button: pointer;
   --cursor-checkbox: pointer;
   --cursor-disabled: default;
@@ -44,7 +45,159 @@
   --cursor-switch: pointer;
 }
 
+:root, .light, .light-theme {
+  --gray-1: #f4f5f5;
+  --gray-2: #f0f2f2;
+  --gray-3: #e5e8ea;
+  --gray-4: #dce0e2;
+  --gray-5: #d3d8db;
+  --gray-6: #cbd0d4;
+  --gray-7: #bfc6ca;
+  --gray-8: #aab3b8;
+  --gray-9: #7c858a;
+  --gray-10: #727a7f;
+  --gray-11: #565c60;
+  --gray-12: #1c2124;
+
+  --gray-a1: #2d606005;
+  --gray-a2: #164e4e09;
+  --gray-a3: #062c4614;
+  --gray-a4: #0225371d;
+  --gray-a5: #07273b27;
+  --gray-a6: #041f352f;
+  --gray-a7: #0220313b;
+  --gray-a8: #031f2f51;
+  --gray-a9: #00121c80;
+  --gray-a10: #000f188a;
+  --gray-a11: #000910a7;
+  --gray-a12: #01070ae3;
+
+  --gray-contrast: #FFFFFF;
+  --gray-surface: #ffffffcc;
+  --gray-indicator: #7c858a;
+  --gray-track: #7c858a;
+}
+
+@supports (color: color(display-p3 1 1 1)) {
+  @media (color-gamut: p3) {
+    :root, .light, .light-theme {
+      --gray-1: oklch(96.9% 0.0012 234);
+      --gray-2: oklch(95.9% 0.0022 234);
+      --gray-3: oklch(92.9% 0.0039 234);
+      --gray-4: oklch(90.4% 0.0051 234);
+      --gray-5: oklch(88% 0.0066 234);
+      --gray-6: oklch(85.5% 0.0076 234);
+      --gray-7: oklch(82.1% 0.0094 234);
+      --gray-8: oklch(76% 0.0127 234);
+      --gray-9: oklch(61.1% 0.0128 234);
+      --gray-10: oklch(57.6% 0.0122 234);
+      --gray-11: oklch(47.2% 0.0105 234);
+      --gray-12: oklch(24.4% 0.0088 234);
+
+      --gray-a1: color(display-p3 0.051 0.2824 0.2824 / 0.017);
+      --gray-a2: color(display-p3 0.0235 0.2627 0.2627 / 0.033);
+      --gray-a3: color(display-p3 0.0078 0.1137 0.2235 / 0.073);
+      --gray-a4: color(display-p3 0.0039 0.1098 0.1843 / 0.109);
+      --gray-a5: color(display-p3 0.0078 0.1137 0.1961 / 0.146);
+      --gray-a6: color(display-p3 0.0039 0.0941 0.1804 / 0.178);
+      --gray-a7: color(display-p3 0.0039 0.1059 0.1765 / 0.226);
+      --gray-a8: color(display-p3 0.0039 0.0941 0.1451 / 0.307);
+      --gray-a9: color(display-p3 0.0039 0.0588 0.0902 / 0.492);
+      --gray-a10: color(display-p3 0 0.051 0.0824 / 0.537);
+      --gray-a11: color(display-p3 0 0.0314 0.0549 / 0.65);
+      --gray-a12: color(display-p3 0 0.0196 0.0314 / 0.884);
+
+      --gray-contrast: #FFFFFF;
+      --gray-surface: color(display-p3 1 1 1 / 80%);
+      --gray-indicator: oklch(61.1% 0.0128 234);
+      --gray-track: oklch(61.1% 0.0128 234);
+    }
+  }
+}
+
+.dark, .dark-theme {
+  --gray-1: #31302e;
+  --gray-2: #363533;
+  --gray-3: #3e3c3a;
+  --gray-4: #42413f;
+  --gray-5: #474643;
+  --gray-6: #4e4c4a;
+  --gray-7: #595755;
+  --gray-8: #6e6d6b;
+  --gray-9: #797775;
+  --gray-10: #83817f;
+  --gray-11: #b8b6b4;
+  --gray-12: #eeedeb;
+
+  --gray-a1: #e30d0007;
+  --gray-a2: #f17f210d;
+  --gray-a3: #fdb17916;
+  --gray-a4: #fcc99c1b;
+  --gray-a5: #fdd4a821;
+  --gray-a6: #fbd5ba2a;
+  --gray-a7: #fce2cd37;
+  --gray-a8: #fff0e350;
+  --gray-a9: #fdefe55e;
+  --gray-a10: #fdf1e96a;
+  --gray-a11: #fef9f4aa;
+  --gray-a12: #fffdfbeb;
+
+  --gray-contrast: #FFFFFF;
+  --gray-surface: rgba(0, 0, 0, 0.05);
+  --gray-indicator: #797775;
+  --gray-track: #797775;
+}
+
+@supports (color: color(display-p3 1 1 1)) {
+  @media (color-gamut: p3) {
+    .dark, .dark-theme {
+      --gray-1: oklch(30.9% 0.0036 84.56);
+      --gray-2: oklch(33% 0.0034 84.56);
+      --gray-3: oklch(35.8% 0.0043 84.56);
+      --gray-4: oklch(37.6% 0.0043 84.56);
+      --gray-5: oklch(39.3% 0.0043 84.56);
+      --gray-6: oklch(41.8% 0.0043 84.56);
+      --gray-7: oklch(45.8% 0.0043 84.56);
+      --gray-8: oklch(53.6% 0.0043 84.56);
+      --gray-9: oklch(57.1% 0.0043 84.56);
+      --gray-10: oklch(60.5% 0.0043 84.56);
+      --gray-11: oklch(77.8% 0.0043 84.56);
+      --gray-12: oklch(94.7% 0.0029 84.56);
+
+      --gray-a1: color(display-p3 0.9608 0 0 / 0.02);
+      --gray-a2: color(display-p3 1 0.5608 0.1137 / 0.043);
+      --gray-a3: color(display-p3 1 0.7255 0.498 / 0.081);
+      --gray-a4: color(display-p3 0.9961 0.8196 0.6353 / 0.1);
+      --gray-a5: color(display-p3 1 0.8588 0.6784 / 0.124);
+      --gray-a6: color(display-p3 0.9961 0.8627 0.7529 / 0.158);
+      --gray-a7: color(display-p3 0.9961 0.902 0.8235 / 0.21);
+      --gray-a8: color(display-p3 1 0.9529 0.902 / 0.31);
+      --gray-a9: color(display-p3 1 0.9529 0.9098 / 0.362);
+      --gray-a10: color(display-p3 0.9961 0.9608 0.9216 / 0.41);
+      --gray-a11: color(display-p3 1 0.9765 0.9608 / 0.662);
+      --gray-a12: color(display-p3 0.9961 0.9922 0.9843 / 0.92);
+
+      --gray-contrast: #FFFFFF;
+      --gray-surface: color(display-p3 0 0 0 / 5%);
+      --gray-indicator: oklch(57.1% 0.0043 84.56);
+      --gray-track: oklch(57.1% 0.0043 84.56);
+    }
+  }
+}
+
+:root, .light, .light-theme, .radix-themes {
+  --color-background: #edecea;
+}
+.dark, .dark-theme, :is(.dark, .dark-theme) :where(.radix-themes:not(.light, .light-theme)) {
+  --color-background: #2c3134;
+}
 /* Global link styling */
+html,
+body {
+  padding: 0;
+  margin: 0;
+}
+ 
 a {
   text-decoration: underline;
   color: var(--accent-11);
@@ -107,7 +260,8 @@ a:hover {
 }
 
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {

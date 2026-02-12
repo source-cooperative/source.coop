@@ -5,7 +5,7 @@ jest.mock("@/lib/actions/products", () => ({
   getProducts: jest.fn(),
 }));
 
-import { metadata } from "./page";
+import { metadata } from "./featured/page";
 
 describe("Home Page Metadata", () => {
   it("has proper OpenGraph metadata", () => {

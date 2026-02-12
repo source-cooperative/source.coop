@@ -18,7 +18,7 @@ export const metadata = {
   },
 };
 
-export default async function HomePage() {
+export default async function FeaturedProductsPage() {
   // Fetch featured products on the server
   const result = await getProducts({
     featuredOnly: true,
