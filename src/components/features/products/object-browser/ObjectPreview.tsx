@@ -48,6 +48,11 @@ const getIframeAttributes = (
         src: `https://source-cooperative.github.io/model-viewer/?url=${sourceUrl}`,
         style: { border: "1px solid var(--gray-5)" },
       };
+    case "zip":
+      return {
+        src: `https://source-cooperative.github.io/zip-viewer/?url=${sourceUrl}`,
+        style: { border: "1px solid var(--gray-5)" },
+      };
     default:
       return null;
   }
