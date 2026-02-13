@@ -1,13 +1,12 @@
 import { ReactNode } from "react";
 import { Heading } from "@radix-ui/themes";
 import { Link2Icon } from "@radix-ui/react-icons";
-import type { HeadingProps } from "@radix-ui/themes/dist/cjs/components/heading";
 
 interface HeadingWithPermalinkProps {
   id: string;
-  level: HeadingProps["size"];
+  level: "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9";
   children: ReactNode;
-  mb?: HeadingProps["mb"];
+  mb?: "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9";
 }
 
 export function HeadingWithPermalink({
