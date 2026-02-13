@@ -1,15 +1,41 @@
-"use client";
+import "server-only";
 
-import { Box } from "@radix-ui/themes";
+import { Box, Skeleton } from "@radix-ui/themes";
 import type { CSSProperties } from "react";
+import { DuckDBConnection } from "@duckdb/node-api";
 
 interface ObjectPreviewProps {
   sourceUrl: string;
 }
 
-const getIframeAttributes = (
-  sourceUrl: string
-): { src: string; style?: CSSProperties } | null => {
+const isStacGeoParquet = async (sourceUrl: string): Promise<boolean> => {
+  try {
+    const db = await DuckDBConnection.create();
+
+    // Vercel: /tmp is the only writable location
+    await db.run("SET home_directory='/tmp'");
+    await db.run("SET extension_directory='/tmp/duckdb_extensions'");
+
+    const reader = await db.runAndReadAll(
+      `
+        SELECT stac_version
+        FROM read_parquet(?)
+        WHERE geometry IS NOT NULL
+        LIMIT 1
+      `,
+      [sourceUrl],
+    );
+    const [[stac_version] = []] = reader.getRows();
+    return Boolean(stac_version);
+  } catch (error) {
+    console.error("Error checking for STAC GeoParquet:", error);
+    return false;
+  }
+};
+
+const getIframeAttributes = async (
+  sourceUrl: string,
+): Promise<{ src: string; style?: CSSProperties } | null> => {
   switch (sourceUrl.split(".").pop()) {
     case "pmtiles":
       return {
@@ -17,6 +43,12 @@ const getIframeAttributes = (
         style: { border: "none" },
       };
     case "parquet":
+      if (await isStacGeoParquet(sourceUrl)) {
+        return {
+          src: `https://developmentseed.org/stac-map?href=${sourceUrl}`,
+          style: { border: "1px solid var(--gray-5)" },
+        };
+      }
       return {
         src: `https://source-cooperative.github.io/parquet-table/?iframe=true&url=${sourceUrl}`,
         style: { border: "1px solid var(--gray-5)" },
@@ -58,8 +90,10 @@ const getIframeAttributes = (
   }
 };
 
-export function ObjectPreview({ sourceUrl: cloudUri }: ObjectPreviewProps) {
-  const iframeProps = getIframeAttributes(cloudUri);
+export async function ObjectPreview({
+  sourceUrl: cloudUri,
+}: ObjectPreviewProps) {
+  const iframeProps = await getIframeAttributes(cloudUri);
   if (iframeProps) {
     const { src, style } = iframeProps;
     return (
@@ -70,4 +104,14 @@ export function ObjectPreview({ sourceUrl: cloudUri }: ObjectPreviewProps) {
       </Box>
     );
   }
+}
+
+export function ObjectPreviewLoading() {
+  return (
+    <Skeleton>
+      <Box mt="4" pt="4" style={{ borderTop: "1px solid var(--gray-6)" }}>
+        <Box width="100%" height="600px" />
+      </Box>
+    </Skeleton>
+  );
 }
