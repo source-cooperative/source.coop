@@ -1,7 +1,7 @@
 import "server-only";
 
 import { fileSourceUrl } from "@/lib/urls";
-import { Box } from "@radix-ui/themes";
+import { Box, Code } from "@radix-ui/themes";
 import type { CSSProperties } from "react";
 import { getExtension } from "@/lib/files";
 import { DuckDBConnection } from "@duckdb/node-api";
@@ -39,12 +39,13 @@ interface ObjectPreviewExternalProps {
 
 const getIframeAttributes = async (
   sourceUrl: string,
+  extension: string,
 ): Promise<{ src: string; style?: CSSProperties } | null> => {
-  const extension = getExtension(sourceUrl);
+  const url = encodeURIComponent(sourceUrl);
   switch (extension) {
     case "pmtiles":
       return {
-        src: `https://pmtiles.io/#url=${sourceUrl}&iframe=true`,
+        src: `https://pmtiles.io/#url=${url}&iframe=true`,
         style: { border: "none" },
       };
     case "parquet":
@@ -55,13 +56,13 @@ const getIframeAttributes = async (
         };
       }
       return {
-        src: `https://source-cooperative.github.io/parquet-table/?iframe=true&url=${sourceUrl}`,
+        src: `https://source-cooperative.github.io/parquet-table/?iframe=true&url=${url}`,
         style: { border: "1px solid var(--gray-5)" },
       };
     case "csv":
     case "tsv":
       return {
-        src: `https://source-cooperative.github.io/csv-table/?iframe=true&url=${sourceUrl}`,
+        src: `https://source-cooperative.github.io/csv-table/?iframe=true&url=${url}`,
         style: { border: "1px solid var(--gray-5)" },
       };
     case "avif":
@@ -74,7 +75,7 @@ const getIframeAttributes = async (
     case "tiff":
     case "webp":
       return {
-        src: `https://source-cooperative.github.io/image-viewer/?url=${sourceUrl}`,
+        src: `https://source-cooperative.github.io/image-viewer/?url=${url}`,
         style: { border: "1px solid var(--gray-5)" },
       };
     case "glb":
@@ -82,12 +83,12 @@ const getIframeAttributes = async (
     case "obj":
     case "stl":
       return {
-        src: `https://source-cooperative.github.io/model-viewer/?url=${sourceUrl}`,
+        src: `https://source-cooperative.github.io/model-viewer/?url=${url}`,
         style: { border: "1px solid var(--gray-5)" },
       };
     case "zip":
       return {
-        src: `https://source-cooperative.github.io/zip-viewer/?url=${sourceUrl}`,
+        src: `https://source-cooperative.github.io/zip-viewer/?url=${url}`,
         style: { border: "1px solid var(--gray-5)" },
       };
     default:
@@ -97,22 +98,41 @@ const getIframeAttributes = async (
 
 export async function ObjectPreviewExternal(props: ObjectPreviewExternalProps) {
   const cloudUri = fileSourceUrl(props);
-  const iframeProps = await getIframeAttributes(cloudUri);
+  const extension = getExtension(cloudUri);
 
-  if (iframeProps) {
-    const { src, style } = iframeProps;
+  if (!extension) {
+    return null;
+  }
+
+  const iframeProps = await getIframeAttributes(cloudUri, extension);
+  if (!iframeProps) {
     return (
       <Box mt="4" pt="4" style={{ borderTop: "1px solid var(--gray-6)" }}>
-        <iframe
-          width="100%"
-          height="600px"
-          allow="fullscreen"
-          style={style}
-          src={src}
-        >
-          Your browser does not support iframes.
-        </iframe>
+        <p>
+          No preview available for file type <Code>.{extension}</Code>.{" "}
+          <a href="https://github.com/source-cooperative/source.coop/issues">
+            Open an issue
+          </a>{" "}
+          if you would like support for this file type.
+        </p>
       </Box>
     );
   }
+
+  const { src, style } = iframeProps;
+  return (
+    <Box mt="4" pt="4" style={{ borderTop: "1px solid var(--gray-6)" }}>
+      <iframe
+        width="100%"
+        height="600px"
+        allow="fullscreen"
+        style={style}
+        src={src}
+        title={`Preview of ${props.object_path}`}
+        loading="lazy"
+      >
+        Your browser does not support iframes.
+      </iframe>
+    </Box>
+  );
 }
