@@ -8,8 +8,9 @@ import { getExtension } from "@/lib/files";
 import { DuckDBConnection } from "@duckdb/node-api";
 
 const isStacGeoParquet = async (sourceUrl: string): Promise<boolean> => {
+  let db: DuckDBConnection | undefined;
   try {
-    const db = await DuckDBConnection.create();
+    db = await DuckDBConnection.create();
 
     // Vercel: /tmp is the only writable location
     await db.run("SET home_directory='/tmp'");
@@ -33,6 +34,9 @@ const isStacGeoParquet = async (sourceUrl: string): Promise<boolean> => {
       metadata: { sourceUrl, error: (error as Error).toString() },
     });
     return false;
+  } finally {
+    // DuckDB connections should be closed to free up resources
+    db?.closeSync();
   }
 };
 
