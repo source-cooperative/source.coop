@@ -98,7 +98,7 @@ const getIframeAttributes = async (
 
 export async function ObjectPreviewExternal(props: ObjectPreviewExternalProps) {
   const cloudUri = fileSourceUrl(props);
-  const extension = getExtension(cloudUri);
+  const extension = getExtension(props.object_path);
 
   if (!extension) {
     return null;
