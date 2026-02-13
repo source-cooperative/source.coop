@@ -77,7 +77,7 @@ code.inline-code {
 /* Links */
 .markdown-viewer a {
   color: var(--blue-9);
-  text-decoration: none;
+  text-decoration: underline;
 }
 
 .markdown-viewer a:hover {
