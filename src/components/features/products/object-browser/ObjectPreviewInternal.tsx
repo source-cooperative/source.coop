@@ -28,7 +28,7 @@ export async function ObjectPreviewInternal(props: ObjectPreviewInternalProps) {
   let content: string | undefined;
   try {
     const head = await storage.headObject(props);
-    if (!head.contentLength) {
+    if (head.contentLength === undefined) {
       LOGGER.debug(`Object has no content`, {
         operation: "ObjectPreviewInternal",
         context: "object fetch",
@@ -57,7 +57,7 @@ export async function ObjectPreviewInternal(props: ObjectPreviewInternalProps) {
       metadata: { ...props, error: (error as Error).toString() },
     });
   }
-  if (!content) {
+  if (content === undefined) {
     return null;
   }
 
