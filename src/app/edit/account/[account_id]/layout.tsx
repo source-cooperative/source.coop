@@ -24,7 +24,7 @@ import {
   editAccountMembershipsUrl,
   accountUrl,
 } from "@/lib/urls";
-import { ExternalLink } from "@/components";
+import { ExternalLink } from "@/components/core/ExternalLink";
 import { getManageableAccounts } from "@/lib/clients/lookups";
 
 interface AccountLayoutProps {

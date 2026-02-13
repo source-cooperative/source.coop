@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Box } from "@radix-ui/themes";
-import { FormTitle } from "@/components";
+import { FormTitle } from "@/components/core/FormTitle";
 import { ProfileImageUpload } from "@/components/features/profiles/ProfileImageUpload";
 import { accountsTable } from "@/lib/clients/database";
 
