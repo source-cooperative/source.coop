@@ -1,5 +1,6 @@
 import "server-only";
 
+import { LOGGER } from "@/lib";
 import { fileSourceUrl } from "@/lib/urls";
 import { Box, Code } from "@radix-ui/themes";
 import type { CSSProperties } from "react";
@@ -26,7 +27,11 @@ const isStacGeoParquet = async (sourceUrl: string): Promise<boolean> => {
     const [[stac_version] = []] = reader.getRows();
     return Boolean(stac_version);
   } catch (error) {
-    console.error("Error checking for STAC GeoParquet:", error);
+    LOGGER.error(`Error checking for STAC GeoParquet: ${error}`, {
+      operation: "isStacGeoParquet",
+      context: "DuckDB query",
+      metadata: { sourceUrl, error: (error as Error).toString() },
+    });
     return false;
   }
 };
