@@ -104,7 +104,9 @@ export function MarkdownViewer({ content }: MarkdownViewerProps) {
           </Text>
         ),
         a: ({ href, children }) => (
-          <RadixLink href={href}>{children}</RadixLink>
+          <RadixLink href={href} underline="always">
+            {children}
+          </RadixLink>
         ),
         table: ({ children }) => (
           <Table.Root mb="3" variant="surface">

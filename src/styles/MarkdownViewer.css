@@ -74,15 +74,6 @@ code.inline-code {
   margin: 1em 0;
 }
 
-/* Links */
-.markdown-viewer a {
-  color: var(--blue-9);
-  text-decoration: underline;
-}
-
-.markdown-viewer a:hover {
-  text-decoration: underline;
-}
 
 /* Styles for MyST admonitions */
 .admonition {
