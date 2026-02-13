@@ -11,7 +11,7 @@ interface ObjectPreviewProps {
   object_path: string;
 }
 
-export function ObjectPreview(props: ObjectPreviewProps) {
+export async function ObjectPreview(props: ObjectPreviewProps) {
   if (canRenderInternally(props.object_path)) {
     return <ObjectPreviewInternal {...props} />;
   } else {
