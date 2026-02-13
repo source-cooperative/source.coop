@@ -56,7 +56,7 @@ const getIframeAttributes = async (
     case "parquet":
       if (await isStacGeoParquet(sourceUrl)) {
         return {
-          src: `https://developmentseed.org/stac-map?href=${sourceUrl}`,
+          src: `https://developmentseed.org/stac-map?href=${url}`,
           style: { border: "1px solid var(--gray-5)" },
         };
       }
