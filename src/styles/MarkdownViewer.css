@@ -136,21 +136,28 @@ code.inline-code {
   background-color: var(--purple-12);
 }
 
-/* Permalink styles */
+/* Permalink styles - Right-side with reserved space */
 .heading-with-permalink {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
+  position: relative;
+  display: inline-block;
+  padding-right: 2em;
 }
 
 .permalink-link {
-  display: none;
+  position: absolute;
+  right: 0.25em;
+  top: 0;
+  display: inline-flex;
+  align-items: center;
   color: var(--gray-9);
   text-decoration: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
 }
 
-.heading-with-permalink:hover .permalink-link {
-  display: inline-flex;
+.heading-with-permalink:hover .permalink-link,
+.permalink-link:hover {
+  opacity: 1;
 }
 
 .permalink-link:hover {
