@@ -74,15 +74,6 @@ code.inline-code {
   margin: 1em 0;
 }
 
-/* Links */
-.markdown-viewer a {
-  color: var(--blue-9);
-  text-decoration: none;
-}
-
-.markdown-viewer a:hover {
-  text-decoration: underline;
-}
 
 /* Styles for MyST admonitions */
 .admonition {
@@ -134,4 +125,30 @@ code.inline-code {
 
 :root[class~="dark"] .admonition.important {
   background-color: var(--purple-12);
+}
+
+/* Permalink styles */
+.heading-with-permalink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.permalink-link {
+  display: none;
+  color: var(--gray-9);
+  text-decoration: none;
+}
+
+.heading-with-permalink:hover .permalink-link {
+  display: inline-flex;
+}
+
+.permalink-link:hover {
+  color: var(--blue-9);
+}
+
+.permalink-link svg {
+  width: 0.85em;
+  height: 0.85em;
 }
