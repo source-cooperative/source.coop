@@ -5,7 +5,7 @@ import { Flex, DropdownMenu } from "@radix-ui/themes";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Account } from "@/types";
-import { AvatarLinkCompact } from "@/components";
+import { AvatarLinkCompact } from "@/components/core/AccountLinks";
 import { editAccountViewUrl } from "@/lib/urls";
 import { ChevronIcon } from "@/components/icons";
 

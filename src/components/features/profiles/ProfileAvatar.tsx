@@ -11,9 +11,13 @@ interface ProfileAvatarProps {
 
 export function ProfileAvatar({ account, size = "6" }: ProfileAvatarProps) {
   let avatarSrc: string | undefined;
-  // Get avatar source URL
-  if (account.type === "individual") {
-    // Use Gravatar for individuals
+
+  // Priority 1: Use profile_image if set
+  if (account.metadata_public?.profile_image) {
+    avatarSrc = account.metadata_public.profile_image;
+  }
+  // Priority 2: Use Gravatar for individuals
+  else if (account.type === "individual") {
     const primaryEmail = account.emails?.find(
       (email) => email.is_primary
     )?.address;

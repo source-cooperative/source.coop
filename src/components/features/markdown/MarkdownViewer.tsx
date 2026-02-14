@@ -39,10 +39,11 @@ export function MarkdownViewer({ content }: MarkdownViewerProps) {
   }
 
   return (
-    <ReactMarkdown
-      remarkPlugins={[remarkGfm]}
-      rehypePlugins={[rehypeRaw, [rehypeSanitize, sanitizeSchema]]}
-      components={{
+    <div className="markdown-viewer">
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        rehypePlugins={[rehypeRaw, [rehypeSanitize, sanitizeSchema]]}
+        components={{
         h1: ({ children }) => (
           <HeadingWithPermalink
             id={generateHeadingId(String(children))}
@@ -103,7 +104,9 @@ export function MarkdownViewer({ content }: MarkdownViewerProps) {
           </Text>
         ),
         a: ({ href, children }) => (
-          <RadixLink href={href}>{children}</RadixLink>
+          <RadixLink href={href} underline="always">
+            {children}
+          </RadixLink>
         ),
         table: ({ children }) => (
           <Table.Root mb="3" variant="surface">
@@ -131,8 +134,9 @@ export function MarkdownViewer({ content }: MarkdownViewerProps) {
           return <Code lang={lang}>{codeContent}</Code>;
         },
       }}
-    >
-      {content}
-    </ReactMarkdown>
+      >
+        {content}
+      </ReactMarkdown>
+    </div>
   );
 }

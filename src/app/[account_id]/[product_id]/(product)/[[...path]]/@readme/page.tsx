@@ -1,5 +1,5 @@
 import { LOGGER, storage } from "@/lib";
-import { SectionHeader } from "@/components";
+import { SectionHeader } from "@/components/core/SectionHeader";
 import { MarkdownViewer } from "@/components/features/markdown";
 import { Card } from "@radix-ui/themes";
 

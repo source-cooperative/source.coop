@@ -1,8 +1,8 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Box } from "@radix-ui/themes";
-import { EditProfileForm } from "@/components/features/profiles/EditProfileForm";
 import { FormTitle } from "@/components/core/FormTitle";
+import { ProfileImageUpload } from "@/components/features/profiles/ProfileImageUpload";
 import { accountsTable } from "@/lib/clients/database";
 
 export async function generateMetadata({
@@ -10,31 +10,30 @@ export async function generateMetadata({
 }: PageProps): Promise<Metadata> {
   const { account_id } = await params;
   const account = await accountsTable.fetchById(account_id);
-  return { title: `Edit ${account!.name} profile` };
+  return { title: `${account!.name} settings` };
 }
 
 interface PageProps {
   params: Promise<{ account_id: string }>;
 }
 
-export default async function ProfilePage({ params }: PageProps) {
+export default async function ProfilePicturePage({ params }: PageProps) {
   const { account_id } = await params;
 
   const account = await accountsTable.fetchById(account_id);
   if (!account) {
     notFound();
   }
+
   return (
     <Box>
       <FormTitle
-        title="Public Profile"
-        description={
-          account.type === "individual"
-            ? "Update your public profile information"
-            : "Update your organization's public profile information"
-        }
+        title="Profile Picture"
+        description={`Manage your ${
+          account.type === "individual" ? "account" : "organization"
+        }'s profile picture`}
       />
-      <EditProfileForm account={account} />
+      <ProfileImageUpload account={account} />
     </Box>
   );
 }

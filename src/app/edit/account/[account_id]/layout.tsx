@@ -10,14 +10,21 @@ import { Actions } from "@/types";
 import { accountsTable } from "@/lib/clients/database";
 import { notFound, redirect } from "next/navigation";
 import { CONFIG } from "@/lib/config";
-import { PersonIcon, LockClosedIcon, Pencil1Icon } from "@radix-ui/react-icons";
+import {
+  PersonIcon,
+  LockClosedIcon,
+  Pencil1Icon,
+  GearIcon,
+  ImageIcon,
+} from "@radix-ui/react-icons";
 import {
   editAccountProfileUrl,
+  editAccountProfilePictureUrl,
   editAccountPermissionsUrl,
   editAccountMembershipsUrl,
   accountUrl,
 } from "@/lib/urls";
-import { ExternalLink } from "@/components";
+import { ExternalLink } from "@/components/core/ExternalLink";
 import { getManageableAccounts } from "@/lib/clients/lookups";
 
 interface AccountLayoutProps {
@@ -61,6 +68,11 @@ export default async function AccountLayout({
     accountToEdit,
     Actions.ListAccountMemberships
   );
+  const canEditAccount = isAuthorized(
+    userSession,
+    accountToEdit,
+    Actions.PutAccountProfile
+  );
 
   const menuItems = [
     {
@@ -69,6 +81,13 @@ export default async function AccountLayout({
       href: editAccountProfileUrl(account_id),
       icon: <Pencil1Icon width="16" height="16" />,
       condition: canReadAccount,
+    },
+    {
+      id: "profile-picture",
+      label: "Profile Picture",
+      href: editAccountProfilePictureUrl(account_id),
+      icon: <ImageIcon width="16" height="16" />,
+      condition: canEditAccount,
     },
     ...(accountToEdit.type === "organization"
       ? [

@@ -11,31 +11,40 @@ interface OGAvatarProps {
  * Cannot use Radix UI Avatar since OG image generation requires pure server-side rendering.
  */
 export function OGAvatar({ account, size = 350 }: OGAvatarProps) {
-  // Get avatar source URL for individuals using Gravatar
-  if (account.type === "individual") {
+  let avatarSrc: string | undefined;
+
+  // Priority 1: Use profile_image if set
+  if (account.metadata_public?.profile_image) {
+    avatarSrc = account.metadata_public.profile_image;
+  }
+  // Priority 2: Use Gravatar for individuals
+  else if (account.type === "individual") {
     const primaryEmail = account.emails?.find(
       (email) => email.is_primary
     )?.address;
 
     if (primaryEmail) {
       const hash = md5(primaryEmail.toLowerCase().trim());
-      const avatarSrc = `https://www.gravatar.com/avatar/${hash}?d=identicon&s=${size}`;
-
-      return (
-        <img
-          src={avatarSrc}
-          alt={`${account.name} avatar`}
-          width={size}
-          height={size}
-          style={{
-            borderRadius: "50%",
-          }}
-        />
-      );
+      avatarSrc = `https://www.gravatar.com/avatar/${hash}?d=identicon&s=${size}`;
     }
   }
 
-  // For organizations or individuals without email, show first letter
+  // If we have an avatar source, render it
+  if (avatarSrc) {
+    return (
+      <img
+        src={avatarSrc}
+        alt={`${account.name} avatar`}
+        width={size}
+        height={size}
+        style={{
+          borderRadius: account.type === "individual" ? "50%" : 16,
+        }}
+      />
+    );
+  }
+
+  // Fallback: Show first letter
   return (
     <div
       style={{

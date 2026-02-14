@@ -3,20 +3,15 @@ import { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import DirectoryListLoading from "./loading";
-import {
-  LOGGER,
-  storage,
-  dataConnectionsTable,
-  productsTable,
-  fileSourceUrl,
-} from "@/lib";
+import { LOGGER, storage, dataConnectionsTable, productsTable } from "@/lib";
 import { DataConnection, ProductMirror } from "@/types";
+import { DirectoryList } from "@/components/features/products/object-browser/DirectoryList";
+import { ObjectSummary } from "@/components/features/products/object-browser/ObjectSummary";
 import {
-  DirectoryList,
-  ObjectSummary,
   ObjectPreview,
-  generateProductMetadata,
-} from "@/components";
+  ObjectPreviewLoading,
+} from "@/components/features/products/object-browser/ObjectPreview";
+import { generateProductMetadata } from "@/components/features/metadata/ProductMetadata";
 
 export async function generateMetadata({
   params,
@@ -53,14 +48,20 @@ export default async function ProductPathPage({ params }: PageProps) {
             objectInfo={objectInfo}
             connectionDetails={connectionDetails}
           />
-          <ObjectPreview sourceUrl={fileSourceUrl(product, objectInfo)} />
+          <Suspense fallback={<ObjectPreviewLoading />}>
+            <ObjectPreview
+              account_id={account_id}
+              product_id={product_id}
+              object_path={objectPath}
+            />
+          </Suspense>
         </>
       ) : (
         <DirectoryList
           product={product}
           objects={objectsList.filter(
             // Exclude the current directory object
-            (obj) => obj.path.replace(/\/$/, "") !== objectPath
+            (obj) => obj.path.replace(/\/$/, "") !== objectPath,
           )}
           prefix={objectPath}
         />
@@ -72,7 +73,7 @@ export default async function ProductPathPage({ params }: PageProps) {
 export async function fetchProduct(
   account_id: string,
   product_id: string,
-  object_path: string
+  object_path: string,
 ) {
   // 1. Get and await params
   const isRoot = !object_path;
@@ -125,7 +126,7 @@ export async function fetchProduct(
     const primaryMirror =
       product.value.metadata.mirrors[product.value.metadata.primary_mirror];
     const dataConnection = await dataConnectionsTable.fetchById(
-      primaryMirror.connection_id
+      primaryMirror.connection_id,
     );
     if (!dataConnection) {
       LOGGER.error("Data connection not found", {
