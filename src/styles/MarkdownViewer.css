@@ -5,54 +5,6 @@
   overflow-wrap: break-word;
 }
 
-.markdown-viewer h1 {
-  margin-top: var(--space-6);
-  margin-bottom: var(--space-4);
-  font-weight: 600;
-  font-size: var(--font-size-8);
-  line-height: var(--line-height-8);
-}
-
-.markdown-viewer h2 {
-  margin-top: var(--space-6);
-  margin-bottom: var(--space-3);
-  font-weight: 600;
-  font-size: var(--font-size-7);
-  line-height: var(--line-height-7);
-}
-
-.markdown-viewer h3 {
-  margin-top: var(--space-5);
-  margin-bottom: var(--space-2);
-  font-weight: 600;
-  font-size: var(--font-size-6);
-  line-height: var(--line-height-6);
-}
-
-.markdown-viewer h4 {
-  margin-top: var(--space-4);
-  margin-bottom: var(--space-2);
-  font-weight: 600;
-  font-size: var(--font-size-5);
-  line-height: var(--line-height-5);
-}
-
-.markdown-viewer h5 {
-  margin-top: var(--space-3);
-  margin-bottom: var(--space-2);
-  font-weight: 600;
-  font-size: var(--font-size-4);
-  line-height: var(--line-height-4);
-}
-
-.markdown-viewer h6 {
-  margin-top: var(--space-3);
-  margin-bottom: var(--space-2);
-  font-weight: 600;
-  font-size: var(--font-size-3);
-  line-height: var(--line-height-3);
-}
-
 /* Only style inline code - Bright handles code blocks */
 code.inline-code {
   background-color: var(--gray-3);
@@ -72,16 +24,6 @@ code.inline-code {
   color: var(--gray-11);
   border-left: 0.25em solid var(--gray-6);
   margin: 1em 0;
-}
-
-/* Links */
-.markdown-viewer a {
-  color: var(--blue-9);
-  text-decoration: none;
-}
-
-.markdown-viewer a:hover {
-  text-decoration: underline;
 }
 
 /* Styles for MyST admonitions */
@@ -136,22 +78,16 @@ code.inline-code {
   background-color: var(--purple-12);
 }
 
-/* Permalink styles - Right-side with reserved space */
-.heading-with-permalink {
-  position: relative;
-  display: inline-block;
-  padding-right: 2em;
-}
-
+/* Permalink styles - Inline approach */
 .permalink-link {
-  position: absolute;
-  right: 0.25em;
   display: inline-flex;
-  align-items: center;
+  margin-left: 0.4em;
   color: var(--gray-9);
   text-decoration: none;
   opacity: 0;
   transition: opacity 0.15s ease;
+  vertical-align: middle;
+  will-change: opacity;
 }
 
 .heading-with-permalink:hover .permalink-link,
@@ -159,11 +95,7 @@ code.inline-code {
   opacity: 1;
 }
 
-.permalink-link:hover {
-  color: var(--blue-9);
-}
-
 .permalink-link svg {
-  width: 0.85em;
-  height: 0.85em;
+  width: 0.9em;
+  height: 0.9em;
 }
