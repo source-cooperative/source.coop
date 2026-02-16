@@ -80,8 +80,9 @@ const getIframeAttributes = async (
     case "jpg":
     case "jpeg":
     case "svg":
-    case "tif":
-    case "tiff":
+    // case "tif":
+    // case "tiff":
+    // TIFF is disabled until https://github.com/source-cooperative/source.coop/issues/221 is fixed.
     case "webp":
       return {
         src: `https://source-cooperative.github.io/image-viewer/?url=${url}`,
