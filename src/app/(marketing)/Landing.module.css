@@ -5,6 +5,7 @@
   --color-background: #2c3134;
 }
 .landing {
+  --heading-font-family: "Berkeley Mono", Menlo, Consolas, monospace;
   background: var(--gray-2);
   overflow: hidden;
 }

@@ -32,7 +32,6 @@
 
 :root .radix-themes {
   --default-font-family: var(--font-ibm-plex);
-  --heading-font-family: "Berkeley Mono", Menlo, Consolas, monospace;
   --code-font-family: "Berkeley Mono", Menlo, Consolas, monospace;
   --cursor-button: pointer;
   --cursor-checkbox: pointer;
