@@ -17,7 +17,7 @@ export function Footer() {
   const pathname = usePathname();
 
   return (
-    <Box py="4" mt="6" style={{ borderTop: "1px solid var(--gray-5)" }}>
+    <Box py="4" m="2" mt="6" style={{ borderTop: "1px solid var(--gray-5)" }}>
       <Container size="4">
         <Box>
           {pathname === "/" ? (
@@ -33,8 +33,8 @@ export function Footer() {
               }}
             >
               <Logo />
-              <Flex gap="6" direction={{ xs: "column", sm: "row" }}>
-                <Box flexBasis={"20%"}>
+              <Flex gap="6" direction={{ initial: "column", sm: "row" }}>
+                <Box flexBasis={"10%"}>
                   <Heading size="1">ABOUT US</Heading>
                   <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
                     <li>
@@ -98,7 +98,7 @@ export function Footer() {
                   personal information with any third party. For more
                   information, please see our <a href="">privacy policy</a>.
                 </Box>
-                <Box flexBasis={"80%"}>
+                <Box flexBasis={"30%"}>
                   Open Imagery Network Inc.doing business as: Radiant Earth
                   <br />
                   740 15th St NW
