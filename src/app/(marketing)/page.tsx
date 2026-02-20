@@ -7,7 +7,6 @@ import {
 import { getProducts } from "@/lib/actions/products";
 import {
   Badge,
-  Blockquote,
   Box,
   Button,
   Container,
@@ -17,6 +16,7 @@ import {
   Section,
   Text,
 } from "@radix-ui/themes";
+import { CaseStudyCarousel } from "./CaseStudyCarousel";
 import { ThemeInverseComponent } from "@/components/layout/ThemeInverseComponent";
 import styles from "./Landing.module.css";
 import { productListUrl } from "@/lib/urls";
@@ -29,23 +29,7 @@ function SectionSubheading({ children }: { children: React.ReactNode }) {
   );
 }
 
-const CASE_STUDIES = [
-  {
-    content: "We can solve this question for ourselves, but the point of our work is to bring the world's attention to these rural communities and their needs. We want to make sure the data we develop and the insights we generate are accessible to other organizations and people. That's what brought us to Source.",
-    byline: "- Cameron Kruse, Bridges to Prosperity Director of Digital Technology",
-    url: "#"
-  },
-  {
-    content: "I value Source Cooperative as a scalable, practically unlimited in size, data store for open data. I could store the data in a commercial account that I manage, but I prefer using a well-known, discoverable space for storage. I like using Source when it's for a broader public good, one which provides public usefulness.",
-    byline: "— Alex Leith, Auspatious Founder",
-    url: "#"
-  },
-  {
-    content: "Source has allowed us to open up all of this data to really anybody in the world… we would have been hesitant to do this without Source. We get people from local communities, indigenous groups, and others from almost every continent, who have reached out to us about this data.",
-    byline: "— Tom &quo;Hutch&quo; Ingold, Earth Genome, CTO",
-    url: "#"
-  },
-]
+
 export default async function Landing() {
   const result = await getProducts({
     featuredOnly: true,
@@ -124,9 +108,9 @@ export default async function Landing() {
           </Section>
           <Section px="4">
             <Container>
-              <Flex direction="column" align="start" gap="8" maxWidth="50rem">
-                <Box>
-                  <SectionSubheading>Why Source?</SectionSubheading>
+              <SectionSubheading>Why Source?</SectionSubheading>
+              <Flex direction={{initial: "column", sm: "row"}} align="start" gap="8">
+                <Box flexBasis="50%">
                   <Heading size="8" mb="6">
                     The Challenge
                   </Heading>
@@ -144,8 +128,7 @@ export default async function Landing() {
                     simply accessing data.
                   </Text>
                 </Box>
-                <Box>
-                  <SectionSubheading>Why Source?</SectionSubheading>
+                <Box flexBasis="50%">
                   <Heading size="8" mb="6">
                     Our Mission
                   </Heading>
@@ -282,30 +265,7 @@ export default async function Landing() {
                     Open Source, Governed, and Trusted By These Teams
                   </Heading>
                 </Box>
-                <Box className={styles.caseStudy} p="4" flexBasis="50%">
-                  <Blockquote size="2" mb="2">
-                    &quot;We can solve this question for ourselves, but the
-                    point of our work is to bring the world&apos;s attention to
-                    these rural communities and their needs. We want to make
-                    sure the data we develop and the insights we generate are
-                    accessible to other organizations and people. That&apos;s
-                    what brought us to Source.&quot;
-                  </Blockquote>
-                  <Text weight="bold" size="2">
-                    — Cameron Kruse, Bridges to Prosperity Director of Digital
-                    Technology
-                  </Text>
-                  <Box>
-                    <Link
-                      href="https://docs.source.coop/case-studies/bridges-to-prosperity"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      size="1"
-                    >
-                      Read case study &rarr;
-                    </Link>
-                  </Box>
-                </Box>
+                <CaseStudyCarousel />
               </Flex>
             </Container>
           </Section>
