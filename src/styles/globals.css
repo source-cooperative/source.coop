@@ -45,17 +45,17 @@
 }
 
 :root, .light, .light-theme {
-  --gray-1: #f4f5f5;
-  --gray-2: #f0f2f2;
-  --gray-3: #e5e8ea;
-  --gray-4: #dce0e2;
-  --gray-5: #d3d8db;
-  --gray-6: #cbd0d4;
-  --gray-7: #bfc6ca;
-  --gray-8: #aab3b8;
-  --gray-9: #7c858a;
-  --gray-10: #727a7f;
-  --gray-11: #565c60;
+  --gray-1: #F8F8F8;
+  --gray-2: #EDECEA;
+  --gray-3: #E5E3E4;
+  --gray-4: #D3CED1;
+  --gray-5: #B8B1B5;
+  --gray-6: #9E959A;
+  --gray-7: #867C81;
+  --gray-8: #6F666B;
+  --gray-9: #5E565A;
+  --gray-10: #514B4E;
+  --gray-11: #292628;
   --gray-12: #1c2124;
 
   --gray-a1: #2d606005;

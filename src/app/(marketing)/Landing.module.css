@@ -13,6 +13,9 @@
   border: 1px solid var(--gray-7);
   border-top: 0;
   border-bottom: 0;
+  & > nav {
+    background: var(--gray-2);
+  }
 }
 .landing a {
   font-family: var(--heading-font-family);
