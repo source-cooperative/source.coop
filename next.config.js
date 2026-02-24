@@ -22,6 +22,7 @@ const nextConfig = {
       fullUrl: true,
     },
   },
+  serverExternalPackages: ["@duckdb/node-api"],
 };
 
 export default nextConfig;

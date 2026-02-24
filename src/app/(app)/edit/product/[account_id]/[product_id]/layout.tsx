@@ -13,7 +13,7 @@ import { Actions } from "@/types";
 import { productsTable } from "@/lib/clients/database";
 import { notFound, redirect } from "next/navigation";
 import { CONFIG } from "@/lib/config";
-import { ExternalLink } from "@/components";
+import { ExternalLink } from "@/components/core/ExternalLink";
 import {
   productUrl,
   editProductDetailsUrl,

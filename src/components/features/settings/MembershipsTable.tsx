@@ -10,7 +10,7 @@ import {
   Actions,
   UserSession,
 } from "@/types";
-import { AvatarLinkCompact } from "@/components";
+import { AvatarLinkCompact } from "@/components/core/AccountLinks";
 import { isAuthorized } from "@/lib/api/authz";
 import { revokeMembership } from "@/lib/actions/memberships";
 import Form from "next/form";

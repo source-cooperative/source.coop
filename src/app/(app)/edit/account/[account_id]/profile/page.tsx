@@ -1,8 +1,9 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Box } from "@radix-ui/themes";
-import { FormTitle, EditProfileForm } from "@/components";
-import { accountsTable, isIndividualAccount } from "@/lib/clients/database";
+import { EditProfileForm } from "@/components/features/profiles/EditProfileForm";
+import { FormTitle } from "@/components/core/FormTitle";
+import { accountsTable } from "@/lib/clients/database";
 
 export async function generateMetadata({
   params,

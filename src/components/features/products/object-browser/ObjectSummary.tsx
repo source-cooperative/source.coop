@@ -1,5 +1,3 @@
-"use client";
-
 import { DataList, Flex, Button, Box } from "@radix-ui/themes";
 import { DownloadIcon } from "@radix-ui/react-icons";
 import type {
@@ -36,7 +34,11 @@ export function ObjectSummary({
       : details?.provider === "s3"
       ? `s3://${details.bucket}/${prefix}${objectInfo.path}`
       : undefined;
-  const sourceUrl = fileSourceUrl(product, objectInfo);
+  const sourceUrl = fileSourceUrl({
+    account_id: product.account_id,
+    product_id: product.product_id,
+    object_path: objectInfo.path,
+  });
 
   return (
     <>

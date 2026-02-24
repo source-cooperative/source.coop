@@ -19,7 +19,7 @@ import {
   CheckIcon,
   ExclamationTriangleIcon,
 } from "@radix-ui/react-icons";
-import { useUploadManager } from "@/components";
+import { useUploadManager } from "@/components/features/uploader/UploadProvider";
 import { productUrl, formatBytes } from "@/lib";
 
 export function UploadsSubmenu() {
