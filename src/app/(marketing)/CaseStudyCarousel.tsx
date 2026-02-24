@@ -16,13 +16,13 @@ const CASE_STUDIES = [
     content:
       "I value Source Cooperative as a scalable, practically unlimited in size, data store for open data. I could store the data in a commercial account that I manage, but I prefer using a well-known, discoverable space for storage. I like using Source when it's for a broader public good, one which provides public usefulness.",
     byline: "— Alex Leith, Auspatious Founder",
-    url: "#",
+    url: "https://docs.source.coop/case-studies/auspatious",
   },
   {
     content:
       "Source has allowed us to open up all of this data to really anybody in the world… we would have been hesitant to do this without Source. We get people from local communities, indigenous groups, and others from almost every continent, who have reached out to us about this data.",
     byline: '— Tom "Hutch" Ingold, Earth Genome, CTO',
-    url: "#",
+    url: "https://docs.source.coop/case-studies/earth-genome",
   },
 ];
 
@@ -44,7 +44,7 @@ export function CaseStudyCarousel() {
   const trackY = PEEK - index * SLIDE_H;
 
   return (
-    <Flex align="center" gap="4" flexBasis="50%">
+    <Flex align="center" gap="4" flexBasis="50%" width="100%">
       {/* Clipping viewport */}
       <Box
         className={styles.carouselViewport}
