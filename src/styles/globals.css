@@ -75,6 +75,8 @@
   --gray-surface: #ffffffcc;
   --gray-indicator: #7c858a;
   --gray-track: #7c858a;
+
+  --color-background: #edecea;
 }
 
 @supports (color: color(display-p3 1 1 1)) {
