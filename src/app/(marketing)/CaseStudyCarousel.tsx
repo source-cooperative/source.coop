@@ -89,20 +89,22 @@ export function CaseStudyCarousel() {
 
       {/* Arrows — outside the viewport, vertically centered by the parent Flex */}
       <Flex direction="column" gap="3" className={styles.carouselArrows}>
-        <span
+        <Text
+          size="7"
           onClick={goPrev}
           aria-label="Previous quote"
           style={{ opacity: canPrev ? 1 : 0.25, cursor: canPrev ? "pointer" : "default" }}
         >
           ↑
-        </span>
-        <span
+        </Text>
+        <Text
+          size="7"
           onClick={goNext}
           aria-label="Next quote"
           style={{ opacity: canNext ? 1 : 0.25, cursor: canNext ? "pointer" : "default" }}
         >
           ↓
-        </span>
+        </Text>
       </Flex>
     </Flex>
   );

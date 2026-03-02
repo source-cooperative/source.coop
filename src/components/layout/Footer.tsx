@@ -22,8 +22,6 @@ export function Footer() {
         <Box>
           {pathname === "/" ? (
             <Flex
-              justify="center"
-              align="center"
               direction="column"
               gap="4"
               my="4"
@@ -34,8 +32,8 @@ export function Footer() {
             >
               <Logo />
               <Flex gap="6" direction={{ initial: "column", sm: "row" }}>
-                <Box flexBasis={"10%"}>
-                  <Heading size="1">ABOUT US</Heading>
+                <Box>
+                  <Heading size="3">ABOUT US</Heading>
                   <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
                     <li>
                       <RadixLink
@@ -74,50 +72,6 @@ export function Footer() {
                       </RadixLink>
                     </li>
                   </ul>
-                </Box>
-                <Box flexBasis={"80%"}>
-                  <Heading size="1">IMPRESSUM</Heading>
-                  <strong>Governance:</strong>
-                  <br />
-                  Radiant Earth is a technology non-profit organization governed
-                  by a board of directors. The board is responsible for setting
-                  the organization&apos;s policies and overseeing its
-                  operations.
-                  <br />
-                  <br />
-                  <strong>Finances:</strong>
-                  <br />
-                  Radiant Earth is a registered 501(c)(3) organization. All
-                  donations are tax-deductible to the extent allowed by law.
-                  <br />
-                  <br />
-                  <strong>Privacy Policy:</strong>
-                  <br />
-                  Radiant Earth is committed to protecting the privacy of our
-                  donors and website visitors. We will never sell or share your
-                  personal information with any third party. For more
-                  information, please see our <a href="">privacy policy</a>.
-                </Box>
-                <Box flexBasis={"30%"}>
-                  Open Imagery Network Inc.doing business as: Radiant Earth
-                  <br />
-                  740 15th St NW
-                  <br />
-                  Suite 900
-                  <br />
-                  Washington DC, 20005
-                  <br />
-                  United States
-                  <br />
-                  <br />
-                  Phone: 202-596-3603
-                  <br />
-                  Email: hello@radiant.earth
-                  <br />
-                  Website: https://radiant.earth
-                  <br />
-                  <br />
-                  EIN: 81-3160991
                 </Box>
               </Flex>
             </Flex>

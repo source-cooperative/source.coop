@@ -151,6 +151,7 @@
   border: 1px solid var(--gray-7);
   border-top: 0;
   border-bottom: 0;
+  overflow: hidden;
   & > nav {
     background: var(--gray-2);
   }
@@ -209,11 +210,14 @@
   user-select: none;
   font-family: var(--heading-font-family);
   font-size: var(--font-size-4);
-  color: var(--gray-9);
+}
 
-  & span:hover {
-    color: var(--gray-12);
-  }
+.carouselArrows span {
+  color: var(--gray-11);
+}
+
+.carouselArrows span:hover {
+  color: var(--gray-12);
 }
 
 .carouselViewport {
