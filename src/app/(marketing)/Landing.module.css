@@ -171,6 +171,9 @@
 .heroImage {
   mix-blend-mode: difference;
 }
+.dark .heroImage {
+  mix-blend-mode: color-dodge;
+}
 .productsSection {
   border-bottom: 1px dashed var(--gray-9);
   border-top: 1px dashed var(--gray-9);

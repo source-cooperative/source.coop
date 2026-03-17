@@ -117,7 +117,7 @@ export default async function Landing() {
                     The Challenge
                   </Heading>
                   <Text>
-                  Scientific data infrastructure wasn't built for cross-border, cross-sector cooperation.
+                  Scientific data infrastructure wasn&apos;t built for cross-border, cross-sector cooperation.
                   <br /><br />
                   Addressing global challenges means combining data from governments, research institutions, commercial providers, and civil society—each with its own formats, access patterns, and APIs.
                   <br /><br />
