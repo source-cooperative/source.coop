@@ -1,0 +1,54 @@
+name: Deploy to Prod
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: production
+  cancel-in-progress: false
+
+jobs:
+  deploy-cdk:
+    runs-on: ubuntu-latest
+    environment: Production-Infra
+    steps:
+      - uses: actions/checkout@v4.2.2
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ vars.AWS_REGION }}
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+      - uses: actions/setup-node@v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --include=dev
+      - name: CDK Deploy
+        run: npx cdk deploy --all --require-approval never
+        env:
+          STAGE: prod
+
+  deploy-vercel:
+    runs-on: ubuntu-latest
+    environment:
+      name: Production
+      url: https://source.coop
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v4.2.2
+      - uses: actions/setup-node@v4.4.0
+        with:
+          node-version: 22
+      - run: npm install -g vercel
+      - name: Deploy to Vercel
+        id: deploy
+        run: echo "url=$(vercel deploy --prod --token=$VERCEL_TOKEN)" >> "$GITHUB_OUTPUT"
