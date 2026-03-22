@@ -53,6 +53,4 @@ jobs:
         with:
           node-version: 22
       - run: npm install -g vercel
-      - run: vercel pull --yes --token=$VERCEL_TOKEN
-      - run: vercel build --token=$VERCEL_TOKEN
-      - run: vercel deploy --prebuilt --token=$VERCEL_TOKEN
+      - run: vercel deploy --token=$VERCEL_TOKEN
