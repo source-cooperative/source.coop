@@ -17,9 +17,7 @@ concurrency:
 jobs:
   deploy-cdk:
     runs-on: ubuntu-latest
-    environment: staging
-    env:
-      STAGE: dev
+    environment: staging-infra
     steps:
       - uses: actions/checkout@v4.2.2
       - name: Configure AWS Credentials
@@ -32,13 +30,10 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci --include=dev
-      - name: Set vars to env
-        env:
-          VARS_JSON: ${{ toJSON(vars) }}
-        run: |
-          echo "$VARS_JSON" | jq -r 'keys[] as $k | "\($k)=\(.[$k])"' >> $GITHUB_ENV
       - name: CDK Deploy
         run: npx cdk deploy --all --require-approval never
+        env:
+          STAGE: dev
 
   deploy-vercel:
     runs-on: ubuntu-latest
