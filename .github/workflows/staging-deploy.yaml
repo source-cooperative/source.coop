@@ -48,4 +48,4 @@ jobs:
         with:
           node-version: 22
       - run: npm install -g vercel
-      - run: vercel deploy --token=$VERCEL_TOKEN
+      - run: vercel deploy --target staging --token=$VERCEL_TOKEN
