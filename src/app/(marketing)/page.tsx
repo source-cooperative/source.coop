@@ -57,10 +57,8 @@ export default async function Landing() {
                     Data publishing at any scale for everyone.
                   </Text>
                   <Text size={{ xs: "5", sm: "6" }}>
-                    Upload, share, and access data without needing to build or maintain your own infrastructure.
-
-
-
+                    Upload, share, and access data without needing to build or
+                    maintain your own infrastructure.
                   </Text>
                   <Flex
                     gap="4"
@@ -89,7 +87,10 @@ export default async function Landing() {
                     </Link>
                   </Flex>
                 </Flex>
-                <Flex display={{ initial: "none", sm: "flex" }} className={styles.heroImageContainer}>
+                <Flex
+                  display={{ initial: "none", sm: "flex" }}
+                  className={styles.heroImageContainer}
+                >
                   <img
                     className={styles.heroImage}
                     src="/img/dithered-globe.png"
@@ -102,17 +103,30 @@ export default async function Landing() {
           <Section px="4">
             <Container>
               <SectionSubheading>What is Source Cooperative?</SectionSubheading>
-              <Flex direction={{initial: "column", sm: "row"}} align="start" gap="8">
+              <Flex
+                direction={{ initial: "column", sm: "row" }}
+                align="start"
+                gap="8"
+              >
                 <Box flexBasis="50%">
                   <Heading size="8" mb="6">
                     The Challenge
                   </Heading>
                   <Text>
-                  Scientific data infrastructure wasn&apos;t built for cross-border, cross-sector cooperation.
-                  <br /><br />
-                  Addressing global challenges means combining data from governments, research institutions, commercial providers, and civil society—each with its own formats, access patterns, and APIs.
-                  <br /><br />
-                  Data engineers, scientists, and researchers spend more time wrangling infrastructure than doing their actual work, hampering collaboration and limiting informed decision making.
+                    Scientific data infrastructure wasn&apos;t built for
+                    cross-border, cross-sector cooperation.
+                    <br />
+                    <br />
+                    Addressing global challenges means combining data from
+                    governments, research institutions, commercial providers,
+                    and civil society—each with its own formats, access
+                    patterns, and APIs.
+                    <br />
+                    <br />
+                    Data engineers, scientists, and researchers spend more time
+                    wrangling infrastructure than doing their actual work,
+                    hampering collaboration and limiting informed decision
+                    making.
                   </Text>
                 </Box>
                 <Box flexBasis="50%">
@@ -120,10 +134,21 @@ export default async function Landing() {
                     Our Solution
                   </Heading>
                   <Text>
-                  Source is a nonprofit data publishing utility built on commodity cloud object storage. Researchers publish data at any scale without running servers, building portals, or writing APIs.
-                  <br /><br />
-                  Source handles cloud infrastructure so researchers can focus on their data, not their hosting. Users access everything through standard URLs that work with existing tools—no custom portals, no proprietary APIs.<br /><br />
-                  The service is intentionally commoditized: built to resist lock-in and designed so that no single provider, funder, or political decision can make research data disappear.
+                    Source is a nonprofit data publishing utility built on
+                    commodity cloud object storage. Researchers publish data at
+                    any scale without running servers, building portals, or
+                    writing APIs.
+                    <br />
+                    <br />
+                    Source handles cloud infrastructure so researchers can focus
+                    on their data, not their hosting. Users access everything
+                    through standard URLs that work with existing tools—no
+                    custom portals, no proprietary APIs.
+                    <br />
+                    <br />
+                    The service is intentionally commoditized: built to resist
+                    lock-in and designed so that no single provider, funder, or
+                    political decision can make research data disappear.
                   </Text>
                 </Box>
               </Flex>
@@ -145,7 +170,9 @@ export default async function Landing() {
                   align="start"
                 >
                   <Box style={{ flex: 1 }}>
-                    <SectionSubheading>Why Source is different</SectionSubheading>
+                    <SectionSubheading>
+                      Why Source is different
+                    </SectionSubheading>
                     <Heading size="8" mb="6">
                       Data publishing for everyone
                     </Heading>
@@ -164,7 +191,8 @@ export default async function Landing() {
                           Integrate into any workflow
                         </Heading>
                         <Text>
-                          Source is a vendor-neutral data publishing utility that works with any S3-compatible cloud provider.
+                          Source is a vendor-neutral data publishing utility
+                          that works with any S3-compatible cloud provider.
                         </Text>
                       </Box>
                     </Flex>
@@ -217,9 +245,14 @@ export default async function Landing() {
                           Flat pricing
                         </Heading>
                         <Text>
-                          Instead of building and maintaining data portals or trying to wrangle variable cloud costs, Source lets you focus on the fundamentals that make data easy to publish and easy to use.
-                          <br /><br />
-                          Pricing plans based on data volume and usage will be announced soon.
+                          Instead of building and maintaining data portals or
+                          trying to wrangle variable cloud costs, Source lets
+                          you focus on the fundamentals that make data easy to
+                          publish and easy to use.
+                          <br />
+                          <br />
+                          Pricing plans based on data volume and usage will be
+                          announced soon.
                         </Text>
                       </Box>
                     </Flex>
@@ -232,6 +265,15 @@ export default async function Landing() {
       </ThemeInverseComponent>
       <Box className={styles.landing} px={{ sm: "6", lg: "9" }}>
         <Box className={styles.landingInner} mx="auto" maxWidth="1400px">
+          <Section className={styles.productsSection} px="4">
+            <Container>
+              <SectionSubheading>Explore Source Datasets</SectionSubheading>
+              <Heading size="8" mb="6">
+                Featured Products
+              </Heading>
+              <ProductsList products={result.products} grid />
+            </Container>
+          </Section>
           <Section px="4">
             <Container>
               <Flex
@@ -272,15 +314,6 @@ export default async function Landing() {
                   </Button>
                 </Box>
               </Flex>
-            </Container>
-          </Section>
-          <Section className={styles.productsSection} px="4">
-            <Container>
-              <SectionSubheading>Explore Source Datasets</SectionSubheading>
-              <Heading size="8" mb="6">
-                Featured Products
-              </Heading>
-              <ProductsList products={result.products} grid />
             </Container>
           </Section>
           <Footer />
