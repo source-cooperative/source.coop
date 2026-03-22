@@ -17,7 +17,7 @@ concurrency:
 jobs:
   deploy-cdk:
     runs-on: ubuntu-latest
-    environment: staging-infra
+    environment: Staging-Infra
     steps:
       - uses: actions/checkout@v4.2.2
       - name: Configure AWS Credentials
@@ -37,7 +37,9 @@ jobs:
 
   deploy-vercel:
     runs-on: ubuntu-latest
-    environment: staging
+    environment:
+      name: Staging
+      url: https://staging.source.coop
     env:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
