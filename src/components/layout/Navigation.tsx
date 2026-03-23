@@ -9,7 +9,7 @@ export async function Navigation() {
   return (
     <nav className={styles.nav}>
       <Container>
-        <Flex justify="between" align="center" py="3" gap="1">
+        <Flex justify="between" align="center" py="2" px="2" gap="1">
           <Logo />
 
           <Flex gap="4" align="center">

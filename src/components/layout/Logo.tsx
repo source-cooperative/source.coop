@@ -12,15 +12,15 @@ export function Logo() {
 
   const logoImage = (
     <ThemeAwareImage
-      lightSrc="/logo/logotype-light.svg"
-      darkSrc="/logo/logotype-dark.svg"
+      lightSrc="/logo/logolockup-light.svg"
+      darkSrc="/logo/logolockup-dark.svg"
       alt="Source Cooperative"
-      width={243}
-      height={74}
+      width={200}
+      height={40}
       priority
       style={{
         width: "auto",
-        height: "clamp(52px, 16vw, 74px)", // Scale logo
+        height: "clamp(36px, 16vw, 48px)", // Scale logo
       }}
     />
   );
