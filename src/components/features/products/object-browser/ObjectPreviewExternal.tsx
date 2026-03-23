@@ -17,16 +17,10 @@ const isStacGeoParquet = async (sourceUrl: string): Promise<boolean> => {
     await db.run("SET extension_directory='/tmp/duckdb_extensions'");
 
     const reader = await db.runAndReadAll(
-      `
-        SELECT stac_version
-        FROM read_parquet(?)
-        WHERE geometry IS NOT NULL
-        LIMIT 1
-      `,
+      `SELECT count(*) > 0 FROM parquet_schema(?) WHERE name IN ('stac_version', 'geometry') GROUP BY file_name HAVING count(*) = 2`,
       [sourceUrl],
     );
-    const [[stac_version] = []] = reader.getRows();
-    return Boolean(stac_version);
+    return reader.getRows().length > 0;
   } catch (error) {
     LOGGER.error(`Error checking for STAC GeoParquet: ${error}`, {
       operation: "isStacGeoParquet",
