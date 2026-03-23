@@ -99,6 +99,15 @@ export default async function Landing() {
               </Flex>
             </Container>
           </Section>
+          <Section className={styles.productsSection} px="4">
+            <Container>
+              <SectionSubheading>Explore Source Datasets</SectionSubheading>
+              <Heading size="8" mb="6">
+                Featured Products
+              </Heading>
+              <ProductsList products={result.products} grid />
+            </Container>
+          </Section>
           <Section px="4">
             <Container>
               <SectionSubheading>What is Source Cooperative?</SectionSubheading>
@@ -264,15 +273,6 @@ export default async function Landing() {
       </ThemeInverseComponent>
       <Box className={styles.landing} px={{ sm: "6", lg: "9" }}>
         <Box className={styles.landingInner} mx="auto" maxWidth="1400px">
-          <Section className={styles.productsSection} px="4">
-            <Container>
-              <SectionSubheading>Explore Source Datasets</SectionSubheading>
-              <Heading size="8" mb="6">
-                Featured Products
-              </Heading>
-              <ProductsList products={result.products} grid />
-            </Container>
-          </Section>
           <Section px="4" className={styles.tout}>
             <Container>
               <Flex
