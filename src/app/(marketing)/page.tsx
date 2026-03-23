@@ -29,6 +29,7 @@ function SectionSubheading({ children }: { children: React.ReactNode }) {
   );
 }
 
+
 export default async function Landing() {
   const result = await getProducts({
     featuredOnly: true,
@@ -287,6 +288,31 @@ export default async function Landing() {
                   </Heading>
                 </Box>
                 <CaseStudyCarousel />
+              </Flex>
+            </Container>
+          </Section>
+          <Section px="4" className={styles.tout}>
+            <Container>
+              <Flex
+                gap={{ xs: "2", md: "6" }}
+                direction={{ initial: "column", sm: "row" }}
+                align="start"
+              >
+                <Box flexGrow="2">
+                  <Heading size="8">
+                    Built for Data Engineers, Scientists, and Developers
+                  </Heading>
+                </Box>
+                <Box flexGrow="1">
+                  <Text size="5" mb="4" as="div">
+                    Source.Coop supports your data lifecycle, from prototyping
+                    to public release, without navigating corporate cloud
+                    policies.
+                  </Text>
+                  <Button className={styles.subheading} highContrast>
+                    Explore the data &rarr;
+                  </Button>
+                </Box>
               </Flex>
             </Container>
           </Section>
