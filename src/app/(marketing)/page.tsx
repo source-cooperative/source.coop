@@ -29,7 +29,6 @@ function SectionSubheading({ children }: { children: React.ReactNode }) {
   );
 }
 
-
 export default async function Landing() {
   const result = await getProducts({
     featuredOnly: true,
@@ -309,9 +308,11 @@ export default async function Landing() {
                     to public release, without navigating corporate cloud
                     policies.
                   </Text>
-                  <Button className={styles.subheading} highContrast>
-                    Explore the data &rarr;
-                  </Button>
+                  <Link href={productListUrl()}>
+                    <Button className={styles.subheading} highContrast>
+                      Explore the data &rarr;
+                    </Button>
+                  </Link>
                 </Box>
               </Flex>
             </Container>
