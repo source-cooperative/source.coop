@@ -30,7 +30,14 @@ function SectionSubheading({ children }: { children: React.ReactNode }) {
 }
 
 export default async function Landing() {
-  const products = await getFeaturedProducts(4);
+  const featuredCount = 4;
+  const featured = await getFeaturedProducts(20);
+  // Shuffle and pick 4 for the homepage
+  for (let i = featured.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [featured[i], featured[j]] = [featured[j], featured[i]];
+  }
+  const products = featured.slice(0, featuredCount);
 
   return (
     <>
