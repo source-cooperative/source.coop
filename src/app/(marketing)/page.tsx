@@ -4,7 +4,7 @@ import {
   ProductsList,
   ThemeAwareImage,
 } from "@/components";
-import { getProducts } from "@/lib/actions/products";
+import { getFeaturedProducts } from "@/lib/actions/products";
 import {
   Badge,
   Box,
@@ -30,10 +30,14 @@ function SectionSubheading({ children }: { children: React.ReactNode }) {
 }
 
 export default async function Landing() {
-  const result = await getProducts({
-    featuredOnly: true,
-    limit: 10,
-  });
+  const featuredCount = 4;
+  const featured = await getFeaturedProducts(20);
+  // Shuffle and pick 4 for the homepage
+  for (let i = featured.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [featured[i], featured[j]] = [featured[j], featured[i]];
+  }
+  const products = featured.slice(0, featuredCount);
 
   return (
     <>
@@ -105,7 +109,7 @@ export default async function Landing() {
               <Heading size="8" mb="6">
                 Featured Products
               </Heading>
-              <ProductsList products={result.products} grid />
+              <ProductsList products={products} grid />
             </Container>
           </Section>
           <Section px="4">

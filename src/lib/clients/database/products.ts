@@ -88,21 +88,58 @@ class ProductsTable extends BaseTable {
 
   async listPublic(
     limit = 50,
-    lastEvaluatedKey?: any
+    lastEvaluatedKey?: any,
+    filters?: { search?: string; tags?: string; featuredOnly?: boolean }
   ): Promise<{
     products: Product[];
     lastEvaluatedKey: any;
   }> {
+    const expressionValues: Record<string, any> = {
+      ":visibility": "public",
+    };
+    const expressionNames: Record<string, string> = {};
+    const filterParts: string[] = [];
+
+    let keyCondition = "visibility = :visibility";
+    if (filters?.featuredOnly) {
+      expressionValues[":zero"] = 0;
+      keyCondition += " AND featured > :zero";
+    }
+
+    if (filters?.search) {
+      const searchLower = filters.search.toLowerCase();
+      expressionValues[":search"] = searchLower;
+      filterParts.push(
+        "(contains(#title, :search) OR contains(#desc, :search) OR contains(account_id, :search) OR contains(product_id, :search))"
+      );
+      expressionNames["#title"] = "title";
+      expressionNames["#desc"] = "description";
+    }
+
+    if (filters?.tags) {
+      const tagsArray = filters.tags.split(",").map((t) => t.trim());
+      tagsArray.forEach((tag, i) => {
+        expressionValues[`:tag${i}`] = tag;
+        filterParts.push(`contains(metadata.tags, :tag${i})`);
+      });
+    }
+
     const queryParams: any = {
       TableName: this.table,
       IndexName: "public_featured",
-      KeyConditionExpression: "visibility = :visibility",
-      ExpressionAttributeValues: {
-        ":visibility": "public",
-      },
-      ScanIndexForward: false, // Descending order of featured
+      KeyConditionExpression: keyCondition,
+      ExpressionAttributeValues: expressionValues,
+      ScanIndexForward: false,
       Limit: limit,
     };
+
+    if (filterParts.length > 0) {
+      queryParams.FilterExpression = filterParts.join(" AND ");
+    }
+
+    if (Object.keys(expressionNames).length > 0) {
+      queryParams.ExpressionAttributeNames = expressionNames;
+    }
 
     if (lastEvaluatedKey) {
       queryParams.ExclusiveStartKey = lastEvaluatedKey;
