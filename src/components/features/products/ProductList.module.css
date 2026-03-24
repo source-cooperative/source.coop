@@ -34,7 +34,8 @@
 .item {
   text-decoration: none;
   color: inherit;
-  display: block;
+  display: flex;
+  flex-direction: column;
   padding: var(--space-4);
   border-radius: var(--radius-3);
   border: 1px solid var(--gray-5);
@@ -43,10 +44,25 @@
   outline: 2px solid transparent;
   outline-offset: -1px;
   margin-bottom: var(--space-4);
-  contain: content;
 }
+
+.item > article {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.itemSpacer {
+  flex: 1;
+}
+
+.gridList > li {
+  display: flex;
+}
+
 .gridList .item {
   border-style: dashed;
+  margin-bottom: 0;
 }
 
 .item:hover:not([data-highlighted="true"]):not([data-selected="true"]) {
