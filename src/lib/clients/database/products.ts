@@ -89,7 +89,7 @@ class ProductsTable extends BaseTable {
   async listPublic(
     limit = 50,
     lastEvaluatedKey?: any,
-    filters?: { search?: string; tags?: string }
+    filters?: { search?: string; tags?: string; featuredOnly?: boolean }
   ): Promise<{
     products: Product[];
     lastEvaluatedKey: any;
@@ -99,6 +99,12 @@ class ProductsTable extends BaseTable {
     };
     const expressionNames: Record<string, string> = {};
     const filterParts: string[] = [];
+
+    let keyCondition = "visibility = :visibility";
+    if (filters?.featuredOnly) {
+      expressionValues[":zero"] = 0;
+      keyCondition += " AND featured > :zero";
+    }
 
     if (filters?.search) {
       const searchLower = filters.search.toLowerCase();
@@ -121,7 +127,7 @@ class ProductsTable extends BaseTable {
     const queryParams: any = {
       TableName: this.table,
       IndexName: "public_featured",
-      KeyConditionExpression: "visibility = :visibility",
+      KeyConditionExpression: keyCondition,
       ExpressionAttributeValues: expressionValues,
       ScanIndexForward: false,
       Limit: limit,

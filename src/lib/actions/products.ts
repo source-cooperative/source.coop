@@ -25,9 +25,8 @@ export interface PaginatedProductsResult {
 
 export async function getFeaturedProducts(limit = 10): Promise<Product[]> {
   try {
-    const result = await productsTable.listPublic(limit);
-    const featured = result.products.filter((p) => p.featured > 0);
-    return productsTable.attachAccounts(featured);
+    const result = await productsTable.listPublic(limit, undefined, { featuredOnly: true });
+    return productsTable.attachAccounts(result.products);
   } catch (error) {
     LOGGER.error("Failed to fetch featured products", {
       operation: "getFeaturedProducts",
