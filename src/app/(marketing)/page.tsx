@@ -4,7 +4,7 @@ import {
   ProductsList,
   ThemeAwareImage,
 } from "@/components";
-import { getProducts } from "@/lib/actions/products";
+import { getFeaturedProducts } from "@/lib/actions/products";
 import {
   Badge,
   Box,
@@ -30,10 +30,7 @@ function SectionSubheading({ children }: { children: React.ReactNode }) {
 }
 
 export default async function Landing() {
-  const result = await getProducts({
-    featuredOnly: true,
-    limit: 10,
-  });
+  const products = await getFeaturedProducts(4);
 
   return (
     <>
@@ -105,7 +102,7 @@ export default async function Landing() {
               <Heading size="8" mb="6">
                 Featured Products
               </Heading>
-              <ProductsList products={result.products} grid />
+              <ProductsList products={products} grid />
             </Container>
           </Section>
           <Section px="4">

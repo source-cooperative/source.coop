@@ -2,7 +2,7 @@
 jest.mock("@/components/layout", () => ({}));
 jest.mock("@/components/features/products/ProductsList", () => ({}));
 jest.mock("@/lib/actions/products", () => ({
-  getProducts: jest.fn(),
+  getFeaturedProducts: jest.fn(),
 }));
 
 import { metadata } from "./(app)/featured/page";

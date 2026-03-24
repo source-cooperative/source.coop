@@ -1,7 +1,7 @@
 import { PageHeader } from "@/components/layout";
 import { ProductsList } from "@/components/features/products/ProductsList";
 import { ProductsFilters } from "@/components/features/products/ProductsFilters";
-import { getProducts } from "@/lib/actions/products";
+import { getPaginatedProducts } from "@/lib/actions/products";
 import { Badge, Box, Flex, Text } from "@radix-ui/themes";
 
 export const metadata = {
@@ -32,13 +32,8 @@ export default async function ProductsPage({
 }: ProductsPageProps) {
   const { search, tags, next } = await searchParams;
 
-  // Fetch products on the server
-  const result = await getProducts({
-    search,
-    tags,
-    cursor: next,
-    limit: 20,
-  });
+  const filters = search || tags ? { search, tags } : undefined;
+  const { products } = await getPaginatedProducts(20, next, undefined, undefined, filters);
 
   const hasActiveFilters = search || tags;
 
@@ -51,7 +46,7 @@ export default async function ProductsPage({
       {hasActiveFilters && (
         <Flex gap="2" align="center" mb="3">
           <Text size="2" color="gray">
-            Showing {result.products.length} of {result.totalCount} products
+            Showing {products.length} products
           </Text>
           {search && (
             <Badge variant="soft" color="blue">
@@ -66,7 +61,7 @@ export default async function ProductsPage({
         </Flex>
       )}
 
-      <ProductsList products={result.products} />
+      <ProductsList products={products} />
     </Box>
   );
 }

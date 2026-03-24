@@ -1,6 +1,6 @@
 import { PageHeader } from "@/components/layout";
 import { ProductsList } from "@/components/features/products/ProductsList";
-import { getProducts } from "@/lib/actions/products";
+import { getFeaturedProducts } from "@/lib/actions/products";
 import { Box } from "@radix-ui/themes";
 
 export const metadata = {
@@ -19,16 +19,12 @@ export const metadata = {
 };
 
 export default async function FeaturedProductsPage() {
-  // Fetch featured products on the server
-  const result = await getProducts({
-    featuredOnly: true,
-    limit: 10,
-  });
+  const products = await getFeaturedProducts(10);
 
   return (
     <Box>
       <PageHeader title="Featured Products" />
-      <ProductsList products={result.products} />
+      <ProductsList products={products} />
     </Box>
   );
 }
