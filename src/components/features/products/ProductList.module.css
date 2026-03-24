@@ -58,6 +58,11 @@
 
 .gridList > li {
   display: flex;
+  min-width: 0;
+}
+
+.gridList .item {
+  flex: 1;
 }
 
 .gridList .item {
