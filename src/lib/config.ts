@@ -63,6 +63,13 @@ export const CONFIG = {
     },
   },
 
+  // Cloudflare Analytics Engine configuration
+  analytics: {
+    accountId: process.env.CF_ANALYTICS_ACCOUNT_ID,
+    apiToken: process.env.CF_ANALYTICS_API_TOKEN,
+    dataset: process.env.CF_ANALYTICS_DATASET ?? "source_data_proxy_production",
+  },
+
   // Google configuration
   google: {
     siteVerification: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || "",

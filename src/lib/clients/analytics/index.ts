@@ -1,15 +1,12 @@
 // src/lib/clients/analytics/index.ts
 
 import type { DailyProductStats, DailyAccountProductStats, Period } from "./types";
+import { CONFIG } from "@/lib/config";
 
 export type { DailyProductStats, DailyAccountProductStats, Period } from "./types";
 
-const CF_ANALYTICS_ACCOUNT_ID = process.env.CF_ANALYTICS_ACCOUNT_ID;
-const CF_ANALYTICS_API_TOKEN = process.env.CF_ANALYTICS_API_TOKEN;
-const CF_ANALYTICS_DATASET = process.env.CF_ANALYTICS_DATASET ?? "source_data_proxy_production";
-
 function isConfigured(): boolean {
-  return !!(CF_ANALYTICS_ACCOUNT_ID && CF_ANALYTICS_API_TOKEN);
+  return !!(CONFIG.analytics.accountId && CONFIG.analytics.apiToken);
 }
 
 async function queryAnalyticsEngine<T>(sql: string): Promise<T[]> {
@@ -18,11 +15,11 @@ async function queryAnalyticsEngine<T>(sql: string): Promise<T[]> {
   }
 
   const response = await fetch(
-    `https://api.cloudflare.com/client/v4/accounts/${CF_ANALYTICS_ACCOUNT_ID}/analytics_engine/sql`,
+    `https://api.cloudflare.com/client/v4/accounts/${CONFIG.analytics.accountId}/analytics_engine/sql`,
     {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${CF_ANALYTICS_API_TOKEN}`,
+        Authorization: `Bearer ${CONFIG.analytics.apiToken}`,
       },
       body: sql,
       next: { revalidate: 3600 }, // Cache for 1 hour
@@ -48,7 +45,7 @@ export async function getProductAnalytics(
       toStartOfInterval(timestamp, INTERVAL '1' DAY) AS date,
       COUNT() AS downloads,
       SUM(double1) AS bytes
-    FROM ${CF_ANALYTICS_DATASET}
+    FROM ${CONFIG.analytics.dataset}
     WHERE blob1 = '${accountId}'
       AND blob2 = '${productId}'
       AND timestamp >= NOW() - INTERVAL '${days}' DAY
@@ -79,7 +76,7 @@ export async function getAccountAnalytics(
       toStartOfInterval(timestamp, INTERVAL '1' DAY) AS date,
       COUNT() AS downloads,
       SUM(double1) AS bytes
-    FROM ${CF_ANALYTICS_DATASET}
+    FROM ${CONFIG.analytics.dataset}
     WHERE blob1 = '${accountId}'
       AND timestamp >= NOW() - INTERVAL '${days}' DAY
     GROUP BY product_id, date
