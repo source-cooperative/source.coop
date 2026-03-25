@@ -26,6 +26,7 @@ import { getPendingInvitation } from "@/lib/actions/memberships";
 interface ProductLayoutProps {
   children: React.ReactNode;
   readme: React.ReactNode;
+  analytics: React.ReactNode;
   params: Promise<{ account_id: string; product_id: string; path?: string[] }>;
 }
 
@@ -33,6 +34,7 @@ export default async function ProductLayout({
   params,
   children,
   readme,
+  analytics,
 }: ProductLayoutProps) {
   // Then check if product exists
   const { account_id, product_id, path } = await params;
@@ -60,6 +62,7 @@ export default async function ProductLayout({
       <Box mt="4">
         <ProductHeader product={product} />
       </Box>
+      <Box mt="4">{analytics}</Box>
       <Box mt="4">
         <Dropzone product={product} prefix={prefix}>
           <Card>
