@@ -1,16 +1,19 @@
 // src/lib/clients/analytics/index.ts
 
 import type { DailyProductStats, DailyAccountProductStats, Period } from "./types";
+import { LOGGER } from "@/lib";
 import { CONFIG } from "@/lib/config";
 
 export type { DailyProductStats, DailyAccountProductStats, Period } from "./types";
 
-function isConfigured(): boolean {
-  return !!(CONFIG.analytics.accountId && CONFIG.analytics.apiToken);
-}
-
 async function queryAnalyticsEngine<T>(sql: string): Promise<T[]> {
-  if (!isConfigured()) {
+  const isConfigured = !!(CONFIG.analytics.accountId && CONFIG.analytics.apiToken);
+  if (isConfigured) {
+    LOGGER.warn("Analytics engine not configured", {
+      operation: "queryAnalyticsEngine",
+      context: "checking configuration",
+      metadata: { },
+    });
     console.warn("Analytics engine not configured.");
     return [];
   }
@@ -60,6 +63,12 @@ export async function getProductAnalytics(
     bytes: number;
   }>(sql);
 
+  LOGGER.debug("Queried data", {
+    operation: "getProductAnalytics",
+    context: "get product analytics",
+    metadata: { sql, rows },
+  });
+
   return rows.map((row) => ({
     date: row.date,
     downloads: Number(row.downloads),
@@ -90,6 +99,12 @@ export async function getAccountAnalytics(
     downloads: number;
     bytes: number;
   }>(sql);
+
+  LOGGER.debug("Queried data", {
+    operation: "getAccountAnalytics",
+    context: "get account analytics",
+    metadata: { sql, rows },
+  });
 
   return rows.map((row) => ({
     product_id: row.product_id,
