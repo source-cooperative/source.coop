@@ -17,9 +17,9 @@ export function ProductsFilters() {
   const currentTags = searchParams.get("tags") || "";
   const hasActiveFilters = currentSearch || currentTags;
 
-  // Local state for search and tags input
-  const [searchInput, setSearchInput] = useState("");
-  const [tagsInput, setTagsInput] = useState("");
+  // Local state for search and tags input (initialized from URL to prevent race condition)
+  const [searchInput, setSearchInput] = useState(currentSearch);
+  const [tagsInput, setTagsInput] = useState(currentTags);
 
   // Set search and tags input values from URL on mount
   useEffect(() => {
