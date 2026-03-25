@@ -11,6 +11,7 @@ function isConfigured(): boolean {
 
 async function queryAnalyticsEngine<T>(sql: string): Promise<T[]> {
   if (!isConfigured()) {
+    console.warn("Analytics engine not configured.");
     return [];
   }
 
