@@ -12,7 +12,7 @@ async function queryAnalyticsEngine<T>(sql: string): Promise<T[]> {
     LOGGER.warn("Analytics engine not configured", {
       operation: "queryAnalyticsEngine",
       context: "checking configuration",
-      metadata: { },
+      metadata: CONFIG.analytics,
     });
     console.warn("Analytics engine not configured.");
     return [];
