@@ -92,14 +92,16 @@ export function StackedAreaChart({ data, dataKey, label }: StackedAreaChartProps
                   year: "numeric",
                 });
               }}
-              formatter={(value, name) => [
-                typeof value === "number"
-                  ? dataKey === "bytes"
-                    ? formatBytes(value)
-                    : value.toLocaleString()
-                  : String(value ?? ""),
-                String(name ?? ""),
-              ]}
+              formatter={(value, name) =>
+                [
+                  typeof value === "number"
+                    ? dataKey === "bytes"
+                      ? formatBytes(value)
+                      : value.toLocaleString()
+                    : String(value ?? ""),
+                  name,
+                ] as [string, typeof name]
+              }
             />
             <Legend />
             {productIds.map((pid, i) => (
