@@ -8,7 +8,7 @@ export type { DailyProductStats, DailyAccountProductStats, Period } from "./type
 
 async function queryAnalyticsEngine<T>(sql: string): Promise<T[]> {
   const isConfigured = !!(CONFIG.analytics.accountId && CONFIG.analytics.apiToken);
-  if (isConfigured) {
+  if (!isConfigured) {
     LOGGER.warn("Analytics engine not configured", {
       operation: "queryAnalyticsEngine",
       context: "checking configuration",
