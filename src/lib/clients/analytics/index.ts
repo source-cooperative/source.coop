@@ -47,8 +47,8 @@ export async function getProductAnalytics(
   const sql = `
     SELECT
       toStartOfInterval(timestamp, INTERVAL '1' DAY) AS date,
-      COUNT() AS downloads,
-      SUM(double1) AS bytes
+      SUM(_sample_interval) AS downloads,
+      SUM(_sample_interval * double1) AS bytes
     FROM ${CONFIG.analytics.dataset}
     WHERE blob1 = '${accountId}'
       AND blob2 = '${productId}'
@@ -84,8 +84,8 @@ export async function getAccountAnalytics(
     SELECT
       blob2 AS product_id,
       toStartOfInterval(timestamp, INTERVAL '1' DAY) AS date,
-      COUNT() AS downloads,
-      SUM(double1) AS bytes
+      SUM(_sample_interval) AS downloads,
+      SUM(_sample_interval * double1) AS bytes
     FROM ${CONFIG.analytics.dataset}
     WHERE blob1 = '${accountId}'
       AND timestamp >= NOW() - INTERVAL '${days}' DAY
@@ -123,7 +123,7 @@ export async function getPopularFiles(
     SELECT
       blob3 AS file_path,
       toStartOfInterval(timestamp, INTERVAL '1' DAY) AS date,
-      COUNT() AS downloads
+      SUM(_sample_interval) AS downloads
     FROM ${CONFIG.analytics.dataset}
     WHERE blob1 = '${accountId}'
       AND blob2 = '${productId}'
