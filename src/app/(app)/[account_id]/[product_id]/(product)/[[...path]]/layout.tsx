@@ -27,7 +27,6 @@ interface ProductLayoutProps {
   children: React.ReactNode;
   readme: React.ReactNode;
   analytics: React.ReactNode;
-  popularfiles: React.ReactNode;
   params: Promise<{ account_id: string; product_id: string; path?: string[] }>;
 }
 
@@ -36,7 +35,6 @@ export default async function ProductLayout({
   children,
   readme,
   analytics,
-  popularfiles,
 }: ProductLayoutProps) {
   // Then check if product exists
   const { account_id, product_id, path } = await params;
@@ -65,44 +63,39 @@ export default async function ProductLayout({
         <ProductHeader product={product} />
       </Box>
       <Box mt="4">{analytics}</Box>
-      <Flex mt="4" gap="4" direction={{ initial: "column", md: "row" }}>
-        <Box style={{ flex: 1, minWidth: 0 }}>
-          <Dropzone product={product} prefix={prefix}>
-            <Card>
-              <SectionHeader
-                title="Product Contents"
-                rightButton={
-                  isAuthorized(session, product, Actions.WriteRepositoryData) && (
-                    <FetchCredentialsButton
-                      scope={{ accountId: account_id, productId: product_id }}
-                      prefix={prefix}
-                    />
-                  )
-                }
+      <Box mt="4">
+        <Dropzone product={product} prefix={prefix}>
+          <Card>
+            <SectionHeader
+              title="Product Contents"
+              rightButton={
+                isAuthorized(session, product, Actions.WriteRepositoryData) && (
+                  <FetchCredentialsButton
+                    scope={{ accountId: account_id, productId: product_id }}
+                    prefix={prefix}
+                  />
+                )
+              }
+            >
+              <Box
+                pb="3"
+                mb="3"
+                style={{
+                  borderBottom: "1px solid var(--gray-5)",
+                }}
               >
-                <Box
-                  pb="3"
-                  mb="3"
-                  style={{
-                    borderBottom: "1px solid var(--gray-5)",
-                  }}
-                >
-                  <Flex direction="row" gap="2" align="center" justify="between">
-                    <BreadcrumbNav
-                      path={path?.map((p) => decodeURIComponent(p)) || []}
-                      baseUrl={productUrl(account_id, product_id)}
-                    />
-                  </Flex>
-                </Box>
-              </SectionHeader>
-              {children}
-            </Card>
-          </Dropzone>
-        </Box>
-        <Box style={{ width: "auto", minWidth: 240 }}>
-          {popularfiles}
-        </Box>
-      </Flex>
+                <Flex direction="row" gap="2" align="center" justify="between">
+                  <BreadcrumbNav
+                    path={path?.map((p) => decodeURIComponent(p)) || []}
+                    baseUrl={productUrl(account_id, product_id)}
+                  />
+                </Flex>
+              </Box>
+            </SectionHeader>
+            {children}
+          </Card>
+        </Dropzone>
+      </Box>
 
       {readme}
     </>

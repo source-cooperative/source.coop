@@ -1,5 +1,5 @@
 import { ProductAnalytics } from "@/components/features/analytics/ProductAnalytics";
-import { getProductAnalytics, type Period } from "@/lib/clients/analytics";
+import { getProductAnalytics, getPopularFiles, type Period } from "@/lib/clients/analytics";
 
 function parsePeriod(value: string | undefined): Period {
   const num = Number(value);
@@ -20,7 +20,18 @@ export default async function ProductAnalyticsSlot({
   const { period: periodParam } = await searchParams;
   const period = parsePeriod(periodParam);
 
-  const data = await getProductAnalytics(account_id, product_id, period);
+  const [data, popularFiles] = await Promise.all([
+    getProductAnalytics(account_id, product_id, period),
+    getPopularFiles(account_id, product_id, period),
+  ]);
 
-  return <ProductAnalytics data={data} period={period} />;
+  return (
+    <ProductAnalytics
+      data={data}
+      popularFiles={popularFiles}
+      accountId={account_id}
+      productId={product_id}
+      period={period}
+    />
+  );
 }

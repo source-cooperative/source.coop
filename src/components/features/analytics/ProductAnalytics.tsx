@@ -1,18 +1,22 @@
 "use client";
 
-import { Card, Flex } from "@radix-ui/themes";
+import { Box, Card, Flex, Separator } from "@radix-ui/themes";
 import { SparklineChart } from "./SparklineChart";
+import { PopularFilesTable } from "./PopularFilesTable";
 import { PeriodSelector } from "./PeriodSelector";
 import { SectionHeader } from "@/components/core/SectionHeader";
-import type { DailyProductStats, Period } from "@/lib/clients/analytics";
+import type { DailyProductStats, Period, PopularFile } from "@/lib/clients/analytics";
 
 interface ProductAnalyticsProps {
   data: DailyProductStats[];
+  popularFiles: PopularFile[];
+  accountId: string;
+  productId: string;
   period: Period;
 }
 
-export function ProductAnalytics({ data, period }: ProductAnalyticsProps) {
-  if (data.length === 0) return null;
+export function ProductAnalytics({ data, popularFiles, accountId, productId, period }: ProductAnalyticsProps) {
+  if (data.length === 0 && popularFiles.length === 0) return null;
 
   const totalDownloads = data.reduce((sum, d) => sum + d.downloads, 0);
   const totalBytes = data.reduce((sum, d) => sum + d.bytes, 0);
@@ -40,6 +44,16 @@ export function ProductAnalytics({ data, period }: ProductAnalyticsProps) {
             dateRange={dateRange}
           />
         </Flex>
+        {popularFiles.length > 0 && (
+          <Box mt="4">
+            <Separator size="4" color="gray" mb="4" />
+            <PopularFilesTable
+              files={popularFiles}
+              accountId={accountId}
+              productId={productId}
+            />
+          </Box>
+        )}
       </SectionHeader>
     </Card>
   );

@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Box, Button, Card, Flex, IconButton, Link as RadixLink, Text, Tooltip } from "@radix-ui/themes";
-import { BarChartIcon, Cross1Icon } from "@radix-ui/react-icons";
+import { Box, Button, Flex, Link as RadixLink, Text, Tooltip } from "@radix-ui/themes";
 import { AreaChart, Area, ResponsiveContainer } from "recharts";
 import type { PopularFile } from "@/lib/clients/analytics";
 import Link from "next/link";
@@ -10,18 +9,17 @@ import { objectUrl } from "@/lib/urls";
 
 const DEFAULT_VISIBLE = 10;
 
-interface PopularFilesSidebarProps {
+interface PopularFilesTableProps {
   files: PopularFile[];
   accountId: string;
   productId: string;
 }
 
-export function PopularFilesSidebar({
+export function PopularFilesTable({
   files,
   accountId,
   productId,
-}: PopularFilesSidebarProps) {
-  const [isOpen, setIsOpen] = useState(false);
+}: PopularFilesTableProps) {
   const [showAll, setShowAll] = useState(false);
 
   if (files.length === 0) return null;
@@ -29,39 +27,14 @@ export function PopularFilesSidebar({
   const visibleFiles = showAll ? files : files.slice(0, DEFAULT_VISIBLE);
   const hasMore = files.length > DEFAULT_VISIBLE;
 
-  if (!isOpen) {
-    return (
-      <Box>
-        <Tooltip content="Popular files">
-          <IconButton
-            size="1"
-            variant="soft"
-            color="gray"
-            onClick={() => setIsOpen(true)}
-          >
-            <BarChartIcon />
-          </IconButton>
-        </Tooltip>
-      </Box>
-    );
-  }
-
   return (
-    <Card size="1">
-      <Flex justify="between" align="center" mb="3">
-        <Text size="2" weight="bold">Popular Files</Text>
-        <IconButton
-          size="1"
-          variant="ghost"
-          color="gray"
-          onClick={() => setIsOpen(false)}
-        >
-          <Cross1Icon />
-        </IconButton>
-      </Flex>
-      <Flex direction="column" gap="3">
+    <Box>
+      <Text size="1" color="gray" mb="2" asChild>
+        <Box mb="2">Popular Files</Box>
+      </Text>
+      <Flex direction="column" gap="2">
         {visibleFiles.map((file, index) => (
-          <PopularFileEntry
+          <PopularFileRow
             key={file.file_path}
             file={file}
             index={index}
@@ -71,7 +44,7 @@ export function PopularFilesSidebar({
         ))}
       </Flex>
       {hasMore && !showAll && (
-        <Box mt="3">
+        <Box mt="2">
           <Button
             size="1"
             variant="soft"
@@ -82,11 +55,11 @@ export function PopularFilesSidebar({
           </Button>
         </Box>
       )}
-    </Card>
+    </Box>
   );
 }
 
-function PopularFileEntry({
+function PopularFileRow({
   file,
   index,
   accountId,
@@ -100,22 +73,19 @@ function PopularFileEntry({
   const fileName = file.file_path.split("/").pop() || file.file_path;
 
   return (
-    <Box>
-      <Flex justify="between" align="center" gap="2">
+    <Flex align="center" gap="3">
+      <Box style={{ flex: 1, minWidth: 0 }}>
         <Tooltip content={file.file_path}>
           <RadixLink size="1" asChild color="gray" underline="hover">
             <Link href={objectUrl(accountId, productId, file.file_path)}>
-              <Text size="1" truncate style={{ maxWidth: 160 }}>
+              <Text size="1" truncate>
                 {fileName}
               </Text>
             </Link>
           </RadixLink>
         </Tooltip>
-        <Text size="1" color="gray" style={{ whiteSpace: "nowrap" }}>
-          {file.total_downloads.toLocaleString()}
-        </Text>
-      </Flex>
-      <Box mt="1" style={{ width: "100%", height: 24 }}>
+      </Box>
+      <Box style={{ width: 80, height: 24, flexShrink: 0 }}>
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={file.daily} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
             <defs>
@@ -135,6 +105,9 @@ function PopularFileEntry({
           </AreaChart>
         </ResponsiveContainer>
       </Box>
-    </Box>
+      <Text size="1" color="gray" style={{ whiteSpace: "nowrap", minWidth: 40, textAlign: "right" }}>
+        {file.total_downloads.toLocaleString()}
+      </Text>
+    </Flex>
   );
 }
