@@ -60,10 +60,11 @@ export function PopularFilesSidebar({
         </IconButton>
       </Flex>
       <Flex direction="column" gap="3">
-        {visibleFiles.map((file) => (
+        {visibleFiles.map((file, index) => (
           <PopularFileEntry
             key={file.file_path}
             file={file}
+            index={index}
             accountId={accountId}
             productId={productId}
           />
@@ -87,10 +88,12 @@ export function PopularFilesSidebar({
 
 function PopularFileEntry({
   file,
+  index,
   accountId,
   productId,
 }: {
   file: PopularFile;
+  index: number;
   accountId: string;
   productId: string;
 }) {
@@ -116,7 +119,7 @@ function PopularFileEntry({
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={file.daily} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
             <defs>
-              <linearGradient id={`gradient-pop-${encodeURIComponent(file.file_path)}`} x1="0" y1="0" x2="0" y2="1">
+              <linearGradient id={`gradient-pop-${index}`} x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="var(--accent-9)" stopOpacity={0.3} />
                 <stop offset="100%" stopColor="var(--accent-9)" stopOpacity={0.05} />
               </linearGradient>
@@ -126,7 +129,7 @@ function PopularFileEntry({
               dataKey="downloads"
               stroke="var(--accent-9)"
               strokeWidth={1}
-              fill={`url(#gradient-pop-${encodeURIComponent(file.file_path)})`}
+              fill={`url(#gradient-pop-${index})`}
               isAnimationActive={false}
             />
           </AreaChart>

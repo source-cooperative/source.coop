@@ -99,7 +99,7 @@ export default async function ProductLayout({
             </Card>
           </Dropzone>
         </Box>
-        <Box style={{ width: "auto" }}>
+        <Box style={{ width: "auto", minWidth: 240 }}>
           {popularfiles}
         </Box>
       </Flex>

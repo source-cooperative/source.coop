@@ -4,7 +4,7 @@ import type { DailyProductStats, DailyAccountProductStats, Period, PopularFile }
 import { LOGGER } from "@/lib";
 import { CONFIG } from "@/lib/config";
 
-export type { DailyProductStats, DailyAccountProductStats, Period, PopularFile, PopularFileDailyStats } from "./types";
+export type { DailyProductStats, DailyAccountProductStats, Period, PopularFile } from "./types";
 
 async function queryAnalyticsEngine<T>(sql: string): Promise<T[]> {
   const isConfigured = !!(CONFIG.analytics.accountId && CONFIG.analytics.apiToken);

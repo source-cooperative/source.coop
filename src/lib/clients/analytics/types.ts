@@ -15,12 +15,6 @@ export interface DailyAccountProductStats {
 
 export type Period = 7 | 30 | 90;
 
-export interface PopularFileDailyStats {
-  file_path: string;
-  date: string;
-  downloads: number;
-}
-
 export interface PopularFile {
   file_path: string;
   total_downloads: number;
