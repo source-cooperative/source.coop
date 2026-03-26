@@ -4,7 +4,6 @@ jest.mock("@/components/features/products/ProductsFilters", () => ({
   ProductsFilters: () => null,
 }));
 jest.mock("@/lib/actions/products", () => ({
-  getFeaturedProducts: jest.fn(),
   getPaginatedProducts: jest.fn().mockResolvedValue({ products: [] }),
 }));
 
