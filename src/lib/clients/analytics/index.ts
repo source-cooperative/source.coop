@@ -42,8 +42,10 @@ async function queryAnalyticsEngine<T>(sql: string): Promise<T[]> {
 export async function getProductAnalytics(
   accountId: string,
   productId: string,
-  days: Period = 7
+  days: Period = 7,
+  filePath?: string
 ): Promise<DailyProductStats[]> {
+  const fileFilter = filePath ? `AND blob3 = '${filePath}'` : "";
   const sql = `
     SELECT
       toStartOfInterval(timestamp, INTERVAL '1' DAY) AS date,
@@ -52,6 +54,7 @@ export async function getProductAnalytics(
     FROM ${CONFIG.analytics.dataset}
     WHERE blob1 = '${accountId}'
       AND blob2 = '${productId}'
+      ${fileFilter}
       AND timestamp >= NOW() - INTERVAL '${days}' DAY
     GROUP BY date
     ORDER BY date

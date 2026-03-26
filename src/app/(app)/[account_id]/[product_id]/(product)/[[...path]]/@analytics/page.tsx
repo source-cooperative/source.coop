@@ -8,7 +8,7 @@ function parsePeriod(value: string | undefined): Period {
 }
 
 interface PageProps {
-  params: Promise<{ account_id: string; product_id: string }>;
+  params: Promise<{ account_id: string; product_id: string; path?: string[] }>;
   searchParams: Promise<{ period?: string }>;
 }
 
@@ -16,13 +16,17 @@ export default async function ProductAnalyticsSlot({
   params,
   searchParams,
 }: PageProps) {
-  const { account_id, product_id } = await params;
+  const { account_id, product_id, path } = await params;
   const { period: periodParam } = await searchParams;
   const period = parsePeriod(periodParam);
 
+  const filePath = path?.map((p) => decodeURIComponent(p)).join("/") || undefined;
+
   const [data, popularFiles] = await Promise.all([
-    getProductAnalytics(account_id, product_id, period),
-    getPopularFiles(account_id, product_id, period),
+    getProductAnalytics(account_id, product_id, period, filePath),
+    filePath
+      ? Promise.resolve([])
+      : getPopularFiles(account_id, product_id, period),
   ]);
 
   return (
