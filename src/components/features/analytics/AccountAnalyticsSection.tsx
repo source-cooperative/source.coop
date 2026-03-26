@@ -23,6 +23,7 @@ export function AccountAnalyticsSection({
         <SectionHeader
           title="Analytics"
           rightButton={<PeriodSelector currentPeriod={period} />}
+          collapsible
         >
           <Flex direction="column" gap="6">
             <StackedAreaChart data={data} dataKey="downloads" label="Downloads" />
