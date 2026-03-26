@@ -1,10 +1,10 @@
 // src/lib/clients/analytics/index.ts
 
-import type { DailyProductStats, DailyAccountProductStats, Period } from "./types";
+import type { DailyProductStats, DailyAccountProductStats, Period, PopularFile } from "./types";
 import { LOGGER } from "@/lib";
 import { CONFIG } from "@/lib/config";
 
-export type { DailyProductStats, DailyAccountProductStats, Period } from "./types";
+export type { DailyProductStats, DailyAccountProductStats, Period, PopularFile, PopularFileDailyStats } from "./types";
 
 async function queryAnalyticsEngine<T>(sql: string): Promise<T[]> {
   const isConfigured = !!(CONFIG.analytics.accountId && CONFIG.analytics.apiToken);
@@ -112,4 +112,54 @@ export async function getAccountAnalytics(
     downloads: Number(row.downloads),
     bytes: Number(row.bytes),
   }));
+}
+
+export async function getPopularFiles(
+  accountId: string,
+  productId: string,
+  days: Period = 7
+): Promise<PopularFile[]> {
+  const sql = `
+    SELECT
+      blob3 AS file_path,
+      toStartOfInterval(timestamp, INTERVAL '1' DAY) AS date,
+      COUNT() AS downloads
+    FROM ${CONFIG.analytics.dataset}
+    WHERE blob1 = '${accountId}'
+      AND blob2 = '${productId}'
+      AND timestamp >= NOW() - INTERVAL '${days}' DAY
+    GROUP BY file_path, date
+    ORDER BY file_path, date
+  `;
+
+  const rows = await queryAnalyticsEngine<{
+    file_path: string;
+    date: string;
+    downloads: number;
+  }>(sql);
+
+  LOGGER.debug("Queried popular files data", {
+    operation: "getPopularFiles",
+    context: "get popular files analytics",
+    metadata: { sql, rowCount: rows.length },
+  });
+
+  // Group by file_path, compute totals, sort by total downloads descending
+  const byFile = new Map<string, { daily: { date: string; downloads: number }[]; total: number }>();
+
+  for (const row of rows) {
+    const downloads = Number(row.downloads);
+    const entry = byFile.get(row.file_path) ?? { daily: [], total: 0 };
+    entry.daily.push({ date: row.date, downloads });
+    entry.total += downloads;
+    byFile.set(row.file_path, entry);
+  }
+
+  return Array.from(byFile.entries())
+    .map(([file_path, { daily, total }]) => ({
+      file_path,
+      total_downloads: total,
+      daily,
+    }))
+    .sort((a, b) => b.total_downloads - a.total_downloads);
 }
