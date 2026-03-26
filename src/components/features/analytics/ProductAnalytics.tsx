@@ -28,6 +28,7 @@ export function ProductAnalytics({ data, popularFiles, accountId, productId, per
         title="Analytics"
         rightButton={<PeriodSelector currentPeriod={period} />}
         collapsible
+        defaultCollapsed
       >
         <Flex direction="column" gap="4">
           <SparklineChart
