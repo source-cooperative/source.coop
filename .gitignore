@@ -257,3 +257,4 @@ cdk.out
 .claude/
 .worktrees/
 .env*.local
+docs/plans
