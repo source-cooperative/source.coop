@@ -70,6 +70,11 @@ export const CONFIG = {
     dataset: process.env.CF_ANALYTICS_DATASET ?? "source_data_proxy_production",
   },
 
+  // Location WebSocket for live globe
+  locationWs: {
+    url: process.env.NEXT_PUBLIC_LOCATION_WS_URL,
+  },
+
   // Google configuration
   google: {
     siteVerification: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || "",
