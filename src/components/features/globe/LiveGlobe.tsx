@@ -41,7 +41,7 @@ const CLOUDS_ALT = 0.004;
 const CLOUDS_ROTATION_SPEED = -0.0025;
 const MAX_POINTS = 500;
 
-// Monotonic ID counter for unique keys
+// Monotonic ID counter — shared across instances, but always unique
 let nextPointId = 0;
 
 export function LiveGlobe({
@@ -54,7 +54,6 @@ export function LiveGlobe({
   const globeRef = useRef<GlobeMethods | undefined>(undefined);
   const pointsRef = useRef<LocationPoint[]>([]);
   const [globeReady, setGlobeReady] = useState(false);
-  const globeReadyRef = useRef(false);
   const onErrorRef = useRef(onError);
   onErrorRef.current = onError;
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -62,20 +61,9 @@ export function LiveGlobe({
   const sizeRef = useRef({ width, height });
   sizeRef.current = { width, height };
   const [selected, setSelected] = useState<SelectedPoint | null>(null);
+  const selectedRef = useRef<SelectedPoint | null>(null);
   const selectedIdRef = useRef<number | null>(null);
   const pinnedRef = useRef(false);
-
-  // Poll for globe readiness (onGlobeReady fires during render, can't setState there)
-  useEffect(() => {
-    if (globeReady) return;
-    const id = setInterval(() => {
-      if (globeReadyRef.current) {
-        setGlobeReady(true);
-        clearInterval(id);
-      }
-    }, 100);
-    return () => clearInterval(id);
-  }, [globeReady]);
 
   // Resize the composer/dither pass without tearing down the scene
   const composerRef = useRef<EffectComposer | null>(null);
@@ -97,8 +85,9 @@ export function LiveGlobe({
     let cancelled = false;
     let animFrameId: number;
     let clouds: THREE.Mesh | undefined;
+    let cachedRect: DOMRect | null = null;
 
-    // Per-instance scratch vectors (safe if multiple instances mount)
+    // Per-instance scratch vectors
     const _pointVec = new THREE.Vector3();
     const _camToPoint = new THREE.Vector3();
 
@@ -168,6 +157,60 @@ export function LiveGlobe({
       // Replace default render loop with dithered one
       renderer.setAnimationLoop(null);
 
+      // Cache wrapper rect; invalidate on scroll/resize
+      function updateRect() {
+        cachedRect = wrapperRef.current?.getBoundingClientRect() ?? null;
+      }
+      updateRect();
+      window.addEventListener("scroll", updateRect, { passive: true });
+      window.addEventListener("resize", updateRect, { passive: true });
+
+      function toPageCoords(canvasX: number, canvasY: number) {
+        if (!cachedRect) return { x: canvasX, y: canvasY };
+        return {
+          x: cachedRect.left + canvasX + window.scrollX,
+          y: cachedRect.top + canvasY + window.scrollY,
+        };
+      }
+
+      function updateSelected(next: SelectedPoint) {
+        const prev = selectedRef.current;
+        if (
+          prev &&
+          prev.x === next.x &&
+          prev.y === next.y &&
+          prev.label === next.label &&
+          prev.href === next.href
+        ) {
+          return;
+        }
+        selectedRef.current = next;
+        setSelected(next);
+      }
+
+      function clearSelected() {
+        selectedIdRef.current = null;
+        pinnedRef.current = false;
+        selectedRef.current = null;
+        setSelected(null);
+      }
+
+      function selectPoint(pointId: number) {
+        const point = pointsRef.current.find((p) => p.id === pointId);
+        if (!point) return;
+        selectedIdRef.current = pointId;
+        const coords = globe!.getScreenCoords(point.lat, point.lng, 0.01);
+        if (coords) {
+          const page = toPageCoords(coords.x, coords.y);
+          updateSelected({
+            label: point.label,
+            href: point.href,
+            x: page.x,
+            y: page.y,
+          });
+        }
+      }
+
       function animate() {
         if (cancelled) return;
         animFrameId = requestAnimationFrame(animate);
@@ -180,16 +223,18 @@ export function LiveGlobe({
         // Prune expired points (only mutate ref, don't setState)
         const now = Date.now();
         const prev = pointsRef.current;
-        const alive = prev.filter((p) => now - p.timestamp < DOT_TTL_MS);
-        if (alive.length !== prev.length) {
-          pointsRef.current = alive;
-          // Clear selection if the selected point expired
-          if (
-            selectedIdRef.current !== null &&
-            !alive.some((p) => p.id === selectedIdRef.current)
-          ) {
-            selectedIdRef.current = null;
-            setSelected(null);
+        // Early exit: only filter if the oldest point could have expired
+        if (prev.length > 0 && now - prev[0].timestamp >= DOT_TTL_MS) {
+          const alive = prev.filter((p) => now - p.timestamp < DOT_TTL_MS);
+          if (alive.length !== prev.length) {
+            pointsRef.current = alive;
+            // Clear selection if the selected point expired
+            if (
+              selectedIdRef.current !== null &&
+              !alive.some((p) => p.id === selectedIdRef.current)
+            ) {
+              clearSelected();
+            }
           }
         }
 
@@ -214,8 +259,11 @@ export function LiveGlobe({
             const p = dots[i];
             const el = container.children[i] as HTMLElement;
 
-            // Store point id for click handler
-            el.dataset.pointId = String(p.id);
+            // Only update dataset when mapping changes
+            const idStr = String(p.id);
+            if (el.dataset.pointId !== idStr) {
+              el.dataset.pointId = idStr;
+            }
 
             const pos3d = globe!.getCoords(p.lat, p.lng, 0.01);
             const coords = globe!.getScreenCoords(p.lat, p.lng, 0.01);
@@ -248,10 +296,10 @@ export function LiveGlobe({
             el.style.top = `${coords.y - DOT_SIZE / 2}px`;
             el.style.opacity = String(ageFade * edgeFade);
 
-            // Update popup position if this point is selected
+            // Update popup position if this point is selected (only when changed)
             if (p.id === selectedIdRef.current) {
               const page = toPageCoords(coords.x, coords.y);
-              setSelected({
+              updateSelected({
                 label: p.label,
                 href: p.href,
                 x: page.x,
@@ -263,31 +311,6 @@ export function LiveGlobe({
 
         controls.update();
         composer.render();
-      }
-
-      function toPageCoords(canvasX: number, canvasY: number) {
-        const rect = wrapperRef.current?.getBoundingClientRect();
-        if (!rect) return { x: canvasX, y: canvasY };
-        return {
-          x: rect.left + canvasX + window.scrollX,
-          y: rect.top + canvasY + window.scrollY,
-        };
-      }
-
-      function selectPoint(pointId: number) {
-        const point = pointsRef.current.find((p) => p.id === pointId);
-        if (!point) return;
-        selectedIdRef.current = pointId;
-        const coords = globe!.getScreenCoords(point.lat, point.lng, 0.01);
-        if (coords) {
-          const page = toPageCoords(coords.x, coords.y);
-          setSelected({
-            label: point.label,
-            href: point.href,
-            x: page.x,
-            y: page.y,
-          });
-        }
       }
 
       // Hover: show popup on mouseenter, hide on mouseleave (unless pinned)
@@ -304,8 +327,7 @@ export function LiveGlobe({
         if (pinnedRef.current) return;
         const related = e.relatedTarget as HTMLElement | null;
         if (related?.closest(`.${styles.dot}`)) return;
-        selectedIdRef.current = null;
-        setSelected(null);
+        clearSelected();
       };
 
       // Click on dot: pin the popup open
@@ -327,9 +349,7 @@ export function LiveGlobe({
       // Click anywhere else: dismiss pinned popup
       const handleDocClick = () => {
         if (!pinnedRef.current) return;
-        pinnedRef.current = false;
-        selectedIdRef.current = null;
-        setSelected(null);
+        clearSelected();
       };
 
       const containerEl = dotsContainerRef.current;
@@ -343,6 +363,8 @@ export function LiveGlobe({
       return () => {
         cancelled = true;
         cancelAnimationFrame(animFrameId);
+        window.removeEventListener("scroll", updateRect);
+        window.removeEventListener("resize", updateRect);
         containerEl?.removeEventListener("mouseover", handleMouseOver);
         containerEl?.removeEventListener("mouseout", handleMouseOut);
         containerEl?.removeEventListener("click", handleDotClick);
@@ -374,13 +396,15 @@ export function LiveGlobe({
   useEffect(() => {
     if (!wsUrl) return;
 
+    let closed = false;
     const ws = new WebSocket(wsUrl);
 
     ws.onmessage = (event) => {
+      if (closed) return;
       try {
         const msg = JSON.parse(event.data);
         if (msg.type === "location") {
-          const prev = pointsRef.current;
+          const points = pointsRef.current;
           const { account_id, product_id, path } = msg.data;
           const parts = [account_id, product_id, path].filter(Boolean);
           const label = parts.length > 0 ? `s3://${parts.join("/")}` : "";
@@ -396,11 +420,11 @@ export function LiveGlobe({
             label,
             href,
           };
-          // Cap array to prevent unbounded growth under burst traffic
-          pointsRef.current =
-            prev.length >= MAX_POINTS
-              ? [...prev.slice(prev.length - MAX_POINTS + 1), newPoint]
-              : [...prev, newPoint];
+          // Mutate in-place — this is a ref, not React state
+          if (points.length >= MAX_POINTS) {
+            points.splice(0, points.length - MAX_POINTS + 1);
+          }
+          points.push(newPoint);
         }
       } catch {
         // Ignore malformed messages
@@ -412,6 +436,7 @@ export function LiveGlobe({
     };
 
     return () => {
+      closed = true;
       if (
         ws.readyState === WebSocket.OPEN ||
         ws.readyState === WebSocket.CONNECTING
@@ -438,7 +463,7 @@ export function LiveGlobe({
           bumpImageUrl="/img/earth-topology.png"
           showAtmosphere={false}
           onGlobeReady={() => {
-            globeReadyRef.current = true;
+            queueMicrotask(() => setGlobeReady(true));
           }}
           animateIn={false}
         />
@@ -446,6 +471,7 @@ export function LiveGlobe({
         <div ref={dotsContainerRef} aria-hidden="true" />
       </div>
       {selected &&
+        typeof document !== "undefined" &&
         createPortal(
           <div
             className={styles.popup}
