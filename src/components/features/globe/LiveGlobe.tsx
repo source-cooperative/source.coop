@@ -34,7 +34,7 @@ interface LiveGlobeProps {
   onError?: () => void;
 }
 
-const DOT_TTL_MS = 3000;
+const DOT_TTL_MS = 5000;
 const DOT_COLOR = "#a8e8b5";
 const DOT_SIZE = 8;
 const CLOUDS_ALT = 0.004;
