@@ -1,0 +1,12 @@
+.container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+.container canvas {
+  mix-blend-mode: difference;
+}
+:global(.dark) .container canvas,
+:global(.dark-theme) .container canvas {
+  mix-blend-mode: color-dodge;
+}
