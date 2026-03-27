@@ -50,7 +50,10 @@ export function HeroGlobe({ wsUrl }: { wsUrl: string }) {
   }
 
   return (
-    <div ref={containerRef} style={{ width: "100%", aspectRatio: "1 / 1" }}>
+    <div
+      ref={containerRef}
+      style={{ width: "100%", aspectRatio: "1 / 1", overflow: "hidden" }}
+    >
       {size.width > 0 && (
         <LiveGlobe
           wsUrl={wsUrl}

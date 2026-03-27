@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import Globe, { GlobeMethods } from "react-globe.gl";
 import * as THREE from "three";
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
@@ -14,12 +15,15 @@ interface LocationPoint {
   lat: number;
   lng: number;
   timestamp: number;
+  label: string;
+  href: string;
 }
 
-interface StatsData {
-  requestsPerSecond: number;
-  broadcastsPerSecond: number;
-  viewers: number;
+interface SelectedPoint {
+  label: string;
+  href: string;
+  x: number;
+  y: number;
 }
 
 interface LiveGlobeProps {
@@ -49,14 +53,17 @@ export function LiveGlobe({
 }: LiveGlobeProps) {
   const globeRef = useRef<GlobeMethods | undefined>(undefined);
   const pointsRef = useRef<LocationPoint[]>([]);
-  const [stats, setStats] = useState<StatsData | null>(null);
   const [globeReady, setGlobeReady] = useState(false);
   const globeReadyRef = useRef(false);
   const onErrorRef = useRef(onError);
   onErrorRef.current = onError;
+  const wrapperRef = useRef<HTMLDivElement>(null);
   const dotsContainerRef = useRef<HTMLDivElement>(null);
   const sizeRef = useRef({ width, height });
   sizeRef.current = { width, height };
+  const [selected, setSelected] = useState<SelectedPoint | null>(null);
+  const selectedIdRef = useRef<number | null>(null);
+  const pinnedRef = useRef(false);
 
   // Poll for globe readiness (onGlobeReady fires during render, can't setState there)
   useEffect(() => {
@@ -176,6 +183,14 @@ export function LiveGlobe({
         const alive = prev.filter((p) => now - p.timestamp < DOT_TTL_MS);
         if (alive.length !== prev.length) {
           pointsRef.current = alive;
+          // Clear selection if the selected point expired
+          if (
+            selectedIdRef.current !== null &&
+            !alive.some((p) => p.id === selectedIdRef.current)
+          ) {
+            selectedIdRef.current = null;
+            setSelected(null);
+          }
         }
 
         // Update dot overlay positions directly via DOM (no React re-render)
@@ -198,6 +213,9 @@ export function LiveGlobe({
           for (let i = 0; i < dots.length; i++) {
             const p = dots[i];
             const el = container.children[i] as HTMLElement;
+
+            // Store point id for click handler
+            el.dataset.pointId = String(p.id);
 
             const pos3d = globe!.getCoords(p.lat, p.lng, 0.01);
             const coords = globe!.getScreenCoords(p.lat, p.lng, 0.01);
@@ -229,6 +247,17 @@ export function LiveGlobe({
             el.style.left = `${coords.x - DOT_SIZE / 2}px`;
             el.style.top = `${coords.y - DOT_SIZE / 2}px`;
             el.style.opacity = String(ageFade * edgeFade);
+
+            // Update popup position if this point is selected
+            if (p.id === selectedIdRef.current) {
+              const page = toPageCoords(coords.x, coords.y);
+              setSelected({
+                label: p.label,
+                href: p.href,
+                x: page.x,
+                y: page.y,
+              });
+            }
           }
         }
 
@@ -236,30 +265,107 @@ export function LiveGlobe({
         composer.render();
       }
 
+      function toPageCoords(canvasX: number, canvasY: number) {
+        const rect = wrapperRef.current?.getBoundingClientRect();
+        if (!rect) return { x: canvasX, y: canvasY };
+        return {
+          x: rect.left + canvasX + window.scrollX,
+          y: rect.top + canvasY + window.scrollY,
+        };
+      }
+
+      function selectPoint(pointId: number) {
+        const point = pointsRef.current.find((p) => p.id === pointId);
+        if (!point) return;
+        selectedIdRef.current = pointId;
+        const coords = globe!.getScreenCoords(point.lat, point.lng, 0.01);
+        if (coords) {
+          const page = toPageCoords(coords.x, coords.y);
+          setSelected({
+            label: point.label,
+            href: point.href,
+            x: page.x,
+            y: page.y,
+          });
+        }
+      }
+
+      // Hover: show popup on mouseenter, hide on mouseleave (unless pinned)
+      const handleMouseOver = (e: MouseEvent) => {
+        if (pinnedRef.current) return;
+        const target = (e.target as HTMLElement).closest(
+          `.${styles.dot}`,
+        ) as HTMLElement | null;
+        if (!target) return;
+        selectPoint(Number(target.dataset.pointId));
+      };
+
+      const handleMouseOut = (e: MouseEvent) => {
+        if (pinnedRef.current) return;
+        const related = e.relatedTarget as HTMLElement | null;
+        if (related?.closest(`.${styles.dot}`)) return;
+        selectedIdRef.current = null;
+        setSelected(null);
+      };
+
+      // Click on dot: pin the popup open
+      const handleDotClick = (e: MouseEvent) => {
+        const target = (e.target as HTMLElement).closest(
+          `.${styles.dot}`,
+        ) as HTMLElement | null;
+        if (!target) return;
+        e.stopPropagation();
+        const pointId = Number(target.dataset.pointId);
+        if (pinnedRef.current && selectedIdRef.current === pointId) {
+          pinnedRef.current = false;
+        } else {
+          pinnedRef.current = true;
+          selectPoint(pointId);
+        }
+      };
+
+      // Click anywhere else: dismiss pinned popup
+      const handleDocClick = () => {
+        if (!pinnedRef.current) return;
+        pinnedRef.current = false;
+        selectedIdRef.current = null;
+        setSelected(null);
+      };
+
+      const containerEl = dotsContainerRef.current;
+      containerEl?.addEventListener("mouseover", handleMouseOver);
+      containerEl?.addEventListener("mouseout", handleMouseOut);
+      containerEl?.addEventListener("click", handleDotClick);
+      document.addEventListener("click", handleDocClick);
+
       animate();
+
+      return () => {
+        cancelled = true;
+        cancelAnimationFrame(animFrameId);
+        containerEl?.removeEventListener("mouseover", handleMouseOver);
+        containerEl?.removeEventListener("mouseout", handleMouseOut);
+        containerEl?.removeEventListener("click", handleDotClick);
+        document.removeEventListener("click", handleDocClick);
+        composerRef.current?.dispose();
+        composerRef.current = null;
+        ditherPassRef.current = null;
+        if (clouds) {
+          globe?.scene().remove(clouds);
+          const mat = clouds.material as THREE.MeshPhongMaterial;
+          mat.map?.dispose();
+          mat.dispose();
+          clouds.geometry.dispose();
+        }
+        // Clear overlay DOM
+        const c = dotsContainerRef.current;
+        if (c) {
+          c.innerHTML = "";
+        }
+      };
     } catch {
       onErrorRef.current?.();
     }
-
-    return () => {
-      cancelled = true;
-      cancelAnimationFrame(animFrameId);
-      composerRef.current?.dispose();
-      composerRef.current = null;
-      ditherPassRef.current = null;
-      if (clouds) {
-        globe?.scene().remove(clouds);
-        const mat = clouds.material as THREE.MeshPhongMaterial;
-        mat.map?.dispose();
-        mat.dispose();
-        clouds.geometry.dispose();
-      }
-      // Clear overlay DOM
-      const container = dotsContainerRef.current;
-      if (container) {
-        container.innerHTML = "";
-      }
-    };
   // width/height handled by separate resize effect; onError via ref
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [globeReady, showClouds]);
@@ -275,19 +381,26 @@ export function LiveGlobe({
         const msg = JSON.parse(event.data);
         if (msg.type === "location") {
           const prev = pointsRef.current;
+          const { account_id, product_id, path } = msg.data;
+          const parts = [account_id, product_id, path].filter(Boolean);
+          const label = parts.length > 0 ? `s3://${parts.join("/")}` : "";
+          const href =
+            account_id && product_id
+              ? `/${account_id}/${product_id}`
+              : "";
           const newPoint: LocationPoint = {
             id: nextPointId++,
             lat: msg.data.lat,
             lng: msg.data.lon,
             timestamp: Date.now(),
+            label,
+            href,
           };
           // Cap array to prevent unbounded growth under burst traffic
           pointsRef.current =
             prev.length >= MAX_POINTS
               ? [...prev.slice(prev.length - MAX_POINTS + 1), newPoint]
               : [...prev, newPoint];
-        } else if (msg.type === "stats") {
-          setStats(msg.data);
         }
       } catch {
         // Ignore malformed messages
@@ -309,43 +422,47 @@ export function LiveGlobe({
   }, [wsUrl]);
 
   return (
-    <div
-      className={styles.container}
-      role="img"
-      aria-label="Interactive 3D globe showing live data request locations"
-    >
-      <Globe
-        ref={globeRef}
-        width={width}
-        height={height}
-        backgroundColor="rgba(0,0,0,0)"
-        globeImageUrl="/img/earth-blue-marble.jpg"
-        bumpImageUrl="/img/earth-topology.png"
-        showAtmosphere={false}
-        onGlobeReady={() => {
-          globeReadyRef.current = true;
-        }}
-        animateIn={false}
-      />
-      {/* Dot overlay — managed imperatively by the animation loop, not React */}
-      <div ref={dotsContainerRef} aria-hidden="true" />
-      {stats && (
-        <div
-          aria-hidden="true"
-          style={{
-            position: "absolute",
-            bottom: 8,
-            right: 75,
-            fontSize: "0.7rem",
-            fontFamily: "var(--heading-font-family)",
-            opacity: 0.6,
-            textTransform: "uppercase",
-            letterSpacing: "0.5px",
+    <>
+      <div
+        ref={wrapperRef}
+        className={styles.container}
+        role="img"
+        aria-label="Interactive 3D globe showing live data request locations"
+      >
+        <Globe
+          ref={globeRef}
+          width={width}
+          height={height}
+          backgroundColor="rgba(0,0,0,0)"
+          globeImageUrl="/img/earth-blue-marble.jpg"
+          bumpImageUrl="/img/earth-topology.png"
+          showAtmosphere={false}
+          onGlobeReady={() => {
+            globeReadyRef.current = true;
           }}
-        >
-          {stats.requestsPerSecond} req/s
-        </div>
-      )}
-    </div>
+          animateIn={false}
+        />
+        {/* Dot overlay — managed imperatively by the animation loop, not React */}
+        <div ref={dotsContainerRef} aria-hidden="true" />
+      </div>
+      {selected &&
+        createPortal(
+          <div
+            className={styles.popup}
+            style={{
+              left: selected.x,
+              top: selected.y,
+            }}
+          >
+            <div className={styles.popupLabel}>{selected.label}</div>
+            {selected.href && (
+              <a href={selected.href} className={styles.popupLink}>
+                View product &rarr;
+              </a>
+            )}
+          </div>,
+          document.body,
+        )}
+    </>
   );
 }
