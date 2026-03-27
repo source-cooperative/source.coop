@@ -423,7 +423,7 @@ export function LiveGlobe({
           const parts = [account_id, product_id, path].filter(Boolean);
           const label =
             parts.length > 0
-              ? `GET https://${CONFIG.storage.endpoint}/${parts.join("/")}`
+              ? `GET ${CONFIG.storage.endpoint}/${parts.join("/")}`
               : "";
           const href =
             account_id && product_id ? `/${account_id}/${product_id}` : "";
