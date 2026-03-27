@@ -35,7 +35,7 @@ interface LiveGlobeProps {
 }
 
 const DOT_TTL_MS = 5000;
-const DOT_COLOR = "#a8e8b5";
+const DOT_COLOR = "#75e58c";
 const DOT_SIZE = 8;
 const CLOUDS_ALT = 0.004;
 const CLOUDS_ROTATION_SPEED = -0.0025;
