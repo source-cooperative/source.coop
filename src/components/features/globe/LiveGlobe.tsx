@@ -9,6 +9,7 @@ import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass.js";
 import { DitherShader } from "./DitherShader";
 import styles from "./LiveGlobe.module.css";
+import { CONFIG } from "@/lib";
 
 interface LocationPoint {
   id: number;
@@ -54,6 +55,7 @@ export function LiveGlobe({
   const globeRef = useRef<GlobeMethods | undefined>(undefined);
   const pointsRef = useRef<LocationPoint[]>([]);
   const [globeReady, setGlobeReady] = useState(false);
+  const globeReadyRef = useRef(false);
   const onErrorRef = useRef(onError);
   onErrorRef.current = onError;
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -64,6 +66,18 @@ export function LiveGlobe({
   const selectedRef = useRef<SelectedPoint | null>(null);
   const selectedIdRef = useRef<number | null>(null);
   const pinnedRef = useRef(false);
+
+  // Poll for globe readiness (onGlobeReady fires during render, can't setState there)
+  useEffect(() => {
+    if (globeReady) return;
+    const id = setInterval(() => {
+      if (globeReadyRef.current) {
+        setGlobeReady(true);
+        clearInterval(id);
+      }
+    }, 100);
+    return () => clearInterval(id);
+  }, [globeReady]);
 
   // Resize the composer/dither pass without tearing down the scene
   const composerRef = useRef<EffectComposer | null>(null);
@@ -388,8 +402,8 @@ export function LiveGlobe({
     } catch {
       onErrorRef.current?.();
     }
-  // width/height handled by separate resize effect; onError via ref
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // width/height handled by separate resize effect; onError via ref
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [globeReady, showClouds]);
 
   // WebSocket connection
@@ -407,11 +421,12 @@ export function LiveGlobe({
           const points = pointsRef.current;
           const { account_id, product_id, path } = msg.data;
           const parts = [account_id, product_id, path].filter(Boolean);
-          const label = parts.length > 0 ? `s3://${parts.join("/")}` : "";
-          const href =
-            account_id && product_id
-              ? `/${account_id}/${product_id}`
+          const label =
+            parts.length > 0
+              ? `GET https://${CONFIG.storage.endpoint}/${parts.join("/")}`
               : "";
+          const href =
+            account_id && product_id ? `/${account_id}/${product_id}` : "";
           const newPoint: LocationPoint = {
             id: nextPointId++,
             lat: msg.data.lat,
@@ -463,7 +478,7 @@ export function LiveGlobe({
           bumpImageUrl="/img/earth-topology.png"
           showAtmosphere={false}
           onGlobeReady={() => {
-            queueMicrotask(() => setGlobeReady(true));
+            globeReadyRef.current = true;
           }}
           animateIn={false}
         />
