@@ -1,22 +1,31 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import dynamic from "next/dynamic";
 import styles from "./Landing.module.css";
-import { CONFIG } from "@/lib/config";
 
 const LiveGlobe = dynamic(
   () =>
     import("@/components/features/globe/LiveGlobe").then((m) => ({
       default: m.LiveGlobe,
     })),
-  { ssr: false }
+  {
+    ssr: false,
+    loading: () => (
+      <img
+        className={styles.heroImage}
+        src="/img/dithered-globe.png"
+        alt="Visualization of live data requests around the world"
+      />
+    ),
+  },
 );
 
-export function HeroGlobe() {
+export function HeroGlobe({ wsUrl }: { wsUrl: string }) {
   const [errored, setErrored] = useState(false);
   const [size, setSize] = useState({ width: 0, height: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
+  const handleError = useCallback(() => setErrored(true), []);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -35,19 +44,20 @@ export function HeroGlobe() {
       <img
         className={styles.heroImage}
         src="/img/dithered-globe.png"
-        alt="globe"
+        alt="Visualization of live data requests around the world"
       />
     );
   }
 
   return (
-    <div ref={containerRef} style={{ width: "100%", height: "100%" }}>
+    <div ref={containerRef} style={{ width: "100%", aspectRatio: "1 / 1" }}>
       {size.width > 0 && (
         <LiveGlobe
-          wsUrl={CONFIG.locationWs.url || ""}
+          wsUrl={wsUrl}
           width={size.width}
           height={size.height}
-          onError={() => setErrored(true)}
+          onError={handleError}
+          showClouds
         />
       )}
     </div>

@@ -42,10 +42,17 @@ export const DitherShader = {
     void main() {
       vec4 color = texture2D(tDiffuse, vUv);
       float luma = dot(color.rgb, vec3(0.299, 0.587, 0.114));
+
+      // Gamma-boost to pull out detail from dark regions, then clamp
+      luma = pow(luma, 0.4);
+      luma = smoothstep(0.05, 0.6, luma);
+
       vec2 pixel = vUv * resolution;
       float threshold = bayer8(pixel);
       float dithered = step(threshold, luma);
-      gl_FragColor = vec4(vec3(dithered), color.a);
+
+      // Output dark pixels on transparent background (no blend mode needed)
+      gl_FragColor = vec4(vec3(0.0), dithered * color.a);
     }
   `,
 };

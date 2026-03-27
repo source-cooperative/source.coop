@@ -21,6 +21,7 @@ import { ThemeInverseComponent } from "@/components/layout/ThemeInverseComponent
 import styles from "./Landing.module.css";
 import { productListUrl } from "@/lib/urls";
 import { HeroGlobe } from "./HeroGlobe";
+import { CONFIG } from "@/lib/config";
 
 function SectionSubheading({ children }: { children: React.ReactNode }) {
   return (
@@ -94,8 +95,10 @@ export default async function Landing() {
                 <Flex
                   display={{ initial: "none", sm: "flex" }}
                   className={styles.heroImageContainer}
+                  flexShrink="0"
+                  style={{ flexBasis: "600px" }}
                 >
-                  <HeroGlobe />
+                  <HeroGlobe wsUrl={CONFIG.locationWs.url || ""} />
                 </Flex>
               </Flex>
             </Container>

@@ -3,10 +3,14 @@
   height: 100%;
   position: relative;
 }
-.container canvas {
-  mix-blend-mode: difference;
-}
 :global(.dark) .container canvas,
 :global(.dark-theme) .container canvas {
-  mix-blend-mode: color-dodge;
+  filter: invert(1);
+}
+.dot {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  color: #ff6b35;
+  box-shadow: 0 0 6px 2px currentColor;
 }
