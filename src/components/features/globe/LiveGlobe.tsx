@@ -31,7 +31,7 @@ interface LiveGlobeProps {
 }
 
 const DOT_TTL_MS = 3000;
-const DOT_COLOR = "#ff6b35";
+const DOT_COLOR = "#a8e8b5";
 const DOT_SIZE = 8;
 const CLOUDS_ALT = 0.004;
 const CLOUDS_ROTATION_SPEED = -0.0025;
@@ -191,6 +191,7 @@ export function LiveGlobe({
             el.className = styles.dot;
             el.style.width = `${DOT_SIZE}px`;
             el.style.height = `${DOT_SIZE}px`;
+            el.style.setProperty("--dot-color", DOT_COLOR);
             el.style.backgroundColor = DOT_COLOR;
             container.appendChild(el);
           }
@@ -334,7 +335,7 @@ export function LiveGlobe({
           style={{
             position: "absolute",
             bottom: 8,
-            right: 8,
+            right: 75,
             fontSize: "0.7rem",
             fontFamily: "var(--heading-font-family)",
             opacity: 0.6,
