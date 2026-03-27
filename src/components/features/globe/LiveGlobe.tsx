@@ -79,7 +79,7 @@ export function LiveGlobe({ wsUrl, width, height, onError }: LiveGlobeProps) {
 
         if (!mountedRef.current) return;
 
-        globe = GlobeGL()(container)
+        globe = new GlobeGL(container as HTMLElement)
           .width(width)
           .height(height)
           .backgroundColor("rgba(0,0,0,0)")

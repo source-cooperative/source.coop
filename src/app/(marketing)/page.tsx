@@ -20,6 +20,7 @@ import { CaseStudyCarousel } from "./CaseStudyCarousel";
 import { ThemeInverseComponent } from "@/components/layout/ThemeInverseComponent";
 import styles from "./Landing.module.css";
 import { productListUrl } from "@/lib/urls";
+import { HeroGlobe } from "./HeroGlobe";
 
 function SectionSubheading({ children }: { children: React.ReactNode }) {
   return (
@@ -94,11 +95,7 @@ export default async function Landing() {
                   display={{ initial: "none", sm: "flex" }}
                   className={styles.heroImageContainer}
                 >
-                  <img
-                    className={styles.heroImage}
-                    src="/img/dithered-globe.png"
-                    alt="globe"
-                  />
+                  <HeroGlobe />
                 </Flex>
               </Flex>
             </Container>
