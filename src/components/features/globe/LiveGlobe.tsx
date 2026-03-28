@@ -472,7 +472,6 @@ export function LiveGlobe({
           height={height}
           backgroundColor="rgba(0,0,0,0)"
           globeImageUrl="/img/earth-blue-marble.jpg"
-          bumpImageUrl="/img/earth-topology.png"
           showAtmosphere={false}
           onGlobeReady={() => {
             globeReadyRef.current = true;
