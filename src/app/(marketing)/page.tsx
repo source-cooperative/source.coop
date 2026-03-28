@@ -43,6 +43,9 @@ export default async function Landing() {
 
   return (
     <>
+      {/* Preload globe textures so they're cached before the client component mounts */}
+      <link rel="preload" href="/img/earth-blue-marble.jpg" as="image" />
+      <link rel="preload" href="/img/clouds.png" as="image" />
       <Box className={styles.landing} px={{ sm: "6", lg: "9" }}>
         <Box className={styles.landingInner} mx="auto" maxWidth="1400px">
           <Navigation />

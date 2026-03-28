@@ -9,16 +9,7 @@ const LiveGlobe = dynamic(
     import("@/components/features/globe/LiveGlobe").then((m) => ({
       default: m.LiveGlobe,
     })),
-  {
-    ssr: false,
-    loading: () => (
-      <img
-        className={styles.heroImage}
-        src="/img/dithered-globe.png"
-        alt="Visualization of live data requests around the world"
-      />
-    ),
-  },
+  { ssr: false },
 );
 
 export function HeroGlobe({ wsUrl }: { wsUrl: string }) {
