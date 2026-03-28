@@ -406,55 +406,54 @@ export function LiveGlobe({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [globeReady, showClouds]);
 
-  // WebSocket connection
+  // WebSocket connection with auto-reconnect on wake
   useEffect(() => {
     if (!wsUrl) return;
 
-    let closed = false;
-    const ws = new WebSocket(wsUrl);
+    let disposed = false;
+    let ws: WebSocket;
 
-    ws.onmessage = (event) => {
-      if (closed) return;
-      try {
-        const msg = JSON.parse(event.data);
-        if (msg.type === "location") {
-          const points = pointsRef.current;
-          const { account_id, product_id, path } = msg.data;
+    function connect() {
+      if (disposed) return;
+      if (ws && ws.readyState < WebSocket.CLOSING) ws.close();
+      ws = new WebSocket(wsUrl);
+      ws.onmessage = (event) => {
+        if (disposed) return;
+        try {
+          const msg = JSON.parse(event.data);
+          if (msg.type !== "location") return;
+          const { account_id, product_id, path, lat, lon } = msg.data;
           const parts = [account_id, product_id, path].filter(Boolean);
-          const label = parts.length > 0 ? `GET /${parts.join("/")}` : "";
-          const href =
-            account_id && product_id ? `/${account_id}/${product_id}` : "";
-          const newPoint: LocationPoint = {
-            id: nextPointId++,
-            lat: msg.data.lat,
-            lng: msg.data.lon,
-            timestamp: Date.now(),
-            label,
-            href,
-          };
-          // Mutate in-place — this is a ref, not React state
+          const points = pointsRef.current;
           if (points.length >= MAX_POINTS) {
             points.splice(0, points.length - MAX_POINTS + 1);
           }
-          points.push(newPoint);
+          points.push({
+            id: nextPointId++,
+            lat,
+            lng: lon,
+            timestamp: Date.now(),
+            label: parts.length > 0 ? `GET /${parts.join("/")}` : "",
+            href: account_id && product_id ? `/${account_id}/${product_id}` : "",
+          });
+        } catch {
+          // Ignore malformed messages
         }
-      } catch {
-        // Ignore malformed messages
-      }
-    };
+      };
+    }
 
-    ws.onerror = () => {
-      // WebSocket failed — globe still works, just no dots
-    };
+    function onVisibilityChange() {
+      if (disposed || document.hidden) return;
+      if (ws.readyState >= WebSocket.CLOSING) connect();
+    }
+
+    connect();
+    document.addEventListener("visibilitychange", onVisibilityChange);
 
     return () => {
-      closed = true;
-      if (
-        ws.readyState === WebSocket.OPEN ||
-        ws.readyState === WebSocket.CONNECTING
-      ) {
-        ws.close();
-      }
+      disposed = true;
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      if (ws.readyState < WebSocket.CLOSING) ws.close();
     };
   }, [wsUrl]);
 
