@@ -42,7 +42,7 @@ export async function getPaginatedProducts(
   cursor?: string,
   previousCursor?: string,
   accountId?: string,
-  filters?: { search?: string; tags?: string },
+  filters?: { search?: string; tags?: string; featuredOnly?: boolean },
 ): Promise<PaginatedProductsResult> {
   try {
     let lastEvaluatedKey: any = undefined;

@@ -10,5 +10,6 @@ export * from "./object-browser";
 export * from "./ChecksumVerifier";
 export * from "./ProductsFilters";
 export * from "./ProductsList";
+export * from "./Pagination";
 export * from "./ProductsSkeleton";
 export * from "../uploader";
