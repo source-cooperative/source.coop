@@ -64,6 +64,7 @@ export function LiveGlobe({
   const globeRef = useRef<GlobeMethods | undefined>(undefined);
   const pointsRef = useRef<LocationPoint[]>([]);
   const [globeReady, setGlobeReady] = useState(false);
+  const globeReadyRef = useRef(false);
   const onErrorRef = useRef(onError);
   onErrorRef.current = onError;
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -74,6 +75,19 @@ export function LiveGlobe({
   const selectedRef = useRef<SelectedPoint | null>(null);
   const selectedIdRef = useRef<number | null>(null);
   const pinnedRef = useRef(false);
+
+  // onGlobeReady fires during render so we can't call setState directly.
+  // Instead, set a ref and poll until mounted.
+  useEffect(() => {
+    if (globeReady) return;
+    const id = setInterval(() => {
+      if (globeReadyRef.current) {
+        setGlobeReady(true);
+        clearInterval(id);
+      }
+    }, 100);
+    return () => clearInterval(id);
+  }, [globeReady]);
 
   // Resize the composer/dither pass without tearing down the scene
   const composerRef = useRef<EffectComposer | null>(null);
@@ -307,8 +321,7 @@ export function LiveGlobe({
             const age = now - p.timestamp;
             const ageFade = Math.max(0, 1 - age / DOT_TTL_MS);
             el.style.display = "";
-            el.style.left = `${screenX - DOT_SIZE / 2}px`;
-            el.style.top = `${screenY - DOT_SIZE / 2}px`;
+            el.style.transform = `translate(${screenX - DOT_SIZE / 2}px,${screenY - DOT_SIZE / 2}px)`;
             el.style.opacity = String(ageFade * edgeFade);
 
             // Update popup position if this point is selected (only when changed)
@@ -488,8 +501,7 @@ export function LiveGlobe({
           globeImageUrl="/img/earth-blue-marble.jpg"
           showAtmosphere={false}
           onGlobeReady={() => {
-            // Defer: this callback fires during render, so setState must be async
-            setTimeout(() => setGlobeReady(true), 0);
+            globeReadyRef.current = true;
           }}
           animateIn={false}
         />
