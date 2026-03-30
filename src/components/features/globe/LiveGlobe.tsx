@@ -286,26 +286,25 @@ export function LiveGlobe({
               continue;
             }
 
-            // Occlusion + edge fade: use the dot product to determine
-            // how much the point faces the camera. Values near 0 are at
-            // the limb (edge) of the globe; negative values are behind it.
+            // Occlusion + edge fade: cosine of angle between the surface
+            // normal (≈ point vector) and the camera-to-point direction.
+            // 1.0 = dead-center, 0.0 = limb, negative = behind globe.
             _pointVec.set(pos3d.x, pos3d.y, pos3d.z);
+            _projVec.copy(_pointVec); // save unnormalized for projection
             _camToPoint.copy(_pointVec).sub(camera.position);
-            const facing = -_pointVec.dot(_camToPoint);
-            if (facing <= 0) {
+            const cosAngle =
+              -_pointVec.normalize().dot(_camToPoint.normalize());
+            if (cosAngle <= 0) {
               el.style.display = "none";
               continue;
             }
 
-            // Normalize facing value: points dead-center have facing ≈ max,
-            // points at the edge approach 0. Use this to smoothly fade at the limb.
-            const pointDist = _pointVec.length();
-            const camDist = _camToPoint.length();
-            const edgeFade = Math.min(1, facing / (pointDist * camDist * 0.15));
+            // Smooth fade near the limb (cosAngle 0→0.15 maps to opacity 0→1)
+            const edgeFade = Math.min(1, cosAngle / 0.15);
 
-            // Project 3D position to screen coords (reuse scratch vector)
+            // Project 3D position to screen coords
             const { width, height } = sizeRef.current;
-            _projVec.copy(_pointVec).project(camera);
+            _projVec.project(camera);
             const screenX = (_projVec.x * 0.5 + 0.5) * width;
             const screenY = (-_projVec.y * 0.5 + 0.5) * height;
 
