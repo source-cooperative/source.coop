@@ -512,7 +512,6 @@ export function LiveGlobe({
         <div ref={dotsContainerRef} aria-hidden="true" />
       </div>
       {selected &&
-        typeof document !== "undefined" &&
         createPortal(
           <div
             className={styles.popup}
