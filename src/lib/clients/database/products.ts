@@ -148,7 +148,7 @@ export class ProductsTable extends BaseTable {
       ExpressionAttributeValues: expressionValues,
       ScanIndexForward: false,
       // When filtering, read more items since DynamoDB applies Limit before FilterExpression
-      Limit: filterParts.length > 0 ? Math.max(limit * 10, 200) : limit,
+      Limit: filterParts.length > 0 ? Math.max(limit * 10, 1000) : limit,
     };
 
     if (filterParts.length > 0) {
