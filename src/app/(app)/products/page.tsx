@@ -39,7 +39,7 @@ export default async function ProductsPage({
     ? { search, tags, featuredOnly: featuredOnly || undefined }
     : undefined;
   const { products, hasNextPage, hasPreviousPage, nextCursor, previousCursor } =
-    await getPaginatedProducts(100, cursor, previous, undefined, filters);
+    await getPaginatedProducts(2, cursor, previous, undefined, filters);
 
   const hasActiveFilters = search || tags || featuredOnly;
 

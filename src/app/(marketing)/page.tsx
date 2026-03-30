@@ -20,6 +20,8 @@ import { CaseStudyCarousel } from "./CaseStudyCarousel";
 import { ThemeInverseComponent } from "@/components/layout/ThemeInverseComponent";
 import styles from "./Landing.module.css";
 import { productListUrl } from "@/lib/urls";
+import { HeroGlobe } from "./HeroGlobe";
+import { CONFIG } from "@/lib/config";
 
 function SectionSubheading({ children }: { children: React.ReactNode }) {
   return (
@@ -41,6 +43,9 @@ export default async function Landing() {
 
   return (
     <>
+      {/* Preload globe textures so they're cached before the client component mounts */}
+      <link rel="preload" href="/img/earth-blue-marble.jpg" as="image" />
+      <link rel="preload" href="/img/clouds.png" as="image" />
       <Box className={styles.landing} px={{ sm: "6", lg: "9" }}>
         <Box className={styles.landingInner} mx="auto" maxWidth="1400px">
           <Navigation />
@@ -93,12 +98,10 @@ export default async function Landing() {
                 <Flex
                   display={{ initial: "none", sm: "flex" }}
                   className={styles.heroImageContainer}
+                  flexShrink="0"
+                  style={{ flexBasis: "600px" }}
                 >
-                  <img
-                    className={styles.heroImage}
-                    src="/img/dithered-globe.png"
-                    alt="globe"
-                  />
+                  <HeroGlobe wsUrl={CONFIG.locationWs.url || ""} />
                 </Flex>
               </Flex>
             </Container>
