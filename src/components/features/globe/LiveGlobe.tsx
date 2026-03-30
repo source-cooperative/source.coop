@@ -406,12 +406,13 @@ export function LiveGlobe({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [globeReady, showClouds]);
 
-  // WebSocket connection with auto-reconnect on wake
+  // WebSocket connection with auto-reconnect on close/error and wake
   useEffect(() => {
     if (!wsUrl) return;
 
     let disposed = false;
     let ws: WebSocket;
+    let reconnectDelay = 1000;
 
     function connect() {
       if (disposed) return;
@@ -419,6 +420,7 @@ export function LiveGlobe({
       ws = new WebSocket(wsUrl);
       ws.onmessage = (event) => {
         if (disposed) return;
+        reconnectDelay = 1000; // reset backoff on successful message
         try {
           const msg = JSON.parse(event.data);
           if (msg.type !== "location") return;
@@ -439,6 +441,11 @@ export function LiveGlobe({
         } catch {
           // Ignore malformed messages
         }
+      };
+      ws.onclose = () => {
+        if (disposed || document.hidden) return;
+        setTimeout(connect, reconnectDelay);
+        reconnectDelay = Math.min(reconnectDelay * 2, 30_000);
       };
     }
 
