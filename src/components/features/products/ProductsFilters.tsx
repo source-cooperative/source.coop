@@ -3,7 +3,7 @@
 import { useTransition, useState, useEffect } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { TextField, Button, Flex } from "@radix-ui/themes";
-import { Cross2Icon } from "@radix-ui/react-icons";
+import { Cross2Icon, StarFilledIcon } from "@radix-ui/react-icons";
 import { useDebounce } from "@/hooks/useDebounce";
 
 export function ProductsFilters() {
@@ -15,7 +15,8 @@ export function ProductsFilters() {
   // Read current values from URL
   const currentSearch = searchParams.get("search") || "";
   const currentTags = searchParams.get("tags") || "";
-  const hasActiveFilters = currentSearch || currentTags;
+  const currentFeatured = searchParams.get("featured") === "1";
+  const hasActiveFilters = currentSearch || currentTags || currentFeatured;
 
   // Local state for search and tags input (initialized from URL to prevent race condition)
   const [searchInput, setSearchInput] = useState(currentSearch);
@@ -50,12 +51,30 @@ export function ProductsFilters() {
     }
 
     // Reset pagination when filters change
-    params.delete("next");
+    params.delete("cursor");
+    params.delete("previous");
 
     const newUrl = params.toString()
       ? `${pathname}?${params.toString()}`
       : pathname;
 
+    startTransition(() => {
+      router.push(newUrl);
+    });
+  };
+
+  const toggleFeatured = () => {
+    const params = new URLSearchParams(searchParams);
+    if (currentFeatured) {
+      params.delete("featured");
+    } else {
+      params.set("featured", "1");
+    }
+    params.delete("cursor");
+    params.delete("previous");
+    const newUrl = params.toString()
+      ? `${pathname}?${params.toString()}`
+      : pathname;
     startTransition(() => {
       router.push(newUrl);
     });
@@ -88,6 +107,17 @@ export function ProductsFilters() {
         onChange={(e) => setTagsInput(e.target.value)}
         disabled={isPending}
       />
+
+      <Button
+        size="1"
+        variant={currentFeatured ? "solid" : "soft"}
+        color={currentFeatured ? "orange" : "gray"}
+        onClick={toggleFeatured}
+        disabled={isPending}
+      >
+        <StarFilledIcon />
+        Featured
+      </Button>
 
       {hasActiveFilters && (
         <Button
