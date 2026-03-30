@@ -22,8 +22,6 @@ import { WebsiteLink } from "./WebsiteLink";
 import { ProfileLocation } from "./ProfileLocation";
 import { editAccountProfileUrl } from "@/lib/urls";
 import { EditButton } from "@/components/core";
-import { AccountAnalyticsSection } from "../analytics/AccountAnalyticsSection";
-import type { DailyAccountProductStats, Period } from "@/lib/clients/analytics";
 
 interface OrganizationProfileProps {
   account: OrganizationalAccount;
@@ -32,8 +30,6 @@ interface OrganizationProfileProps {
   admins: IndividualAccount[];
   members: IndividualAccount[];
   canEdit: boolean;
-  analyticsData?: DailyAccountProductStats[];
-  analyticsPeriod?: Period;
 }
 
 export function OrganizationProfile({
@@ -43,8 +39,6 @@ export function OrganizationProfile({
   admins,
   members,
   canEdit,
-  analyticsData,
-  analyticsPeriod = 7,
 }: OrganizationProfileProps) {
   return (
     <Box>
@@ -126,13 +120,6 @@ export function OrganizationProfile({
           />
         </Box>
       </Grid>
-
-      {analyticsData && analyticsData.length > 0 && (
-        <AccountAnalyticsSection
-          data={analyticsData}
-          period={analyticsPeriod}
-        />
-      )}
 
       <Box>
         <Heading as="h2" size="4" mb="2">

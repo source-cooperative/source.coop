@@ -19,8 +19,6 @@ import { EmailVerificationStatus } from "./EmailVerificationStatus";
 import { AvatarLinkCompact, EditButton } from "@/components/core";
 import { EmailVerificationCallout } from "../auth/EmailVerificationCallout";
 import { WelcomeCallout } from "./WelcomeCallout";
-import { AccountAnalyticsSection } from "../analytics/AccountAnalyticsSection";
-import type { DailyAccountProductStats, Period } from "@/lib/clients/analytics";
 
 interface IndividualProfileProps {
   account: IndividualAccount;
@@ -30,8 +28,6 @@ interface IndividualProfileProps {
   organizations: OrganizationalAccount[];
   showWelcome?: boolean;
   canEdit: boolean;
-  analyticsData?: DailyAccountProductStats[];
-  analyticsPeriod?: Period;
 }
 
 export function IndividualProfile({
@@ -42,8 +38,6 @@ export function IndividualProfile({
   organizations,
   showWelcome = false,
   canEdit,
-  analyticsData,
-  analyticsPeriod = 7,
 }: IndividualProfileProps) {
   const primaryEmail = account.emails?.find((email) => email.is_primary);
   return (
@@ -124,13 +118,6 @@ export function IndividualProfile({
             ))}
           </Grid>
         </Box>
-      )}
-
-      {analyticsData && analyticsData.length > 0 && (
-        <AccountAnalyticsSection
-          data={analyticsData}
-          period={analyticsPeriod}
-        />
       )}
 
       {ownedProducts.length > 0 && (
