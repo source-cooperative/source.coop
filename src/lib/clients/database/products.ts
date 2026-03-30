@@ -114,7 +114,6 @@ export class ProductsTable extends BaseTable {
     const expressionValues: Record<string, any> = {
       ":visibility": "public",
     };
-    const expressionNames: Record<string, string> = {};
     const filterParts: string[] = [];
 
     let keyCondition = "visibility = :visibility";
@@ -153,10 +152,6 @@ export class ProductsTable extends BaseTable {
 
     if (filterParts.length > 0) {
       queryParams.FilterExpression = filterParts.join(" AND ");
-    }
-
-    if (Object.keys(expressionNames).length > 0) {
-      queryParams.ExpressionAttributeNames = expressionNames;
     }
 
     if (lastEvaluatedKey) {
