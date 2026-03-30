@@ -6,14 +6,28 @@ import type { Product } from "@/types";
 import { ProductListItem } from "./ProductListItem";
 import { ShortcutHelp } from "@/components/features/keyboard/ShortcutHelp";
 import { useProductListKeyboardShortcuts } from "@/hooks/useProductListKeyboardShortcuts";
+import { Pagination } from "./Pagination";
 import styles from "./ProductList.module.css";
+
+export interface PaginationProps {
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+  nextCursor?: string;
+  previousCursor?: string;
+  currentCursor?: string;
+}
 
 interface ProductsListProps {
   products: Product[];
   grid?: boolean;
+  pagination?: PaginationProps;
 }
 
-export function ProductsList({ products, grid = false }: ProductsListProps) {
+export function ProductsList({
+  products,
+  grid = false,
+  pagination,
+}: ProductsListProps) {
   const [showHelp, setShowHelp] = useState(false);
 
   const { selectedIndex } = useProductListKeyboardShortcuts({
@@ -49,6 +63,8 @@ export function ProductsList({ products, grid = false }: ProductsListProps) {
           ))}
         </ul>
       </nav>
+
+      {pagination && <Pagination {...pagination} />}
 
       <ShortcutHelp
         open={showHelp}
