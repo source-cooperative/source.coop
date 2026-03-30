@@ -3,13 +3,22 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Globe, { GlobeMethods } from "react-globe.gl";
-import * as THREE from "three";
+import {
+  AmbientLight,
+  DirectionalLight,
+  Mesh,
+  MeshPhongMaterial,
+  Object3D,
+  SphereGeometry,
+  TextureLoader,
+  Vector2,
+  Vector3,
+} from "three";
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass.js";
 import { DitherShader } from "./DitherShader";
 import styles from "./LiveGlobe.module.css";
-import { CONFIG } from "@/lib";
 
 interface LocationPoint {
   id: number;
@@ -98,13 +107,13 @@ export function LiveGlobe({
 
     let cancelled = false;
     let animFrameId: number;
-    let clouds: THREE.Mesh | undefined;
+    let clouds: Mesh | undefined;
     let cachedRect: DOMRect | null = null;
 
     // Per-instance scratch vectors
-    const _pointVec = new THREE.Vector3();
-    const _camToPoint = new THREE.Vector3();
-    const _projVec = new THREE.Vector3();
+    const _pointVec = new Vector3();
+    const _camToPoint = new Vector3();
+    const _projVec = new Vector3();
 
     const prefersReducedMotion = window.matchMedia(
       "(prefers-reduced-motion: reduce)",
@@ -112,11 +121,11 @@ export function LiveGlobe({
 
     try {
       const scene = globe.scene();
-      scene.traverse((obj: THREE.Object3D) => {
-        if (obj instanceof THREE.AmbientLight) {
+      scene.traverse((obj: Object3D) => {
+        if (obj instanceof AmbientLight) {
           obj.intensity = 3.0;
         }
-        if (obj instanceof THREE.DirectionalLight) {
+        if (obj instanceof DirectionalLight) {
           obj.intensity = 0.2;
         }
       });
@@ -134,15 +143,15 @@ export function LiveGlobe({
 
       // Add clouds
       if (showClouds) {
-        new THREE.TextureLoader().load("/img/clouds.png", (texture) => {
+        new TextureLoader().load("/img/clouds.png", (texture) => {
           if (cancelled || !globe) return;
-          clouds = new THREE.Mesh(
-            new THREE.SphereGeometry(
+          clouds = new Mesh(
+            new SphereGeometry(
               globe.getGlobeRadius() * (1 + CLOUDS_ALT),
               75,
               75,
             ),
-            new THREE.MeshPhongMaterial({
+            new MeshPhongMaterial({
               map: texture,
               transparent: true,
               opacity: 0.3,
@@ -159,7 +168,7 @@ export function LiveGlobe({
       composer.addPass(new RenderPass(scene, camera));
 
       const ditherPass = new ShaderPass(DitherShader);
-      ditherPass.uniforms.resolution.value = new THREE.Vector2(
+      ditherPass.uniforms.resolution.value = new Vector2(
         sizeRef.current.width,
         sizeRef.current.height,
       );
@@ -393,7 +402,7 @@ export function LiveGlobe({
         ditherPassRef.current = null;
         if (clouds) {
           globe?.scene().remove(clouds);
-          const mat = clouds.material as THREE.MeshPhongMaterial;
+          const mat = clouds.material as MeshPhongMaterial;
           mat.map?.dispose();
           mat.dispose();
           clouds.geometry.dispose();
