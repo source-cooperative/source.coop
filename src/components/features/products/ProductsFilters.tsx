@@ -51,7 +51,8 @@ export function ProductsFilters() {
     }
 
     // Reset pagination when filters change
-    params.delete("next");
+    params.delete("cursor");
+    params.delete("previous");
 
     const newUrl = params.toString()
       ? `${pathname}?${params.toString()}`
@@ -69,7 +70,8 @@ export function ProductsFilters() {
     } else {
       params.set("featured", "1");
     }
-    params.delete("next");
+    params.delete("cursor");
+    params.delete("previous");
     const newUrl = params.toString()
       ? `${pathname}?${params.toString()}`
       : pathname;
