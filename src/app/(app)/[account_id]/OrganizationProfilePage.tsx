@@ -17,21 +17,25 @@ import {
 import { getPageSession } from "@/lib/api/utils";
 import { isAuthorized } from "@/lib/api/authz";
 import { getPendingInvitation } from "@/lib/actions/memberships";
+import { getAccountAnalytics, type Period } from "@/lib/clients/analytics";
 
 interface OrganizationProfilePageProps {
   account: OrganizationalAccount;
+  period?: Period;
 }
 
 export async function OrganizationProfilePage({
   account,
+  period = 7,
 }: OrganizationProfilePageProps) {
   // Get session to check authentication status
   const session = await getPageSession();
   const isAuthenticated = session?.account && !session.account.disabled;
 
-  let [memberships, { products }] = await Promise.all([
+  let [memberships, { products }, analyticsData] = await Promise.all([
     membershipsTable.listByAccount(account.account_id),
     productsTable.listByAccount(account.account_id),
+    getAccountAnalytics(account.account_id, period),
   ]);
 
   memberships = memberships
@@ -106,6 +110,8 @@ export async function OrganizationProfilePage({
           admins={admins}
           members={members}
           canEdit={isAuthorized(session, account, Actions.PutAccountProfile)}
+          analyticsData={analyticsData}
+          analyticsPeriod={period}
         />
       </Box>
     </Container>

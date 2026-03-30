@@ -19,10 +19,17 @@ import {
   generateNotFoundMetadata,
   generateAccountMetadata,
 } from "@/components/features/metadata";
+import type { Period } from "@/lib/clients/analytics";
+
+function parsePeriod(value: string | undefined): Period {
+  const num = Number(value);
+  if (num === 7 || num === 30 || num === 90) return num;
+  return 7;
+}
 
 type PageProps = {
   params: Promise<{ account_id: string }>;
-  searchParams: Promise<{ welcome?: string }>;
+  searchParams: Promise<{ welcome?: string; period?: string }>;
 };
 
 export async function generateMetadata({
@@ -38,7 +45,9 @@ export async function generateMetadata({
 
 export default async function AccountPage({ params, searchParams }: PageProps) {
   const { account_id } = await params;
-  const showWelcome = Object.hasOwn(await searchParams, "welcome");
+  const resolvedSearchParams = await searchParams;
+  const showWelcome = Object.hasOwn(resolvedSearchParams, "welcome");
+  const period = parsePeriod(resolvedSearchParams.period);
 
   const account = await accountsTable.fetchById(account_id);
   if (!account) {
@@ -46,8 +55,12 @@ export default async function AccountPage({ params, searchParams }: PageProps) {
   }
 
   return isOrganizationalAccount(account) ? (
-    <OrganizationProfilePage account={account} />
+    <OrganizationProfilePage account={account} period={period} />
   ) : (
-    <IndividualProfilePage account={account} showWelcome={showWelcome} />
+    <IndividualProfilePage
+      account={account}
+      showWelcome={showWelcome}
+      period={period}
+    />
   );
 }
