@@ -104,6 +104,7 @@ export function LiveGlobe({
     // Per-instance scratch vectors
     const _pointVec = new THREE.Vector3();
     const _camToPoint = new THREE.Vector3();
+    const _projVec = new THREE.Vector3();
 
     const prefersReducedMotion = window.matchMedia(
       "(prefers-reduced-motion: reduce)",
@@ -280,8 +281,7 @@ export function LiveGlobe({
             }
 
             const pos3d = globe!.getCoords(p.lat, p.lng, 0.01);
-            const coords = globe!.getScreenCoords(p.lat, p.lng, 0.01);
-            if (!pos3d || !coords) {
+            if (!pos3d) {
               el.style.display = "none";
               continue;
             }
@@ -303,16 +303,22 @@ export function LiveGlobe({
             const camDist = _camToPoint.length();
             const edgeFade = Math.min(1, facing / (pointDist * camDist * 0.15));
 
+            // Project 3D position to screen coords (reuse scratch vector)
+            const { width, height } = sizeRef.current;
+            _projVec.copy(_pointVec).project(camera);
+            const screenX = (_projVec.x * 0.5 + 0.5) * width;
+            const screenY = (-_projVec.y * 0.5 + 0.5) * height;
+
             const age = now - p.timestamp;
             const ageFade = Math.max(0, 1 - age / DOT_TTL_MS);
             el.style.display = "";
-            el.style.left = `${coords.x - DOT_SIZE / 2}px`;
-            el.style.top = `${coords.y - DOT_SIZE / 2}px`;
+            el.style.left = `${screenX - DOT_SIZE / 2}px`;
+            el.style.top = `${screenY - DOT_SIZE / 2}px`;
             el.style.opacity = String(ageFade * edgeFade);
 
             // Update popup position if this point is selected (only when changed)
             if (p.id === selectedIdRef.current) {
-              const page = toPageCoords(coords.x, coords.y);
+              const page = toPageCoords(screenX, screenY);
               updateSelected({
                 label: p.label,
                 href: p.href,
