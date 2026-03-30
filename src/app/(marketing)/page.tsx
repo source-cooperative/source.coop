@@ -311,7 +311,7 @@ export default async function Landing() {
                 </Box>
                 <Box flexGrow="1">
                   <Text size="5" mb="4" as="div">
-                    Source.Coop supports your data lifecycle, from prototyping
+                    Source Cooperative supports your data lifecycle, from prototyping
                     to public release, without navigating corporate cloud
                     policies.
                   </Text>
