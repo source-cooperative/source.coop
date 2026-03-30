@@ -1,0 +1,71 @@
+.container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+:global(.dark) .container canvas {
+  filter: invert(1);
+}
+.dot {
+  position: absolute;
+  top: 0;
+  left: 0;
+  will-change: transform, opacity;
+  border-radius: 50%;
+  pointer-events: auto;
+  cursor: pointer;
+  box-shadow: 0 0 6px 2px var(--dot-color);
+}
+/* Larger invisible hit area */
+.dot::before {
+  content: "";
+  position: absolute;
+  top: -10px;
+  left: -10px;
+  right: -10px;
+  bottom: -10px;
+  border-radius: 50%;
+}
+.popup {
+  position: absolute;
+  transform: translate(-50%, calc(-100% - 16px));
+  background: var(--color-background, #fff);
+  border: 1px solid var(--gray-6, #d0d0d0);
+  padding: 10px 12px;
+  font-size: 0.75rem;
+  font-family: var(--code-font-family, "Berkeley Mono", Menlo, Consolas, monospace);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 20;
+  pointer-events: auto;
+  white-space: nowrap;
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.popup::after {
+  content: "";
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%) rotate(45deg);
+  width: 10px;
+  height: 10px;
+  background: var(--color-background, #fff);
+  border-right: 1px solid var(--gray-6, #d0d0d0);
+  border-bottom: 1px solid var(--gray-6, #d0d0d0);
+}
+.popupLabel {
+  margin-bottom: 4px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.popupLink {
+  color: inherit;
+  text-decoration: none;
+  font-weight: 500;
+}
+.popupLink:hover {
+  text-decoration: underline;
+}
