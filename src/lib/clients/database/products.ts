@@ -15,8 +15,25 @@ import { accountsTable } from "./accounts";
 import { BaseTable } from "./base";
 import { marshall } from "@aws-sdk/util-dynamodb";
 
-class ProductsTable extends BaseTable {
+export class ProductsTable extends BaseTable {
   model = "products";
+
+  private buildSearchText(product: {
+    title?: string;
+    description?: string;
+    account_id: string;
+    product_id: string;
+  }): string {
+    return [
+      product.title,
+      product.description,
+      product.account_id,
+      product.product_id,
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+  }
 
   async list(
     limit = 50,
@@ -106,14 +123,14 @@ class ProductsTable extends BaseTable {
       keyCondition += " AND featured > :zero";
     }
 
+    // Search uses a pre-computed `search_text` field (lowercased on write) with
+    // DynamoDB `contains()`. This is a substring scan, not full-text search —
+    // it won't scale well beyond ~10k products. At that point, consider a
+    // dedicated search service (e.g. OpenSearch, Typesense).
     if (filters?.search) {
       const searchLower = filters.search.toLowerCase();
       expressionValues[":search"] = searchLower;
-      filterParts.push(
-        "(contains(#title, :search) OR contains(#desc, :search) OR contains(account_id, :search) OR contains(product_id, :search))"
-      );
-      expressionNames["#title"] = "title";
-      expressionNames["#desc"] = "description";
+      filterParts.push("contains(search_text, :search)");
     }
 
     if (filters?.tags) {
@@ -130,7 +147,8 @@ class ProductsTable extends BaseTable {
       KeyConditionExpression: keyCondition,
       ExpressionAttributeValues: expressionValues,
       ScanIndexForward: false,
-      Limit: limit,
+      // When filtering, read more items since DynamoDB applies Limit before FilterExpression
+      Limit: filterParts.length > 0 ? Math.max(limit * 10, 200) : limit,
     };
 
     if (filterParts.length > 0) {
@@ -187,10 +205,11 @@ class ProductsTable extends BaseTable {
 
   async create(product: Product): Promise<Product> {
     try {
+      const item = { ...product, search_text: this.buildSearchText(product) };
       await this.client.send(
         new PutCommand({
           TableName: this.table,
-          Item: product,
+          Item: item,
         })
       );
       return product;
@@ -213,13 +232,14 @@ class ProductsTable extends BaseTable {
             account_id: product.account_id,
           },
           UpdateExpression:
-            "SET title = :title, description = :description, updated_at = :updated_at, visibility = :visibility, metadata = :metadata",
+            "SET title = :title, description = :description, updated_at = :updated_at, visibility = :visibility, metadata = :metadata, search_text = :search_text",
           ExpressionAttributeValues: {
             ":title": product.title,
             ":description": product.description,
             ":updated_at": new Date().toISOString(),
             ":visibility": product.visibility,
             ":metadata": product.metadata,
+            ":search_text": this.buildSearchText(product),
           },
           ReturnValues: "ALL_NEW",
         })
@@ -240,9 +260,10 @@ class ProductsTable extends BaseTable {
     checkIfExists: boolean = false
   ): Promise<[Product, boolean]> {
     try {
+      const item = { ...product, search_text: this.buildSearchText(product) };
       const command = new PutItemCommand({
         TableName: this.table,
-        Item: marshall(product),
+        Item: marshall(item),
         ConditionExpression: checkIfExists
           ? "attribute_not_exists(product_id)"
           : undefined,

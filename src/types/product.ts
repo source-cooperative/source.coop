@@ -63,6 +63,7 @@ export const ProductSchema = z
     disabled: z.boolean(),
     featured: z.number(),
     data_mode: ProductDataModeSchema,
+    search_text: z.string().optional(),
   })
   .openapi("Product");
 
