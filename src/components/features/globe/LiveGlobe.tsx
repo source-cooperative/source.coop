@@ -413,7 +413,10 @@ export function LiveGlobe({
           c.innerHTML = "";
         }
       };
-    } catch {
+    } catch (err) {
+      if (process.env.NODE_ENV !== "production") {
+        console.error("[LiveGlobe] setup error:", err);
+      }
       onErrorRef.current?.();
     }
     // width/height handled by separate resize effect; onError via ref

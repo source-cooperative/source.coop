@@ -9,6 +9,9 @@
 }
 .dot {
   position: absolute;
+  top: 0;
+  left: 0;
+  will-change: transform, opacity;
   border-radius: 50%;
   pointer-events: auto;
   cursor: pointer;
