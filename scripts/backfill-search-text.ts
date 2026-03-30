@@ -156,7 +156,7 @@ if (!tableName) {
   process.exit(1);
 }
 
-const dryRun = process.env.DRY_RUN === "true";
+const dryRun = process.env.DRY_RUN !== undefined;
 
 backfill(tableName, dryRun).catch((err) => {
   console.error("Backfill failed:", err);
