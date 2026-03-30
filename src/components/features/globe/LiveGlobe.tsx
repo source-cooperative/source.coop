@@ -430,20 +430,27 @@ export function LiveGlobe({
         try {
           const msg = JSON.parse(event.data);
           if (msg.type !== "location") return;
-          const { account_id, product_id, path, lat, lon } = msg.data;
-          const parts = [account_id, product_id, path].filter(Boolean);
-          const points = pointsRef.current;
-          if (points.length >= MAX_POINTS) {
-            points.splice(0, points.length - MAX_POINTS + 1);
-          }
-          points.push({
-            id: nextPointId++,
-            lat,
-            lng: lon,
-            timestamp: Date.now(),
-            label: parts.length > 0 ? `GET /${parts.join("/")}` : "",
-            href: account_id && product_id ? `/${account_id}/${product_id}` : "",
-          });
+          const { account_id, product_id, lat, lon } = msg.data;
+          const parts = [account_id, product_id].filter(Boolean);
+          const current = pointsRef.current;
+          const trimmed =
+            current.length >= MAX_POINTS
+              ? current.slice(current.length - MAX_POINTS + 1)
+              : current;
+          pointsRef.current = [
+            ...trimmed,
+            {
+              id: nextPointId++,
+              lat,
+              lng: lon,
+              timestamp: Date.now(),
+              label: parts.length > 0 ? `GET /${parts.join("/")}` : "",
+              href:
+                account_id && product_id
+                  ? `/${account_id}/${product_id}`
+                  : "",
+            },
+          ];
         } catch {
           // Ignore malformed messages
         }
