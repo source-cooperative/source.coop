@@ -4,8 +4,7 @@
   position: relative;
   overflow: hidden;
 }
-:global(.dark) .container canvas,
-:global(.dark-theme) .container canvas {
+:global(.dark) .container canvas {
   filter: invert(1);
 }
 .dot {
