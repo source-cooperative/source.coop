@@ -24,18 +24,22 @@ interface ProductsPageProps {
     search?: string;
     tags?: string;
     next?: string;
+    featured?: string;
   }>;
 }
 
 export default async function ProductsPage({
   searchParams,
 }: ProductsPageProps) {
-  const { search, tags, next } = await searchParams;
+  const { search, tags, next, featured } = await searchParams;
 
-  const filters = search || tags ? { search, tags } : undefined;
+  const featuredOnly = featured === "1";
+  const filters = search || tags || featuredOnly
+    ? { search, tags, featuredOnly: featuredOnly || undefined }
+    : undefined;
   const { products } = await getPaginatedProducts(20, next, undefined, undefined, filters);
 
-  const hasActiveFilters = search || tags;
+  const hasActiveFilters = search || tags || featuredOnly;
 
   return (
     <Box>
@@ -56,6 +60,11 @@ export default async function ProductsPage({
           {tags && (
             <Badge variant="soft" color="green">
               Tags: {tags}
+            </Badge>
+          )}
+          {featuredOnly && (
+            <Badge variant="soft" color="orange">
+              Featured
             </Badge>
           )}
         </Flex>
