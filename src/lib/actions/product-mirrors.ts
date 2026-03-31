@@ -47,8 +47,8 @@ export async function addProductMirror(
 
     const prefix = connection.prefix_template
       ? connection.prefix_template
-          .replace("{account_id}", accountId)
-          .replace("{repository_id}", productId)
+          .replace("{{repository.account_id}}", accountId)
+          .replace("{{repository.repository_id}}", productId)
       : `${accountId}/${productId}/`;
 
     const config: Record<string, string> = {};

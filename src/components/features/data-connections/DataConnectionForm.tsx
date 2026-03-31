@@ -141,7 +141,7 @@ export function DataConnectionForm({
             defaultValue={
               (state.data.get("prefix_template") as string) ||
               dataConnection?.prefix_template ||
-              "{account_id}/{repository_id}/"
+              "{{repository.account_id}}/{{repository.repository_id}}/"
             }
             style={fieldStyle}
           />
