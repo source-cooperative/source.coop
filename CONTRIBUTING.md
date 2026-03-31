@@ -21,6 +21,10 @@ Merging to `main` automatically deploys to [staging.source.coop](https://staging
 
 Production deploys to [source.coop](https://source.coop) trigger when a [GitHub Release](https://github.com/source-cooperative/source.coop/releases) is published. [release-please](https://github.com/googleapis/release-please) automatically maintains a release PR — merging it creates the GitHub Release and triggers the production deploy.
 
+## Local Development
+
+See the [README](README.md) for setup instructions (prerequisites, database, environment variables).
+
 ## Architecture
 
 ### Infrastructure
@@ -34,7 +38,7 @@ CDK is run alongside other deployment workflows via GitHub Actions (see `.github
 
 ### Database
 
-DynamoDB is the primary data store. Production runs in `us-west-2`, staging in `us-east-1`. Table clients live in `src/lib/clients/database/` and are the standard way to interact with the database.
+DynamoDB is the primary data store. Production runs in `us-west-2`, staging in `us-east-1`. Table clients live in `src/lib/clients/database/` and are the standard way to interact with the database. Seed data for local development lives in `fixtures/`.
 
 ### Authentication
 
@@ -62,6 +66,14 @@ Use `LOGGER` from `src/lib/logging.ts` — not `console.log`. Debug logs are sup
 
 All data types are defined in `src/types/` using [Zod](https://zod.dev/) schemas, with TypeScript types inferred via `z.infer`. Zod is also used for server action input validation.
 
+### Testing
+
+Run tests with `npm test`.
+
 ### UI
 
-[Radix UI](https://www.radix-ui.com/) is the component library. Forms use `src/components/core/DynamicForm.tsx` with Next.js server actions.
+[Radix UI](https://www.radix-ui.com/) is the component library. Components are organized into `src/components/core/` (reusable primitives), `src/components/layout/` (page structure), and `src/components/features/` (domain-specific). Forms use `src/components/core/DynamicForm.tsx` with Next.js server actions.
+
+### Server Actions & API Routes
+
+Server actions (`src/lib/actions/`) handle form submissions — they validate with Zod, return `FormState` objects, and call `revalidatePath()` after mutations. API routes (`src/app/api/v1/`) return JSON and use status codes from the `http-status-codes` library. Both use `isAuthorized()` for permission checks.
