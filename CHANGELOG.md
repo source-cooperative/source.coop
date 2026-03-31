@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.1](https://github.com/source-cooperative/source.coop/compare/v1.1.0...v1.1.1) (2026-03-31)
+
+
+### Bug Fixes
+
+* smooth transition when loading globe ([4f650b9](https://github.com/source-cooperative/source.coop/commit/4f650b9cf0f3df85aadc6b149cac045ab1c86421))
+* smooth transition when loading globe ([#262](https://github.com/source-cooperative/source.coop/issues/262)) ([223dca4](https://github.com/source-cooperative/source.coop/commit/223dca49644279419020afc898e58df78a688eaa))
+
 ## [1.1.0](https://github.com/source-cooperative/source.coop/compare/v1.0.0...v1.1.0) (2026-03-31)
 
 
