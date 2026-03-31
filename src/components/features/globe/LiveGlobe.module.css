@@ -4,6 +4,13 @@
   position: relative;
   overflow: hidden;
 }
+.loading canvas {
+  opacity: 0;
+}
+.ready canvas {
+  opacity: 1;
+  transition: opacity 0.5s ease-in;
+}
 :global(.dark) .container canvas {
   filter: invert(1);
 }
