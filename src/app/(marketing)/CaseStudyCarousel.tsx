@@ -9,8 +9,8 @@ const CASE_STUDIES = [
     content:
       "We can solve this question for ourselves, but the point of our work is to bring the world's attention to these rural communities and their needs. We want to make sure the data we develop and the insights we generate are accessible to other organizations and people. That's what brought us to Source.",
     byline:
-      "— Cameron Kruse, Bridges to Prosperity Director of Digital Technology",
-    url: "https://docs.source.coop/case-studies/bridges-to-prosperity",
+      "— Cameron Kruse, Fika Director of Digital Technology",
+    url: "https://docs.source.coop/case-studies/fika",
   },
   {
     content:
