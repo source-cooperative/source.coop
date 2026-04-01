@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.2.0](https://github.com/source-cooperative/source.coop/compare/v1.1.1...v1.2.0) (2026-04-01)
+
+
+### Features
+
+* add city country to globe labels ([#276](https://github.com/source-cooperative/source.coop/issues/276)) ([5f97d7c](https://github.com/source-cooperative/source.coop/commit/5f97d7c741dba49869961aa991811b6263872431))
+
+
+### Bug Fixes
+
+* Update Bridges to Prosperity to Fika ([#264](https://github.com/source-cooperative/source.coop/issues/264)) ([f67b4f3](https://github.com/source-cooperative/source.coop/commit/f67b4f32dbe570b20c6859cebe999634ed672094))
+
 ## [1.1.1](https://github.com/source-cooperative/source.coop/compare/v1.1.0...v1.1.1) (2026-03-31)
 
 
