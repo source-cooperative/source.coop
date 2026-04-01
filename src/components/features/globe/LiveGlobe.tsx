@@ -64,6 +64,7 @@ export function LiveGlobe({
   const globeRef = useRef<GlobeMethods | undefined>(undefined);
   const pointsRef = useRef<LocationPoint[]>([]);
   const [globeReady, setGlobeReady] = useState(false);
+  const [sceneReady, setSceneReady] = useState(false);
   const globeReadyRef = useRef(false);
   const onErrorRef = useRef(onError);
   onErrorRef.current = onError;
@@ -387,8 +388,10 @@ export function LiveGlobe({
       document.addEventListener("click", handleDocClick);
 
       animate();
+      setSceneReady(true);
 
       return () => {
+        setSceneReady(false);
         cancelled = true;
         cancelAnimationFrame(animFrameId);
         window.removeEventListener("scroll", updateRect);
@@ -492,7 +495,7 @@ export function LiveGlobe({
     <>
       <div
         ref={wrapperRef}
-        className={styles.container}
+        className={`${styles.container} ${sceneReady ? styles.ready : styles.loading}`}
         role="img"
         aria-label="Interactive 3D globe showing live data request locations"
       >
