@@ -26,11 +26,13 @@ interface LocationPoint {
   lng: number;
   timestamp: number;
   label: string;
+  location: string;
   href: string;
 }
 
 interface SelectedPoint {
   label: string;
+  location: string;
   href: string;
   x: number;
   y: number;
@@ -206,6 +208,7 @@ export function LiveGlobe({
           prev.x === next.x &&
           prev.y === next.y &&
           prev.label === next.label &&
+          prev.location === next.location &&
           prev.href === next.href
         ) {
           return;
@@ -230,6 +233,7 @@ export function LiveGlobe({
           const page = toPageCoords(coords.x, coords.y);
           updateSelected({
             label: point.label,
+            location: point.location,
             href: point.href,
             x: page.x,
             y: page.y,
@@ -330,6 +334,7 @@ export function LiveGlobe({
               const page = toPageCoords(screenX, screenY);
               updateSelected({
                 label: p.label,
+                location: p.location,
                 href: p.href,
                 x: page.x,
                 y: page.y,
@@ -444,8 +449,9 @@ export function LiveGlobe({
         try {
           const msg = JSON.parse(event.data);
           if (msg.type !== "location") return;
-          const { account_id, product_id, lat, lon } = msg.data;
+          const { account_id, product_id, lat, lon, city, country } = msg.data;
           const parts = [account_id, product_id].filter(Boolean);
+          const locationParts = [city, country].filter(Boolean);
           const current = pointsRef.current;
           const trimmed =
             current.length >= MAX_POINTS
@@ -459,10 +465,10 @@ export function LiveGlobe({
               lng: lon,
               timestamp: Date.now(),
               label: parts.length > 0 ? `GET /${parts.join("/")}` : "",
+              location:
+                locationParts.length > 0 ? locationParts.join(", ") : "",
               href:
-                account_id && product_id
-                  ? `/${account_id}/${product_id}`
-                  : "",
+                account_id && product_id ? `/${account_id}/${product_id}` : "",
             },
           ];
         } catch {
@@ -523,6 +529,9 @@ export function LiveGlobe({
               top: selected.y,
             }}
           >
+            {selected.location && (
+              <div className={styles.popupLocation}>{selected.location}</div>
+            )}
             <div className={styles.popupLabel}>{selected.label}</div>
             {selected.href && (
               <a href={selected.href} className={styles.popupLink}>
