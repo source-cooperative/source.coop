@@ -19,6 +19,7 @@ import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass.js";
 import { DitherShader } from "./DitherShader";
 import styles from "./LiveGlobe.module.css";
+import coloLocations from "./locations.json";
 
 interface LocationPoint {
   id: number;
@@ -449,9 +450,12 @@ export function LiveGlobe({
         try {
           const msg = JSON.parse(event.data);
           if (msg.type !== "location") return;
-          const { account_id, product_id, lat, lon, city, country } = msg.data;
+          const { account_id, product_id, colo } = msg.data;
           const parts = [account_id, product_id].filter(Boolean);
-          const locationParts = [city, country].filter(Boolean);
+          const coloEntry =
+            colo &&
+            coloLocations[colo as keyof typeof coloLocations];
+          if (!coloEntry?.lat || !coloEntry?.lon) return;
           const current = pointsRef.current;
           const trimmed =
             current.length >= MAX_POINTS
@@ -461,12 +465,11 @@ export function LiveGlobe({
             ...trimmed,
             {
               id: nextPointId++,
-              lat,
-              lng: lon,
+              lat: coloEntry.lat,
+              lng: coloEntry.lon,
               timestamp: Date.now(),
               label: parts.length > 0 ? `GET /${parts.join("/")}` : "",
-              location:
-                locationParts.length > 0 ? locationParts.join(", ") : "",
+              location: coloEntry ? coloEntry.name : "",
               href:
                 account_id && product_id ? `/${account_id}/${product_id}` : "",
             },
