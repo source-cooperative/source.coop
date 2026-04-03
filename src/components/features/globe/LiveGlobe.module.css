@@ -62,23 +62,35 @@
   border-right: 1px solid var(--gray-6, #d0d0d0);
   border-bottom: 1px solid var(--gray-6, #d0d0d0);
 }
-.popupLabel {
-  margin-bottom: 4px;
-  font-weight: 600;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
 .popupLocation {
   margin-bottom: 4px;
   color: var(--gray-11, #6b6b6b);
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.popupProducts {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.popupProduct {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 1px 0;
+  overflow: hidden;
+}
 .popupLink {
   color: inherit;
   text-decoration: none;
   font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .popupLink:hover {
   text-decoration: underline;
+}
+.popupRps {
+  color: var(--gray-11, #6b6b6b);
+  flex-shrink: 0;
 }

@@ -21,20 +21,25 @@ import { DitherShader } from "./DitherShader";
 import styles from "./LiveGlobe.module.css";
 import coloLocations from "./locations.json";
 
+interface ProductEntry {
+  slug: string; // "account_id/product_id"
+  href: string; // "/account_id/product_id"
+  avgRps: number;
+}
+
 interface LocationPoint {
-  id: number;
+  id: string; // colo code (e.g. "JFK")
   lat: number;
   lng: number;
-  timestamp: number;
-  label: string;
   location: string;
-  href: string;
+  products: ProductEntry[];
+  totalRps: number;
+  lastSeen: number;
 }
 
 interface SelectedPoint {
-  label: string;
   location: string;
-  href: string;
+  products: ProductEntry[];
   x: number;
   y: number;
 }
@@ -47,15 +52,11 @@ interface LiveGlobeProps {
   onError?: () => void;
 }
 
-const DOT_TTL_MS = 10 * 1_000;
+const FADE_TTL_MS = 2_000; // time for removed entries to fade out
 const DOT_COLOR = "#75e58c";
 const DOT_SIZE = 8;
 const CLOUDS_ALT = 0.004;
 const CLOUDS_ROTATION_SPEED = -0.0025;
-const MAX_POINTS = 500;
-
-// Monotonic ID counter — shared across instances, but always unique
-let nextPointId = 0;
 
 export function LiveGlobe({
   wsUrl,
@@ -77,8 +78,9 @@ export function LiveGlobe({
   sizeRef.current = { width, height };
   const [selected, setSelected] = useState<SelectedPoint | null>(null);
   const selectedRef = useRef<SelectedPoint | null>(null);
-  const selectedIdRef = useRef<number | null>(null);
+  const selectedIdRef = useRef<string | null>(null);
   const pinnedRef = useRef(false);
+  const clearSelectedRef = useRef(() => {});
 
   // onGlobeReady fires during render so we can't call setState directly.
   // Instead, set a ref and poll until mounted.
@@ -208,9 +210,8 @@ export function LiveGlobe({
           prev &&
           prev.x === next.x &&
           prev.y === next.y &&
-          prev.label === next.label &&
           prev.location === next.location &&
-          prev.href === next.href
+          prev.products === next.products
         ) {
           return;
         }
@@ -224,8 +225,9 @@ export function LiveGlobe({
         selectedRef.current = null;
         setSelected(null);
       }
+      clearSelectedRef.current = clearSelected;
 
-      function selectPoint(pointId: number) {
+      function selectPoint(pointId: string) {
         const point = pointsRef.current.find((p) => p.id === pointId);
         if (!point) return;
         selectedIdRef.current = pointId;
@@ -233,9 +235,8 @@ export function LiveGlobe({
         if (coords) {
           const page = toPageCoords(coords.x, coords.y);
           updateSelected({
-            label: point.label,
             location: point.location,
-            href: point.href,
+            products: point.products,
             x: page.x,
             y: page.y,
           });
@@ -251,21 +252,17 @@ export function LiveGlobe({
           clouds.rotation.y += (CLOUDS_ROTATION_SPEED * Math.PI) / 180;
         }
 
-        // Prune expired points (only mutate ref, don't setState)
+        // Prune fully faded-out points
         const now = Date.now();
         const prev = pointsRef.current;
-        // Early exit: only filter if the oldest point could have expired
-        if (prev.length > 0 && now - prev[0].timestamp >= DOT_TTL_MS) {
-          const alive = prev.filter((p) => now - p.timestamp < DOT_TTL_MS);
-          if (alive.length !== prev.length) {
-            pointsRef.current = alive;
-            // Clear selection if the selected point expired
-            if (
-              selectedIdRef.current !== null &&
-              !alive.some((p) => p.id === selectedIdRef.current)
-            ) {
-              clearSelected();
-            }
+        const alive = prev.filter((p) => now - p.lastSeen < FADE_TTL_MS);
+        if (alive.length !== prev.length) {
+          pointsRef.current = alive;
+          if (
+            selectedIdRef.current !== null &&
+            !alive.some((p) => p.id === selectedIdRef.current)
+          ) {
+            clearSelected();
           }
         }
 
@@ -324,19 +321,21 @@ export function LiveGlobe({
             const screenX = (_projVec.x * 0.5 + 0.5) * width;
             const screenY = (-_projVec.y * 0.5 + 0.5) * height;
 
-            const age = now - p.timestamp;
-            const ageFade = Math.max(0, 1 - age / DOT_TTL_MS);
+            // Opacity from total rps (0.6–1.0 for active entries)
+            const rpsOpacity = Math.min(1, 0.6 + 0.4 * Math.min(1, p.totalRps / 3));
+            // Fade out entries that have dropped from the summary
+            const staleness = now - p.lastSeen;
+            const staleFade = staleness > 0 ? Math.max(0, 1 - staleness / FADE_TTL_MS) : 1;
             el.style.display = "";
             el.style.transform = `translate(${screenX - DOT_SIZE / 2}px,${screenY - DOT_SIZE / 2}px)`;
-            el.style.opacity = String(ageFade * edgeFade);
+            el.style.opacity = String(rpsOpacity * edgeFade * staleFade);
 
             // Update popup position if this point is selected (only when changed)
             if (p.id === selectedIdRef.current) {
               const page = toPageCoords(screenX, screenY);
               updateSelected({
-                label: p.label,
                 location: p.location,
-                href: p.href,
+                products: p.products,
                 x: page.x,
                 y: page.y,
               });
@@ -355,7 +354,7 @@ export function LiveGlobe({
           `.${styles.dot}`,
         ) as HTMLElement | null;
         if (!target) return;
-        selectPoint(Number(target.dataset.pointId));
+        selectPoint(target.dataset.pointId!);
       };
 
       const handleMouseOut = (e: MouseEvent) => {
@@ -372,7 +371,7 @@ export function LiveGlobe({
         ) as HTMLElement | null;
         if (!target) return;
         e.stopPropagation();
-        const pointId = Number(target.dataset.pointId);
+        const pointId = target.dataset.pointId!;
         if (pinnedRef.current && selectedIdRef.current === pointId) {
           pinnedRef.current = false;
         } else {
@@ -449,31 +448,71 @@ export function LiveGlobe({
         reconnectDelay = 1000; // reset backoff on successful message
         try {
           const msg = JSON.parse(event.data);
-          if (msg.type !== "location") return;
-          const { account_id, product_id, colo } = msg.data;
-          const parts = [account_id, product_id].filter(Boolean);
-          const coloEntry =
-            colo &&
-            coloLocations[colo as keyof typeof coloLocations];
-          if (!coloEntry?.lat || !coloEntry?.lon) return;
-          const current = pointsRef.current;
-          const trimmed =
-            current.length >= MAX_POINTS
-              ? current.slice(current.length - MAX_POINTS + 1)
-              : current;
-          pointsRef.current = [
-            ...trimmed,
-            {
-              id: nextPointId++,
+          if (msg.type !== "summary") return;
+          const now = Date.now();
+          const prev = pointsRef.current;
+          const entries: [string, number][] = msg.entries || [];
+          const coloMap = coloLocations as unknown as Record<string, { lat: number; lon: number; name: string }>;
+
+          // Group entries by colo
+          const grouped = new Map<string, ProductEntry[]>();
+          for (const [key, avg_rps] of entries) {
+            const colonIdx = key.lastIndexOf(":");
+            if (colonIdx === -1) continue;
+            const slug = key.slice(0, colonIdx);
+            const colo = key.slice(colonIdx + 1);
+            if (!coloMap[colo]?.lat || !coloMap[colo]?.lon) continue;
+
+            const slashIdx = slug.indexOf("/");
+            const account_id = slashIdx !== -1 ? slug.slice(0, slashIdx) : slug;
+            const product_id = slashIdx !== -1 ? slug.slice(slashIdx + 1) : "";
+
+            let group = grouped.get(colo);
+            if (!group) {
+              group = [];
+              grouped.set(colo, group);
+            }
+            group.push({
+              slug,
+              href: account_id && product_id ? `/${account_id}/${product_id}` : "",
+              avgRps: avg_rps,
+            });
+          }
+
+          // Build one point per colo
+          const activeColos = new Set<string>();
+          const nextPoints: LocationPoint[] = [];
+          for (const [colo, products] of grouped) {
+            activeColos.add(colo);
+            const coloEntry = coloMap[colo];
+            const totalRps = products.reduce((sum, p) => sum + p.avgRps, 0);
+            nextPoints.push({
+              id: colo,
               lat: coloEntry.lat,
               lng: coloEntry.lon,
-              timestamp: Date.now(),
-              label: parts.length > 0 ? `GET /${parts.join("/")}` : "",
-              location: coloEntry ? coloEntry.name : "",
-              href:
-                account_id && product_id ? `/${account_id}/${product_id}` : "",
-            },
-          ];
+              location: coloEntry.name,
+              products,
+              totalRps,
+              lastSeen: now,
+            });
+          }
+
+          // Keep fading-out colos not in this summary
+          for (const p of prev) {
+            if (!activeColos.has(p.id) && now - p.lastSeen < FADE_TTL_MS) {
+              nextPoints.push(p);
+            }
+          }
+
+          pointsRef.current = nextPoints;
+
+          // Clear selection if selected colo fully faded out
+          if (
+            selectedIdRef.current !== null &&
+            !nextPoints.some((p) => p.id === selectedIdRef.current)
+          ) {
+            clearSelectedRef.current();
+          }
         } catch {
           // Ignore malformed messages
         }
@@ -535,12 +574,22 @@ export function LiveGlobe({
             {selected.location && (
               <div className={styles.popupLocation}>{selected.location}</div>
             )}
-            <div className={styles.popupLabel}>{selected.label}</div>
-            {selected.href && (
-              <a href={selected.href} className={styles.popupLink}>
-                View product &rarr;
-              </a>
-            )}
+            <ul className={styles.popupProducts}>
+              {selected.products.map((p) => (
+                <li key={p.slug} className={styles.popupProduct}>
+                  {p.href ? (
+                    <a href={p.href} className={styles.popupLink}>
+                      {p.slug}
+                    </a>
+                  ) : (
+                    <span>{p.slug}</span>
+                  )}
+                  <span className={styles.popupRps}>
+                    {p.avgRps.toFixed(1)} rps
+                  </span>
+                </li>
+              ))}
+            </ul>
           </div>,
           document.body,
         )}
