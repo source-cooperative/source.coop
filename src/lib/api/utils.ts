@@ -43,6 +43,7 @@ import md5 from "md5";
 import { CONFIG } from "../config";
 import { AccountType } from "@/types/account";
 import { AccountFlags } from "@/types/shared";
+import { authenticateWithOidcToken } from "./oidc";
 
 /**
  * Authenticates using the API secret. Used by the Data Proxy to access the API.
@@ -137,6 +138,9 @@ export async function getApiSession(
 
   const apiSecretSession = await authenticateWithApiSecret(authorization);
   if (apiSecretSession) return apiSecretSession;
+
+  const oidcSession = await authenticateWithOidcToken(authorization);
+  if (oidcSession) return oidcSession;
 
   const apiKeySession = await authenticateWithApiKey(authorization);
   if (apiKeySession) return apiKeySession;
