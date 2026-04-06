@@ -1,5 +1,16 @@
-import { SignJWT, exportJWK, generateKeyPair, importJWK } from "jose";
-import { authenticateWithOidcToken } from "./oidc";
+/**
+ * @jest-environment node
+ */
+
+import {
+  SignJWT,
+  exportJWK,
+  generateKeyPair,
+  importJWK,
+  type FlattenedJWSInput,
+  type JWSHeaderParameters,
+} from "jose";
+import { authenticateWithOidcToken, _setJwks } from "./oidc";
 
 // Generate a test RSA key pair
 let privateKey: CryptoKey;
@@ -63,45 +74,21 @@ import {
   isIndividualAccount,
 } from "@/lib/clients/database";
 
-// We need to mock getJwks behavior. Since createRemoteJWKSet is called at module level
-// lazily, we'll use jest.spyOn approach by mocking the jose module's createRemoteJWKSet.
-// Instead, we'll use a __mocks__ approach or mock the internal function.
-
-// Mock createRemoteJWKSet by providing a module-level mock
-const mockJwksFunction = jest.fn();
-jest.mock("jose", () => {
-  // We need to return a manual mock that re-exports the real functions
-  // but replaces createRemoteJWKSet
-  return {
-    __esModule: true,
-    // These will be resolved at test time via the real module
-    get jwtVerify() {
-      return jest.requireActual<typeof import("jose")>("jose").jwtVerify;
-    },
-    get SignJWT() {
-      return jest.requireActual<typeof import("jose")>("jose").SignJWT;
-    },
-    get exportJWK() {
-      return jest.requireActual<typeof import("jose")>("jose").exportJWK;
-    },
-    get generateKeyPair() {
-      return jest.requireActual<typeof import("jose")>("jose").generateKeyPair;
-    },
-    get importJWK() {
-      return jest.requireActual<typeof import("jose")>("jose").importJWK;
-    },
-    createRemoteJWKSet: (...args: unknown[]) => mockJwksFunction(...args),
-  };
-});
-
 describe("authenticateWithOidcToken", () => {
   beforeEach(() => {
     jest.clearAllMocks();
 
-    // Set up the mock JWKS to return a function that resolves our test public key
-    mockJwksFunction.mockReturnValue(async () => {
-      return importJWK(publicJwk, "RS256");
-    });
+    // Inject a local JWKS resolver that returns our test public key
+    _setJwks(
+      async (_protectedHeader: JWSHeaderParameters, _token: FlattenedJWSInput) => {
+        return importJWK(publicJwk, "RS256");
+      }
+    );
+  });
+
+  afterAll(() => {
+    // Clean up the injected JWKS
+    _setJwks(null);
   });
 
   test("returns null for non-Bearer authorization", async () => {
