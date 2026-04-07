@@ -7,6 +7,7 @@ import {
 } from "@/lib/clients/database";
 import { isAuthorized } from "@/lib/api/authz";
 import { Actions, UserSession } from "@/types";
+import type { IndividualAccount } from "@/types/account";
 
 let jwks: ReturnType<typeof createRemoteJWKSet> | null = null;
 
@@ -17,10 +18,7 @@ export function _setJwks(fn: ReturnType<typeof createRemoteJWKSet> | null) {
 
 function getJwks() {
   if (!jwks) {
-    const jwksUrl = new URL(
-      "/.well-known/jwks.json",
-      CONFIG.oidc.issuerUrl
-    );
+    const jwksUrl = new URL("/.well-known/jwks.json", CONFIG.oidc.issuerUrl);
     jwks = createRemoteJWKSet(jwksUrl);
   }
   return jwks;
@@ -32,7 +30,7 @@ function getJwks() {
  * resolves the subject claim to a UserSession.
  */
 export async function authenticateWithOidcToken(
-  authorization: string | null
+  authorization: string | null,
 ): Promise<UserSession | null> {
   if (!authorization || !authorization.startsWith("Bearer ")) {
     return null;
@@ -62,21 +60,25 @@ export async function authenticateWithOidcToken(
   }
 
   const account = await accountsTable.fetchById(accountId);
-  if (!account || account.disabled || !isIndividualAccount(account)) {
+  if (!account || account.disabled) {
     return null;
   }
 
-  const memberships = await membershipsTable.listByUser(account.account_id);
-  const filteredMemberships = memberships.filter((membership) =>
-    isAuthorized(
-      { account, identity_id: account.identity_id },
-      membership,
-      Actions.GetMembership
-    )
-  );
+  const identity_id = isIndividualAccount(account)
+    ? (account as IndividualAccount).identity_id
+    : null;
+
+  // Only look up memberships for individual accounts — orgs don't have memberships in other entities
+  let filteredMemberships: UserSession["memberships"] = [];
+  if (isIndividualAccount(account)) {
+    const memberships = await membershipsTable.listByUser(account.account_id);
+    filteredMemberships = memberships.filter((membership) =>
+      isAuthorized({ account, identity_id }, membership, Actions.GetMembership),
+    );
+  }
 
   return {
-    identity_id: account.identity_id,
+    identity_id,
     account,
     memberships: filteredMemberships,
   };

@@ -151,15 +151,26 @@ describe("authenticateWithOidcToken", () => {
     expect(result).toBeNull();
   });
 
-  test("returns null when account is not individual", async () => {
-    (accountsTable.fetchById as jest.Mock).mockResolvedValue({
+  test("returns UserSession for valid token with org account", async () => {
+    const mockOrgAccount = {
       account_id: "test-org",
       disabled: false,
-    });
+      type: "organization",
+      name: "Test Org",
+      flags: [],
+    };
+
+    (accountsTable.fetchById as jest.Mock).mockResolvedValue(mockOrgAccount);
     (isIndividualAccount as unknown as jest.Mock).mockReturnValue(false);
+
     const token = await createToken({ sub: "test-org" });
     const result = await authenticateWithOidcToken(`Bearer ${token}`);
-    expect(result).toBeNull();
+
+    expect(result).not.toBeNull();
+    expect(result!.identity_id).toBeNull();
+    expect(result!.account).toEqual(mockOrgAccount);
+    expect(result!.memberships).toEqual([]);
+    expect(membershipsTable.listByUser).not.toHaveBeenCalled();
   });
 
   test("returns null when sub claim is missing", async () => {
