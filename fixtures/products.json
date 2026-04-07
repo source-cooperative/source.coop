@@ -25,7 +25,7 @@
       "roles": {}
     },
     "disabled": false,
-    "data_mode": "open",
+
     "featured": 0
   },
   {
@@ -54,7 +54,7 @@
       "roles": {}
     },
     "disabled": false,
-    "data_mode": "open",
+
     "featured": 0
   },
   {
@@ -83,7 +83,7 @@
       "roles": {}
     },
     "disabled": true,
-    "data_mode": "open",
+
     "featured": 0
   },
   {
@@ -112,7 +112,7 @@
       "roles": {}
     },
     "disabled": false,
-    "data_mode": "open",
+
     "featured": 0
   },
   {
@@ -141,7 +141,7 @@
       "roles": {}
     },
     "disabled": false,
-    "data_mode": "open",
+
     "featured": 1
   },
   {
@@ -170,7 +170,7 @@
       "roles": {}
     },
     "disabled": false,
-    "data_mode": "private",
+
     "featured": 0
   },
   {
@@ -199,7 +199,7 @@
       "roles": {}
     },
     "disabled": false,
-    "data_mode": "subscription",
+
     "featured": 0
   },
   {
@@ -228,7 +228,7 @@
       "roles": {}
     },
     "disabled": false,
-    "data_mode": "open",
+
     "featured": 10
   }
 ]

@@ -19,7 +19,7 @@ import {
 import { getServerSession } from "@ory/nextjs/app";
 import { getOryId } from "@/lib/ory";
 import { authenticateWithOidcToken } from "@/lib/api/oidc";
-import { AccountType, ProductDataMode } from "@/types";
+import { AccountType } from "@/types";
 
 jest.mock("@/lib/clients/database/products", () => ({
   productsTable: {
@@ -77,7 +77,6 @@ describe("/api/v1/products/[account_id]", () => {
     product_id: "public-repo",
     name: "Public Repo",
     visibility: "public",
-    data_mode: ProductDataMode.Open,
     disabled: false,
   };
 
@@ -86,7 +85,6 @@ describe("/api/v1/products/[account_id]", () => {
     product_id: "private-repo",
     name: "Private Repo",
     visibility: "restricted",
-    data_mode: ProductDataMode.Private,
     disabled: false,
   };
 
@@ -95,7 +93,6 @@ describe("/api/v1/products/[account_id]", () => {
     product_id: "disabled-repo",
     name: "Disabled Repo",
     visibility: "restricted",
-    data_mode: ProductDataMode.Open,
     disabled: true,
   };
 

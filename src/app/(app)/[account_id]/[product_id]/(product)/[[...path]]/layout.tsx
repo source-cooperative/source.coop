@@ -41,6 +41,9 @@ export default async function ProductLayout({
   if (!product) {
     notFound();
   }
+  if (!isAuthorized(session, product, Actions.GetRepository)) {
+    notFound();
+  }
   const prefix = path ? path.join("/") : "";
 
   // Check for pending invitation
