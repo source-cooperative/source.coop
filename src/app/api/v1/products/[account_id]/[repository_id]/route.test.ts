@@ -27,6 +27,7 @@ import {
 } from "@/lib/clients/database";
 import { getServerSession } from "@ory/nextjs/app";
 import { getOryId } from "@/lib/ory";
+import { authenticateWithOidcToken } from "@/lib/api/oidc";
 import { AccountType, ProductDataMode } from "@/types";
 
 // Mock database dependencies for testing real authentication
@@ -56,6 +57,10 @@ jest.mock("@ory/nextjs/app", () => ({
 
 jest.mock("@/lib/ory", () => ({
   getOryId: jest.fn(),
+}));
+
+jest.mock("@/lib/api/oidc", () => ({
+  authenticateWithOidcToken: jest.fn(),
 }));
 
 const { GET } = require("./route");
@@ -98,6 +103,9 @@ describe("/api/v1/products/[account_id]/[repository_id]", () => {
 
     // Set up isIndividualAccount mock to return true by default
     (isIndividualAccount as jest.Mock).mockReturnValue(true);
+
+    // No OIDC session by default
+    (authenticateWithOidcToken as jest.Mock).mockResolvedValue(null);
   });
 
   describe("GET /api/v1/products/[account_id]/[repository_id]", () => {
@@ -344,6 +352,67 @@ describe("/api/v1/products/[account_id]/[repository_id]", () => {
         "test-account",
         "test-repo"
       );
+    });
+  });
+
+  describe("org account authenticated via OIDC", () => {
+    const mockOrgAccount = {
+      type: AccountType.ORGANIZATION,
+      account_id: "test-org",
+      name: "Test Organization",
+      disabled: false,
+      flags: [],
+    };
+
+    beforeEach(() => {
+      // Simulate OIDC resolving to an org account session (no identity_id, no memberships)
+      (authenticateWithOidcToken as jest.Mock).mockResolvedValue({
+        identity_id: null,
+        account: mockOrgAccount,
+        memberships: [],
+      });
+    });
+
+    test("org account can access its own private product", async () => {
+      const orgOwnedProduct = {
+        ...mockRepository,
+        account_id: "test-org",
+        repository_id: "private-repo",
+      };
+      (productsTable.fetchById as jest.Mock).mockResolvedValue(orgOwnedProduct);
+
+      const request = new NextRequest(
+        "http://localhost/api/v1/products/test-org/private-repo",
+        { headers: { Authorization: "Bearer oidc-token" } }
+      );
+      const response = await GET(request, {
+        params: Promise.resolve({
+          account_id: "test-org",
+          repository_id: "private-repo",
+        }),
+      });
+
+      expect(response.status).toBe(200);
+      const responseData = await response.json();
+      expect(responseData).toEqual(orgOwnedProduct);
+    });
+
+    test("org account cannot access another account's private product", async () => {
+      // Product is owned by a different account
+      (productsTable.fetchById as jest.Mock).mockResolvedValue(mockRepository);
+
+      const request = new NextRequest(
+        "http://localhost/api/v1/products/test-account/test-repo",
+        { headers: { Authorization: "Bearer oidc-token" } }
+      );
+      const response = await GET(request, {
+        params: Promise.resolve({
+          account_id: "test-account",
+          repository_id: "test-repo",
+        }),
+      });
+
+      expect(response.status).toBe(401);
     });
   });
 });
