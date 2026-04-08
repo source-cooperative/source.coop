@@ -22,12 +22,12 @@ function getJwks() {
   if (!issuerUrl) {
     throw new Error("OIDC issuer URL is not configured");
   }
-  LOGGER.debug("Fetching JWKS for OIDC token verification", {
-    operation: "getJwks",
-    metadata: { issuerUrl },
-  });
   if (!jwks) {
     const jwksUrl = new URL("/.well-known/jwks.json", issuerUrl);
+    LOGGER.debug("Fetching JWKS for OIDC token verification", {
+      operation: "getJwks",
+      metadata: { jwksUrl: jwksUrl.toString() },
+    });
     jwks = createRemoteJWKSet(jwksUrl);
   }
   return jwks;
