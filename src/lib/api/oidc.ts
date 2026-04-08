@@ -41,6 +41,7 @@ function getJwks() {
 export async function authenticateWithOidcToken(
   authorization: string | null,
 ): Promise<UserSession | null> {
+  console.log({ authorization });
   if (!authorization || !authorization.startsWith("Bearer ")) {
     return null;
   }
