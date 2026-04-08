@@ -81,7 +81,7 @@ export const CONFIG = {
 
   // Environment configuration
   environment: {
-    isDevelopment: process.env.NODE_ENV === "development",
+    isDevelopment: (process.env.STAGE || "dev") !== "prod",
     stage: process.env.STAGE || "dev",
   },
 } as const;
