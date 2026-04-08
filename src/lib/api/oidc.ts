@@ -41,12 +41,20 @@ function getJwks() {
 export async function authenticateWithOidcToken(
   authorization: string | null,
 ): Promise<UserSession | null> {
+  // TODO: Remove this console log once we're confident the OIDC authentication flow is working correctly
   console.log({ authorization });
   if (!authorization || !authorization.startsWith("Bearer ")) {
     return null;
   }
 
   if (!CONFIG.oidc.issuerUrl || !CONFIG.oidc.audience) {
+    LOGGER.warn(
+      "OIDC issuer URL or audience is not configured, cannot authenticate with OIDC token",
+      {
+        operation: "authenticateWithOidcToken",
+        metadata: { oidc: CONFIG.oidc },
+      },
+    );
     return null;
   }
 
