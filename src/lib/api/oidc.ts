@@ -70,12 +70,12 @@ export async function authenticateWithOidcToken(
     return null;
   }
 
-  const accountId = payload.sub;
-  if (!accountId) {
+  const oryId = payload.sub;
+  if (!oryId) {
     return null;
   }
 
-  const account = await accountsTable.fetchById(accountId);
+  const account = await accountsTable.fetchById(oryId);
   if (!account || account.disabled) {
     return null;
   }
