@@ -46,9 +46,14 @@ async function createToken(
 // Mock config
 jest.mock("@/lib/config", () => ({
   CONFIG: {
-    oidc: {
-      issuerUrl: "https://data.test.source.coop",
-      audience: "https://test.source.coop",
+    storage: {
+      endpoint: "https://data.test.source.coop",
+    },
+    environment: {
+      isDevelopment: true,
+    },
+    auth: {
+      accessToken: "",
     },
   },
 }));
@@ -67,6 +72,8 @@ jest.mock("@/lib/clients/database", () => ({
 jest.mock("@/lib/api/authz", () => ({
   isAuthorized: jest.fn().mockReturnValue(true),
 }));
+
+import { isAuthorized } from "@/lib/api/authz";
 
 import {
   accountsTable,
@@ -92,17 +99,17 @@ describe("authenticateWithOidcToken", () => {
   });
 
   test("returns null for non-Bearer authorization", async () => {
-    const result = await authenticateWithOidcToken("some-api-secret");
+    const result = await authenticateWithOidcToken("some-api-secret", AUDIENCE);
     expect(result).toBeNull();
   });
 
   test("returns null for null authorization", async () => {
-    const result = await authenticateWithOidcToken(null);
+    const result = await authenticateWithOidcToken(null, AUDIENCE);
     expect(result).toBeNull();
   });
 
   test("returns null for invalid JWT", async () => {
-    const result = await authenticateWithOidcToken("Bearer invalid.jwt.token");
+    const result = await authenticateWithOidcToken("Bearer invalid.jwt.token", AUDIENCE);
     expect(result).toBeNull();
   });
 
@@ -111,7 +118,7 @@ describe("authenticateWithOidcToken", () => {
       { sub: "test-user" },
       { issuer: "https://evil.com" }
     );
-    const result = await authenticateWithOidcToken(`Bearer ${token}`);
+    const result = await authenticateWithOidcToken(`Bearer ${token}`, AUDIENCE);
     expect(result).toBeNull();
   });
 
@@ -120,7 +127,7 @@ describe("authenticateWithOidcToken", () => {
       { sub: "test-user" },
       { audience: "https://wrong.com" }
     );
-    const result = await authenticateWithOidcToken(`Bearer ${token}`);
+    const result = await authenticateWithOidcToken(`Bearer ${token}`, AUDIENCE);
     expect(result).toBeNull();
   });
 
@@ -129,14 +136,14 @@ describe("authenticateWithOidcToken", () => {
       { sub: "test-user" },
       { expiresIn: "-1m" }
     );
-    const result = await authenticateWithOidcToken(`Bearer ${token}`);
+    const result = await authenticateWithOidcToken(`Bearer ${token}`, AUDIENCE);
     expect(result).toBeNull();
   });
 
   test("returns null when account not found", async () => {
     (accountsTable.fetchById as jest.Mock).mockResolvedValue(null);
     const token = await createToken({ sub: "nonexistent-user" });
-    const result = await authenticateWithOidcToken(`Bearer ${token}`);
+    const result = await authenticateWithOidcToken(`Bearer ${token}`, AUDIENCE);
     expect(result).toBeNull();
   });
 
@@ -147,7 +154,7 @@ describe("authenticateWithOidcToken", () => {
     });
     (isIndividualAccount as unknown as jest.Mock).mockReturnValue(true);
     const token = await createToken({ sub: "test-user" });
-    const result = await authenticateWithOidcToken(`Bearer ${token}`);
+    const result = await authenticateWithOidcToken(`Bearer ${token}`, AUDIENCE);
     expect(result).toBeNull();
   });
 
@@ -164,7 +171,7 @@ describe("authenticateWithOidcToken", () => {
     (isIndividualAccount as unknown as jest.Mock).mockReturnValue(false);
 
     const token = await createToken({ sub: "test-org" });
-    const result = await authenticateWithOidcToken(`Bearer ${token}`);
+    const result = await authenticateWithOidcToken(`Bearer ${token}`, AUDIENCE);
 
     expect(result).not.toBeNull();
     expect(result!.identity_id).toBeNull();
@@ -175,7 +182,7 @@ describe("authenticateWithOidcToken", () => {
 
   test("returns null when sub claim is missing", async () => {
     const token = await createToken({});
-    const result = await authenticateWithOidcToken(`Bearer ${token}`);
+    const result = await authenticateWithOidcToken(`Bearer ${token}`, AUDIENCE);
     expect(result).toBeNull();
   });
 
@@ -197,12 +204,58 @@ describe("authenticateWithOidcToken", () => {
     );
 
     const token = await createToken({ sub: "test-user" });
-    const result = await authenticateWithOidcToken(`Bearer ${token}`);
+    const result = await authenticateWithOidcToken(`Bearer ${token}`, AUDIENCE);
 
     expect(result).not.toBeNull();
     expect(result!.identity_id).toBe("ory-123");
     expect(result!.account).toEqual(mockAccount);
     expect(result!.memberships).toEqual(mockMemberships);
     expect(accountsTable.fetchById).toHaveBeenCalledWith("test-user");
+  });
+
+  test("filters memberships through isAuthorized", async () => {
+    const mockAccount = {
+      account_id: "test-user",
+      identity_id: "ory-123",
+      disabled: false,
+      type: "individual",
+      name: "Test User",
+      flags: [],
+    };
+    const authorizedMembership = { membership_id: "m1" };
+    const unauthorizedMembership = { membership_id: "m2" };
+
+    (accountsTable.fetchById as jest.Mock).mockResolvedValue(mockAccount);
+    (isIndividualAccount as unknown as jest.Mock).mockReturnValue(true);
+    (membershipsTable.listByUser as jest.Mock).mockResolvedValue([
+      authorizedMembership,
+      unauthorizedMembership,
+    ]);
+    // Only authorize the first membership
+    (isAuthorized as jest.Mock)
+      .mockReturnValueOnce(true)
+      .mockReturnValueOnce(false);
+
+    const token = await createToken({ sub: "test-user" });
+    const result = await authenticateWithOidcToken(`Bearer ${token}`, AUDIENCE);
+
+    expect(result).not.toBeNull();
+    expect(result!.memberships).toEqual([authorizedMembership]);
+    expect(isAuthorized).toHaveBeenCalledTimes(2);
+  });
+
+  test("returns null when storage endpoint is not configured", async () => {
+    // Temporarily override the config mock
+    const { CONFIG } = require("@/lib/config");
+    const originalEndpoint = CONFIG.storage.endpoint;
+    CONFIG.storage.endpoint = "";
+
+    const token = await createToken({ sub: "test-user" });
+    const result = await authenticateWithOidcToken(`Bearer ${token}`, AUDIENCE);
+
+    expect(result).toBeNull();
+
+    // Restore
+    CONFIG.storage.endpoint = originalEndpoint;
   });
 });

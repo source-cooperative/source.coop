@@ -47,11 +47,6 @@ export const CONFIG = {
   // API Secret for the Data Proxy to access the API
   apiSecret: process.env.SOURCE_KEY || "",
 
-  // OIDC configuration for validating Data Proxy JWTs
-  oidc: {
-    issuerUrl: process.env.OIDC_ISSUER_URL || "",
-    audience: process.env.OIDC_AUDIENCE || "",
-  },
 
   // Ory.sh configuration
   auth: {

@@ -57,7 +57,8 @@ export async function getApiSession(req: NextRequest): Promise<UserSession | nul
       operation: "getApiSession",
       metadata: { method: "OIDC token" },
     });
-    const oidcSession = await authenticateWithOidcToken(authorization);
+    const audience = new URL(req.url).origin;
+    const oidcSession = await authenticateWithOidcToken(authorization, audience);
     if (oidcSession) return oidcSession;
   } else {
     LOGGER.debug(

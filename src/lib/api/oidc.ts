@@ -18,7 +18,7 @@ export function _setJwks(fn: ReturnType<typeof createRemoteJWKSet> | null) {
 }
 
 function getJwks() {
-  const issuerUrl = CONFIG.oidc.issuerUrl;
+  const issuerUrl = CONFIG.storage.endpoint;
   if (!issuerUrl) {
     throw new Error("OIDC issuer URL is not configured");
   }
@@ -40,32 +40,24 @@ function getJwks() {
  */
 export async function authenticateWithOidcToken(
   authorization: string | null,
+  audience: string,
 ): Promise<UserSession | null> {
   if (!authorization || !authorization.startsWith("Bearer ")) {
     return null;
   }
 
-  if (!CONFIG.oidc.issuerUrl || !CONFIG.oidc.audience) {
-    LOGGER.warn(
-      "OIDC issuer URL or audience is not configured, cannot authenticate with OIDC token",
-      {
-        operation: "authenticateWithOidcToken",
-        metadata: { oidc: CONFIG.oidc },
-      },
-    );
-    return null;
-  }
-
   LOGGER.debug("Authenticating with OIDC token", {
     operation: "authenticateWithOidcToken",
+    metadata: { audience },
   });
   const token = authorization.slice(7);
 
   let payload;
   try {
     const result = await jwtVerify(token, getJwks(), {
-      issuer: CONFIG.oidc.issuerUrl,
-      audience: CONFIG.oidc.audience,
+      // We assume that the data proxy is going to be hosting the JWKS
+      issuer: CONFIG.storage.endpoint,
+      audience,
       clockTolerance: 30,
     });
     payload = result.payload;
