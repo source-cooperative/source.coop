@@ -51,36 +51,24 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ account_id: string; repository_id: string }> }
 ) {
-  try {
-    const session = await getApiSession(request);
-    const { account_id, repository_id } = await params;
-    const repository = await productsTable.fetchById(account_id, repository_id);
-    if (!repository) {
-      return NextResponse.json(
-        {
-          error: `Repository with ID ${account_id}/${repository_id} not found`,
-        },
-        { status: StatusCodes.NOT_FOUND }
-      );
-    }
-    if (!isAuthorized(session, repository, Actions.GetRepository)) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: StatusCodes.UNAUTHORIZED }
-      );
-    }
-    return NextResponse.json(repository, { status: StatusCodes.OK });
-  } catch (err: any) {
-    LOGGER.error("Error in products GET", {
-      operation: "products.GET",
-      context: "product fetching",
-      error: err,
-    });
+  const session = await getApiSession(request);
+  const { account_id, repository_id } = await params;
+  const repository = await productsTable.fetchById(account_id, repository_id);
+  if (!repository) {
     return NextResponse.json(
-      { error: err.message || "Internal server error" },
-      { status: StatusCodes.INTERNAL_SERVER_ERROR }
+      {
+        error: `Repository with ID ${account_id}/${repository_id} not found`,
+      },
+      { status: StatusCodes.NOT_FOUND },
     );
   }
+  if (!isAuthorized(session, repository, Actions.GetRepository)) {
+    return NextResponse.json(
+      { error: "Unauthorized" },
+      { status: StatusCodes.UNAUTHORIZED },
+    );
+  }
+  return NextResponse.json(repository, { status: StatusCodes.OK });
 }
 
 /**
@@ -212,7 +200,9 @@ export async function GET(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ account_id: string; repository_id: string }> }
+  {
+    params,
+  }: { params: Promise<{ account_id: string; repository_id: string }> },
 ) {
   try {
     const session = await getApiSession(request);
@@ -223,13 +213,13 @@ export async function DELETE(
         {
           error: `Repository with ID ${account_id}/${repository_id} not found`,
         },
-        { status: StatusCodes.NOT_FOUND }
+        { status: StatusCodes.NOT_FOUND },
       );
     }
     if (!isAuthorized(session, repository, Actions.DisableRepository)) {
       return NextResponse.json(
         { error: "Unauthorized" },
-        { status: StatusCodes.UNAUTHORIZED }
+        { status: StatusCodes.UNAUTHORIZED },
       );
     }
     // repository.disabled = true; // TODO: Does disabled need to be supported?
@@ -238,7 +228,7 @@ export async function DELETE(
   } catch (err: any) {
     return NextResponse.json(
       { error: err.message || "Internal server error" },
-      { status: StatusCodes.INTERNAL_SERVER_ERROR }
+      { status: StatusCodes.INTERNAL_SERVER_ERROR },
     );
   }
 }
