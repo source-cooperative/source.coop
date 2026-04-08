@@ -61,10 +61,10 @@ export async function authenticateWithOidcToken(
       clockTolerance: 30,
     });
     payload = result.payload;
-  } catch {
+  } catch (error) {
     LOGGER.debug("Failed to verify OIDC token", {
       operation: "authenticateWithOidcToken",
-      metadata: { error: "Invalid token" },
+      metadata: { error },
     });
     return null;
   }
