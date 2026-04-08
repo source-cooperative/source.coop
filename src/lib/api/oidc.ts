@@ -42,7 +42,10 @@ export async function authenticateWithOidcToken(
   authorization: string | null,
   audience: string,
 ): Promise<UserSession | null> {
-  if (!authorization || !authorization.startsWith("Bearer ")) {
+  if (!authorization || !authorization.toLowerCase().startsWith("bearer ")) {
+    LOGGER.warn("Invalid Authorization header found for OIDC authentication", {
+      operation: "authenticateWithOidcToken",
+    });
     return null;
   }
 
@@ -62,7 +65,7 @@ export async function authenticateWithOidcToken(
     });
     payload = result.payload;
   } catch (error) {
-    LOGGER.debug("Failed to verify OIDC token", {
+    LOGGER.error("Failed to verify OIDC token", {
       operation: "authenticateWithOidcToken",
       metadata: { error },
     });
