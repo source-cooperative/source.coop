@@ -45,84 +45,84 @@ import { AccountType } from "@/types/account";
 import { AccountFlags } from "@/types/shared";
 import { authenticateWithOidcToken } from "./oidc";
 
-/**
- * Authenticates using the API secret. Used by the Data Proxy to access the API.
- * @param authorization
- * @returns UserSession object if authentication is successful, or null if it fails.
- */
-async function authenticateWithApiSecret(
-  authorization: string | null
-): Promise<UserSession | null> {
-  if (authorization !== CONFIG.apiSecret) {
-    return null;
-  }
-  // Create a mock account for the API Secret session
-  return {
-    identity_id: "api-secret",
-    account: {
-      type: AccountType.INDIVIDUAL,
-      identity_id: "api-secret",
-      name: "api-secret",
-      account_id: "api-secret",
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      disabled: false,
-      flags: [AccountFlags.ADMIN],
-      metadata_public: {},
-      emails: [],
-    },
-  };
-}
+// /**
+//  * Authenticates using the API secret. Used by the Data Proxy to access the API.
+//  * @param authorization
+//  * @returns UserSession object if authentication is successful, or null if it fails.
+//  */
+// async function authenticateWithApiSecret(
+//   authorization: string | null
+// ): Promise<UserSession | null> {
+//   if (authorization !== CONFIG.apiSecret) {
+//     return null;
+//   }
+//   // Create a mock account for the API Secret session
+//   return {
+//     identity_id: "api-secret",
+//     account: {
+//       type: AccountType.INDIVIDUAL,
+//       identity_id: "api-secret",
+//       name: "api-secret",
+//       account_id: "api-secret",
+//       created_at: new Date().toISOString(),
+//       updated_at: new Date().toISOString(),
+//       disabled: false,
+//       flags: [AccountFlags.ADMIN],
+//       metadata_public: {},
+//       emails: [],
+//     },
+//   };
+// }
 
-/**
- * Authenticates a user using API key credentials.
- *
- * @param accessKeyId - The access key ID for API authentication.
- * @param secretAccessKey - The secret access key for API authentication.
- * @returns A Promise that resolves to a UserSession object if authentication is successful, or null if it fails.
- */
-async function authenticateWithApiKey(
-  authorization: string | null
-): Promise<UserSession | null> {
-  if (!authorization) return null;
+// /**
+//  * Authenticates a user using API key credentials.
+//  *
+//  * @param accessKeyId - The access key ID for API authentication.
+//  * @param secretAccessKey - The secret access key for API authentication.
+//  * @returns A Promise that resolves to a UserSession object if authentication is successful, or null if it fails.
+//  */
+// async function authenticateWithApiKey(
+//   authorization: string | null
+// ): Promise<UserSession | null> {
+//   if (!authorization) return null;
 
-  const [accessKeyId, secretAccessKey] = authorization.split(" ");
+//   const [accessKeyId, secretAccessKey] = authorization.split(" ");
 
-  // Retrieve the API key from the database
-  const apiKey = await apiKeysTable.fetchById(accessKeyId);
+//   // Retrieve the API key from the database
+//   const apiKey = await apiKeysTable.fetchById(accessKeyId);
 
-  // Check if the API key is valid, matches the secret, and is not disabled
-  if (
-    !apiKey ||
-    apiKey.secret_access_key !== secretAccessKey ||
-    apiKey.disabled
-  ) {
-    return null;
-  }
+//   // Check if the API key is valid, matches the secret, and is not disabled
+//   if (
+//     !apiKey ||
+//     apiKey.secret_access_key !== secretAccessKey ||
+//     apiKey.disabled
+//   ) {
+//     return null;
+//   }
 
-  // Fetch the account associated with the API key
-  const account = await accountsTable.fetchById(apiKey.account_id);
-  if (!account || account.disabled || !isIndividualAccount(account)) {
-    return null;
-  }
+//   // Fetch the account associated with the API key
+//   const account = await accountsTable.fetchById(apiKey.account_id);
+//   if (!account || account.disabled || !isIndividualAccount(account)) {
+//     return null;
+//   }
 
-  // Retrieve and filter memberships for the user
-  const memberships = await membershipsTable.listByUser(account.account_id);
-  const filteredMemberships = memberships.filter((membership) =>
-    isAuthorized(
-      { account, identity_id: account.identity_id },
-      membership,
-      Actions.GetMembership
-    )
-  );
+//   // Retrieve and filter memberships for the user
+//   const memberships = await membershipsTable.listByUser(account.account_id);
+//   const filteredMemberships = memberships.filter((membership) =>
+//     isAuthorized(
+//       { account, identity_id: account.identity_id },
+//       membership,
+//       Actions.GetMembership
+//     )
+//   );
 
-  // Return the user session
-  return {
-    identity_id: account.identity_id,
-    account,
-    memberships: filteredMemberships,
-  };
-}
+//   // Return the user session
+//   return {
+//     identity_id: account.identity_id,
+//     account,
+//     memberships: filteredMemberships,
+//   };
+// }
 
 /**
  * Retrieves the current user session from the request context.
@@ -136,14 +136,16 @@ export async function getApiSession(
 ): Promise<UserSession | null> {
   const authorization = req.headers.get("Authorization");
 
-  const apiSecretSession = await authenticateWithApiSecret(authorization);
-  if (apiSecretSession) return apiSecretSession;
+  // TODO: Rm unused code
+  // const apiSecretSession = await authenticateWithApiSecret(authorization);
+  // if (apiSecretSession) return apiSecretSession;
 
   const oidcSession = await authenticateWithOidcToken(authorization);
   if (oidcSession) return oidcSession;
 
-  const apiKeySession = await authenticateWithApiKey(authorization);
-  if (apiKeySession) return apiKeySession;
+  // TODO: Rm unused code
+  // const apiKeySession = await authenticateWithApiKey(authorization);
+  // if (apiKeySession) return apiKeySession;
 
   // Fall back to page session (ie cookie-based authentication)
   return getPageSession();

@@ -8,6 +8,7 @@ import {
 import { isAuthorized } from "@/lib/api/authz";
 import { Actions, UserSession } from "@/types";
 import type { IndividualAccount } from "@/types/account";
+import { LOGGER } from "../logging";
 
 let jwks: ReturnType<typeof createRemoteJWKSet> | null = null;
 
@@ -17,8 +18,16 @@ export function _setJwks(fn: ReturnType<typeof createRemoteJWKSet> | null) {
 }
 
 function getJwks() {
+  const issuerUrl = CONFIG.oidc.issuerUrl;
+  if (!issuerUrl) {
+    throw new Error("OIDC issuer URL is not configured");
+  }
+  LOGGER.debug("Fetching JWKS for OIDC token verification", {
+    operation: "getJwks",
+    metadata: { issuerUrl },
+  });
   if (!jwks) {
-    const jwksUrl = new URL("/.well-known/jwks.json", CONFIG.oidc.issuerUrl);
+    const jwksUrl = new URL("/.well-known/jwks.json", issuerUrl);
     jwks = createRemoteJWKSet(jwksUrl);
   }
   return jwks;
@@ -40,6 +49,9 @@ export async function authenticateWithOidcToken(
     return null;
   }
 
+  LOGGER.debug("Authenticating with OIDC token", {
+    operation: "authenticateWithOidcToken",
+  });
   const token = authorization.slice(7);
 
   let payload;
@@ -51,6 +63,10 @@ export async function authenticateWithOidcToken(
     });
     payload = result.payload;
   } catch {
+    LOGGER.debug("Failed to verify OIDC token", {
+      operation: "authenticateWithOidcToken",
+      metadata: { error: "Invalid token" },
+    });
     return null;
   }
 
