@@ -41,8 +41,6 @@ function getJwks() {
 export async function authenticateWithOidcToken(
   authorization: string | null,
 ): Promise<UserSession | null> {
-  // TODO: Remove this console log once we're confident the OIDC authentication flow is working correctly
-  console.log({ authorization });
   if (!authorization || !authorization.startsWith("Bearer ")) {
     return null;
   }
