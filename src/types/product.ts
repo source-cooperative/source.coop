@@ -36,6 +36,14 @@ export const ProductMetadataSchema = z
 
 export type ProductMetadata = z.infer<typeof ProductMetadataSchema>;
 
+export enum ProductVisibility {
+  Public = "public",
+  Unlisted = "unlisted",
+  Restricted = "restricted",
+}
+
+export const ProductVisibilitySchema = z.nativeEnum(ProductVisibility);
+
 // Main product interface matching new schema
 // Product is the main product entity, including metadata and optional account
 export const ProductSchema = z
@@ -46,7 +54,7 @@ export const ProductSchema = z
     description: z.string(),
     created_at: z.string(),
     updated_at: z.string(),
-    visibility: z.enum(["public", "unlisted", "restricted"]),
+    visibility: ProductVisibilitySchema,
     metadata: ProductMetadataSchema,
     account: AccountSchema.optional(),
     disabled: z.boolean(),
