@@ -49,8 +49,13 @@ import { LOGGER } from "../logging";
  * @param req - The Next.js API request object.
  * @returns A Promise that resolves to a UserSession object if a valid session exists, or null if not authenticated.
  */
-export async function getApiSession(req: NextRequest): Promise<UserSession | null> {
+export async function getApiSession(
+  req: NextRequest,
+): Promise<UserSession | null> {
   const authorization = req.headers.get("Authorization");
+
+  // TODO: Rm
+  console.log("Authorization header:", authorization);
 
   if (authorization) {
     LOGGER.debug("Attempting OIDC token authentication", {
@@ -58,7 +63,10 @@ export async function getApiSession(req: NextRequest): Promise<UserSession | nul
       metadata: { method: "OIDC token" },
     });
     const audience = new URL(req.url).origin;
-    const oidcSession = await authenticateWithOidcToken(authorization, audience);
+    const oidcSession = await authenticateWithOidcToken(
+      authorization,
+      audience,
+    );
     if (oidcSession) return oidcSession;
   } else {
     LOGGER.debug(
