@@ -13,7 +13,7 @@ export function useProductListKeyboardShortcuts({
   onShowHelp,
 }: UseProductListKeyboardShortcutsOptions) {
   const router = useRouter();
-  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
 
   const handleKeyDown = useCallback(
     (event: KeyboardEvent) => {
@@ -43,7 +43,7 @@ export function useProductListKeyboardShortcuts({
         case "ArrowLeft":
         case "k":
           event.preventDefault();
-          setSelectedIndex((prev) => (prev > 0 ? prev - 1 : prev));
+          setSelectedIndex((prev) => (prev > 0 ? prev - 1 : 0));
           break;
         case "Enter":
         case " ":
@@ -67,7 +67,7 @@ export function useProductListKeyboardShortcuts({
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [handleKeyDown]);
 
-  useEffect(() => setSelectedIndex(0), [products]);
+  useEffect(() => setSelectedIndex(-1), [products]);
 
   return { selectedIndex };
 }

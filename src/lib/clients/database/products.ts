@@ -15,8 +15,25 @@ import { accountsTable } from "./accounts";
 import { BaseTable } from "./base";
 import { marshall } from "@aws-sdk/util-dynamodb";
 
-class ProductsTable extends BaseTable {
+export class ProductsTable extends BaseTable {
   model = "products";
+
+  private buildSearchText(product: {
+    title?: string;
+    description?: string;
+    account_id: string;
+    product_id: string;
+  }): string {
+    return [
+      product.title,
+      product.description,
+      product.account_id,
+      product.product_id,
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+  }
 
   async list(
     limit = 50,
@@ -88,21 +105,54 @@ class ProductsTable extends BaseTable {
 
   async listPublic(
     limit = 50,
-    lastEvaluatedKey?: any
+    lastEvaluatedKey?: any,
+    filters?: { search?: string; tags?: string; featuredOnly?: boolean }
   ): Promise<{
     products: Product[];
     lastEvaluatedKey: any;
   }> {
+    const expressionValues: Record<string, any> = {
+      ":visibility": "public",
+    };
+    const filterParts: string[] = [];
+
+    let keyCondition = "visibility = :visibility";
+    if (filters?.featuredOnly) {
+      expressionValues[":zero"] = 0;
+      keyCondition += " AND featured > :zero";
+    }
+
+    // Search uses a pre-computed `search_text` field (lowercased on write) with
+    // DynamoDB `contains()`. This is a substring scan, not full-text search —
+    // it won't scale well beyond ~10k products. At that point, consider a
+    // dedicated search service (e.g. OpenSearch, Typesense).
+    if (filters?.search) {
+      const searchLower = filters.search.toLowerCase();
+      expressionValues[":search"] = searchLower;
+      filterParts.push("contains(search_text, :search)");
+    }
+
+    if (filters?.tags) {
+      const tagsArray = filters.tags.split(",").map((t) => t.trim());
+      tagsArray.forEach((tag, i) => {
+        expressionValues[`:tag${i}`] = tag;
+        filterParts.push(`contains(metadata.tags, :tag${i})`);
+      });
+    }
+
     const queryParams: any = {
       TableName: this.table,
       IndexName: "public_featured",
-      KeyConditionExpression: "visibility = :visibility",
-      ExpressionAttributeValues: {
-        ":visibility": "public",
-      },
-      ScanIndexForward: false, // Descending order of featured
-      Limit: limit,
+      KeyConditionExpression: keyCondition,
+      ExpressionAttributeValues: expressionValues,
+      ScanIndexForward: false,
+      // When filtering, read more items since DynamoDB applies Limit before FilterExpression
+      Limit: filterParts.length > 0 ? Math.max(limit * 10, 1000) : limit,
     };
+
+    if (filterParts.length > 0) {
+      queryParams.FilterExpression = filterParts.join(" AND ");
+    }
 
     if (lastEvaluatedKey) {
       queryParams.ExclusiveStartKey = lastEvaluatedKey;
@@ -150,10 +200,11 @@ class ProductsTable extends BaseTable {
 
   async create(product: Product): Promise<Product> {
     try {
+      const item = { ...product, search_text: this.buildSearchText(product) };
       await this.client.send(
         new PutCommand({
           TableName: this.table,
-          Item: product,
+          Item: item,
         })
       );
       return product;
@@ -176,13 +227,14 @@ class ProductsTable extends BaseTable {
             account_id: product.account_id,
           },
           UpdateExpression:
-            "SET title = :title, description = :description, updated_at = :updated_at, visibility = :visibility, metadata = :metadata",
+            "SET title = :title, description = :description, updated_at = :updated_at, visibility = :visibility, metadata = :metadata, search_text = :search_text",
           ExpressionAttributeValues: {
             ":title": product.title,
             ":description": product.description,
             ":updated_at": new Date().toISOString(),
             ":visibility": product.visibility,
             ":metadata": product.metadata,
+            ":search_text": this.buildSearchText(product),
           },
           ReturnValues: "ALL_NEW",
         })
@@ -203,9 +255,10 @@ class ProductsTable extends BaseTable {
     checkIfExists: boolean = false
   ): Promise<[Product, boolean]> {
     try {
+      const item = { ...product, search_text: this.buildSearchText(product) };
       const command = new PutItemCommand({
         TableName: this.table,
-        Item: marshall(product),
+        Item: marshall(item),
         ConditionExpression: checkIfExists
           ? "attribute_not_exists(product_id)"
           : undefined,

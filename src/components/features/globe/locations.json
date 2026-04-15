@@ -1,0 +1,1678 @@
+{
+  "_src": "https://github.com/Netrvin/cloudflare-colo-list/blob/main/DC-Colos.json",
+  "AAE": {
+    "lat": 36.822201,
+    "lon": 7.80917,
+    "name": "Annaba, Algeria"
+  },
+  "ABJ": {
+    "lat": 5.26139,
+    "lon": -3.92629,
+    "name": "Abidjan, Ivory Coast"
+  },
+  "ABQ": {
+    "lat": 35.040199,
+    "lon": -106.609001,
+    "name": "Albuquerque, NM, United States"
+  },
+  "ACC": {
+    "lat": 5.60519,
+    "lon": -0.166786,
+    "name": "Accra, Ghana"
+  },
+  "ACX": {
+    "name": "Xingyi, China",
+    "lat": 25.0882,
+    "lon": 104.9587
+  },
+  "ADB": {
+    "lat": 38.2924,
+    "lon": 27.157,
+    "name": "Izmir, Turkey"
+  },
+  "ADD": {
+    "lat": 8.97789,
+    "lon": 38.799301,
+    "name": "Addis Ababa, Ethiopia"
+  },
+  "ADL": {
+    "lat": -34.945,
+    "lon": 138.531006,
+    "name": "Adelaide, SA, Australia"
+  },
+  "AGR": {
+    "lat": 27.1558,
+    "lon": 77.960899,
+    "name": "Agra, India"
+  },
+  "AKL": {
+    "lat": -37.008099,
+    "lon": 174.792007,
+    "name": "Auckland, New Zealand"
+  },
+  "AKX": {
+    "lat": 50.2458,
+    "lon": 57.206699,
+    "name": "Aktobe, Kazakhstan"
+  },
+  "ALA": {
+    "lat": 43.3521,
+    "lon": 77.040497,
+    "name": "Almaty, Kazakhstan"
+  },
+  "ALG": {
+    "lat": 36.691002,
+    "lon": 3.21541,
+    "name": "Algiers, Algeria"
+  },
+  "AMD": {
+    "lat": 23.0772,
+    "lon": 72.634697,
+    "name": "Ahmedabad, India"
+  },
+  "AMM": {
+    "lat": 31.722601,
+    "lon": 35.993198,
+    "name": "Amman, Jordan"
+  },
+  "AMS": {
+    "lat": 52.308601,
+    "lon": 4.76389,
+    "name": "Amsterdam, Netherlands"
+  },
+  "ANC": {
+    "lat": 61.1744,
+    "lon": -149.996002,
+    "name": "Anchorage, AK, United States"
+  },
+  "ARI": {
+    "lat": -18.348499,
+    "lon": -70.338699,
+    "name": "Arica, Chile"
+  },
+  "ARN": {
+    "lat": 59.651901,
+    "lon": 17.9186,
+    "name": "Stockholm, Sweden"
+  },
+  "ARU": {
+    "lat": -21.1413,
+    "lon": -50.424702,
+    "name": "Aracatuba, Brazil"
+  },
+  "ASK": {
+    "lat": 6.90317,
+    "lon": -5.36558,
+    "name": "Yamoussoukro, Ivory Coast"
+  },
+  "ASU": {
+    "lat": -25.24,
+    "lon": -57.52,
+    "name": "Asunción, Paraguay"
+  },
+  "ATH": {
+    "lat": 37.936401,
+    "lon": 23.9445,
+    "name": "Athens, Greece"
+  },
+  "ATL": {
+    "lat": 33.6367,
+    "lon": -84.428101,
+    "name": "Atlanta, GA, United States"
+  },
+  "AUS": {
+    "lat": 30.1945,
+    "lon": -97.669899,
+    "name": "Austin, TX, United States"
+  },
+  "BAH": {
+    "lat": 26.2708,
+    "lon": 50.633598,
+    "name": "Manama, Bahrain"
+  },
+  "BAQ": {
+    "lat": 10.8896,
+    "lon": -74.7808,
+    "name": "Barranquilla, Colombia"
+  },
+  "BBI": {
+    "name": "Bhubaneswar, India",
+    "lat": 20.2444,
+    "lon": 85.8178
+  },
+  "BCN": {
+    "lat": 41.2971,
+    "lon": 2.07846,
+    "name": "Barcelona, Spain"
+  },
+  "BEG": {
+    "lat": 44.818401,
+    "lon": 20.309099,
+    "name": "Belgrade, Serbia"
+  },
+  "BEL": {
+    "lat": -1.37925,
+    "lon": -48.476299,
+    "name": "Belém, Brazil"
+  },
+  "BEY": {
+    "lat": 33.8209,
+    "lon": 35.4884,
+    "name": "Beirut, Lebanon"
+  },
+  "BGI": {
+    "lat": 13.0746,
+    "lon": -59.4925,
+    "name": "Bridgetown, Barbados"
+  },
+  "BGR": {
+    "lat": 44.8074,
+    "lon": -68.828102,
+    "name": "Bangor, ME, United States"
+  },
+  "BGW": {
+    "lat": 33.262501,
+    "lon": 44.2346,
+    "name": "Baghdad, Iraq"
+  },
+  "BHY": {
+    "name": "Beihai, China",
+    "lat": 21.5393,
+    "lon": 109.2928
+  },
+  "BKK": {
+    "lat": 13.6811,
+    "lon": 100.747002,
+    "name": "Bangkok, Thailand"
+  },
+  "BLR": {
+    "lat": 13.1979,
+    "lon": 77.706299,
+    "name": "Bangalore, India"
+  },
+  "BNA": {
+    "lat": 36.1245,
+    "lon": -86.6782,
+    "name": "Nashville, United States"
+  },
+  "BNE": {
+    "lat": -27.384199,
+    "lon": 153.117004,
+    "name": "Brisbane, QLD, Australia"
+  },
+  "BNU": {
+    "lat": -26.830601,
+    "lon": -49.090302,
+    "name": "Blumenau, Brazil"
+  },
+  "BOD": {
+    "lat": 44.8283,
+    "lon": -0.715556,
+    "name": "Bordeaux, France"
+  },
+  "BOG": {
+    "lat": 4.70159,
+    "lon": -74.1469,
+    "name": "Bogota, Colombia"
+  },
+  "BOM": {
+    "lat": 19.088699,
+    "lon": 72.867897,
+    "name": "Mumbai, India"
+  },
+  "BOS": {
+    "lat": 42.3643,
+    "lon": -71.005203,
+    "name": "Boston, MA, United States"
+  },
+  "BRU": {
+    "lat": 50.901402,
+    "lon": 4.48444,
+    "name": "Brussels, Belgium"
+  },
+  "BSB": {
+    "lat": -15.869167,
+    "lon": -47.920834,
+    "name": "Brasilia, Brazil"
+  },
+  "BSR": {
+    "lat": 30.549101,
+    "lon": 47.662102,
+    "name": "Basra, Iraq"
+  },
+  "BTS": {
+    "lat": 48.1702,
+    "lon": 17.2127,
+    "name": "Bratislava, Slovakia"
+  },
+  "BUD": {
+    "lat": 47.436901,
+    "lon": 19.2556,
+    "name": "Budapest, Hungary"
+  },
+  "BUF": {
+    "lat": 42.940498,
+    "lon": -78.732201,
+    "name": "Buffalo, NY, United States"
+  },
+  "BWN": {
+    "lat": 4.9442,
+    "lon": 114.928001,
+    "name": "Bandar Seri Begawan, Brunei"
+  },
+  "CAI": {
+    "lat": 30.121901,
+    "lon": 31.4056,
+    "name": "Cairo, Egypt"
+  },
+  "CAN": {
+    "name": "Guangzhou, China",
+    "lat": 23.3925,
+    "lon": 113.2989
+  },
+  "CAW": {
+    "lat": -21.698299,
+    "lon": -41.301701,
+    "name": "Campos dos Goytacazes, Brazil"
+  },
+  "CBR": {
+    "lat": -35.3069,
+    "lon": 149.195007,
+    "name": "Canberra, ACT, Australia"
+  },
+  "CCP": {
+    "lat": -36.772701,
+    "lon": -73.063103,
+    "name": "Concepción, Chile"
+  },
+  "CCU": {
+    "lat": 22.654699,
+    "lon": 88.446701,
+    "name": "Kolkata, India"
+  },
+  "CDG": {
+    "lat": 49.012798,
+    "lon": 2.55,
+    "name": "Paris, France"
+  },
+  "CEB": {
+    "lat": 10.3075,
+    "lon": 123.978996,
+    "name": "Cebu, Philippines"
+  },
+  "CFC": {
+    "lat": -26.7762,
+    "lon": -51.0125,
+    "name": "Cacador, Brazil"
+  },
+  "CGB": {
+    "lat": -15.6529,
+    "lon": -56.116699,
+    "name": "Cuiaba, Brazil"
+  },
+  "CGD": {
+    "name": "Changde, China",
+    "lat": 28.9189,
+    "lon": 111.64
+  },
+  "CGK": {
+    "lat": -6.12557,
+    "lon": 106.655998,
+    "name": "Jakarta, Indonesia"
+  },
+  "CGO": {
+    "name": "Zhengzhou, China",
+    "lat": 34.5267,
+    "lon": 113.8494
+  },
+  "CGP": {
+    "lat": 22.249599,
+    "lon": 91.813301,
+    "name": "Chittagong, Bangladesh"
+  },
+  "CGY": {
+    "lat": 8.41562,
+    "lon": 124.611,
+    "name": "Cagayan de Oro, Philippines"
+  },
+  "CHC": {
+    "lat": -43.489399,
+    "lon": 172.531998,
+    "name": "Christchurch, New Zealand"
+  },
+  "CJB": {
+    "lat": 11.03,
+    "lon": 77.043404,
+    "name": "Coimbatore, India"
+  },
+  "CKG": {
+    "name": "Chongqing, China",
+    "lat": 29.7123,
+    "lon": 106.6519
+  },
+  "CLE": {
+    "lat": 41.411701,
+    "lon": -81.8498,
+    "name": "Cleveland, OH, United States"
+  },
+  "CLO": {
+    "lat": 3.54322,
+    "lon": -76.3816,
+    "name": "Cali, Colombia"
+  },
+  "CLT": {
+    "lat": 35.214001,
+    "lon": -80.9431,
+    "name": "Charlotte, NC, United States"
+  },
+  "CMB": {
+    "lat": 7.18076,
+    "lon": 79.884102,
+    "name": "Colombo, Sri Lanka"
+  },
+  "CMH": {
+    "lat": 39.998001,
+    "lon": -82.891899,
+    "name": "Columbus, OH, United States"
+  },
+  "CNF": {
+    "lat": -19.624443,
+    "lon": -43.971943,
+    "name": "Belo Horizonte, Brazil"
+  },
+  "CNN": {
+    "lat": 11.92,
+    "lon": 75.55,
+    "name": "Kannur, India"
+  },
+  "CNX": {
+    "lat": 18.7668,
+    "lon": 98.962601,
+    "name": "Chiang Mai, Thailand"
+  },
+  "COK": {
+    "lat": 10.152,
+    "lon": 76.401901,
+    "name": "Kochi, India"
+  },
+  "COR": {
+    "lat": -31.323601,
+    "lon": -64.208,
+    "name": "Córdoba, Argentina"
+  },
+  "CPH": {
+    "lat": 55.617901,
+    "lon": 12.656,
+    "name": "Copenhagen, Denmark"
+  },
+  "CPT": {
+    "lat": -33.964802,
+    "lon": 18.6017,
+    "name": "Cape Town, South Africa"
+  },
+  "CRK": {
+    "lat": 15.186,
+    "lon": 120.559998,
+    "name": "Tarlac City, Philippines"
+  },
+  "CSX": {
+    "name": "Changsha, China",
+    "lat": 28.1967,
+    "lon": 113.2208
+  },
+  "CTU": {
+    "name": "Chengdu, China",
+    "lat": 30.5785,
+    "lon": 103.947
+  },
+  "CWB": {
+    "lat": -25.5285,
+    "lon": -49.1758,
+    "name": "Curitiba, Brazil"
+  },
+  "CZL": {
+    "lat": 36.276001,
+    "lon": 6.62039,
+    "name": "Constantine, Algeria"
+  },
+  "CZX": {
+    "name": "Changzhou, China",
+    "lat": 31.9197,
+    "lon": 119.779
+  },
+  "DAC": {
+    "lat": 23.843347,
+    "lon": 90.397783,
+    "name": "Dhaka, Bangladesh"
+  },
+  "DAD": {
+    "lat": 16.0439,
+    "lon": 108.198997,
+    "name": "Da Nang, Vietnam"
+  },
+  "DAR": {
+    "lat": -6.87811,
+    "lon": 39.202599,
+    "name": "Dar es Salaam, Tanzania"
+  },
+  "DEL": {
+    "lat": 28.5665,
+    "lon": 77.103104,
+    "name": "New Delhi, India"
+  },
+  "DEN": {
+    "lat": 39.861698,
+    "lon": -104.672997,
+    "name": "Denver, CO, United States"
+  },
+  "DFW": {
+    "lat": 32.896801,
+    "lon": -97.038002,
+    "name": "Dallas, TX, United States"
+  },
+  "DKR": {
+    "lat": 14.7397,
+    "lon": -17.4902,
+    "name": "Dakar, Senegal"
+  },
+  "DLC": {
+    "name": "Dalian, China",
+    "lat": 38.9624,
+    "lon": 121.5424
+  },
+  "DME": {
+    "lat": 55.408798,
+    "lon": 37.9063,
+    "name": "Moscow, Russia"
+  },
+  "DMM": {
+    "lat": 26.471201,
+    "lon": 49.797901,
+    "name": "Dammam, Saudi Arabia"
+  },
+  "DOH": {
+    "lat": 25.260595,
+    "lon": 51.613767,
+    "name": "Doha, Qatar"
+  },
+  "DPS": {
+    "lat": -8.74817,
+    "lon": 115.167,
+    "name": "Denpasar, Indonesia"
+  },
+  "DTW": {
+    "lat": 42.212399,
+    "lon": -83.353401,
+    "name": "Detroit, MI, United States"
+  },
+  "DUB": {
+    "lat": 53.421299,
+    "lon": -6.27007,
+    "name": "Dublin, Ireland"
+  },
+  "DUR": {
+    "lat": -29.614444,
+    "lon": 31.119722,
+    "name": "Durban, South Africa"
+  },
+  "DUS": {
+    "lat": 51.289501,
+    "lon": 6.76678,
+    "name": "Düsseldorf, Germany"
+  },
+  "DXB": {
+    "lat": 25.2528,
+    "lon": 55.364399,
+    "name": "Dubai, United Arab Emirates"
+  },
+  "EBB": {
+    "lat": 0.042386,
+    "lon": 32.443501,
+    "name": "Kampala, Uganda"
+  },
+  "EBL": {
+    "lat": 36.237598,
+    "lon": 43.9632,
+    "name": "Erbil, Iraq"
+  },
+  "EVN": {
+    "lat": 40.147301,
+    "lon": 44.395901,
+    "name": "Yerevan, Armenia"
+  },
+  "EWR": {
+    "lat": 40.692501,
+    "lon": -74.168701,
+    "name": "Newark, NJ, United States"
+  },
+  "EZE": {
+    "lat": -34.8222,
+    "lon": -58.5358,
+    "name": "Buenos Aires, Argentina"
+  },
+  "FCO": {
+    "lat": 41.804501,
+    "lon": 12.2508,
+    "name": "Rome, Italy"
+  },
+  "FIH": {
+    "lat": -4.38575,
+    "lon": 15.4446,
+    "name": "Kinshasa, DR Congo"
+  },
+  "FLN": {
+    "lat": -27.670279,
+    "lon": -48.552502,
+    "name": "Florianopolis, Brazil"
+  },
+  "FOC": {
+    "name": "Fuzhou, China",
+    "lat": 25.9351,
+    "lon": 119.663
+  },
+  "FOR": {
+    "lat": -3.77628,
+    "lon": -38.5326,
+    "name": "Fortaleza, Brazil"
+  },
+  "FRA": {
+    "lat": 50.026402,
+    "lon": 8.54313,
+    "name": "Frankfurt, Germany"
+  },
+  "FRU": {
+    "lat": 43.061272,
+    "lon": 74.477508,
+    "name": "Bishkek, Kyrgyzstan"
+  },
+  "FSD": {
+    "lat": 43.582001,
+    "lon": -96.741898,
+    "name": "Sioux Falls, SD, United States"
+  },
+  "FUK": {
+    "lat": 33.585899,
+    "lon": 130.451004,
+    "name": "Fukuoka, Japan"
+  },
+  "FUO": {
+    "name": "Foshan, China",
+    "lat": 23.0835,
+    "lon": 113.0712
+  },
+  "GBE": {
+    "lat": -24.555201,
+    "lon": 25.9182,
+    "name": "Gaborone, Botswana"
+  },
+  "GDL": {
+    "lat": 20.521799,
+    "lon": -103.310997,
+    "name": "Guadalajara, Mexico"
+  },
+  "GEO": {
+    "lat": 6.49855,
+    "lon": -58.254101,
+    "name": "Georgetown, Guyana"
+  },
+  "GIG": {
+    "lat": -22.809999,
+    "lon": -43.250557,
+    "name": "Rio de Janeiro, Brazil"
+  },
+  "GND": {
+    "lat": 12.0042,
+    "lon": -61.786201,
+    "name": "St. George's, Grenada"
+  },
+  "GOT": {
+    "lat": 57.6628,
+    "lon": 12.2798,
+    "name": "Gothenburg, Sweden"
+  },
+  "GRU": {
+    "lat": -23.435556,
+    "lon": -46.473057,
+    "name": "São Paulo, Brazil"
+  },
+  "GUA": {
+    "lat": 14.5833,
+    "lon": -90.527496,
+    "name": "Guatemala City, Guatemala"
+  },
+  "GUM": {
+    "lat": 13.4834,
+    "lon": 144.796005,
+    "name": "Hagatna, Guam"
+  },
+  "GVA": {
+    "lat": 46.238098,
+    "lon": 6.10895,
+    "name": "Geneva, Switzerland"
+  },
+  "GYD": {
+    "lat": 40.467499,
+    "lon": 50.0467,
+    "name": "Baku, Azerbaijan"
+  },
+  "GYE": {
+    "lat": -2.15742,
+    "lon": -79.883598,
+    "name": "Guayaquil, Ecuador"
+  },
+  "GYN": {
+    "lat": -16.632,
+    "lon": -49.220699,
+    "name": "Goiania, Brazil"
+  },
+  "HAK": {
+    "name": "Chengmai, China",
+    "lat": 19.9349,
+    "lon": 110.459
+  },
+  "HAM": {
+    "lat": 53.630402,
+    "lon": 9.98823,
+    "name": "Hamburg, Germany"
+  },
+  "HAN": {
+    "lat": 21.221201,
+    "lon": 105.806999,
+    "name": "Hanoi, Vietnam"
+  },
+  "HBA": {
+    "lat": -42.836102,
+    "lon": 147.509995,
+    "name": "Hobart, Australia"
+  },
+  "HEL": {
+    "lat": 60.3172,
+    "lon": 24.963301,
+    "name": "Helsinki, Finland"
+  },
+  "HFA": {
+    "lat": 32.809399,
+    "lon": 35.043098,
+    "name": "Haifa, Israel"
+  },
+  "HGH": {
+    "name": "Shaoxing, China",
+    "lat": 30.2295,
+    "lon": 120.434
+  },
+  "HKG": {
+    "lat": 22.308901,
+    "lon": 113.915001,
+    "name": "Hong Kong"
+  },
+  "HNL": {
+    "lat": 21.318701,
+    "lon": -157.921997,
+    "name": "Honolulu, HI, United States"
+  },
+  "HRE": {
+    "lat": -17.931801,
+    "lon": 31.0928,
+    "name": "Harare, Zimbabwe"
+  },
+  "HYD": {
+    "lat": 17.231318,
+    "lon": 78.429855,
+    "name": "Hyderabad, India"
+  },
+  "HYN": {
+    "name": "Taizhou, China",
+    "lat": 28.5622,
+    "lon": 121.4286
+  },
+  "IAD": {
+    "lat": 38.9445,
+    "lon": -77.455803,
+    "name": "Ashburn, VA, United States"
+  },
+  "IAH": {
+    "lat": 29.9844,
+    "lon": -95.3414,
+    "name": "Houston, TX, United States"
+  },
+  "ICN": {
+    "lat": 37.469101,
+    "lon": 126.450996,
+    "name": "Seoul, South Korea"
+  },
+  "IND": {
+    "lat": 39.7173,
+    "lon": -86.294403,
+    "name": "Indianapolis, IN, United States"
+  },
+  "ISB": {
+    "lat": 33.616699,
+    "lon": 73.099197,
+    "name": "Islamabad, Pakistan"
+  },
+  "IST": {
+    "lat": 41.262222,
+    "lon": 28.727778,
+    "name": "Istanbul, Turkey"
+  },
+  "ISU": {
+    "lat": 35.561749,
+    "lon": 45.316738,
+    "name": "Sulaymaniyah, Iraq"
+  },
+  "IXC": {
+    "lat": 30.6735,
+    "lon": 76.788498,
+    "name": "Chandigarh, India"
+  },
+  "JAX": {
+    "lat": 30.494101,
+    "lon": -81.687897,
+    "name": "Jacksonville, FL, United States"
+  },
+  "JDO": {
+    "lat": -7.21896,
+    "lon": -39.2701,
+    "name": "Juazeiro do Norte, Brazil"
+  },
+  "JED": {
+    "lat": 21.6796,
+    "lon": 39.156502,
+    "name": "Jeddah, Saudi Arabia"
+  },
+  "JHB": {
+    "lat": 1.64131,
+    "lon": 103.669998,
+    "name": "Johor Bahru, Malaysia"
+  },
+  "JIB": {
+    "lat": 11.5473,
+    "lon": 43.1595,
+    "name": "Djibouti, Djibouti"
+  },
+  "JNB": {
+    "lat": -26.133333,
+    "lon": 28.25,
+    "name": "Johannesburg, South Africa"
+  },
+  "JOG": {
+    "lat": -7.78818,
+    "lon": 110.431999,
+    "name": "Yogyakarta, Indonesia"
+  },
+  "JOI": {
+    "lat": -26.224501,
+    "lon": -48.797401,
+    "name": "Joinville, Brazil"
+  },
+  "JXG": {
+    "name": "Jiaxing, China",
+    "lat": 30.7066,
+    "lon": 120.6806
+  },
+  "KBP": {
+    "lat": 50.345001,
+    "lon": 30.894699,
+    "name": "Kyiv, Ukraine"
+  },
+  "KCH": {
+    "lat": 1.4847,
+    "lon": 110.347,
+    "name": "Kuching, Malaysia"
+  },
+  "KEF": {
+    "lat": 63.985001,
+    "lon": -22.6056,
+    "name": "Reykjavík, Iceland"
+  },
+  "KGL": {
+    "lat": -1.96863,
+    "lon": 30.1395,
+    "name": "Kigali, Rwanda"
+  },
+  "KHH": {
+    "lat": 22.577101,
+    "lon": 120.349998,
+    "name": "Kaohsiung City, Taiwan"
+  },
+  "KHI": {
+    "lat": 24.9065,
+    "lon": 67.160797,
+    "name": "Karachi, Pakistan"
+  },
+  "KHN": {
+    "name": "Nanchang, China",
+    "lat": 28.8648,
+    "lon": 115.9027
+  },
+  "KIN": {
+    "lat": 17.935699,
+    "lon": -76.787498,
+    "name": "Kingston, Jamaica"
+  },
+  "KIV": {
+    "name": "Chișinău, Moldova",
+    "lat": 46.9277,
+    "lon": 28.931
+  },
+  "KIX": {
+    "lat": 34.427299,
+    "lon": 135.244003,
+    "name": "Osaka, Japan"
+  },
+  "KJA": {
+    "lat": 56.172901,
+    "lon": 92.493301,
+    "name": "Krasnoyarsk, Russia"
+  },
+  "KMG": {
+    "name": "Kunming, China",
+    "lat": 25.1019,
+    "lon": 102.9292
+  },
+  "KNU": {
+    "lat": 26.399462,
+    "lon": 80.42695,
+    "name": "Kanpur, India"
+  },
+  "KTM": {
+    "lat": 27.6966,
+    "lon": 85.3591,
+    "name": "Kathmandu, Nepal"
+  },
+  "KUL": {
+    "lat": 2.74558,
+    "lon": 101.709999,
+    "name": "Kuala Lumpur, Malaysia"
+  },
+  "KWE": {
+    "name": "Guiyang, China",
+    "lat": 26.5415,
+    "lon": 106.8033
+  },
+  "KWI": {
+    "lat": 29.226601,
+    "lon": 47.968899,
+    "name": "Kuwait City, Kuwait"
+  },
+  "LAD": {
+    "lat": -8.85837,
+    "lon": 13.2312,
+    "name": "Luanda, Angola"
+  },
+  "LAS": {
+    "lat": 36.080101,
+    "lon": -115.152,
+    "name": "Las Vegas, NV, United States"
+  },
+  "LAX": {
+    "lat": 33.942501,
+    "lon": -118.407997,
+    "name": "Los Angeles, CA, United States"
+  },
+  "LCA": {
+    "lat": 34.875099,
+    "lon": 33.624901,
+    "name": "Nicosia, Cyprus"
+  },
+  "LED": {
+    "lat": 59.800301,
+    "lon": 30.262501,
+    "name": "Saint Petersburg, Russia"
+  },
+  "LHE": {
+    "lat": 31.521601,
+    "lon": 74.403603,
+    "name": "Lahore, Pakistan"
+  },
+  "LHR": {
+    "lat": 51.4706,
+    "lon": -0.461941,
+    "name": "London, United Kingdom"
+  },
+  "LIM": {
+    "lat": -12.0219,
+    "lon": -77.114304,
+    "name": "Lima, Peru"
+  },
+  "LIS": {
+    "lat": 38.7813,
+    "lon": -9.13592,
+    "name": "Lisbon, Portugal"
+  },
+  "LLK": {
+    "lat": 38.746399,
+    "lon": 48.818001,
+    "name": "Astara, Azerbaijan"
+  },
+  "LLW": {
+    "lat": -13.7894,
+    "lon": 33.780998,
+    "name": "Lilongwe, Malawi"
+  },
+  "LOS": {
+    "lat": 6.57737,
+    "lon": 3.32116,
+    "name": "Lagos, Nigeria"
+  },
+  "LPB": {
+    "lat": -16.5133,
+    "lon": -68.192299,
+    "name": "La Paz, Bolivia"
+  },
+  "LUN": {
+    "lat": -15.3308,
+    "lon": 28.4526,
+    "name": "Lusaka, Zambia"
+  },
+  "LUX": {
+    "lat": 49.626598,
+    "lon": 6.21152,
+    "name": "Luxembourg City, Luxembourg"
+  },
+  "LYA": {
+    "name": "Luoyang, China",
+    "lat": 34.7413,
+    "lon": 112.388
+  },
+  "LYS": {
+    "lat": 45.726398,
+    "lon": 5.09083,
+    "name": "Lyon, France"
+  },
+  "MAA": {
+    "lat": 12.990005,
+    "lon": 80.169296,
+    "name": "Chennai, India"
+  },
+  "MAD": {
+    "lat": 40.4936,
+    "lon": -3.56676,
+    "name": "Madrid, Spain"
+  },
+  "MAN": {
+    "lat": 53.353699,
+    "lon": -2.27495,
+    "name": "Manchester, United Kingdom"
+  },
+  "MAO": {
+    "lat": -3.03861,
+    "lon": -60.049702,
+    "name": "Manaus, Brazil"
+  },
+  "MBA": {
+    "lat": -4.03483,
+    "lon": 39.5942,
+    "name": "Mombasa, Kenya"
+  },
+  "MCI": {
+    "lat": 39.2976,
+    "lon": -94.713898,
+    "name": "Kansas City, MO, United States"
+  },
+  "MCT": {
+    "lat": 23.5933,
+    "lon": 58.284401,
+    "name": "Muscat, Oman"
+  },
+  "MDE": {
+    "lat": 6.16454,
+    "lon": -75.4231,
+    "name": "Medellín, Colombia"
+  },
+  "MEL": {
+    "lat": -37.673302,
+    "lon": 144.843002,
+    "name": "Melbourne, VIC, Australia"
+  },
+  "MEM": {
+    "lat": 35.0424,
+    "lon": -89.9767,
+    "name": "Memphis, TN, United States"
+  },
+  "MEX": {
+    "lat": 19.4363,
+    "lon": -99.072098,
+    "name": "Mexico City, Mexico"
+  },
+  "MFM": {
+    "lat": 22.149599,
+    "lon": 113.592003,
+    "name": "Macau"
+  },
+  "MIA": {
+    "lat": 25.7932,
+    "lon": -80.290604,
+    "name": "Miami, FL, United States"
+  },
+  "MLA": {
+    "lat": 35.857498,
+    "lon": 14.4775,
+    "name": "Valletta, Malta"
+  },
+  "MLE": {
+    "lat": 4.19183,
+    "lon": 73.529099,
+    "name": "Male, Maldives"
+  },
+  "MLG": {
+    "lat": -7.92656,
+    "lon": 112.714996,
+    "name": "Malang, Indonesia"
+  },
+  "MNL": {
+    "lat": 14.5086,
+    "lon": 121.019997,
+    "name": "Manila, Philippines"
+  },
+  "MPM": {
+    "lat": -25.920799,
+    "lon": 32.572601,
+    "name": "Maputo, Mozambique"
+  },
+  "MRS": {
+    "lat": 43.439272,
+    "lon": 5.221424,
+    "name": "Marseille, France"
+  },
+  "MRU": {
+    "lat": -20.430201,
+    "lon": 57.683601,
+    "name": "Port Louis, Mauritius"
+  },
+  "MSP": {
+    "lat": 44.882,
+    "lon": -93.221802,
+    "name": "Minneapolis, MN, United States"
+  },
+  "MSQ": {
+    "lat": 53.8825,
+    "lon": 28.030701,
+    "name": "Minsk, Belarus"
+  },
+  "MUC": {
+    "lat": 48.353802,
+    "lon": 11.7861,
+    "name": "Munich, Germany"
+  },
+  "MXP": {
+    "lat": 45.6306,
+    "lon": 8.72811,
+    "name": "Milan, Italy"
+  },
+  "NAG": {
+    "lat": 21.092199,
+    "lon": 79.047203,
+    "name": "Nagpur, India"
+  },
+  "NBO": {
+    "lat": -1.31924,
+    "lon": 36.927799,
+    "name": "Nairobi, Kenya"
+  },
+  "NJF": {
+    "lat": 31.989722,
+    "lon": 44.404167,
+    "name": "Najaf, Iraq"
+  },
+  "NOU": {
+    "lat": -22.014601,
+    "lon": 166.212997,
+    "name": "Noumea, New Caledonia"
+  },
+  "NQN": {
+    "lat": -38.949001,
+    "lon": -68.155701,
+    "name": "Neuquen, Argentina"
+  },
+  "NQZ": {
+    "lat": 51.022202,
+    "lon": 71.466904,
+    "name": "Astana, Kazakhstan"
+  },
+  "NRT": {
+    "lat": 35.764702,
+    "lon": 140.386002,
+    "name": "Tokyo, Japan"
+  },
+  "NVT": {
+    "lat": -26.879999,
+    "lon": -48.651402,
+    "name": "Timbo, Brazil"
+  },
+  "OKA": {
+    "lat": 26.195801,
+    "lon": 127.646004,
+    "name": "Naha, Japan"
+  },
+  "OKC": {
+    "lat": 35.393101,
+    "lon": -97.6007,
+    "name": "Oklahoma City, OK, United States"
+  },
+  "OMA": {
+    "lat": 41.3032,
+    "lon": -95.894096,
+    "name": "Omaha, NE, United States"
+  },
+  "ORD": {
+    "lat": 41.9786,
+    "lon": -87.9048,
+    "name": "Chicago, IL, United States"
+  },
+  "ORF": {
+    "lat": 36.8946,
+    "lon": -76.201202,
+    "name": "Norfolk, VA, United States"
+  },
+  "ORN": {
+    "lat": 35.623901,
+    "lon": -0.621183,
+    "name": "Oran, Algeria"
+  },
+  "OSL": {
+    "lat": 60.193901,
+    "lon": 11.1004,
+    "name": "Oslo, Norway"
+  },
+  "OTP": {
+    "lat": 44.572201,
+    "lon": 26.1022,
+    "name": "Bucharest, Romania"
+  },
+  "OUA": {
+    "lat": 12.3532,
+    "lon": -1.51242,
+    "name": "Ouagadougou, Burkina Faso"
+  },
+  "PAT": {
+    "lat": 25.591299,
+    "lon": 85.087997,
+    "name": "Patna, India"
+  },
+  "PBH": {
+    "lat": 27.4032,
+    "lon": 89.424599,
+    "name": "Thimphu, Bhutan"
+  },
+  "PBM": {
+    "lat": 5.45283,
+    "lon": -55.187801,
+    "name": "Paramaribo, Suriname"
+  },
+  "PDX": {
+    "lat": 45.588699,
+    "lon": -122.598,
+    "name": "Portland, OR, United States"
+  },
+  "PER": {
+    "lat": -31.9403,
+    "lon": 115.967003,
+    "name": "Perth, WA, Australia"
+  },
+  "PHL": {
+    "lat": 39.871899,
+    "lon": -75.241096,
+    "name": "Philadelphia, United States"
+  },
+  "PHX": {
+    "lat": 33.434299,
+    "lon": -112.012001,
+    "name": "Phoenix, AZ, United States"
+  },
+  "PIT": {
+    "lat": 40.491501,
+    "lon": -80.232903,
+    "name": "Pittsburgh, PA, United States"
+  },
+  "PKX": {
+    "name": "Langfang, China",
+    "lat": 39.5099,
+    "lon": 116.4109
+  },
+  "PMO": {
+    "lat": 38.175999,
+    "lon": 13.091,
+    "name": "Palermo, Italy"
+  },
+  "PMW": {
+    "lat": -10.2915,
+    "lon": -48.356998,
+    "name": "Palmas, Brazil"
+  },
+  "PNH": {
+    "lat": 11.5466,
+    "lon": 104.844002,
+    "name": "Phnom Penh, Cambodia"
+  },
+  "POA": {
+    "lat": -29.9944,
+    "lon": -51.171398,
+    "name": "Porto Alegre, Brazil"
+  },
+  "POS": {
+    "lat": 10.5954,
+    "lon": -61.3372,
+    "name": "Port of Spain, Trinidad and Tobago"
+  },
+  "PPT": {
+    "lat": -17.553699,
+    "lon": -149.606995,
+    "name": "Tahiti, French Polynesia"
+  },
+  "PRG": {
+    "lat": 50.1008,
+    "lon": 14.26,
+    "name": "Prague, Czech Republic"
+  },
+  "PTY": {
+    "lat": 9.07136,
+    "lon": -79.383499,
+    "name": "Panama City, Panama"
+  },
+  "QRO": {
+    "lat": 20.6173,
+    "lon": -100.185997,
+    "name": "Queretaro, MX, Mexico"
+  },
+  "QWJ": {
+    "lat": -22.738,
+    "lon": -47.334,
+    "name": "Americana, Brazil"
+  },
+  "RAO": {
+    "lat": -21.136389,
+    "lon": -47.776669,
+    "name": "Ribeirao Preto, Brazil"
+  },
+  "RDU": {
+    "lat": 35.877602,
+    "lon": -78.787498,
+    "name": "Durham, NC, United States"
+  },
+  "REC": {
+    "lat": -8.12649,
+    "lon": -34.923599,
+    "name": "Recife, Brazil"
+  },
+  "RIC": {
+    "lat": 37.505199,
+    "lon": -77.319702,
+    "name": "Richmond, VA, United States"
+  },
+  "RIX": {
+    "lat": 56.923599,
+    "lon": 23.9711,
+    "name": "Riga, Latvia"
+  },
+  "RUH": {
+    "lat": 24.9576,
+    "lon": 46.698799,
+    "name": "Riyadh, Saudi Arabia"
+  },
+  "RUN": {
+    "lat": -20.8871,
+    "lon": 55.5103,
+    "name": "Saint-Denis, Réunion"
+  },
+  "SAN": {
+    "lat": 32.733601,
+    "lon": -117.190002,
+    "name": "San Diego, CA, United States"
+  },
+  "SAP": {
+    "lat": 15.4526,
+    "lon": -87.923599,
+    "name": "San Pedro Sula, Honduras"
+  },
+  "SAT": {
+    "lat": 29.533701,
+    "lon": -98.469803,
+    "name": "San Antonio, TX, United States"
+  },
+  "SCL": {
+    "lat": -33.393002,
+    "lon": -70.785797,
+    "name": "Santiago, Chile"
+  },
+  "SDQ": {
+    "lat": 18.429701,
+    "lon": -69.6689,
+    "name": "Santo Domingo, Dominican Republic"
+  },
+  "SEA": {
+    "lat": 47.449001,
+    "lon": -122.308998,
+    "name": "Seattle, WA, United States"
+  },
+  "SFO": {
+    "lat": 37.618999,
+    "lon": -122.375,
+    "name": "San Francisco, CA, United States"
+  },
+  "SGN": {
+    "lat": 10.8188,
+    "lon": 106.652,
+    "name": "Ho Chi Minh City, Vietnam"
+  },
+  "SHA": {
+    "name": "Shanghai, China",
+    "lat": 31.1981,
+    "lon": 121.3343
+  },
+  "SIN": {
+    "lat": 1.35019,
+    "lon": 103.994003,
+    "name": "Singapore, Singapore"
+  },
+  "SJC": {
+    "lat": 37.362598,
+    "lon": -121.929001,
+    "name": "San Jose, CA, United States"
+  },
+  "SJK": {
+    "lat": -23.2292,
+    "lon": -45.8615,
+    "name": "São José dos Campos, Brazil"
+  },
+  "SJO": {
+    "lat": 9.99386,
+    "lon": -84.208801,
+    "name": "San José, Costa Rica"
+  },
+  "SJP": {
+    "lat": -20.816601,
+    "lon": -49.406502,
+    "name": "São José do Rio Preto, Brazil"
+  },
+  "SJU": {
+    "lat": 18.4394,
+    "lon": -66.001801,
+    "name": "San Juan, Puerto Rico"
+  },
+  "SJW": {
+    "name": "Shijiazhuang, China",
+    "lat": 38.2807,
+    "lon": 114.697
+  },
+  "SKG": {
+    "lat": 40.519699,
+    "lon": 22.9709,
+    "name": "Thessaloniki, Greece"
+  },
+  "SKP": {
+    "lat": 41.961601,
+    "lon": 21.621401,
+    "name": "Skopje, North Macedonia"
+  },
+  "SLC": {
+    "lat": 40.788399,
+    "lon": -111.977997,
+    "name": "Salt Lake City, UT, United States"
+  },
+  "SMF": {
+    "lat": 38.6954,
+    "lon": -121.591003,
+    "name": "Sacramento, CA, United States"
+  },
+  "SOD": {
+    "lat": -23.478001,
+    "lon": -47.490002,
+    "name": "Sorocaba, Brazil"
+  },
+  "SOF": {
+    "lat": 42.696693,
+    "lon": 23.411436,
+    "name": "Sofia, Bulgaria"
+  },
+  "SSA": {
+    "lat": -12.068355,
+    "lon": -45.711454,
+    "name": "Salvador, Brazil"
+  },
+  "STI": {
+    "lat": 19.406099,
+    "lon": -70.604698,
+    "name": "Santiago de los Caballeros, Dominican Republic"
+  },
+  "STL": {
+    "lat": 38.748699,
+    "lon": -90.370003,
+    "name": "St. Louis, MO, United States"
+  },
+  "STR": {
+    "lat": 48.689899,
+    "lon": 9.22196,
+    "name": "Stuttgart, Germany"
+  },
+  "SUV": {
+    "lat": -18.043301,
+    "lon": 178.559006,
+    "name": "Suva, Fiji"
+  },
+  "SYD": {
+    "lat": -33.946098,
+    "lon": 151.177002,
+    "name": "Sydney, NSW, Australia"
+  },
+  "SZX": {
+    "name": "Shenzhen, China",
+    "lat": 22.6395,
+    "lon": 113.811
+  },
+  "TAO": {
+    "name": "Qingdao, China",
+    "lat": 36.2661,
+    "lon": 120.374
+  },
+  "TBS": {
+    "lat": 41.669201,
+    "lon": 44.9547,
+    "name": "Tbilisi, Georgia"
+  },
+  "TEN": {
+    "name": "Tongren, China",
+    "lat": 27.8843,
+    "lon": 109.3094
+  },
+  "TGU": {
+    "lat": 14.0609,
+    "lon": -87.217201,
+    "name": "Tegucigalpa, Honduras"
+  },
+  "TIA": {
+    "lat": 41.4147,
+    "lon": 19.7206,
+    "name": "Tirana, Albania"
+  },
+  "TLH": {
+    "lat": 30.3965,
+    "lon": -84.350304,
+    "name": "Tallahassee, FL, United States"
+  },
+  "TLL": {
+    "lat": 59.4133,
+    "lon": 24.8328,
+    "name": "Tallinn, Estonia"
+  },
+  "TLV": {
+    "lat": 32.011398,
+    "lon": 34.8867,
+    "name": "Tel Aviv, Israel"
+  },
+  "TNA": {
+    "name": "Zibo, China",
+    "lat": 36.8572,
+    "lon": 117.216
+  },
+  "TNR": {
+    "lat": -18.7969,
+    "lon": 47.478802,
+    "name": "Antananarivo, Madagascar"
+  },
+  "TPA": {
+    "lat": 27.9755,
+    "lon": -82.533203,
+    "name": "Tampa, FL, United States"
+  },
+  "TPE": {
+    "lat": 25.0777,
+    "lon": 121.233002,
+    "name": "Taipei"
+  },
+  "TUN": {
+    "lat": 36.851002,
+    "lon": 10.2272,
+    "name": "Tunis, Tunisia"
+  },
+  "TXL": {
+    "lat": 52.5597,
+    "lon": 13.2877,
+    "name": "Berlin, Germany"
+  },
+  "TYN": {
+    "name": "Yangquan, China",
+    "lat": 37.7457,
+    "lon": 112.6305
+  },
+  "UDI": {
+    "lat": -18.883612,
+    "lon": -48.225277,
+    "name": "Uberlandia, Brazil"
+  },
+  "UIO": {
+    "lat": -0.129167,
+    "lon": -78.3575,
+    "name": "Quito, Ecuador"
+  },
+  "ULN": {
+    "lat": 47.843102,
+    "lon": 106.766998,
+    "name": "Ulaanbaatar, Mongolia"
+  },
+  "URT": {
+    "lat": 9.1326,
+    "lon": 99.135597,
+    "name": "Surat Thani, Thailand"
+  },
+  "VCP": {
+    "lat": -23.007401,
+    "lon": -47.134499,
+    "name": "Campinas, Brazil"
+  },
+  "VIE": {
+    "lat": 48.110298,
+    "lon": 16.5697,
+    "name": "Vienna, Austria"
+  },
+  "VIX": {
+    "lat": -20.258057,
+    "lon": -40.286388,
+    "name": "Vitoria, Brazil"
+  },
+  "VNO": {
+    "lat": 54.634102,
+    "lon": 25.285801,
+    "name": "Vilnius, Lithuania"
+  },
+  "VTE": {
+    "lat": 17.9883,
+    "lon": 102.563004,
+    "name": "Vientiane, Laos"
+  },
+  "WAW": {
+    "lat": 52.165699,
+    "lon": 20.9671,
+    "name": "Warsaw, Poland"
+  },
+  "WDH": {
+    "lat": -22.4799,
+    "lon": 17.4709,
+    "name": "Windhoek, Namibia"
+  },
+  "WLG": {
+    "name": "Wellington, New Zealand",
+    "lat": -41.3272,
+    "lon": 174.805
+  },
+  "WRO": {
+    "lat": 51.102699,
+    "lon": 16.885799,
+    "name": "Wroclaw, Poland"
+  },
+  "XAP": {
+    "lat": -27.134199,
+    "lon": -52.656601,
+    "name": "Chapeco, Brazil"
+  },
+  "XFN": {
+    "name": "Xiangyang, China",
+    "lat": 32.1522,
+    "lon": 112.2917
+  },
+  "XIY": {
+    "name": "Baoji, China",
+    "lat": 34.4471,
+    "lon": 108.752
+  },
+  "XNH": {
+    "lat": 30.935801,
+    "lon": 46.090099,
+    "name": "Nasiriyah, Iraq"
+  },
+  "YHZ": {
+    "lat": 44.880798,
+    "lon": -63.508598,
+    "name": "Halifax, Canada"
+  },
+  "YOW": {
+    "lat": 45.322498,
+    "lon": -75.669197,
+    "name": "Ottawa, Canada"
+  },
+  "YUL": {
+    "lat": 45.4706,
+    "lon": -73.740799,
+    "name": "Montréal, QC, Canada"
+  },
+  "YVR": {
+    "lat": 49.193901,
+    "lon": -123.183998,
+    "name": "Vancouver, BC, Canada"
+  },
+  "YWG": {
+    "lat": 49.91,
+    "lon": -97.239899,
+    "name": "Winnipeg, MB, Canada"
+  },
+  "YXE": {
+    "lat": 52.170799,
+    "lon": -106.699997,
+    "name": "Saskatoon, SK, Canada"
+  },
+  "YYC": {
+    "lat": 51.113899,
+    "lon": -114.019997,
+    "name": "Calgary, AB, Canada"
+  },
+  "YYZ": {
+    "lat": 43.6772,
+    "lon": -79.6306,
+    "name": "Toronto, ON, Canada"
+  },
+  "ZAG": {
+    "lat": 45.742901,
+    "lon": 16.0688,
+    "name": "Zagreb, Croatia"
+  },
+  "ZDM": {
+    "lat": 32.2719,
+    "lon": 35.0194,
+    "name": "Ramallah"
+  },
+  "ZRH": {
+    "lat": 47.464699,
+    "lon": 8.54917,
+    "name": "Zurich, Switzerland"
+  }
+}

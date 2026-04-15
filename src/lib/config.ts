@@ -63,6 +63,11 @@ export const CONFIG = {
     },
   },
 
+  // Location WebSocket for live globe
+  locationWs: {
+    url: process.env.NEXT_PUBLIC_LOCATION_WS_URL,
+  },
+
   // Google configuration
   google: {
     siteVerification: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || "",

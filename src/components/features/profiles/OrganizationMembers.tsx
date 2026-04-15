@@ -1,6 +1,6 @@
 import { Box, Text, Flex } from "@radix-ui/themes";
 import type { IndividualAccount } from "@/types";
-import { AvatarLinkCompact } from "@/components";
+import { AvatarLinkCompact } from "@/components/core/AccountLinks";
 
 interface OrganizationMembersProps {
   owners: IndividualAccount[];

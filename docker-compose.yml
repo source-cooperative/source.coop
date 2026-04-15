@@ -30,5 +30,5 @@ services:
       "
     environment:
       DYNAMODB_ENDPOINT: http://dynamodb:8000
-      # RESET_TABLES: 1
+      RESET_TABLES: ${RESET_TABLES}
       NPM_CONFIG_UPDATE_NOTIFIER: false

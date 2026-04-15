@@ -28,6 +28,10 @@ const handleChromeDevTools = (request: NextRequest): NextResponse | null => {
  * @returns response or null
  */
 const handleLegacyRedirects = (request: NextRequest): NextResponse | null => {
+  if (request.nextUrl.pathname === "/featured") {
+    return NextResponse.redirect(new URL("/products?featured=1", request.url));
+  }
+
   if (request.nextUrl.pathname.startsWith("/repositories")) {
     // Handle the specific pattern: /repositories/[owner_id]/[repo_id]/description
     const pathParts = request.nextUrl.pathname.split("/");

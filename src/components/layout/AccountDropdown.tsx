@@ -14,12 +14,10 @@ import {
 import { DropdownSection } from "./DropdownSection";
 import { isAuthorized } from "@/lib/api/authz";
 import { Actions, UserSession } from "@/types";
-import {
-  ProfileAvatar,
-  UploadsSubmenu,
-  UploadBadge,
-  Skeleton,
-} from "@/components";
+import { ProfileAvatar } from "@/components/features/profiles/ProfileAvatar";
+import { UploadBadge } from "@/components/features/uploader/UploadBadge";
+import { UploadsSubmenu } from "@/components/features/uploader/UploadsSubmenu";
+import { Skeleton } from "@/components/core/Skeleton";
 
 export function AccountDropdownSkeleton() {
   return (

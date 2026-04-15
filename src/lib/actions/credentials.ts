@@ -49,21 +49,21 @@ export async function getTemporaryCredentials({
   const product = await productsTable.fetchById(accountId, productId);
   if (!product)
     throw new Error(
-      `Product ${accountId}/${productId} not found for temporary credentials`
+      `Product ${accountId}/${productId} not found for temporary credentials`,
     );
 
   if (!isAuthorized(session, product, Actions.WriteRepositoryData))
     throw new Error(
-      `Unauthorized: User does not have permission to upload to ${accountId}/${productId}`
+      `Unauthorized: User does not have permission to upload to ${accountId}/${productId}`,
     );
 
   // TODO: Ideally, we would be able to read this directly from the product, however the product mirrors seem to have incorrect bucket values
   const dataConnection = await dataConnectionsTable.fetchById(
-    product.metadata.primary_mirror
+    product.metadata.primary_mirror,
   );
   if (!dataConnection)
     throw new Error(
-      `Data connection ${product.metadata.primary_mirror} not found`
+      `Data connection ${product.metadata.primary_mirror} not found`,
     );
   if (dataConnection.details.provider !== DataProvider.S3)
     throw new Error("Non-S3 providers are not supported.");
@@ -91,11 +91,13 @@ export async function getTemporaryCredentials({
       credentials: CONFIG.database.credentials,
     });
 
+    const RoleSessionName =
+      `upload-${accountId}-${productId}-${Date.now()}`.slice(0, 64); // Max length for session name is 64 characters
     // Use AssumeRole to get temporary credentials
     const response = await stsClient.send(
       new AssumeRoleCommand({
         RoleArn: CONFIG.uploads.accessRoleArn,
-        RoleSessionName: `upload-${accountId}-${productId}-${Date.now()}`,
+        RoleSessionName,
         DurationSeconds: durationSeconds,
         // Create session policy to scope permissions
         Policy: JSON.stringify({
@@ -128,7 +130,7 @@ export async function getTemporaryCredentials({
             },
           ],
         }),
-      })
+      }),
     );
 
     if (!response.Credentials) {
@@ -163,7 +165,7 @@ export async function getTemporaryCredentials({
     throw new Error(
       `Failed to generate credentials: ${
         error instanceof Error ? error.message : "Unknown error"
-      }`
+      }`,
     );
   }
 }
@@ -177,7 +179,7 @@ export async function getTemporaryCredentials({
  */
 export async function refreshCredentialsIfNeeded(
   params: GetCredentialsParams,
-  currentExpiration: string
+  currentExpiration: string,
 ): Promise<TemporaryCredentials | null> {
   const expirationTime = new Date(currentExpiration).getTime();
   const now = Date.now();

@@ -43,6 +43,8 @@ export function ProductListItem({ product, isSelected }: ProductListItemProps) {
           </Text>
         )}
 
+        <div className={styles.itemSpacer} />
+
         <Box className={styles.metadata}>
           {product.account?.name && (
             <>

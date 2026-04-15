@@ -4,6 +4,7 @@ import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
 import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import { Code } from "./codeConfig";
+import { HeadingWithPermalink } from "./HeadingWithPermalink";
 import "@/styles/MarkdownViewer.css";
 
 interface MarkdownViewerProps {
@@ -38,39 +39,64 @@ export function MarkdownViewer({ content }: MarkdownViewerProps) {
   }
 
   return (
-    <ReactMarkdown
-      remarkPlugins={[remarkGfm]}
-      rehypePlugins={[rehypeRaw, [rehypeSanitize, sanitizeSchema]]}
-      components={{
+    <div className="markdown-viewer">
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        rehypePlugins={[rehypeRaw, [rehypeSanitize, sanitizeSchema]]}
+        components={{
         h1: ({ children }) => (
-          <Heading size="8" mb="4" id={generateHeadingId(String(children))}>
+          <HeadingWithPermalink
+            id={generateHeadingId(String(children))}
+            level="8"
+            mb="4"
+          >
             {children}
-          </Heading>
+          </HeadingWithPermalink>
         ),
         h2: ({ children }) => (
-          <Heading size="7" mb="3" id={generateHeadingId(String(children))}>
+          <HeadingWithPermalink
+            id={generateHeadingId(String(children))}
+            level="7"
+            mb="3"
+          >
             {children}
-          </Heading>
+          </HeadingWithPermalink>
         ),
         h3: ({ children }) => (
-          <Heading size="6" mb="2" id={generateHeadingId(String(children))}>
+          <HeadingWithPermalink
+            id={generateHeadingId(String(children))}
+            level="6"
+            mb="2"
+          >
             {children}
-          </Heading>
+          </HeadingWithPermalink>
         ),
         h4: ({ children }) => (
-          <Heading size="5" mb="2" id={generateHeadingId(String(children))}>
+          <HeadingWithPermalink
+            id={generateHeadingId(String(children))}
+            level="5"
+            mb="2"
+          >
             {children}
-          </Heading>
+          </HeadingWithPermalink>
         ),
         h5: ({ children }) => (
-          <Heading size="4" mb="2" id={generateHeadingId(String(children))}>
+          <HeadingWithPermalink
+            id={generateHeadingId(String(children))}
+            level="4"
+            mb="2"
+          >
             {children}
-          </Heading>
+          </HeadingWithPermalink>
         ),
         h6: ({ children }) => (
-          <Heading size="3" mb="2" id={generateHeadingId(String(children))}>
+          <HeadingWithPermalink
+            id={generateHeadingId(String(children))}
+            level="3"
+            mb="2"
+          >
             {children}
-          </Heading>
+          </HeadingWithPermalink>
         ),
         p: ({ children }) => (
           <Text as="p" mb="3">
@@ -78,7 +104,9 @@ export function MarkdownViewer({ content }: MarkdownViewerProps) {
           </Text>
         ),
         a: ({ href, children }) => (
-          <RadixLink href={href}>{children}</RadixLink>
+          <RadixLink href={href} underline="always">
+            {children}
+          </RadixLink>
         ),
         table: ({ children }) => (
           <Table.Root mb="3" variant="surface">
@@ -106,8 +134,9 @@ export function MarkdownViewer({ content }: MarkdownViewerProps) {
           return <Code lang={lang}>{codeContent}</Code>;
         },
       }}
-    >
-      {content}
-    </ReactMarkdown>
+      >
+        {content}
+      </ReactMarkdown>
+    </div>
   );
 }
