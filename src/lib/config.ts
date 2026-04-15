@@ -13,11 +13,6 @@ export const CONFIG = {
     type: "S3",
     endpoint: process.env.NEXT_PUBLIC_S3_ENDPOINT,
     region: "us-east-1",
-    credentials: {
-      accessKeyId: "anonymous",
-      secretAccessKey: "anonymous",
-    },
-    // Optional role to use when granting temporary upload credentials
   } as StorageConfig,
 
   uploads: {
@@ -55,6 +50,12 @@ export const CONFIG = {
       frontendUrl,
     },
     accessToken: process.env.ORY_PROJECT_API_KEY || "",
+
+    oauth2: {
+      clientId: process.env.ORY_OAUTH2_CLIENT_ID || "",
+      clientSecret: process.env.ORY_OAUTH2_CLIENT_SECRET || "",
+      redirectUri: process.env.ORY_OAUTH2_REDIRECT_URI || "",
+    },
 
     routes: {
       // https://www.ory.sh/docs/reference/api#tag/frontend/operation/createBrowserLoginFlow
