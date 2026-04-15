@@ -189,6 +189,7 @@ export async function updateAccountProfile(
     const name = formData.get("name") as string;
     const description = formData.get("description") as string;
     const orcid = formData.get("orcid") as string;
+    const ror_id = formData.get("ror_id") as string;
 
     // Extract websites from form data (handle both indexed and direct approaches)
     const websites: string[] = [];
@@ -230,6 +231,7 @@ export async function updateAccountProfile(
         ...currentAccount.metadata_public,
         bio: description || undefined,
         orcid: orcid || undefined,
+        ror_id: ror_id || undefined,
         domains: validWebsites,
       },
       updated_at: new Date().toISOString(),
