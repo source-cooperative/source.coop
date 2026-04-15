@@ -1,10 +1,17 @@
 "use client";
 
-import { LOGGER, TemporaryCredentials, getTemporaryCredentials } from "@/lib";
+import {
+  LOGGER,
+  TemporaryCredentials,
+  getTemporaryCredentials,
+  getReadCredentials,
+  ReadCredentials,
+} from "@/lib";
 import {
   createContext,
   useContext,
   useState,
+  useEffect,
   ReactNode,
   useMemo,
   useCallback,
@@ -30,17 +37,71 @@ interface CredentialsContextType {
   clearCredentials: (scope: CredentialsScope) => void;
   clearAllCredentials: () => void;
   getAllCredentials: () => Map<CredentialsScope, TemporaryCredentials>;
+  readCredentials: ReadCredentials | null;
+  readCredentialsStatus: "loading" | "success" | "failed" | undefined;
+  refreshReadCredentials: () => Promise<void>;
 }
 
 const CredentialsContext = createContext<CredentialsContextType | undefined>(
   undefined
 );
 
-export function S3CredentialsProvider({ children }: { children: ReactNode }) {
+export function S3CredentialsProvider({
+  children,
+  isAuthenticated,
+}: {
+  children: ReactNode;
+  isAuthenticated: boolean;
+}) {
   // Store credentials by scope key (accountId:productId)
   const [credentialsMap, setCredentialsMap] = useState<
     Map<string, CredentialsEntry>
   >(new Map());
+
+  // Read credentials state (user-scoped, not product-scoped)
+  const [readCredentials, setReadCredentials] =
+    useState<ReadCredentials | null>(null);
+  const [readCredentialsStatus, setReadCredentialsStatus] = useState<
+    "loading" | "success" | "failed" | undefined
+  >();
+
+  const refreshReadCredentials = useCallback(async () => {
+    setReadCredentialsStatus("loading");
+    try {
+      const creds = await getReadCredentials();
+      setReadCredentials(creds);
+      setReadCredentialsStatus("success");
+    } catch (error) {
+      LOGGER.error("Failed to fetch read credentials", {
+        operation: "refreshReadCredentials",
+        error,
+      });
+      setReadCredentials(null);
+      setReadCredentialsStatus("failed");
+    }
+  }, []);
+
+  // Auto-fetch when authenticated
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setReadCredentials(null);
+      setReadCredentialsStatus(undefined);
+      return;
+    }
+    void refreshReadCredentials();
+  }, [isAuthenticated, refreshReadCredentials]);
+
+  // Proactive refresh when credentials are near expiry
+  useEffect(() => {
+    if (!readCredentials) return;
+    const expiresAt = new Date(readCredentials.expiration).getTime();
+    const refreshAt = expiresAt - 5 * 60 * 1000;
+    const delay = Math.max(0, refreshAt - Date.now());
+    const timer = setTimeout(() => {
+      void refreshReadCredentials();
+    }, delay);
+    return () => clearTimeout(timer);
+  }, [readCredentials, refreshReadCredentials]);
 
   const getScopeKey = (scope: CredentialsScope): string => {
     return `${scope.accountId}:${scope.productId}`;
@@ -152,6 +213,9 @@ export function S3CredentialsProvider({ children }: { children: ReactNode }) {
         clearCredentials,
         clearAllCredentials,
         getAllCredentials,
+        readCredentials,
+        readCredentialsStatus,
+        refreshReadCredentials,
       }}
     >
       {children}

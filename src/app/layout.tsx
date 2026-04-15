@@ -8,6 +8,7 @@ import {
   S3CredentialsProvider,
   UploadProvider,
 } from "@/components";
+import { getPageSession } from "@/lib";
 import { metadata } from "./metadata";
 const ibmPlexSans = IBM_Plex_Sans({
   subsets: ["latin"],
@@ -22,6 +23,9 @@ interface RootLayoutProps {
 }
 
 export default async function RootLayout({ children }: RootLayoutProps) {
+  const session = await getPageSession();
+  const isAuthenticated = !!session?.identity_id;
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={ibmPlexSans.variable} suppressHydrationWarning>
@@ -33,7 +37,7 @@ export default async function RootLayout({ children }: RootLayoutProps) {
         >
           <NextTopLoader />
           <SessionProvider>
-            <S3CredentialsProvider>
+            <S3CredentialsProvider isAuthenticated={isAuthenticated}>
               <UploadProvider>
                 {children}
               </UploadProvider>
