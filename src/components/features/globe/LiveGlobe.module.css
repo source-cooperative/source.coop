@@ -68,6 +68,12 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.popupLocation {
+  margin-bottom: 4px;
+  color: var(--gray-11, #6b6b6b);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .popupLink {
   color: inherit;
   text-decoration: none;
