@@ -20,20 +20,28 @@ jest.mock("@/lib/config", () => ({
   },
 }));
 
+// JWT with exp = 9999999999 (far future), sub = "identity-xyz"
+const MOCK_ID_TOKEN =
+  "eyJhbGciOiJSUzI1NiJ9." +
+  btoa(JSON.stringify({ sub: "identity-xyz", exp: 9999999999 })) +
+  ".sig";
+
 describe("getOryIdToken", () => {
   let fetchMock: jest.Mock;
 
   beforeEach(() => {
     fetchMock = jest.fn();
     global.fetch = fetchMock as unknown as typeof fetch;
+    // Clear the token cache between tests
+    jest.resetModules();
   });
 
   afterEach(() => {
     jest.resetAllMocks();
   });
 
-  test("drives full auth code flow and returns id_token", async () => {
-    // 1) GET /oauth2/auth → 302 with login_challenge in redirect URL
+  test("completes flow with skip_consent (4 calls)", async () => {
+    // 1) GET /oauth2/auth → 302 with login_challenge
     fetchMock.mockResolvedValueOnce(
       new Response(null, {
         status: 302,
@@ -44,38 +52,17 @@ describe("getOryIdToken", () => {
       }),
     );
 
-    // 2) PUT /admin/oauth2/auth/requests/login/accept → { redirect_to }
+    // 2) PUT /admin/.../login/accept → { redirect_to }
     fetchMock.mockResolvedValueOnce(
       new Response(
         JSON.stringify({
-          redirect_to: "https://auth.source.coop/oauth2/auth?continue=login",
+          redirect_to: "https://auth.source.coop/oauth2/auth?continue=1",
         }),
         { status: 200 },
       ),
     );
 
-    // 3) Follow redirect → 302 with consent_challenge
-    fetchMock.mockResolvedValueOnce(
-      new Response(null, {
-        status: 302,
-        headers: {
-          location:
-            "https://auth.source.coop/ui/consent?consent_challenge=consent-456",
-        },
-      }),
-    );
-
-    // 4) PUT /admin/oauth2/auth/requests/consent/accept → { redirect_to }
-    fetchMock.mockResolvedValueOnce(
-      new Response(
-        JSON.stringify({
-          redirect_to: "https://auth.source.coop/oauth2/auth?continue=consent",
-        }),
-        { status: 200 },
-      ),
-    );
-
-    // 5) Follow redirect → 302 with code
+    // 3) Follow redirect → 302 straight to callback with code (consent skipped)
     fetchMock.mockResolvedValueOnce(
       new Response(null, {
         status: 302,
@@ -86,11 +73,11 @@ describe("getOryIdToken", () => {
       }),
     );
 
-    // 6) POST /oauth2/token → { id_token }
+    // 4) POST /oauth2/token → { id_token }
     fetchMock.mockResolvedValueOnce(
       new Response(
         JSON.stringify({
-          id_token: "eyJhbGci.payload.sig",
+          id_token: MOCK_ID_TOKEN,
           access_token: "atok",
           token_type: "bearer",
           expires_in: 3600,
@@ -101,17 +88,77 @@ describe("getOryIdToken", () => {
 
     const idToken = await getOryIdToken("identity-xyz");
 
-    expect(idToken).toBe("eyJhbGci.payload.sig");
-    expect(fetchMock).toHaveBeenCalledTimes(6);
+    expect(idToken).toBe(MOCK_ID_TOKEN);
+    expect(fetchMock).toHaveBeenCalledTimes(4);
 
-    // Verify the login accept call used the identity as subject
+    // Verify login accept used the identity as subject
     const loginAcceptCall = fetchMock.mock.calls[1];
-    expect(loginAcceptCall[0]).toContain(
-      "/admin/oauth2/auth/requests/login/accept",
-    );
+    expect(loginAcceptCall[0]).toContain("/admin/oauth2/auth/requests/login/accept");
     expect(loginAcceptCall[0]).toContain("login_challenge=login-123");
     const loginAcceptBody = JSON.parse(loginAcceptCall[1].body);
     expect(loginAcceptBody.subject).toBe("identity-xyz");
+  });
+
+  test("completes flow with consent step (6 calls)", async () => {
+    // 1) GET /oauth2/auth → 302 with login_challenge
+    fetchMock.mockResolvedValueOnce(
+      new Response(null, {
+        status: 302,
+        headers: {
+          location: "/ui/login?login_challenge=lc",
+        },
+      }),
+    );
+
+    // 2) PUT login/accept
+    fetchMock.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({ redirect_to: "https://auth.source.coop/oauth2/auth?x=1" }),
+        { status: 200 },
+      ),
+    );
+
+    // 3) Follow redirect → consent_challenge
+    fetchMock.mockResolvedValueOnce(
+      new Response(null, {
+        status: 302,
+        headers: {
+          location: "/ui/consent?consent_challenge=cc",
+        },
+      }),
+    );
+
+    // 4) PUT consent/accept
+    fetchMock.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({ redirect_to: "https://auth.source.coop/oauth2/auth?y=1" }),
+        { status: 200 },
+      ),
+    );
+
+    // 5) Follow redirect → code
+    fetchMock.mockResolvedValueOnce(
+      new Response(null, {
+        status: 302,
+        headers: {
+          location: "https://source.coop/callback?code=c",
+        },
+      }),
+    );
+
+    // 6) Token exchange
+    fetchMock.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({ id_token: MOCK_ID_TOKEN }),
+        { status: 200 },
+      ),
+    );
+
+    // Use a different identity to avoid cache from previous test
+    const idToken = await getOryIdToken("identity-with-consent");
+
+    expect(idToken).toBe(MOCK_ID_TOKEN);
+    expect(fetchMock).toHaveBeenCalledTimes(6);
   });
 
   test("throws when login_challenge is missing from redirect", async () => {
@@ -122,7 +169,7 @@ describe("getOryIdToken", () => {
       }),
     );
 
-    await expect(getOryIdToken("identity-xyz")).rejects.toThrow(
+    await expect(getOryIdToken("identity-no-challenge")).rejects.toThrow(
       /login_challenge/,
     );
   });
@@ -132,10 +179,7 @@ describe("getOryIdToken", () => {
       .mockResolvedValueOnce(
         new Response(null, {
           status: 302,
-          headers: {
-            location:
-              "https://auth.source.coop/ui/login?login_challenge=lc",
-          },
+          headers: { location: "/ui/login?login_challenge=lc" },
         }),
       )
       .mockResolvedValueOnce(
@@ -147,33 +191,16 @@ describe("getOryIdToken", () => {
       .mockResolvedValueOnce(
         new Response(null, {
           status: 302,
-          headers: {
-            location:
-              "https://auth.source.coop/ui/consent?consent_challenge=cc",
-          },
+          headers: { location: "https://source.coop/callback?code=c" },
         }),
       )
       .mockResolvedValueOnce(
-        new Response(
-          JSON.stringify({ redirect_to: "https://auth.source.coop/y" }),
-          { status: 200 },
-        ),
-      )
-      .mockResolvedValueOnce(
-        new Response(null, {
-          status: 302,
-          headers: {
-            location:
-              "https://source.coop/api/internal/oauth2/callback?code=c",
-          },
-        }),
-      )
-      .mockResolvedValueOnce(
-        new Response(JSON.stringify({ access_token: "atok" }), {
-          status: 200,
-        }),
+        new Response(JSON.stringify({ access_token: "atok" }), { status: 200 }),
       );
 
-    await expect(getOryIdToken("identity-xyz")).rejects.toThrow(/id_token/);
+    await expect(getOryIdToken("identity-no-idtoken")).rejects.toThrow(
+      /id_token/,
+    );
   });
+
 });

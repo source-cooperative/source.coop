@@ -4,11 +4,11 @@ import {
   GetObjectCommand,
   type ListObjectsV2CommandInput,
 } from "@aws-sdk/client-s3";
-import type { ReadCredentials } from "@/lib/actions/read-credentials";
+import type { ProxyCredentials } from "@/lib/actions/proxy-credentials";
 
 export interface S3ReadClientConfig {
   endpoint: string;
-  credentials?: ReadCredentials;
+  credentials?: ProxyCredentials;
 }
 
 export interface ListObjectsParams {

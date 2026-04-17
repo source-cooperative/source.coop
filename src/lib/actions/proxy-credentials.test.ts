@@ -1,7 +1,7 @@
 /**
  * @jest-environment node
  */
-import { getReadCredentials } from "./read-credentials";
+import { getProxyCredentials } from "./proxy-credentials";
 
 jest.mock("@/lib/api/utils", () => ({
   getPageSession: jest.fn(),
@@ -34,7 +34,7 @@ const STS_XML = `<?xml version="1.0" encoding="UTF-8"?>
   </AssumeRoleWithWebIdentityResult>
 </AssumeRoleWithWebIdentityResponse>`;
 
-describe("getReadCredentials", () => {
+describe("getProxyCredentials", () => {
   let fetchMock: jest.Mock;
 
   beforeEach(() => {
@@ -46,7 +46,7 @@ describe("getReadCredentials", () => {
 
   test("throws when user is not authenticated", async () => {
     (getPageSession as jest.Mock).mockResolvedValue(null);
-    await expect(getReadCredentials()).rejects.toThrow(/Unauthorized/);
+    await expect(getProxyCredentials()).rejects.toThrow(/Unauthorized/);
     expect(getOryIdToken).not.toHaveBeenCalled();
   });
 
@@ -60,7 +60,7 @@ describe("getReadCredentials", () => {
       new Response(STS_XML, { status: 200 }),
     );
 
-    const creds = await getReadCredentials();
+    const creds = await getProxyCredentials();
 
     expect(creds).toEqual({
       accessKeyId: "AKIAREAD",
@@ -87,6 +87,6 @@ describe("getReadCredentials", () => {
       new Response("access denied", { status: 403 }),
     );
 
-    await expect(getReadCredentials()).rejects.toThrow(/STS/);
+    await expect(getProxyCredentials()).rejects.toThrow(/STS/);
   });
 });

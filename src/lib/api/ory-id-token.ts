@@ -1,12 +1,15 @@
 import { CONFIG } from "@/lib/config";
 import { LOGGER } from "@/lib/logging";
-import { randomBytes } from "crypto";
 
 /**
  * Drives a server-side OAuth2 authorization code flow against Ory Hydra,
  * using the admin API to accept login and consent challenges on behalf of
  * an already-authenticated user. Returns a Hydra-signed OIDC ID token.
+ *
+ * If the OAuth2 client has skip_consent enabled (recommended), the consent
+ * step is skipped and the flow completes in 4 HTTP calls instead of 6.
  */
+
 export async function getOryIdToken(identityId: string): Promise<string> {
   const {
     api: { backendUrl },
@@ -14,35 +17,38 @@ export async function getOryIdToken(identityId: string): Promise<string> {
     oauth2: { clientId, clientSecret, redirectUri },
   } = CONFIG.auth;
 
-  if (!clientId || !clientSecret || !redirectUri) {
-    throw new Error(
-      "OAuth2 client is not configured; cannot issue Ory ID tokens",
-    );
-  }
-  if (!backendUrl) {
-    throw new Error("Ory backend URL is not configured");
-  }
-  if (!adminApiKey) {
-    throw new Error("Ory admin API key is not configured");
+  if (!clientId || !clientSecret || !redirectUri || !backendUrl || !adminApiKey) {
+    throw new Error("Incomplete Ory OAuth2 configuration");
   }
 
-  const state = randomBytes(16).toString("hex");
+  // Cookie jar — Hydra sets CSRF cookies that must persist across the flow.
+  const cookieJar = new Map<string, string>();
 
-  // Step 1: Initiate the OAuth2 flow
+  // Step 1: Initiate the OAuth2 flow. Hydra responds with a redirect
+  // containing a login_challenge.
   const authUrl = new URL(`${backendUrl}/oauth2/auth`);
   authUrl.searchParams.set("response_type", "code");
   authUrl.searchParams.set("client_id", clientId);
   authUrl.searchParams.set("redirect_uri", redirectUri);
   authUrl.searchParams.set("scope", "openid");
-  authUrl.searchParams.set("state", state);
+  authUrl.searchParams.set(
+    "state",
+    Array.from(crypto.getRandomValues(new Uint8Array(16)))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join(""),
+  );
 
-  const authResp = await fetch(authUrl.toString(), { redirect: "manual" });
-  const loginChallenge = extractFromRedirect(authResp, "login_challenge");
+  const authResp = await fetchWithCookies(authUrl.toString(), cookieJar, {
+    redirect: "manual",
+  });
+  const loginChallenge = extractParam(authResp, "login_challenge");
   if (!loginChallenge) {
-    throw new Error("No login_challenge in /oauth2/auth redirect");
+    throw new Error(
+      `No login_challenge in /oauth2/auth redirect. Status: ${authResp.status}, Location: ${authResp.headers.get("location")}`,
+    );
   }
 
-  // Step 2: Accept the login challenge as admin
+  // Step 2: Accept the login challenge via admin API.
   const loginAcceptResp = await fetch(
     `${backendUrl}/admin/oauth2/auth/requests/login/accept?login_challenge=${encodeURIComponent(loginChallenge)}`,
     {
@@ -59,60 +65,66 @@ export async function getOryIdToken(identityId: string): Promise<string> {
       `Login accept failed: ${loginAcceptResp.status} ${await loginAcceptResp.text()}`,
     );
   }
-  const loginAcceptBody = (await loginAcceptResp.json()) as {
-    redirect_to: string;
-  };
+  const { redirect_to: loginRedirect } =
+    (await loginAcceptResp.json()) as { redirect_to: string };
 
-  // Step 3: Follow the returned redirect to get consent_challenge
-  const consentResp = await fetch(loginAcceptBody.redirect_to, {
+  // Step 3: Follow the redirect. If skip_consent is enabled on the client,
+  // this redirect goes straight to the callback with a code. Otherwise,
+  // it returns a consent_challenge that we need to accept.
+  const postLoginResp = await fetchWithCookies(loginRedirect, cookieJar, {
     redirect: "manual",
   });
-  const consentChallenge = extractFromRedirect(
-    consentResp,
-    "consent_challenge",
-  );
-  if (!consentChallenge) {
-    throw new Error("No consent_challenge in redirect after login accept");
-  }
 
-  // Step 4: Accept the consent challenge as admin
-  const consentAcceptResp = await fetch(
-    `${backendUrl}/admin/oauth2/auth/requests/consent/accept?consent_challenge=${encodeURIComponent(consentChallenge)}`,
-    {
-      method: "PUT",
-      headers: {
-        Authorization: `Bearer ${adminApiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ grant_scope: ["openid"], remember: false }),
-    },
-  );
-  if (!consentAcceptResp.ok) {
-    throw new Error(
-      `Consent accept failed: ${consentAcceptResp.status} ${await consentAcceptResp.text()}`,
-    );
-  }
-  const consentAcceptBody = (await consentAcceptResp.json()) as {
-    redirect_to: string;
-  };
+  let code = extractParam(postLoginResp, "code");
 
-  // Step 5: Follow the redirect to get the authorization code
-  const codeResp = await fetch(consentAcceptBody.redirect_to, {
-    redirect: "manual",
-  });
-  const code = extractFromRedirect(codeResp, "code");
   if (!code) {
-    throw new Error("No authorization code in final redirect");
+    // Consent was not skipped — handle the consent challenge.
+    const consentChallenge = extractParam(postLoginResp, "consent_challenge");
+    if (!consentChallenge) {
+      // The redirect might have led to another redirect — follow it once.
+      const location = postLoginResp.headers.get("location");
+      if (location) {
+        const resolvedUrl = new URL(location, loginRedirect).toString();
+        const followResp = await fetchWithCookies(resolvedUrl, cookieJar, {
+          redirect: "manual",
+        });
+        const followedChallenge = extractParam(followResp, "consent_challenge");
+        const followedCode = extractParam(followResp, "code");
+        if (followedCode) {
+          code = followedCode;
+        } else if (!followedChallenge) {
+          throw new Error(
+            `No consent_challenge or code after login accept. Status: ${followResp.status}, Location: ${followResp.headers.get("location")}`,
+          );
+        } else {
+          code = await acceptConsentAndGetCode(
+            backendUrl,
+            adminApiKey,
+            followedChallenge,
+            cookieJar,
+          );
+        }
+      } else {
+        throw new Error(
+          `No consent_challenge or code after login accept. Status: ${postLoginResp.status}`,
+        );
+      }
+    } else {
+      code = await acceptConsentAndGetCode(
+        backendUrl,
+        adminApiKey,
+        consentChallenge,
+        cookieJar,
+      );
+    }
   }
 
-  // Step 6: Exchange the code for tokens
+  // Step 4: Exchange the authorization code for tokens.
   const tokenResp = await fetch(`${backendUrl}/oauth2/token`, {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
-      Authorization:
-        "Basic " +
-        Buffer.from(`${clientId}:${clientSecret}`).toString("base64"),
+      Authorization: "Basic " + btoa(`${clientId}:${clientSecret}`),
     },
     body: new URLSearchParams({
       grant_type: "authorization_code",
@@ -138,14 +150,86 @@ export async function getOryIdToken(identityId: string): Promise<string> {
   return tokenBody.id_token;
 }
 
-function extractFromRedirect(
-  response: Response,
-  param: string,
-): string | null {
+/**
+ * Accept a consent challenge and follow the redirect to get the auth code.
+ */
+async function acceptConsentAndGetCode(
+  backendUrl: string,
+  adminApiKey: string,
+  consentChallenge: string,
+  cookieJar: Map<string, string>,
+): Promise<string> {
+  const consentAcceptResp = await fetch(
+    `${backendUrl}/admin/oauth2/auth/requests/consent/accept?consent_challenge=${encodeURIComponent(consentChallenge)}`,
+    {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${adminApiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ grant_scope: ["openid"], remember: false }),
+    },
+  );
+  if (!consentAcceptResp.ok) {
+    throw new Error(
+      `Consent accept failed: ${consentAcceptResp.status} ${await consentAcceptResp.text()}`,
+    );
+  }
+  const { redirect_to: consentRedirect } =
+    (await consentAcceptResp.json()) as { redirect_to: string };
+
+  const codeResp = await fetchWithCookies(consentRedirect, cookieJar, {
+    redirect: "manual",
+  });
+  const code = extractParam(codeResp, "code");
+  if (!code) {
+    throw new Error(
+      `No authorization code after consent accept. Status: ${codeResp.status}, Location: ${codeResp.headers.get("location")}`,
+    );
+  }
+  return code;
+}
+
+/**
+ * Fetch with a shared cookie jar. Collects Set-Cookie headers from each
+ * response and sends accumulated cookies on subsequent requests.
+ */
+async function fetchWithCookies(
+  url: string,
+  cookieJar: Map<string, string>,
+  init?: RequestInit,
+): Promise<Response> {
+  const cookieHeader = Array.from(cookieJar.entries())
+    .map(([name, value]) => `${name}=${value}`)
+    .join("; ");
+
+  const headers = new Headers(init?.headers);
+  if (cookieHeader) {
+    headers.set("Cookie", cookieHeader);
+  }
+
+  const resp = await fetch(url, { ...init, headers });
+
+  // Collect Set-Cookie headers into the jar
+  const setCookies = resp.headers.getSetCookie?.() ?? [];
+  for (const sc of setCookies) {
+    const match = sc.match(/^([^=]+)=([^;]*)/);
+    if (match) {
+      cookieJar.set(match[1], match[2]);
+    }
+  }
+
+  return resp;
+}
+
+/**
+ * Extract a query parameter from a response's Location header.
+ */
+function extractParam(response: Response, param: string): string | null {
   const location = response.headers.get("location");
   if (!location) return null;
   try {
-    const url = new URL(location);
+    const url = new URL(location, "https://placeholder.invalid");
     return url.searchParams.get(param);
   } catch {
     return null;

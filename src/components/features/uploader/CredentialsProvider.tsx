@@ -1,12 +1,10 @@
 "use client";
 
+import { LOGGER, TemporaryCredentials, getTemporaryCredentials } from "@/lib";
 import {
-  LOGGER,
-  TemporaryCredentials,
-  getTemporaryCredentials,
-  getReadCredentials,
-  ReadCredentials,
-} from "@/lib";
+  getProxyCredentials,
+  type ProxyCredentials,
+} from "@/lib/actions/proxy-credentials";
 import {
   createContext,
   useContext,
@@ -37,9 +35,9 @@ interface CredentialsContextType {
   clearCredentials: (scope: CredentialsScope) => void;
   clearAllCredentials: () => void;
   getAllCredentials: () => Map<CredentialsScope, TemporaryCredentials>;
-  readCredentials: ReadCredentials | null;
-  readCredentialsStatus: "loading" | "success" | "failed" | undefined;
-  refreshReadCredentials: () => Promise<void>;
+  proxyCredentials: ProxyCredentials | null;
+  proxyCredentialsStatus: "loading" | "success" | "failed" | undefined;
+  refreshProxyCredentials: () => Promise<void>;
 }
 
 const CredentialsContext = createContext<CredentialsContextType | undefined>(
@@ -59,49 +57,49 @@ export function S3CredentialsProvider({
   >(new Map());
 
   // Read credentials state (user-scoped, not product-scoped)
-  const [readCredentials, setReadCredentials] =
-    useState<ReadCredentials | null>(null);
-  const [readCredentialsStatus, setReadCredentialsStatus] = useState<
+  const [proxyCredentials, setProxyCredentials] =
+    useState<ProxyCredentials | null>(null);
+  const [proxyCredentialsStatus, setProxyCredentialsStatus] = useState<
     "loading" | "success" | "failed" | undefined
   >();
 
-  const refreshReadCredentials = useCallback(async () => {
-    setReadCredentialsStatus("loading");
+  const refreshProxyCredentials = useCallback(async () => {
+    setProxyCredentialsStatus("loading");
     try {
-      const creds = await getReadCredentials();
-      setReadCredentials(creds);
-      setReadCredentialsStatus("success");
+      const creds = await getProxyCredentials();
+      setProxyCredentials(creds);
+      setProxyCredentialsStatus("success");
     } catch (error) {
       LOGGER.error("Failed to fetch read credentials", {
-        operation: "refreshReadCredentials",
+        operation: "refreshProxyCredentials",
         error,
       });
-      setReadCredentials(null);
-      setReadCredentialsStatus("failed");
+      setProxyCredentials(null);
+      setProxyCredentialsStatus("failed");
     }
   }, []);
 
   // Auto-fetch when authenticated
   useEffect(() => {
     if (!isAuthenticated) {
-      setReadCredentials(null);
-      setReadCredentialsStatus(undefined);
+      setProxyCredentials(null);
+      setProxyCredentialsStatus(undefined);
       return;
     }
-    void refreshReadCredentials();
-  }, [isAuthenticated, refreshReadCredentials]);
+    void refreshProxyCredentials();
+  }, [isAuthenticated, refreshProxyCredentials]);
 
   // Proactive refresh when credentials are near expiry
   useEffect(() => {
-    if (!readCredentials) return;
-    const expiresAt = new Date(readCredentials.expiration).getTime();
+    if (!proxyCredentials) return;
+    const expiresAt = new Date(proxyCredentials.expiration).getTime();
     const refreshAt = expiresAt - 5 * 60 * 1000;
     const delay = Math.max(0, refreshAt - Date.now());
     const timer = setTimeout(() => {
-      void refreshReadCredentials();
+      void refreshProxyCredentials();
     }, delay);
     return () => clearTimeout(timer);
-  }, [readCredentials, refreshReadCredentials]);
+  }, [proxyCredentials, refreshProxyCredentials]);
 
   const getScopeKey = (scope: CredentialsScope): string => {
     return `${scope.accountId}:${scope.productId}`;
@@ -213,9 +211,9 @@ export function S3CredentialsProvider({
         clearCredentials,
         clearAllCredentials,
         getAllCredentials,
-        readCredentials,
-        readCredentialsStatus,
-        refreshReadCredentials,
+        proxyCredentials,
+        proxyCredentialsStatus,
+        refreshProxyCredentials,
       }}
     >
       {children}

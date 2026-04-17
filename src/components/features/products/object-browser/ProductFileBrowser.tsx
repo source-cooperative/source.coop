@@ -29,14 +29,14 @@ export function ProductFileBrowser({
   product_id,
   prefix,
 }: ProductFileBrowserProps) {
-  const { readCredentials, readCredentialsStatus } = useS3Credentials();
+  const { proxyCredentials, proxyCredentialsStatus } = useS3Credentials();
   const [listing, setListing] = useState<ListObjectsResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Wait for credentials to resolve before creating the client
   const isCredentialsReady =
-    readCredentialsStatus !== "loading";
+    proxyCredentialsStatus !== "loading";
 
   const s3Client = useMemo(() => {
     if (!isCredentialsReady) return null;
@@ -46,9 +46,9 @@ export function ProductFileBrowser({
     }
     return new S3ReadClient({
       endpoint,
-      credentials: readCredentials ?? undefined,
+      credentials: proxyCredentials ?? undefined,
     });
-  }, [isCredentialsReady, readCredentials]);
+  }, [isCredentialsReady, proxyCredentials]);
 
   useEffect(() => {
     if (!s3Client) return;

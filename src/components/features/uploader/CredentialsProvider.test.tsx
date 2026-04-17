@@ -1,6 +1,6 @@
 import { render, screen, waitFor, act } from "@testing-library/react";
 
-const mockGetReadCredentials = jest.fn();
+const mockGetProxyCredentials = jest.fn();
 const mockGetTemporaryCredentials = jest.fn();
 
 jest.mock("@/lib", () => ({
@@ -12,8 +12,11 @@ jest.mock("@/lib", () => ({
   },
   getTemporaryCredentials: (...args: unknown[]) =>
     mockGetTemporaryCredentials(...args),
-  getReadCredentials: (...args: unknown[]) =>
-    mockGetReadCredentials(...args),
+}));
+
+jest.mock("@/lib/actions/proxy-credentials", () => ({
+  getProxyCredentials: (...args: unknown[]) =>
+    mockGetProxyCredentials(...args),
 }));
 
 import {
@@ -22,12 +25,12 @@ import {
 } from "./CredentialsProvider";
 
 function ReadCredentialsConsumer() {
-  const { readCredentials, readCredentialsStatus } = useS3Credentials();
+  const { proxyCredentials, proxyCredentialsStatus } = useS3Credentials();
   return (
     <div>
-      <span data-testid="status">{readCredentialsStatus ?? "undefined"}</span>
+      <span data-testid="status">{proxyCredentialsStatus ?? "undefined"}</span>
       <span data-testid="accessKeyId">
-        {readCredentials?.accessKeyId ?? "none"}
+        {proxyCredentials?.accessKeyId ?? "none"}
       </span>
     </div>
   );
@@ -47,7 +50,7 @@ describe("S3CredentialsProvider - read credentials", () => {
   });
 
   it("fetches read credentials on mount when isAuthenticated is true", async () => {
-    mockGetReadCredentials.mockResolvedValue({
+    mockGetProxyCredentials.mockResolvedValue({
       accessKeyId: "AKID",
       secretAccessKey: "SECRET",
       sessionToken: "TOKEN",
@@ -67,7 +70,7 @@ describe("S3CredentialsProvider - read credentials", () => {
     });
 
     expect(screen.getByTestId("accessKeyId").textContent).toBe("AKID");
-    expect(mockGetReadCredentials).toHaveBeenCalledTimes(1);
+    expect(mockGetProxyCredentials).toHaveBeenCalledTimes(1);
   });
 
   it("does NOT fetch when isAuthenticated is false", async () => {
@@ -81,11 +84,11 @@ describe("S3CredentialsProvider - read credentials", () => {
 
     expect(screen.getByTestId("status").textContent).toBe("undefined");
     expect(screen.getByTestId("accessKeyId").textContent).toBe("none");
-    expect(mockGetReadCredentials).not.toHaveBeenCalled();
+    expect(mockGetProxyCredentials).not.toHaveBeenCalled();
   });
 
   it("sets status to 'failed' when fetch throws", async () => {
-    mockGetReadCredentials.mockRejectedValue(new Error("Unauthorized"));
+    mockGetProxyCredentials.mockRejectedValue(new Error("Unauthorized"));
 
     await act(async () => {
       render(

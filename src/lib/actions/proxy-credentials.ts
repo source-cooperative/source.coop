@@ -6,7 +6,7 @@ import { getOryIdToken } from "@/lib/api/ory-id-token";
 import { parseAssumeRoleWithWebIdentityResponse } from "@/lib/api/sts-response";
 import { LOGGER } from "@/lib/logging";
 
-export interface ReadCredentials {
+export interface ProxyCredentials {
   accessKeyId: string;
   secretAccessKey: string;
   sessionToken: string;
@@ -14,10 +14,10 @@ export interface ReadCredentials {
 }
 
 /**
- * Obtains temporary S3 read credentials from the data proxy for the
+ * Obtains temporary S3 credentials from the data proxy for the
  * currently authenticated user.
  */
-export async function getReadCredentials(): Promise<ReadCredentials> {
+export async function getProxyCredentials(): Promise<ProxyCredentials> {
   const session = await getPageSession();
   if (!session?.identity_id) {
     throw new Error("Unauthorized: no active Ory session");
@@ -34,7 +34,7 @@ export async function getReadCredentials(): Promise<ReadCredentials> {
   if (!resp.ok) {
     const body = await resp.text();
     LOGGER.error("STS exchange failed", {
-      operation: "getReadCredentials",
+      operation: "getProxyCredentials",
       metadata: { status: resp.status, body },
     });
     throw new Error(`STS exchange failed: ${resp.status}`);
@@ -44,7 +44,7 @@ export async function getReadCredentials(): Promise<ReadCredentials> {
   const creds = parseAssumeRoleWithWebIdentityResponse(xml);
 
   LOGGER.info("Issued read credentials", {
-    operation: "getReadCredentials",
+    operation: "getProxyCredentials",
     metadata: { identity_id: session.identity_id, expiration: creds.expiration },
   });
 
