@@ -11,12 +11,6 @@ export const ProductMirrorSchema = z
     storage_type: z.enum(["s3", "azure", "gcs", "minio", "ceph"]),
     connection_id: z.string(), // Reference to storage connection config
     prefix: z.string(), // Format: "{account_id}/{product_id}/"
-    config: z.object({
-      region: z.string().optional(), // For S3/GCS
-      bucket: z.string().optional(), // For S3/GCS
-      container: z.string().optional(), // For Azure
-      endpoint: z.string().optional(), // For MinIO/Ceph
-    }),
     // Mirror-specific settings
     is_primary: z.boolean(), // Is this the primary mirror?
   })

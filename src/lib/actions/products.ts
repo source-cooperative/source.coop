@@ -137,10 +137,6 @@ export async function createProduct(
           storage_type: "s3",
           connection_id: "aws-opendata-us-west-2",
           prefix: `${validatedFields.data.account_id}/${validatedFields.data.product_id}/`,
-          config: {
-            region: "us-west-2",
-            bucket: "aws-opendata-us-west-2",
-          },
           is_primary: true,
         },
       },
