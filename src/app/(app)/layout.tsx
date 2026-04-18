@@ -1,20 +1,28 @@
 import { Box, Container, Flex } from "@radix-ui/themes";
-import { Navigation, Footer } from "@/components";
+import { Navigation, Footer, S3CredentialsProvider, UploadProvider } from "@/components";
+import { getPageSession } from "@/lib";
 
 interface AppLayoutProps {
   children: React.ReactNode;
 }
 
 export default async function AppLayout({ children }: AppLayoutProps) {
+  const session = await getPageSession();
+  const isAuthenticated = !!session?.identity_id;
+
   return (
-    <Flex direction="column" minHeight="100vh">
-      <Navigation />
-      <Box flexGrow="1" m="2">
-        <Container size="4" py="4">
-          {children}
-        </Container>
-      </Box>
-      <Footer />
-    </Flex>
+    <S3CredentialsProvider isAuthenticated={isAuthenticated}>
+      <UploadProvider>
+        <Flex direction="column" minHeight="100vh">
+          <Navigation />
+          <Box flexGrow="1" m="2">
+            <Container size="4" py="4">
+              {children}
+            </Container>
+          </Box>
+          <Footer />
+        </Flex>
+      </UploadProvider>
+    </S3CredentialsProvider>
   );
 }

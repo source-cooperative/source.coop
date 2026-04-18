@@ -28,11 +28,20 @@ export class S3StorageClient implements StorageClient {
   private s3Client: S3Client;
 
   constructor(config: StorageConfig) {
-    // Initialize S3 client without request signing for public access
-    this.s3Client = new S3Client({
+    const clientConfig: ConstructorParameters<typeof S3Client>[0] = {
       ...config,
       forcePathStyle: true,
-    });
+    };
+
+    // When no credentials are provided, use a no-op signer so requests
+    // are sent unsigned. The data proxy treats unsigned requests as anonymous.
+    if (!config.credentials) {
+      clientConfig.signer = {
+        sign: async (request: any) => request,
+      };
+    }
+
+    this.s3Client = new S3Client(clientConfig);
   }
 
   async listObjects(params: ListObjectsParams): Promise<ListObjectsResult> {

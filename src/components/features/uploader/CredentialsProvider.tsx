@@ -2,9 +2,14 @@
 
 import { LOGGER, TemporaryCredentials, getTemporaryCredentials } from "@/lib";
 import {
+  getProxyCredentials,
+  type ProxyCredentials,
+} from "@/lib/actions/proxy-credentials";
+import {
   createContext,
   useContext,
   useState,
+  useEffect,
   ReactNode,
   useMemo,
   useCallback,
@@ -30,17 +35,70 @@ interface CredentialsContextType {
   clearCredentials: (scope: CredentialsScope) => void;
   clearAllCredentials: () => void;
   getAllCredentials: () => Map<CredentialsScope, TemporaryCredentials>;
+  proxyCredentials: ProxyCredentials | null;
+  proxyCredentialsStatus: "loading" | "success" | "failed" | undefined;
+  refreshProxyCredentials: () => Promise<void>;
 }
 
 const CredentialsContext = createContext<CredentialsContextType | undefined>(
   undefined
 );
 
-export function S3CredentialsProvider({ children }: { children: ReactNode }) {
+export function S3CredentialsProvider({
+  children,
+  isAuthenticated,
+}: {
+  children: ReactNode;
+  isAuthenticated: boolean;
+}) {
   // Store credentials by scope key (accountId:productId)
   const [credentialsMap, setCredentialsMap] = useState<
     Map<string, CredentialsEntry>
   >(new Map());
+
+  // Proxy credentials (user-scoped, not product-scoped)
+  const [proxyCredentials, setProxyCredentials] =
+    useState<ProxyCredentials | null>(null);
+  const [proxyCredentialsStatus, setProxyCredentialsStatus] = useState<
+    "loading" | "success" | "failed" | undefined
+  >();
+
+  const refreshProxyCredentials = useCallback(async () => {
+    setProxyCredentialsStatus("loading");
+    try {
+      const creds = await getProxyCredentials();
+      setProxyCredentials(creds);
+      setProxyCredentialsStatus("success");
+    } catch (error) {
+      LOGGER.error("Failed to fetch proxy credentials", {
+        operation: "refreshProxyCredentials",
+        error,
+      });
+      setProxyCredentials(null);
+      setProxyCredentialsStatus("failed");
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setProxyCredentials(null);
+      setProxyCredentialsStatus(undefined);
+      return;
+    }
+    void refreshProxyCredentials();
+  }, [isAuthenticated, refreshProxyCredentials]);
+
+  // Proactive refresh when credentials are near expiry
+  useEffect(() => {
+    if (!proxyCredentials) return;
+    const expiresAt = new Date(proxyCredentials.expiration).getTime();
+    const refreshAt = expiresAt - 5 * 60 * 1000;
+    const delay = Math.max(0, refreshAt - Date.now());
+    const timer = setTimeout(() => {
+      void refreshProxyCredentials();
+    }, delay);
+    return () => clearTimeout(timer);
+  }, [proxyCredentials, refreshProxyCredentials]);
 
   const getScopeKey = (scope: CredentialsScope): string => {
     return `${scope.accountId}:${scope.productId}`;
@@ -152,6 +210,9 @@ export function S3CredentialsProvider({ children }: { children: ReactNode }) {
         clearCredentials,
         clearAllCredentials,
         getAllCredentials,
+        proxyCredentials,
+        proxyCredentialsStatus,
+        refreshProxyCredentials,
       }}
     >
       {children}

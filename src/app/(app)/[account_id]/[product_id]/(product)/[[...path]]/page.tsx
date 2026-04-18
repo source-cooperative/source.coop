@@ -3,9 +3,9 @@ import { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import DirectoryListLoading from "./loading";
-import { LOGGER, storage, dataConnectionsTable, productsTable } from "@/lib";
+import { CONFIG, LOGGER, storage, dataConnectionsTable, productsTable } from "@/lib";
 import { DataConnection, ProductMirror } from "@/types";
-import { DirectoryList } from "@/components/features/products/object-browser/DirectoryList";
+import { ProductFileBrowser } from "@/components/features/products/object-browser/ProductFileBrowser";
 import { ObjectSummary } from "@/components/features/products/object-browser/ObjectSummary";
 import {
   ObjectPreview,
@@ -36,7 +36,7 @@ export default async function ProductPathPage({ params }: PageProps) {
   let { account_id, product_id, path } = await params;
   path = path?.map((p) => decodeURIComponent(p)) || [];
   const objectPath = path.join("/");
-  const { product, objectsList, objectInfo, connectionDetails } =
+  const { product, objectInfo, connectionDetails } =
     await fetchProduct(account_id, product_id, objectPath);
 
   return (
@@ -57,13 +57,12 @@ export default async function ProductPathPage({ params }: PageProps) {
           </Suspense>
         </>
       ) : (
-        <DirectoryList
+        <ProductFileBrowser
           product={product}
-          objects={objectsList.filter(
-            // Exclude the current directory object
-            (obj) => obj.path.replace(/\/$/, "") !== objectPath,
-          )}
+          account_id={account_id}
+          product_id={product_id}
           prefix={objectPath}
+          endpoint={CONFIG.storage.endpoint || ""}
         />
       )}
     </Suspense>
@@ -79,23 +78,9 @@ export async function fetchProduct(
   const isRoot = !object_path;
 
   // 2. Run concurrent requests for better performance
-  const [product, objectsList, objectInfo] = await Promise.allSettled([
+  const [product, objectInfo] = await Promise.allSettled([
     // Always fetch product info
     productsTable.fetchById(account_id, product_id),
-
-    // Always fetch objects list for directory browsing
-    storage
-      .listObjects({
-        account_id,
-        product_id,
-        object_path,
-        prefix:
-          object_path && !object_path?.endsWith("/")
-            ? `${object_path}/`
-            : object_path,
-        delimiter: "/",
-      })
-      .then((result) => result.objects || []),
 
     // If looking at a path, fetch object info for the current path
     !isRoot &&
@@ -146,7 +131,6 @@ export async function fetchProduct(
   }
   return {
     product: product.value,
-    objectsList: objectsList.status === "fulfilled" ? objectsList.value : [],
     objectInfo: selectedObject || undefined,
     connectionDetails,
   };
