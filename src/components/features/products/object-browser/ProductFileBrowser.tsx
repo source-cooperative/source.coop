@@ -20,8 +20,8 @@ interface ProductFileBrowserProps {
 
 /**
  * Client-side file browser that fetches directory listings from the data proxy.
- * Uses proxy credentials from CredentialsProvider for authenticated access,
- * or unsigned requests for anonymous access.
+ * Uses proxy credentials for authenticated access, or unsigned requests for
+ * anonymous access. Handles both directory and file paths.
  */
 export function ProductFileBrowser({
   product,
@@ -30,7 +30,8 @@ export function ProductFileBrowser({
   prefix,
   endpoint,
 }: ProductFileBrowserProps) {
-  const { credentials: proxyCredentials, status: proxyCredentialsStatus } = useProxyCredentials();
+  const { credentials: proxyCredentials, status: proxyCredentialsStatus } =
+    useProxyCredentials();
   const [listing, setListing] = useState<ListObjectsResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -51,7 +52,12 @@ export function ProductFileBrowser({
     setLoading(true);
     setError(null);
 
-    const s3Prefix = prefix ? `${product_id}/${prefix}/` : `${product_id}/`;
+    // List with the prefix as a directory (trailing slash).
+    // If the path is a file (e.g. catalog.json), this returns an empty listing,
+    // which we handle below by listing the parent directory instead.
+    const s3Prefix = prefix
+      ? `${product_id}/${prefix}/`
+      : `${product_id}/`;
 
     s3Client
       .listObjects({ bucket: account_id, prefix: s3Prefix })
@@ -75,6 +81,18 @@ export function ProductFileBrowser({
   }
 
   if (!listing) return null;
+
+  // If the listing is empty and the prefix has a file extension,
+  // the user navigated to a file path. Show the parent directory instead
+  // with this file highlighted (or just show the parent listing).
+  const isEmpty =
+    listing.objects.length === 0 && listing.directories.length === 0;
+  if (isEmpty && prefix) {
+    // TODO: handle file view (ObjectSummary + ObjectPreview) client-side
+    // For now, this case means the server-side page rendered ProductFileBrowser
+    // for a file path. The listing will be empty.
+    return <DirectoryListLoading />;
+  }
 
   // Map S3ReadClient results to ProductObject[] for DirectoryList
   const objects: ProductObject[] = [
