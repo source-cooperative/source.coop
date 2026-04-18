@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useS3Credentials } from "@/components/features/uploader/CredentialsProvider";
+import { useProxyCredentials } from "@/components/features/products/ProxyCredentialsProvider";
 import {
   S3ReadClient,
   type ListObjectsResult,
@@ -30,7 +30,7 @@ export function ProductFileBrowser({
   prefix,
   endpoint,
 }: ProductFileBrowserProps) {
-  const { proxyCredentials, proxyCredentialsStatus } = useS3Credentials();
+  const { credentials: proxyCredentials, status: proxyCredentialsStatus } = useProxyCredentials();
   const [listing, setListing] = useState<ListObjectsResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
