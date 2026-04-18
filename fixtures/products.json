@@ -25,7 +25,6 @@
       "roles": {}
     },
     "disabled": false,
-
     "featured": 0
   },
   {
@@ -54,7 +53,6 @@
       "roles": {}
     },
     "disabled": false,
-
     "featured": 0
   },
   {
@@ -83,7 +81,6 @@
       "roles": {}
     },
     "disabled": true,
-
     "featured": 0
   },
   {
@@ -112,7 +109,6 @@
       "roles": {}
     },
     "disabled": false,
-
     "featured": 0
   },
   {
@@ -141,7 +137,6 @@
       "roles": {}
     },
     "disabled": false,
-
     "featured": 1
   },
   {
@@ -170,7 +165,6 @@
       "roles": {}
     },
     "disabled": false,
-
     "featured": 0
   },
   {
@@ -199,7 +193,6 @@
       "roles": {}
     },
     "disabled": false,
-
     "featured": 0
   },
   {
@@ -228,7 +221,6 @@
       "roles": {}
     },
     "disabled": false,
-
     "featured": 10
   }
 ]
