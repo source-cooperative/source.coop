@@ -54,9 +54,6 @@ export async function getApiSession(
 ): Promise<UserSession | null> {
   const authorization = req.headers.get("Authorization");
 
-  // TODO: Rm
-  console.log("Authorization header:", authorization);
-
   if (authorization) {
     LOGGER.debug("Attempting OIDC token authentication", {
       operation: "getApiSession",
