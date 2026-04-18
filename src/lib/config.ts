@@ -53,7 +53,7 @@ export const CONFIG = {
     oauth2: {
       clientId: process.env.ORY_OAUTH2_CLIENT_ID || "",
       clientSecret: process.env.ORY_OAUTH2_CLIENT_SECRET || "",
-      redirectUri: `${process.env.NEXT_PUBLIC_SITE_URL || process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000"}/api/internal/oauth2/callback`,
+      redirectUri: `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/api/internal/oauth2/callback`,
     },
 
     routes: {
