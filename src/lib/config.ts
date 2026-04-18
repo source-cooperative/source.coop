@@ -47,7 +47,6 @@ export const CONFIG = {
   // API Secret for the Data Proxy to access the API
   apiSecret: process.env.SOURCE_KEY || "",
 
-
   // Ory.sh configuration
   auth: {
     api: {

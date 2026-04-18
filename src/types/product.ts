@@ -64,7 +64,6 @@ export const ProductCreationRequestSchema = ProductSchema.omit({
   account: true,
   disabled: true,
   featured: true,
-
   metadata: true,
 }).openapi("ProductCreationRequest");
 
