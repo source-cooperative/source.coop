@@ -1,7 +1,7 @@
 import "server-only";
 
 import { LOGGER } from "@/lib";
-import { fileSourceUrl } from "@/lib/urls";
+import { getPresignedUrl } from "@/lib/actions/presigned-url";
 import { Box, Code } from "@radix-ui/themes";
 import type { CSSProperties } from "react";
 import { getExtension } from "@/lib/files";
@@ -101,7 +101,7 @@ const getIframeAttributes = async (
 };
 
 export async function ObjectPreviewExternal(props: ObjectPreviewExternalProps) {
-  const cloudUri = fileSourceUrl(props);
+  const cloudUri = await getPresignedUrl(props);
   const extension = getExtension(props.object_path);
 
   if (!extension) {
