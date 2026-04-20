@@ -1,33 +1,40 @@
 import type { Product } from "@/types";
-import { productUrl } from "@/lib/urls";
+import { accountUrl, productUrl } from "@/lib/urls";
+import { getBaseUrl } from "@/lib/baseUrl";
 
-// For injecting schema.org metadata
-export function ProductSchemaMetadata({ product }: { product: Product }) {
+export async function ProductSchemaMetadata({ product }: { product: Product }) {
   const account = product.account;
+  const baseUrl = await getBaseUrl();
+
+  const creator = account
+    ? {
+        "@type": account.type === "organization" ? "Organization" : "Person",
+        name: account.name,
+        url: `${baseUrl}${accountUrl(account.account_id)}`,
+        ...(account.type === "individual" && account.metadata_public?.orcid
+          ? { sameAs: `https://orcid.org/${account.metadata_public.orcid}` }
+          : {}),
+        ...(account.type === "organization" && account.metadata_public?.ror_id
+          ? { sameAs: `https://ror.org/${account.metadata_public.ror_id}` }
+          : {}),
+      }
+    : undefined;
+
   const schemaData = {
     "@context": "https://schema.org/",
     "@type": "Dataset",
     name: product.title,
     description: product.description,
     url: account
-      ? `https://yourdomain.com${productUrl(
-          account.account_id,
-          product.product_id
-        )}`
+      ? `${baseUrl}${productUrl(account.account_id, product.product_id)}`
       : "",
     dateModified: product.updated_at,
     dateCreated: product.created_at,
     isAccessibleForFree: product.visibility === "public",
-    ...(account && {
-      creator: {
-        "@type": account.type === "organization" ? "Organization" : "Person",
-        name: account.name,
-        // TODO: Implement this
-        // ...(account.metadata_public?.domains?.[0]?.domain && {
-        //   url: `https://${account.metadata_public.domains[0].domain}`, // Assuming https
-        // }),
-      },
+    ...(product.metadata?.doi && {
+      identifier: `https://doi.org/${product.metadata.doi}`,
     }),
+    ...(creator && { creator }),
   };
 
   return (
