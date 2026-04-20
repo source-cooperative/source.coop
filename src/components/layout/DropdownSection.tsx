@@ -1,7 +1,22 @@
 "use client";
 import { DropdownMenu } from "@radix-ui/themes";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ReactNode } from "react";
+import { CSSProperties, ReactNode } from "react";
+
+export const dropdownMenuLinkStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: "var(--space-2)",
+  alignSelf: "stretch",
+  flex: 1,
+  marginLeft: "calc(-1 * var(--base-menu-item-padding-left))",
+  marginRight: "calc(-1 * var(--base-menu-item-padding-right))",
+  paddingLeft: "var(--base-menu-item-padding-left)",
+  paddingRight: "var(--base-menu-item-padding-right)",
+  color: "inherit",
+  textDecoration: "none",
+};
 
 export interface DropdownItem {
   href?: string;
@@ -44,9 +59,11 @@ export function DropdownSection({
             key={index}
             color={item.color}
             disabled={item.disabled}
-            onClick={() => router.push(item.href!)}
+            onSelect={() => router.push(item.href!)}
           >
-            {item.children}
+            <Link href={item.href} style={dropdownMenuLinkStyle}>
+              {item.children}
+            </Link>
           </DropdownMenu.Item>
         ) : (
           <DropdownMenu.Item

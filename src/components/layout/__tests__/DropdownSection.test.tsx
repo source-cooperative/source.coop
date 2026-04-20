@@ -7,20 +7,45 @@ jest.mock("next/navigation", () => ({
   useRouter: () => ({ push: mockPush }),
 }));
 
+jest.mock("next/link", () => ({
+  __esModule: true,
+  default: ({
+    href,
+    children,
+    ...rest
+  }: {
+    href: string;
+    children: React.ReactNode;
+  }) => (
+    <a href={href} {...rest}>
+      {children}
+    </a>
+  ),
+}));
+
 jest.mock("@radix-ui/themes", () => ({
   DropdownMenu: {
     Item: ({
       children,
       onClick,
+      onSelect,
       disabled,
     }: {
       children: React.ReactNode;
       onClick?: () => void;
+      onSelect?: () => void;
       disabled?: boolean;
     }) => (
       <div
         role="menuitem"
-        onClick={disabled ? undefined : onClick}
+        onClick={
+          disabled
+            ? undefined
+            : () => {
+                onSelect?.();
+                onClick?.();
+              }
+        }
         aria-disabled={disabled}
       >
         {children}
@@ -51,25 +76,23 @@ describe("DropdownSection", () => {
     expect(screen.getByText("Item Two")).toBeInTheDocument();
   });
 
-  it("renders without errors when items have href", () => {
-    // This specifically validates that the asChild approach no longer causes
-    // "React.Children.only expected to receive a single React element child"
-    expect(() => {
-      render(
-        <DropdownSection
-          items={[{ href: "/test", children: "Test Item" }]}
-        />
-      );
-    }).not.toThrow();
+  it("renders href items as real anchor links for right-click / new-tab support", () => {
+    render(
+      <DropdownSection items={[{ href: "/test", children: "Test Item" }]} />
+    );
+    const link = screen.getByText("Test Item").closest("a");
+    expect(link).not.toBeNull();
+    expect(link).toHaveAttribute("href", "/test");
   });
 
-  it("navigates via router.push when an href item is clicked", () => {
+  it("navigates via router.push when an href item is activated via keyboard", () => {
     render(
       <DropdownSection
         items={[{ href: "/some-path", children: "Navigate Here" }]}
       />
     );
-    fireEvent.click(screen.getByText("Navigate Here"));
+    // Activating the menu item (e.g. via keyboard Enter) fires onSelect
+    fireEvent.click(screen.getByRole("menuitem"));
     expect(mockPush).toHaveBeenCalledWith("/some-path");
   });
 
@@ -119,7 +142,7 @@ describe("DropdownSection", () => {
         items={[{ href: "/path", children: "Disabled Item", disabled: true }]}
       />
     );
-    fireEvent.click(screen.getByText("Disabled Item"));
+    fireEvent.click(screen.getByRole("menuitem"));
     expect(mockPush).not.toHaveBeenCalled();
   });
 });
