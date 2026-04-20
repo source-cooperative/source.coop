@@ -9,13 +9,13 @@
  * @requires @asteasolutions/zod-to-openapi
  */
 
-import { IndividualAccount } from "./account";
+import { Account } from "./account";
 import { Membership } from "./membership";
 import type { Session } from "@ory/client-fetch";
 
 export interface UserSession {
   identity_id: string | null;
-  account?: IndividualAccount;
+  account?: Account;
   memberships?: Membership[];
   orySession?: Session;
 }

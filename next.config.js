@@ -22,6 +22,7 @@ const nextConfig = {
       fullUrl: true,
     },
   },
+  transpilePackages: ["jose"],
   serverExternalPackages: ["@duckdb/node-api"],
 };
 

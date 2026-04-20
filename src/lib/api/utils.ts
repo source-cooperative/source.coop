@@ -30,7 +30,6 @@
 
 import { Actions, UserSession } from "@/types";
 import {
-  apiKeysTable,
   accountsTable,
   membershipsTable,
   isIndividualAccount,
@@ -40,106 +39,41 @@ import { getServerSession } from "@ory/nextjs/app";
 import { NextRequest } from "next/server";
 import { getOryId } from "../ory";
 import md5 from "md5";
-import { CONFIG } from "../config";
-import { AccountType } from "@/types/account";
-import { AccountFlags } from "@/types/shared";
-
-/**
- * Authenticates using the API secret. Used by the Data Proxy to access the API.
- * @param authorization
- * @returns UserSession object if authentication is successful, or null if it fails.
- */
-async function authenticateWithApiSecret(
-  authorization: string | null
-): Promise<UserSession | null> {
-  if (authorization !== CONFIG.apiSecret) {
-    return null;
-  }
-  // Create a mock account for the API Secret session
-  return {
-    identity_id: "api-secret",
-    account: {
-      type: AccountType.INDIVIDUAL,
-      identity_id: "api-secret",
-      name: "api-secret",
-      account_id: "api-secret",
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      disabled: false,
-      flags: [AccountFlags.ADMIN],
-      metadata_public: {},
-      emails: [],
-    },
-  };
-}
-
-/**
- * Authenticates a user using API key credentials.
- *
- * @param accessKeyId - The access key ID for API authentication.
- * @param secretAccessKey - The secret access key for API authentication.
- * @returns A Promise that resolves to a UserSession object if authentication is successful, or null if it fails.
- */
-async function authenticateWithApiKey(
-  authorization: string | null
-): Promise<UserSession | null> {
-  if (!authorization) return null;
-
-  const [accessKeyId, secretAccessKey] = authorization.split(" ");
-
-  // Retrieve the API key from the database
-  const apiKey = await apiKeysTable.fetchById(accessKeyId);
-
-  // Check if the API key is valid, matches the secret, and is not disabled
-  if (
-    !apiKey ||
-    apiKey.secret_access_key !== secretAccessKey ||
-    apiKey.disabled
-  ) {
-    return null;
-  }
-
-  // Fetch the account associated with the API key
-  const account = await accountsTable.fetchById(apiKey.account_id);
-  if (!account || account.disabled || !isIndividualAccount(account)) {
-    return null;
-  }
-
-  // Retrieve and filter memberships for the user
-  const memberships = await membershipsTable.listByUser(account.account_id);
-  const filteredMemberships = memberships.filter((membership) =>
-    isAuthorized(
-      { account, identity_id: account.identity_id },
-      membership,
-      Actions.GetMembership
-    )
-  );
-
-  // Return the user session
-  return {
-    identity_id: account.identity_id,
-    account,
-    memberships: filteredMemberships,
-  };
-}
+import { authenticateWithOidcToken } from "./oidc";
+import { LOGGER } from "../logging";
 
 /**
  * Retrieves the current user session from the request context.
- * Attempts API secret first, then API key authentication, then falls back to cookie-based authentication.
+ * Attempts OIDC token authentication first, then falls back to cookie-based authentication.
  *
  * @param req - The Next.js API request object.
  * @returns A Promise that resolves to a UserSession object if a valid session exists, or null if not authenticated.
  */
 export async function getApiSession(
-  req: NextRequest
+  req: NextRequest,
 ): Promise<UserSession | null> {
   const authorization = req.headers.get("Authorization");
 
-  const apiSecretSession = await authenticateWithApiSecret(authorization);
-  if (apiSecretSession) return apiSecretSession;
-
-  const apiKeySession = await authenticateWithApiKey(authorization);
-  if (apiKeySession) return apiKeySession;
+  if (authorization) {
+    LOGGER.debug("Attempting OIDC token authentication", {
+      operation: "getApiSession",
+      metadata: { method: "OIDC token" },
+    });
+    const audience = new URL(req.url).origin;
+    const oidcSession = await authenticateWithOidcToken(
+      authorization,
+      audience,
+    );
+    if (oidcSession) return oidcSession;
+  } else {
+    LOGGER.debug(
+      "No Authorization header found, falling back to cookie-based authentication",
+      {
+        operation: "getApiSession",
+        metadata: { method: "cookie-based" },
+      },
+    );
+  }
 
   // Fall back to page session (ie cookie-based authentication)
   return getPageSession();
@@ -174,8 +108,8 @@ export async function getPageSession(): Promise<UserSession | null> {
     isAuthorized(
       { orySession, account, identity_id },
       membership,
-      Actions.GetMembership
-    )
+      Actions.GetMembership,
+    ),
   );
 
   // Return the user session
@@ -194,7 +128,7 @@ export async function getEmail(identity_id: string): Promise<string | null> {
       headers: {
         Authorization: `Bearer ${process.env.ORY_ACCESS_TOKEN}`,
       },
-    }
+    },
   );
 
   if (!response.ok) {

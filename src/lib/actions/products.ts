@@ -6,7 +6,7 @@ import {
   ProductCreationRequestSchema,
   type Product,
   type ProductCreationRequest,
-  ProductDataMode,
+
 } from "@/types";
 import { getPageSession, LOGGER } from "@/lib";
 import { FormState } from "@/components/core/DynamicForm";
@@ -128,7 +128,7 @@ export async function createProduct(
     updated_at: new Date().toISOString(),
     disabled: false,
     featured: 0,
-    data_mode: ProductDataMode.Open,
+
     metadata: {
       tags: [],
       primary_mirror: "aws-opendata-us-west-2",
