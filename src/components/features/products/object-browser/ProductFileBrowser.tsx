@@ -82,16 +82,21 @@ export function ProductFileBrowser({
 
   if (!listing) return null;
 
-  // If the listing is empty and the prefix has a file extension,
-  // the user navigated to a file path. Show the parent directory instead
-  // with this file highlighted (or just show the parent listing).
+  // If the listing is empty and we have a prefix, this is likely a file path
+  // (e.g. catalog.json). List the parent directory instead so the user sees
+  // the file in context rather than an empty page.
   const isEmpty =
     listing.objects.length === 0 && listing.directories.length === 0;
   if (isEmpty && prefix) {
-    // TODO: handle file view (ObjectSummary + ObjectPreview) client-side
-    // For now, this case means the server-side page rendered ProductFileBrowser
-    // for a file path. The listing will be empty.
-    return <DirectoryListLoading />;
+    return (
+      <ProductFileBrowser
+        product={product}
+        account_id={account_id}
+        product_id={product_id}
+        prefix={prefix.includes("/") ? prefix.substring(0, prefix.lastIndexOf("/")) : ""}
+        endpoint={endpoint}
+      />
+    );
   }
 
   // Map S3ReadClient results to ProductObject[] for DirectoryList
