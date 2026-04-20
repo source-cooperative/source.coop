@@ -36,24 +36,27 @@ export function DropdownSection({
   return (
     <>
       {label && <DropdownMenu.Label>{label}</DropdownMenu.Label>}
-      {items.map((item, index) => (
-        <DropdownMenu.Item
-          key={index}
-          color={item.color}
-          disabled={item.disabled}
-        >
-          {item.href ? (
+      {items.map((item, index) =>
+        item.href ? (
+          <DropdownMenu.Item
+            key={index}
+            color={item.color}
+            disabled={item.disabled}
+            asChild
+          >
             <Link href={item.href}>{item.children}</Link>
-          ) : (
-            <div
-              onClick={item.onClick}
-              style={{ cursor: item.onClick ? "pointer" : "default" }}
-            >
-              {item.children}
-            </div>
-          )}
-        </DropdownMenu.Item>
-      ))}
+          </DropdownMenu.Item>
+        ) : (
+          <DropdownMenu.Item
+            key={index}
+            color={item.color}
+            disabled={item.disabled}
+            onClick={item.onClick}
+          >
+            {item.children}
+          </DropdownMenu.Item>
+        )
+      )}
       {showSeparator && <DropdownMenu.Separator />}
     </>
   );
