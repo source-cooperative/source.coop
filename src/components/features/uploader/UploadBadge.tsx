@@ -1,14 +1,18 @@
 "use client";
 import { Badge } from "@radix-ui/themes";
-import { useMemo } from "react";
-import { useUploadManager } from "@/components/features/uploader/UploadProvider";
+import { useContext, useMemo } from "react";
+import { UploadContext } from "@/components/features/uploader/UploadProvider";
 
 /**
  * Badge indicator showing count of active uploads
  * Displays as a positioned badge overlay (typically on an avatar)
+ *
+ * Renders nothing if not within an UploadProvider (e.g. marketing pages)
+ * since uploads aren't possible there anyway.
  */
 export function UploadBadge() {
-  const { uploads } = useUploadManager();
+  const context = useContext(UploadContext);
+  const uploads = context?.uploads ?? [];
 
   // Calculate active uploads (queued, uploading)
   const activeCount = useMemo(() => {

@@ -39,7 +39,7 @@ interface UploadContextType {
   getUploadsByScope: () => Map<string, ScopedUploadItem[]>;
 }
 
-const UploadContext = createContext<UploadContextType | undefined>(undefined);
+export const UploadContext = createContext<UploadContextType | undefined>(undefined);
 
 interface UploadProviderProps {
   children: ReactNode;
