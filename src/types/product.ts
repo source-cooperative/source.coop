@@ -11,12 +11,6 @@ export const ProductMirrorSchema = z
     storage_type: z.enum(["s3", "azure", "gcs", "minio", "ceph"]),
     connection_id: z.string(), // Reference to storage connection config
     prefix: z.string(), // Format: "{account_id}/{product_id}/"
-    config: z.object({
-      region: z.string().optional(), // For S3/GCS
-      bucket: z.string().optional(), // For S3/GCS
-      container: z.string().optional(), // For Azure
-      endpoint: z.string().optional(), // For MinIO/Ceph
-    }),
     // Mirror-specific settings
     is_primary: z.boolean(), // Is this the primary mirror?
   })
@@ -36,16 +30,13 @@ export const ProductMetadataSchema = z
 
 export type ProductMetadata = z.infer<typeof ProductMetadataSchema>;
 
-export enum ProductDataMode {
-  Open = "open",
-  Subscription = "subscription",
-  Private = "private",
+export enum ProductVisibility {
+  Public = "public",
+  Unlisted = "unlisted",
+  Restricted = "restricted",
 }
-export const ProductDataModeSchema = z
-  .nativeEnum(ProductDataMode, {
-    errorMap: () => ({ message: "Invalid product data mode" }),
-  })
-  .openapi("ProductDataMode");
+
+export const ProductVisibilitySchema = z.nativeEnum(ProductVisibility);
 
 // Main product interface matching new schema
 // Product is the main product entity, including metadata and optional account
@@ -57,12 +48,12 @@ export const ProductSchema = z
     description: z.string(),
     created_at: z.string(),
     updated_at: z.string(),
-    visibility: z.enum(["public", "unlisted", "restricted"]),
+    visibility: ProductVisibilitySchema,
     metadata: ProductMetadataSchema,
     account: AccountSchema.optional(),
     disabled: z.boolean(),
     featured: z.number(),
-    data_mode: ProductDataModeSchema,
+
     search_text: z.string().optional(),
   })
   .openapi("Product");
@@ -75,7 +66,7 @@ export const ProductCreationRequestSchema = ProductSchema.omit({
   account: true,
   disabled: true,
   featured: true,
-  data_mode: true,
+
   metadata: true,
 }).openapi("ProductCreationRequest");
 
