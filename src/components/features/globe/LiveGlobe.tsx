@@ -505,21 +505,29 @@ export function LiveGlobe({
       <div
         ref={wrapperRef}
         className={`${styles.container} ${sceneReady ? styles.ready : styles.loading}`}
+        style={{ background: "var(--color-background)" }}
         role="img"
         aria-label="Interactive 3D globe showing live data request locations"
       >
-        <Globe
-          ref={globeRef}
-          width={width}
-          height={height}
-          backgroundColor="rgba(0,0,0,0)"
-          globeImageUrl="/img/earth-blue-marble.jpg"
-          showAtmosphere={false}
-          onGlobeReady={() => {
-            globeReadyRef.current = true;
+        <div
+          style={{
+            opacity: sceneReady ? 1 : 0,
+            transition: "opacity 0.5s ease-in",
           }}
-          animateIn={false}
-        />
+        >
+          <Globe
+            ref={globeRef}
+            width={width}
+            height={height}
+            backgroundColor="rgba(0,0,0,0)"
+            globeImageUrl="/img/earth-blue-marble.jpg"
+            showAtmosphere={false}
+            onGlobeReady={() => {
+              globeReadyRef.current = true;
+            }}
+            animateIn={false}
+          />
+        </div>
         {/* Dot overlay — managed imperatively by the animation loop, not React */}
         <div ref={dotsContainerRef} aria-hidden="true" />
       </div>
