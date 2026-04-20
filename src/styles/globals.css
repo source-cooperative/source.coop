@@ -71,6 +71,15 @@ a:hover {
   color: white !important;
 }
 
+/* Dropdown menu item links should inherit the item's color in every state,
+   overriding the global a/a:hover rules above so highlighted rows don't
+   render as dark text on a tinted background. */
+.rt-BaseMenuItem a,
+.rt-BaseMenuItem a:hover {
+  color: inherit !important;
+  text-decoration: none !important;
+}
+
 .repository-listing {
   color: var(--accent-13);
   display: block;

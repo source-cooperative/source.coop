@@ -3,10 +3,11 @@
 import { useState } from "react";
 import { Flex, Text, DropdownMenu } from "@radix-ui/themes";
 import Link from "next/link";
+import { useRouter, usePathname } from "next/navigation";
 import { Product } from "@/types";
 import { editProductViewUrl } from "@/lib/urls";
 import { ChevronIcon } from "@/components/icons";
-import { usePathname } from "next/navigation";
+import { dropdownMenuLinkStyle } from "@/components/layout/DropdownSection";
 
 interface ProductSelectorProps {
   currentProduct: Product;
@@ -19,6 +20,7 @@ export function ProductSelector({
 }: ProductSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
 
   // Extract current view from pathname (last segment)
   const pathParts = pathname.split("/");
@@ -36,23 +38,26 @@ export function ProductSelector({
 
       <DropdownMenu.Content variant="soft">
         {/* TODO: Handle empty state */}
-        {manageableProducts.map((product) => (
-          <DropdownMenu.Item key={product.product_id}>
-            <Link
-              href={editProductViewUrl(
-                product.account_id,
-                product.product_id,
-                currentView
-              )}
-              onClick={() => setIsOpen(false)}
+        {manageableProducts.map((product) => {
+          const href = editProductViewUrl(
+            product.account_id,
+            product.product_id,
+            currentView
+          );
+          return (
+            <DropdownMenu.Item
+              key={product.product_id}
+              onSelect={() => router.push(href)}
             >
-              <ProductDisplay
-                product={product}
-                selected={product.product_id === currentProduct.product_id}
-              />
-            </Link>
-          </DropdownMenu.Item>
-        ))}
+              <Link href={href} style={dropdownMenuLinkStyle}>
+                <ProductDisplay
+                  product={product}
+                  selected={product.product_id === currentProduct.product_id}
+                />
+              </Link>
+            </DropdownMenu.Item>
+          );
+        })}
       </DropdownMenu.Content>
     </DropdownMenu.Root>
   );
