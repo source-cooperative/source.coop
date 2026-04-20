@@ -1,6 +1,6 @@
 "use client";
 import { DropdownMenu } from "@radix-ui/themes";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ReactNode } from "react";
 
 export interface DropdownItem {
@@ -25,6 +25,8 @@ export function DropdownSection({
   showSeparator = true,
   condition = true,
 }: DropdownSectionProps) {
+  const router = useRouter();
+
   // Only render if condition is true and there are items to show
   if (
     !condition ||
@@ -42,9 +44,9 @@ export function DropdownSection({
             key={index}
             color={item.color}
             disabled={item.disabled}
-            asChild
+            onClick={() => router.push(item.href!)}
           >
-            <Link href={item.href}>{item.children}</Link>
+            {item.children}
           </DropdownMenu.Item>
         ) : (
           <DropdownMenu.Item
