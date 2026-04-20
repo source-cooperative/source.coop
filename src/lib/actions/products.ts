@@ -226,6 +226,13 @@ export async function updateProduct(
       | "public"
       | "unlisted"
       | "restricted";
+    const tagsRaw = formData.get("tags") as string;
+    const tags = tagsRaw
+      ? tagsRaw
+          .split(",")
+          .map((t) => t.trim())
+          .filter((t) => t.length > 0)
+      : currentProduct.metadata?.tags || [];
 
     // Build update data
     const updateData = {
@@ -233,6 +240,10 @@ export async function updateProduct(
       title: title || currentProduct.title,
       description: description || currentProduct.description,
       visibility: visibility || currentProduct.visibility,
+      metadata: {
+        ...currentProduct.metadata,
+        tags,
+      },
       updated_at: new Date().toISOString(),
     };
 
