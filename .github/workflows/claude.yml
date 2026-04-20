@@ -35,24 +35,13 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          claude_args: |
+            --allowedTools "Bash(git checkout:*),Bash(git switch:*),Bash(git branch:*),Bash(git add:*),Bash(git commit:*),Bash(git push:*),Bash(gh pr create:*),Bash(gh pr view:*),Bash(gh issue view:*)"
+          prompt: |
+            When the user asks you to implement a change, fix a bug, or address an issue that requires code modifications:
+            1. Create a new branch off the default branch (name it descriptively, e.g. `claude/fix-<short-description>` or `claude/issue-<number>`).
+            2. Make the changes, commit them with a clear message, and push the branch.
+            3. Read `.github/pull_request_template.md` and fill in each section (removing the HTML comment instructions). If the change resolves an issue, add "Closes #<n>" to the "What I'm changing" section. Write the filled template to a temp file and pass it to `gh pr create --body-file <path>`.
+            4. Reply in the original thread with the PR link.
 
-          # Optional: Customize the trigger phrase (default: @claude)
-          # trigger_phrase: "/claude"
-
-          # Optional: Trigger when specific user is assigned to an issue
-          # assignee_trigger: "claude-bot"
-
-          # Optional: Configure Claude's behavior with CLI arguments
-          # claude_args: |
-          #   --model claude-opus-4-1-20250805
-          #   --max-turns 10
-          #   --allowedTools "Bash(npm install),Bash(npm run build),Bash(npm run test:*),Bash(npm run lint:*)"
-          #   --system-prompt "Follow our coding standards. Ensure all new code has tests. Use TypeScript for new files."
-
-          # Optional: Advanced settings configuration
-          # settings: |
-          #   {
-          #     "env": {
-          #       "NODE_ENV": "test"
-          #     }
-          #   }
+            For read-only questions or discussions, skip the PR workflow and just respond.
