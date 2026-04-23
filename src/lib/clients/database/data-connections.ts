@@ -8,6 +8,7 @@ import {
   ScanCommand,
   PutCommand,
   UpdateCommand,
+  DeleteCommand,
 } from "@aws-sdk/lib-dynamodb";
 import { marshall } from "@aws-sdk/util-dynamodb";
 import { BaseTable } from "./base";
@@ -131,6 +132,22 @@ export class DataConnectionsTable extends BaseTable {
       this.logError("upsert", error, {
         dataConnectionId: dataConnection.data_connection_id,
       });
+      throw error;
+    }
+  }
+
+  async delete(dataConnectionId: string): Promise<void> {
+    try {
+      await this.client.send(
+        new DeleteCommand({
+          TableName: this.table,
+          Key: {
+            data_connection_id: dataConnectionId,
+          },
+        })
+      );
+    } catch (error) {
+      this.logError("delete", error, { dataConnectionId });
       throw error;
     }
   }
