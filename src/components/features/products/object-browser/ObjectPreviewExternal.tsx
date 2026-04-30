@@ -16,11 +16,21 @@ const isStacGeoParquet = async (sourceUrl: string): Promise<boolean> => {
     await db.run("SET home_directory='/tmp'");
     await db.run("SET extension_directory='/tmp/duckdb_extensions'");
 
+    // Check for required STAC columns and validate bbox is a struct (has xmin sub-field).
+    // Some files (e.g. Maxar) store bbox as a list/array rather than a struct, which causes
+    // the STAC map viewer to throw "Cannot extract field 'xmin' from expression 'bbox'".
     const reader = await db.runAndReadAll(
-      `SELECT count(*) > 0 FROM parquet_schema(?) WHERE name IN ('stac_version', 'geometry') GROUP BY file_name HAVING count(*) = 2`,
+      `WITH schema AS (SELECT * FROM parquet_schema(?))
+       SELECT
+         count(*) FILTER (WHERE name IN ('stac_version', 'geometry')) = 2
+           AND (count(*) FILTER (WHERE name = 'bbox') = 0
+                OR count(*) FILTER (WHERE name = 'xmin') > 0)
+         AS is_valid
+       FROM schema`,
       [sourceUrl],
     );
-    return reader.getRows().length > 0;
+    const rows = reader.getRows();
+    return rows.length > 0 && (rows[0][0] as boolean);
   } catch (error) {
     LOGGER.error(`Error checking for STAC GeoParquet: ${error}`, {
       operation: "isStacGeoParquet",
