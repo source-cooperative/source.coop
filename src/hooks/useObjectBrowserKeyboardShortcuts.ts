@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import type { Product } from "@/types";
-import type { ProductObject } from '@/types/product_object';
+import type { ProductObject } from "@/types";
 import { useKeyboardShortcuts } from './useKeyboardShortcuts';
 import { objectUrl } from "@/lib/urls";
 

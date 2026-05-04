@@ -17,7 +17,19 @@ export const CONFIG = {
       accessKeyId: "anonymous",
       secretAccessKey: "anonymous",
     },
+    // Optional role to use when granting temporary upload credentials
   } as StorageConfig,
+
+  uploads: {
+    accessRoleArn: process.env.AWS_UPLOAD_ACCESS_ROLE_ARN,
+  },
+
+  // Assets (profile images, etc.) configuration
+  assets: {
+    bucket: process.env.ASSETS_BUCKET,
+    domain: process.env.ASSETS_DOMAIN,
+    region: region,
+  },
 
   // DynamoDB configuration
   database: {
@@ -49,6 +61,11 @@ export const CONFIG = {
       // https://www.ory.sh/docs/reference/api#tag/frontend/operation/createBrowserLogoutFlow
       logout: `${frontendUrl}/self-service/logout/browser`,
     },
+  },
+
+  // Location WebSocket for live globe
+  locationWs: {
+    url: process.env.NEXT_PUBLIC_LOCATION_WS_URL,
   },
 
   // Google configuration

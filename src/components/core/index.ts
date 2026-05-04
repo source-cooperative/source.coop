@@ -10,3 +10,4 @@ export { StatusPage, NotFoundPage, NotAuthorizedPage } from "./StatusPage";
 export { EditButton } from "./EditButton";
 export { ExternalLink } from "./ExternalLink";
 export * from "./AccountLinks";
+export { CopyToClipboard } from "./CopyToClipboard";

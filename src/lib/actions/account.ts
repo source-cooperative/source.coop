@@ -213,8 +213,10 @@ export async function updateAccountProfile(
         ) {
           processedUrl = `https://${processedUrl}`;
         }
+        // Validate the URL by parsing it, but store the full URL to preserve paths
+        new URL(processedUrl);
         return {
-          domain: new URL(processedUrl).hostname,
+          domain: processedUrl,
           status: "unverified" as const,
           created_at: new Date().toISOString(),
         };

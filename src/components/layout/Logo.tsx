@@ -1,30 +1,37 @@
 "use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { ThemeAwareImage } from "./ThemeAwareImage";
-import { LogoLink } from "./LogoLink";
-import Image from "next/image";
+import styles from "./Navigation.module.css";
+import { homeUrl } from "@/lib/urls";
+
 export function Logo() {
-  const LogoImage = (
+  const pathname = usePathname();
+  const isHomePage = pathname === "/";
+
+  const logoImage = (
     <ThemeAwareImage
-      lightSrc="/logo/logotype-light.svg"
-      darkSrc="/logo/logotype-dark.svg"
+      lightSrc="/logo/logolockup-light.svg"
+      darkSrc="/logo/logolockup-dark.svg"
       alt="Source Cooperative"
-      width={243}
-      height={74}
+      width={200}
+      height={40}
       priority
+      style={{
+        width: "auto",
+        height: "clamp(36px, 16vw, 48px)", // Scale logo
+      }}
     />
   );
 
-  return <LogoLink>{LogoImage}</LogoLink>;
-}
+  if (isHomePage) {
+    return <div className={styles.logo}>{logoImage}</div>;
+  }
 
-export function LightLogo() {
   return (
-    <Image
-      src="/logo/logotype-light.svg"
-      alt="Source Cooperative"
-      width={243}
-      height={74}
-      priority
-    />
+    <Link href={homeUrl()} className={styles.logo}>
+      {logoImage}
+    </Link>
   );
 }

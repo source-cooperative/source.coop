@@ -1,46 +1,30 @@
-"use client";
-
-import { Box } from "@radix-ui/themes";
-import type { CSSProperties } from "react";
+import {
+  canRenderInternally,
+  ObjectPreviewInternal,
+} from "./ObjectPreviewInternal";
+import { ObjectPreviewExternal } from "./ObjectPreviewExternal";
+import { Box, Skeleton } from "@radix-ui/themes";
 
 interface ObjectPreviewProps {
-  sourceUrl: string;
+  account_id: string;
+  product_id: string;
+  object_path: string;
 }
 
-const getIframeAttributes = (
-  sourceUrl: string
-): { src: string; style?: CSSProperties } | null => {
-  switch (sourceUrl.split(".").pop()) {
-    case "pmtiles":
-      return {
-        src: `https://pmtiles.io/#iframe=true&url=${sourceUrl}`,
-        style: { border: "none" },
-      };
-    case "parquet":
-      return {
-        src: `https://source-cooperative.github.io/parquet-table/?iframe=true&url=${sourceUrl}`,
-        style: { border: "1px solid var(--gray-5)" },
-      };
-    case "tif":
-      return {
-        src: `https://cogeo.org/viewer/#iframe=true&url=${sourceUrl}`,
-        style: { border: "none" },
-      }
-    default:
-      return null;
+export async function ObjectPreview(props: ObjectPreviewProps) {
+  if (canRenderInternally(props.object_path)) {
+    return <ObjectPreviewInternal {...props} />;
+  } else {
+    return <ObjectPreviewExternal {...props} />;
   }
-};
+}
 
-export function ObjectPreview({ sourceUrl: cloudUri }: ObjectPreviewProps) {
-  const iframeProps = getIframeAttributes(cloudUri);
-  if (iframeProps) {
-    const { src, style } = iframeProps;
-    return (
+export function ObjectPreviewLoading() {
+  return (
+    <Skeleton>
       <Box mt="4" pt="4" style={{ borderTop: "1px solid var(--gray-6)" }}>
-        <iframe width="100%" height="600px" style={style} src={src}>
-          Your browser does not support iframes.
-        </iframe>
+        <Box width="100%" height="600px" />
       </Box>
-    );
-  }
+    </Skeleton>
+  );
 }

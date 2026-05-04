@@ -23,21 +23,25 @@
 }
 
 .settingsContent {
-  padding-left: 0;
+  padding-left: 2em;
+  border-left: 1px solid var(--gray-6);
+  width: 100%;
 }
 
+/* Mobile */
 @media (max-width: 768px) {
   .settingsLayout {
     flex-direction: column;
   }
-  
+
   .settingsSidebar {
     position: static;
     min-width: unset;
     max-width: unset;
   }
-  
+
   .settingsContent {
-    padding-left: 0;
+    border: none;
+    padding: 1rem 0.5rem;
   }
 }

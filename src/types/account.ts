@@ -73,6 +73,7 @@ const BaseAccountProfileSchema = z.object({
       return location === "" ? undefined : location;
     }, z.optional(z.string().max(128, "Location must not exceed 128 characters")))
     .openapi({ example: "Augsburg, Germany" }),
+  profile_image: z.optional(z.string().url()),
   domains: z.optional(z.array(AccountDomainSchema)),
 });
 

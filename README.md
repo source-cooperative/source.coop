@@ -57,30 +57,35 @@ docs/
 
 ### Database Setup
 
-The application requires a DynamoDB instance for data storage. We've added several convenience scripts to manage the local DynamoDB:
+The application requires a DynamoDB instance for data storage. Docker Compose is used to run DynamoDB locally for development:
 
 ```bash
-# Start DynamoDB (will prompt for table initialization if needed)
-npm run start-dynamodb
-
-# Check if DynamoDB is running
-npm run check-dynamodb
-
-# Initialize DynamoDB tables and sample data
-npm run init-local
+# Start DynamoDB and DynamoDB Admin
+docker compose up
 ```
 
-When you run `npm run dev`, the system automatically:
+This will start:
 
-1. Checks if DynamoDB is running
-2. Starts DynamoDB if it's not running
-3. Skips initialization if tables already exist
+- **DynamoDB Local** on port 8000
+- **DynamoDB Admin UI** on port 8001 (accessible at http://localhost:8001)
+- **Bootstrap script** that automatically initializes tables if they don't exist
+
+The bootstrap script (`init-db` service) will:
+
+1. Run automatically when tables are not found
+2. Create all required DynamoDB tables
+3. Populate sample data for development
+4. Can be forced to reset tables by setting the `RESET_TABLES` environment variable:
+
+```bash
+# Force reset and reinitialize tables
+RESET_TABLES=true docker compose up
+```
 
 ### Development Environment
 
-- Local DynamoDB running on port 8000
-- Local file storage in `./test-storage`
-- Ory Kratos for authentication
+- Local DynamoDB
+- DynamoDB Admin UI
 - Environment variables in `.env.local`
 
 ## Contributing

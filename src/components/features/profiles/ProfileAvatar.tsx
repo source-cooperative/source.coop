@@ -10,24 +10,27 @@ interface ProfileAvatarProps {
 }
 
 export function ProfileAvatar({ account, size = "6" }: ProfileAvatarProps) {
-  // Get avatar source URL
-  const getAvatarSrc = () => {
-    if (account.type === "individual") {
-      // Use Gravatar for individuals
-      const primaryEmail = account.emails?.find(
-        (email) => email.is_primary
-      )?.address;
-      if (primaryEmail) {
-        const hash = md5(primaryEmail.toLowerCase().trim());
-        return `https://www.gravatar.com/avatar/${hash}?d=identicon&s=200`;
-      }
+  let avatarSrc: string | undefined;
+
+  // Priority 1: Use profile_image if set
+  if (account.metadata_public?.profile_image) {
+    avatarSrc = account.metadata_public.profile_image;
+  }
+  // Priority 2: Use Gravatar for individuals
+  else if (account.type === "individual") {
+    const primaryEmail = account.emails?.find(
+      (email) => email.is_primary
+    )?.address;
+    if (primaryEmail) {
+      const hash = md5(primaryEmail.toLowerCase().trim());
+      avatarSrc = `https://www.gravatar.com/avatar/${hash}?d=identicon&s=200`;
     }
-  };
+  }
 
   return (
     <Avatar
       size={size}
-      src={getAvatarSrc()}
+      src={avatarSrc}
       fallback={account.name?.[0]?.toUpperCase() || ""}
       radius={account.type === "individual" ? "full" : "medium"}
     />

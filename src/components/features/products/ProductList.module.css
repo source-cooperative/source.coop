@@ -7,6 +7,18 @@
   contain: content;
 }
 
+.gridList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(28rem, 100%), 1fr));
+  gap: var(--space-4);
+  position: relative;
+  contain: content;
+}
+
 .viewport {
   width: 100%;
   height: calc(100vh - 400px);
@@ -22,7 +34,8 @@
 .item {
   text-decoration: none;
   color: inherit;
-  display: block;
+  display: flex;
+  flex-direction: column;
   padding: var(--space-4);
   border-radius: var(--radius-3);
   border: 1px solid var(--gray-5);
@@ -31,7 +44,30 @@
   outline: 2px solid transparent;
   outline-offset: -1px;
   margin-bottom: var(--space-4);
-  contain: content;
+}
+
+.item > article {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.itemSpacer {
+  flex: 1;
+}
+
+.gridList > li {
+  display: flex;
+  min-width: 0;
+}
+
+.gridList .item {
+  flex: 1;
+}
+
+.gridList .item {
+  border-style: dashed;
+  margin-bottom: 0;
 }
 
 .item:hover:not([data-highlighted="true"]):not([data-selected="true"]) {
