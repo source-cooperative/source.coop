@@ -4,7 +4,7 @@
     "name": "Staging Bucket",
     "prefix_template": "{account_id}/{repository_id}/",
     "read_only": false,
-    "allowed_data_modes": ["open", "private", "subscription"],
+    "allowed_data_modes": ["public", "unlisted"],
     "details": {
       "provider": "s3",
       "bucket": "dev.us-west-2.opendata.source.coop",
@@ -20,7 +20,7 @@
     "name": "Primary Data Connection",
     "prefix_template": "{account_id}/{repository_id}/",
     "read_only": false,
-    "allowed_data_modes": ["open", "private", "subscription"],
+    "allowed_data_modes": ["public", "unlisted", "restricted"],
     "details": {
       "provider": "s3",
       "bucket": "source-coop-data",
@@ -36,7 +36,7 @@
     "name": "Read-Only Data Connection",
     "prefix_template": "{account_id}/{repository_id}/",
     "read_only": true,
-    "allowed_data_modes": ["open"],
+    "allowed_data_modes": ["public", "unlisted"],
     "details": {
       "provider": "s3",
       "bucket": "source-coop-readonly",
@@ -54,7 +54,7 @@
     "name": "Azure Data Connection",
     "prefix_template": "{account_id}/{repository_id}/",
     "read_only": false,
-    "allowed_data_modes": ["open", "private"],
+    "allowed_data_modes": ["public", "unlisted", "restricted"],
     "details": {
       "provider": "az",
       "account_name": "sourcecoopstorage",
@@ -72,7 +72,7 @@
     "name": "Subscription Data Connection",
     "prefix_template": "{account_id}/{repository_id}/",
     "read_only": false,
-    "allowed_data_modes": ["subscription"],
+    "allowed_data_modes": ["restricted"],
     "required_flag": "admin",
     "details": {
       "provider": "s3",
