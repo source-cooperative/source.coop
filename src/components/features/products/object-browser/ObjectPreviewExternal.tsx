@@ -73,7 +73,7 @@ const getIframeAttributes = async (
       return {
         src: `https://cogeo.org/viewer/#iframe=true&url=${url}`,
         style: { border: "none" },
-      }
+      };
     case "avif":
     case "bmp":
     case "gif":
