@@ -71,7 +71,7 @@ const getIframeAttributes = async (
     case "tif":
     case "tiff":
       return {
-        src: `https://cogeo.org/viewer/#iframe=true&url=https://data.source.coop/clarkcga/multi-temporal-crop-classification/hls/chip_002_060_merged.tif`,
+        src: `https://cogeo.org/viewer/#iframe=true&url=${url}`,
         style: { border: "none" },
       }
     case "avif":
