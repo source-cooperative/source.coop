@@ -4,40 +4,7 @@ A data publishing utility that allows trusted organizations and individuals to s
 
 ## Project Status
 
-Source Cooperative is operational and available at [https://source.coop](https://source.coop), providing access to over 800TB of data.
-
-A new version of the Source Cooperative web app called _S2_ is under active development. It is currently only available to be deployed locally and is not yet available in staging or production environments.
-
-## Documentation
-
-The project documentation is organized in the `docs/` directory with the following structure:
-
-```
-docs/
-├── architecture/           # System architecture and design
-│   ├── overview.md        # High-level system overview
-│   ├── data-model.md      # Data structures and relationships
-│   ├── storage.md         # Storage architecture details
-│   └── authentication.md  # Authentication and authorization
-├── development/           # Development guidelines
-│   ├── setup.md          # Development environment setup
-│   ├── coding-standards.md # Coding standards and practices
-│   ├── testing.md        # Testing guidelines and protocols
-│   └── performance.md    # Performance optimization guidelines
-├── roadmap/              # Project roadmap and planning
-│   ├── overview.md       # High-level roadmap
-│   ├── current.md        # Current sprint and priorities
-│   └── future.md         # Future considerations
-└── releases/             # Release information
-    └── changelog.md      # Detailed changelog
-```
-
-### Key Documentation Sections
-
-- **Architecture**: System design, data models, and technical decisions
-- **Development**: Guidelines for contributing and development practices
-- **Roadmap**: Project planning and future development stages
-- **Releases**: Version history and changelog
+Source Cooperative is operational and available at [https://source.coop](https://source.coop), providing access to over 5PB of data.
 
 ## Development Setup
 
