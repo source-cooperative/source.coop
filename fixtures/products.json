@@ -174,35 +174,6 @@
     "featured": 0
   },
   {
-    "product_id": "subscription-org-repo-id",
-    "account_id": "organization",
-    "title": "Subscription Repo",
-    "description": "Subscription Organization's product",
-    "created_at": "2020-01-01T00:00:00Z",
-    "updated_at": "2020-01-01T00:00:00Z",
-    "visibility": "restricted",
-    "metadata": {
-      "mirrors": {
-        "primary-data-connection": {
-          "storage_type": "s3",
-          "connection_id": "primary-data-connection",
-          "prefix": "organization/subscription-org-repo-id/",
-          "config": {
-            "region": "us-east-1",
-            "bucket": "source-coop-data"
-          },
-          "is_primary": true
-        }
-      },
-      "primary_mirror": "primary-data-connection",
-      "tags": ["mock", "subscription"],
-      "roles": {}
-    },
-    "disabled": false,
-
-    "featured": 0
-  },
-  {
     "product_id": "overture",
     "account_id": "cholmes",
     "title": "Overture Open Buildings",
