@@ -23,13 +23,27 @@ jobs:
             REPO: ${{ github.repository }}
             PR NUMBER: ${{ github.event.pull_request.number }}
 
-            Please review this pull request with a focus on:
+            STEP 1 — Clean up prior review artifacts from previous runs of THIS workflow:
+            - List inline review comments:
+              `gh api "repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/comments" --paginate`
+              For each whose body starts with `<!-- claude-review-inline -->`, delete it:
+              `gh api -X DELETE "repos/${{ github.repository }}/pulls/comments/<id>"`
+            - List issue comments:
+              `gh api "repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments" --paginate`
+              Find the one whose body starts with `<!-- claude-review-summary -->` (if any) and remember its id as PRIOR_SUMMARY_ID.
+
+            STEP 2 — Review this pull request with a focus on:
             - Code quality and best practices
             - Potential bugs or issues
             - Security implications
             - Performance considerations
 
-            Provide detailed feedback using inline comments for specific issues.
+            For each specific issue, post an inline comment whose body begins with the marker line `<!-- claude-review-inline -->` followed by your feedback.
+
+            STEP 3 — Post a single sticky summary comment whose body begins with the marker line `<!-- claude-review-summary -->`.
+            - If PRIOR_SUMMARY_ID exists, update it in place:
+              `gh api -X PATCH "repos/${{ github.repository }}/issues/comments/<PRIOR_SUMMARY_ID>" -f body=@<file>`
+            - Otherwise create it with `gh pr comment`.
 
           claude_args: |
-            --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*)"
+            --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh api:*)"
