@@ -68,9 +68,12 @@ const getIframeAttributes = async (
         src: `https://source-cooperative.github.io/csv-table/?iframe=true&url=${url}`,
         style: { border: "1px solid var(--gray-5)" },
       };
-    // TIFF is disabled until https://github.com/source-cooperative/source.coop/issues/221 is fixed.
-    // case "tif":
-    // case "tiff":
+    case "tif":
+    case "tiff":
+      return {
+        src: `https://cogeo.org/viewer/#iframe=true&url=https://data.source.coop/clarkcga/multi-temporal-crop-classification/hls/chip_002_060_merged.tif`,
+        style: { border: "none" },
+      }
     case "avif":
     case "bmp":
     case "gif":
