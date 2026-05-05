@@ -13,10 +13,6 @@
           "storage_type": "s3",
           "connection_id": "primary-data-connection",
           "prefix": "create-repositories-user/regular-user-repo-id/",
-          "config": {
-            "region": "us-east-1",
-            "bucket": "source-coop-data"
-          },
           "is_primary": true
         }
       },
@@ -41,10 +37,6 @@
           "storage_type": "s3",
           "connection_id": "primary-data-connection",
           "prefix": "organization/org-repo-id/",
-          "config": {
-            "region": "us-east-1",
-            "bucket": "source-coop-data"
-          },
           "is_primary": true
         }
       },
@@ -69,10 +61,6 @@
           "storage_type": "s3",
           "connection_id": "primary-data-connection",
           "prefix": "organization/disabled-org-repo-id/",
-          "config": {
-            "region": "us-east-1",
-            "bucket": "source-coop-data"
-          },
           "is_primary": true
         }
       },
@@ -97,10 +85,6 @@
           "storage_type": "s3",
           "connection_id": "primary-data-connection",
           "prefix": "organization/unlisted-org-repo-id/",
-          "config": {
-            "region": "us-east-1",
-            "bucket": "source-coop-data"
-          },
           "is_primary": true
         }
       },
@@ -125,10 +109,6 @@
           "storage_type": "s3",
           "connection_id": "primary-data-connection",
           "prefix": "organization/featured-org-repo-id/",
-          "config": {
-            "region": "us-east-1",
-            "bucket": "source-coop-data"
-          },
           "is_primary": true
         }
       },
@@ -153,10 +133,6 @@
           "storage_type": "s3",
           "connection_id": "primary-data-connection",
           "prefix": "organization/private-org-repo-id/",
-          "config": {
-            "region": "us-east-1",
-            "bucket": "source-coop-data"
-          },
           "is_primary": true
         }
       },
@@ -181,10 +157,6 @@
           "storage_type": "s3",
           "connection_id": "primary-data-connection",
           "prefix": "cholmes/overture/",
-          "config": {
-            "region": "us-east-1",
-            "bucket": "source-coop-data"
-          },
           "is_primary": true
         }
       },
