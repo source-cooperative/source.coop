@@ -3026,7 +3026,7 @@ describe("Authorization Tests", () => {
       data_connection_id: "test-connection",
       name: "Test Connection",
       read_only: false,
-      allowed_data_modes: [ProductVisibility.Public],
+      allowed_visibilities: [ProductVisibility.Public],
       details: {
         provider: DataProvider.S3,
         bucket: "test-bucket",
@@ -3099,7 +3099,7 @@ describe("Authorization Tests", () => {
       data_connection_id: "test-connection",
       name: "Test Connection",
       read_only: false,
-      allowed_data_modes: [ProductVisibility.Public],
+      allowed_visibilities: [ProductVisibility.Public],
       details: {
         provider: DataProvider.S3,
         bucket: "test-bucket",
@@ -3172,7 +3172,7 @@ describe("Authorization Tests", () => {
       data_connection_id: "test-connection",
       name: "Test Connection",
       read_only: false,
-      allowed_data_modes: [ProductVisibility.Public],
+      allowed_visibilities: [ProductVisibility.Public],
       details: {
         provider: DataProvider.S3,
         bucket: "test-bucket",
@@ -3245,7 +3245,7 @@ describe("Authorization Tests", () => {
       data_connection_id: "test-connection",
       name: "Test Connection",
       read_only: false,
-      allowed_data_modes: [ProductVisibility.Public],
+      allowed_visibilities: [ProductVisibility.Public],
       details: {
         provider: DataProvider.S3,
         bucket: "test-bucket",
@@ -3342,7 +3342,7 @@ describe("Authorization Tests", () => {
       data_connection_id: "test-connection",
       name: "Test Connection",
       read_only: false,
-      allowed_data_modes: [ProductVisibility.Public],
+      allowed_visibilities: [ProductVisibility.Public],
       details: {
         provider: DataProvider.S3,
         bucket: "test-bucket",
@@ -3415,7 +3415,7 @@ describe("Authorization Tests", () => {
       data_connection_id: "test-connection",
       name: "Test Connection",
       read_only: false,
-      allowed_data_modes: [ProductVisibility.Public],
+      allowed_visibilities: [ProductVisibility.Public],
       details: {
         provider: DataProvider.S3,
         bucket: "test-bucket",

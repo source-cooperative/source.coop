@@ -1,19 +1,27 @@
 #!/usr/bin/env tsx
 /**
- * Backfill script to migrate legacy `allowed_data_modes` values on
- * data-connections records to the new ProductVisibility values.
+ * Backfill script to migrate the legacy `allowed_data_modes` field to
+ * `allowed_visibilities` on data-connections records, mapping legacy
+ * values to ProductVisibility values along the way.
  *
- * Mapping:
+ * Value mapping:
  *   "open"         -> "public"
  *   "private"      -> "restricted"
  *   "subscription" -> "restricted"
+ * Values already conforming to ProductVisibility are passed through.
+ *
+ * For each record:
+ *   - if it has `allowed_data_modes`, the values are mapped, deduped,
+ *     written to `allowed_visibilities`, and `allowed_data_modes` is
+ *     removed.
+ *   - if it has only `allowed_visibilities`, it is skipped.
  *
  * Usage:
- *   npx tsx scripts/backfill-allowed-data-modes.ts <table-name>
+ *   npx tsx scripts/backfill-allowed-visibilities.ts <table-name>
  *
  * Examples:
- *   npx tsx scripts/backfill-allowed-data-modes.ts sc-dev-data-connections
- *   npx tsx scripts/backfill-allowed-data-modes.ts sc-prod-data-connections
+ *   npx tsx scripts/backfill-allowed-visibilities.ts sc-dev-data-connections
+ *   npx tsx scripts/backfill-allowed-visibilities.ts sc-prod-data-connections
  *
  * Environment variables:
  *   AWS_REGION  - AWS region (default: us-east-1)
@@ -37,22 +45,18 @@ const LEGACY_TO_NEW: Record<string, string> = {
 interface DataConnectionItem {
   data_connection_id: string;
   allowed_data_modes?: string[];
+  allowed_visibilities?: string[];
 }
 
-function migrate(modes: string[]): string[] {
+function mapValues(modes: string[]): string[] {
   const mapped = modes.map((m) => LEGACY_TO_NEW[m] ?? m);
   return Array.from(new Set(mapped));
-}
-
-function arraysEqual(a: string[], b: string[]): boolean {
-  if (a.length !== b.length) return false;
-  return a.every((v, i) => v === b[i]);
 }
 
 async function backfill(tableName: string, dryRun: boolean) {
   const region = process.env.AWS_REGION || "us-east-1";
 
-  console.log(`Backfill allowed_data_modes for table: ${tableName}`);
+  console.log(`Backfill allowed_visibilities for table: ${tableName}`);
   console.log(`Region: ${region}`);
   console.log(`Dry run: ${dryRun}`);
   console.log("");
@@ -72,7 +76,8 @@ async function backfill(tableName: string, dryRun: boolean) {
     const result = await client.send(
       new ScanCommand({
         TableName: tableName,
-        ProjectionExpression: "data_connection_id, allowed_data_modes",
+        ProjectionExpression:
+          "data_connection_id, allowed_data_modes, allowed_visibilities",
         ExclusiveStartKey: lastEvaluatedKey,
       })
     );
@@ -81,17 +86,16 @@ async function backfill(tableName: string, dryRun: boolean) {
     scanned += items.length;
 
     for (const item of items) {
-      const current = item.allowed_data_modes ?? [];
-      const next = migrate(current);
-
-      if (arraysEqual(current, next)) {
+      if (item.allowed_data_modes === undefined) {
         skipped++;
         continue;
       }
 
+      const next = mapValues(item.allowed_data_modes);
+
       if (dryRun) {
         console.log(
-          `[DRY RUN] Would update ${item.data_connection_id}: ${JSON.stringify(current)} -> ${JSON.stringify(next)}`
+          `[DRY RUN] Would update ${item.data_connection_id}: allowed_data_modes=${JSON.stringify(item.allowed_data_modes)} -> allowed_visibilities=${JSON.stringify(next)}`
         );
         updated++;
         continue;
@@ -102,8 +106,9 @@ async function backfill(tableName: string, dryRun: boolean) {
           new UpdateCommand({
             TableName: tableName,
             Key: { data_connection_id: item.data_connection_id },
-            UpdateExpression: "SET allowed_data_modes = :allowed_data_modes",
-            ExpressionAttributeValues: { ":allowed_data_modes": next },
+            UpdateExpression:
+              "SET allowed_visibilities = :allowed_visibilities REMOVE allowed_data_modes",
+            ExpressionAttributeValues: { ":allowed_visibilities": next },
           })
         );
         updated++;
@@ -130,15 +135,15 @@ const tableName = process.argv[2];
 
 if (!tableName) {
   console.error(
-    "Usage: npx tsx scripts/backfill-allowed-data-modes.ts <table-name>"
+    "Usage: npx tsx scripts/backfill-allowed-visibilities.ts <table-name>"
   );
   console.error("");
   console.error("Examples:");
   console.error(
-    "  npx tsx scripts/backfill-allowed-data-modes.ts sc-dev-data-connections"
+    "  npx tsx scripts/backfill-allowed-visibilities.ts sc-dev-data-connections"
   );
   console.error(
-    "  npx tsx scripts/backfill-allowed-data-modes.ts sc-prod-data-connections"
+    "  npx tsx scripts/backfill-allowed-visibilities.ts sc-prod-data-connections"
   );
   console.error("");
   console.error("Environment variables:");
