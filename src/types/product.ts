@@ -53,7 +53,6 @@ export const ProductSchema = z
     account: AccountSchema.optional(),
     disabled: z.boolean(),
     featured: z.number(),
-
     search_text: z.string().optional(),
   })
   .openapi("Product");
@@ -66,7 +65,6 @@ export const ProductCreationRequestSchema = ProductSchema.omit({
   account: true,
   disabled: true,
   featured: true,
-
   metadata: true,
 }).openapi("ProductCreationRequest");
 

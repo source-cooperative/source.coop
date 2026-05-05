@@ -130,7 +130,6 @@ export async function createProduct(
     updated_at: new Date().toISOString(),
     disabled: false,
     featured: 0,
-
     metadata: {
       tags: [],
       primary_mirror: "aws-opendata-us-west-2",
