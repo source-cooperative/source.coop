@@ -36,7 +36,7 @@ export enum ProductVisibility {
   Restricted = "restricted",
 }
 
-export const ProductVisibilitySchema = z.nativeEnum(ProductVisibility);
+export const ProductVisibilitySchema = z.nativeEnum(ProductVisibility).openapi("ProductVisibility");
 
 // Main product interface matching new schema
 // Product is the main product entity, including metadata and optional account
