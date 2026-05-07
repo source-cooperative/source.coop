@@ -97,7 +97,7 @@ const getIframeAttributes = async (
       };
     case "json":
       return {
-        src: `https://source-cooperative.github.io/viewer-json-eo/?url=${url}`,
+        src: `https://source-cooperative.github.io/json-viewer/?url=${url}`,
       };
     default:
       return null;
