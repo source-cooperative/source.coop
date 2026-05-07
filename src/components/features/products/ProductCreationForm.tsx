@@ -105,6 +105,14 @@ export function ProductCreationForm({
         { value: "restricted", label: "Restricted" },
       ],
     },
+    {
+      label: "Tags",
+      name: "tags" as keyof Product,
+      type: "text",
+      required: false,
+      description: "Comma-separated list of tags",
+      placeholder: "climate, geospatial, satellite",
+    },
   ];
 
   return (
@@ -122,11 +130,12 @@ export function ProductCreationForm({
       }
       initialValues={
         isEditMode
-          ? {
+          ? ({
               title: product.title,
               description: product.description,
               visibility: product.visibility,
-            }
+              tags: product.metadata?.tags?.join(", ") || "",
+            } as Partial<Product>)
           : undefined
       }
     />
