@@ -67,3 +67,16 @@ export const fileSourceUrl = ({ account_id, product_id, object_path }: {
   object_path: string
 }) =>
   `${CONFIG.storage.endpoint}/${account_id}/${product_id}/${object_path}`;
+
+// Admin URLs
+export const adminDataConnectionsUrl = () => "/admin/data-connections";
+export const adminDataConnectionCreateUrl = () =>
+  "/admin/data-connections/create";
+export const adminDataConnectionEditUrl = (data_connection_id: string) =>
+  `/admin/data-connections/${data_connection_id}`;
+
+// Product data connections edit URL
+export const editProductDataConnectionsUrl = (
+  account_id: string,
+  product_id: string
+) => `/edit/product/${account_id}/${product_id}/data-connections`;

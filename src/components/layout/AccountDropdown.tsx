@@ -10,9 +10,10 @@ import {
   editAccountProfileUrl,
   newOrganizationUrl,
   newProductUrl,
+  adminDataConnectionsUrl,
 } from "@/lib";
 import { DropdownSection } from "./DropdownSection";
-import { isAuthorized } from "@/lib/api/authz";
+import { isAuthorized, isAdmin } from "@/lib/api/authz";
 import { Actions, UserSession } from "@/types";
 import { ProfileAvatar } from "@/components/features/profiles/ProfileAvatar";
 import { UploadBadge } from "@/components/features/uploader/UploadBadge";
@@ -99,6 +100,16 @@ export function AccountDropdown({ session }: { session: UserSession }) {
               href: newProductUrl(),
               children: "Create Product",
               condition: isAuthorized(session, "*", Actions.CreateRepository),
+            },
+          ]}
+        />
+        <DropdownSection
+          label="Admin"
+          items={[
+            {
+              href: adminDataConnectionsUrl(),
+              children: "Data Connections",
+              condition: isAdmin(session),
             },
           ]}
         />
