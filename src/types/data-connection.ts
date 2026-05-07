@@ -11,13 +11,8 @@
 
 import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
 import { z } from "zod";
-import {
-  MIN_ID_LENGTH,
-  MAX_ID_LENGTH,
-  ID_REGEX,
-  RepositoryDataMode,
-  AccountFlags,
-} from "./shared";
+import { MIN_ID_LENGTH, MAX_ID_LENGTH, ID_REGEX, AccountFlags } from "./shared";
+import { ProductVisibility } from "./product";
 
 extendZodWithOpenApi(z);
 
@@ -161,7 +156,8 @@ export const DataConnectionSchema = z
     name: z.string(),
     prefix_template: z.optional(z.string()),
     read_only: z.boolean(),
-    allowed_data_modes: z.array(z.nativeEnum(RepositoryDataMode)),
+    // NOTE: allowed_visibilities is currently unenforced
+    allowed_visibilities: z.array(z.nativeEnum(ProductVisibility)),
     required_flag: z.optional(z.nativeEnum(AccountFlags)),
     details: DataConnnectionDetailsSchema,
     authentication: z.optional(DataConnectionAuthenticationSchema),

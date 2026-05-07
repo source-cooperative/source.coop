@@ -6,7 +6,7 @@ import {
   ProductCreationRequestSchema,
   type Product,
   type ProductCreationRequest,
-  ProductDataMode,
+  type ProductVisibility,
 } from "@/types";
 import { getPageSession, LOGGER } from "@/lib";
 import { FormState } from "@/components/core/DynamicForm";
@@ -25,7 +25,9 @@ export interface PaginatedProductsResult {
 
 export async function getFeaturedProducts(limit = 10): Promise<Product[]> {
   try {
-    const result = await productsTable.listPublic(limit, undefined, { featuredOnly: true });
+    const result = await productsTable.listPublic(limit, undefined, {
+      featuredOnly: true,
+    });
     return productsTable.attachAccounts(result.products);
   } catch (error) {
     LOGGER.error("Failed to fetch featured products", {
@@ -128,7 +130,6 @@ export async function createProduct(
     updated_at: new Date().toISOString(),
     disabled: false,
     featured: 0,
-    data_mode: ProductDataMode.Open,
     metadata: {
       tags: [],
       primary_mirror: "aws-opendata-us-west-2",
@@ -137,10 +138,6 @@ export async function createProduct(
           storage_type: "s3",
           connection_id: "aws-opendata-us-west-2",
           prefix: `${validatedFields.data.account_id}/${validatedFields.data.product_id}/`,
-          config: {
-            region: "us-west-2",
-            bucket: "aws-opendata-us-west-2",
-          },
           is_primary: true,
         },
       },
@@ -222,10 +219,7 @@ export async function updateProduct(
     // Extract form data
     const title = formData.get("title") as string;
     const description = formData.get("description") as string;
-    const visibility = formData.get("visibility") as
-      | "public"
-      | "unlisted"
-      | "restricted";
+    const visibility = formData.get("visibility") as ProductVisibility;
 
     // Build update data
     const updateData = {
