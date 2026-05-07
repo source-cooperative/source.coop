@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.3.0](https://github.com/source-cooperative/source.coop/compare/v1.2.0...v1.3.0) (2026-05-07)
+
+
+### Features
+
+* add ROR ID field to organization profile edit form ([#280](https://github.com/source-cooperative/source.coop/issues/280)) ([00f3ff8](https://github.com/source-cooperative/source.coop/commit/00f3ff8c22a91bc0347e75e20a77f8edc6645964))
+* add schema.org Dataset metadata to product pages ([#281](https://github.com/source-cooperative/source.coop/issues/281)) ([fb1efa5](https://github.com/source-cooperative/source.coop/commit/fb1efa5c8549c2bc6fa46c64b0a9e094697b9671))
+* add schema.org Person/Organization metadata to account pages ([#282](https://github.com/source-cooperative/source.coop/issues/282)) ([dbf19c7](https://github.com/source-cooperative/source.coop/commit/dbf19c7100d34807739ebe64f1103f3ffed728e8))
+* viewer for STAC & JSON ([#200](https://github.com/source-cooperative/source.coop/issues/200)) ([476d3d2](https://github.com/source-cooperative/source.coop/commit/476d3d27fe565e805508ecea1bf17984368ec1d9))
+
 ## [1.2.0](https://github.com/source-cooperative/source.coop/compare/v1.1.1...v1.2.0) (2026-04-01)
 
 
