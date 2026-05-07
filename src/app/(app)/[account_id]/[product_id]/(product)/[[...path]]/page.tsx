@@ -3,9 +3,9 @@ import { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import DirectoryListLoading from "./loading";
-import { LOGGER, storage, dataConnectionsTable, productsTable } from "@/lib";
+import { CONFIG, LOGGER, storage, dataConnectionsTable, productsTable } from "@/lib";
 import { DataConnection, ProductMirror } from "@/types";
-import { DirectoryList } from "@/components/features/products/object-browser/DirectoryList";
+import { ProductFileBrowser } from "@/components/features/products/object-browser/ProductFileBrowser";
 import { ObjectSummary } from "@/components/features/products/object-browser/ObjectSummary";
 import {
   ObjectPreview,
@@ -36,12 +36,42 @@ export default async function ProductPathPage({ params }: PageProps) {
   let { account_id, product_id, path } = await params;
   path = path?.map((p) => decodeURIComponent(p)) || [];
   const objectPath = path.join("/");
-  const { product, objectsList, objectInfo, connectionDetails } =
-    await fetchProduct(account_id, product_id, objectPath);
 
-  return (
-    <Suspense fallback={<DirectoryListLoading />}>
-      {objectInfo?.type === "file" ? (
+  const product = await productsTable.fetchById(account_id, product_id);
+  if (!product) {
+    notFound();
+  }
+
+  // For non-root paths, check if this is a file via HEAD request.
+  // If the HEAD succeeds, render the file view (ObjectSummary + ObjectPreview).
+  // If it fails or returns null, fall through to the directory listing.
+  if (objectPath) {
+    const objectInfo = await storage
+      .getObjectInfo({ account_id, product_id, object_path: objectPath })
+      .catch((error) => {
+        LOGGER.debug("HEAD request failed, treating as directory", {
+          operation: "ProductPathPage",
+          context: "object info lookup",
+          metadata: { account_id, product_id, objectPath, error: String(error) },
+        });
+        return null;
+      });
+
+    if (objectInfo?.type === "file") {
+      let connectionDetails:
+        | { primaryMirror: ProductMirror; dataConnection: DataConnection }
+        | undefined;
+
+      const primaryMirror =
+        product.metadata.mirrors[product.metadata.primary_mirror];
+      const dataConnection = await dataConnectionsTable.fetchById(
+        primaryMirror.connection_id,
+      );
+      if (dataConnection) {
+        connectionDetails = { primaryMirror, dataConnection };
+      }
+
+      return (
         <>
           <ObjectSummary
             product={product}
@@ -56,98 +86,20 @@ export default async function ProductPathPage({ params }: PageProps) {
             />
           </Suspense>
         </>
-      ) : (
-        <DirectoryList
-          product={product}
-          objects={objectsList.filter(
-            // Exclude the current directory object
-            (obj) => obj.path.replace(/\/$/, "") !== objectPath,
-          )}
-          prefix={objectPath}
-        />
-      )}
-    </Suspense>
-  );
-}
-
-export async function fetchProduct(
-  account_id: string,
-  product_id: string,
-  object_path: string,
-) {
-  // 1. Get and await params
-  const isRoot = !object_path;
-
-  // 2. Run concurrent requests for better performance
-  const [product, objectsList, objectInfo] = await Promise.allSettled([
-    // Always fetch product info
-    productsTable.fetchById(account_id, product_id),
-
-    // Always fetch objects list for directory browsing
-    storage
-      .listObjects({
-        account_id,
-        product_id,
-        object_path,
-        prefix:
-          object_path && !object_path?.endsWith("/")
-            ? `${object_path}/`
-            : object_path,
-        delimiter: "/",
-      })
-      .then((result) => result.objects || []),
-
-    // If looking at a path, fetch object info for the current path
-    !isRoot &&
-      storage.getObjectInfo({
-        account_id,
-        product_id,
-        object_path,
-      }),
-  ]);
-
-  // Handle product fetch failure
-  if (product.status === "rejected" || !product.value) {
-    notFound();
-  }
-
-  // Extract values from settled promises
-  const selectedObject =
-    objectInfo.status === "fulfilled" ? objectInfo.value : undefined;
-
-  let connectionDetails:
-    | {
-        primaryMirror: ProductMirror;
-        dataConnection: DataConnection;
-      }
-    | undefined = undefined;
-
-  if (selectedObject) {
-    const primaryMirror =
-      product.value.metadata.mirrors[product.value.metadata.primary_mirror];
-    const dataConnection = await dataConnectionsTable.fetchById(
-      primaryMirror.connection_id,
-    );
-    if (!dataConnection) {
-      LOGGER.error("Data connection not found", {
-        operation: "ProductPathPage",
-        context: "data connection lookup",
-        metadata: {
-          connection_id: primaryMirror.connection_id,
-          primaryMirror,
-        },
-      });
-    } else {
-      connectionDetails = {
-        primaryMirror,
-        dataConnection,
-      };
+      );
     }
   }
-  return {
-    product: product.value,
-    objectsList: objectsList.status === "fulfilled" ? objectsList.value : [],
-    objectInfo: selectedObject || undefined,
-    connectionDetails,
-  };
+
+  // Directory listing — client-side via data proxy
+  return (
+    <Suspense fallback={<DirectoryListLoading />}>
+      <ProductFileBrowser
+        product={product}
+        account_id={account_id}
+        product_id={product_id}
+        prefix={objectPath}
+        endpoint={CONFIG.storage.endpoint || ""}
+      />
+    </Suspense>
+  );
 }

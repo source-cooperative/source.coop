@@ -4,10 +4,7 @@ import { ThemeProvider } from "@/styles/theme";
 import { SessionProvider } from "@ory/elements-react/client";
 import NextTopLoader from "nextjs-toploader";
 import { IBM_Plex_Sans } from "next/font/google";
-import {
-  S3CredentialsProvider,
-  UploadProvider,
-} from "@/components";
+import { S3CredentialsProvider, UploadProvider } from "@/components";
 import { metadata } from "./metadata";
 const ibmPlexSans = IBM_Plex_Sans({
   subsets: ["latin"],
