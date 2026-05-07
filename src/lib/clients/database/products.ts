@@ -68,6 +68,7 @@ export class ProductsTable extends BaseTable {
     products: Product[];
     lastEvaluatedKey: any;
   }> {
+    account_id = account_id.toLowerCase();
     const result = await this.client.send(
       new QueryCommand({
         TableName: this.table,
@@ -170,6 +171,8 @@ export class ProductsTable extends BaseTable {
     account_id: string,
     product_id: string
   ): Promise<Product | null> {
+    account_id = account_id.toLowerCase();
+    product_id = product_id.toLowerCase();
     try {
       const [result, account] = await Promise.all([
         this.client.send(

@@ -20,6 +20,7 @@ class AccountsTable extends BaseTable {
   model = "accounts";
 
   async fetchById(account_id: string): Promise<Account | null> {
+    account_id = account_id.toLowerCase();
     try {
       LOGGER.debug(`Trying to fetch account for ID`, {
         operation: "AccountsTable.fetchById",
@@ -60,8 +61,8 @@ class AccountsTable extends BaseTable {
   ): Promise<Account[]> {
     const accountBatches: Account[] = [];
 
-    // Remove duplicates
-    account_ids = [...new Set(account_ids)];
+    // Remove duplicates and normalize to lowercase
+    account_ids = [...new Set(account_ids.map((id) => id.toLowerCase()))];
 
     for (let i = 0; i < account_ids.length; i += batchSize) {
       const batch = account_ids.slice(i, i + batchSize);
