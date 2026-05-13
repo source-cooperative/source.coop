@@ -1,6 +1,7 @@
 import type { Product } from "@/types";
 import { accountUrl, productUrl } from "@/lib/urls";
 import { getBaseUrl } from "@/lib/baseUrl";
+import { serializeJsonLd } from "@/lib/jsonLd";
 
 export async function ProductSchemaMetadata({ product }: { product: Product }) {
   const account = product.account;
@@ -40,7 +41,7 @@ export async function ProductSchemaMetadata({ product }: { product: Product }) {
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaData) }}
+      dangerouslySetInnerHTML={{ __html: serializeJsonLd(schemaData) }}
     />
   );
 }
