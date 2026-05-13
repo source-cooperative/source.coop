@@ -98,6 +98,11 @@ const getIframeAttributes = async (
         src: `https://source-cooperative.github.io/zip-viewer/?url=${url}`,
         style: { border: "1px solid var(--gray-5)" },
       };
+    case "json":
+      return {
+        src: `https://source-cooperative.github.io/json-viewer/?url=${url}`,
+        style: { border: "none" },
+      };
     default:
       return null;
   }
