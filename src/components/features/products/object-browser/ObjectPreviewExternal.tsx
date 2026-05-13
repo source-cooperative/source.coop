@@ -68,9 +68,12 @@ const getIframeAttributes = async (
         src: `https://source-cooperative.github.io/csv-table/?iframe=true&url=${url}`,
         style: { border: "1px solid var(--gray-5)" },
       };
-    // TIFF is disabled until https://github.com/source-cooperative/source.coop/issues/221 is fixed.
-    // case "tif":
-    // case "tiff":
+    case "tif":
+    case "tiff":
+      return {
+        src: `https://source-cooperative.github.io/cog-viewer/?url=${url}`,
+        style: { border: "1px solid var(--gray-5)" },
+      };
     case "avif":
     case "bmp":
     case "gif":
