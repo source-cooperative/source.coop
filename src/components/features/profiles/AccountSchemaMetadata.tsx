@@ -1,6 +1,7 @@
 import type { Account } from "@/types";
 import { accountUrl } from "@/lib/urls";
 import { getBaseUrl } from "@/lib/baseUrl";
+import { serializeJsonLd } from "@/lib/jsonLd";
 
 export async function AccountSchemaMetadata({ account }: { account: Account }) {
   const baseUrl = await getBaseUrl();
@@ -42,12 +43,7 @@ export async function AccountSchemaMetadata({ account }: { account: Account }) {
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{
-        __html: JSON.stringify(schemaData)
-          .replace(/</g, "\\u003c")
-          .replace(/>/g, "\\u003e")
-          .replace(/&/g, "\\u0026"),
-      }}
+      dangerouslySetInnerHTML={{ __html: serializeJsonLd(schemaData) }}
     />
   );
 }
