@@ -79,6 +79,7 @@ const getIframeAttributes = async (
     case "gif":
     case "jpg":
     case "jpeg":
+    case "png":
     case "svg":
     case "webp":
       return {
