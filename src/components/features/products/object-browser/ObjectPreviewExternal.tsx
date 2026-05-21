@@ -86,6 +86,11 @@ const getIframeAttributes = async (
         src: `https://source-cooperative.github.io/image-viewer/?url=${url}`,
         style: { border: "1px solid var(--gray-5)" },
       };
+    case "pdf":
+      return {
+        src: `https://source-cooperative.github.io/pdf-viewer/?url=${url}`,
+        style: { border: "1px solid var(--gray-5)" },
+      };
     case "glb":
     case "gltf":
     case "obj":
