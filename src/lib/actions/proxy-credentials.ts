@@ -107,9 +107,12 @@ async function getOryIdToken(identityId: string): Promise<string> {
     },
   );
   if (!loginAcceptResp.ok) {
-    throw new Error(
-      `Login accept failed: ${loginAcceptResp.status} ${await loginAcceptResp.text()}`,
-    );
+    const body = await loginAcceptResp.text();
+    LOGGER.error("Login accept failed", {
+      operation: "getOryIdToken",
+      metadata: { status: loginAcceptResp.status, body },
+    });
+    throw new Error(`Login accept failed: ${loginAcceptResp.status}`);
   }
   const { redirect_to: loginRedirect } =
     (await loginAcceptResp.json()) as { redirect_to: string };
@@ -166,9 +169,12 @@ async function getOryIdToken(identityId: string): Promise<string> {
     }).toString(),
   });
   if (!tokenResp.ok) {
-    throw new Error(
-      `Token exchange failed: ${tokenResp.status} ${await tokenResp.text()}`,
-    );
+    const body = await tokenResp.text();
+    LOGGER.error("Token exchange failed", {
+      operation: "getOryIdToken",
+      metadata: { status: tokenResp.status, body },
+    });
+    throw new Error(`Token exchange failed: ${tokenResp.status}`);
   }
   const tokenBody = (await tokenResp.json()) as { id_token?: string };
   if (!tokenBody.id_token) {
@@ -205,9 +211,12 @@ async function acceptConsentAndGetCode(
     },
   );
   if (!consentAcceptResp.ok) {
-    throw new Error(
-      `Consent accept failed: ${consentAcceptResp.status} ${await consentAcceptResp.text()}`,
-    );
+    const body = await consentAcceptResp.text();
+    LOGGER.error("Consent accept failed", {
+      operation: "acceptConsentAndGetCode",
+      metadata: { status: consentAcceptResp.status, body },
+    });
+    throw new Error(`Consent accept failed: ${consentAcceptResp.status}`);
   }
   const { redirect_to: consentRedirect } =
     (await consentAcceptResp.json()) as { redirect_to: string };
