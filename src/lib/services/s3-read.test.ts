@@ -18,18 +18,21 @@ import { S3Client } from "@aws-sdk/client-s3";
 describe("S3ReadClient", () => {
   beforeEach(() => { mockSend.mockReset(); (S3Client as jest.Mock).mockClear(); });
 
-  test("uses no-op signer when no credentials", () => {
+  test("uses no-auth scheme when no credentials", () => {
     new S3ReadClient({ endpoint: "https://data.source.coop" });
     const config = (S3Client as jest.Mock).mock.calls[0][0];
-    expect(config.signer).toBeDefined();
     expect(config.forcePathStyle).toBe(true);
+    expect(config.credentials).toBeUndefined();
+    expect(config.httpAuthSchemes).toHaveLength(1);
+    expect(config.httpAuthSchemes[0].schemeId).toBe("aws.auth#sigv4");
+    expect(typeof config.httpAuthSchemes[0].signer.sign).toBe("function");
   });
 
   test("uses credentials when provided", () => {
     new S3ReadClient({ endpoint: "https://data.source.coop", credentials: { accessKeyId: "A", secretAccessKey: "S", sessionToken: "T", expiration: "2026-04-10T13:00:00Z" } });
     const config = (S3Client as jest.Mock).mock.calls[0][0];
     expect(config.credentials).toMatchObject({ accessKeyId: "A", secretAccessKey: "S", sessionToken: "T" });
-    expect(config.signer).toBeUndefined();
+    expect(config.httpAuthSchemes).toBeUndefined();
   });
 
   test("listObjects parses response", async () => {

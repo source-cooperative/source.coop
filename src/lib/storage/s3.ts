@@ -7,6 +7,7 @@ import {
   DeleteObjectCommand,
   HeadObjectCommand,
 } from "@aws-sdk/client-s3";
+import { NoAuthSigner } from "@smithy/core";
 import {
   StorageClient,
   StorageConfig,
@@ -33,12 +34,20 @@ export class S3StorageClient implements StorageClient {
       forcePathStyle: true,
     };
 
-    // When no credentials are provided, use a no-op signer so requests
-    // are sent unsigned. The data proxy treats unsigned requests as anonymous.
+    // When no credentials are provided, send unsigned requests. The data
+    // proxy treats unsigned requests as anonymous. The top-level `signer`
+    // option alone is not sufficient: the SDK's auth middleware resolves
+    // credentials before signing, so when no credentials are configured the
+    // default credential provider chain runs and may sign the request with
+    // unrelated environment credentials (or throw "Credential is missing").
     if (!config.credentials) {
-      clientConfig.signer = {
-        sign: async (request: any) => request,
-      };
+      clientConfig.httpAuthSchemes = [
+        {
+          schemeId: "aws.auth#sigv4",
+          identityProvider: () => async () => ({}),
+          signer: new NoAuthSigner(),
+        },
+      ];
     }
 
     this.s3Client = new S3Client(clientConfig);

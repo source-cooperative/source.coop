@@ -4,6 +4,7 @@ import {
   GetObjectCommand,
   type ListObjectsV2CommandInput,
 } from "@aws-sdk/client-s3";
+import { NoAuthSigner } from "@smithy/core";
 import type { ProxyCredentials } from "@/lib/actions/proxy-credentials";
 
 export interface S3ReadClientConfig {
@@ -55,7 +56,18 @@ export class S3ReadClient {
         sessionToken: config.credentials.sessionToken,
       };
     } else {
-      clientConfig.signer = { sign: async (request: any) => request };
+      // For anonymous access, replace the default SigV4 auth scheme with a
+      // no-auth scheme. The top-level `signer` option alone is not sufficient:
+      // the SDK's auth middleware resolves credentials before signing, and the
+      // browser's default credential provider rejects with "Credential is
+      // missing" if no credentials are configured.
+      clientConfig.httpAuthSchemes = [
+        {
+          schemeId: "aws.auth#sigv4",
+          identityProvider: () => async () => ({}),
+          signer: new NoAuthSigner(),
+        },
+      ];
     }
 
     this.client = new S3Client(clientConfig);
