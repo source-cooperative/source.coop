@@ -76,7 +76,10 @@ export const CONFIG = {
 
   // Environment configuration
   environment: {
-    isDevelopment: (process.env.STAGE || "dev") !== "prod",
+    // Local development only — Vercel preview and production both set
+    // NODE_ENV=production. Use isProduction to distinguish prod from staging.
+    isDevelopment: process.env.NODE_ENV === "development",
+    isProduction: (process.env.STAGE || "dev") === "prod",
     stage: process.env.STAGE || "dev",
   },
 } as const;
