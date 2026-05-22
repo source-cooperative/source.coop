@@ -2,10 +2,12 @@ import { Suspense } from "react";
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 
-import DirectoryListLoading from "./loading";
 import { CONFIG, LOGGER, storage, dataConnectionsTable, productsTable } from "@/lib";
-import { DataConnection, ProductMirror } from "@/types";
-import { ProductFileBrowser } from "@/components/features/products/object-browser/ProductFileBrowser";
+import { DataConnection, ProductMirror, ProductObject } from "@/types";
+import { S3ReadClient } from "@/lib/services/s3-read";
+import { ensureProxyCredentials } from "@/lib/services/proxy-credentials-cache";
+import { getPageSession } from "@/lib/api/utils";
+import { DirectoryList } from "@/components/features/products/object-browser/DirectoryList";
 import { ObjectSummary } from "@/components/features/products/object-browser/ObjectSummary";
 import {
   ObjectPreview,
@@ -90,16 +92,82 @@ export default async function ProductPathPage({ params }: PageProps) {
     }
   }
 
-  // Directory listing — client-side via data proxy
+  // Directory listing — server-side via the data proxy, using the user's
+  // cached proxy credentials when authenticated.
+  const session = await getPageSession();
+  const creds = session?.identity_id
+    ? await ensureProxyCredentials(session.identity_id).catch((error) => {
+        LOGGER.error("Failed to obtain proxy credentials", {
+          operation: "ProductPathPage",
+          context: "proxy credentials",
+          metadata: { identity_id: session.identity_id, error: String(error) },
+        });
+        return undefined;
+      })
+    : undefined;
+
+  const s3 = new S3ReadClient({
+    endpoint: CONFIG.storage.endpoint || "",
+    credentials: creds,
+  });
+
+  const s3Prefix = objectPath
+    ? `${product_id}/${objectPath}/`
+    : `${product_id}/`;
+  const listing = await s3.listObjects({ bucket: account_id, prefix: s3Prefix });
+
+  // If the listing is empty and we have a prefix, this is likely a file path
+  // whose HEAD failed earlier (e.g. transient error). Fall back to listing
+  // the parent directory so the user lands on something useful.
+  let effectivePrefix = objectPath;
+  let effectiveListing = listing;
+  if (
+    effectiveListing.objects.length === 0 &&
+    effectiveListing.directories.length === 0 &&
+    effectivePrefix
+  ) {
+    const parent = effectivePrefix.includes("/")
+      ? effectivePrefix.substring(0, effectivePrefix.lastIndexOf("/"))
+      : "";
+    const parentS3Prefix = parent ? `${product_id}/${parent}/` : `${product_id}/`;
+    effectiveListing = await s3.listObjects({
+      bucket: account_id,
+      prefix: parentS3Prefix,
+    });
+    effectivePrefix = parent;
+  }
+
+  const objects: ProductObject[] = [
+    ...effectiveListing.objects.map((obj) => ({
+      id: obj.key,
+      product_id,
+      path: obj.key.replace(`${product_id}/`, ""),
+      size: obj.size,
+      type: "file" as const,
+      created_at: obj.lastModified,
+      updated_at: obj.lastModified,
+      checksum: obj.etag,
+    })),
+    ...effectiveListing.directories.map((dir) => ({
+      id: dir,
+      product_id,
+      path: dir.replace(`${product_id}/`, ""),
+      size: 0,
+      type: "directory" as const,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      checksum: "",
+      isDirectory: true,
+    })),
+  ];
+
   return (
-    <Suspense fallback={<DirectoryListLoading />}>
-      <ProductFileBrowser
-        product={product}
-        account_id={account_id}
-        product_id={product_id}
-        prefix={objectPath}
-        endpoint={CONFIG.storage.endpoint || ""}
-      />
-    </Suspense>
+    <DirectoryList
+      product={product}
+      objects={objects.filter(
+        (obj) => obj.path.replace(/\/$/, "") !== effectivePrefix,
+      )}
+      prefix={effectivePrefix}
+    />
   );
 }
