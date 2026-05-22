@@ -100,7 +100,8 @@ export default async function ProductPathPage({ params }: PageProps) {
         LOGGER.error("Failed to obtain proxy credentials", {
           operation: "ProductPathPage",
           context: "proxy credentials",
-          metadata: { identity_id: session.identity_id, error: String(error) },
+          error,
+          metadata: { identity_id: session.identity_id },
         });
         return undefined;
       })
