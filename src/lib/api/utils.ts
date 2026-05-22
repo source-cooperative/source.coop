@@ -65,6 +65,10 @@ export async function getApiSession(
       audience,
     );
     if (oidcSession) return oidcSession;
+    // An explicit but invalid Authorization header must not fall back to
+    // cookie auth — that would let a bogus Bearer token silently succeed
+    // via the session cookie.
+    return null;
   } else {
     LOGGER.debug(
       "No Authorization header found, falling back to cookie-based authentication",
