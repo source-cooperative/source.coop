@@ -51,24 +51,31 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ account_id: string; repository_id: string }> }
 ) {
-  const session = await getApiSession(request);
-  const { account_id, repository_id } = await params;
-  const repository = await productsTable.fetchById(account_id, repository_id);
-  if (!repository) {
+  try {
+    const session = await getApiSession(request);
+    const { account_id, repository_id } = await params;
+    const repository = await productsTable.fetchById(account_id, repository_id);
+    if (!repository) {
+      return NextResponse.json(
+        {
+          error: `Repository with ID ${account_id}/${repository_id} not found`,
+        },
+        { status: StatusCodes.NOT_FOUND },
+      );
+    }
+    if (!isAuthorized(session, repository, Actions.GetRepository)) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: StatusCodes.UNAUTHORIZED },
+      );
+    }
+    return NextResponse.json(repository, { status: StatusCodes.OK });
+  } catch (err: any) {
     return NextResponse.json(
-      {
-        error: `Repository with ID ${account_id}/${repository_id} not found`,
-      },
-      { status: StatusCodes.NOT_FOUND },
+      { error: err.message || "Internal server error" },
+      { status: StatusCodes.INTERNAL_SERVER_ERROR },
     );
   }
-  if (!isAuthorized(session, repository, Actions.GetRepository)) {
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: StatusCodes.UNAUTHORIZED },
-    );
-  }
-  return NextResponse.json(repository, { status: StatusCodes.OK });
 }
 
 /**
