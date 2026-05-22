@@ -14,6 +14,9 @@ let jwks: ReturnType<typeof createRemoteJWKSet> | null = null;
 
 /** @internal Exposed for testing — override to supply a local JWKS resolver. */
 export function _setJwks(fn: ReturnType<typeof createRemoteJWKSet> | null) {
+  if (process.env.NODE_ENV !== "test") {
+    throw new Error("_setJwks is only available in test mode");
+  }
   jwks = fn;
 }
 
