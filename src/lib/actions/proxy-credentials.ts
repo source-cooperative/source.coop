@@ -131,6 +131,17 @@ async function getOryIdToken(identityId: string): Promise<string> {
       const location = postLoginResp.headers.get("location");
       if (location) {
         const resolvedUrl = new URL(location, loginRedirect).toString();
+        // Confirm the redirect stays within Hydra. If Hydra is
+        // misconfigured (or compromised) and returns a Location pointing
+        // elsewhere, forwarding the cookie jar would leak auth state to
+        // an unintended host.
+        const resolvedOrigin = new URL(resolvedUrl).origin;
+        const expectedOrigin = new URL(backendUrl).origin;
+        if (resolvedOrigin !== expectedOrigin) {
+          throw new Error(
+            `Unexpected redirect to untrusted host: ${resolvedOrigin}`,
+          );
+        }
         const followResp = await fetchWithCookies(resolvedUrl, cookieJar, {
           redirect: "manual",
         });
