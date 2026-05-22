@@ -1,7 +1,6 @@
 import {
   S3Client,
   ListObjectsV2Command,
-  GetObjectCommand,
   type ListObjectsV2CommandInput,
 } from "@aws-sdk/client-s3";
 import { NoAuthSigner } from "@smithy/core";
@@ -95,11 +94,5 @@ export class S3ReadClient {
       isTruncated: response.IsTruncated ?? false,
       nextContinuationToken: response.NextContinuationToken,
     };
-  }
-
-  async getObject(bucket: string, key: string): Promise<Uint8Array> {
-    const response = await this.client.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
-    if (!response.Body) throw new Error("S3 response body is empty");
-    return response.Body.transformToByteArray();
   }
 }
