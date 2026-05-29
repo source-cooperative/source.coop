@@ -57,18 +57,11 @@ RESET_TABLES=true docker compose up
 
 ## Contributing
 
-See [Development Guidelines](docs/development/coding-standards.md) for detailed information about contributing to the project.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed information about contributing to the project.
 
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-### Development Guidelines
-
-- Follow the patterns outlined in `CURSOR_RULES.md`
-- Components use Radix UI for consistent theming
-- Pages follow Next.js 13+ App Router conventions
-- TypeScript is used throughout the project
 
 ### Available Scripts
 
