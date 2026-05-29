@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   Box,
   Button,
@@ -23,11 +24,22 @@ export default function ProductError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const router = useRouter();
+
   useEffect(() => {
     // Surface the error in the browser console for debugging; the full
     // server-side error (with stack) is already in the server logs.
     console.error(error);
   }, [error]);
+
+  // reset() alone just re-renders the boundary with the same (cached) server
+  // payload, so a server-data error throws again immediately. Refreshing the
+  // route first invalidates that cache and genuinely re-fetches, so the retry
+  // actually re-runs the failed proxy call.
+  const retry = () => {
+    router.refresh();
+    reset();
+  };
 
   return (
     <Box mt="4">
@@ -46,7 +58,7 @@ export default function ProductError({
         </Text>
       )}
       <Flex mt="3">
-        <Button variant="soft" onClick={() => reset()}>
+        <Button variant="soft" onClick={retry}>
           Try again
         </Button>
       </Flex>
