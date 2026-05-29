@@ -13,10 +13,6 @@
           "storage_type": "s3",
           "connection_id": "primary-data-connection",
           "prefix": "create-repositories-user/regular-user-repo-id/",
-          "config": {
-            "region": "us-east-1",
-            "bucket": "source-coop-data"
-          },
           "is_primary": true
         }
       },
@@ -25,7 +21,6 @@
       "roles": {}
     },
     "disabled": false,
-    "data_mode": "open",
     "featured": 0
   },
   {
@@ -42,10 +37,6 @@
           "storage_type": "s3",
           "connection_id": "primary-data-connection",
           "prefix": "organization/org-repo-id/",
-          "config": {
-            "region": "us-east-1",
-            "bucket": "source-coop-data"
-          },
           "is_primary": true
         }
       },
@@ -54,7 +45,6 @@
       "roles": {}
     },
     "disabled": false,
-    "data_mode": "open",
     "featured": 0
   },
   {
@@ -71,10 +61,6 @@
           "storage_type": "s3",
           "connection_id": "primary-data-connection",
           "prefix": "organization/disabled-org-repo-id/",
-          "config": {
-            "region": "us-east-1",
-            "bucket": "source-coop-data"
-          },
           "is_primary": true
         }
       },
@@ -83,7 +69,6 @@
       "roles": {}
     },
     "disabled": true,
-    "data_mode": "open",
     "featured": 0
   },
   {
@@ -100,10 +85,6 @@
           "storage_type": "s3",
           "connection_id": "primary-data-connection",
           "prefix": "organization/unlisted-org-repo-id/",
-          "config": {
-            "region": "us-east-1",
-            "bucket": "source-coop-data"
-          },
           "is_primary": true
         }
       },
@@ -112,7 +93,6 @@
       "roles": {}
     },
     "disabled": false,
-    "data_mode": "open",
     "featured": 0
   },
   {
@@ -129,10 +109,6 @@
           "storage_type": "s3",
           "connection_id": "primary-data-connection",
           "prefix": "organization/featured-org-repo-id/",
-          "config": {
-            "region": "us-east-1",
-            "bucket": "source-coop-data"
-          },
           "is_primary": true
         }
       },
@@ -141,7 +117,6 @@
       "roles": {}
     },
     "disabled": false,
-    "data_mode": "open",
     "featured": 1
   },
   {
@@ -158,10 +133,6 @@
           "storage_type": "s3",
           "connection_id": "primary-data-connection",
           "prefix": "organization/private-org-repo-id/",
-          "config": {
-            "region": "us-east-1",
-            "bucket": "source-coop-data"
-          },
           "is_primary": true
         }
       },
@@ -170,36 +141,6 @@
       "roles": {}
     },
     "disabled": false,
-    "data_mode": "private",
-    "featured": 0
-  },
-  {
-    "product_id": "subscription-org-repo-id",
-    "account_id": "organization",
-    "title": "Subscription Repo",
-    "description": "Subscription Organization's product",
-    "created_at": "2020-01-01T00:00:00Z",
-    "updated_at": "2020-01-01T00:00:00Z",
-    "visibility": "restricted",
-    "metadata": {
-      "mirrors": {
-        "primary-data-connection": {
-          "storage_type": "s3",
-          "connection_id": "primary-data-connection",
-          "prefix": "organization/subscription-org-repo-id/",
-          "config": {
-            "region": "us-east-1",
-            "bucket": "source-coop-data"
-          },
-          "is_primary": true
-        }
-      },
-      "primary_mirror": "primary-data-connection",
-      "tags": ["mock", "subscription"],
-      "roles": {}
-    },
-    "disabled": false,
-    "data_mode": "subscription",
     "featured": 0
   },
   {
@@ -216,10 +157,6 @@
           "storage_type": "s3",
           "connection_id": "primary-data-connection",
           "prefix": "cholmes/overture/",
-          "config": {
-            "region": "us-east-1",
-            "bucket": "source-coop-data"
-          },
           "is_primary": true
         }
       },
@@ -228,7 +165,6 @@
       "roles": {}
     },
     "disabled": false,
-    "data_mode": "open",
     "featured": 10
   }
 ]

@@ -43,7 +43,6 @@ import {
   MembershipRole,
   MembershipState,
   Product,
-  ProductDataMode,
   UserSession,
 } from "@/types";
 import { match } from "ts-pattern";
@@ -680,8 +679,8 @@ function readRepositoryData(
     return false;
   }
 
-  // If the repository is open, everyone is authorized
-  if (product.data_mode === ProductDataMode.Open) {
+  // If the repository is public or unlisted, everyone is authorized
+  if (product.visibility === "public" || product.visibility === "unlisted") {
     return true;
   }
 
@@ -723,9 +722,8 @@ function getRepository(
     return false;
   }
 
-  // If the repository is open, everyone is authorized
-  // TODO: Right now we are treating unset data_mode as open
-  if (!product.data_mode || product.data_mode === ProductDataMode.Open) {
+  // If the repository is public or unlisted, everyone is authorized
+  if (product.visibility === "public" || product.visibility === "unlisted") {
     return true;
   }
 
@@ -767,12 +765,8 @@ function listRepository(
     return false;
   }
 
-  // If the repository is listed , everyone is authorized
-  if (
-    // product.state === RepositoryState.Listed &&
-    // product.data_mode === RepositoryDataMode.Open
-    product.visibility === "public"
-  ) {
+  // If the repository is public, everyone is authorized
+  if (product.visibility === "public") {
     return true;
   }
 

@@ -68,18 +68,27 @@ const getIframeAttributes = async (
         src: `https://source-cooperative.github.io/csv-table/?iframe=true&url=${url}`,
         style: { border: "1px solid var(--gray-5)" },
       };
-    // TIFF is disabled until https://github.com/source-cooperative/source.coop/issues/221 is fixed.
-    // case "tif":
-    // case "tiff":
+    case "tif":
+    case "tiff":
+      return {
+        src: `https://source-cooperative.github.io/cog-viewer/?url=${url}`,
+        style: { border: "1px solid var(--gray-5)" },
+      };
     case "avif":
     case "bmp":
     case "gif":
     case "jpg":
     case "jpeg":
+    case "png":
     case "svg":
     case "webp":
       return {
         src: `https://source-cooperative.github.io/image-viewer/?url=${url}`,
+        style: { border: "1px solid var(--gray-5)" },
+      };
+    case "pdf":
+      return {
+        src: `https://source-cooperative.github.io/pdf-viewer/?url=${url}`,
         style: { border: "1px solid var(--gray-5)" },
       };
     case "glb":
@@ -97,7 +106,7 @@ const getIframeAttributes = async (
       };
     case "json":
       return {
-        src: `https://source-cooperative.github.io/viewer-json-eo/?url=${url}`,
+        src: `https://source-cooperative.github.io/json-viewer/?url=${url}`,
         style: { border: "none" },
       };
     default:
