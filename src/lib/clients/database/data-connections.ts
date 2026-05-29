@@ -83,12 +83,12 @@ export class DataConnectionsTable extends BaseTable {
             data_connection_id: dataConnection.data_connection_id,
           },
           UpdateExpression:
-            "SET name = :name, prefix_template = :prefix_template, read_only = :read_only, allowed_data_modes = :allowed_data_modes, required_flag = :required_flag, details = :details, authentication = :authentication",
+            "SET name = :name, prefix_template = :prefix_template, read_only = :read_only, allowed_visibilities = :allowed_visibilities, required_flag = :required_flag, details = :details, authentication = :authentication",
           ExpressionAttributeValues: {
             ":name": dataConnection.name,
             ":prefix_template": dataConnection.prefix_template,
             ":read_only": dataConnection.read_only,
-            ":allowed_data_modes": dataConnection.allowed_data_modes,
+            ":allowed_visibilities": dataConnection.allowed_visibilities,
             ":required_flag": dataConnection.required_flag,
             ":details": dataConnection.details,
             ":authentication": dataConnection.authentication,

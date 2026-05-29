@@ -43,7 +43,6 @@ import {
   MembershipRole,
   MembershipState,
   Product,
-
   UserSession,
 } from "@/types";
 import { match } from "ts-pattern";
