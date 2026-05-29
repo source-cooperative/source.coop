@@ -5,64 +5,84 @@ import {
   getProxyCredentials,
   type ProxyCredentials,
 } from "@/lib/actions/proxy-credentials";
+import { getPageSession } from "@/lib/api/utils";
 import { encryptJson, decryptJson } from "./encrypted-cookie";
+import {
+  PROXY_CREDS_COOKIE_NAME,
+  isFresh,
+} from "./proxy-credentials-shared";
 
-const COOKIE_NAME = "sc_proxy_creds";
-const REFRESH_BEFORE_MS = 5 * 60 * 1000;
+export interface RefreshResult {
+  /** Whether the caller is authenticated and credentials are now available. */
+  ok: boolean;
+  /** ISO expiration of the current credentials, when `ok`. */
+  expiration?: string;
+  /** Whether this call minted (and wrote) new credentials. */
+  minted: boolean;
+}
 
 const inflight = new Map<string, Promise<ProxyCredentials>>();
 
-function isFresh(creds: ProxyCredentials): boolean {
-  return new Date(creds.expiration).getTime() - REFRESH_BEFORE_MS > Date.now();
-}
-
 /**
- * Returns proxy credentials for the current user, caching them in an
- * encrypted HTTP-only cookie keyed by the user's session. The cookie travels
- * with the user across Vercel function instances, so cold starts only re-mint
- * on the first request that arrives without a fresh cookie.
+ * Mints per-user proxy credentials and writes them to the encrypted
+ * `sc_proxy_creds` cookie.
  *
- * Concurrent calls from the same session on a single instance are coalesced
- * via an in-flight promise map.
+ * This is a Server Action: it MUST be invoked from a client component (or
+ * other action-phase context), never inline during a Server Component render.
+ * In Next.js, cookies are only mutable when `requestStore.phase === 'action'`;
+ * calling this during render would throw `ReadonlyRequestCookiesError`. The
+ * render path reads the cookie via `readProxyCredentials` instead.
+ *
+ * Returns early without minting when a fresh cookie already exists, and
+ * coalesces concurrent mints for the same user via an in-flight promise map.
  */
-export async function ensureProxyCredentials(
-  sessionId: string,
-): Promise<ProxyCredentials> {
+export async function refreshProxyCredentials(): Promise<RefreshResult> {
+  const session = await getPageSession();
+  if (!session?.identity_id) {
+    return { ok: false, minted: false };
+  }
+  const identityId = session.identity_id;
+
   const jar = await cookies();
-  const token = jar.get(COOKIE_NAME)?.value;
+  const token = jar.get(PROXY_CREDS_COOKIE_NAME)?.value;
   if (token) {
     const cached = await decryptJson<ProxyCredentials>(token);
-    if (cached && isFresh(cached)) return cached;
+    if (cached && isFresh(cached)) {
+      return { ok: true, expiration: cached.expiration, minted: false };
+    }
   }
 
-  const existing = inflight.get(sessionId);
-  if (existing) return existing;
+  const existing = inflight.get(identityId);
+  if (existing) {
+    const creds = await existing;
+    return { ok: true, expiration: creds.expiration, minted: true };
+  }
 
-  const promise = (async () => {
-    const creds = await getProxyCredentials();
-    const maxAge = Math.max(
-      0,
-      Math.floor((new Date(creds.expiration).getTime() - Date.now()) / 1000),
-    );
-    jar.set(COOKIE_NAME, await encryptJson(creds), {
-      httpOnly: true,
-      secure: true,
-      sameSite: "lax",
-      path: "/",
-      maxAge,
-    });
-    return creds;
-  })();
-
-  inflight.set(sessionId, promise);
+  const promise = getProxyCredentials();
+  inflight.set(identityId, promise);
+  let creds: ProxyCredentials;
   try {
-    return await promise;
+    creds = await promise;
   } finally {
-    inflight.delete(sessionId);
+    inflight.delete(identityId);
   }
+
+  const maxAge = Math.max(
+    0,
+    Math.floor((new Date(creds.expiration).getTime() - Date.now()) / 1000),
+  );
+  jar.set(PROXY_CREDS_COOKIE_NAME, await encryptJson(creds), {
+    httpOnly: true,
+    secure: true,
+    sameSite: "lax",
+    path: "/",
+    maxAge,
+  });
+
+  return { ok: true, expiration: creds.expiration, minted: true };
 }
 
 export async function clearCachedProxyCredentials(): Promise<void> {
   const jar = await cookies();
-  jar.delete(COOKIE_NAME);
+  jar.delete(PROXY_CREDS_COOKIE_NAME);
 }

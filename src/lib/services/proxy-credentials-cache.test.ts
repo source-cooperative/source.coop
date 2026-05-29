@@ -21,8 +21,13 @@ jest.mock("@/lib/actions/proxy-credentials", () => ({
   getProxyCredentials: () => mockGetProxyCredentials(),
 }));
 
+const mockGetPageSession = jest.fn();
+jest.mock("@/lib/api/utils", () => ({
+  getPageSession: () => mockGetPageSession(),
+}));
+
 import {
-  ensureProxyCredentials,
+  refreshProxyCredentials,
   clearCachedProxyCredentials,
 } from "./proxy-credentials-cache";
 import { encryptJson } from "./encrypted-cookie";
@@ -47,6 +52,8 @@ describe("proxy-credentials-cache", () => {
     mockSet.mockReset();
     mockDelete.mockReset();
     mockGetProxyCredentials.mockReset();
+    mockGetPageSession.mockReset();
+    mockGetPageSession.mockResolvedValue({ identity_id: "user-1" });
   });
 
   const freshCreds = (offsetMs = 60 * 60 * 1000) => ({
@@ -56,14 +63,28 @@ describe("proxy-credentials-cache", () => {
     expiration: new Date(Date.now() + offsetMs).toISOString(),
   });
 
+  test("returns ok:false without minting when unauthenticated", async () => {
+    mockGetPageSession.mockResolvedValue(null);
+
+    const result = await refreshProxyCredentials();
+
+    expect(result).toEqual({ ok: false, minted: false });
+    expect(mockGetProxyCredentials).not.toHaveBeenCalled();
+    expect(mockSet).not.toHaveBeenCalled();
+  });
+
   test("mints and sets cookie on cache miss", async () => {
     mockGet.mockReturnValue(undefined);
     const creds = freshCreds();
     mockGetProxyCredentials.mockResolvedValue(creds);
 
-    const result = await ensureProxyCredentials("user-1");
+    const result = await refreshProxyCredentials();
 
-    expect(result).toEqual(creds);
+    expect(result).toEqual({
+      ok: true,
+      expiration: creds.expiration,
+      minted: true,
+    });
     expect(mockGetProxyCredentials).toHaveBeenCalledTimes(1);
     expect(mockSet).toHaveBeenCalledTimes(1);
     const [name, , options] = mockSet.mock.calls[0];
@@ -77,29 +98,31 @@ describe("proxy-credentials-cache", () => {
     expect(options.maxAge).toBeGreaterThan(0);
   });
 
-  test("returns cached creds on cookie hit without re-minting", async () => {
+  test("returns early without minting when cookie is fresh", async () => {
     const creds = freshCreds();
-    const token = await encryptJson(creds);
-    mockGet.mockReturnValue({ value: token });
+    mockGet.mockReturnValue({ value: await encryptJson(creds) });
 
-    const result = await ensureProxyCredentials("user-2");
+    const result = await refreshProxyCredentials();
 
-    expect(result).toEqual(creds);
+    expect(result).toEqual({
+      ok: true,
+      expiration: creds.expiration,
+      minted: false,
+    });
     expect(mockGetProxyCredentials).not.toHaveBeenCalled();
     expect(mockSet).not.toHaveBeenCalled();
   });
 
   test("re-mints when cached creds are close to expiring", async () => {
-    const stale = freshCreds(60 * 1000); // expires in 1 min — within 5-min refresh window
-    const token = await encryptJson(stale);
-    mockGet.mockReturnValue({ value: token });
-
+    const stale = freshCreds(60 * 1000); // within the 5-min refresh window
+    mockGet.mockReturnValue({ value: await encryptJson(stale) });
     const fresh = freshCreds(60 * 60 * 1000);
     mockGetProxyCredentials.mockResolvedValue(fresh);
 
-    const result = await ensureProxyCredentials("user-3");
+    const result = await refreshProxyCredentials();
 
-    expect(result).toEqual(fresh);
+    expect(result.minted).toBe(true);
+    expect(result.expiration).toBe(fresh.expiration);
     expect(mockGetProxyCredentials).toHaveBeenCalledTimes(1);
   });
 
@@ -108,13 +131,13 @@ describe("proxy-credentials-cache", () => {
     const creds = freshCreds();
     mockGetProxyCredentials.mockResolvedValue(creds);
 
-    const result = await ensureProxyCredentials("user-4");
+    const result = await refreshProxyCredentials();
 
-    expect(result).toEqual(creds);
+    expect(result.minted).toBe(true);
     expect(mockGetProxyCredentials).toHaveBeenCalledTimes(1);
   });
 
-  test("coalesces concurrent mints for the same session", async () => {
+  test("coalesces concurrent mints for the same user", async () => {
     mockGet.mockReturnValue(undefined);
     let resolve!: (v: ReturnType<typeof freshCreds>) => void;
     mockGetProxyCredentials.mockReturnValue(
@@ -123,13 +146,14 @@ describe("proxy-credentials-cache", () => {
       }),
     );
 
-    const p1 = ensureProxyCredentials("user-5");
-    const p2 = ensureProxyCredentials("user-5");
+    const p1 = refreshProxyCredentials();
+    const p2 = refreshProxyCredentials();
 
     resolve(freshCreds());
     const [r1, r2] = await Promise.all([p1, p2]);
 
-    expect(r1).toEqual(r2);
+    expect(r1.ok).toBe(true);
+    expect(r2.ok).toBe(true);
     expect(mockGetProxyCredentials).toHaveBeenCalledTimes(1);
   });
 
