@@ -31,7 +31,7 @@ See the [README](README.md) for setup instructions (prerequisites, database, env
 
 AWS infrastructure is managed with [CDK](https://aws.amazon.com/cdk/) in the `deploy/` directory (DynamoDB, S3, CloudFront, IAM). [Vercel](https://vercel.com) hosts the Next.js frontend and API. Each deploy updates both CDK and Vercel in parallel.
 
-CDK is run alongside other deployment workflows via GitHub Actions (see `.github/workflows/`), following the same deployment patterns (with the exception of preview deplyments which are not supported).
+CDK is run alongside other deployment workflows via GitHub Actions (see `.github/workflows/`), following the same deployment patterns (with the exception of preview deployments which are not supported).
 
 > [!WARNING]
 > CDK can only apply one DynamoDB index change per deployment. If you need to add multiple indexes, split them across separate deployments.
