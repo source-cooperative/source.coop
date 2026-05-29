@@ -32,5 +32,10 @@ export async function GET(request: NextRequest) {
     );
   }
   const data = await response.json();
-  return NextResponse.redirect(data.logout_url, 302);
+  const res = NextResponse.redirect(data.logout_url, 302);
+  // Drop the cached proxy credentials so the next user on this browser starts
+  // clean. (A returned NextResponse ignores cookies().delete(), so expire it
+  // directly on the response.)
+  res.cookies.set("sc_proxy_creds", "", { path: "/", maxAge: 0 });
+  return res;
 }

@@ -5,8 +5,9 @@ import { notFound } from "next/navigation";
 import { CONFIG, LOGGER, storage, dataConnectionsTable, productsTable } from "@/lib";
 import { DataConnection, ProductMirror, ProductObject } from "@/types";
 import { S3ReadClient } from "@/lib/services/s3-read";
-import { ensureProxyCredentials } from "@/lib/services/proxy-credentials-cache";
+import { readProxyCredentials } from "@/lib/services/proxy-credentials-read";
 import { getPageSession } from "@/lib/api/utils";
+import { ProxyCredentialsGate } from "@/components/features/products/ProxyCredentialsGate";
 import { DirectoryList } from "@/components/features/products/object-browser/DirectoryList";
 import { ObjectSummary } from "@/components/features/products/object-browser/ObjectSummary";
 import {
@@ -92,20 +93,21 @@ export default async function ProductPathPage({ params }: PageProps) {
     }
   }
 
-  // Directory listing — server-side via the data proxy, using the user's
-  // cached proxy credentials when authenticated.
-  const session = await getPageSession();
-  const creds = session?.identity_id
-    ? await ensureProxyCredentials(session.identity_id).catch((error) => {
-        LOGGER.error("Failed to obtain proxy credentials", {
-          operation: "ProductPathPage",
-          context: "proxy credentials",
-          error,
-          metadata: { identity_id: session.identity_id },
-        });
-        return undefined;
-      })
-    : undefined;
+  // Directory listing — server-side via the data proxy. Read-only: we read the
+  // user's cached proxy credentials from the cookie but never mint here (minting
+  // writes a cookie, which is illegal during render). Public/unlisted data lists
+  // anonymously. For a restricted product with no fresh cookie, an authenticated
+  // user is sent through ProxyCredentialsGate, which mints (in an action) and
+  // refreshes the page so this render then finds the credentials.
+  const creds = await readProxyCredentials();
+  if (!creds && product.visibility === "restricted") {
+    const session = await getPageSession();
+    if (session?.identity_id) {
+      return <ProxyCredentialsGate />;
+    }
+    // Anonymous viewer of a restricted product: fall through to the anonymous
+    // (empty) listing.
+  }
 
   const s3 = new S3ReadClient({
     endpoint: CONFIG.storage.endpoint || "",
