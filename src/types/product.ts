@@ -26,6 +26,7 @@ const DOI_REGEX = /^10\.\d{4,9}\/[-._;()/:A-Za-z0-9]+$/;
 
 export const DoiSchema = z
   .string()
+  .trim()
   .regex(DOI_REGEX, "Invalid DOI (expected a bare DOI such as 10.1234/foo.bar)");
 
 // Metadata for a product, including mirrors, roles, and tags
