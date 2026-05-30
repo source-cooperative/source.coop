@@ -45,7 +45,7 @@ export class MembershipsTable extends BaseTable {
           },
         })
       );
-      return result.Items?.map((item: Membership) => item) ?? [];
+      return result.Items?.map((item) => item as Membership) ?? [];
     } catch (error) {
       this.logError("listByUser", error, { accountId });
       throw error;
@@ -102,7 +102,7 @@ export class MembershipsTable extends BaseTable {
         ...query,
       });
       const result = await this.cachedSend(command);
-      return result.Items?.map((item: Membership) => item) ?? [];
+      return result.Items?.map((item) => item as Membership) ?? [];
     } catch (error) {
       this.logError("listByAccount", error, {
         membershipAccountId,

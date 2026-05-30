@@ -2,6 +2,7 @@ import { CONFIG } from "@/lib/config";
 import { LOGGER } from "@/lib/logging";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
+import type { GetOutputType } from "@smithy/types";
 import {
   memoizedRead as defaultMemoizedRead,
   stableStringify,
@@ -9,7 +10,11 @@ import {
 } from "./request-cache";
 
 // Read commands carry their parameters on `.input`; we key the cache on the
-// command class name plus a stable serialization of those parameters.
+// command class name plus a stable serialization of those parameters. The bound
+// only needs those two fields — the real command output type (e.g.
+// `QueryCommandOutput`) is recovered from the concrete command via
+// `GetOutputType`, the same helper the client's own `send` overloads use, so
+// callers keep `.Items`/`.Item` typing through the cache.
 interface DynamoCommand {
   readonly input: unknown;
   readonly constructor: { name: string };
@@ -54,11 +59,15 @@ export abstract class BaseTable {
    * The resolved response is shared across callers within a request — treat it
    * as read-only and never mutate `result.Items`/`result.Item` in place.
    */
-  protected cachedSend<T extends Record<string, unknown> = Record<string, unknown>>(command: DynamoCommand): Promise<T> {
+  protected cachedSend<C extends DynamoCommand>(
+    command: C
+  ): Promise<GetOutputType<C>> {
     const key = `${command.constructor.name}:${stableStringify(command.input)}`;
     return this.memoizedRead(key, () =>
-      this.client.send(command as Parameters<DynamoDBDocumentClient["send"]>[0])
-    ) as Promise<T>;
+      this.client.send(
+        command as unknown as Parameters<DynamoDBDocumentClient["send"]>[0]
+      )
+    ) as Promise<GetOutputType<C>>;
   }
 
   protected logError(

@@ -52,7 +52,7 @@ export class APIKeysTable extends BaseTable {
       });
 
       const result = await this.cachedSend(command);
-      return result.Items?.map((item: APIKey) => item) ?? [];
+      return result.Items?.map((item) => item as APIKey) ?? [];
     } catch (error) {
       this.logError("listByAccount", error, { accountId, repositoryId });
       throw error;

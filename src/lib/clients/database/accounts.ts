@@ -110,8 +110,8 @@ export class AccountsTable extends BaseTable {
         })
       );
 
-      const account = result.Items?.filter((item: Account) =>
-        isIndividualAccount(item)
+      const account = result.Items?.filter((item) =>
+        isIndividualAccount(item as Account)
       )?.at(-1);
 
       if (!account) return null;
