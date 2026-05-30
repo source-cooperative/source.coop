@@ -71,6 +71,11 @@ export async function GET(
     }
     return NextResponse.json(repository, { status: StatusCodes.OK });
   } catch (err: any) {
+    LOGGER.error("Error in products GET", {
+      operation: "products.GET",
+      context: "product fetching",
+      error: err,
+    });
     return NextResponse.json(
       { error: err.message || "Internal server error" },
       { status: StatusCodes.INTERNAL_SERVER_ERROR },
