@@ -12,6 +12,16 @@ export interface ProxyCredentials {
 }
 
 /**
+ * Ory and STS error responses can include backend implementation and state
+ * details that are invaluable when debugging this multi-step flow locally or in
+ * staging, but that we don't want persisted in production logs. Returns the
+ * body for logging everywhere except production (where it is dropped).
+ */
+function debugBody(body: string): string | undefined {
+  return CONFIG.environment.isProduction ? undefined : body;
+}
+
+/**
  * Obtains temporary S3 credentials from the data proxy for the
  * currently authenticated user.
  *
@@ -38,7 +48,7 @@ export async function getProxyCredentials(): Promise<ProxyCredentials> {
     const body = await resp.text();
     LOGGER.error("STS exchange failed", {
       operation: "getProxyCredentials",
-      metadata: { status: resp.status, body },
+      metadata: { status: resp.status, body: debugBody(body) },
     });
     throw new Error(`STS exchange failed: ${resp.status}`);
   }
@@ -110,7 +120,7 @@ async function getOryIdToken(identityId: string): Promise<string> {
     const body = await loginAcceptResp.text();
     LOGGER.error("Login accept failed", {
       operation: "getOryIdToken",
-      metadata: { status: loginAcceptResp.status, body },
+      metadata: { status: loginAcceptResp.status, body: debugBody(body) },
     });
     throw new Error(`Login accept failed: ${loginAcceptResp.status}`);
   }
@@ -183,7 +193,7 @@ async function getOryIdToken(identityId: string): Promise<string> {
     const body = await tokenResp.text();
     LOGGER.error("Token exchange failed", {
       operation: "getOryIdToken",
-      metadata: { status: tokenResp.status, body },
+      metadata: { status: tokenResp.status, body: debugBody(body) },
     });
     throw new Error(`Token exchange failed: ${tokenResp.status}`);
   }
@@ -225,7 +235,7 @@ async function acceptConsentAndGetCode(
     const body = await consentAcceptResp.text();
     LOGGER.error("Consent accept failed", {
       operation: "acceptConsentAndGetCode",
-      metadata: { status: consentAcceptResp.status, body },
+      metadata: { status: consentAcceptResp.status, body: debugBody(body) },
     });
     throw new Error(`Consent accept failed: ${consentAcceptResp.status}`);
   }

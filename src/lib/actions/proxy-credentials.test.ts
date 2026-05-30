@@ -4,10 +4,18 @@
 import { getProxyCredentials } from "./proxy-credentials";
 
 jest.mock("@/lib/api/utils", () => ({ getPageSession: jest.fn() }));
+jest.mock("@/lib/logging", () => ({
+  LOGGER: {
+    error: jest.fn(),
+    warn: jest.fn(),
+    debug: jest.fn(),
+    info: jest.fn(),
+  },
+}));
 jest.mock("@/lib/config", () => ({
   CONFIG: {
     storage: { endpoint: "https://data.source.coop" },
-    environment: { isDevelopment: true },
+    environment: { isDevelopment: true, isProduction: false },
     auth: {
       accessToken: "test-admin-key",
       api: { backendUrl: "https://auth.source.coop" },
@@ -21,6 +29,8 @@ jest.mock("@/lib/config", () => ({
 }));
 
 import { getPageSession } from "@/lib/api/utils";
+import { LOGGER } from "@/lib/logging";
+import { CONFIG } from "@/lib/config";
 
 const STS_XML = `<AssumeRoleWithWebIdentityResponse><AssumeRoleWithWebIdentityResult><Credentials><AccessKeyId>AKIAREAD</AccessKeyId><SecretAccessKey>readsecret</SecretAccessKey><SessionToken>readsess</SessionToken><Expiration>2026-04-10T13:00:00Z</Expiration></Credentials></AssumeRoleWithWebIdentityResult></AssumeRoleWithWebIdentityResponse>`;
 
@@ -80,6 +90,8 @@ describe("getProxyCredentials", () => {
     fetchMock = jest.fn();
     global.fetch = fetchMock as unknown as typeof fetch;
     (getPageSession as jest.Mock).mockReset();
+    (LOGGER.error as jest.Mock).mockClear();
+    CONFIG.environment.isProduction = false;
   });
 
   test("throws when not authenticated", async () => {
@@ -291,5 +303,41 @@ describe("getProxyCredentials", () => {
       // 200 but malformed XML.
       .mockResolvedValueOnce(new Response("<Response>no creds</Response>", { status: 200 }));
     await expect(getProxyCredentials()).rejects.toThrow(/missing <Credentials>/);
+  });
+
+  test("logs the Ory error body outside production", async () => {
+    (getPageSession as jest.Mock).mockResolvedValue(AUTHED_SESSION);
+    fetchMock
+      .mockResolvedValueOnce(redirectResponse("/ui/login?login_challenge=lc"))
+      .mockResolvedValueOnce(new Response("backend detail", { status: 500 }));
+
+    await expect(getProxyCredentials()).rejects.toThrow(/Login accept failed/);
+
+    const call = (LOGGER.error as jest.Mock).mock.calls.find(
+      ([msg]) => msg === "Login accept failed",
+    );
+    expect(call).toBeDefined();
+    expect(call[1].metadata.status).toBe(500);
+    expect(call[1].metadata.body).toBe("backend detail");
+  });
+
+  test("omits the Ory error body from logs in production", async () => {
+    CONFIG.environment.isProduction = true;
+    (getPageSession as jest.Mock).mockResolvedValue(AUTHED_SESSION);
+    fetchMock
+      .mockResolvedValueOnce(redirectResponse("/ui/login?login_challenge=lc"))
+      .mockResolvedValueOnce(
+        new Response("super secret backend detail", { status: 500 }),
+      );
+
+    await expect(getProxyCredentials()).rejects.toThrow(/Login accept failed/);
+
+    const call = (LOGGER.error as jest.Mock).mock.calls.find(
+      ([msg]) => msg === "Login accept failed",
+    );
+    expect(call).toBeDefined();
+    // Status is still logged for diagnostics, but the raw body is dropped.
+    expect(call[1].metadata.status).toBe(500);
+    expect(call[1].metadata.body).toBeUndefined();
   });
 });
