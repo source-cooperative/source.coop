@@ -53,7 +53,7 @@ export class DataConnectionsTable extends BaseTable {
           .sort((a, b) =>
             b.data_connection_id.localeCompare(a.data_connection_id)
           )
-          .map((item) => item as DataConnection) ?? []
+          .map((item) => item as DataConnection)
       );
     } catch (error) {
       this.logError("listAll", error);
