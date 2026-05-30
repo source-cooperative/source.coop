@@ -54,11 +54,11 @@ export abstract class BaseTable {
    * The resolved response is shared across callers within a request — treat it
    * as read-only and never mutate `result.Items`/`result.Item` in place.
    */
-  protected cachedSend(command: DynamoCommand): Promise<any> {
+  protected cachedSend<T extends Record<string, unknown> = Record<string, unknown>>(command: DynamoCommand): Promise<T> {
     const key = `${command.constructor.name}:${stableStringify(command.input)}`;
     return this.memoizedRead(key, () =>
       this.client.send(command as Parameters<DynamoDBDocumentClient["send"]>[0])
-    );
+    ) as Promise<T>;
   }
 
   protected logError(
