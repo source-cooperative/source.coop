@@ -3,9 +3,11 @@ import "server-only";
 const ALGO = "AES-GCM";
 const IV_LEN = 12;
 
-let cachedKey: Promise<CryptoKey> | null = null;
+// Cache the resolved key, not the import promise: caching a rejected promise
+// would make every later call fail permanently with the original error.
+let cachedKey: CryptoKey | null = null;
 
-function getKey(): Promise<CryptoKey> {
+async function getKey(): Promise<CryptoKey> {
   if (cachedKey) return cachedKey;
   const raw = process.env.PROXY_CREDS_COOKIE_KEY;
   if (!raw) {
@@ -17,7 +19,7 @@ function getKey(): Promise<CryptoKey> {
   if (keyBytes.byteLength !== 32) {
     throw new Error("PROXY_CREDS_COOKIE_KEY must decode to 32 bytes");
   }
-  cachedKey = crypto.subtle.importKey("raw", keyBytes, ALGO, false, [
+  cachedKey = await crypto.subtle.importKey("raw", keyBytes, ALGO, false, [
     "encrypt",
     "decrypt",
   ]);
