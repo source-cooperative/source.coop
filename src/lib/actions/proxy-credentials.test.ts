@@ -59,6 +59,20 @@ function mockHydraFlowAndSts(fetchMock: jest.Mock) {
     .mockResolvedValueOnce(new Response(STS_XML, { status: 200 }));
 }
 
+// A 302 carrying (or omitting) a Location header.
+const redirectResponse = (location: string | null) =>
+  new Response(null, {
+    status: 302,
+    headers: location ? { location } : {},
+  });
+const jsonResponse = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), { status });
+
+const AUTHED_SESSION = {
+  identity_id: "ory-123",
+  account: { account_id: "user-1" },
+};
+
 describe("getProxyCredentials", () => {
   let fetchMock: jest.Mock;
 
@@ -109,5 +123,173 @@ describe("getProxyCredentials", () => {
       .mockResolvedValueOnce(new Response("denied", { status: 403 }));
 
     await expect(getProxyCredentials()).rejects.toThrow(/STS/);
+  });
+
+  test("completes the full consent flow when skip_consent is not enabled", async () => {
+    (getPageSession as jest.Mock).mockResolvedValue(AUTHED_SESSION);
+    fetchMock
+      // /oauth2/auth → login_challenge
+      .mockResolvedValueOnce(redirectResponse("/ui/login?login_challenge=lc"))
+      // login/accept → redirect_to
+      .mockResolvedValueOnce(
+        jsonResponse({ redirect_to: "https://auth.source.coop/postlogin" }),
+      )
+      // post-login redirect → consent_challenge (no code: skip_consent disabled)
+      .mockResolvedValueOnce(
+        redirectResponse("https://auth.source.coop/consent?consent_challenge=cc"),
+      )
+      // consent/accept → redirect_to
+      .mockResolvedValueOnce(
+        jsonResponse({ redirect_to: "https://auth.source.coop/postconsent" }),
+      )
+      // post-consent redirect → code
+      .mockResolvedValueOnce(redirectResponse("https://source.coop/callback?code=c"))
+      // token exchange → id_token
+      .mockResolvedValueOnce(jsonResponse({ id_token: "tok" }))
+      // STS exchange → credentials
+      .mockResolvedValueOnce(new Response(STS_XML, { status: 200 }));
+
+    const creds = await getProxyCredentials();
+    expect(creds.accessKeyId).toBe("AKIAREAD");
+    // The consent challenge must have been accepted via the admin API.
+    const consentCall = fetchMock.mock.calls.find(([url]) =>
+      String(url).includes("/consent/accept"),
+    );
+    expect(consentCall).toBeDefined();
+  });
+
+  test("follows an intermediate same-origin redirect before obtaining the code", async () => {
+    (getPageSession as jest.Mock).mockResolvedValue(AUTHED_SESSION);
+    fetchMock
+      .mockResolvedValueOnce(redirectResponse("/ui/login?login_challenge=lc"))
+      .mockResolvedValueOnce(
+        jsonResponse({ redirect_to: "https://auth.source.coop/postlogin" }),
+      )
+      // post-login redirect → neither code nor consent_challenge, but a
+      // same-origin Location to follow.
+      .mockResolvedValueOnce(redirectResponse("https://auth.source.coop/intermediate"))
+      // following it yields the code.
+      .mockResolvedValueOnce(redirectResponse("https://source.coop/callback?code=c"))
+      .mockResolvedValueOnce(jsonResponse({ id_token: "tok" }))
+      .mockResolvedValueOnce(new Response(STS_XML, { status: 200 }));
+
+    const creds = await getProxyCredentials();
+    expect(creds.accessKeyId).toBe("AKIAREAD");
+  });
+
+  test("rejects an intermediate redirect to an untrusted origin", async () => {
+    (getPageSession as jest.Mock).mockResolvedValue(AUTHED_SESSION);
+    fetchMock
+      .mockResolvedValueOnce(redirectResponse("/ui/login?login_challenge=lc"))
+      .mockResolvedValueOnce(
+        jsonResponse({ redirect_to: "https://auth.source.coop/postlogin" }),
+      )
+      // post-login redirect points off to an attacker-controlled host.
+      .mockResolvedValueOnce(redirectResponse("https://evil.example.com/steal"));
+
+    await expect(getProxyCredentials()).rejects.toThrow(/untrusted host/);
+    // The cookie jar must never be forwarded to the untrusted host.
+    const leakedCall = fetchMock.mock.calls.find(([url]) =>
+      String(url).includes("evil.example.com"),
+    );
+    expect(leakedCall).toBeUndefined();
+  });
+
+  test("throws when /oauth2/auth returns no login_challenge", async () => {
+    (getPageSession as jest.Mock).mockResolvedValue(AUTHED_SESSION);
+    fetchMock.mockResolvedValueOnce(redirectResponse("/ui/login"));
+    await expect(getProxyCredentials()).rejects.toThrow(/login_challenge/);
+  });
+
+  test("throws when the login accept call fails", async () => {
+    (getPageSession as jest.Mock).mockResolvedValue(AUTHED_SESSION);
+    fetchMock
+      .mockResolvedValueOnce(redirectResponse("/ui/login?login_challenge=lc"))
+      .mockResolvedValueOnce(new Response("nope", { status: 500 }));
+    await expect(getProxyCredentials()).rejects.toThrow(/Login accept failed/);
+  });
+
+  test("throws when the consent accept call fails", async () => {
+    (getPageSession as jest.Mock).mockResolvedValue(AUTHED_SESSION);
+    fetchMock
+      .mockResolvedValueOnce(redirectResponse("/ui/login?login_challenge=lc"))
+      .mockResolvedValueOnce(
+        jsonResponse({ redirect_to: "https://auth.source.coop/postlogin" }),
+      )
+      .mockResolvedValueOnce(
+        redirectResponse("https://auth.source.coop/consent?consent_challenge=cc"),
+      )
+      .mockResolvedValueOnce(new Response("nope", { status: 500 }));
+    await expect(getProxyCredentials()).rejects.toThrow(/Consent accept failed/);
+  });
+
+  test("throws when no code is returned after consent accept", async () => {
+    (getPageSession as jest.Mock).mockResolvedValue(AUTHED_SESSION);
+    fetchMock
+      .mockResolvedValueOnce(redirectResponse("/ui/login?login_challenge=lc"))
+      .mockResolvedValueOnce(
+        jsonResponse({ redirect_to: "https://auth.source.coop/postlogin" }),
+      )
+      .mockResolvedValueOnce(
+        redirectResponse("https://auth.source.coop/consent?consent_challenge=cc"),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({ redirect_to: "https://auth.source.coop/postconsent" }),
+      )
+      // post-consent redirect with no code.
+      .mockResolvedValueOnce(redirectResponse("https://source.coop/callback"));
+    await expect(getProxyCredentials()).rejects.toThrow(/No authorization code/);
+  });
+
+  test("throws when the post-login redirect has no usable parameters", async () => {
+    (getPageSession as jest.Mock).mockResolvedValue(AUTHED_SESSION);
+    fetchMock
+      .mockResolvedValueOnce(redirectResponse("/ui/login?login_challenge=lc"))
+      .mockResolvedValueOnce(
+        jsonResponse({ redirect_to: "https://auth.source.coop/postlogin" }),
+      )
+      // 302 with neither code, consent_challenge, nor a Location to follow.
+      .mockResolvedValueOnce(redirectResponse(null));
+    await expect(getProxyCredentials()).rejects.toThrow(
+      /No consent_challenge or code/,
+    );
+  });
+
+  test("throws when the token exchange fails", async () => {
+    (getPageSession as jest.Mock).mockResolvedValue(AUTHED_SESSION);
+    fetchMock
+      .mockResolvedValueOnce(redirectResponse("/ui/login?login_challenge=lc"))
+      .mockResolvedValueOnce(
+        jsonResponse({ redirect_to: "https://auth.source.coop/postlogin" }),
+      )
+      .mockResolvedValueOnce(redirectResponse("https://source.coop/callback?code=c"))
+      .mockResolvedValueOnce(new Response("bad", { status: 401 }));
+    await expect(getProxyCredentials()).rejects.toThrow(/Token exchange failed/);
+  });
+
+  test("throws when the token response has no id_token", async () => {
+    (getPageSession as jest.Mock).mockResolvedValue(AUTHED_SESSION);
+    fetchMock
+      .mockResolvedValueOnce(redirectResponse("/ui/login?login_challenge=lc"))
+      .mockResolvedValueOnce(
+        jsonResponse({ redirect_to: "https://auth.source.coop/postlogin" }),
+      )
+      .mockResolvedValueOnce(redirectResponse("https://source.coop/callback?code=c"))
+      .mockResolvedValueOnce(jsonResponse({}));
+    await expect(getProxyCredentials()).rejects.toThrow(/id_token/);
+  });
+
+  test("throws when the STS response is missing the Credentials element", async () => {
+    (getPageSession as jest.Mock).mockResolvedValue(AUTHED_SESSION);
+    fetchMock
+      .mockResolvedValueOnce(redirectResponse("/ui/login?login_challenge=lc"))
+      .mockResolvedValueOnce(
+        jsonResponse({ redirect_to: "https://auth.source.coop/postlogin" }),
+      )
+      .mockResolvedValueOnce(redirectResponse("https://source.coop/callback?code=c"))
+      .mockResolvedValueOnce(jsonResponse({ id_token: "tok" }))
+      // 200 but malformed XML.
+      .mockResolvedValueOnce(new Response("<Response>no creds</Response>", { status: 200 }));
+    await expect(getProxyCredentials()).rejects.toThrow(/missing <Credentials>/);
   });
 });
