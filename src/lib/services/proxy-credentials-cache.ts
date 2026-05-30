@@ -54,8 +54,10 @@ export async function refreshProxyCredentials(): Promise<RefreshResult> {
 
   const existing = inflight.get(identityId);
   if (existing) {
+    // Coalesced onto another in-flight mint: we awaited its result but did not
+    // mint or write the cookie ourselves, so report minted: false.
     const creds = await existing;
-    return { ok: true, expiration: creds.expiration, minted: true };
+    return { ok: true, expiration: creds.expiration, minted: false };
   }
 
   const promise = getProxyCredentials();

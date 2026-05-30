@@ -154,7 +154,37 @@ describe("proxy-credentials-cache", () => {
 
     expect(r1.ok).toBe(true);
     expect(r2.ok).toBe(true);
+    // Exactly one of the two minted; the coalesced caller reports minted: false.
+    expect([r1.minted, r2.minted].sort()).toEqual([false, true]);
     expect(mockGetProxyCredentials).toHaveBeenCalledTimes(1);
+  });
+
+  test("propagates the failure to coalesced callers when minting rejects", async () => {
+    mockGet.mockReturnValue(undefined);
+    let reject!: (e: Error) => void;
+    mockGetProxyCredentials.mockReturnValue(
+      new Promise((_, r) => {
+        reject = r;
+      }),
+    );
+
+    // Attach handlers before rejecting to avoid unhandled-rejection noise.
+    const p1 = refreshProxyCredentials().catch((e: Error) => e);
+    const p2 = refreshProxyCredentials().catch((e: Error) => e);
+
+    reject(new Error("mint failed"));
+    const [r1, r2] = await Promise.all([p1, p2]);
+
+    expect((r1 as Error).message).toBe("mint failed");
+    expect((r2 as Error).message).toBe("mint failed");
+    // Both callers saw the same single mint attempt...
+    expect(mockGetProxyCredentials).toHaveBeenCalledTimes(1);
+    expect(mockSet).not.toHaveBeenCalled();
+    // ...and the in-flight entry was cleared, so a later call retries.
+    mockGetProxyCredentials.mockResolvedValue(freshCreds());
+    const retry = await refreshProxyCredentials();
+    expect(retry.ok).toBe(true);
+    expect(mockGetProxyCredentials).toHaveBeenCalledTimes(2);
   });
 
   test("clearCachedProxyCredentials deletes the cookie", async () => {
