@@ -161,7 +161,7 @@ export class ProductsTable extends BaseTable {
     const result = await this.cachedSend(new QueryCommand(queryParams));
 
     return {
-      products: (result.Items || []) as Product[],
+      products: ([...(result.Items ?? [])]) as Product[],
       lastEvaluatedKey: result.LastEvaluatedKey,
     };
   }
