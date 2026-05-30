@@ -13,6 +13,20 @@ type Status = "loading" | "error";
 // of looping forever. Attempts spaced further apart are treated as new episodes.
 const MAX_QUICK_ATTEMPTS = 2;
 const EPISODE_WINDOW_MS = 15_000;
+// Bound how long we wait on the mint action before surfacing an error, so a
+// hung network request can't leave the gate spinning indefinitely.
+const REFRESH_TIMEOUT_MS = 20_000;
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  let timer: ReturnType<typeof setTimeout>;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(
+      () => reject(new Error("Timed out refreshing proxy credentials")),
+      ms,
+    );
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
 
 /**
  * Rendered by the product directory page when an authenticated user opens a
@@ -31,7 +45,10 @@ export function ProxyCredentialsGate() {
     setStatus("loading");
     const key = `sc_creds_gate:${pathname}`;
     try {
-      const result = await refreshProxyCredentials();
+      const result = await withTimeout(
+        refreshProxyCredentials(),
+        REFRESH_TIMEOUT_MS,
+      );
       if (!result.ok) {
         setStatus("error");
         return;
