@@ -50,8 +50,13 @@ jobs:
             Requirements for that JSON:
             - "event": "REQUEST_CHANGES" if there are blocking issues, otherwise "COMMENT".
               Never use "APPROVE" (bot approvals are restricted and not meaningful here).
-            - "body": a short verdict followed by a brief bullet list. No checklists,
-              no progress logs.
+            - "body": begin with a single bold verdict line that starts with a clear
+              status emoji — `✅` when nothing is blocking (safe to merge) or `❌` when
+              changes are requested — e.g. `**✅ No blocking issues — safe to merge.**`
+              or `**❌ Changes requested — see findings below.**`. The emoji must match
+              the "event": ✅ pairs with "COMMENT", ❌ pairs with "REQUEST_CHANGES".
+              Follow the verdict line with a brief bullet list. No checklists, no
+              progress logs.
             - "comments": one entry per finding, each { "path", "line" (and "start_line"
               for multi-line), "body" }. Anchor each to the exact changed line(s).
 
@@ -68,5 +73,12 @@ jobs:
             several small, targeted suggestions over one large comment — they are far
             easier for the author to apply individually. Reserve plain prose comments
             for issues that have no mechanical fix.
+
+            Before posting any suggestion block, re-read it and verify it is
+            syntactically complete — balanced brackets, parens, and braces — and that
+            it would compile if committed verbatim. The author applies it with one
+            click, so a malformed suggestion breaks their build. If you are not
+            confident the replacement is exactly correct, describe the fix in prose
+            instead.
           claude_args: |
             --allowedTools "Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh api:*)"
