@@ -1,10 +1,6 @@
 import { jwtVerify, createRemoteJWKSet } from "jose";
 import { CONFIG } from "@/lib/config";
-import {
-  accountsTable,
-  membershipsTable,
-  isIndividualAccount,
-} from "@/lib/clients/database";
+import { accountsTable, membershipsTable } from "@/lib/clients/database";
 import { isAuthorized } from "@/lib/api/authz";
 import { Actions, UserSession } from "@/types";
 import type { IndividualAccount } from "@/types/account";
@@ -80,23 +76,22 @@ export async function authenticateWithOidcToken(
     return null;
   }
 
-  const account = await accountsTable.fetchById(oryId);
+  // The token subject is the caller's Ory identity id (the data proxy signs
+  // tokens with the authenticated principal's Ory id as `sub`), so resolve the
+  // account via the identity_id index — NOT fetchById, which keys on the
+  // human-readable account_id. Only individual accounts have an Ory identity;
+  // org accounts are never the subject of a proxy-issued token.
+  const account = await accountsTable.fetchByOryId(oryId);
   if (!account || account.disabled) {
     return null;
   }
 
-  const identity_id = isIndividualAccount(account)
-    ? (account as IndividualAccount).identity_id
-    : null;
+  const identity_id = (account as IndividualAccount).identity_id;
 
-  // Only look up memberships for individual accounts — orgs don't have memberships in other entities
-  let filteredMemberships: UserSession["memberships"] = [];
-  if (isIndividualAccount(account)) {
-    const memberships = await membershipsTable.listByUser(account.account_id);
-    filteredMemberships = memberships.filter((membership) =>
-      isAuthorized({ account, identity_id }, membership, Actions.GetMembership),
-    );
-  }
+  const memberships = await membershipsTable.listByUser(account.account_id);
+  const filteredMemberships = memberships.filter((membership) =>
+    isAuthorized({ account, identity_id }, membership, Actions.GetMembership),
+  );
 
   return {
     identity_id,

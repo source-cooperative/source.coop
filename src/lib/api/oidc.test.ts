@@ -61,7 +61,7 @@ jest.mock("@/lib/config", () => ({
 // Mock database lookups
 jest.mock("@/lib/clients/database", () => ({
   accountsTable: {
-    fetchById: jest.fn(),
+    fetchByOryId: jest.fn(),
   },
   membershipsTable: {
     listByUser: jest.fn(),
@@ -141,14 +141,14 @@ describe("authenticateWithOidcToken", () => {
   });
 
   test("returns null when account not found", async () => {
-    (accountsTable.fetchById as jest.Mock).mockResolvedValue(null);
+    (accountsTable.fetchByOryId as jest.Mock).mockResolvedValue(null);
     const token = await createToken({ sub: "nonexistent-user" });
     const result = await authenticateWithOidcToken(`Bearer ${token}`, AUDIENCE);
     expect(result).toBeNull();
   });
 
   test("returns null when account is disabled", async () => {
-    (accountsTable.fetchById as jest.Mock).mockResolvedValue({
+    (accountsTable.fetchByOryId as jest.Mock).mockResolvedValue({
       account_id: "test-user",
       disabled: true,
     });
@@ -156,28 +156,6 @@ describe("authenticateWithOidcToken", () => {
     const token = await createToken({ sub: "test-user" });
     const result = await authenticateWithOidcToken(`Bearer ${token}`, AUDIENCE);
     expect(result).toBeNull();
-  });
-
-  test("returns UserSession for valid token with org account", async () => {
-    const mockOrgAccount = {
-      account_id: "test-org",
-      disabled: false,
-      type: "organization",
-      name: "Test Org",
-      flags: [],
-    };
-
-    (accountsTable.fetchById as jest.Mock).mockResolvedValue(mockOrgAccount);
-    (isIndividualAccount as unknown as jest.Mock).mockReturnValue(false);
-
-    const token = await createToken({ sub: "test-org" });
-    const result = await authenticateWithOidcToken(`Bearer ${token}`, AUDIENCE);
-
-    expect(result).not.toBeNull();
-    expect(result!.identity_id).toBeNull();
-    expect(result!.account).toEqual(mockOrgAccount);
-    expect(result!.memberships).toEqual([]);
-    expect(membershipsTable.listByUser).not.toHaveBeenCalled();
   });
 
   test("returns null when sub claim is missing", async () => {
@@ -197,7 +175,7 @@ describe("authenticateWithOidcToken", () => {
     };
     const mockMemberships = [{ membership_id: "m1" }];
 
-    (accountsTable.fetchById as jest.Mock).mockResolvedValue(mockAccount);
+    (accountsTable.fetchByOryId as jest.Mock).mockResolvedValue(mockAccount);
     (isIndividualAccount as unknown as jest.Mock).mockReturnValue(true);
     (membershipsTable.listByUser as jest.Mock).mockResolvedValue(
       mockMemberships
@@ -210,7 +188,7 @@ describe("authenticateWithOidcToken", () => {
     expect(result!.identity_id).toBe("ory-123");
     expect(result!.account).toEqual(mockAccount);
     expect(result!.memberships).toEqual(mockMemberships);
-    expect(accountsTable.fetchById).toHaveBeenCalledWith("test-user");
+    expect(accountsTable.fetchByOryId).toHaveBeenCalledWith("test-user");
   });
 
   test("filters memberships through isAuthorized", async () => {
@@ -225,7 +203,7 @@ describe("authenticateWithOidcToken", () => {
     const authorizedMembership = { membership_id: "m1" };
     const unauthorizedMembership = { membership_id: "m2" };
 
-    (accountsTable.fetchById as jest.Mock).mockResolvedValue(mockAccount);
+    (accountsTable.fetchByOryId as jest.Mock).mockResolvedValue(mockAccount);
     (isIndividualAccount as unknown as jest.Mock).mockReturnValue(true);
     (membershipsTable.listByUser as jest.Mock).mockResolvedValue([
       authorizedMembership,
