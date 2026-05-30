@@ -1,9 +1,8 @@
 import { Suspense } from "react";
 import { Metadata } from "next";
 
-import { CONFIG, LOGGER, storage, dataConnectionsTable, getPageSession } from "@/lib";
+import { LOGGER, getStorageClient, dataConnectionsTable, getPageSession } from "@/lib";
 import { DataConnection, ProductMirror, ProductObject } from "@/types";
-import { S3ReadClient } from "@/lib/services/s3-read";
 import { readProxyCredentials } from "@/lib/services/proxy-credentials-read";
 import { getAuthorizedProduct } from "./data";
 import { ProxyCredentialsGate } from "@/components/features/products/ProxyCredentialsGate";
@@ -44,11 +43,16 @@ export default async function ProductPathPage({ params }: PageProps) {
   // product.
   const product = await getAuthorizedProduct(account_id, product_id);
 
+  // Build one storage client per request (signed when the user has proxy
+  // credentials cached, anonymous otherwise) and reuse it for both the
+  // file-detection HEAD and the directory listing below.
+  const s3 = await getStorageClient();
+
   // For non-root paths, check if this is a file via HEAD request.
   // If the HEAD succeeds, render the file view (ObjectSummary + ObjectPreview).
   // If it fails or returns null, fall through to the directory listing.
   if (objectPath) {
-    const objectInfo = await storage
+    const objectInfo = await s3
       .getObjectInfo({ account_id, product_id, object_path: objectPath })
       .catch((error) => {
         LOGGER.debug("HEAD request failed, treating as directory", {
@@ -108,11 +112,6 @@ export default async function ProductPathPage({ params }: PageProps) {
       return <ProxyCredentialsGate />;
     }
   }
-
-  const s3 = new S3ReadClient({
-    endpoint: CONFIG.storage.endpoint || "",
-    credentials: creds,
-  });
 
   const s3Prefix = objectPath
     ? `${product_id}/${objectPath}/`
