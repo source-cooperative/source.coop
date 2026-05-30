@@ -1,5 +1,6 @@
 import { Box } from "@radix-ui/themes";
-import { LOGGER, getStorageClient } from "@/lib";
+import { LOGGER } from "@/lib";
+import { getStorageClient } from "@/lib/clients/storage";
 import { MarkdownViewer } from "@/components/features/markdown/MarkdownViewer";
 import { TextViewer } from "@/components/features/text/TextViewer";
 import { getExtension } from "@/lib/files";

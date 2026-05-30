@@ -1,4 +1,5 @@
-import { LOGGER, getStorageClient } from "@/lib";
+import { LOGGER } from "@/lib";
+import { getStorageClient } from "@/lib/clients/storage";
 import { SectionHeader } from "@/components/core/SectionHeader";
 import { MarkdownViewer } from "@/components/features/markdown";
 import { Card } from "@radix-ui/themes";

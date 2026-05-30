@@ -1,7 +1,8 @@
 import { Suspense } from "react";
 import { Metadata } from "next";
 
-import { LOGGER, getStorageClient, dataConnectionsTable, getPageSession } from "@/lib";
+import { LOGGER, dataConnectionsTable, getPageSession } from "@/lib";
+import { getStorageClient } from "@/lib/clients/storage";
 import { DataConnection, ProductMirror, ProductObject } from "@/types";
 import { readProxyCredentials } from "@/lib/services/proxy-credentials-read";
 import { getAuthorizedProduct } from "./data";
