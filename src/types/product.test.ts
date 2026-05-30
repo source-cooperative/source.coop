@@ -17,6 +17,17 @@ describe("ProductMetadataSchema DOI validation", () => {
     expect(ProductMetadataSchema.safeParse(baseMetadata).success).toBe(true);
   });
 
+  it("trims surrounding whitespace from a DOI", () => {
+    const result = ProductMetadataSchema.safeParse({
+      ...baseMetadata,
+      doi: "  10.1234/foo.bar  ",
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.doi).toBe("10.1234/foo.bar");
+    }
+  });
+
   it.each([
     "10.1234/foo.bar",
     "10.1000/182",
