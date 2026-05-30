@@ -60,6 +60,10 @@ export async function authenticateWithOidcToken(
       // We assume that the data proxy is going to be hosting the JWKS
       issuer: CONFIG.storage.endpoint,
       audience,
+      // Pin the signature algorithm. Without this, a token is accepted for any
+      // algorithm the JWKS can satisfy; restricting to RS256 (what the proxy
+      // signs with) prevents algorithm-confusion/downgrade attacks.
+      algorithms: ["RS256"],
       clockTolerance: 30,
     });
     payload = result.payload;

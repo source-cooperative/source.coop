@@ -140,6 +140,40 @@ describe("authenticateWithOidcToken", () => {
     expect(result).toBeNull();
   });
 
+  test("returns null for a token signed with a non-RS256 algorithm", async () => {
+    // A fully valid token (correct issuer/audience/expiry/signature) signed
+    // with PS256 instead of RS256, resolving to a real, enabled account. The
+    // only thing that should reject it is the `algorithms: ["RS256"]` pin —
+    // without it, verification would succeed and a session would be returned.
+    (accountsTable.fetchByOryId as jest.Mock).mockResolvedValue({
+      account_id: "test-user",
+      identity_id: "ory-123",
+      disabled: false,
+      type: "individual",
+    });
+    (isIndividualAccount as unknown as jest.Mock).mockReturnValue(true);
+    (membershipsTable.listByUser as jest.Mock).mockResolvedValue([]);
+
+    const { privateKey: psPriv, publicKey: psPub } =
+      await generateKeyPair("PS256");
+    const psJwk = await exportJWK(psPub);
+    psJwk.kid = "test-key-1";
+    psJwk.alg = "PS256";
+    psJwk.use = "sig";
+    _setJwks(async () => importJWK(psJwk, "PS256"));
+
+    const token = await new SignJWT({ sub: "test-user" })
+      .setProtectedHeader({ alg: "PS256", kid: "test-key-1" })
+      .setIssuer(ISSUER)
+      .setAudience(AUDIENCE)
+      .setIssuedAt()
+      .setExpirationTime("5m")
+      .sign(psPriv);
+
+    const result = await authenticateWithOidcToken(`Bearer ${token}`, AUDIENCE);
+    expect(result).toBeNull();
+  });
+
   test("returns null when account not found", async () => {
     (accountsTable.fetchByOryId as jest.Mock).mockResolvedValue(null);
     const token = await createToken({ sub: "nonexistent-user" });
