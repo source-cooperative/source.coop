@@ -2,6 +2,11 @@ name: Claude Auto Review
 on:
   pull_request:
     types: [opened, synchronize, ready_for_review, reopened]
+    # Skip when a PR touches workflow files: the action can't validate/run
+    # against modified workflows and fails with "401 Unauthorized - Workflow
+    # validation failed".
+    paths-ignore:
+      - '.github/workflows/**'
 
 jobs:
   review:
