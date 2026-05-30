@@ -16,7 +16,7 @@ import {
 import { BaseTable } from "./base";
 import { LOGGER } from "@/lib/logging";
 
-class AccountsTable extends BaseTable {
+export class AccountsTable extends BaseTable {
   model = "accounts";
 
   async fetchById(account_id: string): Promise<Account | null> {
@@ -26,7 +26,7 @@ class AccountsTable extends BaseTable {
         context: "database operation",
         metadata: { account_id },
       });
-      const result = await this.client.send(
+      const result = await this.cachedSend(
         new QueryCommand({
           TableName: this.table,
           ExpressionAttributeValues: {
@@ -36,7 +36,9 @@ class AccountsTable extends BaseTable {
         })
       );
 
-      const account = result.Items?.pop();
+      // Non-mutating last-item access: the response may be a shared, request-
+      // cached object, so we must not `.pop()` (which would empty it).
+      const account = result.Items?.at(-1);
 
       if (!account) return null;
 
@@ -81,7 +83,7 @@ class AccountsTable extends BaseTable {
           metadata: { batch },
         }
       );
-      const result = await this.client.send(new BatchGetCommand(batchRequest));
+      const result = await this.cachedSend(new BatchGetCommand(batchRequest));
       if (result.Responses?.[this.table]) {
         accountBatches.push(...(result.Responses[this.table] as Account[]));
       }
@@ -97,7 +99,7 @@ class AccountsTable extends BaseTable {
         context: "database operation",
         metadata: { identity_id },
       });
-      const result = await this.client.send(
+      const result = await this.cachedSend(
         new QueryCommand({
           TableName: this.table,
           IndexName: "identity_id",
@@ -108,9 +110,9 @@ class AccountsTable extends BaseTable {
         })
       );
 
-      const account = result.Items?.filter((item) =>
-        isIndividualAccount(item as Account)
-      )?.pop();
+      const account = result.Items?.filter((item: Account) =>
+        isIndividualAccount(item)
+      )?.at(-1);
 
       if (!account) return null;
 
