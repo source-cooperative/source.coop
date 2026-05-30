@@ -81,7 +81,7 @@ export class ProductsTable extends BaseTable {
     );
 
     return {
-      products: (result.Items || []) as Product[],
+      products: ([...(result.Items ?? [])]]) as Product[],
       lastEvaluatedKey: result.LastEvaluatedKey,
     };
   }
