@@ -29,7 +29,6 @@ jest.mock("@/lib", () => ({
     fetchById: jest.fn(),
   },
   getPageSession: jest.fn(),
-  getStorageClient: jest.fn(),
   dataConnectionsTable: {},
   LOGGER: {},
   fileSourceUrl: jest.fn(),

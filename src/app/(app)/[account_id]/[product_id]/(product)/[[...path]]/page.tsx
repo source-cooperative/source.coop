@@ -52,6 +52,11 @@ export default async function ProductPathPage({ params }: PageProps) {
   // For non-root paths, check if this is a file via HEAD request.
   // If the HEAD succeeds, render the file view (ObjectSummary + ObjectPreview).
   // If it fails or returns null, fall through to the directory listing.
+  // Note: for a private product on first visit (no proxy-creds cookie yet),
+  // `s3` is anonymous and this HEAD is denied → null, so we fall through to the
+  // ProxyCredentialsGate below, which mints credentials and refreshes; the next
+  // render's signed HEAD then succeeds and the file view shows. So the HEAD is
+  // not expected to succeed on the initial render for a restricted product.
   if (objectPath) {
     const objectInfo = await s3
       .getObjectInfo({ account_id, product_id, object_path: objectPath })
