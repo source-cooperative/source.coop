@@ -1,19 +1,5 @@
 import { createMemoizedRead, stableStringify } from "./request-cache";
-
-// Mimics React.cache for tests: memoizes the wrapped function's result by its
-// first argument for the lifetime of the wrapper (i.e. one "request").
-function fakeReactCache<A extends unknown[], R>(
-  fn: (...args: A) => R
-): (...args: A) => R {
-  const store = new Map<unknown, R>();
-  return (...args: A): R => {
-    const k = args[0];
-    if (!store.has(k)) store.set(k, fn(...args));
-    return store.get(k) as R;
-  };
-}
-
-const identity = <A extends unknown[], R>(fn: (...args: A) => R) => fn;
+import { fakeReactCache, identity } from "./__test-helpers__/fake-react-cache";
 
 describe("createMemoizedRead", () => {
   it("runs the loader once for repeated calls with the same key", async () => {
@@ -60,6 +46,36 @@ describe("createMemoizedRead", () => {
 
     expect(a).toBe("v");
     expect(b).toBe("v");
+    expect(loader).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not poison the key on rejection: a later caller can retry", async () => {
+    const memoizedRead = createMemoizedRead(fakeReactCache);
+    const loader = jest
+      .fn()
+      .mockRejectedValueOnce(new Error("transient throttle"))
+      .mockResolvedValueOnce("recovered");
+
+    await expect(memoizedRead("k", loader)).rejects.toThrow(
+      "transient throttle"
+    );
+    // The first attempt failed; a subsequent read of the same key must retry
+    // rather than replay the cached rejection.
+    await expect(memoizedRead("k", loader)).resolves.toBe("recovered");
+    expect(loader).toHaveBeenCalledTimes(2);
+  });
+
+  it("still dedupes concurrent callers that share a rejecting load", async () => {
+    const memoizedRead = createMemoizedRead(fakeReactCache);
+    const loader = jest.fn(() => Promise.reject(new Error("boom")));
+
+    const results = await Promise.allSettled([
+      memoizedRead("k", loader),
+      memoizedRead("k", loader),
+    ]);
+
+    expect(results.every((r) => r.status === "rejected")).toBe(true);
+    // Both concurrent callers share the single in-flight attempt.
     expect(loader).toHaveBeenCalledTimes(1);
   });
 });

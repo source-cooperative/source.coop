@@ -49,7 +49,15 @@ export function createMemoizedRead(
   ): Promise<R> {
     const cell = cellForKey(key);
     if (!cell.promise) {
-      cell.promise = load();
+      const promise = load();
+      cell.promise = promise;
+      // Don't poison the key with a rejected promise: a transient failure (e.g.
+      // a DynamoDB throttle) would otherwise be replayed to every later caller
+      // in this request. Clear the slot on rejection so the next caller retries.
+      // In-flight concurrent callers still share this single attempt.
+      promise.catch(() => {
+        if (cell.promise === promise) cell.promise = undefined;
+      });
     }
     return cell.promise as Promise<R>;
   };
