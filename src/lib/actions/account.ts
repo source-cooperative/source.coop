@@ -223,10 +223,40 @@ export async function updateAccountProfile(
         };
       });
 
+    // For organizations, process the contact email
+    let updatedEmails = currentAccount.emails;
+    if (currentAccount.type === AccountType.ORGANIZATION) {
+      const email = ((formData.get("email") as string) || "").trim();
+      if (email) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+          return {
+            fieldErrors: { email: ["Invalid email address"] },
+            data: formData,
+            message: "Invalid form data",
+            success: false,
+          };
+        }
+        updatedEmails = [
+          {
+            address: email,
+            verified: false,
+            is_primary: true,
+            added_at:
+              currentAccount.emails?.find((e) => e.is_primary)?.added_at ||
+              new Date().toISOString(),
+          },
+        ];
+      } else {
+        updatedEmails = [];
+      }
+    }
+
     // Build update data
     const updateData = {
       ...currentAccount,
       name,
+      emails: updatedEmails,
       metadata_public: {
         ...currentAccount.metadata_public,
         bio: description || undefined,
