@@ -1,12 +1,11 @@
 import { Suspense } from "react";
 import { Metadata } from "next";
-import { notFound } from "next/navigation";
 
-import { CONFIG, LOGGER, storage, dataConnectionsTable, productsTable } from "@/lib";
+import { CONFIG, LOGGER, storage, dataConnectionsTable, getPageSession } from "@/lib";
 import { DataConnection, ProductMirror, ProductObject } from "@/types";
 import { S3ReadClient } from "@/lib/services/s3-read";
 import { readProxyCredentials } from "@/lib/services/proxy-credentials-read";
-import { getPageSession } from "@/lib/api/utils";
+import { getAuthorizedProduct } from "./data";
 import { ProxyCredentialsGate } from "@/components/features/products/ProxyCredentialsGate";
 import { DirectoryList } from "@/components/features/products/object-browser/DirectoryList";
 import { ObjectSummary } from "@/components/features/products/object-browser/ObjectSummary";
@@ -20,10 +19,10 @@ export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
   const { account_id, product_id } = await params;
-  const product = await productsTable.fetchById(account_id, product_id);
-  if (!product) {
-    notFound();
-  }
+  // Authorize before exposing any metadata — generateMetadata runs independently
+  // of the layout, so without this an unauthorized viewer could read a
+  // restricted product's title/description via HTTP headers and OG tags.
+  const product = await getAuthorizedProduct(account_id, product_id);
   return generateProductMetadata({ product });
 }
 
@@ -40,10 +39,10 @@ export default async function ProductPathPage({ params }: PageProps) {
   path = path?.map((p) => decodeURIComponent(p)) || [];
   const objectPath = path.join("/");
 
-  const product = await productsTable.fetchById(account_id, product_id);
-  if (!product) {
-    notFound();
-  }
+  // Fetch + authorize. Throws a 404 for missing products or unauthorized
+  // viewers, so the S3 reads below never run for someone who may not read this
+  // product.
+  const product = await getAuthorizedProduct(account_id, product_id);
 
   // For non-root paths, check if this is a file via HEAD request.
   // If the HEAD succeeds, render the file view (ObjectSummary + ObjectPreview).
@@ -101,12 +100,13 @@ export default async function ProductPathPage({ params }: PageProps) {
   // refreshes the page so this render then finds the credentials.
   const creds = await readProxyCredentials();
   if (!creds && product.visibility === "restricted") {
+    // Authorization above guarantees this viewer is a member, so they have a
+    // session — send them through the gate to mint credentials (in an action)
+    // and re-render. The session check stays as a defensive guard.
     const session = await getPageSession();
     if (session?.identity_id) {
       return <ProxyCredentialsGate />;
     }
-    // Anonymous viewer of a restricted product: fall through to the anonymous
-    // (empty) listing.
   }
 
   const s3 = new S3ReadClient({
