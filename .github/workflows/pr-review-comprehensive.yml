@@ -44,8 +44,8 @@ jobs:
             do not pad the review.
 
             STEP 3 — Submit ONE formal review in a single API call, bundling every
-            inline note in the `comments` array. Build a JSON file and post it:
-              `gh api -X POST repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/reviews --input <file>`
+            inline note in the `comments` array:
+              `gh api -X POST repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/reviews --input payload.json`
 
             Requirements for that JSON:
             - "event": "REQUEST_CHANGES" if there are blocking issues, otherwise "COMMENT".
@@ -56,17 +56,39 @@ jobs:
               for multi-line), "body" }. Anchor each to the exact changed line(s).
 
             MAKE FINDINGS ONE-CLICK APPLYABLE. Whenever a finding has a concrete code
-            fix, put a GitHub suggestion block in that inline comment's body so the
+            fix, end that inline comment's body with a GitHub suggestion block so the
             author can apply it with the "Commit suggestion" button:
 
                 ```suggestion
                 <the exact replacement text for the commented line(s)>
                 ```
 
-            The suggestion content must replace the full line range the comment is
-            anchored to (use start_line..line for multi-line replacements). Prefer
-            several small, targeted suggestions over one large comment — they are far
-            easier for the author to apply individually. Reserve plain prose comments
-            for issues that have no mechanical fix.
+            Rules for suggestions:
+            - The block must replace the FULL line range the comment is anchored to
+              (use start_line..line for multi-line replacements), and contain the
+              COMPLETE, valid, ready-to-commit code for those lines — not a fragment.
+              Re-read each suggestion and confirm it parses and balances brackets/quotes
+              before including it; if you are not certain it compiles, use a prose
+              comment instead of a suggestion.
+            - Prefer several small, single-line suggestions over one large one — they
+              are easier to apply and less error-prone.
+            - Reserve plain prose comments for issues with no mechanical fix.
+
+            BUILD THE PAYLOAD SAFELY — do not hand-write JSON escapes. Embedded literal
+            "\n" sequences break the suggestion fences and the apply button. Instead:
+            - Write each comment body (including its ```suggestion block, with real
+              newlines) to its own file, e.g. c1.body, and the review summary to
+              body.md.
+            - Assemble with jq so newlines and quotes are encoded correctly, e.g.:
+                jq -n --arg path "src/foo.ts" --argjson line 164 --rawfile body c1.body \
+                  '{path:$path, line:$line, body:$body}' > c1.json
+              (add `--argjson start_line N` and include it in the object for multi-line)
+              then combine:
+                jq -s '.' c1.json c2.json > comments.json
+                jq -n --arg event "COMMENT" --rawfile body body.md \
+                  --slurpfile comments comments.json \
+                  '{event:$event, body:$body, comments:$comments[0]}' > payload.json
+            - Validate before posting: `jq empty payload.json` must succeed. Confirm no
+              comment body contains a literal backslash-n where a newline belongs.
           claude_args: |
-            --allowedTools "Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh api:*)"
+            --allowedTools "Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh api:*),Bash(jq:*),Write"
