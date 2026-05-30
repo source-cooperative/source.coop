@@ -54,7 +54,7 @@ export class ProductsTable extends BaseTable {
 
     const result = await this.cachedSend(new ScanCommand(scanParams));
 
-    return {
+      products: ([...(result.Items ?? [])]) as Product[],
       products: (result.Items || []) as Product[],
       lastEvaluatedKey: result.LastEvaluatedKey,
     };
