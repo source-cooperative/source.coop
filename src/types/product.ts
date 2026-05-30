@@ -18,13 +18,23 @@ export const ProductMirrorSchema = z
 
 export type ProductMirror = z.infer<typeof ProductMirrorSchema>;
 
+// A Digital Object Identifier: "10.<registrant>/<suffix>" (e.g. 10.1234/foo.bar).
+// Stored bare (without the https://doi.org/ prefix), since that prefix is added
+// when rendering links and schema.org identifiers. Pattern from Crossref:
+// https://www.crossref.org/blog/dois-and-matching-regular-expressions/
+const DOI_REGEX = /^10\.\d{4,9}\/[-._;()/:A-Za-z0-9]+$/;
+
+export const DoiSchema = z
+  .string()
+  .regex(DOI_REGEX, "Invalid DOI (expected a bare DOI such as 10.1234/foo.bar)");
+
 // Metadata for a product, including mirrors, roles, and tags
 export const ProductMetadataSchema = z
   .object({
     mirrors: z.record(ProductMirrorSchema),
     primary_mirror: z.string(), // Key of the primary mirror (e.g., "aws-us-east-1")
     tags: z.array(z.string()).optional(),
-    doi: z.string().optional(), // Digital Object Identifier
+    doi: DoiSchema.optional(), // Digital Object Identifier
   })
   .openapi("ProductMetadata");
 

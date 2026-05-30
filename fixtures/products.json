@@ -18,6 +18,7 @@
       },
       "primary_mirror": "primary-data-connection",
       "tags": ["mock"],
+      "doi": "10.1234/regular-user-dataset",
       "roles": {}
     },
     "disabled": false,
