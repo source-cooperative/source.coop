@@ -3,7 +3,6 @@ import { CONFIG } from "@/lib/config";
 import { accountsTable, membershipsTable } from "@/lib/clients/database";
 import { isAuthorized } from "@/lib/api/authz";
 import { Actions, UserSession } from "@/types";
-import type { IndividualAccount } from "@/types/account";
 import { LOGGER } from "../logging";
 
 let jwks: ReturnType<typeof createRemoteJWKSet> | null = null;
@@ -90,7 +89,7 @@ export async function authenticateWithOidcToken(
     return null;
   }
 
-  const identity_id = (account as IndividualAccount).identity_id;
+  const identity_id = account.identity_id;
 
   const memberships = await membershipsTable.listByUser(account.account_id);
   const filteredMemberships = memberships.filter((membership) =>

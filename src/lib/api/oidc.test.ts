@@ -66,7 +66,6 @@ jest.mock("@/lib/clients/database", () => ({
   membershipsTable: {
     listByUser: jest.fn(),
   },
-  isIndividualAccount: jest.fn(),
 }));
 
 jest.mock("@/lib/api/authz", () => ({
@@ -75,11 +74,7 @@ jest.mock("@/lib/api/authz", () => ({
 
 import { isAuthorized } from "@/lib/api/authz";
 
-import {
-  accountsTable,
-  membershipsTable,
-  isIndividualAccount,
-} from "@/lib/clients/database";
+import { accountsTable, membershipsTable } from "@/lib/clients/database";
 
 describe("authenticateWithOidcToken", () => {
   beforeEach(() => {
@@ -151,7 +146,6 @@ describe("authenticateWithOidcToken", () => {
       disabled: false,
       type: "individual",
     });
-    (isIndividualAccount as unknown as jest.Mock).mockReturnValue(true);
     (membershipsTable.listByUser as jest.Mock).mockResolvedValue([]);
 
     const { privateKey: psPriv, publicKey: psPub } =
@@ -186,7 +180,6 @@ describe("authenticateWithOidcToken", () => {
       account_id: "test-user",
       disabled: true,
     });
-    (isIndividualAccount as unknown as jest.Mock).mockReturnValue(true);
     const token = await createToken({ sub: "test-user" });
     const result = await authenticateWithOidcToken(`Bearer ${token}`, AUDIENCE);
     expect(result).toBeNull();
@@ -210,7 +203,6 @@ describe("authenticateWithOidcToken", () => {
     const mockMemberships = [{ membership_id: "m1" }];
 
     (accountsTable.fetchByOryId as jest.Mock).mockResolvedValue(mockAccount);
-    (isIndividualAccount as unknown as jest.Mock).mockReturnValue(true);
     (membershipsTable.listByUser as jest.Mock).mockResolvedValue(
       mockMemberships
     );
@@ -238,7 +230,6 @@ describe("authenticateWithOidcToken", () => {
     const unauthorizedMembership = { membership_id: "m2" };
 
     (accountsTable.fetchByOryId as jest.Mock).mockResolvedValue(mockAccount);
-    (isIndividualAccount as unknown as jest.Mock).mockReturnValue(true);
     (membershipsTable.listByUser as jest.Mock).mockResolvedValue([
       authorizedMembership,
       unauthorizedMembership,
