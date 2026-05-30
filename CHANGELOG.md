@@ -1,5 +1,27 @@
 # Changelog
 
+## [2.0.0](https://github.com/source-cooperative/source.coop/compare/v1.3.0...v2.0.0) (2026-05-30)
+
+
+### ⚠ BREAKING CHANGES
+
+* require auth for restricted products ([#284](https://github.com/source-cooperative/source.coop/issues/284))
+
+### Features
+
+* **viewer:** Add PDF viewer, PNG bindings ([#315](https://github.com/source-cooperative/source.coop/issues/315)) ([7927431](https://github.com/source-cooperative/source.coop/commit/7927431815971f9d6e11b5ab25164835cf151c70))
+
+
+### Bug Fixes
+
+* require auth for restricted products ([#284](https://github.com/source-cooperative/source.coop/issues/284)) ([112265a](https://github.com/source-cooperative/source.coop/commit/112265aea73a84a364d0843ff7798124a5f65f14))
+* validate product DOI format ([#319](https://github.com/source-cooperative/source.coop/issues/319)) ([4727dec](https://github.com/source-cooperative/source.coop/commit/4727dec6f267619aef7a8ab8886c88e9b182a24c))
+
+
+### Performance Improvements
+
+* **db:** request-scoped memoization of DynamoDB reads ([#320](https://github.com/source-cooperative/source.coop/issues/320)) ([1f295cf](https://github.com/source-cooperative/source.coop/commit/1f295cf18e0cf451d3ef328fb23d4316cf15dbec))
+
 ## [1.3.0](https://github.com/source-cooperative/source.coop/compare/v1.2.0...v1.3.0) (2026-05-13)
 
 
