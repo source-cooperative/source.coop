@@ -20,7 +20,7 @@ export class DataConnectionsTable extends BaseTable {
 
   async fetchById(dataConnectionId: string): Promise<DataConnection | null> {
     try {
-      const result = await this.client.send(
+      const result = await this.cachedSend(
         new QueryCommand({
           TableName: this.table,
           KeyConditionExpression: "data_connection_id = :data_connection_id",
@@ -40,16 +40,20 @@ export class DataConnectionsTable extends BaseTable {
 
   async listAll(): Promise<DataConnection[]> {
     try {
-      const result = await this.client.send(
+      const result = await this.cachedSend(
         new ScanCommand({
           TableName: this.table,
           ConsistentRead: true,
         })
       );
+      // Copy before sorting: the response may be a shared, request-cached object,
+      // so we must not sort `result.Items` in place.
       return (
-        result.Items?.sort((a, b) =>
-          b.data_connection_id.localeCompare(a.data_connection_id)
-        ).map((item) => item as DataConnection) ?? []
+        [...(result.Items ?? [])]
+          .sort((a, b) =>
+            b.data_connection_id.localeCompare(a.data_connection_id)
+          )
+          .map((item) => item as DataConnection) ?? []
       );
     } catch (error) {
       this.logError("listAll", error);
