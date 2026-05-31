@@ -112,7 +112,7 @@ export function ProxyCredentialsGate() {
   return (
     <Flex align="center" gap="2" py="4">
       <Spinner />
-      <Text color="gray">Loading private files…</Text>
+      <Text color="gray">Fetching proxy credentials…</Text>
     </Flex>
   );
 }
