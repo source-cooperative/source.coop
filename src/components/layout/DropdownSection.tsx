@@ -53,7 +53,9 @@ export function DropdownSection({
   return (
     <>
       {label && <DropdownMenu.Label>{label}</DropdownMenu.Label>}
-      {items.map((item, index) =>
+      {items
+        .filter(({ condition = true }) => condition)
+        .map((item, index) =>
         item.href ? (
           <DropdownMenu.Item
             key={index}
@@ -61,7 +63,15 @@ export function DropdownSection({
             disabled={item.disabled}
             onSelect={() => router.push(item.href!)}
           >
-            <Link href={item.href} style={dropdownMenuLinkStyle}>
+            {/* Left-click is handled by onSelect (router.push); preventDefault
+                stops the <Link>'s native navigation from pushing a second,
+                duplicate history entry. Right/middle-click still use the
+                anchor for open-in-new-tab. */}
+            <Link
+              href={item.href}
+              style={dropdownMenuLinkStyle}
+              onClick={(e) => e.preventDefault()}
+            >
               {item.children}
             </Link>
           </DropdownMenu.Item>

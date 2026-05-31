@@ -50,7 +50,11 @@ export function AccountSelector({
               key={account.account_id}
               onSelect={() => router.push(href)}
             >
-              <Link href={href} style={dropdownMenuLinkStyle}>
+              <Link
+                href={href}
+                style={dropdownMenuLinkStyle}
+                onClick={(e) => e.preventDefault()}
+              >
                 <AvatarLinkCompact
                   account={account}
                   link={false}
