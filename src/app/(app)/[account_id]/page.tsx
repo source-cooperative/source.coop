@@ -19,6 +19,7 @@ import {
   generateNotFoundMetadata,
   generateAccountMetadata,
 } from "@/components/features/metadata";
+import { AccountSchemaMetadata } from "@/components/features/profiles/AccountSchemaMetadata";
 
 type PageProps = {
   params: Promise<{ account_id: string }>;
@@ -45,9 +46,14 @@ export default async function AccountPage({ params, searchParams }: PageProps) {
     notFound();
   }
 
-  return isOrganizationalAccount(account) ? (
-    <OrganizationProfilePage account={account} />
-  ) : (
-    <IndividualProfilePage account={account} showWelcome={showWelcome} />
+  return (
+    <>
+      <AccountSchemaMetadata account={account} />
+      {isOrganizationalAccount(account) ? (
+        <OrganizationProfilePage account={account} />
+      ) : (
+        <IndividualProfilePage account={account} showWelcome={showWelcome} />
+      )}
+    </>
   );
 }

@@ -1,10 +1,16 @@
-name: Claude Auto Review with Tracking
+name: Claude Auto Review
 on:
   pull_request:
     types: [opened, synchronize, ready_for_review, reopened]
+    # Skip when a PR touches workflow files: the action can't validate/run
+    # against modified workflows and fails with "401 Unauthorized - Workflow
+    # validation failed".
+    paths-ignore:
+      - '.github/workflows/**'
 
 jobs:
   review:
+    if: github.event.pull_request.user.type != 'Bot'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -18,18 +24,66 @@ jobs:
       - uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          track_progress: true # ✨ Enables tracking comments
+          # No track_progress / use_sticky_comment: we deliver a single FORMAL PR
+          # review and supersede the prior one, so there are no accumulating
+          # progress/summary comments across pushes.
           prompt: |
             REPO: ${{ github.repository }}
-            PR NUMBER: ${{ github.event.pull_request.number }}
+            PR: ${{ github.event.pull_request.number }}
 
-            Please review this pull request with a focus on:
-            - Code quality and best practices
-            - Potential bugs or issues
-            - Security implications
-            - Performance considerations
+            You are reviewing this pull request. Deliver exactly ONE formal GitHub
+            pull request review per run, replacing any prior review from earlier runs.
 
-            Provide detailed feedback using inline comments for specific issues.
+            STEP 1 — Supersede prior rounds.
+            List existing reviews:
+              `gh api repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/reviews --paginate`
+            For each review authored by the Claude app user whose state is APPROVED or
+            CHANGES_REQUESTED (i.e. still active), dismiss it so only this run's review
+            is in effect:
+              `gh api -X PUT repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/reviews/<id>/dismissals \
+                 -f message="Superseded by a newer Claude review." -f event=DISMISS`
 
+            STEP 2 — Review the diff (`gh pr diff`) for correctness bugs, security
+            issues, and clear best-practice problems. Skip nits and anything the
+            linter/formatter already enforces. If nothing is blocking, say so briefly —
+            do not pad the review.
+
+            STEP 3 — Submit ONE formal review in a single API call, bundling every
+            inline note in the `comments` array. Build a JSON file and post it:
+              `gh api -X POST repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/reviews --input <file>`
+
+            Requirements for that JSON:
+            - "event": "REQUEST_CHANGES" if there are blocking issues, otherwise "COMMENT".
+              Never use "APPROVE" (bot approvals are restricted and not meaningful here).
+            - "body": begin with a single bold verdict line that starts with a clear
+              status emoji — `✅` when nothing is blocking (safe to merge) or `❌` when
+              changes are requested — e.g. `**✅ No blocking issues — safe to merge.**`
+              or `**❌ Changes requested — see findings below.**`. The emoji must match
+              the "event": ✅ pairs with "COMMENT", ❌ pairs with "REQUEST_CHANGES".
+              Follow the verdict line with a brief bullet list. No checklists, no
+              progress logs.
+            - "comments": one entry per finding, each { "path", "line" (and "start_line"
+              for multi-line), "body" }. Anchor each to the exact changed line(s).
+
+            MAKE FINDINGS ONE-CLICK APPLYABLE. Whenever a finding has a concrete code
+            fix, put a GitHub suggestion block in that inline comment's body so the
+            author can apply it with the "Commit suggestion" button:
+
+                ```suggestion
+                <the exact replacement text for the commented line(s)>
+                ```
+
+            The suggestion content must replace the full line range the comment is
+            anchored to (use start_line..line for multi-line replacements). Prefer
+            several small, targeted suggestions over one large comment — they are far
+            easier for the author to apply individually. Reserve plain prose comments
+            for issues that have no mechanical fix.
+
+            Before posting any suggestion block, re-read it and verify it is
+            syntactically complete — balanced brackets, parens, and braces — and that
+            it would compile if committed verbatim. The author applies it with one
+            click, so a malformed suggestion breaks their build. If you are not
+            confident the replacement is exactly correct, describe the fix in prose
+            instead.
           claude_args: |
-            --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*)"
+            --allowedTools "Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh api:*)"

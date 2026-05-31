@@ -27,7 +27,7 @@ import {
 } from "@/lib/clients/database";
 import { getServerSession } from "@ory/nextjs/app";
 import { getOryId } from "@/lib/ory";
-import { AccountType, ProductDataMode } from "@/types";
+import { AccountType } from "@/types";
 
 // Mock database dependencies for testing real authentication
 jest.mock("@/lib/clients/database/products", () => ({
@@ -69,7 +69,7 @@ describe("/api/v1/products/[account_id]/[repository_id]", () => {
     created_at: "2024-01-01T00:00:00Z",
     updated_at: "2024-01-01T00:00:00Z",
     disabled: false,
-    data_mode: ProductDataMode.Private, // Set to private mode to test authorization
+    visibility: "restricted", // Set to restricted to test authorization
   };
 
   // Test SOURCE_KEY value (set at module level)
