@@ -72,7 +72,7 @@ export function DropdownSection({
             key={index}
             color={item.color}
             disabled={item.disabled}
-            onClick={item.onClick}
+            onSelect={item.onClick}
           >
             {item.children}
           </DropdownMenu.Item>
