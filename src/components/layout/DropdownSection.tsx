@@ -63,15 +63,7 @@ export function DropdownSection({
             disabled={item.disabled}
             onSelect={() => router.push(item.href!)}
           >
-            {/* Left-click is handled by onSelect (router.push); preventDefault
-                stops the <Link>'s native navigation from pushing a second,
-                duplicate history entry. Right/middle-click still use the
-                anchor for open-in-new-tab. */}
-            <Link
-              href={item.href}
-              style={dropdownMenuLinkStyle}
-              onClick={(e) => e.preventDefault()}
-            >
+            <Link href={item.href} style={dropdownMenuLinkStyle}>
               {item.children}
             </Link>
           </DropdownMenu.Item>

@@ -49,11 +49,7 @@ export function ProductSelector({
               key={product.product_id}
               onSelect={() => router.push(href)}
             >
-              <Link
-                href={href}
-                style={dropdownMenuLinkStyle}
-                onClick={(e) => e.preventDefault()}
-              >
+              <Link href={href} style={dropdownMenuLinkStyle}>
                 <ProductDisplay
                   product={product}
                   selected={product.product_id === currentProduct.product_id}

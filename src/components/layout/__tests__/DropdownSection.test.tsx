@@ -149,21 +149,6 @@ describe("DropdownSection", () => {
     expect(screen.queryByText("Hidden Item")).not.toBeInTheDocument();
   });
 
-  it("prevents the link's native navigation on left-click so only onSelect navigates", () => {
-    render(
-      <DropdownSection items={[{ href: "/some-path", children: "Nav Item" }]} />
-    );
-    const link = screen.getByText("Nav Item").closest("a")!;
-    // fireEvent.click returns false when a handler called preventDefault. The
-    // <Link>'s onClick preventDefaults so the native anchor navigation does not
-    // fire — otherwise left-click would push two history entries (anchor +
-    // onSelect's router.push).
-    const notPrevented = fireEvent.click(link);
-    expect(notPrevented).toBe(false);
-    expect(mockPush).toHaveBeenCalledTimes(1);
-    expect(mockPush).toHaveBeenCalledWith("/some-path");
-  });
-
   it("does not navigate when item is disabled", () => {
     render(
       <DropdownSection
