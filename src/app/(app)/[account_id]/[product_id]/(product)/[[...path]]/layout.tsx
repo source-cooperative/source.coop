@@ -22,6 +22,7 @@ import { Actions } from "@/types/shared";
 import { Box, Card, Flex } from "@radix-ui/themes";
 import { notFound } from "next/navigation";
 import { getPendingInvitation } from "@/lib/actions/memberships";
+import { ProductSchemaMetadata } from "@/components/features/products/ProductSchemaMetadata";
 
 interface ProductLayoutProps {
   children: React.ReactNode;
@@ -41,6 +42,9 @@ export default async function ProductLayout({
   if (!product) {
     notFound();
   }
+  if (!isAuthorized(session, product, Actions.GetRepository)) {
+    notFound();
+  }
   const prefix = path ? path.join("/") : "";
 
   // Check for pending invitation
@@ -48,6 +52,7 @@ export default async function ProductLayout({
 
   return (
     <>
+      <ProductSchemaMetadata product={product} />
       {/* Show pending invitation banner if exists */}
       {pendingInvitation && (
         <PendingInvitationBanner

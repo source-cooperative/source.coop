@@ -15,7 +15,7 @@ export class MembershipsTable extends BaseTable {
 
   async fetchById(membershipId: string): Promise<Membership | null> {
     try {
-      const result = await this.client.send(
+      const result = await this.cachedSend(
         new QueryCommand({
           TableName: this.table,
           KeyConditionExpression: "membership_id = :membership_id",
@@ -35,7 +35,7 @@ export class MembershipsTable extends BaseTable {
 
   async listByUser(accountId: string): Promise<Membership[]> {
     try {
-      const result = await this.client.send(
+      const result = await this.cachedSend(
         new QueryCommand({
           TableName: this.table,
           IndexName: "account_id",
@@ -101,7 +101,7 @@ export class MembershipsTable extends BaseTable {
         TableName: this.table,
         ...query,
       });
-      const result = await this.client.send(command);
+      const result = await this.cachedSend(command);
       return result.Items?.map((item) => item as Membership) ?? [];
     } catch (error) {
       this.logError("listByAccount", error, {

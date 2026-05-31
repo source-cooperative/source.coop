@@ -52,10 +52,10 @@ export class ProductsTable extends BaseTable {
       scanParams.ExclusiveStartKey = lastEvaluatedKey;
     }
 
-    const result = await this.client.send(new ScanCommand(scanParams));
+    const result = await this.cachedSend(new ScanCommand(scanParams));
 
     return {
-      products: (result.Items || []) as Product[],
+      products: [...(result.Items ?? [])] as Product[],
       lastEvaluatedKey: result.LastEvaluatedKey,
     };
   }
@@ -69,7 +69,7 @@ export class ProductsTable extends BaseTable {
     lastEvaluatedKey: any;
   }> {
     account_id = account_id.toLowerCase();
-    const result = await this.client.send(
+    const result = await this.cachedSend(
       new QueryCommand({
         TableName: this.table,
         KeyConditionExpression: "account_id = :account_id",
@@ -82,7 +82,7 @@ export class ProductsTable extends BaseTable {
     );
 
     return {
-      products: (result.Items || []) as Product[],
+      products: ([...(result.Items ?? [])]) as Product[],
       lastEvaluatedKey: result.LastEvaluatedKey,
     };
   }
@@ -159,10 +159,10 @@ export class ProductsTable extends BaseTable {
       queryParams.ExclusiveStartKey = lastEvaluatedKey;
     }
 
-    const result = await this.client.send(new QueryCommand(queryParams));
+    const result = await this.cachedSend(new QueryCommand(queryParams));
 
     return {
-      products: (result.Items || []) as Product[],
+      products: ([...(result.Items ?? [])]) as Product[],
       lastEvaluatedKey: result.LastEvaluatedKey,
     };
   }
@@ -175,7 +175,7 @@ export class ProductsTable extends BaseTable {
     product_id = product_id.toLowerCase();
     try {
       const [result, account] = await Promise.all([
-        this.client.send(
+        this.cachedSend(
           new GetCommand({
             TableName: this.table,
             Key: {

@@ -1,6 +1,6 @@
 # Ory Authentication Implementation
 
-Source Cooperative uses Ory Kratos for authentication, following a server-first architecture with minimal client-side auth.
+Source Cooperative uses [Ory Kratos](https://github.com/ory/kratos) for authentication, following a server-first architecture with minimal client-side auth.
 
 
 ## Local Development Setup
