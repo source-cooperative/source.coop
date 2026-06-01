@@ -38,8 +38,12 @@ describe("encrypted-cookie", () => {
 
   test("returns null on tampered ciphertext", async () => {
     const token = await encryptJson({ x: 1 });
-    // Flip a byte near the end (in the auth tag region) by altering base64
-    const tampered = token.slice(0, -4) + (token.endsWith("A") ? "B" : "A") + token.slice(-3);
+    // Flip the first base64 char (part of the IV) so the GCM tag no longer
+    // verifies. The first char is always data — never base64 padding — and the
+    // ternary keys off that char, so the value always changes. (The previous
+    // version keyed off the LAST char, which is padding `=`, so it always wrote
+    // "A" and was a no-op ~1/64 of the time when index -4 was already "A".)
+    const tampered = (token[0] === "A" ? "B" : "A") + token.slice(1);
     expect(await decryptJson(tampered)).toBeNull();
   });
 
