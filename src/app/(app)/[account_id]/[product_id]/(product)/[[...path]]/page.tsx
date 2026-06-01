@@ -3,10 +3,12 @@ import { Metadata } from "next";
 
 import { LOGGER, dataConnectionsTable, getPageSession } from "@/lib";
 import { getStorageClient } from "@/lib/clients/storage";
+import { isAccessDeniedError } from "@/lib/storage/s3";
 import { DataConnection, ProductMirror, ProductObject } from "@/types";
 import { readProxyCredentials } from "@/lib/services/proxy-credentials-read";
 import { getAuthorizedProduct } from "./data";
 import { ProxyCredentialsGate } from "@/components/features/products/ProxyCredentialsGate";
+import { ProductDataUnavailable } from "@/components/features/products/ProductDataUnavailable";
 import { DirectoryList } from "@/components/features/products/object-browser/DirectoryList";
 import { ObjectSummary } from "@/components/features/products/object-browser/ObjectSummary";
 import {
@@ -122,27 +124,51 @@ export default async function ProductPathPage({ params }: PageProps) {
   const s3Prefix = objectPath
     ? `${product_id}/${objectPath}/`
     : `${product_id}/`;
-  const listing = await s3.listObjects({ bucket: account_id, prefix: s3Prefix });
 
-  // If the listing is empty and we have a prefix, this is likely a file path
-  // whose HEAD failed earlier (e.g. transient error). Fall back to listing
-  // the parent directory so the user lands on something useful.
+  // The directory listing goes through the data proxy with the user's signed
+  // credentials. The viewer is already app-authorized (getAuthorizedProduct
+  // above), so an AccessDenied here is not "you can't see this" — it's the proxy
+  // refusing the signed read, usually because the just-minted credentials
+  // haven't propagated yet. Surface a clear, recoverable notice for that case
+  // and let any other error fall through to the route error boundary (retry).
   let effectivePrefix = objectPath;
-  let effectiveListing = listing;
-  if (
-    effectiveListing.objects.length === 0 &&
-    effectiveListing.directories.length === 0 &&
-    effectivePrefix
-  ) {
-    const parent = effectivePrefix.includes("/")
-      ? effectivePrefix.substring(0, effectivePrefix.lastIndexOf("/"))
-      : "";
-    const parentS3Prefix = parent ? `${product_id}/${parent}/` : `${product_id}/`;
+  let effectiveListing;
+  try {
     effectiveListing = await s3.listObjects({
       bucket: account_id,
-      prefix: parentS3Prefix,
+      prefix: s3Prefix,
     });
-    effectivePrefix = parent;
+
+    // If the listing is empty and we have a prefix, this is likely a file path
+    // whose HEAD failed earlier (e.g. transient error). Fall back to listing
+    // the parent directory so the user lands on something useful.
+    if (
+      effectiveListing.objects.length === 0 &&
+      effectiveListing.directories.length === 0 &&
+      effectivePrefix
+    ) {
+      const parent = effectivePrefix.includes("/")
+        ? effectivePrefix.substring(0, effectivePrefix.lastIndexOf("/"))
+        : "";
+      const parentS3Prefix = parent
+        ? `${product_id}/${parent}/`
+        : `${product_id}/`;
+      effectiveListing = await s3.listObjects({
+        bucket: account_id,
+        prefix: parentS3Prefix,
+      });
+      effectivePrefix = parent;
+    }
+  } catch (error) {
+    if (isAccessDeniedError(error)) {
+      LOGGER.warn("Proxy denied a signed read for an authorized viewer", {
+        operation: "ProductPathPage",
+        context: "directory listing",
+        metadata: { account_id, product_id, objectPath },
+      });
+      return <ProductDataUnavailable />;
+    }
+    throw error;
   }
 
   const objects: ProductObject[] = [

@@ -49,6 +49,18 @@ const keyFor = (p: { product_id: string; object_path: string }) =>
   `${p.product_id}/${p.object_path}`;
 
 /**
+ * True when a storage error is an S3 "AccessDenied" (HTTP 403) — i.e. the data
+ * proxy refused the read. Callers use this to show a clear, recoverable notice
+ * instead of falling through to the generic "something went wrong" boundary.
+ */
+export function isAccessDeniedError(error: unknown): boolean {
+  return (
+    error instanceof S3ServiceException &&
+    (error.name === "AccessDenied" || error.$metadata?.httpStatusCode === 403)
+  );
+}
+
+/**
  * Server-side S3 client, built per request by getStorageClient(), which wires
  * the user's proxy credentials (or anonymous for public data). Every
  * server -> proxy read therefore acts on behalf of the requesting user.

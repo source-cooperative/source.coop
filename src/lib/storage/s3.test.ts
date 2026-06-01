@@ -2,7 +2,7 @@
  * @jest-environment node
  */
 import { Readable } from "stream";
-import { S3StorageClient } from "./s3";
+import { S3StorageClient, isAccessDeniedError } from "./s3";
 
 const mockSend = jest.fn();
 
@@ -16,6 +16,7 @@ jest.mock("@aws-sdk/client-s3", () => {
 
 import {
   S3Client,
+  S3ServiceException,
   ListObjectsV2Command,
   HeadObjectCommand,
   GetObjectCommand,
@@ -235,5 +236,32 @@ describe("S3StorageClient", () => {
     expect(result.contentType).toBe("text/plain");
     expect(result.contentLength).toBe(bytes.length);
     expect(result.etag).toBe('"ghi"');
+  });
+});
+
+describe("isAccessDeniedError", () => {
+  const makeS3Error = (name: string, httpStatusCode?: number) =>
+    new S3ServiceException({
+      name,
+      $fault: "client",
+      $metadata: httpStatusCode ? { httpStatusCode } : {},
+    } as ConstructorParameters<typeof S3ServiceException>[0]);
+
+  test("true for AccessDenied by name", () => {
+    expect(isAccessDeniedError(makeS3Error("AccessDenied"))).toBe(true);
+  });
+
+  test("true for a 403 even when the name differs", () => {
+    expect(isAccessDeniedError(makeS3Error("Forbidden", 403))).toBe(true);
+  });
+
+  test("false for other S3 errors (e.g. NotFound/404)", () => {
+    expect(isAccessDeniedError(makeS3Error("NotFound", 404))).toBe(false);
+  });
+
+  test("false for non-S3 errors and non-errors", () => {
+    expect(isAccessDeniedError(new Error("AccessDenied"))).toBe(false);
+    expect(isAccessDeniedError("AccessDenied")).toBe(false);
+    expect(isAccessDeniedError(null)).toBe(false);
   });
 });
