@@ -1,4 +1,9 @@
-import { jwtVerify, createRemoteJWKSet } from "jose";
+import {
+  jwtVerify,
+  createRemoteJWKSet,
+  decodeJwt,
+  decodeProtectedHeader,
+} from "jose";
 import { CONFIG } from "@/lib/config";
 import { accountsTable, membershipsTable } from "@/lib/clients/database";
 import { isAuthorized } from "@/lib/api/authz";
@@ -70,9 +75,44 @@ export async function authenticateWithOidcToken(
     });
     payload = result.payload;
   } catch (error) {
+    // `Error` objects serialize to `{}`, hiding the cause. jose attaches a
+    // machine-readable `code` (e.g. ERR_JWT_CLAIM_VALIDATION_FAILED,
+    // ERR_JWS_SIGNATURE_VERIFICATION_FAILED, ERR_JWT_EXPIRED,
+    // ERR_JWKS_NO_MATCHING_KEY) and, for claim failures, the offending `claim`.
+    // Decode the token unverified so we can log its actual iss/aud/exp/kid
+    // against what we expect — none of which is secret — turning an opaque
+    // failure into an actionable one.
+    const e = error as {
+      name?: string;
+      code?: string;
+      claim?: string;
+      message?: string;
+    };
+    let tokenClaims: Record<string, unknown> = { decode: "failed" };
+    try {
+      const claims = decodeJwt(token);
+      const header = decodeProtectedHeader(token);
+      tokenClaims = {
+        token_iss: claims.iss,
+        token_aud: claims.aud,
+        token_exp: claims.exp,
+        token_alg: header.alg,
+        token_kid: header.kid,
+      };
+    } catch {
+      // Leave the failure marker.
+    }
     LOGGER.error("Failed to verify OIDC token", {
       operation: "authenticateWithOidcToken",
-      metadata: { error },
+      metadata: {
+        error_name: e?.name,
+        error_code: e?.code,
+        error_claim: e?.claim,
+        error_message: e?.message,
+        expected_iss: CONFIG.storage.endpoint,
+        expected_aud: audience,
+        ...tokenClaims,
+      },
     });
     return null;
   }
