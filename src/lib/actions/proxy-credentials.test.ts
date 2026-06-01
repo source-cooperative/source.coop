@@ -120,6 +120,72 @@ describe("getProxyCredentials", () => {
     expect(lastCall).toContain("RoleArn=_default");
   });
 
+  // Drives the 4-call skip_consent Hydra flow, then returns the given STS body.
+  function mockHydraFlowEndingWithSts(body: string, status = 200) {
+    fetchMock
+      .mockResolvedValueOnce(redirectResponse("/ui/login?login_challenge=lc"))
+      .mockResolvedValueOnce(
+        jsonResponse({ redirect_to: "https://auth.source.coop/postlogin" }),
+      )
+      .mockResolvedValueOnce(redirectResponse("https://source.coop/callback?code=c"))
+      .mockResolvedValueOnce(jsonResponse({ id_token: "tok" }))
+      .mockResolvedValueOnce(new Response(body, { status }));
+  }
+
+  test("trims whitespace from STS credential values", async () => {
+    (getPageSession as jest.Mock).mockResolvedValue(AUTHED_SESSION);
+    const xml = `<AssumeRoleWithWebIdentityResponse><AssumeRoleWithWebIdentityResult><Credentials><AccessKeyId>
+      AKIAREAD
+    </AccessKeyId><SecretAccessKey>  readsecret  </SecretAccessKey><SessionToken>
+readsess
+</SessionToken><Expiration>  2026-04-10T13:00:00Z  </Expiration></Credentials></AssumeRoleWithWebIdentityResult></AssumeRoleWithWebIdentityResponse>`;
+    mockHydraFlowEndingWithSts(xml);
+
+    const creds = await getProxyCredentials();
+    expect(creds).toEqual({
+      accessKeyId: "AKIAREAD",
+      secretAccessKey: "readsecret",
+      sessionToken: "readsess",
+      expiration: "2026-04-10T13:00:00Z",
+    });
+  });
+
+  test("throws when the STS Expiration is not a parseable date", async () => {
+    (getPageSession as jest.Mock).mockResolvedValue(AUTHED_SESSION);
+    mockHydraFlowEndingWithSts(
+      STS_XML.replace("2026-04-10T13:00:00Z", "not-a-real-date"),
+    );
+    await expect(getProxyCredentials()).rejects.toThrow(/unparseable <Expiration>/);
+  });
+
+  test("encodes non-Latin-1 client credentials for the token-exchange Basic header", async () => {
+    (getPageSession as jest.Mock).mockResolvedValue(AUTHED_SESSION);
+    const prev = CONFIG.auth.oauth2.clientSecret;
+    CONFIG.auth.oauth2.clientSecret = "sÉcret€"; // € is U+20AC (> 255) → btoa throws
+    try {
+      mockHydraFlowAndSts(fetchMock);
+      // Would throw InvalidCharacterError if the code still used btoa().
+      await expect(getProxyCredentials()).resolves.toBeDefined();
+      const tokenCall = fetchMock.mock.calls.find(([url]) =>
+        String(url).endsWith("/oauth2/token"),
+      );
+      expect(tokenCall).toBeDefined();
+      const headers = (tokenCall![1] as RequestInit).headers as Record<
+        string,
+        string
+      >;
+      const expected =
+        "Basic " +
+        Buffer.from(
+          `${CONFIG.auth.oauth2.clientId}:sÉcret€`,
+          "utf-8",
+        ).toString("base64");
+      expect(headers.Authorization).toBe(expected);
+    } finally {
+      CONFIG.auth.oauth2.clientSecret = prev;
+    }
+  });
+
   test("sends a sufficiently-long state on the /oauth2/auth request", async () => {
     // Hydra (fosite) enforces a minimum-entropy check and rejects the
     // /oauth2/auth request with `invalid_state` if `state` is missing or

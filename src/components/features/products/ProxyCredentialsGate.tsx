@@ -16,6 +16,12 @@ const EPISODE_WINDOW_MS = 15_000;
 // Bound how long we wait on the mint action before surfacing an error, so a
 // hung network request can't leave the gate spinning indefinitely.
 const REFRESH_TIMEOUT_MS = 20_000;
+// After router.refresh() succeeds we expect this gate to unmount (the server
+// re-renders the listing). router.refresh() preserves this client instance, so
+// the mount effect won't re-run on its own — if we're still mounted after this
+// long, the refresh didn't expose the credentials, so re-attempt. The loop
+// guard above bounds the retries and surfaces an error instead of spinning.
+const POST_REFRESH_RECHECK_MS = 3_000;
 
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   let timer: ReturnType<typeof setTimeout>;
@@ -40,9 +46,13 @@ export function ProxyCredentialsGate() {
   const pathname = usePathname();
   const [status, setStatus] = useState<Status>("loading");
   const startedRef = useRef(false);
+  const recheckRef = useRef<ReturnType<typeof setTimeout> | undefined>(
+    undefined,
+  );
 
   const attempt = useCallback(async () => {
     setStatus("loading");
+    if (recheckRef.current) clearTimeout(recheckRef.current);
     const key = `sc_creds_gate:${pathname}`;
     try {
       const result = await withTimeout(
@@ -72,6 +82,12 @@ export function ProxyCredentialsGate() {
         return;
       }
       router.refresh();
+      // If the refresh resolves the credentials, this gate unmounts and the
+      // cleanup below clears this timer. If it doesn't (cookie still missing),
+      // re-attempt so the loop guard can eventually surface the error.
+      recheckRef.current = setTimeout(() => {
+        void attempt();
+      }, POST_REFRESH_RECHECK_MS);
     } catch {
       setStatus("error");
     }
@@ -81,6 +97,9 @@ export function ProxyCredentialsGate() {
     if (startedRef.current) return;
     startedRef.current = true;
     void attempt();
+    return () => {
+      if (recheckRef.current) clearTimeout(recheckRef.current);
+    };
   }, [attempt]);
 
   const retry = useCallback(() => {

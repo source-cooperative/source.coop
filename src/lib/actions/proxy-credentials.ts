@@ -176,7 +176,11 @@ async function getOryIdToken(identityId: string): Promise<string> {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
-      Authorization: "Basic " + btoa(`${clientId}:${clientSecret}`),
+      // btoa throws on any code point > 255; encode UTF-8 bytes first so a
+      // client secret with non-Latin-1 characters still produces a valid header.
+      Authorization:
+        "Basic " +
+        Buffer.from(`${clientId}:${clientSecret}`, "utf-8").toString("base64"),
     },
     body: new URLSearchParams({
       grant_type: "authorization_code",
@@ -278,14 +282,23 @@ function parseStsCredentials(xml: string): ProxyCredentials {
     if (!match) {
       throw new Error(`STS response missing <${tag}> element`);
     }
-    return match[1];
+    // STS XML occasionally pads values with surrounding whitespace; trim so it
+    // never leaks into the credential or the parsed Expiration.
+    return match[1].trim();
   };
+
+  const expiration = extract("Expiration");
+  if (Number.isNaN(Date.parse(expiration))) {
+    // A malformed Expiration would otherwise feed isFresh()/cookie maxAge as a
+    // garbage date — fail loudly instead of caching unusable credentials.
+    throw new Error(`STS response has an unparseable <Expiration>: ${expiration}`);
+  }
 
   return {
     accessKeyId: extract("AccessKeyId"),
     secretAccessKey: extract("SecretAccessKey"),
     sessionToken: extract("SessionToken"),
-    expiration: extract("Expiration"),
+    expiration,
   };
 }
 
