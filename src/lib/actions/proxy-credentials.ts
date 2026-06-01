@@ -82,14 +82,21 @@ async function getOryIdToken(identityId: string): Promise<string> {
 
   const cookieJar = new Map<string, string>();
 
-  // Step 1: Initiate the OAuth2 flow. No `state` parameter is used: this flow
-  // is driven entirely server-side (no browser redirect), so there is no
-  // cross-site request for a CSRF `state` token to protect against.
+  // Step 1: Initiate the OAuth2 flow. This flow is driven entirely server-side
+  // (no browser redirect), so a `state` token isn't needed for CSRF protection.
+  // Hydra still requires one, though: fosite enforces a minimum-entropy check
+  // (MinParameterEntropy, 8 chars) and rejects the /oauth2/auth request with
+  // `invalid_state` if `state` is missing or too short — so we must send it.
+  const state = Array.from(crypto.getRandomValues(new Uint8Array(16)))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+
   const authUrl = new URL(`${backendUrl}/oauth2/auth`);
   authUrl.searchParams.set("response_type", "code");
   authUrl.searchParams.set("client_id", clientId);
   authUrl.searchParams.set("redirect_uri", redirectUri);
   authUrl.searchParams.set("scope", "openid");
+  authUrl.searchParams.set("state", state);
 
   const authResp = await fetchWithCookies(authUrl.toString(), cookieJar, {
     redirect: "manual",

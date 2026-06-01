@@ -120,6 +120,22 @@ describe("getProxyCredentials", () => {
     expect(lastCall).toContain("RoleArn=_default");
   });
 
+  test("sends a sufficiently-long state on the /oauth2/auth request", async () => {
+    // Hydra (fosite) enforces a minimum-entropy check and rejects the
+    // /oauth2/auth request with `invalid_state` if `state` is missing or
+    // shorter than 8 chars. Guard against a regression that drops it.
+    (getPageSession as jest.Mock).mockResolvedValue(AUTHED_SESSION);
+    mockHydraFlowAndSts(fetchMock);
+
+    await getProxyCredentials();
+
+    const authUrl = new URL(fetchMock.mock.calls[0][0] as string);
+    expect(authUrl.pathname).toBe("/oauth2/auth");
+    const state = authUrl.searchParams.get("state");
+    expect(state).not.toBeNull();
+    expect(state!.length).toBeGreaterThanOrEqual(8);
+  });
+
   test("throws when STS returns non-200", async () => {
     (getPageSession as jest.Mock).mockResolvedValue({
       identity_id: "ory-123",
