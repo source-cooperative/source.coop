@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Flex, DropdownMenu } from "@radix-ui/themes";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { Account } from "@/types";
 import { AvatarLinkCompact } from "@/components/core/AccountLinks";
 import { editAccountViewUrl } from "@/lib/urls";
@@ -23,7 +23,6 @@ export function AccountSelector({
 }: AccountSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
-  const router = useRouter();
 
   return (
     <DropdownMenu.Root open={isOpen} onOpenChange={setIsOpen}>
@@ -46,10 +45,7 @@ export function AccountSelector({
             linkToSameView ? pathname.split("/").pop()! : ""
           );
           return (
-            <DropdownMenu.Item
-              key={account.account_id}
-              onSelect={() => router.push(href)}
-            >
+            <DropdownMenu.Item key={account.account_id} asChild>
               <Link href={href} style={dropdownMenuLinkStyle}>
                 <AvatarLinkCompact
                   account={account}

@@ -1,19 +1,16 @@
 "use client";
 import { DropdownMenu } from "@radix-ui/themes";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { CSSProperties, ReactNode } from "react";
 
+// Used by Links rendered AS a menu item (Radix `asChild`). The Link inherits
+// the item's padding/layout/highlight from Radix, so we only neutralize the
+// global anchor styles (accent color + underline) and keep the icon+label
+// laid out in a row.
 export const dropdownMenuLinkStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   gap: "var(--space-2)",
-  alignSelf: "stretch",
-  flex: 1,
-  marginLeft: "calc(-1 * var(--base-menu-item-padding-left))",
-  marginRight: "calc(-1 * var(--base-menu-item-padding-right))",
-  paddingLeft: "var(--base-menu-item-padding-left)",
-  paddingRight: "var(--base-menu-item-padding-right)",
   color: "inherit",
   textDecoration: "none",
 };
@@ -40,8 +37,6 @@ export function DropdownSection({
   showSeparator = true,
   condition = true,
 }: DropdownSectionProps) {
-  const router = useRouter();
-
   // Only render if condition is true and there are items to show
   if (
     !condition ||
@@ -57,11 +52,15 @@ export function DropdownSection({
         .filter(({ condition = true }) => condition)
         .map((item, index) =>
         item.href ? (
+          // `asChild` makes the <Link> itself the menu item: one real anchor
+          // handles left-click (Next client-side nav), keyboard activation
+          // (Radix triggers the anchor), and open-in-new-tab — a single
+          // navigation with no duplicate history entry.
           <DropdownMenu.Item
             key={index}
             color={item.color}
             disabled={item.disabled}
-            onSelect={() => router.push(item.href!)}
+            asChild
           >
             <Link href={item.href} style={dropdownMenuLinkStyle}>
               {item.children}

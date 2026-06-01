@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Flex, Text, DropdownMenu } from "@radix-ui/themes";
 import Link from "next/link";
-import { useRouter, usePathname } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { Product } from "@/types";
 import { editProductViewUrl } from "@/lib/urls";
 import { ChevronIcon } from "@/components/icons";
@@ -20,7 +20,6 @@ export function ProductSelector({
 }: ProductSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
-  const router = useRouter();
 
   // Extract current view from pathname (last segment)
   const pathParts = pathname.split("/");
@@ -45,10 +44,7 @@ export function ProductSelector({
             currentView
           );
           return (
-            <DropdownMenu.Item
-              key={product.product_id}
-              onSelect={() => router.push(href)}
-            >
+            <DropdownMenu.Item key={product.product_id} asChild>
               <Link href={href} style={dropdownMenuLinkStyle}>
                 <ProductDisplay
                   product={product}

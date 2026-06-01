@@ -1,12 +1,6 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import { DropdownSection } from "../DropdownSection";
 
-const mockPush = jest.fn();
-
-jest.mock("next/navigation", () => ({
-  useRouter: () => ({ push: mockPush }),
-}));
-
 jest.mock("next/link", () => ({
   __esModule: true,
   default: ({
@@ -25,32 +19,39 @@ jest.mock("next/link", () => ({
 
 jest.mock("@radix-ui/themes", () => ({
   DropdownMenu: {
+    // href items use `asChild`, so the Item renders its child (the Link) AS the
+    // menu item. Non-href items render a clickable row driven by onClick.
     Item: ({
       children,
       onClick,
       onSelect,
       disabled,
+      asChild,
     }: {
       children: React.ReactNode;
       onClick?: () => void;
       onSelect?: () => void;
       disabled?: boolean;
-    }) => (
-      <div
-        role="menuitem"
-        onClick={
-          disabled
-            ? undefined
-            : () => {
-                onSelect?.();
-                onClick?.();
-              }
-        }
-        aria-disabled={disabled}
-      >
-        {children}
-      </div>
-    ),
+      asChild?: boolean;
+    }) =>
+      asChild ? (
+        <>{children}</>
+      ) : (
+        <div
+          role="menuitem"
+          onClick={
+            disabled
+              ? undefined
+              : () => {
+                  onSelect?.();
+                  onClick?.();
+                }
+          }
+          aria-disabled={disabled}
+        >
+          {children}
+        </div>
+      ),
     Label: ({ children }: { children: React.ReactNode }) => (
       <div>{children}</div>
     ),
@@ -59,10 +60,6 @@ jest.mock("@radix-ui/themes", () => ({
 }));
 
 describe("DropdownSection", () => {
-  beforeEach(() => {
-    mockPush.mockClear();
-  });
-
   it("renders items", () => {
     render(
       <DropdownSection
@@ -76,24 +73,13 @@ describe("DropdownSection", () => {
     expect(screen.getByText("Item Two")).toBeInTheDocument();
   });
 
-  it("renders href items as real anchor links for right-click / new-tab support", () => {
+  it("renders href items as a real anchor link (Next Link handles navigation)", () => {
     render(
       <DropdownSection items={[{ href: "/test", children: "Test Item" }]} />
     );
     const link = screen.getByText("Test Item").closest("a");
     expect(link).not.toBeNull();
     expect(link).toHaveAttribute("href", "/test");
-  });
-
-  it("navigates via router.push when an href item is activated via keyboard", () => {
-    render(
-      <DropdownSection
-        items={[{ href: "/some-path", children: "Navigate Here" }]}
-      />
-    );
-    // Activating the menu item (e.g. via keyboard Enter) fires onSelect
-    fireEvent.click(screen.getByRole("menuitem"));
-    expect(mockPush).toHaveBeenCalledWith("/some-path");
   });
 
   it("calls onClick handler for non-href items", () => {
@@ -105,6 +91,17 @@ describe("DropdownSection", () => {
     );
     fireEvent.click(screen.getByText("Click Me"));
     expect(handleClick).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not invoke onClick for a disabled non-href item", () => {
+    const handleClick = jest.fn();
+    render(
+      <DropdownSection
+        items={[{ onClick: handleClick, children: "Disabled", disabled: true }]}
+      />
+    );
+    fireEvent.click(screen.getByText("Disabled"));
+    expect(handleClick).not.toHaveBeenCalled();
   });
 
   it("renders a label when provided", () => {
@@ -147,15 +144,5 @@ describe("DropdownSection", () => {
     );
     expect(screen.getByText("Visible Item")).toBeInTheDocument();
     expect(screen.queryByText("Hidden Item")).not.toBeInTheDocument();
-  });
-
-  it("does not navigate when item is disabled", () => {
-    render(
-      <DropdownSection
-        items={[{ href: "/path", children: "Disabled Item", disabled: true }]}
-      />
-    );
-    fireEvent.click(screen.getByRole("menuitem"));
-    expect(mockPush).not.toHaveBeenCalled();
   });
 });
