@@ -5,9 +5,6 @@
  * Focuses on org account access via OIDC authentication.
  */
 
-// Set environment variable BEFORE importing anything else
-process.env.SOURCE_KEY = "test-source-key-123";
-
 import { NextRequest } from "next/server";
 import { productsTable } from "@/lib/clients/database/products";
 import {

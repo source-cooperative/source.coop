@@ -1,5 +1,6 @@
 import { CONFIG, LOGGER } from "@/lib";
 import { NextRequest, NextResponse } from "next/server";
+import { PROXY_CREDS_COOKIE_NAME } from "@/lib/services/proxy-credentials-shared";
 
 export async function GET(request: NextRequest) {
   const returnTo = new URL(request.url).origin;
@@ -36,6 +37,6 @@ export async function GET(request: NextRequest) {
   // Drop the cached proxy credentials so the next user on this browser starts
   // clean. (A returned NextResponse ignores cookies().delete(), so expire it
   // directly on the response.)
-  res.cookies.set("sc_proxy_creds", "", { path: "/", maxAge: 0 });
+  res.cookies.set(PROXY_CREDS_COOKIE_NAME, "", { path: "/", maxAge: 0 });
   return res;
 }

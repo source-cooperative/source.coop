@@ -207,6 +207,44 @@ describe("getProxyCredentials", () => {
     expect(leakedCall).toBeUndefined();
   });
 
+  test("rejects an off-origin login redirect from the admin API", async () => {
+    (getPageSession as jest.Mock).mockResolvedValue(AUTHED_SESSION);
+    fetchMock
+      .mockResolvedValueOnce(redirectResponse("/ui/login?login_challenge=lc"))
+      // login/accept returns a redirect_to pointing off to an untrusted host.
+      .mockResolvedValueOnce(
+        jsonResponse({ redirect_to: "https://evil.example.com/postlogin" }),
+      );
+
+    await expect(getProxyCredentials()).rejects.toThrow(/untrusted host/);
+    const leakedCall = fetchMock.mock.calls.find(([url]) =>
+      String(url).includes("evil.example.com"),
+    );
+    expect(leakedCall).toBeUndefined();
+  });
+
+  test("rejects an off-origin consent redirect from the admin API", async () => {
+    (getPageSession as jest.Mock).mockResolvedValue(AUTHED_SESSION);
+    fetchMock
+      .mockResolvedValueOnce(redirectResponse("/ui/login?login_challenge=lc"))
+      .mockResolvedValueOnce(
+        jsonResponse({ redirect_to: "https://auth.source.coop/postlogin" }),
+      )
+      .mockResolvedValueOnce(
+        redirectResponse("https://auth.source.coop/consent?consent_challenge=cc"),
+      )
+      // consent/accept returns a redirect_to pointing off to an untrusted host.
+      .mockResolvedValueOnce(
+        jsonResponse({ redirect_to: "https://evil.example.com/postconsent" }),
+      );
+
+    await expect(getProxyCredentials()).rejects.toThrow(/untrusted host/);
+    const leakedCall = fetchMock.mock.calls.find(([url]) =>
+      String(url).includes("evil.example.com"),
+    );
+    expect(leakedCall).toBeUndefined();
+  });
+
   test("throws when /oauth2/auth returns no login_challenge", async () => {
     (getPageSession as jest.Mock).mockResolvedValue(AUTHED_SESSION);
     fetchMock.mockResolvedValueOnce(redirectResponse("/ui/login"));

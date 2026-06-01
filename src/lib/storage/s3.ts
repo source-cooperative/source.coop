@@ -113,7 +113,11 @@ export class S3StorageClient {
   async getObjectInfo(params: GetObjectParams): Promise<ProductObject | null> {
     try {
       const response = await this.client.send(
-        new HeadObjectCommand({ Bucket: params.account_id, Key: keyFor(params) }),
+        new HeadObjectCommand({
+          Bucket: params.account_id,
+          Key: keyFor(params),
+          VersionId: params.versionId,
+        }),
       );
       return {
         id: params.object_path,
@@ -145,7 +149,11 @@ export class S3StorageClient {
 
   async headObject(params: HeadObjectParams): Promise<HeadObjectResult> {
     const response = await this.client.send(
-      new HeadObjectCommand({ Bucket: params.account_id, Key: keyFor(params) }),
+      new HeadObjectCommand({
+        Bucket: params.account_id,
+        Key: keyFor(params),
+        VersionId: params.versionId,
+      }),
     );
     return {
       etag: response.ETag,

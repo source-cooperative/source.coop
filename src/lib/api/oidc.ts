@@ -41,7 +41,10 @@ export async function authenticateWithOidcToken(
   audience: string,
 ): Promise<UserSession | null> {
   if (!authorization || !authorization.toLowerCase().startsWith("bearer ")) {
-    LOGGER.warn("Invalid Authorization header found for OIDC authentication", {
+    // A missing or non-Bearer Authorization header is an expected, normal input
+    // (e.g. legacy clients still sending an API key), not an anomaly — log at
+    // debug so it doesn't flood warn-level logs on every such request.
+    LOGGER.debug("No Bearer token for OIDC authentication, skipping", {
       operation: "authenticateWithOidcToken",
     });
     return null;

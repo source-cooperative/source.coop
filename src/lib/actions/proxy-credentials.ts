@@ -82,17 +82,14 @@ async function getOryIdToken(identityId: string): Promise<string> {
 
   const cookieJar = new Map<string, string>();
 
-  const state = Array.from(crypto.getRandomValues(new Uint8Array(16)))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
-
-  // Step 1: Initiate the OAuth2 flow.
+  // Step 1: Initiate the OAuth2 flow. No `state` parameter is used: this flow
+  // is driven entirely server-side (no browser redirect), so there is no
+  // cross-site request for a CSRF `state` token to protect against.
   const authUrl = new URL(`${backendUrl}/oauth2/auth`);
   authUrl.searchParams.set("response_type", "code");
   authUrl.searchParams.set("client_id", clientId);
   authUrl.searchParams.set("redirect_uri", redirectUri);
   authUrl.searchParams.set("scope", "openid");
-  authUrl.searchParams.set("state", state);
 
   const authResp = await fetchWithCookies(authUrl.toString(), cookieJar, {
     redirect: "manual",
@@ -129,6 +126,7 @@ async function getOryIdToken(identityId: string): Promise<string> {
 
   // Step 3: Follow the redirect. If skip_consent is enabled, this goes
   // straight to the callback with a code. Otherwise we get a consent_challenge.
+  assertHydraOrigin(loginRedirect, backendUrl);
   const postLoginResp = await fetchWithCookies(loginRedirect, cookieJar, {
     redirect: "manual",
   });
@@ -141,17 +139,7 @@ async function getOryIdToken(identityId: string): Promise<string> {
       const location = postLoginResp.headers.get("location");
       if (location) {
         const resolvedUrl = new URL(location, loginRedirect).toString();
-        // Confirm the redirect stays within Hydra. If Hydra is
-        // misconfigured (or compromised) and returns a Location pointing
-        // elsewhere, forwarding the cookie jar would leak auth state to
-        // an unintended host.
-        const resolvedOrigin = new URL(resolvedUrl).origin;
-        const expectedOrigin = new URL(backendUrl).origin;
-        if (resolvedOrigin !== expectedOrigin) {
-          throw new Error(
-            `Unexpected redirect to untrusted host: ${resolvedOrigin}`,
-          );
-        }
+        assertHydraOrigin(resolvedUrl, backendUrl);
         const followResp = await fetchWithCookies(resolvedUrl, cookieJar, {
           redirect: "manual",
         });
@@ -214,6 +202,21 @@ async function getOryIdToken(identityId: string): Promise<string> {
 // Helpers
 // ---------------------------------------------------------------------------
 
+/**
+ * Guard before following a Hydra `redirect_to` while carrying the session
+ * cookie jar. The values come from Hydra's admin API and public auth endpoint
+ * and are normally same-origin, but if Hydra is misconfigured (or compromised)
+ * and points the redirect off-origin, forwarding the jar would leak live auth
+ * state to an unintended host. Relative URLs are resolved against backendUrl.
+ */
+function assertHydraOrigin(redirectUrl: string, backendUrl: string): void {
+  const resolvedOrigin = new URL(redirectUrl, backendUrl).origin;
+  const expectedOrigin = new URL(backendUrl).origin;
+  if (resolvedOrigin !== expectedOrigin) {
+    throw new Error(`Unexpected redirect to untrusted host: ${resolvedOrigin}`);
+  }
+}
+
 async function acceptConsentAndGetCode(
   backendUrl: string,
   adminApiKey: string,
@@ -242,6 +245,9 @@ async function acceptConsentAndGetCode(
   const { redirect_to: consentRedirect } =
     (await consentAcceptResp.json()) as { redirect_to: string };
 
+  // Same-origin guard as the login redirect path: the cookie jar carries live
+  // Hydra session state, so never forward it to a host outside Hydra's origin.
+  assertHydraOrigin(consentRedirect, backendUrl);
   const codeResp = await fetchWithCookies(consentRedirect, cookieJar, {
     redirect: "manual",
   });
