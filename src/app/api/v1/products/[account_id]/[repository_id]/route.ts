@@ -64,6 +64,20 @@ export async function GET(
       );
     }
     if (!isAuthorized(session, repository, Actions.GetRepository)) {
+      // Distinguish the three ways this 401 happens: no session at all (the
+      // OIDC token failed to verify or its subject didn't resolve — see the
+      // authenticateWithOidcToken warnings) vs. a resolved session that simply
+      // isn't authorized for this product (compare the account ids below).
+      LOGGER.warn("Product read authorization denied", {
+        operation: "products.GET",
+        metadata: {
+          hasSession: !!session,
+          sessionAccountId: session?.account?.account_id,
+          productAccountId: repository.account_id,
+          productId: repository.product_id,
+          visibility: repository.visibility,
+        },
+      });
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: StatusCodes.UNAUTHORIZED },

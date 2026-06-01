@@ -119,6 +119,9 @@ export async function authenticateWithOidcToken(
 
   const oryId = payload.sub;
   if (!oryId) {
+    LOGGER.warn("OIDC token verified but carries no subject claim", {
+      operation: "authenticateWithOidcToken",
+    });
     return null;
   }
 
@@ -128,7 +131,21 @@ export async function authenticateWithOidcToken(
   // human-readable account_id. Only individual accounts have an Ory identity;
   // org accounts are never the subject of a proxy-issued token.
   const account = await accountsTable.fetchByOryId(oryId);
-  if (!account || account.disabled) {
+  if (!account) {
+    // Verified token, but no account is indexed under this Ory id. This is the
+    // silent 401 path: the token is valid but the subject doesn't map to an
+    // account in this environment's DB.
+    LOGGER.warn("OIDC token verified but no account matches its subject", {
+      operation: "authenticateWithOidcToken",
+      metadata: { sub: oryId },
+    });
+    return null;
+  }
+  if (account.disabled) {
+    LOGGER.warn("OIDC token subject resolves to a disabled account", {
+      operation: "authenticateWithOidcToken",
+      metadata: { sub: oryId, account_id: account.account_id },
+    });
     return null;
   }
 
@@ -138,6 +155,14 @@ export async function authenticateWithOidcToken(
   const filteredMemberships = memberships.filter((membership) =>
     isAuthorized({ account, identity_id }, membership, Actions.GetMembership),
   );
+
+  LOGGER.debug("OIDC authentication resolved a session", {
+    operation: "authenticateWithOidcToken",
+    metadata: {
+      account_id: account.account_id,
+      memberships: filteredMemberships.length,
+    },
+  });
 
   return {
     identity_id,
