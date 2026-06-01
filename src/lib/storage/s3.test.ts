@@ -1,63 +1,239 @@
-import { S3StorageClient } from './s3';
-import type { StorageConfig, ListObjectsParams } from '@/types/storage';
-import { describe, it, expect, beforeEach } from '@jest/globals';
-import { S3Client, ListObjectsV2Command } from '@aws-sdk/client-s3';
-import { mockClient } from 'aws-sdk-client-mock';
+/**
+ * @jest-environment node
+ */
+import { Readable } from "stream";
+import { S3StorageClient } from "./s3";
 
-const s3Mock = mockClient(S3Client as any);
+const mockSend = jest.fn();
 
-describe('S3StorageClient', () => {
-  const config: StorageConfig = {
-    type: 'S3',
-    endpoint: 'https://opendata.source.coop',
-    region: 'us-west-2',
+jest.mock("@aws-sdk/client-s3", () => {
+  const actual = jest.requireActual("@aws-sdk/client-s3");
+  return {
+    ...actual,
+    S3Client: jest.fn().mockImplementation(() => ({ send: mockSend })),
   };
+});
 
-  const client = new S3StorageClient(config);
+import {
+  S3Client,
+  ListObjectsV2Command,
+  HeadObjectCommand,
+  GetObjectCommand,
+} from "@aws-sdk/client-s3";
 
+describe("S3StorageClient", () => {
   beforeEach(() => {
-    s3Mock.reset();
+    mockSend.mockReset();
+    (S3Client as jest.Mock).mockClear();
   });
 
-  it('should list objects from public bucket', async () => {
-    s3Mock.on(ListObjectsV2Command as any).resolves({
-      Contents: [{ Key: 'file1.txt' }, { Key: 'file2.txt' }],
-      CommonPrefixes: [{ Prefix: 'prefix1/' }, { Prefix: 'prefix2/' }],
+  test("uses no-auth scheme when no credentials", async () => {
+    new S3StorageClient({ endpoint: "https://data.source.coop" });
+    const config = (S3Client as jest.Mock).mock.calls[0][0];
+    expect(config.forcePathStyle).toBe(true);
+    expect(config.credentials).toBeUndefined();
+    expect(config.httpAuthSchemes).toHaveLength(1);
+    expect(config.httpAuthSchemes[0].schemeId).toBe("aws.auth#sigv4");
+    expect(typeof config.httpAuthSchemes[0].signer.sign).toBe("function");
+    // The no-auth identity provider must resolve to an empty identity so the
+    // SDK's credential middleware doesn't reject before signing.
+    const identity = await config.httpAuthSchemes[0].identityProvider()();
+    expect(identity).toEqual({});
+  });
+
+  test("uses credentials when provided", () => {
+    new S3StorageClient({
+      endpoint: "https://data.source.coop",
+      credentials: {
+        accessKeyId: "A",
+        secretAccessKey: "S",
+        sessionToken: "T",
+        expiration: "2026-04-10T13:00:00Z",
+      },
+    });
+    const config = (S3Client as jest.Mock).mock.calls[0][0];
+    expect(config.credentials).toMatchObject({
+      accessKeyId: "A",
+      secretAccessKey: "S",
+      sessionToken: "T",
+    });
+    expect(config.httpAuthSchemes).toBeUndefined();
+  });
+
+  test("listObjects parses response and builds the command", async () => {
+    mockSend.mockResolvedValue({
+      Contents: [
+        {
+          Key: "a/p/file.txt",
+          Size: 42,
+          ETag: '"abc"',
+          LastModified: new Date("2026-04-10"),
+        },
+      ],
+      CommonPrefixes: [{ Prefix: "a/p/subdir/" }],
       IsTruncated: false,
-    } as any);
+    });
+    const client = new S3StorageClient({ endpoint: "https://data.source.coop" });
+    const result = await client.listObjects({
+      bucket: "a",
+      prefix: "p/",
+      continuationToken: "tok-in",
+      maxKeys: 10,
+    });
 
-    const params: ListObjectsParams = {
-      account_id: 'fiboa',
-      product_id: 'de-mv',
-      prefix: '',
-      delimiter: '/',
-      object_path: '', // Add required object_path parameter
-    };
+    // The command must be constructed with the expected input — otherwise a
+    // wrong bucket/prefix/delimiter could regress while parsing still passes.
+    const command = mockSend.mock.calls[0][0];
+    expect(command).toBeInstanceOf(ListObjectsV2Command);
+    expect(command.input).toMatchObject({
+      Bucket: "a",
+      Prefix: "p/",
+      Delimiter: "/",
+      ContinuationToken: "tok-in",
+      MaxKeys: 10,
+    });
 
-    const result = await client.listObjects(params);
+    expect(result.objects).toHaveLength(1);
+    expect(result.objects[0]).toMatchObject({ key: "a/p/file.txt", size: 42 });
+    expect(result.directories).toEqual(["a/p/subdir/"]);
+    expect(result.isTruncated).toBe(false);
+    expect(result.nextContinuationToken).toBeUndefined();
+  });
 
-    expect(result.objects).toBeDefined();
-    expect(Array.isArray(result.objects)).toBe(true);
-    expect(result.commonPrefixes).toBeDefined();
-    expect(Array.isArray(result.commonPrefixes)).toBe(true);
-  }, 10000); // Increase timeout for S3 operations
+  test("listObjects surfaces pagination fields when truncated", async () => {
+    mockSend.mockResolvedValue({
+      Contents: [],
+      CommonPrefixes: [],
+      IsTruncated: true,
+      NextContinuationToken: "tok-next",
+    });
+    const client = new S3StorageClient({ endpoint: "https://data.source.coop" });
+    const result = await client.listObjects({ bucket: "a", prefix: "p/" });
 
-  it('should handle missing CommonPrefixes gracefully', async () => {
-    s3Mock.on(ListObjectsV2Command as any).resolves({
-      Contents: [{ Key: 'file1.txt' }],
-      // CommonPrefixes is intentionally omitted
-      IsTruncated: false,
-    } as any);
+    expect(result.isTruncated).toBe(true);
+    expect(result.nextContinuationToken).toBe("tok-next");
+  });
 
-    const params: ListObjectsParams = {
-      account_id: 'fiboa',
-      product_id: 'de-mv',
-      prefix: '',
-      delimiter: '/',
-      object_path: '',
-    };
+  test("getObjectInfo returns a ProductObject on a successful HEAD", async () => {
+    mockSend.mockResolvedValue({
+      ContentLength: 123,
+      ContentType: "text/plain",
+      ETag: '"abc"',
+      LastModified: new Date("2026-04-10"),
+      Metadata: { foo: "bar" },
+    });
+    const client = new S3StorageClient({ endpoint: "https://data.source.coop" });
+    const result = await client.getObjectInfo({
+      account_id: "acct",
+      product_id: "prod",
+      object_path: "dir/file.txt",
+    });
 
-    const result = await client.listObjects(params);
-    expect(result.commonPrefixes).toEqual([]);
+    const command = mockSend.mock.calls[0][0];
+    expect(command).toBeInstanceOf(HeadObjectCommand);
+    expect(command.input).toMatchObject({
+      Bucket: "acct",
+      Key: "prod/dir/file.txt",
+    });
+
+    expect(result).toMatchObject({
+      id: "dir/file.txt",
+      product_id: "prod",
+      path: "dir/file.txt",
+      type: "file",
+      size: 123,
+      mime_type: "text/plain",
+      checksum: '"abc"',
+    });
+  });
+
+  test("getObjectInfo returns null on a NotFound S3ServiceException", async () => {
+    const actual = jest.requireActual("@aws-sdk/client-s3");
+    const notFound = new actual.S3ServiceException({
+      name: "NotFound",
+      $fault: "client",
+      $metadata: {},
+    });
+    mockSend.mockRejectedValue(notFound);
+
+    const client = new S3StorageClient({ endpoint: "https://data.source.coop" });
+    const result = await client.getObjectInfo({
+      account_id: "acct",
+      product_id: "prod",
+      object_path: "missing.txt",
+    });
+    expect(result).toBeNull();
+  });
+
+  test("getObjectInfo re-throws on a non-NotFound error", async () => {
+    const boom = new Error("boom");
+    mockSend.mockRejectedValue(boom);
+
+    const client = new S3StorageClient({ endpoint: "https://data.source.coop" });
+    await expect(
+      client.getObjectInfo({
+        account_id: "acct",
+        product_id: "prod",
+        object_path: "file.txt",
+      }),
+    ).rejects.toThrow("boom");
+  });
+
+  test("headObject maps response fields", async () => {
+    mockSend.mockResolvedValue({
+      ContentLength: 456,
+      ContentType: "application/json",
+      ETag: '"def"',
+      VersionId: "v1",
+      Metadata: { k: "v" },
+    });
+    const client = new S3StorageClient({ endpoint: "https://data.source.coop" });
+    const result = await client.headObject({
+      account_id: "acct",
+      product_id: "prod",
+      object_path: "dir/file.json",
+    });
+
+    const command = mockSend.mock.calls[0][0];
+    expect(command).toBeInstanceOf(HeadObjectCommand);
+    expect(command.input).toMatchObject({
+      Bucket: "acct",
+      Key: "prod/dir/file.json",
+    });
+
+    expect(result.contentLength).toBe(456);
+    expect(result.contentType).toBe("application/json");
+    expect(result.etag).toBe('"def"');
+    expect(result.versionId).toBe("v1");
+  });
+
+  test("getObject buffers the Body and returns data and contentType", async () => {
+    const bytes = Buffer.from("hello world");
+    mockSend.mockResolvedValue({
+      Body: Readable.from([bytes]),
+      ContentType: "text/plain",
+      ETag: '"ghi"',
+      LastModified: new Date("2026-04-10"),
+      Metadata: {},
+    });
+    const client = new S3StorageClient({ endpoint: "https://data.source.coop" });
+    const result = await client.getObject({
+      account_id: "acct",
+      product_id: "prod",
+      object_path: "dir/file.txt",
+    });
+
+    const command = mockSend.mock.calls[0][0];
+    expect(command).toBeInstanceOf(GetObjectCommand);
+    expect(command.input).toMatchObject({
+      Bucket: "acct",
+      Key: "prod/dir/file.txt",
+    });
+
+    expect(Buffer.isBuffer(result.data)).toBe(true);
+    expect((result.data as Buffer).equals(bytes)).toBe(true);
+    expect(result.contentType).toBe("text/plain");
+    expect(result.contentLength).toBe(bytes.length);
+    expect(result.etag).toBe('"ghi"');
   });
 });

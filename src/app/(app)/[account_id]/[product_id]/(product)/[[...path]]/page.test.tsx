@@ -28,7 +28,7 @@ jest.mock("@/lib", () => ({
   productsTable: {
     fetchById: jest.fn(),
   },
-  storage: {},
+  getPageSession: jest.fn(),
   dataConnectionsTable: {},
   LOGGER: {},
   fileSourceUrl: jest.fn(),
@@ -37,6 +37,10 @@ jest.mock("@/lib", () => ({
       siteVerification: "test-verification",
     },
   },
+}));
+
+jest.mock("@/lib/api/authz", () => ({
+  isAuthorized: jest.fn(),
 }));
 
 jest.mock("next/navigation", () => ({
@@ -50,14 +54,15 @@ jest.mock("@/lib/baseUrl", () => ({
 }));
 
 import { generateMetadata } from "./page";
-import { productsTable } from "@/lib";
+import { productsTable, getPageSession } from "@/lib";
+import { isAuthorized } from "@/lib/api/authz";
 
 describe("Product Page Metadata", () => {
   afterEach(() => {
     jest.clearAllMocks();
   });
 
-  it("returns OpenGraph metadata for product", async () => {
+  it("returns OpenGraph metadata for an authorized product", async () => {
     const mockProduct = {
       id: "test-product",
       product_id: "test-product",
@@ -70,6 +75,8 @@ describe("Product Page Metadata", () => {
     };
 
     (productsTable.fetchById as jest.Mock).mockResolvedValue(mockProduct);
+    (getPageSession as jest.Mock).mockResolvedValue(null);
+    (isAuthorized as jest.Mock).mockReturnValue(true);
 
     const metadata = await generateMetadata({
       params: Promise.resolve({
@@ -107,12 +114,42 @@ describe("Product Page Metadata", () => {
     const { notFound } = await import("next/navigation");
 
     (productsTable.fetchById as jest.Mock).mockResolvedValue(null);
+    (getPageSession as jest.Mock).mockResolvedValue(null);
+    (isAuthorized as jest.Mock).mockReturnValue(true);
 
     await expect(
       generateMetadata({
         params: Promise.resolve({
-          account_id: "test-account",
-          product_id: "test-product",
+          account_id: "missing-account",
+          product_id: "missing-product",
+        }),
+      })
+    ).rejects.toThrow("NEXT_NOT_FOUND");
+
+    expect(notFound).toHaveBeenCalled();
+  });
+
+  it("calls notFound (no metadata leak) when the viewer is not authorized", async () => {
+    const { notFound } = await import("next/navigation");
+
+    // A restricted product the viewer may not read: it exists, but isAuthorized
+    // returns false. generateMetadata must 404 rather than expose its metadata.
+    (productsTable.fetchById as jest.Mock).mockResolvedValue({
+      id: "secret-product",
+      product_id: "secret-product",
+      title: "Secret Product",
+      description: "Should not leak",
+      visibility: "restricted",
+      account: { account_id: "secret-account", name: "Secret" },
+    });
+    (getPageSession as jest.Mock).mockResolvedValue(null);
+    (isAuthorized as jest.Mock).mockReturnValue(false);
+
+    await expect(
+      generateMetadata({
+        params: Promise.resolve({
+          account_id: "secret-account",
+          product_id: "secret-product",
         }),
       })
     ).rejects.toThrow("NEXT_NOT_FOUND");

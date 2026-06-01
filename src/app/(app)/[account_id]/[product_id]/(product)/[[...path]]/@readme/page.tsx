@@ -1,4 +1,5 @@
-import { LOGGER, storage } from "@/lib";
+import { LOGGER } from "@/lib";
+import { getStorageClient } from "@/lib/clients/storage";
 import { SectionHeader } from "@/components/core/SectionHeader";
 import { MarkdownViewer } from "@/components/features/markdown";
 import { Card } from "@radix-ui/themes";
@@ -24,8 +25,9 @@ export default async function ProductPathPage({ params }: PageProps) {
 
   let readme: string | undefined;
   try {
-    await storage.headObject(lookupDetails);
-    const result = await storage.getObject(lookupDetails);
+    const s3 = await getStorageClient();
+    await s3.headObject(lookupDetails);
+    const result = await s3.getObject(lookupDetails);
     readme =
       result.data instanceof Buffer ? result.data.toString("utf-8") : undefined;
   } catch (error) {

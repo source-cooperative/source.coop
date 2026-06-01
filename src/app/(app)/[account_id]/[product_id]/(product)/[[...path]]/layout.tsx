@@ -16,13 +16,12 @@ import { SectionHeader } from "@/components/core/SectionHeader";
 import { Dropzone } from "@/components/features/uploader/Dropzone";
 import { getPageSession } from "@/lib";
 import { isAuthorized } from "@/lib/api/authz";
-import { productsTable } from "@/lib/clients/database";
 import { productUrl } from "@/lib/urls";
 import { Actions } from "@/types/shared";
 import { Box, Card, Flex } from "@radix-ui/themes";
-import { notFound } from "next/navigation";
 import { getPendingInvitation } from "@/lib/actions/memberships";
 import { ProductSchemaMetadata } from "@/components/features/products/ProductSchemaMetadata";
+import { getAuthorizedProduct } from "./data";
 
 interface ProductLayoutProps {
   children: React.ReactNode;
@@ -35,16 +34,11 @@ export default async function ProductLayout({
   children,
   readme,
 }: ProductLayoutProps) {
-  // Then check if product exists
+  // Fetch + authorize in one place. Throws a 404 for missing products or
+  // unauthorized viewers. The session is also needed below for the write check.
   const { account_id, product_id, path } = await params;
+  const product = await getAuthorizedProduct(account_id, product_id);
   const session = await getPageSession();
-  const product = await productsTable.fetchById(account_id, product_id);
-  if (!product) {
-    notFound();
-  }
-  if (!isAuthorized(session, product, Actions.GetRepository)) {
-    notFound();
-  }
   const prefix = path ? path.join("/") : "";
 
   // Check for pending invitation

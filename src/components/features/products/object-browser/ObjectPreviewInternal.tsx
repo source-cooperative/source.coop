@@ -1,5 +1,6 @@
 import { Box } from "@radix-ui/themes";
-import { LOGGER, storage } from "@/lib";
+import { LOGGER } from "@/lib";
+import { getStorageClient } from "@/lib/clients/storage";
 import { MarkdownViewer } from "@/components/features/markdown/MarkdownViewer";
 import { TextViewer } from "@/components/features/text/TextViewer";
 import { getExtension } from "@/lib/files";
@@ -27,7 +28,8 @@ export const canRenderInternally = (object_path: string): boolean => {
 export async function ObjectPreviewInternal(props: ObjectPreviewInternalProps) {
   let content: string | undefined;
   try {
-    const head = await storage.headObject(props);
+    const s3 = await getStorageClient();
+    const head = await s3.headObject(props);
     if (head.contentLength === undefined) {
       LOGGER.debug(`Object has no content`, {
         operation: "ObjectPreviewInternal",
@@ -47,7 +49,7 @@ export async function ObjectPreviewInternal(props: ObjectPreviewInternalProps) {
       );
       return null;
     }
-    const result = await storage.getObject(props);
+    const result = await s3.getObject(props);
     content =
       result.data instanceof Buffer ? result.data.toString("utf-8") : undefined;
   } catch (error) {

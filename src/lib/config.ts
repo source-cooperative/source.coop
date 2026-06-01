@@ -13,11 +13,6 @@ export const CONFIG = {
     type: "S3",
     endpoint: process.env.NEXT_PUBLIC_S3_ENDPOINT,
     region: "us-east-1",
-    credentials: {
-      accessKeyId: "anonymous",
-      secretAccessKey: "anonymous",
-    },
-    // Optional role to use when granting temporary upload credentials
   } as StorageConfig,
 
   uploads: {
@@ -55,6 +50,12 @@ export const CONFIG = {
     },
     accessToken: process.env.ORY_PROJECT_API_KEY || "",
 
+    oauth2: {
+      clientId: process.env.ORY_OAUTH2_CLIENT_ID || "",
+      clientSecret: process.env.ORY_OAUTH2_CLIENT_SECRET || "",
+      redirectUri: `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/api/internal/oauth2/callback`,
+    },
+
     routes: {
       // https://www.ory.sh/docs/reference/api#tag/frontend/operation/createBrowserLoginFlow
       login: `${frontendUrl}/self-service/login/browser`,
@@ -75,7 +76,10 @@ export const CONFIG = {
 
   // Environment configuration
   environment: {
+    // Local development only — Vercel preview and production both set
+    // NODE_ENV=production. Use isProduction to distinguish prod from staging.
     isDevelopment: process.env.NODE_ENV === "development",
+    isProduction: (process.env.STAGE || "dev") === "prod",
     stage: process.env.STAGE || "dev",
   },
 } as const;
