@@ -110,7 +110,7 @@ export function ProxyCredentialsGate() {
   }
 
   return (
-    <Flex align="center" gap="2" py="4">
+    <Flex align="center" gap="2" p="4">
       <Spinner />
       <Text color="gray">Fetching access credentials…</Text>
     </Flex>
