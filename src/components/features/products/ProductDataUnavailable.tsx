@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Box, Button, Callout, Flex, Heading, Text } from "@radix-ui/themes";
+import { Box, Button, Callout, Flex } from "@radix-ui/themes";
 
 /**
  * Rendered by the product page when the data proxy returns AccessDenied (403)
@@ -16,9 +16,6 @@ export function ProductDataUnavailable() {
   const router = useRouter();
   return (
     <Box mt="4">
-      <Heading size="4" mb="2">
-        We couldn&apos;t load this product&apos;s files
-      </Heading>
       <Callout.Root color="amber" role="alert">
         <Callout.Text>
           Your access to this private product&apos;s data couldn&apos;t be
