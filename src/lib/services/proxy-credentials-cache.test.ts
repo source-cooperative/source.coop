@@ -52,7 +52,7 @@ describe("proxy-credentials-cache", () => {
 
     const result = await refreshProxyCredentials();
 
-    expect(result).toEqual({ ok: false, minted: false });
+    expect(result).toEqual({ ok: false });
     expect(mockGetProxyCredentials).not.toHaveBeenCalled();
     expect(mockSet).not.toHaveBeenCalled();
   });
@@ -64,11 +64,8 @@ describe("proxy-credentials-cache", () => {
 
     const result = await refreshProxyCredentials();
 
-    expect(result).toEqual({
-      ok: true,
-      expiration: creds.expiration,
-      minted: true,
-    });
+    // The mint itself is verified by getProxyCredentials being called once.
+    expect(result).toEqual({ ok: true });
     expect(mockGetProxyCredentials).toHaveBeenCalledTimes(1);
     expect(mockSet).toHaveBeenCalledTimes(1);
     const [name, , options] = mockSet.mock.calls[0];
@@ -88,11 +85,8 @@ describe("proxy-credentials-cache", () => {
 
     const result = await refreshProxyCredentials();
 
-    expect(result).toEqual({
-      ok: true,
-      expiration: creds.expiration,
-      minted: false,
-    });
+    // The cache hit is verified by getProxyCredentials never being called.
+    expect(result).toEqual({ ok: true });
     expect(mockGetProxyCredentials).not.toHaveBeenCalled();
     expect(mockSet).not.toHaveBeenCalled();
   });
@@ -105,8 +99,8 @@ describe("proxy-credentials-cache", () => {
 
     const result = await refreshProxyCredentials();
 
-    expect(result.minted).toBe(true);
-    expect(result.expiration).toBe(fresh.expiration);
+    // Re-mint is proven by getProxyCredentials being called despite a cookie.
+    expect(result.ok).toBe(true);
     expect(mockGetProxyCredentials).toHaveBeenCalledTimes(1);
   });
 
@@ -117,7 +111,8 @@ describe("proxy-credentials-cache", () => {
 
     const result = await refreshProxyCredentials();
 
-    expect(result.minted).toBe(true);
+    // An undecryptable cookie forces a re-mint (getProxyCredentials called).
+    expect(result.ok).toBe(true);
     expect(mockGetProxyCredentials).toHaveBeenCalledTimes(1);
   });
 
@@ -134,7 +129,6 @@ describe("proxy-credentials-cache", () => {
     expect(r2.ok).toBe(true);
     // No in-process coalescing (serverless requests don't share a module
     // scope): both callers mint and write the cookie. Re-minting is idempotent.
-    expect([r1.minted, r2.minted]).toEqual([true, true]);
     expect(mockGetProxyCredentials).toHaveBeenCalledTimes(2);
     expect(mockSet).toHaveBeenCalledTimes(2);
   });

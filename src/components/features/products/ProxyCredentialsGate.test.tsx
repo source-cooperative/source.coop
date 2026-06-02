@@ -41,7 +41,7 @@ describe("ProxyCredentialsGate", () => {
   // effect never re-fires — without the post-refresh recheck the gate would
   // spin forever. It must re-attempt and then surface the error.
   test("surfaces an error instead of hanging when refresh keeps returning the gate", async () => {
-    mockRefreshCreds.mockResolvedValue({ ok: true, minted: true });
+    mockRefreshCreds.mockResolvedValue({ ok: true });
 
     render(
       <Theme>
@@ -74,7 +74,7 @@ describe("ProxyCredentialsGate", () => {
   });
 
   test("does not re-attempt after the gate unmounts (refresh resolved it)", async () => {
-    mockRefreshCreds.mockResolvedValue({ ok: true, minted: true });
+    mockRefreshCreds.mockResolvedValue({ ok: true });
 
     const { unmount } = render(
       <Theme>

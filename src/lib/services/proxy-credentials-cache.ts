@@ -15,10 +15,6 @@ import {
 export interface RefreshResult {
   /** Whether the caller is authenticated and credentials are now available. */
   ok: boolean;
-  /** ISO expiration of the current credentials, when `ok`. */
-  expiration?: string;
-  /** Whether this call minted (and wrote) new credentials. */
-  minted: boolean;
 }
 
 /**
@@ -39,7 +35,7 @@ export interface RefreshResult {
 export async function refreshProxyCredentials(): Promise<RefreshResult> {
   const session = await getPageSession();
   if (!session?.identity_id) {
-    return { ok: false, minted: false };
+    return { ok: false };
   }
 
   const jar = await cookies();
@@ -47,7 +43,7 @@ export async function refreshProxyCredentials(): Promise<RefreshResult> {
   if (token) {
     const cached = await decryptJson<ProxyCredentials>(token);
     if (cached && isFresh(cached)) {
-      return { ok: true, expiration: cached.expiration, minted: false };
+      return { ok: true };
     }
   }
 
@@ -71,7 +67,7 @@ export async function refreshProxyCredentials(): Promise<RefreshResult> {
     maxAge,
   });
 
-  return { ok: true, expiration: creds.expiration, minted: true };
+  return { ok: true };
 }
 
 export async function clearCachedProxyCredentials(): Promise<void> {
