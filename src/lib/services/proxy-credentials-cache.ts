@@ -21,8 +21,6 @@ export interface RefreshResult {
   minted: boolean;
 }
 
-const inflight = new Map<string, Promise<ProxyCredentials>>();
-
 /**
  * Mints per-user proxy credentials and writes them to the encrypted
  * `sc_proxy_creds` cookie.
@@ -33,15 +31,16 @@ const inflight = new Map<string, Promise<ProxyCredentials>>();
  * calling this during render would throw `ReadonlyRequestCookiesError`. The
  * render path reads the cookie via `readProxyCredentials` instead.
  *
- * Returns early without minting when a fresh cookie already exists, and
- * coalesces concurrent mints for the same user via an in-flight promise map.
+ * Returns early without minting when a fresh cookie already exists. The
+ * encrypted cookie is the cache; concurrent mints for the same user just
+ * re-mint (idempotent — last write wins), which on serverless can't be
+ * coalesced in-process anyway since requests run in separate instances.
  */
 export async function refreshProxyCredentials(): Promise<RefreshResult> {
   const session = await getPageSession();
   if (!session?.identity_id) {
     return { ok: false, minted: false };
   }
-  const identityId = session.identity_id;
 
   const jar = await cookies();
   const token = jar.get(PROXY_CREDS_COOKIE_NAME)?.value;
@@ -52,28 +51,13 @@ export async function refreshProxyCredentials(): Promise<RefreshResult> {
     }
   }
 
-  const existing = inflight.get(identityId);
-  if (existing) {
-    // Coalesced onto another in-flight mint: we awaited its result but did not
-    // mint or write the cookie ourselves, so report minted: false.
-    const creds = await existing;
-    return { ok: true, expiration: creds.expiration, minted: false };
-  }
-
   const MINT_TIMEOUT_MS = 25_000;
-  const promise = Promise.race([
+  const creds = await Promise.race([
     getProxyCredentials(),
     new Promise<never>((_, reject) =>
       setTimeout(() => reject(new Error("Credential mint timed out")), MINT_TIMEOUT_MS),
     ),
   ]);
-  inflight.set(identityId, promise);
-  let creds: ProxyCredentials;
-  try {
-    creds = await promise;
-  } finally {
-    inflight.delete(identityId);
-  }
 
   const maxAge = Math.max(
     0,
