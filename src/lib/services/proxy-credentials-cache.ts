@@ -60,7 +60,13 @@ export async function refreshProxyCredentials(): Promise<RefreshResult> {
     return { ok: true, expiration: creds.expiration, minted: false };
   }
 
-  const promise = getProxyCredentials();
+  const MINT_TIMEOUT_MS = 25_000;
+  const promise = Promise.race([
+    getProxyCredentials(),
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error("Credential mint timed out")), MINT_TIMEOUT_MS),
+    ),
+  ]);
   inflight.set(identityId, promise);
   let creds: ProxyCredentials;
   try {
