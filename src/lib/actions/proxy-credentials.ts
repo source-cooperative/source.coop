@@ -22,6 +22,26 @@ function debugBody(body: string): string | undefined {
 }
 
 /**
+ * Throws (after logging the status and, outside production, the response body)
+ * when an Ory/STS response is not OK. Centralizes the read-body / log / throw
+ * handling shared by every step of the flow. `${label} failed` is used for both
+ * the log message and the thrown error.
+ */
+async function assertOk(
+  resp: Response,
+  label: string,
+  operation: string,
+): Promise<void> {
+  if (resp.ok) return;
+  const body = await resp.text();
+  LOGGER.error(`${label} failed`, {
+    operation,
+    metadata: { status: resp.status, body: debugBody(body) },
+  });
+  throw new Error(`${label} failed: ${resp.status}`);
+}
+
+/**
  * Obtains temporary S3 credentials from the data proxy for the
  * currently authenticated user.
  *
@@ -44,14 +64,7 @@ export async function getProxyCredentials(): Promise<ProxyCredentials> {
   stsUrl.searchParams.set("WebIdentityToken", idToken);
 
   const resp = await fetch(stsUrl.toString());
-  if (!resp.ok) {
-    const body = await resp.text();
-    LOGGER.error("STS exchange failed", {
-      operation: "getProxyCredentials",
-      metadata: { status: resp.status, body: debugBody(body) },
-    });
-    throw new Error(`STS exchange failed: ${resp.status}`);
-  }
+  await assertOk(resp, "STS exchange", "getProxyCredentials");
 
   const xml = await resp.text();
   return parseStsCredentials(xml);
@@ -120,14 +133,7 @@ async function getOryIdToken(identityId: string): Promise<string> {
       body: JSON.stringify({ subject: identityId, remember: false }),
     },
   );
-  if (!loginAcceptResp.ok) {
-    const body = await loginAcceptResp.text();
-    LOGGER.error("Login accept failed", {
-      operation: "getOryIdToken",
-      metadata: { status: loginAcceptResp.status, body: debugBody(body) },
-    });
-    throw new Error(`Login accept failed: ${loginAcceptResp.status}`);
-  }
+  await assertOk(loginAcceptResp, "Login accept", "getOryIdToken");
   const { redirect_to: loginRedirect } =
     (await loginAcceptResp.json()) as { redirect_to: string };
 
@@ -164,14 +170,7 @@ async function getOryIdToken(identityId: string): Promise<string> {
       redirect_uri: redirectUri,
     }).toString(),
   });
-  if (!tokenResp.ok) {
-    const body = await tokenResp.text();
-    LOGGER.error("Token exchange failed", {
-      operation: "getOryIdToken",
-      metadata: { status: tokenResp.status, body: debugBody(body) },
-    });
-    throw new Error(`Token exchange failed: ${tokenResp.status}`);
-  }
+  await assertOk(tokenResp, "Token exchange", "getOryIdToken");
   const tokenBody = (await tokenResp.json()) as { id_token?: string };
   if (!tokenBody.id_token) {
     throw new Error("Token response did not include an id_token");
@@ -270,14 +269,7 @@ async function acceptConsentAndGetCode(
       body: JSON.stringify({ grant_scope: ["openid"], remember: false }),
     },
   );
-  if (!consentAcceptResp.ok) {
-    const body = await consentAcceptResp.text();
-    LOGGER.error("Consent accept failed", {
-      operation: "acceptConsentAndGetCode",
-      metadata: { status: consentAcceptResp.status, body: debugBody(body) },
-    });
-    throw new Error(`Consent accept failed: ${consentAcceptResp.status}`);
-  }
+  await assertOk(consentAcceptResp, "Consent accept", "acceptConsentAndGetCode");
   const { redirect_to: consentRedirect } =
     (await consentAcceptResp.json()) as { redirect_to: string };
 
