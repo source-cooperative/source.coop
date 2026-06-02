@@ -173,7 +173,7 @@ export default async function ProductPathPage({ params }: PageProps) {
 
   const objects: ProductObject[] = [
     ...effectiveListing.objects.map((obj) => ({
-      id: obj.key,
+      id: obj.key.replace(`${product_id}/`, ""),
       product_id,
       path: obj.key.replace(`${product_id}/`, ""),
       size: obj.size,
@@ -183,7 +183,7 @@ export default async function ProductPathPage({ params }: PageProps) {
       checksum: obj.etag,
     })),
     ...effectiveListing.directories.map((dir) => ({
-      id: dir,
+      id: dir.replace(`${product_id}/`, ""),
       product_id,
       path: dir.replace(`${product_id}/`, ""),
       size: 0,
