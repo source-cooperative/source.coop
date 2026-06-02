@@ -28,17 +28,14 @@ async function getKey(): Promise<CryptoKey> {
   return cachedKey;
 }
 
+// This module is server-only, so Buffer is always available — no need to
+// hand-roll base64 over atob/btoa for browser compatibility.
 function toBase64(bytes: Uint8Array): string {
-  let s = "";
-  for (let i = 0; i < bytes.byteLength; i++) s += String.fromCharCode(bytes[i]);
-  return btoa(s);
+  return Buffer.from(bytes).toString("base64");
 }
 
 function fromBase64(s: string): Uint8Array {
-  const bin = atob(s);
-  const out = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
-  return out;
+  return new Uint8Array(Buffer.from(s, "base64"));
 }
 
 export async function encryptJson(value: unknown): Promise<string> {
