@@ -1,58 +1,46 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Button, Callout, Flex, Spinner, Text } from "@radix-ui/themes";
 import { refreshProxyCredentials } from "@/lib/services/proxy-credentials-cache";
 import { withTimeout } from "@/lib/with-timeout";
 
 type Status = "loading" | "error";
 
-// Bound the mint -> refresh -> still-no-cookie -> mint loop that can only occur
-// if the cookie can't be written/read (e.g. misconfigured PROXY_CREDS_COOKIE_KEY).
-// We allow a couple of quick refreshes per route, then surface an error instead
-// of looping forever. Attempts spaced further apart are treated as new episodes.
-const MAX_QUICK_ATTEMPTS = 2;
-const EPISODE_WINDOW_MS = 15_000;
-// Bound how long we wait on the mint action before surfacing an error, so a
-// hung network request can't leave the gate spinning indefinitely.
+// Number of mint+refresh tries before surfacing an error instead of looping.
+const MAX_ATTEMPTS = 2;
+// Bound the mint action so a hung network request can't spin forever.
 const REFRESH_TIMEOUT_MS = 20_000;
-// After router.refresh() succeeds we expect this gate to unmount (the server
-// re-renders the listing). router.refresh() preserves this client instance, so
-// the mount effect won't re-run on its own — if we're still mounted after this
-// long, the refresh didn't expose the credentials, so re-attempt. The loop
-// guard above bounds the retries and surfaces an error instead of spinning.
-const POST_REFRESH_RECHECK_MS = 3_000;
+// router.refresh() keeps this client instance mounted, so the mount effect won't
+// re-fire on its own. If the refresh didn't expose the credentials, re-attempt
+// after this delay (bounded by MAX_ATTEMPTS).
+const RECHECK_MS = 3_000;
 
 /**
  * Rendered by the product directory page when an authenticated user opens a
  * restricted product without a fresh proxy-credentials cookie. Mints the
- * credentials via a Server Action (which runs in action phase, where writing
- * the cookie is legal) and then refreshes the route so the server re-renders
- * with the credentials available.
+ * credentials via a Server Action (cookies are only writable in the action
+ * phase) and refreshes the route so the server re-renders with them.
+ *
+ * If the refresh doesn't expose the cookie (e.g. a misconfigured key makes it
+ * unreadable), we re-attempt up to MAX_ATTEMPTS, then show a retryable error
+ * rather than spinning indefinitely.
  */
 export function ProxyCredentialsGate() {
   const router = useRouter();
-  const pathname = usePathname();
   const [status, setStatus] = useState<Status>("loading");
   const startedRef = useRef(false);
-  const recheckRef = useRef<ReturnType<typeof setTimeout> | undefined>(
-    undefined,
-  );
-  // In-memory attempt counter. The post-refresh recheck re-invokes attempt() on
-  // this same client instance, so this bounds the retry loop even when
-  // sessionStorage is unavailable (where the cross-mount counter below cannot).
   const attemptsRef = useRef(0);
+  const recheckRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const attempt = useCallback(async () => {
-    setStatus("loading");
-    if (recheckRef.current) clearTimeout(recheckRef.current);
-    attemptsRef.current += 1;
-    if (attemptsRef.current > MAX_QUICK_ATTEMPTS) {
+    clearTimeout(recheckRef.current);
+    if (++attemptsRef.current > MAX_ATTEMPTS) {
       setStatus("error");
       return;
     }
-    const key = `sc_creds_gate:${pathname}`;
+    setStatus("loading");
     try {
       const result = await withTimeout(
         refreshProxyCredentials(),
@@ -63,55 +51,26 @@ export function ProxyCredentialsGate() {
         setStatus("error");
         return;
       }
-
-      // Track quick consecutive refreshes to detect a write/read loop.
-      let count = 1;
-      try {
-        const raw = sessionStorage.getItem(key);
-        if (raw) {
-          const prev = JSON.parse(raw) as { count: number; ts: number };
-          if (Date.now() - prev.ts < EPISODE_WINDOW_MS) count = prev.count + 1;
-        }
-        sessionStorage.setItem(key, JSON.stringify({ count, ts: Date.now() }));
-      } catch {
-        // sessionStorage unavailable — skip cross-mount tracking; the in-memory
-        // attemptsRef above still bounds the loop within this mount.
-      }
-
-      if (count > MAX_QUICK_ATTEMPTS) {
-        setStatus("error");
-        return;
-      }
+      // On success this gate unmounts (cleanup clears the timer); otherwise the
+      // recheck re-attempts until the cap trips.
       router.refresh();
-      // If the refresh resolves the credentials, this gate unmounts and the
-      // cleanup below clears this timer. If it doesn't (cookie still missing),
-      // re-attempt so the loop guard can eventually surface the error.
-      recheckRef.current = setTimeout(() => {
-        void attempt();
-      }, POST_REFRESH_RECHECK_MS);
+      recheckRef.current = setTimeout(() => void attempt(), RECHECK_MS);
     } catch {
       setStatus("error");
     }
-  }, [pathname, router]);
+  }, [router]);
 
   useEffect(() => {
     if (startedRef.current) return;
     startedRef.current = true;
     void attempt();
-    return () => {
-      if (recheckRef.current) clearTimeout(recheckRef.current);
-    };
+    return () => clearTimeout(recheckRef.current);
   }, [attempt]);
 
   const retry = useCallback(() => {
     attemptsRef.current = 0;
-    try {
-      sessionStorage.removeItem(`sc_creds_gate:${pathname}`);
-    } catch {
-      // ignore
-    }
     void attempt();
-  }, [attempt, pathname]);
+  }, [attempt]);
 
   if (status === "error") {
     return (
