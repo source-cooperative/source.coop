@@ -36,9 +36,11 @@ jest.mock("@/lib/config", () => ({
     },
     environment: {
       isDevelopment: false,
+      isTest: true,
       stage: "test",
     },
     auth: {
+      api: { backendUrl: "http://localhost:4000" },
       accessToken: "test-token",
     },
     apiSecret: "test-source-key-123",

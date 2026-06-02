@@ -84,6 +84,7 @@ export const CONFIG = {
     // NODE_ENV=production. Use isProduction to distinguish prod from staging.
     isDevelopment: process.env.NODE_ENV === "development",
     isProduction: (process.env.STAGE || "dev") === "prod",
+    isTest: process.env.NODE_ENV === "test",
     stage: process.env.STAGE || "dev",
   },
 } as const;

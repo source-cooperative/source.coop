@@ -41,6 +41,7 @@ import { getOryId } from "../ory";
 import md5 from "md5";
 import { authenticateWithOidcToken } from "./oidc";
 import { LOGGER } from "../logging";
+import { CONFIG } from "@/lib/config";
 
 /**
  * Retrieves the current user session from the request context.
@@ -127,10 +128,10 @@ export async function getPageSession(): Promise<UserSession | null> {
 
 export async function getEmail(identity_id: string): Promise<string | null> {
   const response = await fetch(
-    `${process.env.NEXT_PUBLIC_ORY_SDK_URL}/admin/identities/${identity_id}`,
+    `${CONFIG.auth.api.backendUrl}/admin/identities/${identity_id}`,
     {
       headers: {
-        Authorization: `Bearer ${process.env.ORY_ACCESS_TOKEN}`,
+        Authorization: `Bearer ${CONFIG.auth.accessToken}`,
       },
     },
   );

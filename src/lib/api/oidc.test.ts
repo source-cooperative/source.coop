@@ -51,6 +51,7 @@ jest.mock("@/lib/config", () => ({
     },
     environment: {
       isDevelopment: true,
+      isTest: true,
     },
     auth: {
       accessToken: "",
