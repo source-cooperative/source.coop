@@ -6,6 +6,7 @@ import {
   type ProxyCredentials,
 } from "@/lib/actions/proxy-credentials";
 import { getPageSession } from "@/lib/api/utils";
+import { withTimeout } from "@/lib/with-timeout";
 import { encryptJson, decryptJson } from "./encrypted-cookie";
 import {
   PROXY_CREDS_COOKIE_NAME,
@@ -48,12 +49,11 @@ export async function refreshProxyCredentials(): Promise<RefreshResult> {
   }
 
   const MINT_TIMEOUT_MS = 25_000;
-  const creds = await Promise.race([
+  const creds = await withTimeout(
     getProxyCredentials(),
-    new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error("Credential mint timed out")), MINT_TIMEOUT_MS),
-    ),
-  ]);
+    MINT_TIMEOUT_MS,
+    "Credential mint timed out",
+  );
 
   const maxAge = Math.max(
     0,

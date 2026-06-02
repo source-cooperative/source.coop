@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { Button, Callout, Flex, Spinner, Text } from "@radix-ui/themes";
 import { refreshProxyCredentials } from "@/lib/services/proxy-credentials-cache";
+import { withTimeout } from "@/lib/with-timeout";
 
 type Status = "loading" | "error";
 
@@ -22,17 +23,6 @@ const REFRESH_TIMEOUT_MS = 20_000;
 // long, the refresh didn't expose the credentials, so re-attempt. The loop
 // guard above bounds the retries and surfaces an error instead of spinning.
 const POST_REFRESH_RECHECK_MS = 3_000;
-
-function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
-  let timer: ReturnType<typeof setTimeout>;
-  const timeout = new Promise<never>((_, reject) => {
-    timer = setTimeout(
-      () => reject(new Error("Timed out refreshing proxy credentials")),
-      ms,
-    );
-  });
-  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
-}
 
 /**
  * Rendered by the product directory page when an authenticated user opens a
@@ -58,6 +48,7 @@ export function ProxyCredentialsGate() {
       const result = await withTimeout(
         refreshProxyCredentials(),
         REFRESH_TIMEOUT_MS,
+        "Timed out refreshing proxy credentials",
       );
       if (!result.ok) {
         setStatus("error");
