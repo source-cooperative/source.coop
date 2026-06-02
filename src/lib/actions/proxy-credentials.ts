@@ -63,7 +63,11 @@ export async function getProxyCredentials(): Promise<ProxyCredentials> {
   stsUrl.searchParams.set("RoleArn", "_default");
   stsUrl.searchParams.set("WebIdentityToken", idToken);
 
-  const resp = await fetch(stsUrl.toString());
+  const stsController = new AbortController();
+  const stsTimer = setTimeout(() => stsController.abort(), 15_000);
+  const resp = await fetch(stsUrl.toString(), { signal: stsController.signal }).finally(
+    () => clearTimeout(stsTimer),
+  );
   await assertOk(resp, "STS exchange", "getProxyCredentials");
 
   const xml = await resp.text();
@@ -134,7 +138,10 @@ async function getOryIdToken(identityId: string): Promise<string> {
   );
   await assertOk(loginAcceptResp, "Login accept", "getOryIdToken");
   const { redirect_to: loginRedirect } =
-    (await loginAcceptResp.json()) as { redirect_to: string };
+    (await loginAcceptResp.json()) as { redirect_to?: string };
+  if (!loginRedirect) {
+    throw new Error(`Login accept returned no redirect_to. Status: ${loginAcceptResp.status}`);
+  }
 
   // Step 3: Follow the post-login redirect chain to obtain the authorization
   // code. With skip_consent enabled this resolves in one hop; otherwise it
@@ -270,7 +277,10 @@ async function acceptConsentAndGetCode(
   );
   await assertOk(consentAcceptResp, "Consent accept", "acceptConsentAndGetCode");
   const { redirect_to: consentRedirect } =
-    (await consentAcceptResp.json()) as { redirect_to: string };
+    (await consentAcceptResp.json()) as { redirect_to?: string };
+  if (!consentRedirect) {
+    throw new Error(`Consent accept returned no redirect_to. Status: ${consentAcceptResp.status}`);
+  }
 
   // Same-origin guard as the login redirect path: the cookie jar carries live
   // Hydra session state, so never forward it to a host outside Hydra's origin.
