@@ -171,28 +171,38 @@ export default async function ProductPathPage({ params }: PageProps) {
     throw error;
   }
 
+  // Strip the bucket-key product prefix so paths are relative to the product.
+  const relativePath = (key: string) => key.replace(`${product_id}/`, "");
+
   const objects: ProductObject[] = [
-    ...effectiveListing.objects.map((obj) => ({
-      id: obj.key.replace(`${product_id}/`, ""),
-      product_id,
-      path: obj.key.replace(`${product_id}/`, ""),
-      size: obj.size,
-      type: "file" as const,
-      created_at: obj.lastModified,
-      updated_at: obj.lastModified,
-      checksum: obj.etag,
-    })),
-    ...effectiveListing.directories.map((dir) => ({
-      id: dir.replace(`${product_id}/`, ""),
-      product_id,
-      path: dir.replace(`${product_id}/`, ""),
-      size: 0,
-      type: "directory" as const,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      checksum: "",
-      isDirectory: true,
-    })),
+    ...effectiveListing.objects.map((obj) => {
+      const path = relativePath(obj.key);
+      return {
+        id: path,
+        product_id,
+        path,
+        size: obj.size,
+        type: "file" as const,
+        created_at: obj.lastModified,
+        updated_at: obj.lastModified,
+        checksum: obj.etag,
+      };
+    }),
+    ...effectiveListing.directories.map((dir) => {
+      const path = relativePath(dir);
+      const now = new Date().toISOString();
+      return {
+        id: path,
+        product_id,
+        path,
+        size: 0,
+        type: "directory" as const,
+        created_at: now,
+        updated_at: now,
+        checksum: "",
+        isDirectory: true,
+      };
+    }),
   ];
 
   return (
