@@ -19,9 +19,7 @@ export function ProductDataUnavailable() {
       <Callout.Root color="amber" role="alert">
         <Callout.Text>
           Your access to this private product&apos;s data couldn&apos;t be
-          confirmed just now. This is usually temporary while your credentials
-          finish setting up — please try again in a moment. If it keeps
-          happening, sign out and back in.
+          confirmed just now.
         </Callout.Text>
       </Callout.Root>
       <Flex mt="3">
