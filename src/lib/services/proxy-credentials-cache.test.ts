@@ -2,8 +2,6 @@
  * @jest-environment node
  */
 
-const TEST_KEY = Buffer.alloc(32).toString("base64");
-
 const mockGet = jest.fn();
 const mockSet = jest.fn();
 const mockDelete = jest.fn();
@@ -33,20 +31,6 @@ import {
 import { encryptJson } from "./encrypted-cookie";
 
 describe("proxy-credentials-cache", () => {
-  const originalKey = process.env.PROXY_CREDS_COOKIE_KEY;
-
-  beforeAll(() => {
-    process.env.PROXY_CREDS_COOKIE_KEY = TEST_KEY;
-  });
-
-  afterAll(() => {
-    if (originalKey === undefined) {
-      delete process.env.PROXY_CREDS_COOKIE_KEY;
-    } else {
-      process.env.PROXY_CREDS_COOKIE_KEY = originalKey;
-    }
-  });
-
   beforeEach(() => {
     mockGet.mockReset();
     mockSet.mockReset();

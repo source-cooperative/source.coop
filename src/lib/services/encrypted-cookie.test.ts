@@ -3,24 +3,8 @@
  */
 import { encryptJson, decryptJson } from "./encrypted-cookie";
 
-// 32 bytes of zeros, base64'd
-const TEST_KEY = Buffer.alloc(32).toString("base64");
-
+// The encryption key comes from the global CONFIG mock (jest.setup.ts).
 describe("encrypted-cookie", () => {
-  const originalKey = process.env.PROXY_CREDS_COOKIE_KEY;
-
-  beforeAll(() => {
-    process.env.PROXY_CREDS_COOKIE_KEY = TEST_KEY;
-  });
-
-  afterAll(() => {
-    if (originalKey === undefined) {
-      delete process.env.PROXY_CREDS_COOKIE_KEY;
-    } else {
-      process.env.PROXY_CREDS_COOKIE_KEY = originalKey;
-    }
-  });
-
   test("round-trips a JSON value", async () => {
     const value = { accessKeyId: "A", secretAccessKey: "S", sessionToken: "T", expiration: "2026-05-21T00:00:00Z" };
     const token = await encryptJson(value);

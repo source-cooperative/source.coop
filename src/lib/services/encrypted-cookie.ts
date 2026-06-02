@@ -1,5 +1,7 @@
 import "server-only";
 
+import { CONFIG } from "@/lib/config";
+
 const ALGO = "AES-GCM";
 const IV_LEN = 12;
 
@@ -9,7 +11,7 @@ let cachedKey: CryptoKey | null = null;
 
 async function getKey(): Promise<CryptoKey> {
   if (cachedKey) return cachedKey;
-  const raw = process.env.PROXY_CREDS_COOKIE_KEY;
+  const raw = CONFIG.proxyCredentialsCookieKey;
   if (!raw) {
     throw new Error(
       "PROXY_CREDS_COOKIE_KEY is not set. Generate with `openssl rand -base64 32`.",

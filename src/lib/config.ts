@@ -42,6 +42,10 @@ export const CONFIG = {
   // API Secret for the Data Proxy to access the API
   apiSecret: process.env.SOURCE_KEY || "",
 
+  // Encryption key (base64, decoding to 32 bytes) for the per-user
+  // proxy-credentials cookie (`sc_proxy_creds`).
+  proxyCredentialsCookieKey: process.env.PROXY_CREDS_COOKIE_KEY || "",
+
   // Ory.sh configuration
   auth: {
     api: {
