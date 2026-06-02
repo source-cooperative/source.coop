@@ -131,45 +131,21 @@ async function getOryIdToken(identityId: string): Promise<string> {
   const { redirect_to: loginRedirect } =
     (await loginAcceptResp.json()) as { redirect_to: string };
 
-  // Step 3: Follow the redirect. If skip_consent is enabled, this goes
-  // straight to the callback with a code. Otherwise we get a consent_challenge.
+  // Step 3: Follow the post-login redirect chain to obtain the authorization
+  // code. With skip_consent enabled this resolves in one hop; otherwise it
+  // passes through a consent challenge. resolveAuthCode bounds and origin-checks
+  // every hop.
   assertHydraOrigin(loginRedirect, backendUrl);
   const postLoginResp = await fetchWithCookies(loginRedirect, cookieJar, {
     redirect: "manual",
   });
-
-  let code = extractParam(postLoginResp, "code");
-
-  if (!code) {
-    const consentChallenge = extractParam(postLoginResp, "consent_challenge");
-    if (!consentChallenge) {
-      const location = postLoginResp.headers.get("location");
-      if (location) {
-        const resolvedUrl = new URL(location, loginRedirect).toString();
-        assertHydraOrigin(resolvedUrl, backendUrl);
-        const followResp = await fetchWithCookies(resolvedUrl, cookieJar, {
-          redirect: "manual",
-        });
-        const followedCode = extractParam(followResp, "code");
-        const followedChallenge = extractParam(followResp, "consent_challenge");
-        if (followedCode) {
-          code = followedCode;
-        } else if (followedChallenge) {
-          code = await acceptConsentAndGetCode(backendUrl, adminApiKey, followedChallenge, cookieJar);
-        } else {
-          throw new Error(
-            `No consent_challenge or code after login accept. Status: ${followResp.status}, Location: ${followResp.headers.get("location")}`,
-          );
-        }
-      } else {
-        throw new Error(
-          `No consent_challenge or code after login accept. Status: ${postLoginResp.status}`,
-        );
-      }
-    } else {
-      code = await acceptConsentAndGetCode(backendUrl, adminApiKey, consentChallenge, cookieJar);
-    }
-  }
+  const code = await resolveAuthCode(
+    postLoginResp,
+    loginRedirect,
+    backendUrl,
+    adminApiKey,
+    cookieJar,
+  );
 
   // Step 4: Exchange the authorization code for tokens.
   const tokenResp = await fetch(`${backendUrl}/oauth2/token`, {
@@ -226,6 +202,55 @@ function assertHydraOrigin(redirectUrl: string, backendUrl: string): void {
   if (resolvedOrigin !== expectedOrigin) {
     throw new Error(`Unexpected redirect to untrusted host: ${resolvedOrigin}`);
   }
+}
+
+/**
+ * Resolves the OAuth2 authorization code from Hydra's post-login redirect
+ * chain, starting from an already-fetched response. With skip_consent the first
+ * response already carries the `code`; otherwise it carries a `consent_challenge`
+ * (accepted via the admin API) or another same-origin redirect to follow.
+ *
+ * Bounded to a few hops so a misbehaving redirect loop can't spin forever, and
+ * every hop is origin-checked before the live session cookie jar is forwarded.
+ * `base` resolves relative `Location` headers and advances with each hop.
+ */
+async function resolveAuthCode(
+  initial: Response,
+  base: string,
+  backendUrl: string,
+  adminApiKey: string,
+  cookieJar: Map<string, string>,
+): Promise<string> {
+  let resp = initial;
+  let from = base;
+
+  for (let hop = 0; hop < 5; hop++) {
+    const code = extractParam(resp, "code");
+    if (code) return code;
+
+    const consentChallenge = extractParam(resp, "consent_challenge");
+    if (consentChallenge) {
+      return acceptConsentAndGetCode(
+        backendUrl,
+        adminApiKey,
+        consentChallenge,
+        cookieJar,
+      );
+    }
+
+    const location = resp.headers.get("location");
+    if (!location) {
+      throw new Error(
+        `No consent_challenge or code after login accept. Status: ${resp.status}`,
+      );
+    }
+    const next = new URL(location, from).toString();
+    assertHydraOrigin(next, backendUrl);
+    resp = await fetchWithCookies(next, cookieJar, { redirect: "manual" });
+    from = next;
+  }
+
+  throw new Error("Too many redirects resolving the authorization code");
 }
 
 async function acceptConsentAndGetCode(
