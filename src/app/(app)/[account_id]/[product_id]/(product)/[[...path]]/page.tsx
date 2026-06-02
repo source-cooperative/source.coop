@@ -46,10 +46,12 @@ export default async function ProductPathPage({ params }: PageProps) {
   // product.
   const product = await getAuthorizedProduct(account_id, product_id);
 
-  // Build one storage client per request (signed when the user has proxy
-  // credentials cached, anonymous otherwise) and reuse it for both the
-  // file-detection HEAD and the directory listing below.
-  const s3 = await getStorageClient();
+  // Read the user's cached proxy credentials once for this request: used both to
+  // build the (signed-or-anonymous) storage client and, below, to decide whether
+  // a restricted product needs the credential gate. Build one storage client and
+  // reuse it for both the file-detection HEAD and the directory listing.
+  const creds = await readProxyCredentials();
+  const s3 = await getStorageClient(creds);
 
   // For non-root paths, check if this is a file via HEAD request.
   // If the HEAD succeeds, render the file view (ObjectSummary + ObjectPreview).
@@ -104,13 +106,12 @@ export default async function ProductPathPage({ params }: PageProps) {
     }
   }
 
-  // Directory listing — server-side via the data proxy. Read-only: we read the
-  // user's cached proxy credentials from the cookie but never mint here (minting
-  // writes a cookie, which is illegal during render). Public/unlisted data lists
-  // anonymously. For a restricted product with no fresh cookie, an authenticated
-  // user is sent through ProxyCredentialsGate, which mints (in an action) and
-  // refreshes the page so this render then finds the credentials.
-  const creds = await readProxyCredentials();
+  // Directory listing — server-side via the data proxy. Read-only: we use the
+  // credentials read above but never mint here (minting writes a cookie, which is
+  // illegal during render). Public/unlisted data lists anonymously. For a
+  // restricted product with no fresh cookie, an authenticated user is sent
+  // through ProxyCredentialsGate, which mints (in an action) and refreshes the
+  // page so this render then finds the credentials.
   if (!creds && product.visibility === "restricted") {
     // Authorization above guarantees this viewer is a member, so they have a
     // session — send them through the gate to mint credentials (in an action)
@@ -131,34 +132,16 @@ export default async function ProductPathPage({ params }: PageProps) {
   // refusing the signed read, usually because the just-minted credentials
   // haven't propagated yet. Surface a clear, recoverable notice for that case
   // and let any other error fall through to the route error boundary (retry).
-  let effectivePrefix = objectPath;
+  // An empty listing is a valid S3 state (e.g. a directory with no uploads yet);
+  // DirectoryList renders the empty state. We intentionally do NOT fall back to
+  // the parent prefix here — that masked legitimately empty directories.
+  const effectivePrefix = objectPath;
   let effectiveListing;
   try {
     effectiveListing = await s3.listObjects({
       bucket: account_id,
       prefix: s3Prefix,
     });
-
-    // If the listing is empty and we have a prefix, this is likely a file path
-    // whose HEAD failed earlier (e.g. transient error). Fall back to listing
-    // the parent directory so the user lands on something useful.
-    if (
-      effectiveListing.objects.length === 0 &&
-      effectiveListing.directories.length === 0 &&
-      effectivePrefix
-    ) {
-      const parent = effectivePrefix.includes("/")
-        ? effectivePrefix.substring(0, effectivePrefix.lastIndexOf("/"))
-        : "";
-      const parentS3Prefix = parent
-        ? `${product_id}/${parent}/`
-        : `${product_id}/`;
-      effectiveListing = await s3.listObjects({
-        bucket: account_id,
-        prefix: parentS3Prefix,
-      });
-      effectivePrefix = parent;
-    }
   } catch (error) {
     if (isAccessDeniedError(error)) {
       LOGGER.warn("Proxy denied a signed read for an authorized viewer", {

@@ -12,6 +12,18 @@ import { LOGGER } from "../logging";
 
 let jwks: ReturnType<typeof createRemoteJWKSet> | null = null;
 
+// jose `code`s for routine, expected token rejections (bad/expired/wrong-claim/
+// bad-signature tokens). These are logged at `warn`; anything else (e.g. an
+// unreachable JWKS endpoint, a misconfigured issuer) is a system failure logged
+// at `error` so it can page on-call.
+const ROUTINE_VERIFY_CODES = new Set([
+  "ERR_JWT_EXPIRED",
+  "ERR_JWT_CLAIM_VALIDATION_FAILED",
+  "ERR_JWS_SIGNATURE_VERIFICATION_FAILED",
+  "ERR_JWS_INVALID",
+  "ERR_JWT_INVALID",
+]);
+
 /** @internal Exposed for testing — override to supply a local JWKS resolver. */
 export function _setJwks(fn: ReturnType<typeof createRemoteJWKSet> | null) {
   if (!CONFIG.environment.isTest) {
@@ -102,7 +114,7 @@ export async function authenticateWithOidcToken(
     } catch {
       // Leave the failure marker.
     }
-    LOGGER.error("Failed to verify OIDC token", {
+    const logPayload = {
       operation: "authenticateWithOidcToken",
       metadata: {
         error_name: e?.name,
@@ -113,7 +125,14 @@ export async function authenticateWithOidcToken(
         expected_aud: audience,
         ...tokenClaims,
       },
-    });
+    };
+    // Routine token rejections shouldn't page on-call; reserve error for
+    // system failures (unreachable JWKS, misconfigured issuer, etc.).
+    if (e?.code && ROUTINE_VERIFY_CODES.has(e.code)) {
+      LOGGER.warn("Failed to verify OIDC token", logPayload);
+    } else {
+      LOGGER.error("Failed to verify OIDC token", logPayload);
+    }
     return null;
   }
 

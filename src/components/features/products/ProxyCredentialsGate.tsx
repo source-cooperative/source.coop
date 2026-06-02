@@ -39,10 +39,19 @@ export function ProxyCredentialsGate() {
   const recheckRef = useRef<ReturnType<typeof setTimeout> | undefined>(
     undefined,
   );
+  // In-memory attempt counter. The post-refresh recheck re-invokes attempt() on
+  // this same client instance, so this bounds the retry loop even when
+  // sessionStorage is unavailable (where the cross-mount counter below cannot).
+  const attemptsRef = useRef(0);
 
   const attempt = useCallback(async () => {
     setStatus("loading");
     if (recheckRef.current) clearTimeout(recheckRef.current);
+    attemptsRef.current += 1;
+    if (attemptsRef.current > MAX_QUICK_ATTEMPTS) {
+      setStatus("error");
+      return;
+    }
     const key = `sc_creds_gate:${pathname}`;
     try {
       const result = await withTimeout(
@@ -65,7 +74,8 @@ export function ProxyCredentialsGate() {
         }
         sessionStorage.setItem(key, JSON.stringify({ count, ts: Date.now() }));
       } catch {
-        // sessionStorage unavailable — fall back to a single refresh.
+        // sessionStorage unavailable — skip cross-mount tracking; the in-memory
+        // attemptsRef above still bounds the loop within this mount.
       }
 
       if (count > MAX_QUICK_ATTEMPTS) {
@@ -94,6 +104,7 @@ export function ProxyCredentialsGate() {
   }, [attempt]);
 
   const retry = useCallback(() => {
+    attemptsRef.current = 0;
     try {
       sessionStorage.removeItem(`sc_creds_gate:${pathname}`);
     } catch {
