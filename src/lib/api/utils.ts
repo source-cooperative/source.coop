@@ -70,15 +70,15 @@ export async function getApiSession(
     // cookie auth — that would let a bogus Bearer token silently succeed
     // via the session cookie.
     return null;
-  } else {
-    LOGGER.debug(
-      "No Authorization header found, falling back to cookie-based authentication",
-      {
-        operation: "getApiSession",
-        metadata: { method: "cookie-based" },
-      },
-    );
   }
+
+  LOGGER.debug(
+    "No Authorization header found, falling back to cookie-based authentication",
+    {
+      operation: "getApiSession",
+      metadata: { method: "cookie-based" },
+    },
+  );
 
   // Fall back to page session (ie cookie-based authentication)
   return getPageSession();
