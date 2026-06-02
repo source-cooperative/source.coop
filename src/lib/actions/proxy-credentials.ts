@@ -99,10 +99,9 @@ async function getOryIdToken(identityId: string): Promise<string> {
   // (no browser redirect), so a `state` token isn't needed for CSRF protection.
   // Hydra still requires one, though: fosite enforces a minimum-entropy check
   // (MinParameterEntropy, 8 chars) and rejects the /oauth2/auth request with
-  // `invalid_state` if `state` is missing or too short — so we must send it.
-  const state = Array.from(crypto.getRandomValues(new Uint8Array(16)))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
+  // `invalid_state` if `state` is missing or too short — so we must send it. A
+  // 36-char UUID clears that bound with room to spare.
+  const state = crypto.randomUUID();
 
   const authUrl = new URL(`${backendUrl}/oauth2/auth`);
   authUrl.searchParams.set("response_type", "code");
