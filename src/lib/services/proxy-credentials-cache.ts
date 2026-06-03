@@ -69,8 +69,3 @@ export async function refreshProxyCredentials(): Promise<RefreshResult> {
 
   return { ok: true };
 }
-
-export async function clearCachedProxyCredentials(): Promise<void> {
-  const jar = await cookies();
-  jar.delete(PROXY_CREDS_COOKIE_NAME);
-}

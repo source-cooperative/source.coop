@@ -1,4 +1,10 @@
-"use server";
+// Not a Server Action: this module is invoked only server-side (from the
+// `refreshProxyCredentials` action), so it must NOT carry a file-level
+// "use server" directive — that would publish `getProxyCredentials` as a
+// public endpoint any authenticated user could POST to directly, each call
+// driving the full Ory + STS request chain. `server-only` keeps it from ever
+// being bundled into client code.
+import "server-only";
 
 import { CONFIG } from "@/lib/config";
 import { getPageSession } from "@/lib/api/utils";

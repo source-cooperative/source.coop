@@ -24,10 +24,7 @@ jest.mock("@/lib/api/utils", () => ({
   getPageSession: () => mockGetPageSession(),
 }));
 
-import {
-  refreshProxyCredentials,
-  clearCachedProxyCredentials,
-} from "./proxy-credentials-cache";
+import { refreshProxyCredentials } from "./proxy-credentials-cache";
 import { encryptJson } from "./encrypted-cookie";
 
 describe("proxy-credentials-cache", () => {
@@ -131,10 +128,5 @@ describe("proxy-credentials-cache", () => {
     // scope): both callers mint and write the cookie. Re-minting is idempotent.
     expect(mockGetProxyCredentials).toHaveBeenCalledTimes(2);
     expect(mockSet).toHaveBeenCalledTimes(2);
-  });
-
-  test("clearCachedProxyCredentials deletes the cookie", async () => {
-    await clearCachedProxyCredentials();
-    expect(mockDelete).toHaveBeenCalledWith("sc_proxy_creds");
   });
 });
