@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { Metadata } from "next";
 
-import { LOGGER, dataConnectionsTable, getPageSession } from "@/lib";
+import { LOGGER, dataConnectionsTable } from "@/lib";
 import { getStorageClient } from "@/lib/clients/storage";
 import { isAccessDeniedError } from "@/lib/storage/s3";
 import { DataConnection, ProductMirror, ProductObject } from "@/types";
