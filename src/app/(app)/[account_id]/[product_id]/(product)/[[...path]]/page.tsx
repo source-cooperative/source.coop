@@ -113,13 +113,7 @@ export default async function ProductPathPage({ params }: PageProps) {
   // through ProxyCredentialsGate, which mints (in an action) and refreshes the
   // page so this render then finds the credentials.
   if (!creds && product.visibility === "restricted") {
-    // Authorization above guarantees this viewer is a member, so they have a
-    // session — send them through the gate to mint credentials (in an action)
-    // and re-render. The session check stays as a defensive guard.
-    const session = await getPageSession();
-    if (session?.identity_id) {
-      return <ProxyCredentialsGate />;
-    }
+    return <ProxyCredentialsGate />;
   }
 
   const s3Prefix = objectPath
