@@ -43,7 +43,6 @@ jest.mock("@/lib/config", () => ({
       api: { backendUrl: "http://localhost:4000" },
       accessToken: "test-token",
     },
-    apiSecret: "test-source-key-123",
     // 32 zero bytes, base64 — a valid key for the encrypted-cookie helpers.
     proxyCredentialsCookieKey: Buffer.alloc(32).toString("base64"),
   },
