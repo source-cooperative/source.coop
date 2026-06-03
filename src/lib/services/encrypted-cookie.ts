@@ -1,6 +1,7 @@
 import "server-only";
 
 import { CONFIG } from "@/lib/config";
+import { LOGGER } from "@/lib/logging";
 
 const ALGO = "AES-GCM";
 const IV_LEN = 12;
@@ -64,7 +65,16 @@ export async function decryptJson<T>(token: string): Promise<T | null> {
       ciphertext,
     );
     return JSON.parse(new TextDecoder().decode(plaintext)) as T;
-  } catch {
+  } catch (error) {
+    // A decrypt failure is expected for a tampered or legacy cookie, but it
+    // also fires for every existing cookie after PROXY_CREDS_COOKIE_KEY is
+    // rotated — log at debug so a rotation-driven spike of re-mints is
+    // diagnosable (raise the log level when investigating) without adding
+    // noise in normal operation.
+    LOGGER.debug("Failed to decrypt sc_proxy_creds cookie", {
+      operation: "decryptJson",
+      metadata: { error: (error as Error).message },
+    });
     return null;
   }
 }

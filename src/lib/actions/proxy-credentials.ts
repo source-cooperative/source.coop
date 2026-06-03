@@ -55,14 +55,21 @@ async function assertOk(
  *   1. Verify the Ory session.
  *   2. Drive Hydra's OAuth2 auth code flow server-side to get an ID token.
  *   3. Exchange the ID token at the data proxy's STS endpoint for credentials.
+ *
+ * `identityId` lets a caller that has already resolved the session (e.g.
+ * `refreshProxyCredentials`) pass it through, avoiding a second `getPageSession`
+ * round-trip per mint. When omitted, the session is resolved here.
  */
-export async function getProxyCredentials(): Promise<ProxyCredentials> {
-  const session = await getPageSession();
-  if (!session?.identity_id) {
+export async function getProxyCredentials(
+  identityId?: string,
+): Promise<ProxyCredentials> {
+  const resolvedIdentityId =
+    identityId ?? (await getPageSession())?.identity_id;
+  if (!resolvedIdentityId) {
     throw new Error("Unauthorized: no active Ory session");
   }
 
-  const idToken = await getOryIdToken(session.identity_id);
+  const idToken = await getOryIdToken(resolvedIdentityId);
 
   const stsUrl = new URL(`${CONFIG.storage.endpoint}/.sts`);
   stsUrl.searchParams.set("Action", "AssumeRoleWithWebIdentity");

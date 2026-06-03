@@ -50,7 +50,8 @@ export async function refreshProxyCredentials(): Promise<RefreshResult> {
 
   const MINT_TIMEOUT_MS = 25_000;
   const creds = await withTimeout(
-    getProxyCredentials(),
+    // Pass the session we already resolved so the mint doesn't re-fetch it.
+    getProxyCredentials(session.identity_id),
     MINT_TIMEOUT_MS,
     "Credential mint timed out",
   );
