@@ -116,8 +116,11 @@ export default async function ProductPathPage({ params }: PageProps) {
     return <ProxyCredentialsGate />;
   }
 
+  // Strip any trailing slash from objectPath: a trailing-slash URL yields catch-all
+  // segments like ["dir",""], which would otherwise build a `${product_id}/dir//`
+  // prefix that S3 lists as empty even when the directory has contents.
   const s3Prefix = objectPath
-    ? `${product_id}/${objectPath}/`
+    ? `${product_id}/${objectPath.replace(/\/$/, "")}/`
     : `${product_id}/`;
 
   // The directory listing goes through the data proxy with the user's signed

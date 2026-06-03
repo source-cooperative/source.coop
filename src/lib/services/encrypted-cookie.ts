@@ -17,7 +17,7 @@ async function getKey(): Promise<CryptoKey> {
       "PROXY_CREDS_COOKIE_KEY is not set. Generate with `openssl rand -base64 32`.",
     );
   }
-  const keyBytes = Uint8Array.from(atob(raw), (c) => c.charCodeAt(0));
+  const keyBytes = fromBase64(raw);
   if (keyBytes.byteLength !== 32) {
     throw new Error("PROXY_CREDS_COOKIE_KEY must decode to 32 bytes");
   }
