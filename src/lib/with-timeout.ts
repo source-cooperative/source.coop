@@ -10,7 +10,10 @@ export function withTimeout<T>(
   ms: number,
   message = "Operation timed out",
 ): Promise<T> {
-  let timer: ReturnType<typeof setTimeout>;
+  // `| undefined` reflects that the timer isn't assigned until the Promise
+  // executor runs; clearTimeout(undefined) is a no-op, so the `.finally`
+  // cleanup stays correct.
+  let timer: ReturnType<typeof setTimeout> | undefined;
   const timeout = new Promise<never>((_, reject) => {
     timer = setTimeout(() => reject(new Error(message)), ms);
   });

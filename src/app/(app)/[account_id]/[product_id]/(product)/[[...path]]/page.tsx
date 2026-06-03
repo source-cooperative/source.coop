@@ -51,7 +51,9 @@ export default async function ProductPathPage({ params }: PageProps) {
   // a restricted product needs the credential gate. Build one storage client and
   // reuse it for both the file-detection HEAD and the directory listing.
   const creds = await readProxyCredentials();
-  const s3 = await getStorageClient(creds);
+  // creds is already resolved here; `?? null` passes an explicit "none" so
+  // getStorageClient doesn't read the cookie a second time.
+  const s3 = await getStorageClient(creds ?? null);
 
   // For non-root paths, check if this is a file via HEAD request.
   // If the HEAD succeeds, render the file view (ObjectSummary + ObjectPreview).

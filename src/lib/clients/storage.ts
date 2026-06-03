@@ -8,15 +8,22 @@ import type { ProxyCredentials } from "@/lib/actions/proxy-credentials";
  * signed with their proxy credentials when present, anonymous otherwise.
  * Must be called during a server render/action (reads the request cookie).
  *
- * Pass `credentials` when the caller already read them this request to avoid
- * decrypting the cookie twice; omit to read them here.
+ * When the caller already resolved credentials this request, pass them — a
+ * `ProxyCredentials`, or `null` to mean "resolved, but none" — to avoid reading
+ * the cookie a second time. Omit the argument entirely to read here. A plain
+ * `?? readProxyCredentials()` fallback can't distinguish an explicit `undefined`
+ * from an omitted argument, so it would re-read on an explicit "no credentials".
  */
 export async function getStorageClient(
-  credentials?: ProxyCredentials,
+  credentials?: ProxyCredentials | null,
 ): Promise<S3StorageClient> {
+  const resolved =
+    credentials === undefined
+      ? await readProxyCredentials()
+      : (credentials ?? undefined);
   return new S3StorageClient({
     endpoint: CONFIG.storage.endpoint ?? "",
-    credentials: credentials ?? (await readProxyCredentials()),
+    credentials: resolved,
   });
 }
 

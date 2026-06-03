@@ -42,7 +42,9 @@ export default async function ProductPathPage({ params }: PageProps) {
 
   let readme: string | undefined;
   try {
-    const s3 = await getStorageClient(creds);
+    // creds already resolved above; `?? null` is an explicit "none" so
+    // getStorageClient doesn't re-read the cookie.
+    const s3 = await getStorageClient(creds ?? null);
     await s3.headObject(lookupDetails);
     const result = await s3.getObject(lookupDetails);
     readme =
