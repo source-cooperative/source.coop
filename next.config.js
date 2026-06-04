@@ -24,6 +24,22 @@ const nextConfig = {
   },
   transpilePackages: ["jose"],
   serverExternalPackages: ["@duckdb/node-api"],
+  async headers() {
+    if (process.env.STAGE === "prod") {
+      return [];
+    }
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          {
+            key: "X-Robots-Tag",
+            value: "noindex, nofollow",
+          },
+        ],
+      },
+    ];
+  },
 };
 
 export default nextConfig;
