@@ -65,7 +65,25 @@ export enum AzureRegions {
 
 export enum DataConnectionAuthenticationType {
   S3AccessKey = "s3_access_key",
-  S3IAMRole = "s3_iam_role",
+  /**
+   * V2 federated backend access: the proxy presents its own OIDC identity to the
+   * data provider's AWS account and assumes `role_arn` via
+   * `AssumeRoleWithWebIdentity`, so no long-lived backend credentials are stored.
+   * (Renamed from the unused V1 `s3_iam_role` placeholder.)
+   */
+  S3WebIdentityRole = "s3_web_identity_role",
+  /**
+   * V2 federated GCS access via GCP Workload Identity Federation: the proxy's
+   * OIDC token is exchanged at GCP STS for a token that impersonates a service
+   * account. Scaffolded — not yet implemented by the proxy/multistore.
+   */
+  GcpWorkloadIdentity = "gcp_workload_identity",
+  /**
+   * V2 federated Azure Blob access via Azure Workload Identity Federation: the
+   * proxy's OIDC token is exchanged at Azure AD for a bearer token. Scaffolded —
+   * not yet implemented by the proxy/multistore.
+   */
+  AzureWorkloadIdentity = "azure_workload_identity",
   AzureSasToken = "az_sas_token",
   S3ECSTaskRole = "s3_ecs_task_role",
   S3Local = "s3_local",
@@ -98,9 +116,58 @@ export const AzureSasTokenAuthenticationSchema = z
   })
   .openapi("AzureSasTokenAuthentication");
 
+/**
+ * V2 federated S3 access. `role_arn` is the customer-owned IAM role the proxy
+ * assumes via `AssumeRoleWithWebIdentity`. It is *not* a secret (it's an ARN),
+ * so it can be surfaced to the proxy without exposing credentials.
+ */
+export const S3WebIdentityRoleAuthenticationSchema = z
+  .object({
+    type: z.literal(DataConnectionAuthenticationType.S3WebIdentityRole),
+    role_arn: z.string(),
+  })
+  .openapi("S3WebIdentityRoleAuthentication");
+
+/**
+ * V2 federated GCS access via GCP Workload Identity Federation. The proxy
+ * exchanges its OIDC assertion at GCP STS — the `workload_identity_provider`
+ * resource is itself the exchange audience — for a token that impersonates
+ * `service_account`. Neither field is a secret. Scaffolded — not yet wired in
+ * the proxy/multistore.
+ */
+export const GcpWorkloadIdentityAuthenticationSchema = z
+  .object({
+    type: z.literal(DataConnectionAuthenticationType.GcpWorkloadIdentity),
+    /** Full WIF provider resource: `//iam.googleapis.com/projects/.../providers/...`. */
+    workload_identity_provider: z.string(),
+    /** Service account email the exchanged token impersonates for GCS. */
+    service_account: z.string(),
+  })
+  .openapi("GcpWorkloadIdentityAuthentication");
+
+/**
+ * V2 federated Azure Blob access via Azure Workload Identity Federation. The
+ * proxy exchanges its OIDC assertion at Azure AD (audience
+ * `api://AzureADTokenExchange`, a constant) for a bearer token, using the app
+ * registration identified by `tenant_id` + `client_id`. Neither field is a
+ * secret. Scaffolded — not yet wired in the proxy/multistore.
+ */
+export const AzureWorkloadIdentityAuthenticationSchema = z
+  .object({
+    type: z.literal(DataConnectionAuthenticationType.AzureWorkloadIdentity),
+    /** Azure AD tenant (directory) ID. */
+    tenant_id: z.string(),
+    /** App registration (client) ID holding the federated identity credential. */
+    client_id: z.string(),
+  })
+  .openapi("AzureWorkloadIdentityAuthentication");
+
 export const DataConnectionAuthenticationSchema = z
   .discriminatedUnion("type", [
     S3AccessKeyAuthenticationSchema,
+    S3WebIdentityRoleAuthenticationSchema,
+    GcpWorkloadIdentityAuthenticationSchema,
+    AzureWorkloadIdentityAuthenticationSchema,
     AzureSasTokenAuthenticationSchema,
     S3ECSTaskRoleAuthenticationSchema,
     S3LocalAuthenticationSchema,
