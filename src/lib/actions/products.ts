@@ -1,6 +1,6 @@
 "use server";
 
-import { productsTable } from "@/lib/clients/database";
+import { productsTable, dataConnectionsTable } from "@/lib/clients/database";
 import {
   Actions,
   ProductCreationRequestSchema,
@@ -14,6 +14,8 @@ import { isAuthorized } from "../api/authz";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { productUrl, editProductDetailsUrl } from "@/lib/urls";
+
+export const PRIMARY_DATA_CONNECTION_ID = "aws-opendata-us-west-2";
 
 export interface PaginatedProductsResult {
   products: Product[];
@@ -124,6 +126,25 @@ export async function createProduct(
     };
   }
 
+  const dataConnection = await dataConnectionsTable.fetchById(
+    PRIMARY_DATA_CONNECTION_ID
+  );
+  if (
+    dataConnection &&
+    !dataConnection.allowed_visibilities.includes(validatedFields.data.visibility)
+  ) {
+    return {
+      fieldErrors: {
+        visibility: [
+          `Visibility must be one of: ${dataConnection.allowed_visibilities.join(", ")}`,
+        ],
+      },
+      data: formData,
+      message: "Invalid visibility for this data connection",
+      success: false,
+    };
+  }
+
   const product: Product = {
     ...validatedFields.data,
     created_at: new Date().toISOString(),
@@ -220,6 +241,25 @@ export async function updateProduct(
     const title = formData.get("title") as string;
     const description = formData.get("description") as string;
     const visibility = formData.get("visibility") as ProductVisibility;
+
+    // Validate visibility against the product's data connection allowed_visibilities
+    if (visibility) {
+      const dataConnection = await dataConnectionsTable.fetchById(
+        currentProduct.metadata.primary_mirror
+      );
+      if (dataConnection && !dataConnection.allowed_visibilities.includes(visibility)) {
+        return {
+          fieldErrors: {
+            visibility: [
+              `Visibility must be one of: ${dataConnection.allowed_visibilities.join(", ")}`,
+            ],
+          },
+          data: formData,
+          message: "Invalid visibility for this data connection",
+          success: false,
+        };
+      }
+    }
 
     // Build update data
     const updateData = {

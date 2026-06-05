@@ -1,9 +1,12 @@
 import { ProductCreationForm } from "@/components/features/products/ProductCreationForm";
 import { accountsTable, getPageSession, membershipsTable } from "@/lib";
+import { dataConnectionsTable } from "@/lib/clients/database";
 import { isAuthorized } from "@/lib/api/authz";
 import { Actions, MembershipState } from "@/types";
+import { ProductVisibility } from "@/types/product";
 import { Heading, Text } from "@radix-ui/themes";
 import { FormTitle } from "@/components/core";
+import { PRIMARY_DATA_CONNECTION_ID } from "@/lib/actions/products";
 
 export default async function NewProductPage() {
   const session = await getPageSession();
@@ -33,9 +36,11 @@ export default async function NewProductPage() {
     );
   }
 
-  const memberships = await membershipsTable.listByUser(
-    session.account.account_id
-  );
+  const [memberships, primaryDataConnection] = await Promise.all([
+    membershipsTable.listByUser(session.account.account_id),
+    dataConnectionsTable.fetchById(PRIMARY_DATA_CONNECTION_ID),
+  ]);
+
   const potentialOwnerAccounts = [
     session.account,
     ...(await accountsTable.fetchManyByIds(
@@ -45,6 +50,9 @@ export default async function NewProductPage() {
     )),
   ];
 
+  const allowedVisibilities =
+    primaryDataConnection?.allowed_visibilities ?? Object.values(ProductVisibility);
+
   return (
     <>
       <FormTitle
@@ -52,7 +60,10 @@ export default async function NewProductPage() {
         description="Create a new product to share with others"
       />
 
-      <ProductCreationForm potentialOwnerAccounts={potentialOwnerAccounts} />
+      <ProductCreationForm
+        potentialOwnerAccounts={potentialOwnerAccounts}
+        allowedVisibilities={allowedVisibilities}
+      />
     </>
   );
 }

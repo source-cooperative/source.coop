@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Text, Spinner, Flex } from "@radix-ui/themes";
 import { DynamicForm, FormField } from "@/components/core";
 import { Account } from "@/types";
-import { Product } from "@/types/product";
+import { Product, ProductVisibility } from "@/types/product";
 import { useProductIdValidation } from "@/hooks/useIdValidation";
 import { createProduct, updateProduct } from "@/lib/actions/products";
 
@@ -12,12 +12,14 @@ interface ProductCreationFormProps {
   potentialOwnerAccounts: Account[];
   product?: Product; // Optional product for edit mode
   mode?: "create" | "edit"; // Mode of operation
+  allowedVisibilities: ProductVisibility[];
 }
 
 export function ProductCreationForm({
   potentialOwnerAccounts,
   product,
   mode = "create",
+  allowedVisibilities,
 }: ProductCreationFormProps) {
   const isEditMode = mode === "edit" && product;
 
@@ -99,11 +101,10 @@ export function ProductCreationForm({
       name: "visibility",
       type: "select",
       description: "Your product's visibility",
-      options: [
-        { value: "public", label: "Public" },
-        { value: "unlisted", label: "Unlisted" },
-        { value: "restricted", label: "Restricted" },
-      ],
+      options: allowedVisibilities.map((v) => ({
+        value: v,
+        label: v.charAt(0).toUpperCase() + v.slice(1),
+      })),
     },
   ];
 

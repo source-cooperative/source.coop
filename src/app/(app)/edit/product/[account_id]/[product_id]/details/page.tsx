@@ -1,7 +1,8 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ProductCreationForm } from "@/components/features/products/ProductCreationForm";
-import { productsTable, accountsTable } from "@/lib/clients/database";
+import { productsTable, accountsTable, dataConnectionsTable } from "@/lib/clients/database";
+import { ProductVisibility } from "@/types/product";
 
 export async function generateMetadata({
   params,
@@ -24,16 +25,24 @@ export default async function DetailsPage({ params }: PageProps) {
   }
 
   // Get the account for the potential owner accounts array (needed by the form)
-  const account = await accountsTable.fetchById(account_id);
+  const [account, dataConnection] = await Promise.all([
+    accountsTable.fetchById(account_id),
+    dataConnectionsTable.fetchById(product.metadata.primary_mirror),
+  ]);
+
   if (!account) {
     notFound();
   }
+
+  const allowedVisibilities =
+    dataConnection?.allowed_visibilities ?? Object.values(ProductVisibility);
 
   return (
     <ProductCreationForm
       potentialOwnerAccounts={[account]}
       product={product}
       mode="edit"
+      allowedVisibilities={allowedVisibilities}
     />
   );
 }
