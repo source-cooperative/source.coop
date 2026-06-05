@@ -45,7 +45,16 @@ describe("DataConnectionAuthentication (V2 web-identity role)", () => {
     );
   });
 
-  test("authentication is optional on a data connection (omitted = unsigned)", () => {
+  test("rejects gcp_workload_identity without workload_identity_provider", () => {
+    expect(() =>
+      DataConnectionAuthenticationSchema.parse({
+        type: "gcp_workload_identity",
+        service_account: "sa@project.iam.gserviceaccount.com",
+      })
+    ).toThrow();
+  });
+
+  test("parses the scaffolded gcp_workload_identity variant", () => {
     const dc = DataConnectionSchema.parse({
       data_connection_id: "conn-1",
       name: "Conn",
