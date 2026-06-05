@@ -1,7 +1,12 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ProductCreationForm } from "@/components/features/products/ProductCreationForm";
-import { productsTable, accountsTable } from "@/lib/clients/database";
+import {
+  productsTable,
+  accountsTable,
+  dataConnectionsTable,
+} from "@/lib/clients/database";
+import { DataConnection, DataConnectionSchema } from "@/types";
 
 export async function generateMetadata({
   params,
@@ -29,10 +34,21 @@ export default async function DetailsPage({ params }: PageProps) {
     notFound();
   }
 
+  // Resolve the product's data connection so the visibility options stay
+  // constrained to what that connection allows. Credentials are stripped before
+  // the connection reaches the client form.
+  const connection = await dataConnectionsTable.fetchById(
+    product.metadata.primary_mirror
+  );
+  const dataConnections: DataConnection[] = connection
+    ? [DataConnectionSchema.omit({ authentication: true }).parse(connection)]
+    : [];
+
   return (
     <ProductCreationForm
       potentialOwnerAccounts={[account]}
       product={product}
+      dataConnections={dataConnections}
       mode="edit"
     />
   );
