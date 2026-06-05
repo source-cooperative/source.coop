@@ -168,6 +168,24 @@ export async function createProduct(
     };
   }
 
+  // Enforce that the connection is available for the product's account. An
+  // owned connection may only be used by the account that owns it.
+  if (
+    dataConnection.owner &&
+    dataConnection.owner !== validatedFields.data.account_id
+  ) {
+    return {
+      fieldErrors: {
+        data_connection_id: [
+          "Selected data connection is not available for this account",
+        ],
+      },
+      data: formData,
+      message: "Invalid data connection for this account",
+      success: false,
+    };
+  }
+
   // Enforce the connection's allowed visibilities. Even though the form only
   // offers permitted options, the server must reject disallowed combinations.
   if (
