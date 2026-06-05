@@ -61,16 +61,32 @@ export function ProductCreationForm({
   );
   const validationState = useProductIdValidation(productId, accountId);
 
+  // Connections available to the currently selected owner account: either
+  // unowned (Source-Coop-managed) or explicitly owned by that account.
+  const connectionsForAccount = (forAccountId: string) =>
+    dataConnections.filter(
+      (dc) => !dc.owner || dc.owner === forAccountId
+    );
+
   // Data connection selection. In edit mode the storage backend is fixed once
   // the product exists, so we don't offer a selector — but we still resolve the
   // product's connection to constrain the visibility options.
+  const initialAccountId = isEditMode
+    ? product.account_id
+    : potentialOwnerAccounts[0]?.account_id;
+  const initialAvailable = connectionsForAccount(initialAccountId ?? "");
+
   const [dataConnectionId, setDataConnectionId] = useState(
     isEditMode
       ? product.metadata.primary_mirror
-      : dataConnections[0]?.data_connection_id ?? ""
+      : initialAvailable[0]?.data_connection_id ?? ""
   );
 
-  const selectedConnection = dataConnections.find(
+  const [availableConnections, setAvailableConnections] = useState(
+    isEditMode ? dataConnections : initialAvailable
+  );
+
+  const selectedConnection = availableConnections.find(
     (connection) => connection.data_connection_id === dataConnectionId
   );
 
@@ -90,12 +106,32 @@ export function ProductCreationForm({
   // permitted one so the form can't submit an invalid combination.
   const handleConnectionChange = (value: string) => {
     setDataConnectionId(value);
-    const next = dataConnections.find(
+    const next = availableConnections.find(
       (connection) => connection.data_connection_id === value
     );
     const nextAllowed = allowedVisibilitiesFor(next);
     if (!nextAllowed.includes(visibility)) {
       setVisibility(nextAllowed[0]);
+    }
+  };
+
+  // When the owner account changes, recalculate which connections are available
+  // and reset the selected connection/visibility if the current choice is no
+  // longer valid for the new account.
+  const handleAccountChange = (value: string) => {
+    setAccountId(value);
+    const nextAvailable = connectionsForAccount(value);
+    setAvailableConnections(nextAvailable);
+    const stillValid = nextAvailable.find(
+      (dc) => dc.data_connection_id === dataConnectionId
+    );
+    if (!stillValid) {
+      const first = nextAvailable[0];
+      setDataConnectionId(first?.data_connection_id ?? "");
+      const nextAllowed = allowedVisibilitiesFor(first);
+      if (!nextAllowed.includes(visibility)) {
+        setVisibility(nextAllowed[0]);
+      }
     }
   };
 
@@ -124,7 +160,7 @@ export function ProductCreationForm({
             })),
             controlled: true,
             value: accountId,
-            onValueChange: setAccountId,
+            onValueChange: handleAccountChange,
           },
           {
             label: "Product ID",
@@ -176,15 +212,15 @@ export function ProductCreationForm({
             required: true,
             description:
               "Where this product's data is stored. Determines the available region and visibility options.",
-            options: dataConnections.map((connection) => ({
+            options: availableConnections.map((connection) => ({
               value: connection.data_connection_id,
               label: describeConnection(connection),
             })),
             placeholder:
-              dataConnections.length === 0
+              availableConnections.length === 0
                 ? "No data connections available"
                 : undefined,
-            readOnly: dataConnections.length === 0,
+            readOnly: availableConnections.length === 0,
             controlled: true,
             value: dataConnectionId,
             onValueChange: handleConnectionChange,

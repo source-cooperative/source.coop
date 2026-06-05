@@ -142,4 +142,41 @@ describe("createProduct", () => {
     expect(dataConnectionsTable.fetchById).not.toHaveBeenCalled();
     expect(productsTable.create).not.toHaveBeenCalled();
   });
+
+  test("rejects when the connection is owned by a different account", async () => {
+    (dataConnectionsTable.fetchById as jest.Mock).mockResolvedValue(
+      connection({ owner: "org-other" })
+    );
+
+    const result = await createProduct(
+      undefined,
+      buildFormData({ account_id: "alice" })
+    );
+
+    expect(result.success).toBe(false);
+    expect(result.fieldErrors.data_connection_id).toBeDefined();
+    expect(productsTable.create).not.toHaveBeenCalled();
+  });
+
+  test("allows a connection owned by the same account", async () => {
+    (dataConnectionsTable.fetchById as jest.Mock).mockResolvedValue(
+      connection({ owner: "alice" })
+    );
+
+    await createProduct(undefined, buildFormData({ account_id: "alice" }));
+
+    expect(productsTable.create).toHaveBeenCalledTimes(1);
+    expect(redirect).toHaveBeenCalled();
+  });
+
+  test("allows an unowned (Source-Coop-managed) connection for any account", async () => {
+    (dataConnectionsTable.fetchById as jest.Mock).mockResolvedValue(
+      connection({ owner: undefined })
+    );
+
+    await createProduct(undefined, buildFormData({ account_id: "alice" }));
+
+    expect(productsTable.create).toHaveBeenCalledTimes(1);
+    expect(redirect).toHaveBeenCalled();
+  });
 });

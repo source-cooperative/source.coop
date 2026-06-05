@@ -156,6 +156,9 @@ export const DataConnectionSchema = z
     name: z.string(),
     prefix_template: z.optional(z.string()),
     read_only: z.boolean(),
+    // Optional account that owns this connection. Source-Coop-managed
+    // connections have no owner and are available to all accounts.
+    owner: z.optional(z.string()),
     // Visibilities a product may use on this connection; enforced at product
     // creation (see createProduct in src/lib/actions/products.ts).
     allowed_visibilities: z.array(z.nativeEnum(ProductVisibility)),
