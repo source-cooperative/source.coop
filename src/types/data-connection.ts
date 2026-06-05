@@ -254,8 +254,18 @@ export type DataConnection = z.infer<typeof DataConnectionSchema>;
 export function isSecretBearingAuth(
   auth: DataConnectionAuthentication
 ): boolean {
-  return (
-    auth.type === DataConnectionAuthenticationType.S3AccessKey ||
-    auth.type === DataConnectionAuthenticationType.AzureSasToken
-  );
+  // Exhaustive over the discriminated union so a newly-added variant that isn't
+  // classified here is a compile error ("lacks ending return statement") rather
+  // than silently defaulting to secret-less and being exposed to non-admins.
+  switch (auth.type) {
+    case DataConnectionAuthenticationType.S3AccessKey:
+    case DataConnectionAuthenticationType.AzureSasToken:
+      return true;
+    case DataConnectionAuthenticationType.S3WebIdentityRole:
+    case DataConnectionAuthenticationType.GcpWorkloadIdentity:
+    case DataConnectionAuthenticationType.AzureWorkloadIdentity:
+    case DataConnectionAuthenticationType.S3ECSTaskRole:
+    case DataConnectionAuthenticationType.S3Local:
+      return false;
+  }
 }
