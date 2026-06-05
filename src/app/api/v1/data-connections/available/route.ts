@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Actions, DataConnectionSchema, DataConnection } from "@/types";
+import { Actions, DataConnection } from "@/types";
 import { getApiSession } from "@/lib/api/utils";
 import { StatusCodes } from "http-status-codes";
 import { isAuthorized } from "@/lib/api/authz";
+import { sanitizeDataConnection } from "@/lib/api/sanitize-data-connection";
 import { dataConnectionsTable } from "@/lib/clients/database";
 
 /**
@@ -41,19 +42,9 @@ export async function GET(request: NextRequest) {
         isAuthorized(session, dataConnection, Actions.GetDataConnection)
     );
 
-    const sanitizedConnections = filteredConnections.map((connection) => {
-      const sanitized = DataConnectionSchema.omit({
-        authentication: true,
-      }).parse(connection);
-
-      if (
-        isAuthorized(session, connection, Actions.ViewDataConnectionCredentials)
-      ) {
-        return DataConnectionSchema.parse(connection);
-      }
-
-      return sanitized;
-    });
+    const sanitizedConnections = filteredConnections.map((connection) =>
+      sanitizeDataConnection(connection, session)
+    );
 
     return NextResponse.json(sanitizedConnections, { status: StatusCodes.OK });
   } catch (err: any) {

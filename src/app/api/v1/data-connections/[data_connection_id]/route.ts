@@ -30,6 +30,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Actions, DataConnectionSchema } from "@/types";
 import { StatusCodes } from "http-status-codes";
 import { isAdmin, isAuthorized } from "@/lib/api/authz";
+import { sanitizeDataConnection } from "@/lib/api/sanitize-data-connection";
 import { getApiSession } from "@/lib/api/utils";
 import { dataConnectionsTable } from "@/lib/clients";
 
@@ -41,7 +42,7 @@ export async function GET(
     const session = await getApiSession(request);
 
     const { data_connection_id } = await params;
-    let dataConnection = await dataConnectionsTable.fetchById(
+    const dataConnection = await dataConnectionsTable.fetchById(
       data_connection_id
     );
     if (!dataConnection) {
@@ -58,20 +59,9 @@ export async function GET(
       );
     }
 
-    // Sanitize connection if user doesn't have permission to view credentials
-    if (
-      !isAuthorized(
-        session,
-        dataConnection,
-        Actions.ViewDataConnectionCredentials
-      )
-    ) {
-      dataConnection = DataConnectionSchema.omit({
-        authentication: true,
-      }).parse(dataConnection);
-    }
+    const sanitized = sanitizeDataConnection(dataConnection, session);
 
-    return NextResponse.json(dataConnection, { status: StatusCodes.OK });
+    return NextResponse.json(sanitized, { status: StatusCodes.OK });
   } catch (err: unknown) {
     const errorMessage =
       err instanceof Error ? err.message : "Internal server error";
