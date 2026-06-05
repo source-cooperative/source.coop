@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Actions, DataConnectionSchema, DataConnection } from "@/types";
+import { Actions, DataConnectionSchema } from "@/types";
 import { getApiSession } from "@/lib/api/utils";
 import { StatusCodes } from "http-status-codes";
 import { isAuthorized } from "@/lib/api/authz";
-import { dataConnectionsTable } from "@/lib/clients/database";
+import { listUsableDataConnections } from "@/lib/data-connections";
 
 /**
  * @openapi
@@ -32,14 +32,7 @@ export async function GET(request: NextRequest) {
   try {
     const session = await getApiSession(request);
 
-    const dataConnections: DataConnection[] =
-      await dataConnectionsTable.listAll();
-
-    const filteredConnections = dataConnections.filter(
-      (dataConnection) =>
-        isAuthorized(session, dataConnection, Actions.UseDataConnection) &&
-        isAuthorized(session, dataConnection, Actions.GetDataConnection)
-    );
+    const filteredConnections = await listUsableDataConnections(session);
 
     const sanitizedConnections = filteredConnections.map((connection) => {
       const sanitized = DataConnectionSchema.omit({

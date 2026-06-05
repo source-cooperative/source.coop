@@ -1,7 +1,8 @@
 import { ProductCreationForm } from "@/components/features/products/ProductCreationForm";
 import { accountsTable, getPageSession, membershipsTable } from "@/lib";
 import { isAuthorized } from "@/lib/api/authz";
-import { Actions, MembershipState } from "@/types";
+import { listUsableDataConnections } from "@/lib/data-connections";
+import { Actions, DataConnectionSchema, MembershipState } from "@/types";
 import { Heading, Text } from "@radix-ui/themes";
 import { FormTitle } from "@/components/core";
 
@@ -45,6 +46,12 @@ export default async function NewProductPage() {
     )),
   ];
 
+  // Strip credentials before handing connections to the client component.
+  const dataConnections = (await listUsableDataConnections(session)).map(
+    (connection) =>
+      DataConnectionSchema.omit({ authentication: true }).parse(connection)
+  );
+
   return (
     <>
       <FormTitle
@@ -52,7 +59,10 @@ export default async function NewProductPage() {
         description="Create a new product to share with others"
       />
 
-      <ProductCreationForm potentialOwnerAccounts={potentialOwnerAccounts} />
+      <ProductCreationForm
+        potentialOwnerAccounts={potentialOwnerAccounts}
+        dataConnections={dataConnections}
+      />
     </>
   );
 }

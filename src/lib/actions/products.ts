@@ -1,11 +1,13 @@
 "use server";
 
-import { productsTable } from "@/lib/clients/database";
+import { productsTable, dataConnectionsTable } from "@/lib/clients/database";
 import {
   Actions,
+  DataProvider,
   ProductCreationRequestSchema,
   type Product,
   type ProductCreationRequest,
+  type ProductMirror,
   type ProductVisibility,
 } from "@/types";
 import { getPageSession, LOGGER } from "@/lib";
@@ -14,6 +16,16 @@ import { isAuthorized } from "../api/authz";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { productUrl, editProductDetailsUrl } from "@/lib/urls";
+
+// Map a data connection's storage provider to the product mirror's storage_type.
+const STORAGE_TYPE_BY_PROVIDER: Record<
+  DataProvider,
+  ProductMirror["storage_type"]
+> = {
+  [DataProvider.S3]: "s3",
+  [DataProvider.Azure]: "azure",
+  [DataProvider.GCP]: "gcs",
+};
 
 export interface PaginatedProductsResult {
   products: Product[];
@@ -124,6 +136,56 @@ export async function createProduct(
     };
   }
 
+  const dataConnectionId = formData.get("data_connection_id");
+  if (typeof dataConnectionId !== "string" || dataConnectionId.length === 0) {
+    return {
+      fieldErrors: { data_connection_id: ["A data connection is required"] },
+      data: formData,
+      message: "Invalid form data",
+      success: false,
+    };
+  }
+
+  const dataConnection = await dataConnectionsTable.fetchById(dataConnectionId);
+  if (!dataConnection) {
+    return {
+      fieldErrors: {
+        data_connection_id: ["Selected data connection was not found"],
+      },
+      data: formData,
+      message: "Invalid data connection",
+      success: false,
+    };
+  }
+
+  // Enforce that the user may create products against this connection. This
+  // covers read-only connections and connections gated behind an account flag.
+  if (!isAuthorized(session, dataConnection, Actions.UseDataConnection)) {
+    return {
+      fieldErrors: {},
+      data: formData,
+      message: "You are not permitted to use the selected data connection",
+      success: false,
+    };
+  }
+
+  // Enforce the connection's allowed visibilities. Even though the form only
+  // offers permitted options, the server must reject disallowed combinations.
+  if (
+    !dataConnection.allowed_visibilities.includes(validatedFields.data.visibility)
+  ) {
+    return {
+      fieldErrors: {
+        visibility: [
+          `The "${dataConnection.name}" data connection does not allow ${validatedFields.data.visibility} products`,
+        ],
+      },
+      data: formData,
+      message: "Invalid visibility for the selected data connection",
+      success: false,
+    };
+  }
+
   const product: Product = {
     ...validatedFields.data,
     created_at: new Date().toISOString(),
@@ -132,11 +194,12 @@ export async function createProduct(
     featured: 0,
     metadata: {
       tags: [],
-      primary_mirror: "aws-opendata-us-west-2",
+      primary_mirror: dataConnection.data_connection_id,
       mirrors: {
-        "aws-opendata-us-west-2": {
-          storage_type: "s3",
-          connection_id: "aws-opendata-us-west-2",
+        [dataConnection.data_connection_id]: {
+          storage_type:
+            STORAGE_TYPE_BY_PROVIDER[dataConnection.details.provider],
+          connection_id: dataConnection.data_connection_id,
           prefix: `${validatedFields.data.account_id}/${validatedFields.data.product_id}/`,
           is_primary: true,
         },

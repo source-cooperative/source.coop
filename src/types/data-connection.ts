@@ -156,7 +156,8 @@ export const DataConnectionSchema = z
     name: z.string(),
     prefix_template: z.optional(z.string()),
     read_only: z.boolean(),
-    // NOTE: allowed_visibilities is currently unenforced
+    // Visibilities a product may use on this connection; enforced at product
+    // creation (see createProduct in src/lib/actions/products.ts).
     allowed_visibilities: z.array(z.nativeEnum(ProductVisibility)),
     required_flag: z.optional(z.nativeEnum(AccountFlags)),
     details: DataConnnectionDetailsSchema,
