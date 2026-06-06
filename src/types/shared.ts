@@ -32,12 +32,6 @@ export const DEFAULT_INDIVIDUAL_FLAGS: AccountFlags[] = [];
 
 export const DEFAULT_ORGANIZATION_FLAGS: AccountFlags[] = [];
 
-export enum RepositoryDataMode {
-  Open = "open",
-  Subscription = "subscription",
-  Private = "private",
-}
-
 // Common schemas
 export const AccountFlagsSchema = z
   .array(
@@ -46,12 +40,6 @@ export const AccountFlagsSchema = z
     })
   )
   .openapi("AccountFlags");
-
-export const RepositoryDataModeSchema = z
-  .nativeEnum(RepositoryDataMode, {
-    errorMap: () => ({ message: "Invalid repository data mode" }),
-  })
-  .openapi("RepositoryDataMode");
 
 // Common types
 export type ErrorResponse = {

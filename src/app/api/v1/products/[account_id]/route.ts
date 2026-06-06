@@ -144,7 +144,7 @@ export async function POST(
   //     );
   //   }
   //   if (
-  //     !dataConnection.allowed_data_modes.includes(
+  //     !dataConnection.allowed_visibilities.includes(
   //       repositoryCreateRequest.data_mode
   //     )
   //   ) {

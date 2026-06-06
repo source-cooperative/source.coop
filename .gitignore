@@ -258,3 +258,6 @@ cdk.out
 .worktrees/
 .env*.local
 docs/plans
+
+# MystMD
+_build/

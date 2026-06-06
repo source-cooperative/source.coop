@@ -15,7 +15,7 @@ export class APIKeysTable extends BaseTable {
 
   async fetchById(accessKeyId: string): Promise<APIKey | null> {
     try {
-      const result = await this.client.send(
+      const result = await this.cachedSend(
         new QueryCommand({
           TableName: this.table,
           KeyConditionExpression: "access_key_id = :access_key_id",
@@ -51,7 +51,7 @@ export class APIKeysTable extends BaseTable {
         },
       });
 
-      const result = await this.client.send(command);
+      const result = await this.cachedSend(command);
       return result.Items?.map((item) => item as APIKey) ?? [];
     } catch (error) {
       this.logError("listByAccount", error, { accountId, repositoryId });
