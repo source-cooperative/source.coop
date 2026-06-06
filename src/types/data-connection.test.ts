@@ -53,7 +53,35 @@ describe("DataConnectionAuthentication (V2 web-identity role)", () => {
     ).toThrow();
   });
 
-  test("parses the scaffolded gcp_workload_identity variant", () => {
+  test("rejects gcp_workload_identity without service_account", () => {
+    expect(() =>
+      DataConnectionAuthenticationSchema.parse({
+        type: "gcp_workload_identity",
+        workload_identity_provider:
+          "//iam.googleapis.com/projects/123/locations/global/workloadIdentityPools/p/providers/pr",
+      })
+    ).toThrow();
+  });
+
+  test("rejects azure_workload_identity without tenant_id", () => {
+    expect(() =>
+      DataConnectionAuthenticationSchema.parse({
+        type: "azure_workload_identity",
+        client_id: "11111111-1111-1111-1111-111111111111",
+      })
+    ).toThrow();
+  });
+
+  test("rejects azure_workload_identity without client_id", () => {
+    expect(() =>
+      DataConnectionAuthenticationSchema.parse({
+        type: "azure_workload_identity",
+        tenant_id: "00000000-0000-0000-0000-000000000000",
+      })
+    ).toThrow();
+  });
+
+  test("authentication field is optional and absent by default", () => {
     const dc = DataConnectionSchema.parse({
       data_connection_id: "conn-1",
       name: "Conn",
