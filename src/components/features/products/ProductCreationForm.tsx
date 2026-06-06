@@ -30,12 +30,13 @@ function allowedVisibilitiesFor(
     : ALL_VISIBILITIES;
 }
 
-// "AWS Open Data (us-west-2) · Public, Unlisted"
+// "AWS Open Data (us-west-2) · Public, Unlisted · Read Only"
 function describeConnection(connection: DataConnection): string {
   const visibilities =
     connection.allowed_visibilities.map((v) => VISIBILITY_LABELS[v]).join(", ") ||
     "no visibilities";
-  return `${connection.name} (${connection.details.region}) · ${visibilities}`;
+  const readOnly = connection.read_only ? " · Read Only" : "";
+  return `${connection.name} (${connection.details.region}) · ${visibilities}${readOnly}`;
 }
 
 interface ProductCreationFormProps {
