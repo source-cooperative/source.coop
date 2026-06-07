@@ -16,7 +16,6 @@ export const newProductUrl = () => "/products/new";
 export const loginUrl = (returnTo?: string) => {
   const base = CONFIG.auth.routes.login;
   if (!returnTo) return base;
-  if (!returnTo) return base;
   const sep = base.includes('?') ? '&' : '?';
   return `${base}${sep}return_to=${encodeURIComponent(returnTo)}`;
 export const onboardingUrl = () => "/onboarding";
