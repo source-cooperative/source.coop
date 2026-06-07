@@ -155,6 +155,10 @@ export async function createProduct(
 
   try {
     await productsTable.create(product);
+    // Invalidate the root layout's Router Cache so the soft navigation
+    // triggered by redirect() re-renders the auth UI in the shared layout.
+    // Without this, the user can appear logged out until a full reload.
+    revalidatePath("/", "layout");
     redirect(productUrl(product.account_id, product.product_id, "success"));
   } catch (error) {
     LOGGER.error("Failed to create product", {

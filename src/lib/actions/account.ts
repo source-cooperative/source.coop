@@ -125,6 +125,10 @@ export async function createAccount(
     });
   }
 
+  // Invalidate the root layout's Router Cache so the soft navigation
+  // triggered by redirect() re-renders the auth UI in the shared layout.
+  // Without this, the user can appear logged out until a full reload.
+  revalidatePath("/", "layout");
   redirect(
     account.type === AccountType.INDIVIDUAL
       ? accountUrl(account.account_id, "welcome=true")
