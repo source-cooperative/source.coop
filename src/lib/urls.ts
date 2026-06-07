@@ -18,6 +18,7 @@ export const loginUrl = (returnTo?: string) => {
   if (!returnTo) return base;
   const sep = base.includes('?') ? '&' : '?';
   return `${base}${sep}return_to=${encodeURIComponent(returnTo)}`;
+};
 export const onboardingUrl = () => "/onboarding";
 
 // Object URLs
