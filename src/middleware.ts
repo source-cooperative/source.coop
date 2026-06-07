@@ -66,10 +66,20 @@ const handleLegacyRedirects = (request: NextRequest): NextResponse | null => {
 const ory = createOryMiddleware({});
 
 export const middleware = async (request: NextRequest) => {
-  for (const handler of [handleLegacyRedirects, handleChromeDevTools, ory]) {
+  for (const handler of [handleLegacyRedirects, handleChromeDevTools]) {
     const response = await handler(request);
     if (response) return response;
   }
+
+  const oryResponse = await ory(request);
+  if (oryResponse) return oryResponse;
+
+  // Inject current path into request headers so server components can read it
+  // via headers() from next/headers (used to build return_to login URLs).
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-pathname", request.nextUrl.pathname);
+  requestHeaders.set("x-search", request.nextUrl.search);
+  return NextResponse.next({ request: { headers: requestHeaders } });
 };
 
 export const config = {

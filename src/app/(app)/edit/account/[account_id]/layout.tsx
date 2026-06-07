@@ -9,7 +9,7 @@ import { isAuthorized } from "@/lib/api/authz";
 import { Actions } from "@/types";
 import { accountsTable } from "@/lib/clients/database";
 import { notFound, redirect } from "next/navigation";
-import { CONFIG } from "@/lib/config";
+import { getReturnToUrl } from "@/lib/baseUrl";
 import {
   PersonIcon,
   LockClosedIcon,
@@ -18,6 +18,7 @@ import {
   ImageIcon,
 } from "@radix-ui/react-icons";
 import {
+  loginUrl,
   editAccountProfileUrl,
   editAccountProfilePictureUrl,
   editAccountPermissionsUrl,
@@ -41,7 +42,7 @@ export default async function AccountLayout({
   const userSession = await getPageSession();
 
   if (!userSession?.account) {
-    redirect(CONFIG.auth.routes.login);
+    redirect(loginUrl(await getReturnToUrl()));
   }
 
   const accountToEdit = await accountsTable.fetchById(account_id);

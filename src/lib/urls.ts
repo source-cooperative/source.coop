@@ -13,7 +13,11 @@ export const productListUrl = () => "/products";
 export const newProductUrl = () => "/products/new";
 
 // Auth URLs
-export const loginUrl = () => CONFIG.auth.routes.login;
+export const loginUrl = (returnTo?: string) => {
+  const base = CONFIG.auth.routes.login;
+  if (!returnTo) return base;
+  return `${base}?return_to=${encodeURIComponent(returnTo)}`;
+};
 export const onboardingUrl = () => "/onboarding";
 
 // Object URLs

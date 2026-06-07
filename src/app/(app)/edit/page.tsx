@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getPageSession } from "@/lib/api/utils";
 import { editProfileUrl, homeUrl, loginUrl } from "@/lib/urls";
+import { getReturnToUrl } from "@/lib/baseUrl";
 
 interface SettingsPageProps {
   params: Promise<{ account_id: string }>;
@@ -9,7 +10,7 @@ interface SettingsPageProps {
 export default async function Redirect({ params }: SettingsPageProps) {
   const session = await getPageSession();
   if (!session) {
-    redirect(loginUrl());
+    redirect(loginUrl(await getReturnToUrl()));
   }
 
   if (!session.account?.account_id) {
