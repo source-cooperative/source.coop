@@ -21,7 +21,6 @@ import { isAuthorized } from "../api/authz";
 import { getPageSession } from "../api/utils";
 import { accountsTable, membershipsTable } from "../clients";
 import { FormState } from "@/components/core/DynamicForm";
-import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import {
   accountUrl,
@@ -125,15 +124,19 @@ export async function createAccount(
     });
   }
 
-  // Invalidate the root layout's Router Cache so the soft navigation
-  // triggered by redirect() re-renders the auth UI in the shared layout.
-  // Without this, the user can appear logged out until a full reload.
-  revalidatePath("/", "layout");
-  redirect(
-    account.type === AccountType.INDIVIDUAL
-      ? accountUrl(account.account_id, "welcome=true")
-      : accountUrl(account.account_id)
-  );
+  // Navigate on the client (see FormState.redirectTo) rather than redirect()
+  // here, so the shared layout's auth UI re-renders and the freshly onboarded
+  // user isn't shown as logged out until a full reload.
+  return {
+    fieldErrors: {},
+    data: formData,
+    message: "",
+    success: true,
+    redirectTo:
+      account.type === AccountType.INDIVIDUAL
+        ? accountUrl(account.account_id, "welcome=true")
+        : accountUrl(account.account_id),
+  };
 }
 
 /**
