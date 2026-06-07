@@ -49,34 +49,38 @@ export function DropdownSection({
     <>
       {label && <DropdownMenu.Label>{label}</DropdownMenu.Label>}
       {items
-        .filter(({ condition = true }) => condition)
-        .map((item, index) =>
-        item.href ? (
-          // `asChild` makes the <Link> itself the menu item: one real anchor
-          // handles left-click (Next client-side nav), keyboard activation
-          // (Radix triggers the anchor), and open-in-new-tab — a single
-          // navigation with no duplicate history entry.
-          <DropdownMenu.Item
-            key={index}
-            color={item.color}
-            disabled={item.disabled}
-            asChild
-          >
-            <Link href={item.href} style={dropdownMenuLinkStyle}>
+        // Keep the original array index so the React key is stable when an
+        // item's `condition` toggles — filtering on its own would renumber
+        // surviving items and let React reconcile the wrong node.
+        .map((item, index) => ({ item, index }))
+        .filter(({ item: { condition = true } }) => condition)
+        .map(({ item, index }) =>
+          item.href ? (
+            // `asChild` makes the <Link> itself the menu item: one real anchor
+            // handles left-click (Next client-side nav), keyboard activation
+            // (Radix triggers the anchor), and open-in-new-tab — a single
+            // navigation with no duplicate history entry.
+            <DropdownMenu.Item
+              key={index}
+              color={item.color}
+              disabled={item.disabled}
+              asChild
+            >
+              <Link href={item.href} style={dropdownMenuLinkStyle}>
+                {item.children}
+              </Link>
+            </DropdownMenu.Item>
+          ) : (
+            <DropdownMenu.Item
+              key={index}
+              color={item.color}
+              disabled={item.disabled}
+              onSelect={item.onClick}
+            >
               {item.children}
-            </Link>
-          </DropdownMenu.Item>
-        ) : (
-          <DropdownMenu.Item
-            key={index}
-            color={item.color}
-            disabled={item.disabled}
-            onSelect={item.onClick}
-          >
-            {item.children}
-          </DropdownMenu.Item>
-        )
-      )}
+            </DropdownMenu.Item>
+          )
+        )}
       {showSeparator && <DropdownMenu.Separator />}
     </>
   );

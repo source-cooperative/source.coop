@@ -75,7 +75,9 @@ a:hover {
    overriding the global a/a:hover rules above so highlighted rows don't
    render as dark text on a tinted background. Covers both a nested <a> and an
    <a> rendered AS the menu item itself (Radix `asChild`). The :root-prefixed
-   hover selectors mirror the global hover rules' specificity so they win. */
+   hover selectors mirror the global hover rules' specificity so they win.
+   NOTE: `.rt-BaseMenuItem` is a @radix-ui/themes internal class (verified
+   against themes 3.2.1); re-check these selectors when bumping themes. */
 .rt-BaseMenuItem a,
 a.rt-BaseMenuItem,
 :root:not([class~="dark"]) .rt-BaseMenuItem a:hover,
