@@ -165,8 +165,7 @@ export async function createProduct(
   }
 
   // Navigate on the client (see FormState.redirectTo) rather than redirect()
-  // here, so the shared layout's auth UI re-renders and the user isn't shown
-  // as logged out until a full reload.
+  // here, so the shared layout's auth UI re-renders with the current session.
   return {
     fieldErrors: {},
     data: formData,

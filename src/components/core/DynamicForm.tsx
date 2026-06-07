@@ -102,9 +102,9 @@ export function DynamicForm<T extends Record<string, any>>({
   }, [state.success, onSuccess]);
 
   // Navigate on the client after a successful submission that asks for it.
-  // router.refresh() re-renders the shared layout (including the auth UI) with
-  // the current session before pushing to the destination, which a server-side
-  // redirect() cannot do — see the note on FormState.redirectTo.
+  // router.refresh() marks shared layout Router Cache entries as stale so the
+  // subsequent router.push() refetches the layout from the server with the
+  // current session — a server-side redirect() cannot do this.
   React.useEffect(() => {
     if (state.success && state.redirectTo) {
       router.refresh();
