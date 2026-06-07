@@ -16,8 +16,9 @@ export const newProductUrl = () => "/products/new";
 export const loginUrl = (returnTo?: string) => {
   const base = CONFIG.auth.routes.login;
   if (!returnTo) return base;
-  return `${base}?return_to=${encodeURIComponent(returnTo)}`;
-};
+  if (!returnTo) return base;
+  const sep = base.includes('?') ? '&' : '?';
+  return `${base}${sep}return_to=${encodeURIComponent(returnTo)}`;
 export const onboardingUrl = () => "/onboarding";
 
 // Object URLs
