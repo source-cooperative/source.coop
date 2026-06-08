@@ -310,6 +310,34 @@ export async function updateProduct(
     const description = formData.get("description") as string;
     const visibility = formData.get("visibility") as ProductVisibility;
 
+    // Enforce the connection's allowed visibilities when the visibility is
+    // being changed. The edit form only offers permitted options, but the
+    // server must reject disallowed combinations from tampered requests. The
+    // connection itself is fixed at creation, so we resolve it from the
+    // product's primary mirror rather than the form.
+    if (visibility && visibility !== currentProduct.visibility) {
+      const connectionId = currentProduct.metadata?.primary_mirror;
+      const dataConnection = connectionId
+        ? await dataConnectionsTable.fetchById(connectionId)
+        : undefined;
+
+      if (
+        dataConnection &&
+        !dataConnection.allowed_visibilities.includes(visibility)
+      ) {
+        return {
+          fieldErrors: {
+            visibility: [
+              `The "${dataConnection.name}" data connection does not allow ${visibility} products`,
+            ],
+          },
+          data: formData,
+          message: "Invalid visibility for the product's data connection",
+          success: false,
+        };
+      }
+    }
+
     // Build update data
     const updateData = {
       ...currentProduct,
