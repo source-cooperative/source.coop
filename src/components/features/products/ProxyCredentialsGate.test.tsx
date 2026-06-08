@@ -4,7 +4,6 @@ import { Theme } from "@radix-ui/themes";
 const mockRefresh = jest.fn();
 jest.mock("next/navigation", () => ({
   useRouter: () => ({ refresh: mockRefresh }),
-  usePathname: () => "/acct/prod",
 }));
 
 const mockRefreshCreds = jest.fn();
