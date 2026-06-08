@@ -111,6 +111,18 @@ describe("createProduct", () => {
     expect(productsTable.create).not.toHaveBeenCalled();
   });
 
+  test("rejects unauthorized creation before any data connection lookup", async () => {
+    (isAuthorized as jest.Mock).mockImplementation(
+      (_session, _resource, action) => action !== Actions.CreateRepository
+    );
+
+    const result = await createProduct(undefined, buildFormData());
+
+    expect(result.success).toBe(false);
+    expect(dataConnectionsTable.fetchById).not.toHaveBeenCalled();
+    expect(productsTable.create).not.toHaveBeenCalled();
+  });
+
   test("rejects when the data connection does not exist", async () => {
     (dataConnectionsTable.fetchById as jest.Mock).mockResolvedValue(null);
 
@@ -250,6 +262,20 @@ describe("updateProduct", () => {
     expect(productsTable.update).toHaveBeenCalledTimes(1);
     const updated = (productsTable.update as jest.Mock).mock.calls[0][0];
     expect(updated.visibility).toBe("restricted");
+  });
+
+  test("rejects a visibility change when the data connection no longer exists", async () => {
+    (productsTable.fetchById as jest.Mock).mockResolvedValue(currentProduct());
+    (dataConnectionsTable.fetchById as jest.Mock).mockResolvedValue(null);
+
+    const result = await updateProduct(
+      undefined,
+      buildUpdateFormData({ visibility: "restricted" })
+    );
+
+    expect(result.success).toBe(false);
+    expect(result.fieldErrors.visibility).toBeDefined();
+    expect(productsTable.update).not.toHaveBeenCalled();
   });
 
   test("does not re-validate when the visibility is unchanged", async () => {

@@ -136,6 +136,28 @@ export async function createProduct(
     };
   }
 
+  // Authorize creation before any data-connection I/O. createRepository only
+  // inspects account_id/product_id, so checking here means a caller who may
+  // not create products under this account is rejected before they can probe
+  // whether a data_connection_id exists or learn its visibility policy.
+  if (
+    !isAuthorized(
+      session,
+      {
+        account_id: validatedFields.data.account_id,
+        product_id: validatedFields.data.product_id,
+      } as Product,
+      Actions.CreateRepository,
+    )
+  ) {
+    return {
+      fieldErrors: {},
+      data: formData,
+      message: "Unauthorized to create product",
+      success: false,
+    };
+  }
+
   const dataConnectionId = formData.get("data_connection_id");
   if (typeof dataConnectionId !== "string" || dataConnectionId.length === 0) {
     return {
@@ -225,15 +247,6 @@ export async function createProduct(
     },
   };
 
-  if (!isAuthorized(session, product, Actions.CreateRepository)) {
-    return {
-      fieldErrors: {},
-      data: formData,
-      message: "Unauthorized to create product",
-      success: false,
-    };
-  }
-
   try {
     await productsTable.create(product);
     redirect(productUrl(product.account_id, product.product_id, "success"));
@@ -306,17 +319,32 @@ export async function updateProduct(
     // being changed. The edit form only offers permitted options, but the
     // server must reject disallowed combinations from tampered requests. The
     // connection itself is fixed at creation, so we resolve it from the
-    // product's primary mirror rather than the form.
+    // product's primary mirror rather than the form. This branch only runs on
+    // an actual visibility change, so unrelated edits (title, description) are
+    // never blocked by it.
     if (visibility && visibility !== currentProduct.visibility) {
       const connectionId = currentProduct.metadata?.primary_mirror;
       const dataConnection = connectionId
         ? await dataConnectionsTable.fetchById(connectionId)
-        : undefined;
+        : null;
 
-      if (
-        dataConnection &&
-        !dataConnection.allowed_visibilities.includes(visibility)
-      ) {
+      // Without a resolvable connection we cannot know the allowed set, so a
+      // missing/deleted connection is a hard rejection rather than a free pass
+      // to set any visibility. The product keeps its current visibility.
+      if (!dataConnection) {
+        return {
+          fieldErrors: {
+            visibility: [
+              "This product's data connection could not be found, so its visibility cannot be changed",
+            ],
+          },
+          data: formData,
+          message: "Data connection not found for this product",
+          success: false,
+        };
+      }
+
+      if (!dataConnection.allowed_visibilities.includes(visibility)) {
         return {
           fieldErrors: {
             visibility: [
