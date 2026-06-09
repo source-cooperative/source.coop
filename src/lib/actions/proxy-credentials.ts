@@ -124,7 +124,7 @@ async function getOryIdToken(identityId: string): Promise<string> {
   // state satisfies fosite's minimum-entropy check but is not verified on
   // return: the entire flow is server-side with no browser redirect, so
   // there is no CSRF surface that state verification would protect.
-  const state = crypto.randomUUID();
+  authUrl.searchParams.set("response_type", "code");
   authUrl.searchParams.set("client_id", clientId);
   authUrl.searchParams.set("redirect_uri", redirectUri);
   authUrl.searchParams.set("scope", "openid");
