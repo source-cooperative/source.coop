@@ -16,7 +16,7 @@ export default async function AdminUserLookupPage() {
   }
 
   return (
-    <Box>
+    <Box maxWidth="480px">
       <FormTitle
         title="User lookup"
         description="Find a user by email and open their profile."

@@ -193,8 +193,7 @@ export async function getPageSession(): Promise<UserSession | null> {
  * its identity ID, or null if no identity matches.
  *
  * Uses the `credentials_identifier` filter, which matches the identifier a user
- * authenticates with (their email). Mirrors {@link getEmail} in reading the Ory
- * admin credentials directly from the environment.
+ * authenticates with (their email).
  *
  * @param email - The email address to look up.
  * @returns The Ory identity ID, or null if not found.
@@ -202,14 +201,12 @@ export async function getPageSession(): Promise<UserSession | null> {
 export async function getOryIdentityIdByEmail(
   email: string
 ): Promise<string | null> {
-  const url = new URL(
-    `${process.env.NEXT_PUBLIC_ORY_SDK_URL}/admin/identities`
-  );
+  const url = new URL(`${CONFIG.auth.api.backendUrl}/admin/identities`);
   url.searchParams.set("credentials_identifier", email);
 
   const response = await fetch(url, {
     headers: {
-      Authorization: `Bearer ${process.env.ORY_ACCESS_TOKEN}`,
+      Authorization: `Bearer ${CONFIG.auth.accessToken}`,
     },
   });
 
@@ -232,10 +229,10 @@ export async function getOryIdentityIdByEmail(
 
 export async function getEmail(identity_id: string): Promise<string | null> {
   const response = await fetch(
-    `${process.env.NEXT_PUBLIC_ORY_SDK_URL}/admin/identities/${identity_id}`,
+    `${CONFIG.auth.api.backendUrl}/admin/identities/${identity_id}`,
     {
       headers: {
-        Authorization: `Bearer ${process.env.ORY_ACCESS_TOKEN}`,
+        Authorization: `Bearer ${CONFIG.auth.accessToken}`,
       },
     }
   );

@@ -13,7 +13,7 @@ export const productListUrl = () => "/products";
 export const newProductUrl = () => "/products/new";
 
 // Admin URLs
-export const adminUserLookupUrl = () => "/admin/lookup";
+export const adminUserLookupUrl = () => "/admin/user-lookup";
 
 // Auth URLs
 export const loginUrl = (returnTo?: string) => {
