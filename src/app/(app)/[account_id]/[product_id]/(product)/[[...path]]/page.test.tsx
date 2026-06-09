@@ -29,14 +29,33 @@ jest.mock("@/lib", () => ({
     fetchById: jest.fn(),
   },
   getPageSession: jest.fn(),
-  dataConnectionsTable: {},
-  LOGGER: {},
+  dataConnectionsTable: {
+    fetchById: jest.fn(),
+  },
+  LOGGER: {
+    debug: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+  },
   fileSourceUrl: jest.fn(),
   CONFIG: {
     google: {
       siteVerification: "test-verification",
     },
   },
+}));
+
+jest.mock("@/lib/services/proxy-credentials-read", () => ({
+  readProxyCredentials: jest.fn(),
+}));
+jest.mock("@/lib/clients/storage", () => ({
+  getStorageClient: jest.fn(),
+}));
+jest.mock("@/components/features/products/ProxyCredentialsGate", () => ({
+  ProxyCredentialsGate: jest.fn(),
+}));
+jest.mock("@/components/features/products/ProductDataUnavailable", () => ({
+  ProductDataUnavailable: jest.fn(),
 }));
 
 jest.mock("@/lib/api/authz", () => ({
@@ -53,9 +72,13 @@ jest.mock("@/lib/baseUrl", () => ({
   getBaseUrl: jest.fn().mockResolvedValue("https://source.coop"),
 }));
 
-import { generateMetadata } from "./page";
+import ProductPathPage, { generateMetadata } from "./page";
 import { productsTable, getPageSession } from "@/lib";
 import { isAuthorized } from "@/lib/api/authz";
+import { readProxyCredentials } from "@/lib/services/proxy-credentials-read";
+import { getStorageClient } from "@/lib/clients/storage";
+import { ProductDataUnavailable } from "@/components/features/products/ProductDataUnavailable";
+import { S3ServiceException } from "@aws-sdk/client-s3";
 
 describe("Product Page Metadata", () => {
   afterEach(() => {
@@ -127,6 +150,86 @@ describe("Product Page Metadata", () => {
     ).rejects.toThrow("NEXT_NOT_FOUND");
 
     expect(notFound).toHaveBeenCalled();
+  });
+
+});
+
+describe("ProductPathPage proxy AccessDenied handling", () => {
+  const accessDenied = () =>
+    new S3ServiceException({
+      name: "AccessDenied",
+      $fault: "client",
+      $metadata: { httpStatusCode: 403 },
+    });
+
+  const mockProduct = (visibility: "public" | "restricted") => ({
+    product_id: "test-product",
+    visibility,
+    metadata: {
+      primary_mirror: "primary",
+      mirrors: { primary: { connection_id: "dc-1" } },
+    },
+    account: { account_id: "test-account", name: "Test Account" },
+  });
+
+  const renderPage = () =>
+    ProductPathPage({
+      params: Promise.resolve({
+        account_id: "test-account",
+        product_id: "test-product",
+        path: [],
+      }),
+    });
+
+  beforeEach(() => {
+    (getPageSession as jest.Mock).mockResolvedValue({ identity_id: "user-1" });
+    (isAuthorized as jest.Mock).mockReturnValue(true);
+    // Credentials are present so the render proceeds past the gate to the
+    // proxy read itself.
+    (readProxyCredentials as jest.Mock).mockResolvedValue({
+      accessKeyId: "A",
+      secretAccessKey: "S",
+      sessionToken: "T",
+      expiration: new Date(Date.now() + 3_600_000).toISOString(),
+    });
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("shows ProductDataUnavailable when the proxy denies a signed read on a restricted product", async () => {
+    (productsTable.fetchById as jest.Mock).mockResolvedValue(
+      mockProduct("restricted"),
+    );
+    (getStorageClient as jest.Mock).mockResolvedValue({
+      listObjects: jest.fn().mockRejectedValue(accessDenied()),
+      getObjectInfo: jest.fn(),
+    });
+
+    const element = await renderPage();
+    expect(element.type).toBe(ProductDataUnavailable);
+  });
+
+  it("lets an AccessDenied on a public product reach the error boundary", async () => {
+    // An anonymous read of a public product can only be denied by a proxy
+    // misconfiguration — the private-product copy would be wrong, so the
+    // error must propagate instead.
+    (productsTable.fetchById as jest.Mock).mockResolvedValue(
+      mockProduct("public"),
+    );
+    (getStorageClient as jest.Mock).mockResolvedValue({
+      listObjects: jest.fn().mockRejectedValue(accessDenied()),
+      getObjectInfo: jest.fn(),
+    });
+
+    await expect(renderPage()).rejects.toThrow(S3ServiceException);
+  });
+});
+
+describe("Product Page Metadata (authorization)", () => {
+  afterEach(() => {
+    jest.clearAllMocks();
   });
 
   it("calls notFound (no metadata leak) when the viewer is not authorized", async () => {

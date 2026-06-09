@@ -127,10 +127,13 @@ export default async function ProductPathPage({ params }: PageProps) {
 
   // The directory listing goes through the data proxy with the user's signed
   // credentials. The viewer is already app-authorized (getAuthorizedProduct
-  // above), so an AccessDenied here is not "you can't see this" — it's the proxy
-  // refusing the signed read, usually because the just-minted credentials
-  // haven't propagated yet. Surface a clear, recoverable notice for that case
-  // and let any other error fall through to the route error boundary (retry).
+  // above), so for a RESTRICTED product an AccessDenied here is not "you can't
+  // see this" — it's the proxy refusing the signed read, usually because the
+  // just-minted credentials haven't propagated yet. Surface a clear,
+  // recoverable notice for that case. On a public/unlisted product the read is
+  // anonymous and a 403 means the proxy is misconfigured — let it (and any
+  // other error) fall through to the route error boundary (retry) rather than
+  // showing the private-product copy.
   // An empty listing is a valid S3 state (e.g. a directory with no uploads yet);
   // DirectoryList renders the empty state. We intentionally do NOT fall back to
   // the parent prefix here — that masked legitimately empty directories.
@@ -142,7 +145,7 @@ export default async function ProductPathPage({ params }: PageProps) {
       prefix: s3Prefix,
     });
   } catch (error) {
-    if (isAccessDeniedError(error)) {
+    if (isAccessDeniedError(error) && product.visibility === "restricted") {
       LOGGER.warn("Proxy denied a signed read for an authorized viewer", {
         operation: "ProductPathPage",
         context: "directory listing",
