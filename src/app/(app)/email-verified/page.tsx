@@ -1,8 +1,8 @@
 /**
  * Legacy destination for Ory's post-verification redirect. The email-sync and
  * confirmation banner now run on every authenticated page load (see the (app)
- * layout + `reconcileEmailVerification`), so this route just forwards the user
- * to a sensible page where that banner will be shown.
+ * layout's <VerificationBanner />), so this route just forwards the user to a
+ * sensible page where that banner will be shown.
  */
 
 import { redirect } from "next/navigation";

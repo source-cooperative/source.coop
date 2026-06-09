@@ -41,13 +41,8 @@ import { NextRequest } from "next/server";
 import { getOryId } from "../ory";
 import md5 from "md5";
 import { CONFIG } from "../config";
-import {
-  AccountType,
-  type AccountEmail,
-  type IndividualAccount,
-} from "@/types/account";
+import { AccountType } from "@/types/account";
 import { AccountFlags } from "@/types/shared";
-import type { Session } from "@ory/client-fetch";
 
 /**
  * Authenticates using the API secret. Used by the Data Proxy to access the API.
@@ -190,71 +185,6 @@ export async function getPageSession(): Promise<UserSession | null> {
     account,
     memberships: filteredMemberships,
   };
-}
-
-/**
- * The state of the current user's email verification, used to decide which (if
- * any) banner to render. `null` means no banner should be shown — either the
- * visitor is unauthenticated/un-onboarded, or their email is already verified
- * in our database.
- */
-export type EmailVerificationState = "unverified" | "just-verified";
-
-/**
- * Maps the verifiable addresses from an Ory session into our `AccountEmail`
- * shape. The first address is treated as primary, mirroring how Ory orders a
- * user's addresses.
- */
-function oryAddressesToAccountEmails(orySession: Session): AccountEmail[] {
-  const addresses = orySession.identity?.verifiable_addresses ?? [];
-  return addresses.map((address, index) => ({
-    address: address.value,
-    verified: address.verified,
-    is_primary: index === 0,
-    added_at: (address.created_at || new Date()).toISOString(),
-    verified_at: (address.verified_at || new Date()).toISOString(),
-  }));
-}
-
-/**
- * Reconciles the current user's email-verification state between Ory (the
- * source of truth for verification) and our DynamoDB account record.
- *
- * Called on every authenticated page load:
- * - If we already track a verified email, there's nothing to do (returns null).
- * - If Ory reports a verified address but our DB doesn't yet track it, the
- *   account's emails are synced from Ory and "just-verified" is returned so the
- *   caller can render a confirmation banner.
- * - Otherwise the email is still unverified and "unverified" is returned so the
- *   caller can render a reminder.
- *
- * On a successful sync the passed-in session's `account` is updated in place so
- * downstream consumers in the same render see the fresh emails.
- */
-export async function reconcileEmailVerification(
-  session: UserSession
-): Promise<EmailVerificationState | null> {
-  const { account, orySession } = session;
-  if (!account || !orySession) {
-    return null;
-  }
-
-  // Already verified in our database — nothing to do.
-  if (account.emails?.some((email) => email.verified)) {
-    return null;
-  }
-
-  const emails = oryAddressesToAccountEmails(orySession);
-
-  // Ory hasn't verified any address yet — remind the user.
-  if (!emails.some((email) => email.verified)) {
-    return "unverified";
-  }
-
-  // Ory has verified the email but our database doesn't track it yet: sync it.
-  const updated = await accountsTable.update({ ...account, emails });
-  session.account = updated as IndividualAccount;
-  return "just-verified";
 }
 
 export async function getEmail(identity_id: string): Promise<string | null> {

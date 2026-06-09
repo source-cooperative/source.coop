@@ -1,13 +1,14 @@
 import { Box, Callout, Link } from "@radix-ui/themes";
 import { CheckCircledIcon, InfoCircledIcon } from "@radix-ui/react-icons";
 import { verifyEmailUrl } from "@/lib";
-import type { EmailVerificationState } from "@/lib/api/utils";
+
+/**
+ * Which banner to render. "unverified" shows a reminder to verify;
+ * "just-verified" thanks the user for confirming their email.
+ */
+export type EmailVerificationState = "unverified" | "just-verified";
 
 interface EmailVerificationCalloutProps {
-  /**
-   * Which banner to render. "unverified" shows a reminder to verify;
-   * "just-verified" thanks the user for confirming their email.
-   */
   status: EmailVerificationState;
 }
 
