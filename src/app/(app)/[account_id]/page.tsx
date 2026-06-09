@@ -11,7 +11,7 @@
  */
 
 import { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { OrganizationProfilePage } from "@/app/(app)/[account_id]/OrganizationProfilePage";
 import { accountsTable, isOrganizationalAccount } from "@/lib/clients/database";
 import { IndividualProfilePage } from "./IndividualProfilePage";
@@ -40,6 +40,10 @@ export async function generateMetadata({
 export default async function AccountPage({ params, searchParams }: PageProps) {
   const { account_id } = await params;
   const showWelcome = Object.hasOwn(await searchParams, "welcome");
+
+  if (account_id !== account_id.toLowerCase()) {
+    redirect(`/${account_id.toLowerCase()}`);
+  }
 
   const account = await accountsTable.fetchById(account_id);
   if (!account) {
