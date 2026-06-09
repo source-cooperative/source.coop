@@ -20,7 +20,7 @@ export interface FormField<T extends Record<string, any>> {
     | "custom";
   required?: boolean;
   readOnly?: boolean;
-  description?: string;
+  description?: React.ReactNode;
   placeholder?: string;
   isValid?: boolean | null;
   message?: React.ReactNode;
