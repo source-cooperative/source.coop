@@ -5,7 +5,7 @@ import {
   DataConnectionSchema,
 } from "./data-connection";
 
-describe("DataConnectionAuthentication (V2 web-identity role)", () => {
+describe("DataConnectionAuthentication (V2 workload-identity variants)", () => {
   test("parses the s3_web_identity_role variant", () => {
     const auth = DataConnectionAuthenticationSchema.parse({
       type: "s3_web_identity_role",
