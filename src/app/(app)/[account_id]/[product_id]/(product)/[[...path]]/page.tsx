@@ -134,7 +134,7 @@ export default async function ProductPathPage({ params }: PageProps) {
   // An empty listing is a valid S3 state (e.g. a directory with no uploads yet);
   // DirectoryList renders the empty state. We intentionally do NOT fall back to
   // the parent prefix here — that masked legitimately empty directories.
-  const effectivePrefix = objectPath;
+  const effectivePrefix = objectPath.replace(/\/$/, "");
   let effectiveListing;
   try {
     effectiveListing = await s3.listObjects({
@@ -154,7 +154,10 @@ export default async function ProductPathPage({ params }: PageProps) {
   }
 
   // Strip the bucket-key product prefix so paths are relative to the product.
-  const relativePath = (key: string) => key.replace(`${product_id}/`, "");
+  const relativePath = (key: string) => {
+    const prefix = `${product_id}/`;
+    return key.startsWith(prefix) ? key.slice(prefix.length) : key;
+  };
 
   const objects: ProductObject[] = [
     ...effectiveListing.objects.map((obj) => {
