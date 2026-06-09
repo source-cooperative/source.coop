@@ -2,10 +2,19 @@
 
 import { useState } from "react";
 import { Account } from "@/types";
-import { Button, Flex, Text, Box, TextField, Tooltip } from "@radix-ui/themes";
+import {
+  Button,
+  Flex,
+  Text,
+  Box,
+  TextField,
+  Tooltip,
+  Link,
+} from "@radix-ui/themes";
 import { TrashIcon } from "@radix-ui/react-icons";
 import { DynamicForm, FormField } from "@/components/core";
 import { updateAccountProfile } from "@/lib/actions/account";
+import { orySettingsUrl } from "@/lib/urls";
 
 interface Website {
   url: string;
@@ -82,9 +91,14 @@ export function EditProfileForm({
       readOnly: true,
       placeholder: "you@example.com",
       description:
-        initialAccount.type === "individual"
-          ? "Your primary email address"
-          : "Contact email for your organization",
+        initialAccount.type === "individual" ? (
+          <>
+            Your primary email address. You can change it in your{" "}
+            <Link href={orySettingsUrl()} target="_blank" rel="noopener noreferrer">account settings</Link>.
+          </>
+        ) : (
+          "Contact email for your organization"
+        ),
     },
     {
       label: initialAccount.type === "individual" ? "Bio" : "Description",
