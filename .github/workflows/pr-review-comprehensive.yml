@@ -34,6 +34,15 @@ jobs:
             You are reviewing this pull request. Deliver exactly ONE formal GitHub
             pull request review per run, replacing any prior review from earlier runs.
 
+            ABSOLUTE RULE — NO PROBE/TEST WRITES. The ONLY thing you may write to the
+            PR is the single final review in STEP 3 (plus the dismissals in STEP 1).
+            Never post a "test", "test123", placeholder, scratch, or trial comment to
+            verify that the API or line-anchoring works — not as a standalone comment,
+            not as an inline comment, not "just to check". If you are unsure a `gh api`
+            call is correct, reason about it or dry-run the JSON locally with `cat`/`jq`;
+            do NOT probe by posting to the live PR. Any stray comment you leave is
+            visible to the author and is a defect.
+
             STEP 1 — Supersede prior rounds.
             List existing reviews:
               `gh api repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/reviews --paginate`
@@ -51,6 +60,9 @@ jobs:
             STEP 3 — Submit ONE formal review in a single API call, bundling every
             inline note in the `comments` array. Build a JSON file and post it:
               `gh api -X POST repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/reviews --input <file>`
+            This POST is the ONLY write you make to the PR in this step, and you make it
+            exactly once. Do not post any comment before it to test the call — build the
+            JSON file, inspect it with `cat`, then post it directly.
 
             Requirements for that JSON:
             - "event": "REQUEST_CHANGES" if there are blocking issues, otherwise "COMMENT".
