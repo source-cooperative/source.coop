@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 // Access is gated by the /admin layout.
 export default function AdminUserLookupPage() {
   return (
-    <Box maxWidth="480px">
+    <Box>
       <FormTitle
         title="User lookup"
         description="Find a user by email and open their profile."
