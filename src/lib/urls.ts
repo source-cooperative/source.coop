@@ -67,7 +67,7 @@ export const verifyEmailUrl = () =>
   `${CONFIG.auth.api.frontendUrl}/self-service/verification/browser`;
 
 export const orySettingsUrl = () =>
-  `${CONFIG.auth.api.frontendUrl}/ui/settings/browser`;
+  `${CONFIG.auth.api.frontendUrl}/self-service/settings/browser`;
 
 export const fileSourceUrl = ({ account_id, product_id, object_path }: {
   account_id: string

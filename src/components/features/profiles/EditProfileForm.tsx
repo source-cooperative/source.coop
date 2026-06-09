@@ -94,7 +94,7 @@ export function EditProfileForm({
         initialAccount.type === "individual" ? (
           <>
             Your primary email address. You can change it in your{" "}
-            <Link href={orySettingsUrl()}>account settings</Link>.
+            <Link href={orySettingsUrl()} target="_blank" rel="noopener noreferrer">account settings</Link>.
           </>
         ) : (
           "Contact email for your organization"
