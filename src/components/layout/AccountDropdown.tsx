@@ -12,8 +12,8 @@ import {
   newProductUrl,
 } from "@/lib";
 import { DropdownSection } from "./DropdownSection";
-import { isAuthorized } from "@/lib/api/authz";
-import { AdminSubmenu } from "@/components/features/admin/AdminSubmenu";
+import { isAdmin, isAuthorized } from "@/lib/api/authz";
+import { ADMIN_TOOLS } from "@/components/features/admin/tools";
 import { Actions, UserSession } from "@/types";
 import { ProfileAvatar } from "@/components/features/profiles/ProfileAvatar";
 import { UploadBadge } from "@/components/features/uploader/UploadBadge";
@@ -103,8 +103,15 @@ export function AccountDropdown({ session }: { session: UserSession }) {
             },
           ]}
         />
+        <DropdownSection
+          label="Admin"
+          condition={isAdmin(session)}
+          items={ADMIN_TOOLS.map((tool) => ({
+            href: tool.href,
+            children: tool.name,
+          }))}
+        />
         <UploadsSubmenu />
-        <AdminSubmenu session={session} />
         <DropdownSection
           items={[
             {
