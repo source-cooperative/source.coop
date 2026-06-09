@@ -1,11 +1,13 @@
 "use server";
 
-import { productsTable } from "@/lib/clients/database";
+import { productsTable, dataConnectionsTable } from "@/lib/clients/database";
 import {
   Actions,
+  DataProvider,
   ProductCreationRequestSchema,
   type Product,
   type ProductCreationRequest,
+  type ProductMirror,
   type ProductVisibility,
 } from "@/types";
 import { getPageSession, LOGGER } from "@/lib";
@@ -13,6 +15,16 @@ import { FormState } from "@/components/core/DynamicForm";
 import { isAuthorized } from "../api/authz";
 import { revalidatePath } from "next/cache";
 import { productUrl, editProductDetailsUrl } from "@/lib/urls";
+
+// Map a data connection's storage provider to the product mirror's storage_type.
+const STORAGE_TYPE_BY_PROVIDER: Record<
+  DataProvider,
+  ProductMirror["storage_type"]
+> = {
+  [DataProvider.S3]: "s3",
+  [DataProvider.Azure]: "azure",
+  [DataProvider.GCP]: "gcs",
+};
 
 export interface PaginatedProductsResult {
   products: Product[];
@@ -123,6 +135,96 @@ export async function createProduct(
     };
   }
 
+  // Authorize creation before any data-connection I/O. createRepository only
+  // inspects account_id/product_id, so checking here means a caller who may
+  // not create products under this account is rejected before they can probe
+  // whether a data_connection_id exists or learn its visibility policy.
+  if (
+    !isAuthorized(
+      session,
+      {
+        account_id: validatedFields.data.account_id,
+        product_id: validatedFields.data.product_id,
+      } as Product,
+      Actions.CreateRepository,
+    )
+  ) {
+    return {
+      fieldErrors: {},
+      data: formData,
+      message: "Unauthorized to create product",
+      success: false,
+    };
+  }
+
+  const dataConnectionId = formData.get("data_connection_id");
+  if (typeof dataConnectionId !== "string" || dataConnectionId.length === 0) {
+    return {
+      fieldErrors: { data_connection_id: ["A data connection is required"] },
+      data: formData,
+      message: "Invalid form data",
+      success: false,
+    };
+  }
+
+  const dataConnection = await dataConnectionsTable.fetchById(dataConnectionId);
+  if (!dataConnection) {
+    return {
+      fieldErrors: {
+        data_connection_id: ["Selected data connection was not found"],
+      },
+      data: formData,
+      message: "Invalid data connection",
+      success: false,
+    };
+  }
+
+  // Enforce that the user may create products against this connection. This
+  // covers read-only connections and connections gated behind an account flag.
+  if (!isAuthorized(session, dataConnection, Actions.UseDataConnection)) {
+    return {
+      fieldErrors: {},
+      data: formData,
+      message: "You are not permitted to use the selected data connection",
+      success: false,
+    };
+  }
+
+  // Enforce that the connection is available for the product's account. An
+  // owned connection may only be used by the account that owns it.
+  if (
+    dataConnection.owner &&
+    dataConnection.owner !== validatedFields.data.account_id
+  ) {
+    return {
+      fieldErrors: {
+        data_connection_id: [
+          "Selected data connection is not available for this account",
+        ],
+      },
+      data: formData,
+      message: "Invalid data connection for this account",
+      success: false,
+    };
+  }
+
+  // Enforce the connection's allowed visibilities. Even though the form only
+  // offers permitted options, the server must reject disallowed combinations.
+  if (
+    !dataConnection.allowed_visibilities.includes(validatedFields.data.visibility)
+  ) {
+    return {
+      fieldErrors: {
+        visibility: [
+          `The "${dataConnection.name}" data connection does not allow ${validatedFields.data.visibility} products`,
+        ],
+      },
+      data: formData,
+      message: "Invalid visibility for the selected data connection",
+      success: false,
+    };
+  }
+
   const product: Product = {
     ...validatedFields.data,
     created_at: new Date().toISOString(),
@@ -131,26 +233,18 @@ export async function createProduct(
     featured: 0,
     metadata: {
       tags: [],
-      primary_mirror: "aws-opendata-us-west-2",
+      primary_mirror: dataConnection.data_connection_id,
       mirrors: {
-        "aws-opendata-us-west-2": {
-          storage_type: "s3",
-          connection_id: "aws-opendata-us-west-2",
+        [dataConnection.data_connection_id]: {
+          storage_type:
+            STORAGE_TYPE_BY_PROVIDER[dataConnection.details.provider],
+          connection_id: dataConnection.data_connection_id,
           prefix: `${validatedFields.data.account_id}/${validatedFields.data.product_id}/`,
           is_primary: true,
         },
       },
     },
   };
-
-  if (!isAuthorized(session, product, Actions.CreateRepository)) {
-    return {
-      fieldErrors: {},
-      data: formData,
-      message: "Unauthorized to create product",
-      success: false,
-    };
-  }
 
   try {
     await productsTable.create(product);
@@ -228,6 +322,49 @@ export async function updateProduct(
     const title = formData.get("title") as string;
     const description = formData.get("description") as string;
     const visibility = formData.get("visibility") as ProductVisibility;
+
+    // Enforce the connection's allowed visibilities when the visibility is
+    // being changed. The edit form only offers permitted options, but the
+    // server must reject disallowed combinations from tampered requests. The
+    // connection itself is fixed at creation, so we resolve it from the
+    // product's primary mirror rather than the form. This branch only runs on
+    // an actual visibility change, so unrelated edits (title, description) are
+    // never blocked by it.
+    if (visibility && visibility !== currentProduct.visibility) {
+      const connectionId = currentProduct.metadata?.primary_mirror;
+      const dataConnection = connectionId
+        ? await dataConnectionsTable.fetchById(connectionId)
+        : null;
+
+      // Without a resolvable connection we cannot know the allowed set, so a
+      // missing/deleted connection is a hard rejection rather than a free pass
+      // to set any visibility. The product keeps its current visibility.
+      if (!dataConnection) {
+        return {
+          fieldErrors: {
+            visibility: [
+              "This product's data connection could not be found, so its visibility cannot be changed",
+            ],
+          },
+          data: formData,
+          message: "Data connection not found for this product",
+          success: false,
+        };
+      }
+
+      if (!dataConnection.allowed_visibilities.includes(visibility)) {
+        return {
+          fieldErrors: {
+            visibility: [
+              `The "${dataConnection.name}" data connection does not allow ${visibility} products`,
+            ],
+          },
+          data: formData,
+          message: "Invalid visibility for the product's data connection",
+          success: false,
+        };
+      }
+    }
 
     // Build update data
     const updateData = {
