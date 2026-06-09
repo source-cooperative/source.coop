@@ -1,16 +1,14 @@
 "use server";
 
 import { cookies } from "next/headers";
-import {
-  getProxyCredentials,
-  type ProxyCredentials,
-} from "@/lib/actions/proxy-credentials";
+import { getProxyCredentials } from "@/lib/actions/proxy-credentials";
 import { getPageSession } from "@/lib/api/utils";
 import { withTimeout } from "@/lib/with-timeout";
 import { encryptJson, decryptJson } from "./encrypted-cookie";
 import {
   PROXY_CREDS_COOKIE_NAME,
   isFresh,
+  type CachedProxyCredentials,
 } from "./proxy-credentials-shared";
 
 export interface RefreshResult {
@@ -42,8 +40,15 @@ export async function refreshProxyCredentials(): Promise<RefreshResult> {
   const jar = await cookies();
   const token = jar.get(PROXY_CREDS_COOKIE_NAME)?.value;
   if (token) {
-    const cached = await decryptJson<ProxyCredentials>(token);
-    if (cached && isFresh(cached)) {
+    const cached = await decryptJson<CachedProxyCredentials>(token);
+    // Reuse only credentials minted for THIS user. A still-fresh cookie left
+    // by a previous user on the same browser (user switch that never hit
+    // /logout) must be overwritten, not returned as a cache hit.
+    if (
+      cached &&
+      isFresh(cached) &&
+      cached.identityId === session.identity_id
+    ) {
       return { ok: true };
     }
   }
@@ -60,7 +65,13 @@ export async function refreshProxyCredentials(): Promise<RefreshResult> {
     0,
     Math.floor((new Date(creds.expiration).getTime() - Date.now()) / 1000),
   );
-  jar.set(PROXY_CREDS_COOKIE_NAME, await encryptJson(creds), {
+  // Bind the cookie to the identity it was minted for; readers compare this
+  // against the current session before using the credentials.
+  const payload: CachedProxyCredentials = {
+    ...creds,
+    identityId: session.identity_id,
+  };
+  jar.set(PROXY_CREDS_COOKIE_NAME, await encryptJson(payload), {
     httpOnly: true,
     secure: true,
     sameSite: "lax",

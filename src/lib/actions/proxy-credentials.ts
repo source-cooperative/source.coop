@@ -7,7 +7,6 @@
 import "server-only";
 
 import { CONFIG } from "@/lib/config";
-import { getPageSession } from "@/lib/api/utils";
 import { LOGGER } from "@/lib/logging";
 
 export interface ProxyCredentials {
@@ -48,28 +47,26 @@ async function assertOk(
 }
 
 /**
- * Obtains temporary S3 credentials from the data proxy for the
- * currently authenticated user.
+ * Obtains temporary S3 credentials from the data proxy for the given user.
  *
  * Flow:
- *   1. Verify the Ory session.
- *   2. Drive Hydra's OAuth2 auth code flow server-side to get an ID token.
- *   3. Exchange the ID token at the data proxy's STS endpoint for credentials.
+ *   1. Drive Hydra's OAuth2 auth code flow server-side to get an ID token.
+ *   2. Exchange the ID token at the data proxy's STS endpoint for credentials.
  *
- * `identityId` lets a caller that has already resolved the session (e.g.
- * `refreshProxyCredentials`) pass it through, avoiding a second `getPageSession`
- * round-trip per mint. When omitted, the session is resolved here.
+ * SECURITY: `identityId` is trusted as-is. The Ory admin API accepts a login
+ * for ANY subject, so this function mints valid credentials for whatever
+ * identity it is handed — it is "become any user" if fed unverified input.
+ * Callers MUST pass an identity taken from a verified session (e.g.
+ * `(await getPageSession()).identity_id`), never from request parameters.
  */
 export async function getProxyCredentials(
-  identityId?: string,
+  identityId: string,
 ): Promise<ProxyCredentials> {
-  const resolvedIdentityId =
-    identityId ?? (await getPageSession())?.identity_id;
-  if (!resolvedIdentityId) {
-    throw new Error("Unauthorized: no active Ory session");
+  if (!identityId) {
+    throw new Error("Unauthorized: no verified identity provided");
   }
 
-  const idToken = await getOryIdToken(resolvedIdentityId);
+  const idToken = await getOryIdToken(identityId);
 
   const stsUrl = new URL(`${CONFIG.storage.endpoint}/.sts`);
   stsUrl.searchParams.set("Action", "AssumeRoleWithWebIdentity");

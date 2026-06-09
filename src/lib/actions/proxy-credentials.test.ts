@@ -3,7 +3,6 @@
  */
 import { getProxyCredentials } from "./proxy-credentials";
 
-jest.mock("@/lib/api/utils", () => ({ getPageSession: jest.fn() }));
 jest.mock("@/lib/logging", () => ({
   LOGGER: {
     error: jest.fn(),
@@ -28,7 +27,6 @@ jest.mock("@/lib/config", () => ({
   },
 }));
 
-import { getPageSession } from "@/lib/api/utils";
 import { LOGGER } from "@/lib/logging";
 import { CONFIG } from "@/lib/config";
 
@@ -78,35 +76,26 @@ const redirectResponse = (location: string | null) =>
 const jsonResponse = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status });
 
-const AUTHED_SESSION = {
-  identity_id: "ory-123",
-  account: { account_id: "user-1" },
-};
-
 describe("getProxyCredentials", () => {
   let fetchMock: jest.Mock;
 
   beforeEach(() => {
     fetchMock = jest.fn();
     global.fetch = fetchMock as unknown as typeof fetch;
-    (getPageSession as jest.Mock).mockReset();
     (LOGGER.error as jest.Mock).mockClear();
     CONFIG.environment.isProduction = false;
   });
 
-  test("throws when not authenticated", async () => {
-    (getPageSession as jest.Mock).mockResolvedValue(null);
-    await expect(getProxyCredentials()).rejects.toThrow(/Unauthorized/);
+  test("throws when called without a verified identity", async () => {
+    await expect(getProxyCredentials("")).rejects.toThrow(/Unauthorized/);
+    // Nothing must reach Ory for an empty subject.
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   test("returns STS credentials for authenticated user", async () => {
-    (getPageSession as jest.Mock).mockResolvedValue({
-      identity_id: "ory-123",
-      account: { account_id: "user-1" },
-    });
     mockHydraFlowAndSts(fetchMock);
 
-    const creds = await getProxyCredentials();
+    const creds = await getProxyCredentials("ory-123");
     expect(creds).toEqual({
       accessKeyId: "AKIAREAD",
       secretAccessKey: "readsecret",
@@ -133,7 +122,6 @@ describe("getProxyCredentials", () => {
   }
 
   test("trims whitespace from STS credential values", async () => {
-    (getPageSession as jest.Mock).mockResolvedValue(AUTHED_SESSION);
     const xml = `<AssumeRoleWithWebIdentityResponse><AssumeRoleWithWebIdentityResult><Credentials><AccessKeyId>
       AKIAREAD
     </AccessKeyId><SecretAccessKey>  readsecret  </SecretAccessKey><SessionToken>
@@ -141,7 +129,7 @@ readsess
 </SessionToken><Expiration>  2026-04-10T13:00:00Z  </Expiration></Credentials></AssumeRoleWithWebIdentityResult></AssumeRoleWithWebIdentityResponse>`;
     mockHydraFlowEndingWithSts(xml);
 
-    const creds = await getProxyCredentials();
+    const creds = await getProxyCredentials("ory-123");
     expect(creds).toEqual({
       accessKeyId: "AKIAREAD",
       secretAccessKey: "readsecret",
@@ -151,21 +139,19 @@ readsess
   });
 
   test("throws when the STS Expiration is not a parseable date", async () => {
-    (getPageSession as jest.Mock).mockResolvedValue(AUTHED_SESSION);
     mockHydraFlowEndingWithSts(
       STS_XML.replace("2026-04-10T13:00:00Z", "not-a-real-date"),
     );
-    await expect(getProxyCredentials()).rejects.toThrow(/unparseable <Expiration>/);
+    await expect(getProxyCredentials("ory-123")).rejects.toThrow(/unparseable <Expiration>/);
   });
 
   test("encodes non-Latin-1 client credentials for the token-exchange Basic header", async () => {
-    (getPageSession as jest.Mock).mockResolvedValue(AUTHED_SESSION);
     const prev = CONFIG.auth.oauth2.clientSecret;
     CONFIG.auth.oauth2.clientSecret = "sÉcret€"; // € is U+20AC (> 255) → btoa throws
     try {
       mockHydraFlowAndSts(fetchMock);
       // Would throw InvalidCharacterError if the code still used btoa().
-      await expect(getProxyCredentials()).resolves.toBeDefined();
+      await expect(getProxyCredentials("ory-123")).resolves.toBeDefined();
       const tokenCall = fetchMock.mock.calls.find(([url]) =>
         String(url).endsWith("/oauth2/token"),
       );
@@ -190,10 +176,9 @@ readsess
     // Hydra (fosite) enforces a minimum-entropy check and rejects the
     // /oauth2/auth request with `invalid_state` if `state` is missing or
     // shorter than 8 chars. Guard against a regression that drops it.
-    (getPageSession as jest.Mock).mockResolvedValue(AUTHED_SESSION);
     mockHydraFlowAndSts(fetchMock);
 
-    await getProxyCredentials();
+    await getProxyCredentials("ory-123");
 
     const authUrl = new URL(fetchMock.mock.calls[0][0] as string);
     expect(authUrl.pathname).toBe("/oauth2/auth");
@@ -203,10 +188,6 @@ readsess
   });
 
   test("throws when STS returns non-200", async () => {
-    (getPageSession as jest.Mock).mockResolvedValue({
-      identity_id: "ory-123",
-      account: { account_id: "user-1" },
-    });
     fetchMock
       // Hydra flow (4 calls)
       .mockResolvedValueOnce(new Response(null, { status: 302, headers: { location: "/ui/login?login_challenge=lc" } }))
@@ -216,11 +197,10 @@ readsess
       // STS fails
       .mockResolvedValueOnce(new Response("denied", { status: 403 }));
 
-    await expect(getProxyCredentials()).rejects.toThrow(/STS/);
+    await expect(getProxyCredentials("ory-123")).rejects.toThrow(/STS/);
   });
 
   test("completes the full consent flow when skip_consent is not enabled", async () => {
-    (getPageSession as jest.Mock).mockResolvedValue(AUTHED_SESSION);
     fetchMock
       // /oauth2/auth → login_challenge
       .mockResolvedValueOnce(redirectResponse("/ui/login?login_challenge=lc"))
@@ -243,7 +223,7 @@ readsess
       // STS exchange → credentials
       .mockResolvedValueOnce(new Response(STS_XML, { status: 200 }));
 
-    const creds = await getProxyCredentials();
+    const creds = await getProxyCredentials("ory-123");
     expect(creds.accessKeyId).toBe("AKIAREAD");
     // The consent challenge must have been accepted via the admin API.
     const consentCall = fetchMock.mock.calls.find(([url]) =>
@@ -253,7 +233,6 @@ readsess
   });
 
   test("follows an intermediate same-origin redirect before obtaining the code", async () => {
-    (getPageSession as jest.Mock).mockResolvedValue(AUTHED_SESSION);
     fetchMock
       .mockResolvedValueOnce(redirectResponse("/ui/login?login_challenge=lc"))
       .mockResolvedValueOnce(
@@ -267,12 +246,11 @@ readsess
       .mockResolvedValueOnce(jsonResponse({ id_token: "tok" }))
       .mockResolvedValueOnce(new Response(STS_XML, { status: 200 }));
 
-    const creds = await getProxyCredentials();
+    const creds = await getProxyCredentials("ory-123");
     expect(creds.accessKeyId).toBe("AKIAREAD");
   });
 
   test("rejects an intermediate redirect to an untrusted origin", async () => {
-    (getPageSession as jest.Mock).mockResolvedValue(AUTHED_SESSION);
     fetchMock
       .mockResolvedValueOnce(redirectResponse("/ui/login?login_challenge=lc"))
       .mockResolvedValueOnce(
@@ -281,7 +259,7 @@ readsess
       // post-login redirect points off to an attacker-controlled host.
       .mockResolvedValueOnce(redirectResponse("https://evil.example.com/steal"));
 
-    await expect(getProxyCredentials()).rejects.toThrow(/untrusted host/);
+    await expect(getProxyCredentials("ory-123")).rejects.toThrow(/untrusted host/);
     // The cookie jar must never be forwarded to the untrusted host.
     const leakedCall = fetchMock.mock.calls.find(([url]) =>
       String(url).includes("evil.example.com"),
@@ -290,7 +268,6 @@ readsess
   });
 
   test("rejects an off-origin login redirect from the admin API", async () => {
-    (getPageSession as jest.Mock).mockResolvedValue(AUTHED_SESSION);
     fetchMock
       .mockResolvedValueOnce(redirectResponse("/ui/login?login_challenge=lc"))
       // login/accept returns a redirect_to pointing off to an untrusted host.
@@ -298,7 +275,7 @@ readsess
         jsonResponse({ redirect_to: "https://evil.example.com/postlogin" }),
       );
 
-    await expect(getProxyCredentials()).rejects.toThrow(/untrusted host/);
+    await expect(getProxyCredentials("ory-123")).rejects.toThrow(/untrusted host/);
     const leakedCall = fetchMock.mock.calls.find(([url]) =>
       String(url).includes("evil.example.com"),
     );
@@ -306,7 +283,6 @@ readsess
   });
 
   test("rejects an off-origin consent redirect from the admin API", async () => {
-    (getPageSession as jest.Mock).mockResolvedValue(AUTHED_SESSION);
     fetchMock
       .mockResolvedValueOnce(redirectResponse("/ui/login?login_challenge=lc"))
       .mockResolvedValueOnce(
@@ -320,7 +296,7 @@ readsess
         jsonResponse({ redirect_to: "https://evil.example.com/postconsent" }),
       );
 
-    await expect(getProxyCredentials()).rejects.toThrow(/untrusted host/);
+    await expect(getProxyCredentials("ory-123")).rejects.toThrow(/untrusted host/);
     const leakedCall = fetchMock.mock.calls.find(([url]) =>
       String(url).includes("evil.example.com"),
     );
@@ -328,21 +304,18 @@ readsess
   });
 
   test("throws when /oauth2/auth returns no login_challenge", async () => {
-    (getPageSession as jest.Mock).mockResolvedValue(AUTHED_SESSION);
     fetchMock.mockResolvedValueOnce(redirectResponse("/ui/login"));
-    await expect(getProxyCredentials()).rejects.toThrow(/login_challenge/);
+    await expect(getProxyCredentials("ory-123")).rejects.toThrow(/login_challenge/);
   });
 
   test("throws when the login accept call fails", async () => {
-    (getPageSession as jest.Mock).mockResolvedValue(AUTHED_SESSION);
     fetchMock
       .mockResolvedValueOnce(redirectResponse("/ui/login?login_challenge=lc"))
       .mockResolvedValueOnce(new Response("nope", { status: 500 }));
-    await expect(getProxyCredentials()).rejects.toThrow(/Login accept failed/);
+    await expect(getProxyCredentials("ory-123")).rejects.toThrow(/Login accept failed/);
   });
 
   test("throws when the consent accept call fails", async () => {
-    (getPageSession as jest.Mock).mockResolvedValue(AUTHED_SESSION);
     fetchMock
       .mockResolvedValueOnce(redirectResponse("/ui/login?login_challenge=lc"))
       .mockResolvedValueOnce(
@@ -352,11 +325,10 @@ readsess
         redirectResponse("https://auth.source.coop/consent?consent_challenge=cc"),
       )
       .mockResolvedValueOnce(new Response("nope", { status: 500 }));
-    await expect(getProxyCredentials()).rejects.toThrow(/Consent accept failed/);
+    await expect(getProxyCredentials("ory-123")).rejects.toThrow(/Consent accept failed/);
   });
 
   test("throws when no code is returned after consent accept", async () => {
-    (getPageSession as jest.Mock).mockResolvedValue(AUTHED_SESSION);
     fetchMock
       .mockResolvedValueOnce(redirectResponse("/ui/login?login_challenge=lc"))
       .mockResolvedValueOnce(
@@ -370,11 +342,10 @@ readsess
       )
       // post-consent redirect with no code.
       .mockResolvedValueOnce(redirectResponse("https://source.coop/callback"));
-    await expect(getProxyCredentials()).rejects.toThrow(/No authorization code/);
+    await expect(getProxyCredentials("ory-123")).rejects.toThrow(/No authorization code/);
   });
 
   test("throws when the post-login redirect has no usable parameters", async () => {
-    (getPageSession as jest.Mock).mockResolvedValue(AUTHED_SESSION);
     fetchMock
       .mockResolvedValueOnce(redirectResponse("/ui/login?login_challenge=lc"))
       .mockResolvedValueOnce(
@@ -382,13 +353,12 @@ readsess
       )
       // 302 with neither code, consent_challenge, nor a Location to follow.
       .mockResolvedValueOnce(redirectResponse(null));
-    await expect(getProxyCredentials()).rejects.toThrow(
+    await expect(getProxyCredentials("ory-123")).rejects.toThrow(
       /No consent_challenge or code/,
     );
   });
 
   test("throws when the token exchange fails", async () => {
-    (getPageSession as jest.Mock).mockResolvedValue(AUTHED_SESSION);
     fetchMock
       .mockResolvedValueOnce(redirectResponse("/ui/login?login_challenge=lc"))
       .mockResolvedValueOnce(
@@ -396,11 +366,10 @@ readsess
       )
       .mockResolvedValueOnce(redirectResponse("https://source.coop/callback?code=c"))
       .mockResolvedValueOnce(new Response("bad", { status: 401 }));
-    await expect(getProxyCredentials()).rejects.toThrow(/Token exchange failed/);
+    await expect(getProxyCredentials("ory-123")).rejects.toThrow(/Token exchange failed/);
   });
 
   test("throws when the token response has no id_token", async () => {
-    (getPageSession as jest.Mock).mockResolvedValue(AUTHED_SESSION);
     fetchMock
       .mockResolvedValueOnce(redirectResponse("/ui/login?login_challenge=lc"))
       .mockResolvedValueOnce(
@@ -408,11 +377,10 @@ readsess
       )
       .mockResolvedValueOnce(redirectResponse("https://source.coop/callback?code=c"))
       .mockResolvedValueOnce(jsonResponse({}));
-    await expect(getProxyCredentials()).rejects.toThrow(/id_token/);
+    await expect(getProxyCredentials("ory-123")).rejects.toThrow(/id_token/);
   });
 
   test("throws when the STS response is missing the Credentials element", async () => {
-    (getPageSession as jest.Mock).mockResolvedValue(AUTHED_SESSION);
     fetchMock
       .mockResolvedValueOnce(redirectResponse("/ui/login?login_challenge=lc"))
       .mockResolvedValueOnce(
@@ -422,16 +390,15 @@ readsess
       .mockResolvedValueOnce(jsonResponse({ id_token: "tok" }))
       // 200 but malformed XML.
       .mockResolvedValueOnce(new Response("<Response>no creds</Response>", { status: 200 }));
-    await expect(getProxyCredentials()).rejects.toThrow(/missing <Credentials>/);
+    await expect(getProxyCredentials("ory-123")).rejects.toThrow(/missing <Credentials>/);
   });
 
   test("logs the Ory error body outside production", async () => {
-    (getPageSession as jest.Mock).mockResolvedValue(AUTHED_SESSION);
     fetchMock
       .mockResolvedValueOnce(redirectResponse("/ui/login?login_challenge=lc"))
       .mockResolvedValueOnce(new Response("backend detail", { status: 500 }));
 
-    await expect(getProxyCredentials()).rejects.toThrow(/Login accept failed/);
+    await expect(getProxyCredentials("ory-123")).rejects.toThrow(/Login accept failed/);
 
     const call = (LOGGER.error as jest.Mock).mock.calls.find(
       ([msg]) => msg === "Login accept failed",
@@ -443,14 +410,13 @@ readsess
 
   test("omits the Ory error body from logs in production", async () => {
     CONFIG.environment.isProduction = true;
-    (getPageSession as jest.Mock).mockResolvedValue(AUTHED_SESSION);
     fetchMock
       .mockResolvedValueOnce(redirectResponse("/ui/login?login_challenge=lc"))
       .mockResolvedValueOnce(
         new Response("super secret backend detail", { status: 500 }),
       );
 
-    await expect(getProxyCredentials()).rejects.toThrow(/Login accept failed/);
+    await expect(getProxyCredentials("ory-123")).rejects.toThrow(/Login accept failed/);
 
     const call = (LOGGER.error as jest.Mock).mock.calls.find(
       ([msg]) => msg === "Login accept failed",

@@ -25,7 +25,7 @@ jest.mock("@/lib/api/utils", () => ({
 }));
 
 import { refreshProxyCredentials } from "./proxy-credentials-cache";
-import { encryptJson } from "./encrypted-cookie";
+import { encryptJson, decryptJson } from "./encrypted-cookie";
 
 describe("proxy-credentials-cache", () => {
   beforeEach(() => {
@@ -42,6 +42,12 @@ describe("proxy-credentials-cache", () => {
     secretAccessKey: "S",
     sessionToken: "T",
     expiration: new Date(Date.now() + offsetMs).toISOString(),
+  });
+
+  // What a previously-written cookie holds: creds plus the identity binding.
+  const cachedCreds = (identityId = "user-1", offsetMs?: number) => ({
+    ...freshCreds(offsetMs),
+    identityId,
   });
 
   test("returns ok:false without minting when unauthenticated", async () => {
@@ -77,8 +83,7 @@ describe("proxy-credentials-cache", () => {
   });
 
   test("returns early without minting when cookie is fresh", async () => {
-    const creds = freshCreds();
-    mockGet.mockReturnValue({ value: await encryptJson(creds) });
+    mockGet.mockReturnValue({ value: await encryptJson(cachedCreds()) });
 
     const result = await refreshProxyCredentials();
 
@@ -88,8 +93,44 @@ describe("proxy-credentials-cache", () => {
     expect(mockSet).not.toHaveBeenCalled();
   });
 
+  test("binds the minted cookie to the session identity", async () => {
+    mockGet.mockReturnValue(undefined);
+    mockGetProxyCredentials.mockResolvedValue(freshCreds());
+
+    await refreshProxyCredentials();
+
+    const [, encrypted] = mockSet.mock.calls[0];
+    const payload = await decryptJson<{ identityId?: string }>(encrypted);
+    expect(payload?.identityId).toBe("user-1");
+  });
+
+  test("re-mints when the fresh cookie belongs to a different user", async () => {
+    // User switch without /logout: the previous user's cookie is still fresh
+    // but must not count as a cache hit for the new session.
+    mockGet.mockReturnValue({
+      value: await encryptJson(cachedCreds("someone-else")),
+    });
+    mockGetProxyCredentials.mockResolvedValue(freshCreds());
+
+    const result = await refreshProxyCredentials();
+
+    expect(result).toEqual({ ok: true });
+    expect(mockGetProxyCredentials).toHaveBeenCalledTimes(1);
+    expect(mockSet).toHaveBeenCalledTimes(1);
+  });
+
+  test("re-mints over a legacy cookie without an identity binding", async () => {
+    mockGet.mockReturnValue({ value: await encryptJson(freshCreds()) });
+    mockGetProxyCredentials.mockResolvedValue(freshCreds());
+
+    const result = await refreshProxyCredentials();
+
+    expect(result.ok).toBe(true);
+    expect(mockGetProxyCredentials).toHaveBeenCalledTimes(1);
+  });
+
   test("re-mints when cached creds are close to expiring", async () => {
-    const stale = freshCreds(60 * 1000); // within the 5-min refresh window
+    const stale = cachedCreds("user-1", 60 * 1000); // within the 5-min refresh window
     mockGet.mockReturnValue({ value: await encryptJson(stale) });
     const fresh = freshCreds(60 * 60 * 1000);
     mockGetProxyCredentials.mockResolvedValue(fresh);
