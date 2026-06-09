@@ -1,5 +1,7 @@
+import { Suspense } from "react";
 import { Box, Container, Flex } from "@radix-ui/themes";
 import { Navigation, Footer } from "@/components";
+import { VerificationBanner } from "@/components/features/auth/VerificationBanner";
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -9,6 +11,9 @@ export default async function AppLayout({ children }: AppLayoutProps) {
   return (
     <Flex direction="column" minHeight="100vh">
       <Navigation />
+      <Suspense fallback={null}>
+        <VerificationBanner />
+      </Suspense>
       <Box flexGrow="1" m="2">
         <Container size="4" py="4">
           {children}

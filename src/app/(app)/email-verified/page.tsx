@@ -9,6 +9,10 @@ import { redirect } from "next/navigation";
 import { accountUrl, homeUrl, onboardingUrl, verifyEmailUrl } from "@/lib/urls";
 import { getPageSession } from "@/lib/api/utils";
 import { accountsTable } from "@/lib";
+import {
+  isEmailVerifiedInOry,
+  oryAddressesToAccountEmails,
+} from "@/lib/accounts/email-verification";
 import Link from "next/link";
 
 export default async function EmailVerifiedPage() {
@@ -21,18 +25,11 @@ export default async function EmailVerifiedPage() {
   }
   const verifiedAddresses = session.orySession?.identity?.verifiable_addresses;
 
-  if (verifiedAddresses?.some((address) => address.verified)) {
+  if (isEmailVerifiedInOry(session.orySession)) {
     await accountsTable.update({
       ...session.account,
-
       // Copy over the verified email addresses from Ory
-      emails: verifiedAddresses?.map((address, index) => ({
-        address: address.value,
-        verified: address.verified,
-        is_primary: index === 0,
-        added_at: (address.created_at || new Date()).toISOString(),
-        verified_at: (address.verified_at || new Date()).toISOString(),
-      })),
+      emails: oryAddressesToAccountEmails(session.orySession),
     });
     redirect(accountUrl(session.account.account_id) + "?verified");
   }
