@@ -57,17 +57,21 @@ export default async function ProductPathPage({ params }: PageProps) {
 
   // For non-root paths, check if this is a file via HEAD request.
   // If the HEAD succeeds, render the file view (ObjectSummary + ObjectPreview).
-  // If it fails or returns null, fall through to the directory listing.
-  // Note: for a private product on first visit (no proxy-creds cookie yet),
-  // `s3` is anonymous and this HEAD is denied → null, so we fall through to the
-  // ProxyCredentialsGate below, which mints credentials and refreshes; the next
+  // getObjectInfo returns null on NotFound (not a file → directory listing).
+  // AccessDenied also falls through: for a private product on first visit (no
+  // proxy-creds cookie yet), `s3` is anonymous and this HEAD is denied, and the
+  // ProxyCredentialsGate below mints credentials and refreshes; the next
   // render's signed HEAD then succeeds and the file view shows. So the HEAD is
   // not expected to succeed on the initial render for a restricted product.
+  // Anything else (e.g. a proxy 500) is a real failure — let it reach the
+  // error boundary rather than silently degrading a file page into a
+  // (probably empty) directory listing.
   if (objectPath) {
     const objectInfo = await s3
       .getObjectInfo({ account_id, product_id, object_path: objectPath })
       .catch((error) => {
-        LOGGER.debug("HEAD request failed, treating as directory", {
+        if (!isAccessDeniedError(error)) throw error;
+        LOGGER.debug("HEAD request denied, treating as directory", {
           operation: "ProductPathPage",
           context: "object info lookup",
           metadata: { account_id, product_id, objectPath, error: String(error) },

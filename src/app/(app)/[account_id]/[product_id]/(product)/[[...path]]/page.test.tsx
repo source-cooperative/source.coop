@@ -78,6 +78,7 @@ import { isAuthorized } from "@/lib/api/authz";
 import { readProxyCredentials } from "@/lib/services/proxy-credentials-read";
 import { getStorageClient } from "@/lib/clients/storage";
 import { ProductDataUnavailable } from "@/components/features/products/ProductDataUnavailable";
+import { DirectoryList } from "@/components/features/products/object-browser/DirectoryList";
 import { S3ServiceException } from "@aws-sdk/client-s3";
 
 describe("Product Page Metadata", () => {
@@ -224,6 +225,51 @@ describe("ProductPathPage proxy AccessDenied handling", () => {
     });
 
     await expect(renderPage()).rejects.toThrow(S3ServiceException);
+  });
+
+  it("falls through to the directory listing when the file HEAD is denied", async () => {
+    // First visit to a restricted file URL: the HEAD is unsigned and denied;
+    // the page must keep rendering (gate / listing), not crash.
+    (productsTable.fetchById as jest.Mock).mockResolvedValue(
+      mockProduct("restricted"),
+    );
+    (getStorageClient as jest.Mock).mockResolvedValue({
+      getObjectInfo: jest.fn().mockRejectedValue(accessDenied()),
+      listObjects: jest.fn().mockResolvedValue({
+        objects: [],
+        directories: [],
+        isTruncated: false,
+      }),
+    });
+
+    const element = await ProductPathPage({
+      params: Promise.resolve({
+        account_id: "test-account",
+        product_id: "test-product",
+        path: ["file.txt"],
+      }),
+    });
+    expect(element.type).toBe(DirectoryList);
+  });
+
+  it("surfaces a non-AccessDenied HEAD failure instead of degrading to a directory", async () => {
+    (productsTable.fetchById as jest.Mock).mockResolvedValue(
+      mockProduct("restricted"),
+    );
+    (getStorageClient as jest.Mock).mockResolvedValue({
+      getObjectInfo: jest.fn().mockRejectedValue(new Error("proxy exploded")),
+      listObjects: jest.fn(),
+    });
+
+    await expect(
+      ProductPathPage({
+        params: Promise.resolve({
+          account_id: "test-account",
+          product_id: "test-product",
+          path: ["file.txt"],
+        }),
+      }),
+    ).rejects.toThrow("proxy exploded");
   });
 });
 
