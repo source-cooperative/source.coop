@@ -24,6 +24,7 @@ import {
   editAccountPermissionsUrl,
   editAccountMembershipsUrl,
   accountUrl,
+  orySettingsUrl,
 } from "@/lib/urls";
 import { ExternalLink } from "@/components/core/ExternalLink";
 import { getManageableAccounts } from "@/lib/clients/lookups";
@@ -75,6 +76,11 @@ export default async function AccountLayout({
     Actions.PutAccountProfile
   );
 
+  // Authentication details (email, password, keys) live in Ory and can only
+  // be changed by the account owner themselves — not by an admin acting on
+  // someone else's account.
+  const isOwnAccount = userSession.account.account_id === accountToEdit.account_id;
+
   const menuItems = [
     {
       id: "profile",
@@ -111,6 +117,17 @@ export default async function AccountLayout({
               accountToEdit,
               Actions.GetAccount
             ),
+          },
+          {
+            id: "authentication",
+            label: "Authentication",
+            href: orySettingsUrl(),
+            icon: <GearIcon width="16" height="16" />,
+            condition: canReadAccount,
+            external: true,
+            disabled: !isOwnAccount,
+            disabledTooltip:
+              "Admins can't edit another user's authentication details.",
           },
         ]),
   ];
