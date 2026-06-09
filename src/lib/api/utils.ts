@@ -41,6 +41,7 @@ import { NextRequest } from "next/server";
 import { getOryId } from "../ory";
 import md5 from "md5";
 import { CONFIG } from "../config";
+import { LOGGER } from "@/lib/logging";
 import { AccountType } from "@/types/account";
 import { AccountFlags } from "@/types/shared";
 
@@ -185,6 +186,48 @@ export async function getPageSession(): Promise<UserSession | null> {
     account,
     memberships: filteredMemberships,
   };
+}
+
+/**
+ * Looks up an Ory identity by email address via the Ory admin API and returns
+ * its identity ID, or null if no identity matches.
+ *
+ * Uses the `credentials_identifier` filter, which matches the identifier a user
+ * authenticates with (their email). Mirrors {@link getEmail} in reading the Ory
+ * admin credentials directly from the environment.
+ *
+ * @param email - The email address to look up.
+ * @returns The Ory identity ID, or null if not found.
+ */
+export async function getOryIdentityIdByEmail(
+  email: string
+): Promise<string | null> {
+  const url = new URL(
+    `${process.env.NEXT_PUBLIC_ORY_SDK_URL}/admin/identities`
+  );
+  url.searchParams.set("credentials_identifier", email);
+
+  const response = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${process.env.ORY_ACCESS_TOKEN}`,
+    },
+  });
+
+  if (!response.ok) {
+    LOGGER.warn("Ory identity lookup by email failed", {
+      operation: "getOryIdentityIdByEmail",
+      context: "ory",
+      metadata: { status: response.status },
+    });
+    return null;
+  }
+
+  const identities = await response.json();
+  if (!Array.isArray(identities) || identities.length === 0) {
+    return null;
+  }
+
+  return identities[0]?.id ?? null;
 }
 
 export async function getEmail(identity_id: string): Promise<string | null> {

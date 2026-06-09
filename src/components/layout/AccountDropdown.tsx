@@ -7,12 +7,13 @@ import {
   LOGGER,
   CONFIG,
   accountUrl,
+  adminUserLookupUrl,
   editAccountProfileUrl,
   newOrganizationUrl,
   newProductUrl,
 } from "@/lib";
 import { DropdownSection } from "./DropdownSection";
-import { isAuthorized } from "@/lib/api/authz";
+import { isAdmin, isAuthorized } from "@/lib/api/authz";
 import { Actions, UserSession } from "@/types";
 import { ProfileAvatar } from "@/components/features/profiles/ProfileAvatar";
 import { UploadBadge } from "@/components/features/uploader/UploadBadge";
@@ -103,6 +104,16 @@ export function AccountDropdown({ session }: { session: UserSession }) {
           ]}
         />
         <UploadsSubmenu />
+        <DropdownSection
+          label="Admin"
+          condition={isAdmin(session)}
+          items={[
+            {
+              href: adminUserLookupUrl(),
+              children: "User Lookup",
+            },
+          ]}
+        />
         <DropdownSection
           items={[
             {

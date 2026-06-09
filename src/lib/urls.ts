@@ -12,6 +12,9 @@ export const productUrl = (
 export const productListUrl = () => "/products";
 export const newProductUrl = () => "/products/new";
 
+// Admin URLs
+export const adminUserLookupUrl = () => "/admin/lookup";
+
 // Auth URLs
 export const loginUrl = (returnTo?: string) => {
   const base = CONFIG.auth.routes.login;
