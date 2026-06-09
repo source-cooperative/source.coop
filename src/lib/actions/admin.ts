@@ -73,7 +73,7 @@ export async function lookupUserByEmail(
   LOGGER.info("Admin resolved email to profile", {
     operation: "lookupUserByEmail",
     context: "admin",
-    metadata: { account_id: account.account_id },
+    metadata: { account_id: account.account_id, looked_up_by: session?.account?.account_id },
   });
 
   // Navigate on the client (see FormState.redirectTo) rather than redirect()
