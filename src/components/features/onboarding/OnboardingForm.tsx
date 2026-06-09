@@ -55,7 +55,7 @@ export function OnboardingForm({ identityId }: { identityId: string }) {
 
   return (
     <Box pt="6">
-      <EmailVerificationCallout showCheckEmail={true} />
+      <EmailVerificationCallout status="unverified" />
       <DynamicForm<OnboardingFormData>
         fields={fields}
         action={createAccount}

@@ -1,23 +1,22 @@
-"use client";
-
 import { Box, Callout, Link } from "@radix-ui/themes";
 import { CheckCircledIcon, InfoCircledIcon } from "@radix-ui/react-icons";
-import { useSearchParams } from "next/navigation";
 import { verifyEmailUrl } from "@/lib";
+import type { EmailVerificationState } from "@/lib/api/utils";
 
 interface EmailVerificationCalloutProps {
-  showCheckEmail?: boolean;
+  /**
+   * Which banner to render. "unverified" shows a reminder to verify;
+   * "just-verified" thanks the user for confirming their email.
+   */
+  status: EmailVerificationState;
 }
 
 export function EmailVerificationCallout({
-  showCheckEmail = false,
+  status,
 }: EmailVerificationCalloutProps) {
-  const searchParams = useSearchParams();
-  const isVerified = searchParams.has("verified");
-
   return (
     <Box mb="6">
-      {!isVerified || showCheckEmail ? (
+      {status === "unverified" ? (
         <Callout.Root color="blue">
           <Callout.Icon>
             <InfoCircledIcon />
