@@ -45,4 +45,16 @@ export async function VerificationBanner() {
 
   // Authenticated but unverified everywhere: nudge the user to verify.
   return <EmailVerificationCallout status="unverified" />;
-}
+  // Verified upstream on Ory but our record is stale: persist it and say thanks.
+  if (isEmailVerifiedInOry(session.orySession)) {
+    try {
+      await accountsTable.update({
+        ...session.account,
+        emails: oryAddressesToAccountEmails(session.orySession),
+      });
+    } catch {
+      // Non-fatal: the banner still shows "just-verified" and the sync
+      // will be retried on the next page load.
+    }
+    return <EmailVerificationCallout status="just-verified" />;
+  }
