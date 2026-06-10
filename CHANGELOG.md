@@ -1,5 +1,35 @@
 # Changelog
 
+## [2.0.0](https://github.com/source-cooperative/source.coop/compare/v1.3.0...v2.0.0) (2026-06-10)
+
+
+### ⚠ BREAKING CHANGES
+
+* require auth for restricted products ([#284](https://github.com/source-cooperative/source.coop/issues/284))
+
+### Features
+
+* add X-Robots-Tag header for non-production deployments ([72249b9](https://github.com/source-cooperative/source.coop/commit/72249b91a86de74cbf285e161ca0ab7809c68844)), closes [#302](https://github.com/source-cooperative/source.coop/issues/302)
+* add X-Robots-Tag header for non-production deployments ([#323](https://github.com/source-cooperative/source.coop/issues/323)) ([4fa9f9d](https://github.com/source-cooperative/source.coop/commit/4fa9f9db692a2f283bcc03399b84b4d4d1ce3a13))
+* **admin:** admin email-to-profile lookup view ([#350](https://github.com/source-cooperative/source.coop/issues/350)) ([a056a28](https://github.com/source-cooperative/source.coop/commit/a056a2818f3f6f9d5855113496eb5f37d514427d))
+* **profile:** link to Ory settings from read-only email field ([#349](https://github.com/source-cooperative/source.coop/issues/349)) ([34a2244](https://github.com/source-cooperative/source.coop/commit/34a224446d39d3606abbe70544d3f51f68c1b2bd))
+* **viewer:** Add PDF viewer, PNG bindings ([#315](https://github.com/source-cooperative/source.coop/issues/315)) ([7927431](https://github.com/source-cooperative/source.coop/commit/7927431815971f9d6e11b5ab25164835cf151c70))
+
+
+### Bug Fixes
+
+* **email-verification:** reconcile Ory verification on every page load ([#347](https://github.com/source-cooperative/source.coop/issues/347)) ([e0a85c3](https://github.com/source-cooperative/source.coop/commit/e0a85c379b20b57481a93d81d8f39dc0fd3122d4))
+* make full menu item area clickable ([#295](https://github.com/source-cooperative/source.coop/issues/295)) ([e27a3c2](https://github.com/source-cooperative/source.coop/commit/e27a3c23c50b264b0cc0897ce87b785ec8cbefac))
+* re-render auth UI after form-submission redirects ([#344](https://github.com/source-cooperative/source.coop/issues/344)) ([a378ebc](https://github.com/source-cooperative/source.coop/commit/a378ebc1a523eaaed80eca803283056a57e01db4))
+* require auth for restricted products ([#284](https://github.com/source-cooperative/source.coop/issues/284)) ([112265a](https://github.com/source-cooperative/source.coop/commit/112265aea73a84a364d0843ff7798124a5f65f14))
+* return user to current view after login ([#346](https://github.com/source-cooperative/source.coop/issues/346)) ([9dd6d5f](https://github.com/source-cooperative/source.coop/commit/9dd6d5f923237a2f79517c5f7a917609c964ecb4))
+* validate product DOI format ([#319](https://github.com/source-cooperative/source.coop/issues/319)) ([4727dec](https://github.com/source-cooperative/source.coop/commit/4727dec6f267619aef7a8ab8886c88e9b182a24c))
+
+
+### Performance Improvements
+
+* **db:** request-scoped memoization of DynamoDB reads ([#320](https://github.com/source-cooperative/source.coop/issues/320)) ([1f295cf](https://github.com/source-cooperative/source.coop/commit/1f295cf18e0cf451d3ef328fb23d4316cf15dbec))
+
 ## [1.3.0](https://github.com/source-cooperative/source.coop/compare/v1.2.0...v1.3.0) (2026-05-13)
 
 
