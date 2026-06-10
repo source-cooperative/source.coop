@@ -17,7 +17,6 @@ import { ProductsList } from "../products/ProductsList";
 import { WebsiteLink } from "./WebsiteLink";
 import { EmailVerificationStatus } from "./EmailVerificationStatus";
 import { AvatarLinkCompact, EditButton } from "@/components/core";
-import { EmailVerificationCallout } from "../auth/EmailVerificationCallout";
 import { WelcomeCallout } from "./WelcomeCallout";
 
 interface IndividualProfileProps {
@@ -42,11 +41,8 @@ export function IndividualProfile({
   const primaryEmail = account.emails?.find((email) => email.is_primary);
   return (
     <Box>
-      {isOwner && (
-        <>
-          {!primaryEmail?.verified && <EmailVerificationCallout />}
-          {showWelcome && <WelcomeCallout accountId={account.account_id} />}
-        </>
+      {isOwner && showWelcome && (
+        <WelcomeCallout accountId={account.account_id} />
       )}
 
       <Box mb="6">
