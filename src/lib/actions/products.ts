@@ -11,7 +11,6 @@ import {
 import { getPageSession, LOGGER } from "@/lib";
 import { FormState } from "@/components/core/DynamicForm";
 import { isAuthorized } from "../api/authz";
-import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { productUrl, editProductDetailsUrl } from "@/lib/urls";
 
@@ -155,7 +154,6 @@ export async function createProduct(
 
   try {
     await productsTable.create(product);
-    redirect(productUrl(product.account_id, product.product_id, "success"));
   } catch (error) {
     LOGGER.error("Failed to create product", {
       operation: "createProduct",
@@ -165,6 +163,16 @@ export async function createProduct(
     });
     throw error;
   }
+
+  // Navigate on the client (see FormState.redirectTo) rather than redirect()
+  // here, so the shared layout's auth UI re-renders with the current session.
+  return {
+    fieldErrors: {},
+    data: formData,
+    message: "",
+    success: true,
+    redirectTo: productUrl(product.account_id, product.product_id, "success"),
+  };
 }
 
 export async function updateProduct(

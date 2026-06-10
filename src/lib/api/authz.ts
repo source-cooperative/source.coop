@@ -92,7 +92,6 @@ type ActionResourceMap = {
   [Actions.GetDataConnection]: DataConnection;
   [Actions.CreateDataConnection]: DataConnection;
   [Actions.DisableDataConnection]: DataConnection;
-  [Actions.UseDataConnection]: DataConnection;
   [Actions.ViewDataConnectionCredentials]: DataConnection;
   [Actions.PutDataConnection]: DataConnection;
   [Actions.DeleteDataConnection]: DataConnection;
@@ -269,11 +268,6 @@ export function isAuthorized(
 export function isAuthorized(
   principal: UserSession | null,
   resource: DataConnection,
-  action: Actions.UseDataConnection
-): boolean;
-export function isAuthorized(
-  principal: UserSession | null,
-  resource: DataConnection,
   action: Actions.ViewDataConnectionCredentials
 ): boolean;
 export function isAuthorized(
@@ -391,9 +385,6 @@ export function isAuthorized(
       .with(Actions.DisableDataConnection, () =>
         disableDataConnection(principal, resource as ResourceForAction<Actions.DisableDataConnection>)
       )
-      .with(Actions.UseDataConnection, () =>
-        useDataConnection(principal, resource as ResourceForAction<Actions.UseDataConnection>)
-      )
       .with(Actions.ViewDataConnectionCredentials, () =>
         viewDataConnectionCredentials(principal, resource as ResourceForAction<Actions.ViewDataConnectionCredentials>)
       )
@@ -449,32 +440,6 @@ function disableDataConnection(
   }
 
   return false;
-}
-
-function useDataConnection(
-  principal: UserSession | null,
-  dataConnection: DataConnection
-): boolean {
-  if (principal?.account?.disabled) {
-    return false;
-  }
-
-  if (isAdmin(principal)) {
-    return true;
-  }
-
-  if (dataConnection.read_only) {
-    return false;
-  }
-
-  if (dataConnection.required_flag) {
-    if (principal?.account?.flags?.includes(dataConnection.required_flag)) {
-      return true;
-    }
-    return false;
-  } else {
-    return true;
-  }
 }
 
 function viewDataConnectionCredentials(

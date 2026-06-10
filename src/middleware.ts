@@ -65,11 +65,40 @@ const handleLegacyRedirects = (request: NextRequest): NextResponse | null => {
 
 const ory = createOryMiddleware({});
 
+// Paths the Ory middleware proxies (self-service flows, session checks). For
+// everything else its middleware just returns a no-op NextResponse.next(), so
+// we own the response and inject the current-path headers below.
+// See node_modules/@ory/nextjs/dist/middleware (proxyRequest match list).
+const ORY_PROXIED_PREFIXES = [
+  "/self-service",
+  "/sessions/whoami",
+  "/ui",
+  "/.well-known/ory",
+  "/.ory",
+];
+
 export const middleware = async (request: NextRequest) => {
-  for (const handler of [handleLegacyRedirects, handleChromeDevTools, ory]) {
+  for (const handler of [handleLegacyRedirects, handleChromeDevTools]) {
     const response = await handler(request);
     if (response) return response;
   }
+
+  // Let Ory handle its own endpoints (it returns proxied responses with
+  // redirects / Set-Cookie that we must not discard).
+  if (
+    ORY_PROXIED_PREFIXES.some((prefix) =>
+      request.nextUrl.pathname.startsWith(prefix),
+    )
+  ) {
+    return ory(request);
+  }
+
+  // Inject current path into request headers so server components can read it
+  // via headers() from next/headers (used to build return_to login URLs).
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-pathname", request.nextUrl.pathname);
+  requestHeaders.set("x-search", request.nextUrl.search);
+  return NextResponse.next({ request: { headers: requestHeaders } });
 };
 
 export const config = {

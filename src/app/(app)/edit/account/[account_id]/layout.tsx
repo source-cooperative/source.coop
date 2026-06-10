@@ -9,7 +9,7 @@ import { isAuthorized } from "@/lib/api/authz";
 import { Actions } from "@/types";
 import { accountsTable } from "@/lib/clients/database";
 import { notFound, redirect } from "next/navigation";
-import { CONFIG } from "@/lib/config";
+import { getReturnToUrl } from "@/lib/baseUrl";
 import {
   PersonIcon,
   LockClosedIcon,
@@ -18,11 +18,13 @@ import {
   ImageIcon,
 } from "@radix-ui/react-icons";
 import {
+  loginUrl,
   editAccountProfileUrl,
   editAccountProfilePictureUrl,
   editAccountPermissionsUrl,
   editAccountMembershipsUrl,
   accountUrl,
+  orySettingsUrl,
 } from "@/lib/urls";
 import { ExternalLink } from "@/components/core/ExternalLink";
 import { getManageableAccounts } from "@/lib/clients/lookups";
@@ -41,7 +43,7 @@ export default async function AccountLayout({
   const userSession = await getPageSession();
 
   if (!userSession?.account) {
-    redirect(CONFIG.auth.routes.login);
+    redirect(loginUrl(await getReturnToUrl()));
   }
 
   const accountToEdit = await accountsTable.fetchById(account_id);
@@ -73,6 +75,11 @@ export default async function AccountLayout({
     accountToEdit,
     Actions.PutAccountProfile
   );
+
+  // Authentication details (email, password, keys) live in Ory and can only
+  // be changed by the account owner themselves — not by an admin acting on
+  // someone else's account.
+  const isOwnAccount = userSession.account.account_id === accountToEdit.account_id;
 
   const menuItems = [
     {
@@ -110,6 +117,17 @@ export default async function AccountLayout({
               accountToEdit,
               Actions.GetAccount
             ),
+          },
+          {
+            id: "authentication",
+            label: "Authentication",
+            href: orySettingsUrl(),
+            icon: <GearIcon width="16" height="16" />,
+            condition: canReadAccount,
+            external: true,
+            disabled: !isOwnAccount,
+            disabledTooltip:
+              "Admins can't edit another user's authentication details.",
           },
         ]),
   ];

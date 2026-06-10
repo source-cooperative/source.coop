@@ -3,6 +3,7 @@
 import React, { useActionState } from "react";
 import { Button, Text, Flex } from "@radix-ui/themes";
 import Form from "next/form";
+import { useRouter } from "next/navigation";
 
 export interface FormField<T extends Record<string, any>> {
   label?: string;
@@ -19,7 +20,7 @@ export interface FormField<T extends Record<string, any>> {
     | "custom";
   required?: boolean;
   readOnly?: boolean;
-  description?: string;
+  description?: React.ReactNode;
   placeholder?: string;
   isValid?: boolean | null;
   message?: React.ReactNode;
@@ -35,6 +36,12 @@ export interface FormState<T> {
   data: FormData;
   message: string;
   success: boolean;
+  // When set on a successful submission, the form navigates here on the client.
+  // We navigate client-side (rather than redirect() in the server action) so
+  // router.refresh() re-renders the shared layout's auth UI. A server-side
+  // redirect() after revalidatePath() does not invalidate the client Router
+  // Cache (Next.js issue #49450), leaving the user looking logged out.
+  redirectTo?: string;
 }
 
 interface DynamicFormProps<T extends Record<string, any>> {
@@ -72,6 +79,7 @@ export function DynamicForm<T extends Record<string, any>>({
   initialValues,
   onSuccess,
 }: DynamicFormProps<T>) {
+  const router = useRouter();
   const [state, formAction, pending] = useActionState(action, {
     message: "",
     data: new FormData(),
@@ -92,6 +100,17 @@ export function DynamicForm<T extends Record<string, any>>({
       onSuccess();
     }
   }, [state.success, onSuccess]);
+
+  // Navigate on the client after a successful submission that asks for it.
+  // router.refresh() marks shared layout Router Cache entries as stale so the
+  // subsequent router.push() refetches the layout from the server with the
+  // current session — a server-side redirect() cannot do this.
+  React.useEffect(() => {
+    if (state.success && state.redirectTo) {
+      router.refresh();
+      router.push(state.redirectTo);
+    }
+  }, [state.success, state.redirectTo, router]);
 
   return (
     <Form action={formAction} className={className}>

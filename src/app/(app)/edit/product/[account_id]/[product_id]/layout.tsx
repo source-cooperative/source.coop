@@ -12,9 +12,10 @@ import { isAuthorized } from "@/lib/api/authz";
 import { Actions } from "@/types";
 import { productsTable } from "@/lib/clients/database";
 import { notFound, redirect } from "next/navigation";
-import { CONFIG } from "@/lib/config";
+import { getReturnToUrl } from "@/lib/baseUrl";
 import { ExternalLink } from "@/components/core/ExternalLink";
 import {
+  loginUrl,
   productUrl,
   editProductDetailsUrl,
   editProductMembershipsUrl,
@@ -35,7 +36,7 @@ export default async function ProductLayout({
   const session = await getPageSession();
 
   if (!session?.account) {
-    redirect(CONFIG.auth.routes.login);
+    redirect(loginUrl(await getReturnToUrl()));
   }
 
   const product = await productsTable.fetchById(account_id, product_id);

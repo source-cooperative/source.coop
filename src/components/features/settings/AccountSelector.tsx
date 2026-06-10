@@ -8,6 +8,7 @@ import { Account } from "@/types";
 import { AvatarLinkCompact } from "@/components/core/AccountLinks";
 import { editAccountViewUrl } from "@/lib/urls";
 import { ChevronIcon } from "@/components/icons";
+import { dropdownMenuLinkStyle } from "@/components/layout/DropdownSection";
 
 interface AccountSelectorProps {
   currentAccount: Account;
@@ -37,25 +38,25 @@ export function AccountSelector({
       </DropdownMenu.Trigger>
 
       <DropdownMenu.Content variant="soft">
-        {manageableAccounts.map((account) => (
-          <DropdownMenu.Item key={account.account_id}>
-            <Link
-              href={editAccountViewUrl(
-                account.account_id,
-                // We want to send user to the same view they are in, but for different account
-                linkToSameView ? pathname.split("/").pop()! : ""
-              )}
-              onClick={() => setIsOpen(false)}
-            >
-              <AvatarLinkCompact
-                account={account}
-                link={false}
-                showHoverCard={false}
-                size="1"
-              />
-            </Link>
-          </DropdownMenu.Item>
-        ))}
+        {manageableAccounts.map((account) => {
+          const href = editAccountViewUrl(
+            account.account_id,
+            // We want to send user to the same view they are in, but for different account
+            linkToSameView ? pathname.split("/").pop()! : ""
+          );
+          return (
+            <DropdownMenu.Item key={account.account_id} asChild>
+              <Link href={href} style={dropdownMenuLinkStyle}>
+                <AvatarLinkCompact
+                  account={account}
+                  link={false}
+                  showHoverCard={false}
+                  size="1"
+                />
+              </Link>
+            </DropdownMenu.Item>
+          );
+        })}
       </DropdownMenu.Content>
     </DropdownMenu.Root>
   );

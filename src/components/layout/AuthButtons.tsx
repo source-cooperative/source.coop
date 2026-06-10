@@ -1,9 +1,9 @@
 import { AccountDropdown } from "./AccountDropdown";
 import { getPageSession } from "@/lib/api/utils";
 import { Button, Callout, Link } from "@radix-ui/themes";
-import { CONFIG } from "@/lib/config";
 import { ExclamationTriangleIcon } from "@radix-ui/react-icons";
-import { onboardingUrl } from "@/lib/urls";
+import { loginUrl, onboardingUrl } from "@/lib/urls";
+import { getReturnToUrl } from "@/lib/baseUrl";
 
 export async function AuthButtons() {
   const session = await getPageSession();
@@ -26,8 +26,10 @@ export async function AuthButtons() {
     );
   }
 
+  const returnTo = await getReturnToUrl();
+
   return (
-    <Link href={CONFIG.auth.routes.login}>
+    <Link href={loginUrl(returnTo)}>
       <Button>Log In / Register</Button>
     </Link>
   );
