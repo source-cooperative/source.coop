@@ -16,7 +16,7 @@ import { SectionHeader } from "@/components/core/SectionHeader";
 import { Dropzone } from "@/components/features/uploader/Dropzone";
 import { getPageSession } from "@/lib";
 import { isAuthorized } from "@/lib/api/authz";
-import { productsTable } from "@/lib/clients/database";
+import { dataConnectionsTable, productsTable } from "@/lib/clients/database";
 import { productUrl } from "@/lib/urls";
 import { Actions } from "@/types/shared";
 import { Box, Card, Flex } from "@radix-ui/themes";
@@ -47,6 +47,17 @@ export default async function ProductLayout({
   }
   const prefix = path ? path.join("/") : "";
 
+  // Hide data-editing controls when the backing data connection is read-only
+  const primaryMirror =
+    product.metadata.mirrors[product.metadata.primary_mirror];
+  const dataConnection = primaryMirror
+    ? await dataConnectionsTable.fetchById(primaryMirror.connection_id)
+    : null;
+  const canWriteData =
+    !!dataConnection &&
+    !dataConnection.read_only &&
+    isAuthorized(session, product, Actions.WriteRepositoryData);
+
   // Check for pending invitation
   const pendingInvitation = await getPendingInvitation(account_id, product_id);
 
@@ -71,7 +82,7 @@ export default async function ProductLayout({
             <SectionHeader
               title="Product Contents"
               rightButton={
-                isAuthorized(session, product, Actions.WriteRepositoryData) && (
+                canWriteData && (
                   <FetchCredentialsButton
                     scope={{ accountId: account_id, productId: product_id }}
                     prefix={prefix}
