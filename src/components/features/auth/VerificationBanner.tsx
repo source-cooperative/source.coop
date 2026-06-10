@@ -36,17 +36,6 @@ export async function VerificationBanner() {
 
   // Verified upstream on Ory but our record is stale: persist it and say thanks.
   if (isEmailVerifiedInOry(session.orySession)) {
-    await accountsTable.update({
-      ...session.account,
-      emails: oryAddressesToAccountEmails(session.orySession),
-    });
-    return <EmailVerificationCallout status="just-verified" />;
-  }
-
-  // Authenticated but unverified everywhere: nudge the user to verify.
-  return <EmailVerificationCallout status="unverified" />;
-  // Verified upstream on Ory but our record is stale: persist it and say thanks.
-  if (isEmailVerifiedInOry(session.orySession)) {
     try {
       await accountsTable.update({
         ...session.account,
@@ -58,3 +47,7 @@ export async function VerificationBanner() {
     }
     return <EmailVerificationCallout status="just-verified" />;
   }
+
+  // Authenticated but unverified everywhere: nudge the user to verify.
+  return <EmailVerificationCallout status="unverified" />;
+}
