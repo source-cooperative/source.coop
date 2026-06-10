@@ -22,6 +22,7 @@ const ROUTINE_VERIFY_CODES = new Set([
   "ERR_JWS_SIGNATURE_VERIFICATION_FAILED",
   "ERR_JWS_INVALID",
   "ERR_JWT_INVALID",
+  "ERR_JOSE_ALG_NOT_ALLOWED",
 ]);
 
 /** @internal Exposed for testing — override to supply a local JWKS resolver. */
