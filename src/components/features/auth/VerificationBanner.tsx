@@ -41,9 +41,13 @@ export async function VerificationBanner() {
         ...session.account,
         emails: oryAddressesToAccountEmails(session.orySession),
       });
-    } catch {
+    } catch (err) {
       // Non-fatal: the banner still shows "just-verified" and the sync
       // will be retried on the next page load.
+      console.error(
+        "[VerificationBanner] Failed to sync verified email to DB:",
+        err,
+      );
     }
     return <EmailVerificationCallout status="just-verified" />;
   }

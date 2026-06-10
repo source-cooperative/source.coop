@@ -25,8 +25,8 @@ export function isEmailVerifiedInDb(account: Account): boolean {
 export function isEmailVerifiedInOry(orySession?: Session): boolean {
   return Boolean(
     orySession?.identity?.verifiable_addresses?.some(
-      (address) => address.verified
-    )
+      (address) => address.verified,
+    ),
   );
 }
 
@@ -35,9 +35,7 @@ export function isEmailVerifiedInOry(orySession?: Session): boolean {
  * verified state can be persisted to DynamoDB. The first address is treated as
  * primary, mirroring Ory's ordering.
  */
-export function oryAddressesToAccountEmails(
-  orySession?: Session
-): AccountEmail[] {
+export function oryAddressesToAccountEmails(orySession?: Session): AccountEmail[] {
   const addresses = orySession?.identity?.verifiable_addresses ?? [];
   return addresses.map((address, index) => ({
     address: address.value,
@@ -45,7 +43,7 @@ export function oryAddressesToAccountEmails(
     is_primary: index === 0,
     added_at: (address.created_at ?? new Date()).toISOString(),
     verified_at: address.verified
-      ? (address.verified_at ?? new Date()).toISOString()
+      ? address.verified_at?.toISOString()
       : undefined,
   }));
 }
