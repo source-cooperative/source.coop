@@ -40,8 +40,89 @@ import { NextRequest } from "next/server";
 import { getOryId } from "../ory";
 import md5 from "md5";
 import { authenticateWithOidcToken } from "./oidc";
-import { LOGGER } from "../logging";
 import { CONFIG } from "@/lib/config";
+import { LOGGER } from "@/lib/logging";
+import { AccountType } from "@/types/account";
+import { AccountFlags } from "@/types/shared";
+
+/**
+ * Authenticates using the API secret. Used by the Data Proxy to access the API.
+ * @param authorization
+ * @returns UserSession object if authentication is successful, or null if it fails.
+ */
+async function authenticateWithApiSecret(
+  authorization: string | null
+): Promise<UserSession | null> {
+  if (authorization !== CONFIG.apiSecret) {
+    return null;
+  }
+  // Create a mock account for the API Secret session
+  return {
+    identity_id: "api-secret",
+    account: {
+      type: AccountType.INDIVIDUAL,
+      identity_id: "api-secret",
+      name: "api-secret",
+      account_id: "api-secret",
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      disabled: false,
+      flags: [AccountFlags.ADMIN],
+      metadata_public: {},
+      emails: [],
+    },
+  };
+}
+
+/**
+ * Authenticates a user using API key credentials.
+ *
+ * @param accessKeyId - The access key ID for API authentication.
+ * @param secretAccessKey - The secret access key for API authentication.
+ * @returns A Promise that resolves to a UserSession object if authentication is successful, or null if it fails.
+ */
+async function authenticateWithApiKey(
+  authorization: string | null
+): Promise<UserSession | null> {
+  if (!authorization) return null;
+
+  const [accessKeyId, secretAccessKey] = authorization.split(" ");
+
+  // Retrieve the API key from the database
+  const apiKey = await apiKeysTable.fetchById(accessKeyId);
+
+  // Check if the API key is valid, matches the secret, and is not disabled
+  if (
+    !apiKey ||
+    apiKey.secret_access_key !== secretAccessKey ||
+    apiKey.disabled
+  ) {
+    return null;
+  }
+
+  // Fetch the account associated with the API key
+  const account = await accountsTable.fetchById(apiKey.account_id);
+  if (!account || account.disabled || !isIndividualAccount(account)) {
+    return null;
+  }
+
+  // Retrieve and filter memberships for the user
+  const memberships = await membershipsTable.listByUser(account.account_id);
+  const filteredMemberships = memberships.filter((membership) =>
+    isAuthorized(
+      { account, identity_id: account.identity_id },
+      membership,
+      Actions.GetMembership
+    )
+  );
+
+  // Return the user session
+  return {
+    identity_id: account.identity_id,
+    account,
+    memberships: filteredMemberships,
+  };
+}
 
 /**
  * Retrieves the current user session from the request context.
@@ -124,6 +205,45 @@ export async function getPageSession(): Promise<UserSession | null> {
     account,
     memberships: filteredMemberships,
   };
+}
+
+/**
+ * Looks up an Ory identity by email address via the Ory admin API and returns
+ * its identity ID, or null if no identity matches.
+ *
+ * Uses the `credentials_identifier` filter, which matches the identifier a user
+ * authenticates with (their email).
+ *
+ * @param email - The email address to look up.
+ * @returns The Ory identity ID, or null if not found.
+ */
+export async function getOryIdentityIdByEmail(
+  email: string
+): Promise<string | null> {
+  const url = new URL(`${CONFIG.auth.api.backendUrl}/admin/identities`);
+  url.searchParams.set("credentials_identifier", email);
+
+  const response = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${CONFIG.auth.accessToken}`,
+    },
+  });
+
+  if (!response.ok) {
+    LOGGER.warn("Ory identity lookup by email failed", {
+      operation: "getOryIdentityIdByEmail",
+      context: "ory",
+      metadata: { status: response.status },
+    });
+    return null;
+  }
+
+  const identities = await response.json();
+  if (!Array.isArray(identities) || identities.length === 0) {
+    return null;
+  }
+
+  return identities[0]?.id ?? null;
 }
 
 export async function getEmail(identity_id: string): Promise<string | null> {
