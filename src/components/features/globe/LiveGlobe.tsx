@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { CONFIG } from "@/lib/config";
 import Globe, { GlobeMethods } from "react-globe.gl";
 import {
   AmbientLight,
@@ -423,7 +424,7 @@ export function LiveGlobe({
         }
       };
     } catch (err) {
-      if (process.env.NODE_ENV !== "production") {
+      if (CONFIG.environment.isDevelopment) {
         console.error("[LiveGlobe] setup error:", err);
       }
       onErrorRef.current?.();

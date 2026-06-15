@@ -1,30 +1,30 @@
-import { S3StorageClient } from "../storage/s3";
 import { CONFIG } from "@/lib/config";
-import { LOGGER } from "@/lib/logging";
-import type { StorageClient, StorageConfig } from "@/types/storage";
+import { readProxyCredentials } from "@/lib/services/proxy-credentials-read";
+import { S3StorageClient } from "@/lib/storage/s3";
+import type { ProxyCredentials } from "@/lib/actions/proxy-credentials";
 
-function createStorageClient(config: StorageConfig): StorageClient {
-  LOGGER.debug("Creating storage client with config", {
-    operation: "createStorageClient",
-    context: "storage client initialization",
-    metadata: { config }
-  });
-
-  if (!config.endpoint || config.endpoint.trim() === "") {
-    LOGGER.error("Storage endpoint is missing in CONFIG", {
-      operation: "createStorageClient",
-      context: "configuration validation",
-      metadata: { CONFIG }
-    });
-    throw new Error("Storage endpoint is not configured");
-  }
-
-  // Create the appropriate storage client based on type
+/**
+ * Build a per-request S3 client that acts on behalf of the current user:
+ * signed with their proxy credentials when present, anonymous otherwise.
+ * Must be called during a server render/action (reads the request cookie).
+ *
+ * When the caller already resolved credentials this request, pass them — a
+ * `ProxyCredentials`, or `null` to mean "resolved, but none" — to avoid reading
+ * the cookie a second time. Omit the argument entirely to read here. A plain
+ * `?? readProxyCredentials()` fallback can't distinguish an explicit `undefined`
+ * from an omitted argument, so it would re-read on an explicit "no credentials".
+ */
+export async function getStorageClient(
+  credentials?: ProxyCredentials | null,
+): Promise<S3StorageClient> {
+  const resolved =
+    credentials === undefined
+      ? await readProxyCredentials()
+      : (credentials ?? undefined);
   return new S3StorageClient({
-    endpoint: config.endpoint,
-    region: config.region,
-    credentials: config.credentials,
+    endpoint: CONFIG.storage.endpoint ?? "",
+    credentials: resolved,
   });
 }
 
-export const storage = createStorageClient(CONFIG.storage);
+export { S3StorageClient } from "@/lib/storage/s3";

@@ -7,7 +7,7 @@ interface AppLayoutProps {
   children: React.ReactNode;
 }
 
-export default async function AppLayout({ children }: AppLayoutProps) {
+export default function AppLayout({ children }: AppLayoutProps) {
   return (
     <Flex direction="column" minHeight="100vh">
       <Navigation />
