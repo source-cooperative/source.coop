@@ -1,0 +1,265 @@
+/**
+ * @jest-environment node
+ */
+
+import {
+  SignJWT,
+  exportJWK,
+  generateKeyPair,
+  importJWK,
+  type FlattenedJWSInput,
+  type JWSHeaderParameters,
+} from "jose";
+import { authenticateWithOidcToken, _setJwks } from "./oidc";
+
+// Generate a test RSA key pair
+let privateKey: CryptoKey;
+let publicJwk: JsonWebKey & { kid?: string; alg?: string; use?: string };
+
+beforeAll(async () => {
+  const { privateKey: priv, publicKey: pub } = await generateKeyPair("RS256");
+  privateKey = priv;
+  const jwk = await exportJWK(pub);
+  jwk.kid = "test-key-1";
+  jwk.alg = "RS256";
+  jwk.use = "sig";
+  publicJwk = jwk;
+});
+
+const ISSUER = "https://data.test.source.coop";
+const AUDIENCE = "https://test.source.coop";
+
+// Helper to create a signed JWT
+async function createToken(
+  claims: Record<string, unknown> = {},
+  options: { issuer?: string; audience?: string; expiresIn?: string } = {}
+) {
+  return new SignJWT(claims)
+    .setProtectedHeader({ alg: "RS256", kid: "test-key-1" })
+    .setIssuer(options.issuer ?? ISSUER)
+    .setAudience(options.audience ?? AUDIENCE)
+    .setIssuedAt()
+    .setExpirationTime(options.expiresIn ?? "5m")
+    .sign(privateKey);
+}
+
+// Mock config
+jest.mock("@/lib/config", () => ({
+  CONFIG: {
+    storage: {
+      endpoint: "https://data.test.source.coop",
+    },
+    environment: {
+      isDevelopment: true,
+      isTest: true,
+    },
+    auth: {
+      accessToken: "",
+    },
+  },
+}));
+
+// Mock database lookups
+jest.mock("@/lib/clients/database", () => ({
+  accountsTable: {
+    fetchByOryId: jest.fn(),
+  },
+  membershipsTable: {
+    listByUser: jest.fn(),
+  },
+}));
+
+jest.mock("@/lib/api/authz", () => ({
+  isAuthorized: jest.fn().mockReturnValue(true),
+}));
+
+import { isAuthorized } from "@/lib/api/authz";
+
+import { accountsTable, membershipsTable } from "@/lib/clients/database";
+
+describe("authenticateWithOidcToken", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+
+    // Inject a local JWKS resolver that returns our test public key
+    _setJwks(
+      async (_protectedHeader: JWSHeaderParameters, _token: FlattenedJWSInput) => {
+        return importJWK(publicJwk, "RS256");
+      }
+    );
+  });
+
+  afterAll(() => {
+    // Clean up the injected JWKS
+    _setJwks(null);
+  });
+
+  test("returns null for non-Bearer authorization", async () => {
+    const result = await authenticateWithOidcToken("some-api-secret", AUDIENCE);
+    expect(result).toBeNull();
+  });
+
+  test("returns null for null authorization", async () => {
+    const result = await authenticateWithOidcToken(null, AUDIENCE);
+    expect(result).toBeNull();
+  });
+
+  test("returns null for invalid JWT", async () => {
+    const result = await authenticateWithOidcToken("Bearer invalid.jwt.token", AUDIENCE);
+    expect(result).toBeNull();
+  });
+
+  test("returns null for wrong issuer", async () => {
+    const token = await createToken(
+      { sub: "test-user" },
+      { issuer: "https://evil.com" }
+    );
+    const result = await authenticateWithOidcToken(`Bearer ${token}`, AUDIENCE);
+    expect(result).toBeNull();
+  });
+
+  test("returns null for wrong audience", async () => {
+    const token = await createToken(
+      { sub: "test-user" },
+      { audience: "https://wrong.com" }
+    );
+    const result = await authenticateWithOidcToken(`Bearer ${token}`, AUDIENCE);
+    expect(result).toBeNull();
+  });
+
+  test("returns null for expired token", async () => {
+    const token = await createToken(
+      { sub: "test-user" },
+      { expiresIn: "-1m" }
+    );
+    const result = await authenticateWithOidcToken(`Bearer ${token}`, AUDIENCE);
+    expect(result).toBeNull();
+  });
+
+  test("returns null for a token signed with a non-RS256 algorithm", async () => {
+    // A fully valid token (correct issuer/audience/expiry/signature) signed
+    // with PS256 instead of RS256, resolving to a real, enabled account. The
+    // only thing that should reject it is the `algorithms: ["RS256"]` pin —
+    // without it, verification would succeed and a session would be returned.
+    (accountsTable.fetchByOryId as jest.Mock).mockResolvedValue({
+      account_id: "test-user",
+      identity_id: "ory-123",
+      disabled: false,
+      type: "individual",
+    });
+    (membershipsTable.listByUser as jest.Mock).mockResolvedValue([]);
+
+    const { privateKey: psPriv, publicKey: psPub } =
+      await generateKeyPair("PS256");
+    const psJwk = await exportJWK(psPub);
+    psJwk.kid = "test-key-1";
+    psJwk.alg = "PS256";
+    psJwk.use = "sig";
+    _setJwks(async () => importJWK(psJwk, "PS256"));
+
+    const token = await new SignJWT({ sub: "test-user" })
+      .setProtectedHeader({ alg: "PS256", kid: "test-key-1" })
+      .setIssuer(ISSUER)
+      .setAudience(AUDIENCE)
+      .setIssuedAt()
+      .setExpirationTime("5m")
+      .sign(psPriv);
+
+    const result = await authenticateWithOidcToken(`Bearer ${token}`, AUDIENCE);
+    expect(result).toBeNull();
+  });
+
+  test("returns null when account not found", async () => {
+    (accountsTable.fetchByOryId as jest.Mock).mockResolvedValue(null);
+    const token = await createToken({ sub: "nonexistent-user" });
+    const result = await authenticateWithOidcToken(`Bearer ${token}`, AUDIENCE);
+    expect(result).toBeNull();
+  });
+
+  test("returns null when account is disabled", async () => {
+    (accountsTable.fetchByOryId as jest.Mock).mockResolvedValue({
+      account_id: "test-user",
+      disabled: true,
+    });
+    const token = await createToken({ sub: "test-user" });
+    const result = await authenticateWithOidcToken(`Bearer ${token}`, AUDIENCE);
+    expect(result).toBeNull();
+  });
+
+  test("returns null when sub claim is missing", async () => {
+    const token = await createToken({});
+    const result = await authenticateWithOidcToken(`Bearer ${token}`, AUDIENCE);
+    expect(result).toBeNull();
+  });
+
+  test("returns UserSession for valid token with valid account", async () => {
+    const mockAccount = {
+      account_id: "test-user",
+      identity_id: "ory-123",
+      disabled: false,
+      type: "individual",
+      name: "Test User",
+      flags: [],
+    };
+    const mockMemberships = [{ membership_id: "m1" }];
+
+    (accountsTable.fetchByOryId as jest.Mock).mockResolvedValue(mockAccount);
+    (membershipsTable.listByUser as jest.Mock).mockResolvedValue(
+      mockMemberships
+    );
+
+    const token = await createToken({ sub: "test-user" });
+    const result = await authenticateWithOidcToken(`Bearer ${token}`, AUDIENCE);
+
+    expect(result).not.toBeNull();
+    expect(result!.identity_id).toBe("ory-123");
+    expect(result!.account).toEqual(mockAccount);
+    expect(result!.memberships).toEqual(mockMemberships);
+    expect(accountsTable.fetchByOryId).toHaveBeenCalledWith("test-user");
+  });
+
+  test("filters memberships through isAuthorized", async () => {
+    const mockAccount = {
+      account_id: "test-user",
+      identity_id: "ory-123",
+      disabled: false,
+      type: "individual",
+      name: "Test User",
+      flags: [],
+    };
+    const authorizedMembership = { membership_id: "m1" };
+    const unauthorizedMembership = { membership_id: "m2" };
+
+    (accountsTable.fetchByOryId as jest.Mock).mockResolvedValue(mockAccount);
+    (membershipsTable.listByUser as jest.Mock).mockResolvedValue([
+      authorizedMembership,
+      unauthorizedMembership,
+    ]);
+    // Only authorize the first membership
+    (isAuthorized as jest.Mock)
+      .mockReturnValueOnce(true)
+      .mockReturnValueOnce(false);
+
+    const token = await createToken({ sub: "test-user" });
+    const result = await authenticateWithOidcToken(`Bearer ${token}`, AUDIENCE);
+
+    expect(result).not.toBeNull();
+    expect(result!.memberships).toEqual([authorizedMembership]);
+    expect(isAuthorized).toHaveBeenCalledTimes(2);
+  });
+
+  test("returns null when storage endpoint is not configured", async () => {
+    // Temporarily override the config mock
+    const { CONFIG } = require("@/lib/config");
+    const originalEndpoint = CONFIG.storage.endpoint;
+    CONFIG.storage.endpoint = "";
+
+    const token = await createToken({ sub: "test-user" });
+    const result = await authenticateWithOidcToken(`Bearer ${token}`, AUDIENCE);
+
+    expect(result).toBeNull();
+
+    // Restore
+    CONFIG.storage.endpoint = originalEndpoint;
+  });
+});

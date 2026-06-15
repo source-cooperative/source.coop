@@ -30,7 +30,6 @@
 
 import { Actions, UserSession } from "@/types";
 import {
-  apiKeysTable,
   accountsTable,
   membershipsTable,
   isIndividualAccount,
@@ -40,7 +39,8 @@ import { getServerSession } from "@ory/nextjs/app";
 import { NextRequest } from "next/server";
 import { getOryId } from "../ory";
 import md5 from "md5";
-import { CONFIG } from "../config";
+import { authenticateWithOidcToken } from "./oidc";
+import { CONFIG } from "@/lib/config";
 import { LOGGER } from "@/lib/logging";
 import { AccountType } from "@/types/account";
 import { AccountFlags } from "@/types/shared";
@@ -126,21 +126,40 @@ async function authenticateWithApiKey(
 
 /**
  * Retrieves the current user session from the request context.
- * Attempts API secret first, then API key authentication, then falls back to cookie-based authentication.
+ * Attempts OIDC token authentication first, then falls back to cookie-based authentication.
  *
  * @param req - The Next.js API request object.
  * @returns A Promise that resolves to a UserSession object if a valid session exists, or null if not authenticated.
  */
 export async function getApiSession(
-  req: NextRequest
+  req: NextRequest,
 ): Promise<UserSession | null> {
   const authorization = req.headers.get("Authorization");
 
-  const apiSecretSession = await authenticateWithApiSecret(authorization);
-  if (apiSecretSession) return apiSecretSession;
+  if (authorization) {
+    LOGGER.debug("Attempting OIDC token authentication", {
+      operation: "getApiSession",
+      metadata: { method: "OIDC token" },
+    });
+    const audience = new URL(req.url).origin;
+    const oidcSession = await authenticateWithOidcToken(
+      authorization,
+      audience,
+    );
+    if (oidcSession) return oidcSession;
+    // An explicit but invalid Authorization header must not fall back to
+    // cookie auth — that would let a bogus Bearer token silently succeed
+    // via the session cookie.
+    return null;
+  }
 
-  const apiKeySession = await authenticateWithApiKey(authorization);
-  if (apiKeySession) return apiKeySession;
+  LOGGER.debug(
+    "No Authorization header found, falling back to cookie-based authentication",
+    {
+      operation: "getApiSession",
+      metadata: { method: "cookie-based" },
+    },
+  );
 
   // Fall back to page session (ie cookie-based authentication)
   return getPageSession();
@@ -175,8 +194,8 @@ export async function getPageSession(): Promise<UserSession | null> {
     isAuthorized(
       { orySession, account, identity_id },
       membership,
-      Actions.GetMembership
-    )
+      Actions.GetMembership,
+    ),
   );
 
   // Return the user session
@@ -234,7 +253,7 @@ export async function getEmail(identity_id: string): Promise<string | null> {
       headers: {
         Authorization: `Bearer ${CONFIG.auth.accessToken}`,
       },
-    }
+    },
   );
 
   if (!response.ok) {
