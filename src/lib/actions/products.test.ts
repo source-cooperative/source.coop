@@ -3,7 +3,7 @@ import { Actions } from "@/types";
 import { productsTable, dataConnectionsTable } from "@/lib/clients/database";
 import { getPageSession } from "@/lib";
 import { isAuthorized } from "@/lib/api/authz";
-import { redirect } from "next/navigation";
+import { productUrl } from "@/lib/urls";
 
 jest.mock("@/lib/clients/database", () => ({
   productsTable: {
@@ -75,6 +75,9 @@ describe("createProduct", () => {
     jest.resetAllMocks();
     (getPageSession as jest.Mock).mockResolvedValue(SESSION);
     (isAuthorized as jest.Mock).mockReturnValue(true);
+    // resetAllMocks wipes the factory implementation, so re-establish the
+    // success URL that the action returns as redirectTo.
+    (productUrl as jest.Mock).mockReturnValue("/account/product");
   });
 
   test("builds mirror metadata from the selected data connection", async () => {
@@ -82,7 +85,7 @@ describe("createProduct", () => {
       connection()
     );
 
-    await createProduct(undefined, buildFormData());
+    const result = await createProduct(undefined, buildFormData());
 
     expect(productsTable.create).toHaveBeenCalledTimes(1);
     const created = (productsTable.create as jest.Mock).mock.calls[0][0];
@@ -93,7 +96,8 @@ describe("createProduct", () => {
       prefix: "alice/my-product/",
       is_primary: true,
     });
-    expect(redirect).toHaveBeenCalled();
+    expect(result.success).toBe(true);
+    expect(result.redirectTo).toBeDefined();
   });
 
   test("rejects a visibility not allowed by the data connection", async () => {
@@ -179,10 +183,14 @@ describe("createProduct", () => {
       connection({ owner: "alice" })
     );
 
-    await createProduct(undefined, buildFormData({ account_id: "alice" }));
+    const result = await createProduct(
+      undefined,
+      buildFormData({ account_id: "alice" })
+    );
 
     expect(productsTable.create).toHaveBeenCalledTimes(1);
-    expect(redirect).toHaveBeenCalled();
+    expect(result.success).toBe(true);
+    expect(result.redirectTo).toBeDefined();
   });
 
   test("allows an unowned (Source-Coop-managed) connection for any account", async () => {
@@ -190,10 +198,14 @@ describe("createProduct", () => {
       connection({ owner: undefined })
     );
 
-    await createProduct(undefined, buildFormData({ account_id: "alice" }));
+    const result = await createProduct(
+      undefined,
+      buildFormData({ account_id: "alice" })
+    );
 
     expect(productsTable.create).toHaveBeenCalledTimes(1);
-    expect(redirect).toHaveBeenCalled();
+    expect(result.success).toBe(true);
+    expect(result.redirectTo).toBeDefined();
   });
 });
 
@@ -229,6 +241,9 @@ describe("updateProduct", () => {
     jest.resetAllMocks();
     (getPageSession as jest.Mock).mockResolvedValue(SESSION);
     (isAuthorized as jest.Mock).mockReturnValue(true);
+    // resetAllMocks wipes the factory implementation, so re-establish the
+    // success URL that the action returns as redirectTo.
+    (productUrl as jest.Mock).mockReturnValue("/account/product");
   });
 
   test("rejects a visibility not allowed by the product's data connection", async () => {
