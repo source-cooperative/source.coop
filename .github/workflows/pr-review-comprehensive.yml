@@ -24,78 +24,30 @@ jobs:
       - uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          # No track_progress / use_sticky_comment: we deliver a single FORMAL PR
-          # review and supersede the prior one, so there are no accumulating
-          # progress/summary comments across pushes.
+          # Deliver the review as ONE sticky PR comment that updates in place each
+          # run. track_progress forces tag mode (a single tracking comment the
+          # action owns and updates with the final result on these pull_request
+          # events); use_sticky_comment makes it the SAME comment across pushes.
+          # Replaces the prior formal-review approach, which left multiple reviews
+          # per run and accumulated undismissable COMMENTED reviews across runs
+          # (GitHub can't dismiss or delete a submitted COMMENTED review).
+          track_progress: true
+          use_sticky_comment: true
           prompt: |
             REPO: ${{ github.repository }}
             PR: ${{ github.event.pull_request.number }}
 
-            You are reviewing this pull request. Deliver exactly ONE formal GitHub
-            pull request review per run, replacing any prior review from earlier runs.
+            Review this pull request's diff for correctness bugs, security issues,
+            and clear best-practice problems. Skip nits and anything the linter or
+            formatter already enforces.
 
-            ABSOLUTE RULE — NO PROBE/TEST WRITES. The ONLY thing you may write to the
-            PR is the single final review in STEP 3 (plus the dismissals in STEP 1).
-            Never post a "test", "test123", placeholder, scratch, or trial comment to
-            verify that the API or line-anchoring works — not as a standalone comment,
-            not as an inline comment, not "just to check". If you are unsure a `gh api`
-            call is correct, reason about it or dry-run the JSON locally with `cat`/`jq`;
-            do NOT probe by posting to the live PR. Any stray comment you leave is
-            visible to the author and is a defect.
-
-            STEP 1 — Supersede prior rounds.
-            List existing reviews:
-              `gh api repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/reviews --paginate`
-            For each review authored by the Claude app user whose state is APPROVED or
-            CHANGES_REQUESTED (i.e. still active), dismiss it so only this run's review
-            is in effect:
-              `gh api -X PUT repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/reviews/<id>/dismissals \
-                 -f message="Superseded by a newer Claude review." -f event=DISMISS`
-
-            STEP 2 — Review the diff (`gh pr diff`) for correctness bugs, security
-            issues, and clear best-practice problems. Skip nits and anything the
-            linter/formatter already enforces. If nothing is blocking, say so briefly —
-            do not pad the review.
-
-            STEP 3 — Submit ONE formal review in a single API call, bundling every
-            inline note in the `comments` array. Build a JSON file and post it:
-              `gh api -X POST repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/reviews --input <file>`
-            This POST is the ONLY write you make to the PR in this step, and you make it
-            exactly once. Do not post any comment before it to test the call — build the
-            JSON file, inspect it with `cat`, then post it directly.
-
-            Requirements for that JSON:
-            - "event": "REQUEST_CHANGES" if there are blocking issues, otherwise "COMMENT".
-              Never use "APPROVE" (bot approvals are restricted and not meaningful here).
-            - "body": begin with a single bold verdict line that starts with a clear
-              status emoji — `✅` when nothing is blocking (safe to merge) or `❌` when
-              changes are requested — e.g. `**✅ No blocking issues — safe to merge.**`
-              or `**❌ Changes requested — see findings below.**`. The emoji must match
-              the "event": ✅ pairs with "COMMENT", ❌ pairs with "REQUEST_CHANGES".
-              Follow the verdict line with a brief bullet list. No checklists, no
-              progress logs.
-            - "comments": one entry per finding, each { "path", "line" (and "start_line"
-              for multi-line), "body" }. Anchor each to the exact changed line(s).
-
-            MAKE FINDINGS ONE-CLICK APPLYABLE. Whenever a finding has a concrete code
-            fix, put a GitHub suggestion block in that inline comment's body so the
-            author can apply it with the "Commit suggestion" button:
-
-                ```suggestion
-                <the exact replacement text for the commented line(s)>
-                ```
-
-            The suggestion content must replace the full line range the comment is
-            anchored to (use start_line..line for multi-line replacements). Prefer
-            several small, targeted suggestions over one large comment — they are far
-            easier for the author to apply individually. Reserve plain prose comments
-            for issues that have no mechanical fix.
-
-            Before posting any suggestion block, re-read it and verify it is
-            syntactically complete — balanced brackets, parens, and braces — and that
-            it would compile if committed verbatim. The author applies it with one
-            click, so a malformed suggestion breaks their build. If you are not
-            confident the replacement is exactly correct, describe the fix in prose
-            instead.
+            Your final message is delivered as the PR review comment automatically —
+            do NOT post any comment or review yourself. Just produce the review:
+            - Start with a single bold verdict line: `**✅ No blocking issues — safe
+              to merge.**` when nothing is blocking, or `**❌ Changes requested — see
+              findings below.**` when there are blocking issues.
+            - Follow with a short bullet list of findings, each citing `path:line`
+              and, where a concrete fix exists, a fenced code block with the fix.
+            - If nothing is blocking, say so briefly; do not pad.
           claude_args: |
-            --allowedTools "Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh api:*)"
+            --allowedTools "Bash(gh pr diff:*),Bash(gh pr view:*)"
