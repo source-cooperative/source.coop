@@ -1,4 +1,3 @@
-import { NextResponse } from "next/server";
 import * as path from "path";
 import {
   UserSession,
@@ -114,12 +113,4 @@ for (const product of products) {
 export const mappedAPIKeys: Record<string, APIKey> = {};
 for (const apiKey of apiKeys) {
   mappedAPIKeys[apiKey.access_key_id] = apiKey;
-}
-
-export type MockNextResponse = NextResponse & {
-  _getData: () => string;
-};
-
-export function jsonBody(res: MockNextResponse) {
-  return JSON.parse(res._getData());
 }
