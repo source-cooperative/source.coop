@@ -81,6 +81,50 @@ describe("DataConnectionAuthentication (V2 workload-identity variants)", () => {
     ).toThrow();
   });
 
+  test("rejects s3_web_identity_role with an empty role_arn", () => {
+    expect(() =>
+      DataConnectionAuthenticationSchema.parse({
+        type: "s3_web_identity_role",
+        role_arn: "",
+      })
+    ).toThrow();
+  });
+
+  test("rejects gcp_workload_identity with empty string fields", () => {
+    expect(() =>
+      DataConnectionAuthenticationSchema.parse({
+        type: "gcp_workload_identity",
+        workload_identity_provider: "",
+        service_account: "sa@project.iam.gserviceaccount.com",
+      })
+    ).toThrow();
+    expect(() =>
+      DataConnectionAuthenticationSchema.parse({
+        type: "gcp_workload_identity",
+        workload_identity_provider:
+          "//iam.googleapis.com/projects/123/locations/global/workloadIdentityPools/p/providers/pr",
+        service_account: "",
+      })
+    ).toThrow();
+  });
+
+  test("rejects azure_workload_identity with empty string fields", () => {
+    expect(() =>
+      DataConnectionAuthenticationSchema.parse({
+        type: "azure_workload_identity",
+        tenant_id: "",
+        client_id: "11111111-1111-1111-1111-111111111111",
+      })
+    ).toThrow();
+    expect(() =>
+      DataConnectionAuthenticationSchema.parse({
+        type: "azure_workload_identity",
+        tenant_id: "00000000-0000-0000-0000-000000000000",
+        client_id: "",
+      })
+    ).toThrow();
+  });
+
   test("authentication field is optional and absent by default", () => {
     const dc = DataConnectionSchema.parse({
       data_connection_id: "conn-1",

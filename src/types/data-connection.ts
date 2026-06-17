@@ -124,7 +124,7 @@ export const AzureSasTokenAuthenticationSchema = z
 export const S3WebIdentityRoleAuthenticationSchema = z
   .object({
     type: z.literal(DataConnectionAuthenticationType.S3WebIdentityRole),
-    role_arn: z.string(),
+    role_arn: z.string().min(1),
   })
   .openapi("S3WebIdentityRoleAuthentication");
 
@@ -139,9 +139,9 @@ export const GcpWorkloadIdentityAuthenticationSchema = z
   .object({
     type: z.literal(DataConnectionAuthenticationType.GcpWorkloadIdentity),
     /** Full WIF provider resource: `//iam.googleapis.com/projects/.../providers/...`. */
-    workload_identity_provider: z.string(),
+    workload_identity_provider: z.string().min(1),
     /** Service account email the exchanged token impersonates for GCS. */
-    service_account: z.string(),
+    service_account: z.string().min(1),
   })
   .openapi("GcpWorkloadIdentityAuthentication");
 
@@ -156,9 +156,9 @@ export const AzureWorkloadIdentityAuthenticationSchema = z
   .object({
     type: z.literal(DataConnectionAuthenticationType.AzureWorkloadIdentity),
     /** Azure AD tenant (directory) ID. */
-    tenant_id: z.string(),
+    tenant_id: z.string().min(1),
     /** App registration (client) ID holding the federated identity credential. */
-    client_id: z.string(),
+    client_id: z.string().min(1),
   })
   .openapi("AzureWorkloadIdentityAuthentication");
 
