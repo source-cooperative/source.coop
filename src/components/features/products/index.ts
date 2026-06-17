@@ -1,3 +1,4 @@
+export * from "./DeleteProductModal";
 export * from "./ProductListItem";
 export * from "./ProductSummaryCard";
 export * from "./ProductMetaContent";

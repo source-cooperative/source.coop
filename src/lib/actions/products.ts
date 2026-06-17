@@ -1,6 +1,6 @@
 "use server";
 
-import { productsTable, dataConnectionsTable } from "@/lib/clients/database";
+import { productsTable, membershipsTable, dataConnectionsTable } from "@/lib/clients/database";
 import {
   Actions,
   DataProvider,
@@ -16,6 +16,8 @@ import { FormState } from "@/components/core/DynamicForm";
 import { isAuthorized } from "../api/authz";
 import { revalidatePath } from "next/cache";
 import { productUrl, editProductDetailsUrl } from "@/lib/urls";
+import { S3Client, ListObjectsV2Command, DeleteObjectsCommand } from "@aws-sdk/client-s3";
+import { CONFIG } from "@/lib/config";
 
 // Map a data connection's storage provider to the product mirror's storage_type.
 const STORAGE_TYPE_BY_PROVIDER: Record<
@@ -421,5 +423,108 @@ export async function updateProduct(
       message: "Failed to update product. Please try again.",
       success: false,
     };
+  }
+}
+
+async function deleteAllS3Objects(
+  client: S3Client,
+  bucket: string,
+  prefix: string
+): Promise<void> {
+  let continuationToken: string | undefined;
+
+  do {
+    const listResult = await client.send(
+      new ListObjectsV2Command({
+        Bucket: bucket,
+        Prefix: prefix,
+        ContinuationToken: continuationToken,
+        MaxKeys: 1000,
+      })
+    );
+
+    const objects = listResult.Contents ?? [];
+    if (objects.length > 0) {
+      await client.send(
+        new DeleteObjectsCommand({
+          Bucket: bucket,
+          Delete: {
+            Objects: objects.map((obj) => ({ Key: obj.Key! })),
+            Quiet: true,
+          },
+        })
+      );
+    }
+
+    continuationToken = listResult.IsTruncated
+      ? listResult.NextContinuationToken
+      : undefined;
+  } while (continuationToken);
+}
+
+export async function deleteProduct(
+  account_id: string,
+  product_id: string
+): Promise<{ success: boolean; error?: string }> {
+  const session = await getPageSession();
+
+  if (!session?.identity_id || !session.account) {
+    return { success: false, error: "Unauthenticated" };
+  }
+
+  const product = await productsTable.fetchById(account_id, product_id);
+  if (!product) {
+    return { success: false, error: "Product not found" };
+  }
+
+  if (!isAuthorized(session, product, Actions.DeleteRepository)) {
+    return { success: false, error: "Unauthorized to delete this product" };
+  }
+
+  try {
+    const primaryMirror =
+      product.metadata.mirrors[product.metadata.primary_mirror];
+
+    if (primaryMirror) {
+      const dataConnection = await dataConnectionsTable.fetchById(
+        primaryMirror.connection_id
+      );
+
+      if (dataConnection && !dataConnection.read_only) {
+        if (dataConnection.details.provider === DataProvider.S3) {
+          // TODO: Replace IAM credentials with user's credentials via data proxy
+          const s3Client = new S3Client({
+            region: dataConnection.details.region,
+            credentials: CONFIG.database.credentials,
+          });
+
+          await deleteAllS3Objects(
+            s3Client,
+            dataConnection.details.bucket,
+            primaryMirror.prefix
+          );
+        }
+      }
+    }
+
+    await membershipsTable.deleteByProduct(account_id, product_id);
+    await productsTable.delete(account_id, product_id);
+
+    LOGGER.info("Successfully deleted product", {
+      operation: "deleteProduct",
+      context: "product deletion",
+      metadata: { account_id, product_id },
+    });
+
+    return { success: true };
+  } catch (error) {
+    LOGGER.error("Error deleting product", {
+      operation: "deleteProduct",
+      context: "product deletion",
+      error: error,
+      metadata: { account_id, product_id },
+    });
+
+    return { success: false, error: "Failed to delete product. Please try again." };
   }
 }

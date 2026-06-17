@@ -3,7 +3,7 @@ import {
   PutItemCommand,
   ResourceNotFoundException,
 } from "@aws-sdk/client-dynamodb";
-import { QueryCommand, PutCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
+import { DeleteCommand, QueryCommand, PutCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import { marshall } from "@aws-sdk/util-dynamodb";
 import { BaseTable } from "./base";
 
@@ -179,6 +179,30 @@ export class MembershipsTable extends BaseTable {
       this.logError("update", error, {
         membershipId: membership.membership_id,
       });
+      throw error;
+    }
+  }
+
+  async delete(membershipId: string): Promise<void> {
+    try {
+      await this.client.send(
+        new DeleteCommand({
+          TableName: this.table,
+          Key: { membership_id: membershipId },
+        })
+      );
+    } catch (error) {
+      this.logError("delete", error, { membershipId });
+      throw error;
+    }
+  }
+
+  async deleteByProduct(account_id: string, product_id: string): Promise<void> {
+    try {
+      const memberships = await this.listByAccount(account_id, product_id);
+      await Promise.all(memberships.map((m) => this.delete(m.membership_id)));
+    } catch (error) {
+      this.logError("deleteByProduct", error, { account_id, product_id });
       throw error;
     }
   }
