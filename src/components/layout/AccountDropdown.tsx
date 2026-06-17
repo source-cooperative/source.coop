@@ -4,8 +4,6 @@ import { Flex, DropdownMenu, Text, Box } from "@radix-ui/themes";
 import { ChevronDownIcon } from "@radix-ui/react-icons";
 import styles from "./Navigation.module.css";
 import {
-  LOGGER,
-  CONFIG,
   accountUrl,
   editAccountProfileUrl,
   newOrganizationUrl,
@@ -32,23 +30,8 @@ export function AccountDropdownSkeleton() {
 export function AccountDropdown({ session }: { session: UserSession }) {
   const [isOpen, setIsOpen] = useState(false);
 
-  const handleLogout = async () => {
-    const response = await fetch(CONFIG.auth.routes.logout, {
-      method: "GET",
-      credentials: "include",
-    });
-    if (!response.ok) {
-      LOGGER.error(
-        `Failed to logout: ${response.status} ${response.statusText}`,
-        {
-          operation: "logout",
-          metadata: { response },
-        }
-      );
-      return;
-    }
-    const { logout_url } = await response.json();
-    window.location.href = logout_url;
+  const handleLogout = () => {
+    window.location.href = "/logout";
   };
 
   return (
