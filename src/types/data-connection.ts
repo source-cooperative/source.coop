@@ -117,6 +117,13 @@ export const AzureSasTokenAuthenticationSchema = z
   .openapi("AzureSasTokenAuthentication");
 
 /**
+ * IAM role ARN: `arn:{partition}:iam::{account}:role/{path}{name}`. The
+ * partition class (`aws`, `aws-us-gov`, `aws-cn`) and an optional role path are
+ * allowed so GovCloud/China and pathed roles are not rejected.
+ */
+const IAM_ROLE_ARN_REGEX = /^arn:aws[a-z-]*:iam::\d{12}:role\/.+$/;
+
+/**
  * V2 federated S3 access. `role_arn` is the customer-owned IAM role the proxy
  * assumes via `AssumeRoleWithWebIdentity`. It is *not* a secret (it's an ARN),
  * so it can be surfaced to the proxy without exposing credentials.
@@ -124,7 +131,7 @@ export const AzureSasTokenAuthenticationSchema = z
 export const S3WebIdentityRoleAuthenticationSchema = z
   .object({
     type: z.literal(DataConnectionAuthenticationType.S3WebIdentityRole),
-    role_arn: z.string().min(1),
+    role_arn: z.string().regex(IAM_ROLE_ARN_REGEX, "Invalid IAM role ARN"),
   })
   .openapi("S3WebIdentityRoleAuthentication");
 
@@ -139,9 +146,11 @@ export const GcpWorkloadIdentityAuthenticationSchema = z
   .object({
     type: z.literal(DataConnectionAuthenticationType.GcpWorkloadIdentity),
     /** Full WIF provider resource: `//iam.googleapis.com/projects/.../providers/...`. */
-    workload_identity_provider: z.string().min(1),
+    workload_identity_provider: z
+      .string()
+      .startsWith("//iam.googleapis.com/projects/"),
     /** Service account email the exchanged token impersonates for GCS. */
-    service_account: z.string().min(1),
+    service_account: z.string().email().endsWith(".gserviceaccount.com"),
   })
   .openapi("GcpWorkloadIdentityAuthentication");
 
@@ -156,9 +165,9 @@ export const AzureWorkloadIdentityAuthenticationSchema = z
   .object({
     type: z.literal(DataConnectionAuthenticationType.AzureWorkloadIdentity),
     /** Azure AD tenant (directory) ID. */
-    tenant_id: z.string().min(1),
+    tenant_id: z.string().uuid(),
     /** App registration (client) ID holding the federated identity credential. */
-    client_id: z.string().min(1),
+    client_id: z.string().uuid(),
   })
   .openapi("AzureWorkloadIdentityAuthentication");
 

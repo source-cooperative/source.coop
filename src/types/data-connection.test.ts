@@ -125,6 +125,69 @@ describe("DataConnectionAuthentication (V2 workload-identity variants)", () => {
     ).toThrow();
   });
 
+  test("accepts a GovCloud role_arn (partition-tolerant)", () => {
+    const auth = DataConnectionAuthenticationSchema.parse({
+      type: "s3_web_identity_role",
+      role_arn: "arn:aws-us-gov:iam::123456789012:role/team/source-coop",
+    });
+    expect(auth.type).toBe(DataConnectionAuthenticationType.S3WebIdentityRole);
+  });
+
+  test("rejects a role_arn that is not an IAM role ARN", () => {
+    for (const role_arn of [
+      "not-an-arn",
+      "arn:aws:s3:::some-bucket",
+      "arn:aws:iam::abc:role/source-coop",
+    ]) {
+      expect(() =>
+        DataConnectionAuthenticationSchema.parse({
+          type: "s3_web_identity_role",
+          role_arn,
+        })
+      ).toThrow();
+    }
+  });
+
+  test("rejects a workload_identity_provider with the wrong prefix", () => {
+    expect(() =>
+      DataConnectionAuthenticationSchema.parse({
+        type: "gcp_workload_identity",
+        workload_identity_provider: "https://iam.googleapis.com/projects/123",
+        service_account: "sa@project.iam.gserviceaccount.com",
+      })
+    ).toThrow();
+  });
+
+  test("rejects a service_account that is not a gserviceaccount.com email", () => {
+    for (const service_account of ["not-an-email", "user@gmail.com"]) {
+      expect(() =>
+        DataConnectionAuthenticationSchema.parse({
+          type: "gcp_workload_identity",
+          workload_identity_provider:
+            "//iam.googleapis.com/projects/123/locations/global/workloadIdentityPools/p/providers/pr",
+          service_account,
+        })
+      ).toThrow();
+    }
+  });
+
+  test("rejects azure_workload_identity with non-UUID ids", () => {
+    expect(() =>
+      DataConnectionAuthenticationSchema.parse({
+        type: "azure_workload_identity",
+        tenant_id: "contoso",
+        client_id: "11111111-1111-1111-1111-111111111111",
+      })
+    ).toThrow();
+    expect(() =>
+      DataConnectionAuthenticationSchema.parse({
+        type: "azure_workload_identity",
+        tenant_id: "00000000-0000-0000-0000-000000000000",
+        client_id: "not-a-uuid",
+      })
+    ).toThrow();
+  });
+
   test("authentication field is optional and absent by default", () => {
     const dc = DataConnectionSchema.parse({
       data_connection_id: "conn-1",
