@@ -1,6 +1,10 @@
 "use server";
 
-import { productsTable } from "@/lib/clients/database";
+import {
+  productsTable,
+  dataConnectionsTable,
+  accountsTable,
+} from "@/lib/clients/database";
 import {
   Actions,
   ProductCreationRequestSchema,
@@ -8,11 +12,14 @@ import {
   type ProductCreationRequest,
   type ProductVisibility,
 } from "@/types";
-import { getPageSession, LOGGER } from "@/lib";
+import { getPageSession } from "@/lib/api/utils";
+import { LOGGER } from "@/lib/logging";
 import { FormState } from "@/components/core/DynamicForm";
 import { isAuthorized } from "../api/authz";
 import { revalidatePath } from "next/cache";
 import { productUrl, editProductDetailsUrl } from "@/lib/urls";
+
+const DEFAULT_DATA_CONNECTION_ID = "aws-opendata-us-west-2";
 
 export interface PaginatedProductsResult {
   products: Product[];
@@ -123,6 +130,32 @@ export async function createProduct(
     };
   }
 
+  const [dataConnection, ownerAccount] = await Promise.all([
+    dataConnectionsTable.fetchById(DEFAULT_DATA_CONNECTION_ID),
+    accountsTable.fetchById(validatedFields.data.account_id),
+  ]);
+
+  if (!ownerAccount) {
+    return {
+      fieldErrors: {},
+      data: formData,
+      message: "Account not found",
+      success: false,
+    };
+  }
+
+  if (
+    dataConnection?.required_flag &&
+    !ownerAccount.flags?.includes(dataConnection.required_flag)
+  ) {
+    return {
+      fieldErrors: {},
+      data: formData,
+      message: `Account does not have required flag "${dataConnection.required_flag}" for the data connection`,
+      success: false,
+    };
+  }
+
   const product: Product = {
     ...validatedFields.data,
     created_at: new Date().toISOString(),
@@ -131,11 +164,11 @@ export async function createProduct(
     featured: 0,
     metadata: {
       tags: [],
-      primary_mirror: "aws-opendata-us-west-2",
+      primary_mirror: DEFAULT_DATA_CONNECTION_ID,
       mirrors: {
-        "aws-opendata-us-west-2": {
+        [DEFAULT_DATA_CONNECTION_ID]: {
           storage_type: "s3",
-          connection_id: "aws-opendata-us-west-2",
+          connection_id: DEFAULT_DATA_CONNECTION_ID,
           prefix: `${validatedFields.data.account_id}/${validatedFields.data.product_id}/`,
           is_primary: true,
         },
