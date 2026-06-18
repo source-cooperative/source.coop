@@ -3,6 +3,8 @@ import {
   DataConnectionAuthenticationSchema,
   DataConnectionAuthenticationType,
   DataConnectionSchema,
+  DataConnnectionDetailsSchema,
+  DataProvider,
 } from "./data-connection";
 
 describe("DataConnectionAuthentication (V2 workload-identity variants)", () => {
@@ -202,5 +204,74 @@ describe("DataConnectionAuthentication (V2 workload-identity variants)", () => {
       },
     });
     expect(dc.authentication).toBeUndefined();
+  });
+});
+
+describe("DataConnectionDetails (S3-compatible + GCP variants)", () => {
+  test("parses an S3-compatible (R2) connection with a custom endpoint", () => {
+    const details = DataConnnectionDetailsSchema.parse({
+      provider: "s3",
+      bucket: "my-bucket",
+      base_prefix: "",
+      region: "auto",
+      endpoint: "https://abc123.r2.cloudflarestorage.com",
+    });
+    expect(details.provider).toBe(DataProvider.S3);
+    expect(details).toMatchObject({
+      region: "auto",
+      endpoint: "https://abc123.r2.cloudflarestorage.com",
+    });
+  });
+
+  test("endpoint is optional for AWS S3", () => {
+    const details = DataConnnectionDetailsSchema.parse({
+      provider: "s3",
+      bucket: "my-bucket",
+      base_prefix: "",
+      region: "us-east-1",
+    });
+    expect("endpoint" in details && details.endpoint).toBeFalsy();
+  });
+
+  test("rejects a non-URL endpoint", () => {
+    expect(() =>
+      DataConnnectionDetailsSchema.parse({
+        provider: "s3",
+        bucket: "my-bucket",
+        base_prefix: "",
+        region: "auto",
+        endpoint: "not-a-url",
+      })
+    ).toThrow();
+  });
+
+  test("parses a GCP (GCS) connection", () => {
+    const details = DataConnnectionDetailsSchema.parse({
+      provider: "gcp",
+      bucket: "my-gcs-bucket",
+      base_prefix: "data/",
+    });
+    expect(details.provider).toBe(DataProvider.GCP);
+    expect(details).toMatchObject({ bucket: "my-gcs-bucket" });
+  });
+
+  test("parses a full GCP connection with workload-identity auth", () => {
+    const dc = DataConnectionSchema.parse({
+      data_connection_id: "gcs-conn",
+      name: "GCS",
+      read_only: false,
+      allowed_visibilities: [],
+      details: { provider: "gcp", bucket: "my-gcs-bucket", base_prefix: "" },
+      authentication: {
+        type: "gcp_workload_identity",
+        workload_identity_provider:
+          "//iam.googleapis.com/projects/123/locations/global/workloadIdentityPools/p/providers/pr",
+        service_account: "sa@my-project.iam.gserviceaccount.com",
+      },
+    });
+    expect(dc.details.provider).toBe(DataProvider.GCP);
+    expect(dc.authentication?.type).toBe(
+      DataConnectionAuthenticationType.GcpWorkloadIdentity
+    );
   });
 });

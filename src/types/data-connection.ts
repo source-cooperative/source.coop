@@ -23,6 +23,11 @@ export enum DataProvider {
 }
 
 export enum S3Regions {
+  /**
+   * For S3-compatible backends (e.g. Cloudflare R2) that don't use an AWS
+   * region. Pair with a custom `endpoint` on the connection.
+   */
+  AUTO = "auto",
   AF_SOUTH_1 = "af-south-1",
   AP_EAST_1 = "ap-east-1",
   AP_NORTHEAST_1 = "ap-northeast-1",
@@ -193,6 +198,11 @@ export const S3DataConnectionSchema = z
     bucket: z.string(),
     base_prefix: z.string(),
     region: z.nativeEnum(S3Regions),
+    /**
+     * Custom S3-compatible endpoint for non-AWS backends (Cloudflare R2, MinIO,
+     * Ceph). Omit for AWS S3, which derives its endpoint from `region`.
+     */
+    endpoint: z.optional(z.string().url()),
   })
   .openapi("S3DataConnection");
 
@@ -206,13 +216,28 @@ export const AzureDataConnectionSchema = z
   })
   .openapi("AzureDataConnection");
 
+/**
+ * Google Cloud Storage. Access is keyless via GCP Workload Identity Federation
+ * (the `gcp_workload_identity` authentication variant), so no region/endpoint is
+ * needed to address the bucket.
+ */
+export const GcpDataConnectionSchema = z
+  .object({
+    provider: z.literal(DataProvider.GCP),
+    bucket: z.string(),
+    base_prefix: z.string(),
+  })
+  .openapi("GcpDataConnection");
+
 export type S3DataConnection = z.infer<typeof S3DataConnectionSchema>;
 export type AzureDataConnection = z.infer<typeof AzureDataConnectionSchema>;
+export type GcpDataConnection = z.infer<typeof GcpDataConnectionSchema>;
 
 export const DataConnnectionDetailsSchema = z
   .discriminatedUnion("provider", [
     S3DataConnectionSchema,
     AzureDataConnectionSchema,
+    GcpDataConnectionSchema,
   ])
   .openapi("DataConnectionDetails");
 
