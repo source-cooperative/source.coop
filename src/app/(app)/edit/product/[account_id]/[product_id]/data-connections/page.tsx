@@ -3,6 +3,7 @@ import { isAdmin } from "@/lib/api/authz";
 import { productsTable, dataConnectionsTable } from "@/lib/clients";
 import { notFound } from "next/navigation";
 import { ProductMirrorsManager } from "@/components/features/data-connections";
+import { toDataConnectionOption } from "@/components/features/data-connections/redact";
 
 interface ProductDataConnectionsPageProps {
   params: Promise<{ account_id: string; product_id: string }>;
@@ -23,9 +24,10 @@ export default async function ProductDataConnectionsPage({
   const userIsAdmin = isAdmin(session);
 
   // Connections are only needed to populate the admin "add" picker; non-admins
-  // see their existing mirrors read-only.
+  // see their existing mirrors read-only. Redact to a secret-free option shape
+  // so credentials never reach the client.
   const availableConnections = userIsAdmin
-    ? await dataConnectionsTable.listAll()
+    ? (await dataConnectionsTable.listAll()).map(toDataConnectionOption)
     : [];
 
   return (

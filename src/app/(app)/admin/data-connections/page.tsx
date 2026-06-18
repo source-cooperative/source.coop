@@ -1,3 +1,4 @@
+import { Metadata } from "next";
 import { dataConnectionsTable } from "@/lib/clients";
 import { Text, Table, Flex, Badge, Button, Heading, Code } from "@radix-ui/themes";
 import { Link1Icon } from "@radix-ui/react-icons";
@@ -7,6 +8,10 @@ import {
   adminDataConnectionCreateUrl,
   adminDataConnectionEditUrl,
 } from "@/lib/urls";
+
+export const metadata: Metadata = {
+  title: "Admin — Data connections",
+};
 
 export default async function DataConnectionsPage() {
   const connections = await dataConnectionsTable.listAll();
