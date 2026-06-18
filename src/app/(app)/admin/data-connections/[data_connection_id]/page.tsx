@@ -1,11 +1,13 @@
 import { Metadata } from "next";
-import { Flex, Heading } from "@radix-ui/themes";
+import { Suspense } from "react";
+import { Flex, Heading, Text } from "@radix-ui/themes";
 import { notFound } from "next/navigation";
 import { dataConnectionsTable } from "@/lib/clients";
 import {
   DataConnectionForm,
   DeleteDataConnectionButton,
 } from "@/components/features/data-connections";
+import { ConnectionUsage } from "@/components/features/data-connections/ConnectionUsage";
 import { toEditableDataConnection } from "@/components/features/data-connections/redact";
 
 export const metadata: Metadata = {
@@ -40,6 +42,16 @@ export default async function EditDataConnectionPage({
         mode="edit"
         dataConnection={toEditableDataConnection(dataConnection)}
       />
+
+      <Suspense
+        fallback={
+          <Text size="2" color="gray">
+            Loading product usage…
+          </Text>
+        }
+      >
+        <ConnectionUsage connectionId={dataConnection.data_connection_id} />
+      </Suspense>
     </Flex>
   );
 }

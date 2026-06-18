@@ -103,6 +103,34 @@ export class ProductsTable extends BaseTable {
     return allProducts;
   }
 
+  /**
+   * Returns every product that mirrors data through the given data connection.
+   *
+   * There is no index on `metadata.mirrors[*].connection_id` (it lives inside a
+   * DynamoDB map), so this scans the whole table and filters app-side. It
+   * matches on each mirror's `connection_id` field rather than the map key, so
+   * it is robust to legacy mirrors keyed by region (e.g. "aws-us-east-1") rather
+   * than by connection id. Intended for low-traffic admin views; if product
+   * volume grows large, replace with a denormalized connection index + GSI.
+   */
+  async listProductsByConnectionId(connectionId: string): Promise<Product[]> {
+    const matches: Product[] = [];
+    let lastEvaluatedKey: any = undefined;
+
+    do {
+      const result = await this.list(1000, lastEvaluatedKey);
+      for (const product of result.products) {
+        const mirrors = Object.values(product.metadata?.mirrors ?? {});
+        if (mirrors.some((mirror) => mirror.connection_id === connectionId)) {
+          matches.push(product);
+        }
+      }
+      lastEvaluatedKey = result.lastEvaluatedKey;
+    } while (lastEvaluatedKey);
+
+    return matches;
+  }
+
   async listPublic(
     limit = 50,
     lastEvaluatedKey?: any,
