@@ -4,16 +4,18 @@ import { useActionState } from "react";
 import { Text, Table, Flex, Badge, Button, Heading, Code } from "@radix-ui/themes";
 import { Link1Icon } from "@radix-ui/react-icons";
 import Form from "next/form";
-import { DataConnection, Product } from "@/types";
+import { formFieldStyle } from "@/components/core/DynamicForm";
+import { Product } from "@/types";
 import {
   addProductMirror,
   removeProductMirror,
   setPrimaryMirror,
 } from "@/lib/actions/product-mirrors";
+import type { DataConnectionOption } from "./redact";
 
 interface ProductMirrorsManagerProps {
   product: Product;
-  availableConnections: DataConnection[];
+  availableConnections: DataConnectionOption[];
   isAdmin: boolean;
 }
 
@@ -199,14 +201,7 @@ export function ProductMirrorsManager({
                 name="connection_id"
                 required
                 defaultValue=""
-                style={{
-                  fontFamily: "var(--code-font-family)",
-                  padding: "8px 12px",
-                  border: "1px solid var(--gray-6)",
-                  fontSize: "16px",
-                  lineHeight: "1.5",
-                  flex: 1,
-                }}
+                style={{ ...formFieldStyle, flex: 1 }}
               >
                 <option value="" disabled>
                   Select a data connection...
@@ -216,7 +211,7 @@ export function ProductMirrorsManager({
                     key={conn.data_connection_id}
                     value={conn.data_connection_id}
                   >
-                    {conn.name} ({conn.details.provider} - {conn.details.region})
+                    {conn.name} ({conn.provider} - {conn.region})
                   </option>
                 ))}
               </select>

@@ -5,7 +5,6 @@ import { Button, Text, Flex, Checkbox } from "@radix-ui/themes";
 import Form from "next/form";
 import { useRouter } from "next/navigation";
 import {
-  DataConnection,
   DataProvider,
   DataConnectionAuthenticationType,
   S3Regions,
@@ -13,26 +12,17 @@ import {
   ProductVisibility,
   AccountFlags,
 } from "@/types";
+import { formFieldStyle as fieldStyle } from "@/components/core/DynamicForm";
 import {
   createDataConnection,
   updateDataConnection,
 } from "@/lib/actions/data-connections";
+import type { EditableDataConnection } from "./redact";
 
 interface DataConnectionFormProps {
-  dataConnection?: DataConnection;
+  dataConnection?: EditableDataConnection;
   mode: "create" | "edit";
 }
-
-const fieldStyle: React.CSSProperties = {
-  fontFamily: "var(--code-font-family)",
-  width: "100%",
-  padding: "8px 12px",
-  borderRadius: "0",
-  border: "1px solid var(--gray-6)",
-  fontSize: "16px",
-  lineHeight: "1.5",
-  boxSizing: "border-box",
-};
 
 // Storage providers limited to those with a `details` schema (S3, Azure).
 const providerOptions: Array<{ value: DataProvider; label: string }> = [
@@ -533,6 +523,31 @@ export function DataConnectionForm({
               />
             </Flex>
           </>
+        )}
+
+        {authType === DataConnectionAuthenticationType.AzureSasToken && (
+          <Flex direction="column" gap="1">
+            <Text size="3" weight="medium">
+              SAS Token
+            </Text>
+            <input
+              type="password"
+              name="sas_token"
+              autoComplete="new-password"
+              required={mode === "create"}
+              defaultValue={(state.data.get("sas_token") as string) || ""}
+              style={fieldStyle}
+            />
+            {secretHint && (
+              <Text size="1" color="gray">
+                {secretHint}
+              </Text>
+            )}
+            <FieldErrors
+              name="sas_token"
+              errors={state.fieldErrors?.sas_token}
+            />
+          </Flex>
         )}
 
         {authType === DataConnectionAuthenticationType.S3WebIdentityRole && (

@@ -1,3 +1,4 @@
+import { Metadata } from "next";
 import { Flex, Heading } from "@radix-ui/themes";
 import { notFound } from "next/navigation";
 import { dataConnectionsTable } from "@/lib/clients";
@@ -5,6 +6,11 @@ import {
   DataConnectionForm,
   DeleteDataConnectionButton,
 } from "@/components/features/data-connections";
+import { toEditableDataConnection } from "@/components/features/data-connections/redact";
+
+export const metadata: Metadata = {
+  title: "Admin — Edit data connection",
+};
 
 interface EditDataConnectionPageProps {
   params: Promise<{ data_connection_id: string }>;
@@ -30,7 +36,10 @@ export default async function EditDataConnectionPage({
           dataConnectionId={dataConnection.data_connection_id}
         />
       </Flex>
-      <DataConnectionForm mode="edit" dataConnection={dataConnection} />
+      <DataConnectionForm
+        mode="edit"
+        dataConnection={toEditableDataConnection(dataConnection)}
+      />
     </Flex>
   );
 }

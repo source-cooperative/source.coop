@@ -1,5 +1,6 @@
 "use server";
 
+import { z } from "zod";
 import { LOGGER } from "@/lib/logging";
 import {
   Actions,
@@ -37,7 +38,17 @@ export async function createDataConnection(
     const validated = DataConnectionSchema.safeParse(dataConnection);
     if (!validated.success) {
       return {
-        fieldErrors: validated.error.flatten().fieldErrors,
+        fieldErrors: fieldErrorsFromZod(validated.error),
+        data: formData,
+        message: "Invalid form data",
+        success: false,
+      };
+    }
+
+    const secretErrors = missingSecretErrors(validated.data.authentication);
+    if (Object.keys(secretErrors).length > 0) {
+      return {
+        fieldErrors: secretErrors,
         data: formData,
         message: "Invalid form data",
         success: false,
@@ -69,7 +80,28 @@ export async function createDataConnection(
       };
     }
 
-    await dataConnectionsTable.create(validated.data);
+    try {
+      // create() does a conditional put; this also rejects a concurrent
+      // create that slipped past the existence check above.
+      await dataConnectionsTable.create(validated.data);
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        error.name === "ConditionalCheckFailedException"
+      ) {
+        return {
+          fieldErrors: {
+            data_connection_id: [
+              "A data connection with this ID already exists",
+            ],
+          },
+          data: formData,
+          message: "Data connection ID already exists",
+          success: false,
+        };
+      }
+      throw error;
+    }
 
     LOGGER.info("Successfully created data connection", {
       operation: "createDataConnection",
@@ -154,7 +186,17 @@ export async function updateDataConnection(
     const validated = DataConnectionSchema.safeParse(dataConnection);
     if (!validated.success) {
       return {
-        fieldErrors: validated.error.flatten().fieldErrors,
+        fieldErrors: fieldErrorsFromZod(validated.error),
+        data: formData,
+        message: "Invalid form data",
+        success: false,
+      };
+    }
+
+    const secretErrors = missingSecretErrors(validated.data.authentication);
+    if (Object.keys(secretErrors).length > 0) {
+      return {
+        fieldErrors: secretErrors,
         data: formData,
         message: "Invalid form data",
         success: false,
@@ -269,6 +311,24 @@ export async function deleteDataConnection(
 }
 
 /**
+ * Maps Zod issues to form-field errors keyed by the field's *leaf* name (e.g.
+ * `role_arn`, `region`), not the top-level object key. `ZodError.flatten()` only
+ * keys top-level fields, so nested `details.*` / `authentication.*` errors would
+ * otherwise never render next to their inputs.
+ */
+function fieldErrorsFromZod(error: z.ZodError): Record<string, string[]> {
+  const fieldErrors: Record<string, string[]> = {};
+  for (const issue of error.issues) {
+    const stringSegments = issue.path.filter(
+      (segment): segment is string => typeof segment === "string"
+    );
+    const key = stringSegments[stringSegments.length - 1] ?? "form";
+    (fieldErrors[key] ??= []).push(issue.message);
+  }
+  return fieldErrors;
+}
+
+/**
  * Maps the data connection form fields to a `DataConnection`-shaped object for
  * validation. `existing` (edit only) supplies the stored secret values when the
  * corresponding form field is left blank, so editing non-secret fields does not
@@ -355,14 +415,8 @@ function buildAuthenticationFromForm(
         type: DataConnectionAuthenticationType.S3WebIdentityRole,
         role_arn: formData.get("role_arn") as string,
       };
-    case DataConnectionAuthenticationType.GcpWorkloadIdentity:
-      return {
-        type: DataConnectionAuthenticationType.GcpWorkloadIdentity,
-        workload_identity_provider: formData.get(
-          "workload_identity_provider"
-        ) as string,
-        service_account: formData.get("service_account") as string,
-      };
+    // GcpWorkloadIdentity is intentionally omitted: there is no GCP `details`
+    // schema, so the form never offers it and it can't form a valid connection.
     case DataConnectionAuthenticationType.AzureWorkloadIdentity:
       return {
         type: DataConnectionAuthenticationType.AzureWorkloadIdentity,
@@ -387,4 +441,34 @@ function buildAuthenticationFromForm(
     default:
       return undefined;
   }
+}
+
+/**
+ * The auth schemas accept empty secret strings, and the form leaves secret
+ * fields blank on edit (to keep the stored value). This guards the remaining
+ * gap: selecting a secret-based auth type but providing no secret — on create,
+ * or when switching auth type on edit (where there is no stored value to reuse).
+ */
+function missingSecretErrors(
+  authentication: DataConnection["authentication"]
+): Record<string, string[]> {
+  const errors: Record<string, string[]> = {};
+  if (!authentication) return errors;
+
+  if (authentication.type === DataConnectionAuthenticationType.S3AccessKey) {
+    if (!authentication.access_key_id) {
+      errors.access_key_id = ["Access Key ID is required"];
+    }
+    if (!authentication.secret_access_key) {
+      errors.secret_access_key = ["Secret Access Key is required"];
+    }
+  } else if (
+    authentication.type === DataConnectionAuthenticationType.AzureSasToken
+  ) {
+    if (!authentication.sas_token) {
+      errors.sas_token = ["SAS Token is required"];
+    }
+  }
+
+  return errors;
 }

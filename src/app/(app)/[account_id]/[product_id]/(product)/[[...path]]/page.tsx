@@ -84,12 +84,14 @@ export default async function ProductPathPage({ params }: PageProps) {
         | { primaryMirror: ProductMirror; dataConnection: DataConnection }
         | undefined;
 
+      // primary_mirror may be empty or stale (e.g. its mirror/connection was
+      // removed), so guard before dereferencing.
       const primaryMirror =
         product.metadata.mirrors[product.metadata.primary_mirror];
-      const dataConnection = await dataConnectionsTable.fetchById(
-        primaryMirror.connection_id,
-      );
-      if (dataConnection) {
+      const dataConnection = primaryMirror
+        ? await dataConnectionsTable.fetchById(primaryMirror.connection_id)
+        : null;
+      if (primaryMirror && dataConnection) {
         connectionDetails = { primaryMirror, dataConnection };
       }
 
