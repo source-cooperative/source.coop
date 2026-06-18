@@ -2,8 +2,9 @@
 
 import { useActionState } from "react";
 import { Text, Table, Flex, Badge, Button, Heading, Code } from "@radix-ui/themes";
-import { Link1Icon } from "@radix-ui/react-icons";
+import { Link1Icon, ExternalLinkIcon } from "@radix-ui/react-icons";
 import Form from "next/form";
+import Link from "next/link";
 import { formFieldStyle } from "@/components/core/DynamicForm";
 import { Product } from "@/types";
 import {
@@ -11,6 +12,7 @@ import {
   removeProductMirror,
   setPrimaryMirror,
 } from "@/lib/actions/product-mirrors";
+import { adminDataConnectionEditUrl } from "@/lib/urls";
 import type { DataConnectionOption } from "./redact";
 
 interface ProductMirrorsManagerProps {
@@ -92,7 +94,22 @@ export function ProductMirrorsManager({
             {mirrors.map(([key, mirror]) => (
               <Table.Row key={key}>
                 <Table.Cell>
-                  <Code size="2">{mirror.connection_id}</Code>
+                  <Flex align="center" gap="2">
+                    <Code size="2">{mirror.connection_id}</Code>
+                    {isAdmin && (
+                      <Link
+                        href={adminDataConnectionEditUrl(mirror.connection_id)}
+                        aria-label={`Manage ${mirror.connection_id} in the admin data connections view`}
+                        title="Manage in admin"
+                        style={{
+                          display: "inline-flex",
+                          color: "var(--accent-11)",
+                        }}
+                      >
+                        <ExternalLinkIcon />
+                      </Link>
+                    )}
+                  </Flex>
                 </Table.Cell>
                 <Table.Cell>
                   <Badge
