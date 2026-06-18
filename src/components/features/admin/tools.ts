@@ -1,6 +1,6 @@
 import type { ComponentType, ComponentProps } from "react";
-import { MagnifyingGlassIcon } from "@radix-ui/react-icons";
-import { adminUserLookupUrl } from "@/lib";
+import { MagnifyingGlassIcon, Link1Icon } from "@radix-ui/react-icons";
+import { adminUserLookupUrl, adminDataConnectionsUrl } from "@/lib";
 
 type IconProps = ComponentProps<typeof MagnifyingGlassIcon>;
 
@@ -22,5 +22,11 @@ export const ADMIN_TOOLS: AdminTool[] = [
     description: "Find a user by email and open their profile.",
     href: adminUserLookupUrl(),
     Icon: MagnifyingGlassIcon,
+  },
+  {
+    name: "Data Connections",
+    description: "Manage the storage backends products mirror their data to.",
+    href: adminDataConnectionsUrl(),
+    Icon: Link1Icon,
   },
 ];
