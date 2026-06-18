@@ -1,6 +1,6 @@
 import { Metadata } from "next";
 import { dataConnectionsTable } from "@/lib/clients";
-import { Text, Table, Flex, Badge, Button, Heading, Code } from "@radix-ui/themes";
+import { Text, Table, Flex, Badge, Button, Heading } from "@radix-ui/themes";
 import { Link1Icon } from "@radix-ui/react-icons";
 import Link from "next/link";
 import { DataProvider } from "@/types";
@@ -46,7 +46,6 @@ export default async function DataConnectionsPage() {
           <Table.Header>
             <Table.Row>
               <Table.ColumnHeaderCell>Name</Table.ColumnHeaderCell>
-              <Table.ColumnHeaderCell>ID</Table.ColumnHeaderCell>
               <Table.ColumnHeaderCell>Provider</Table.ColumnHeaderCell>
               <Table.ColumnHeaderCell>Region</Table.ColumnHeaderCell>
               <Table.ColumnHeaderCell>Read Only</Table.ColumnHeaderCell>
@@ -57,15 +56,21 @@ export default async function DataConnectionsPage() {
             {connections.map((conn) => (
               <Table.Row key={conn.data_connection_id}>
                 <Table.Cell>
-                  <Link
-                    href={adminDataConnectionEditUrl(conn.data_connection_id)}
-                    style={{ color: "var(--accent-11)" }}
-                  >
-                    {conn.name}
-                  </Link>
-                </Table.Cell>
-                <Table.Cell>
-                  <Code size="2">{conn.data_connection_id}</Code>
+                  <Flex direction="column">
+                    <Link
+                      href={adminDataConnectionEditUrl(conn.data_connection_id)}
+                      style={{ color: "var(--accent-11)" }}
+                    >
+                      {conn.name}
+                    </Link>
+                    <Text
+                      size="1"
+                      color="gray"
+                      style={{ fontFamily: "var(--code-font-family)" }}
+                    >
+                      {conn.data_connection_id}
+                    </Text>
+                  </Flex>
                 </Table.Cell>
                 <Table.Cell>
                   <Badge
