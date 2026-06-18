@@ -13,6 +13,15 @@ export const metadata: Metadata = {
   title: "Admin — Data connections",
 };
 
+const PROVIDER_BADGE: Record<
+  DataProvider,
+  { label: string; color: "orange" | "blue" | "green" }
+> = {
+  [DataProvider.S3]: { label: "S3", color: "orange" },
+  [DataProvider.Azure]: { label: "Azure", color: "blue" },
+  [DataProvider.GCP]: { label: "GCP", color: "green" },
+};
+
 export default async function DataConnectionsPage() {
   const connections = await dataConnectionsTable.listAll();
 
@@ -73,18 +82,14 @@ export default async function DataConnectionsPage() {
                   </Flex>
                 </Table.Cell>
                 <Table.Cell>
-                  <Badge
-                    color={
-                      conn.details.provider === DataProvider.S3
-                        ? "orange"
-                        : "blue"
-                    }
-                  >
-                    {conn.details.provider === DataProvider.S3 ? "S3" : "Azure"}
+                  <Badge color={PROVIDER_BADGE[conn.details.provider].color}>
+                    {PROVIDER_BADGE[conn.details.provider].label}
                   </Badge>
                 </Table.Cell>
                 <Table.Cell>
-                  <Text size="2">{conn.details.region}</Text>
+                  <Text size="2">
+                    {"region" in conn.details ? conn.details.region : "—"}
+                  </Text>
                 </Table.Cell>
                 <Table.Cell>
                   <Badge color={conn.read_only ? "red" : "green"}>

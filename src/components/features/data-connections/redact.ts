@@ -84,10 +84,12 @@ export interface DataConnectionOption {
 export function toDataConnectionOption(
   dataConnection: DataConnection
 ): DataConnectionOption {
+  const details = dataConnection.details;
   return {
     data_connection_id: dataConnection.data_connection_id,
     name: dataConnection.name,
-    provider: dataConnection.details.provider,
-    region: dataConnection.details.region,
+    provider: details.provider,
+    // GCS connections carry no region.
+    region: "region" in details ? details.region : "",
   };
 }

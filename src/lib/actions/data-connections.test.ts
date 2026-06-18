@@ -240,6 +240,69 @@ describe("createDataConnection", () => {
     });
   });
 
+  test("creates an R2 (S3-compatible) connection with a custom endpoint", async () => {
+    const result = await createDataConnection(
+      FORM_STATE,
+      formDataFor({
+        ...baseS3Fields,
+        region: "auto",
+        endpoint: "https://abc123.r2.cloudflarestorage.com",
+        auth_type: DataConnectionAuthenticationType.S3AccessKey,
+        access_key_id: "AKIA",
+        secret_access_key: "secret",
+      })
+    );
+
+    expect(result.success).toBe(true);
+    expect(mockTable.create.mock.calls[0][0].details).toMatchObject({
+      provider: DataProvider.S3,
+      region: "auto",
+      endpoint: "https://abc123.r2.cloudflarestorage.com",
+    });
+  });
+
+  test("omits endpoint for a plain AWS S3 connection", async () => {
+    await createDataConnection(
+      FORM_STATE,
+      formDataFor({
+        ...baseS3Fields,
+        auth_type: DataConnectionAuthenticationType.S3ECSTaskRole,
+      })
+    );
+
+    expect(
+      "endpoint" in mockTable.create.mock.calls[0][0].details
+    ).toBe(false);
+  });
+
+  test("creates a GCP (GCS) connection with workload-identity auth", async () => {
+    const result = await createDataConnection(
+      FORM_STATE,
+      formDataFor({
+        data_connection_id: "gcs-connection",
+        name: "GCS Connection",
+        provider: DataProvider.GCP,
+        bucket: "my-gcs-bucket",
+        base_prefix: "",
+        visibility_public: "on",
+        auth_type: DataConnectionAuthenticationType.GcpWorkloadIdentity,
+        workload_identity_provider:
+          "//iam.googleapis.com/projects/123/locations/global/workloadIdentityPools/p/providers/pr",
+        service_account: "sa@my-project.iam.gserviceaccount.com",
+      })
+    );
+
+    expect(result.success).toBe(true);
+    expect(mockTable.create.mock.calls[0][0].details).toMatchObject({
+      provider: DataProvider.GCP,
+      bucket: "my-gcs-bucket",
+    });
+    expect(mockTable.create.mock.calls[0][0].authentication).toMatchObject({
+      type: DataConnectionAuthenticationType.GcpWorkloadIdentity,
+      service_account: "sa@my-project.iam.gserviceaccount.com",
+    });
+  });
+
   test("rejects an existing connection ID", async () => {
     mockTable.fetchById.mockResolvedValue({
       data_connection_id: "my-connection",

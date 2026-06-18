@@ -347,11 +347,20 @@ function buildDataConnectionFromForm(
 
   let details: Record<string, unknown>;
   if (provider === DataProvider.S3) {
+    const endpoint = (formData.get("endpoint") as string) || undefined;
     details = {
       provider: DataProvider.S3,
       bucket: formData.get("bucket") as string,
       base_prefix: (formData.get("base_prefix") as string) || "",
       region: formData.get("region") as string,
+      // Omit when blank so AWS S3 connections have no endpoint field.
+      ...(endpoint ? { endpoint } : {}),
+    };
+  } else if (provider === DataProvider.GCP) {
+    details = {
+      provider: DataProvider.GCP,
+      bucket: formData.get("bucket") as string,
+      base_prefix: (formData.get("base_prefix") as string) || "",
     };
   } else {
     details = {
@@ -415,8 +424,14 @@ function buildAuthenticationFromForm(
         type: DataConnectionAuthenticationType.S3WebIdentityRole,
         role_arn: formData.get("role_arn") as string,
       };
-    // GcpWorkloadIdentity is intentionally omitted: there is no GCP `details`
-    // schema, so the form never offers it and it can't form a valid connection.
+    case DataConnectionAuthenticationType.GcpWorkloadIdentity:
+      return {
+        type: DataConnectionAuthenticationType.GcpWorkloadIdentity,
+        workload_identity_provider: formData.get(
+          "workload_identity_provider"
+        ) as string,
+        service_account: formData.get("service_account") as string,
+      };
     case DataConnectionAuthenticationType.AzureWorkloadIdentity:
       return {
         type: DataConnectionAuthenticationType.AzureWorkloadIdentity,

@@ -84,9 +84,17 @@ export async function addProductMirror(
 
     const isFirst = Object.keys(product.metadata.mirrors).length === 0;
 
+    const storageTypeByProvider: Record<
+      DataProvider,
+      ProductMirror["storage_type"]
+    > = {
+      [DataProvider.S3]: "s3",
+      [DataProvider.Azure]: "azure",
+      [DataProvider.GCP]: "gcs",
+    };
+
     const mirror: ProductMirror = {
-      storage_type:
-        connection.details.provider === DataProvider.S3 ? "s3" : "azure",
+      storage_type: storageTypeByProvider[connection.details.provider],
       connection_id: connectionId,
       prefix,
       is_primary: isFirst,

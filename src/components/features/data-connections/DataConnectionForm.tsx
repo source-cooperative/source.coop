@@ -24,10 +24,11 @@ interface DataConnectionFormProps {
   mode: "create" | "edit";
 }
 
-// Storage providers limited to those with a `details` schema (S3, Azure).
+// Storage providers limited to those with a `details` schema (S3, Azure, GCP).
 const providerOptions: Array<{ value: DataProvider; label: string }> = [
-  { value: DataProvider.S3, label: "S3" },
+  { value: DataProvider.S3, label: "S3 / S3-compatible (R2, MinIO)" },
   { value: DataProvider.Azure, label: "Azure" },
+  { value: DataProvider.GCP, label: "GCP (GCS)" },
 ];
 
 const s3AuthTypes = [
@@ -41,6 +42,14 @@ const azureAuthTypes = [
   DataConnectionAuthenticationType.AzureSasToken,
   DataConnectionAuthenticationType.AzureWorkloadIdentity,
 ];
+
+const gcpAuthTypes = [DataConnectionAuthenticationType.GcpWorkloadIdentity];
+
+const authTypesByProvider: Record<string, DataConnectionAuthenticationType[]> = {
+  [DataProvider.S3]: s3AuthTypes,
+  [DataProvider.Azure]: azureAuthTypes,
+  [DataProvider.GCP]: gcpAuthTypes,
+};
 
 const AUTH_TYPE_LABELS: Record<DataConnectionAuthenticationType, string> = {
   [DataConnectionAuthenticationType.S3AccessKey]: "Access Key",
@@ -72,6 +81,8 @@ const AUTH_TYPE_DESCRIPTIONS: Partial<
     "A shared access signature token you provide.",
   [DataConnectionAuthenticationType.AzureWorkloadIdentity]:
     "Keyless: the proxy federates into an Azure AD app registration.",
+  [DataConnectionAuthenticationType.GcpWorkloadIdentity]:
+    "Keyless: the proxy federates into a GCP service account via Workload Identity.",
 };
 
 function FieldErrors({ errors, name }: { errors?: string[]; name: string }) {
@@ -157,8 +168,7 @@ export function DataConnectionForm({
     setAuthType("");
   };
 
-  const authOptions =
-    provider === DataProvider.S3 ? s3AuthTypes : azureAuthTypes;
+  const authOptions = authTypesByProvider[provider] ?? s3AuthTypes;
 
   // Pre-fill non-secret authentication fields from the existing connection.
   // Secrets (access keys, SAS tokens) are intentionally never rendered.
@@ -174,6 +184,14 @@ export function DataConnectionForm({
   const initialClientId =
     auth?.type === DataConnectionAuthenticationType.AzureWorkloadIdentity
       ? auth.client_id
+      : "";
+  const initialWorkloadIdentityProvider =
+    auth?.type === DataConnectionAuthenticationType.GcpWorkloadIdentity
+      ? auth.workload_identity_provider
+      : "";
+  const initialServiceAccount =
+    auth?.type === DataConnectionAuthenticationType.GcpWorkloadIdentity
+      ? auth.service_account
       : "";
 
   // Secret fields are never pre-filled; on edit, blank means "keep current".
@@ -373,7 +391,7 @@ export function DataConnectionForm({
             <Field
               label="Region"
               name="region"
-              description="AWS region the bucket is hosted in."
+              description="AWS region the bucket is hosted in. Use “auto” for S3-compatible backends like Cloudflare R2."
               errors={state.fieldErrors?.region}
             >
               <select
@@ -395,6 +413,68 @@ export function DataConnectionForm({
                   </option>
                 ))}
               </select>
+            </Field>
+
+            <Field
+              label="Endpoint"
+              name="endpoint"
+              description="Custom S3-compatible endpoint for non-AWS backends (Cloudflare R2, MinIO, Ceph). Leave blank for AWS S3."
+              errors={state.fieldErrors?.endpoint}
+            >
+              <input
+                type="text"
+                name="endpoint"
+                placeholder="https://<account>.r2.cloudflarestorage.com"
+                defaultValue={
+                  (state.data.get("endpoint") as string) ||
+                  (dataConnection?.details.provider === DataProvider.S3
+                    ? dataConnection.details.endpoint ?? ""
+                    : "")
+                }
+                style={fieldStyle}
+              />
+            </Field>
+          </>
+        )}
+
+        {provider === DataProvider.GCP && (
+          <>
+            <Field
+              label="Bucket"
+              name="bucket"
+              description="Name of the Google Cloud Storage bucket."
+              errors={state.fieldErrors?.bucket}
+            >
+              <input
+                type="text"
+                name="bucket"
+                defaultValue={
+                  (state.data.get("bucket") as string) ||
+                  (dataConnection?.details.provider === DataProvider.GCP
+                    ? dataConnection.details.bucket
+                    : "")
+                }
+                style={fieldStyle}
+              />
+            </Field>
+
+            <Field
+              label="Base Prefix"
+              name="base_prefix"
+              description="Optional key prefix prepended to every object path in the bucket. Leave blank for the bucket root."
+              errors={state.fieldErrors?.base_prefix}
+            >
+              <input
+                type="text"
+                name="base_prefix"
+                defaultValue={
+                  (state.data.get("base_prefix") as string) ||
+                  (dataConnection?.details.provider === DataProvider.GCP
+                    ? dataConnection.details.base_prefix
+                    : "")
+                }
+                style={fieldStyle}
+              />
             </Field>
           </>
         )}
@@ -627,6 +707,49 @@ export function DataConnectionForm({
                 placeholder="00000000-0000-0000-0000-000000000000"
                 defaultValue={
                   (state.data.get("client_id") as string) || initialClientId
+                }
+                style={fieldStyle}
+              />
+            </Field>
+          </>
+        )}
+
+        {authType ===
+          DataConnectionAuthenticationType.GcpWorkloadIdentity && (
+          <>
+            <Field
+              label="Workload Identity Provider"
+              name="workload_identity_provider"
+              description="Full GCP Workload Identity provider resource. Not a secret."
+              errors={state.fieldErrors?.workload_identity_provider}
+            >
+              <input
+                type="text"
+                name="workload_identity_provider"
+                required
+                placeholder="//iam.googleapis.com/projects/123/locations/global/workloadIdentityPools/pool/providers/provider"
+                defaultValue={
+                  (state.data.get("workload_identity_provider") as string) ||
+                  initialWorkloadIdentityProvider
+                }
+                style={fieldStyle}
+              />
+            </Field>
+
+            <Field
+              label="Service Account"
+              name="service_account"
+              description="Email of the GCP service account the proxy impersonates. Not a secret."
+              errors={state.fieldErrors?.service_account}
+            >
+              <input
+                type="text"
+                name="service_account"
+                required
+                placeholder="sa@my-project.iam.gserviceaccount.com"
+                defaultValue={
+                  (state.data.get("service_account") as string) ||
+                  initialServiceAccount
                 }
                 style={fieldStyle}
               />
