@@ -55,6 +55,25 @@ const AUTH_TYPE_LABELS: Record<DataConnectionAuthenticationType, string> = {
     "Workload Identity (federated)",
 };
 
+// One-line description of what each authentication type means, shown under the
+// Authentication Type select so the admin knows what they're choosing.
+const AUTH_TYPE_DESCRIPTIONS: Partial<
+  Record<DataConnectionAuthenticationType, string>
+> = {
+  [DataConnectionAuthenticationType.S3ECSTaskRole]:
+    "Use the proxy's ECS task role — no stored credentials.",
+  [DataConnectionAuthenticationType.S3AccessKey]:
+    "Static IAM access key and secret you provide.",
+  [DataConnectionAuthenticationType.S3WebIdentityRole]:
+    "Keyless: the proxy assumes a customer IAM role via web identity.",
+  [DataConnectionAuthenticationType.S3Local]:
+    "Local/dev credential chain — no stored credentials.",
+  [DataConnectionAuthenticationType.AzureSasToken]:
+    "A shared access signature token you provide.",
+  [DataConnectionAuthenticationType.AzureWorkloadIdentity]:
+    "Keyless: the proxy federates into an Azure AD app registration.",
+};
+
 function FieldErrors({ errors, name }: { errors?: string[]; name: string }) {
   if (!errors?.length) return null;
   return (
@@ -65,6 +84,39 @@ function FieldErrors({ errors, name }: { errors?: string[]; name: string }) {
         </Text>
       ))}
     </>
+  );
+}
+
+/**
+ * Labelled field wrapper: renders the label, a gray description of what the
+ * field does, the control, and any server-side validation errors.
+ */
+function Field({
+  label,
+  name,
+  description,
+  errors,
+  children,
+}: {
+  label: string;
+  name: string;
+  description?: React.ReactNode;
+  errors?: string[];
+  children: React.ReactNode;
+}) {
+  return (
+    <Flex direction="column" gap="1">
+      <Text size="3" weight="medium">
+        {label}
+      </Text>
+      {description && (
+        <Text size="1" color="gray">
+          {description}
+        </Text>
+      )}
+      {children}
+      <FieldErrors name={name} errors={errors} />
+    </Flex>
   );
 }
 
@@ -124,17 +176,19 @@ export function DataConnectionForm({
       ? auth.client_id
       : "";
 
-  const secretHint =
-    mode === "edit" ? "Leave blank to keep the current value." : undefined;
+  // Secret fields are never pre-filled; on edit, blank means "keep current".
+  const withSecretHint = (base: string) =>
+    mode === "edit" ? `${base} Leave blank to keep the current value.` : base;
 
   return (
     <Form action={formAction}>
       <Flex direction="column" gap="4">
-        {/* Connection ID */}
-        <Flex direction="column" gap="1">
-          <Text size="3" weight="medium">
-            Connection ID
-          </Text>
+        <Field
+          label="Connection ID"
+          name="data_connection_id"
+          description="Unique identifier used in URLs and as the storage key. Lowercase letters, numbers, and hyphens only; cannot be changed after creation."
+          errors={state.fieldErrors?.data_connection_id}
+        >
           <input
             type="text"
             name="data_connection_id"
@@ -153,17 +207,14 @@ export function DataConnectionForm({
                 : {}),
             }}
           />
-          <FieldErrors
-            name="data_connection_id"
-            errors={state.fieldErrors?.data_connection_id}
-          />
-        </Flex>
+        </Field>
 
-        {/* Name */}
-        <Flex direction="column" gap="1">
-          <Text size="3" weight="medium">
-            Name
-          </Text>
+        <Field
+          label="Name"
+          name="name"
+          description="Human-readable label shown in admin lists and the product mirror picker."
+          errors={state.fieldErrors?.name}
+        >
           <input
             type="text"
             name="name"
@@ -173,14 +224,14 @@ export function DataConnectionForm({
             }
             style={fieldStyle}
           />
-          <FieldErrors name="name" errors={state.fieldErrors?.name} />
-        </Flex>
+        </Field>
 
-        {/* Prefix Template */}
-        <Flex direction="column" gap="1">
-          <Text size="3" weight="medium">
-            Prefix Template
-          </Text>
+        <Field
+          label="Prefix Template"
+          name="prefix_template"
+          description="Template for the object-key prefix each product receives within the bucket/container. {{repository.account_id}} and {{repository.repository_id}} are substituted when a product attaches this connection."
+          errors={state.fieldErrors?.prefix_template}
+        >
           <input
             type="text"
             name="prefix_template"
@@ -191,17 +242,13 @@ export function DataConnectionForm({
             }
             style={fieldStyle}
           />
-          <FieldErrors
-            name="prefix_template"
-            errors={state.fieldErrors?.prefix_template}
-          />
-        </Flex>
+        </Field>
 
-        {/* Read Only */}
-        <Flex direction="column" gap="1">
-          <Text size="3" weight="medium">
-            Read Only
-          </Text>
+        <Field
+          label="Read Only"
+          name="read_only"
+          description="Prevents products from writing or modifying data through this connection — browse and download only."
+        >
           <Flex align="center" gap="2" asChild>
             <label>
               <Checkbox
@@ -211,13 +258,14 @@ export function DataConnectionForm({
               <Text size="2">Connection is read-only</Text>
             </label>
           </Flex>
-        </Flex>
+        </Field>
 
-        {/* Allowed Visibilities */}
-        <Flex direction="column" gap="1">
-          <Text size="3" weight="medium">
-            Allowed Visibilities
-          </Text>
+        <Field
+          label="Allowed Visibilities"
+          name="allowed_visibilities"
+          description="Product visibilities permitted to use this connection. (Not currently enforced.)"
+          errors={state.fieldErrors?.allowed_visibilities}
+        >
           <Flex direction="column" gap="2">
             {Object.values(ProductVisibility).map((visibility) => (
               <Flex align="center" gap="2" asChild key={visibility}>
@@ -235,17 +283,14 @@ export function DataConnectionForm({
               </Flex>
             ))}
           </Flex>
-          <FieldErrors
-            name="allowed_visibilities"
-            errors={state.fieldErrors?.allowed_visibilities}
-          />
-        </Flex>
+        </Field>
 
-        {/* Required Flag */}
-        <Flex direction="column" gap="1">
-          <Text size="3" weight="medium">
-            Required Flag
-          </Text>
+        <Field
+          label="Required Flag"
+          name="required_flag"
+          description="Account flag a user must have for their products to use this connection. Choose None for no restriction. (Not currently enforced.)"
+          errors={state.fieldErrors?.required_flag}
+        >
           <select
             name="required_flag"
             defaultValue={
@@ -262,17 +307,14 @@ export function DataConnectionForm({
               </option>
             ))}
           </select>
-          <FieldErrors
-            name="required_flag"
-            errors={state.fieldErrors?.required_flag}
-          />
-        </Flex>
+        </Field>
 
-        {/* Provider */}
-        <Flex direction="column" gap="1">
-          <Text size="3" weight="medium">
-            Provider
-          </Text>
+        <Field
+          label="Provider"
+          name="provider"
+          description="Storage backend type. Determines the connection and authentication fields shown below."
+          errors={state.fieldErrors?.provider}
+        >
           <select
             name="provider"
             value={provider}
@@ -285,16 +327,17 @@ export function DataConnectionForm({
               </option>
             ))}
           </select>
-          <FieldErrors name="provider" errors={state.fieldErrors?.provider} />
-        </Flex>
+        </Field>
 
         {/* Provider-specific fields */}
         {provider === DataProvider.S3 && (
           <>
-            <Flex direction="column" gap="1">
-              <Text size="3" weight="medium">
-                Bucket
-              </Text>
+            <Field
+              label="Bucket"
+              name="bucket"
+              description="Name of the S3 bucket that stores the data."
+              errors={state.fieldErrors?.bucket}
+            >
               <input
                 type="text"
                 name="bucket"
@@ -306,13 +349,14 @@ export function DataConnectionForm({
                 }
                 style={fieldStyle}
               />
-              <FieldErrors name="bucket" errors={state.fieldErrors?.bucket} />
-            </Flex>
+            </Field>
 
-            <Flex direction="column" gap="1">
-              <Text size="3" weight="medium">
-                Base Prefix
-              </Text>
+            <Field
+              label="Base Prefix"
+              name="base_prefix"
+              description="Optional key prefix prepended to every object path in the bucket (a shared root folder). Leave blank for the bucket root."
+              errors={state.fieldErrors?.base_prefix}
+            >
               <input
                 type="text"
                 name="base_prefix"
@@ -324,16 +368,14 @@ export function DataConnectionForm({
                 }
                 style={fieldStyle}
               />
-              <FieldErrors
-                name="base_prefix"
-                errors={state.fieldErrors?.base_prefix}
-              />
-            </Flex>
+            </Field>
 
-            <Flex direction="column" gap="1">
-              <Text size="3" weight="medium">
-                Region
-              </Text>
+            <Field
+              label="Region"
+              name="region"
+              description="AWS region the bucket is hosted in."
+              errors={state.fieldErrors?.region}
+            >
               <select
                 name="region"
                 defaultValue={
@@ -353,17 +395,18 @@ export function DataConnectionForm({
                   </option>
                 ))}
               </select>
-              <FieldErrors name="region" errors={state.fieldErrors?.region} />
-            </Flex>
+            </Field>
           </>
         )}
 
         {provider === DataProvider.Azure && (
           <>
-            <Flex direction="column" gap="1">
-              <Text size="3" weight="medium">
-                Account Name
-              </Text>
+            <Field
+              label="Account Name"
+              name="account_name"
+              description="Azure Storage account name."
+              errors={state.fieldErrors?.account_name}
+            >
               <input
                 type="text"
                 name="account_name"
@@ -375,16 +418,14 @@ export function DataConnectionForm({
                 }
                 style={fieldStyle}
               />
-              <FieldErrors
-                name="account_name"
-                errors={state.fieldErrors?.account_name}
-              />
-            </Flex>
+            </Field>
 
-            <Flex direction="column" gap="1">
-              <Text size="3" weight="medium">
-                Container Name
-              </Text>
+            <Field
+              label="Container Name"
+              name="container_name"
+              description="Azure Blob Storage container name."
+              errors={state.fieldErrors?.container_name}
+            >
               <input
                 type="text"
                 name="container_name"
@@ -396,16 +437,14 @@ export function DataConnectionForm({
                 }
                 style={fieldStyle}
               />
-              <FieldErrors
-                name="container_name"
-                errors={state.fieldErrors?.container_name}
-              />
-            </Flex>
+            </Field>
 
-            <Flex direction="column" gap="1">
-              <Text size="3" weight="medium">
-                Base Prefix
-              </Text>
+            <Field
+              label="Base Prefix"
+              name="base_prefix"
+              description="Optional key prefix prepended to every object path in the container. Leave blank for the container root."
+              errors={state.fieldErrors?.base_prefix}
+            >
               <input
                 type="text"
                 name="base_prefix"
@@ -417,16 +456,14 @@ export function DataConnectionForm({
                 }
                 style={fieldStyle}
               />
-              <FieldErrors
-                name="base_prefix"
-                errors={state.fieldErrors?.base_prefix}
-              />
-            </Flex>
+            </Field>
 
-            <Flex direction="column" gap="1">
-              <Text size="3" weight="medium">
-                Region
-              </Text>
+            <Field
+              label="Region"
+              name="region"
+              description="Azure region the storage account is hosted in."
+              errors={state.fieldErrors?.region}
+            >
               <select
                 name="region"
                 defaultValue={
@@ -446,16 +483,19 @@ export function DataConnectionForm({
                   </option>
                 ))}
               </select>
-              <FieldErrors name="region" errors={state.fieldErrors?.region} />
-            </Flex>
+            </Field>
           </>
         )}
 
-        {/* Authentication Type */}
-        <Flex direction="column" gap="1">
-          <Text size="3" weight="medium">
-            Authentication Type
-          </Text>
+        <Field
+          label="Authentication Type"
+          name="auth_type"
+          description={
+            (authType && AUTH_TYPE_DESCRIPTIONS[authType as DataConnectionAuthenticationType]) ||
+            "How the data proxy authenticates to this backend when serving the product's data. Choose None for unsigned (public) access."
+          }
+          errors={state.fieldErrors?.auth_type}
+        >
           <select
             name="auth_type"
             value={authType}
@@ -469,16 +509,19 @@ export function DataConnectionForm({
               </option>
             ))}
           </select>
-          <FieldErrors name="auth_type" errors={state.fieldErrors?.auth_type} />
-        </Flex>
+        </Field>
 
         {/* Auth-specific fields */}
         {authType === DataConnectionAuthenticationType.S3AccessKey && (
           <>
-            <Flex direction="column" gap="1">
-              <Text size="3" weight="medium">
-                Access Key ID
-              </Text>
+            <Field
+              label="Access Key ID"
+              name="access_key_id"
+              description={withSecretHint(
+                "AWS access key ID for static-credential access."
+              )}
+              errors={state.fieldErrors?.access_key_id}
+            >
               <input
                 type="text"
                 name="access_key_id"
@@ -487,21 +530,16 @@ export function DataConnectionForm({
                 defaultValue={(state.data.get("access_key_id") as string) || ""}
                 style={fieldStyle}
               />
-              {secretHint && (
-                <Text size="1" color="gray">
-                  {secretHint}
-                </Text>
-              )}
-              <FieldErrors
-                name="access_key_id"
-                errors={state.fieldErrors?.access_key_id}
-              />
-            </Flex>
+            </Field>
 
-            <Flex direction="column" gap="1">
-              <Text size="3" weight="medium">
-                Secret Access Key
-              </Text>
+            <Field
+              label="Secret Access Key"
+              name="secret_access_key"
+              description={withSecretHint(
+                "AWS secret access key paired with the access key ID. Never shown after saving."
+              )}
+              errors={state.fieldErrors?.secret_access_key}
+            >
               <input
                 type="password"
                 name="secret_access_key"
@@ -512,24 +550,19 @@ export function DataConnectionForm({
                 }
                 style={fieldStyle}
               />
-              {secretHint && (
-                <Text size="1" color="gray">
-                  {secretHint}
-                </Text>
-              )}
-              <FieldErrors
-                name="secret_access_key"
-                errors={state.fieldErrors?.secret_access_key}
-              />
-            </Flex>
+            </Field>
           </>
         )}
 
         {authType === DataConnectionAuthenticationType.AzureSasToken && (
-          <Flex direction="column" gap="1">
-            <Text size="3" weight="medium">
-              SAS Token
-            </Text>
+          <Field
+            label="SAS Token"
+            name="sas_token"
+            description={withSecretHint(
+              "Azure shared access signature granting access to the container. Never shown after saving."
+            )}
+            errors={state.fieldErrors?.sas_token}
+          >
             <input
               type="password"
               name="sas_token"
@@ -538,23 +571,16 @@ export function DataConnectionForm({
               defaultValue={(state.data.get("sas_token") as string) || ""}
               style={fieldStyle}
             />
-            {secretHint && (
-              <Text size="1" color="gray">
-                {secretHint}
-              </Text>
-            )}
-            <FieldErrors
-              name="sas_token"
-              errors={state.fieldErrors?.sas_token}
-            />
-          </Flex>
+          </Field>
         )}
 
         {authType === DataConnectionAuthenticationType.S3WebIdentityRole && (
-          <Flex direction="column" gap="1">
-            <Text size="3" weight="medium">
-              Role ARN
-            </Text>
+          <Field
+            label="Role ARN"
+            name="role_arn"
+            description="IAM role the proxy assumes via AssumeRoleWithWebIdentity (keyless federation). This is an ARN, not a secret."
+            errors={state.fieldErrors?.role_arn}
+          >
             <input
               type="text"
               name="role_arn"
@@ -565,20 +591,17 @@ export function DataConnectionForm({
               }
               style={fieldStyle}
             />
-            <Text size="1" color="gray">
-              The proxy assumes this role via AssumeRoleWithWebIdentity. Not a
-              secret.
-            </Text>
-            <FieldErrors name="role_arn" errors={state.fieldErrors?.role_arn} />
-          </Flex>
+          </Field>
         )}
 
         {authType === DataConnectionAuthenticationType.AzureWorkloadIdentity && (
           <>
-            <Flex direction="column" gap="1">
-              <Text size="3" weight="medium">
-                Tenant ID
-              </Text>
+            <Field
+              label="Tenant ID"
+              name="tenant_id"
+              description="Azure AD tenant (directory) ID used for workload-identity federation."
+              errors={state.fieldErrors?.tenant_id}
+            >
               <input
                 type="text"
                 name="tenant_id"
@@ -589,16 +612,14 @@ export function DataConnectionForm({
                 }
                 style={fieldStyle}
               />
-              <FieldErrors
-                name="tenant_id"
-                errors={state.fieldErrors?.tenant_id}
-              />
-            </Flex>
+            </Field>
 
-            <Flex direction="column" gap="1">
-              <Text size="3" weight="medium">
-                Client ID
-              </Text>
+            <Field
+              label="Client ID"
+              name="client_id"
+              description="App registration (client) ID that holds the federated identity credential."
+              errors={state.fieldErrors?.client_id}
+            >
               <input
                 type="text"
                 name="client_id"
@@ -609,11 +630,7 @@ export function DataConnectionForm({
                 }
                 style={fieldStyle}
               />
-              <FieldErrors
-                name="client_id"
-                errors={state.fieldErrors?.client_id}
-              />
-            </Flex>
+            </Field>
           </>
         )}
 
