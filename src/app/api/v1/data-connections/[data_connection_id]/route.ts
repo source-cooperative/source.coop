@@ -27,11 +27,7 @@
  *         description: Internal server error
  */
 import { NextRequest, NextResponse } from "next/server";
-import {
-  Actions,
-  DataConnectionSchema,
-  DataConnectionObjectSchema,
-} from "@/types";
+import { Actions, DataConnectionSchema } from "@/types";
 import { StatusCodes } from "http-status-codes";
 import { isAdmin, isAuthorized } from "@/lib/api/authz";
 import { sanitizeDataConnection } from "@/lib/api/sanitize-data-connection";
@@ -63,18 +59,7 @@ export async function GET(
       );
     }
 
-    // Sanitize connection if user doesn't have permission to view credentials
-    if (
-      !isAuthorized(
-        session,
-        dataConnection,
-        Actions.ViewDataConnectionCredentials
-      )
-    ) {
-      dataConnection = DataConnectionObjectSchema.omit({
-        authentication: true,
-      }).parse(dataConnection);
-    }
+    // sanitizeDataConnection redacts authentication per the caller's permissions.
     const sanitized = sanitizeDataConnection(dataConnection, session);
 
     return NextResponse.json(sanitized, { status: StatusCodes.OK });

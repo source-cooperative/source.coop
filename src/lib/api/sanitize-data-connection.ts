@@ -1,6 +1,7 @@
 import {
   Actions,
   DataConnection,
+  DataConnectionObjectSchema,
   DataConnectionSchema,
   isSecretBearingAuth,
   UserSession,
@@ -40,5 +41,7 @@ export function sanitizeDataConnection(
     return DataConnectionSchema.parse(connection);
   }
 
-  return DataConnectionSchema.omit({ authentication: true }).parse(connection);
+  return DataConnectionObjectSchema.omit({ authentication: true }).parse(
+    connection
+  );
 }

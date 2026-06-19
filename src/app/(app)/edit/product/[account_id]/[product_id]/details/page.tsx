@@ -6,7 +6,7 @@ import {
   accountsTable,
   dataConnectionsTable,
 } from "@/lib/clients/database";
-import { DataConnection, DataConnectionSchema } from "@/types";
+import { DataConnection, DataConnectionObjectSchema } from "@/types";
 
 export async function generateMetadata({
   params,
@@ -41,7 +41,11 @@ export default async function DetailsPage({ params }: PageProps) {
     product.metadata.primary_mirror
   );
   const dataConnections: DataConnection[] = connection
-    ? [DataConnectionSchema.omit({ authentication: true }).parse(connection)]
+    ? [
+        DataConnectionObjectSchema.omit({ authentication: true }).parse(
+          connection
+        ),
+      ]
     : [];
 
   return (
