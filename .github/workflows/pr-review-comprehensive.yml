@@ -8,6 +8,12 @@ on:
     paths-ignore:
       - '.github/workflows/**'
 
+# Cancel an in-flight review when a new commit is pushed: the latest commit is
+# the only one worth reviewing, and all runs share one sticky comment anyway.
+concurrency:
+  group: claude-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 jobs:
   review:
     if: github.event.pull_request.user.type != 'Bot'
