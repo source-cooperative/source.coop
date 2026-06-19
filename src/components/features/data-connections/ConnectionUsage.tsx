@@ -29,9 +29,8 @@ export async function ConnectionUsage({
           <Table.Header>
             <Table.Row>
               <Table.ColumnHeaderCell>Product</Table.ColumnHeaderCell>
-              <Table.ColumnHeaderCell>ID</Table.ColumnHeaderCell>
-              <Table.ColumnHeaderCell>Disabled</Table.ColumnHeaderCell>
               <Table.ColumnHeaderCell>Primary</Table.ColumnHeaderCell>
+              <Table.ColumnHeaderCell>Disabled</Table.ColumnHeaderCell>
             </Table.Row>
           </Table.Header>
           <Table.Body>
@@ -44,26 +43,20 @@ export async function ConnectionUsage({
                   key={`${product.account_id}/${product.product_id}`}
                 >
                   <Table.Cell>
-                    <Link
-                      href={productUrl(product.account_id, product.product_id)}
-                      style={{ color: "var(--accent-11)" }}
-                    >
-                      {product.title || product.product_id}
-                    </Link>
-                  </Table.Cell>
-                  <Table.Cell>
-                    <Code size="2">
-                      {product.account_id}/{product.product_id}
-                    </Code>
-                  </Table.Cell>
-                  <Table.Cell>
-                    {product.disabled ? (
-                      <Badge color="red">Disabled</Badge>
-                    ) : (
-                      <Badge color="gray" variant="soft">
-                        Active
-                      </Badge>
-                    )}
+                    <Flex direction="column" gap="1">
+                      <Link
+                        href={productUrl(
+                          product.account_id,
+                          product.product_id
+                        )}
+                        style={{ color: "var(--accent-11)" }}
+                      >
+                        {product.title || product.product_id}
+                      </Link>
+                      <Code size="1" variant="ghost" color="gray">
+                        {product.account_id}/{product.product_id}
+                      </Code>
+                    </Flex>
                   </Table.Cell>
                   <Table.Cell>
                     {isPrimary ? (
@@ -72,6 +65,15 @@ export async function ConnectionUsage({
                       <Text size="2" color="gray">
                         -
                       </Text>
+                    )}
+                  </Table.Cell>
+                  <Table.Cell>
+                    {product.disabled ? (
+                      <Badge color="red">Disabled</Badge>
+                    ) : (
+                      <Badge color="gray" variant="soft">
+                        Active
+                      </Badge>
                     )}
                   </Table.Cell>
                 </Table.Row>
