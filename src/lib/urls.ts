@@ -15,6 +15,11 @@ export const newProductUrl = () => "/products/new";
 // Admin URLs
 export const adminUrl = () => "/admin";
 export const adminUserLookupUrl = () => "/admin/user-lookup";
+export const adminDataConnectionsUrl = () => "/admin/data-connections";
+export const adminDataConnectionCreateUrl = () =>
+  "/admin/data-connections/create";
+export const adminDataConnectionEditUrl = (data_connection_id: string) =>
+  `/admin/data-connections/${data_connection_id}`;
 
 // Auth URLs
 export const loginUrl = (returnTo?: string) => {
@@ -58,6 +63,10 @@ export const editProductMembershipsUrl = (
   account_id: string,
   product_id: string
 ) => `/edit/product/${account_id}/${product_id}/memberships`;
+export const editProductDataConnectionsUrl = (
+  account_id: string,
+  product_id: string
+) => `/edit/product/${account_id}/${product_id}/data-connections`;
 export const editProfileUrl = (account_id: string) =>
   `/edit/profile/${account_id}`;
 
