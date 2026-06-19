@@ -9,6 +9,12 @@ import { FormState } from "@/components/core/DynamicForm";
 import { revalidatePath } from "next/cache";
 import { editProductDataConnectionsUrl } from "@/lib/urls";
 
+// ponytail: these three actions fetch → mutate → productsTable.update() with no
+// optimistic lock, so two admins editing the same product's mirrors at once can
+// silently lose one update (last write wins). Admin-only and low-frequency, so
+// the race is left open. Upgrade path: thread a ConditionExpression on
+// updated_at through productsTable.update() for a compare-and-swap.
+
 export async function addProductMirror(
   _prevState: FormState<unknown>,
   formData: FormData
@@ -78,8 +84,8 @@ export async function addProductMirror(
 
     const prefix = connection.prefix_template
       ? connection.prefix_template
-          .replace("{{repository.account_id}}", accountId)
-          .replace("{{repository.repository_id}}", productId)
+          .replaceAll("{{repository.account_id}}", accountId)
+          .replaceAll("{{repository.repository_id}}", productId)
       : `${accountId}/${productId}/`;
 
     const isFirst = Object.keys(product.metadata.mirrors).length === 0;

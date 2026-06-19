@@ -239,7 +239,8 @@ export function ProductMirrorsManager({
                     key={conn.data_connection_id}
                     value={conn.data_connection_id}
                   >
-                    {conn.name} ({conn.provider} - {conn.region})
+                    {conn.name} ({conn.provider}
+                    {conn.region ? ` - ${conn.region}` : ""})
                   </option>
                 ))}
               </select>

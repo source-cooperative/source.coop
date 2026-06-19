@@ -109,15 +109,15 @@ export const S3ECSTaskRoleAuthenticationSchema = z
 export const S3AccessKeyAuthenticationSchema = z
   .object({
     type: z.literal(DataConnectionAuthenticationType.S3AccessKey),
-    access_key_id: z.string(),
-    secret_access_key: z.string(),
+    access_key_id: z.string().min(1, "Access Key ID is required"),
+    secret_access_key: z.string().min(1, "Secret Access Key is required"),
   })
   .openapi("S3AccessKeyAuthentication");
 
 export const AzureSasTokenAuthenticationSchema = z
   .object({
     type: z.literal(DataConnectionAuthenticationType.AzureSasToken),
-    sas_token: z.string(),
+    sas_token: z.string().min(1, "SAS Token is required"),
   })
   .openapi("AzureSasTokenAuthentication");
 

@@ -45,16 +45,6 @@ export async function createDataConnection(
       };
     }
 
-    const secretErrors = missingSecretErrors(validated.data.authentication);
-    if (Object.keys(secretErrors).length > 0) {
-      return {
-        fieldErrors: secretErrors,
-        data: formData,
-        message: "Invalid form data",
-        success: false,
-      };
-    }
-
     if (!isAuthorized(session, validated.data, Actions.CreateDataConnection)) {
       return {
         fieldErrors: {},
@@ -187,16 +177,6 @@ export async function updateDataConnection(
     if (!validated.success) {
       return {
         fieldErrors: fieldErrorsFromZod(validated.error),
-        data: formData,
-        message: "Invalid form data",
-        success: false,
-      };
-    }
-
-    const secretErrors = missingSecretErrors(validated.data.authentication);
-    if (Object.keys(secretErrors).length > 0) {
-      return {
-        fieldErrors: secretErrors,
         data: formData,
         message: "Invalid form data",
         success: false,
@@ -493,34 +473,4 @@ function buildAuthenticationFromForm(
     default:
       return undefined;
   }
-}
-
-/**
- * The auth schemas accept empty secret strings, and the form leaves secret
- * fields blank on edit (to keep the stored value). This guards the remaining
- * gap: selecting a secret-based auth type but providing no secret — on create,
- * or when switching auth type on edit (where there is no stored value to reuse).
- */
-function missingSecretErrors(
-  authentication: DataConnection["authentication"]
-): Record<string, string[]> {
-  const errors: Record<string, string[]> = {};
-  if (!authentication) return errors;
-
-  if (authentication.type === DataConnectionAuthenticationType.S3AccessKey) {
-    if (!authentication.access_key_id) {
-      errors.access_key_id = ["Access Key ID is required"];
-    }
-    if (!authentication.secret_access_key) {
-      errors.secret_access_key = ["Secret Access Key is required"];
-    }
-  } else if (
-    authentication.type === DataConnectionAuthenticationType.AzureSasToken
-  ) {
-    if (!authentication.sas_token) {
-      errors.sas_token = ["SAS Token is required"];
-    }
-  }
-
-  return errors;
 }

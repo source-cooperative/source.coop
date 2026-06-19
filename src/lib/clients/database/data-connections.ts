@@ -47,15 +47,9 @@ export class DataConnectionsTable extends BaseTable {
           ConsistentRead: true,
         })
       );
-      // Copy before sorting: the response may be a shared, request-cached object,
-      // so we must not sort `result.Items` in place.
-      return (
-        [...(result.Items ?? [])]
-          .sort((a, b) =>
-            b.data_connection_id.localeCompare(a.data_connection_id)
-          )
-          .map((item) => item as DataConnection)
-      );
+      // Unsorted: callers order as they need (e.g. the admin page sorts by
+      // provider then name). Sorting here would express no useful intent.
+      return (result.Items ?? []) as DataConnection[];
     } catch (error) {
       this.logError("listAll", error);
       throw error;
