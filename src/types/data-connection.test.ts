@@ -5,6 +5,7 @@ import {
   DataConnectionSchema,
   DataConnnectionDetailsSchema,
   DataProvider,
+  isSecretBearingAuth,
 } from "./data-connection";
 
 describe("DataConnection V2 workload-identity variants", () => {
@@ -239,7 +240,7 @@ describe("isSecretBearingAuth", () => {
       })
     ).toBe(false);
   });
-}
+});
 
 describe("DataConnectionDetails (S3-compatible + GCP variants)", () => {
   test("parses an S3-compatible (R2) connection with a custom endpoint", () => {

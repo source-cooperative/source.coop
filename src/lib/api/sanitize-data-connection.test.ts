@@ -42,7 +42,7 @@ function conn(over: Partial<DataConnection>): DataConnection {
 
 const roleAuth = {
   type: DataConnectionAuthenticationType.S3WebIdentityRole,
-  role_arn: "arn:aws:iam::1:role/r",
+  role_arn: "arn:aws:iam::123456789012:role/r",
 };
 const keyAuth = {
   type: DataConnectionAuthenticationType.S3AccessKey,
