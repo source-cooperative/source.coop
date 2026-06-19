@@ -27,7 +27,11 @@
  *         description: Internal server error
  */
 import { NextRequest, NextResponse } from "next/server";
-import { Actions, DataConnectionSchema } from "@/types";
+import {
+  Actions,
+  DataConnectionSchema,
+  DataConnectionObjectSchema,
+} from "@/types";
 import { StatusCodes } from "http-status-codes";
 import { isAdmin, isAuthorized } from "@/lib/api/authz";
 import { getApiSession } from "@/lib/api/utils";
@@ -66,7 +70,7 @@ export async function GET(
         Actions.ViewDataConnectionCredentials
       )
     ) {
-      dataConnection = DataConnectionSchema.omit({
+      dataConnection = DataConnectionObjectSchema.omit({
         authentication: true,
       }).parse(dataConnection);
     }

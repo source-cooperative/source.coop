@@ -140,6 +140,11 @@ describe("DataConnection V2 workload-identity variants", () => {
       "not-an-arn",
       "arn:aws:s3:::some-bucket",
       "arn:aws:iam::abc:role/source-coop",
+      // role name with a space — invalid IAM character, must be rejected here
+      // rather than slipping through to an STS failure at call time
+      "arn:aws:iam::123456789012:role/foo bar",
+      // role name with an otherwise-invalid character
+      "arn:aws:iam::123456789012:role/source$coop",
     ]) {
       expect(() =>
         DataConnectionAuthenticationSchema.parse({
@@ -161,7 +166,12 @@ describe("DataConnection V2 workload-identity variants", () => {
   });
 
   test("rejects a service_account that is not a gserviceaccount.com email", () => {
-    for (const service_account of ["not-an-email", "user@gmail.com"]) {
+    for (const service_account of [
+      "not-an-email",
+      "user@gmail.com",
+      // missing the `.iam.` subdomain — not a valid user-managed SA format
+      "sa@project.gserviceaccount.com",
+    ]) {
       expect(() =>
         DataConnectionAuthenticationSchema.parse({
           type: "gcp_workload_identity",
@@ -273,5 +283,81 @@ describe("DataConnectionDetails (S3-compatible + GCP variants)", () => {
     expect(dc.authentication?.type).toBe(
       DataConnectionAuthenticationType.GcpWorkloadIdentity
     );
+  });
+});
+
+describe("DataConnection provider ↔ authentication cross-validation", () => {
+  const baseFields = {
+    data_connection_id: "conn-1",
+    name: "Conn",
+    read_only: false,
+    allowed_visibilities: [],
+  };
+  const s3Details = {
+    provider: "s3",
+    bucket: "example-bucket",
+    base_prefix: "",
+    region: "us-west-2",
+  };
+  const gcpDetails = { provider: "gcp", bucket: "example-bucket", base_prefix: "" };
+  const s3WebIdentityAuth = {
+    type: "s3_web_identity_role",
+    role_arn: "arn:aws:iam::123456789012:role/source-coop",
+  };
+  const gcpAuth = {
+    type: "gcp_workload_identity",
+    workload_identity_provider:
+      "//iam.googleapis.com/projects/123/locations/global/workloadIdentityPools/p/providers/pr",
+    service_account: "sa@project.iam.gserviceaccount.com",
+  };
+
+  test("accepts an S3 provider paired with an S3 auth variant", () => {
+    const dc = DataConnectionSchema.parse({
+      ...baseFields,
+      details: s3Details,
+      authentication: s3WebIdentityAuth,
+    });
+    expect(dc.authentication?.type).toBe(
+      DataConnectionAuthenticationType.S3WebIdentityRole
+    );
+  });
+
+  test("accepts a GCP provider paired with the GCP auth variant", () => {
+    const dc = DataConnectionSchema.parse({
+      ...baseFields,
+      details: gcpDetails,
+      authentication: gcpAuth,
+    });
+    expect(dc.authentication?.type).toBe(
+      DataConnectionAuthenticationType.GcpWorkloadIdentity
+    );
+  });
+
+  test("rejects a GCP provider paired with an S3 auth variant", () => {
+    expect(() =>
+      DataConnectionSchema.parse({
+        ...baseFields,
+        details: gcpDetails,
+        authentication: s3WebIdentityAuth,
+      })
+    ).toThrow();
+  });
+
+  test("rejects an S3 provider paired with the GCP auth variant", () => {
+    expect(() =>
+      DataConnectionSchema.parse({
+        ...baseFields,
+        details: s3Details,
+        authentication: gcpAuth,
+      })
+    ).toThrow();
+  });
+
+  test("allows a connection with no authentication regardless of provider", () => {
+    const dc = DataConnectionSchema.parse({
+      ...baseFields,
+      details: gcpDetails,
+    });
+    expect(dc.authentication).toBeUndefined();
   });
 });
