@@ -64,6 +64,17 @@ export async function GET(
       );
     }
     if (!isAuthorized(session, repository, Actions.GetRepository)) {
+      // A deactivated product should be indistinguishable from a missing one
+      // for anyone not permitted to view it: return 404 instead of a 401 that
+      // would leak its existence.
+      if (repository.disabled) {
+        return NextResponse.json(
+          {
+            error: `Repository with ID ${account_id}/${repository_id} not found`,
+          },
+          { status: StatusCodes.NOT_FOUND },
+        );
+      }
       // Distinguish the three ways this 401 happens: no session at all (the
       // OIDC token failed to verify or its subject didn't resolve — see the
       // authenticateWithOidcToken warnings) vs. a resolved session that simply
