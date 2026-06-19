@@ -42,7 +42,13 @@ export function SettingsLayout({ children, menuItems }: SettingsLayoutProps) {
         >
           <Flex direction="column" gap="1">
             {filteredMenuItems.map((item) => {
-              const isActive = !item.external && pathname === item.href;
+              // Active when on the item's page or any of its sub-routes (e.g.
+              // a tool's create/edit pages). The "/" guard avoids matching
+              // sibling routes that merely share a prefix.
+              const isActive =
+                !item.external &&
+                (pathname === item.href ||
+                  pathname.startsWith(item.href + "/"));
               const baseStyle: CSSProperties = {
                 display: "flex",
                 alignItems: "center",

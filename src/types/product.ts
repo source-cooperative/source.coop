@@ -4,8 +4,9 @@ import { AccountSchema } from "@/types/account";
 
 extendZodWithOpenApi(z);
 
-// Mirror configuration and status tracking
-// ProductMirror describes a storage mirror for a product, including config, sync status, and stats.
+// ProductMirror describes a storage mirror for a product: which data connection
+// backs it, the key prefix under which the product's objects live, and whether
+// it is the primary mirror.
 export const ProductMirrorSchema = z
   .object({
     storage_type: z.enum(["s3", "azure", "gcs", "minio", "ceph"]),

@@ -23,6 +23,11 @@ export enum DataProvider {
 }
 
 export enum S3Regions {
+  /**
+   * For S3-compatible backends (e.g. Cloudflare R2) that don't use an AWS
+   * region. Pair with a custom `endpoint` on the connection.
+   */
+  AUTO = "auto",
   AF_SOUTH_1 = "af-south-1",
   AP_EAST_1 = "ap-east-1",
   AP_NORTHEAST_1 = "ap-northeast-1",
@@ -104,17 +109,24 @@ export const S3ECSTaskRoleAuthenticationSchema = z
 export const S3AccessKeyAuthenticationSchema = z
   .object({
     type: z.literal(DataConnectionAuthenticationType.S3AccessKey),
-    access_key_id: z.string(),
-    secret_access_key: z.string(),
+    access_key_id: z.string().min(1, "Access Key ID is required"),
+    secret_access_key: z.string().min(1, "Secret Access Key is required"),
   })
   .openapi("S3AccessKeyAuthentication");
 
 export const AzureSasTokenAuthenticationSchema = z
   .object({
     type: z.literal(DataConnectionAuthenticationType.AzureSasToken),
-    sas_token: z.string(),
+    sas_token: z.string().min(1, "SAS Token is required"),
   })
   .openapi("AzureSasTokenAuthentication");
+
+/**
+ * IAM role ARN: `arn:{partition}:iam::{account}:role/{path}{name}`. The
+ * partition class (`aws`, `aws-us-gov`, `aws-cn`) and an optional role path are
+ * allowed so GovCloud/China and pathed roles are not rejected.
+ */
+const IAM_ROLE_ARN_REGEX = /^arn:aws[a-z-]*:iam::\d{12}:role\/.+$/;
 
 /**
  * V2 federated S3 access. `role_arn` is the customer-owned IAM role the proxy
@@ -124,7 +136,7 @@ export const AzureSasTokenAuthenticationSchema = z
 export const S3WebIdentityRoleAuthenticationSchema = z
   .object({
     type: z.literal(DataConnectionAuthenticationType.S3WebIdentityRole),
-    role_arn: z.string(),
+    role_arn: z.string().regex(IAM_ROLE_ARN_REGEX, "Invalid IAM role ARN"),
   })
   .openapi("S3WebIdentityRoleAuthentication");
 
@@ -139,9 +151,11 @@ export const GcpWorkloadIdentityAuthenticationSchema = z
   .object({
     type: z.literal(DataConnectionAuthenticationType.GcpWorkloadIdentity),
     /** Full WIF provider resource: `//iam.googleapis.com/projects/.../providers/...`. */
-    workload_identity_provider: z.string(),
+    workload_identity_provider: z
+      .string()
+      .startsWith("//iam.googleapis.com/projects/"),
     /** Service account email the exchanged token impersonates for GCS. */
-    service_account: z.string(),
+    service_account: z.string().email().endsWith(".gserviceaccount.com"),
   })
   .openapi("GcpWorkloadIdentityAuthentication");
 
@@ -156,9 +170,9 @@ export const AzureWorkloadIdentityAuthenticationSchema = z
   .object({
     type: z.literal(DataConnectionAuthenticationType.AzureWorkloadIdentity),
     /** Azure AD tenant (directory) ID. */
-    tenant_id: z.string(),
+    tenant_id: z.string().uuid(),
     /** App registration (client) ID holding the federated identity credential. */
-    client_id: z.string(),
+    client_id: z.string().uuid(),
   })
   .openapi("AzureWorkloadIdentityAuthentication");
 
@@ -184,6 +198,11 @@ export const S3DataConnectionSchema = z
     bucket: z.string(),
     base_prefix: z.string(),
     region: z.nativeEnum(S3Regions),
+    /**
+     * Custom S3-compatible endpoint for non-AWS backends (Cloudflare R2, MinIO,
+     * Ceph). Omit for AWS S3, which derives its endpoint from `region`.
+     */
+    endpoint: z.optional(z.string().url()),
   })
   .openapi("S3DataConnection");
 
@@ -197,13 +216,28 @@ export const AzureDataConnectionSchema = z
   })
   .openapi("AzureDataConnection");
 
+/**
+ * Google Cloud Storage. Access is keyless via GCP Workload Identity Federation
+ * (the `gcp_workload_identity` authentication variant), so no region/endpoint is
+ * needed to address the bucket.
+ */
+export const GcpDataConnectionSchema = z
+  .object({
+    provider: z.literal(DataProvider.GCP),
+    bucket: z.string(),
+    base_prefix: z.string(),
+  })
+  .openapi("GcpDataConnection");
+
 export type S3DataConnection = z.infer<typeof S3DataConnectionSchema>;
 export type AzureDataConnection = z.infer<typeof AzureDataConnectionSchema>;
+export type GcpDataConnection = z.infer<typeof GcpDataConnectionSchema>;
 
 export const DataConnnectionDetailsSchema = z
   .discriminatedUnion("provider", [
     S3DataConnectionSchema,
     AzureDataConnectionSchema,
+    GcpDataConnectionSchema,
   ])
   .openapi("DataConnectionDetails");
 
@@ -223,6 +257,11 @@ export const DataConnectionSchema = z
     name: z.string(),
     prefix_template: z.optional(z.string()),
     read_only: z.boolean(),
+    // Optional account that owns this connection. Source-Coop-managed
+    // connections have no owner and are available to all accounts.
+    owner: z.optional(z.string()),
+    // Visibilities a product may use on this connection; enforced at product
+    // creation (see createProduct in src/lib/actions/products.ts).
     allowed_visibilities: z.array(z.nativeEnum(ProductVisibility)),
     required_flag: z.optional(z.nativeEnum(AccountFlags)),
     /**

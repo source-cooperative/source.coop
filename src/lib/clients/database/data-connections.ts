@@ -8,6 +8,7 @@ import {
   ScanCommand,
   PutCommand,
   UpdateCommand,
+  DeleteCommand,
 } from "@aws-sdk/lib-dynamodb";
 import { marshall } from "@aws-sdk/util-dynamodb";
 import { BaseTable } from "./base";
@@ -46,15 +47,9 @@ export class DataConnectionsTable extends BaseTable {
           ConsistentRead: true,
         })
       );
-      // Copy before sorting: the response may be a shared, request-cached object,
-      // so we must not sort `result.Items` in place.
-      return (
-        [...(result.Items ?? [])]
-          .sort((a, b) =>
-            b.data_connection_id.localeCompare(a.data_connection_id)
-          )
-          .map((item) => item as DataConnection)
-      );
+      // Unsorted: callers order as they need (e.g. the admin page sorts by
+      // provider then name). Sorting here would express no useful intent.
+      return (result.Items ?? []) as DataConnection[];
     } catch (error) {
       this.logError("listAll", error);
       throw error;
@@ -67,6 +62,9 @@ export class DataConnectionsTable extends BaseTable {
         new PutCommand({
           TableName: this.table,
           Item: dataConnection,
+          // Guard against a concurrent create racing the caller's existence
+          // check and silently overwriting a live connection.
+          ConditionExpression: "attribute_not_exists(data_connection_id)",
         })
       );
       return dataConnection;
@@ -80,23 +78,56 @@ export class DataConnectionsTable extends BaseTable {
 
   async update(dataConnection: DataConnection): Promise<DataConnection> {
     try {
+      // `name` is a DynamoDB reserved word, so it must be aliased. Optional
+      // fields that are `undefined` are REMOVEd rather than SET: the document
+      // client strips undefined values (removeUndefinedValues), which would
+      // otherwise leave the SET expression referencing a missing value.
+      const names: Record<string, string> = { "#name": "name" };
+      const values: Record<string, unknown> = {
+        ":name": dataConnection.name,
+        ":read_only": dataConnection.read_only,
+        ":allowed_visibilities": dataConnection.allowed_visibilities,
+        ":details": dataConnection.details,
+      };
+      const setClauses = [
+        "#name = :name",
+        "read_only = :read_only",
+        "allowed_visibilities = :allowed_visibilities",
+        "details = :details",
+      ];
+      const removeClauses: string[] = [];
+
+      const optionalFields: Array<[string, unknown]> = [
+        ["prefix_template", dataConnection.prefix_template],
+        ["required_flag", dataConnection.required_flag],
+        ["authentication", dataConnection.authentication],
+      ];
+      for (const [field, value] of optionalFields) {
+        if (value === undefined) {
+          removeClauses.push(field);
+        } else {
+          setClauses.push(`${field} = :${field}`);
+          values[`:${field}`] = value;
+        }
+      }
+
+      let updateExpression = `SET ${setClauses.join(", ")}`;
+      if (removeClauses.length > 0) {
+        updateExpression += ` REMOVE ${removeClauses.join(", ")}`;
+      }
+
       const result = await this.client.send(
         new UpdateCommand({
           TableName: this.table,
           Key: {
             data_connection_id: dataConnection.data_connection_id,
           },
-          UpdateExpression:
-            "SET name = :name, prefix_template = :prefix_template, read_only = :read_only, allowed_visibilities = :allowed_visibilities, required_flag = :required_flag, details = :details, authentication = :authentication",
-          ExpressionAttributeValues: {
-            ":name": dataConnection.name,
-            ":prefix_template": dataConnection.prefix_template,
-            ":read_only": dataConnection.read_only,
-            ":allowed_visibilities": dataConnection.allowed_visibilities,
-            ":required_flag": dataConnection.required_flag,
-            ":details": dataConnection.details,
-            ":authentication": dataConnection.authentication,
-          },
+          // Guard against UpdateItem's upsert semantics resurrecting a row that
+          // was deleted concurrently (would otherwise write a partial ghost).
+          ConditionExpression: "attribute_exists(data_connection_id)",
+          UpdateExpression: updateExpression,
+          ExpressionAttributeNames: names,
+          ExpressionAttributeValues: values,
           ReturnValues: "ALL_NEW",
         })
       );
@@ -105,6 +136,22 @@ export class DataConnectionsTable extends BaseTable {
       this.logError("update", error, {
         dataConnectionId: dataConnection.data_connection_id,
       });
+      throw error;
+    }
+  }
+
+  async delete(dataConnectionId: string): Promise<void> {
+    try {
+      await this.client.send(
+        new DeleteCommand({
+          TableName: this.table,
+          Key: {
+            data_connection_id: dataConnectionId,
+          },
+        })
+      );
+    } catch (error) {
+      this.logError("delete", error, { dataConnectionId });
       throw error;
     }
   }
