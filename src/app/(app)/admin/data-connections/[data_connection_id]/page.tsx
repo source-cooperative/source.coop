@@ -1,8 +1,8 @@
 import { Metadata } from "next";
 import { Suspense } from "react";
-import { Flex, Heading, Text } from "@radix-ui/themes";
+import { Button, Flex, Heading, Text } from "@radix-ui/themes";
 import { notFound } from "next/navigation";
-import { dataConnectionsTable } from "@/lib/clients";
+import { dataConnectionsTable, productsTable } from "@/lib/clients";
 import {
   DataConnectionForm,
   DeleteDataConnectionButton,
@@ -34,9 +34,17 @@ export default async function EditDataConnectionPage({
     <Flex direction="column" gap="4">
       <Flex justify="between" align="center">
         <Heading size="4">Edit Data Connection</Heading>
-        <DeleteDataConnectionButton
-          dataConnectionId={dataConnection.data_connection_id}
-        />
+        <Suspense
+          fallback={
+            <Button size="2" color="red" variant="soft" disabled>
+              Delete
+            </Button>
+          }
+        >
+          <DeleteConnectionControl
+            connectionId={dataConnection.data_connection_id}
+          />
+        </Suspense>
       </Flex>
       <DataConnectionForm
         mode="edit"
@@ -53,5 +61,22 @@ export default async function EditDataConnectionPage({
         <ConnectionUsage connectionId={dataConnection.data_connection_id} />
       </Suspense>
     </Flex>
+  );
+}
+
+// Fetches the dependent-product count so the delete confirm can be disabled when
+// the connection is in use. The scan is request-deduped with <ConnectionUsage>,
+// so this adds no extra DB work; Suspense keeps it off the form's critical path.
+async function DeleteConnectionControl({
+  connectionId,
+}: {
+  connectionId: string;
+}) {
+  const products = await productsTable.listProductsByConnectionId(connectionId);
+  return (
+    <DeleteDataConnectionButton
+      dataConnectionId={connectionId}
+      productsInUse={products.length}
+    />
   );
 }

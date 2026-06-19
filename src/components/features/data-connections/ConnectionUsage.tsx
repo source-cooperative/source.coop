@@ -30,6 +30,7 @@ export async function ConnectionUsage({
             <Table.Row>
               <Table.ColumnHeaderCell>Product</Table.ColumnHeaderCell>
               <Table.ColumnHeaderCell>ID</Table.ColumnHeaderCell>
+              <Table.ColumnHeaderCell>Disabled</Table.ColumnHeaderCell>
               <Table.ColumnHeaderCell>Primary</Table.ColumnHeaderCell>
             </Table.Row>
           </Table.Header>
@@ -54,6 +55,15 @@ export async function ConnectionUsage({
                     <Code size="2">
                       {product.account_id}/{product.product_id}
                     </Code>
+                  </Table.Cell>
+                  <Table.Cell>
+                    {product.disabled ? (
+                      <Badge color="red">Disabled</Badge>
+                    ) : (
+                      <Badge color="gray" variant="soft">
+                        Active
+                      </Badge>
+                    )}
                   </Table.Cell>
                   <Table.Cell>
                     {isPrimary ? (

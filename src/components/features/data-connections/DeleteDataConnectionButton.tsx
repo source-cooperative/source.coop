@@ -8,11 +8,16 @@ import { deleteDataConnection } from "@/lib/actions/data-connections";
 
 interface DeleteDataConnectionButtonProps {
   dataConnectionId: string;
+  // Number of products still mirroring through this connection; deletion is
+  // blocked server-side while > 0, so we disable the confirm to match.
+  productsInUse: number;
 }
 
 export function DeleteDataConnectionButton({
   dataConnectionId,
+  productsInUse,
 }: DeleteDataConnectionButtonProps) {
+  const inUse = productsInUse > 0;
   const router = useRouter();
   const [state, formAction, pending] = useActionState(deleteDataConnection, {
     message: "",
@@ -42,10 +47,12 @@ export function DeleteDataConnectionButton({
           Are you sure you want to delete this data connection? This action
           cannot be undone.
         </AlertDialog.Description>
-        <Text as="p" size="1" color="gray" mt="2">
-          You cannot delete a connection while products are using it — remove it
-          from all products first.
-        </Text>
+        {inUse && (
+          <Text as="p" size="1" color="red" mt="2">
+            You cannot delete a connection while products are using it — remove
+            it from all products first.
+          </Text>
+        )}
         <Flex gap="3" mt="4" justify="end">
           <AlertDialog.Cancel>
             <Button variant="soft" color="gray">
@@ -66,7 +73,7 @@ export function DeleteDataConnectionButton({
             <Button
               type="submit"
               color="red"
-              disabled={pending}
+              disabled={pending || inUse}
               loading={pending}
             >
               Delete
