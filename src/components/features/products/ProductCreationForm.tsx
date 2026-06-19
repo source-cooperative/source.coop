@@ -237,10 +237,16 @@ export function ProductCreationForm({
             required: true,
             description:
               "Where this product's data is stored. Determines the available region and visibility options. If you're unsure, choose a us-west-2 connection.",
-            options: availableConnections.map((connection) => ({
-              value: connection.data_connection_id,
-              label: describeConnection(connection),
-            })),
+            options: [...availableConnections]
+              .sort(
+                (a, b) =>
+                  a.details.provider.localeCompare(b.details.provider) ||
+                  a.name.localeCompare(b.name)
+              )
+              .map((connection) => ({
+                value: connection.data_connection_id,
+                label: describeConnection(connection),
+              })),
             placeholder:
               availableConnections.length === 0
                 ? "No data connections available"
