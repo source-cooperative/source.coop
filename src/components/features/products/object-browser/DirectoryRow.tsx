@@ -14,7 +14,7 @@ import Link from "next/link";
 import { MonoText } from "@/components/core";
 import type { FileNode } from "./utils";
 import type { Product } from "@/types";
-import { formatFileSize } from "./utils";
+import { formatBytes } from "@/lib/format";
 import { objectUrl } from "@/lib/urls";
 import styles from "./ObjectBrowser.module.css";
 import { useState } from "react";
@@ -147,7 +147,7 @@ export function DirectoryRow({
               {/* File size */}
               {!item.isDirectory && item.size > 0 && (
                 <MonoText color="gray" size="1" style={{ flexShrink: 0 }}>
-                  {formatFileSize(item.size)}
+                  {formatBytes(item.size)}
                 </MonoText>
               )}
 
