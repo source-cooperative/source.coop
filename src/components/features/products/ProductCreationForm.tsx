@@ -30,6 +30,11 @@ function allowedVisibilitiesFor(
     : ALL_VISIBILITIES;
 }
 
+// Region is only present on S3/Azure connections, not GCP (keyless WIF).
+function regionOf(connection: DataConnection): string | undefined {
+  return "region" in connection.details ? connection.details.region : undefined;
+}
+
 // A new product defaults to a us-west-2 connection when one is available — the
 // region we steer unsure users toward — and otherwise to the first option.
 const DEFAULT_REGION = "us-west-2";
@@ -37,8 +42,7 @@ function pickDefaultConnection(
   connections: DataConnection[]
 ): DataConnection | undefined {
   return (
-    connections.find((c) => c.details.region === DEFAULT_REGION) ??
-    connections[0]
+    connections.find((c) => regionOf(c) === DEFAULT_REGION) ?? connections[0]
   );
 }
 
@@ -47,8 +51,10 @@ function describeConnection(connection: DataConnection): string {
   const visibilities =
     connection.allowed_visibilities.map((v) => VISIBILITY_LABELS[v]).join(", ") ||
     "no visibilities";
+  const region = regionOf(connection);
+  const location = region ? ` (${region})` : "";
   const readOnly = connection.read_only ? " · Read Only" : "";
-  return `${connection.name} (${connection.details.region}) · ${visibilities}${readOnly}`;
+  return `${connection.name}${location} · ${visibilities}${readOnly}`;
 }
 
 interface ProductCreationFormProps {
