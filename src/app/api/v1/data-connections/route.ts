@@ -18,11 +18,7 @@
  *         description: Internal server error
  */
 import { NextRequest, NextResponse } from "next/server";
-import {
-  Actions,
-  DataConnectionSchema,
-  DataConnectionObjectSchema,
-} from "@/types";
+import { Actions, DataConnectionSchema } from "@/types";
 import { StatusCodes } from "http-status-codes";
 import { isAuthorized } from "@/lib/api/authz";
 import { sanitizeDataConnection } from "@/lib/api/sanitize-data-connection";
@@ -38,15 +34,10 @@ export async function GET(request: NextRequest) {
     const filteredConnections = dataConnections.filter((dataConnection) =>
       isAuthorized(session, dataConnection, Actions.GetDataConnection)
     );
-    const sanitizedConnections = filteredConnections.map((connection) => {
-      const sanitized = sanitizeDataConnection(connection, session);
-      if (
-        isAuthorized(session, connection, Actions.ViewDataConnectionCredentials)
-      ) {
-        return DataConnectionSchema.parse(connection);
-      }
-      return sanitized;
-    });
+    // sanitizeDataConnection redacts authentication per the caller's permissions.
+    const sanitizedConnections = filteredConnections.map((connection) =>
+      sanitizeDataConnection(connection, session)
+    );
 
     return NextResponse.json(sanitizedConnections, { status: StatusCodes.OK });
   } catch (err: any) {
