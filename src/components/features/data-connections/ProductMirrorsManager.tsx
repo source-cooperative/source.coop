@@ -6,7 +6,7 @@ import { Link1Icon, ExternalLinkIcon } from "@radix-ui/react-icons";
 import Form from "next/form";
 import Link from "next/link";
 import { formFieldStyle } from "@/components/core/DynamicForm";
-import { Product } from "@/types";
+import { Product, ProductMirror } from "@/types";
 import {
   addProductMirror,
   removeProductMirror,
@@ -20,6 +20,19 @@ interface ProductMirrorsManagerProps {
   availableConnections: DataConnectionOption[];
   isAdmin: boolean;
 }
+
+// Distinct color per backend so GCS isn't confused with Azure. minio/ceph are
+// S3-compatible, hence orange like s3. Unknown types fall back to gray.
+const STORAGE_TYPE_COLOR: Record<
+  ProductMirror["storage_type"],
+  "orange" | "blue" | "green"
+> = {
+  s3: "orange",
+  minio: "orange",
+  ceph: "orange",
+  azure: "blue",
+  gcs: "green",
+};
 
 const emptyFormState = {
   message: "",
@@ -112,9 +125,7 @@ export function ProductMirrorsManager({
                   </Flex>
                 </Table.Cell>
                 <Table.Cell>
-                  <Badge
-                    color={mirror.storage_type === "s3" ? "orange" : "blue"}
-                  >
+                  <Badge color={STORAGE_TYPE_COLOR[mirror.storage_type]}>
                     {mirror.storage_type}
                   </Badge>
                 </Table.Cell>

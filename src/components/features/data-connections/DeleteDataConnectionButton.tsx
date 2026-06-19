@@ -40,7 +40,8 @@ export function DeleteDataConnectionButton({
         <AlertDialog.Title>Delete Data Connection</AlertDialog.Title>
         <AlertDialog.Description>
           Are you sure you want to delete this data connection? This action
-          cannot be undone. Products using this connection may be affected.
+          cannot be undone. You cannot delete a connection while products are
+          using it — remove it from all products first.
         </AlertDialog.Description>
         <Flex gap="3" mt="4" justify="end">
           <AlertDialog.Cancel>

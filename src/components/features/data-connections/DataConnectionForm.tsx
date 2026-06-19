@@ -272,9 +272,12 @@ export function DataConnectionForm({
             type="text"
             name="prefix_template"
             defaultValue={
-              (state.data.get("prefix_template") as string) ||
-              dataConnection?.prefix_template ||
-              "{{repository.account_id}}/{{repository.repository_id}}/"
+              // has()-check, not ||: preserve a user-cleared value across a
+              // failed submit instead of reverting to the stored value.
+              state.data.has("prefix_template")
+                ? (state.data.get("prefix_template") as string)
+                : (dataConnection?.prefix_template ??
+                  "{{repository.account_id}}/{{repository.repository_id}}/")
             }
             style={fieldStyle}
           />
@@ -330,9 +333,11 @@ export function DataConnectionForm({
           <select
             name="required_flag"
             defaultValue={
-              (state.data.get("required_flag") as string) ||
-              dataConnection?.required_flag ||
-              ""
+              // has()-check, not ||: a user-selected "None" ("") must survive a
+              // failed submit instead of reverting to the stored flag.
+              state.data.has("required_flag")
+                ? (state.data.get("required_flag") as string)
+                : (dataConnection?.required_flag ?? "")
             }
             style={fieldStyle}
           >

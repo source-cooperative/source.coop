@@ -203,7 +203,24 @@ export async function updateDataConnection(
       };
     }
 
-    await dataConnectionsTable.update(validated.data);
+    try {
+      // update() requires the row to still exist; a concurrent delete between
+      // the fetchById above and here would otherwise resurrect a partial ghost.
+      await dataConnectionsTable.update(validated.data);
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        error.name === "ConditionalCheckFailedException"
+      ) {
+        return {
+          fieldErrors: {},
+          data: formData,
+          message: "Data connection was deleted concurrently",
+          success: false,
+        };
+      }
+      throw error;
+    }
 
     LOGGER.info("Successfully updated data connection", {
       operation: "updateDataConnection",

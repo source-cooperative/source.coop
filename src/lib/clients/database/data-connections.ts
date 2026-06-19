@@ -128,6 +128,9 @@ export class DataConnectionsTable extends BaseTable {
           Key: {
             data_connection_id: dataConnection.data_connection_id,
           },
+          // Guard against UpdateItem's upsert semantics resurrecting a row that
+          // was deleted concurrently (would otherwise write a partial ghost).
+          ConditionExpression: "attribute_exists(data_connection_id)",
           UpdateExpression: updateExpression,
           ExpressionAttributeNames: names,
           ExpressionAttributeValues: values,

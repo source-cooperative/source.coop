@@ -429,6 +429,25 @@ describe("updateDataConnection", () => {
     expect(result.message).toContain("not found");
     expect(mockTable.update).not.toHaveBeenCalled();
   });
+
+  test("translates a concurrent delete into a clear error", async () => {
+    mockTable.fetchById.mockResolvedValue(existingAccessKey);
+    const conditionalFailure = Object.assign(new Error("conditional"), {
+      name: "ConditionalCheckFailedException",
+    });
+    mockTable.update.mockRejectedValueOnce(conditionalFailure);
+
+    const result = await updateDataConnection(
+      FORM_STATE,
+      formDataFor({
+        ...baseS3Fields,
+        auth_type: DataConnectionAuthenticationType.S3Local,
+      })
+    );
+
+    expect(result.success).toBe(false);
+    expect(result.message).toContain("deleted concurrently");
+  });
 });
 
 describe("deleteDataConnection", () => {
