@@ -103,6 +103,34 @@ export class ProductsTable extends BaseTable {
     return allProducts;
   }
 
+  /**
+   * Returns every product that mirrors data through the given data connection.
+   *
+   * There is no index on `metadata.mirrors[*].connection_id` (it lives inside a
+   * DynamoDB map), so this scans the whole table and filters app-side. It
+   * matches on each mirror's `connection_id` field rather than the map key, so
+   * it is robust to legacy mirrors keyed by region (e.g. "aws-us-east-1") rather
+   * than by connection id. Intended for low-traffic admin views; if product
+   * volume grows large, replace with a denormalized connection index + GSI.
+   */
+  async listProductsByConnectionId(connectionId: string): Promise<Product[]> {
+    const matches: Product[] = [];
+    let lastEvaluatedKey: any = undefined;
+
+    do {
+      const result = await this.list(1000, lastEvaluatedKey);
+      for (const product of result.products) {
+        const mirrors = Object.values(product.metadata?.mirrors ?? {});
+        if (mirrors.some((mirror) => mirror.connection_id === connectionId)) {
+          matches.push(product);
+        }
+      }
+      lastEvaluatedKey = result.lastEvaluatedKey;
+    } while (lastEvaluatedKey);
+
+    return matches;
+  }
+
   async listPublic(
     limit = 50,
     lastEvaluatedKey?: any,
@@ -217,8 +245,26 @@ export class ProductsTable extends BaseTable {
     }
   }
 
-  async update(product: Product): Promise<Product> {
+  async update(
+    product: Product,
+    // Optimistic lock: when set, the write only lands if the row's stored
+    // updated_at still equals the value the caller read. A concurrent writer
+    // bumps updated_at, so the condition fails (ConditionalCheckFailedException)
+    // instead of silently clobbering their change. Omit it for last-write-wins.
+    opts?: { expectedUpdatedAt?: string }
+  ): Promise<Product> {
     try {
+      const values: Record<string, unknown> = {
+        ":title": product.title,
+        ":description": product.description,
+        ":updated_at": new Date().toISOString(),
+        ":visibility": product.visibility,
+        ":metadata": product.metadata,
+        ":search_text": this.buildSearchText(product),
+      };
+      if (opts?.expectedUpdatedAt) {
+        values[":expected_updated_at"] = opts.expectedUpdatedAt;
+      }
       const result = await this.client.send(
         new UpdateCommand({
           TableName: this.table,
@@ -228,14 +274,10 @@ export class ProductsTable extends BaseTable {
           },
           UpdateExpression:
             "SET title = :title, description = :description, updated_at = :updated_at, visibility = :visibility, metadata = :metadata, search_text = :search_text",
-          ExpressionAttributeValues: {
-            ":title": product.title,
-            ":description": product.description,
-            ":updated_at": new Date().toISOString(),
-            ":visibility": product.visibility,
-            ":metadata": product.metadata,
-            ":search_text": this.buildSearchText(product),
-          },
+          ...(opts?.expectedUpdatedAt
+            ? { ConditionExpression: "updated_at = :expected_updated_at" }
+            : {}),
+          ExpressionAttributeValues: values,
           ReturnValues: "ALL_NEW",
         })
       );

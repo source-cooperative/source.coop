@@ -5,6 +5,7 @@ import {
   DataConnectionSchema,
   DataConnnectionDetailsSchema,
   DataProvider,
+  isSecretBearingAuth,
 } from "./data-connection";
 
 describe("DataConnection V2 workload-identity variants", () => {
@@ -214,6 +215,40 @@ describe("DataConnection V2 workload-identity variants", () => {
       },
     });
     expect(dc.authentication).toBeUndefined();
+  });
+});
+
+describe("isSecretBearingAuth", () => {
+  test("static-credential variants are secret-bearing", () => {
+    expect(
+      isSecretBearingAuth({
+        type: DataConnectionAuthenticationType.S3AccessKey,
+        access_key_id: "AKIA",
+        secret_access_key: "s",
+      })
+    ).toBe(true);
+    expect(
+      isSecretBearingAuth({
+        type: DataConnectionAuthenticationType.AzureSasToken,
+        sas_token: "t",
+      })
+    ).toBe(true);
+  });
+
+  test("federation variants are secret-less", () => {
+    expect(
+      isSecretBearingAuth({
+        type: DataConnectionAuthenticationType.S3WebIdentityRole,
+        role_arn: "arn:aws:iam::1:role/r",
+      })
+    ).toBe(false);
+    expect(
+      isSecretBearingAuth({
+        type: DataConnectionAuthenticationType.GcpWorkloadIdentity,
+        workload_identity_provider: "p",
+        service_account: "sa",
+      })
+    ).toBe(false);
   });
 });
 

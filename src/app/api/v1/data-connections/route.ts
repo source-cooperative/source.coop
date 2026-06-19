@@ -25,6 +25,7 @@ import {
 } from "@/types";
 import { StatusCodes } from "http-status-codes";
 import { isAuthorized } from "@/lib/api/authz";
+import { sanitizeDataConnection } from "@/lib/api/sanitize-data-connection";
 import { getApiSession } from "@/lib/api/utils";
 import { dataConnectionsTable } from "@/lib/clients/database";
 import { LOGGER } from "@/lib";
@@ -38,9 +39,7 @@ export async function GET(request: NextRequest) {
       isAuthorized(session, dataConnection, Actions.GetDataConnection)
     );
     const sanitizedConnections = filteredConnections.map((connection) => {
-      const sanitized = DataConnectionObjectSchema.omit({
-        authentication: true,
-      }).parse(connection);
+      const sanitized = sanitizeDataConnection(connection, session);
       if (
         isAuthorized(session, connection, Actions.ViewDataConnectionCredentials)
       ) {
@@ -48,6 +47,7 @@ export async function GET(request: NextRequest) {
       }
       return sanitized;
     });
+
     return NextResponse.json(sanitizedConnections, { status: StatusCodes.OK });
   } catch (err: any) {
     return NextResponse.json(

@@ -58,7 +58,9 @@ interface DynamicFormProps<T extends Record<string, any>> {
   onSuccess?: () => void; // Callback when form submission is successful
 }
 
-const style: React.CSSProperties = {
+// Shared input/select styling for app forms. Exported so bespoke forms (e.g.
+// the data-connection form) render identical fields without copying the rule.
+export const formFieldStyle: React.CSSProperties = {
   fontFamily: "var(--code-font-family)",
   width: "100%",
   padding: "8px 12px",
@@ -68,6 +70,8 @@ const style: React.CSSProperties = {
   lineHeight: "1.5",
   boxSizing: "border-box",
 };
+
+const style = formFieldStyle;
 
 export function DynamicForm<T extends Record<string, any>>({
   fields,

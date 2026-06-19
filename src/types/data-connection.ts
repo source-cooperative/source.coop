@@ -109,15 +109,15 @@ export const S3ECSTaskRoleAuthenticationSchema = z
 export const S3AccessKeyAuthenticationSchema = z
   .object({
     type: z.literal(DataConnectionAuthenticationType.S3AccessKey),
-    access_key_id: z.string(),
-    secret_access_key: z.string(),
+    access_key_id: z.string().min(1, "Access Key ID is required"),
+    secret_access_key: z.string().min(1, "Secret Access Key is required"),
   })
   .openapi("S3AccessKeyAuthentication");
 
 export const AzureSasTokenAuthenticationSchema = z
   .object({
     type: z.literal(DataConnectionAuthenticationType.AzureSasToken),
-    sas_token: z.string(),
+    sas_token: z.string().min(1, "SAS Token is required"),
   })
   .openapi("AzureSasTokenAuthentication");
 
@@ -294,9 +294,23 @@ export const DataConnectionObjectSchema = z
     name: z.string(),
     prefix_template: z.optional(z.string()),
     read_only: z.boolean(),
-    // NOTE: allowed_visibilities is currently unenforced
+    // Visibilities a product may use on this connection; enforced at product
+    // creation (see createProduct in src/lib/actions/products.ts).
     allowed_visibilities: z.array(z.nativeEnum(ProductVisibility)),
     required_flag: z.optional(z.nativeEnum(AccountFlags)),
+    /**
+     * Account (individual or organization) that owns this connection. Governs
+     * who may view its *secret-less* config when it isn't public: absent =
+     * unowned (e.g. Source Cooperative-managed) ⇒ viewable by anyone; set ⇒
+     * viewable by members of that account. (See `canViewDataConnectionConfig`.)
+     */
+    owner: z.optional(
+      z
+        .string()
+        .min(MIN_ID_LENGTH)
+        .max(MAX_ID_LENGTH)
+        .regex(ID_REGEX, "Invalid account ID format")
+    ),
     details: DataConnnectionDetailsSchema,
     authentication: z.optional(DataConnectionAuthenticationSchema),
   })
@@ -325,3 +339,28 @@ export const DataConnectionSchema = DataConnectionObjectSchema.superRefine(
 );
 
 export type DataConnection = z.infer<typeof DataConnectionSchema>;
+
+/**
+ * Whether an authentication variant carries a usable secret — and so must never
+ * be exposed outside the `ViewDataConnectionCredentials` (admin) path. The V2
+ * federation variants (web identity / workload identity) are secret-less; only
+ * the static-credential variants carry secrets.
+ */
+export function isSecretBearingAuth(
+  auth: DataConnectionAuthentication
+): boolean {
+  // Default-deny on exposure: a type is treated as secret-bearing (kept out of
+  // non-admin responses) unless it is explicitly listed below as secret-less.
+  // So a newly-added or unknown variant fails safe — never accidentally exposed;
+  // exposing a type requires a deliberate edit to this allowlist.
+  switch (auth.type) {
+    case DataConnectionAuthenticationType.S3WebIdentityRole:
+    case DataConnectionAuthenticationType.GcpWorkloadIdentity:
+    case DataConnectionAuthenticationType.AzureWorkloadIdentity:
+    case DataConnectionAuthenticationType.S3ECSTaskRole:
+    case DataConnectionAuthenticationType.S3Local:
+      return false;
+    default:
+      return true;
+  }
+}
