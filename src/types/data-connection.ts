@@ -132,14 +132,34 @@ export const AzureSasTokenAuthenticationSchema = z
 const IAM_ROLE_ARN_REGEX = /^arn:aws[a-z-]*:iam::\d{12}:role\/[A-Za-z0-9+=,.@/_-]+$/;
 
 /**
+ * Granularity of the proxy's federated-credential cache for this connection —
+ * it keys the cache + single-flight lock, *not* the OIDC subject (which is
+ * always product-grained). Not stored: it's derived from connection ownership
+ * at exposure time (see `sanitizeDataConnection`) — unowned (Source-managed
+ * shared connection) ⇒ `system` (one cached credential); owned ⇒ `product`
+ * (per-product, always safe). `account` exists for a future customer that needs
+ * account-level caching with an account-scoped trust policy; nothing emits it
+ * yet.
+ */
+export enum DataConnectionCacheLevel {
+  Product = "product",
+  Account = "account",
+  System = "system",
+}
+
+/**
  * V2 federated S3 access. `role_arn` is the customer-owned IAM role the proxy
  * assumes via `AssumeRoleWithWebIdentity`. It is *not* a secret (it's an ARN),
  * so it can be surfaced to the proxy without exposing credentials.
+ *
+ * `cache_level` is optional here only so the wire type can carry the derived
+ * value; it is never stored (see {@link DataConnectionCacheLevel}).
  */
 export const S3WebIdentityRoleAuthenticationSchema = z
   .object({
     type: z.literal(DataConnectionAuthenticationType.S3WebIdentityRole),
     role_arn: z.string().regex(IAM_ROLE_ARN_REGEX, "Invalid IAM role ARN"),
+    cache_level: z.optional(z.nativeEnum(DataConnectionCacheLevel)),
   })
   .openapi("S3WebIdentityRoleAuthentication");
 

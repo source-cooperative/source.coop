@@ -93,14 +93,27 @@ describe("sanitizeDataConnection", () => {
     ).toBeUndefined();
   });
 
-  test("keeps secret-less auth when the caller may view the config", () => {
+  test("keeps secret-less auth (with derived cache_level) when viewable", () => {
     const c = conn({
       allowed_visibilities: [ProductVisibility.Public],
       authentication: roleAuth as never,
     });
+    // Unowned ⇒ Source-managed shared connection ⇒ system-level caching.
     expect(
       sanitizeDataConnection(c, sessions["anonymous"]).authentication
-    ).toEqual(roleAuth);
+    ).toEqual({ ...roleAuth, cache_level: "system" });
+  });
+
+  test("derives cache_level=product for an owned federated connection", () => {
+    const c = conn({
+      allowed_visibilities: [ProductVisibility.Restricted],
+      owner: "acme",
+      authentication: roleAuth as never,
+    });
+    expect(sanitizeDataConnection(c, memberOfAcme).authentication).toEqual({
+      ...roleAuth,
+      cache_level: "product",
+    });
   });
 
   test("strips secret-less auth when the caller may NOT view the config", () => {
