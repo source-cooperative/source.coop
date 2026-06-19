@@ -77,8 +77,8 @@ export async function verifyProxyAssertion(
 ): Promise<JWTPayload | null> {
   if (!authorization || !authorization.toLowerCase().startsWith("bearer ")) {
     // A missing or non-Bearer Authorization header is an expected, normal input
-    // (e.g. legacy clients still sending an API key), not an anomaly — log at
-    // debug so it doesn't flood warn-level logs on every such request.
+    // (e.g. anonymous or legacy clients), not an anomaly — log at debug so it
+    // doesn't flood warn-level logs on every such request.
     LOGGER.debug("No Bearer token for OIDC authentication, skipping", {
       operation: "verifyProxyAssertion",
     });
