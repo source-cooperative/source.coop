@@ -4,12 +4,9 @@ import { NextRequest, NextResponse } from "next/server";
 import swaggerJSDoc from "swagger-jsdoc";
 import { OpenApiGeneratorV3 } from "@asteasolutions/zod-to-openapi";
 import {
-  APIKeyRequestSchema,
-  APIKeySchema,
   DataConnectionObjectSchema,
   MembershipInvitationSchema,
   MembershipSchema,
-  RedactedAPIKeySchema,
 } from "@/types";
 import { AccountSchema } from "@/types/account";
 
@@ -36,24 +33,12 @@ export async function GET(_req: NextRequest) {
   const generator = new OpenApiGeneratorV3([
     AccountSchema,
     MembershipSchema,
-    APIKeySchema,
-    APIKeyRequestSchema,
-    RedactedAPIKeySchema,
     MembershipInvitationSchema,
     DataConnectionObjectSchema,
   ]);
   if (!openapiSpecification["components"]) {
     openapiSpecification["components"] = {};
   }
-  openapiSpecification["components"]["securitySchemes"] = {
-    ApiKeyAuth: {
-      type: "apiKey",
-      in: "header",
-      name: "Authorization",
-      description: "Follows the format `<access-key-id> <secret-access-key>`",
-    },
-  };
-  openapiSpecification["security"] = [{ ApiKeyAuth: [] }];
   const generatedComponents = generator.generateComponents().components;
   openapiSpecification["components"]["schemas"] =
     generatedComponents?.schemas || {};

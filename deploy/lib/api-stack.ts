@@ -77,7 +77,6 @@ export class ApiStack extends cdk.Stack {
       database.accountsTable,
       database.productsTable,
       database.dataConnectionsTable,
-      database.apiKeysTable,
       database.membershipsTable,
     ]) {
       table.grantReadWriteData(vercel.vercelRole);

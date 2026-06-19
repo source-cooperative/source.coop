@@ -3,8 +3,6 @@ import {
   UserSession,
   Membership,
   MembershipSchema,
-  APIKey,
-  APIKeySchema,
   Product,
   ProductSchema,
   DataConnection,
@@ -55,11 +53,6 @@ export const accounts: Account[] = loadAndValidateJson(
   z.array(AccountSchema)
 );
 
-export const apiKeys: APIKey[] = loadAndValidateJson(
-  path.join("fixtures", "api-keys.json"),
-  z.array(APIKeySchema)
-);
-
 export const memberships: Membership[] = loadAndValidateJson(
   path.join("fixtures", "memberships.json"),
   z.array(MembershipSchema)
@@ -108,9 +101,4 @@ for (const product of products) {
     mappedProducts[product.account_id] = {};
   }
   mappedProducts[product.account_id][product.product_id] = product;
-}
-
-export const mappedAPIKeys: Record<string, APIKey> = {};
-for (const apiKey of apiKeys) {
-  mappedAPIKeys[apiKey.access_key_id] = apiKey;
 }
