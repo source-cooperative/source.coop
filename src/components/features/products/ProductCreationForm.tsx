@@ -121,6 +121,11 @@ export function ProductCreationForm({
     isEditMode ? product.visibility : allowedVisibilities[0]
   );
 
+  // Active/deactivated toggle (edit mode only — new products start active).
+  const [disabled, setDisabled] = useState<boolean>(
+    isEditMode ? product.disabled : false
+  );
+
   // The currently selected visibility must always be selectable, even if it
   // falls outside the connection's allowed set (e.g. legacy data drift).
   const visibilityOptions = allowedVisibilities.includes(visibility)
@@ -274,6 +279,27 @@ export function ProductCreationForm({
       value: visibility,
       onValueChange: (value) => setVisibility(value as ProductVisibility),
     },
+    // Activation toggle (edit mode only). Deactivating hides the product
+    // everywhere; only an admin can reactivate it afterwards.
+    ...(isEditMode
+      ? ([
+          {
+            label: "Status",
+            name: "disabled" as keyof Product,
+            type: "select",
+            required: true,
+            description:
+              "A deactivated product is inaccessible via the data.source.coop API and hidden from the source.coop UI for everyone except administrators. Reactivating it afterwards requires a Source Cooperative administrator.",
+            options: [
+              { value: "false", label: "Active" },
+              { value: "true", label: "Deactivated" },
+            ],
+            controlled: true,
+            value: String(disabled),
+            onValueChange: (value) => setDisabled(value === "true"),
+          },
+        ] as FormField<Product>[])
+      : []),
   ];
 
   return (

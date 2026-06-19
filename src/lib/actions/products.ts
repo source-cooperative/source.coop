@@ -322,6 +322,13 @@ export async function updateProduct(
     const title = formData.get("title") as string;
     const description = formData.get("description") as string;
     const visibility = formData.get("visibility") as ProductVisibility;
+    // Activation toggle. The select submits "true"/"false"; absent (e.g. an
+    // older form) leaves the current value untouched. Note: authorization above
+    // already blocks non-admins from updating an already-disabled product, so
+    // reactivation is admin-only — by design, disabled products are inaccessible.
+    const disabledRaw = formData.get("disabled");
+    const disabled =
+      disabledRaw === null ? currentProduct.disabled : disabledRaw === "true";
 
     // Enforce the connection's allowed visibilities when the visibility is
     // being changed. The edit form only offers permitted options, but the
@@ -372,6 +379,7 @@ export async function updateProduct(
       title: title || currentProduct.title,
       description: description || currentProduct.description,
       visibility: visibility || currentProduct.visibility,
+      disabled,
       updated_at: new Date().toISOString(),
     };
 
