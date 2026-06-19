@@ -23,7 +23,11 @@ const PROVIDER_BADGE: Record<
 };
 
 export default async function DataConnectionsPage() {
-  const connections = await dataConnectionsTable.listAll();
+  const connections = (await dataConnectionsTable.listAll()).sort(
+    (a, b) =>
+      a.details.provider.localeCompare(b.details.provider) ||
+      a.name.localeCompare(b.name)
+  );
 
   return (
     <Flex direction="column" gap="4">
