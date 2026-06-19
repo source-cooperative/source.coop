@@ -16,7 +16,7 @@ import { accountsTable, membershipsTable } from "../clients";
 import { FormState } from "@/components/core/DynamicForm";
 import { revalidatePath } from "next/cache";
 import { editAccountProfileUrl } from "@/lib/urls";
-import { v4 as uuidv4 } from "uuid";
+import { randomUUID } from "crypto";
 
 /**
  * Invites a new member to an organization.
@@ -98,7 +98,7 @@ export async function inviteMember(
     // Create the membership object
     const membership: Membership = {
       ...validatedInvitation,
-      membership_id: uuidv4(),
+      membership_id: randomUUID(),
       membership_account_id: organizationId,
       repository_id: productId,
       state: MembershipState.Invited,

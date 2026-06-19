@@ -8,7 +8,6 @@ import {
   // Product,
 } from "@/types";
 import { isAuthorized } from "@/lib/api/authz";
-// import Handlebars from "handlebars";
 import { StatusCodes } from "http-status-codes";
 import { getApiSession } from "@/lib/api/utils";
 import { accountsTable } from "@/lib/clients/database/accounts";

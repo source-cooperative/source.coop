@@ -11,7 +11,7 @@ import { StatusCodes } from "http-status-codes";
 import { accountsTable, membershipsTable } from "@/lib/clients/database";
 import { isAuthorized } from "@/lib/api/authz";
 import { getApiSession } from "@/lib/api/utils";
-import { v4 as uuidv4 } from "uuid";
+import { randomUUID } from "crypto";
 
 /**
  * @openapi
@@ -93,7 +93,7 @@ export async function POST(
     const success = false;
     const membership: Membership = {
       ...membershipInvitation,
-      membership_id: uuidv4(),
+      membership_id: randomUUID(),
       membership_account_id: account.account_id,
       state: MembershipState.Invited,
       state_changed: new Date().toISOString(),
