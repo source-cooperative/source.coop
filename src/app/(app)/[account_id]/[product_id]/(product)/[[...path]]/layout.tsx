@@ -19,7 +19,8 @@ import { isAuthorized } from "@/lib/api/authz";
 import { dataConnectionsTable, productsTable } from "@/lib/clients/database";
 import { productUrl } from "@/lib/urls";
 import { Actions } from "@/types/shared";
-import { Box, Card, Flex } from "@radix-ui/themes";
+import { Box, Callout, Card, Flex } from "@radix-ui/themes";
+import { ExclamationTriangleIcon } from "@radix-ui/react-icons";
 import { getPendingInvitation } from "@/lib/actions/memberships";
 import { ProductSchemaMetadata } from "@/components/features/products/ProductSchemaMetadata";
 import { getAuthorizedProduct } from "./data";
@@ -59,6 +60,21 @@ export default async function ProductLayout({
   return (
     <>
       <ProductSchemaMetadata product={product} />
+      {/* Deactivated products are visible only to admins (backend authz 404s
+          everyone else) — make that state unmistakable. */}
+      {product.disabled && (
+        <Box mt="4">
+          <Callout.Root color="amber" role="alert">
+            <Callout.Icon>
+              <ExclamationTriangleIcon />
+            </Callout.Icon>
+            <Callout.Text>
+              This product is deactivated. It is hidden from everyone except
+              administrators.
+            </Callout.Text>
+          </Callout.Root>
+        </Box>
+      )}
       {/* Show pending invitation banner if exists */}
       {pendingInvitation && (
         <PendingInvitationBanner
