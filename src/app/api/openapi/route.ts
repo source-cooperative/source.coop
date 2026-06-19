@@ -6,7 +6,7 @@ import { OpenApiGeneratorV3 } from "@asteasolutions/zod-to-openapi";
 import {
   APIKeyRequestSchema,
   APIKeySchema,
-  DataConnectionSchema,
+  DataConnectionObjectSchema,
   MembershipInvitationSchema,
   MembershipSchema,
   RedactedAPIKeySchema,
@@ -40,7 +40,7 @@ export async function GET(_req: NextRequest) {
     APIKeyRequestSchema,
     RedactedAPIKeySchema,
     MembershipInvitationSchema,
-    DataConnectionSchema,
+    DataConnectionObjectSchema,
   ]);
   if (!openapiSpecification["components"]) {
     openapiSpecification["components"] = {};

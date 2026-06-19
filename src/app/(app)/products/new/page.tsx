@@ -2,7 +2,7 @@ import { ProductCreationForm } from "@/components/features/products/ProductCreat
 import { accountsTable, getPageSession, membershipsTable } from "@/lib";
 import { isAuthorized } from "@/lib/api/authz";
 import { listUsableDataConnections } from "@/lib/data-connections";
-import { Actions, DataConnectionSchema, MembershipState } from "@/types";
+import { Actions, DataConnectionObjectSchema, MembershipState } from "@/types";
 import { Heading, Text } from "@radix-ui/themes";
 import { FormTitle } from "@/components/core";
 
@@ -49,7 +49,9 @@ export default async function NewProductPage() {
   // Strip credentials before handing connections to the client component.
   const dataConnections = (await listUsableDataConnections(session)).map(
     (connection) =>
-      DataConnectionSchema.omit({ authentication: true }).parse(connection)
+      DataConnectionObjectSchema.omit({ authentication: true }).parse(
+        connection
+      )
   );
 
   return (

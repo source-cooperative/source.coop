@@ -59,6 +59,7 @@ export async function GET(
       );
     }
 
+    // sanitizeDataConnection redacts authentication per the caller's permissions.
     const sanitized = sanitizeDataConnection(dataConnection, session);
 
     return NextResponse.json(sanitized, { status: StatusCodes.OK });

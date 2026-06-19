@@ -124,9 +124,12 @@ export const AzureSasTokenAuthenticationSchema = z
 /**
  * IAM role ARN: `arn:{partition}:iam::{account}:role/{path}{name}`. The
  * partition class (`aws`, `aws-us-gov`, `aws-cn`) and an optional role path are
- * allowed so GovCloud/China and pathed roles are not rejected.
+ * allowed so GovCloud/China and pathed roles are not rejected. The role
+ * path/name segment is restricted to the characters AWS permits
+ * (`[A-Za-z0-9+=,.@_-]`, plus `/` for the path), so malformed ARNs are
+ * rejected here rather than at AWS STS call time.
  */
-const IAM_ROLE_ARN_REGEX = /^arn:aws[a-z-]*:iam::\d{12}:role\/.+$/;
+const IAM_ROLE_ARN_REGEX = /^arn:aws[a-z-]*:iam::\d{12}:role\/[A-Za-z0-9+=,.@/_-]+$/;
 
 /**
  * V2 federated S3 access. `role_arn` is the customer-owned IAM role the proxy
@@ -154,8 +157,12 @@ export const GcpWorkloadIdentityAuthenticationSchema = z
     workload_identity_provider: z
       .string()
       .startsWith("//iam.googleapis.com/projects/"),
-    /** Service account email the exchanged token impersonates for GCS. */
-    service_account: z.string().email().endsWith(".gserviceaccount.com"),
+    /**
+     * Service account email the exchanged token impersonates for GCS. User-
+     * managed service accounts (the kind used for WIF) always live under the
+     * `.iam.gserviceaccount.com` domain, e.g. `sa@project.iam.gserviceaccount.com`.
+     */
+    service_account: z.string().email().endsWith(".iam.gserviceaccount.com"),
   })
   .openapi("GcpWorkloadIdentityAuthentication");
 
@@ -245,7 +252,37 @@ export type DataConnectionDetails = z.infer<
   typeof DataConnnectionDetailsSchema
 >;
 
-export const DataConnectionSchema = z
+/**
+ * Authentication variants permitted for each provider. `authentication` is
+ * optional (omitted ⇒ unsigned), so this pairing is only checked when it is
+ * present. A discriminated union can't express this cross-field
+ * (`details.provider` ↔ `authentication.type`) constraint on its own, so it is
+ * enforced with a `superRefine` on the full connection.
+ */
+const PROVIDER_AUTH_TYPES: Record<
+  DataProvider,
+  readonly DataConnectionAuthenticationType[]
+> = {
+  [DataProvider.S3]: [
+    DataConnectionAuthenticationType.S3AccessKey,
+    DataConnectionAuthenticationType.S3WebIdentityRole,
+    DataConnectionAuthenticationType.S3ECSTaskRole,
+    DataConnectionAuthenticationType.S3Local,
+  ],
+  [DataProvider.Azure]: [
+    DataConnectionAuthenticationType.AzureWorkloadIdentity,
+    DataConnectionAuthenticationType.AzureSasToken,
+  ],
+  [DataProvider.GCP]: [DataConnectionAuthenticationType.GcpWorkloadIdentity],
+};
+
+/**
+ * The connection object shape. Exported separately from {@link DataConnectionSchema}
+ * because object-only operations (`.omit()`, OpenAPI registration) need the
+ * underlying `ZodObject`, which the cross-field `superRefine` below wraps into a
+ * `ZodEffects`.
+ */
+export const DataConnectionObjectSchema = z
   .object({
     data_connection_id: z
       .string()
@@ -278,6 +315,28 @@ export const DataConnectionSchema = z
     authentication: z.optional(DataConnectionAuthenticationSchema),
   })
   .openapi("DataConnection");
+
+/**
+ * Full data connection schema: the object shape plus the cross-field check that
+ * `authentication.type` is valid for `details.provider`. Use this for parsing/
+ * validating whole connections; use {@link DataConnectionObjectSchema} when you
+ * need `ZodObject` operations such as `.omit()`.
+ */
+export const DataConnectionSchema = DataConnectionObjectSchema.superRefine(
+  (connection, ctx) => {
+    const { authentication, details } = connection;
+    if (!authentication) return;
+    if (
+      !PROVIDER_AUTH_TYPES[details.provider].includes(authentication.type)
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["authentication", "type"],
+        message: `Authentication type "${authentication.type}" is not valid for provider "${details.provider}"`,
+      });
+    }
+  }
+);
 
 export type DataConnection = z.infer<typeof DataConnectionSchema>;
 
