@@ -9,11 +9,19 @@ import { FormState } from "@/components/core/DynamicForm";
 import { revalidatePath } from "next/cache";
 import { editProductDataConnectionsUrl } from "@/lib/urls";
 
-// ponytail: these three actions fetch → mutate → productsTable.update() with no
-// optimistic lock, so two admins editing the same product's mirrors at once can
-// silently lose one update (last write wins). Admin-only and low-frequency, so
-// the race is left open. Upgrade path: thread a ConditionExpression on
-// updated_at through productsTable.update() for a compare-and-swap.
+// These three actions fetch → mutate → productsTable.update(). The update is an
+// optimistic compare-and-swap on the product's updated_at, so two admins editing
+// the same product's mirrors concurrently can't silently clobber each other —
+// the second write fails and the action reports a conflict instead.
+const CONCURRENT_EDIT_MESSAGE =
+  "This product was modified by someone else. Please reload and try again.";
+
+function isConcurrentEdit(error: unknown): boolean {
+  return (
+    error instanceof Error &&
+    error.name === "ConditionalCheckFailedException"
+  );
+}
 
 export async function addProductMirror(
   _prevState: FormState<unknown>,
@@ -115,7 +123,9 @@ export async function addProductMirror(
       },
     };
 
-    await productsTable.update(updatedProduct);
+    await productsTable.update(updatedProduct, {
+      expectedUpdatedAt: product.updated_at,
+    });
 
     LOGGER.info("Successfully added product mirror", {
       operation: "addProductMirror",
@@ -131,6 +141,14 @@ export async function addProductMirror(
       success: true,
     };
   } catch (error) {
+    if (isConcurrentEdit(error)) {
+      return {
+        fieldErrors: {},
+        data: formData,
+        message: CONCURRENT_EDIT_MESSAGE,
+        success: false,
+      };
+    }
     LOGGER.error("Error adding product mirror", {
       operation: "addProductMirror",
       error,
@@ -226,7 +244,9 @@ export async function removeProductMirror(
       },
     };
 
-    await productsTable.update(updatedProduct);
+    await productsTable.update(updatedProduct, {
+      expectedUpdatedAt: product.updated_at,
+    });
 
     LOGGER.info("Successfully removed product mirror", {
       operation: "removeProductMirror",
@@ -242,6 +262,14 @@ export async function removeProductMirror(
       success: true,
     };
   } catch (error) {
+    if (isConcurrentEdit(error)) {
+      return {
+        fieldErrors: {},
+        data: formData,
+        message: CONCURRENT_EDIT_MESSAGE,
+        success: false,
+      };
+    }
     LOGGER.error("Error removing product mirror", {
       operation: "removeProductMirror",
       error,
@@ -329,7 +357,9 @@ export async function setPrimaryMirror(
       },
     };
 
-    await productsTable.update(updatedProduct);
+    await productsTable.update(updatedProduct, {
+      expectedUpdatedAt: product.updated_at,
+    });
 
     LOGGER.info("Successfully set primary mirror", {
       operation: "setPrimaryMirror",
@@ -345,6 +375,14 @@ export async function setPrimaryMirror(
       success: true,
     };
   } catch (error) {
+    if (isConcurrentEdit(error)) {
+      return {
+        fieldErrors: {},
+        data: formData,
+        message: CONCURRENT_EDIT_MESSAGE,
+        success: false,
+      };
+    }
     LOGGER.error("Error setting primary mirror", {
       operation: "setPrimaryMirror",
       error,

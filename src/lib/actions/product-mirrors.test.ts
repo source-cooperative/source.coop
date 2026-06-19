@@ -131,6 +131,31 @@ describe("addProductMirror", () => {
     });
   });
 
+  test("passes the read updated_at as an optimistic lock and reports conflicts", async () => {
+    mockProductsTable.fetchById.mockResolvedValue({
+      ...productWith({}, ""),
+      updated_at: "2026-01-01T00:00:00.000Z",
+    });
+    const conflict = new Error("stale write");
+    conflict.name = "ConditionalCheckFailedException";
+    mockProductsTable.update.mockRejectedValueOnce(conflict);
+
+    const result = await addProductMirror(
+      FORM_STATE,
+      formDataFor({
+        account_id: "acct",
+        product_id: "prod",
+        connection_id: "conn-a",
+      })
+    );
+
+    expect(mockProductsTable.update.mock.calls[0][1]).toEqual({
+      expectedUpdatedAt: "2026-01-01T00:00:00.000Z",
+    });
+    expect(result.success).toBe(false);
+    expect(result.message).toMatch(/modified by someone else/i);
+  });
+
   test("maps a GCP connection to the gcs storage type", async () => {
     mockProductsTable.fetchById.mockResolvedValue(productWith({}, ""));
     mockDataConnectionsTable.fetchById.mockResolvedValue({

@@ -245,8 +245,26 @@ export class ProductsTable extends BaseTable {
     }
   }
 
-  async update(product: Product): Promise<Product> {
+  async update(
+    product: Product,
+    // Optimistic lock: when set, the write only lands if the row's stored
+    // updated_at still equals the value the caller read. A concurrent writer
+    // bumps updated_at, so the condition fails (ConditionalCheckFailedException)
+    // instead of silently clobbering their change. Omit it for last-write-wins.
+    opts?: { expectedUpdatedAt?: string }
+  ): Promise<Product> {
     try {
+      const values: Record<string, unknown> = {
+        ":title": product.title,
+        ":description": product.description,
+        ":updated_at": new Date().toISOString(),
+        ":visibility": product.visibility,
+        ":metadata": product.metadata,
+        ":search_text": this.buildSearchText(product),
+      };
+      if (opts?.expectedUpdatedAt) {
+        values[":expected_updated_at"] = opts.expectedUpdatedAt;
+      }
       const result = await this.client.send(
         new UpdateCommand({
           TableName: this.table,
@@ -256,14 +274,10 @@ export class ProductsTable extends BaseTable {
           },
           UpdateExpression:
             "SET title = :title, description = :description, updated_at = :updated_at, visibility = :visibility, metadata = :metadata, search_text = :search_text",
-          ExpressionAttributeValues: {
-            ":title": product.title,
-            ":description": product.description,
-            ":updated_at": new Date().toISOString(),
-            ":visibility": product.visibility,
-            ":metadata": product.metadata,
-            ":search_text": this.buildSearchText(product),
-          },
+          ...(opts?.expectedUpdatedAt
+            ? { ConditionExpression: "updated_at = :expected_updated_at" }
+            : {}),
+          ExpressionAttributeValues: values,
           ReturnValues: "ALL_NEW",
         })
       );
