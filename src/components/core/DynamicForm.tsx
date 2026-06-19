@@ -1,8 +1,7 @@
 "use client";
 
-import React, { useActionState } from "react";
+import React, { useActionState, startTransition } from "react";
 import { Button, Text, Flex } from "@radix-ui/themes";
-import Form from "next/form";
 import { useRouter } from "next/navigation";
 
 export interface FormField<T extends Record<string, any>> {
@@ -98,6 +97,21 @@ export function DynamicForm<T extends Record<string, any>>({
     }
   };
 
+  // Dispatch the action from onSubmit (in a transition) rather than via the
+  // form's `action` prop. React automatically resets a form after an `action`
+  // submission, and that reset incorrectly snaps controlled <select>/checkbox
+  // fields back to their first option/default for a frame before re-applying
+  // the controlled value (facebook/react#31695). Dispatching from onSubmit is
+  // the React-maintainer-recommended opt-out:
+  // https://github.com/facebook/react/issues/29034#issuecomment-2143595195
+  // Handling submit ourselves keeps controlled fields' values; `pending` from
+  // useActionState still tracks the in-flight action.
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    startTransition(() => formAction(formData));
+  };
+
   // Call onSuccess when form submission is successful
   React.useEffect(() => {
     if (state.success && onSuccess) {
@@ -117,7 +131,7 @@ export function DynamicForm<T extends Record<string, any>>({
   }, [state.success, state.redirectTo, router]);
 
   return (
-    <Form action={formAction} className={className}>
+    <form onSubmit={handleSubmit} className={className}>
       {/* Hidden fields */}
       {Object.entries(hiddenFields).map(([name, value]) => (
         <input key={name} type="hidden" name={name} value={value} />
@@ -273,6 +287,6 @@ export function DynamicForm<T extends Record<string, any>>({
           </Flex>
         )}
       </Flex>
-    </Form>
+    </form>
   );
 }
