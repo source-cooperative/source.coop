@@ -30,6 +30,18 @@ function allowedVisibilitiesFor(
     : ALL_VISIBILITIES;
 }
 
+// A new product defaults to a us-west-2 connection when one is available — the
+// region we steer unsure users toward — and otherwise to the first option.
+const DEFAULT_REGION = "us-west-2";
+function pickDefaultConnection(
+  connections: DataConnection[]
+): DataConnection | undefined {
+  return (
+    connections.find((c) => c.details.region === DEFAULT_REGION) ??
+    connections[0]
+  );
+}
+
 // "AWS Open Data (us-west-2) · Public, Unlisted · Read Only"
 function describeConnection(connection: DataConnection): string {
   const visibilities =
@@ -80,7 +92,7 @@ export function ProductCreationForm({
   const [dataConnectionId, setDataConnectionId] = useState(
     isEditMode
       ? product.metadata.primary_mirror
-      : initialAvailable[0]?.data_connection_id ?? ""
+      : pickDefaultConnection(initialAvailable)?.data_connection_id ?? ""
   );
 
   const [availableConnections, setAvailableConnections] = useState(
@@ -90,6 +102,12 @@ export function ProductCreationForm({
   const selectedConnection = availableConnections.find(
     (connection) => connection.data_connection_id === dataConnectionId
   );
+
+  // In edit mode the connection is fixed and resolved server-side; if it can no
+  // longer be found (e.g. deleted), updateProduct rejects any visibility change,
+  // so the form shows visibility as read-only rather than offering options that
+  // can't be saved.
+  const connectionMissing = Boolean(isEditMode && !selectedConnection);
 
   const allowedVisibilities = allowedVisibilitiesFor(selectedConnection);
 
@@ -127,7 +145,7 @@ export function ProductCreationForm({
       (dc) => dc.data_connection_id === dataConnectionId
     );
     if (!stillValid) {
-      const first = nextAvailable[0];
+      const first = pickDefaultConnection(nextAvailable);
       setDataConnectionId(first?.data_connection_id ?? "");
       const nextAllowed = allowedVisibilitiesFor(first);
       if (!nextAllowed.includes(visibility)) {
@@ -212,7 +230,7 @@ export function ProductCreationForm({
             type: "select",
             required: true,
             description:
-              "Where this product's data is stored. Determines the available region and visibility options.",
+              "Where this product's data is stored. Determines the available region and visibility options. If you're unsure, choose a us-west-2 connection.",
             options: availableConnections.map((connection) => ({
               value: connection.data_connection_id,
               label: describeConnection(connection),
@@ -232,11 +250,14 @@ export function ProductCreationForm({
       name: "visibility",
       type: "select",
       required: true,
-      description: "Your product's visibility",
+      description: connectionMissing
+        ? "This product's data connection could not be found, so its visibility can't be changed."
+        : "Your product's visibility",
       options: visibilityOptions.map((value) => ({
         value,
         label: VISIBILITY_LABELS[value],
       })),
+      readOnly: connectionMissing,
       controlled: true,
       value: visibility,
       onValueChange: (value) => setVisibility(value as ProductVisibility),
