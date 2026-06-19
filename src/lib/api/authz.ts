@@ -92,6 +92,7 @@ type ActionResourceMap = {
   [Actions.GetDataConnection]: DataConnection;
   [Actions.CreateDataConnection]: DataConnection;
   [Actions.DisableDataConnection]: DataConnection;
+  [Actions.UseDataConnection]: DataConnection;
   [Actions.ViewDataConnectionCredentials]: DataConnection;
   [Actions.PutDataConnection]: DataConnection;
   [Actions.DeleteDataConnection]: DataConnection;
@@ -268,6 +269,11 @@ export function isAuthorized(
 export function isAuthorized(
   principal: UserSession | null,
   resource: DataConnection,
+  action: Actions.UseDataConnection
+): boolean;
+export function isAuthorized(
+  principal: UserSession | null,
+  resource: DataConnection,
   action: Actions.ViewDataConnectionCredentials
 ): boolean;
 export function isAuthorized(
@@ -385,6 +391,9 @@ export function isAuthorized(
       .with(Actions.DisableDataConnection, () =>
         disableDataConnection(principal, resource as ResourceForAction<Actions.DisableDataConnection>)
       )
+      .with(Actions.UseDataConnection, () =>
+        useDataConnection(principal, resource as ResourceForAction<Actions.UseDataConnection>)
+      )
       .with(Actions.ViewDataConnectionCredentials, () =>
         viewDataConnectionCredentials(principal, resource as ResourceForAction<Actions.ViewDataConnectionCredentials>)
       )
@@ -440,6 +449,37 @@ function disableDataConnection(
   }
 
   return false;
+}
+
+// Models what the *connection* permits, not whether the caller is
+// authenticated. A connection that is not read-only and carries no
+// required_flag is usable by anyone — including an anonymous principal — so
+// callers (e.g. createProduct, listUsableDataConnections) must apply their own
+// auth guard before relying on this result.
+function useDataConnection(
+  principal: UserSession | null,
+  dataConnection: DataConnection
+): boolean {
+  if (principal?.account?.disabled) {
+    return false;
+  }
+
+  if (isAdmin(principal)) {
+    return true;
+  }
+
+  if (dataConnection.read_only) {
+    return false;
+  }
+
+  if (dataConnection.required_flag) {
+    if (principal?.account?.flags?.includes(dataConnection.required_flag)) {
+      return true;
+    }
+    return false;
+  } else {
+    return true;
+  }
 }
 
 function viewDataConnectionCredentials(
