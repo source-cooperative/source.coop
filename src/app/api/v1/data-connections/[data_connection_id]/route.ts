@@ -4,7 +4,7 @@
  *   get:
  *     tags: [Data Connections]
  *     summary: Get data connection details
- *     description: Retrieves the details of a specific data connection. Authentication details are redacted unless the user has appropriate permissions.
+ *     description: Retrieves the details of a specific data connection. Secret-bearing authentication (static keys/tokens) is always stripped; secret-less federated config (role ARN, workload-identity IDs) is returned to any authorized caller.
  *     parameters:
  *       - in: path
  *         name: data_connection_id

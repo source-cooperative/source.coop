@@ -4,7 +4,7 @@
  *   get:
  *     tags: [Data Connections]
  *     summary: List data connections
- *     description: Retrieves a list of data connections. The list is sanitized of data connection credentials based on the user's permissions.
+ *     description: Retrieves a list of data connections. Secret-bearing authentication (static keys/tokens) is always stripped; secret-less federated config (role ARN, workload-identity IDs) is returned to any authorized caller.
  *     responses:
  *       200:
  *         description: Successfully retrieved the list of data connections
