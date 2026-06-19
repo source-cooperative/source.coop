@@ -162,6 +162,24 @@ export function DataConnectionForm({
     dataConnection?.authentication?.type || ""
   );
 
+  // Controlled so the user's selections survive a re-render after a failed
+  // submit. React 19 resets uncontrolled form fields once the action returns;
+  // text inputs re-seed from `state.data`, but checkboxes can't (there's no way
+  // to tell "unchecked" from "absent"), so they must be controlled.
+  const [readOnly, setReadOnly] = useState<boolean>(
+    dataConnection?.read_only ?? false
+  );
+  const [visibilities, setVisibilities] = useState<Set<string>>(
+    () => new Set(dataConnection?.allowed_visibilities ?? [])
+  );
+  const toggleVisibility = (visibility: string, checked: boolean) =>
+    setVisibilities((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(visibility);
+      else next.delete(visibility);
+      return next;
+    });
+
   // Reset auth type when provider changes; auth options are provider-specific.
   const handleProviderChange = (value: string) => {
     setProvider(value);
@@ -271,7 +289,8 @@ export function DataConnectionForm({
             <label>
               <Checkbox
                 name="read_only"
-                defaultChecked={dataConnection?.read_only || false}
+                checked={readOnly}
+                onCheckedChange={(checked) => setReadOnly(checked === true)}
               />
               <Text size="2">Connection is read-only</Text>
             </label>
@@ -290,10 +309,9 @@ export function DataConnectionForm({
                 <label>
                   <Checkbox
                     name={`visibility_${visibility}`}
-                    defaultChecked={
-                      dataConnection?.allowed_visibilities?.includes(
-                        visibility
-                      ) || false
+                    checked={visibilities.has(visibility)}
+                    onCheckedChange={(checked) =>
+                      toggleVisibility(visibility, checked === true)
                     }
                   />
                   <Text size="2">{visibility}</Text>

@@ -12,7 +12,7 @@ import {
 } from "@/types";
 import { isAuthorized } from "../api/authz";
 import { getPageSession } from "../api/utils";
-import { dataConnectionsTable } from "../clients";
+import { dataConnectionsTable, productsTable } from "../clients";
 import { FormState } from "@/components/core/DynamicForm";
 import { revalidatePath } from "next/cache";
 import { adminDataConnectionsUrl, adminDataConnectionEditUrl } from "@/lib/urls";
@@ -279,6 +279,20 @@ export async function deleteDataConnection(
       };
     }
 
+    // Refuse to delete a connection still referenced by product mirrors —
+    // deleting would leave those products with a dangling connection_id. The
+    // admin must detach it from each product first.
+    const dependents =
+      await productsTable.listProductsByConnectionId(dataConnectionId);
+    if (dependents.length > 0) {
+      return {
+        fieldErrors: {},
+        data: formData,
+        message: `Cannot delete: ${dependents.length} product(s) still use this connection. Remove it from them first.`,
+        success: false,
+      };
+    }
+
     await dataConnectionsTable.delete(dataConnectionId);
 
     LOGGER.info("Successfully deleted data connection", {
@@ -312,9 +326,14 @@ export async function deleteDataConnection(
 
 /**
  * Maps Zod issues to form-field errors keyed by the field's *leaf* name (e.g.
- * `role_arn`, `region`), not the top-level object key. `ZodError.flatten()` only
- * keys top-level fields, so nested `details.*` / `authentication.*` errors would
- * otherwise never render next to their inputs.
+ * `role_arn`, `region`), not the top-level object key — `ZodError.flatten()`
+ * only keys top-level fields, so nested `details.*` / `authentication.*` errors
+ * would otherwise never render next to their inputs.
+ *
+ * Keying by leaf (rather than the full dotted path) is deliberate: the form is a
+ * flat namespace where every `<input name>` is a unique leaf, so leaf keys map
+ * 1:1 to inputs and cannot collide. A dotted path (`details.region`) would be
+ * more "unique" but would no longer match the form's leaf-based lookups.
  */
 function fieldErrorsFromZod(error: z.ZodError): Record<string, string[]> {
   const fieldErrors: Record<string, string[]> = {};
@@ -323,7 +342,8 @@ function fieldErrorsFromZod(error: z.ZodError): Record<string, string[]> {
       (segment): segment is string => typeof segment === "string"
     );
     const key = stringSegments[stringSegments.length - 1] ?? "form";
-    (fieldErrors[key] ??= []).push(issue.message);
+    const messages = (fieldErrors[key] ??= []);
+    if (!messages.includes(issue.message)) messages.push(issue.message);
   }
   return fieldErrors;
 }

@@ -3,7 +3,7 @@ import {
   updateDataConnection,
   deleteDataConnection,
 } from "./data-connections";
-import { dataConnectionsTable } from "../clients";
+import { dataConnectionsTable, productsTable } from "../clients";
 import { getPageSession } from "../api/utils";
 import { isAuthorized } from "../api/authz";
 import {
@@ -18,6 +18,9 @@ jest.mock("../clients", () => ({
     create: jest.fn(),
     update: jest.fn(),
     delete: jest.fn(),
+  },
+  productsTable: {
+    listProductsByConnectionId: jest.fn(),
   },
 }));
 
@@ -34,6 +37,7 @@ jest.mock("next/cache", () => ({
 }));
 
 const mockTable = dataConnectionsTable as jest.Mocked<typeof dataConnectionsTable>;
+const mockProductsTable = productsTable as jest.Mocked<typeof productsTable>;
 const mockGetPageSession = getPageSession as jest.MockedFunction<
   typeof getPageSession
 >;
@@ -87,6 +91,7 @@ beforeEach(() => {
   mockTable.fetchById.mockResolvedValue(null);
   mockTable.create.mockImplementation(async (dc) => dc);
   mockTable.update.mockImplementation(async (dc) => dc);
+  mockProductsTable.listProductsByConnectionId.mockResolvedValue([]);
 });
 
 describe("createDataConnection", () => {
@@ -452,6 +457,26 @@ describe("deleteDataConnection", () => {
 
     expect(result.success).toBe(false);
     expect(result.message).toContain("not found");
+    expect(mockTable.delete).not.toHaveBeenCalled();
+  });
+
+  test("blocks deletion while products still reference the connection", async () => {
+    mockTable.fetchById.mockResolvedValue({
+      data_connection_id: "my-connection",
+    } as DataConnection);
+    mockProductsTable.listProductsByConnectionId.mockResolvedValue([
+      { account_id: "acct", product_id: "prod" },
+    ] as Awaited<
+      ReturnType<typeof productsTable.listProductsByConnectionId>
+    >);
+
+    const result = await deleteDataConnection(
+      FORM_STATE,
+      formDataFor({ data_connection_id: "my-connection" })
+    );
+
+    expect(result.success).toBe(false);
+    expect(result.message).toContain("still use this connection");
     expect(mockTable.delete).not.toHaveBeenCalled();
   });
 });
