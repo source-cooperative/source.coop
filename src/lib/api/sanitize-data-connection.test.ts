@@ -1,18 +1,10 @@
 /** @jest-environment node */
 import { sanitizeDataConnection } from "./sanitize-data-connection";
-import { sessions } from "./utils.mock";
 import {
   DataConnection,
   DataConnectionAuthenticationType,
   ProductVisibility,
-  UserSession,
 } from "@/types";
-
-const nonMember = {
-  identity_id: "bob",
-  account: { account_id: "bob" },
-  memberships: [],
-} as unknown as UserSession;
 
 function conn(over: Partial<DataConnection>): DataConnection {
   return {
@@ -41,46 +33,23 @@ const keyAuth = {
 };
 
 describe("sanitizeDataConnection", () => {
-  test("strips secret-bearing auth for non-credential-viewers", () => {
-    const c = conn({
-      allowed_visibilities: [ProductVisibility.Public],
-      authentication: keyAuth as never,
-    });
-    expect(
-      sanitizeDataConnection(c, sessions["anonymous"]).authentication
-    ).toBeUndefined();
+  test("strips secret-bearing auth for every caller (secrets are write-only)", () => {
+    const c = conn({ authentication: keyAuth as never });
+    expect(sanitizeDataConnection(c).authentication).toBeUndefined();
   });
 
-  test("keeps secret-less (federated) auth for any caller", () => {
-    const c = conn({
-      allowed_visibilities: [ProductVisibility.Public],
-      authentication: roleAuth as never,
-    });
-    expect(
-      sanitizeDataConnection(c, sessions["anonymous"]).authentication
-    ).toEqual(roleAuth);
-  });
-
-  test("keeps secret-less auth even for a non-owner of a private connection", () => {
+  test("keeps secret-less (federated) auth regardless of owner/visibility", () => {
     // role_arn is not a credential — the IAM trust policy is the boundary — so
-    // ownership/visibility no longer gates it (only secret-bearing auth is gated).
+    // nothing gates it; a private, owned connection still returns it.
     const c = conn({
       allowed_visibilities: [ProductVisibility.Restricted],
       owner: "acme",
       authentication: roleAuth as never,
     });
-    expect(sanitizeDataConnection(c, nonMember).authentication).toEqual(
-      roleAuth
-    );
+    expect(sanitizeDataConnection(c).authentication).toEqual(roleAuth);
   });
 
-  test("admins still see secret-bearing auth", () => {
-    const c = conn({
-      allowed_visibilities: [],
-      authentication: keyAuth as never,
-    });
-    expect(sanitizeDataConnection(c, sessions["admin"]).authentication).toEqual(
-      keyAuth
-    );
+  test("passes through a connection with no authentication", () => {
+    expect(sanitizeDataConnection(conn({})).authentication).toBeUndefined();
   });
 });

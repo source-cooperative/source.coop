@@ -34,9 +34,9 @@ export async function GET(request: NextRequest) {
     const filteredConnections = dataConnections.filter((dataConnection) =>
       isAuthorized(session, dataConnection, Actions.GetDataConnection)
     );
-    // sanitizeDataConnection redacts authentication per the caller's permissions.
+    // sanitizeDataConnection strips secret-bearing authentication (write-only).
     const sanitizedConnections = filteredConnections.map((connection) =>
-      sanitizeDataConnection(connection, session)
+      sanitizeDataConnection(connection)
     );
 
     return NextResponse.json(sanitizedConnections, { status: StatusCodes.OK });

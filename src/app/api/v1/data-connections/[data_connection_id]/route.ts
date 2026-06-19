@@ -59,8 +59,8 @@ export async function GET(
       );
     }
 
-    // sanitizeDataConnection redacts authentication per the caller's permissions.
-    const sanitized = sanitizeDataConnection(dataConnection, session);
+    // sanitizeDataConnection strips secret-bearing authentication (write-only).
+    const sanitized = sanitizeDataConnection(dataConnection);
 
     return NextResponse.json(sanitized, { status: StatusCodes.OK });
   } catch (err: unknown) {
@@ -143,7 +143,7 @@ export async function PUT(
     const dataConnection = await dataConnectionsTable.create(
       updatedDataConnection
     );
-    const sanitized = sanitizeDataConnection(dataConnection, session);
+    const sanitized = sanitizeDataConnection(dataConnection);
     return NextResponse.json(sanitized, { status: StatusCodes.OK });
   } catch (err: unknown) {
     const errorMessage =

@@ -343,16 +343,17 @@ export type DataConnection = z.infer<typeof DataConnectionSchema>;
 
 /**
  * Whether an authentication variant carries a usable secret — and so must never
- * be exposed outside the `ViewDataConnectionCredentials` (admin) path. The V2
- * federation variants (web identity / workload identity) are secret-less; only
- * the static-credential variants carry secrets.
+ * be returned by the read API (`sanitizeDataConnection` strips it for everyone;
+ * such secrets are write-only). The V2 federation variants (web identity /
+ * workload identity) are secret-less; only the static-credential variants carry
+ * secrets.
  */
 export function isSecretBearingAuth(
   auth: DataConnectionAuthentication
 ): boolean {
-  // Default-deny on exposure: a type is treated as secret-bearing (kept out of
-  // non-admin responses) unless it is explicitly listed below as secret-less.
-  // So a newly-added or unknown variant fails safe — never accidentally exposed;
+  // Default-deny on exposure: a type is treated as secret-bearing (stripped from
+  // read responses) unless it is explicitly listed below as secret-less. So a
+  // newly-added or unknown variant fails safe — never accidentally exposed;
   // exposing a type requires a deliberate edit to this allowlist.
   switch (auth.type) {
     case DataConnectionAuthenticationType.S3WebIdentityRole:
