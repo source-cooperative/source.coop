@@ -142,7 +142,8 @@ export async function PUT(
     const dataConnection = await dataConnectionsTable.create(
       updatedDataConnection
     );
-    return NextResponse.json(dataConnection, { status: StatusCodes.OK });
+    const sanitized = sanitizeDataConnection(dataConnection, session);
+    return NextResponse.json(sanitized, { status: StatusCodes.OK });
   } catch (err: unknown) {
     const errorMessage =
       err instanceof Error ? err.message : "Internal server error";
