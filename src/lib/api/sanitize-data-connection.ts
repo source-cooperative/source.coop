@@ -6,18 +6,19 @@ import {
   isSecretBearingAuth,
   UserSession,
 } from "@/types";
-import { canViewDataConnectionConfig, isAuthorized } from "./authz";
+import { isAuthorized } from "./authz";
 
 /**
  * Redact a data connection's `authentication` for a read response.
  *
- * - **Credential viewers** (admins, `ViewDataConnectionCredentials`) → full
- *   connection, secrets included.
- * - Otherwise, a **secret-less** `authentication` (federated role ARN /
- *   workload identity) is kept iff the caller may view the connection's config
- *   (see {@link canViewDataConnectionConfig}).
- * - **Secret-bearing** `authentication` (static keys/tokens), and any config the
- *   caller isn't allowed to see, are stripped.
+ * - **Secret-bearing** `authentication` (static keys / SAS tokens) is stripped
+ *   unless the caller is a credential viewer (admin /
+ *   `ViewDataConnectionCredentials`). Leaking it = direct backend access.
+ * - **Secret-less** `authentication` (federated role ARN / workload identity) is
+ *   *not* a credential — the customer's IAM trust policy is the security
+ *   boundary, so the ARN grants nothing on its own — and is returned to any
+ *   caller (the proxy reads it impersonating the end user). Like the
+ *   connection's `details`, it carries nothing exploitable.
  *
  * Connections with no `authentication` pass through unchanged.
  */
@@ -32,12 +33,7 @@ export function sanitizeDataConnection(
   }
 
   const auth = connection.authentication;
-  const keepSecretlessConfig =
-    auth !== undefined &&
-    !isSecretBearingAuth(auth) &&
-    canViewDataConnectionConfig(principal, connection);
-
-  if (keepSecretlessConfig) {
+  if (auth !== undefined && !isSecretBearingAuth(auth)) {
     return DataConnectionSchema.parse(connection);
   }
 

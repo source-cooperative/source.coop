@@ -299,10 +299,11 @@ export const DataConnectionObjectSchema = z
     allowed_visibilities: z.array(z.nativeEnum(ProductVisibility)),
     required_flag: z.optional(z.nativeEnum(AccountFlags)),
     /**
-     * Account (individual or organization) that owns this connection. Governs
-     * who may view its *secret-less* config when it isn't public: absent =
-     * unowned (e.g. Source Cooperative-managed) ⇒ viewable by anyone; set ⇒
-     * viewable by members of that account. (See `canViewDataConnectionConfig`.)
+     * Account (individual or organization) that owns this connection. Absent =
+     * unowned (e.g. Source Cooperative-managed), usable by any account; set ⇒
+     * only that account's products may use it (enforced in `createProduct`). The
+     * proxy also keys its federated-credential cache off this: owned ⇒ per
+     * product-grained subject, unowned ⇒ one shared credential per connection.
      */
     owner: z.optional(
       z
