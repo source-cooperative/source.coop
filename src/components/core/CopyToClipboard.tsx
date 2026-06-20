@@ -23,6 +23,7 @@ export function CopyToClipboard({ text }: CopyToClipboardProps) {
   return (
     <Tooltip content="Copy to clipboard">
       <IconButton
+        type="button"
         size="1"
         variant="ghost"
         color={copied ? "green" : "gray"}
