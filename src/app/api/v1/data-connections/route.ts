@@ -90,7 +90,8 @@ export async function POST(request: NextRequest) {
       const createdDataConnection = await dataConnectionsTable.create(
         dataConnection
       );
-      return NextResponse.json(createdDataConnection, {
+      // Strip secret-bearing auth from the create response too (write-only).
+      return NextResponse.json(sanitizeDataConnection(createdDataConnection), {
         status: StatusCodes.OK,
       });
     } catch (e) {
