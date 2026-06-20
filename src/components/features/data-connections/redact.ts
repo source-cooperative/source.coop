@@ -15,8 +15,6 @@ import {
 export type RedactedAuthentication =
   | { type: DataConnectionAuthenticationType.S3AccessKey }
   | { type: DataConnectionAuthenticationType.AzureSasToken }
-  | { type: DataConnectionAuthenticationType.S3ECSTaskRole }
-  | { type: DataConnectionAuthenticationType.S3Local }
   | { type: DataConnectionAuthenticationType.S3WebIdentityRole; role_arn: string }
   | {
       type: DataConnectionAuthenticationType.GcpWorkloadIdentity;
@@ -54,8 +52,6 @@ function redactAuthentication(
       };
     case DataConnectionAuthenticationType.S3AccessKey:
     case DataConnectionAuthenticationType.AzureSasToken:
-    case DataConnectionAuthenticationType.S3ECSTaskRole:
-    case DataConnectionAuthenticationType.S3Local:
       return { type: auth.type };
   }
 }

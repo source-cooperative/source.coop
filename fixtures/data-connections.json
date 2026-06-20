@@ -10,9 +10,6 @@
       "bucket": "dev.us-west-2.opendata.source.coop",
       "base_prefix": "",
       "region": "us-west-2"
-    },
-    "authentication": {
-      "type": "s3_ecs_task_role"
     }
   },
   {
@@ -26,9 +23,6 @@
       "bucket": "source-coop-data",
       "base_prefix": "",
       "region": "us-east-1"
-    },
-    "authentication": {
-      "type": "s3_local"
     }
   },
   {
@@ -79,9 +73,6 @@
       "bucket": "source-coop-subscription",
       "base_prefix": "premium/",
       "region": "eu-west-1"
-    },
-    "authentication": {
-      "type": "s3_ecs_task_role"
     }
   }
 ]
