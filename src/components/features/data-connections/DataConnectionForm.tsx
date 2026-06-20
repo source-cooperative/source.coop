@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useActionState } from "react";
-import { Button, Text, Flex, Checkbox } from "@radix-ui/themes";
+import { Button, Text, Flex, Checkbox, Code } from "@radix-ui/themes";
+import { CopyToClipboard } from "@/components/core/CopyToClipboard";
 import Form from "next/form";
 import { useRouter } from "next/navigation";
 import {
@@ -195,6 +196,8 @@ export function DataConnectionForm({
     auth?.type === DataConnectionAuthenticationType.S3WebIdentityRole
       ? auth.role_arn
       : "";
+  // OIDC subject the proxy presents; owners match it in their IAM trust policy.
+  const subPattern = `scv1:conn:${dataConnection?.data_connection_id ?? ""}:*`;
   const initialTenantId =
     auth?.type === DataConnectionAuthenticationType.AzureWorkloadIdentity
       ? auth.tenant_id
@@ -678,23 +681,52 @@ export function DataConnectionForm({
         )}
 
         {authType === DataConnectionAuthenticationType.S3WebIdentityRole && (
-          <Field
-            label="Role ARN"
-            name="role_arn"
-            description="IAM role the proxy assumes via AssumeRoleWithWebIdentity (keyless federation). This is an ARN, not a secret."
-            errors={state.fieldErrors?.role_arn}
-          >
-            <input
-              type="text"
+          <>
+            <Field
+              label="Role ARN"
               name="role_arn"
-              required
-              placeholder="arn:aws:iam::123456789012:role/my-role"
-              defaultValue={
-                (state.data.get("role_arn") as string) || initialRoleArn
-              }
-              style={fieldStyle}
-            />
-          </Field>
+              description="IAM role the proxy assumes via AssumeRoleWithWebIdentity (keyless federation). This is an ARN, not a secret."
+              errors={state.fieldErrors?.role_arn}
+            >
+              <input
+                type="text"
+                name="role_arn"
+                required
+                placeholder="arn:aws:iam::123456789012:role/my-role"
+                defaultValue={
+                  (state.data.get("role_arn") as string) || initialRoleArn
+                }
+                style={fieldStyle}
+              />
+            </Field>
+
+            {mode === "edit" && (
+              <Field
+                label="Trust-policy subject"
+                name="sub_pattern"
+                description={
+                  <>
+                    The proxy presents this OIDC subject when assuming the role.
+                    In the role&apos;s trust policy, add a{" "}
+                    <Text weight="medium">StringLike</Text> condition on{" "}
+                    <Text weight="medium">data.source.coop:sub</Text> matching
+                    it, alongside{" "}
+                    <Text weight="medium">
+                      data.source.coop:aud = source-coop-data-proxy
+                    </Text>
+                    .
+                  </>
+                }
+              >
+                <Flex align="center" gap="2">
+                  <Code size="2" variant="soft">
+                    {subPattern}
+                  </Code>
+                  <CopyToClipboard text={subPattern} />
+                </Flex>
+              </Field>
+            )}
+          </>
         )}
 
         {authType === DataConnectionAuthenticationType.AzureWorkloadIdentity && (
