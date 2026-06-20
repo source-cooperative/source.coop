@@ -4,7 +4,7 @@
  *   get:
  *     tags: [Data Connections]
  *     summary: Get data connection details
- *     description: Retrieves the details of a specific data connection. Authentication details are redacted unless the user has appropriate permissions.
+ *     description: Retrieves the details of a specific data connection. Secret-bearing authentication (static keys/tokens) is always stripped; secret-less federated config (role ARN, workload-identity IDs) is returned to any authorized caller.
  *     parameters:
  *       - in: path
  *         name: data_connection_id
@@ -59,8 +59,8 @@ export async function GET(
       );
     }
 
-    // sanitizeDataConnection redacts authentication per the caller's permissions.
-    const sanitized = sanitizeDataConnection(dataConnection, session);
+    // sanitizeDataConnection strips secret-bearing authentication (write-only).
+    const sanitized = sanitizeDataConnection(dataConnection);
 
     return NextResponse.json(sanitized, { status: StatusCodes.OK });
   } catch (err: unknown) {
@@ -143,7 +143,7 @@ export async function PUT(
     const dataConnection = await dataConnectionsTable.create(
       updatedDataConnection
     );
-    const sanitized = sanitizeDataConnection(dataConnection, session);
+    const sanitized = sanitizeDataConnection(dataConnection);
     return NextResponse.json(sanitized, { status: StatusCodes.OK });
   } catch (err: unknown) {
     const errorMessage =

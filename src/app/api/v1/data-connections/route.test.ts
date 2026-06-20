@@ -44,18 +44,39 @@ describe("/api/v1/data-connections", () => {
     }
   });
 
-  test("POST creates a data connection when authorized", async () => {
+  test("POST strips secret-bearing auth from the create response", async () => {
     (getApiSession as jest.Mock).mockResolvedValue({ identity_id: "user" });
     (isAuthorized as jest.Mock).mockReturnValue(true);
-    (dataConnectionsTable.create as jest.Mock).mockResolvedValue({ id: "x" });
 
-    const body = { data_connection_id: "x", authentication: {} };
+    const connection = {
+      data_connection_id: "test-connection",
+      name: "X",
+      read_only: false,
+      allowed_visibilities: ["public"],
+      details: {
+        provider: "s3",
+        bucket: "b",
+        base_prefix: "",
+        region: "us-east-1",
+      },
+      authentication: {
+        type: "s3_access_key",
+        access_key_id: "AKIA",
+        secret_access_key: "secret",
+      },
+    };
+    (dataConnectionsTable.create as jest.Mock).mockResolvedValue(connection);
+
     const req = new NextRequest("http://localhost/api/v1/data-connections", {
       method: "POST",
-      body: JSON.stringify(body),
+      body: JSON.stringify(connection),
       headers: { "content-type": "application/json" },
     });
     const res = await POST(req);
-    expect(res.status).toBeGreaterThanOrEqual(200);
+
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.authentication).toBeUndefined();
+    expect(JSON.stringify(json)).not.toContain("secret");
   });
 });
