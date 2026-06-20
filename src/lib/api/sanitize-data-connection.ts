@@ -1,43 +1,26 @@
 import {
-  Actions,
   DataConnection,
   DataConnectionObjectSchema,
   DataConnectionSchema,
   isSecretBearingAuth,
-  UserSession,
 } from "@/types";
-import { canViewDataConnectionConfig, isAuthorized } from "./authz";
 
 /**
- * Redact a data connection's `authentication` for a read response.
+ * Strip a data connection's *secret-bearing* `authentication` (static S3 keys /
+ * SAS tokens) from a read response. These secrets are write-only — they never
+ * leave the database via the API, for any caller (admins included); rotate by
+ * writing a new value.
  *
- * - **Credential viewers** (admins, `ViewDataConnectionCredentials`) → full
- *   connection, secrets included.
- * - Otherwise, a **secret-less** `authentication` (federated role ARN /
- *   workload identity) is kept iff the caller may view the connection's config
- *   (see {@link canViewDataConnectionConfig}).
- * - **Secret-bearing** `authentication` (static keys/tokens), and any config the
- *   caller isn't allowed to see, are stripped.
- *
- * Connections with no `authentication` pass through unchanged.
+ * Secret-less `authentication` (federated role ARN / workload identity) is *not*
+ * a credential — the customer's IAM trust policy is the security boundary, so
+ * the ARN grants nothing on its own — and is returned to any caller (the proxy
+ * reads it impersonating the end user), like the connection's `details`.
  */
 export function sanitizeDataConnection(
-  connection: DataConnection,
-  principal: UserSession | null
+  connection: DataConnection
 ): DataConnection {
-  if (
-    isAuthorized(principal, connection, Actions.ViewDataConnectionCredentials)
-  ) {
-    return DataConnectionSchema.parse(connection);
-  }
-
   const auth = connection.authentication;
-  const keepSecretlessConfig =
-    auth !== undefined &&
-    !isSecretBearingAuth(auth) &&
-    canViewDataConnectionConfig(principal, connection);
-
-  if (keepSecretlessConfig) {
+  if (auth !== undefined && !isSecretBearingAuth(auth)) {
     return DataConnectionSchema.parse(connection);
   }
 

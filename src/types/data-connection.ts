@@ -299,10 +299,11 @@ export const DataConnectionObjectSchema = z
     allowed_visibilities: z.array(z.nativeEnum(ProductVisibility)),
     required_flag: z.optional(z.nativeEnum(AccountFlags)),
     /**
-     * Account (individual or organization) that owns this connection. Governs
-     * who may view its *secret-less* config when it isn't public: absent =
-     * unowned (e.g. Source Cooperative-managed) ⇒ viewable by anyone; set ⇒
-     * viewable by members of that account. (See `canViewDataConnectionConfig`.)
+     * Account (individual or organization) that owns this connection. Absent =
+     * unowned (e.g. Source Cooperative-managed), usable by any account; set ⇒
+     * only that account's products may use it (enforced in `createProduct`). The
+     * proxy also keys its federated-credential cache off this: owned ⇒ per
+     * product-grained subject, unowned ⇒ one shared credential per connection.
      */
     owner: z.optional(
       z
@@ -342,16 +343,17 @@ export type DataConnection = z.infer<typeof DataConnectionSchema>;
 
 /**
  * Whether an authentication variant carries a usable secret — and so must never
- * be exposed outside the `ViewDataConnectionCredentials` (admin) path. The V2
- * federation variants (web identity / workload identity) are secret-less; only
- * the static-credential variants carry secrets.
+ * be returned by the read API (`sanitizeDataConnection` strips it for everyone;
+ * such secrets are write-only). The V2 federation variants (web identity /
+ * workload identity) are secret-less; only the static-credential variants carry
+ * secrets.
  */
 export function isSecretBearingAuth(
   auth: DataConnectionAuthentication
 ): boolean {
-  // Default-deny on exposure: a type is treated as secret-bearing (kept out of
-  // non-admin responses) unless it is explicitly listed below as secret-less.
-  // So a newly-added or unknown variant fails safe — never accidentally exposed;
+  // Default-deny on exposure: a type is treated as secret-bearing (stripped from
+  // read responses) unless it is explicitly listed below as secret-less. So a
+  // newly-added or unknown variant fails safe — never accidentally exposed;
   // exposing a type requires a deliberate edit to this allowlist.
   switch (auth.type) {
     case DataConnectionAuthenticationType.S3WebIdentityRole:

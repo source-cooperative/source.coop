@@ -125,6 +125,30 @@ describe("/api/v1/products/[account_id]/[repository_id]", () => {
       });
     });
 
+    test("returns 404 (not 401) for a deactivated product when not permitted", async () => {
+      (productsTable.fetchById as jest.Mock).mockResolvedValue({
+        ...mockRepository,
+        disabled: true,
+      });
+
+      const request = new NextRequest(
+        "http://localhost/api/v1/products/test-account/test-repo"
+        // No Authorization header = not permitted to view
+      );
+      const response = await GET(request, {
+        params: Promise.resolve({
+          account_id: "test-account",
+          repository_id: "test-repo",
+        }),
+      });
+
+      expect(response.status).toBe(404);
+      const responseData = await response.json();
+      expect(responseData).toEqual({
+        error: "Repository with ID test-account/test-repo not found",
+      });
+    });
+
   });
 
   describe("org account authenticated via OIDC", () => {
