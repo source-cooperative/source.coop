@@ -305,4 +305,32 @@ describe("updateProduct", () => {
     expect(dataConnectionsTable.fetchById).not.toHaveBeenCalled();
     expect(productsTable.update).toHaveBeenCalledTimes(1);
   });
+
+  test("deactivates a product when disabled=true is submitted", async () => {
+    (productsTable.fetchById as jest.Mock).mockResolvedValue(currentProduct());
+
+    const result = await updateProduct(
+      undefined,
+      buildUpdateFormData({ visibility: "public", disabled: "true" })
+    );
+
+    expect(result.success).toBe(true);
+    const updated = (productsTable.update as jest.Mock).mock.calls[0][0];
+    expect(updated.disabled).toBe(true);
+  });
+
+  test("reactivates a product when disabled=false is submitted", async () => {
+    (productsTable.fetchById as jest.Mock).mockResolvedValue(
+      currentProduct({ disabled: true })
+    );
+
+    const result = await updateProduct(
+      undefined,
+      buildUpdateFormData({ visibility: "public", disabled: "false" })
+    );
+
+    expect(result.success).toBe(true);
+    const updated = (productsTable.update as jest.Mock).mock.calls[0][0];
+    expect(updated.disabled).toBe(false);
+  });
 });

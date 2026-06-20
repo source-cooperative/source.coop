@@ -42,7 +42,6 @@ import {
   MembershipRole,
   MembershipState,
   Product,
-  ProductVisibility,
   UserSession,
 } from "@/types";
 import { match } from "ts-pattern";
@@ -86,7 +85,6 @@ type ActionResourceMap = {
   [Actions.CreateDataConnection]: DataConnection;
   [Actions.DisableDataConnection]: DataConnection;
   [Actions.UseDataConnection]: DataConnection;
-  [Actions.ViewDataConnectionCredentials]: DataConnection;
   [Actions.PutDataConnection]: DataConnection;
   [Actions.DeleteDataConnection]: DataConnection;
 };
@@ -240,11 +238,6 @@ export function isAuthorized(
 export function isAuthorized(
   principal: UserSession | null,
   resource: DataConnection,
-  action: Actions.ViewDataConnectionCredentials
-): boolean;
-export function isAuthorized(
-  principal: UserSession | null,
-  resource: DataConnection,
   action: Actions.PutDataConnection
 ): boolean;
 export function isAuthorized(
@@ -345,9 +338,6 @@ export function isAuthorized(
       .with(Actions.UseDataConnection, () =>
         useDataConnection(principal, resource as ResourceForAction<Actions.UseDataConnection>)
       )
-      .with(Actions.ViewDataConnectionCredentials, () =>
-        viewDataConnectionCredentials(principal, resource as ResourceForAction<Actions.ViewDataConnectionCredentials>)
-      )
       .with(Actions.PutDataConnection, () =>
         putDataConnection(principal, resource as ResourceForAction<Actions.PutDataConnection>)
       )
@@ -431,65 +421,6 @@ function useDataConnection(
   } else {
     return true;
   }
-}
-
-function viewDataConnectionCredentials(
-  principal: UserSession | null,
-  _dataConnection: DataConnection
-): boolean {
-  if (principal?.account?.disabled) {
-    return false;
-  }
-
-  if (isAdmin(principal)) {
-    return true;
-  }
-
-  return false;
-}
-
-/**
- * Whether `principal` is affiliated with `account_id` — it *is* that account
- * (individual account) or is an active member of it (any role).
- */
-function isAffiliatedWith(
-  principal: UserSession | null,
-  account_id: string
-): boolean {
-  if (principal?.account?.account_id === account_id) {
-    return true;
-  }
-
-  return (principal?.memberships ?? []).some(
-    (membership) =>
-      membership.state === MembershipState.Member &&
-      membership.membership_account_id === account_id
-  );
-}
-
-/**
- * Whether the caller may view a data connection's *secret-less* config (e.g. a
- * federated role ARN). This is independent of `ViewDataConnectionCredentials`,
- * which gates *secret-bearing* config (static keys/tokens).
- *
- * - `public` in `allowed_visibilities` → anyone, **including anonymous**: the
- *   connection backs public products that must be servable without a session.
- * - no `owner` → anyone (unowned / Source Cooperative-managed).
- * - otherwise → members of the owner account.
- */
-export function canViewDataConnectionConfig(
-  principal: UserSession | null,
-  connection: DataConnection
-): boolean {
-  if (connection.allowed_visibilities.includes(ProductVisibility.Public)) {
-    return true;
-  }
-
-  if (!connection.owner) {
-    return true;
-  }
-
-  return isAffiliatedWith(principal, connection.owner);
 }
 
 function putDataConnection(

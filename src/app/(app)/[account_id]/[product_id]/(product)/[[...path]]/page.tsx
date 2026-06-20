@@ -46,9 +46,16 @@ export default async function ProductPathPage({ params }: PageProps) {
   // product.
   const product = await getAuthorizedProduct(account_id, product_id);
 
+  // A deactivated (disabled) product is reachable here only by an admin — backend
+  // authz 404s everyone else — and the data proxy won't serve its objects to an
+  // anonymous reader. So read its data with signed credentials regardless of
+  // visibility, taking the same gate-and-mint path a restricted product takes.
+  const needsAuthenticatedRead =
+    product.visibility === "restricted" || product.disabled;
+
   // Read the user's cached proxy credentials once for this request: used both to
   // build the (signed-or-anonymous) storage client and, below, to decide whether
-  // a restricted product needs the credential gate. Build one storage client and
+  // the product needs the credential gate. Build one storage client and
   // reuse it for both the file-detection HEAD and the directory listing.
   const creds = await readProxyCredentials();
   // creds is already resolved here; `?? null` passes an explicit "none" so
@@ -120,7 +127,7 @@ export default async function ProductPathPage({ params }: PageProps) {
   // restricted product with no fresh cookie, an authenticated user is sent
   // through ProxyCredentialsGate, which mints (in an action) and refreshes the
   // page so this render then finds the credentials.
-  if (!creds && product.visibility === "restricted") {
+  if (!creds && needsAuthenticatedRead) {
     return <ProxyCredentialsGate />;
   }
 
@@ -151,7 +158,7 @@ export default async function ProductPathPage({ params }: PageProps) {
       prefix: s3Prefix,
     });
   } catch (error) {
-    if (isAccessDeniedError(error) && product.visibility === "restricted") {
+    if (isAccessDeniedError(error) && needsAuthenticatedRead) {
       LOGGER.warn("Proxy denied a signed read for an authorized viewer", {
         operation: "ProductPathPage",
         context: "directory listing",

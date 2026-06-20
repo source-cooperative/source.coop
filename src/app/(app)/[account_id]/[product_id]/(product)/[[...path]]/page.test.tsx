@@ -79,6 +79,7 @@ import { readProxyCredentials } from "@/lib/services/proxy-credentials-read";
 import { getStorageClient } from "@/lib/clients/storage";
 import { ProductDataUnavailable } from "@/components/features/products/ProductDataUnavailable";
 import { DirectoryList } from "@/components/features/products/object-browser/DirectoryList";
+import { ProxyCredentialsGate } from "@/components/features/products/ProxyCredentialsGate";
 import { S3ServiceException } from "@aws-sdk/client-s3";
 
 describe("Product Page Metadata", () => {
@@ -270,6 +271,49 @@ describe("ProductPathPage proxy AccessDenied handling", () => {
         }),
       }),
     ).rejects.toThrow("proxy exploded");
+  });
+});
+
+describe("ProductPathPage authenticated-read gate for deactivated products", () => {
+  beforeEach(() => {
+    (getPageSession as jest.Mock).mockResolvedValue({ identity_id: "admin-1" });
+    (isAuthorized as jest.Mock).mockReturnValue(true);
+    // No cached proxy credentials — anonymous client.
+    (readProxyCredentials as jest.Mock).mockResolvedValue(undefined);
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("routes a deactivated product through ProxyCredentialsGate regardless of visibility", async () => {
+    // A disabled product is reachable only by admins, and the proxy won't serve
+    // its data anonymously — even a *public* disabled product must mint signed
+    // credentials rather than attempt an anonymous read.
+    (productsTable.fetchById as jest.Mock).mockResolvedValue({
+      product_id: "test-product",
+      visibility: "public",
+      disabled: true,
+      metadata: { primary_mirror: "primary", mirrors: {} },
+      account: { account_id: "test-account", name: "Test Account" },
+    });
+    const listObjects = jest.fn();
+    (getStorageClient as jest.Mock).mockResolvedValue({
+      listObjects,
+      getObjectInfo: jest.fn(),
+    });
+
+    const element = await ProductPathPage({
+      params: Promise.resolve({
+        account_id: "test-account",
+        product_id: "test-product",
+        path: [],
+      }),
+    });
+
+    expect(element.type).toBe(ProxyCredentialsGate);
+    // Never attempted an anonymous listing.
+    expect(listObjects).not.toHaveBeenCalled();
   });
 });
 

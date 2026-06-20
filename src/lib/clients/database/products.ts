@@ -261,6 +261,7 @@ export class ProductsTable extends BaseTable {
         ":visibility": product.visibility,
         ":metadata": product.metadata,
         ":search_text": this.buildSearchText(product),
+        ":disabled": product.disabled,
       };
       if (opts?.expectedUpdatedAt) {
         values[":expected_updated_at"] = opts.expectedUpdatedAt;
@@ -273,7 +274,7 @@ export class ProductsTable extends BaseTable {
             account_id: product.account_id,
           },
           UpdateExpression:
-            "SET title = :title, description = :description, updated_at = :updated_at, visibility = :visibility, metadata = :metadata, search_text = :search_text",
+            "SET title = :title, description = :description, updated_at = :updated_at, visibility = :visibility, metadata = :metadata, search_text = :search_text, disabled = :disabled",
           ...(opts?.expectedUpdatedAt
             ? { ConditionExpression: "updated_at = :expected_updated_at" }
             : {}),

@@ -4,7 +4,7 @@
  *   get:
  *     tags: [Data Connections]
  *     summary: List data connections
- *     description: Retrieves a list of data connections. The list is sanitized of data connection credentials based on the user's permissions.
+ *     description: Retrieves a list of data connections. Secret-bearing authentication (static keys/tokens) is always stripped; secret-less federated config (role ARN, workload-identity IDs) is returned to any authorized caller.
  *     responses:
  *       200:
  *         description: Successfully retrieved the list of data connections
@@ -34,9 +34,9 @@ export async function GET(request: NextRequest) {
     const filteredConnections = dataConnections.filter((dataConnection) =>
       isAuthorized(session, dataConnection, Actions.GetDataConnection)
     );
-    // sanitizeDataConnection redacts authentication per the caller's permissions.
+    // sanitizeDataConnection strips secret-bearing authentication (write-only).
     const sanitizedConnections = filteredConnections.map((connection) =>
-      sanitizeDataConnection(connection, session)
+      sanitizeDataConnection(connection)
     );
 
     return NextResponse.json(sanitizedConnections, { status: StatusCodes.OK });
@@ -90,7 +90,8 @@ export async function POST(request: NextRequest) {
       const createdDataConnection = await dataConnectionsTable.create(
         dataConnection
       );
-      return NextResponse.json(createdDataConnection, {
+      // Strip secret-bearing auth from the create response too (write-only).
+      return NextResponse.json(sanitizeDataConnection(createdDataConnection), {
         status: StatusCodes.OK,
       });
     } catch (e) {
