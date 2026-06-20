@@ -24,7 +24,6 @@ export class DatabaseConstruct extends Construct {
   public readonly accountsTable: dynamodb.Table;
   public readonly productsTable: dynamodb.Table;
   public readonly dataConnectionsTable: dynamodb.Table;
-  public readonly apiKeysTable: dynamodb.Table;
   public readonly membershipsTable: dynamodb.Table;
 
   constructor(
@@ -50,20 +49,6 @@ export class DatabaseConstruct extends Construct {
           // fetch an account by Ory identity_id
           name: "identity_id",
           partitionKey: "identity_id",
-        },
-      ],
-      removalPolicy,
-    });
-
-    this.apiKeysTable = this.createTable({
-      name: "api-keys",
-      stage,
-      partitionKey: "access_key_id",
-      indexes: [
-        {
-          // fetch all API keys for a given account
-          name: "account_id",
-          partitionKey: "account_id",
         },
       ],
       removalPolicy,

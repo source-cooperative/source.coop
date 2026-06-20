@@ -14,7 +14,7 @@ import {
 // Node.js built-in imports
 
 // Import mock data
-import { accounts, apiKeys, memberships, products, dataConnections } from "../src/lib/api/utils.mock";
+import { accounts, memberships, products, dataConnections } from "../src/lib/api/utils.mock";
 
 const DYNAMODB_ENDPOINT =
   process.env.DYNAMODB_ENDPOINT || "http://localhost:8000";
@@ -47,7 +47,6 @@ async function tablesExist() {
   return (
     tables.TableNames?.includes(getTableName("accounts")) &&
     tables.TableNames?.includes(getTableName("products")) &&
-    tables.TableNames?.includes(getTableName("api-keys")) &&
     tables.TableNames?.includes(getTableName("data-connections")) &&
     tables.TableNames?.includes(getTableName("memberships"))
   );
@@ -74,7 +73,6 @@ async function createTables() {
   // Delete existing tables
   await deleteTable(getTableName("products"));
   await deleteTable(getTableName("accounts"));
-  await deleteTable(getTableName("api-keys"));
   await deleteTable(getTableName("data-connections"));
   await deleteTable(getTableName("memberships"));
 
@@ -128,41 +126,6 @@ async function createTables() {
     console.log(`✓ Created ${getTableName("accounts")} table`);
   } catch (e) {
     console.error(`✗ Error creating ${getTableName("accounts")} table:`, e);
-    throw e;
-  }
-
-  // Create api-keys table
-  try {
-    await client.send(
-      new CreateTableCommand({
-        TableName: getTableName("api-keys"),
-        AttributeDefinitions: [
-          { AttributeName: "access_key_id", AttributeType: "S" },
-          { AttributeName: "account_id", AttributeType: "S" },
-        ],
-        KeySchema: [{ AttributeName: "access_key_id", KeyType: "HASH" }],
-        GlobalSecondaryIndexes: [
-          {
-            IndexName: "account_id",
-            KeySchema: [{ AttributeName: "account_id", KeyType: "HASH" }],
-            Projection: {
-              ProjectionType: "ALL",
-            },
-            ProvisionedThroughput: {
-              ReadCapacityUnits: 5,
-              WriteCapacityUnits: 5,
-            },
-          },
-        ],
-        ProvisionedThroughput: {
-          ReadCapacityUnits: 5,
-          WriteCapacityUnits: 5,
-        },
-      })
-    );
-    console.log(`✓ Created ${getTableName("api-keys")} table`);
-  } catch (e) {
-    console.error(`✗ Error creating ${getTableName("api-keys")} table:`, e);
     throw e;
   }
 
@@ -307,7 +270,6 @@ async function loadFixtureData() {
   try {
     console.log(`Loaded ${accounts.length} accounts from mock utilities`);
     console.log(`Loaded ${products.length} products from mock utilities`);
-    console.log(`Loaded ${apiKeys.length} API keys from mock utilities`);
     console.log(`Loaded ${memberships.length} memberships from mock utilities`);
     console.log(
       `Loaded ${dataConnections.length} data connections from mock utilities`
@@ -342,40 +304,6 @@ async function loadFixtureData() {
     }
     console.log(
       `Account insertion complete! Processed ${processedAccounts} accounts.`
-    );
-
-    // Insert API keys into DynamoDB
-    console.log(
-      `Inserting ${apiKeys.length} API keys into ${getTableName(
-        "api-keys"
-      )} table...`
-    );
-    let processedApiKeys = 0;
-
-    for (const apiKey of apiKeys) {
-      try {
-        await docClient.send(
-          new PutCommand({
-            TableName: getTableName("api-keys"),
-            Item: apiKey,
-          })
-        );
-
-        processedApiKeys++;
-        if (processedApiKeys % 50 === 0) {
-          console.log(
-            `Processed ${processedApiKeys}/${apiKeys.length} API keys...`
-          );
-        }
-      } catch (error) {
-        console.error(
-          `Error inserting API key ${apiKey.access_key_id}:`,
-          error
-        );
-      }
-    }
-    console.log(
-      `API key insertion complete! Processed ${processedApiKeys} API keys.`
     );
 
     // Insert data connections into DynamoDB
@@ -508,20 +436,6 @@ async function loadFixtureData() {
           })
         );
       console.log(`Found ${accountCount || 0} individual accounts in DynamoDB`);
-
-      const { Items: savedApiKeys, Count: apiKeyCount } = await docClient.send(
-        new QueryCommand({
-          TableName: getTableName("api-keys"),
-          IndexName: "account_id",
-          KeyConditionExpression: "account_id = :account_id",
-          ExpressionAttributeValues: {
-            ":account_id": "regular-user",
-          },
-        })
-      );
-      console.log(
-        `Found ${apiKeyCount || 0} API keys for regular-user in DynamoDB`
-      );
 
       const { Items: savedMemberships, Count: membershipCount } =
         await docClient.send(
