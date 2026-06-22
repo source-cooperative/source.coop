@@ -32,10 +32,8 @@ const providerOptions: Array<{ value: DataProvider; label: string }> = [
 ];
 
 const s3AuthTypes = [
-  DataConnectionAuthenticationType.S3ECSTaskRole,
   DataConnectionAuthenticationType.S3AccessKey,
   DataConnectionAuthenticationType.S3WebIdentityRole,
-  DataConnectionAuthenticationType.S3Local,
 ];
 
 const azureAuthTypes = [
@@ -55,8 +53,6 @@ const AUTH_TYPE_LABELS: Record<DataConnectionAuthenticationType, string> = {
   [DataConnectionAuthenticationType.S3AccessKey]: "Access Key",
   [DataConnectionAuthenticationType.S3WebIdentityRole]:
     "Web Identity Role (federated)",
-  [DataConnectionAuthenticationType.S3ECSTaskRole]: "ECS Task Role",
-  [DataConnectionAuthenticationType.S3Local]: "Local",
   [DataConnectionAuthenticationType.AzureSasToken]: "SAS Token",
   [DataConnectionAuthenticationType.AzureWorkloadIdentity]:
     "Workload Identity (federated)",
@@ -69,14 +65,10 @@ const AUTH_TYPE_LABELS: Record<DataConnectionAuthenticationType, string> = {
 const AUTH_TYPE_DESCRIPTIONS: Partial<
   Record<DataConnectionAuthenticationType, string>
 > = {
-  [DataConnectionAuthenticationType.S3ECSTaskRole]:
-    "Use the proxy's ECS task role — no stored credentials.",
   [DataConnectionAuthenticationType.S3AccessKey]:
     "Static IAM access key and secret you provide.",
   [DataConnectionAuthenticationType.S3WebIdentityRole]:
     "Keyless: the proxy assumes a customer IAM role via web identity.",
-  [DataConnectionAuthenticationType.S3Local]:
-    "Local/dev credential chain — no stored credentials.",
   [DataConnectionAuthenticationType.AzureSasToken]:
     "A shared access signature token you provide.",
   [DataConnectionAuthenticationType.AzureWorkloadIdentity]:

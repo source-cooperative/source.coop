@@ -467,10 +467,6 @@ function buildAuthenticationFromForm(
           (formData.get("sas_token") as string) || prev?.sas_token || "",
       };
     }
-    case DataConnectionAuthenticationType.S3ECSTaskRole:
-      return { type: DataConnectionAuthenticationType.S3ECSTaskRole };
-    case DataConnectionAuthenticationType.S3Local:
-      return { type: DataConnectionAuthenticationType.S3Local };
     default:
       return undefined;
   }

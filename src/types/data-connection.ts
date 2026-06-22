@@ -90,21 +90,7 @@ export enum DataConnectionAuthenticationType {
    */
   AzureWorkloadIdentity = "azure_workload_identity",
   AzureSasToken = "az_sas_token",
-  S3ECSTaskRole = "s3_ecs_task_role",
-  S3Local = "s3_local",
 }
-
-export const S3LocalAuthenticationSchema = z
-  .object({
-    type: z.literal(DataConnectionAuthenticationType.S3Local),
-  })
-  .openapi("S3LocalAuthentication");
-
-export const S3ECSTaskRoleAuthenticationSchema = z
-  .object({
-    type: z.literal(DataConnectionAuthenticationType.S3ECSTaskRole),
-  })
-  .openapi("S3ECSTaskRoleAuthentication");
 
 export const S3AccessKeyAuthenticationSchema = z
   .object({
@@ -190,8 +176,6 @@ export const DataConnectionAuthenticationSchema = z
     GcpWorkloadIdentityAuthenticationSchema,
     AzureWorkloadIdentityAuthenticationSchema,
     AzureSasTokenAuthenticationSchema,
-    S3ECSTaskRoleAuthenticationSchema,
-    S3LocalAuthenticationSchema,
   ])
   .openapi("DataConnectionAuthentication");
 
@@ -266,8 +250,6 @@ const PROVIDER_AUTH_TYPES: Record<
   [DataProvider.S3]: [
     DataConnectionAuthenticationType.S3AccessKey,
     DataConnectionAuthenticationType.S3WebIdentityRole,
-    DataConnectionAuthenticationType.S3ECSTaskRole,
-    DataConnectionAuthenticationType.S3Local,
   ],
   [DataProvider.Azure]: [
     DataConnectionAuthenticationType.AzureWorkloadIdentity,
@@ -378,8 +360,6 @@ export function isSecretBearingAuth(
     case DataConnectionAuthenticationType.S3WebIdentityRole:
     case DataConnectionAuthenticationType.GcpWorkloadIdentity:
     case DataConnectionAuthenticationType.AzureWorkloadIdentity:
-    case DataConnectionAuthenticationType.S3ECSTaskRole:
-    case DataConnectionAuthenticationType.S3Local:
       return false;
     default:
       return true;

@@ -271,7 +271,6 @@ describe("createDataConnection", () => {
       FORM_STATE,
       formDataFor({
         ...baseS3Fields,
-        auth_type: DataConnectionAuthenticationType.S3ECSTaskRole,
       })
     );
 
@@ -317,7 +316,6 @@ describe("createDataConnection", () => {
       FORM_STATE,
       formDataFor({
         ...baseS3Fields,
-        auth_type: DataConnectionAuthenticationType.S3ECSTaskRole,
       })
     );
 
@@ -336,7 +334,6 @@ describe("createDataConnection", () => {
       FORM_STATE,
       formDataFor({
         ...baseS3Fields,
-        auth_type: DataConnectionAuthenticationType.S3Local,
       })
     );
 
@@ -421,7 +418,6 @@ describe("updateDataConnection", () => {
       FORM_STATE,
       formDataFor({
         ...baseS3Fields,
-        auth_type: DataConnectionAuthenticationType.S3Local,
       })
     );
 
@@ -441,7 +437,6 @@ describe("updateDataConnection", () => {
       FORM_STATE,
       formDataFor({
         ...baseS3Fields,
-        auth_type: DataConnectionAuthenticationType.S3Local,
       })
     );
 
