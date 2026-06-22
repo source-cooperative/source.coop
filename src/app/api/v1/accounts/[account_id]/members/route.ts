@@ -89,8 +89,6 @@ export async function POST(
         { status: StatusCodes.BAD_REQUEST }
       );
     }
-    let createdMembership: Membership | null = null;
-    const success = false;
     const membership: Membership = {
       ...membershipInvitation,
       membership_id: uuidv4(),
@@ -122,12 +120,10 @@ export async function POST(
         );
       }
     }
-    createdMembership = await membershipsTable.create(membership);
-    if (success) {
-      return NextResponse.json(createdMembership, {
-        status: StatusCodes.OK,
-      });
-    }
+    const createdMembership = await membershipsTable.create(membership);
+    return NextResponse.json(createdMembership, {
+      status: StatusCodes.OK,
+    });
   } catch (err: unknown) {
     const errorMessage =
       err instanceof Error ? err.message : "Internal server error";
