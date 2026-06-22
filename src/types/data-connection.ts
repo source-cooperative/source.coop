@@ -342,6 +342,25 @@ export const DataConnectionSchema = DataConnectionObjectSchema.superRefine(
 export type DataConnection = z.infer<typeof DataConnectionSchema>;
 
 /**
+ * The object-key prefix a product mirror receives on this connection.
+ * Substitutes the repository tokens in `prefix_template`; an empty/undefined
+ * template means "no prefix" — the product mirrors at the bucket root.
+ *
+ * Single source of truth: both product creation (`createProduct`) and attaching
+ * a connection later (`addProductMirror`) call this, so the two paths can't
+ * diverge on how a prefix is computed.
+ */
+export function resolveMirrorPrefix(
+  prefixTemplate: string | undefined,
+  accountId: string,
+  productId: string
+): string {
+  return (prefixTemplate ?? "")
+    .replaceAll("{{repository.account_id}}", accountId)
+    .replaceAll("{{repository.repository_id}}", productId);
+}
+
+/**
  * Whether an authentication variant carries a usable secret — and so must never
  * be returned by the read API (`sanitizeDataConnection` strips it for everyone;
  * such secrets are write-only). The V2 federation variants (web identity /

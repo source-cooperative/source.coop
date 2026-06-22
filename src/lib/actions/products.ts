@@ -9,6 +9,7 @@ import {
   type ProductCreationRequest,
   type ProductMirror,
   type ProductVisibility,
+  resolveMirrorPrefix,
 } from "@/types";
 import { getPageSession, LOGGER } from "@/lib";
 import { FormState } from "@/components/core/DynamicForm";
@@ -239,7 +240,11 @@ export async function createProduct(
           storage_type:
             STORAGE_TYPE_BY_PROVIDER[dataConnection.details.provider],
           connection_id: dataConnection.data_connection_id,
-          prefix: `${validatedFields.data.account_id}/${validatedFields.data.product_id}/`,
+          prefix: resolveMirrorPrefix(
+            dataConnection.prefix_template,
+            validatedFields.data.account_id,
+            validatedFields.data.product_id
+          ),
           is_primary: true,
         },
       },
