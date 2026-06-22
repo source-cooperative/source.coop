@@ -290,8 +290,13 @@ export function DataConnectionForm({
               // failed submit instead of reverting to the stored value.
               state.data.has("prefix_template")
                 ? (state.data.get("prefix_template") as string)
-                : (dataConnection?.prefix_template ??
-                  "{{repository.account_id}}/{{repository.repository_id}}/")
+                : mode === "create"
+                  ? // Creating: pre-fill the default so admins don't retype it.
+                    "{{repository.account_id}}/{{repository.repository_id}}/"
+                  : // Editing: show the stored value, empty if it was cleared.
+                    // Don't fall back to the default, or a cleared prefix would
+                    // reappear on reload.
+                    (dataConnection?.prefix_template ?? "")
             }
             style={fieldStyle}
           />
