@@ -90,11 +90,12 @@ export async function addProductMirror(
       };
     }
 
-    const prefix = connection.prefix_template
-      ? connection.prefix_template
-          .replaceAll("{{repository.account_id}}", accountId)
-          .replaceAll("{{repository.repository_id}}", productId)
-      : `${accountId}/${productId}/`;
+    // An empty/undefined template means "no prefix" — the product mirrors at
+    // the bucket root (base_prefix). It's the admin's responsibility to avoid
+    // collisions when several products share a root-mirrored connection.
+    const prefix = (connection.prefix_template ?? "")
+      .replaceAll("{{repository.account_id}}", accountId)
+      .replaceAll("{{repository.repository_id}}", productId);
 
     const isFirst = Object.keys(product.metadata.mirrors).length === 0;
 
