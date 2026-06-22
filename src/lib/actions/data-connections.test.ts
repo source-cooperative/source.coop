@@ -131,7 +131,7 @@ describe("createDataConnection", () => {
     expect(mockTable.create).not.toHaveBeenCalled();
   });
 
-  test("creates an S3 access-key connection and redirects to the list", async () => {
+  test("creates an S3 access-key connection and redirects to the new connection", async () => {
     const result = await createDataConnection(
       FORM_STATE,
       formDataFor({
@@ -144,7 +144,7 @@ describe("createDataConnection", () => {
     );
 
     expect(result.success).toBe(true);
-    expect(result.redirectTo).toBe("/admin/data-connections");
+    expect(result.redirectTo).toBe("/admin/data-connections/my-connection");
     expect(mockTable.create).toHaveBeenCalledTimes(1);
     const created = mockTable.create.mock.calls[0][0];
     expect(created.read_only).toBe(true);

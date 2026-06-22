@@ -1,9 +1,8 @@
 "use client";
 
-import React, { useState, useActionState } from "react";
+import React, { useState, useActionState, startTransition } from "react";
 import { Button, Text, Flex, Checkbox, Code } from "@radix-ui/themes";
 import { CopyToClipboard } from "@/components/core/CopyToClipboard";
-import Form from "next/form";
 import { useRouter } from "next/navigation";
 import {
   DataProvider,
@@ -219,8 +218,20 @@ export function DataConnectionForm({
   const withSecretHint = (base: string) =>
     mode === "edit" ? `${base} Leave blank to keep the current value.` : base;
 
+  // Dispatch the action from onSubmit (in a transition) rather than via the
+  // form's `action` prop. React auto-resets a form after an `action` submit,
+  // and that reset snaps controlled <select>/checkbox fields (auth_type,
+  // provider, read_only, visibilities) back to their first option/default —
+  // here auth_type stuck on "None" after save (facebook/react#31695). This is
+  // the maintainer-recommended opt-out; mirrors the DynamicForm fix (#373).
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    startTransition(() => formAction(formData));
+  };
+
   return (
-    <Form action={formAction}>
+    <form onSubmit={handleSubmit}>
       <Flex direction="column" gap="4">
         <Field
           label="Connection ID"
@@ -279,8 +290,13 @@ export function DataConnectionForm({
               // failed submit instead of reverting to the stored value.
               state.data.has("prefix_template")
                 ? (state.data.get("prefix_template") as string)
-                : (dataConnection?.prefix_template ??
-                  "{{repository.account_id}}/{{repository.repository_id}}/")
+                : mode === "create"
+                  ? // Creating: pre-fill the default so admins don't retype it.
+                    "{{repository.account_id}}/{{repository.repository_id}}/"
+                  : // Editing: show the stored value, empty if it was cleared.
+                    // Don't fall back to the default, or a cleared prefix would
+                    // reappear on reload.
+                    (dataConnection?.prefix_template ?? "")
             }
             style={fieldStyle}
           />
@@ -826,6 +842,6 @@ export function DataConnectionForm({
           </Flex>
         </Flex>
       </Flex>
-    </Form>
+    </form>
   );
 }

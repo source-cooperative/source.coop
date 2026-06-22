@@ -156,6 +156,26 @@ describe("addProductMirror", () => {
     expect(result.message).toMatch(/modified by someone else/i);
   });
 
+  test("an empty prefix template mirrors at the root (no prefix)", async () => {
+    mockProductsTable.fetchById.mockResolvedValue(productWith({}, ""));
+    mockDataConnectionsTable.fetchById.mockResolvedValue({
+      data_connection_id: "conn-a",
+      details: { provider: "s3" },
+    } as DataConnection);
+
+    await addProductMirror(
+      FORM_STATE,
+      formDataFor({
+        account_id: "acct",
+        product_id: "prod",
+        connection_id: "conn-a",
+      })
+    );
+
+    const updated = mockProductsTable.update.mock.calls[0][0];
+    expect(updated.metadata.mirrors["conn-a"].prefix).toBe("");
+  });
+
   test("maps a GCP connection to the gcs storage type", async () => {
     mockProductsTable.fetchById.mockResolvedValue(productWith({}, ""));
     mockDataConnectionsTable.fetchById.mockResolvedValue({

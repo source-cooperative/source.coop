@@ -82,7 +82,10 @@ describe("createProduct", () => {
 
   test("builds mirror metadata from the selected data connection", async () => {
     (dataConnectionsTable.fetchById as jest.Mock).mockResolvedValue(
-      connection()
+      connection({
+        prefix_template:
+          "{{repository.account_id}}/{{repository.repository_id}}/",
+      })
     );
 
     const result = await createProduct(undefined, buildFormData());
@@ -98,6 +101,17 @@ describe("createProduct", () => {
     });
     expect(result.success).toBe(true);
     expect(result.redirectTo).toBeDefined();
+  });
+
+  test("a connection without a prefix template mirrors at the root", async () => {
+    (dataConnectionsTable.fetchById as jest.Mock).mockResolvedValue(
+      connection()
+    );
+
+    await createProduct(undefined, buildFormData());
+
+    const created = (productsTable.create as jest.Mock).mock.calls[0][0];
+    expect(created.metadata.mirrors["conn-x"].prefix).toBe("");
   });
 
   test("rejects a visibility not allowed by the data connection", async () => {

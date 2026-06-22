@@ -102,13 +102,14 @@ export async function createDataConnection(
 
     // Navigate client-side (see FormState.redirectTo) so the shared admin layout
     // is refetched with the current session, rather than a server redirect()
-    // that leaves the client Router Cache stale.
+    // that leaves the client Router Cache stale. Land on the new connection's
+    // page rather than back on the list.
     return {
       fieldErrors: {},
       data: formData,
       message: "Data connection created successfully!",
       success: true,
-      redirectTo: adminDataConnectionsUrl(),
+      redirectTo: adminDataConnectionEditUrl(validated.data.data_connection_id),
     };
   } catch (error) {
     LOGGER.error("Error creating data connection", {
