@@ -26,10 +26,12 @@ export function DeleteDataConnectionButton({
     success: false,
   });
 
-  // Navigate client-side back to the list once the deletion succeeds.
+  // Navigate client-side back to the list once the deletion succeeds. No
+  // router.refresh() — that refetches the *current* (now-deleted) connection's
+  // page and 404s before the push lands. The list is already revalidatePath'd
+  // server-side, so the push fetches it fresh.
   React.useEffect(() => {
     if (state.success && state.redirectTo) {
-      router.refresh();
       router.push(state.redirectTo);
     }
   }, [state.success, state.redirectTo, router]);
