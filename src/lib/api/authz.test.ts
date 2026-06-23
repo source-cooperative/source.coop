@@ -1,6 +1,7 @@
-import { isAuthorized } from "./authz";
+import { isAuthorized, canManageAccountDataConnections } from "./authz";
 import {
   sessions,
+  accounts,
   mappedProducts,
   mappedAPIKeys,
   memberships,
@@ -3684,5 +3685,83 @@ describe("Authorization Tests", () => {
       },
     };
     expect(isAuthorized(userWithAdminAndOtherFlags, "*", action)).toBe(true);
+  });
+});
+
+describe("canManageAccountDataConnections", () => {
+  const org = accounts.find((a) => a.account_id === "organization")!;
+  const regularUser = accounts.find((a) => a.account_id === "regular-user")!;
+  const withFlag = (account: Account): Account => ({
+    ...account,
+    flags: [AccountFlags.CREATE_DATA_CONNECTIONS],
+  });
+  const noFlag = (account: Account): Account => ({ ...account, flags: [] });
+
+  test("org owner/maintainer may manage only when the org holds the flag", () => {
+    const orgWithFlag = withFlag(org);
+    // Owners and maintainers of a flagged org can manage its connections.
+    expect(
+      canManageAccountDataConnections(
+        sessions["organization-owner-user"],
+        orgWithFlag
+      )
+    ).toBe(true);
+    expect(
+      canManageAccountDataConnections(
+        sessions["organization-maintainer-user"],
+        orgWithFlag
+      )
+    ).toBe(true);
+    // Read-data members and non-members cannot, even with the flag.
+    expect(
+      canManageAccountDataConnections(
+        sessions["organization-read-data-user"],
+        orgWithFlag
+      )
+    ).toBe(false);
+    expect(
+      canManageAccountDataConnections(sessions["regular-user"], orgWithFlag)
+    ).toBe(false);
+    // Without the flag, even an owner is blocked.
+    expect(
+      canManageAccountDataConnections(
+        sessions["organization-owner-user"],
+        noFlag(org)
+      )
+    ).toBe(false);
+  });
+
+  test("individuals manage their own account only with the flag", () => {
+    expect(
+      canManageAccountDataConnections(
+        sessions["regular-user"],
+        withFlag(regularUser)
+      )
+    ).toBe(true);
+    expect(
+      canManageAccountDataConnections(
+        sessions["regular-user"],
+        noFlag(regularUser)
+      )
+    ).toBe(false);
+    // Another user can't manage someone else's individual account.
+    expect(
+      canManageAccountDataConnections(
+        sessions["organization-owner-user"],
+        withFlag(regularUser)
+      )
+    ).toBe(false);
+  });
+
+  test("admins bypass the flag; disabled accounts are always denied", () => {
+    expect(
+      canManageAccountDataConnections(sessions["admin"], noFlag(org))
+    ).toBe(true);
+    expect(
+      canManageAccountDataConnections(sessions["disabled"], withFlag(org))
+    ).toBe(false);
+    expect(
+      canManageAccountDataConnections(sessions["anonymous"], withFlag(org))
+    ).toBe(false);
   });
 });

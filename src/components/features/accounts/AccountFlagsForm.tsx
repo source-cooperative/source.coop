@@ -53,6 +53,11 @@ export function AccountFlagsForm({ session, account }: AccountFlagsFormProps) {
       "Create Organizations",
       "Allows this account to create new organizations and manage organizational accounts.",
     ],
+    [
+      AccountFlags.CREATE_DATA_CONNECTIONS,
+      "Create Data Connections",
+      "Allows this account to create and manage its own data connections to external storage.",
+    ],
   ];
 
   if (isAdmin(session)) {

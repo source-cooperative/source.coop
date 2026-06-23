@@ -503,6 +503,40 @@ function deleteDataConnection(
   return false;
 }
 
+/**
+ * Whether `session` may create/manage data connections *owned by* `account`.
+ *
+ * The per-action authz functions above only ever see a connection's `owner`
+ * id, so they can't check the owner account's capability flag and stay
+ * admin-only — which keeps the public `/api/v1/data-connections` routes
+ * admin-only. This helper takes the owner *account* (the account-scoped UI has
+ * already fetched it) so it can additionally require the platform-granted
+ * CREATE_DATA_CONNECTIONS flag: an account (individual or org) must hold it to
+ * own connections at all. Admins bypass the flag.
+ */
+export function canManageAccountDataConnections(
+  session: UserSession | null,
+  account: Account
+): boolean {
+  if (session?.account?.disabled) {
+    return false;
+  }
+
+  if (isAdmin(session)) {
+    return true;
+  }
+
+  if (!account.flags?.includes(AccountFlags.CREATE_DATA_CONNECTIONS)) {
+    return false;
+  }
+
+  return hasRole(
+    session,
+    [MembershipRole.Owners, MembershipRole.Maintainers],
+    account.account_id
+  );
+}
+
 function putAccountFlags(
   principal: UserSession | null,
   _account: Account

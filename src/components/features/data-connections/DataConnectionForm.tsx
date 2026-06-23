@@ -22,6 +22,10 @@ import type { EditableDataConnection } from "./redact";
 interface DataConnectionFormProps {
   dataConnection?: EditableDataConnection;
   mode: "create" | "edit";
+  // When set, the form is account-scoped: the connection is owned by this
+  // account. Posts a hidden `owner`, hides the platform-only Required Flag, and
+  // (on create) shows the ID namespacing prefix.
+  ownerAccountId?: string;
 }
 
 // Storage providers limited to those with a `details` schema (S3, Azure, GCP).
@@ -126,6 +130,7 @@ function Field({
 export function DataConnectionForm({
   dataConnection,
   mode,
+  ownerAccountId,
 }: DataConnectionFormProps) {
   const router = useRouter();
   const action = mode === "create" ? createDataConnection : updateDataConnection;
@@ -225,10 +230,17 @@ export function DataConnectionForm({
   return (
     <form onSubmit={handleSubmit}>
       <Flex direction="column" gap="4">
+        {ownerAccountId && (
+          <input type="hidden" name="owner" value={ownerAccountId} />
+        )}
         <Field
           label="Connection ID"
           name="data_connection_id"
-          description="Unique identifier used in URLs and as the storage key. Lowercase letters, numbers, and hyphens only; cannot be changed after creation."
+          description={
+            ownerAccountId && mode === "create"
+              ? `Lowercase letters, numbers, and hyphens only. It will be stored as ${ownerAccountId}-<id>; cannot be changed after creation.`
+              : "Unique identifier used in URLs and as the storage key. Lowercase letters, numbers, and hyphens only; cannot be changed after creation."
+          }
           errors={state.fieldErrors?.data_connection_id}
         >
           <input
@@ -335,31 +347,34 @@ export function DataConnectionForm({
           </Flex>
         </Field>
 
-        <Field
-          label="Required Flag"
-          name="required_flag"
-          description="Account flag a user must have for their products to use this connection. Choose None for no restriction. (Not currently enforced.)"
-          errors={state.fieldErrors?.required_flag}
-        >
-          <select
+        {/* Required Flag is a platform-only gate; hidden on owned connections. */}
+        {!ownerAccountId && (
+          <Field
+            label="Required Flag"
             name="required_flag"
-            defaultValue={
-              // has()-check, not ||: a user-selected "None" ("") must survive a
-              // failed submit instead of reverting to the stored flag.
-              state.data.has("required_flag")
-                ? (state.data.get("required_flag") as string)
-                : (dataConnection?.required_flag ?? "")
-            }
-            style={fieldStyle}
+            description="Account flag a user must have for their products to use this connection. Choose None for no restriction. (Not currently enforced.)"
+            errors={state.fieldErrors?.required_flag}
           >
-            <option value="">None</option>
-            {Object.values(AccountFlags).map((flag) => (
-              <option key={flag} value={flag}>
-                {flag}
-              </option>
-            ))}
-          </select>
-        </Field>
+            <select
+              name="required_flag"
+              defaultValue={
+                // has()-check, not ||: a user-selected "None" ("") must survive a
+                // failed submit instead of reverting to the stored flag.
+                state.data.has("required_flag")
+                  ? (state.data.get("required_flag") as string)
+                  : (dataConnection?.required_flag ?? "")
+              }
+              style={fieldStyle}
+            >
+              <option value="">None</option>
+              {Object.values(AccountFlags).map((flag) => (
+                <option key={flag} value={flag}>
+                  {flag}
+                </option>
+              ))}
+            </select>
+          </Field>
+        )}
 
         <Field
           label="Provider"

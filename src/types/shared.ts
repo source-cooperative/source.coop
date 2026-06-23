@@ -17,6 +17,9 @@ extendZodWithOpenApi(z);
 // Common constants
 export const MIN_ID_LENGTH = 3;
 export const MAX_ID_LENGTH = 40;
+// Account-owned connection IDs are namespaced as `${account_id}-${slug}`, so
+// they need room for two ID segments plus the joining hyphen.
+export const MAX_DATA_CONNECTION_ID_LENGTH = MAX_ID_LENGTH * 2 + 1;
 export const MIN_NAME_LENGTH = 3;
 export const MAX_NAME_LENGTH = 100;
 export const ID_REGEX = /^[a-z0-9](?:(?!--)[a-z0-9-])*[a-z0-9]$/;
@@ -26,6 +29,7 @@ export enum AccountFlags {
   ADMIN = "admin",
   CREATE_REPOSITORIES = "create_repositories",
   CREATE_ORGANIZATIONS = "create_organizations",
+  CREATE_DATA_CONNECTIONS = "create_data_connections",
 }
 
 export const DEFAULT_INDIVIDUAL_FLAGS: AccountFlags[] = [];
