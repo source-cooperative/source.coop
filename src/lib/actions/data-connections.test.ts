@@ -592,4 +592,23 @@ describe("account-owned connections", () => {
     // Admin short-circuits before the (now-missing) owner-account lookup.
     expect(mockAccountsTable.fetchById).not.toHaveBeenCalled();
   });
+
+  test("rejects an admin-created (unowned) id containing the reserved -- delimiter", async () => {
+    const result = await createDataConnection(
+      FORM_STATE,
+      formDataFor({
+        ...baseS3Fields,
+        data_connection_id: "acme--myconn", // no `owner` field → unowned path
+        auth_type: DataConnectionAuthenticationType.S3AccessKey,
+        access_key_id: "AKIA",
+        secret_access_key: "secret",
+      })
+    );
+
+    expect(result.success).toBe(false);
+    expect(result.fieldErrors.data_connection_id?.[0]).toContain(
+      "consecutive hyphens"
+    );
+    expect(mockTable.create).not.toHaveBeenCalled();
+  });
 });

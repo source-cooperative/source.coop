@@ -102,6 +102,22 @@ export async function createDataConnection(
     // therefore unambiguous and collision-free across accounts (a single `-`
     // would not be, since both halves may themselves contain hyphens).
     formData.set("data_connection_id", `${owner}--${slug}`);
+  } else {
+    // Unowned (admin) ids may not contain `--`: that sequence is reserved for
+    // the namespacing delimiter, so an admin id like `acme--x` would shadow
+    // account `acme`'s slug `x` (DATA_CONNECTION_ID_REGEX permits `--` only so
+    // the composed namespaced id above validates).
+    const rawId = ((formData.get("data_connection_id") as string) || "").trim();
+    if (rawId.includes("--")) {
+      return {
+        fieldErrors: {
+          data_connection_id: ["ID may not contain consecutive hyphens (--)."],
+        },
+        data: formData,
+        message: "Invalid connection ID",
+        success: false,
+      };
+    }
   }
 
   try {
