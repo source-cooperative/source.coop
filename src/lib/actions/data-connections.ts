@@ -96,10 +96,6 @@ export async function createDataConnection(
 
   try {
     const dataConnection = buildDataConnectionFromForm(formData);
-    // Owned connections never carry a required_flag (use is already owner-locked).
-    if (owner) {
-      dataConnection.required_flag = undefined;
-    }
 
     const validated = DataConnectionSchema.safeParse(dataConnection);
     if (!validated.success) {
@@ -257,9 +253,6 @@ export async function updateDataConnection(
     // and preserves `owner` (the form never changes it), so an account can't
     // be edited into giving its connection away.
     const dataConnection = buildDataConnectionFromForm(formData, existing);
-    if (existing.owner) {
-      dataConnection.required_flag = undefined;
-    }
     const validated = DataConnectionSchema.safeParse(dataConnection);
     if (!validated.success) {
       return {
