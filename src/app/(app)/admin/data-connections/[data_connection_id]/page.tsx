@@ -1,11 +1,11 @@
 import { Metadata } from "next";
 import { Suspense } from "react";
-import { Button, Flex, Heading, Text } from "@radix-ui/themes";
+import { Flex, Heading, Text } from "@radix-ui/themes";
 import { notFound } from "next/navigation";
-import { dataConnectionsTable, productsTable } from "@/lib/clients";
+import { dataConnectionsTable } from "@/lib/clients";
 import {
   DataConnectionForm,
-  DeleteDataConnectionButton,
+  DeleteConnectionControl,
 } from "@/components/features/data-connections";
 import { ConnectionUsage } from "@/components/features/data-connections/ConnectionUsage";
 import { toEditableDataConnection } from "@/components/features/data-connections/redact";
@@ -34,17 +34,9 @@ export default async function EditDataConnectionPage({
     <Flex direction="column" gap="4">
       <Flex justify="between" align="center">
         <Heading size="4">Edit Data Connection</Heading>
-        <Suspense
-          fallback={
-            <Button size="2" color="red" variant="soft" disabled>
-              Delete
-            </Button>
-          }
-        >
-          <DeleteConnectionControl
-            connectionId={dataConnection.data_connection_id}
-          />
-        </Suspense>
+        <DeleteConnectionControl
+          connectionId={dataConnection.data_connection_id}
+        />
       </Flex>
       <DataConnectionForm
         mode="edit"
@@ -61,22 +53,5 @@ export default async function EditDataConnectionPage({
         <ConnectionUsage connectionId={dataConnection.data_connection_id} />
       </Suspense>
     </Flex>
-  );
-}
-
-// Fetches the dependent-product count so the delete confirm can be disabled when
-// the connection is in use. The scan is request-deduped with <ConnectionUsage>,
-// so this adds no extra DB work; Suspense keeps it off the form's critical path.
-async function DeleteConnectionControl({
-  connectionId,
-}: {
-  connectionId: string;
-}) {
-  const products = await productsTable.listProductsByConnectionId(connectionId);
-  return (
-    <DeleteDataConnectionButton
-      dataConnectionId={connectionId}
-      productsInUse={products.length}
-    />
   );
 }

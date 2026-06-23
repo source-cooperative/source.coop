@@ -1,17 +1,13 @@
 import { Metadata } from "next";
 import { Suspense } from "react";
-import { Button, Flex, Heading, Text } from "@radix-ui/themes";
+import { Flex, Heading, Text } from "@radix-ui/themes";
 import { notFound } from "next/navigation";
-import {
-  accountsTable,
-  dataConnectionsTable,
-  productsTable,
-} from "@/lib/clients";
+import { accountsTable, dataConnectionsTable } from "@/lib/clients";
 import { getPageSession } from "@/lib/api/utils";
 import { canManageAccountDataConnections } from "@/lib/api/authz";
 import {
   DataConnectionForm,
-  DeleteDataConnectionButton,
+  DeleteConnectionControl,
 } from "@/components/features/data-connections";
 import { ConnectionUsage } from "@/components/features/data-connections/ConnectionUsage";
 import { toEditableDataConnection } from "@/components/features/data-connections/redact";
@@ -46,17 +42,9 @@ export default async function AccountEditDataConnectionPage({
     <Flex direction="column" gap="4">
       <Flex justify="between" align="center">
         <Heading size="4">Edit Data Connection</Heading>
-        <Suspense
-          fallback={
-            <Button size="2" color="red" variant="soft" disabled>
-              Delete
-            </Button>
-          }
-        >
-          <DeleteConnectionControl
-            connectionId={dataConnection.data_connection_id}
-          />
-        </Suspense>
+        <DeleteConnectionControl
+          connectionId={dataConnection.data_connection_id}
+        />
       </Flex>
       <DataConnectionForm
         mode="edit"
@@ -74,21 +62,5 @@ export default async function AccountEditDataConnectionPage({
         <ConnectionUsage connectionId={dataConnection.data_connection_id} />
       </Suspense>
     </Flex>
-  );
-}
-
-// Mirrors the admin page: fetch the dependent-product count so delete can be
-// disabled when the connection is in use. Request-deduped with <ConnectionUsage>.
-async function DeleteConnectionControl({
-  connectionId,
-}: {
-  connectionId: string;
-}) {
-  const products = await productsTable.listProductsByConnectionId(connectionId);
-  return (
-    <DeleteDataConnectionButton
-      dataConnectionId={connectionId}
-      productsInUse={products.length}
-    />
   );
 }
