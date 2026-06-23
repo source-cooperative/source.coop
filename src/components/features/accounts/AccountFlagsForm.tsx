@@ -1,6 +1,6 @@
 "use client";
 
-import { Account, AccountFlags, Actions, UserSession } from "@/types";
+import { Account, AccountFlags, AccountType, Actions, UserSession } from "@/types";
 import { Text, Flex, Checkbox } from "@radix-ui/themes";
 import { Label } from "radix-ui";
 import { DynamicForm } from "@/components/core";
@@ -41,26 +41,37 @@ export function AccountFlagsForm({ session, account }: AccountFlagsFormProps) {
     );
   }, [account.flags, account.updated_at]);
 
-  // Flag configurations with display names and descriptions
-  const fields: Array<[AccountFlags, string, string]> = [
-    [
-      AccountFlags.CREATE_REPOSITORIES,
-      "Create Repositories",
-      "Allows this account to create new repositories and manage repository settings.",
-    ],
-    [
-      AccountFlags.CREATE_ORGANIZATIONS,
-      "Create Organizations",
-      "Allows this account to create new organizations and manage organizational accounts.",
-    ],
-    [
-      AccountFlags.CREATE_DATA_CONNECTIONS,
-      "Create Data Connections",
-      "Allows this account to create and manage its own data connections to external storage.",
-    ],
-  ];
+  const isOrganization = account.type === AccountType.ORGANIZATION;
 
-  if (isAdmin(session)) {
+  // Organizations can only be granted the data-connection capability; the other
+  // flags (repositories, organizations, admin) are individual-account concerns.
+  const fields: Array<[AccountFlags, string, string]> = isOrganization
+    ? [
+        [
+          AccountFlags.CREATE_DATA_CONNECTIONS,
+          "Create Data Connections",
+          "Allows this organization to create and manage its own data connections to external storage.",
+        ],
+      ]
+    : [
+        [
+          AccountFlags.CREATE_REPOSITORIES,
+          "Create Repositories",
+          "Allows this account to create new repositories and manage repository settings.",
+        ],
+        [
+          AccountFlags.CREATE_ORGANIZATIONS,
+          "Create Organizations",
+          "Allows this account to create new organizations and manage organizational accounts.",
+        ],
+        [
+          AccountFlags.CREATE_DATA_CONNECTIONS,
+          "Create Data Connections",
+          "Allows this account to create and manage its own data connections to external storage.",
+        ],
+      ];
+
+  if (!isOrganization && isAdmin(session)) {
     fields.push([
       AccountFlags.ADMIN,
       "Administrator",
