@@ -16,6 +16,7 @@ import {
   MAX_ID_LENGTH,
   MAX_DATA_CONNECTION_ID_LENGTH,
   ID_REGEX,
+  DATA_CONNECTION_ID_REGEX,
   AccountFlags,
 } from "./shared";
 import { ProductVisibility } from "./product";
@@ -277,7 +278,7 @@ export const DataConnectionObjectSchema = z
       .min(MIN_ID_LENGTH)
       .max(MAX_DATA_CONNECTION_ID_LENGTH)
       .toLowerCase()
-      .regex(ID_REGEX, "Invalid data connection ID format")
+      .regex(DATA_CONNECTION_ID_REGEX, "Invalid data connection ID format")
       .openapi({ example: "data-connection-id" }),
     name: z.string(),
     prefix_template: z.optional(z.string()),

@@ -238,7 +238,7 @@ export function DataConnectionForm({
           name="data_connection_id"
           description={
             ownerAccountId && mode === "create"
-              ? `Lowercase letters, numbers, and hyphens only. It will be stored as ${ownerAccountId}-<id>; cannot be changed after creation.`
+              ? `Lowercase letters, numbers, and hyphens only. It will be stored as ${ownerAccountId}--<id>; cannot be changed after creation.`
               : "Unique identifier used in URLs and as the storage key. Lowercase letters, numbers, and hyphens only; cannot be changed after creation."
           }
           errors={state.fieldErrors?.data_connection_id}

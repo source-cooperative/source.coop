@@ -17,12 +17,17 @@ extendZodWithOpenApi(z);
 // Common constants
 export const MIN_ID_LENGTH = 3;
 export const MAX_ID_LENGTH = 40;
-// Account-owned connection IDs are namespaced as `${account_id}-${slug}`, so
-// they need room for two ID segments plus the joining hyphen.
-export const MAX_DATA_CONNECTION_ID_LENGTH = MAX_ID_LENGTH * 2 + 1;
+// Account-owned connection IDs are namespaced as `${account_id}--${slug}`, so
+// they need room for two ID segments plus the 2-char `--` delimiter.
+export const MAX_DATA_CONNECTION_ID_LENGTH = MAX_ID_LENGTH * 2 + 2;
 export const MIN_NAME_LENGTH = 3;
 export const MAX_NAME_LENGTH = 100;
 export const ID_REGEX = /^[a-z0-9](?:(?!--)[a-z0-9-])*[a-z0-9]$/;
+// Like ID_REGEX but permits consecutive hyphens, so an account-owned connection
+// id can use `--` as the `${account_id}--${slug}` delimiter. Both halves are
+// still validated with the strict ID_REGEX before composing, so the only `--`
+// is the separator.
+export const DATA_CONNECTION_ID_REGEX = /^[a-z0-9][a-z0-9-]*[a-z0-9]$/;
 
 // Common enums
 export enum AccountFlags {

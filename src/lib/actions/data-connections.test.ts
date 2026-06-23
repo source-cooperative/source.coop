@@ -3,10 +3,11 @@ import {
   updateDataConnection,
   deleteDataConnection,
 } from "./data-connections";
-import { dataConnectionsTable, productsTable } from "../clients";
+import { dataConnectionsTable, productsTable, accountsTable } from "../clients";
 import { getPageSession } from "../api/utils";
-import { isAuthorized } from "../api/authz";
+import { isAuthorized, canManageAccountDataConnections } from "../api/authz";
 import {
+  Account,
   DataConnection,
   DataConnectionAuthenticationType,
   DataProvider,
@@ -22,6 +23,9 @@ jest.mock("../clients", () => ({
   productsTable: {
     listProductsByConnectionId: jest.fn(),
   },
+  accountsTable: {
+    fetchById: jest.fn(),
+  },
 }));
 
 jest.mock("../api/utils", () => ({
@@ -30,6 +34,7 @@ jest.mock("../api/utils", () => ({
 
 jest.mock("../api/authz", () => ({
   isAuthorized: jest.fn(),
+  canManageAccountDataConnections: jest.fn(),
 }));
 
 jest.mock("next/cache", () => ({
@@ -43,6 +48,10 @@ const mockGetPageSession = getPageSession as jest.MockedFunction<
 >;
 const mockIsAuthorized = isAuthorized as jest.MockedFunction<
   typeof isAuthorized
+>;
+const mockAccountsTable = accountsTable as jest.Mocked<typeof accountsTable>;
+const mockCanManage = canManageAccountDataConnections as jest.MockedFunction<
+  typeof canManageAccountDataConnections
 >;
 
 const FORM_STATE = {
@@ -92,6 +101,10 @@ beforeEach(() => {
   mockTable.create.mockImplementation(async (dc) => dc);
   mockTable.update.mockImplementation(async (dc) => dc);
   mockProductsTable.listProductsByConnectionId.mockResolvedValue([]);
+  mockAccountsTable.fetchById.mockResolvedValue({
+    account_id: "acme",
+  } as Account);
+  mockCanManage.mockReturnValue(true);
 });
 
 describe("createDataConnection", () => {
@@ -492,5 +505,91 @@ describe("deleteDataConnection", () => {
     expect(result.success).toBe(false);
     expect(result.message).toContain("still use this connection");
     expect(mockTable.delete).not.toHaveBeenCalled();
+  });
+});
+
+describe("account-owned connections", () => {
+  // Posted by the account-scoped page: `owner` hidden field + a bare slug as
+  // the id. Caller is not a platform admin, so authorization runs through the
+  // owner account (mockCanManage).
+  const ownedFields = {
+    ...baseS3Fields,
+    data_connection_id: "myslug",
+    owner: "acme",
+    auth_type: DataConnectionAuthenticationType.S3AccessKey,
+    access_key_id: "AKIA",
+    secret_access_key: "secret",
+  };
+
+  test("namespaces the id as ${owner}--${slug} and redirects to the account view", async () => {
+    mockIsAuthorized.mockReturnValue(false); // not a platform admin
+
+    const result = await createDataConnection(
+      FORM_STATE,
+      formDataFor(ownedFields)
+    );
+
+    expect(result.success).toBe(true);
+    expect(mockCanManage).toHaveBeenCalled();
+    const created = mockTable.create.mock.calls[0][0];
+    expect(created.data_connection_id).toBe("acme--myslug");
+    expect(created.owner).toBe("acme");
+    expect(result.redirectTo).toBe(
+      "/edit/account/acme/data-connections/acme--myslug"
+    );
+  });
+
+  test("ignores a required_flag injected via a crafted POST on an owned connection", async () => {
+    mockIsAuthorized.mockReturnValue(false);
+
+    const result = await createDataConnection(
+      FORM_STATE,
+      formDataFor({ ...ownedFields, required_flag: "admin" })
+    );
+
+    expect(result.success).toBe(true);
+    expect(mockTable.create.mock.calls[0][0].required_flag).toBeUndefined();
+  });
+
+  test("rejects a caller who is not an admin of the owner account", async () => {
+    mockIsAuthorized.mockReturnValue(false);
+    mockCanManage.mockReturnValue(false);
+
+    const result = await createDataConnection(
+      FORM_STATE,
+      formDataFor(ownedFields)
+    );
+
+    expect(result.success).toBe(false);
+    expect(result.message).toContain("Unauthorized");
+    expect(mockTable.create).not.toHaveBeenCalled();
+  });
+
+  test("lets a platform admin manage an orphaned connection whose owner was deleted", async () => {
+    mockIsAuthorized.mockReturnValue(true); // platform admin
+    mockAccountsTable.fetchById.mockResolvedValue(null); // owner account gone
+    mockTable.fetchById.mockResolvedValue({
+      data_connection_id: "ghost--conn",
+      name: "Orphan",
+      read_only: false,
+      allowed_visibilities: [],
+      owner: "ghost",
+      details: {
+        provider: DataProvider.S3,
+        bucket: "b",
+        base_prefix: "",
+        region: "us-east-1",
+      },
+    } as DataConnection);
+
+    const result = await deleteDataConnection(
+      FORM_STATE,
+      formDataFor({ data_connection_id: "ghost--conn" })
+    );
+
+    expect(result.success).toBe(true);
+    expect(mockTable.delete).toHaveBeenCalledWith("ghost--conn");
+    // Admin short-circuits before the (now-missing) owner-account lookup.
+    expect(mockAccountsTable.fetchById).not.toHaveBeenCalled();
   });
 });

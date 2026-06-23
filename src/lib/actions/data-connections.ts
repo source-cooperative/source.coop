@@ -45,6 +45,12 @@ async function canManageConnection(
   if (!connection.owner) {
     return adminAuthorized;
   }
+  // adminAuthorized is true only for platform admins (the data-connection
+  // isAuthorized helpers are admin-only), who can manage any connection — even
+  // an orphaned one whose owner account has since been deleted.
+  if (adminAuthorized) {
+    return true;
+  }
   const ownerAccount = await accountsTable.fetchById(connection.owner);
   if (!ownerAccount) {
     return false;
@@ -91,7 +97,11 @@ export async function createDataConnection(
         success: false,
       };
     }
-    formData.set("data_connection_id", `${owner}-${slug}`);
+    // `--` delimiter: ID_REGEX forbids consecutive hyphens inside an account_id
+    // or slug, so the only `--` is this separator — `${owner}--${slug}` is
+    // therefore unambiguous and collision-free across accounts (a single `-`
+    // would not be, since both halves may themselves contain hyphens).
+    formData.set("data_connection_id", `${owner}--${slug}`);
   }
 
   try {
@@ -493,17 +503,24 @@ function buildDataConnectionFromForm(
 
   const requiredFlag = formData.get("required_flag") as string;
 
+  // Owner is never client-editable: on edit it is preserved from the stored
+  // connection; on create it comes from the account-scoped page's hidden
+  // `owner` field (validated against the caller's role before the write).
+  const owner = existing
+    ? existing.owner
+    : (formData.get("owner") as string) || undefined;
+
   return {
     data_connection_id: formData.get("data_connection_id") as string,
     name: formData.get("name") as string,
     prefix_template: (formData.get("prefix_template") as string) || undefined,
     read_only: formData.get("read_only") === "on",
     allowed_visibilities: allowedVisibilities,
-    required_flag: requiredFlag || undefined,
-    // Owner is never client-editable: on edit it is preserved from the stored
-    // connection; on create it comes from the account-scoped page's hidden
-    // `owner` field (validated against the caller's role before the write).
-    owner: existing ? existing.owner : (formData.get("owner") as string) || undefined,
+    // required_flag is a platform-only gate; an owned connection never carries
+    // one (it's already isolated to the owner's products), so drop it even if a
+    // crafted POST supplies it.
+    required_flag: owner ? undefined : requiredFlag || undefined,
+    owner,
     details,
     authentication,
   };
