@@ -1,6 +1,6 @@
 import { Metadata } from "next";
 import { Suspense } from "react";
-import { Flex, Heading, Text } from "@radix-ui/themes";
+import { Box, Flex, Text } from "@radix-ui/themes";
 import { notFound } from "next/navigation";
 import { accountsTable, dataConnectionsTable } from "@/lib/clients";
 import { getPageSession } from "@/lib/api/utils";
@@ -11,6 +11,7 @@ import {
 } from "@/components/features/data-connections";
 import { ConnectionUsage } from "@/components/features/data-connections/ConnectionUsage";
 import { toEditableDataConnection } from "@/components/features/data-connections/redact";
+import { FormTitle } from "@/components/core/FormTitle";
 
 export const metadata: Metadata = {
   title: "Edit data connection",
@@ -39,9 +40,14 @@ export default async function AccountEditDataConnectionPage({
   }
 
   return (
-    <Flex direction="column" gap="4">
-      <Flex justify="between" align="center">
-        <Heading size="4">Edit Data Connection</Heading>
+    <Box>
+      <Flex justify="between" align="center" mb="6">
+        <Box>
+          <FormTitle
+            title="Edit Data Connection"
+            description="Update this connection's settings and credentials."
+          />
+        </Box>
         <DeleteConnectionControl
           connectionId={dataConnection.data_connection_id}
         />
@@ -52,15 +58,17 @@ export default async function AccountEditDataConnectionPage({
         dataConnection={toEditableDataConnection(dataConnection)}
       />
 
-      <Suspense
-        fallback={
-          <Text size="2" color="gray">
-            Loading product usage…
-          </Text>
-        }
-      >
-        <ConnectionUsage connectionId={dataConnection.data_connection_id} />
-      </Suspense>
-    </Flex>
+      <Box mt="6">
+        <Suspense
+          fallback={
+            <Text size="2" color="gray">
+              Loading product usage…
+            </Text>
+          }
+        >
+          <ConnectionUsage connectionId={dataConnection.data_connection_id} />
+        </Suspense>
+      </Box>
+    </Box>
   );
 }

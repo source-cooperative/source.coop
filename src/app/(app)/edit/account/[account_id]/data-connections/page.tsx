@@ -1,10 +1,11 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { Flex, Button, Heading } from "@radix-ui/themes";
+import { Box, Flex, Button } from "@radix-ui/themes";
 import Link from "next/link";
 import { accountsTable, dataConnectionsTable } from "@/lib/clients";
 import { getPageSession } from "@/lib/api/utils";
 import { canManageAccountDataConnections } from "@/lib/api/authz";
+import { FormTitle } from "@/components/core/FormTitle";
 import { DataConnectionsTable } from "@/components/features/data-connections";
 import {
   accountDataConnectionCreateUrl,
@@ -38,9 +39,14 @@ export default async function AccountDataConnectionsPage({ params }: PageProps) 
     );
 
   return (
-    <Flex direction="column" gap="4">
-      <Flex justify="between" align="center">
-        <Heading size="4">Data Connections</Heading>
+    <Box>
+      <Flex justify="between" align="center" mb="6">
+        <Box>
+          <FormTitle
+            title="Data Connections"
+            description="Manage this account's connections to external storage."
+          />
+        </Box>
         <Button asChild size="2">
           <Link href={accountDataConnectionCreateUrl(account_id)}>
             New Connection
@@ -52,6 +58,6 @@ export default async function AccountDataConnectionsPage({ params }: PageProps) 
         connections={connections}
         editHref={(id) => accountDataConnectionEditUrl(account_id, id)}
       />
-    </Flex>
+    </Box>
   );
 }
