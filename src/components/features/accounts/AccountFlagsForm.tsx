@@ -30,12 +30,15 @@ export function AccountFlagsForm({ session, account }: AccountFlagsFormProps) {
   // To avoid a bug where the checkboxes are reverting to the initial values after form
   // submission, we track the current flag values for controlled checkboxes
   const [flagValues, setFlagValues] = useState(initialValues);
+  // Re-sync from the freshly-fetched account after a save. Read from
+  // account.flags (the source of truth), not the current UI state, or the
+  // checkboxes would keep showing the pre-save values.
   useEffect(() => {
     setFlagValues(
       Object.fromEntries(
         Object.values(AccountFlags).map((flag) => [
           flag,
-          flagValues[flag] || false,
+          account.flags?.includes(flag) || false,
         ])
       ) as AccountFlagsFormData
     );

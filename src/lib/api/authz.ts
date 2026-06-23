@@ -526,6 +526,12 @@ export function canManageAccountDataConnections(
     return true;
   }
 
+  // A disabled owner account can't have its connections managed by its members
+  // (admins, handled above, still can). Mirrors getAccountFlags/putAccountProfile.
+  if (account.disabled) {
+    return false;
+  }
+
   if (!account.flags?.includes(AccountFlags.CREATE_DATA_CONNECTIONS)) {
     return false;
   }

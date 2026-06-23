@@ -3764,4 +3764,17 @@ describe("canManageAccountDataConnections", () => {
       canManageAccountDataConnections(sessions["anonymous"], withFlag(org))
     ).toBe(false);
   });
+
+  test("denies members (but not admins) when the owner account is disabled", () => {
+    const disabledOrg: Account = { ...withFlag(org), disabled: true };
+    expect(
+      canManageAccountDataConnections(
+        sessions["organization-owner-user"],
+        disabledOrg
+      )
+    ).toBe(false);
+    expect(
+      canManageAccountDataConnections(sessions["admin"], disabledOrg)
+    ).toBe(true);
+  });
 });
