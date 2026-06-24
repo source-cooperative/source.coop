@@ -735,7 +735,7 @@ export function DataConnectionForm({
                     <Text weight="medium">data.source.coop:sub</Text> matching
                     it, alongside{" "}
                     <Text weight="medium">
-                      data.source.coop:aud = source-coop-data-proxy
+                      data.source.coop:aud = sts.amazonaws.com
                     </Text>
                     .
                   </>
