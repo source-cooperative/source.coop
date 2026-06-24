@@ -136,6 +136,9 @@ export async function PUT(
         { status: StatusCodes.UNAUTHORIZED }
       );
     }
+    // Admin-only route: the spread lets the body overwrite any field, including
+    // `owner` (now load-bearing for account-scoped authz). Acceptable since only
+    // platform admins reach here; the account-scoped server actions preserve it.
     const updatedDataConnection = {
       ...existingDataConnection,
       ...dataConnectionUpdate,

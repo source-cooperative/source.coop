@@ -79,4 +79,37 @@ describe("/api/v1/data-connections", () => {
     expect(json.authentication).toBeUndefined();
     expect(JSON.stringify(json)).not.toContain("secret");
   });
+
+  test("POST rejects an unowned id containing -- (namespace squat)", async () => {
+    (getApiSession as jest.Mock).mockResolvedValue({ identity_id: "admin" });
+    (isAuthorized as jest.Mock).mockReturnValue(true);
+
+    const connection = {
+      data_connection_id: "acme--slug",
+      name: "X",
+      read_only: false,
+      allowed_visibilities: ["public"],
+      details: {
+        provider: "s3",
+        bucket: "b",
+        base_prefix: "",
+        region: "us-east-1",
+      },
+      authentication: {
+        type: "s3_access_key",
+        access_key_id: "AKIA",
+        secret_access_key: "secret",
+      },
+    };
+
+    const req = new NextRequest("http://localhost/api/v1/data-connections", {
+      method: "POST",
+      body: JSON.stringify(connection),
+      headers: { "content-type": "application/json" },
+    });
+    const res = await POST(req);
+
+    expect(res.status).toBe(400);
+    expect(dataConnectionsTable.create).not.toHaveBeenCalled();
+  });
 });
