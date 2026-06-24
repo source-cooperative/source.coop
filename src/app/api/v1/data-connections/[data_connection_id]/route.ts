@@ -143,7 +143,9 @@ export async function PUT(
       ...existingDataConnection,
       ...dataConnectionUpdate,
     };
-    const dataConnection = await dataConnectionsTable.create(
+    // update() (attribute_exists guard), not create() (attribute_not_exists):
+    // the connection already exists, so create() would fail its condition → 500.
+    const dataConnection = await dataConnectionsTable.update(
       updatedDataConnection
     );
     const sanitized = sanitizeDataConnection(dataConnection);
