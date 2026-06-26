@@ -1,5 +1,5 @@
 import { Metadata } from "next";
-import { dataConnectionsTable } from "@/lib/clients";
+import { accountsTable, dataConnectionsTable } from "@/lib/clients";
 import { Flex, Button, Heading } from "@radix-ui/themes";
 import Link from "next/link";
 import { DataConnectionsTable } from "@/components/features/data-connections";
@@ -19,6 +19,16 @@ export default async function DataConnectionsPage() {
       a.name.localeCompare(b.name)
   );
 
+  const ownerIds = connections
+    .map((conn) => conn.owner)
+    .filter((id): id is string => Boolean(id));
+  const ownerAccounts = Object.fromEntries(
+    (await accountsTable.fetchManyByIds(ownerIds)).map((acct) => [
+      acct.account_id,
+      acct,
+    ])
+  );
+
   return (
     <Flex direction="column" gap="4">
       <Flex justify="between" align="center">
@@ -31,6 +41,7 @@ export default async function DataConnectionsPage() {
       <DataConnectionsTable
         connections={connections}
         editHref={adminDataConnectionEditUrl}
+        ownerAccounts={ownerAccounts}
       />
     </Flex>
   );

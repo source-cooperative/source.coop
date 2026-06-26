@@ -1,7 +1,10 @@
 import { Text, Table, Flex, Badge } from "@radix-ui/themes";
 import { Link1Icon } from "@radix-ui/react-icons";
 import Link from "next/link";
-import { DataConnection, DataProvider } from "@/types";
+import { Account, DataConnection, DataProvider } from "@/types";
+import { AccountInfoHoverCard } from "@/components/core/AccountInfoHoverCard";
+import { MonoText } from "@/components/core/MonoText";
+import { accountUrl } from "@/lib/urls";
 
 const PROVIDER_BADGE: Record<
   DataProvider,
@@ -16,12 +19,54 @@ interface DataConnectionsTableProps {
   connections: DataConnection[];
   /** Link target for a connection's edit page (admin- or account-scoped). */
   editHref: (dataConnectionId: string) => string;
+  /**
+   * Owner accounts keyed by `account_id`. Pass this (admin view) to render an
+   * Owner column distinguishing system-owned (unowned) from account-owned
+   * connections. Omit it (account-scoped view) to hide the column entirely.
+   */
+  ownerAccounts?: Record<string, Account>;
+}
+
+/** Owner cell: system badge when unowned, hover-carded account otherwise. */
+function OwnerCell({
+  owner,
+  ownerAccounts,
+}: {
+  owner?: string;
+  ownerAccounts: Record<string, Account>;
+}) {
+  if (!owner) {
+    return (
+      <Badge color="gray" variant="soft">
+        System
+      </Badge>
+    );
+  }
+
+  const account = ownerAccounts[owner];
+  if (!account) {
+    // Owner id with no loadable account (e.g. deleted). Show the raw id.
+    return (
+      <MonoText size="1" color="gray">
+        {owner}
+      </MonoText>
+    );
+  }
+
+  return (
+    <AccountInfoHoverCard account={account}>
+      <Link href={accountUrl(account.account_id)} style={{ color: "var(--accent-11)" }}>
+        {account.name}
+      </Link>
+    </AccountInfoHoverCard>
+  );
 }
 
 /** Shared list table for both the admin and account-scoped connection views. */
 export function DataConnectionsTable({
   connections,
   editHref,
+  ownerAccounts,
 }: DataConnectionsTableProps) {
   if (connections.length === 0) {
     return (
@@ -48,6 +93,9 @@ export function DataConnectionsTable({
       <Table.Header>
         <Table.Row>
           <Table.ColumnHeaderCell>Name</Table.ColumnHeaderCell>
+          {ownerAccounts && (
+            <Table.ColumnHeaderCell>Owner</Table.ColumnHeaderCell>
+          )}
           <Table.ColumnHeaderCell>Provider</Table.ColumnHeaderCell>
           <Table.ColumnHeaderCell>Region</Table.ColumnHeaderCell>
           <Table.ColumnHeaderCell>Read Only</Table.ColumnHeaderCell>
@@ -74,6 +122,11 @@ export function DataConnectionsTable({
                 </Text>
               </Flex>
             </Table.Cell>
+            {ownerAccounts && (
+              <Table.Cell>
+                <OwnerCell owner={conn.owner} ownerAccounts={ownerAccounts} />
+              </Table.Cell>
+            )}
             <Table.Cell>
               <Badge color={PROVIDER_BADGE[conn.details.provider].color}>
                 {PROVIDER_BADGE[conn.details.provider].label}
