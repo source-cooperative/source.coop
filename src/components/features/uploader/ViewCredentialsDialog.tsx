@@ -46,6 +46,14 @@ export function ViewCredentialsDialog({
     `export AWS_DEFAULT_REGION="${credentials.region}"`,
   ].join("\n");
 
+  const iniFormat = [
+    `[source-cooperative]`,
+    `aws_access_key_id = ${credentials.accessKeyId}`,
+    `aws_secret_access_key = ${credentials.secretAccessKey}`,
+    `aws_session_token = ${credentials.sessionToken}`,
+    `region = ${credentials.region}`,
+  ].join("\n");
+
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Content maxWidth="600px">
@@ -58,6 +66,7 @@ export function ViewCredentialsDialog({
           <Tabs.List>
             <Tabs.Trigger value="json">JSON (SDK)</Tabs.Trigger>
             <Tabs.Trigger value="env">Environment Variables</Tabs.Trigger>
+            <Tabs.Trigger value="ini">INI</Tabs.Trigger>
           </Tabs.List>
 
           <Box pt="3">
@@ -71,6 +80,12 @@ export function ViewCredentialsDialog({
               value="env"
               title="For terminal/shell usage"
               content={envFormat}
+            />
+
+            <CredentialsTabContent
+              value="ini"
+              title="For ~/.aws/credentials (AWS CLI profile)"
+              content={iniFormat}
             />
           </Box>
         </Tabs.Root>
