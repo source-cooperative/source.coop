@@ -64,6 +64,11 @@ export function ProductListItem({ product, isSelected }: ProductListItemProps) {
           >
             {visibility.label}
           </Badge>
+          {product.disabled && (
+            <Badge size="1" color="amber" aria-label="Deactivated product">
+              Deactivated
+            </Badge>
+          )}
         </Box>
 
         {product.metadata.tags &&
