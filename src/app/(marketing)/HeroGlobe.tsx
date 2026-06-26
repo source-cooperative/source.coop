@@ -23,10 +23,14 @@ export function HeroGlobe({ wsUrl }: { wsUrl: string }) {
     // synchronously during render when WebGL is disabled, bypassing onError.
     try {
       const probe = document.createElement("canvas");
-      if (!probe.getContext("webgl2") && !probe.getContext("webgl")) {
+      const gl = probe.getContext("webgl2") ?? probe.getContext("webgl");
+      if (!gl) {
         setErrored(true);
         return;
       }
+      // Release the probe context so it doesn't count against the
+      // per-origin WebGL context limit while waiting on GC.
+      gl.getExtension("WEBGL_lose_context")?.loseContext();
     } catch {
       setErrored(true);
       return;
