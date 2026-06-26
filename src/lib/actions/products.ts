@@ -445,7 +445,7 @@ async function deleteAllS3Objects(
 
     const objects = listResult.Contents ?? [];
     if (objects.length > 0) {
-      await client.send(
+      const deleteResult = await client.send(
         new DeleteObjectsCommand({
           Bucket: bucket,
           Delete: {
@@ -454,6 +454,12 @@ async function deleteAllS3Objects(
           },
         })
       );
+      if (deleteResult.Errors?.length) {
+        throw new Error(
+          `Failed to delete ${deleteResult.Errors.length} S3 object(s): ` +
+            deleteResult.Errors.map((e) => e.Key).join(", ")
+        );
+      }
     }
 
     continuationToken = listResult.IsTruncated
