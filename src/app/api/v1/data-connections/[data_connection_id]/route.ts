@@ -136,11 +136,16 @@ export async function PUT(
         { status: StatusCodes.UNAUTHORIZED }
       );
     }
+    // Admin-only route: the spread lets the body overwrite any field, including
+    // `owner` (now load-bearing for account-scoped authz). Acceptable since only
+    // platform admins reach here; the account-scoped server actions preserve it.
     const updatedDataConnection = {
       ...existingDataConnection,
       ...dataConnectionUpdate,
     };
-    const dataConnection = await dataConnectionsTable.create(
+    // update() (attribute_exists guard), not create() (attribute_not_exists):
+    // the connection already exists, so create() would fail its condition → 500.
+    const dataConnection = await dataConnectionsTable.update(
       updatedDataConnection
     );
     const sanitized = sanitizeDataConnection(dataConnection);

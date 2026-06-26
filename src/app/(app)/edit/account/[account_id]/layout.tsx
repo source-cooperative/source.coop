@@ -5,7 +5,10 @@ import {
   SettingsHeader,
 } from "@/components/features/settings";
 import { getPageSession } from "@/lib/api/utils";
-import { isAuthorized } from "@/lib/api/authz";
+import {
+  isAuthorized,
+  canManageAccountDataConnections,
+} from "@/lib/api/authz";
 import { Actions } from "@/types";
 import { accountsTable } from "@/lib/clients/database";
 import { notFound, redirect } from "next/navigation";
@@ -16,6 +19,7 @@ import {
   Pencil1Icon,
   GearIcon,
   ImageIcon,
+  Link1Icon,
 } from "@radix-ui/react-icons";
 import {
   loginUrl,
@@ -23,6 +27,7 @@ import {
   editAccountProfilePictureUrl,
   editAccountPermissionsUrl,
   editAccountMembershipsUrl,
+  accountDataConnectionsUrl,
   accountUrl,
   orySettingsUrl,
 } from "@/lib/urls";
@@ -75,6 +80,10 @@ export default async function AccountLayout({
     accountToEdit,
     Actions.PutAccountProfile
   );
+  const canManageDataConnections = canManageAccountDataConnections(
+    userSession,
+    accountToEdit
+  );
 
   // Authentication details (email, password, keys) live in Ory and can only
   // be changed by the account owner themselves — not by an admin acting on
@@ -96,6 +105,26 @@ export default async function AccountLayout({
       icon: <ImageIcon width="16" height="16" />,
       condition: canEditAccount,
     },
+    {
+      id: "data-connections",
+      label: "Data Connections",
+      href: accountDataConnectionsUrl(account_id),
+      icon: <Link1Icon width="16" height="16" />,
+      condition: canManageDataConnections,
+    },
+    // Permissions (account flags) apply to both individuals and organizations;
+    // view requires GetAccountFlags, edit is admin-only (enforced in the form).
+    {
+      id: "permissions",
+      label: "Permissions",
+      href: editAccountPermissionsUrl(account_id),
+      icon: <LockClosedIcon width="16" height="16" />,
+      condition: isAuthorized(
+        userSession,
+        accountToEdit,
+        Actions.GetAccountFlags
+      ),
+    },
     ...(accountToEdit.type === "organization"
       ? [
           {
@@ -107,17 +136,6 @@ export default async function AccountLayout({
           },
         ]
       : [
-          {
-            id: "permissions",
-            label: "Permissions",
-            href: editAccountPermissionsUrl(account_id),
-            icon: <LockClosedIcon width="16" height="16" />,
-            condition: isAuthorized(
-              userSession,
-              accountToEdit,
-              Actions.GetAccount
-            ),
-          },
           {
             id: "authentication",
             label: "Authentication",

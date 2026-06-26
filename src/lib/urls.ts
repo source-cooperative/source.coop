@@ -21,6 +21,16 @@ export const adminDataConnectionCreateUrl = () =>
 export const adminDataConnectionEditUrl = (data_connection_id: string) =>
   `/admin/data-connections/${data_connection_id}`;
 
+// Account-scoped data connection URLs (an account managing the connections it owns)
+export const accountDataConnectionsUrl = (account_id: string) =>
+  `/edit/account/${account_id}/data-connections`;
+export const accountDataConnectionCreateUrl = (account_id: string) =>
+  `/edit/account/${account_id}/data-connections/create`;
+export const accountDataConnectionEditUrl = (
+  account_id: string,
+  data_connection_id: string
+) => `/edit/account/${account_id}/data-connections/${data_connection_id}`;
+
 // Auth URLs
 export const loginUrl = (returnTo?: string) => {
   const base = CONFIG.auth.routes.login;

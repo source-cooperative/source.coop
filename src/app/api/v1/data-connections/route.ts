@@ -80,10 +80,24 @@ export async function POST(request: NextRequest) {
     const session = await getApiSession(request);
     const body = await request.json();
     const dataConnection = DataConnectionSchema.parse(body);
+    // Auth before validation: an unauthenticated request must get 401, not leak
+    // that `--` is reserved via a 400.
     if (!isAuthorized(session, dataConnection, Actions.CreateDataConnection)) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: StatusCodes.UNAUTHORIZED }
+      );
+    }
+    // `--` is reserved as the account-namespacing delimiter (`owner--slug`).
+    // The schema regex permits it for namespaced ids; reject it on unowned
+    // (admin-created) ids so an admin can't squat an account's slug namespace.
+    if (
+      !dataConnection.owner &&
+      dataConnection.data_connection_id.includes("--")
+    ) {
+      return NextResponse.json(
+        { error: "ID may not contain consecutive hyphens (--)" },
+        { status: StatusCodes.BAD_REQUEST }
       );
     }
     try {

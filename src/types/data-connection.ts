@@ -11,7 +11,14 @@
 
 import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
 import { z } from "zod";
-import { MIN_ID_LENGTH, MAX_ID_LENGTH, ID_REGEX, AccountFlags } from "./shared";
+import {
+  MIN_ID_LENGTH,
+  MAX_ID_LENGTH,
+  MAX_DATA_CONNECTION_ID_LENGTH,
+  ID_REGEX,
+  DATA_CONNECTION_ID_REGEX,
+  AccountFlags,
+} from "./shared";
 import { ProductVisibility } from "./product";
 
 extendZodWithOpenApi(z);
@@ -269,9 +276,9 @@ export const DataConnectionObjectSchema = z
     data_connection_id: z
       .string()
       .min(MIN_ID_LENGTH)
-      .max(MAX_ID_LENGTH)
+      .max(MAX_DATA_CONNECTION_ID_LENGTH)
       .toLowerCase()
-      .regex(ID_REGEX, "Invalid data connection ID format")
+      .regex(DATA_CONNECTION_ID_REGEX, "Invalid data connection ID format")
       .openapi({ example: "data-connection-id" }),
     name: z.string(),
     prefix_template: z.optional(z.string()),

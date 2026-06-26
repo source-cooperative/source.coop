@@ -9,13 +9,54 @@ import {
   DataProvider,
   DataConnectionAuthenticationType,
   ProductVisibility,
+  UserSession,
+  MIN_ID_LENGTH,
+  MAX_ID_LENGTH,
+  ID_REGEX,
 } from "@/types";
-import { isAuthorized } from "../api/authz";
+import { isAuthorized, canManageAccountDataConnections } from "../api/authz";
 import { getPageSession } from "../api/utils";
-import { dataConnectionsTable, productsTable } from "../clients";
+import {
+  accountsTable,
+  dataConnectionsTable,
+  productsTable,
+} from "../clients";
 import { FormState } from "@/components/core/DynamicForm";
 import { revalidatePath } from "next/cache";
-import { adminDataConnectionsUrl, adminDataConnectionEditUrl } from "@/lib/urls";
+import {
+  adminDataConnectionsUrl,
+  adminDataConnectionEditUrl,
+  accountDataConnectionsUrl,
+  accountDataConnectionEditUrl,
+} from "@/lib/urls";
+
+/**
+ * Authorizes managing a connection. An *owned* connection is governed by its
+ * owner account's capability flag + the caller's role there (admin-of-owner);
+ * an unowned connection stays admin-only — the caller passes that admin check
+ * (`isAuthorized(... CreateDataConnection|PutDataConnection|...)`) as
+ * `adminAuthorized`. Keeps the owner/flag rule in one place across CRUD.
+ */
+async function canManageConnection(
+  session: UserSession,
+  connection: DataConnection,
+  adminAuthorized: boolean
+): Promise<boolean> {
+  if (!connection.owner) {
+    return adminAuthorized;
+  }
+  // adminAuthorized is true only for platform admins (the data-connection
+  // isAuthorized helpers are admin-only), who can manage any connection — even
+  // an orphaned one whose owner account has since been deleted.
+  if (adminAuthorized) {
+    return true;
+  }
+  const ownerAccount = await accountsTable.fetchById(connection.owner);
+  if (!ownerAccount) {
+    return false;
+  }
+  return canManageAccountDataConnections(session, ownerAccount);
+}
 
 export async function createDataConnection(
   _prevState: FormState<DataConnection>,
@@ -32,6 +73,57 @@ export async function createDataConnection(
     };
   }
 
+  // Account-scoped create: the page posts the owning account as `owner`. The
+  // submitted ID is just a slug; namespace it as `${owner}-${slug}` so two
+  // accounts can't collide and an account can't probe another's connection IDs.
+  // Lowercase to match the schema's `.toLowerCase()` on `data_connection_id`;
+  // otherwise an admin-supplied `owner` of "ACME" stores a connection that the
+  // "acme" account's list (filtered on `conn.owner === account_id`) never sees.
+  const owner =
+    ((formData.get("owner") as string) || "").trim().toLowerCase() || undefined;
+  if (owner) {
+    const slug = ((formData.get("data_connection_id") as string) || "")
+      .trim()
+      .toLowerCase();
+    if (
+      slug.length < MIN_ID_LENGTH ||
+      slug.length > MAX_ID_LENGTH ||
+      !ID_REGEX.test(slug)
+    ) {
+      return {
+        fieldErrors: {
+          data_connection_id: [
+            `ID must be ${MIN_ID_LENGTH}–${MAX_ID_LENGTH} lowercase letters, numbers, or hyphens.`,
+          ],
+        },
+        data: formData,
+        message: "Invalid connection ID",
+        success: false,
+      };
+    }
+    // `--` delimiter: ID_REGEX forbids consecutive hyphens inside an account_id
+    // or slug, so the only `--` is this separator — `${owner}--${slug}` is
+    // therefore unambiguous and collision-free across accounts (a single `-`
+    // would not be, since both halves may themselves contain hyphens).
+    formData.set("data_connection_id", `${owner}--${slug}`);
+  } else {
+    // Unowned (admin) ids may not contain `--`: that sequence is reserved for
+    // the namespacing delimiter, so an admin id like `acme--x` would shadow
+    // account `acme`'s slug `x` (DATA_CONNECTION_ID_REGEX permits `--` only so
+    // the composed namespaced id above validates).
+    const rawId = ((formData.get("data_connection_id") as string) || "").trim();
+    if (rawId.includes("--")) {
+      return {
+        fieldErrors: {
+          data_connection_id: ["ID may not contain consecutive hyphens (--)."],
+        },
+        data: formData,
+        message: "Invalid connection ID",
+        success: false,
+      };
+    }
+  }
+
   try {
     const dataConnection = buildDataConnectionFromForm(formData);
 
@@ -45,7 +137,13 @@ export async function createDataConnection(
       };
     }
 
-    if (!isAuthorized(session, validated.data, Actions.CreateDataConnection)) {
+    if (
+      !(await canManageConnection(
+        session,
+        validated.data,
+        isAuthorized(session, validated.data, Actions.CreateDataConnection)
+      ))
+    ) {
       return {
         fieldErrors: {},
         data: formData,
@@ -98,18 +196,22 @@ export async function createDataConnection(
       metadata: { data_connection_id: validated.data.data_connection_id },
     });
 
-    revalidatePath(adminDataConnectionsUrl());
+    const newId = validated.data.data_connection_id;
+    revalidatePath(
+      owner ? accountDataConnectionsUrl(owner) : adminDataConnectionsUrl()
+    );
 
-    // Navigate client-side (see FormState.redirectTo) so the shared admin layout
-    // is refetched with the current session, rather than a server redirect()
-    // that leaves the client Router Cache stale. Land on the new connection's
-    // page rather than back on the list.
+    // Navigate client-side (see FormState.redirectTo) so the shared layout is
+    // refetched with the current session, rather than a server redirect() that
+    // leaves the client Router Cache stale. Land on the new connection's page.
     return {
       fieldErrors: {},
       data: formData,
       message: "Data connection created successfully!",
       success: true,
-      redirectTo: adminDataConnectionEditUrl(validated.data.data_connection_id),
+      redirectTo: owner
+        ? accountDataConnectionEditUrl(owner, newId)
+        : adminDataConnectionEditUrl(newId),
     };
   } catch (error) {
     LOGGER.error("Error creating data connection", {
@@ -162,7 +264,13 @@ export async function updateDataConnection(
       };
     }
 
-    if (!isAuthorized(session, existing, Actions.PutDataConnection)) {
+    if (
+      !(await canManageConnection(
+        session,
+        existing,
+        isAuthorized(session, existing, Actions.PutDataConnection)
+      ))
+    ) {
       return {
         fieldErrors: {},
         data: formData,
@@ -172,7 +280,8 @@ export async function updateDataConnection(
     }
 
     // `existing` lets blank secret fields fall back to the stored credentials,
-    // so an admin can edit other fields without re-entering secrets.
+    // and preserves `owner` (the form never changes it), so an account can't
+    // be edited into giving its connection away.
     const dataConnection = buildDataConnectionFromForm(formData, existing);
     const validated = DataConnectionSchema.safeParse(dataConnection);
     if (!validated.success) {
@@ -208,8 +317,15 @@ export async function updateDataConnection(
       metadata: { data_connection_id: dataConnectionId },
     });
 
-    revalidatePath(adminDataConnectionsUrl());
-    revalidatePath(adminDataConnectionEditUrl(dataConnectionId));
+    if (existing.owner) {
+      revalidatePath(accountDataConnectionsUrl(existing.owner));
+      revalidatePath(
+        accountDataConnectionEditUrl(existing.owner, dataConnectionId)
+      );
+    } else {
+      revalidatePath(adminDataConnectionsUrl());
+      revalidatePath(adminDataConnectionEditUrl(dataConnectionId));
+    }
 
     return {
       fieldErrors: {},
@@ -268,7 +384,13 @@ export async function deleteDataConnection(
       };
     }
 
-    if (!isAuthorized(session, existing, Actions.DeleteDataConnection)) {
+    if (
+      !(await canManageConnection(
+        session,
+        existing,
+        isAuthorized(session, existing, Actions.DeleteDataConnection)
+      ))
+    ) {
       return {
         fieldErrors: {},
         data: formData,
@@ -298,14 +420,17 @@ export async function deleteDataConnection(
       metadata: { data_connection_id: dataConnectionId },
     });
 
-    revalidatePath(adminDataConnectionsUrl());
+    const listUrl = existing.owner
+      ? accountDataConnectionsUrl(existing.owner)
+      : adminDataConnectionsUrl();
+    revalidatePath(listUrl);
 
     return {
       fieldErrors: {},
       data: formData,
       message: "Data connection deleted successfully!",
       success: true,
-      redirectTo: adminDataConnectionsUrl(),
+      redirectTo: listUrl,
     };
   } catch (error) {
     LOGGER.error("Error deleting data connection", {
@@ -398,13 +523,24 @@ function buildDataConnectionFromForm(
 
   const requiredFlag = formData.get("required_flag") as string;
 
+  // Owner is never client-editable: on edit it is preserved from the stored
+  // connection; on create it comes from the account-scoped page's hidden
+  // `owner` field (validated against the caller's role before the write).
+  const owner = existing
+    ? existing.owner
+    : (formData.get("owner") as string) || undefined;
+
   return {
     data_connection_id: formData.get("data_connection_id") as string,
     name: formData.get("name") as string,
     prefix_template: (formData.get("prefix_template") as string) || undefined,
     read_only: formData.get("read_only") === "on",
     allowed_visibilities: allowedVisibilities,
-    required_flag: requiredFlag || undefined,
+    // required_flag is a platform-only gate; an owned connection never carries
+    // one (it's already isolated to the owner's products), so drop it even if a
+    // crafted POST supplies it.
+    required_flag: owner ? undefined : requiredFlag || undefined,
+    owner,
     details,
     authentication,
   };
