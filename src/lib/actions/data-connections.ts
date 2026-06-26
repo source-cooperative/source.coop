@@ -76,7 +76,11 @@ export async function createDataConnection(
   // Account-scoped create: the page posts the owning account as `owner`. The
   // submitted ID is just a slug; namespace it as `${owner}-${slug}` so two
   // accounts can't collide and an account can't probe another's connection IDs.
-  const owner = (formData.get("owner") as string) || undefined;
+  // Lowercase to match the schema's `.toLowerCase()` on `data_connection_id`;
+  // otherwise an admin-supplied `owner` of "ACME" stores a connection that the
+  // "acme" account's list (filtered on `conn.owner === account_id`) never sees.
+  const owner =
+    ((formData.get("owner") as string) || "").trim().toLowerCase() || undefined;
   if (owner) {
     const slug = ((formData.get("data_connection_id") as string) || "")
       .trim()
