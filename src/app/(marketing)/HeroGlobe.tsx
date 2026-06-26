@@ -19,6 +19,19 @@ export function HeroGlobe({ wsUrl }: { wsUrl: string }) {
   const handleError = useCallback(() => setErrored(true), []);
 
   useEffect(() => {
+    // ponytail: probe WebGL before mounting LiveGlobe — react-globe.gl throws
+    // synchronously during render when WebGL is disabled, bypassing onError.
+    try {
+      const probe = document.createElement("canvas");
+      if (!probe.getContext("webgl2") && !probe.getContext("webgl")) {
+        setErrored(true);
+        return;
+      }
+    } catch {
+      setErrored(true);
+      return;
+    }
+
     const el = containerRef.current;
     if (!el) return;
 
