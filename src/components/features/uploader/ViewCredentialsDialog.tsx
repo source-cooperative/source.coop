@@ -84,8 +84,7 @@ export function ViewCredentialsDialog({
 
             <CredentialsTabContent
               value="ini"
-              title="For ~/.aws/credentials (AWS CLI profile)"
-              content={iniFormat}
+title="For ~/.aws/credentials (AWS CLI profile credentials; set region in ~/.aws/config)"
             />
           </Box>
         </Tabs.Root>
