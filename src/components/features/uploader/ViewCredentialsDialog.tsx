@@ -47,7 +47,7 @@ export function ViewCredentialsDialog({
   ].join("\n");
 
   const iniFormat = [
-    `[source-cooperative]`,
+    `[source-coop]`,
     `aws_access_key_id = ${credentials.accessKeyId}`,
     `aws_secret_access_key = ${credentials.secretAccessKey}`,
     `aws_session_token = ${credentials.sessionToken}`,
