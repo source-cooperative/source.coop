@@ -3,7 +3,7 @@
 import { getPageSession } from "@/lib/api/utils";
 import { isAuthorized } from "@/lib/api/authz";
 import { Actions } from "@/types";
-import { CONFIG, LOGGER, productsTable } from "@/lib";
+import { CONFIG, productsTable } from "@/lib";
 import { getProxyCredentials } from "@/lib/actions/proxy-credentials";
 import { readProxyCredentials } from "@/lib/services/proxy-credentials-read";
 
@@ -63,43 +63,21 @@ export async function getTemporaryCredentials({
   const endpoint = CONFIG.storage.endpoint;
   if (!endpoint) throw new Error("Storage endpoint is not configured");
 
-  try {
-    // Reuse the read path's cached cookie when fresh; mint otherwise. The
-    // identity comes from the verified session — the only safe input to
-    // getProxyCredentials (see its security note).
-    const creds =
-      (await readProxyCredentials()) ??
-      (await getProxyCredentials(session.identity_id));
+  // Reuse the read path's cached cookie when fresh; mint otherwise. The
+  // identity comes from the verified session — the only safe input to
+  // getProxyCredentials (see its security note).
+  const creds =
+    (await readProxyCredentials()) ??
+    (await getProxyCredentials(session.identity_id));
 
-    LOGGER.info("Issued proxy upload credentials", {
-      operation: "getTemporaryCredentials",
-      metadata: {
-        accountId,
-        productId,
-        prefix: `${productId}/`,
-        expiration: creds.expiration,
-      },
-    });
-
-    return {
-      accessKeyId: creds.accessKeyId,
-      secretAccessKey: creds.secretAccessKey,
-      sessionToken: creds.sessionToken,
-      expiration: creds.expiration,
-      endpoint,
-      bucket: accountId,
-      region: CONFIG.storage.region ?? "us-east-1",
-      prefix: `${productId}/`,
-    };
-  } catch (error) {
-    LOGGER.error("Failed to issue proxy upload credentials", {
-      operation: "getTemporaryCredentials",
-      metadata: { accountId, productId, error },
-    });
-    throw new Error(
-      `Failed to generate credentials: ${
-        error instanceof Error ? error.message : "Unknown error"
-      }`,
-    );
-  }
+  return {
+    accessKeyId: creds.accessKeyId,
+    secretAccessKey: creds.secretAccessKey,
+    sessionToken: creds.sessionToken,
+    expiration: creds.expiration,
+    endpoint,
+    bucket: accountId,
+    region: CONFIG.storage.region ?? "us-east-1",
+    prefix: `${productId}/`,
+  };
 }

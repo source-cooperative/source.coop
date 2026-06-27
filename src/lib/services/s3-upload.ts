@@ -10,9 +10,12 @@ export interface S3UploadConfig {
   accessKeyId: string;
   secretAccessKey: string;
   sessionToken: string;
-  chunkSize?: number;
-  maxConcurrent?: number;
 }
+
+// 5MB parts, 4 concurrent — S3's minimum part size and a sensible browser
+// concurrency. Inlined: no caller has ever needed to override them.
+const PART_SIZE = 5 * 1024 * 1024;
+const QUEUE_SIZE = 4;
 
 export interface S3UploadParams {
   file: File;
@@ -32,13 +35,9 @@ export interface S3UploadResult {
 export class S3UploadService {
   private client: S3Client;
   private config: S3UploadConfig;
-  private chunkSize: number;
-  private maxConcurrent: number;
 
   constructor(config: S3UploadConfig) {
     this.config = config;
-    this.chunkSize = config.chunkSize || 5 * 1024 * 1024; // 5MB default
-    this.maxConcurrent = config.maxConcurrent || 4;
 
     this.client = new S3Client({
       endpoint: config.endpoint,
@@ -69,8 +68,8 @@ export class S3UploadService {
         Body: file,
         ContentType: file.type || "application/octet-stream",
       },
-      queueSize: this.maxConcurrent,
-      partSize: this.chunkSize,
+      queueSize: QUEUE_SIZE,
+      partSize: PART_SIZE,
       leavePartsOnError: false,
     });
 
@@ -88,19 +87,5 @@ export class S3UploadService {
         etag: result.ETag,
       })),
     };
-  }
-
-  /**
-   * Cancel an upload
-   */
-  async cancelUpload(upload: Upload): Promise<void> {
-    await upload.abort();
-  }
-
-  /**
-   * Get the S3 client (for other operations if needed)
-   */
-  getClient(): S3Client {
-    return this.client;
   }
 }

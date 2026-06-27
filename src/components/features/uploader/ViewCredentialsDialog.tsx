@@ -15,7 +15,6 @@ import {
 import { CopyIcon, CheckIcon } from "@radix-ui/react-icons";
 import React, { useState } from "react";
 import { MonoText } from "@/components/core";
-import { Icon } from "@radix-ui/react-select";
 
 interface ViewCredentialsDialogProps {
   credentials: TemporaryCredentials;
