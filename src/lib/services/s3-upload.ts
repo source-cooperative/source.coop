@@ -2,6 +2,8 @@ import { S3Client } from "@aws-sdk/client-s3";
 import { Upload } from "@aws-sdk/lib-storage";
 
 export interface S3UploadConfig {
+  /** Data proxy endpoint. Uploads are path-style and routed through the proxy. */
+  endpoint: string;
   bucket: string;
   region: string;
   prefix: string;
@@ -39,7 +41,11 @@ export class S3UploadService {
     this.maxConcurrent = config.maxConcurrent || 4;
 
     this.client = new S3Client({
+      endpoint: config.endpoint,
       region: config.region,
+      // The proxy addresses objects as ${endpoint}/${bucket}/${key}, matching
+      // the server-side read client (S3StorageClient).
+      forcePathStyle: true,
       credentials: {
         accessKeyId: config.accessKeyId,
         secretAccessKey: config.secretAccessKey,

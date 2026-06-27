@@ -28,12 +28,15 @@ export function ViewCredentialsDialog({
   open,
   onOpenChange,
 }: ViewCredentialsDialogProps) {
+  // The credentials are only valid against the data proxy, so the endpoint must
+  // travel with them — an SDK pointed at the default AWS endpoint would 403.
   const jsonFormat = JSON.stringify(
     {
       aws_access_key_id: credentials.accessKeyId,
       aws_secret_access_key: credentials.secretAccessKey,
       aws_session_token: credentials.sessionToken,
       region_name: credentials.region,
+      endpoint_url: credentials.endpoint,
     },
     null,
     2
@@ -44,6 +47,7 @@ export function ViewCredentialsDialog({
     `export AWS_SECRET_ACCESS_KEY="${credentials.secretAccessKey}"`,
     `export AWS_SESSION_TOKEN="${credentials.sessionToken}"`,
     `export AWS_DEFAULT_REGION="${credentials.region}"`,
+    `export AWS_ENDPOINT_URL="${credentials.endpoint}"`,
   ].join("\n");
 
   return (
@@ -90,6 +94,11 @@ export function ViewCredentialsDialog({
                     {new Date(credentials.expiration).toLocaleString()}
                   </span>,
                   credentials.expiration,
+                ],
+                [
+                  "Endpoint",
+                  <MonoText key="endpoint">{credentials.endpoint}</MonoText>,
+                  credentials.endpoint,
                 ],
                 [
                   "Bucket",
