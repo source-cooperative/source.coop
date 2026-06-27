@@ -47,11 +47,13 @@ beforeEach(() => {
 });
 
 describe("getTemporaryCredentials", () => {
-  it("shapes proxy creds to the proxy path: bucket=account, prefix=product/", async () => {
+  it("mints with the verified identity and shapes creds to the proxy path", async () => {
     const out = await getTemporaryCredentials({
       accountId: "acc",
       productId: "p",
     });
+    // Minted from the verified session identity — never from request input.
+    expect(getProxyCredentials).toHaveBeenCalledWith("id-1");
     expect(out).toEqual({
       ...CREDS,
       endpoint: "https://data.source.coop",
@@ -65,11 +67,6 @@ describe("getTemporaryCredentials", () => {
     (readProxyCredentials as jest.Mock).mockResolvedValue(CREDS);
     await getTemporaryCredentials({ accountId: "acc", productId: "p" });
     expect(getProxyCredentials).not.toHaveBeenCalled();
-  });
-
-  it("mints with the verified session identity when no cookie is cached", async () => {
-    await getTemporaryCredentials({ accountId: "acc", productId: "p" });
-    expect(getProxyCredentials).toHaveBeenCalledWith("id-1");
   });
 
   it("rejects an uploader without write permission", async () => {

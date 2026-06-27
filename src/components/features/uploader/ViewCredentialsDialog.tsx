@@ -95,11 +95,6 @@ export function ViewCredentialsDialog({
                   credentials.expiration,
                 ],
                 [
-                  "Endpoint",
-                  <MonoText key="endpoint">{credentials.endpoint}</MonoText>,
-                  credentials.endpoint,
-                ],
-                [
                   "Bucket",
                   <MonoText key="bucket">{credentials.bucket}</MonoText>,
                   credentials.bucket,
