@@ -30,11 +30,29 @@ export default async function ProductDataConnectionsPage({
     ? (await dataConnectionsTable.listAll()).map(toDataConnectionOption)
     : [];
 
+  // A mirror only links to a connection's admin form when the product owner
+  // owns that connection (or the viewer is an admin), so resolve each mirror's
+  // connection owner here. Reads are globally cached, so per-mirror fetches are
+  // cheap even when the admin list above already loaded them.
+  const mirrorConnectionIds = [
+    ...new Set(
+      Object.values(product.metadata.mirrors).map((m) => m.connection_id)
+    ),
+  ];
+  const ownedConnectionIds = (
+    await Promise.all(
+      mirrorConnectionIds.map((id) => dataConnectionsTable.fetchById(id))
+    )
+  )
+    .filter((c) => c?.owner === product.account_id)
+    .map((c) => c!.data_connection_id);
+
   return (
     <ProductMirrorsManager
       product={product}
       availableConnections={availableConnections}
       isAdmin={userIsAdmin}
+      ownedConnectionIds={ownedConnectionIds}
     />
   );
 }
