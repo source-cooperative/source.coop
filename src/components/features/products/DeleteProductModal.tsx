@@ -113,7 +113,7 @@ export function DeleteProductModal({
                       <Text as="div" size="2" weight="medium">
                         Delete the product record only
                       </Text>
-                      <Text as="div" size="2" color="gray">
+                      <Text as="div" size="1" color="gray">
                         {dataReadOnly
                           ? "This connection is read-only, so its underlying data is always kept."
                           : "Remove the product and its memberships, but keep the underlying data in the connection."}
