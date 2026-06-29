@@ -61,6 +61,7 @@ export type ErrorResponse = {
 export enum Actions {
   CreateRepository = "repository:create",
   PutRepository = "repository:put",
+  DeleteRepository = "repository:delete",
   DisableRepository = "repository:disable",
   ListRepository = "repository:list",
   GetRepository = "repository:get",

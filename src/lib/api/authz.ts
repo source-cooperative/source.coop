@@ -65,6 +65,7 @@ type ActionResourceMap = {
   [Actions.GetRepository]: Product;
   [Actions.ListRepository]: Product;
   [Actions.PutRepository]: Product;
+  [Actions.DeleteRepository]: Product;
   [Actions.DisableRepository]: Product;
   [Actions.ReadRepositoryData]: Product;
   [Actions.WriteRepositoryData]: Product;
@@ -168,6 +169,11 @@ export function isAuthorized(
   principal: UserSession | null,
   resource: Product,
   action: Actions.PutRepository
+): boolean;
+export function isAuthorized(
+  principal: UserSession | null,
+  resource: Product,
+  action: Actions.DeleteRepository
 ): boolean;
 export function isAuthorized(
   principal: UserSession | null,
@@ -312,6 +318,9 @@ export function isAuthorized(
       )
       .with(Actions.PutRepository, () =>
         putRepository(principal, resource as ResourceForAction<Actions.PutRepository>)
+      )
+      .with(Actions.DeleteRepository, () =>
+        deleteRepository(principal, resource as ResourceForAction<Actions.DeleteRepository>)
       )
       .with(Actions.ListRepository, () =>
         listRepository(principal, resource as ResourceForAction<Actions.ListRepository>)
@@ -810,6 +819,38 @@ function listRepository(
       MembershipRole.ReadData,
       MembershipRole.WriteData,
     ],
+    product.account_id,
+    product.product_id
+  );
+}
+
+function deleteRepository(
+  principal: UserSession | null,
+  product: Product
+): boolean {
+  if (!principal?.account) {
+    return false;
+  }
+
+  if (principal?.account?.disabled) {
+    return false;
+  }
+
+  if (isAdmin(principal)) {
+    return true;
+  }
+
+  if (product.disabled) {
+    return false;
+  }
+
+  if (principal?.account?.account_id === product.account_id) {
+    return true;
+  }
+
+  return hasRole(
+    principal,
+    [MembershipRole.Owners],
     product.account_id,
     product.product_id
   );

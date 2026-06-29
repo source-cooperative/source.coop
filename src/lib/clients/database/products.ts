@@ -5,6 +5,7 @@ import {
 } from "@aws-sdk/client-dynamodb";
 
 import {
+  DeleteCommand,
   GetCommand,
   PutCommand,
   QueryCommand,
@@ -365,6 +366,20 @@ export class ProductsTable extends BaseTable {
       ...item,
       account: accountMap.get(item.account_id) || undefined,
     }));
+  }
+
+  async delete(account_id: string, product_id: string): Promise<void> {
+    try {
+      await this.client.send(
+        new DeleteCommand({
+          TableName: this.table,
+          Key: { account_id, product_id },
+        })
+      );
+    } catch (error) {
+      this.logError("delete", error, { account_id, product_id });
+      throw error;
+    }
   }
 }
 

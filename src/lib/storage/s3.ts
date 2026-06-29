@@ -1,6 +1,7 @@
 import {
   S3Client,
   ListObjectsV2Command,
+  DeleteObjectCommand,
   HeadObjectCommand,
   GetObjectCommand,
   S3ServiceException,
@@ -119,6 +120,62 @@ export class S3StorageClient {
       isTruncated: response.IsTruncated ?? false,
       nextContinuationToken: response.NextContinuationToken,
     };
+  }
+
+  /**
+   * Delete every object under a prefix (e.g. a whole product's data) through
+   * the proxy, paging until exhausted. Uses an unfiltered ListObjectsV2 (no
+   * delimiter) so nested keys are included. Throws (naming a sample failing key
+   * and reason) if any object fails, so a partial wipe can't pass for a clean one.
+   *
+   * Objects are deleted individually (DELETE /{bucket}/{key}) rather than via the
+   * batch DeleteObjects endpoint: the proxy resolves each backend from the
+   * product segment in the request path, and `POST /{bucket}?delete` carries only
+   * the account in its path (keys live in the body), so the proxy rejects it with
+   * "bucket not found". A per-object DELETE carries the full account/product path,
+   * exactly like the read/upload calls the proxy already serves.
+   */
+  async deleteByPrefix(bucket: string, prefix: string): Promise<void> {
+    let continuationToken: string | undefined;
+    const failed: string[] = [];
+    let firstReason: unknown;
+    do {
+      const listed = await this.client.send(
+        new ListObjectsV2Command({
+          Bucket: bucket,
+          Prefix: prefix,
+          ContinuationToken: continuationToken,
+          MaxKeys: 1000,
+        }),
+      );
+      const keys = (listed.Contents ?? [])
+        .map((o) => o.Key)
+        .filter((k): k is string => !!k);
+      // ponytail: bounded fan-out (25) — fine for the rare product-delete path;
+      // raise the chunk size if wiping huge products ever needs to be faster.
+      for (let i = 0; i < keys.length; i += 25) {
+        const chunk = keys.slice(i, i + 25);
+        const results = await Promise.allSettled(
+          chunk.map((Key) =>
+            this.client.send(new DeleteObjectCommand({ Bucket: bucket, Key })),
+          ),
+        );
+        results.forEach((r, j) => {
+          if (r.status === "rejected") {
+            failed.push(chunk[j]);
+            firstReason ??= r.reason;
+          }
+        });
+      }
+      continuationToken = listed.IsTruncated
+        ? listed.NextContinuationToken
+        : undefined;
+    } while (continuationToken);
+    if (failed.length) {
+      const detail =
+        firstReason instanceof Error ? `: ${firstReason.message}` : "";
+      throw new Error(`Failed to delete ${failed.length} object(s)${detail}`);
+    }
   }
 
   /** HEAD an object. Returns null on NotFound; throws on other errors. */

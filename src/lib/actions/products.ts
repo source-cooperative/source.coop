@@ -1,6 +1,6 @@
 "use server";
 
-import { productsTable, dataConnectionsTable } from "@/lib/clients/database";
+import { productsTable, membershipsTable, dataConnectionsTable } from "@/lib/clients/database";
 import {
   Actions,
   DataProvider,
@@ -13,9 +13,12 @@ import {
 } from "@/types";
 import { getPageSession, LOGGER } from "@/lib";
 import { FormState } from "@/components/core/DynamicForm";
-import { isAuthorized } from "../api/authz";
+import { isAuthorized, isAdmin } from "../api/authz";
 import { revalidatePath } from "next/cache";
-import { productUrl, editProductDetailsUrl } from "@/lib/urls";
+import { productUrl, editProductDetailsUrl, accountUrl } from "@/lib/urls";
+import { getProxyCredentials } from "@/lib/actions/proxy-credentials";
+import { readProxyCredentials } from "@/lib/services/proxy-credentials-read";
+import { getStorageClient } from "@/lib/clients/storage";
 
 // Map a data connection's storage provider to the product mirror's storage_type.
 const STORAGE_TYPE_BY_PROVIDER: Record<
@@ -421,5 +424,93 @@ export async function updateProduct(
       message: "Failed to update product. Please try again.",
       success: false,
     };
+  }
+}
+
+export async function deleteProduct(
+  account_id: string,
+  product_id: string,
+  preserveData: boolean = false
+): Promise<{ success: boolean; error?: string }> {
+  const session = await getPageSession();
+
+  if (!session?.identity_id || !session.account) {
+    return { success: false, error: "Unauthenticated" };
+  }
+
+  const product = await productsTable.fetchById(account_id, product_id);
+  if (!product) {
+    return { success: false, error: "Product not found" };
+  }
+
+  if (!isAuthorized(session, product, Actions.DeleteRepository)) {
+    return { success: false, error: "Unauthorized to delete this product" };
+  }
+
+  try {
+    const primaryMirror =
+      product.metadata.mirrors[product.metadata.primary_mirror];
+    const dataConnection = primaryMirror
+      ? await dataConnectionsTable.fetchById(primaryMirror.connection_id)
+      : undefined;
+
+    // Keeping the underlying data is allowed for non-system (account-owned)
+    // connections, for admins, or whenever the connection is read-only — its
+    // data is never ours to delete. On system-managed storage a regular user
+    // must remove the data so we don't orphan platform objects.
+    const canPreserveData =
+      !!dataConnection?.read_only ||
+      !!dataConnection?.owner ||
+      isAdmin(session);
+    if (preserveData && !canPreserveData) {
+      return {
+        success: false,
+        error: "You are not permitted to keep this product's data when deleting it.",
+      };
+    }
+
+    // Delete the underlying objects unless the caller opted to keep them.
+    // Read-only connections mirror data we don't own — never delete their
+    // objects. Otherwise delete through the data proxy with the user's STS
+    // credentials (the same path reads/uploads use), so the proxy enforces
+    // per-object authz instead of falling back to platform IAM creds. The proxy
+    // fronts every backend (S3/GCP/Azure), addressing objects as
+    // bucket=account_id, key=product_id/… — so there's no per-provider branch.
+    if (!preserveData && dataConnection && !dataConnection.read_only) {
+      const credentials =
+        (await readProxyCredentials()) ??
+        (await getProxyCredentials(session.identity_id));
+      const storage = await getStorageClient(credentials);
+      await storage.deleteByPrefix(account_id, `${product_id}/`);
+    }
+
+    await membershipsTable.deleteByProduct(account_id, product_id);
+    await productsTable.delete(account_id, product_id);
+
+    LOGGER.info("Successfully deleted product", {
+      operation: "deleteProduct",
+      context: "product deletion",
+      metadata: { account_id, product_id },
+    });
+
+    // Drop cached pages for the deleted product and the account listing it
+    // appeared on, so other users stop seeing the now-removed product.
+    revalidatePath(productUrl(account_id, product_id));
+    revalidatePath(editProductDetailsUrl(account_id, product_id));
+    revalidatePath(accountUrl(account_id));
+
+    return { success: true };
+  } catch (error) {
+    LOGGER.error("Error deleting product", {
+      operation: "deleteProduct",
+      context: "product deletion",
+      error: error,
+      metadata: { account_id, product_id },
+    });
+
+    // Surface the underlying cause (e.g. S3 "Access Denied") instead of a
+    // generic "try again" — most failures here are not transient.
+    const reason = error instanceof Error ? error.message : "Unknown error";
+    return { success: false, error: `Failed to delete product: ${reason}` };
   }
 }

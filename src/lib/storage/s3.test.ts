@@ -18,6 +18,7 @@ import {
   S3Client,
   S3ServiceException,
   ListObjectsV2Command,
+  DeleteObjectCommand,
   HeadObjectCommand,
   GetObjectCommand,
 } from "@aws-sdk/client-s3";
@@ -236,6 +237,55 @@ describe("S3StorageClient", () => {
     expect(result.contentType).toBe("text/plain");
     expect(result.contentLength).toBe(bytes.length);
     expect(result.etag).toBe('"ghi"');
+  });
+
+  test("deleteByPrefix pages through the listing and deletes each object individually", async () => {
+    mockSend
+      .mockResolvedValueOnce({
+        Contents: [{ Key: "p/a" }, { Key: "p/b" }],
+        IsTruncated: true,
+        NextContinuationToken: "t2",
+      })
+      .mockResolvedValueOnce({}) // delete p/a
+      .mockResolvedValueOnce({}) // delete p/b
+      .mockResolvedValueOnce({ Contents: [{ Key: "p/c" }], IsTruncated: false })
+      .mockResolvedValueOnce({}); // delete p/c
+
+    const client = new S3StorageClient({ endpoint: "https://data.source.coop" });
+    await client.deleteByPrefix("alice", "p/");
+
+    const commands = mockSend.mock.calls.map((c) => c[0]);
+    // Each object is removed with its own DeleteObjectCommand (full key path),
+    // not a single batch DeleteObjects.
+    const deletedKeys = commands
+      .filter((cmd) => cmd instanceof DeleteObjectCommand)
+      .map((cmd) => cmd.input.Key);
+    expect(deletedKeys).toEqual(["p/a", "p/b", "p/c"]);
+    const lists = commands.filter((cmd) => cmd instanceof ListObjectsV2Command);
+    expect(lists[1].input.ContinuationToken).toBe("t2");
+  });
+
+  test("deleteByPrefix throws (with a sample reason) when an object delete fails", async () => {
+    mockSend
+      .mockResolvedValueOnce({ Contents: [{ Key: "p/a" }], IsTruncated: false })
+      .mockRejectedValueOnce(new Error("bucket not found: alice"));
+
+    const client = new S3StorageClient({ endpoint: "https://data.source.coop" });
+    await expect(client.deleteByPrefix("alice", "p/")).rejects.toThrow(
+      /Failed to delete 1 object\(s\): bucket not found: alice/,
+    );
+  });
+
+  test("deleteByPrefix issues no delete when nothing matches the prefix", async () => {
+    mockSend.mockResolvedValueOnce({ Contents: [], IsTruncated: false });
+
+    const client = new S3StorageClient({ endpoint: "https://data.source.coop" });
+    await client.deleteByPrefix("alice", "p/");
+
+    const deletes = mockSend.mock.calls
+      .map((c) => c[0])
+      .filter((cmd) => cmd instanceof DeleteObjectCommand);
+    expect(deletes).toHaveLength(0);
   });
 });
 

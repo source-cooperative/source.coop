@@ -3,7 +3,7 @@ import {
   PutItemCommand,
   ResourceNotFoundException,
 } from "@aws-sdk/client-dynamodb";
-import { QueryCommand, PutCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
+import { DeleteCommand, QueryCommand, PutCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import { marshall } from "@aws-sdk/util-dynamodb";
 import { BaseTable } from "./base";
 
@@ -64,7 +64,8 @@ export class MembershipsTable extends BaseTable {
   async listByAccount(
     membershipAccountId: string,
     repositoryId?: string,
-    all: boolean = false
+    all: boolean = false,
+    bypassCache: boolean = false
   ): Promise<Membership[]> {
     try {
       const query = repositoryId
@@ -101,7 +102,11 @@ export class MembershipsTable extends BaseTable {
         TableName: this.table,
         ...query,
       });
-      const result = await this.cachedSend(command);
+      // Destructive callers pass bypassCache to avoid acting on a stale
+      // request-scoped read that could miss recently-created memberships.
+      const result = bypassCache
+        ? await this.client.send(command)
+        : await this.cachedSend(command);
       return result.Items?.map((item) => item as Membership) ?? [];
     } catch (error) {
       this.logError("listByAccount", error, {
@@ -179,6 +184,35 @@ export class MembershipsTable extends BaseTable {
       this.logError("update", error, {
         membershipId: membership.membership_id,
       });
+      throw error;
+    }
+  }
+
+  async delete(membershipId: string): Promise<void> {
+    try {
+      await this.client.send(
+        new DeleteCommand({
+          TableName: this.table,
+          Key: { membership_id: membershipId },
+        })
+      );
+    } catch (error) {
+      this.logError("delete", error, { membershipId });
+      throw error;
+    }
+  }
+
+  async deleteByProduct(account_id: string, product_id: string): Promise<void> {
+    try {
+      const memberships = await this.listByAccount(
+        account_id,
+        product_id,
+        false,
+        true
+      );
+      await Promise.all(memberships.map((m) => this.delete(m.membership_id)));
+    } catch (error) {
+      this.logError("deleteByProduct", error, { account_id, product_id });
       throw error;
     }
   }
