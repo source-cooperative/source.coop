@@ -97,8 +97,3 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-/* Radix Tooltip portals to <body> with z-index:auto, so it renders behind the
-   popup (z-index:20). Lift just the tooltip popper above it. */
-:global([data-radix-popper-content-wrapper]:has(.rt-TooltipContent)) {
-  z-index: 30;
-}

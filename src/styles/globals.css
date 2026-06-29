@@ -142,3 +142,9 @@ a.rt-BaseMenuItem,
 .animate-spin {
   animation: spin 1s linear infinite;
 }
+
+/* Radix Tooltip portals to <body> at z-index:auto, so it renders behind the
+   live-globe popup (z-index:20). Lift just the tooltip popper above it. */
+[data-radix-popper-content-wrapper]:has(.rt-TooltipContent) {
+  z-index: 30;
+}
