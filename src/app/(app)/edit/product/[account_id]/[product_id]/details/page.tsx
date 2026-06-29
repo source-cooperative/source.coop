@@ -8,7 +8,7 @@ import {
   dataConnectionsTable,
 } from "@/lib/clients/database";
 import { getPageSession } from "@/lib";
-import { isAuthorized } from "@/lib/api/authz";
+import { isAuthorized, isAdmin } from "@/lib/api/authz";
 import {
   Actions,
   DataConnection,
@@ -60,6 +60,10 @@ export default async function DetailsPage({ params }: PageProps) {
     : [];
 
   const canDelete = isAuthorized(session, product, Actions.DeleteRepository);
+  // Keeping the underlying data on delete is allowed for non-system
+  // (account-owned) connections, or for admins on any connection. The server
+  // re-checks this; this only decides whether to offer the option in the UI.
+  const canPreserveData = !!connection?.owner || isAdmin(session);
 
   return (
     <>
@@ -78,7 +82,11 @@ export default async function DetailsPage({ params }: PageProps) {
               Deleting this product is permanent and cannot be undone. All
               associated data, memberships, and records will be removed.
             </Text>
-            <DeleteProductModal accountId={account_id} productId={product_id} />
+            <DeleteProductModal
+              accountId={account_id}
+              productId={product_id}
+              canPreserveData={canPreserveData}
+            />
           </Box>
         </>
       )}

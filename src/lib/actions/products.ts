@@ -13,7 +13,7 @@ import {
 } from "@/types";
 import { getPageSession, LOGGER } from "@/lib";
 import { FormState } from "@/components/core/DynamicForm";
-import { isAuthorized } from "../api/authz";
+import { isAuthorized, isAdmin } from "../api/authz";
 import { revalidatePath } from "next/cache";
 import { productUrl, editProductDetailsUrl, accountUrl } from "@/lib/urls";
 import { getProxyCredentials } from "@/lib/actions/proxy-credentials";
@@ -429,7 +429,8 @@ export async function updateProduct(
 
 export async function deleteProduct(
   account_id: string,
-  product_id: string
+  product_id: string,
+  preserveData: boolean = false
 ): Promise<{ success: boolean; error?: string }> {
   const session = await getPageSession();
 
@@ -449,25 +450,34 @@ export async function deleteProduct(
   try {
     const primaryMirror =
       product.metadata.mirrors[product.metadata.primary_mirror];
+    const dataConnection = primaryMirror
+      ? await dataConnectionsTable.fetchById(primaryMirror.connection_id)
+      : undefined;
 
-    if (primaryMirror) {
-      const dataConnection = await dataConnectionsTable.fetchById(
-        primaryMirror.connection_id
-      );
+    // Keeping the underlying data is allowed only for non-system (account-owned)
+    // connections, or for admins on any connection. On system-managed storage a
+    // regular user must remove the data so we don't orphan platform objects.
+    const canPreserveData = !!dataConnection?.owner || isAdmin(session);
+    if (preserveData && !canPreserveData) {
+      return {
+        success: false,
+        error: "You are not permitted to keep this product's data when deleting it.",
+      };
+    }
 
-      // Read-only connections mirror data we don't own — never delete their
-      // objects. For owned connections, delete through the data proxy with the
-      // user's STS credentials (the same path reads/uploads use), so the proxy
-      // enforces per-object authz instead of falling back to platform IAM creds.
-      // The proxy fronts every backend (S3/GCP/Azure), so there's no per-provider
-      // branch — and it addresses objects as bucket=account_id, key=product_id/…
-      if (dataConnection && !dataConnection.read_only) {
-        const credentials =
-          (await readProxyCredentials()) ??
-          (await getProxyCredentials(session.identity_id));
-        const storage = await getStorageClient(credentials);
-        await storage.deleteByPrefix(account_id, `${product_id}/`);
-      }
+    // Delete the underlying objects unless the caller opted to keep them.
+    // Read-only connections mirror data we don't own — never delete their
+    // objects. Otherwise delete through the data proxy with the user's STS
+    // credentials (the same path reads/uploads use), so the proxy enforces
+    // per-object authz instead of falling back to platform IAM creds. The proxy
+    // fronts every backend (S3/GCP/Azure), addressing objects as
+    // bucket=account_id, key=product_id/… — so there's no per-provider branch.
+    if (!preserveData && dataConnection && !dataConnection.read_only) {
+      const credentials =
+        (await readProxyCredentials()) ??
+        (await getProxyCredentials(session.identity_id));
+      const storage = await getStorageClient(credentials);
+      await storage.deleteByPrefix(account_id, `${product_id}/`);
     }
 
     await membershipsTable.deleteByProduct(account_id, product_id);

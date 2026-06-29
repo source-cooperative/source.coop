@@ -6,7 +6,7 @@ import {
   membershipsTable,
 } from "@/lib/clients/database";
 import { getPageSession } from "@/lib";
-import { isAuthorized } from "@/lib/api/authz";
+import { isAuthorized, isAdmin } from "@/lib/api/authz";
 import { productUrl } from "@/lib/urls";
 import { getProxyCredentials } from "@/lib/actions/proxy-credentials";
 import { readProxyCredentials } from "@/lib/services/proxy-credentials-read";
@@ -30,6 +30,7 @@ jest.mock("@/lib", () => ({
 
 jest.mock("@/lib/api/authz", () => ({
   isAuthorized: jest.fn(),
+  isAdmin: jest.fn(),
 }));
 
 jest.mock("next/navigation", () => ({
@@ -390,6 +391,7 @@ describe("deleteProduct", () => {
     (productsTable.fetchById as jest.Mock).mockResolvedValue(currentProduct());
     (membershipsTable.deleteByProduct as jest.Mock).mockResolvedValue(undefined);
     (productsTable.delete as jest.Mock).mockResolvedValue(undefined);
+    (isAdmin as jest.Mock).mockReturnValue(false);
     (readProxyCredentials as jest.Mock).mockResolvedValue(undefined);
     (getProxyCredentials as jest.Mock).mockResolvedValue({
       accessKeyId: "AK",
@@ -438,5 +440,50 @@ describe("deleteProduct", () => {
     expect(result.success).toBe(true);
     expect(getProxyCredentials).not.toHaveBeenCalled();
     expect(getStorageClient).not.toHaveBeenCalled();
+  });
+
+  test("rejects keeping data on a system connection for a non-admin", async () => {
+    (productsTable.fetchById as jest.Mock).mockResolvedValue(productWithMirror());
+    // System connection: no owner. Non-admin (default).
+    (dataConnectionsTable.fetchById as jest.Mock).mockResolvedValue({
+      read_only: false,
+    });
+
+    const result = await deleteProduct("alice", "my-product", true);
+
+    expect(result.success).toBe(false);
+    expect(result.error).toMatch(/not permitted to keep/i);
+    // Nothing is deleted when the request is rejected.
+    expect(deleteByPrefix).not.toHaveBeenCalled();
+    expect(productsTable.delete).not.toHaveBeenCalled();
+  });
+
+  test("keeps data on a non-system (owned) connection when requested", async () => {
+    (productsTable.fetchById as jest.Mock).mockResolvedValue(productWithMirror());
+    (dataConnectionsTable.fetchById as jest.Mock).mockResolvedValue({
+      read_only: false,
+      owner: "someone-else",
+    });
+
+    const result = await deleteProduct("alice", "my-product", true);
+
+    expect(result.success).toBe(true);
+    // Product record + memberships removed, but the underlying objects are kept.
+    expect(deleteByPrefix).not.toHaveBeenCalled();
+    expect(productsTable.delete).toHaveBeenCalledWith("alice", "my-product");
+  });
+
+  test("admin may keep data on a system connection", async () => {
+    (isAdmin as jest.Mock).mockReturnValue(true);
+    (productsTable.fetchById as jest.Mock).mockResolvedValue(productWithMirror());
+    (dataConnectionsTable.fetchById as jest.Mock).mockResolvedValue({
+      read_only: false,
+    });
+
+    const result = await deleteProduct("alice", "my-product", true);
+
+    expect(result.success).toBe(true);
+    expect(deleteByPrefix).not.toHaveBeenCalled();
+    expect(productsTable.delete).toHaveBeenCalledWith("alice", "my-product");
   });
 });

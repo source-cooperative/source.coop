@@ -8,6 +8,7 @@ import {
   Text,
   Flex,
   Callout,
+  Checkbox,
   Separator,
 } from "@radix-ui/themes";
 import { TrashIcon, ExclamationTriangleIcon } from "@radix-ui/react-icons";
@@ -18,14 +19,22 @@ import { accountUrl } from "@/lib/urls";
 interface DeleteProductModalProps {
   accountId: string;
   productId: string;
+  /**
+   * When true, offer the option to delete the product record while keeping the
+   * underlying objects. Only allowed for non-system (account-owned) connections
+   * or for admins; the server re-checks this regardless of what the UI sends.
+   */
+  canPreserveData?: boolean;
 }
 
 export function DeleteProductModal({
   accountId,
   productId,
+  canPreserveData = false,
 }: DeleteProductModalProps) {
   const [open, setOpen] = useState(false);
   const [confirmText, setConfirmText] = useState("");
+  const [preserveData, setPreserveData] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
@@ -38,6 +47,7 @@ export function DeleteProductModal({
       setOpen(next);
       if (!next) {
         setConfirmText("");
+        setPreserveData(false);
         setError(null);
       }
     }
@@ -47,7 +57,11 @@ export function DeleteProductModal({
     if (!isConfirmed) return;
     setError(null);
     startTransition(async () => {
-      const result = await deleteProduct(accountId, productId);
+      const result = await deleteProduct(
+        accountId,
+        productId,
+        canPreserveData && preserveData
+      );
       if (result.success) {
         router.push(accountUrl(accountId));
       } else {
@@ -73,11 +87,35 @@ export function DeleteProductModal({
             <ExclamationTriangleIcon />
           </Callout.Icon>
           <Callout.Text>
-            <Text weight="bold">This action is irreversible.</Text> All product
-            data stored in the associated data connection will be permanently
-            deleted, along with all memberships and the product record itself.
+            <Text weight="bold">This action is irreversible.</Text>{" "}
+            {preserveData ? (
+              <>
+                The product record and all memberships will be permanently
+                deleted. The underlying data in the connection will be kept.
+              </>
+            ) : (
+              <>
+                All product data stored in the associated data connection will be
+                permanently deleted, along with all memberships and the product
+                record itself.
+              </>
+            )}
           </Callout.Text>
         </Callout.Root>
+
+        {canPreserveData && (
+          <Text as="label" size="2" mb="4">
+            <Flex gap="2">
+              <Checkbox
+                checked={preserveData}
+                onCheckedChange={(checked) => setPreserveData(checked === true)}
+                disabled={isPending}
+              />
+              Delete the product record only — keep the underlying data in the
+              connection.
+            </Flex>
+          </Text>
+        )}
 
         <Text as="p" size="2" mb="3">
           To confirm, type{" "}
