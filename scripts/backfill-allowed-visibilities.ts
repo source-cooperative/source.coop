@@ -53,10 +53,10 @@ import {
   UpdateCommand,
 } from "@aws-sdk/lib-dynamodb";
 
-const LEGACY_TO_NEW: Record<string, string> = {
-  open: "public",
-  private: "restricted",
-  subscription: "restricted",
+const LEGACY_TO_NEW: Record<string, string[]> = {
+  open: ["public", "unlisted"],
+  private: ["restricted"],
+  subscription: ["restricted"],
 };
 
 type Mode = "backfill" | "cleanup";
@@ -68,7 +68,7 @@ interface DataConnectionItem {
 }
 
 function mapValues(modes: string[]): string[] {
-  const mapped = modes.map((m) => LEGACY_TO_NEW[m] ?? m);
+  const mapped = modes.flatMap((m) => LEGACY_TO_NEW[m] ?? m);
   return Array.from(new Set(mapped));
 }
 
@@ -106,7 +106,7 @@ async function migrate(tableName: string, mode: Mode, dryRun: boolean) {
         ProjectionExpression:
           "data_connection_id, allowed_data_modes, allowed_visibilities",
         ExclusiveStartKey: lastEvaluatedKey,
-      })
+      }),
     );
     const items = (result.Items || []) as DataConnectionItem[];
     lastEvaluatedKey = result.LastEvaluatedKey;
@@ -131,7 +131,7 @@ async function migrate(tableName: string, mode: Mode, dryRun: boolean) {
 
         if (dryRun) {
           console.log(
-            `[DRY RUN] Would set ${item.data_connection_id}: allowed_visibilities=${JSON.stringify(next)} (allowed_data_modes left in place)`
+            `[DRY RUN] Would set ${item.data_connection_id}: allowed_visibilities=${JSON.stringify(next)} (allowed_data_modes left in place)`,
           );
           updated++;
           continue;
@@ -142,10 +142,11 @@ async function migrate(tableName: string, mode: Mode, dryRun: boolean) {
             new UpdateCommand({
               TableName: tableName,
               Key: { data_connection_id: item.data_connection_id },
-              UpdateExpression: "SET allowed_visibilities = :allowed_visibilities",
+              UpdateExpression:
+                "SET allowed_visibilities = :allowed_visibilities",
               ConditionExpression: "attribute_not_exists(allowed_visibilities)",
               ExpressionAttributeValues: { ":allowed_visibilities": next },
-            })
+            }),
           );
           updated++;
         } catch (err) {
@@ -167,7 +168,7 @@ async function migrate(tableName: string, mode: Mode, dryRun: boolean) {
 
         if (dryRun) {
           console.log(
-            `[DRY RUN] Would remove allowed_data_modes from ${item.data_connection_id}`
+            `[DRY RUN] Would remove allowed_data_modes from ${item.data_connection_id}`,
           );
           updated++;
           continue;
@@ -180,7 +181,7 @@ async function migrate(tableName: string, mode: Mode, dryRun: boolean) {
               Key: { data_connection_id: item.data_connection_id },
               UpdateExpression: "REMOVE allowed_data_modes",
               ConditionExpression: "attribute_exists(allowed_visibilities)",
-            })
+            }),
           );
           updated++;
         } catch (err) {
@@ -195,7 +196,7 @@ async function migrate(tableName: string, mode: Mode, dryRun: boolean) {
     }
 
     console.log(
-      `Progress: scanned=${scanned}, updated=${updated}, skipped=${skipped}, guarded=${guarded}, errors=${errors}`
+      `Progress: scanned=${scanned}, updated=${updated}, skipped=${skipped}, guarded=${guarded}, errors=${errors}`,
     );
   } while (lastEvaluatedKey);
 
@@ -210,25 +211,25 @@ async function migrate(tableName: string, mode: Mode, dryRun: boolean) {
 
 function usage() {
   console.error(
-    "Usage: [MODE=backfill|cleanup] npx tsx scripts/backfill-allowed-visibilities.ts <table-name>"
+    "Usage: [MODE=backfill|cleanup] npx tsx scripts/backfill-allowed-visibilities.ts <table-name>",
   );
   console.error("");
   console.error("Examples:");
   console.error(
-    "  npx tsx scripts/backfill-allowed-visibilities.ts sc-dev-data-connections"
+    "  npx tsx scripts/backfill-allowed-visibilities.ts sc-dev-data-connections",
   );
   console.error(
-    "  MODE=cleanup npx tsx scripts/backfill-allowed-visibilities.ts sc-prod-data-connections"
+    "  MODE=cleanup npx tsx scripts/backfill-allowed-visibilities.ts sc-prod-data-connections",
   );
   console.error("");
   console.error("Environment variables:");
   console.error(
-    "  MODE        - 'backfill' (default, additive) or 'cleanup' (destructive)"
+    "  MODE        - 'backfill' (default, additive) or 'cleanup' (destructive)",
   );
   console.error("  AWS_REGION  - AWS region (default: us-east-1)");
   console.error("  AWS_PROFILE - AWS profile to use (optional)");
   console.error(
-    "  DRY_RUN     - Set (to anything) to preview changes without writing"
+    "  DRY_RUN     - Set (to anything) to preview changes without writing",
   );
 }
 
