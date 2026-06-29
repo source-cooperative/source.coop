@@ -284,6 +284,8 @@ describe("createDataConnection", () => {
       FORM_STATE,
       formDataFor({
         ...baseS3Fields,
+        // unsigned (no auth_type) ⇒ must be read-only
+        read_only: "on",
       })
     );
 
@@ -329,6 +331,8 @@ describe("createDataConnection", () => {
       FORM_STATE,
       formDataFor({
         ...baseS3Fields,
+        // unsigned (no auth_type) ⇒ must be read-only
+        read_only: "on",
       })
     );
 
@@ -347,6 +351,8 @@ describe("createDataConnection", () => {
       FORM_STATE,
       formDataFor({
         ...baseS3Fields,
+        // unsigned (no auth_type) ⇒ must be read-only
+        read_only: "on",
       })
     );
 
@@ -431,6 +437,8 @@ describe("updateDataConnection", () => {
       FORM_STATE,
       formDataFor({
         ...baseS3Fields,
+        // unsigned (no auth_type) ⇒ must be read-only
+        read_only: "on",
       })
     );
 
@@ -450,6 +458,8 @@ describe("updateDataConnection", () => {
       FORM_STATE,
       formDataFor({
         ...baseS3Fields,
+        // unsigned (no auth_type) ⇒ must be read-only
+        read_only: "on",
       })
     );
 
