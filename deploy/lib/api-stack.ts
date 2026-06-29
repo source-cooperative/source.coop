@@ -36,7 +36,7 @@ export class ApiStack extends cdk.Stack {
               : `assets.${props.stage}.source.coop`,
             allowedOrigins: ["*"],
             removalPolicy: cdk.RemovalPolicy.DESTROY,
-          }
+          },
     );
 
     // Create Vercel role with OIDC trust relationship
@@ -65,29 +65,27 @@ export class ApiStack extends cdk.Stack {
 
     // Platform-hosted opendata buckets the data proxy reads/writes for
     // connections backed by Source's own storage.
-    const writableBuckets = (
-      isProduction
-        ? [
-            "ap-northeast-1",
-            "ap-northeast-2",
-            "ap-northeast-3",
-            "ap-south-1",
-            "ap-southeast-1",
-            "ap-southeast-2",
-            "ca-central-1",
-            "eu-central-1",
-            "eu-north-1",
-            "eu-west-1",
-            "eu-west-2",
-            "eu-west-3",
-            "sa-east-1",
-            "us-east-1",
-            "us-east-2",
-            "us-west-1",
-            "us-west-2",
-          ]
-        : ["dev.us-west-2"]
-    ).map((region) => `${region}.opendata.source.coop`);
+    const writableBuckets = [
+      "ap-northeast-1",
+      "ap-northeast-2",
+      "ap-northeast-3",
+      "ap-south-1",
+      "ap-southeast-1",
+      "ap-southeast-2",
+      "ca-central-1",
+      "eu-central-1",
+      "eu-north-1",
+      "eu-west-1",
+      "eu-west-2",
+      "eu-west-3",
+      "sa-east-1",
+      "us-east-1",
+      "us-east-2",
+      "us-west-1",
+      "us-west-2",
+    ]
+      .map((region) => `${region}.opendata.source.coop`)
+      .map((bucket) => (isProduction ? bucket : `dev.${bucket}`));
 
     // AWS-side identity the data proxy assumes (web identity) to touch the
     // hosted buckets. Issuer mirrors the per-stage proxy hostname.
