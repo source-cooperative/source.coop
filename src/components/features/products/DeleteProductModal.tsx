@@ -149,32 +149,47 @@ export function DeleteProductModal({
 
         <Separator size="4" my="4" />
 
-        <Box mb="4">
-          <Text as="p" size="2" mb="2">
-            Deleting this product will:
-          </Text>
-          <ul style={{ margin: 0, paddingInlineStart: "1.25rem" }}>
-            <li>
-              <Text size="2">Remove the product record and its page</Text>
-            </li>
-            <li>
-              <Text size="2">Remove all of its memberships</Text>
-            </li>
-            <li>
-              {keepData ? (
-                <Text size="2" color="gray">
-                  Keep the underlying data in the connection
-                </Text>
-              ) : (
-                <Text size="2" color="red" weight="medium">
-                  Delete all underlying data in the connection
-                </Text>
-              )}
-            </li>
-          </ul>
-          <Text as="p" size="2" weight="medium" mt="2">
-            This can&rsquo;t be undone.
-          </Text>
+        <Box
+          mb="4"
+          p="3"
+          style={{
+            backgroundColor: "var(--red-2)",
+            border: "1px solid var(--red-6)",
+            borderRadius: "var(--radius-3)",
+          }}
+        >
+          <Flex gap="2" align="start">
+            <Text color="red" mt="1" style={{ lineHeight: 0 }}>
+              <ExclamationTriangleIcon />
+            </Text>
+            <Box>
+              <Text as="p" size="2" weight="bold" color="red" mb="2">
+                Deleting this product will:
+              </Text>
+              <ul style={{ margin: 0, paddingInlineStart: "1.25rem" }}>
+                <li>
+                  <Text size="2">Remove the product record and its page</Text>
+                </li>
+                <li>
+                  <Text size="2">Remove all of its memberships</Text>
+                </li>
+                <li>
+                  {keepData ? (
+                    <Text size="2" color="gray">
+                      Keep the underlying data in the connection
+                    </Text>
+                  ) : (
+                    <Text size="2" weight="medium">
+                      Delete all underlying data in the connection
+                    </Text>
+                  )}
+                </li>
+              </ul>
+              <Text as="p" size="2" weight="medium" color="red" mt="2">
+                This cannot be undone.
+              </Text>
+            </Box>
+          </Flex>
         </Box>
 
         <Flex gap="3" justify="end">
