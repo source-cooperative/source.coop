@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { Tooltip } from "@radix-ui/themes";
 import { CONFIG } from "@/lib/config";
 import Globe, { GlobeMethods } from "react-globe.gl";
 import {
@@ -565,14 +566,14 @@ export function LiveGlobe({
             {selected.products.length > 0 && (
               <div className={styles.popupProducts}>
                 {selected.products.map(([name, n]) => (
-                  <a
+                  <Tooltip
                     key={name}
-                    href={`/${name}`}
-                    className={styles.popupLink}
-                    title={`${n.toLocaleString()} ${n === 1 ? "request" : "requests"}`}
+                    content={`${n.toLocaleString()} ${n === 1 ? "request" : "requests"}`}
                   >
-                    {name}
-                  </a>
+                    <a href={`/${name}`} className={styles.popupLink}>
+                      {name}
+                    </a>
+                  </Tooltip>
                 ))}
               </div>
             )}
