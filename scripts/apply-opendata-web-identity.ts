@@ -6,21 +6,22 @@
  * `AssumeRoleWithWebIdentity`, so no long-lived credentials are stored (see
  * S3WebIdentityRoleAuthenticationSchema in src/types/data-connection.ts).
  *
- * Run once per environment table (staging, then prod):
- *   ROLE_ARN=arn:aws:iam::123456789012:role/SourceCoopOpenData \
+ * Run once per environment table. Staging buckets are named
+ * dev.*.opendata.source.coop, so scope to them with BUCKET_PREFIX=dev. :
+ *   ROLE_ARN=arn:aws:iam::123456789012:role/SourceCoopOpenData BUCKET_PREFIX=dev. \
  *     npx tsx scripts/apply-opendata-web-identity.ts sc-dev-data-connections
- *   ROLE_ARN=arn:aws:iam::123456789012:role/SourceCoopOpenData \
- *     npx tsx scripts/apply-opendata-web-identity.ts sc-prod-data-connections
  *
  * Idempotent: a connection already pointing at ROLE_ARN is left untouched.
  * Any other existing authentication on a matching bucket IS overwritten — the
  * point of this script is to switch every open-data bucket onto the one role.
  *
  * Environment variables:
- *   ROLE_ARN    - IAM role ARN the proxy assumes (required)
- *   AWS_REGION  - AWS region (default: us-east-1)
- *   AWS_PROFILE - AWS profile to use (optional)
- *   DRY_RUN     - Set (to anything) to preview changes without writing
+ *   ROLE_ARN      - IAM role ARN the proxy assumes (required)
+ *   BUCKET_PREFIX - Only touch buckets starting with this (e.g. "dev." for
+ *                   staging). Unset = every *.opendata.source.coop bucket.
+ *   AWS_REGION    - AWS region (default: us-east-1)
+ *   AWS_PROFILE   - AWS profile to use (optional)
+ *   DRY_RUN       - Set (to anything) to preview changes without writing
  *
  * Self-check (no AWS calls): npx tsx scripts/apply-opendata-web-identity.ts --self-check
  */
@@ -41,9 +42,15 @@ const IAM_ROLE_ARN_REGEX =
   /^arn:aws[a-z-]*:iam::\d{12}:role\/[A-Za-z0-9+=,.@/_-]+$/;
 
 // Bucket must end at a label boundary: "opendata.source.coop" itself or
-// "<x>.opendata.source.coop", never "myopendata.source.coop".
-function matchesOpenDataBucket(bucket: string | undefined): boolean {
+// "<x>.opendata.source.coop", never "myopendata.source.coop". An optional
+// prefix narrows further, e.g. "dev." to hit only staging's
+// dev.*.opendata.source.coop buckets.
+function matchesOpenDataBucket(
+  bucket: string | undefined,
+  prefix = "",
+): boolean {
   if (!bucket) return false;
+  if (prefix && !bucket.startsWith(prefix)) return false;
   return bucket === OPENDATA_SUFFIX || bucket.endsWith(`.${OPENDATA_SUFFIX}`);
 }
 
@@ -57,11 +64,17 @@ function isConditionalCheckFailed(err: unknown): boolean {
   return err instanceof Error && err.name === "ConditionalCheckFailedException";
 }
 
-async function apply(tableName: string, roleArn: string, dryRun: boolean) {
+async function apply(
+  tableName: string,
+  roleArn: string,
+  bucketPrefix: string,
+  dryRun: boolean,
+) {
   const region = process.env.AWS_REGION || "us-east-1";
 
   console.log(`Table:    ${tableName}`);
   console.log(`Role ARN: ${roleArn}`);
+  console.log(`Bucket:   ${bucketPrefix || "*"}.${OPENDATA_SUFFIX}`);
   console.log(`Region:   ${region}`);
   console.log(`Dry run:  ${dryRun}`);
   console.log("");
@@ -95,7 +108,7 @@ async function apply(tableName: string, roleArn: string, dryRun: boolean) {
     for (const item of items) {
       if (
         item.details?.provider !== "s3" ||
-        !matchesOpenDataBucket(item.details?.bucket)
+        !matchesOpenDataBucket(item.details?.bucket, bucketPrefix)
       ) {
         skipped++;
         continue;
@@ -168,6 +181,14 @@ function selfCheck() {
   ok(!matchesOpenDataBucket("myopendata.source.coop"), "label boundary");
   ok(!matchesOpenDataBucket(undefined), "missing bucket");
   ok(
+    matchesOpenDataBucket("dev.us-west-2.opendata.source.coop", "dev."),
+    "prefix match",
+  );
+  ok(
+    !matchesOpenDataBucket("prod.us-west-2.opendata.source.coop", "dev."),
+    "prefix excludes prod",
+  );
+  ok(
     IAM_ROLE_ARN_REGEX.test("arn:aws:iam::123456789012:role/SourceCoopOpenData"),
     "valid arn",
   );
@@ -182,16 +203,16 @@ function selfCheck() {
 
 function usage() {
   console.error(
-    "Usage: ROLE_ARN=<arn> [DRY_RUN=1] npx tsx scripts/apply-opendata-web-identity.ts <table-name>",
+    "Usage: ROLE_ARN=<arn> [BUCKET_PREFIX=dev.] [DRY_RUN=1] npx tsx scripts/apply-opendata-web-identity.ts <table-name>",
   );
   console.error("       npx tsx scripts/apply-opendata-web-identity.ts --self-check");
   console.error("");
   console.error("Examples:");
   console.error(
-    "  ROLE_ARN=arn:aws:iam::123456789012:role/SourceCoopOpenData npx tsx scripts/apply-opendata-web-identity.ts sc-dev-data-connections",
+    "  # staging: only dev.*.opendata.source.coop buckets",
   );
   console.error(
-    "  ROLE_ARN=arn:aws:iam::123456789012:role/SourceCoopOpenData npx tsx scripts/apply-opendata-web-identity.ts sc-prod-data-connections",
+    "  ROLE_ARN=arn:aws:iam::123456789012:role/SourceCoopOpenData BUCKET_PREFIX=dev. npx tsx scripts/apply-opendata-web-identity.ts sc-dev-data-connections",
   );
 }
 
@@ -218,9 +239,10 @@ if (!IAM_ROLE_ARN_REGEX.test(roleArn)) {
   process.exit(1);
 }
 
+const bucketPrefix = process.env.BUCKET_PREFIX || "";
 const dryRun = process.env.DRY_RUN !== undefined;
 
-apply(arg, roleArn, dryRun).catch((err) => {
+apply(arg, roleArn, bucketPrefix, dryRun).catch((err) => {
   console.error("apply failed:", err);
   process.exit(1);
 });
