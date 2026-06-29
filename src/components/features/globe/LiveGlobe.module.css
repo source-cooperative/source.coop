@@ -82,3 +82,19 @@
 .popupLink:hover {
   text-decoration: underline;
 }
+.popupProducts {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 6px;
+  white-space: normal;
+}
+.popupProducts .popupLink {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+.popupCount {
+  color: var(--gray-11, #6b6b6b);
+  font-variant-numeric: tabular-nums;
+}

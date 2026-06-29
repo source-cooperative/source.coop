@@ -24,18 +24,19 @@ import coloLocations from "./locations.json";
 
 interface LocationPoint {
   id: number;
+  colo: string;
   lat: number;
   lng: number;
   timestamp: number;
-  label: string;
-  location: string;
-  href: string;
+  location: string; // datacenter name, e.g. "Newark, NJ, United States"
+  count: number; // requests served from this datacenter in the latest window
+  products: [string, number][]; // top products: [account/product, request count]
 }
 
 interface SelectedPoint {
-  label: string;
   location: string;
-  href: string;
+  count: number;
+  products: [string, number][];
   x: number;
   y: number;
 }
@@ -53,10 +54,19 @@ const DOT_COLOR = "#75e58c";
 const DOT_SIZE = 8;
 const CLOUDS_ALT = 0.004;
 const CLOUDS_ROTATION_SPEED = -0.0025;
-const MAX_POINTS = 500;
+const MAX_DOT_SCALE = 3; // busiest-datacenter dot grows up to 3x the base size
 
 // Monotonic ID counter — shared across instances, but always unique
 let nextPointId = 0;
+
+// Cheap structural compare for the top-products list (≤5 entries) so the
+// selected popup only re-renders when its contents actually change.
+function sameProducts(a: [string, number][], b: [string, number][]) {
+  return (
+    a.length === b.length &&
+    a.every(([name, n], i) => b[i][0] === name && b[i][1] === n)
+  );
+}
 
 export function LiveGlobe({
   wsUrl,
@@ -209,9 +219,9 @@ export function LiveGlobe({
           prev &&
           prev.x === next.x &&
           prev.y === next.y &&
-          prev.label === next.label &&
           prev.location === next.location &&
-          prev.href === next.href
+          prev.count === next.count &&
+          sameProducts(prev.products, next.products)
         ) {
           return;
         }
@@ -234,9 +244,9 @@ export function LiveGlobe({
         if (coords) {
           const page = toPageCoords(coords.x, coords.y);
           updateSelected({
-            label: point.label,
             location: point.location,
-            href: point.href,
+            count: point.count,
+            products: point.products,
             x: page.x,
             y: page.y,
           });
@@ -325,19 +335,26 @@ export function LiveGlobe({
             const screenX = (_projVec.x * 0.5 + 0.5) * width;
             const screenY = (-_projVec.y * 0.5 + 0.5) * height;
 
+            // Scale the dot with request volume (log, so a few busy
+            // datacenters don't swamp the rest).
+            const scale =
+              1 + Math.min(MAX_DOT_SCALE - 1, Math.log10(1 + p.count) / 2);
+            const size = DOT_SIZE * scale;
             const age = now - p.timestamp;
             const ageFade = Math.max(0, 1 - age / DOT_TTL_MS);
             el.style.display = "";
-            el.style.transform = `translate(${screenX - DOT_SIZE / 2}px,${screenY - DOT_SIZE / 2}px)`;
+            el.style.width = `${size}px`;
+            el.style.height = `${size}px`;
+            el.style.transform = `translate(${screenX - size / 2}px,${screenY - size / 2}px)`;
             el.style.opacity = String(ageFade * edgeFade);
 
             // Update popup position if this point is selected (only when changed)
             if (p.id === selectedIdRef.current) {
               const page = toPageCoords(screenX, screenY);
               updateSelected({
-                label: p.label,
                 location: p.location,
-                href: p.href,
+                count: p.count,
+                products: p.products,
                 x: page.x,
                 y: page.y,
               });
@@ -450,31 +467,32 @@ export function LiveGlobe({
         reconnectDelay = 1000; // reset backoff on successful message
         try {
           const msg = JSON.parse(event.data);
-          if (msg.type !== "location") return;
-          const { account_id, product_id, colo } = msg.data;
-          const parts = [account_id, product_id].filter(Boolean);
-          const coloEntry =
-            colo &&
-            coloLocations[colo as keyof typeof coloLocations];
-          if (!coloEntry?.lat || !coloEntry?.lon) return;
-          const current = pointsRef.current;
-          const trimmed =
-            current.length >= MAX_POINTS
-              ? current.slice(current.length - MAX_POINTS + 1)
-              : current;
-          pointsRef.current = [
-            ...trimmed,
-            {
-              id: nextPointId++,
-              lat: coloEntry.lat,
-              lng: coloEntry.lon,
-              timestamp: Date.now(),
-              label: parts.length > 0 ? `GET /${parts.join("/")}` : "",
-              location: coloEntry ? coloEntry.name : "",
-              href:
-                account_id && product_id ? `/${account_id}/${product_id}` : "",
-            },
-          ];
+          if (msg.type !== "tick" || !Array.isArray(msg.locations)) return;
+          const now = Date.now();
+          // Key dots by datacenter so repeat activity refreshes the same dot
+          // instead of stacking new ones. Datacenters absent from this tick
+          // keep their old timestamp and age out via DOT_TTL_MS in animate().
+          const byColo = new Map(pointsRef.current.map((p) => [p.colo, p]));
+          for (const loc of msg.locations) {
+            const entry = coloLocations[
+              loc.colo as keyof typeof coloLocations
+            ] as { lat: number; lon: number; name: string } | undefined;
+            if (!entry || typeof entry.lat !== "number") continue;
+            byColo.set(loc.colo, {
+              id: byColo.get(loc.colo)?.id ?? nextPointId++,
+              colo: loc.colo,
+              lat: entry.lat,
+              lng: entry.lon,
+              timestamp: now,
+              location: entry.name,
+              count: loc.n ?? 0,
+              products: Array.isArray(loc.p) ? loc.p : [],
+            });
+          }
+          // Sort oldest-first so the prune early-exit in animate() holds.
+          pointsRef.current = [...byColo.values()].sort(
+            (a, b) => a.timestamp - b.timestamp,
+          );
         } catch {
           // Ignore malformed messages
         }
@@ -536,11 +554,21 @@ export function LiveGlobe({
             {selected.location && (
               <div className={styles.popupLocation}>{selected.location}</div>
             )}
-            <div className={styles.popupLabel}>{selected.label}</div>
-            {selected.href && (
-              <a href={selected.href} className={styles.popupLink}>
-                View product &rarr;
-              </a>
+            <div className={styles.popupLabel}>
+              {selected.count.toLocaleString()}{" "}
+              {selected.count === 1 ? "request" : "requests"}
+            </div>
+            {selected.products.length > 0 && (
+              <div className={styles.popupProducts}>
+                {selected.products.map(([name, n]) => (
+                  <a key={name} href={`/${name}`} className={styles.popupLink}>
+                    {name}
+                    <span className={styles.popupCount}>
+                      {n.toLocaleString()}
+                    </span>
+                  </a>
+                ))}
+              </div>
             )}
           </div>,
           document.body,

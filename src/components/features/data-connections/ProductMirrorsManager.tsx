@@ -19,6 +19,9 @@ interface ProductMirrorsManagerProps {
   product: Product;
   availableConnections: DataConnectionOption[];
   isAdmin: boolean;
+  // Connection ids owned by the product owner; their admin form is reachable
+  // even by non-admins, so we render the link for them.
+  ownedConnectionIds: string[];
 }
 
 // Distinct color per backend so GCS isn't confused with Azure. minio/ceph are
@@ -45,7 +48,9 @@ export function ProductMirrorsManager({
   product,
   availableConnections,
   isAdmin,
+  ownedConnectionIds,
 }: ProductMirrorsManagerProps) {
+  const ownedConnections = new Set(ownedConnectionIds);
   const [addState, addAction, addPending] = useActionState(
     addProductMirror,
     emptyFormState
@@ -109,7 +114,7 @@ export function ProductMirrorsManager({
                 <Table.Cell>
                   <Flex align="center" gap="2">
                     <Code size="2">{mirror.connection_id}</Code>
-                    {isAdmin && (
+                    {(isAdmin || ownedConnections.has(mirror.connection_id)) && (
                       <Link
                         href={adminDataConnectionEditUrl(mirror.connection_id)}
                         aria-label={`Manage ${mirror.connection_id} in the admin data connections view`}

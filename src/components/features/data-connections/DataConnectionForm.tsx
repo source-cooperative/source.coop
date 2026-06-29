@@ -309,7 +309,8 @@ export function DataConnectionForm({
         <Field
           label="Read Only"
           name="read_only"
-          description="Prevents products from writing or modifying data through this connection — browse and download only."
+          description="Prevents products from writing or modifying data through this connection — browse and download only. Required for unsigned (no-auth) connections."
+          errors={state.fieldErrors?.read_only}
         >
           <Flex align="center" gap="2" asChild>
             <label>
