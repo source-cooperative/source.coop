@@ -15,10 +15,6 @@ export const CONFIG = {
     region: "us-east-1",
   } as StorageConfig,
 
-  uploads: {
-    accessRoleArn: process.env.AWS_UPLOAD_ACCESS_ROLE_ARN,
-  },
-
   // Assets (profile images, etc.) configuration
   assets: {
     bucket: process.env.ASSETS_BUCKET,
