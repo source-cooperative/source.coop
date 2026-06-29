@@ -105,9 +105,11 @@ const getIframeAttributes = async (
         style: { border: "1px solid var(--gray-5)" },
       };
     case "json":
+    case "jsonl":
+    case "ndjson":
       return {
         src: `https://source-cooperative.github.io/json-viewer/?url=${url}`,
-        style: { border: "none" },
+        style: { border: "1px solid var(--gray-5)" },
       };
     default:
       return null;
