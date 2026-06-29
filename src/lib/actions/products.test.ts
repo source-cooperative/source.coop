@@ -442,6 +442,21 @@ describe("deleteProduct", () => {
     expect(getStorageClient).not.toHaveBeenCalled();
   });
 
+  test("allows keeping data on a read-only connection without rejection", async () => {
+    // Read-only + no owner + non-admin would normally be rejected, but a
+    // read-only connection's data is never deleted, so preserving is always OK.
+    (productsTable.fetchById as jest.Mock).mockResolvedValue(productWithMirror());
+    (dataConnectionsTable.fetchById as jest.Mock).mockResolvedValue({
+      read_only: true,
+    });
+
+    const result = await deleteProduct("alice", "my-product", true);
+
+    expect(result.success).toBe(true);
+    expect(deleteByPrefix).not.toHaveBeenCalled();
+    expect(productsTable.delete).toHaveBeenCalledWith("alice", "my-product");
+  });
+
   test("rejects keeping data on a system connection for a non-admin", async () => {
     (productsTable.fetchById as jest.Mock).mockResolvedValue(productWithMirror());
     // System connection: no owner. Non-admin (default).

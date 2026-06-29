@@ -454,10 +454,14 @@ export async function deleteProduct(
       ? await dataConnectionsTable.fetchById(primaryMirror.connection_id)
       : undefined;
 
-    // Keeping the underlying data is allowed only for non-system (account-owned)
-    // connections, or for admins on any connection. On system-managed storage a
-    // regular user must remove the data so we don't orphan platform objects.
-    const canPreserveData = !!dataConnection?.owner || isAdmin(session);
+    // Keeping the underlying data is allowed for non-system (account-owned)
+    // connections, for admins, or whenever the connection is read-only — its
+    // data is never ours to delete. On system-managed storage a regular user
+    // must remove the data so we don't orphan platform objects.
+    const canPreserveData =
+      !!dataConnection?.read_only ||
+      !!dataConnection?.owner ||
+      isAdmin(session);
     if (preserveData && !canPreserveData) {
       return {
         success: false,

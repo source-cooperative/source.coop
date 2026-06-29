@@ -7,8 +7,12 @@ import {
   TextField,
   Text,
   Flex,
+  Box,
+  Card,
+  Code,
   Callout,
   Checkbox,
+  Tooltip,
   Separator,
 } from "@radix-ui/themes";
 import { TrashIcon, ExclamationTriangleIcon } from "@radix-ui/react-icons";
@@ -25,12 +29,18 @@ interface DeleteProductModalProps {
    * or for admins; the server re-checks this regardless of what the UI sends.
    */
   canPreserveData?: boolean;
+  /**
+   * When true the connection is read-only, so Source never deletes its data:
+   * the keep-data option is forced on and locked.
+   */
+  dataReadOnly?: boolean;
 }
 
 export function DeleteProductModal({
   accountId,
   productId,
   canPreserveData = false,
+  dataReadOnly = false,
 }: DeleteProductModalProps) {
   const [open, setOpen] = useState(false);
   const [confirmText, setConfirmText] = useState("");
@@ -41,6 +51,9 @@ export function DeleteProductModal({
 
   const expectedText = `${accountId}/${productId}`;
   const isConfirmed = confirmText === expectedText;
+  // Read-only connections force-keep their data; otherwise honor the checkbox.
+  const keepData = dataReadOnly || preserveData;
+  const showKeepOption = canPreserveData || dataReadOnly;
 
   const handleOpenChange = (next: boolean) => {
     if (!isPending) {
@@ -57,11 +70,7 @@ export function DeleteProductModal({
     if (!isConfirmed) return;
     setError(null);
     startTransition(async () => {
-      const result = await deleteProduct(
-        accountId,
-        productId,
-        canPreserveData && preserveData
-      );
+      const result = await deleteProduct(accountId, productId, keepData);
       if (result.success) {
         router.push(accountUrl(accountId));
       } else {
@@ -79,70 +88,94 @@ export function DeleteProductModal({
         </Button>
       </Dialog.Trigger>
 
-      <Dialog.Content maxWidth="500px">
-        <Dialog.Title>Delete Product</Dialog.Title>
+      <Dialog.Content maxWidth="520px">
+        <Dialog.Title mb="4">Delete Product</Dialog.Title>
 
-        <Callout.Root color="red" mb="4">
-          <Callout.Icon>
-            <ExclamationTriangleIcon />
-          </Callout.Icon>
-          <Callout.Text>
-            <Text weight="bold">This action is irreversible.</Text>{" "}
-            {preserveData ? (
-              <>
-                The product record and all memberships will be permanently
-                deleted. The underlying data in the connection will be kept.
-              </>
-            ) : (
-              <>
-                All product data stored in the associated data connection will be
-                permanently deleted, along with all memberships and the product
-                record itself.
-              </>
-            )}
-          </Callout.Text>
-        </Callout.Root>
+        <Flex direction="column" gap="4">
+          {showKeepOption && (
+            <Card asChild>
+              <label>
+                <Tooltip
+                  content="This connection is read-only, so Source won't delete its underlying data."
+                  // Only meaningful when the option is locked on.
+                  open={dataReadOnly ? undefined : false}
+                >
+                  <Flex gap="3" align="start">
+                    <Checkbox
+                      mt="1"
+                      checked={keepData}
+                      onCheckedChange={(checked) =>
+                        setPreserveData(checked === true)
+                      }
+                      disabled={isPending || dataReadOnly}
+                    />
+                    <Box>
+                      <Text as="div" size="2" weight="medium">
+                        Delete the product record only
+                      </Text>
+                      <Text as="div" size="2" color="gray">
+                        {dataReadOnly
+                          ? "This connection is read-only, so its underlying data is always kept."
+                          : "Remove the product and its memberships, but keep the underlying data in the connection."}
+                      </Text>
+                    </Box>
+                  </Flex>
+                </Tooltip>
+              </label>
+            </Card>
+          )}
 
-        {canPreserveData && (
-          <Text as="label" size="2" mb="4">
-            <Flex gap="2">
-              <Checkbox
-                checked={preserveData}
-                onCheckedChange={(checked) => setPreserveData(checked === true)}
-                disabled={isPending}
-              />
-              Delete the product record only — keep the underlying data in the
-              connection.
-            </Flex>
+          <Box>
+            <Text as="p" size="2" mb="2">
+              To confirm, type <Code>{expectedText}</Code> below:
+            </Text>
+            <TextField.Root
+              placeholder={expectedText}
+              value={confirmText}
+              onChange={(e) => setConfirmText(e.target.value)}
+              disabled={isPending}
+            />
+          </Box>
+
+          {error && (
+            <Callout.Root color="red">
+              <Callout.Icon>
+                <ExclamationTriangleIcon />
+              </Callout.Icon>
+              <Callout.Text>{error}</Callout.Text>
+            </Callout.Root>
+          )}
+        </Flex>
+
+        <Separator size="4" my="4" />
+
+        <Box mb="4">
+          <Text as="p" size="2" mb="2">
+            Deleting this product will:
           </Text>
-        )}
-
-        <Text as="p" size="2" mb="3">
-          To confirm, type{" "}
-          <Text as="span" size="2" weight="bold" style={{ fontFamily: "monospace" }}>
-            {expectedText}
-          </Text>{" "}
-          below:
-        </Text>
-
-        <TextField.Root
-          placeholder={expectedText}
-          value={confirmText}
-          onChange={(e) => setConfirmText(e.target.value)}
-          disabled={isPending}
-          mb="4"
-        />
-
-        {error && (
-          <Callout.Root color="red" mb="4">
-            <Callout.Icon>
-              <ExclamationTriangleIcon />
-            </Callout.Icon>
-            <Callout.Text>{error}</Callout.Text>
-          </Callout.Root>
-        )}
-
-        <Separator size="4" mb="4" />
+          <ul style={{ margin: 0, paddingInlineStart: "1.25rem" }}>
+            <li>
+              <Text size="2">Remove the product record and its page</Text>
+            </li>
+            <li>
+              <Text size="2">Remove all of its memberships</Text>
+            </li>
+            <li>
+              {keepData ? (
+                <Text size="2" color="gray">
+                  Keep the underlying data in the connection
+                </Text>
+              ) : (
+                <Text size="2" color="red" weight="medium">
+                  Delete all underlying data in the connection
+                </Text>
+              )}
+            </li>
+          </ul>
+          <Text as="p" size="2" weight="medium" mt="2">
+            This can&rsquo;t be undone.
+          </Text>
+        </Box>
 
         <Flex gap="3" justify="end">
           <Dialog.Close>

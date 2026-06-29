@@ -86,6 +86,7 @@ export default async function DetailsPage({ params }: PageProps) {
               accountId={account_id}
               productId={product_id}
               canPreserveData={canPreserveData}
+              dataReadOnly={!!connection?.read_only}
             />
           </Box>
         </>
