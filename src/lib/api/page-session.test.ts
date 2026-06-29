@@ -1,5 +1,5 @@
 /** @jest-environment node */
-import { NextRequest } from "next/server";
+jest.mock("server-only", () => ({}));
 
 jest.mock("@ory/client-fetch", () => {
   const toSession = jest.fn();
@@ -21,9 +21,7 @@ jest.mock("@ory/client-fetch", () => {
   };
 });
 
-jest.mock("next/headers", () => ({
-  headers: async () => ({ get: () => "ory_session=stuck" }),
-}));
+jest.mock("next/headers", () => ({ headers: jest.fn() }));
 jest.mock("next/navigation", () => ({
   // Mirror next/navigation: redirect() signals via a thrown NEXT_REDIRECT.
   redirect: jest.fn(() => {
@@ -31,20 +29,13 @@ jest.mock("next/navigation", () => ({
   }),
 }));
 
-// utils.ts pulls these in at import time; the AAL2 error path short-circuits
-// before any of them are touched, so empty stubs are enough.
-jest.mock("@/lib/clients/database", () => ({
-  accountsTable: { fetchByOryId: jest.fn() },
-  membershipsTable: { listByUser: jest.fn() },
-  isIndividualAccount: jest.fn(),
-}));
-jest.mock("@/lib/api/oidc", () => ({ authenticateWithOidcToken: jest.fn() }));
-
 import { ResponseError } from "@ory/client-fetch";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { getApiSession, getPageSession } from "@/lib/api/utils";
+import { redirectIfStepUpRequired } from "@/lib/api/page-session";
 
 const { __toSession: mockToSession } = jest.requireMock("@ory/client-fetch");
+const mockHeaders = headers as jest.Mock;
 
 const aal2Error = (status = 403) =>
   new ResponseError({
@@ -52,27 +43,36 @@ const aal2Error = (status = 403) =>
     json: async () => ({ error: { id: "session_aal2_required" } }),
   });
 
+beforeEach(() => {
+  mockHeaders.mockResolvedValue({ get: () => "ory_session_abc=1" });
+});
 afterEach(() => jest.clearAllMocks());
 
-describe("AAL2 step-up handling", () => {
-  test("page render signs the user out (redirect /logout)", async () => {
+describe("redirectIfStepUpRequired", () => {
+  test("signs the user out on session_aal2_required", async () => {
     mockToSession.mockRejectedValue(aal2Error());
-    await expect(getPageSession()).rejects.toThrow("NEXT_REDIRECT");
+    await expect(redirectIfStepUpRequired()).rejects.toThrow("NEXT_REDIRECT");
     expect(redirect).toHaveBeenCalledWith("/logout");
   });
 
-  test("API path returns null (→ 401), never redirects", async () => {
-    mockToSession.mockRejectedValue(aal2Error());
-    const req = new NextRequest("http://localhost/api/v1/whoami");
-    await expect(getApiSession(req)).resolves.toBeNull();
+  test("does nothing for a valid session", async () => {
+    mockToSession.mockResolvedValue({ identity: { id: "u" } });
+    await redirectIfStepUpRequired();
     expect(redirect).not.toHaveBeenCalled();
   });
 
-  test("plain 401 returns null without redirecting", async () => {
+  test("does nothing on a plain 401", async () => {
     mockToSession.mockRejectedValue(
       new ResponseError({ status: 401, json: async () => ({}) }),
     );
-    await expect(getPageSession()).resolves.toBeNull();
+    await redirectIfStepUpRequired();
+    expect(redirect).not.toHaveBeenCalled();
+  });
+
+  test("skips the whoami when no Ory session cookie is present", async () => {
+    mockHeaders.mockResolvedValue({ get: () => "theme=dark" });
+    await redirectIfStepUpRequired();
+    expect(mockToSession).not.toHaveBeenCalled();
     expect(redirect).not.toHaveBeenCalled();
   });
 });
