@@ -89,12 +89,11 @@
   margin-top: 6px;
   white-space: normal;
 }
+/* Just the product name per row; the request count rides on the link's
+   title tooltip. Truncate long names instead of wrapping. */
 .popupProducts .popupLink {
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-}
-.popupCount {
-  color: var(--gray-11, #6b6b6b);
-  font-variant-numeric: tabular-nums;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
