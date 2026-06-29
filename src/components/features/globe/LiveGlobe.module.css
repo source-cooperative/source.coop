@@ -89,11 +89,28 @@
   margin-top: 6px;
   white-space: normal;
 }
-/* Just the product name per row; the request count rides on the link's
-   title tooltip. Truncate long names instead of wrapping. */
+/* Product name (truncated) + a trailing arrow that always stays visible to
+   signal the row is a link. */
 .popupProducts .popupLink {
-  display: block;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.popupName {
+  flex: 0 1 auto;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.popupArrow {
+  flex: none;
+  color: var(--gray-11, #6b6b6b);
+}
+/* Radix copies the tooltip Content's computed z-index onto its body-level
+   popper wrapper; without this it inherits auto and renders behind the popup
+   (z-index:20). position:relative makes the z-index take effect so it's read. */
+.tooltipContent {
+  position: relative;
+  z-index: 30;
 }

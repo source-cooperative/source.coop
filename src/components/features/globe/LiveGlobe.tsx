@@ -568,10 +568,14 @@ export function LiveGlobe({
                 {selected.products.map(([name, n]) => (
                   <Tooltip
                     key={name}
+                    className={styles.tooltipContent}
                     content={`${n.toLocaleString()} ${n === 1 ? "request" : "requests"}`}
                   >
                     <a href={`/${name}`} className={styles.popupLink}>
-                      {name}
+                      <span className={styles.popupName}>{name}</span>
+                      <span className={styles.popupArrow} aria-hidden="true">
+                        →
+                      </span>
                     </a>
                   </Tooltip>
                 ))}
