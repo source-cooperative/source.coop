@@ -704,9 +704,17 @@ function readRepositoryData(
     return true;
   }
 
-  // If the repository is disabled, they are not authorized
+  // A deactivated product stays visible to its owners and maintainers — the
+  // same people who can deactivate it — but is hidden from everyone else,
+  // including ReadData members and public/unlisted viewers. (Re-activating a
+  // deactivated product remains admin-only; see putRepository.)
   if (product.disabled) {
-    return false;
+    return hasRole(
+      principal,
+      [MembershipRole.Owners, MembershipRole.Maintainers],
+      product.account_id,
+      product.product_id
+    );
   }
 
   // If the repository is public or unlisted, everyone is authorized
@@ -747,9 +755,17 @@ function getRepository(
     return true;
   }
 
-  // If the repository is disabled, they are not authorized
+  // A deactivated product stays visible to its owners and maintainers — the
+  // same people who can deactivate it — but is hidden from everyone else,
+  // including ReadData members and public/unlisted viewers. (Re-activating a
+  // deactivated product remains admin-only; see putRepository.)
   if (product.disabled) {
-    return false;
+    return hasRole(
+      principal,
+      [MembershipRole.Owners, MembershipRole.Maintainers],
+      product.account_id,
+      product.product_id
+    );
   }
 
   // If the repository is public or unlisted, everyone is authorized

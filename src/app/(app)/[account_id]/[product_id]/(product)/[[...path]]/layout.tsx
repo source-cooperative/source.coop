@@ -60,8 +60,9 @@ export default async function ProductLayout({
   return (
     <>
       <ProductSchemaMetadata product={product} />
-      {/* Deactivated products are visible only to admins (backend authz 404s
-          everyone else) — make that state unmistakable. */}
+      {/* A deactivated product is visible only to its owners/maintainers and
+          admins (backend authz 404s everyone else) — make that state
+          unmistakable to whoever can see it. */}
       {product.disabled && (
         <Box mt="4">
           <Callout.Root color="amber" role="alert">
@@ -69,8 +70,8 @@ export default async function ProductLayout({
               <ExclamationTriangleIcon />
             </Callout.Icon>
             <Callout.Text>
-              This product is deactivated. It is hidden from everyone except
-              administrators.
+              This product is deactivated. It is hidden from everyone except its
+              owners and administrators.
             </Callout.Text>
           </Callout.Root>
         </Box>

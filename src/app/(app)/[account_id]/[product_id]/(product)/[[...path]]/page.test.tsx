@@ -287,9 +287,10 @@ describe("ProductPathPage authenticated-read gate for deactivated products", () 
   });
 
   it("routes a deactivated product through ProxyCredentialsGate regardless of visibility", async () => {
-    // A disabled product is reachable only by admins, and the proxy won't serve
-    // its data anonymously — even a *public* disabled product must mint signed
-    // credentials rather than attempt an anonymous read.
+    // A disabled product is reachable only by its owners/maintainers and
+    // admins, and the proxy won't serve its data anonymously — even a *public*
+    // disabled product must mint signed credentials rather than attempt an
+    // anonymous read.
     (productsTable.fetchById as jest.Mock).mockResolvedValue({
       product_id: "test-product",
       visibility: "public",
