@@ -54,8 +54,8 @@ import { LOGGER } from "@/lib/logging";
 // does NOT swallow the 403 `session_aal2_required` case. That happens when Ory
 // wants an AAL1 session stepped up to AAL2 (e.g. the identity has a second
 // factor configured); whoami then 403s on every request and refreshing never
-// clears it because the same AAL1 cookie is resent. Sign the user out so they
-// can start fresh instead of looping through login.
+// clears it because the same AAL1 cookie is resent. On a page render we sign
+// the user out so they can start fresh instead of looping through login.
 // ponytail: reimplements the lib's one-line client because it hard-catches the
 // error we need to branch on.
 const oryFrontend = new FrontendApi(
@@ -65,16 +65,20 @@ const oryFrontend = new FrontendApi(
   }),
 );
 
-async function getOrySession(): Promise<Session | null> {
+// `redirectOnStepUp` is page-only: a `redirect()` throws NEXT_REDIRECT, which
+// API route handlers wrap in try/catch and turn into a 500. So API callers pass
+// false and get a null session (→ 401) instead of an HTML logout redirect.
+async function getOrySession(redirectOnStepUp: boolean): Promise<Session | null> {
   const cookie = (await headers()).get("cookie") ?? undefined;
   try {
     return await oryFrontend.toSession({ cookie });
   } catch (err) {
-    if (err instanceof ResponseError && err.response.status === 403) {
-      const body = await err.response
-        .clone()
-        .json()
-        .catch(() => null);
+    if (
+      redirectOnStepUp &&
+      err instanceof ResponseError &&
+      err.response.status === 403
+    ) {
+      const body = await err.response.json().catch(() => null);
       if (body?.error?.id === "session_aal2_required") {
         redirect("/logout"); // stuck AAL1 session — clear it (throws NEXT_REDIRECT)
       }
@@ -120,8 +124,9 @@ export async function getApiSession(
     },
   );
 
-  // Fall back to page session (ie cookie-based authentication)
-  return getPageSession();
+  // Fall back to page session (ie cookie-based authentication). API clients get
+  // a null session (→ 401) for a stuck AAL1 cookie, never a browser redirect.
+  return getPageSession({ redirectOnStepUp: false });
 }
 
 /**
@@ -129,8 +134,10 @@ export async function getApiSession(
  *
  * @returns A Promise that resolves to a UserSession object if a valid session exists, or null if not authenticated.
  */
-export async function getPageSession(): Promise<UserSession | null> {
-  const orySession = await getOrySession();
+export async function getPageSession({
+  redirectOnStepUp = true,
+}: { redirectOnStepUp?: boolean } = {}): Promise<UserSession | null> {
+  const orySession = await getOrySession(redirectOnStepUp);
   if (!orySession) {
     return null;
   }
