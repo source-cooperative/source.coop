@@ -1,6 +1,10 @@
 /** @jest-environment node */
 import { Actions } from "@/types";
-import { productsTable, dataConnectionsTable } from "@/lib/clients/database";
+import {
+  productsTable,
+  dataConnectionsTable,
+  membershipsTable,
+} from "@/lib/clients/database";
 import { getPageSession } from "@/lib";
 import { isAuthorized } from "@/lib/api/authz";
 import { productUrl } from "@/lib/urls";
@@ -10,8 +14,10 @@ jest.mock("@/lib/clients/database", () => ({
     create: jest.fn(),
     update: jest.fn(),
     fetchById: jest.fn(),
+    delete: jest.fn(),
   },
   dataConnectionsTable: { fetchById: jest.fn() },
+  membershipsTable: { deleteByProduct: jest.fn() },
 }));
 
 jest.mock("@/lib", () => ({
@@ -34,9 +40,10 @@ jest.mock("next/cache", () => ({
 jest.mock("@/lib/urls", () => ({
   productUrl: jest.fn(() => "/account/product"),
   editProductDetailsUrl: jest.fn(() => "/edit"),
+  accountUrl: jest.fn(() => "/account"),
 }));
 
-const { createProduct, updateProduct } = require("./products");
+const { createProduct, updateProduct, deleteProduct } = require("./products");
 
 const SESSION = {
   identity_id: "user-1",
@@ -346,5 +353,26 @@ describe("updateProduct", () => {
     expect(result.success).toBe(true);
     const updated = (productsTable.update as jest.Mock).mock.calls[0][0];
     expect(updated.disabled).toBe(false);
+  });
+});
+
+describe("deleteProduct", () => {
+  beforeEach(() => {
+    jest.resetAllMocks();
+    (getPageSession as jest.Mock).mockResolvedValue(SESSION);
+    (isAuthorized as jest.Mock).mockReturnValue(true);
+    (productsTable.fetchById as jest.Mock).mockResolvedValue(currentProduct());
+    (membershipsTable.deleteByProduct as jest.Mock).mockResolvedValue(undefined);
+  });
+
+  test("surfaces the underlying failure reason instead of a generic message", async () => {
+    (productsTable.delete as jest.Mock).mockRejectedValue(
+      new Error("Access Denied")
+    );
+
+    const result = await deleteProduct("alice", "my-product");
+
+    expect(result.success).toBe(false);
+    expect(result.error).toBe("Failed to delete product: Access Denied");
   });
 });

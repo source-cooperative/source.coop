@@ -15,7 +15,7 @@ import { getPageSession, LOGGER } from "@/lib";
 import { FormState } from "@/components/core/DynamicForm";
 import { isAuthorized } from "../api/authz";
 import { revalidatePath } from "next/cache";
-import { productUrl, editProductDetailsUrl } from "@/lib/urls";
+import { productUrl, editProductDetailsUrl, accountUrl } from "@/lib/urls";
 import { S3Client, ListObjectsV2Command, DeleteObjectsCommand } from "@aws-sdk/client-s3";
 import { CONFIG } from "@/lib/config";
 
@@ -522,6 +522,12 @@ export async function deleteProduct(
       metadata: { account_id, product_id },
     });
 
+    // Drop cached pages for the deleted product and the account listing it
+    // appeared on, so other users stop seeing the now-removed product.
+    revalidatePath(productUrl(account_id, product_id));
+    revalidatePath(editProductDetailsUrl(account_id, product_id));
+    revalidatePath(accountUrl(account_id));
+
     return { success: true };
   } catch (error) {
     LOGGER.error("Error deleting product", {
@@ -531,6 +537,9 @@ export async function deleteProduct(
       metadata: { account_id, product_id },
     });
 
-    return { success: false, error: "Failed to delete product. Please try again." };
+    // Surface the underlying cause (e.g. S3 "Access Denied") instead of a
+    // generic "try again" — most failures here are not transient.
+    const reason = error instanceof Error ? error.message : "Unknown error";
+    return { success: false, error: `Failed to delete product: ${reason}` };
   }
 }
