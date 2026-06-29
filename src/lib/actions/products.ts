@@ -16,8 +16,9 @@ import { FormState } from "@/components/core/DynamicForm";
 import { isAuthorized } from "../api/authz";
 import { revalidatePath } from "next/cache";
 import { productUrl, editProductDetailsUrl, accountUrl } from "@/lib/urls";
-import { S3Client, ListObjectsV2Command, DeleteObjectsCommand } from "@aws-sdk/client-s3";
-import { CONFIG } from "@/lib/config";
+import { getProxyCredentials } from "@/lib/actions/proxy-credentials";
+import { readProxyCredentials } from "@/lib/services/proxy-credentials-read";
+import { getStorageClient } from "@/lib/clients/storage";
 
 // Map a data connection's storage provider to the product mirror's storage_type.
 const STORAGE_TYPE_BY_PROVIDER: Record<
@@ -426,48 +427,6 @@ export async function updateProduct(
   }
 }
 
-async function deleteAllS3Objects(
-  client: S3Client,
-  bucket: string,
-  prefix: string
-): Promise<void> {
-  let continuationToken: string | undefined;
-
-  do {
-    const listResult = await client.send(
-      new ListObjectsV2Command({
-        Bucket: bucket,
-        Prefix: prefix,
-        ContinuationToken: continuationToken,
-        MaxKeys: 1000,
-      })
-    );
-
-    const objects = listResult.Contents ?? [];
-    if (objects.length > 0) {
-      const deleteResult = await client.send(
-        new DeleteObjectsCommand({
-          Bucket: bucket,
-          Delete: {
-            Objects: objects.map((obj) => ({ Key: obj.Key! })),
-            Quiet: true,
-          },
-        })
-      );
-      if (deleteResult.Errors?.length) {
-        throw new Error(
-          `Failed to delete ${deleteResult.Errors.length} S3 object(s): ` +
-            deleteResult.Errors.map((e) => e.Key).join(", ")
-        );
-      }
-    }
-
-    continuationToken = listResult.IsTruncated
-      ? listResult.NextContinuationToken
-      : undefined;
-  } while (continuationToken);
-}
-
 export async function deleteProduct(
   account_id: string,
   product_id: string
@@ -496,20 +455,18 @@ export async function deleteProduct(
         primaryMirror.connection_id
       );
 
+      // Read-only connections mirror data we don't own — never delete their
+      // objects. For owned connections, delete through the data proxy with the
+      // user's STS credentials (the same path reads/uploads use), so the proxy
+      // enforces per-object authz instead of falling back to platform IAM creds.
+      // The proxy fronts every backend (S3/GCP/Azure), so there's no per-provider
+      // branch — and it addresses objects as bucket=account_id, key=product_id/…
       if (dataConnection && !dataConnection.read_only) {
-        if (dataConnection.details.provider === DataProvider.S3) {
-          // TODO: Replace IAM credentials with user's credentials via data proxy
-          const s3Client = new S3Client({
-            region: dataConnection.details.region,
-            credentials: CONFIG.database.credentials,
-          });
-
-          await deleteAllS3Objects(
-            s3Client,
-            dataConnection.details.bucket,
-            primaryMirror.prefix
-          );
-        }
+        const credentials =
+          (await readProxyCredentials()) ??
+          (await getProxyCredentials(session.identity_id));
+        const storage = await getStorageClient(credentials);
+        await storage.deleteByPrefix(account_id, `${product_id}/`);
       }
     }
 

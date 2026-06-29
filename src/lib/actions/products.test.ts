@@ -8,6 +8,9 @@ import {
 import { getPageSession } from "@/lib";
 import { isAuthorized } from "@/lib/api/authz";
 import { productUrl } from "@/lib/urls";
+import { getProxyCredentials } from "@/lib/actions/proxy-credentials";
+import { readProxyCredentials } from "@/lib/services/proxy-credentials-read";
+import { getStorageClient } from "@/lib/clients/storage";
 
 jest.mock("@/lib/clients/database", () => ({
   productsTable: {
@@ -41,6 +44,18 @@ jest.mock("@/lib/urls", () => ({
   productUrl: jest.fn(() => "/account/product"),
   editProductDetailsUrl: jest.fn(() => "/edit"),
   accountUrl: jest.fn(() => "/account"),
+}));
+
+jest.mock("@/lib/actions/proxy-credentials", () => ({
+  getProxyCredentials: jest.fn(),
+}));
+
+jest.mock("@/lib/services/proxy-credentials-read", () => ({
+  readProxyCredentials: jest.fn(),
+}));
+
+jest.mock("@/lib/clients/storage", () => ({
+  getStorageClient: jest.fn(),
 }));
 
 const { createProduct, updateProduct, deleteProduct } = require("./products");
@@ -357,12 +372,33 @@ describe("updateProduct", () => {
 });
 
 describe("deleteProduct", () => {
+  function productWithMirror() {
+    return currentProduct({
+      metadata: {
+        primary_mirror: "conn-1",
+        mirrors: { "conn-1": { connection_id: "conn-1", prefix: "alice/my-product/" } },
+      },
+    });
+  }
+
+  let deleteByPrefix: jest.Mock;
+
   beforeEach(() => {
     jest.resetAllMocks();
     (getPageSession as jest.Mock).mockResolvedValue(SESSION);
     (isAuthorized as jest.Mock).mockReturnValue(true);
     (productsTable.fetchById as jest.Mock).mockResolvedValue(currentProduct());
     (membershipsTable.deleteByProduct as jest.Mock).mockResolvedValue(undefined);
+    (productsTable.delete as jest.Mock).mockResolvedValue(undefined);
+    (readProxyCredentials as jest.Mock).mockResolvedValue(undefined);
+    (getProxyCredentials as jest.Mock).mockResolvedValue({
+      accessKeyId: "AK",
+      secretAccessKey: "SK",
+      sessionToken: "ST",
+      expiration: "2099-01-01T00:00:00Z",
+    });
+    deleteByPrefix = jest.fn().mockResolvedValue(undefined);
+    (getStorageClient as jest.Mock).mockResolvedValue({ deleteByPrefix });
   });
 
   test("surfaces the underlying failure reason instead of a generic message", async () => {
@@ -374,5 +410,33 @@ describe("deleteProduct", () => {
 
     expect(result.success).toBe(false);
     expect(result.error).toBe("Failed to delete product: Access Denied");
+  });
+
+  test("deletes product data through the proxy with the user's STS credentials", async () => {
+    (productsTable.fetchById as jest.Mock).mockResolvedValue(productWithMirror());
+    (dataConnectionsTable.fetchById as jest.Mock).mockResolvedValue({
+      read_only: false,
+    });
+
+    const result = await deleteProduct("alice", "my-product");
+
+    expect(result.success).toBe(true);
+    // Minted for the verified session identity, not request params.
+    expect(getProxyCredentials).toHaveBeenCalledWith(SESSION.identity_id);
+    // Proxy path scheme: bucket = account_id, key prefix = product_id/.
+    expect(deleteByPrefix).toHaveBeenCalledWith("alice", "my-product/");
+  });
+
+  test("does not touch storage for a read-only data connection", async () => {
+    (productsTable.fetchById as jest.Mock).mockResolvedValue(productWithMirror());
+    (dataConnectionsTable.fetchById as jest.Mock).mockResolvedValue({
+      read_only: true,
+    });
+
+    const result = await deleteProduct("alice", "my-product");
+
+    expect(result.success).toBe(true);
+    expect(getProxyCredentials).not.toHaveBeenCalled();
+    expect(getStorageClient).not.toHaveBeenCalled();
   });
 });

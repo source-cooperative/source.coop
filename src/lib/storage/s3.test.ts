@@ -18,6 +18,7 @@ import {
   S3Client,
   S3ServiceException,
   ListObjectsV2Command,
+  DeleteObjectsCommand,
   HeadObjectCommand,
   GetObjectCommand,
 } from "@aws-sdk/client-s3";
@@ -236,6 +237,53 @@ describe("S3StorageClient", () => {
     expect(result.contentType).toBe("text/plain");
     expect(result.contentLength).toBe(bytes.length);
     expect(result.etag).toBe('"ghi"');
+  });
+
+  test("deleteByPrefix pages through the listing and deletes every object", async () => {
+    mockSend
+      .mockResolvedValueOnce({
+        Contents: [{ Key: "p/a" }, { Key: "p/b" }],
+        IsTruncated: true,
+        NextContinuationToken: "t2",
+      })
+      .mockResolvedValueOnce({}) // delete page 1 (no Errors)
+      .mockResolvedValueOnce({ Contents: [{ Key: "p/c" }], IsTruncated: false })
+      .mockResolvedValueOnce({}); // delete page 2
+
+    const client = new S3StorageClient({ endpoint: "https://data.source.coop" });
+    await client.deleteByPrefix("alice", "p/");
+
+    const commands = mockSend.mock.calls.map((c) => c[0]);
+    const deletedKeys = commands
+      .filter((cmd) => cmd instanceof DeleteObjectsCommand)
+      .flatMap((cmd) => cmd.input.Delete.Objects.map((o: { Key: string }) => o.Key));
+    expect(deletedKeys).toEqual(["p/a", "p/b", "p/c"]);
+    // The second listing must carry the first page's continuation token.
+    const lists = commands.filter((cmd) => cmd instanceof ListObjectsV2Command);
+    expect(lists[1].input.ContinuationToken).toBe("t2");
+  });
+
+  test("deleteByPrefix throws when the proxy reports per-object delete errors", async () => {
+    mockSend
+      .mockResolvedValueOnce({ Contents: [{ Key: "p/a" }], IsTruncated: false })
+      .mockResolvedValueOnce({ Errors: [{ Key: "p/a" }] });
+
+    const client = new S3StorageClient({ endpoint: "https://data.source.coop" });
+    await expect(client.deleteByPrefix("alice", "p/")).rejects.toThrow(
+      /Failed to delete 1 object\(s\): p\/a/,
+    );
+  });
+
+  test("deleteByPrefix issues no delete when nothing matches the prefix", async () => {
+    mockSend.mockResolvedValueOnce({ Contents: [], IsTruncated: false });
+
+    const client = new S3StorageClient({ endpoint: "https://data.source.coop" });
+    await client.deleteByPrefix("alice", "p/");
+
+    const deletes = mockSend.mock.calls
+      .map((c) => c[0])
+      .filter((cmd) => cmd instanceof DeleteObjectsCommand);
+    expect(deletes).toHaveLength(0);
   });
 });
 

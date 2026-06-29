@@ -1,6 +1,7 @@
 import {
   S3Client,
   ListObjectsV2Command,
+  DeleteObjectsCommand,
   HeadObjectCommand,
   GetObjectCommand,
   S3ServiceException,
@@ -119,6 +120,47 @@ export class S3StorageClient {
       isTruncated: response.IsTruncated ?? false,
       nextContinuationToken: response.NextContinuationToken,
     };
+  }
+
+  /**
+   * Delete every object under a prefix (e.g. a whole product's data) through
+   * the proxy, paging until exhausted. Uses an unfiltered ListObjectsV2 (no
+   * delimiter) so nested keys are included. Throws if the proxy reports any
+   * per-object delete error, so a partial failure can't pass for a clean wipe.
+   */
+  async deleteByPrefix(bucket: string, prefix: string): Promise<void> {
+    let continuationToken: string | undefined;
+    do {
+      const listed = await this.client.send(
+        new ListObjectsV2Command({
+          Bucket: bucket,
+          Prefix: prefix,
+          ContinuationToken: continuationToken,
+          MaxKeys: 1000,
+        }),
+      );
+      const objects = listed.Contents ?? [];
+      if (objects.length > 0) {
+        const deleted = await this.client.send(
+          new DeleteObjectsCommand({
+            Bucket: bucket,
+            Delete: {
+              Objects: objects.map((o) => ({ Key: o.Key! })),
+              Quiet: true,
+            },
+          }),
+        );
+        if (deleted.Errors?.length) {
+          throw new Error(
+            `Failed to delete ${deleted.Errors.length} object(s): ` +
+              deleted.Errors.map((e) => e.Key).join(", "),
+          );
+        }
+      }
+      continuationToken = listed.IsTruncated
+        ? listed.NextContinuationToken
+        : undefined;
+    } while (continuationToken);
   }
 
   /** HEAD an object. Returns null on NotFound; throws on other errors. */
