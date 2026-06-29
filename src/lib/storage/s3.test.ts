@@ -18,7 +18,7 @@ import {
   S3Client,
   S3ServiceException,
   ListObjectsV2Command,
-  DeleteObjectsCommand,
+  DeleteObjectCommand,
   HeadObjectCommand,
   GetObjectCommand,
 } from "@aws-sdk/client-s3";
@@ -239,38 +239,40 @@ describe("S3StorageClient", () => {
     expect(result.etag).toBe('"ghi"');
   });
 
-  test("deleteByPrefix pages through the listing and deletes every object", async () => {
+  test("deleteByPrefix pages through the listing and deletes each object individually", async () => {
     mockSend
       .mockResolvedValueOnce({
         Contents: [{ Key: "p/a" }, { Key: "p/b" }],
         IsTruncated: true,
         NextContinuationToken: "t2",
       })
-      .mockResolvedValueOnce({}) // delete page 1 (no Errors)
+      .mockResolvedValueOnce({}) // delete p/a
+      .mockResolvedValueOnce({}) // delete p/b
       .mockResolvedValueOnce({ Contents: [{ Key: "p/c" }], IsTruncated: false })
-      .mockResolvedValueOnce({}); // delete page 2
+      .mockResolvedValueOnce({}); // delete p/c
 
     const client = new S3StorageClient({ endpoint: "https://data.source.coop" });
     await client.deleteByPrefix("alice", "p/");
 
     const commands = mockSend.mock.calls.map((c) => c[0]);
+    // Each object is removed with its own DeleteObjectCommand (full key path),
+    // not a single batch DeleteObjects.
     const deletedKeys = commands
-      .filter((cmd) => cmd instanceof DeleteObjectsCommand)
-      .flatMap((cmd) => cmd.input.Delete.Objects.map((o: { Key: string }) => o.Key));
+      .filter((cmd) => cmd instanceof DeleteObjectCommand)
+      .map((cmd) => cmd.input.Key);
     expect(deletedKeys).toEqual(["p/a", "p/b", "p/c"]);
-    // The second listing must carry the first page's continuation token.
     const lists = commands.filter((cmd) => cmd instanceof ListObjectsV2Command);
     expect(lists[1].input.ContinuationToken).toBe("t2");
   });
 
-  test("deleteByPrefix throws when the proxy reports per-object delete errors", async () => {
+  test("deleteByPrefix throws (with a sample reason) when an object delete fails", async () => {
     mockSend
       .mockResolvedValueOnce({ Contents: [{ Key: "p/a" }], IsTruncated: false })
-      .mockResolvedValueOnce({ Errors: [{ Key: "p/a" }] });
+      .mockRejectedValueOnce(new Error("bucket not found: alice"));
 
     const client = new S3StorageClient({ endpoint: "https://data.source.coop" });
     await expect(client.deleteByPrefix("alice", "p/")).rejects.toThrow(
-      /Failed to delete 1 object\(s\): p\/a/,
+      /Failed to delete 1 object\(s\): bucket not found: alice/,
     );
   });
 
@@ -282,7 +284,7 @@ describe("S3StorageClient", () => {
 
     const deletes = mockSend.mock.calls
       .map((c) => c[0])
-      .filter((cmd) => cmd instanceof DeleteObjectsCommand);
+      .filter((cmd) => cmd instanceof DeleteObjectCommand);
     expect(deletes).toHaveLength(0);
   });
 });
