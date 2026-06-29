@@ -46,13 +46,12 @@ export function ViewCredentialsDialog({
     `export AWS_DEFAULT_REGION="${credentials.region}"`,
   ].join("\n");
 
-  const iniFormat = [
-    `[source-coop]`,
-    `aws_access_key_id = ${credentials.accessKeyId}`,
-    `aws_secret_access_key = ${credentials.secretAccessKey}`,
-    `aws_session_token = ${credentials.sessionToken}`,
-    `region = ${credentials.region}`,
-  ].join("\n");
+const iniFormat = [
+  `[source-coop]`,
+  `aws_access_key_id = ${credentials.accessKeyId}`,
+  `aws_secret_access_key = ${credentials.secretAccessKey}`,
+  `aws_session_token = ${credentials.sessionToken}`,
+].join("\n");
 
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
