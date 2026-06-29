@@ -3,7 +3,7 @@
     "data_connection_id": "aws-opendata-us-west-2",
     "name": "Staging Bucket",
     "prefix_template": "{account_id}/{repository_id}/",
-    "read_only": false,
+    "read_only": true,
     "allowed_visibilities": ["public", "unlisted"],
     "details": {
       "provider": "s3",
@@ -23,6 +23,11 @@
       "bucket": "source-coop-data",
       "base_prefix": "",
       "region": "us-east-1"
+    },
+    "authentication": {
+      "type": "s3_access_key",
+      "access_key_id": "AKIAIOSFODNN7EXAMPLE",
+      "secret_access_key": "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
     }
   },
   {
@@ -73,6 +78,11 @@
       "bucket": "source-coop-subscription",
       "base_prefix": "premium/",
       "region": "eu-west-1"
+    },
+    "authentication": {
+      "type": "s3_access_key",
+      "access_key_id": "AKIAIOSFODNN7EXAMPLE",
+      "secret_access_key": "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
     }
   }
 ]

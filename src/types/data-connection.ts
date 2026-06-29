@@ -307,15 +307,27 @@ export const DataConnectionObjectSchema = z
   .openapi("DataConnection");
 
 /**
- * Full data connection schema: the object shape plus the cross-field check that
- * `authentication.type` is valid for `details.provider`. Use this for parsing/
+ * Full data connection schema: the object shape plus the cross-field checks
+ * that `authentication.type` is valid for `details.provider` and that unsigned
+ * (no-auth) connections are read-only. Use this for parsing/
  * validating whole connections; use {@link DataConnectionObjectSchema} when you
  * need `ZodObject` operations such as `.omit()`.
  */
 export const DataConnectionSchema = DataConnectionObjectSchema.superRefine(
   (connection, ctx) => {
     const { authentication, details } = connection;
-    if (!authentication) return;
+    if (!authentication) {
+      // Unsigned (omitted auth) ⇒ anonymous/public access, so it must be
+      // read-only: there are no credentials to authorize writes with.
+      if (!connection.read_only) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["read_only"],
+          message: "Unsigned connections must be read-only",
+        });
+      }
+      return;
+    }
     if (
       !PROVIDER_AUTH_TYPES[details.provider].includes(authentication.type)
     ) {

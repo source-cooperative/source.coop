@@ -205,7 +205,7 @@ describe("DataConnection V2 workload-identity variants", () => {
     const dc = DataConnectionSchema.parse({
       data_connection_id: "conn-1",
       name: "Conn",
-      read_only: false,
+      read_only: true,
       allowed_visibilities: [],
       details: {
         provider: "s3",
@@ -391,8 +391,28 @@ describe("DataConnection provider ↔ authentication cross-validation", () => {
   test("allows a connection with no authentication regardless of provider", () => {
     const dc = DataConnectionSchema.parse({
       ...baseFields,
+      read_only: true,
       details: gcpDetails,
     });
     expect(dc.authentication).toBeUndefined();
+  });
+
+  test("rejects an unsigned (no-auth) connection that is not read-only", () => {
+    expect(() =>
+      DataConnectionSchema.parse({
+        ...baseFields,
+        read_only: false,
+        details: s3Details,
+      })
+    ).toThrow();
+  });
+
+  test("accepts an unsigned (no-auth) connection that is read-only", () => {
+    const dc = DataConnectionSchema.parse({
+      ...baseFields,
+      read_only: true,
+      details: s3Details,
+    });
+    expect(dc.read_only).toBe(true);
   });
 });
