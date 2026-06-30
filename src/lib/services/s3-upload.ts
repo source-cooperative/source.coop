@@ -1,4 +1,9 @@
-import { S3Client } from "@aws-sdk/client-s3";
+import {
+  S3Client,
+  DeleteObjectCommand,
+  DeleteObjectsCommand,
+  ListObjectsV2Command,
+} from "@aws-sdk/client-s3";
 import { Upload } from "@aws-sdk/lib-storage";
 
 export interface S3UploadConfig {
@@ -87,5 +92,51 @@ export class S3UploadService {
         etag: result.ETag,
       })),
     };
+  }
+
+  /** Delete a single object. `key` is relative to the product prefix. */
+  async deleteObject(key: string): Promise<void> {
+    await this.client.send(
+      new DeleteObjectCommand({
+        Bucket: this.config.bucket,
+        Key: `${this.config.prefix}${key}`,
+      })
+    );
+  }
+
+  /**
+   * Delete every object under a prefix (relative to the product prefix) by
+   * listing recursively and deleting in batches of up to 1000 (S3's per-request
+   * cap). ponytail: page-by-page, sequential — fine for normal folders; revisit
+   * only if someone deletes a prefix with millions of objects. Depends on the
+   * data proxy forwarding DeleteObjects (see data-proxy-storage-access memory).
+   */
+  async deletePrefix(prefix: string): Promise<void> {
+    const fullPrefix = `${this.config.prefix}${prefix}`;
+    let continuationToken: string | undefined;
+    do {
+      const listed = await this.client.send(
+        new ListObjectsV2Command({
+          Bucket: this.config.bucket,
+          Prefix: fullPrefix,
+          ContinuationToken: continuationToken,
+        })
+      );
+      const objects = (listed.Contents ?? [])
+        .map((o) => o.Key)
+        .filter((k): k is string => !!k)
+        .map((Key) => ({ Key }));
+      if (objects.length > 0) {
+        await this.client.send(
+          new DeleteObjectsCommand({
+            Bucket: this.config.bucket,
+            Delete: { Objects: objects, Quiet: true },
+          })
+        );
+      }
+      continuationToken = listed.IsTruncated
+        ? listed.NextContinuationToken
+        : undefined;
+    } while (continuationToken);
   }
 }
