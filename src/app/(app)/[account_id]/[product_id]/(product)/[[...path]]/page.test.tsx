@@ -213,10 +213,10 @@ describe("ProductPathPage proxy AccessDenied handling", () => {
     expect(element.type).toBe(ProductDataUnavailable);
   });
 
-  it("lets an AccessDenied on a public product reach the error boundary", async () => {
-    // An anonymous read of a public product can only be denied by a proxy
-    // misconfiguration — the private-product copy would be wrong, so the
-    // error must propagate instead.
+  it("degrades to ProductDataUnavailable when a public product's read is denied", async () => {
+    // An anonymous read of a public product denied by a proxy misconfiguration
+    // must not blank the whole product — degrade in place so the header and Edit
+    // link (where an owner fixes the connection) stay reachable.
     (productsTable.fetchById as jest.Mock).mockResolvedValue(
       mockProduct("public"),
     );
@@ -225,7 +225,49 @@ describe("ProductPathPage proxy AccessDenied handling", () => {
       getObjectInfo: jest.fn(),
     });
 
-    await expect(renderPage()).rejects.toThrow(S3ServiceException);
+    const element = await renderPage();
+    expect(element.type).toBe(ProductDataUnavailable);
+  });
+
+  it("degrades to ProductDataUnavailable when the listing fails to deserialize (proxy hang)", async () => {
+    // The reported bug: the proxy hangs, Cloudflare returns a non-XML body, and
+    // the AWS SDK throws a deserialization error (not an S3ServiceException).
+    // Must degrade in place, not throw to the route error boundary.
+    (productsTable.fetchById as jest.Mock).mockResolvedValue(
+      mockProduct("restricted"),
+    );
+    (getStorageClient as jest.Mock).mockResolvedValue({
+      listObjects: jest
+        .fn()
+        .mockRejectedValue(new Error("char 'e' is not expected.:1:1")),
+      getObjectInfo: jest.fn(),
+    });
+
+    const element = await renderPage();
+    expect(element.type).toBe(ProductDataUnavailable);
+  });
+
+  it("degrades to ProductDataUnavailable on a proxy ServiceUnavailable (503) wrapping a backend 403", async () => {
+    // Production shape: the proxy's assumed role can't list the backend bucket,
+    // so S3 returns 403; the proxy re-wraps it as a 503 ServiceUnavailable (Code
+    // "ServiceUnavailable", httpStatusCode 503 — not 403, so isAccessDeniedError
+    // is false). Must degrade in place, never reach the route error boundary.
+    (productsTable.fetchById as jest.Mock).mockResolvedValue(
+      mockProduct("restricted"),
+    );
+    (getStorageClient as jest.Mock).mockResolvedValue({
+      listObjects: jest.fn().mockRejectedValue(
+        new S3ServiceException({
+          name: "ServiceUnavailable",
+          $fault: "client",
+          $metadata: { httpStatusCode: 503 },
+        }),
+      ),
+      getObjectInfo: jest.fn(),
+    });
+
+    const element = await renderPage();
+    expect(element.type).toBe(ProductDataUnavailable);
   });
 
   it("falls through to the directory listing when the file HEAD is denied", async () => {
@@ -253,7 +295,9 @@ describe("ProductPathPage proxy AccessDenied handling", () => {
     expect(element.type).toBe(DirectoryList);
   });
 
-  it("surfaces a non-AccessDenied HEAD failure instead of degrading to a directory", async () => {
+  it("degrades to ProductDataUnavailable on a non-AccessDenied HEAD failure", async () => {
+    // A backend failure on the file-detection HEAD must keep the product
+    // rendering (degraded), not crash the whole page.
     (productsTable.fetchById as jest.Mock).mockResolvedValue(
       mockProduct("restricted"),
     );
@@ -262,15 +306,14 @@ describe("ProductPathPage proxy AccessDenied handling", () => {
       listObjects: jest.fn(),
     });
 
-    await expect(
-      ProductPathPage({
-        params: Promise.resolve({
-          account_id: "test-account",
-          product_id: "test-product",
-          path: ["file.txt"],
-        }),
+    const element = await ProductPathPage({
+      params: Promise.resolve({
+        account_id: "test-account",
+        product_id: "test-product",
+        path: ["file.txt"],
       }),
-    ).rejects.toThrow("proxy exploded");
+    });
+    expect(element.type).toBe(ProductDataUnavailable);
   });
 });
 
