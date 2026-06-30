@@ -1,7 +1,7 @@
 "use client";
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
 import { Flex, DropdownMenu, Text, Box } from "@radix-ui/themes";
-import { ChevronDownIcon } from "@radix-ui/react-icons";
+import { ChevronDownIcon, PlusIcon } from "@radix-ui/react-icons";
 import styles from "./Navigation.module.css";
 import {
   LOGGER,
@@ -30,6 +30,15 @@ export function AccountDropdownSkeleton() {
     </Flex>
   );
 }
+
+// Cap long org/product names so a single entry can't blow out the menu width.
+const truncateStyle: CSSProperties = {
+  display: "block",
+  maxWidth: 220,
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
+};
 
 export interface DropdownOrganization {
   account_id: string;
@@ -91,8 +100,8 @@ export function AccountDropdown({
       </DropdownMenu.Trigger>
 
       <DropdownMenu.Content>
-        <DropdownSection
-          label="Account"
+        <DropdownSubmenu
+          label="Profile"
           items={[
             {
               href: accountUrl(session.account!.account_id),
@@ -108,12 +117,17 @@ export function AccountDropdown({
           label="Organizations"
           items={organizations.slice(0, 5).map((org) => ({
             href: accountUrl(org.account_id),
-            children: org.name,
+            children: <span style={truncateStyle}>{org.name}</span>,
           }))}
           actions={[
             {
               href: newOrganizationUrl(session.account!.account_id),
-              children: "Add Organization",
+              children: (
+                <>
+                  <PlusIcon />
+                  Create Organization
+                </>
+              ),
               condition: isAuthorized(session, "*", Actions.CreateAccount),
             },
           ]}
@@ -122,13 +136,18 @@ export function AccountDropdown({
           label="Products"
           items={products.slice(0, 5).map((product) => ({
             href: productUrl(product.account_id, product.product_id),
-            children: product.title,
+            children: <span style={truncateStyle}>{product.title}</span>,
           }))}
           actions={[
             { href: productListUrl(), children: "All Products" },
             {
               href: newProductUrl(),
-              children: "Create Product",
+              children: (
+                <>
+                  <PlusIcon />
+                  Create Product
+                </>
+              ),
               condition: isAuthorized(session, "*", Actions.CreateRepository),
             },
           ]}
@@ -142,6 +161,7 @@ export function AccountDropdown({
           }))}
         />
         <UploadsSubmenu />
+        <DropdownMenu.Separator />
         <DropdownSection
           items={[
             {
