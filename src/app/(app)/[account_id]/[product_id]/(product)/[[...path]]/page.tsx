@@ -46,10 +46,11 @@ export default async function ProductPathPage({ params }: PageProps) {
   // product.
   const product = await getAuthorizedProduct(account_id, product_id);
 
-  // A deactivated (disabled) product is reachable here only by an admin — backend
-  // authz 404s everyone else — and the data proxy won't serve its objects to an
-  // anonymous reader. So read its data with signed credentials regardless of
-  // visibility, taking the same gate-and-mint path a restricted product takes.
+  // A deactivated (disabled) product is reachable here only by its
+  // owners/maintainers and admins — backend authz 404s everyone else — and the
+  // data proxy won't serve its objects to an anonymous reader. So read its data
+  // with signed credentials regardless of visibility, taking the same
+  // gate-and-mint path a restricted product takes.
   const needsAuthenticatedRead =
     product.visibility === "restricted" || product.disabled;
 

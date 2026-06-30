@@ -258,10 +258,10 @@ describe("Authorization Tests", () => {
     expect(isAuthorized(sessions["admin"], repo, action)).toBe(true);
     expect(
       isAuthorized(sessions["organization-owner-user"], repo, action)
-    ).toBe(false);
+    ).toBe(true);
     expect(
       isAuthorized(sessions["organization-maintainer-user"], repo, action)
-    ).toBe(false);
+    ).toBe(true);
     expect(
       isAuthorized(sessions["organization-read-data-user"], repo, action)
     ).toBe(false);
@@ -806,10 +806,10 @@ describe("Authorization Tests", () => {
     expect(isAuthorized(sessions["admin"], repo, action)).toBe(true);
     expect(
       isAuthorized(sessions["organization-owner-user"], repo, action)
-    ).toBe(false);
+    ).toBe(true);
     expect(
       isAuthorized(sessions["organization-maintainer-user"], repo, action)
-    ).toBe(false);
+    ).toBe(true);
     expect(
       isAuthorized(sessions["organization-read-data-user"], repo, action)
     ).toBe(false);
