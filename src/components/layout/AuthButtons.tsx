@@ -7,6 +7,7 @@ import {
 } from "@/lib/clients/database";
 import { Button, Callout, Link } from "@radix-ui/themes";
 import { ExclamationTriangleIcon } from "@radix-ui/react-icons";
+import { MembershipState } from "@/types";
 import { loginUrl, onboardingUrl } from "@/lib/urls";
 import { getReturnToUrl } from "@/lib/baseUrl";
 
@@ -16,10 +17,14 @@ export async function AuthButtons() {
   if (session?.account) {
     // Organizations the user belongs to (memberships carry only ids → resolve
     // the org accounts for their display names) and the products they own.
+    // Only accepted memberships count — an outstanding invite (state Invited)
+    // must not show as an org the user already belongs to.
     const [organizations, { products }] = await Promise.all([
       accountsTable
         .fetchManyByIds(
-          (session.memberships ?? []).map((m) => m.membership_account_id)
+          (session.memberships ?? [])
+            .filter((m) => m.state === MembershipState.Member)
+            .map((m) => m.membership_account_id)
         )
         .then((accounts) =>
           accounts.filter(isOrganizationalAccount).map((a) => ({
