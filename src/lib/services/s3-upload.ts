@@ -1,7 +1,6 @@
 import {
   S3Client,
   DeleteObjectCommand,
-  DeleteObjectsCommand,
   ListObjectsV2Command,
 } from "@aws-sdk/client-s3";
 import { Upload } from "@aws-sdk/lib-storage";
@@ -94,24 +93,32 @@ export class S3UploadService {
     };
   }
 
-  /** Delete a single object. `key` is relative to the product prefix. */
-  async deleteObject(key: string): Promise<void> {
+  /** DELETE one absolute object key (already includes the product prefix). */
+  private async deleteKey(key: string): Promise<void> {
     await this.client.send(
-      new DeleteObjectCommand({
-        Bucket: this.config.bucket,
-        Key: `${this.config.prefix}${key}`,
-      })
+      new DeleteObjectCommand({ Bucket: this.config.bucket, Key: key })
     );
   }
 
+  /** Delete a single object. `key` is relative to the product prefix. */
+  async deleteObject(key: string): Promise<void> {
+    await this.deleteKey(`${this.config.prefix}${key}`);
+  }
+
   /**
-   * Delete every object under a prefix (relative to the product prefix) by
-   * listing recursively and deleting in batches of up to 1000 (S3's per-request
-   * cap). ponytail: page-by-page, sequential — fine for normal folders; revisit
-   * only if someone deletes a prefix with millions of objects. Depends on the
-   * data proxy forwarding DeleteObjects (see data-proxy-storage-access memory).
+   * Delete every object under a prefix (relative to the product prefix).
+   *
+   * Deletes per object via DELETE /{bucket}/{key} rather than the bucket-root
+   * multi-object DeleteObjects (?delete) endpoint: the data proxy routes by
+   * object key and 404s the bucket-root request (NoSuchBucket). We delete in
+   * small concurrent batches to bound the request rate.
+   *
+   * ponytail: per-object DELETE — fine for normal folders, slower for a
+   * many-thousand-chunk store (e.g. Zarr). Switch back to DeleteObjects if the
+   * proxy ever supports it (see data-proxy-storage-access memory).
    */
   async deletePrefix(prefix: string): Promise<void> {
+    const CONCURRENCY = 8;
     const fullPrefix = `${this.config.prefix}${prefix}`;
     let continuationToken: string | undefined;
     do {
@@ -122,16 +129,12 @@ export class S3UploadService {
           ContinuationToken: continuationToken,
         })
       );
-      const objects = (listed.Contents ?? [])
+      const keys = (listed.Contents ?? [])
         .map((o) => o.Key)
-        .filter((k): k is string => !!k)
-        .map((Key) => ({ Key }));
-      if (objects.length > 0) {
-        await this.client.send(
-          new DeleteObjectsCommand({
-            Bucket: this.config.bucket,
-            Delete: { Objects: objects, Quiet: true },
-          })
+        .filter((k): k is string => !!k);
+      for (let i = 0; i < keys.length; i += CONCURRENCY) {
+        await Promise.all(
+          keys.slice(i, i + CONCURRENCY).map((k) => this.deleteKey(k))
         );
       }
       continuationToken = listed.IsTruncated
