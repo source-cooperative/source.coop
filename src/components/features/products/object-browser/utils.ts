@@ -16,6 +16,20 @@ export interface FileNode {
   };
 }
 
+/**
+ * Keep only the optimistically-deleted paths that are still present in the
+ * latest listing. Prunes a deleted path once the server agrees it's gone, so a
+ * stale (eventually-consistent) listing never resurrects a deleted item and a
+ * re-created path is never wrongly hidden.
+ */
+export const retainPresent = (
+  deleted: Set<string>,
+  presentPaths: Iterable<string>
+): Set<string> => {
+  const present = new Set(presentPaths);
+  return new Set([...deleted].filter((p) => present.has(p)));
+};
+
 export const asFileNodes = (objects: ProductObject[]): FileNode[] =>
   objects.map((obj) => ({
     name: obj.path.replace(/\/+$/, "").split("/").pop()!, // Get last segment of path

@@ -1,6 +1,14 @@
 "use client";
 
-import { Box, Flex, Tooltip, IconButton, AlertDialog, Button } from "@radix-ui/themes";
+import {
+  Box,
+  Flex,
+  Tooltip,
+  IconButton,
+  AlertDialog,
+  Button,
+  Text,
+} from "@radix-ui/themes";
 import {
   ChevronRightIcon,
   FileIcon,
@@ -35,6 +43,9 @@ interface DirectoryRowProps {
   setFocusedIndex?: (index: number) => void;
   itemRefs?: React.MutableRefObject<(HTMLAnchorElement | null)[]>;
   virtualRow?: { start: number };
+  /** Called with the item's path after a successful delete, so the list can
+      hide it immediately without waiting for the (eventually-consistent) refetch. */
+  onDeleted?: (path: string) => void;
 }
 
 export function DirectoryRow({
@@ -47,10 +58,12 @@ export function DirectoryRow({
   setFocusedIndex,
   itemRefs,
   virtualRow,
+  onDeleted,
 }: DirectoryRowProps) {
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const router = useRouter();
   const {
     cancelUpload,
@@ -74,16 +87,24 @@ export function DirectoryRow({
 
   const handleDelete = async () => {
     setDeleting(true);
+    setDeleteError(null);
     try {
       if (item.isDirectory) {
         await deletePrefix(item.path, scope);
       } else {
         await deleteObject(item.path, scope);
       }
+      // Hide it now (the refetch below can be stale), then reconcile.
+      onDeleted?.(item.path);
       setConfirmOpen(false);
       router.refresh(); // re-fetch the server-rendered listing
     } catch (error) {
+      // Keep the dialog open and tell the user — a partial failure on a large
+      // prefix otherwise looks just like the stale-listing case.
       console.error("Delete failed", error);
+      setDeleteError(
+        error instanceof Error ? error.message : "Delete failed. Please retry."
+      );
     } finally {
       setDeleting(false);
     }
@@ -281,7 +302,10 @@ export function DirectoryRow({
               {canEdit && !isUploading && (
                 <AlertDialog.Root
                   open={confirmOpen}
-                  onOpenChange={setConfirmOpen}
+                  onOpenChange={(o) => {
+                    setConfirmOpen(o);
+                    if (!o) setDeleteError(null);
+                  }}
                 >
                   <AlertDialog.Trigger>
                     <IconButton
@@ -323,6 +347,11 @@ export function DirectoryRow({
                         Delete
                       </Button>
                     </Flex>
+                    {deleteError && (
+                      <Text as="p" size="1" color="red" mt="2">
+                        {deleteError}
+                      </Text>
+                    )}
                   </AlertDialog.Content>
                 </AlertDialog.Root>
               )}

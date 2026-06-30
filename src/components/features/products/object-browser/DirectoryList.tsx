@@ -5,7 +5,7 @@ import { ChevronDownIcon } from "@radix-ui/react-icons";
 import { useRef, useState, useEffect } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { MonoText } from "@/components/core";
-import { asFileNodes, mergeUploadsWithFiles } from "./utils";
+import { asFileNodes, mergeUploadsWithFiles, retainPresent } from "./utils";
 import type { Product, ProductObject } from "@/types";
 import styles from "./ObjectBrowser.module.css";
 import { DirectoryRow } from "./DirectoryRow";
@@ -36,6 +36,25 @@ export function DirectoryList({
 
   const { getUploadsForScope } = useUploadManager();
 
+  // Optimistically hide just-deleted items. The listing read after a delete can
+  // be stale (the data proxy's LIST is eventually consistent after a bulk
+  // delete), so router.refresh() may still show a deleted prefix for a window.
+  // We hide it immediately and keep it hidden until the server listing agrees
+  // it's gone — pruning below drops a path once it's absent from `objects`, so
+  // a re-created path is never wrongly hidden and a stale listing never
+  // resurrects a deleted one.
+  const [deletedPaths, setDeletedPaths] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    setDeletedPaths((prev) => {
+      if (prev.size === 0) return prev;
+      const next = retainPresent(
+        prev,
+        objects.map((o) => o.path)
+      );
+      return next.size === prev.size ? prev : next; // keep ref stable when unchanged
+    });
+  }, [objects]);
+
   // Get uploads for this specific product scope
   const scope = {
     accountId: product.account_id,
@@ -43,12 +62,12 @@ export function DirectoryList({
   };
   const scopedUploads = getUploadsForScope(scope);
 
-  // Merge file objects with upload progress
+  // Merge file objects with upload progress, dropping optimistically-deleted ones
   const items = mergeUploadsWithFiles(
     asFileNodes(objects),
     scopedUploads,
     prefix
-  );
+  ).filter((item) => !deletedPaths.has(item.path));
 
   // Sort items: directories first, then files alphabetically
   items.sort((a, b) => {
@@ -89,6 +108,8 @@ export function DirectoryList({
     focusedIndex,
     setFocusedIndex,
     itemRefs,
+    onDeleted: (path: string) =>
+      setDeletedPaths((prev) => new Set(prev).add(path)),
   };
   const isVirtualized = items.length > MAX_VISIBLE_ITEMS;
 
