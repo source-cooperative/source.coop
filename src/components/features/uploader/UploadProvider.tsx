@@ -117,8 +117,7 @@ export function UploadProvider({ children }: UploadProviderProps) {
   }, [getAllCredentials]);
 
   const getS3Service = (scope: CredentialsScope) => {
-    const key = `${scope.accountId}:${scope.productId}`;
-    return s3Services.get(key) || null;
+    return s3Services.get(s3ServiceKey(scope)) || null;
   };
 
   const uploadFiles = useCallback(
