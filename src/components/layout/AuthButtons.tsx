@@ -1,5 +1,10 @@
 import { AccountDropdown } from "./AccountDropdown";
 import { getPageSession } from "@/lib/api/utils";
+import {
+  accountsTable,
+  isOrganizationalAccount,
+  productsTable,
+} from "@/lib/clients/database";
 import { Button, Callout, Link } from "@radix-ui/themes";
 import { ExclamationTriangleIcon } from "@radix-ui/react-icons";
 import { loginUrl, onboardingUrl } from "@/lib/urls";
@@ -9,7 +14,33 @@ export async function AuthButtons() {
   const session = await getPageSession();
 
   if (session?.account) {
-    return <AccountDropdown session={session} />;
+    // Organizations the user belongs to (memberships carry only ids → resolve
+    // the org accounts for their display names) and the products they own.
+    const [organizations, { products }] = await Promise.all([
+      accountsTable
+        .fetchManyByIds(
+          (session.memberships ?? []).map((m) => m.membership_account_id)
+        )
+        .then((accounts) =>
+          accounts.filter(isOrganizationalAccount).map((a) => ({
+            account_id: a.account_id,
+            name: a.name,
+          }))
+        ),
+      productsTable.listByAccount(session.account.account_id, 5),
+    ]);
+
+    return (
+      <AccountDropdown
+        session={session}
+        organizations={organizations}
+        products={products.map((p) => ({
+          account_id: p.account_id,
+          product_id: p.product_id,
+          title: p.title,
+        }))}
+      />
+    );
   }
 
   if (session && !session.account) {

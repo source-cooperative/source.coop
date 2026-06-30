@@ -10,8 +10,10 @@ import {
   editAccountProfileUrl,
   newOrganizationUrl,
   newProductUrl,
+  productUrl,
+  productListUrl,
 } from "@/lib";
-import { DropdownSection } from "./DropdownSection";
+import { DropdownSection, DropdownSubmenu } from "./DropdownSection";
 import { isAdmin, isAuthorized } from "@/lib/api/authz";
 import { ADMIN_TOOLS } from "@/components/features/admin/tools";
 import { Actions, UserSession } from "@/types";
@@ -29,7 +31,26 @@ export function AccountDropdownSkeleton() {
   );
 }
 
-export function AccountDropdown({ session }: { session: UserSession }) {
+export interface DropdownOrganization {
+  account_id: string;
+  name: string;
+}
+
+export interface DropdownProduct {
+  account_id: string;
+  product_id: string;
+  title: string;
+}
+
+export function AccountDropdown({
+  session,
+  organizations = [],
+  products = [],
+}: {
+  session: UserSession;
+  organizations?: DropdownOrganization[];
+  products?: DropdownProduct[];
+}) {
   const [isOpen, setIsOpen] = useState(false);
 
   const handleLogout = async () => {
@@ -83,19 +104,28 @@ export function AccountDropdown({ session }: { session: UserSession }) {
             },
           ]}
         />
-        <DropdownSection
+        <DropdownSubmenu
           label="Organizations"
-          items={[
+          items={organizations.slice(0, 5).map((org) => ({
+            href: accountUrl(org.account_id),
+            children: org.name,
+          }))}
+          actions={[
             {
               href: newOrganizationUrl(session.account!.account_id),
-              children: "Create Organization",
+              children: "Add Organization",
               condition: isAuthorized(session, "*", Actions.CreateAccount),
             },
           ]}
         />
-        <DropdownSection
+        <DropdownSubmenu
           label="Products"
-          items={[
+          items={products.slice(0, 5).map((product) => ({
+            href: productUrl(product.account_id, product.product_id),
+            children: product.title,
+          }))}
+          actions={[
+            { href: productListUrl(), children: "All Products" },
             {
               href: newProductUrl(),
               children: "Create Product",
@@ -103,7 +133,7 @@ export function AccountDropdown({ session }: { session: UserSession }) {
             },
           ]}
         />
-        <DropdownSection
+        <DropdownSubmenu
           label="Admin"
           condition={isAdmin(session)}
           items={ADMIN_TOOLS.map((tool) => ({
