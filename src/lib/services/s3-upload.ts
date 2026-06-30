@@ -1,5 +1,6 @@
 import { S3Client } from "@aws-sdk/client-s3";
 import { Upload } from "@aws-sdk/lib-storage";
+import type { AwsCredentialIdentityProvider } from "@aws-sdk/types";
 
 export interface S3UploadConfig {
   /** Data proxy endpoint. Uploads are path-style and routed through the proxy. */
@@ -7,9 +8,14 @@ export interface S3UploadConfig {
   bucket: string;
   region: string;
   prefix: string;
-  accessKeyId: string;
-  secretAccessKey: string;
-  sessionToken: string;
+  /**
+   * Async provider for the proxy STS credentials. Handed straight to the S3
+   * client so the SDK re-invokes it ~5 min before each token's `expiration`
+   * (it auto-refreshes any provider whose identity carries an `expiration`
+   * Date). A static credential object would never refresh, so a multi-hour
+   * upload dies the moment the first token expires — issue #401.
+   */
+  credentials: AwsCredentialIdentityProvider;
 }
 
 // 5MB parts, 4 concurrent — S3's minimum part size and a sensible browser
@@ -45,11 +51,7 @@ export class S3UploadService {
       // The proxy addresses objects as ${endpoint}/${bucket}/${key}, matching
       // the server-side read client (S3StorageClient).
       forcePathStyle: true,
-      credentials: {
-        accessKeyId: config.accessKeyId,
-        secretAccessKey: config.secretAccessKey,
-        sessionToken: config.sessionToken,
-      },
+      credentials: config.credentials,
     });
   }
 
