@@ -1,10 +1,11 @@
 import { Suspense } from "react";
 import { Metadata } from "next";
 
-import { LOGGER, dataConnectionsTable } from "@/lib";
+import { LOGGER, dataConnectionsTable, getPageSession } from "@/lib";
 import { getStorageClient } from "@/lib/clients/storage";
 import { isAccessDeniedError } from "@/lib/storage/s3";
-import { DataConnection, ProductMirror, ProductObject } from "@/types";
+import { isAuthorized } from "@/lib/api/authz";
+import { Actions, DataConnection, ProductMirror, ProductObject } from "@/types";
 import { readProxyCredentials } from "@/lib/services/proxy-credentials-read";
 import { getAuthorizedProduct } from "./data";
 import { ProxyCredentialsGate } from "@/components/features/products/ProxyCredentialsGate";
@@ -36,6 +37,12 @@ interface PageProps {
   }>;
 }
 
+// Shown when a read through the data proxy fails for a non-authz reason (the
+// backend hung / 5xx'd / returned an unparseable body). Recoverable, so the
+// ProductDataUnavailable "Try again" button refreshes.
+const DATA_UNAVAILABLE_MESSAGE =
+  "This product's files couldn't be loaded just now — the storage backend didn't respond. Try again in a moment.";
+
 export default async function ProductPathPage({ params }: PageProps) {
   let { account_id, product_id, path } = await params;
   path = path?.map((p) => decodeURIComponent(p)) || [];
@@ -54,6 +61,16 @@ export default async function ProductPathPage({ params }: PageProps) {
   const needsAuthenticatedRead =
     product.visibility === "restricted" || product.disabled;
 
+  // Maintainers (anyone who can edit the product — same gate as the Edit button,
+  // Actions.PutRepository) get the raw failure surfaced in ProductDataUnavailable
+  // so they can debug a broken data connection. Everyone else only sees the
+  // generic notice. The gate is here, server-side, so error internals never reach
+  // a non-maintainer's browser.
+  const session = await getPageSession();
+  const canEditProduct = isAuthorized(session, product, Actions.PutRepository);
+  const errorDetailsFor = (error: unknown) =>
+    canEditProduct ? String(error) : undefined;
+
   // Read the user's cached proxy credentials once for this request: used both to
   // build the (signed-or-anonymous) storage client and, below, to decide whether
   // the product needs the credential gate. Build one storage client and
@@ -71,21 +88,39 @@ export default async function ProductPathPage({ params }: PageProps) {
   // ProxyCredentialsGate below mints credentials and refreshes; the next
   // render's signed HEAD then succeeds and the file view shows. So the HEAD is
   // not expected to succeed on the initial render for a restricted product.
-  // Anything else (e.g. a proxy 500) is a real failure — let it reach the
-  // error boundary rather than silently degrading a file page into a
-  // (probably empty) directory listing.
+  // Anything else (a proxy hang / 5xx / unparseable response) means the backend
+  // is unreachable, not an authz problem — degrade in place (ProductDataUnavailable)
+  // so the product header and Edit link stay visible, instead of throwing to the
+  // route error boundary, which would blank the whole product.
   if (objectPath) {
-    const objectInfo = await s3
-      .getObjectInfo({ account_id, product_id, object_path: objectPath })
-      .catch((error) => {
-        if (!isAccessDeniedError(error)) throw error;
-        LOGGER.debug("HEAD request denied, treating as directory", {
+    let objectInfo: ProductObject | null;
+    try {
+      objectInfo = await s3.getObjectInfo({
+        account_id,
+        product_id,
+        object_path: objectPath,
+      });
+    } catch (error) {
+      if (!isAccessDeniedError(error)) {
+        LOGGER.warn("Storage backend unavailable for object HEAD", {
           operation: "ProductPathPage",
           context: "object info lookup",
           metadata: { account_id, product_id, objectPath, error: String(error) },
         });
-        return null;
+        return (
+          <ProductDataUnavailable
+            message={DATA_UNAVAILABLE_MESSAGE}
+            details={errorDetailsFor(error)}
+          />
+        );
+      }
+      LOGGER.debug("HEAD request denied, treating as directory", {
+        operation: "ProductPathPage",
+        context: "object info lookup",
+        metadata: { account_id, product_id, objectPath, error: String(error) },
       });
+      objectInfo = null;
+    }
 
     if (objectInfo?.type === "file") {
       let connectionDetails:
@@ -141,13 +176,14 @@ export default async function ProductPathPage({ params }: PageProps) {
 
   // The directory listing goes through the data proxy with the user's signed
   // credentials. The viewer is already app-authorized (getAuthorizedProduct
-  // above), so for a RESTRICTED product an AccessDenied here is not "you can't
-  // see this" — it's the proxy refusing the signed read, usually because the
-  // just-minted credentials haven't propagated yet. Surface a clear,
-  // recoverable notice for that case. On a public/unlisted product the read is
-  // anonymous and a 403 means the proxy is misconfigured — let it (and any
-  // other error) fall through to the route error boundary (retry) rather than
-  // showing the private-product copy.
+  // above), so any failure here is a proxy/backend problem, not "you can't see
+  // this" — and we never want it to blank the whole product (the header + Edit
+  // link must stay reachable so an owner can fix a broken connection). So we
+  // degrade in place for every error:
+  //  - RESTRICTED + AccessDenied: the signed read was refused, usually because
+  //    just-minted credentials haven't propagated yet — the private-data copy.
+  //  - anything else (proxy hung / 5xx / unparseable response, or a misconfigured
+  //    public connection): a generic "couldn't load the contents" notice.
   // An empty listing is a valid S3 state (e.g. a directory with no uploads yet);
   // DirectoryList renders the empty state. We intentionally do NOT fall back to
   // the parent prefix here — that masked legitimately empty directories.
@@ -165,9 +201,19 @@ export default async function ProductPathPage({ params }: PageProps) {
         context: "directory listing",
         metadata: { account_id, product_id, objectPath },
       });
-      return <ProductDataUnavailable />;
+      return <ProductDataUnavailable details={errorDetailsFor(error)} />;
     }
-    throw error;
+    LOGGER.warn("Storage backend unavailable for directory listing", {
+      operation: "ProductPathPage",
+      context: "directory listing",
+      metadata: { account_id, product_id, objectPath, error: String(error) },
+    });
+    return (
+      <ProductDataUnavailable
+        message={DATA_UNAVAILABLE_MESSAGE}
+        details={errorDetailsFor(error)}
+      />
+    );
   }
 
   // Strip the bucket-key product prefix so paths are relative to the product.
