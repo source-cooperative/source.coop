@@ -5,7 +5,7 @@ import { ChevronDownIcon } from "@radix-ui/react-icons";
 import { useRef, useState, useEffect } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { MonoText } from "@/components/core";
-import { asFileNodes, mergeUploadsWithFiles, retainPresent } from "./utils";
+import { asFileNodes, mergeUploadsWithFiles } from "./utils";
 import type { Product, ProductObject } from "@/types";
 import styles from "./ObjectBrowser.module.css";
 import { DirectoryRow } from "./DirectoryRow";
@@ -36,24 +36,19 @@ export function DirectoryList({
 
   const { getUploadsForScope } = useUploadManager();
 
-  // Optimistically hide just-deleted items. The listing read after a delete can
-  // be stale (the data proxy's LIST is eventually consistent after a bulk
-  // delete), so router.refresh() may still show a deleted prefix for a window.
-  // We hide it immediately and keep it hidden until the server listing agrees
-  // it's gone — pruning below drops a path once it's absent from `objects`, so
-  // a re-created path is never wrongly hidden and a stale listing never
-  // resurrects a deleted one.
+  // Optimistically hide just-deleted items. The listing read after a delete is
+  // eventually consistent through the data proxy and is NOT monotonic — a read
+  // can report the item gone, then a later read report it back. So we do not
+  // reconcile a deletion against the listing (that made deleted items briefly
+  // reappear); we just keep a successfully-deleted path hidden for the lifetime
+  // of this directory view and reset when the prefix changes (navigating away).
+  // We only ever add on a confirmed delete, so the object really is gone.
+  // ponytail: re-uploading the exact same path in this same view would stay
+  // hidden until you navigate or refresh — rare; not worth tracking re-creates.
   const [deletedPaths, setDeletedPaths] = useState<Set<string>>(new Set());
   useEffect(() => {
-    setDeletedPaths((prev) => {
-      if (prev.size === 0) return prev;
-      const next = retainPresent(
-        prev,
-        objects.map((o) => o.path)
-      );
-      return next.size === prev.size ? prev : next; // keep ref stable when unchanged
-    });
-  }, [objects]);
+    setDeletedPaths(new Set()); // new directory view → drop stale optimistic hides
+  }, [prefix]);
 
   // Get uploads for this specific product scope
   const scope = {
