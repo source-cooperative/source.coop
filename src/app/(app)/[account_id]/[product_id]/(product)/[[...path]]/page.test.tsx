@@ -81,6 +81,7 @@ import { ProductDataUnavailable } from "@/components/features/products/ProductDa
 import { DirectoryList } from "@/components/features/products/object-browser/DirectoryList";
 import { ProxyCredentialsGate } from "@/components/features/products/ProxyCredentialsGate";
 import { S3ServiceException } from "@aws-sdk/client-s3";
+import { Actions } from "@/types/shared";
 
 describe("Product Page Metadata", () => {
   afterEach(() => {
@@ -268,6 +269,57 @@ describe("ProductPathPage proxy AccessDenied handling", () => {
 
     const element = await renderPage();
     expect(element.type).toBe(ProductDataUnavailable);
+  });
+
+  it("surfaces raw error details to a maintainer (can edit the product)", async () => {
+    // Anyone authorized to edit the product (Actions.PutRepository — the same
+    // gate as the Edit button) sees the underlying failure to debug a broken
+    // data connection. isAuthorized is true for all actions here (beforeEach).
+    (productsTable.fetchById as jest.Mock).mockResolvedValue(
+      mockProduct("restricted"),
+    );
+    (getStorageClient as jest.Mock).mockResolvedValue({
+      listObjects: jest.fn().mockRejectedValue(
+        new S3ServiceException({
+          name: "ServiceUnavailable",
+          message: "backend error: ...403 Forbidden...",
+          $fault: "client",
+          $metadata: { httpStatusCode: 503 },
+        }),
+      ),
+      getObjectInfo: jest.fn(),
+    });
+
+    const element = await renderPage();
+    expect(element.type).toBe(ProductDataUnavailable);
+    expect(element.props.details).toContain("backend error");
+  });
+
+  it("hides error details from a non-maintainer (cannot edit the product)", async () => {
+    // A viewer who can read but not edit (PutRepository denied) gets the notice
+    // but never the raw error — gated server-side, so details is undefined and
+    // the internals are never sent to their browser.
+    (isAuthorized as jest.Mock).mockImplementation(
+      (_session, _product, action) => action !== Actions.PutRepository,
+    );
+    (productsTable.fetchById as jest.Mock).mockResolvedValue(
+      mockProduct("restricted"),
+    );
+    (getStorageClient as jest.Mock).mockResolvedValue({
+      listObjects: jest.fn().mockRejectedValue(
+        new S3ServiceException({
+          name: "ServiceUnavailable",
+          message: "backend error: ...403 Forbidden...",
+          $fault: "client",
+          $metadata: { httpStatusCode: 503 },
+        }),
+      ),
+      getObjectInfo: jest.fn(),
+    });
+
+    const element = await renderPage();
+    expect(element.type).toBe(ProductDataUnavailable);
+    expect(element.props.details).toBeUndefined();
   });
 
   it("falls through to the directory listing when the file HEAD is denied", async () => {

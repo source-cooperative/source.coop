@@ -1,10 +1,11 @@
 import { Suspense } from "react";
 import { Metadata } from "next";
 
-import { LOGGER, dataConnectionsTable } from "@/lib";
+import { LOGGER, dataConnectionsTable, getPageSession } from "@/lib";
 import { getStorageClient } from "@/lib/clients/storage";
 import { isAccessDeniedError } from "@/lib/storage/s3";
-import { DataConnection, ProductMirror, ProductObject } from "@/types";
+import { isAuthorized } from "@/lib/api/authz";
+import { Actions, DataConnection, ProductMirror, ProductObject } from "@/types";
 import { readProxyCredentials } from "@/lib/services/proxy-credentials-read";
 import { getAuthorizedProduct } from "./data";
 import { ProxyCredentialsGate } from "@/components/features/products/ProxyCredentialsGate";
@@ -59,6 +60,16 @@ export default async function ProductPathPage({ params }: PageProps) {
   const needsAuthenticatedRead =
     product.visibility === "restricted" || product.disabled;
 
+  // Maintainers (anyone who can edit the product — same gate as the Edit button,
+  // Actions.PutRepository) get the raw failure surfaced in ProductDataUnavailable
+  // so they can debug a broken data connection. Everyone else only sees the
+  // generic notice. The gate is here, server-side, so error internals never reach
+  // a non-maintainer's browser.
+  const session = await getPageSession();
+  const canEditProduct = isAuthorized(session, product, Actions.PutRepository);
+  const errorDetailsFor = (error: unknown) =>
+    canEditProduct ? String(error) : undefined;
+
   // Read the user's cached proxy credentials once for this request: used both to
   // build the (signed-or-anonymous) storage client and, below, to decide whether
   // the product needs the credential gate. Build one storage client and
@@ -95,7 +106,12 @@ export default async function ProductPathPage({ params }: PageProps) {
           context: "object info lookup",
           metadata: { account_id, product_id, objectPath, error: String(error) },
         });
-        return <ProductDataUnavailable message={DATA_UNAVAILABLE_MESSAGE} />;
+        return (
+          <ProductDataUnavailable
+            message={DATA_UNAVAILABLE_MESSAGE}
+            details={errorDetailsFor(error)}
+          />
+        );
       }
       LOGGER.debug("HEAD request denied, treating as directory", {
         operation: "ProductPathPage",
@@ -184,14 +200,19 @@ export default async function ProductPathPage({ params }: PageProps) {
         context: "directory listing",
         metadata: { account_id, product_id, objectPath },
       });
-      return <ProductDataUnavailable />;
+      return <ProductDataUnavailable details={errorDetailsFor(error)} />;
     }
     LOGGER.warn("Storage backend unavailable for directory listing", {
       operation: "ProductPathPage",
       context: "directory listing",
       metadata: { account_id, product_id, objectPath, error: String(error) },
     });
-    return <ProductDataUnavailable message={DATA_UNAVAILABLE_MESSAGE} />;
+    return (
+      <ProductDataUnavailable
+        message={DATA_UNAVAILABLE_MESSAGE}
+        details={errorDetailsFor(error)}
+      />
+    );
   }
 
   // Strip the bucket-key product prefix so paths are relative to the product.
