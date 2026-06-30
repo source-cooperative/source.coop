@@ -100,10 +100,15 @@ export function DirectoryRow({
       router.refresh(); // re-fetch the server-rendered listing
     } catch (error) {
       // Keep the dialog open and tell the user — a partial failure on a large
-      // prefix otherwise looks just like the stale-listing case.
+      // prefix otherwise looks just like the stale-listing case. A prefix delete
+      // is per-object and non-atomic, so a mid-way failure leaves some objects
+      // gone and the rest intact; warn about that. A single file is all-or-nothing.
       console.error("Delete failed", error);
+      const reason = error instanceof Error ? error.message : "request failed";
       setDeleteError(
-        error instanceof Error ? error.message : "Delete failed. Please retry."
+        item.isDirectory
+          ? `Delete may be partial — ${reason}. Retry to remove remaining items.`
+          : `Delete failed — ${reason}. Please retry.`
       );
     } finally {
       setDeleting(false);
