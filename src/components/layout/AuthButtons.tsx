@@ -1,5 +1,5 @@
 import { AccountDropdown } from "./AccountDropdown";
-import { MobileMenu } from "./MobileMenu";
+import { MobileMenu, LoggedOutMobileMenu } from "./MobileMenu";
 import { ProductsNavLink } from "./ProductsNavLink";
 import { getPageSession } from "@/lib/api/utils";
 import { isAuthorized } from "@/lib/api/authz";
@@ -139,13 +139,19 @@ export async function AuthButtons() {
 
   const returnTo = await getReturnToUrl();
 
-  // Logged out: Products + login sit inline (fits on mobile and desktop).
   return (
-    <Flex align="center" gap="4">
-      <ProductsNavLink />
-      <Link href={loginUrl(returnTo)}>
-        <Button>Log In / Register</Button>
-      </Link>
-    </Flex>
+    <>
+      {/* Desktop: Products link + login inline */}
+      <Flex display={{ initial: "none", sm: "flex" }} align="center" gap="4">
+        <ProductsNavLink />
+        <Link href={loginUrl(returnTo)}>
+          <Button>Log In / Register</Button>
+        </Link>
+      </Flex>
+      {/* Mobile: hamburger → sheet with Products + login */}
+      <Box display={{ initial: "block", sm: "none" }}>
+        <LoggedOutMobileMenu returnTo={returnTo} />
+      </Box>
+    </>
   );
 }
