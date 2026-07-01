@@ -10,7 +10,6 @@ import {
   newOrganizationUrl,
   newProductUrl,
   productUrl,
-  productListUrl,
 } from "@/lib";
 import { DropdownSection, DropdownSubmenu } from "./DropdownSection";
 import { isAdmin, isAuthorized } from "@/lib/api/authz";
@@ -135,13 +134,6 @@ export function AccountDropdown({
       </DropdownMenu.Trigger>
 
       <DropdownMenu.Content>
-        {/* Browse all products */}
-        <DropdownSection
-          showSeparator={false}
-          items={[{ href: productListUrl(), children: "Products" }]}
-        />
-        <DropdownMenu.Separator />
-
         {/* One submenu per account (you + your orgs): an avatar-labelled trigger
             linking to the account page, then that account's products. */}
         {accounts.map(({ account, isSelf, products }) => (
