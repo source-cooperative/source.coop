@@ -1,5 +1,6 @@
 import { AccountDropdown } from "./AccountDropdown";
 import { getPageSession } from "@/lib/api/utils";
+import { isAuthorized } from "@/lib/api/authz";
 import {
   accountsTable,
   isOrganizationalAccount,
@@ -7,7 +8,7 @@ import {
 } from "@/lib/clients/database";
 import { Button, Callout, Link } from "@radix-ui/themes";
 import { ExclamationTriangleIcon } from "@radix-ui/react-icons";
-import { Account, MembershipState } from "@/types";
+import { Account, Actions, MembershipState } from "@/types";
 import { loginUrl, onboardingUrl } from "@/lib/urls";
 import { getReturnToUrl } from "@/lib/baseUrl";
 import { invitationLink } from "./accountMenu";
@@ -23,7 +24,13 @@ export async function AuthButtons() {
     const memberOrgIds = [
       ...new Set(
         memberships
-          .filter((m) => m.state === MembershipState.Member)
+          // Org-level memberships only — a product-level membership doesn't make
+          // you an org member (matches OrganizationProfilePage's isMember).
+          .filter(
+            (m) =>
+              m.state === MembershipState.Member &&
+              m.repository_id === undefined
+          )
           .map((m) => m.membership_account_id)
       ),
     ];
@@ -57,11 +64,13 @@ export async function AuthButtons() {
     const productsByAccount = new Map(
       productAccountIds.map((id, i) => [id, productLists[i]])
     );
+    // Only surface products the user is authorized to see, so an org member
+    // isn't shown the org's restricted products they can't access (matches
+    // IndividualProfilePage's GetRepository filter).
     const toProducts = (id: string) =>
-      (productsByAccount.get(id) ?? []).map((p) => ({
-        product_id: p.product_id,
-        title: p.title,
-      }));
+      (productsByAccount.get(id) ?? [])
+        .filter((p) => isAuthorized(session, p, Actions.GetRepository))
+        .map((p) => ({ product_id: p.product_id, title: p.title }));
 
     // Accounts you can browse: yourself first, then each org you belong to.
     const accounts = [
