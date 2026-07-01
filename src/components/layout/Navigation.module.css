@@ -14,4 +14,13 @@
 
 .chevron[data-state="open"] {
   transform: rotate(180deg);
+}
+
+/* On phones the account dropdown spans (nearly) the full viewport for a more
+   traditional, tap-friendly mobile menu instead of a narrow floating card. */
+@media (max-width: 640px) {
+  .accountMenu {
+    width: calc(100vw - var(--space-4));
+    max-width: calc(100vw - var(--space-4));
+  }
 } 

@@ -133,7 +133,7 @@ export function AccountDropdown({
         </Flex>
       </DropdownMenu.Trigger>
 
-      <DropdownMenu.Content>
+      <DropdownMenu.Content className={styles.accountMenu}>
         {/* One submenu per account (you + your orgs): an avatar-labelled trigger
             linking to the account page, then that account's products. */}
         {accounts.map(({ account, isSelf, products }) => (
