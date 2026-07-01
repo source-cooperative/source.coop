@@ -3,6 +3,7 @@
 import { Box, Text } from "@radix-ui/themes";
 import { ChevronDownIcon } from "@radix-ui/react-icons";
 import { useRef, useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { MonoText } from "@/components/core";
 import { asFileNodes, mergeUploadsWithFiles } from "./utils";
@@ -33,6 +34,7 @@ export function DirectoryList({
   const parentRef = useRef<HTMLDivElement>(null);
   const [showScrollIndicator, setShowScrollIndicator] = useState(false);
   const itemRefs = useRef<(HTMLAnchorElement | null)[]>([]);
+  const router = useRouter();
 
   const { getUploadsForScope } = useUploadManager();
 
@@ -42,6 +44,17 @@ export function DirectoryList({
     productId: product.product_id,
   };
   const scopedUploads = getUploadsForScope(scope);
+
+  // Re-fetch the server listing when this scope's uploads drain, so a re-upload
+  // to an existing path shows its new size/date instead of the stale row.
+  const hasActiveUploads = scopedUploads.some(
+    (u) => u.status === "uploading" || u.status === "queued"
+  );
+  const wasActive = useRef(false);
+  useEffect(() => {
+    if (wasActive.current && !hasActiveUploads) router.refresh();
+    wasActive.current = hasActiveUploads;
+  }, [hasActiveUploads, router]);
 
   // Merge file objects with upload progress
   const items = mergeUploadsWithFiles(
