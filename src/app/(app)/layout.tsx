@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { Box, Container, Flex } from "@radix-ui/themes";
 import { Navigation, Footer } from "@/components";
 import { VerificationBanner } from "@/components/features/auth/VerificationBanner";
+import { StepUpGuard } from "@/components/features/auth/StepUpGuard";
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -10,6 +11,11 @@ interface AppLayoutProps {
 export default function AppLayout({ children }: AppLayoutProps) {
   return (
     <Flex direction="column" minHeight="100vh">
+      {/* Signs out sessions stuck requiring an AAL2 step-up. Suspense so its
+          whoami probe streams in without blocking page content. */}
+      <Suspense fallback={null}>
+        <StepUpGuard />
+      </Suspense>
       <Navigation />
       <Box flexGrow="1" m="2">
         <Container size="4" py="4">

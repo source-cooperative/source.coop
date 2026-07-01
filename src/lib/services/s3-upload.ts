@@ -1,5 +1,10 @@
-import { S3Client } from "@aws-sdk/client-s3";
+import {
+  S3Client,
+  DeleteObjectCommand,
+  ListObjectsV2Command,
+} from "@aws-sdk/client-s3";
 import { Upload } from "@aws-sdk/lib-storage";
+import type { AwsCredentialIdentityProvider } from "@aws-sdk/types";
 
 export interface S3UploadConfig {
   /** Data proxy endpoint. Uploads are path-style and routed through the proxy. */
@@ -7,9 +12,14 @@ export interface S3UploadConfig {
   bucket: string;
   region: string;
   prefix: string;
-  accessKeyId: string;
-  secretAccessKey: string;
-  sessionToken: string;
+  /**
+   * Async provider for the proxy STS credentials. Handed straight to the S3
+   * client so the SDK re-invokes it ~5 min before each token's `expiration`
+   * (it auto-refreshes any provider whose identity carries an `expiration`
+   * Date). A static credential object would never refresh, so a multi-hour
+   * upload dies the moment the first token expires — issue #401.
+   */
+  credentials: AwsCredentialIdentityProvider;
 }
 
 // 5MB parts, 4 concurrent — S3's minimum part size and a sensible browser
@@ -45,11 +55,7 @@ export class S3UploadService {
       // The proxy addresses objects as ${endpoint}/${bucket}/${key}, matching
       // the server-side read client (S3StorageClient).
       forcePathStyle: true,
-      credentials: {
-        accessKeyId: config.accessKeyId,
-        secretAccessKey: config.secretAccessKey,
-        sessionToken: config.sessionToken,
-      },
+      credentials: config.credentials,
     });
   }
 
@@ -87,5 +93,55 @@ export class S3UploadService {
         etag: result.ETag,
       })),
     };
+  }
+
+  /** DELETE one absolute object key (already includes the product prefix). */
+  private async deleteKey(key: string): Promise<void> {
+    await this.client.send(
+      new DeleteObjectCommand({ Bucket: this.config.bucket, Key: key })
+    );
+  }
+
+  /** Delete a single object. `key` is relative to the product prefix. */
+  async deleteObject(key: string): Promise<void> {
+    await this.deleteKey(`${this.config.prefix}${key}`);
+  }
+
+  /**
+   * Delete every object under a prefix (relative to the product prefix).
+   *
+   * Deletes per object via DELETE /{bucket}/{key} rather than the bucket-root
+   * multi-object DeleteObjects (?delete) endpoint: the data proxy routes by
+   * object key and 404s the bucket-root request (NoSuchBucket). We delete in
+   * small concurrent batches to bound the request rate.
+   *
+   * ponytail: per-object DELETE — fine for normal folders, slower for a
+   * many-thousand-chunk store (e.g. Zarr). Switch back to DeleteObjects if the
+   * proxy ever supports it (see data-proxy-storage-access memory).
+   */
+  async deletePrefix(prefix: string): Promise<void> {
+    const CONCURRENCY = 8;
+    const fullPrefix = `${this.config.prefix}${prefix}`;
+    let continuationToken: string | undefined;
+    do {
+      const listed = await this.client.send(
+        new ListObjectsV2Command({
+          Bucket: this.config.bucket,
+          Prefix: fullPrefix,
+          ContinuationToken: continuationToken,
+        })
+      );
+      const keys = (listed.Contents ?? [])
+        .map((o) => o.Key)
+        .filter((k): k is string => !!k);
+      for (let i = 0; i < keys.length; i += CONCURRENCY) {
+        await Promise.all(
+          keys.slice(i, i + CONCURRENCY).map((k) => this.deleteKey(k))
+        );
+      }
+      continuationToken = listed.IsTruncated
+        ? listed.NextContinuationToken
+        : undefined;
+    } while (continuationToken);
   }
 }

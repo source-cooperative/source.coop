@@ -13,7 +13,7 @@ import { Actions } from "@/types";
 import { productsTable } from "@/lib/clients/database";
 import { notFound, redirect } from "next/navigation";
 import { getReturnToUrl } from "@/lib/baseUrl";
-import { ExternalLink } from "@/components/core/ExternalLink";
+import { LinkAway } from "@/components/core/LinkAway";
 import {
   loginUrl,
   productUrl,
@@ -106,9 +106,9 @@ export default async function ProductLayout({
           />
         </Flex>
 
-        <ExternalLink href={productUrl(product.account_id, product.product_id)}>
+        <LinkAway href={productUrl(product.account_id, product.product_id)}>
           View Product
-        </ExternalLink>
+        </LinkAway>
       </SettingsHeader>
       <SettingsLayout menuItems={menuItems}>{children}</SettingsLayout>
     </>

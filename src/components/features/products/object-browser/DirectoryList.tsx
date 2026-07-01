@@ -38,6 +38,20 @@ export function DirectoryList({
 
   const { getUploadsForScope } = useUploadManager();
 
+  // Optimistically hide just-deleted items. The listing read after a delete is
+  // eventually consistent through the data proxy and is NOT monotonic — a read
+  // can report the item gone, then a later read report it back. So we do not
+  // reconcile a deletion against the listing (that made deleted items briefly
+  // reappear); we just keep a successfully-deleted path hidden for the lifetime
+  // of this directory view and reset when the prefix changes (navigating away).
+  // We only ever add on a confirmed delete, so the object really is gone.
+  // ponytail: re-uploading the exact same path in this same view would stay
+  // hidden until you navigate or refresh — rare; not worth tracking re-creates.
+  const [deletedPaths, setDeletedPaths] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    setDeletedPaths(new Set()); // new directory view → drop stale optimistic hides
+  }, [prefix]);
+
   // Get uploads for this specific product scope
   const scope = {
     accountId: product.account_id,
@@ -61,7 +75,7 @@ export function DirectoryList({
     asFileNodes(objects),
     scopedUploads,
     prefix
-  );
+  ).filter((item) => !deletedPaths.has(item.path));
 
   // Sort items: directories first, then files alphabetically
   items.sort((a, b) => {
@@ -102,6 +116,8 @@ export function DirectoryList({
     focusedIndex,
     setFocusedIndex,
     itemRefs,
+    onDeleted: (path: string) =>
+      setDeletedPaths((prev) => new Set(prev).add(path)),
   };
   const isVirtualized = items.length > MAX_VISIBLE_ITEMS;
 

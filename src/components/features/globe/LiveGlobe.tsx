@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { Tooltip } from "@radix-ui/themes";
 import { CONFIG } from "@/lib/config";
 import Globe, { GlobeMethods } from "react-globe.gl";
 import {
@@ -554,19 +555,29 @@ export function LiveGlobe({
             {selected.location && (
               <div className={styles.popupLocation}>{selected.location}</div>
             )}
-            <div className={styles.popupLabel}>
-              {selected.count.toLocaleString()}{" "}
-              {selected.count === 1 ? "request" : "requests"}
-            </div>
+            {/* The bare total just duplicates the single product's count, so
+                only show it as a summary when the breakdown has 2+ rows. */}
+            {selected.products.length !== 1 && (
+              <div className={styles.popupLabel}>
+                {selected.count.toLocaleString()}{" "}
+                {selected.count === 1 ? "request" : "requests"}
+              </div>
+            )}
             {selected.products.length > 0 && (
               <div className={styles.popupProducts}>
                 {selected.products.map(([name, n]) => (
-                  <a key={name} href={`/${name}`} className={styles.popupLink}>
-                    {name}
-                    <span className={styles.popupCount}>
-                      {n.toLocaleString()}
-                    </span>
-                  </a>
+                  <Tooltip
+                    key={name}
+                    className={styles.tooltipContent}
+                    content={`${n.toLocaleString()} ${n === 1 ? "request" : "requests"}`}
+                  >
+                    <a href={`/${name}`} className={styles.popupLink}>
+                      <span className={styles.popupName}>{name}</span>
+                      <span className={styles.popupArrow} aria-hidden="true">
+                        →
+                      </span>
+                    </a>
+                  </Tooltip>
                 ))}
               </div>
             )}
