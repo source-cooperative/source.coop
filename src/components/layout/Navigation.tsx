@@ -1,9 +1,11 @@
-import { Container, Flex } from "@radix-ui/themes";
+import { Container, Flex, Link } from "@radix-ui/themes";
+import NextLink from "next/link";
 import { Logo } from "./Logo";
 import styles from "./Navigation.module.css";
 import { Suspense } from "react";
 import { AuthButtons } from "./AuthButtons";
 import { AccountDropdownSkeleton } from "./AccountDropdown";
+import { productListUrl } from "@/lib";
 
 export async function Navigation() {
   return (
@@ -13,6 +15,16 @@ export async function Navigation() {
           <Logo />
 
           <Flex gap="4" align="center">
+            <Link
+              asChild
+              size="2"
+              weight="medium"
+              color="gray"
+              highContrast
+              underline="hover"
+            >
+              <NextLink href={productListUrl()}>Products</NextLink>
+            </Link>
             <Suspense fallback={<AccountDropdownSkeleton />}>
               <AuthButtons />
             </Suspense>

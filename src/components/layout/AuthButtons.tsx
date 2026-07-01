@@ -10,30 +10,59 @@ import { ExclamationTriangleIcon } from "@radix-ui/react-icons";
 import { MembershipState } from "@/types";
 import { loginUrl, onboardingUrl } from "@/lib/urls";
 import { getReturnToUrl } from "@/lib/baseUrl";
+import { invitationLink } from "./accountMenu";
 
 export async function AuthButtons() {
   const session = await getPageSession();
 
   if (session?.account) {
-    // Organizations the user belongs to (memberships carry only ids → resolve
-    // the org accounts for their display names) and the products they own.
-    // Only accepted memberships count — an outstanding invite (state Invited)
-    // must not show as an org the user already belongs to.
-    const [organizations, { products }] = await Promise.all([
-      accountsTable
-        .fetchManyByIds(
-          (session.memberships ?? [])
-            .filter((m) => m.state === MembershipState.Member)
-            .map((m) => m.membership_account_id)
-        )
-        .then((accounts) =>
-          accounts.filter(isOrganizationalAccount).map((a) => ({
-            account_id: a.account_id,
-            name: a.name,
-          }))
-        ),
+    const memberships = session.memberships ?? [];
+    // Accepted org memberships vs outstanding invites: an invite must not read
+    // as an org the user already belongs to — it goes in "Invitations" instead.
+    const memberOrgIds = new Set(
+      memberships
+        .filter((m) => m.state === MembershipState.Member)
+        .map((m) => m.membership_account_id)
+    );
+    const invited = memberships.filter(
+      (m) => m.state === MembershipState.Invited
+    );
+
+    const [accounts, { products }, invitedProducts] = await Promise.all([
+      // One batched account read resolves both member-org and invite-org names.
+      accountsTable.fetchManyByIds([
+        ...memberOrgIds,
+        ...invited.map((m) => m.membership_account_id),
+      ]),
       productsTable.listByAccount(session.account.account_id, 5),
+      // Product invites need the product title; usually there are none.
+      Promise.all(
+        invited
+          .filter((m) => m.repository_id)
+          .map((m) =>
+            productsTable.fetchById(m.membership_account_id, m.repository_id!)
+          )
+      ),
     ]);
+
+    const accountsById = new Map(accounts.map((a) => [a.account_id, a]));
+    const productTitleByKey = new Map<string, string>();
+    for (const p of invitedProducts) {
+      if (p) productTitleByKey.set(`${p.account_id}/${p.product_id}`, p.title);
+    }
+
+    const organizations = accounts
+      .filter((a) => memberOrgIds.has(a.account_id) && isOrganizationalAccount(a))
+      .map((a) => ({ account_id: a.account_id, name: a.name }));
+
+    const pendingInvitations = invited.map((m) =>
+      invitationLink(m, {
+        organizationName: accountsById.get(m.membership_account_id)?.name,
+        productTitle: m.repository_id
+          ? productTitleByKey.get(`${m.membership_account_id}/${m.repository_id}`)
+          : undefined,
+      })
+    );
 
     return (
       <AccountDropdown
@@ -44,6 +73,7 @@ export async function AuthButtons() {
           product_id: p.product_id,
           title: p.title,
         }))}
+        pendingInvitations={pendingInvitations}
       />
     );
   }

@@ -11,7 +11,6 @@ import {
   newOrganizationUrl,
   newProductUrl,
   productUrl,
-  productListUrl,
 } from "@/lib";
 import { DropdownSection, DropdownSubmenu } from "./DropdownSection";
 import { isAdmin, isAuthorized } from "@/lib/api/authz";
@@ -40,6 +39,15 @@ const truncateStyle: CSSProperties = {
   whiteSpace: "nowrap",
 };
 
+// Red dot rendered inline next to the "Invitations" label.
+const inlineDotStyle: CSSProperties = {
+  display: "inline-block",
+  width: 8,
+  height: 8,
+  borderRadius: "50%",
+  backgroundColor: "var(--red-9)",
+};
+
 export interface DropdownOrganization {
   account_id: string;
   name: string;
@@ -51,16 +59,24 @@ export interface DropdownProduct {
   title: string;
 }
 
+export interface DropdownInvitation {
+  href: string;
+  label: string;
+}
+
 export function AccountDropdown({
   session,
   organizations = [],
   products = [],
+  pendingInvitations = [],
 }: {
   session: UserSession;
   organizations?: DropdownOrganization[];
   products?: DropdownProduct[];
+  pendingInvitations?: DropdownInvitation[];
 }) {
   const [isOpen, setIsOpen] = useState(false);
+  const hasInvitations = pendingInvitations.length > 0;
 
   const handleLogout = async () => {
     const response = await fetch(CONFIG.auth.routes.logout, {
@@ -88,6 +104,21 @@ export function AccountDropdown({
           <Box style={{ position: "relative" }}>
             <ProfileAvatar account={session.account!} size="2" />
             <UploadBadge />
+            {hasInvitations && (
+              <Box
+                aria-label="You have pending invitations"
+                style={{
+                  position: "absolute",
+                  bottom: -1,
+                  right: -1,
+                  width: 12,
+                  height: 12,
+                  borderRadius: "50%",
+                  backgroundColor: "var(--red-9)",
+                  border: "2px solid var(--color-background)",
+                }}
+              />
+            )}
           </Box>
           <Box display={{ initial: "none", sm: "block" }}>
             <Text>{session.account!.name}</Text>
@@ -100,6 +131,21 @@ export function AccountDropdown({
       </DropdownMenu.Trigger>
 
       <DropdownMenu.Content>
+        <DropdownSection
+          condition={hasInvitations}
+          label={
+            <span
+              style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
+            >
+              Invitations
+              <span style={inlineDotStyle} />
+            </span>
+          }
+          items={pendingInvitations.slice(0, 5).map((invitation) => ({
+            href: invitation.href,
+            children: <span style={truncateStyle}>{invitation.label}</span>,
+          }))}
+        />
         <DropdownSubmenu
           label="Profile"
           items={[
@@ -139,7 +185,6 @@ export function AccountDropdown({
             children: <span style={truncateStyle}>{product.title}</span>,
           }))}
           actions={[
-            { href: productListUrl(), children: "All Products" },
             {
               href: newProductUrl(),
               children: (
