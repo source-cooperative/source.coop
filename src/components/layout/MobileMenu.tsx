@@ -7,6 +7,7 @@ import {
   Cross1Icon,
   ChevronDownIcon,
   PlusIcon,
+  FileTextIcon,
 } from "@radix-ui/react-icons";
 import styles from "./Navigation.module.css";
 import {
@@ -131,6 +132,7 @@ export function MobileMenu({
                     href={productUrl(account.account_id, p.product_id)}
                     onNavigate={close}
                     indent
+                    icon={<FileTextIcon />}
                   >
                     {p.title}
                   </Row>
@@ -138,17 +140,20 @@ export function MobileMenu({
               ) : (
                 <MutedRow indent>No products yet</MutedRow>
               )}
+              {canCreateProduct && (
+                <Row
+                  href={newProductUrl(account.account_id)}
+                  onNavigate={close}
+                  indent
+                  icon={<PlusIcon />}
+                >
+                  New product
+                </Row>
+              )}
             </Section>
           ))}
 
-          {(canCreateProduct || canCreateOrg) && (
-            <div className={styles.mobileDivider} />
-          )}
-          {canCreateProduct && (
-            <Row href={newProductUrl()} onNavigate={close} icon={<PlusIcon />}>
-              New product
-            </Row>
-          )}
+          {canCreateOrg && <div className={styles.mobileDivider} />}
           {canCreateOrg && (
             <Row
               href={newOrganizationUrl(session.account!.account_id)}

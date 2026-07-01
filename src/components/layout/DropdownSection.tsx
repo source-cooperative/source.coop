@@ -111,6 +111,8 @@ export interface DropdownSubmenuProps {
   items: DropdownItem[];
   /** Shown after a separator (e.g. the products, or a "Create…" action). */
   actions?: DropdownItem[];
+  /** Optional heading above the actions (e.g. "Products") to label the list. */
+  actionsLabel?: string;
   condition?: boolean;
 }
 
@@ -118,6 +120,7 @@ export function DropdownSubmenu({
   label,
   items,
   actions = [],
+  actionsLabel,
   condition = true,
 }: DropdownSubmenuProps) {
   const hasItems = visibleCount(items) > 0;
@@ -136,6 +139,9 @@ export function DropdownSubmenu({
       >
         <DropdownItems items={items} />
         {hasItems && hasActions && <DropdownMenu.Separator />}
+        {actionsLabel && hasActions && (
+          <DropdownMenu.Label>{actionsLabel}</DropdownMenu.Label>
+        )}
         <DropdownItems items={actions} />
       </DropdownMenu.SubContent>
     </DropdownMenu.Sub>

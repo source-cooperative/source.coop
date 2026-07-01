@@ -1,7 +1,7 @@
 "use client";
 import { useState, type CSSProperties } from "react";
 import { Flex, DropdownMenu, Text, Box } from "@radix-ui/themes";
-import { ChevronDownIcon, PlusIcon } from "@radix-ui/react-icons";
+import { ChevronDownIcon, PlusIcon, FileTextIcon } from "@radix-ui/react-icons";
 import styles from "./Navigation.module.css";
 import {
   accountUrl,
@@ -126,12 +126,16 @@ export function AccountDropdown({
                 children: isSelf ? "View profile" : "View organization",
               },
             ]}
-            actions={
-              products.length > 0
+            actionsLabel="Products"
+            actions={[
+              ...(products.length > 0
                 ? products.slice(0, 20).map((product) => ({
                     href: productUrl(account.account_id, product.product_id),
                     children: (
-                      <span style={entityNameStyle}>{product.title}</span>
+                      <>
+                        <FileTextIcon />
+                        <span style={entityNameStyle}>{product.title}</span>
+                      </>
                     ),
                   }))
                 : [
@@ -140,29 +144,33 @@ export function AccountDropdown({
                       color: "gray" as const,
                       disabled: true,
                     },
-                  ]
-            }
+                  ]),
+              // Create a product for this account, at the bottom of its list.
+              {
+                href: canCreateProduct
+                  ? newProductUrl(account.account_id)
+                  : undefined,
+                disabled: !canCreateProduct,
+                tooltip: canCreateProduct
+                  ? undefined
+                  : "You don't have permission to create products",
+                children: (
+                  <>
+                    <PlusIcon />
+                    New product
+                  </>
+                ),
+              },
+            ]}
           />
         ))}
 
         <DropdownMenu.Separator />
-        {/* Always shown; disabled with a tooltip when the user lacks permission. */}
+        {/* New organization, under the list of accounts you belong to.
+            Always shown; disabled with a tooltip when unauthorized. */}
         <DropdownSection
           showSeparator={false}
           items={[
-            {
-              href: canCreateProduct ? newProductUrl() : undefined,
-              disabled: !canCreateProduct,
-              tooltip: canCreateProduct
-                ? undefined
-                : "You don't have permission to create products",
-              children: (
-                <>
-                  <PlusIcon />
-                  New product
-                </>
-              ),
-            },
             {
               href: canCreateOrg
                 ? newOrganizationUrl(session.account!.account_id)
