@@ -3,6 +3,8 @@
 import { Box, Text } from "@radix-ui/themes";
 import { UploadIcon } from "@radix-ui/react-icons";
 import { useDropzone } from "react-dropzone";
+import { useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import type { Product } from "@/types";
 import {
   useS3Credentials,
@@ -20,18 +22,30 @@ export function Dropzone({
   children,
 }: React.PropsWithChildren<DirectoryListProps>) {
   const { getCredentials } = useS3Credentials();
-  const { uploadFiles } = useUploadManager();
-  const uploadEnabled = getCredentials({
-    productId: product.product_id,
+  const { uploadFiles, getUploadsForScope } = useUploadManager();
+  const router = useRouter();
+  const scope = {
     accountId: product.account_id,
-  });
+    productId: product.product_id,
+  };
+  const uploadEnabled = getCredentials(scope);
+
+  // Re-fetch the server render when this product's uploads drain, so a re-upload
+  // to an existing path shows its new content/metadata instead of the stale
+  // version. Lives here (always mounted for the product route) rather than in
+  // the directory list, which isn't rendered while viewing a single file.
+  const hasActiveUploads = getUploadsForScope(scope).some(
+    (u) => u.status === "uploading" || u.status === "queued"
+  );
+  const wasActive = useRef(false);
+  useEffect(() => {
+    if (wasActive.current && !hasActiveUploads) router.refresh();
+    wasActive.current = hasActiveUploads;
+  }, [hasActiveUploads, router]);
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop: (files) => {
       if (!uploadEnabled) return;
-      uploadFiles(files, prefix, {
-        accountId: product.account_id,
-        productId: product.product_id,
-      });
+      uploadFiles(files, prefix, scope);
     },
     noClick: true, // Don't open file browser on click
     // noKeyboard: true,
