@@ -160,25 +160,6 @@ export function AccountDropdown({
           ]}
         />
         <DropdownSubmenu
-          label="Organizations"
-          items={organizations.slice(0, 5).map((org) => ({
-            href: accountUrl(org.account_id),
-            children: <span style={truncateStyle}>{org.name}</span>,
-          }))}
-          actions={[
-            {
-              href: newOrganizationUrl(session.account!.account_id),
-              children: (
-                <>
-                  <PlusIcon />
-                  Create Organization
-                </>
-              ),
-              condition: isAuthorized(session, "*", Actions.CreateAccount),
-            },
-          ]}
-        />
-        <DropdownSubmenu
           label="Products"
           items={products.slice(0, 5).map((product) => ({
             href: productUrl(product.account_id, product.product_id),
@@ -194,6 +175,25 @@ export function AccountDropdown({
                 </>
               ),
               condition: isAuthorized(session, "*", Actions.CreateRepository),
+            },
+          ]}
+        />
+        <DropdownSubmenu
+          label="Organizations"
+          items={organizations.slice(0, 5).map((org) => ({
+            href: accountUrl(org.account_id),
+            children: <span style={truncateStyle}>{org.name}</span>,
+          }))}
+          actions={[
+            {
+              href: newOrganizationUrl(session.account!.account_id),
+              children: (
+                <>
+                  <PlusIcon />
+                  Create Organization
+                </>
+              ),
+              condition: isAuthorized(session, "*", Actions.CreateAccount),
             },
           ]}
         />
