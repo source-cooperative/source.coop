@@ -10,11 +10,12 @@ import {
   newOrganizationUrl,
   newProductUrl,
   productUrl,
+  productListUrl,
 } from "@/lib";
 import { DropdownSection, DropdownSubmenu } from "./DropdownSection";
 import { isAdmin, isAuthorized } from "@/lib/api/authz";
 import { ADMIN_TOOLS } from "@/components/features/admin/tools";
-import { Actions, UserSession } from "@/types";
+import { Account, Actions, UserSession } from "@/types";
 import { ProfileAvatar } from "@/components/features/profiles/ProfileAvatar";
 import { UploadBadge } from "@/components/features/uploader/UploadBadge";
 import { UploadsSubmenu } from "@/components/features/uploader/UploadsSubmenu";
@@ -29,13 +30,11 @@ export function AccountDropdownSkeleton() {
   );
 }
 
-// Org/product/invitation names are user data, not menu commands — render them
-// in a monospace face so they read distinctly from the surrounding options, and
-// cap the width so one long name can't blow out the menu.
+// Truncate long account/product/invitation names so one entry can't blow out
+// the menu width.
 const entityNameStyle: CSSProperties = {
   display: "block",
   maxWidth: 220,
-  fontFamily: "var(--code-font-family, monospace)",
   overflow: "hidden",
   textOverflow: "ellipsis",
   whiteSpace: "nowrap",
@@ -56,9 +55,9 @@ export interface DropdownAccountProduct {
 }
 
 // An account the user can browse from the menu: themselves or an org they
-// belong to, plus that account's products.
+// belong to, plus that account's products. The full account drives the avatar.
 export interface DropdownAccount {
-  account_id: string;
+  account: Account;
   isSelf: boolean;
   products: DropdownAccountProduct[];
 }
@@ -136,52 +135,79 @@ export function AccountDropdown({
       </DropdownMenu.Trigger>
 
       <DropdownMenu.Content>
+        {/* Browse all products */}
+        <DropdownSection
+          showSeparator={false}
+          items={[{ href: productListUrl(), children: "Products" }]}
+        />
+        {/* Invitations — always shown so the user can check; a grey empty state
+            when there are none, a red dot on the label when there are. */}
         <DropdownSubmenu
-          condition={hasInvitations}
           label={
             <span
               style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
             >
               Invitations
-              <span style={inlineDotStyle} />
+              {hasInvitations && <span style={inlineDotStyle} />}
             </span>
           }
-          items={pendingInvitations.slice(0, 20).map((invitation) => ({
-            href: invitation.href,
-            children: <span style={entityNameStyle}>{invitation.label}</span>,
-          }))}
+          items={
+            hasInvitations
+              ? pendingInvitations.slice(0, 20).map((invitation) => ({
+                  href: invitation.href,
+                  children: (
+                    <span style={entityNameStyle}>{invitation.label}</span>
+                  ),
+                }))
+              : [
+                  {
+                    children: "No pending invitations",
+                    color: "gray" as const,
+                    disabled: true,
+                  },
+                ]
+          }
         />
-        {hasInvitations && <DropdownMenu.Separator />}
+        <DropdownMenu.Separator />
 
-        {/* One submenu per account (you + your orgs): a link to the account
-            page, then that account's products. */}
-        {accounts.map((account) => (
+        {/* One submenu per account (you + your orgs): an avatar-labelled trigger
+            linking to the account page, then that account's products. */}
+        {accounts.map(({ account, isSelf, products }) => (
           <DropdownSubmenu
             key={account.account_id}
             label={
-              <span
-                style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
-              >
-                <span style={entityNameStyle}>{account.account_id}</span>
-                {account.isSelf && (
+              <Flex align="center" gap="2">
+                <ProfileAvatar account={account} size="1" />
+                <span style={entityNameStyle}>{account.name}</span>
+                {isSelf && (
                   <Text size="1" color="gray">
                     you
                   </Text>
                 )}
-              </span>
+              </Flex>
             }
             items={[
               {
                 href: accountUrl(account.account_id),
-                children: account.isSelf
-                  ? "View profile"
-                  : "View organization",
+                children: isSelf ? "View profile" : "View organization",
               },
             ]}
-            actions={account.products.slice(0, 20).map((product) => ({
-              href: productUrl(account.account_id, product.product_id),
-              children: <span style={entityNameStyle}>{product.title}</span>,
-            }))}
+            actions={
+              products.length > 0
+                ? products.slice(0, 20).map((product) => ({
+                    href: productUrl(account.account_id, product.product_id),
+                    children: (
+                      <span style={entityNameStyle}>{product.title}</span>
+                    ),
+                  }))
+                : [
+                    {
+                      children: "No products yet",
+                      color: "gray" as const,
+                      disabled: true,
+                    },
+                  ]
+            }
           />
         ))}
 

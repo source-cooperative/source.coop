@@ -65,12 +65,12 @@ export async function AuthButtons() {
 
     // Accounts you can browse: yourself first, then each org you belong to.
     const accounts = [
-      { account_id: self.account_id, isSelf: true, products: toProducts(self.account_id) },
+      { account: self, isSelf: true, products: toProducts(self.account_id) },
       ...memberOrgIds
         .map((id) => accountsById.get(id))
         .filter((a): a is Account => !!a && isOrganizationalAccount(a))
         .map((a) => ({
-          account_id: a.account_id,
+          account: a,
           isSelf: false,
           products: toProducts(a.account_id),
         })),
