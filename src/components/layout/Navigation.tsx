@@ -15,20 +15,10 @@ export async function Navigation() {
           <Logo />
 
           {/* Products (shown to everyone), divided from the account controls.
-              Inline styles match the product-list entry headers (--gray-a11, 600)
-              and stay immune to the marketing page's `.landing a` uppercase rule. */}
+              `.nav .productsLink` styling stays immune to the marketing page's
+              `.landing a` uppercase/underline rule (higher specificity). */}
           <Flex align="center" gap="4">
-            <Link
-              asChild
-              size="3"
-              style={{
-                color: "var(--gray-a11)",
-                fontWeight: 600,
-                textTransform: "none",
-                textDecoration: "none",
-                fontFamily: "var(--default-font-family)",
-              }}
-            >
+            <Link asChild size="3" className={styles.productsLink}>
               <NextLink href={productListUrl()}>Products</NextLink>
             </Link>
             <Separator orientation="vertical" style={{ height: "1.5rem" }} />
