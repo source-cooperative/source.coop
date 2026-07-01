@@ -10,10 +10,11 @@ export type UploadStatus =
   | "cancelled";
 
 // The storage proxy's SigV4 verification mismatches on these characters
-// (browser encodeURIComponent leaves them un-escaped) — reject up front with
-// an actionable message instead of failing deep in the upload as a cryptic
-// "signature mismatch" (issue #405).
-const UNSUPPORTED_KEY_CHARS = /[!'()*]/;
+// (browser encodeURIComponent leaves them un-escaped, or in the case of
+// spaces, encodes them in a way the proxy doesn't expect) — reject up front
+// with an actionable message instead of failing deep in the upload as a
+// cryptic "signature mismatch" (issue #405).
+const UNSUPPORTED_KEY_CHARS = /[!'()* ]/;
 
 export interface QueuedUpload {
   id: string;
@@ -133,6 +134,14 @@ export class UploadQueueManager {
   }
 
   /**
+   * Remove a single upload from the queue (e.g. dismissing an error)
+   */
+  remove(id: string) {
+    this.items = this.items.filter((item) => item.id !== id);
+    this.onChange();
+  }
+
+  /**
    * Clear uploads from queue
    */
   clear(status?: UploadStatus, scope?: CredentialsScope) {
@@ -182,8 +191,9 @@ export class UploadQueueManager {
 
       const badChar = next.key.match(UNSUPPORTED_KEY_CHARS)?.[0];
       if (badChar) {
+        const label = badChar === " " ? "space" : `"${badChar}"`;
         next.status = "error";
-        next.error = `Unsupported character "${badChar}" in filename. Rename to remove ! ' ( ) * and try again.`;
+        next.error = `Unsupported character ${label} in filename. Rename to remove spaces and ! ' ( ) * and try again.`;
         this.onChange();
         continue; // doesn't consume a concurrency slot, check the next queued item
       }

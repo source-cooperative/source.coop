@@ -34,6 +34,7 @@ interface UploadContextType {
   cancelUpload: (id: string) => Promise<void>;
   cancelAllUploads: (scope?: CredentialsScope) => Promise<void>;
   retryUpload: (id: string) => Promise<void>;
+  removeUpload: (id: string) => void;
   deleteObject: (key: string, scope: CredentialsScope) => Promise<void>;
   deletePrefix: (prefix: string, scope: CredentialsScope) => Promise<void>;
   clearUploads: (status?: UploadStatus, scope?: CredentialsScope) => void;
@@ -152,6 +153,10 @@ export function UploadProvider({ children }: UploadProviderProps) {
     await queueRef.current!.retry(id);
   }, []);
 
+  const removeUpload = useCallback((id: string) => {
+    queueRef.current!.remove(id);
+  }, []);
+
   const deleteObject = useCallback(
     async (key: string, scope: CredentialsScope) => {
       const s3Service = getS3Service(scope);
@@ -204,6 +209,7 @@ export function UploadProvider({ children }: UploadProviderProps) {
     cancelUpload,
     cancelAllUploads,
     retryUpload,
+    removeUpload,
     deleteObject,
     deletePrefix,
     clearUploads,

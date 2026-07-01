@@ -68,6 +68,7 @@ export function DirectoryRow({
   const {
     cancelUpload,
     retryUpload,
+    removeUpload,
     getUploadsForScope,
     deleteObject,
     deletePrefix,
@@ -216,22 +217,38 @@ export function DirectoryRow({
               {/* Upload control buttons */}
               {!item.isDirectory && isUploading && uploadItem && (
                 <Flex gap="1">
-                  {/* Retry button for failed uploads */}
+                  {/* Retry / dismiss buttons for failed uploads */}
                   {item.uploadProgress?.status === "error" && (
-                    <Tooltip content="Retry upload">
-                      <IconButton
-                        variant="soft"
-                        size="1"
-                        color="amber"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          retryUpload(uploadItem.id);
-                        }}
-                        style={{ minWidth: "auto", cursor: "pointer" }}
-                      >
-                        <ReloadIcon width={14} height={14} />
-                      </IconButton>
-                    </Tooltip>
+                    <>
+                      <Tooltip content="Retry upload">
+                        <IconButton
+                          variant="soft"
+                          size="1"
+                          color="amber"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            retryUpload(uploadItem.id);
+                          }}
+                          style={{ minWidth: "auto", cursor: "pointer" }}
+                        >
+                          <ReloadIcon width={14} height={14} />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip content="Dismiss">
+                        <IconButton
+                          variant="soft"
+                          size="1"
+                          color="gray"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeUpload(uploadItem.id);
+                          }}
+                          style={{ minWidth: "auto", cursor: "pointer" }}
+                        >
+                          <Cross2Icon width={14} height={14} />
+                        </IconButton>
+                      </Tooltip>
+                    </>
                   )}
 
                   {/* Cancel button for active/queued uploads */}
