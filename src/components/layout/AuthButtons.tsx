@@ -34,7 +34,7 @@ export async function AuthButtons() {
         ...memberOrgIds,
         ...invited.map((m) => m.membership_account_id),
       ]),
-      productsTable.listByAccount(session.account.account_id, 5),
+      productsTable.listByAccount(session.account.account_id, 20),
       // Product invites need the product title; usually there are none.
       Promise.all(
         invited

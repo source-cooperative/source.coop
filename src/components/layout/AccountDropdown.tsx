@@ -31,12 +31,12 @@ export function AccountDropdownSkeleton() {
 }
 
 // Org/product/invitation names are user data, not menu commands — render them
-// heavier so they read distinctly from the surrounding options, and cap the
-// width so one long name can't blow out the menu.
+// in a monospace face so they read distinctly from the surrounding options, and
+// cap the width so one long name can't blow out the menu.
 const entityNameStyle: CSSProperties = {
   display: "block",
   maxWidth: 220,
-  fontWeight: 500,
+  fontFamily: "var(--code-font-family, monospace)",
   overflow: "hidden",
   textOverflow: "ellipsis",
   whiteSpace: "nowrap",
@@ -164,7 +164,7 @@ export function AccountDropdown({
         />
         <DropdownSubmenu
           label="Products"
-          items={products.slice(0, 5).map((product) => ({
+          items={products.slice(0, 20).map((product) => ({
             href: productUrl(product.account_id, product.product_id),
             children: <span style={entityNameStyle}>{product.title}</span>,
           }))}
@@ -183,7 +183,7 @@ export function AccountDropdown({
         />
         <DropdownSubmenu
           label="Organizations"
-          items={organizations.slice(0, 5).map((org) => ({
+          items={organizations.slice(0, 20).map((org) => ({
             href: accountUrl(org.account_id),
             children: <span style={entityNameStyle}>{org.name}</span>,
           }))}
