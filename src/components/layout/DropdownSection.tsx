@@ -29,8 +29,12 @@ export interface DropdownItem {
 // in both.
 function DropdownItems({ items }: { items: DropdownItem[] }) {
   return items
-    .filter(({ condition = true }) => condition)
-    .map((item, index) =>
+    // Keep the original array index so the React key is stable when an item's
+    // `condition` toggles — filtering first would renumber surviving items and
+    // let React reconcile the wrong node.
+    .map((item, index) => ({ item, index }))
+    .filter(({ item: { condition = true } }) => condition)
+    .map(({ item, index }) =>
       item.href ? (
         // `asChild` makes the <Link> itself the menu item: one real anchor
         // handles left-click (Next client-side nav), keyboard activation
