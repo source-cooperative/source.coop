@@ -30,6 +30,11 @@ jobs:
       - uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          # Allow the github-actions bot to trigger the review so that
+          # Claude-authored PRs get reviewed. Without this, the action
+          # aborts on bot actors ("Workflow initiated by non-human 
+          # actor").
+          allowed_bots: "github-actions"
           # Deliver the review as ONE sticky PR comment that updates in place each
           # run. track_progress forces tag mode (a single tracking comment the
           # action owns and updates with the final result on these pull_request
