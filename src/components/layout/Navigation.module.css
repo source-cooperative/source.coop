@@ -11,7 +11,7 @@
 /* Products nav link — heading font, matches the product-list entry headers.
    Scoped under .nav so it outranks the marketing page's `.landing a` rule. */
 .nav .productsLink {
-  font-family: var(--heading-font-family);
+  font-family: var(--code-font-family); /* Berkeley Mono */
   font-weight: 500;
   color: var(--gray-a11);
   text-transform: none;
