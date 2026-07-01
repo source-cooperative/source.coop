@@ -31,11 +31,77 @@
   transform: rotate(180deg);
 }
 
-/* On phones the account dropdown spans (nearly) the full viewport for a more
-   traditional, tap-friendly mobile menu instead of a narrow floating card. */
-@media (max-width: 640px) {
-  .accountMenu {
-    width: calc(100vw - var(--space-4));
-    max-width: calc(100vw - var(--space-4));
-  }
+/* Mobile menu (full-screen sheet) --------------------------------------- */
+.mobileOverlay {
+  position: fixed;
+  inset: 0;
+  background: color-mix(in srgb, var(--gray-12) 45%, transparent);
+  z-index: 1000;
+}
+
+.mobileSheet {
+  position: fixed;
+  inset: 0;
+  z-index: 1001;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-background);
+  overflow-y: auto;
+  padding-bottom: var(--space-6);
+}
+
+.mobileDivider {
+  border-top: 1px solid var(--gray-a5);
+}
+
+/* Full-width, tap-friendly rows (links, section headers, logout). */
+.mobileRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  min-height: 48px;
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--font-size-3);
+  color: var(--gray-12);
+  text-align: left;
+  text-decoration: none;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.mobileRow:hover {
+  background: var(--gray-3);
+}
+
+.mobileRowIndent {
+  padding-left: var(--space-7);
+}
+
+.mobileRowMuted {
+  color: var(--gray-a11);
+  cursor: default;
+}
+
+.mobileRowMuted:hover {
+  background: transparent;
+}
+
+.mobileRowChevron {
+  margin-left: auto;
+  color: var(--gray-a11);
+  transition: transform 0.15s ease;
+}
+
+.mobileRowChevronOpen {
+  transform: rotate(180deg);
+}
+
+.mobileDot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--red-9);
 } 

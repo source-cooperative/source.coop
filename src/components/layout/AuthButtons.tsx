@@ -1,4 +1,6 @@
 import { AccountDropdown } from "./AccountDropdown";
+import { MobileMenu } from "./MobileMenu";
+import { ProductsNavLink } from "./ProductsNavLink";
 import { getPageSession } from "@/lib/api/utils";
 import { isAuthorized } from "@/lib/api/authz";
 import {
@@ -6,7 +8,7 @@ import {
   isOrganizationalAccount,
   productsTable,
 } from "@/lib/clients/database";
-import { Button, Callout, Link } from "@radix-ui/themes";
+import { Box, Button, Callout, Flex, Link, Separator } from "@radix-ui/themes";
 import { ExclamationTriangleIcon } from "@radix-ui/react-icons";
 import { Account, Actions, MembershipState } from "@/types";
 import { loginUrl, onboardingUrl } from "@/lib/urls";
@@ -99,11 +101,26 @@ export async function AuthButtons() {
     );
 
     return (
-      <AccountDropdown
-        session={session}
-        accounts={accounts}
-        pendingInvitations={pendingInvitations}
-      />
+      <>
+        {/* Desktop: Products link + account dropdown */}
+        <Flex display={{ initial: "none", sm: "flex" }} align="center" gap="4">
+          <ProductsNavLink />
+          <Separator orientation="vertical" style={{ height: "1.5rem" }} />
+          <AccountDropdown
+            session={session}
+            accounts={accounts}
+            pendingInvitations={pendingInvitations}
+          />
+        </Flex>
+        {/* Mobile: single hamburger → full-screen sheet */}
+        <Box display={{ initial: "block", sm: "none" }}>
+          <MobileMenu
+            session={session}
+            accounts={accounts}
+            pendingInvitations={pendingInvitations}
+          />
+        </Box>
+      </>
     );
   }
 
@@ -123,9 +140,13 @@ export async function AuthButtons() {
 
   const returnTo = await getReturnToUrl();
 
+  // Logged out: Products + login sit inline (fits on mobile and desktop).
   return (
-    <Link href={loginUrl(returnTo)}>
-      <Button>Log In / Register</Button>
-    </Link>
+    <Flex align="center" gap="4">
+      <ProductsNavLink />
+      <Link href={loginUrl(returnTo)}>
+        <Button>Log In / Register</Button>
+      </Link>
+    </Flex>
   );
 }

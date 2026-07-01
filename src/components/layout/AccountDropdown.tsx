@@ -4,14 +4,13 @@ import { Flex, DropdownMenu, Text, Box } from "@radix-ui/themes";
 import { ChevronDownIcon, PlusIcon } from "@radix-ui/react-icons";
 import styles from "./Navigation.module.css";
 import {
-  LOGGER,
-  CONFIG,
   accountUrl,
   newOrganizationUrl,
   newProductUrl,
   productUrl,
 } from "@/lib";
 import { DropdownSection, DropdownSubmenu } from "./DropdownSection";
+import { useLogout } from "./useLogout";
 import { isAdmin, isAuthorized } from "@/lib/api/authz";
 import { ADMIN_TOOLS } from "@/components/features/admin/tools";
 import { Account, Actions, UserSession } from "@/types";
@@ -80,25 +79,7 @@ export function AccountDropdown({
   const canCreateProduct = isAuthorized(session, "*", Actions.CreateRepository);
   const canCreateOrg = isAuthorized(session, "*", Actions.CreateAccount);
   const canCreate = canCreateProduct || canCreateOrg;
-
-  const handleLogout = async () => {
-    const response = await fetch(CONFIG.auth.routes.logout, {
-      method: "GET",
-      credentials: "include",
-    });
-    if (!response.ok) {
-      LOGGER.error(
-        `Failed to logout: ${response.status} ${response.statusText}`,
-        {
-          operation: "logout",
-          metadata: { response },
-        }
-      );
-      return;
-    }
-    const { logout_url } = await response.json();
-    window.location.href = logout_url;
-  };
+  const handleLogout = useLogout();
 
   return (
     <DropdownMenu.Root open={isOpen} onOpenChange={setIsOpen}>
@@ -133,7 +114,7 @@ export function AccountDropdown({
         </Flex>
       </DropdownMenu.Trigger>
 
-      <DropdownMenu.Content className={styles.accountMenu}>
+      <DropdownMenu.Content>
         {/* One submenu per account (you + your orgs): an avatar-labelled trigger
             linking to the account page, then that account's products. */}
         {accounts.map(({ account, isSelf, products }) => (
