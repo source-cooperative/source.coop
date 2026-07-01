@@ -3,7 +3,6 @@ declare const styles: {
   readonly logo: string;
   readonly chevron: string;
   readonly productsLink: string;
-  readonly mobileOverlay: string;
   readonly mobileSheet: string;
   readonly mobileDivider: string;
   readonly mobileRow: string;

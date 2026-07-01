@@ -31,23 +31,23 @@
   transform: rotate(180deg);
 }
 
-/* Mobile menu (full-screen sheet) --------------------------------------- */
-.mobileOverlay {
-  position: fixed;
-  inset: 0;
-  background: color-mix(in srgb, var(--gray-12) 45%, transparent);
-  z-index: 1000;
-}
-
+/* Mobile menu — full-screen override of the themed Radix Dialog content
+   (the Dialog supplies the backdrop, panel background, and theme tokens). */
 .mobileSheet {
   position: fixed;
   inset: 0;
-  z-index: 1001;
+  width: 100vw;
+  max-width: 100vw;
+  height: 100dvh;
+  max-height: 100dvh;
+  margin: 0;
+  padding: 0;
+  border-radius: 0;
+  box-shadow: none;
   display: flex;
   flex-direction: column;
-  background: var(--color-background);
   overflow-y: auto;
-  padding-bottom: var(--space-6);
+  background: var(--color-panel-solid);
 }
 
 .mobileDivider {

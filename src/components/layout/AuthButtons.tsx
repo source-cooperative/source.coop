@@ -8,7 +8,7 @@ import {
   isOrganizationalAccount,
   productsTable,
 } from "@/lib/clients/database";
-import { Box, Button, Callout, Flex, Link, Separator } from "@radix-ui/themes";
+import { Box, Button, Callout, Flex, Link } from "@radix-ui/themes";
 import { ExclamationTriangleIcon } from "@radix-ui/react-icons";
 import { Account, Actions, MembershipState } from "@/types";
 import { loginUrl, onboardingUrl } from "@/lib/urls";
@@ -102,10 +102,9 @@ export async function AuthButtons() {
 
     return (
       <>
-        {/* Desktop: Products link + account dropdown */}
+        {/* Desktop: Products link (+ divider) + account dropdown */}
         <Flex display={{ initial: "none", sm: "flex" }} align="center" gap="4">
-          <ProductsNavLink />
-          <Separator orientation="vertical" style={{ height: "1.5rem" }} />
+          <ProductsNavLink divider />
           <AccountDropdown
             session={session}
             accounts={accounts}
