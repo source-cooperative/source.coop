@@ -11,6 +11,7 @@ export const productUrl = (
 ) => `/${account_id}/${product_id}` + (params ? `?${params}` : "");
 export const productListUrl = () => "/products";
 export const newProductUrl = () => "/products/new";
+export const docsUrl = () => "https://docs.source.coop";
 
 // Admin URLs
 export const adminUrl = () => "/admin";

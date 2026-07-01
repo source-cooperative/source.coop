@@ -16,6 +16,7 @@ import {
   newProductUrl,
   newOrganizationUrl,
   loginUrl,
+  docsUrl,
 } from "@/lib";
 import { isAdmin, isAuthorized } from "@/lib/api/authz";
 import { ADMIN_TOOLS } from "@/components/features/admin/tools";
@@ -94,6 +95,9 @@ export function MobileMenu({
           >
             Products
           </NextLink>
+          <a href={docsUrl()} className={styles.mobileRow} onClick={close}>
+            Docs
+          </a>
           <div className={styles.mobileDivider} />
 
           {accounts.map(({ account, isSelf, products }) => (
@@ -222,6 +226,9 @@ export function LoggedOutMobileMenu({ returnTo }: { returnTo?: string }) {
           >
             Products
           </NextLink>
+          <a href={docsUrl()} className={styles.mobileRow} onClick={close}>
+            Docs
+          </a>
           <div className={styles.mobileDivider} />
           <Flex p="4">
             <Button asChild size="3" style={{ width: "100%" }}>

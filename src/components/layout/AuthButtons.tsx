@@ -1,6 +1,6 @@
 import { AccountDropdown } from "./AccountDropdown";
 import { MobileMenu, LoggedOutMobileMenu } from "./MobileMenu";
-import { ProductsNavLink } from "./ProductsNavLink";
+import { NavLinks } from "./NavLinks";
 import { getPageSession } from "@/lib/api/utils";
 import { isAuthorized } from "@/lib/api/authz";
 import {
@@ -104,7 +104,7 @@ export async function AuthButtons() {
       <>
         {/* Desktop: Products link (+ divider) + account dropdown */}
         <Flex display={{ initial: "none", sm: "flex" }} align="center" gap="4">
-          <ProductsNavLink divider />
+          <NavLinks divider />
           <AccountDropdown
             session={session}
             accounts={accounts}
@@ -143,7 +143,7 @@ export async function AuthButtons() {
     <>
       {/* Desktop: Products link + login inline */}
       <Flex display={{ initial: "none", sm: "flex" }} align="center" gap="4">
-        <ProductsNavLink />
+        <NavLinks />
         <Link href={loginUrl(returnTo)}>
           <Button>Log In / Register</Button>
         </Link>
