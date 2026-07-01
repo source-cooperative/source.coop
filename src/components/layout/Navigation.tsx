@@ -15,14 +15,7 @@ export async function Navigation() {
           <Logo />
 
           <Flex gap="4" align="center">
-            <Link
-              asChild
-              size="2"
-              weight="medium"
-              color="gray"
-              highContrast
-              underline="hover"
-            >
+            <Link asChild size="3" color="gray" highContrast underline="hover">
               <NextLink href={productListUrl()}>Products</NextLink>
             </Link>
             <Suspense fallback={<AccountDropdownSkeleton />}>

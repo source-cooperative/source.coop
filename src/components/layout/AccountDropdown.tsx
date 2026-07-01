@@ -30,10 +30,13 @@ export function AccountDropdownSkeleton() {
   );
 }
 
-// Cap long org/product names so a single entry can't blow out the menu width.
-const truncateStyle: CSSProperties = {
+// Org/product/invitation names are user data, not menu commands — render them
+// heavier so they read distinctly from the surrounding options, and cap the
+// width so one long name can't blow out the menu.
+const entityNameStyle: CSSProperties = {
   display: "block",
   maxWidth: 220,
+  fontWeight: 500,
   overflow: "hidden",
   textOverflow: "ellipsis",
   whiteSpace: "nowrap",
@@ -143,7 +146,7 @@ export function AccountDropdown({
           }
           items={pendingInvitations.slice(0, 5).map((invitation) => ({
             href: invitation.href,
-            children: <span style={truncateStyle}>{invitation.label}</span>,
+            children: <span style={entityNameStyle}>{invitation.label}</span>,
           }))}
         />
         <DropdownSubmenu
@@ -163,7 +166,7 @@ export function AccountDropdown({
           label="Products"
           items={products.slice(0, 5).map((product) => ({
             href: productUrl(product.account_id, product.product_id),
-            children: <span style={truncateStyle}>{product.title}</span>,
+            children: <span style={entityNameStyle}>{product.title}</span>,
           }))}
           actions={[
             {
@@ -182,7 +185,7 @@ export function AccountDropdown({
           label="Organizations"
           items={organizations.slice(0, 5).map((org) => ({
             href: accountUrl(org.account_id),
-            children: <span style={truncateStyle}>{org.name}</span>,
+            children: <span style={entityNameStyle}>{org.name}</span>,
           }))}
           actions={[
             {
