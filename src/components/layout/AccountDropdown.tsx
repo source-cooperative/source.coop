@@ -140,34 +140,6 @@ export function AccountDropdown({
           showSeparator={false}
           items={[{ href: productListUrl(), children: "Products" }]}
         />
-        {/* Invitations — always shown so the user can check; a grey empty state
-            when there are none, a red dot on the label when there are. */}
-        <DropdownSubmenu
-          label={
-            <span
-              style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
-            >
-              Invitations
-              {hasInvitations && <span style={inlineDotStyle} />}
-            </span>
-          }
-          items={
-            hasInvitations
-              ? pendingInvitations.slice(0, 20).map((invitation) => ({
-                  href: invitation.href,
-                  children: (
-                    <span style={entityNameStyle}>{invitation.label}</span>
-                  ),
-                }))
-              : [
-                  {
-                    children: "No pending invitations",
-                    color: "gray" as const,
-                    disabled: true,
-                  },
-                ]
-          }
-        />
         <DropdownMenu.Separator />
 
         {/* One submenu per account (you + your orgs): an avatar-labelled trigger
@@ -238,7 +210,35 @@ export function AccountDropdown({
           ]}
         />
 
-        {isAdmin(session) && <DropdownMenu.Separator />}
+        <DropdownMenu.Separator />
+        {/* Invitations — always shown so the user can check; a grey empty state
+            when there are none, a red dot on the label when there are. */}
+        <DropdownSubmenu
+          label={
+            <span
+              style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
+            >
+              Invitations
+              {hasInvitations && <span style={inlineDotStyle} />}
+            </span>
+          }
+          items={
+            hasInvitations
+              ? pendingInvitations.slice(0, 20).map((invitation) => ({
+                  href: invitation.href,
+                  children: (
+                    <span style={entityNameStyle}>{invitation.label}</span>
+                  ),
+                }))
+              : [
+                  {
+                    children: "No pending invitations",
+                    color: "gray" as const,
+                    disabled: true,
+                  },
+                ]
+          }
+        />
         <DropdownSubmenu
           label="Admin"
           condition={isAdmin(session)}
