@@ -61,7 +61,7 @@ export function DirectoryList({
   const uploadKeysSig = scopedUploads.map((u) => u.key).join("\n");
   useEffect(() => {
     setDeletedPaths((prev) => {
-      const keys = uploadKeysSig ? uploadKeysSig.split("\n") : [];
+      const keys = uploadKeysSig.split("\n");
       if (!keys.some((k) => prev.has(k))) return prev;
       const next = new Set(prev);
       keys.forEach((k) => next.delete(k));
