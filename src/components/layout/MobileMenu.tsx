@@ -20,7 +20,7 @@ import { isAdmin, isAuthorized } from "@/lib/api/authz";
 import { ADMIN_TOOLS } from "@/components/features/admin/tools";
 import { Actions, UserSession } from "@/types";
 import { ProfileAvatar } from "@/components/features/profiles/ProfileAvatar";
-import { useLogout } from "./useLogout";
+import { logout } from "./logout";
 import type { DropdownAccount, DropdownInvitation } from "./AccountDropdown";
 
 export function MobileMenu({
@@ -35,7 +35,6 @@ export function MobileMenu({
   const [open, setOpen] = useState(false);
   // Single-open accordion: one expanded section at a time (account id / "…").
   const [expanded, setExpanded] = useState<string | null>(null);
-  const logout = useLogout();
 
   const canCreateProduct = isAuthorized(session, "*", Actions.CreateRepository);
   const canCreateOrg = isAuthorized(session, "*", Actions.CreateAccount);

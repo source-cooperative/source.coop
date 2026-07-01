@@ -10,7 +10,7 @@ import {
   productUrl,
 } from "@/lib";
 import { DropdownSection, DropdownSubmenu } from "./DropdownSection";
-import { useLogout } from "./useLogout";
+import { logout } from "./logout";
 import { isAdmin, isAuthorized } from "@/lib/api/authz";
 import { ADMIN_TOOLS } from "@/components/features/admin/tools";
 import { Account, Actions, UserSession } from "@/types";
@@ -36,15 +36,6 @@ const entityNameStyle: CSSProperties = {
   overflow: "hidden",
   textOverflow: "ellipsis",
   whiteSpace: "nowrap",
-};
-
-// Red dot rendered inline next to the "Invitations" label.
-const inlineDotStyle: CSSProperties = {
-  display: "inline-block",
-  width: 8,
-  height: 8,
-  borderRadius: "50%",
-  backgroundColor: "var(--red-9)",
 };
 
 export interface DropdownAccountProduct {
@@ -79,7 +70,6 @@ export function AccountDropdown({
   const canCreateProduct = isAuthorized(session, "*", Actions.CreateRepository);
   const canCreateOrg = isAuthorized(session, "*", Actions.CreateAccount);
   const canCreate = canCreateProduct || canCreateOrg;
-  const handleLogout = useLogout();
 
   return (
     <DropdownMenu.Root open={isOpen} onOpenChange={setIsOpen}>
@@ -192,7 +182,7 @@ export function AccountDropdown({
               style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
             >
               Invitations
-              {hasInvitations && <span style={inlineDotStyle} />}
+              {hasInvitations && <span className={styles.mobileDot} />}
             </span>
           }
           items={
@@ -225,7 +215,7 @@ export function AccountDropdown({
         <DropdownSection
           items={[
             {
-              onClick: handleLogout,
+              onClick: logout,
               children: "Logout",
               color: "red",
             },

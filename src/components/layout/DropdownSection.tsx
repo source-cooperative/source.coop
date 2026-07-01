@@ -29,12 +29,8 @@ export interface DropdownItem {
 // in both.
 function DropdownItems({ items }: { items: DropdownItem[] }) {
   return items
-    // Keep the original array index so the React key is stable when an
-    // item's `condition` toggles — filtering on its own would renumber
-    // surviving items and let React reconcile the wrong node.
-    .map((item, index) => ({ item, index }))
-    .filter(({ item: { condition = true } }) => condition)
-    .map(({ item, index }) =>
+    .filter(({ condition = true }) => condition)
+    .map((item, index) =>
       item.href ? (
         // `asChild` makes the <Link> itself the menu item: one real anchor
         // handles left-click (Next client-side nav), keyboard activation
@@ -97,7 +93,7 @@ export interface DropdownSubmenuProps {
   label: ReactNode;
   /** Listed first (e.g. the user's organizations/products). */
   items: DropdownItem[];
-  /** Shown after a separator (e.g. "All Products", "Create…"). */
+  /** Shown after a separator (e.g. the products, or a "Create…" action). */
   actions?: DropdownItem[];
   condition?: boolean;
 }
