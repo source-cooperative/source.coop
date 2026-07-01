@@ -43,8 +43,6 @@ export function DirectoryList({
   // reappear); we just keep a successfully-deleted path hidden for the lifetime
   // of this directory view and reset when the prefix changes (navigating away).
   // We only ever add on a confirmed delete, so the object really is gone.
-  // ponytail: re-uploading the exact same path in this same view would stay
-  // hidden until you navigate or refresh — rare; not worth tracking re-creates.
   const [deletedPaths, setDeletedPaths] = useState<Set<string>>(new Set());
   useEffect(() => {
     setDeletedPaths(new Set()); // new directory view → drop stale optimistic hides
@@ -57,7 +55,21 @@ export function DirectoryList({
   };
   const scopedUploads = getUploadsForScope(scope);
 
-  // Merge file objects with upload progress, dropping optimistically-deleted ones
+  // Re-uploading to a previously-deleted path re-creates the object, so stop
+  // hiding it. deletedPaths is client state that survives a router.refresh(),
+  // so without this the re-upload stays hidden until you navigate away.
+  const uploadKeysSig = scopedUploads.map((u) => u.key).join("\n");
+  useEffect(() => {
+    setDeletedPaths((prev) => {
+      const keys = uploadKeysSig.split("\n");
+      if (!keys.some((k) => prev.has(k))) return prev;
+      const next = new Set(prev);
+      keys.forEach((k) => next.delete(k));
+      return next;
+    });
+  }, [uploadKeysSig]);
+
+  // Merge file objects with upload progress
   const items = mergeUploadsWithFiles(
     asFileNodes(objects),
     scopedUploads,
