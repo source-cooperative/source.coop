@@ -1,19 +1,19 @@
 import { ReactNode } from "react";
 import { Flex, Text } from "@radix-ui/themes";
-import { ExternalLinkIcon } from "@radix-ui/react-icons";
+import { ChevronRightIcon } from "@radix-ui/react-icons";
 import Link from "next/link";
 
-interface ExternalLinkProps {
+interface LinkAwayProps {
   href: string;
   children: ReactNode;
   useNextLink?: boolean;
 }
 
-export function ExternalLink({ href, children }: ExternalLinkProps) {
+export function LinkAway({ href, children }: LinkAwayProps) {
   const content = (
     <Flex align="center" gap="2">
       <Text size="1">{children}</Text>
-      <ExternalLinkIcon width="14" height="14" />
+      <ChevronRightIcon width="14" height="14" />
     </Flex>
   );
 
