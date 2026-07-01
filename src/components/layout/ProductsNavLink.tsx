@@ -16,7 +16,7 @@ export function ProductsNavLink({ divider = false }: { divider?: boolean }) {
 
   return (
     <>
-      <Link asChild size="3" className={styles.productsLink}>
+      <Link asChild size="2" className={styles.productsLink}>
         <NextLink href={productListUrl()}>Products</NextLink>
       </Link>
       {divider && (
