@@ -7,7 +7,6 @@ import {
   LOGGER,
   CONFIG,
   accountUrl,
-  editAccountProfileUrl,
   newOrganizationUrl,
   newProductUrl,
   productUrl,
@@ -51,15 +50,17 @@ const inlineDotStyle: CSSProperties = {
   backgroundColor: "var(--red-9)",
 };
 
-export interface DropdownOrganization {
-  account_id: string;
-  name: string;
-}
-
-export interface DropdownProduct {
-  account_id: string;
+export interface DropdownAccountProduct {
   product_id: string;
   title: string;
+}
+
+// An account the user can browse from the menu: themselves or an org they
+// belong to, plus that account's products.
+export interface DropdownAccount {
+  account_id: string;
+  isSelf: boolean;
+  products: DropdownAccountProduct[];
 }
 
 export interface DropdownInvitation {
@@ -69,17 +70,18 @@ export interface DropdownInvitation {
 
 export function AccountDropdown({
   session,
-  organizations = [],
-  products = [],
+  accounts = [],
   pendingInvitations = [],
 }: {
   session: UserSession;
-  organizations?: DropdownOrganization[];
-  products?: DropdownProduct[];
+  accounts?: DropdownAccount[];
   pendingInvitations?: DropdownInvitation[];
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const hasInvitations = pendingInvitations.length > 0;
+  const canCreateProduct = isAuthorized(session, "*", Actions.CreateRepository);
+  const canCreateOrg = isAuthorized(session, "*", Actions.CreateAccount);
+  const canCreate = canCreateProduct || canCreateOrg;
 
   const handleLogout = async () => {
     const response = await fetch(CONFIG.auth.routes.logout, {
@@ -144,62 +146,73 @@ export function AccountDropdown({
               <span style={inlineDotStyle} />
             </span>
           }
-          items={pendingInvitations.slice(0, 5).map((invitation) => ({
+          items={pendingInvitations.slice(0, 20).map((invitation) => ({
             href: invitation.href,
             children: <span style={entityNameStyle}>{invitation.label}</span>,
           }))}
         />
-        <DropdownSubmenu
-          label="Profile"
+        {hasInvitations && <DropdownMenu.Separator />}
+
+        {/* One submenu per account (you + your orgs): a link to the account
+            page, then that account's products. */}
+        {accounts.map((account) => (
+          <DropdownSubmenu
+            key={account.account_id}
+            label={
+              <span
+                style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
+              >
+                <span style={entityNameStyle}>{account.account_id}</span>
+                {account.isSelf && (
+                  <Text size="1" color="gray">
+                    you
+                  </Text>
+                )}
+              </span>
+            }
+            items={[
+              {
+                href: accountUrl(account.account_id),
+                children: account.isSelf
+                  ? "View profile"
+                  : "View organization",
+              },
+            ]}
+            actions={account.products.slice(0, 20).map((product) => ({
+              href: productUrl(account.account_id, product.product_id),
+              children: <span style={entityNameStyle}>{product.title}</span>,
+            }))}
+          />
+        ))}
+
+        {canCreate && <DropdownMenu.Separator />}
+        <DropdownSection
+          showSeparator={false}
           items={[
-            {
-              href: accountUrl(session.account!.account_id),
-              children: "View Profile",
-            },
-            {
-              href: editAccountProfileUrl(session.account!.account_id),
-              children: "Edit Profile",
-            },
-          ]}
-        />
-        <DropdownSubmenu
-          label="Products"
-          items={products.slice(0, 20).map((product) => ({
-            href: productUrl(product.account_id, product.product_id),
-            children: <span style={entityNameStyle}>{product.title}</span>,
-          }))}
-          actions={[
             {
               href: newProductUrl(),
               children: (
                 <>
                   <PlusIcon />
-                  Create Product
+                  New product
                 </>
               ),
-              condition: isAuthorized(session, "*", Actions.CreateRepository),
+              condition: canCreateProduct,
             },
-          ]}
-        />
-        <DropdownSubmenu
-          label="Organizations"
-          items={organizations.slice(0, 20).map((org) => ({
-            href: accountUrl(org.account_id),
-            children: <span style={entityNameStyle}>{org.name}</span>,
-          }))}
-          actions={[
             {
               href: newOrganizationUrl(session.account!.account_id),
               children: (
                 <>
                   <PlusIcon />
-                  Create Organization
+                  New organization
                 </>
               ),
-              condition: isAuthorized(session, "*", Actions.CreateAccount),
+              condition: canCreateOrg,
             },
           ]}
         />
+
+        {isAdmin(session) && <DropdownMenu.Separator />}
         <DropdownSubmenu
           label="Admin"
           condition={isAdmin(session)}

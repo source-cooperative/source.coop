@@ -7,7 +7,7 @@ import {
 } from "@/lib/clients/database";
 import { Button, Callout, Link } from "@radix-ui/themes";
 import { ExclamationTriangleIcon } from "@radix-ui/react-icons";
-import { MembershipState } from "@/types";
+import { Account, MembershipState } from "@/types";
 import { loginUrl, onboardingUrl } from "@/lib/urls";
 import { getReturnToUrl } from "@/lib/baseUrl";
 import { invitationLink } from "./accountMenu";
@@ -16,26 +16,34 @@ export async function AuthButtons() {
   const session = await getPageSession();
 
   if (session?.account) {
+    const self = session.account;
     const memberships = session.memberships ?? [];
-    // Accepted org memberships vs outstanding invites: an invite must not read
-    // as an org the user already belongs to — it goes in "Invitations" instead.
-    const memberOrgIds = new Set(
-      memberships
-        .filter((m) => m.state === MembershipState.Member)
-        .map((m) => m.membership_account_id)
-    );
+    // Accepted org memberships (distinct) vs outstanding invites: an invite
+    // must not read as an org you belong to — it goes in "Invitations" instead.
+    const memberOrgIds = [
+      ...new Set(
+        memberships
+          .filter((m) => m.state === MembershipState.Member)
+          .map((m) => m.membership_account_id)
+      ),
+    ];
     const invited = memberships.filter(
       (m) => m.state === MembershipState.Invited
     );
 
-    const [accounts, { products }, invitedProducts] = await Promise.all([
-      // One batched account read resolves both member-org and invite-org names.
+    // One round trip: org accounts (member + invited, for names), the products
+    // owned by you and by each org you belong to, and titles for product invites.
+    const productAccountIds = [self.account_id, ...memberOrgIds];
+    const [orgAccounts, productLists, invitedProducts] = await Promise.all([
       accountsTable.fetchManyByIds([
         ...memberOrgIds,
         ...invited.map((m) => m.membership_account_id),
       ]),
-      productsTable.listByAccount(session.account.account_id, 20),
-      // Product invites need the product title; usually there are none.
+      Promise.all(
+        productAccountIds.map((id) =>
+          productsTable.listByAccount(id, 20).then((r) => r.products)
+        )
+      ),
       Promise.all(
         invited
           .filter((m) => m.repository_id)
@@ -45,16 +53,33 @@ export async function AuthButtons() {
       ),
     ]);
 
-    const accountsById = new Map(accounts.map((a) => [a.account_id, a]));
+    const accountsById = new Map(orgAccounts.map((a) => [a.account_id, a]));
+    const productsByAccount = new Map(
+      productAccountIds.map((id, i) => [id, productLists[i]])
+    );
+    const toProducts = (id: string) =>
+      (productsByAccount.get(id) ?? []).map((p) => ({
+        product_id: p.product_id,
+        title: p.title,
+      }));
+
+    // Accounts you can browse: yourself first, then each org you belong to.
+    const accounts = [
+      { account_id: self.account_id, isSelf: true, products: toProducts(self.account_id) },
+      ...memberOrgIds
+        .map((id) => accountsById.get(id))
+        .filter((a): a is Account => !!a && isOrganizationalAccount(a))
+        .map((a) => ({
+          account_id: a.account_id,
+          isSelf: false,
+          products: toProducts(a.account_id),
+        })),
+    ];
+
     const productTitleByKey = new Map<string, string>();
     for (const p of invitedProducts) {
       if (p) productTitleByKey.set(`${p.account_id}/${p.product_id}`, p.title);
     }
-
-    const organizations = accounts
-      .filter((a) => memberOrgIds.has(a.account_id) && isOrganizationalAccount(a))
-      .map((a) => ({ account_id: a.account_id, name: a.name }));
-
     const pendingInvitations = invited.map((m) =>
       invitationLink(m, {
         organizationName: accountsById.get(m.membership_account_id)?.name,
@@ -67,12 +92,7 @@ export async function AuthButtons() {
     return (
       <AccountDropdown
         session={session}
-        organizations={organizations}
-        products={products.map((p) => ({
-          account_id: p.account_id,
-          product_id: p.product_id,
-          title: p.title,
-        }))}
+        accounts={accounts}
         pendingInvitations={pendingInvitations}
       />
     );
