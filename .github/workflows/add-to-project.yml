@@ -1,0 +1,58 @@
+name: Add to project
+
+on:
+  issues:
+    types: [opened, reopened, transferred]
+  pull_request_target:
+    types: [opened, reopened, ready_for_review]
+  workflow_dispatch:  # on-demand backfill of all open issues & PRs
+
+permissions: {}       # all writes go through the App token, not GITHUB_TOKEN
+
+concurrency:
+  group: add-to-project-${{ github.event.issue.number || github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  add-single:
+    if: github.event_name != 'workflow_dispatch'
+    name: Add opened issue/PR to project
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/create-github-app-token@5d869da34e18e7287c1daad50e0b8ea0f506ce69 # v1.11.0
+        id: app-token
+        with:
+          app-id: ${{ vars.SC_PROJECT_BOT_ID }}
+          private-key: ${{ secrets.SC_PROJECT_BOT_PRIVATE_KEY }}
+      - uses: actions/add-to-project@5afcf98fcd03f1c2f92c3c83f58ae24323cc57fd # v2.0.0
+        with:
+          project-url: https://github.com/orgs/source-cooperative/projects/2
+          github-token: ${{ steps.app-token.outputs.token }}
+
+  backfill:
+    if: github.event_name == 'workflow_dispatch'
+    name: Backfill open issues & PRs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/create-github-app-token@5d869da34e18e7287c1daad50e0b8ea0f506ce69 # v1.11.0
+        id: app-token
+        with:
+          app-id: ${{ vars.SC_PROJECT_BOT_ID }}
+          private-key: ${{ secrets.SC_PROJECT_BOT_PRIVATE_KEY }}
+      - name: Add all open issues and PRs to project
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          PROJECT_ID=$(gh api graphql -f query='query{organization(login:"source-cooperative"){projectV2(number:2){id}}}' -q '.data.organization.projectV2.id')
+          {
+            gh issue list --repo "$REPO" --state open --limit 500 --json id -q '.[].id'
+            gh pr list --repo "$REPO" --state open --limit 500 --json id -q '.[].id'
+          } | sort -u > ids.txt
+          echo "Backfilling $(wc -l < ids.txt) items into project $PROJECT_ID"
+          while read -r CID; do
+            [ -z "$CID" ] && continue
+            gh api graphql -f query='mutation($p:ID!,$c:ID!){addProjectV2ItemById(input:{projectId:$p,contentId:$c}){item{id}}}' -f p="$PROJECT_ID" -f c="$CID" >/dev/null
+            echo "added $CID"
+          done < ids.txt
