@@ -118,10 +118,9 @@ export function DropdownSubmenu({
     <DropdownMenu.Sub>
       <DropdownMenu.SubTrigger>{label}</DropdownMenu.SubTrigger>
       {/* Cap height so a long list (e.g. up to 20 orgs/products) scrolls
-          instead of running off-screen, and width so long names truncate
-          instead of widening the submenu. */}
+          instead of running off-screen. */}
       <DropdownMenu.SubContent
-        style={{ maxHeight: "min(65vh, 520px)", overflowY: "auto", maxWidth: 256 }}
+        style={{ maxHeight: "min(65vh, 520px)", overflowY: "auto" }}
       >
         <DropdownItems items={items} />
         {hasItems && hasActions && <DropdownMenu.Separator />}

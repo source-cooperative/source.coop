@@ -30,13 +30,11 @@ export function AccountDropdownSkeleton() {
   );
 }
 
-// Cap the menu width so a long name truncates instead of widening the menu.
-const MENU_MAX_WIDTH = 256;
-
-// Truncate long account/product/invitation names: the name shrinks (min-width:
-// 0) and ellipsizes within the capped menu width rather than expanding it.
+// Cap an account/product/invitation name at a fixed width so it ellipsizes
+// (text-overflow needs a definite width) instead of widening the menu.
 const entityNameStyle: CSSProperties = {
-  minWidth: 0,
+  display: "block",
+  maxWidth: 180,
   overflow: "hidden",
   textOverflow: "ellipsis",
   whiteSpace: "nowrap",
@@ -136,7 +134,7 @@ export function AccountDropdown({
         </Flex>
       </DropdownMenu.Trigger>
 
-      <DropdownMenu.Content style={{ maxWidth: MENU_MAX_WIDTH }}>
+      <DropdownMenu.Content>
         {/* Browse all products */}
         <DropdownSection
           showSeparator={false}
