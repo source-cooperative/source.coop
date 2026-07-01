@@ -131,7 +131,7 @@ export function AccountDropdown({
       </DropdownMenu.Trigger>
 
       <DropdownMenu.Content>
-        <DropdownSection
+        <DropdownSubmenu
           condition={hasInvitations}
           label={
             <span

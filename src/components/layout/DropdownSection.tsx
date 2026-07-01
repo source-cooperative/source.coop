@@ -67,7 +67,7 @@ const visibleCount = (items: DropdownItem[]) =>
   items.filter(({ condition = true }) => condition).length;
 
 export interface DropdownSectionProps {
-  label?: ReactNode;
+  label?: string;
   items: DropdownItem[];
   showSeparator?: boolean;
   condition?: boolean;
