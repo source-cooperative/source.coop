@@ -1,5 +1,5 @@
 "use client";
-import { DropdownMenu } from "@radix-ui/themes";
+import { DropdownMenu, Tooltip } from "@radix-ui/themes";
 import Link from "next/link";
 import { CSSProperties, ReactNode } from "react";
 
@@ -22,6 +22,8 @@ export interface DropdownItem {
   color?: DropdownMenu.ItemProps["color"];
   disabled?: boolean;
   condition?: boolean;
+  /** Shown on hover when the item is disabled (e.g. why an action is blocked). */
+  tooltip?: ReactNode;
 }
 
 // Render a list of menu items, honoring each item's `condition`. Shared by the
@@ -35,7 +37,17 @@ function DropdownItems({ items }: { items: DropdownItem[] }) {
     .map((item, index) => ({ item, index }))
     .filter(({ item: { condition = true } }) => condition)
     .map(({ item, index }) =>
-      item.href ? (
+      item.disabled && item.tooltip ? (
+        // Blocked action: a real (disabled) menu item keeps the menu's padding,
+        // wrapped in a span so pointer-events stay alive for the tooltip to fire.
+        <Tooltip key={index} content={item.tooltip}>
+          <span style={{ display: "block" }}>
+            <DropdownMenu.Item disabled color={item.color}>
+              <span style={dropdownMenuLinkStyle}>{item.children}</span>
+            </DropdownMenu.Item>
+          </span>
+        </Tooltip>
+      ) : item.href ? (
         // `asChild` makes the <Link> itself the menu item: one real anchor
         // handles left-click (Next client-side nav), keyboard activation
         // (Radix triggers the anchor), and open-in-new-tab — a single

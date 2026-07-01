@@ -69,7 +69,6 @@ export function AccountDropdown({
   const hasInvitations = pendingInvitations.length > 0;
   const canCreateProduct = isAuthorized(session, "*", Actions.CreateRepository);
   const canCreateOrg = isAuthorized(session, "*", Actions.CreateAccount);
-  const canCreate = canCreateProduct || canCreateOrg;
 
   return (
     <DropdownMenu.Root open={isOpen} onOpenChange={setIsOpen}>
@@ -146,29 +145,38 @@ export function AccountDropdown({
           />
         ))}
 
-        {canCreate && <DropdownMenu.Separator />}
+        <DropdownMenu.Separator />
+        {/* Always shown; disabled with a tooltip when the user lacks permission. */}
         <DropdownSection
           showSeparator={false}
           items={[
             {
-              href: newProductUrl(),
+              href: canCreateProduct ? newProductUrl() : undefined,
+              disabled: !canCreateProduct,
+              tooltip: canCreateProduct
+                ? undefined
+                : "You don't have permission to create products",
               children: (
                 <>
                   <PlusIcon />
                   New product
                 </>
               ),
-              condition: canCreateProduct,
             },
             {
-              href: newOrganizationUrl(session.account!.account_id),
+              href: canCreateOrg
+                ? newOrganizationUrl(session.account!.account_id)
+                : undefined,
+              disabled: !canCreateOrg,
+              tooltip: canCreateOrg
+                ? undefined
+                : "You don't have permission to create organizations",
               children: (
                 <>
                   <PlusIcon />
                   New organization
                 </>
               ),
-              condition: canCreateOrg,
             },
           ]}
         />
