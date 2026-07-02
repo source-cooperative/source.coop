@@ -5,7 +5,20 @@ const region = process.env.AWS_REGION || "us-east-1";
 
 // In dev, we use middleware to serve auth pages.
 // In production, we use auth.source.coop to serve auth pages.
-const frontendUrl = process.env.NEXT_PUBLIC_ORY_UI_URL || "";
+const frontendAuthUrl = process.env.NEXT_PUBLIC_ORY_UI_URL || "";
+
+const frontendUrl =
+  // 1. Check if running in the browser
+  typeof window !== "undefined"
+    ? window.location.origin
+    : // 2. Check if running on Vercel Production
+      process.env.VERCEL_PROJECT_PRODUCTION_URL
+      ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+      : // 3. Check if running on Vercel Preview/Development
+        process.env.VERCEL_URL
+        ? `https://${process.env.VERCEL_URL}`
+        : // 4. Fallback to local development
+          "http://localhost:3000";
 
 export const CONFIG = {
   // Object storage configuration
@@ -43,21 +56,21 @@ export const CONFIG = {
   auth: {
     api: {
       backendUrl: process.env.NEXT_PUBLIC_ORY_SDK_URL,
-      frontendUrl,
+      frontendUrl: frontendAuthUrl,
     },
     accessToken: process.env.ORY_PROJECT_API_KEY || "",
 
     oauth2: {
       clientId: process.env.ORY_OAUTH2_CLIENT_ID || "",
       clientSecret: process.env.ORY_OAUTH2_CLIENT_SECRET || "",
-      redirectUri: `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/api/internal/oauth2/callback`,
+      redirectUri: `${frontendUrl}/api/internal/oauth2/callback`,
     },
 
     routes: {
       // https://www.ory.sh/docs/reference/api#tag/frontend/operation/createBrowserLoginFlow
-      login: `${frontendUrl}/self-service/login/browser`,
+      login: `${frontendAuthUrl}/self-service/login/browser`,
       // https://www.ory.sh/docs/reference/api#tag/frontend/operation/createBrowserLogoutFlow
-      logout: `${frontendUrl}/self-service/logout/browser`,
+      logout: `${frontendAuthUrl}/self-service/logout/browser`,
     },
   },
 
