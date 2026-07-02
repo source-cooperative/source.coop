@@ -7,6 +7,8 @@ export { DynamicForm } from "./DynamicForm";
 export type { FormField } from "./DynamicForm";
 export { SmallColumnContainer } from "./SmallColumnContainer";
 export { StatusPage, NotFoundPage, NotAuthorizedPage } from "./StatusPage";
+export { LoginButton } from "./LoginButton";
+export { LoginRequired } from "./LoginRequired";
 export { EditButton } from "./EditButton";
 export { LinkAway } from "./LinkAway";
 export * from "./AccountLinks";
