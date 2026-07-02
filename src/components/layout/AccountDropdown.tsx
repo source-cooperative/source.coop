@@ -133,7 +133,7 @@ export function AccountDropdown({
                     href: productUrl(account.account_id, product.product_id),
                     children: (
                       <>
-                        <DashIcon />
+                        <DashIcon style={{ color: "var(--gray-a10)" }} />
                         <span style={entityNameStyle}>{product.title}</span>
                       </>
                     ),

@@ -132,7 +132,7 @@ export function MobileMenu({
                     href={productUrl(account.account_id, p.product_id)}
                     onNavigate={close}
                     indent
-                    icon={<DashIcon />}
+                    icon={<DashIcon style={{ color: "var(--gray-a10)" }} />}
                   >
                     {p.title}
                   </Row>
