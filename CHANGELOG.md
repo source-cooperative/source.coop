@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.1](https://github.com/source-cooperative/source.coop/compare/v1.4.0...v1.4.1) (2026-07-02)
+
+
+### Bug Fixes
+
+* correct oauth2 redirect URI ([a5d0e07](https://github.com/source-cooperative/source.coop/commit/a5d0e0753f12a611a9d29b5fa7f0d4fb24ef1206))
+
 ## [1.4.0](https://github.com/source-cooperative/source.coop/compare/v1.3.0...v1.4.0) (2026-07-01)
 
 
