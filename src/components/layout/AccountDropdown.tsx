@@ -33,7 +33,10 @@ export function AccountDropdown({ session }: { session: UserSession }) {
   const [isOpen, setIsOpen] = useState(false);
 
   const handleLogout = async () => {
-    const response = await fetch(CONFIG.auth.routes.logout, {
+    // Return to the current page after logout instead of Ory's default (root).
+    const logoutFlow = new URL(CONFIG.auth.routes.logout);
+    logoutFlow.searchParams.set("return_to", window.location.href);
+    const response = await fetch(logoutFlow, {
       method: "GET",
       credentials: "include",
     });
