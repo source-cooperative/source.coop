@@ -7,7 +7,7 @@ import {
   Cross1Icon,
   ChevronDownIcon,
   PlusIcon,
-  FileTextIcon,
+  TriangleRightIcon,
 } from "@radix-ui/react-icons";
 import styles from "./Navigation.module.css";
 import {
@@ -132,7 +132,7 @@ export function MobileMenu({
                     href={productUrl(account.account_id, p.product_id)}
                     onNavigate={close}
                     indent
-                    icon={<FileTextIcon />}
+                    icon={<TriangleRightIcon />}
                   >
                     {p.title}
                   </Row>

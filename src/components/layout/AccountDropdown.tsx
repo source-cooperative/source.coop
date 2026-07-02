@@ -1,7 +1,11 @@
 "use client";
 import { useState, type CSSProperties } from "react";
 import { Flex, DropdownMenu, Text, Box } from "@radix-ui/themes";
-import { ChevronDownIcon, PlusIcon, FileTextIcon } from "@radix-ui/react-icons";
+import {
+  ChevronDownIcon,
+  PlusIcon,
+  TriangleRightIcon,
+} from "@radix-ui/react-icons";
 import styles from "./Navigation.module.css";
 import {
   accountUrl,
@@ -133,7 +137,7 @@ export function AccountDropdown({
                     href: productUrl(account.account_id, product.product_id),
                     children: (
                       <>
-                        <FileTextIcon />
+                        <TriangleRightIcon />
                         <span style={entityNameStyle}>{product.title}</span>
                       </>
                     ),

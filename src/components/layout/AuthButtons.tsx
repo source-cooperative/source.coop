@@ -50,7 +50,10 @@ export async function AuthButtons() {
       ]),
       Promise.all(
         productAccountIds.map((id) =>
-          productsTable.listByAccount(id, 20).then((r) => r.products)
+          // Over-fetch, then filter by authz, then cap in toProducts — capping
+          // at the query would drop authorized products behind restricted ones.
+          // ponytail: 100-deep window; paginate if accounts commonly exceed it.
+          productsTable.listByAccount(id, 100).then((r) => r.products)
         )
       ),
       Promise.all(
@@ -72,6 +75,7 @@ export async function AuthButtons() {
     const toProducts = (id: string) =>
       (productsByAccount.get(id) ?? [])
         .filter((p) => isAuthorized(session, p, Actions.GetRepository))
+        .slice(0, 20)
         .map((p) => ({ product_id: p.product_id, title: p.title }));
 
     // Accounts you can browse: yourself first, then each org you belong to.
