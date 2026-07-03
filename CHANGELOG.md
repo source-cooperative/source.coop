@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.1](https://github.com/source-cooperative/source.coop/compare/v1.4.0...v1.4.1) (2026-07-03)
+
+
+### Bug Fixes
+
+* set mock redirect uri ([c64b6b4](https://github.com/source-cooperative/source.coop/commit/c64b6b46d059e582e43f2c7093487646346d78d8))
+
 ## [1.4.0](https://github.com/source-cooperative/source.coop/compare/v1.3.0...v1.4.0) (2026-07-01)
 
 
