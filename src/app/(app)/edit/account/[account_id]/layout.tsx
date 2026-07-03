@@ -8,8 +8,8 @@ import { getPageSession } from "@/lib/api/utils";
 import { isAuthorized, canManageAccountDataConnections } from "@/lib/api/authz";
 import { Actions } from "@/types";
 import { accountsTable } from "@/lib/clients/database";
-import { notFound, redirect } from "next/navigation";
-import { getReturnToUrl } from "@/lib/baseUrl";
+import { notFound } from "next/navigation";
+import { LoginRequired } from "@/components/core";
 import {
   PersonIcon,
   LockClosedIcon,
@@ -19,7 +19,6 @@ import {
   ExternalLinkIcon,
 } from "@radix-ui/react-icons";
 import {
-  loginUrl,
   editAccountProfileUrl,
   editAccountProfilePictureUrl,
   editAccountPermissionsUrl,
@@ -45,7 +44,7 @@ export default async function AccountLayout({
   const userSession = await getPageSession();
 
   if (!userSession?.account) {
-    redirect(loginUrl(await getReturnToUrl()));
+    return <LoginRequired />;
   }
 
   const accountToEdit = await accountsTable.fetchById(account_id);

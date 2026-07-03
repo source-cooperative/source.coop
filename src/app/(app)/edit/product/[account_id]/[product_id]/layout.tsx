@@ -11,11 +11,10 @@ import { getPageSession } from "@/lib/api/utils";
 import { isAuthorized, isAdmin } from "@/lib/api/authz";
 import { Actions } from "@/types";
 import { productsTable } from "@/lib/clients/database";
-import { notFound, redirect } from "next/navigation";
-import { getReturnToUrl } from "@/lib/baseUrl";
+import { notFound } from "next/navigation";
 import { LinkAway } from "@/components/core/LinkAway";
+import { LoginRequired } from "@/components/core";
 import {
-  loginUrl,
   productUrl,
   editProductDetailsUrl,
   editProductMembershipsUrl,
@@ -37,7 +36,7 @@ export default async function ProductLayout({
   const session = await getPageSession();
 
   if (!session?.account) {
-    redirect(loginUrl(await getReturnToUrl()));
+    return <LoginRequired />;
   }
 
   const product = await productsTable.fetchById(account_id, product_id);
