@@ -21,6 +21,7 @@ jest.mock("@/components/features/products/object-browser/ObjectSummary", () => {
 jest.mock("@/components/features/products/object-browser/ObjectPreview", () => {
   return {
     ObjectPreview: jest.fn(),
+    ObjectPreviewLoading: jest.fn(),
   };
 });
 
@@ -79,6 +80,7 @@ import { readProxyCredentials } from "@/lib/services/proxy-credentials-read";
 import { getStorageClient } from "@/lib/clients/storage";
 import { ProductDataUnavailable } from "@/components/features/products/ProductDataUnavailable";
 import { DirectoryList } from "@/components/features/products/object-browser/DirectoryList";
+import { ObjectPreview } from "@/components/features/products/object-browser/ObjectPreview";
 import { ProxyCredentialsGate } from "@/components/features/products/ProxyCredentialsGate";
 import { S3ServiceException } from "@aws-sdk/client-s3";
 import { Actions } from "@/types/shared";
@@ -409,6 +411,55 @@ describe("ProductPathPage authenticated-read gate for deactivated products", () 
 
     expect(element.type).toBe(ProxyCredentialsGate);
     // Never attempted an anonymous listing.
+    expect(listObjects).not.toHaveBeenCalled();
+  });
+});
+
+describe("ProductPathPage store viewer (.zarr / .icechunk)", () => {
+  beforeEach(() => {
+    (getPageSession as jest.Mock).mockResolvedValue({ identity_id: "user-1" });
+    (isAuthorized as jest.Mock).mockReturnValue(true);
+    (readProxyCredentials as jest.Mock).mockResolvedValue({
+      accessKeyId: "A",
+      secretAccessKey: "S",
+      sessionToken: "T",
+      expiration: new Date(Date.now() + 3_600_000).toISOString(),
+    });
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("renders the ObjectPreview viewer for an .icechunk store prefix without listing it", async () => {
+    (productsTable.fetchById as jest.Mock).mockResolvedValue({
+      product_id: "test-product",
+      visibility: "public",
+      metadata: {
+        primary_mirror: "primary",
+        mirrors: { primary: { connection_id: "dc-1" } },
+      },
+      account: { account_id: "test-account", name: "Test Account" },
+    });
+    const listObjects = jest.fn();
+    (getStorageClient as jest.Mock).mockResolvedValue({
+      // A store is a key prefix, not a single object, so the HEAD resolves null.
+      getObjectInfo: jest.fn().mockResolvedValue(null),
+      listObjects,
+    });
+
+    const element = await ProductPathPage({
+      params: Promise.resolve({
+        account_id: "test-account",
+        product_id: "test-product",
+        path: ["gfs.icechunk"],
+      }),
+    });
+
+    // The store branch returns <Suspense><ObjectPreview .../></Suspense>.
+    expect(element.props.children.type).toBe(ObjectPreview);
+    expect(element.props.children.props.object_path).toBe("gfs.icechunk");
+    // Never listed the store's internal chunk objects.
     expect(listObjects).not.toHaveBeenCalled();
   });
 });

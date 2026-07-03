@@ -112,6 +112,12 @@ const getIframeAttributes = async (
         src: `https://source-cooperative.github.io/json-viewer/?url=${url}`,
         style: { border: "1px solid var(--gray-5)" },
       };
+    case "zarr":
+    case "icechunk":
+      return {
+        src: `https://source-cooperative.github.io/zarr-viewer/?url=${url}`,
+        style: { border: "1px solid var(--gray-5)" },
+      };
     default:
       return null;
   }

@@ -7,6 +7,7 @@ import { isAccessDeniedError } from "@/lib/storage/s3";
 import { isAuthorized } from "@/lib/api/authz";
 import { Actions, DataConnection, ProductMirror, ProductObject } from "@/types";
 import { readProxyCredentials } from "@/lib/services/proxy-credentials-read";
+import { isViewableStorePath } from "@/lib/files";
 import { getAuthorizedProduct } from "./data";
 import { ProxyCredentialsGate } from "@/components/features/products/ProxyCredentialsGate";
 import { ProductDataUnavailable } from "@/components/features/products/ProductDataUnavailable";
@@ -165,6 +166,23 @@ export default async function ProductPathPage({ params }: PageProps) {
   // page so this render then finds the credentials.
   if (!creds && needsAuthenticatedRead) {
     return <ProxyCredentialsGate />;
+  }
+
+  // A .zarr / .icechunk store is a key prefix (a "directory"), not a single
+  // object, so the HEAD above returned null and we landed here. Render it with
+  // the same file-view treatment other viewers use, driven by the external
+  // zarr-viewer, instead of listing the store's internal chunk objects.
+  const storePath = objectPath.replace(/\/$/, "");
+  if (isViewableStorePath(storePath)) {
+    return (
+      <Suspense fallback={<ObjectPreviewLoading />}>
+        <ObjectPreview
+          account_id={account_id}
+          product_id={product_id}
+          object_path={storePath}
+        />
+      </Suspense>
+    );
   }
 
   // Strip any trailing slash from objectPath: a trailing-slash URL yields catch-all
