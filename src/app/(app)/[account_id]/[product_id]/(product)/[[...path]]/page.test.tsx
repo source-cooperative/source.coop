@@ -437,7 +437,7 @@ describe("ProductPathPage store viewer (.zarr / .icechunk)", () => {
     jest.clearAllMocks();
   });
 
-  it("renders the StorePreview viewer above the normal directory listing for an .icechunk prefix", async () => {
+  it("renders the StorePreview viewer below the normal directory listing for an .icechunk prefix", async () => {
     (productsTable.fetchById as jest.Mock).mockResolvedValue({
       product_id: "test-product",
       visibility: "public",
@@ -464,9 +464,9 @@ describe("ProductPathPage store viewer (.zarr / .icechunk)", () => {
       }),
     });
 
-    // The store branch returns a fragment: <Suspense><StorePreview/></Suspense>
-    // followed by the normal <DirectoryList/>.
-    const [suspense, directoryList] = element.props.children;
+    // The store branch returns a fragment: the normal <DirectoryList/> followed
+    // by <Suspense><StorePreview/></Suspense>.
+    const [directoryList, suspense] = element.props.children;
     expect(suspense.props.children.type).toBe(StorePreview);
     expect(suspense.props.children.props.object_path).toBe("gfs.icechunk");
     expect(suspense.props.children.props.extension).toBe("icechunk");

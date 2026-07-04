@@ -270,14 +270,15 @@ export default async function ProductPathPage({ params }: PageProps) {
 
   // A .zarr / .icechunk store is a key prefix (a "directory"), so it always
   // renders the normal directory listing (users can browse/download its files).
-  // On top of that, when cheap server-side checks confirm it's a renderable
-  // store, we embed the zarr-viewer above the listing. The probe runs inside
-  // StorePreview under Suspense, so it never blocks the listing, and renders
-  // nothing when the store isn't viewable.
+  // Below that, when cheap server-side checks confirm it's a renderable store,
+  // we embed the zarr-viewer. The probe runs inside StorePreview under Suspense,
+  // so it never blocks the listing, and renders nothing when the store isn't
+  // viewable.
   const storeExtension = getExtension(effectivePrefix);
   if (storeExtension && isViewableStorePath(effectivePrefix)) {
     return (
       <>
+        {directoryList}
         <Suspense fallback={<StorePreviewLoading />}>
           <StorePreview
             account_id={account_id}
@@ -286,7 +287,6 @@ export default async function ProductPathPage({ params }: PageProps) {
             extension={storeExtension}
           />
         </Suspense>
-        {directoryList}
       </>
     );
   }
