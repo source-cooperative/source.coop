@@ -24,6 +24,12 @@ jest.mock("@/components/features/products/object-browser/ObjectPreview", () => {
     ObjectPreviewLoading: jest.fn(),
   };
 });
+jest.mock("@/components/features/products/object-browser/StorePreview", () => {
+  return {
+    StorePreview: jest.fn(),
+    StorePreviewLoading: jest.fn(),
+  };
+});
 
 jest.mock("@/lib", () => ({
   productsTable: {
@@ -80,7 +86,7 @@ import { readProxyCredentials } from "@/lib/services/proxy-credentials-read";
 import { getStorageClient } from "@/lib/clients/storage";
 import { ProductDataUnavailable } from "@/components/features/products/ProductDataUnavailable";
 import { DirectoryList } from "@/components/features/products/object-browser/DirectoryList";
-import { ObjectPreview } from "@/components/features/products/object-browser/ObjectPreview";
+import { StorePreview } from "@/components/features/products/object-browser/StorePreview";
 import { ProxyCredentialsGate } from "@/components/features/products/ProxyCredentialsGate";
 import { S3ServiceException } from "@aws-sdk/client-s3";
 import { Actions } from "@/types/shared";
@@ -431,7 +437,7 @@ describe("ProductPathPage store viewer (.zarr / .icechunk)", () => {
     jest.clearAllMocks();
   });
 
-  it("renders the ObjectPreview viewer for an .icechunk store prefix without listing it", async () => {
+  it("renders the StorePreview viewer above the normal directory listing for an .icechunk prefix", async () => {
     (productsTable.fetchById as jest.Mock).mockResolvedValue({
       product_id: "test-product",
       visibility: "public",
@@ -441,7 +447,9 @@ describe("ProductPathPage store viewer (.zarr / .icechunk)", () => {
       },
       account: { account_id: "test-account", name: "Test Account" },
     });
-    const listObjects = jest.fn();
+    const listObjects = jest
+      .fn()
+      .mockResolvedValue({ objects: [], directories: [], isTruncated: false });
     (getStorageClient as jest.Mock).mockResolvedValue({
       // A store is a key prefix, not a single object, so the HEAD resolves null.
       getObjectInfo: jest.fn().mockResolvedValue(null),
@@ -456,11 +464,15 @@ describe("ProductPathPage store viewer (.zarr / .icechunk)", () => {
       }),
     });
 
-    // The store branch returns <Suspense><ObjectPreview .../></Suspense>.
-    expect(element.props.children.type).toBe(ObjectPreview);
-    expect(element.props.children.props.object_path).toBe("gfs.icechunk");
-    // Never listed the store's internal chunk objects.
-    expect(listObjects).not.toHaveBeenCalled();
+    // The store branch returns a fragment: <Suspense><StorePreview/></Suspense>
+    // followed by the normal <DirectoryList/>.
+    const [suspense, directoryList] = element.props.children;
+    expect(suspense.props.children.type).toBe(StorePreview);
+    expect(suspense.props.children.props.object_path).toBe("gfs.icechunk");
+    expect(suspense.props.children.props.extension).toBe("icechunk");
+    expect(directoryList.type).toBe(DirectoryList);
+    // The normal file browser is still populated (listing IS performed now).
+    expect(listObjects).toHaveBeenCalled();
   });
 });
 

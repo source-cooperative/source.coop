@@ -7,7 +7,11 @@ import { isAccessDeniedError } from "@/lib/storage/s3";
 import { isAuthorized } from "@/lib/api/authz";
 import { Actions, DataConnection, ProductMirror, ProductObject } from "@/types";
 import { readProxyCredentials } from "@/lib/services/proxy-credentials-read";
-import { isViewableStorePath } from "@/lib/files";
+import { getExtension, isViewableStorePath } from "@/lib/files";
+import {
+  StorePreview,
+  StorePreviewLoading,
+} from "@/components/features/products/object-browser/StorePreview";
 import { getAuthorizedProduct } from "./data";
 import { ProxyCredentialsGate } from "@/components/features/products/ProxyCredentialsGate";
 import { ProductDataUnavailable } from "@/components/features/products/ProductDataUnavailable";
@@ -168,23 +172,6 @@ export default async function ProductPathPage({ params }: PageProps) {
     return <ProxyCredentialsGate />;
   }
 
-  // A .zarr / .icechunk store is a key prefix (a "directory"), not a single
-  // object, so the HEAD above returned null and we landed here. Render it with
-  // the same file-view treatment other viewers use, driven by the external
-  // zarr-viewer, instead of listing the store's internal chunk objects.
-  const storePath = objectPath.replace(/\/$/, "");
-  if (isViewableStorePath(storePath)) {
-    return (
-      <Suspense fallback={<ObjectPreviewLoading />}>
-        <ObjectPreview
-          account_id={account_id}
-          product_id={product_id}
-          object_path={storePath}
-        />
-      </Suspense>
-    );
-  }
-
   // Strip any trailing slash from objectPath: a trailing-slash URL yields catch-all
   // segments like ["dir",""], which would otherwise build a `${product_id}/dir//`
   // prefix that S3 lists as empty even when the directory has contents.
@@ -271,7 +258,7 @@ export default async function ProductPathPage({ params }: PageProps) {
     }),
   ];
 
-  return (
+  const directoryList = (
     <DirectoryList
       product={product}
       objects={objects.filter(
@@ -280,4 +267,29 @@ export default async function ProductPathPage({ params }: PageProps) {
       prefix={effectivePrefix}
     />
   );
+
+  // A .zarr / .icechunk store is a key prefix (a "directory"), so it always
+  // renders the normal directory listing (users can browse/download its files).
+  // On top of that, when cheap server-side checks confirm it's a renderable
+  // store, we embed the zarr-viewer above the listing. The probe runs inside
+  // StorePreview under Suspense, so it never blocks the listing, and renders
+  // nothing when the store isn't viewable.
+  const storeExtension = getExtension(effectivePrefix);
+  if (storeExtension && isViewableStorePath(effectivePrefix)) {
+    return (
+      <>
+        <Suspense fallback={<StorePreviewLoading />}>
+          <StorePreview
+            account_id={account_id}
+            product_id={product_id}
+            object_path={effectivePrefix}
+            extension={storeExtension}
+          />
+        </Suspense>
+        {directoryList}
+      </>
+    );
+  }
+
+  return directoryList;
 }

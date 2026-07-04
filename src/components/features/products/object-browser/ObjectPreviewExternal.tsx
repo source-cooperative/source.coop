@@ -2,10 +2,10 @@ import "server-only";
 
 import { LOGGER } from "@/lib";
 import { fileSourceUrl } from "@/lib/urls";
-import { Box, Code, Flex, Link } from "@radix-ui/themes";
-import { ExternalLinkIcon } from "@radix-ui/react-icons";
+import { Box, Code } from "@radix-ui/themes";
 import type { CSSProperties } from "react";
 import { getExtension } from "@/lib/files";
+import { PreviewIframe } from "./PreviewIframe";
 import { DuckDBConnection } from "@duckdb/node-api";
 
 const isStacGeoParquet = async (sourceUrl: string): Promise<boolean> => {
@@ -112,12 +112,6 @@ const getIframeAttributes = async (
         src: `https://source-cooperative.github.io/json-viewer/?url=${url}`,
         style: { border: "1px solid var(--gray-5)" },
       };
-    case "zarr":
-    case "icechunk":
-      return {
-        src: `https://source-cooperative.github.io/zarr-viewer/?url=${url}`,
-        style: { border: "1px solid var(--gray-5)" },
-      };
     default:
       return null;
   }
@@ -148,26 +142,6 @@ export async function ObjectPreviewExternal(props: ObjectPreviewExternalProps) {
 
   const { src, style } = iframeProps;
   return (
-    <Box mt="4" pt="4" style={{ borderTop: "1px solid var(--gray-6)" }}>
-      <Flex justify="end" mb="2">
-        <Link href={src} target="_blank" rel="noopener noreferrer" size="1">
-          <Flex align="center" gap="1">
-            Open in new tab
-            <ExternalLinkIcon width="14" height="14" />
-          </Flex>
-        </Link>
-      </Flex>
-      <iframe
-        width="100%"
-        height="600px"
-        allow="fullscreen"
-        style={style}
-        src={src}
-        title={`Preview of ${props.object_path}`}
-        loading="lazy"
-      >
-        Your browser does not support iframes.
-      </iframe>
-    </Box>
+    <PreviewIframe src={src} style={style} title={`Preview of ${props.object_path}`} />
   );
 }
