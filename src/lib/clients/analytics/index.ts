@@ -28,10 +28,7 @@ export const USAGE_DAYS = 30;
 
 export interface UsageTotals {
   bytes: number;
-  fullBytes: number; // status 200 (whole-object downloads)
-  partialBytes: number; // status 206 (range requests)
-  requests: number;
-  visitors: number; // distinct client IP hashes
+  requests: number; // downloads: successful GETs, sample-weighted
   countries: number;
 }
 
@@ -40,10 +37,28 @@ export interface UsagePoint extends UsageTotals {
   date: string;
 }
 
+/** Download-frequency histogram buckets for registered users. */
+export const FREQUENCY_BUCKETS = [
+  { label: "1×", max: 1 },
+  { label: "2–5×", max: 5 },
+  { label: "6–20×", max: 20 },
+  { label: "20×+", max: Infinity },
+] as const;
+
+export interface UsageUsers {
+  /** Distinct signed-in users (blob5) that downloaded in the window */
+  registered: number;
+  /** Sample-weighted requests with no signed-in user */
+  anonRequests: number;
+  /** Per-FREQUENCY_BUCKETS count of registered users */
+  frequency: { label: string; count: number }[];
+}
+
 export interface Usage {
   /** One point per UTC day, oldest first, zero-filled — always USAGE_DAYS long */
   days: UsagePoint[];
   totals: UsageTotals;
+  users: UsageUsers;
 }
 
 export const ADMIN_WINDOWS = {
@@ -184,10 +199,7 @@ const adminQuery = unstable_cache(runQuery, ["analytics-admin"], {
 
 const USAGE_AGGREGATES = `
   SUM(_sample_interval * double1) AS bytes,
-  sumIf(_sample_interval * double1, double2 = 200.0) AS full_bytes,
-  sumIf(_sample_interval * double1, double2 = 206.0) AS partial_bytes,
   SUM(_sample_interval) AS requests,
-  COUNT(DISTINCT blob8) AS visitors,
   COUNT(DISTINCT blob6) AS countries`;
 
 /**
@@ -220,13 +232,18 @@ export async function getUsage(
   const from = `FROM ${CONFIG.analytics.dataset} WHERE ${where}`;
 
   try {
-    const [seriesRows, uniquesRows] = await Promise.all([
+    const [seriesRows, windowRows, userRows] = await Promise.all([
       usageQuery(
         `SELECT toStartOfDay(timestamp) AS day, ${USAGE_AGGREGATES} ${from} GROUP BY day ORDER BY day`,
       ),
-      // Separate query: window-wide DISTINCTs can't be summed from days.
+      // Separate query: window-wide DISTINCT can't be summed from days.
       usageQuery(
-        `SELECT COUNT(DISTINCT blob8) AS visitors, COUNT(DISTINCT blob6) AS countries ${from}`,
+        `SELECT COUNT(DISTINCT blob6) AS countries, sumIf(_sample_interval, blob5 = '') AS anon_requests ${from}`,
+      ),
+      // Sample-weighted request count per signed-in user, for the
+      // download-frequency histogram. Registered = number of rows.
+      usageQuery(
+        `SELECT blob5 AS user, SUM(_sample_interval) AS requests ${from} AND blob5 != '' GROUP BY user`,
       ),
     ]);
 
@@ -243,28 +260,38 @@ export async function getUsage(
     });
 
     // Additive totals come from the grid days, so bars and headline always
-    // agree; the 29th (off-grid) partial day the SQL window touches is
+    // agree; the extra (off-grid) partial day the SQL window touches is
     // dropped with them. The uniques keep that sliver — they're estimates.
     const totals = days.reduce(
       (acc, day) => ({
         bytes: acc.bytes + day.bytes,
-        fullBytes: acc.fullBytes + day.fullBytes,
-        partialBytes: acc.partialBytes + day.partialBytes,
         requests: acc.requests + day.requests,
-        visitors: acc.visitors,
         countries: acc.countries,
       }),
-      {
-        bytes: 0,
-        fullBytes: 0,
-        partialBytes: 0,
-        requests: 0,
-        visitors: num(uniquesRows[0]?.visitors),
-        countries: num(uniquesRows[0]?.countries),
-      },
+      { bytes: 0, requests: 0, countries: num(windowRows[0]?.countries) },
     );
 
-    return { days, totals };
+    const frequency = FREQUENCY_BUCKETS.map(({ label }) => ({
+      label,
+      count: 0,
+    }));
+    for (const row of userRows) {
+      // Sampling makes per-user counts fractional estimates; round, floor 1.
+      const downloads = Math.max(1, Math.round(num(row.requests)));
+      frequency[
+        FREQUENCY_BUCKETS.findIndex((bucket) => downloads <= bucket.max)
+      ].count += 1;
+    }
+
+    return {
+      days,
+      totals,
+      users: {
+        registered: userRows.length,
+        anonRequests: num(windowRows[0]?.anon_requests),
+        frequency,
+      },
+    };
   } catch (error) {
     LOGGER.warn("Analytics usage query failed", {
       operation: "getUsage",
@@ -278,10 +305,7 @@ export async function getUsage(
 function parseUsageAggregates(row: Row): UsageTotals {
   return {
     bytes: num(row.bytes),
-    fullBytes: num(row.full_bytes),
-    partialBytes: num(row.partial_bytes),
     requests: num(row.requests),
-    visitors: num(row.visitors),
     countries: num(row.countries),
   };
 }

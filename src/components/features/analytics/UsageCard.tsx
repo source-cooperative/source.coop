@@ -1,4 +1,4 @@
-import { Box, Card } from "@radix-ui/themes";
+import { Box, Card, Text } from "@radix-ui/themes";
 import { SectionHeader } from "@/components/core/SectionHeader";
 import { getUsage } from "@/lib/clients/analytics";
 import { UsagePanel } from "./UsagePanel";
@@ -16,7 +16,7 @@ interface UsageCardProps {
 }
 
 /**
- * Server component: fetches recent usage and renders the metrics card.
+ * Server component: fetches recent usage and renders the analytics panel.
  * Renders nothing when analytics is unconfigured or the query fails, so the
  * page never depends on the analytics backend. Render inside <Suspense>.
  */
@@ -30,12 +30,22 @@ export async function UsageCard({
   if (!usage) return null;
 
   const section = (
-    <SectionHeader title="Usage">
-      <UsagePanel
-        days={usage.days}
-        totals={usage.totals}
-        scope={objectPath === undefined ? "product" : "object"}
-      />
+    <SectionHeader
+      title={objectPath === undefined ? "Product Analytics" : "Object Analytics"}
+      rightButton={
+        <Text
+          size="1"
+          color="gray"
+          style={{
+            fontFamily: "var(--code-font-family)",
+            letterSpacing: "0.08em",
+          }}
+        >
+          {usage.days.length} DAYS
+        </Text>
+      }
+    >
+      <UsagePanel days={usage.days} totals={usage.totals} users={usage.users} />
     </SectionHeader>
   );
 
