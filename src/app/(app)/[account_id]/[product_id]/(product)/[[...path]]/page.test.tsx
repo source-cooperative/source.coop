@@ -470,6 +470,12 @@ describe("ProductPathPage store viewer (.zarr / .icechunk)", () => {
     expect(suspense.props.children.type).toBe(StorePreview);
     expect(suspense.props.children.props.object_path).toBe("gfs.icechunk");
     expect(suspense.props.children.props.extension).toBe("icechunk");
+    // The request's resolved creds are threaded through so the probe's storage
+    // client doesn't re-read the cookie.
+    expect(suspense.props.children.props.creds).toMatchObject({
+      accessKeyId: "A",
+      secretAccessKey: "S",
+    });
     expect(directoryList.type).toBe(DirectoryList);
     // The normal file browser is still populated (listing IS performed now).
     expect(listObjects).toHaveBeenCalled();

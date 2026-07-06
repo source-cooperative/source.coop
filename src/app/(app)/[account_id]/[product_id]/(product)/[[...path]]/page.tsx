@@ -285,6 +285,7 @@ export default async function ProductPathPage({ params }: PageProps) {
             product_id={product_id}
             object_path={effectivePrefix}
             extension={storeExtension}
+            creds={creds ?? null}
           />
         </Suspense>
       </>

@@ -91,14 +91,19 @@ async function getJson(io: Io, rel: string): Promise<unknown | null> {
   }
 }
 
-/** GET raw bytes of an object relative to the store root. null on any failure. */
-async function getBytes(io: Io, rel: string): Promise<Buffer | null> {
+/**
+ * GET raw bytes of an object relative to the store root. null on any failure.
+ * Pass `range` (an HTTP Range value like "bytes=0-11") to read only a prefix of
+ * the object — used for header sniffing so we never download a large blob whole.
+ */
+async function getBytes(io: Io, rel: string, range?: string): Promise<Buffer | null> {
   try {
     const res = await withTimeout(
       io.s3.getObject({
         account_id: io.account_id,
         product_id: io.product_id,
         object_path: join(io.storePath, rel),
+        range,
       }),
       PROBE_TIMEOUT_MS,
       "store probe GET timed out",
@@ -321,8 +326,10 @@ async function probeIcechunk(args: ProbeStoreArgs): Promise<StoreProbe> {
 
   // Tier 3 (non-blocking): the snapshot blob should be non-empty and carry the
   // Icechunk magic header. Per-chunk canaries aren't feasible — chunk ids are
-  // content-addressed, so there's no derivable "first chunk".
-  const snapshot = await getBytes(io, snapshotRel);
+  // content-addressed, so there's no derivable "first chunk". Snapshots can be
+  // multi-MB (they hold the whole manifest), so read only the leading magic
+  // bytes via a Range request rather than downloading the entire object.
+  const snapshot = await getBytes(io, snapshotRel, `bytes=0-${ICECHUNK_MAGIC.length - 1}`);
   const chunkCanary =
     snapshot && snapshot.length > 0 && snapshot.subarray(0, ICECHUNK_MAGIC.length).equals(ICECHUNK_MAGIC)
       ? "ok"

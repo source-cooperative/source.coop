@@ -21,18 +21,18 @@ function fakeS3(
   dirs: Record<string, string[]> = {},
 ): S3StorageClient {
   return {
-    async getObject({ object_path }: { object_path: string }) {
+    getObject: jest.fn(async ({ object_path }: { object_path: string }) => {
       const data = objects[object_path];
       if (!data) throw notFound();
       return { data } as never;
-    },
-    async headObject({ object_path }: { object_path: string }) {
+    }),
+    headObject: jest.fn(async ({ object_path }: { object_path: string }) => {
       if (!(object_path in objects)) throw notFound();
       return {} as never;
-    },
-    async listObjects({ prefix }: { prefix: string }) {
+    }),
+    listObjects: jest.fn(async ({ prefix }: { prefix: string }) => {
       return { objects: [], directories: dirs[prefix] ?? [], isTruncated: false } as never;
-    },
+    }),
   } as unknown as S3StorageClient;
 }
 
@@ -151,6 +151,13 @@ describe("probeStore — Icechunk", () => {
     });
     const r = await probeStore({ ...base, s3, storePath: "s.icechunk", extension: "icechunk" });
     expect(r).toMatchObject({ renderable: true, format: "icechunk", chunkCanary: "ok" });
+    // The canary must Range-read only the magic header, never the whole snapshot.
+    expect(s3.getObject).toHaveBeenCalledWith(
+      expect.objectContaining({
+        object_path: "s.icechunk/snapshots/SNAP1",
+        range: `bytes=0-${ICECHUNK_MAGIC.length - 1}`,
+      }),
+    );
   });
 
   it("reports 'inconclusive' when the snapshot lacks the magic header", async () => {

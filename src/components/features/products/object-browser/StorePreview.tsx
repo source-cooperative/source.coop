@@ -5,6 +5,7 @@ import { Box, Skeleton } from "@radix-ui/themes";
 import { LOGGER } from "@/lib";
 import { fileSourceUrl } from "@/lib/urls";
 import { getStorageClient } from "@/lib/clients/storage";
+import type { ProxyCredentials } from "@/lib/actions/proxy-credentials";
 import { probeStore } from "@/lib/stores/probe";
 import { PreviewIframe } from "./PreviewIframe";
 
@@ -15,6 +16,12 @@ interface StorePreviewProps {
   object_path: string;
   /** Lowercased suffix: `zarr` or `icechunk`. */
   extension: string;
+  /**
+   * Proxy credentials already resolved for this request (or `null` for none).
+   * Threaded through so the probe's storage client reuses them instead of
+   * re-reading the request cookie.
+   */
+  creds: ProxyCredentials | null;
 }
 
 /**
@@ -30,8 +37,9 @@ export async function StorePreview({
   product_id,
   object_path,
   extension,
+  creds,
 }: StorePreviewProps) {
-  const s3 = await getStorageClient();
+  const s3 = await getStorageClient(creds);
   const probe = await probeStore({
     s3,
     account_id,
