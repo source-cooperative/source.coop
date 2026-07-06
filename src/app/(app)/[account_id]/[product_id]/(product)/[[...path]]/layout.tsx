@@ -14,7 +14,12 @@ import { FetchCredentialsButton } from "@/components/features/uploader/FetchCred
 import { PendingInvitationBanner } from "@/components/features/memberships/PendingInvitationBanner";
 import { ProductSummaryCard } from "@/components/features/products/ProductSummaryCard";
 import { ProductMetaCard } from "@/components/features/products/ProductMetaCard";
-import { ProductTabs, UsageCard } from "@/components/features/analytics";
+import {
+  ProductTabs,
+  UsageCard,
+  UsageCardSkeleton,
+} from "@/components/features/analytics";
+import { isAnalyticsConfigured } from "@/lib/clients/analytics";
 import { SectionHeader } from "@/components/core/SectionHeader";
 import { Dropzone } from "@/components/features/uploader/Dropzone";
 import { getPageSession } from "@/lib";
@@ -154,8 +159,12 @@ export default async function ProductLayout({
 
         <Flex width="100%" className="product-meta" direction="column" gap="4">
           <ProductMetaCard product={product} />
-          {/* Streams in after the page shell; hidden when analytics is off */}
-          <Suspense fallback={null}>
+          {/* Streams in after the page shell; hidden when analytics is off.
+              The skeleton reserves the card's space so warm-cache data
+              fills in instead of reflowing the column. */}
+          <Suspense
+            fallback={isAnalyticsConfigured() ? <UsageCardSkeleton /> : null}
+          >
             <UsageCard
               accountId={account_id}
               productId={product_id}
