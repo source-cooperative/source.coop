@@ -16,6 +16,7 @@ import {
   ObjectPreview,
   ObjectPreviewLoading,
 } from "@/components/features/products/object-browser/ObjectPreview";
+import { UsageCard } from "@/components/features/analytics";
 import { generateProductMetadata } from "@/components/features/metadata/ProductMetadata";
 
 export async function generateMetadata({
@@ -145,6 +146,15 @@ export default async function ProductPathPage({ params }: PageProps) {
             objectInfo={objectInfo}
             connectionDetails={connectionDetails}
           />
+          {/* 28-day download stats for this object; hidden when analytics is off */}
+          <Suspense fallback={null}>
+            <UsageCard
+              accountId={account_id}
+              productId={product_id}
+              objectPath={objectPath}
+              variant="section"
+            />
+          </Suspense>
           <Suspense fallback={<ObjectPreviewLoading />}>
             <ObjectPreview
               account_id={account_id}

@@ -14,6 +14,7 @@ export const newProductUrl = () => "/products/new";
 
 // Admin URLs
 export const adminUrl = () => "/admin";
+export const adminAnalyticsUrl = () => "/admin/analytics";
 export const adminUserLookupUrl = () => "/admin/user-lookup";
 export const adminDataConnectionsUrl = () => "/admin/data-connections";
 export const adminDataConnectionCreateUrl = () =>

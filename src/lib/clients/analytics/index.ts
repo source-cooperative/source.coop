@@ -68,8 +68,11 @@ export const ADMIN_DIMENSIONS = {
 } as const;
 export type AdminDimension = keyof typeof ADMIN_DIMENSIONS;
 
-/** How many series the stacked chart shows before folding into "Other". */
-const CHART_SERIES_LIMIT = 10;
+/**
+ * How many series the stacked chart shows before folding into "Other" —
+ * matches the fixed categorical palette size (hues are never cycled).
+ */
+const CHART_SERIES_LIMIT = 6;
 /** How many rows the ranked totals table shows. */
 const TABLE_GROUP_LIMIT = 25;
 export const OTHER_KEY = "Other";
@@ -335,7 +338,7 @@ export async function getAdminBreakdown(
       buckets,
       bucketHours,
       series: [key],
-      points: buckets.map((b) => {
+      points: buckets.map((b): AdminBreakdown["points"][number] => {
         const row = totalByBucket.get(b);
         return row ? { [key]: { bytes: num(row.bytes), requests: num(row.requests) } } : {};
       }),

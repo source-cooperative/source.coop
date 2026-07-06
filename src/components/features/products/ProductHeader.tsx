@@ -1,8 +1,10 @@
 // For product detail page header
-import { Grid, Box } from "@radix-ui/themes";
+import { Suspense } from "react";
+import { Grid, Box, Flex } from "@radix-ui/themes";
 import type { Product } from "@/types";
 import { ProductSummaryCard } from "./ProductSummaryCard";
 import { ProductMetaCard } from "./ProductMetaCard";
+import { UsageCard } from "@/components/features/analytics";
 
 interface ProductHeaderProps {
   product: Product;
@@ -26,9 +28,16 @@ export function ProductHeader({ product }: ProductHeaderProps) {
           <ProductSummaryCard product={product} />
         </Box>
       </Box>
-      <Box width="100%" className="product-meta">
+      <Flex width="100%" className="product-meta" direction="column" gap="4">
         <ProductMetaCard product={product} />
-      </Box>
+        {/* Streams in after the page shell; hidden when analytics is off */}
+        <Suspense fallback={null}>
+          <UsageCard
+            accountId={product.account_id}
+            productId={product.product_id}
+          />
+        </Suspense>
+      </Flex>
     </Grid>
   );
 }
