@@ -85,7 +85,7 @@ export default async function ProductAnalyticsPage({
                   variant={days === windowDays ? "solid" : "soft"}
                 >
                   <Link
-                    href={`${productAnalyticsUrl(account_id, product_id)}?window=${days}`}
+                    href={`${productAnalyticsUrl(account_id, product_id)}&window=${days}`}
                   >
                     {days}d
                   </Link>

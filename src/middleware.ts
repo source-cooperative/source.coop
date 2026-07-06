@@ -63,6 +63,29 @@ const handleLegacyRedirects = (request: NextRequest): NextResponse | null => {
   return null;
 };
 
+/**
+ * Serve the maintainer analytics view on the product root via a query param
+ * (`/{account}/{product}?tab=analytics`). Layouts can't read search params,
+ * so the view lives at the internal `/-/analytics` route (which also keeps
+ * it from shadowing real object paths) and the query-param URL is rewritten
+ * to it here. Other params (e.g. `window`) pass through.
+ */
+const handleProductAnalyticsTab = (
+  request: NextRequest,
+): NextResponse | null => {
+  const { pathname, searchParams } = request.nextUrl;
+  if (
+    searchParams.get("tab") === "analytics" &&
+    /^\/[^/]+\/[^/]+$/.test(pathname)
+  ) {
+    const url = request.nextUrl.clone();
+    url.pathname = `${pathname}/-/analytics`;
+    url.searchParams.delete("tab");
+    return NextResponse.rewrite(url);
+  }
+  return null;
+};
+
 const ory = createOryMiddleware({});
 
 // Paths the Ory middleware proxies (self-service flows, session checks). For
@@ -77,7 +100,11 @@ const ORY_PROXIED_PREFIXES = [
 ];
 
 export const middleware = async (request: NextRequest) => {
-  for (const handler of [handleLegacyRedirects, handleChromeDevTools]) {
+  for (const handler of [
+    handleLegacyRedirects,
+    handleChromeDevTools,
+    handleProductAnalyticsTab,
+  ]) {
     const response = await handler(request);
     if (response) return response;
   }

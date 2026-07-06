@@ -41,10 +41,12 @@ export const loginUrl = (returnTo?: string) => {
 };
 export const onboardingUrl = () => "/onboarding";
 
-// Product analytics (maintainers/owners/admins). The "-" segment keeps the
-// route from ever shadowing a product file or directory named "analytics".
+// Product analytics (maintainers/owners/admins). The query param is
+// rewritten by middleware to the internal /-/analytics route, so object
+// paths can never be shadowed and layouts (which can't read search params)
+// stay out of the loop.
 export const productAnalyticsUrl = (account_id: string, product_id: string) =>
-  `/${account_id}/${product_id}/-/analytics`;
+  `/${account_id}/${product_id}?tab=analytics`;
 
 // Object URLs
 export const objectUrl = (
