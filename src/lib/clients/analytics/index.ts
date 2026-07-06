@@ -59,7 +59,8 @@ export const ADMIN_DIMENSIONS = {
   account: { label: "Account", columns: ["blob1"] },
   product: { label: "Product", columns: ["blob1", "blob2"] },
   country: { label: "Country", columns: ["blob6"] },
-  client: { label: "Client", columns: ["blob8"] },
+  // "IP hash", not "Client" — client reads as the client_id/User-Agent header
+  client: { label: "IP hash", columns: ["blob8"] },
 } as const;
 export type AdminDimension = keyof typeof ADMIN_DIMENSIONS;
 
