@@ -25,9 +25,7 @@ import { LOGGER } from "@/lib/logging";
 
 export const USAGE_DAYS = 28;
 
-export interface UsagePoint {
-  /** ISO timestamp of the UTC day start */
-  date: string;
+export interface UsageTotals {
   bytes: number;
   fullBytes: number; // status 200 (whole-object downloads)
   partialBytes: number; // status 206 (range requests)
@@ -36,13 +34,9 @@ export interface UsagePoint {
   countries: number;
 }
 
-export interface UsageTotals {
-  bytes: number;
-  fullBytes: number;
-  partialBytes: number;
-  requests: number;
-  visitors: number;
-  countries: number;
+export interface UsagePoint extends UsageTotals {
+  /** ISO timestamp of the UTC day start */
+  date: string;
 }
 
 export interface Usage {
