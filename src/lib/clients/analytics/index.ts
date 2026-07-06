@@ -24,7 +24,7 @@ import { CONFIG } from "@/lib/config";
 import { LOGGER } from "@/lib/logging";
 import { withTimeout } from "@/lib/with-timeout";
 
-export const USAGE_DAYS = 28;
+export const USAGE_DAYS = 30;
 
 export interface UsageTotals {
   bytes: number;
@@ -191,7 +191,7 @@ const USAGE_AGGREGATES = `
   COUNT(DISTINCT blob6) AS countries`;
 
 /**
- * 28-day usage for a product, or a single object when `objectPath` is given.
+ * Recent usage (USAGE_DAYS) for a product, or a single object when `objectPath` is given.
  * Returns null when analytics is unconfigured or the query fails — callers
  * render nothing rather than breaking the page.
  */
@@ -205,9 +205,10 @@ export async function getUsage(
   const filters = [
     SERVED_FILTER,
     // AE's SQL validator is strict (see SERVED_FILTER); stick to the
-    // documented NOW() - INTERVAL form. The window touches 29 UTC calendar
-    // days — day alignment happens in JS below, where off-grid rows are
-    // dropped and displayed totals are summed from the grid days.
+    // documented NOW() - INTERVAL form. The window touches one more UTC
+    // calendar day than the grid — day alignment happens in JS below, where
+    // off-grid rows are dropped and displayed totals are summed from the
+    // grid days.
     `timestamp > NOW() - INTERVAL '${USAGE_DAYS}' DAY`,
     `blob1 = ${sqlQuote(accountId)}`,
     `blob2 = ${sqlQuote(productId)}`,

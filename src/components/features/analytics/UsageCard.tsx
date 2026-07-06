@@ -16,7 +16,7 @@ interface UsageCardProps {
 }
 
 /**
- * Server component: fetches 28-day usage and renders the metrics card.
+ * Server component: fetches recent usage and renders the metrics card.
  * Renders nothing when analytics is unconfigured or the query fails, so the
  * page never depends on the analytics backend. Render inside <Suspense>.
  */

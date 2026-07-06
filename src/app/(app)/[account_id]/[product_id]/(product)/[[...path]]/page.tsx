@@ -146,7 +146,7 @@ export default async function ProductPathPage({ params }: PageProps) {
             objectInfo={objectInfo}
             connectionDetails={connectionDetails}
           />
-          {/* 28-day download stats for this object; hidden when analytics is off */}
+          {/* Recent download stats for this object; hidden when analytics is off */}
           <Suspense fallback={null}>
             <UsageCard
               accountId={account_id}

@@ -15,7 +15,7 @@ beforeAll(() => {
   };
 });
 
-const days: UsagePoint[] = Array.from({ length: 28 }, (_, i) => ({
+const days: UsagePoint[] = Array.from({ length: 30 }, (_, i) => ({
   date: new Date(Date.UTC(2026, 5, 9 + i)).toISOString(),
   bytes: i * 1024,
   fullBytes: i * 512,
@@ -36,7 +36,7 @@ const totals = {
 
 it("shows 28-day totals for a product", () => {
   renderPanel(<UsagePanel days={days} totals={totals} scope="product" />);
-  expect(screen.getByText("Past 28 days")).toBeInTheDocument();
+  expect(screen.getByText("Past 30 days")).toBeInTheDocument();
   expect(screen.getByText("10 GB")).toBeInTheDocument();
   expect(screen.getByText("Unique visitors")).toBeInTheDocument();
   expect(screen.getByText("56")).toBeInTheDocument();

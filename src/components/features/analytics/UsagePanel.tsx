@@ -41,7 +41,7 @@ const HELP = {
 };
 
 /**
- * 28-day usage: a metrics grid over a daily bar chart. Hovering a bar
+ * Recent usage: a metrics grid over a daily bar chart. Hovering a bar
  * highlights it green and the grid shows that day's numbers; otherwise no
  * bar is highlighted and the grid shows window totals (issue #257 V1 mocks).
  */
@@ -75,7 +75,9 @@ export function UsagePanel({ days, totals, scope }: UsagePanelProps) {
           />
         )}
         <Text size="1" color="gray">
-          {hovered === null ? "Past 28 days" : formatDateSSR(days[hovered].date)}
+          {hovered === null
+            ? `Past ${days.length} days`
+            : formatDateSSR(days[hovered].date)}
         </Text>
       </Flex>
 
@@ -108,7 +110,7 @@ export function UsagePanel({ days, totals, scope }: UsagePanelProps) {
 
       <Box
         role="img"
-        aria-label={`Daily data served over the past 28 days, totalling ${formatBytes(totals.bytes)}`}
+        aria-label={`Daily data served over the past ${days.length} days, totalling ${formatBytes(totals.bytes)}`}
         onMouseLeave={() => setHovered(null)}
       >
         <ResponsiveContainer width="100%" height={64}>
