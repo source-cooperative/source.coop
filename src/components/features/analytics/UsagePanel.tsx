@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Box, Flex, Grid, Text } from "@radix-ui/themes";
+import { Box, Flex, Grid, Text, Tooltip } from "@radix-ui/themes";
 import { BarChart, Bar, Cell, XAxis, YAxis, ResponsiveContainer } from "recharts";
 import type { UsagePoint, UsageTotals } from "@/lib/clients/analytics";
 import { formatBytes, formatDateSSR } from "@/lib/format";
@@ -29,28 +29,38 @@ export function parseActiveIndex(raw: unknown, length: number): number | null {
   return Number.isInteger(index) && index >= 0 && index < length ? index : null;
 }
 
+const HELP = {
+  served:
+    "Total bytes downloaded via successful GET requests, estimated from sampled request logs.",
+  full: "Bytes served as complete file downloads (HTTP 200).",
+  partial: "Bytes served as partial reads via Range requests (HTTP 206).",
+  visitors:
+    "Distinct clients, counted by a salted hash of the requester's IP address.",
+  countries:
+    "Distinct countries requests originated from, based on the requester's IP address.",
+};
+
 /**
- * 28-day usage: a metrics grid over a daily bar chart. The latest bar is
- * highlighted green by default; hovering a bar highlights it and the grid
- * shows that day's numbers (per the issue #257 V1 mocks).
+ * 28-day usage: a metrics grid over a daily bar chart. Hovering a bar
+ * highlights it green and the grid shows that day's numbers; otherwise no
+ * bar is highlighted and the grid shows window totals (issue #257 V1 mocks).
  */
 export function UsagePanel({ days, totals, scope }: UsagePanelProps) {
   const [hovered, setHovered] = useState<number | null>(null);
-  const active = hovered ?? days.length - 1;
   const shown = hovered === null ? totals : days[hovered];
 
   const metrics =
     scope === "product"
       ? [
-          { label: "Data served", value: formatBytes(shown.bytes) },
-          { label: "Unique visitors", value: numberFormat.format(shown.visitors) },
-          { label: "Countries", value: numberFormat.format(shown.countries) },
+          { label: "Data served", value: formatBytes(shown.bytes), help: HELP.served },
+          { label: "Unique visitors", value: numberFormat.format(shown.visitors), help: HELP.visitors },
+          { label: "Countries", value: numberFormat.format(shown.countries), help: HELP.countries },
         ]
       : [
-          { label: "Full downloads", value: formatBytes(shown.fullBytes) },
-          { label: "Range requests", value: formatBytes(shown.partialBytes) },
-          { label: "Unique visitors", value: numberFormat.format(shown.visitors) },
-          { label: "Countries", value: numberFormat.format(shown.countries) },
+          { label: "Full downloads", value: formatBytes(shown.fullBytes), help: HELP.full },
+          { label: "Range requests", value: formatBytes(shown.partialBytes), help: HELP.partial },
+          { label: "Unique visitors", value: numberFormat.format(shown.visitors), help: HELP.visitors },
+          { label: "Countries", value: numberFormat.format(shown.countries), help: HELP.countries },
         ];
 
   return (
@@ -74,9 +84,23 @@ export function UsagePanel({ days, totals, scope }: UsagePanelProps) {
             <Text as="div" size="4" weight="bold">
               {metric.value}
             </Text>
-            <Text as="div" size="1" color="gray">
-              {metric.label}
-            </Text>
+            <Tooltip content={metric.help}>
+              <Text
+                as="div"
+                size="1"
+                color="gray"
+                style={{
+                  width: "fit-content",
+                  cursor: "help",
+                  textDecorationLine: "underline",
+                  textDecorationStyle: "dotted",
+                  textDecorationColor: "var(--gray-8)",
+                  textUnderlineOffset: "2px",
+                }}
+              >
+                {metric.label}
+              </Text>
+            </Tooltip>
           </Box>
         ))}
       </Grid>
@@ -105,7 +129,7 @@ export function UsagePanel({ days, totals, scope }: UsagePanelProps) {
               {days.map((day, i) => (
                 <Cell
                   key={day.date}
-                  fill={i === active ? "var(--green-9)" : "var(--gray-6)"}
+                  fill={i === hovered ? "var(--green-9)" : "var(--gray-6)"}
                 />
               ))}
             </Bar>
