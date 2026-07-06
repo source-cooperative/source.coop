@@ -19,7 +19,7 @@ import { SectionHeader } from "@/components/core/SectionHeader";
 import { Dropzone } from "@/components/features/uploader/Dropzone";
 import { getPageSession } from "@/lib";
 import { isAuthorized } from "@/lib/api/authz";
-import { dataConnectionsTable, productsTable } from "@/lib/clients/database";
+import { dataConnectionsTable } from "@/lib/clients/database";
 import { productAnalyticsUrl, productUrl } from "@/lib/urls";
 import { Actions } from "@/types/shared";
 import { Box, Callout, Card, Flex, Grid } from "@radix-ui/themes";
