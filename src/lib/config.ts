@@ -66,6 +66,14 @@ export const CONFIG = {
     },
   },
 
+  // Cloudflare Analytics Engine — request analytics written by the data proxy.
+  // All three must be set for analytics UI to appear; otherwise it hides itself.
+  analytics: {
+    accountId: process.env.CF_ANALYTICS_ACCOUNT_ID || "",
+    apiToken: process.env.CF_ANALYTICS_API_TOKEN || "",
+    dataset: process.env.CF_ANALYTICS_DATASET || "",
+  },
+
   // Location WebSocket for live globe
   locationWs: {
     url: process.env.NEXT_PUBLIC_LOCATION_WS_URL,
