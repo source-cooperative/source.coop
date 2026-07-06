@@ -29,7 +29,11 @@ export function ProductHeader({ product }: ProductHeaderProps) {
         </Box>
       </Box>
       <Flex width="100%" className="product-meta" direction="column" gap="4">
-        <ProductMetaCard product={product} />
+        {/* flexGrow (not the card's height:100%) absorbs the grid-stretched
+            row height, so the usage card below keeps its natural size */}
+        <Box flexGrow="1">
+          <ProductMetaCard product={product} />
+        </Box>
         {/* Streams in after the page shell; hidden when analytics is off */}
         <Suspense fallback={null}>
           <UsageCard

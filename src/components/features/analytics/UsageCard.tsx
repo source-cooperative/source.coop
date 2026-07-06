@@ -42,5 +42,12 @@ export async function UsageCard({
   if (variant === "section") {
     return <Box mt="5">{section}</Box>;
   }
-  return <Card size={{ initial: "2", sm: "1" }}>{section}</Card>;
+  return (
+    // flexShrink 0: in the grid-stretched meta column an over-constrained
+    // flex layout would otherwise crush the card and clip the chart
+    // (Radix Card is overflow:hidden).
+    <Card size={{ initial: "2", sm: "1" }} style={{ flexShrink: 0 }}>
+      {section}
+    </Card>
+  );
 }
