@@ -52,13 +52,14 @@ export function UsagePanel({ days, totals, scope }: UsagePanelProps) {
   const metrics =
     scope === "product"
       ? [
-          { label: "Data served", value: formatBytes(shown.bytes), help: HELP.served },
+          // 1 decimal: wider values ("1016.72 GB") wrap and stretch the card
+          { label: "Data served", value: formatBytes(shown.bytes, 1), help: HELP.served },
           { label: "Unique visitors", value: numberFormat.format(shown.visitors), help: HELP.visitors },
           { label: "Countries", value: numberFormat.format(shown.countries), help: HELP.countries },
         ]
       : [
-          { label: "Full downloads", value: formatBytes(shown.fullBytes), help: HELP.full },
-          { label: "Range requests", value: formatBytes(shown.partialBytes), help: HELP.partial },
+          { label: "Full downloads", value: formatBytes(shown.fullBytes, 1), help: HELP.full },
+          { label: "Range requests", value: formatBytes(shown.partialBytes, 1), help: HELP.partial },
           { label: "Unique visitors", value: numberFormat.format(shown.visitors), help: HELP.visitors },
           { label: "Countries", value: numberFormat.format(shown.countries), help: HELP.countries },
         ];
