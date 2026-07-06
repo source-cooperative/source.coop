@@ -1,7 +1,5 @@
 import { Box, Card, Grid, Flex, DataList } from "@radix-ui/themes";
 import { SectionHeader, Skeleton } from "@/components/core";
-import { UsageCardSkeleton } from "@/components/features/analytics";
-import { isAnalyticsConfigured } from "@/lib/clients/analytics";
 import DirectoryListLoading from "./(product)/[[...path]]/loading";
 
 export default function ProductDetailsLoading() {
@@ -105,8 +103,10 @@ export default function ProductDetailsLoading() {
             </DataList.Root>
           </SectionHeader>
         </Card>
-
-        {isAnalyticsConfigured() && <UsageCardSkeleton />}
+        {/* No analytics skeleton here: the card is maintainer-only and this
+            route-level boundary can't know the viewer — it would flash and
+            vanish for everyone else. The layout's Suspense fallback covers
+            authorized viewers. */}
       </Flex>
     </Grid>
   );

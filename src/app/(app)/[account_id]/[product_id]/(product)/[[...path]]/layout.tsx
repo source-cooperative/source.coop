@@ -25,7 +25,7 @@ import { Dropzone } from "@/components/features/uploader/Dropzone";
 import { getPageSession } from "@/lib";
 import { isAuthorized } from "@/lib/api/authz";
 import { dataConnectionsTable } from "@/lib/clients/database";
-import { productAnalyticsUrl, productUrl } from "@/lib/urls";
+import { productUrl } from "@/lib/urls";
 import { Actions } from "@/types/shared";
 import { Box, Callout, Card, Flex, Grid } from "@radix-ui/themes";
 import { ExclamationTriangleIcon } from "@radix-ui/react-icons";
@@ -158,22 +158,17 @@ export default async function ProductLayout({
 
         <Flex width="100%" className="product-meta" direction="column" gap="4">
           <ProductMetaCard product={product} />
-          {/* Streams in after the page shell; hidden when analytics is off.
-              The skeleton reserves the card's space so warm-cache data
-              fills in instead of reflowing the column. */}
-          <Suspense
-            fallback={isAnalyticsConfigured() ? <UsageCardSkeleton /> : null}
-          >
-            <UsageCard
-              accountId={account_id}
-              productId={product_id}
-              viewAllHref={
-                canViewAnalytics
-                  ? productAnalyticsUrl(account_id, product_id)
-                  : undefined
-              }
-            />
-          </Suspense>
+          {/* Analytics are for the people who run the product, like the
+              /-/analytics page. Streams in after the page shell; hidden when
+              analytics is off. The skeleton reserves the card's space so
+              warm-cache data fills in instead of reflowing the column. */}
+          {canViewAnalytics && (
+            <Suspense
+              fallback={isAnalyticsConfigured() ? <UsageCardSkeleton /> : null}
+            >
+              <UsageCard accountId={account_id} productId={product_id} />
+            </Suspense>
+          )}
         </Flex>
       </Grid>
 

@@ -2,28 +2,22 @@ import Link from "next/link";
 import { Box, Card, Text } from "@radix-ui/themes";
 import { SectionHeader } from "@/components/core/SectionHeader";
 import { getUsage } from "@/lib/clients/analytics";
+import { productAnalyticsUrl } from "@/lib/urls";
 import { UsagePanel } from "./UsagePanel";
 
 interface UsageCardProps {
   accountId: string;
   productId: string;
-  /**
-   * "View all analytics →" target; pass only for viewers who can reach the
-   * (maintainer-gated) product analytics page.
-   */
-  viewAllHref?: string;
 }
 
 /**
  * Server component: fetches recent usage and renders the analytics card.
- * Renders nothing when analytics is unconfigured or the query fails, so the
- * page never depends on the analytics backend. Render inside <Suspense>.
+ * Only render for viewers who can manage the product (the same audience as
+ * the /-/analytics page the footer links to). Renders nothing when analytics
+ * is unconfigured or the query fails, so the page never depends on the
+ * analytics backend. Render inside <Suspense>.
  */
-export async function UsageCard({
-  accountId,
-  productId,
-  viewAllHref,
-}: UsageCardProps) {
+export async function UsageCard({ accountId, productId }: UsageCardProps) {
   const usage = await getUsage(accountId, productId);
   if (!usage) return null;
 
@@ -52,13 +46,11 @@ export async function UsageCard({
           totals={usage.totals}
           users={usage.users}
         />
-        {viewAllHref && (
-          <Box mt="3" pt="3" style={{ borderTop: "1px solid var(--gray-4)" }}>
-            <Link href={viewAllHref}>
-              <Text size="1">View all analytics →</Text>
-            </Link>
-          </Box>
-        )}
+        <Box mt="3" pt="3" style={{ borderTop: "1px solid var(--gray-4)" }}>
+          <Link href={productAnalyticsUrl(accountId, productId)}>
+            <Text size="1">View all analytics →</Text>
+          </Link>
+        </Box>
       </SectionHeader>
     </Card>
   );
