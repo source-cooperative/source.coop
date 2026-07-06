@@ -284,7 +284,20 @@ function parseUsageAggregates(row: Row): UsageTotals {
   };
 }
 
-/** Display key for one grouped row, e.g. "ftw/global-data · US". */
+const countryNames = new Intl.DisplayNames(["en"], { type: "region" });
+
+/** "US" → "United States (US)"; non-ISO values (e.g. "T1") pass through. */
+function countryLabel(code: string): string {
+  if (!code) return "(unknown)";
+  try {
+    const name = countryNames.of(code);
+    return name && name !== code ? `${name} (${code})` : code;
+  } catch {
+    return code;
+  }
+}
+
+/** Display key for one grouped row, e.g. "ftw/global-data · United States (US)". */
 function rowKey(row: Row, groupBy: AdminDimension[]): string {
   return groupBy
     .map((dim) => {
@@ -294,7 +307,7 @@ function rowKey(row: Row, groupBy: AdminDimension[]): string {
         case "product":
           return `${str(row.blob1)}/${str(row.blob2)}`;
         case "country":
-          return str(row.blob6) || "(unknown)";
+          return countryLabel(str(row.blob6));
         case "client":
           // Full HMAC hex is unwieldy; 12 chars is plenty to tell clients apart.
           return str(row.blob8).slice(0, 12) || "(unknown)";

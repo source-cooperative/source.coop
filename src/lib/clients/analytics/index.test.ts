@@ -278,7 +278,7 @@ describe("getAdminBreakdown", () => {
       window: "24h",
       groupBy: ["account", "country"],
     });
-    expect(breakdown!.series).toEqual(["a1 · US"]);
+    expect(breakdown!.series).toEqual(["a1 · United States (US)"]);
   });
 
   it("labels empty dimension values as unknown", async () => {
