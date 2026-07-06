@@ -1,7 +1,7 @@
 "use client";
 import { useState, type ReactNode } from "react";
 import NextLink from "next/link";
-import { Button, Dialog, Flex, IconButton, Text } from "@radix-ui/themes";
+import { Dialog, Flex, IconButton, Text } from "@radix-ui/themes";
 import {
   HamburgerMenuIcon,
   Cross1Icon,
@@ -16,9 +16,9 @@ import {
   productListUrl,
   newProductUrl,
   newOrganizationUrl,
-  loginUrl,
   docsUrl,
 } from "@/lib";
+import { LoginButton } from "@/components/core";
 import { isAdmin, isAuthorized } from "@/lib/api/authz";
 import { ADMIN_TOOLS } from "@/components/features/admin/tools";
 import { Actions, UserSession } from "@/types";
@@ -219,7 +219,7 @@ export function MobileMenu({
 }
 
 /** Logged-out: the same hamburger sheet with just Products + login. */
-export function LoggedOutMobileMenu({ returnTo }: { returnTo?: string }) {
+export function LoggedOutMobileMenu() {
   return (
     <MobileMenuSheet>
       {(close) => (
@@ -235,12 +235,10 @@ export function LoggedOutMobileMenu({ returnTo }: { returnTo?: string }) {
             Docs
           </a>
           <div className={styles.mobileDivider} />
+          {/* LoginButton is a full-page nav to the Ory flow; it carries its own
+              return_to, so no close handler is needed. */}
           <Flex p="4">
-            <Button asChild size="3" style={{ width: "100%" }}>
-              <NextLink href={loginUrl(returnTo)} onClick={close}>
-                Log In / Register
-              </NextLink>
-            </Button>
+            <LoginButton />
           </Flex>
         </>
       )}

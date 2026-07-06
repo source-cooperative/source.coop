@@ -8,11 +8,11 @@ import {
   isOrganizationalAccount,
   productsTable,
 } from "@/lib/clients/database";
-import { Box, Button, Callout, Flex, Link } from "@radix-ui/themes";
+import { Box, Callout, Flex, Link } from "@radix-ui/themes";
 import { ExclamationTriangleIcon } from "@radix-ui/react-icons";
 import { Account, Actions, MembershipState } from "@/types";
-import { loginUrl, onboardingUrl } from "@/lib/urls";
-import { getReturnToUrl } from "@/lib/baseUrl";
+import { onboardingUrl } from "@/lib/urls";
+import { LoginButton } from "@/components/core";
 import { invitationLink } from "./accountMenu";
 
 export async function AuthButtons() {
@@ -141,20 +141,16 @@ export async function AuthButtons() {
     );
   }
 
-  const returnTo = await getReturnToUrl();
-
   return (
     <>
-      {/* Desktop: Products link + login inline */}
+      {/* Desktop: nav links + login inline */}
       <Flex display={{ initial: "none", sm: "flex" }} align="center" gap="4">
         <NavLinks />
-        <Link href={loginUrl(returnTo)}>
-          <Button>Log In / Register</Button>
-        </Link>
+        <LoginButton />
       </Flex>
-      {/* Mobile: hamburger → sheet with Products + login */}
+      {/* Mobile: hamburger → sheet with nav links + login */}
       <Box display={{ initial: "block", sm: "none" }}>
-        <LoggedOutMobileMenu returnTo={returnTo} />
+        <LoggedOutMobileMenu />
       </Box>
     </>
   );

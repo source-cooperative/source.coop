@@ -1,4 +1,5 @@
 import {
+  Box,
   Container,
   Heading,
   Text,
@@ -6,10 +7,14 @@ import {
   Link as RadixLink,
 } from "@radix-ui/themes";
 import Link from "next/link";
-import { LinkBreak2Icon, LockClosedIcon } from "@radix-ui/react-icons";
+import {
+  LinkBreak2Icon,
+  LockClosedIcon,
+  PersonIcon,
+} from "@radix-ui/react-icons";
 import { ReactNode } from "react";
 
-type StatusType = "not-found" | "not-authorized";
+type StatusType = "not-found" | "not-authorized" | "unauthenticated";
 
 interface StatusPageProps {
   type: StatusType;
@@ -17,6 +22,8 @@ interface StatusPageProps {
   description?: ReactNode;
   actionText?: ReactNode;
   actionHref?: string;
+  /** Custom action node (e.g. a client button); overrides actionText/actionHref. */
+  action?: ReactNode;
   iconSize?: number;
   containerSize?: "1" | "2" | "3" | "4";
   minHeight?: string;
@@ -46,6 +53,17 @@ const statusConfig = {
       </>
     ),
   },
+  unauthenticated: {
+    icon: PersonIcon,
+    defaultTitle: "Sign in required",
+    defaultDescription: (
+      <>
+        You need to sign in to access this page.
+        <br />
+        You&apos;ll be returned here after logging in.
+      </>
+    ),
+  },
 };
 
 export function StatusPage({
@@ -54,6 +72,7 @@ export function StatusPage({
   description,
   actionText,
   actionHref,
+  action,
   iconSize = 48,
   containerSize,
   minHeight = "60vh",
@@ -90,11 +109,14 @@ export function StatusPage({
           {finalDescription}
         </Text>
 
-        {showAction && (
-          <RadixLink size="3" mt="5" asChild>
-            <Link href={finalActionHref}>{finalActionText}</Link>
-          </RadixLink>
-        )}
+        {showAction &&
+          (action ? (
+            <Box mt="5">{action}</Box>
+          ) : (
+            <RadixLink size="3" mt="5" asChild>
+              <Link href={finalActionHref}>{finalActionText}</Link>
+            </RadixLink>
+          ))}
       </Flex>
     </Container>
   );

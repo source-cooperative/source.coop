@@ -36,6 +36,18 @@ export function DirectoryList({
 
   const { getUploadsForScope } = useUploadManager();
 
+  // Optimistically hide just-deleted items. The listing read after a delete is
+  // eventually consistent through the data proxy and is NOT monotonic — a read
+  // can report the item gone, then a later read report it back. So we do not
+  // reconcile a deletion against the listing (that made deleted items briefly
+  // reappear); we just keep a successfully-deleted path hidden for the lifetime
+  // of this directory view and reset when the prefix changes (navigating away).
+  // We only ever add on a confirmed delete, so the object really is gone.
+  const [deletedPaths, setDeletedPaths] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    setDeletedPaths(new Set()); // new directory view → drop stale optimistic hides
+  }, [prefix]);
+
   // Get uploads for this specific product scope
   const scope = {
     accountId: product.account_id,
@@ -43,12 +55,26 @@ export function DirectoryList({
   };
   const scopedUploads = getUploadsForScope(scope);
 
+  // Re-uploading to a previously-deleted path re-creates the object, so stop
+  // hiding it. deletedPaths is client state that survives a router.refresh(),
+  // so without this the re-upload stays hidden until you navigate away.
+  const uploadKeysSig = scopedUploads.map((u) => u.key).join("\n");
+  useEffect(() => {
+    setDeletedPaths((prev) => {
+      const keys = uploadKeysSig.split("\n");
+      if (!keys.some((k) => prev.has(k))) return prev;
+      const next = new Set(prev);
+      keys.forEach((k) => next.delete(k));
+      return next;
+    });
+  }, [uploadKeysSig]);
+
   // Merge file objects with upload progress
   const items = mergeUploadsWithFiles(
     asFileNodes(objects),
     scopedUploads,
     prefix
-  );
+  ).filter((item) => !deletedPaths.has(item.path));
 
   // Sort items: directories first, then files alphabetically
   items.sort((a, b) => {
@@ -89,6 +115,8 @@ export function DirectoryList({
     focusedIndex,
     setFocusedIndex,
     itemRefs,
+    onDeleted: (path: string) =>
+      setDeletedPaths((prev) => new Set(prev).add(path)),
   };
   const isVirtualized = items.length > MAX_VISIBLE_ITEMS;
 

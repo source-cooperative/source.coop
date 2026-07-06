@@ -34,6 +34,8 @@ interface UploadContextType {
   cancelUpload: (id: string) => Promise<void>;
   cancelAllUploads: (scope?: CredentialsScope) => Promise<void>;
   retryUpload: (id: string) => Promise<void>;
+  deleteObject: (key: string, scope: CredentialsScope) => Promise<void>;
+  deletePrefix: (prefix: string, scope: CredentialsScope) => Promise<void>;
   clearUploads: (status?: UploadStatus, scope?: CredentialsScope) => void;
   clearAllUploads: (scope?: CredentialsScope) => void;
   getUploadsForScope: (scope: CredentialsScope) => ScopedUploadItem[];
@@ -150,6 +152,26 @@ export function UploadProvider({ children }: UploadProviderProps) {
     await queueRef.current!.retry(id);
   }, []);
 
+  const deleteObject = useCallback(
+    async (key: string, scope: CredentialsScope) => {
+      const s3Service = getS3Service(scope);
+      if (!s3Service)
+        throw new Error(`No S3 service available for scope ${s3ServiceKey(scope)}`);
+      await s3Service.deleteObject(key);
+    },
+    [s3Services]
+  );
+
+  const deletePrefix = useCallback(
+    async (prefix: string, scope: CredentialsScope) => {
+      const s3Service = getS3Service(scope);
+      if (!s3Service)
+        throw new Error(`No S3 service available for scope ${s3ServiceKey(scope)}`);
+      await s3Service.deletePrefix(prefix);
+    },
+    [s3Services]
+  );
+
   const clearUploads = useCallback(
     (status?: UploadStatus, scope?: CredentialsScope) => {
       queueRef.current!.clear(status, scope);
@@ -182,6 +204,8 @@ export function UploadProvider({ children }: UploadProviderProps) {
     cancelUpload,
     cancelAllUploads,
     retryUpload,
+    deleteObject,
+    deletePrefix,
     clearUploads,
     clearAllUploads,
     getUploadsForScope,

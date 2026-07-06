@@ -555,14 +555,6 @@ export function LiveGlobe({
             {selected.location && (
               <div className={styles.popupLocation}>{selected.location}</div>
             )}
-            {/* The bare total just duplicates the single product's count, so
-                only show it as a summary when the breakdown has 2+ rows. */}
-            {selected.products.length !== 1 && (
-              <div className={styles.popupLabel}>
-                {selected.count.toLocaleString()}{" "}
-                {selected.count === 1 ? "request" : "requests"}
-              </div>
-            )}
             {selected.products.length > 0 && (
               <div className={styles.popupProducts}>
                 {selected.products.map(([name, n]) => (

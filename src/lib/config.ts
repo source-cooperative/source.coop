@@ -50,7 +50,12 @@ export const CONFIG = {
     oauth2: {
       clientId: process.env.ORY_OAUTH2_CLIENT_ID || "",
       clientSecret: process.env.ORY_OAUTH2_CLIENT_SECRET || "",
-      redirectUri: `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/api/internal/oauth2/callback`,
+      // Virtual redirect_uri for the headless OAuth2 flow. Hydra validates it
+      // against the client's registered URIs and the token exchange echoes it,
+      // but the flow is fully server-side (see getOryIdToken) — this URL is never
+      // navigated and no route serves it. Must stay byte-identical to the URI
+      // registered on every Ory OAuth2 client we use.
+      redirectUri: "https://source.coop",
     },
 
     routes: {

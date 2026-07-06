@@ -5,24 +5,20 @@ import {
   SettingsHeader,
 } from "@/components/features/settings";
 import { getPageSession } from "@/lib/api/utils";
-import {
-  isAuthorized,
-  canManageAccountDataConnections,
-} from "@/lib/api/authz";
+import { isAuthorized, canManageAccountDataConnections } from "@/lib/api/authz";
 import { Actions } from "@/types";
 import { accountsTable } from "@/lib/clients/database";
-import { notFound, redirect } from "next/navigation";
-import { getReturnToUrl } from "@/lib/baseUrl";
+import { notFound } from "next/navigation";
+import { LoginRequired } from "@/components/core";
 import {
   PersonIcon,
   LockClosedIcon,
   Pencil1Icon,
-  GearIcon,
   ImageIcon,
   Link1Icon,
+  ExternalLinkIcon,
 } from "@radix-ui/react-icons";
 import {
-  loginUrl,
   editAccountProfileUrl,
   editAccountProfilePictureUrl,
   editAccountPermissionsUrl,
@@ -31,7 +27,7 @@ import {
   accountUrl,
   orySettingsUrl,
 } from "@/lib/urls";
-import { ExternalLink } from "@/components/core/ExternalLink";
+import { LinkAway } from "@/components/core/LinkAway";
 import { getManageableAccounts } from "@/lib/clients/lookups";
 
 interface AccountLayoutProps {
@@ -48,7 +44,7 @@ export default async function AccountLayout({
   const userSession = await getPageSession();
 
   if (!userSession?.account) {
-    redirect(loginUrl(await getReturnToUrl()));
+    return <LoginRequired />;
   }
 
   const accountToEdit = await accountsTable.fetchById(account_id);
@@ -68,27 +64,28 @@ export default async function AccountLayout({
   const canReadAccount = isAuthorized(
     userSession,
     accountToEdit,
-    Actions.GetAccount
+    Actions.GetAccount,
   );
   const canReadMembership = isAuthorized(
     userSession,
     accountToEdit,
-    Actions.ListAccountMemberships
+    Actions.ListAccountMemberships,
   );
   const canEditAccount = isAuthorized(
     userSession,
     accountToEdit,
-    Actions.PutAccountProfile
+    Actions.PutAccountProfile,
   );
   const canManageDataConnections = canManageAccountDataConnections(
     userSession,
-    accountToEdit
+    accountToEdit,
   );
 
   // Authentication details (email, password, keys) live in Ory and can only
   // be changed by the account owner themselves — not by an admin acting on
   // someone else's account.
-  const isOwnAccount = userSession.account.account_id === accountToEdit.account_id;
+  const isOwnAccount =
+    userSession.account.account_id === accountToEdit.account_id;
 
   const menuItems = [
     {
@@ -122,7 +119,7 @@ export default async function AccountLayout({
       condition: isAuthorized(
         userSession,
         accountToEdit,
-        Actions.GetAccountFlags
+        Actions.GetAccountFlags,
       ),
     },
     ...(accountToEdit.type === "organization"
@@ -140,7 +137,7 @@ export default async function AccountLayout({
             id: "authentication",
             label: "Authentication",
             href: orySettingsUrl(),
-            icon: <GearIcon width="16" height="16" />,
+            icon: <ExternalLinkIcon width="16" height="16" />,
             condition: canReadAccount,
             external: true,
             disabled: !isOwnAccount,
@@ -159,9 +156,9 @@ export default async function AccountLayout({
           linkToSameView
         />
 
-        <ExternalLink href={accountUrl(accountToEdit.account_id)}>
+        <LinkAway href={accountUrl(accountToEdit.account_id)}>
           View Profile
-        </ExternalLink>
+        </LinkAway>
       </SettingsHeader>
 
       <SettingsLayout menuItems={menuItems}>{children}</SettingsLayout>

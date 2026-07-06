@@ -1,16 +1,12 @@
 import { redirect } from "next/navigation";
 import { getPageSession } from "@/lib/api/utils";
-import { editProfileUrl, homeUrl, loginUrl } from "@/lib/urls";
-import { getReturnToUrl } from "@/lib/baseUrl";
+import { editProfileUrl, homeUrl } from "@/lib/urls";
+import { LoginRequired } from "@/components/core";
 
-interface SettingsPageProps {
-  params: Promise<{ account_id: string }>;
-}
-
-export default async function Redirect({ params }: SettingsPageProps) {
+export default async function Redirect() {
   const session = await getPageSession();
   if (!session) {
-    redirect(loginUrl(await getReturnToUrl()));
+    return <LoginRequired />;
   }
 
   if (!session.account?.account_id) {
