@@ -8,16 +8,25 @@ import { UsagePanel } from "./UsagePanel";
 interface UsageCardProps {
   accountId: string;
   productId: string;
+  /**
+   * Whether the viewer manages the product (owner/maintainer/admin):
+   * unlocks the USERS tab and the link to the /-/analytics page.
+   */
+  canManage?: boolean;
 }
 
 /**
- * Server component: fetches recent usage and renders the analytics card.
- * Only render for viewers who can manage the product (the same audience as
- * the /-/analytics page the footer links to). Renders nothing when analytics
- * is unconfigured or the query fails, so the page never depends on the
+ * Server component: fetches recent usage and renders the analytics card —
+ * public viewers get the downloads stats; managers also get the USERS tab
+ * and the "View all analytics" link. Renders nothing when analytics is
+ * unconfigured or the query fails, so the page never depends on the
  * analytics backend. Render inside <Suspense>.
  */
-export async function UsageCard({ accountId, productId }: UsageCardProps) {
+export async function UsageCard({
+  accountId,
+  productId,
+  canManage = false,
+}: UsageCardProps) {
   const usage = await getUsage(accountId, productId);
   if (!usage) return null;
 
@@ -44,13 +53,15 @@ export async function UsageCard({ accountId, productId }: UsageCardProps) {
         <UsagePanel
           days={usage.days}
           totals={usage.totals}
-          users={usage.users}
+          users={canManage ? usage.users : undefined}
         />
-        <Box mt="3" pt="3" style={{ borderTop: "1px solid var(--gray-4)" }}>
-          <Link href={productAnalyticsUrl(accountId, productId)}>
-            <Text size="1">View all analytics →</Text>
-          </Link>
-        </Box>
+        {canManage && (
+          <Box mt="3" pt="3" style={{ borderTop: "1px solid var(--gray-4)" }}>
+            <Link href={productAnalyticsUrl(accountId, productId)}>
+              <Text size="1">View all analytics →</Text>
+            </Link>
+          </Box>
+        )}
       </SectionHeader>
     </Card>
   );

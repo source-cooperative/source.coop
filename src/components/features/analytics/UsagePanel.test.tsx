@@ -47,6 +47,14 @@ it("shows window downloads, data served, and countries", () => {
   expect(screen.getByText("30-day downloads")).toBeInTheDocument();
 });
 
+it("renders downloads content without a tab selector for public viewers", () => {
+  renderPanel(<UsagePanel days={days} totals={totals} />);
+  expect(screen.queryByRole("tab")).toBeNull();
+  expect(screen.getByText("Downloads")).toBeInTheDocument();
+  expect(screen.getByText("12,847")).toBeInTheDocument();
+  expect(screen.queryByText("Registered")).toBeNull();
+});
+
 it("shows registered/anon usage and frequency on the Users tab", async () => {
   renderPanel(<UsagePanel days={days} totals={totals} users={users} />);
   await userEvent.click(screen.getByRole("tab", { name: /users/i }));

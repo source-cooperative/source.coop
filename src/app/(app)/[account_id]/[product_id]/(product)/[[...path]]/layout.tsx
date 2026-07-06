@@ -158,17 +158,19 @@ export default async function ProductLayout({
 
         <Flex width="100%" className="product-meta" direction="column" gap="4">
           <ProductMetaCard product={product} />
-          {/* Analytics are for the people who run the product, like the
-              /-/analytics page. Streams in after the page shell; hidden when
-              analytics is off. The skeleton reserves the card's space so
-              warm-cache data fills in instead of reflowing the column. */}
-          {canViewAnalytics && (
-            <Suspense
-              fallback={isAnalyticsConfigured() ? <UsageCardSkeleton /> : null}
-            >
-              <UsageCard accountId={account_id} productId={product_id} />
-            </Suspense>
-          )}
+          {/* Public card; managers additionally get the USERS tab and the
+              link to /-/analytics. Streams in after the page shell; hidden
+              when analytics is off. The skeleton reserves the card's space
+              so warm-cache data fills in instead of reflowing the column. */}
+          <Suspense
+            fallback={isAnalyticsConfigured() ? <UsageCardSkeleton /> : null}
+          >
+            <UsageCard
+              accountId={account_id}
+              productId={product_id}
+              canManage={canViewAnalytics}
+            />
+          </Suspense>
         </Flex>
       </Grid>
 

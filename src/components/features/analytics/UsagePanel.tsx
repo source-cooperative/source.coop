@@ -20,18 +20,58 @@ export { parseActiveIndex } from "./panels";
 interface UsagePanelProps {
   days: UsagePoint[];
   totals: UsageTotals;
-  users: UsageUsers;
+  /**
+   * Manager-only extras: when provided, the DOWNLOADS/USERS tab selector
+   * appears. Public viewers get the downloads content alone.
+   */
+  users?: UsageUsers;
 }
 
 /**
- * Compact analytics card panel (issue #257 mocks): DOWNLOADS tab with a
- * stats row (downloads, data served, countries) over a daily downloads bar
- * chart — hovering a bar shows that day's numbers — and a USERS tab with
+ * Compact analytics card panel (issue #257 mocks): a stats row (downloads,
+ * data served, countries) over a daily downloads bar chart — hovering a bar
+ * shows that day's numbers. For product managers, a USERS tab adds
  * registered vs anonymous usage and a download-frequency histogram.
  */
 export function UsagePanel({ days, totals, users }: UsagePanelProps) {
   const [hovered, setHovered] = useState<number | null>(null);
   const shown = hovered === null ? totals : days[hovered];
+
+  const downloads = (
+    <>
+      <Flex mt="3" pb="3" style={{ borderBottom: "1px solid var(--gray-4)" }}>
+        <Stat
+          label="Downloads"
+          help={HELP.downloads}
+          value={numberFormat.format(Math.round(shown.requests))}
+        />
+        <Stat
+          label="Data served"
+          help={HELP.served}
+          value={formatBytes(shown.bytes, 1)}
+          divider
+        />
+        <Stat
+          label="Countries"
+          help={HELP.countries}
+          value={numberFormat.format(shown.countries)}
+          divider
+        />
+      </Flex>
+
+      <Flex mt="3" direction="column">
+        <HoverCaption days={days} hovered={hovered} />
+        <DownloadsChart
+          days={days}
+          hovered={hovered}
+          onHover={setHovered}
+          height={64}
+        />
+      </Flex>
+    </>
+  );
+
+  if (!users) return downloads;
 
   return (
     <Tabs.Root defaultValue="downloads">
@@ -48,37 +88,7 @@ export function UsagePanel({ days, totals, users }: UsagePanelProps) {
         </Tabs.Trigger>
       </Tabs.List>
 
-      <Tabs.Content value="downloads">
-        <Flex mt="3" pb="3" style={{ borderBottom: "1px solid var(--gray-4)" }}>
-          <Stat
-            label="Downloads"
-            help={HELP.downloads}
-            value={numberFormat.format(Math.round(shown.requests))}
-          />
-          <Stat
-            label="Data served"
-            help={HELP.served}
-            value={formatBytes(shown.bytes, 1)}
-            divider
-          />
-          <Stat
-            label="Countries"
-            help={HELP.countries}
-            value={numberFormat.format(shown.countries)}
-            divider
-          />
-        </Flex>
-
-        <Flex mt="3" direction="column">
-          <HoverCaption days={days} hovered={hovered} />
-          <DownloadsChart
-            days={days}
-            hovered={hovered}
-            onHover={setHovered}
-            height={64}
-          />
-        </Flex>
-      </Tabs.Content>
+      <Tabs.Content value="downloads">{downloads}</Tabs.Content>
 
       <Tabs.Content value="users">
         <UsersContent users={users} />
