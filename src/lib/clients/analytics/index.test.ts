@@ -58,7 +58,10 @@ describe("getUsage", () => {
       expect(sql).toContain("blob4 = 'GET' AND double2 IN (200, 206)");
       expect(sql).toContain("blob1 = 'acct'");
       expect(sql).toContain("blob2 = 'prod'");
-      expect(sql).toContain(`INTERVAL '${USAGE_DAYS}' DAY`);
+      // Window matches the 28-day grid: today (partial) + 27 full UTC days.
+      expect(sql).toContain(
+        `timestamp >= toStartOfDay(NOW() - INTERVAL '${USAGE_DAYS - 1}' DAY)`,
+      );
       expect(sql).toContain("FROM test_dataset");
     }
     expect(seriesSql).toContain("toStartOfDay(timestamp)");
@@ -236,6 +239,34 @@ describe("getAdminBreakdown", () => {
       { key: "a1/p1", bytes: 600, requests: 6 },
       { key: "a2/p2", bytes: 300, requests: 3 },
       { key: "Other", bytes: 100, requests: 1 },
+    ]);
+  });
+
+  it("keeps a requests-only Other remainder visible", async () => {
+    const bucket = todayUtc();
+    fetchMock.mockImplementation(async (_url: string, init: { body: string }) => {
+      const sql = init.body;
+      if (sql.includes("GROUP BY bucket, blob1")) {
+        return jsonResponse([{ bucket, blob1: "a1", bytes: 500, requests: 5 }]);
+      }
+      if (sql.includes("GROUP BY bucket")) {
+        // Long tail served zero-byte responses: bytes covered, requests not.
+        return jsonResponse([{ bucket, bytes: 500, requests: 9 }]);
+      }
+      return jsonResponse([{ blob1: "a1", bytes: 500, requests: 5 }]);
+    });
+
+    const breakdown = await getAdminBreakdown({
+      window: "24h",
+      groupBy: ["account"],
+    });
+
+    expect(breakdown!.series).toEqual(["a1", "Other"]);
+    const point = breakdown!.points.find((p) => p.Other);
+    expect(point!.Other).toEqual({ bytes: 0, requests: 4 });
+    expect(breakdown!.groups).toEqual([
+      { key: "a1", bytes: 500, requests: 5 },
+      { key: "Other", bytes: 0, requests: 4 },
     ]);
   });
 

@@ -46,12 +46,15 @@ interface PageState {
 const first = (v: string | string[] | undefined) =>
   Array.isArray(v) ? v[0] : v;
 
+const numberFormat = new Intl.NumberFormat("en-US");
+
 function parseState(params: Record<string, string | string[] | undefined>): PageState {
   const windowParam = first(params.window);
   const groupByParam = first(params.groupBy);
   return {
+    // Object.hasOwn, not `in`: ?window=constructor must not match prototype keys.
     window:
-      windowParam && windowParam in ADMIN_WINDOWS
+      windowParam && Object.hasOwn(ADMIN_WINDOWS, windowParam)
         ? (windowParam as AdminWindow)
         : DEFAULT_WINDOW,
     // Absent → the default grouping; present but empty → no grouping at all.
@@ -62,7 +65,9 @@ function parseState(params: Record<string, string | string[] | undefined>): Page
             ...new Set(
               groupByParam
                 .split(",")
-                .filter((d): d is AdminDimension => d in ADMIN_DIMENSIONS),
+                .filter((d): d is AdminDimension =>
+                  Object.hasOwn(ADMIN_DIMENSIONS, d),
+                ),
             ),
           ],
     account: first(params.account)?.trim() || undefined,
@@ -251,10 +256,10 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
                         .join(" · ")
                     : "Scope"}
                 </Table.ColumnHeaderCell>
-                <Table.ColumnHeaderCell align="right">
+                <Table.ColumnHeaderCell justify="end">
                   Data served
                 </Table.ColumnHeaderCell>
-                <Table.ColumnHeaderCell align="right">
+                <Table.ColumnHeaderCell justify="end">
                   Requests
                 </Table.ColumnHeaderCell>
                 <Table.ColumnHeaderCell>Share</Table.ColumnHeaderCell>
@@ -286,11 +291,11 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
                         )}
                       </Flex>
                     </Table.RowHeaderCell>
-                    <Table.Cell align="right">
+                    <Table.Cell justify="end">
                       {formatBytes(group.bytes)}
                     </Table.Cell>
-                    <Table.Cell align="right">
-                      {Math.round(group.requests).toLocaleString()}
+                    <Table.Cell justify="end">
+                      {numberFormat.format(Math.round(group.requests))}
                     </Table.Cell>
                     <Table.Cell>
                       <Flex align="center" gap="2">

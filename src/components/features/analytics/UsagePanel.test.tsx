@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import { UsagePanel } from "./UsagePanel";
+import { UsagePanel, parseActiveIndex } from "./UsagePanel";
 import type { UsagePoint } from "@/lib/clients/analytics";
 
 // recharts' ResponsiveContainer needs ResizeObserver, which jsdom lacks.
@@ -37,6 +37,17 @@ it("shows 28-day totals for a product", () => {
   expect(screen.getByText("Unique visitors")).toBeInTheDocument();
   expect(screen.getByText("56")).toBeInTheDocument();
   expect(screen.getByText("Countries")).toBeInTheDocument();
+});
+
+it("accepts recharts 3's string activeTooltipIndex", () => {
+  // recharts 3 passes the hover index as a numeric string, not a number.
+  expect(parseActiveIndex("5", 28)).toBe(5);
+  expect(parseActiveIndex(5, 28)).toBe(5);
+  expect(parseActiveIndex(null, 28)).toBeNull();
+  expect(parseActiveIndex(undefined, 28)).toBeNull();
+  expect(parseActiveIndex("", 28)).toBeNull();
+  expect(parseActiveIndex("28", 28)).toBeNull(); // out of bounds
+  expect(parseActiveIndex("-1", 28)).toBeNull();
 });
 
 it("splits full vs range downloads for an object", () => {

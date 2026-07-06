@@ -13,6 +13,22 @@ interface UsagePanelProps {
   scope: "product" | "object";
 }
 
+// Deterministic across server and client — no-arg toLocaleString() follows
+// the runtime locale and causes hydration mismatches.
+const numberFormat = new Intl.NumberFormat("en-US");
+
+/**
+ * recharts 3 delivers activeTooltipIndex as a numeric string (or null);
+ * older typings claim number. Accept either, bounded to the data.
+ */
+export function parseActiveIndex(raw: unknown, length: number): number | null {
+  const index =
+    typeof raw === "number" || (typeof raw === "string" && raw !== "")
+      ? Number(raw) // Number("") would be 0, hence the guard above
+      : NaN;
+  return Number.isInteger(index) && index >= 0 && index < length ? index : null;
+}
+
 /**
  * 28-day usage: a metrics grid over a daily bar chart. The latest bar is
  * highlighted green by default; hovering a bar highlights it and the grid
@@ -27,14 +43,14 @@ export function UsagePanel({ days, totals, scope }: UsagePanelProps) {
     scope === "product"
       ? [
           { label: "Data served", value: formatBytes(shown.bytes) },
-          { label: "Unique visitors", value: shown.visitors.toLocaleString() },
-          { label: "Countries", value: shown.countries.toLocaleString() },
+          { label: "Unique visitors", value: numberFormat.format(shown.visitors) },
+          { label: "Countries", value: numberFormat.format(shown.countries) },
         ]
       : [
           { label: "Full downloads", value: formatBytes(shown.fullBytes) },
           { label: "Range requests", value: formatBytes(shown.partialBytes) },
-          { label: "Unique visitors", value: shown.visitors.toLocaleString() },
-          { label: "Countries", value: shown.countries.toLocaleString() },
+          { label: "Unique visitors", value: numberFormat.format(shown.visitors) },
+          { label: "Countries", value: numberFormat.format(shown.countries) },
         ];
 
   return (
@@ -66,6 +82,7 @@ export function UsagePanel({ days, totals, scope }: UsagePanelProps) {
       </Grid>
 
       <Box
+        role="img"
         aria-label={`Daily data served over the past 28 days, totalling ${formatBytes(totals.bytes)}`}
         onMouseLeave={() => setHovered(null)}
       >
@@ -74,12 +91,12 @@ export function UsagePanel({ days, totals, scope }: UsagePanelProps) {
             data={days}
             margin={{ top: 0, right: 0, bottom: 0, left: 0 }}
             barCategoryGap={2}
+            // The hover interaction is mouse-only; without a Tooltip the
+            // default accessibility layer is just an inert tab stop. The
+            // metrics grid above always carries the data.
+            accessibilityLayer={false}
             onMouseMove={(state) =>
-              setHovered(
-                typeof state?.activeTooltipIndex === "number"
-                  ? state.activeTooltipIndex
-                  : null,
-              )
+              setHovered(parseActiveIndex(state?.activeTooltipIndex, days.length))
             }
           >
             <XAxis dataKey="date" hide />

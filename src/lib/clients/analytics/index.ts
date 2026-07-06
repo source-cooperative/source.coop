@@ -22,6 +22,7 @@
 import { unstable_cache } from "next/cache";
 import { CONFIG } from "@/lib/config";
 import { LOGGER } from "@/lib/logging";
+import { withTimeout } from "@/lib/with-timeout";
 
 export const USAGE_DAYS = 28;
 
@@ -141,16 +142,22 @@ type Row = Record<string, unknown>;
 
 async function runQuery(sql: string): Promise<Row[]> {
   const { accountId, apiToken } = CONFIG.analytics;
-  const res = await fetch(
-    `https://api.cloudflare.com/client/v4/accounts/${accountId}/analytics_engine/sql`,
-    {
-      method: "POST",
-      headers: { Authorization: `Bearer ${apiToken}` },
-      body: sql,
-      // The Analytics Engine response is cached by the unstable_cache
-      // wrappers below, not by the fetch data cache.
-      cache: "no-store",
-    },
+  // withTimeout: a hung Analytics Engine API must not hold the page's
+  // Suspense boundary (and the serverless invocation) open indefinitely.
+  const res = await withTimeout(
+    fetch(
+      `https://api.cloudflare.com/client/v4/accounts/${accountId}/analytics_engine/sql`,
+      {
+        method: "POST",
+        headers: { Authorization: `Bearer ${apiToken}` },
+        body: sql,
+        // The Analytics Engine response is cached by the unstable_cache
+        // wrappers below, not by the fetch data cache.
+        cache: "no-store",
+      },
+    ),
+    15_000,
+    "Analytics Engine query timed out",
   );
   if (!res.ok) {
     throw new Error(
@@ -193,7 +200,10 @@ export async function getUsage(
     SERVED_FILTER,
     `blob1 = ${sqlQuote(accountId)}`,
     `blob2 = ${sqlQuote(productId)}`,
-    `timestamp > NOW() - INTERVAL '${USAGE_DAYS}' DAY`,
+    // Last USAGE_DAYS UTC calendar days (today partial + 27 full), matching
+    // the zero-filled day grid below exactly. A plain NOW()-28d window would
+    // clip a 29th partial day that lands in totals but in no bar.
+    `timestamp >= toStartOfDay(NOW() - INTERVAL '${USAGE_DAYS - 1}' DAY)`,
   ];
   if (objectPath !== undefined) {
     filters.push(`blob3 = ${sqlQuote(truncateToByteLimit(objectPath, 256))}`);
@@ -375,8 +385,10 @@ export async function getAdminBreakdown(
   }
 
   // "Other" per bucket = overall minus the charted slice (clamped: sampling
-  // estimates can put the slice a hair above the total).
-  let otherBytes = 0;
+  // estimates can put the slice a hair above the total). Gate on either
+  // metric — a remainder can be requests-only (zero-byte 200s pass the
+  // served filter) and must still show in the Requests view.
+  let hasOther = false;
   buckets.forEach((bucket, i) => {
     const total = totalByBucket.get(bucket);
     if (!total) return;
@@ -390,20 +402,21 @@ export async function getAdminBreakdown(
     };
     if (other.bytes > 0 || other.requests > 0) {
       points[i][OTHER_KEY] = other;
-      otherBytes += other.bytes;
+      hasOther = true;
     }
   });
-  const series = otherBytes > 0 ? [...chartKeys, OTHER_KEY] : chartKeys;
+  const series = hasOther ? [...chartKeys, OTHER_KEY] : chartKeys;
 
   // Table remainder beyond the top TABLE_GROUP_LIMIT groups.
-  const listedBytes = groups.reduce((sum, g) => sum + g.bytes, 0);
-  const listedRequests = groups.reduce((sum, g) => sum + g.requests, 0);
-  if (totals.bytes - listedBytes > 0) {
-    groups.push({
-      key: OTHER_KEY,
-      bytes: totals.bytes - listedBytes,
-      requests: Math.max(0, totals.requests - listedRequests),
-    });
+  const remainder = {
+    bytes: Math.max(0, totals.bytes - groups.reduce((sum, g) => sum + g.bytes, 0)),
+    requests: Math.max(
+      0,
+      totals.requests - groups.reduce((sum, g) => sum + g.requests, 0),
+    ),
+  };
+  if (remainder.bytes > 0 || remainder.requests > 0) {
+    groups.push({ key: OTHER_KEY, ...remainder });
   }
 
   return { buckets, bucketHours, series, points, groups, totals };

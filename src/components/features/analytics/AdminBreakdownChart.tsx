@@ -44,7 +44,10 @@ function bucketLabel(iso: string, bucketHours: number): string {
       : day;
 }
 
+// en-US explicitly: this renders in SSR HTML, and locale-following
+// toLocaleString() would hydrate differently for non-en visitors.
 const compact = new Intl.NumberFormat("en-US", { notation: "compact" });
+const plain = new Intl.NumberFormat("en-US");
 
 function formatMetric(value: number, metric: Metric): string {
   return metric === "bytes" ? formatBytes(value) : compact.format(value);
@@ -82,7 +85,7 @@ export function AdminBreakdownChart({
           <Text weight="bold" color="gray" highContrast>
             {metric === "bytes"
               ? formatBytes(totals.bytes)
-              : totals.requests.toLocaleString()}
+              : plain.format(totals.requests)}
           </Text>{" "}
           {metric === "bytes" ? "served" : "requests"}
         </Text>
