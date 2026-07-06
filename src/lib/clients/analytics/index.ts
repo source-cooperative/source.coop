@@ -96,8 +96,13 @@ export interface AdminBreakdown {
  * Only count responses that actually served product bytes: HEAD responses
  * carry a Content-Length that the proxy logs as bytes_sent without a body,
  * and listing requests have no product segment (blob2 = '').
+ *
+ * Float literals are load-bearing: AE's type checker rejects comparing the
+ * Double column double2 against Integer literals (422 "IN expression types
+ * must be consistent").
  */
-const SERVED_FILTER = "blob4 = 'GET' AND double2 IN (200, 206) AND blob2 != ''";
+const SERVED_FILTER =
+  "blob4 = 'GET' AND double2 IN (200.0, 206.0) AND blob2 != ''";
 
 export function isAnalyticsConfigured(): boolean {
   const { accountId, apiToken, dataset } = CONFIG.analytics;
@@ -178,8 +183,8 @@ const adminQuery = unstable_cache(runQuery, ["analytics-admin"], {
 
 const USAGE_AGGREGATES = `
   SUM(_sample_interval * double1) AS bytes,
-  sumIf(_sample_interval * double1, double2 = 200) AS full_bytes,
-  sumIf(_sample_interval * double1, double2 = 206) AS partial_bytes,
+  sumIf(_sample_interval * double1, double2 = 200.0) AS full_bytes,
+  sumIf(_sample_interval * double1, double2 = 206.0) AS partial_bytes,
   SUM(_sample_interval) AS requests,
   COUNT(DISTINCT blob8) AS visitors,
   COUNT(DISTINCT blob6) AS countries`;
@@ -198,12 +203,13 @@ export async function getUsage(
 
   const filters = [
     SERVED_FILTER,
+    // AE's SQL validator is strict (see SERVED_FILTER); stick to the
+    // documented NOW() - INTERVAL form. The window touches 29 UTC calendar
+    // days — day alignment happens in JS below, where off-grid rows are
+    // dropped and displayed totals are summed from the grid days.
+    `timestamp > NOW() - INTERVAL '${USAGE_DAYS}' DAY`,
     `blob1 = ${sqlQuote(accountId)}`,
     `blob2 = ${sqlQuote(productId)}`,
-    // Last USAGE_DAYS UTC calendar days (today partial + 27 full), matching
-    // the zero-filled day grid below exactly. A plain NOW()-28d window would
-    // clip a 29th partial day that lands in totals but in no bar.
-    `timestamp >= toStartOfDay(NOW() - INTERVAL '${USAGE_DAYS - 1}' DAY)`,
   ];
   if (objectPath !== undefined) {
     filters.push(`blob3 = ${sqlQuote(truncateToByteLimit(objectPath, 256))}`);
@@ -212,12 +218,14 @@ export async function getUsage(
   const from = `FROM ${CONFIG.analytics.dataset} WHERE ${where}`;
 
   try {
-    const [seriesRows, totalsRows] = await Promise.all([
+    const [seriesRows, uniquesRows] = await Promise.all([
       usageQuery(
         `SELECT toStartOfDay(timestamp) AS day, ${USAGE_AGGREGATES} ${from} GROUP BY day ORDER BY day`,
       ),
-      // Separate query: DISTINCT visitors/countries can't be summed from days.
-      usageQuery(`SELECT ${USAGE_AGGREGATES} ${from}`),
+      // Separate query: window-wide DISTINCTs can't be summed from days.
+      usageQuery(
+        `SELECT COUNT(DISTINCT blob8) AS visitors, COUNT(DISTINCT blob6) AS countries ${from}`,
+      ),
     ]);
 
     const byDay = new Map(
@@ -232,7 +240,29 @@ export async function getUsage(
       return { date, ...parseUsageAggregates(row) };
     });
 
-    return { days, totals: parseUsageAggregates(totalsRows[0] ?? {}) };
+    // Additive totals come from the grid days, so bars and headline always
+    // agree; the 29th (off-grid) partial day the SQL window touches is
+    // dropped with them. The uniques keep that sliver — they're estimates.
+    const totals = days.reduce(
+      (acc, day) => ({
+        bytes: acc.bytes + day.bytes,
+        fullBytes: acc.fullBytes + day.fullBytes,
+        partialBytes: acc.partialBytes + day.partialBytes,
+        requests: acc.requests + day.requests,
+        visitors: acc.visitors,
+        countries: acc.countries,
+      }),
+      {
+        bytes: 0,
+        fullBytes: 0,
+        partialBytes: 0,
+        requests: 0,
+        visitors: num(uniquesRows[0]?.visitors),
+        countries: num(uniquesRows[0]?.countries),
+      },
+    );
+
+    return { days, totals };
   } catch (error) {
     LOGGER.warn("Analytics usage query failed", {
       operation: "getUsage",

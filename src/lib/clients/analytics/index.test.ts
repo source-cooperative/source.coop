@@ -51,21 +51,21 @@ describe("getUsage", () => {
   it("queries with sampling weights and served-bytes filters", async () => {
     await getUsage("acct", "prod");
 
-    const [seriesSql, totalsSql] = sentSql();
-    for (const sql of [seriesSql, totalsSql]) {
-      expect(sql).toContain("SUM(_sample_interval * double1) AS bytes");
-      expect(sql).toContain("SUM(_sample_interval) AS requests");
-      expect(sql).toContain("blob4 = 'GET' AND double2 IN (200, 206)");
+    const [seriesSql, uniquesSql] = sentSql();
+    for (const sql of [seriesSql, uniquesSql]) {
+      // Float literals: AE 422s on Double-vs-Integer comparisons.
+      expect(sql).toContain("blob4 = 'GET' AND double2 IN (200.0, 206.0)");
       expect(sql).toContain("blob1 = 'acct'");
       expect(sql).toContain("blob2 = 'prod'");
-      // Window matches the 28-day grid: today (partial) + 27 full UTC days.
-      expect(sql).toContain(
-        `timestamp >= toStartOfDay(NOW() - INTERVAL '${USAGE_DAYS - 1}' DAY)`,
-      );
+      expect(sql).toContain(`timestamp > NOW() - INTERVAL '${USAGE_DAYS}' DAY`);
       expect(sql).toContain("FROM test_dataset");
     }
     expect(seriesSql).toContain("toStartOfDay(timestamp)");
-    expect(totalsSql).not.toContain("GROUP BY");
+    expect(seriesSql).toContain("SUM(_sample_interval * double1) AS bytes");
+    expect(seriesSql).toContain("SUM(_sample_interval) AS requests");
+    expect(seriesSql).toContain("double2 = 200.0");
+    expect(uniquesSql).toContain("COUNT(DISTINCT blob8) AS visitors");
+    expect(uniquesSql).not.toContain("GROUP BY");
 
     const [, options] = fetchMock.mock.calls[0];
     expect(options.headers.Authorization).toBe("Bearer cf-token");
@@ -102,18 +102,7 @@ describe("getUsage", () => {
           },
         ]),
       )
-      .mockResolvedValueOnce(
-        jsonResponse([
-          {
-            bytes: 1024,
-            full_bytes: 1000,
-            partial_bytes: 24,
-            requests: "7",
-            visitors: "3",
-            countries: 2,
-          },
-        ]),
-      );
+      .mockResolvedValueOnce(jsonResponse([{ visitors: "3", countries: 2 }]));
 
     const usage = await getUsage("acct", "prod");
 
