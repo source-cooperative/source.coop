@@ -193,9 +193,14 @@ async function runQuery(sql: string): Promise<Row[]> {
   return body.data ?? [];
 }
 
-// unstable_cache includes the function arguments (the SQL string) in its key.
+// unstable_cache includes the function arguments (the SQL string) in its key,
+// so each (account, product, object, window) caches independently.
+//
+// Product/object stats are non-dynamic — 30-day aggregates barely move, so
+// they rerun at most every 4 hours. The admin explorer is an interactive
+// surface with a 24h window, so it stays comparatively fresh.
 const usageQuery = unstable_cache(runQuery, ["analytics-usage"], {
-  revalidate: 3600,
+  revalidate: 4 * 3600,
 });
 const adminQuery = unstable_cache(runQuery, ["analytics-admin"], {
   revalidate: 900,
