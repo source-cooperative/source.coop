@@ -1,6 +1,10 @@
 import { render, screen } from "@testing-library/react";
+import { Theme } from "@radix-ui/themes";
 import { UsagePanel, parseActiveIndex } from "./UsagePanel";
 import type { UsagePoint } from "@/lib/clients/analytics";
+
+// Radix Tooltip needs the Theme provider (the app supplies it at the root).
+const renderPanel = (ui: React.ReactElement) => render(<Theme>{ui}</Theme>);
 
 // recharts' ResponsiveContainer needs ResizeObserver, which jsdom lacks.
 beforeAll(() => {
@@ -31,7 +35,7 @@ const totals = {
 };
 
 it("shows 28-day totals for a product", () => {
-  render(<UsagePanel days={days} totals={totals} scope="product" />);
+  renderPanel(<UsagePanel days={days} totals={totals} scope="product" />);
   expect(screen.getByText("Past 28 days")).toBeInTheDocument();
   expect(screen.getByText("10 GB")).toBeInTheDocument();
   expect(screen.getByText("Unique visitors")).toBeInTheDocument();
@@ -51,7 +55,7 @@ it("accepts recharts 3's string activeTooltipIndex", () => {
 });
 
 it("splits full vs range downloads for an object", () => {
-  render(<UsagePanel days={days} totals={totals} scope="object" />);
+  renderPanel(<UsagePanel days={days} totals={totals} scope="object" />);
   expect(screen.getByText("Full downloads")).toBeInTheDocument();
   expect(screen.getByText("8 GB")).toBeInTheDocument();
   expect(screen.getByText("Range requests")).toBeInTheDocument();
