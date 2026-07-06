@@ -26,6 +26,10 @@ import { withTimeout } from "@/lib/with-timeout";
 
 export const USAGE_DAYS = 30;
 
+/** Windows offered on the product analytics page (bounded by AE retention). */
+export const USAGE_WINDOWS = [7, 30, 90] as const;
+export type UsageWindow = (typeof USAGE_WINDOWS)[number];
+
 export interface UsageTotals {
   bytes: number;
   requests: number; // downloads: successful GETs, sample-weighted
@@ -203,6 +207,31 @@ const USAGE_AGGREGATES = `
   COUNT(DISTINCT blob6) AS countries`;
 
 /**
+ * Shared FROM/WHERE for the usage queries. AE's SQL validator is strict
+ * (see SERVED_FILTER); stick to the documented NOW() - INTERVAL form. The
+ * window touches one more UTC calendar day than the day grid — alignment
+ * happens in JS, where off-grid rows are dropped and displayed totals are
+ * summed from the grid days.
+ */
+function usageFrom(
+  accountId: string,
+  productId: string,
+  objectPath: string | undefined,
+  days: UsageWindow,
+): string {
+  const filters = [
+    SERVED_FILTER,
+    `timestamp > NOW() - INTERVAL '${days}' DAY`,
+    `blob1 = ${sqlQuote(accountId)}`,
+    `blob2 = ${sqlQuote(productId)}`,
+  ];
+  if (objectPath !== undefined) {
+    filters.push(`blob3 = ${sqlQuote(truncateToByteLimit(objectPath, 256))}`);
+  }
+  return `FROM ${CONFIG.analytics.dataset} WHERE ${filters.join(" AND ")}`;
+}
+
+/**
  * Recent usage (USAGE_DAYS) for a product, or a single object when `objectPath` is given.
  * Returns null when analytics is unconfigured or the query fails — callers
  * render nothing rather than breaking the page.
@@ -211,25 +240,11 @@ export async function getUsage(
   accountId: string,
   productId: string,
   objectPath?: string,
+  days: UsageWindow = USAGE_DAYS,
 ): Promise<Usage | null> {
   if (!isAnalyticsConfigured()) return null;
 
-  const filters = [
-    SERVED_FILTER,
-    // AE's SQL validator is strict (see SERVED_FILTER); stick to the
-    // documented NOW() - INTERVAL form. The window touches one more UTC
-    // calendar day than the grid — day alignment happens in JS below, where
-    // off-grid rows are dropped and displayed totals are summed from the
-    // grid days.
-    `timestamp > NOW() - INTERVAL '${USAGE_DAYS}' DAY`,
-    `blob1 = ${sqlQuote(accountId)}`,
-    `blob2 = ${sqlQuote(productId)}`,
-  ];
-  if (objectPath !== undefined) {
-    filters.push(`blob3 = ${sqlQuote(truncateToByteLimit(objectPath, 256))}`);
-  }
-  const where = filters.join(" AND ");
-  const from = `FROM ${CONFIG.analytics.dataset} WHERE ${where}`;
+  const from = usageFrom(accountId, productId, objectPath, days);
 
   try {
     const [seriesRows, windowRows, userRows] = await Promise.all([
@@ -251,9 +266,9 @@ export async function getUsage(
       seriesRows.map((row) => [parseDateTime(row.day), row]),
     );
     const todayStart = new Date().setUTCHours(0, 0, 0, 0);
-    const days: UsagePoint[] = Array.from({ length: USAGE_DAYS }, (_, i) => {
+    const points: UsagePoint[] = Array.from({ length: days }, (_, i) => {
       const date = new Date(
-        todayStart - (USAGE_DAYS - 1 - i) * 86_400_000,
+        todayStart - (days - 1 - i) * 86_400_000,
       ).toISOString();
       const row = byDay.get(date) ?? {};
       return { date, ...parseUsageAggregates(row) };
@@ -262,7 +277,7 @@ export async function getUsage(
     // Additive totals come from the grid days, so bars and headline always
     // agree; the extra (off-grid) partial day the SQL window touches is
     // dropped with them. The uniques keep that sliver — they're estimates.
-    const totals = days.reduce(
+    const totals = points.reduce(
       (acc, day) => ({
         bytes: acc.bytes + day.bytes,
         requests: acc.requests + day.requests,
@@ -284,7 +299,7 @@ export async function getUsage(
     }
 
     return {
-      days,
+      days: points,
       totals,
       users: {
         registered: userRows.length,
@@ -310,17 +325,86 @@ function parseUsageAggregates(row: Row): UsageTotals {
   };
 }
 
+const COUNTRY_LIST_LIMIT = 5;
+const FILE_LIST_LIMIT = 10;
+
+export interface ProductBreakdowns {
+  /** Top countries by downloads */
+  countries: { code: string; name: string; requests: number }[];
+  /** Aggregate of the remaining countries, if any */
+  otherCountries: { count: number; requests: number } | null;
+  /** Top objects by downloads */
+  files: { path: string; requests: number; bytes: number }[];
+}
+
+/**
+ * By-country and top-files breakdowns for the product analytics page.
+ * Same contract as getUsage: null when unconfigured or the query fails.
+ */
+export async function getProductBreakdowns(
+  accountId: string,
+  productId: string,
+  days: UsageWindow,
+): Promise<ProductBreakdowns | null> {
+  if (!isAnalyticsConfigured()) return null;
+  const from = usageFrom(accountId, productId, undefined, days);
+
+  try {
+    const [countryRows, fileRows] = await Promise.all([
+      usageQuery(
+        `SELECT blob6 AS country, SUM(_sample_interval) AS requests ${from} GROUP BY country ORDER BY requests DESC`,
+      ),
+      usageQuery(
+        `SELECT blob3 AS file, SUM(_sample_interval) AS requests, SUM(_sample_interval * double1) AS bytes ${from} GROUP BY file ORDER BY requests DESC LIMIT ${FILE_LIST_LIMIT}`,
+      ),
+    ]);
+
+    const rest = countryRows.slice(COUNTRY_LIST_LIMIT);
+    return {
+      countries: countryRows.slice(0, COUNTRY_LIST_LIMIT).map((row) => ({
+        code: str(row.country) || "??",
+        name: countryName(str(row.country)),
+        requests: num(row.requests),
+      })),
+      otherCountries: rest.length
+        ? {
+            count: rest.length,
+            requests: rest.reduce((sum, row) => sum + num(row.requests), 0),
+          }
+        : null,
+      files: fileRows.map((row) => ({
+        path: str(row.file),
+        requests: num(row.requests),
+        bytes: num(row.bytes),
+      })),
+    };
+  } catch (error) {
+    LOGGER.warn("Analytics breakdown query failed", {
+      operation: "getProductBreakdowns",
+      context: "analytics engine",
+      metadata: { accountId, productId, days, error: String(error) },
+    });
+    return null;
+  }
+}
+
 const countryNames = new Intl.DisplayNames(["en"], { type: "region" });
+
+/** "US" → "United States"; non-ISO values (e.g. "T1", "") fall back to the code. */
+export function countryName(code: string): string {
+  if (!code) return "Unknown";
+  try {
+    return countryNames.of(code) || code;
+  } catch {
+    return code;
+  }
+}
 
 /** "US" → "United States (US)"; non-ISO values (e.g. "T1") pass through. */
 function countryLabel(code: string): string {
   if (!code) return "(unknown)";
-  try {
-    const name = countryNames.of(code);
-    return name && name !== code ? `${name} (${code})` : code;
-  } catch {
-    return code;
-  }
+  const name = countryName(code);
+  return name !== code ? `${name} (${code})` : code;
 }
 
 /** Display key for one grouped row, e.g. "ftw/global-data · United States (US)". */

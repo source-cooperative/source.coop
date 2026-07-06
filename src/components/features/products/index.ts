@@ -3,7 +3,6 @@ export * from "./ProductListItem";
 export * from "./ProductSummaryCard";
 export * from "./ProductMetaContent";
 export * from "./ProductMetaCard";
-export * from "./ProductHeader";
 export * from "./ProductSchemaMetadata";
 export * from "./ProductSearchResult";
 export * from "./TagList";

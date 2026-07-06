@@ -41,6 +41,11 @@ export const loginUrl = (returnTo?: string) => {
 };
 export const onboardingUrl = () => "/onboarding";
 
+// Product analytics (maintainers/owners/admins). The "-" segment keeps the
+// route from ever shadowing a product file or directory named "analytics".
+export const productAnalyticsUrl = (account_id: string, product_id: string) =>
+  `/${account_id}/${product_id}/-/analytics`;
+
 // Object URLs
 export const objectUrl = (
   account_id: string,

@@ -3,7 +3,12 @@
  * weights, filters), response parsing/zero-filling, and top-N/"Other" math.
  * The SQL API itself is mocked at the fetch layer.
  */
-import { getUsage, getAdminBreakdown, USAGE_DAYS } from "./index";
+import {
+  getUsage,
+  getAdminBreakdown,
+  getProductBreakdowns,
+  USAGE_DAYS,
+} from "./index";
 import { CONFIG } from "@/lib/config";
 
 jest.mock("next/cache", () => ({
@@ -131,6 +136,12 @@ describe("getUsage", () => {
     });
   });
 
+  it("applies the requested window to the queries and the grid", async () => {
+    const usage = await getUsage("acct", "prod", undefined, 7);
+    expect(sentSql()[0]).toContain("INTERVAL '7' DAY");
+    expect(usage!.days).toHaveLength(7);
+  });
+
   it("returns null when analytics is not configured", async () => {
     const token = CONFIG.analytics.apiToken;
     (CONFIG.analytics as { apiToken: string }).apiToken = "";
@@ -149,6 +160,70 @@ describe("getUsage", () => {
       text: async () => "boom",
     });
     expect(await getUsage("acct", "prod")).toBeNull();
+  });
+});
+
+describe("getProductBreakdowns", () => {
+  it("ranks countries with an others aggregate and lists top files", async () => {
+    fetchMock.mockImplementation(async (_url: string, init: { body: string }) => {
+      const sql = init.body;
+      if (sql.includes("GROUP BY country")) {
+        return jsonResponse([
+          { country: "US", requests: 100 },
+          { country: "DE", requests: 50 },
+          { country: "BR", requests: 40 },
+          { country: "GB", requests: 30 },
+          { country: "IN", requests: "20" },
+          { country: "FR", requests: 10 },
+          { country: "", requests: 5 },
+        ]);
+      }
+      return jsonResponse([
+        { file: "a.tif", requests: 60, bytes: 1000 },
+        { file: "b.json", requests: "40", bytes: "500" },
+      ]);
+    });
+
+    const breakdowns = await getProductBreakdowns("acct", "prod", 30);
+
+    expect(breakdowns!.countries).toHaveLength(5);
+    expect(breakdowns!.countries[0]).toEqual({
+      code: "US",
+      name: "United States",
+      requests: 100,
+    });
+    expect(breakdowns!.otherCountries).toEqual({ count: 2, requests: 15 });
+    expect(breakdowns!.files).toEqual([
+      { path: "a.tif", requests: 60, bytes: 1000 },
+      { path: "b.json", requests: 40, bytes: 500 },
+    ]);
+
+    const fileSql = sentSql().find((sql) => sql.includes("GROUP BY file"));
+    expect(fileSql).toContain("ORDER BY requests DESC");
+    expect(fileSql).toContain("LIMIT 10");
+    expect(fileSql).toContain("blob1 = 'acct'");
+  });
+
+  it("returns no others aggregate when few countries", async () => {
+    fetchMock.mockImplementation(async (_url: string, init: { body: string }) => {
+      return jsonResponse(
+        init.body.includes("GROUP BY country")
+          ? [{ country: "US", requests: 10 }]
+          : [],
+      );
+    });
+    const breakdowns = await getProductBreakdowns("acct", "prod", 7);
+    expect(breakdowns!.otherCountries).toBeNull();
+    expect(breakdowns!.files).toEqual([]);
+  });
+
+  it("returns null when the query fails", async () => {
+    fetchMock.mockResolvedValue({
+      ok: false,
+      status: 500,
+      text: async () => "boom",
+    });
+    expect(await getProductBreakdowns("acct", "prod", 30)).toBeNull();
   });
 });
 

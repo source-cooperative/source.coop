@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Box, Card, Text } from "@radix-ui/themes";
 import { SectionHeader } from "@/components/core/SectionHeader";
 import { getUsage } from "@/lib/clients/analytics";
@@ -13,6 +14,11 @@ interface UsageCardProps {
    * already inside a Card (the object view in Product Contents).
    */
   variant?: "card" | "section";
+  /**
+   * "View all analytics →" target; pass only for viewers who can reach the
+   * (maintainer-gated) product analytics page.
+   */
+  viewAllHref?: string;
 }
 
 /**
@@ -25,6 +31,7 @@ export async function UsageCard({
   productId,
   objectPath,
   variant = "card",
+  viewAllHref,
 }: UsageCardProps) {
   const usage = await getUsage(accountId, productId, objectPath);
   if (!usage) return null;
@@ -35,10 +42,10 @@ export async function UsageCard({
       rightButton={
         <Text
           size="1"
-          color="gray"
           style={{
             fontFamily: "var(--code-font-family)",
-            letterSpacing: "0.08em",
+            letterSpacing: "0.03em",
+            color: "var(--gray-10)",
           }}
         >
           {usage.days.length} DAYS
@@ -46,6 +53,13 @@ export async function UsageCard({
       }
     >
       <UsagePanel days={usage.days} totals={usage.totals} users={usage.users} />
+      {viewAllHref && (
+        <Box mt="3" pt="3" style={{ borderTop: "1px solid var(--gray-4)" }}>
+          <Link href={viewAllHref}>
+            <Text size="1">View all analytics →</Text>
+          </Link>
+        </Box>
+      )}
     </SectionHeader>
   );
 
