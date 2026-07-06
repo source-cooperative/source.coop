@@ -154,7 +154,6 @@ export default async function ProductLayout({
               {children}
             </Card>
           </Dropzone>
-          {readme}
         </Flex>
 
         <Flex width="100%" className="product-meta" direction="column" gap="4">
@@ -177,6 +176,10 @@ export default async function ProductLayout({
           </Suspense>
         </Flex>
       </Grid>
+
+      {/* README/viewer as a full-width row below both columns (the slot
+          renders its own Card with mt, or null when there's no README) */}
+      {readme}
     </>
   );
 }
