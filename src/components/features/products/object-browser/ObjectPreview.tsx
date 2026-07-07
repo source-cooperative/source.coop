@@ -17,7 +17,7 @@ export async function ObjectPreview(props: ObjectPreviewProps) {
     : ObjectPreviewExternal;
 
   return (
-    <Box mt="4" pt="4">
+    <Box mt="4">
       <Component {...props} />
     </Box>
   );
