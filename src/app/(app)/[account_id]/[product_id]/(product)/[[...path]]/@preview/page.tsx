@@ -83,7 +83,9 @@ async function isFile(
 export default async function ObjectPreviewSlot({ params }: PageProps) {
   const { account_id, product_id, path = [] } = await params;
   const object_path = path.map((p) => decodeURIComponent(p)).join("/");
-  if (!object_path || !isFile(account_id, product_id, object_path)) return null;
+  if (!object_path || !(await isFile(account_id, product_id, object_path))) {
+    return null;
+  }
 
   return (
     <Card mt="4">

@@ -153,6 +153,9 @@ export function DownloadsChart({
       role="img"
       aria-label={`Daily downloads over the past ${days.length} days`}
       onMouseLeave={() => onHover(null)}
+      // Clicking/dragging across the bars otherwise triggers the browser's
+      // text-selection overlay on the SVG.
+      style={{ userSelect: "none", WebkitUserSelect: "none" }}
     >
       <ResponsiveContainer width="100%" height={height}>
         <BarChart
