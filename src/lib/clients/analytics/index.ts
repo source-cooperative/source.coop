@@ -214,11 +214,11 @@ const USAGE_AGGREGATES = `
   COUNT(DISTINCT blob6) AS countries`;
 
 /**
- * Shared FROM/WHERE for the usage queries. AE's SQL validator is strict
- * (see SERVED_FILTER); stick to the documented NOW() - INTERVAL form. The
- * window touches one more UTC calendar day than the day grid — alignment
- * happens in JS, where off-grid rows are dropped and displayed totals are
- * summed from the grid days.
+ * Shared FROM/WHERE for the usage queries. The window is day-aligned in SQL
+ * — today (partial) plus days-1 full UTC days — so the day grid, headline
+ * totals, and the country/file breakdowns all cover the identical span. (A
+ * rolling NOW()-Nd window would include the tail of an extra calendar day
+ * that the day grid drops, making breakdown sums exceed the headline.)
  */
 function usageFrom(
   accountId: string,
@@ -228,7 +228,7 @@ function usageFrom(
 ): string {
   const filters = [
     SERVED_FILTER,
-    `timestamp > NOW() - INTERVAL '${days}' DAY`,
+    `timestamp >= toStartOfDay(NOW() - INTERVAL '${days - 1}' DAY)`,
     `blob1 = ${sqlQuote(accountId)}`,
     `blob2 = ${sqlQuote(productId)}`,
   ];

@@ -62,7 +62,11 @@ describe("getUsage", () => {
       expect(sql).toContain("blob4 = 'GET' AND double2 IN (200.0, 206.0)");
       expect(sql).toContain("blob1 = 'acct'");
       expect(sql).toContain("blob2 = 'prod'");
-      expect(sql).toContain(`timestamp > NOW() - INTERVAL '${USAGE_DAYS}' DAY`);
+      // Day-aligned window: today (partial) + USAGE_DAYS-1 full UTC days,
+      // identical for series, totals, and breakdowns.
+      expect(sql).toContain(
+        `timestamp >= toStartOfDay(NOW() - INTERVAL '${USAGE_DAYS - 1}' DAY)`,
+      );
       expect(sql).toContain("FROM test_dataset");
     }
     expect(seriesSql).toContain("toStartOfDay(timestamp)");
@@ -142,7 +146,7 @@ describe("getUsage", () => {
 
   it("applies the requested window to the queries and the grid", async () => {
     const usage = await getUsage("acct", "prod", undefined, 7);
-    expect(sentSql()[0]).toContain("INTERVAL '7' DAY");
+    expect(sentSql()[0]).toContain("toStartOfDay(NOW() - INTERVAL '6' DAY)");
     expect(usage!.days).toHaveLength(7);
   });
 
