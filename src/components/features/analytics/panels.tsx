@@ -5,7 +5,14 @@
  * product analytics page (ProductAnalyticsView).
  */
 import { Box, Flex, Text, Tooltip } from "@radix-ui/themes";
-import { BarChart, Bar, Cell, XAxis, YAxis, ResponsiveContainer } from "recharts";
+import {
+  BarChart,
+  Bar,
+  Cell,
+  XAxis,
+  YAxis,
+  ResponsiveContainer,
+} from "recharts";
 import type { UsagePoint, UsageUsers } from "@/lib/clients/analytics";
 import { formatDateSSR } from "@/lib/format";
 
@@ -29,19 +36,15 @@ export function parseActiveIndex(raw: unknown, length: number): number | null {
 }
 
 export const HELP = {
-  downloads:
-    "Number of successful download requests (GET), estimated from sampled logs.",
-  served:
-    "Total bytes downloaded via successful GET requests, estimated from sampled request logs.",
-  countries:
-    "Distinct countries requests originated from, based on the requester's IP address.",
+  downloads: "Number of successful downloads.",
+  served: "Total bytes downloaded.",
+  countries: "Distinct countries requests originated from.",
   dailyAvg: "Average downloads per day over the period.",
-  uniqueIps:
-    "Distinct IP addresses (stored as salted hashes) that downloaded data in this period.",
+  uniqueIps: "Distinct IP addresses that downloaded data in this period.",
   registered: "Distinct signed-in users who downloaded data in this period.",
-  anon: "Download requests made without a signed-in user (approximate).",
+  anon: "Download requests made without a signed-in user.",
   frequency:
-    "How many times each unique IP address (stored as a salted hash) downloaded data in this period.",
+    "How many times each unique IP address downloaded data in this period.",
 };
 
 export const mono = (extra?: React.CSSProperties): React.CSSProperties => ({
