@@ -3,6 +3,7 @@ import {
   ObjectPreviewInternal,
 } from "./ObjectPreviewInternal";
 import { ObjectPreviewExternal } from "./ObjectPreviewExternal";
+import { Box } from "@radix-ui/themes";
 
 interface ObjectPreviewProps {
   account_id: string;
@@ -11,9 +12,13 @@ interface ObjectPreviewProps {
 }
 
 export async function ObjectPreview(props: ObjectPreviewProps) {
-  if (canRenderInternally(props.object_path)) {
-    return <ObjectPreviewInternal {...props} />;
-  } else {
-    return <ObjectPreviewExternal {...props} />;
-  }
+  const Component = canRenderInternally(props.object_path)
+    ? ObjectPreviewInternal
+    : ObjectPreviewExternal;
+
+  return (
+    <Box mt="4" pt="4">
+      <Component {...props} />
+    </Box>
+  );
 }

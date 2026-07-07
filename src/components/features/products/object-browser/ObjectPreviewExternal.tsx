@@ -2,7 +2,7 @@ import "server-only";
 
 import { LOGGER } from "@/lib";
 import { fileSourceUrl } from "@/lib/urls";
-import { Box, Code, Flex, Link } from "@radix-ui/themes";
+import { Code, Flex, Link } from "@radix-ui/themes";
 import { ExternalLinkIcon } from "@radix-ui/react-icons";
 import type { CSSProperties } from "react";
 import { getExtension } from "@/lib/files";
@@ -128,21 +128,19 @@ export async function ObjectPreviewExternal(props: ObjectPreviewExternalProps) {
   const iframeProps = await getIframeAttributes(cloudUri, extension);
   if (!iframeProps) {
     return (
-      <Box mt="4" pt="4" style={{ borderTop: "1px solid var(--gray-6)" }}>
-        <p>
-          No preview available for file type <Code>.{extension}</Code>.{" "}
-          <a href="https://github.com/source-cooperative/source.coop/issues">
-            Open an issue
-          </a>{" "}
-          if you would like support for this file type.
-        </p>
-      </Box>
+      <p>
+        No preview available for file type <Code>.{extension}</Code>.{" "}
+        <a href="https://github.com/source-cooperative/source.coop/issues">
+          Open an issue
+        </a>{" "}
+        if you would like support for this file type.
+      </p>
     );
   }
 
   const { src, style } = iframeProps;
   return (
-    <Box mt="4" pt="4" style={{ borderTop: "1px solid var(--gray-6)" }}>
+    <>
       <Flex justify="end" mb="2">
         <Link href={src} target="_blank" rel="noopener noreferrer" size="1">
           <Flex align="center" gap="1">
@@ -162,6 +160,6 @@ export async function ObjectPreviewExternal(props: ObjectPreviewExternalProps) {
       >
         Your browser does not support iframes.
       </iframe>
-    </Box>
+    </>
   );
 }
