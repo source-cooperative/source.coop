@@ -122,9 +122,12 @@ export default async function ProductLayout({
           gap="4"
           className="product-summary"
           style={{ gridColumn: "span 2" }}
-          px={{ initial: "4", md: "0" }}
         >
-          <ProductSummaryCard product={product} />
+          {/* Mobile edge padding applies to the summary text only — cards
+              stay full-bleed like they were before the two-column rework */}
+          <Box px={{ initial: "4", md: "0" }}>
+            <ProductSummaryCard product={product} />
+          </Box>
           <Dropzone product={product} prefix={prefix}>
             <Card>
               <SectionHeader

@@ -56,8 +56,8 @@ describe("getUsage", () => {
   it("queries with sampling weights and served-bytes filters", async () => {
     await getUsage("acct", "prod");
 
-    const [seriesSql, windowSql, usersSql] = sentSql();
-    for (const sql of [seriesSql, windowSql, usersSql]) {
+    const [seriesSql, windowSql, ipsSql, registeredSql] = sentSql();
+    for (const sql of [seriesSql, windowSql, ipsSql, registeredSql]) {
       // Float literals: AE 422s on Double-vs-Integer comparisons.
       expect(sql).toContain("blob4 = 'GET' AND double2 IN (200.0, 206.0)");
       expect(sql).toContain("blob1 = 'acct'");
@@ -71,8 +71,10 @@ describe("getUsage", () => {
     expect(windowSql).toContain("COUNT(DISTINCT blob6) AS countries");
     expect(windowSql).toContain("sumIf(_sample_interval, blob5 = '') AS anon_requests");
     expect(windowSql).not.toContain("GROUP BY");
-    expect(usersSql).toContain("blob5 != ''");
-    expect(usersSql).toContain("GROUP BY user");
+    expect(ipsSql).toContain("blob8 != ''");
+    expect(ipsSql).toContain("GROUP BY ip");
+    expect(registeredSql).toContain("COUNT(DISTINCT blob5) AS registered");
+    expect(registeredSql).toContain("blob5 != ''");
 
     const [, options] = fetchMock.mock.calls[0];
     expect(options.headers.Authorization).toBe("Bearer cf-token");
@@ -106,14 +108,15 @@ describe("getUsage", () => {
       )
       .mockResolvedValueOnce(
         jsonResponse([
-          { user: "u1", requests: 1 },
-          { user: "u2", requests: "3" },
-          { user: "u3", requests: 7 },
-          { user: "u4", requests: 25 },
+          { ip: "h1", requests: 1 },
+          { ip: "h2", requests: "3" },
+          { ip: "h3", requests: 7 },
+          { ip: "h4", requests: 25 },
           // sampled fraction rounds down to 0 → floored into the 1× bucket
-          { user: "u5", requests: 0.4 },
+          { ip: "h5", requests: 0.4 },
         ]),
-      );
+      )
+      .mockResolvedValueOnce(jsonResponse([{ registered: "2" }]));
 
     const usage = await getUsage("acct", "prod");
 
@@ -125,7 +128,7 @@ describe("getUsage", () => {
     expect(usage!.days[0]).toMatchObject({ bytes: 0, requests: 0 });
     expect(usage!.totals).toEqual({ bytes: 1024, requests: 7, countries: 2 });
     expect(usage!.users).toEqual({
-      registered: 5,
+      registered: 2,
       anonRequests: 5,
       frequency: [
         { label: "1×", count: 2 },

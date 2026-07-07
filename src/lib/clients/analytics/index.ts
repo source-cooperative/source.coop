@@ -41,7 +41,7 @@ export interface UsagePoint extends UsageTotals {
   date: string;
 }
 
-/** Download-frequency histogram buckets for registered users. */
+/** Download-frequency histogram buckets for unique client IPs. */
 export const FREQUENCY_BUCKETS = [
   { label: "1×", max: 1 },
   { label: "2–5×", max: 5 },
@@ -54,7 +54,7 @@ export interface UsageUsers {
   registered: number;
   /** Sample-weighted requests with no signed-in user */
   anonRequests: number;
-  /** Per-FREQUENCY_BUCKETS count of registered users */
+  /** Per-FREQUENCY_BUCKETS count of unique client IP hashes (blob8) */
   frequency: { label: string; count: number }[];
 }
 
@@ -252,7 +252,7 @@ export async function getUsage(
   const from = usageFrom(accountId, productId, objectPath, days);
 
   try {
-    const [seriesRows, windowRows, userRows] = await Promise.all([
+    const [seriesRows, windowRows, ipRows, registeredRows] = await Promise.all([
       usageQuery(
         `SELECT toStartOfDay(timestamp) AS day, ${USAGE_AGGREGATES} ${from} GROUP BY day ORDER BY day`,
       ),
@@ -260,10 +260,13 @@ export async function getUsage(
       usageQuery(
         `SELECT COUNT(DISTINCT blob6) AS countries, sumIf(_sample_interval, blob5 = '') AS anon_requests ${from}`,
       ),
-      // Sample-weighted request count per signed-in user, for the
-      // download-frequency histogram. Registered = number of rows.
+      // Sample-weighted request count per unique client IP hash, for the
+      // download-frequency histogram (blob8 is empty when the IP is unknown).
       usageQuery(
-        `SELECT blob5 AS user, SUM(_sample_interval) AS requests ${from} AND blob5 != '' GROUP BY user`,
+        `SELECT blob8 AS ip, SUM(_sample_interval) AS requests ${from} AND blob8 != '' GROUP BY ip`,
+      ),
+      usageQuery(
+        `SELECT COUNT(DISTINCT blob5) AS registered ${from} AND blob5 != ''`,
       ),
     ]);
 
@@ -295,8 +298,8 @@ export async function getUsage(
       label,
       count: 0,
     }));
-    for (const row of userRows) {
-      // Sampling makes per-user counts fractional estimates; round, floor 1.
+    for (const row of ipRows) {
+      // Sampling makes per-IP counts fractional estimates; round, floor 1.
       const downloads = Math.max(1, Math.round(num(row.requests)));
       frequency[
         FREQUENCY_BUCKETS.findIndex((bucket) => downloads <= bucket.max)
@@ -307,7 +310,7 @@ export async function getUsage(
       days: points,
       totals,
       users: {
-        registered: userRows.length,
+        registered: num(registeredRows[0]?.registered),
         anonRequests: num(windowRows[0]?.anon_requests),
         frequency,
       },

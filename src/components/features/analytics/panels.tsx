@@ -39,7 +39,7 @@ export const HELP = {
   registered: "Distinct signed-in users who downloaded data in this period.",
   anon: "Download requests made without a signed-in user (approximate).",
   frequency:
-    "How many times each registered user downloaded data in this period.",
+    "How many times each unique IP address (stored as a salted hash) downloaded data in this period.",
 };
 
 export const mono = (extra?: React.CSSProperties): React.CSSProperties => ({
@@ -182,9 +182,10 @@ export function DownloadsChart({
   );
 }
 
-/** USERS tab body: registered vs anonymous usage + download frequency. */
+/** USERS tab body: registered vs anonymous usage + per-IP download frequency. */
 export function UsersContent({ users }: { users: UsageUsers }) {
-  const maxFrequency = Math.max(1, users.registered);
+  const uniqueIps = users.frequency.reduce((sum, bucket) => sum + bucket.count, 0);
+  const maxFrequency = Math.max(1, uniqueIps);
   return (
     <>
       <Flex mt="3" pb="3" style={{ borderBottom: "1px solid var(--gray-4)" }}>
@@ -203,11 +204,11 @@ export function UsersContent({ users }: { users: UsageUsers }) {
 
       <Box mt="3">
         <MonoLabel help={HELP.frequency}>
-          Registered · Download frequency
+          Unique IPs · Download frequency
         </MonoLabel>
-        {users.registered === 0 ? (
+        {uniqueIps === 0 ? (
           <Text as="div" size="1" color="gray" mt="2">
-            No downloads from signed-in users in this period.
+            No download activity in this period.
           </Text>
         ) : (
           <Box mt="2">
