@@ -128,6 +128,7 @@ describe("getUsage", () => {
     expect(usage!.days[0]).toMatchObject({ bytes: 0, requests: 0 });
     expect(usage!.totals).toEqual({ bytes: 1024, requests: 7, countries: 2 });
     expect(usage!.users).toEqual({
+      uniqueIps: 5,
       registered: 2,
       anonRequests: 5,
       frequency: [

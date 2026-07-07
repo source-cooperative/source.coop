@@ -26,6 +26,7 @@ const days: UsagePoint[] = Array.from({ length: 30 }, (_, i) => ({
 const totals = { bytes: 10 * 1024 ** 3, requests: 12847, countries: 42 };
 
 const users: UsageUsers = {
+  uniqueIps: 555,
   registered: 532,
   anonRequests: 12030,
   frequency: [
@@ -58,6 +59,8 @@ it("renders downloads content without a tab selector for public viewers", () => 
 it("shows registered/anon usage and frequency on the Users tab", async () => {
   renderPanel(<UsagePanel days={days} totals={totals} users={users} />);
   await userEvent.click(screen.getByRole("tab", { name: /users/i }));
+  expect(screen.getByText("Unique IPs")).toBeInTheDocument();
+  expect(screen.getByText("555")).toBeInTheDocument();
   expect(screen.getByText("Registered")).toBeInTheDocument();
   expect(screen.getByText("532")).toBeInTheDocument();
   expect(screen.getByText("Anon requests")).toBeInTheDocument();

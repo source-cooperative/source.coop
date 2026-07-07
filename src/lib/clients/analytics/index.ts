@@ -50,6 +50,8 @@ export const FREQUENCY_BUCKETS = [
 ] as const;
 
 export interface UsageUsers {
+  /** Distinct client IP hashes (blob8) that downloaded in the window */
+  uniqueIps: number;
   /** Distinct signed-in users (blob5) that downloaded in the window */
   registered: number;
   /** Sample-weighted requests with no signed-in user */
@@ -313,6 +315,8 @@ export async function getUsage(
       days: points,
       totals,
       users: {
+        // Same population as the histogram, so headline and bars agree.
+        uniqueIps: ipRows.length,
         registered: num(registeredRows[0]?.registered),
         anonRequests: num(windowRows[0]?.anon_requests),
         frequency,

@@ -36,6 +36,8 @@ export const HELP = {
   countries:
     "Distinct countries requests originated from, based on the requester's IP address.",
   dailyAvg: "Average downloads per day over the period.",
+  uniqueIps:
+    "Distinct IP addresses (stored as salted hashes) that downloaded data in this period.",
   registered: "Distinct signed-in users who downloaded data in this period.",
   anon: "Download requests made without a signed-in user (approximate).",
   frequency:
@@ -182,17 +184,22 @@ export function DownloadsChart({
   );
 }
 
-/** USERS tab body: registered vs anonymous usage + per-IP download frequency. */
+/** USERS tab body: unique IPs, registered vs anonymous usage, per-IP frequency. */
 export function UsersContent({ users }: { users: UsageUsers }) {
-  const uniqueIps = users.frequency.reduce((sum, bucket) => sum + bucket.count, 0);
-  const maxFrequency = Math.max(1, uniqueIps);
+  const maxFrequency = Math.max(1, users.uniqueIps);
   return (
     <>
       <Flex mt="3" pb="3" style={{ borderBottom: "1px solid var(--gray-4)" }}>
         <Stat
+          label="Unique IPs"
+          help={HELP.uniqueIps}
+          value={numberFormat.format(users.uniqueIps)}
+        />
+        <Stat
           label="Registered"
           help={HELP.registered}
           value={numberFormat.format(users.registered)}
+          divider
         />
         <Stat
           label="Anon requests"
@@ -206,7 +213,7 @@ export function UsersContent({ users }: { users: UsageUsers }) {
         <MonoLabel help={HELP.frequency}>
           Unique IPs · Download frequency
         </MonoLabel>
-        {uniqueIps === 0 ? (
+        {users.uniqueIps === 0 ? (
           <Text as="div" size="1" color="gray" mt="2">
             No download activity in this period.
           </Text>
