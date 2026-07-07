@@ -8,10 +8,100 @@
   color: inherit;
 }
 
+/* Products nav link — heading font, matches the product-list entry headers.
+   Scoped under .nav so it outranks the marketing page's `.landing a` rule. */
+.nav .productsLink {
+  font-family: var(--code-font-family); /* Berkeley Mono */
+  font-weight: 500;
+  color: var(--gray-a11);
+  text-transform: none;
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.nav .productsLink:hover {
+  color: var(--gray-12);
+}
+
 .chevron {
   transition: transform 0.3s ease;
 }
 
 .chevron[data-state="open"] {
   transform: rotate(180deg);
+}
+
+/* Mobile menu — full-screen override of the themed Radix Dialog content
+   (the Dialog supplies the backdrop, panel background, and theme tokens). */
+.mobileSheet {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  max-width: 100vw;
+  height: 100dvh;
+  max-height: 100dvh;
+  margin: 0;
+  padding: 0;
+  border-radius: 0;
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  background: var(--color-panel-solid);
+}
+
+.mobileDivider {
+  border-top: 1px solid var(--gray-a5);
+}
+
+/* Full-width, tap-friendly rows (links, section headers, logout). */
+.mobileRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  min-height: 48px;
+  padding: 0 var(--space-4);
+  font-size: var(--font-size-3);
+  color: var(--gray-12);
+  text-align: left;
+  text-decoration: none;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.mobileRow:hover {
+  background: var(--gray-3);
+}
+
+.mobileRowIndent {
+  padding-left: var(--space-7);
+}
+
+.mobileRowMuted {
+  color: var(--gray-a11);
+  cursor: default;
+}
+
+.mobileRowMuted:hover {
+  background: transparent;
+}
+
+.mobileRowChevron {
+  margin-left: auto;
+  color: var(--gray-a11);
+  transition: transform 0.15s ease;
+}
+
+.mobileRowChevronOpen {
+  transform: rotate(180deg);
+}
+
+.mobileDot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--red-9);
 } 
