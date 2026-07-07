@@ -153,6 +153,10 @@ export function DownloadsChart({
       role="img"
       aria-label={`Daily downloads over the past ${days.length} days`}
       onMouseLeave={() => onHover(null)}
+      // Clicking the chart must not move focus (a click inside the Radix
+      // tab panel otherwise promotes focus to it and draws its focus ring
+      // around the panel). Keyboard focus is unaffected.
+      onMouseDown={(event) => event.preventDefault()}
       // Clicking/dragging across the bars otherwise triggers the browser's
       // text-selection overlay on the SVG.
       style={{ userSelect: "none", WebkitUserSelect: "none" }}

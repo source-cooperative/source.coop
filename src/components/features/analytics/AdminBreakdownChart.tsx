@@ -101,7 +101,13 @@ export function AdminBreakdownChart({
         </SegmentedControl.Root>
       </Flex>
 
-      <ResponsiveContainer width="100%" height={320}>
+      <Box
+        // Same as the card chart: keep clicks from moving focus (focus ring)
+        // or starting a text selection on the SVG.
+        onMouseDown={(event) => event.preventDefault()}
+        style={{ userSelect: "none", WebkitUserSelect: "none" }}
+      >
+        <ResponsiveContainer width="100%" height={320}>
         <BarChart
           data={rows}
           margin={{ top: 4, right: 0, bottom: 0, left: 0 }}
@@ -196,7 +202,8 @@ export function AdminBreakdownChart({
             />
           ))}
         </BarChart>
-      </ResponsiveContainer>
+        </ResponsiveContainer>
+      </Box>
 
       <Flex gap="3" mt="2" wrap="wrap">
         {series.map((key, s) => (
