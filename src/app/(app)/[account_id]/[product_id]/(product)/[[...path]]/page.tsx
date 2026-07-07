@@ -1,4 +1,3 @@
-import { Suspense } from "react";
 import { Metadata } from "next";
 
 import { LOGGER, dataConnectionsTable, getPageSession } from "@/lib";
@@ -12,10 +11,6 @@ import { ProxyCredentialsGate } from "@/components/features/products/ProxyCreden
 import { ProductDataUnavailable } from "@/components/features/products/ProductDataUnavailable";
 import { DirectoryList } from "@/components/features/products/object-browser/DirectoryList";
 import { ObjectSummary } from "@/components/features/products/object-browser/ObjectSummary";
-import {
-  ObjectPreview,
-  ObjectPreviewLoading,
-} from "@/components/features/products/object-browser/ObjectPreview";
 import { generateProductMetadata } from "@/components/features/metadata/ProductMetadata";
 
 export async function generateMetadata({
@@ -138,21 +133,13 @@ export default async function ProductPathPage({ params }: PageProps) {
         connectionDetails = { primaryMirror, dataConnection };
       }
 
+      // The preview itself renders full-width via the @preview slot.
       return (
-        <>
-          <ObjectSummary
-            product={product}
-            objectInfo={objectInfo}
-            connectionDetails={connectionDetails}
-          />
-          <Suspense fallback={<ObjectPreviewLoading />}>
-            <ObjectPreview
-              account_id={account_id}
-              product_id={product_id}
-              object_path={objectPath}
-            />
-          </Suspense>
-        </>
+        <ObjectSummary
+          product={product}
+          objectInfo={objectInfo}
+          connectionDetails={connectionDetails}
+        />
       );
     }
   }

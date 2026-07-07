@@ -36,6 +36,7 @@ import { getAuthorizedProduct } from "./data";
 interface ProductLayoutProps {
   children: React.ReactNode;
   readme: React.ReactNode;
+  preview: React.ReactNode;
   params: Promise<{ account_id: string; product_id: string; path?: string[] }>;
 }
 
@@ -43,6 +44,7 @@ export default async function ProductLayout({
   params,
   children,
   readme,
+  preview,
 }: ProductLayoutProps) {
   // Fetch + authorize in one place. Throws a 404 for missing products or
   // unauthorized viewers. The session is also needed below for the write check.
@@ -174,8 +176,10 @@ export default async function ProductLayout({
         </Flex>
       </Grid>
 
-      {/* README/viewer as a full-width row below both columns (the slot
-          renders its own Card with mt, or null when there's no README) */}
+      {/* Full-width rows below both columns: the object preview (file
+          views) and the README/viewer. Each slot renders its own Card with
+          mt, or null when it doesn't apply. */}
+      {preview}
       {readme}
     </>
   );
