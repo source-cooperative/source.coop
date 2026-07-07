@@ -1,20 +1,19 @@
 "use client";
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
 import { Flex, DropdownMenu, Text, Box } from "@radix-ui/themes";
-import { ChevronDownIcon } from "@radix-ui/react-icons";
+import { ChevronDownIcon, PlusIcon, DashIcon } from "@radix-ui/react-icons";
 import styles from "./Navigation.module.css";
 import {
-  LOGGER,
-  CONFIG,
   accountUrl,
-  editAccountProfileUrl,
   newOrganizationUrl,
   newProductUrl,
+  productUrl,
 } from "@/lib";
-import { DropdownSection } from "./DropdownSection";
+import { DropdownSection, DropdownSubmenu } from "./DropdownSection";
+import { logout } from "./logout";
 import { isAdmin, isAuthorized } from "@/lib/api/authz";
 import { ADMIN_TOOLS } from "@/components/features/admin/tools";
-import { Actions, UserSession } from "@/types";
+import { Account, Actions, UserSession } from "@/types";
 import { ProfileAvatar } from "@/components/features/profiles/ProfileAvatar";
 import { UploadBadge } from "@/components/features/uploader/UploadBadge";
 import { UploadsSubmenu } from "@/components/features/uploader/UploadsSubmenu";
@@ -29,32 +28,47 @@ export function AccountDropdownSkeleton() {
   );
 }
 
-export function AccountDropdown({ session }: { session: UserSession }) {
-  const [isOpen, setIsOpen] = useState(false);
+// Cap an account/product/invitation name at a fixed width so it ellipsizes
+// (text-overflow needs a definite width) instead of widening the menu.
+const entityNameStyle: CSSProperties = {
+  display: "block",
+  maxWidth: 180,
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
+};
 
-  const handleLogout = async () => {
-    // Return to the current page after logout instead of Ory's default (root).
-    // Base arg resolves the dev-only relative route (frontendUrl is "" in dev,
-    // proxied same-origin); ignored when the route is already absolute (prod).
-    const logoutFlow = new URL(CONFIG.auth.routes.logout, window.location.origin);
-    logoutFlow.searchParams.set("return_to", window.location.href);
-    const response = await fetch(logoutFlow, {
-      method: "GET",
-      credentials: "include",
-    });
-    if (!response.ok) {
-      LOGGER.error(
-        `Failed to logout: ${response.status} ${response.statusText}`,
-        {
-          operation: "logout",
-          metadata: { response },
-        }
-      );
-      return;
-    }
-    const { logout_url } = await response.json();
-    window.location.href = logout_url;
-  };
+export interface DropdownAccountProduct {
+  product_id: string;
+  title: string;
+}
+
+// An account the user can browse from the menu: themselves or an org they
+// belong to, plus that account's products. The full account drives the avatar.
+export interface DropdownAccount {
+  account: Account;
+  isSelf: boolean;
+  products: DropdownAccountProduct[];
+}
+
+export interface DropdownInvitation {
+  href: string;
+  label: string;
+}
+
+export function AccountDropdown({
+  session,
+  accounts = [],
+  pendingInvitations = [],
+}: {
+  session: UserSession;
+  accounts?: DropdownAccount[];
+  pendingInvitations?: DropdownInvitation[];
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const hasInvitations = pendingInvitations.length > 0;
+  const canCreateProduct = isAuthorized(session, "*", Actions.CreateRepository);
+  const canCreateOrg = isAuthorized(session, "*", Actions.CreateAccount);
 
   return (
     <DropdownMenu.Root open={isOpen} onOpenChange={setIsOpen}>
@@ -63,6 +77,21 @@ export function AccountDropdown({ session }: { session: UserSession }) {
           <Box style={{ position: "relative" }}>
             <ProfileAvatar account={session.account!} size="2" />
             <UploadBadge />
+            {hasInvitations && (
+              <Box
+                aria-label="You have pending invitations"
+                style={{
+                  position: "absolute",
+                  bottom: -1,
+                  right: -1,
+                  width: 12,
+                  height: 12,
+                  borderRadius: "50%",
+                  backgroundColor: "var(--red-9)",
+                  border: "2px solid var(--color-background)",
+                }}
+              />
+            )}
           </Box>
           <Box display={{ initial: "none", sm: "block" }}>
             <Text>{session.account!.name}</Text>
@@ -75,40 +104,121 @@ export function AccountDropdown({ session }: { session: UserSession }) {
       </DropdownMenu.Trigger>
 
       <DropdownMenu.Content>
+        {/* One submenu per account (you + your orgs): an avatar-labelled trigger
+            linking to the account page, then that account's products. */}
+        {accounts.map(({ account, isSelf, products }) => (
+          <DropdownSubmenu
+            key={account.account_id}
+            label={
+              <Flex align="center" gap="2">
+                <ProfileAvatar account={account} size="1" />
+                <span style={entityNameStyle}>{account.name}</span>
+                {isSelf && (
+                  <Text size="1" color="gray">
+                    you
+                  </Text>
+                )}
+              </Flex>
+            }
+            items={[
+              {
+                href: accountUrl(account.account_id),
+                children: isSelf ? "View profile" : "View organization",
+              },
+            ]}
+            actionsLabel="Products"
+            actions={[
+              ...(products.length > 0
+                ? products.slice(0, 20).map((product) => ({
+                    href: productUrl(account.account_id, product.product_id),
+                    children: (
+                      <>
+                        <DashIcon style={{ color: "var(--gray-a10)" }} />
+                        <span style={entityNameStyle}>{product.title}</span>
+                      </>
+                    ),
+                  }))
+                : [
+                    {
+                      children: "No products yet",
+                      color: "gray" as const,
+                      disabled: true,
+                    },
+                  ]),
+              // Create a product for this account, at the bottom of its list.
+              {
+                href: canCreateProduct
+                  ? newProductUrl(account.account_id)
+                  : undefined,
+                disabled: !canCreateProduct,
+                tooltip: canCreateProduct
+                  ? undefined
+                  : "You don't have permission to create products",
+                children: (
+                  <>
+                    <PlusIcon />
+                    New product
+                  </>
+                ),
+              },
+            ]}
+          />
+        ))}
+
+        <DropdownMenu.Separator />
+        {/* New organization, under the list of accounts you belong to.
+            Always shown; disabled with a tooltip when unauthorized. */}
         <DropdownSection
-          label="Account"
+          showSeparator={false}
           items={[
             {
-              href: accountUrl(session.account!.account_id),
-              children: "View Profile",
-            },
-            {
-              href: editAccountProfileUrl(session.account!.account_id),
-              children: "Edit Profile",
+              href: canCreateOrg
+                ? newOrganizationUrl(session.account!.account_id)
+                : undefined,
+              disabled: !canCreateOrg,
+              tooltip: canCreateOrg
+                ? undefined
+                : "You don't have permission to create organizations",
+              children: (
+                <>
+                  <PlusIcon />
+                  New organization
+                </>
+              ),
             },
           ]}
         />
-        <DropdownSection
-          label="Organizations"
-          items={[
-            {
-              href: newOrganizationUrl(session.account!.account_id),
-              children: "Create Organization",
-              condition: isAuthorized(session, "*", Actions.CreateAccount),
-            },
-          ]}
+
+        <DropdownMenu.Separator />
+        {/* Invitations — always shown so the user can check; a grey empty state
+            when there are none, a red dot on the label when there are. */}
+        <DropdownSubmenu
+          label={
+            <span
+              style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
+            >
+              Invitations
+              {hasInvitations && <span className={styles.mobileDot} />}
+            </span>
+          }
+          items={
+            hasInvitations
+              ? pendingInvitations.slice(0, 20).map((invitation) => ({
+                  href: invitation.href,
+                  children: (
+                    <span style={entityNameStyle}>{invitation.label}</span>
+                  ),
+                }))
+              : [
+                  {
+                    children: "No pending invitations",
+                    color: "gray" as const,
+                    disabled: true,
+                  },
+                ]
+          }
         />
-        <DropdownSection
-          label="Products"
-          items={[
-            {
-              href: newProductUrl(),
-              children: "Create Product",
-              condition: isAuthorized(session, "*", Actions.CreateRepository),
-            },
-          ]}
-        />
-        <DropdownSection
+        <DropdownSubmenu
           label="Admin"
           condition={isAdmin(session)}
           items={ADMIN_TOOLS.map((tool) => ({
@@ -117,10 +227,11 @@ export function AccountDropdown({ session }: { session: UserSession }) {
           }))}
         />
         <UploadsSubmenu />
+        <DropdownMenu.Separator />
         <DropdownSection
           items={[
             {
-              onClick: handleLogout,
+              onClick: logout,
               children: "Logout",
               color: "red",
             },
