@@ -262,6 +262,9 @@ export async function getUsage(
       ),
       // Sample-weighted request count per unique client IP hash, for the
       // download-frequency histogram (blob8 is empty when the IP is unknown).
+      // ponytail: capped at AE's ~10k response rows — a product with more
+      // unique IPs in the window gets an (arbitrary, roughly unbiased)
+      // sample; the histogram is labeled an estimate anyway.
       usageQuery(
         `SELECT blob8 AS ip, SUM(_sample_interval) AS requests ${from} AND blob8 != '' GROUP BY ip`,
       ),
