@@ -11,7 +11,6 @@ import { ProxyCredentialsGate } from "@/components/features/products/ProxyCreden
 import { ProductDataUnavailable } from "@/components/features/products/ProductDataUnavailable";
 import { DirectoryList } from "@/components/features/products/object-browser/DirectoryList";
 import { ObjectSummary } from "@/components/features/products/object-browser/ObjectSummary";
-import { ObjectPreview } from "@/components/features/products/object-browser/ObjectPreview";
 import { generateProductMetadata } from "@/components/features/metadata/ProductMetadata";
 
 export async function generateMetadata({
@@ -136,20 +135,11 @@ export default async function ProductPathPage({ params }: PageProps) {
 
       // The preview itself renders full-width via the @preview slot.
       return (
-        <>
-          <ObjectSummary
-            product={product}
-            objectInfo={objectInfo}
-            connectionDetails={connectionDetails}
-          />
-          <Suspense fallback={null}>
-            <ObjectPreview
-              account_id={account_id}
-              product_id={product_id}
-              object_path={objectPath}
-            />
-          </Suspense>
-        </>
+        <ObjectSummary
+          product={product}
+          objectInfo={objectInfo}
+          connectionDetails={connectionDetails}
+        />
       );
     }
   }

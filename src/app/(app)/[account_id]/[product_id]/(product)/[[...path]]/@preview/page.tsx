@@ -1,11 +1,9 @@
 import { Suspense } from "react";
 import { Card } from "@radix-ui/themes";
+import { SectionHeader } from "@/components/core/SectionHeader";
 import { getStorageClient } from "@/lib/clients/storage";
 import { readProxyCredentials } from "@/lib/services/proxy-credentials-read";
-import {
-  ObjectPreview,
-  ObjectPreviewLoading,
-} from "@/components/features/products/object-browser/ObjectPreview";
+import { ObjectPreview } from "@/components/features/products/object-browser/ObjectPreview";
 import { getAuthorizedProduct } from "../data";
 
 interface PageProps {
@@ -52,13 +50,15 @@ export default async function ObjectPreviewSlot({ params }: PageProps) {
 
   return (
     <Card mt="4">
-      <Suspense fallback={<ObjectPreviewLoading />}>
-        <ObjectPreview
-          account_id={account_id}
-          product_id={product_id}
-          object_path={objectPath}
-        />
-      </Suspense>
+      <SectionHeader title="Object Preview">
+        <Suspense fallback={null}>
+          <ObjectPreview
+            account_id={account_id}
+            product_id={product_id}
+            object_path={objectPath}
+          />
+        </Suspense>
+      </SectionHeader>
     </Card>
   );
 }
