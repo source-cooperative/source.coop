@@ -29,8 +29,14 @@ export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
   const { account_id, product_id } = await params;
-  // Authorize before exposing anything, like the product page does.
+  // Same full gate as the page body — generateMetadata streams
+  // independently, and unauthorized must look exactly like nonexistent
+  // (no "— Analytics" title on the 404).
   const product = await getAuthorizedProduct(account_id, product_id);
+  const session = await getPageSession();
+  if (!isAuthorized(session, product, Actions.PutRepository)) {
+    notFound();
+  }
   return { title: `${product.title || product_id} — Analytics` };
 }
 

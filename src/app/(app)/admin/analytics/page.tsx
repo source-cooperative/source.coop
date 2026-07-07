@@ -1,5 +1,8 @@
 import { Metadata } from "next";
+import { notFound } from "next/navigation";
 import Link from "next/link";
+import { getPageSession } from "@/lib";
+import { isAdmin } from "@/lib/api/authz";
 import {
   Box,
   Button,
@@ -99,6 +102,13 @@ interface PageProps {
 }
 
 export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
+  // The admin layout renders NotAuthorizedPage, but layouts aren't an auth
+  // boundary (they render in parallel with pages and don't re-render on
+  // soft navigation) — gate the data work here too.
+  if (!isAdmin(await getPageSession())) {
+    notFound();
+  }
+
   const state = parseState(await searchParams);
 
   if (!isAnalyticsConfigured()) {
