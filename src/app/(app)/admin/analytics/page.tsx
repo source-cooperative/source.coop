@@ -396,6 +396,7 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
             <AdminBreakdownChart
               buckets={breakdown.buckets}
               bucketHours={breakdown.bucketHours}
+              range={breakdown.range}
               series={breakdown.series}
               points={breakdown.points}
               totals={breakdown.totals}

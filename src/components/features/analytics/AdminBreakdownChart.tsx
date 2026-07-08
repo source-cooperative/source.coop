@@ -19,6 +19,8 @@ type Metric = "bytes" | "requests";
 interface AdminBreakdownChartProps {
   buckets: string[];
   bucketHours: number;
+  /** Inclusive UTC day range the data covers */
+  range: { from: string; to: string };
   series: string[];
   points: Record<string, { bytes: number; requests: number }>[];
   totals: { bytes: number; requests: number };
@@ -70,6 +72,7 @@ function requestRate(count: number, bucketHours: number): string {
 export function AdminBreakdownChart({
   buckets,
   bucketHours,
+  range,
   series,
   points,
   totals,
@@ -91,6 +94,7 @@ export function AdminBreakdownChart({
     <Box>
       <Flex justify="between" align="center" mb="3" gap="3" wrap="wrap">
         <Text size="2" color="gray">
+          {range.from} → {range.to}:{" "}
           <Text weight="bold" color="gray" highContrast>
             {metric === "bytes"
               ? formatBytes(totals.bytes)
