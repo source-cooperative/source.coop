@@ -104,7 +104,9 @@ export function ViewCredentialsDialog({
                 [
                   "Expiration",
                   <span key="expiration" title={credentials.expiration}>
-                    {new Date(credentials.expiration).toLocaleString()}
+                    {new Date(credentials.expiration).toLocaleString(undefined, {
+                      timeZoneName: "short",
+                    })}
                   </span>,
                   credentials.expiration,
                 ],
