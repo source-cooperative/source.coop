@@ -20,7 +20,16 @@ export interface QueuedUpload {
   scope: CredentialsScope;
   s3Service: S3UploadService;
   uploadInstance?: Upload;
+  retryCount: number;
 }
+
+// Browsers throw "TypeError: Failed to fetch" (or "NetworkError...") for
+// transient connectivity blips — issue #425. Auto-retry those a few times
+// with backoff before surfacing the manual "Retry Upload" button.
+const MAX_AUTO_RETRIES = 3;
+const RETRY_DELAY_MS = 2000;
+const isRetryableError = (message?: string) =>
+  !!message && /failed to fetch|network ?error/i.test(message);
 
 /**
  * Simple imperative upload queue manager
@@ -54,6 +63,7 @@ export class UploadQueueManager {
       totalBytes: file.size,
       scope,
       s3Service,
+      retryCount: 0,
     }));
 
     this.items.push(...newItems);
@@ -122,6 +132,7 @@ export class UploadQueueManager {
     item.status = "queued";
     item.uploadedBytes = 0;
     item.error = undefined;
+    item.retryCount = 0;
     this.onChange();
     this.process();
   }
@@ -214,6 +225,24 @@ export class UploadQueueManager {
       item.uploadInstance = undefined;
       this.onChange();
       this.process(); // Fill the slot we just freed up
+    }
+
+    if (
+      item.status === "error" &&
+      isRetryableError(item.error) &&
+      item.retryCount < MAX_AUTO_RETRIES
+    ) {
+      item.retryCount++;
+      const delay = RETRY_DELAY_MS * item.retryCount;
+      setTimeout(() => {
+        if (item.status === "error") {
+          item.status = "queued";
+          item.uploadedBytes = 0;
+          item.error = undefined;
+          this.onChange();
+          this.process();
+        }
+      }, delay);
     }
   }
 }
