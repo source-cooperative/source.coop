@@ -44,6 +44,8 @@ interface PageState {
   to: string;
   /** Sum interval in hours (a BUCKET_INTERVALS value); undefined = auto */
   bucketHours?: number;
+  /** Chart metric toggle; "bytes" is the default and stays out of URLs */
+  metric: "bytes" | "requests";
   groupBy: AdminDimension[];
   account?: string;
   product?: string;
@@ -80,6 +82,7 @@ function parseState(params: Record<string, string | string[] | undefined>): Page
     bucketHours: BUCKET_INTERVALS.some((b) => b.hours === interval)
       ? interval
       : undefined,
+    metric: first(params.metric) === "requests" ? "requests" : "bytes",
     // Absent → the default grouping; present but empty → no grouping at all.
     groupBy:
       groupByParam === undefined
@@ -105,6 +108,7 @@ function pageUrl(state: PageState): string {
   if (state.from) params.set("from", state.from);
   if (state.to) params.set("to", state.to);
   if (state.bucketHours) params.set("interval", String(state.bucketHours));
+  if (state.metric === "requests") params.set("metric", state.metric);
   if (state.account) params.set("account", state.account);
   if (state.product) params.set("product", state.product);
   return `${adminAnalyticsUrl()}?${params}`;
@@ -334,6 +338,9 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
             {state.bucketHours && (
               <input type="hidden" name="interval" value={state.bucketHours} />
             )}
+            {state.metric === "requests" && (
+              <input type="hidden" name="metric" value={state.metric} />
+            )}
             <Flex gap="2" wrap="wrap" align="center">
               <TextField.Root
                 size="1"
@@ -397,6 +404,7 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
               buckets={breakdown.buckets}
               bucketHours={breakdown.bucketHours}
               range={breakdown.range}
+              initialMetric={state.metric}
               series={breakdown.series}
               points={breakdown.points}
               totals={breakdown.totals}

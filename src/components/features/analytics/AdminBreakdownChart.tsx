@@ -25,6 +25,8 @@ interface AdminBreakdownChartProps {
   points: Record<string, { bytes: number; requests: number }>[];
   totals: { bytes: number; requests: number };
   otherKey: string;
+  /** From ?metric= so shared URLs reproduce the toggle state */
+  initialMetric?: Metric;
 }
 
 const MONTHS = "Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split(" ");
@@ -77,8 +79,20 @@ export function AdminBreakdownChart({
   points,
   totals,
   otherKey,
+  initialMetric = "bytes",
 }: AdminBreakdownChartProps) {
-  const [metric, setMetric] = useState<Metric>("bytes");
+  const [metric, setMetric] = useState<Metric>(initialMetric);
+
+  // Both metrics are already in `points`, so the toggle never refetches —
+  // but it lands in the URL (no server round-trip via replaceState) so the
+  // page can be shared at its exact configuration.
+  const changeMetric = (value: Metric) => {
+    setMetric(value);
+    const url = new URL(window.location.href);
+    if (value === "requests") url.searchParams.set("metric", value);
+    else url.searchParams.delete("metric");
+    window.history.replaceState(null, "", url);
+  };
 
   // Series keys are arbitrary strings (account/product names, hashes), so
   // rows use positional dataKeys that can't collide with "date".
@@ -105,7 +119,7 @@ export function AdminBreakdownChart({
         <SegmentedControl.Root
           size="1"
           value={metric}
-          onValueChange={(value) => setMetric(value as Metric)}
+          onValueChange={(value) => changeMetric(value as Metric)}
         >
           <SegmentedControl.Item value="bytes">Bytes</SegmentedControl.Item>
           <SegmentedControl.Item value="requests">
