@@ -12,7 +12,6 @@ import {
   Heading,
   Table,
   Text,
-  TextField,
   Tooltip,
 } from "@radix-ui/themes";
 import {
@@ -33,6 +32,7 @@ import {
   AdminBreakdownChart,
   seriesColor,
 } from "@/components/features/analytics";
+import { AdminFiltersForm } from "@/components/features/analytics/AdminFiltersForm";
 import { adminAnalyticsUrl, formatBytes } from "@/lib";
 import { accountUrl } from "@/lib/urls";
 
@@ -329,53 +329,22 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
             </Box>
           </Flex>
 
-          <form method="GET" action={adminAnalyticsUrl()}>
-            <input
-              type="hidden"
-              name="groupBy"
-              value={state.groupBy.join(",")}
-            />
-            {state.bucketHours && (
-              <input type="hidden" name="interval" value={state.bucketHours} />
-            )}
-            {state.metric === "requests" && (
-              <input type="hidden" name="metric" value={state.metric} />
-            )}
-            <Flex gap="2" wrap="wrap" align="center">
-              <TextField.Root
-                size="1"
-                type="date"
-                name="from"
-                defaultValue={range.from}
-                aria-label="From (UTC)"
-              />
-              <Text size="1" color="gray">
-                →
-              </Text>
-              <TextField.Root
-                size="1"
-                type="date"
-                name="to"
-                defaultValue={range.to}
-                aria-label="To (UTC)"
-              />
-              <TextField.Root
-                size="1"
-                name="account"
-                defaultValue={state.account ?? ""}
-                placeholder="Filter by account id"
-              />
-              <TextField.Root
-                size="1"
-                name="product"
-                defaultValue={state.product ?? ""}
-                placeholder="Filter by product id"
-              />
-              <Button size="1" variant="soft" type="submit">
-                Apply
-              </Button>
-            </Flex>
-          </form>
+          <AdminFiltersForm
+            action={adminAnalyticsUrl()}
+            defaults={{
+              from: range.from,
+              to: range.to,
+              account: state.account ?? "",
+              product: state.product ?? "",
+            }}
+            hidden={{
+              groupBy: state.groupBy.join(","),
+              ...(state.bucketHours && {
+                interval: String(state.bucketHours),
+              }),
+              ...(state.metric === "requests" && { metric: state.metric }),
+            }}
+          />
         </Flex>
       </Card>
 
