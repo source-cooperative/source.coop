@@ -29,9 +29,12 @@ const MONTHS = "Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split(" ");
 
 function tickLabel(iso: string, bucketHours: number): string {
   const d = new Date(iso);
+  const day = `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]}`;
+  // Sub-daily buckets need the time too; daily+ buckets always start at
+  // 00:00 UTC, so the time would be noise.
   return bucketHours < 24
-    ? `${String(d.getUTCHours()).padStart(2, "0")}:00`
-    : `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]}`;
+    ? `${day} ${String(d.getUTCHours()).padStart(2, "0")}:00`
+    : day;
 }
 
 function bucketLabel(iso: string, bucketHours: number): string {
@@ -51,6 +54,12 @@ const plain = new Intl.NumberFormat("en-US");
 
 function formatMetric(value: number, metric: Metric): string {
   return metric === "bytes" ? formatBytes(value) : compact.format(value);
+}
+
+/** Average request rate over one bucket, e.g. "~0.43/s". */
+function requestRate(count: number, bucketHours: number): string {
+  const perSec = count / (bucketHours * 3600);
+  return `~${perSec >= 10 ? compact.format(perSec) : perSec.toFixed(2)}/s`;
 }
 
 /**
@@ -172,6 +181,12 @@ export function AdminBreakdownChart({
                       </Text>
                       <Text size="1" weight="medium">
                         {formatMetric(entry.value, metric)}
+                        {metric === "requests" && (
+                          <Text color="gray">
+                            {" "}
+                            {requestRate(entry.value, bucketHours)}
+                          </Text>
+                        )}
                       </Text>
                     </Flex>
                   ))}
@@ -183,6 +198,12 @@ export function AdminBreakdownChart({
                       </Text>
                       <Text size="1" weight="bold">
                         {formatMetric(total, metric)}
+                        {metric === "requests" && (
+                          <Text color="gray" weight="regular">
+                            {" "}
+                            {requestRate(total, bucketHours)}
+                          </Text>
+                        )}
                       </Text>
                     </Flex>
                   )}

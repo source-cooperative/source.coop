@@ -285,6 +285,26 @@ describe("getAdminBreakdown", () => {
     expect(sql).toContain("toStartOfInterval(timestamp, INTERVAL '6' HOUR)");
   });
 
+  it("honors a whitelisted sum interval and escalates unreadable ones", async () => {
+    await getAdminBreakdown({ ...TODAY_RANGE, groupBy: [], bucketHours: 6 });
+    expect(sentSql()[0]).toContain("toStartOfInterval(timestamp, INTERVAL '6' HOUR)");
+
+    fetchMock.mockClear();
+    // Hourly over ~92 days would be ~2,200 bars — escalates until drawable.
+    await getAdminBreakdown({
+      from: isoDaysAgo(91),
+      to: isoDaysAgo(0),
+      groupBy: [],
+      bucketHours: 1,
+    });
+    expect(sentSql()[0]).toContain("toStartOfInterval(timestamp, INTERVAL '6' HOUR)");
+
+    fetchMock.mockClear();
+    // Non-whitelisted values fall back to auto (1h for a single day).
+    await getAdminBreakdown({ ...TODAY_RANGE, groupBy: [], bucketHours: 5 });
+    expect(sentSql()[0]).toContain("toStartOfInterval(timestamp, INTERVAL '1' HOUR)");
+  });
+
   it("swaps reversed bounds and bounds ranges that end before today", async () => {
     const breakdown = await getAdminBreakdown({
       from: isoDaysAgo(3),

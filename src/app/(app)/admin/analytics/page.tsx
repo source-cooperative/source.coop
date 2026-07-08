@@ -21,6 +21,7 @@ import {
 } from "@radix-ui/react-icons";
 import {
   ADMIN_DIMENSIONS,
+  BUCKET_INTERVALS,
   OTHER_KEY,
   RETENTION_DAYS,
   getAdminBreakdown,
@@ -41,6 +42,8 @@ interface PageState {
   /** UTC days, YYYY-MM-DD, inclusive; empty string = default */
   from: string;
   to: string;
+  /** Sum interval in hours (a BUCKET_INTERVALS value); undefined = auto */
+  bucketHours?: number;
   groupBy: AdminDimension[];
   account?: string;
   product?: string;
@@ -70,9 +73,13 @@ const PRESETS = [
 
 function parseState(params: Record<string, string | string[] | undefined>): PageState {
   const groupByParam = first(params.groupBy);
+  const interval = Number(first(params.interval));
   return {
     from: dateParam(params.from),
     to: dateParam(params.to),
+    bucketHours: BUCKET_INTERVALS.some((b) => b.hours === interval)
+      ? interval
+      : undefined,
     // Absent → the default grouping; present but empty → no grouping at all.
     groupBy:
       groupByParam === undefined
@@ -97,6 +104,7 @@ function pageUrl(state: PageState): string {
   const params = new URLSearchParams({ groupBy: state.groupBy.join(",") });
   if (state.from) params.set("from", state.from);
   if (state.to) params.set("to", state.to);
+  if (state.bucketHours) params.set("interval", String(state.bucketHours));
   if (state.account) params.set("account", state.account);
   if (state.product) params.set("product", state.product);
   return `${adminAnalyticsUrl()}?${params}`;
@@ -287,6 +295,34 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
                 })}
               </Flex>
             </Box>
+            <Box>
+              <Text as="div" size="1" color="gray" mb="1">
+                Interval
+              </Text>
+              <Flex gap="1" wrap="wrap">
+                <Button
+                  asChild
+                  size="1"
+                  variant={state.bucketHours === undefined ? "solid" : "soft"}
+                >
+                  <Link href={pageUrl({ ...state, bucketHours: undefined })}>
+                    Auto
+                  </Link>
+                </Button>
+                {BUCKET_INTERVALS.map((bucket) => (
+                  <Button
+                    key={bucket.hours}
+                    asChild
+                    size="1"
+                    variant={state.bucketHours === bucket.hours ? "solid" : "soft"}
+                  >
+                    <Link href={pageUrl({ ...state, bucketHours: bucket.hours })}>
+                      {bucket.label}
+                    </Link>
+                  </Button>
+                ))}
+              </Flex>
+            </Box>
           </Flex>
 
           <form method="GET" action={adminAnalyticsUrl()}>
@@ -295,6 +331,9 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
               name="groupBy"
               value={state.groupBy.join(",")}
             />
+            {state.bucketHours && (
+              <input type="hidden" name="interval" value={state.bucketHours} />
+            )}
             <Flex gap="2" wrap="wrap" align="center">
               <TextField.Root
                 size="1"

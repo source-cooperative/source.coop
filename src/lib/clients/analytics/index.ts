@@ -91,11 +91,21 @@ const CHART_SERIES_LIMIT = 6;
 const TABLE_GROUP_LIMIT = 25;
 export const OTHER_KEY = "Other";
 
+/** Sum intervals selectable in the admin explorer. */
+export const BUCKET_INTERVALS = [
+  { hours: 1, label: "Hourly" },
+  { hours: 6, label: "6-hour" },
+  { hours: 24, label: "Daily" },
+  { hours: 168, label: "Weekly" },
+] as const;
+
 export interface AdminQuery {
   /** UTC day, YYYY-MM-DD, inclusive. Invalid/out-of-range values are clamped. */
   from: string;
   /** UTC day, YYYY-MM-DD, inclusive */
   to: string;
+  /** Sum interval override (a BUCKET_INTERVALS hours value); omit for auto */
+  bucketHours?: number;
   groupBy: AdminDimension[];
   account?: string;
   product?: string;
@@ -480,10 +490,20 @@ export async function getAdminBreakdown(
   const fromDaysAgo = Math.round((today - fromMs) / DAY_MS);
   const toDaysAgo = Math.round((today - toMs) / DAY_MS);
 
-  // Bucket size keeps the bar count readable across range lengths.
+  // Bucket size: an explicit whitelisted interval, else auto by range
+  // length. Either way escalate until the bar count stays drawable —
+  // hourly over 92 days would be ~2,200 stacked bars.
   const rangeDays = fromDaysAgo - toDaysAgo + 1;
-  const bucketHours =
-    rangeDays <= 1 ? 1 : rangeDays <= 3 ? 3 : rangeDays <= 7 ? 6 : rangeDays <= 31 ? 24 : 72;
+  const BUCKET_LADDER = [1, 3, 6, 24, 72, 168];
+  const MAX_BUCKETS = 400;
+  let bucketHours = BUCKET_INTERVALS.some((b) => b.hours === query.bucketHours)
+    ? (query.bucketHours as number)
+    : rangeDays <= 1 ? 1 : rangeDays <= 3 ? 3 : rangeDays <= 7 ? 6 : rangeDays <= 31 ? 24 : 72;
+  while ((rangeDays * 24) / bucketHours > MAX_BUCKETS) {
+    const next = BUCKET_LADDER.find((h) => h > bucketHours);
+    if (!next) break;
+    bucketHours = next;
+  }
 
   const groupBy = [...new Set(query.groupBy)];
   const filters = [
