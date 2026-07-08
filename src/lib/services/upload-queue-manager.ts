@@ -21,6 +21,7 @@ export interface QueuedUpload {
   s3Service: S3UploadService;
   uploadInstance?: Upload;
   retryCount: number;
+  retryTimeoutId?: ReturnType<typeof setTimeout>;
 }
 
 // Browsers throw "TypeError: Failed to fetch" (or "NetworkError...") for
@@ -43,6 +44,14 @@ export class UploadQueueManager {
 
   constructor(maxConcurrent = 2) {
     this.maxConcurrent = maxConcurrent;
+  }
+
+  /** Stop a pending auto-retry so it can't resurrect an item after cancel/clear/retry. */
+  private clearRetryTimer(item: QueuedUpload) {
+    if (item.retryTimeoutId !== undefined) {
+      clearTimeout(item.retryTimeoutId);
+      item.retryTimeoutId = undefined;
+    }
   }
 
   /**
@@ -78,6 +87,7 @@ export class UploadQueueManager {
     const item = this.items.find((i) => i.id === id);
     if (!item) return;
 
+    this.clearRetryTimer(item);
     item.status = "cancelled";
 
     // Abort if currently uploading
@@ -105,6 +115,10 @@ export class UploadQueueManager {
         return; // Different scope, skip
       }
 
+      // Stop any pending auto-retry too, even for already-"error" items,
+      // so "Cancel All" can't be undone by a timer firing afterwards.
+      this.clearRetryTimer(item);
+
       if (item.status === "uploading" || item.status === "queued") {
         item.status = "cancelled";
 
@@ -129,6 +143,7 @@ export class UploadQueueManager {
     const item = this.items.find((i) => i.id === id);
     if (!item || item.status !== "error") return;
 
+    this.clearRetryTimer(item);
     item.status = "queued";
     item.uploadedBytes = 0;
     item.error = undefined;
@@ -150,9 +165,12 @@ export class UploadQueueManager {
         ) {
           return true; // Keep - different scope
         }
-        return status ? item.status !== status : false;
+        const keep = status ? item.status !== status : false;
+        if (!keep) this.clearRetryTimer(item); // dropped - stop its pending auto-retry
+        return keep;
       });
     } else {
+      this.items.forEach((item) => this.clearRetryTimer(item));
       this.items = [];
     }
     this.onChange();
@@ -234,7 +252,8 @@ export class UploadQueueManager {
     ) {
       item.retryCount++;
       const delay = RETRY_DELAY_MS * item.retryCount;
-      setTimeout(() => {
+      item.retryTimeoutId = setTimeout(() => {
+        item.retryTimeoutId = undefined;
         if (item.status === "error") {
           item.status = "queued";
           item.uploadedBytes = 0;

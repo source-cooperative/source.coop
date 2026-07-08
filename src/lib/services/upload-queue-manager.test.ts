@@ -67,4 +67,24 @@ describe("UploadQueueManager auto-retry", () => {
     expect(manager.getAll()[0].status).toBe("error");
     expect(uploadFile).toHaveBeenCalledTimes(1);
   });
+
+  it("does not resurrect an item that was cancelled while an auto-retry was pending", async () => {
+    const uploadFile = jest
+      .fn()
+      .mockResolvedValue({ upload: {}, result: Promise.reject(new TypeError("Failed to fetch")) });
+
+    const manager = new UploadQueueManager(1);
+    manager.add([makeFile()], "", scope, fakeService(uploadFile));
+
+    await jest.advanceTimersByTimeAsync(0); // first attempt fails, backoff scheduled
+    const id = manager.getAll()[0].id;
+
+    manager.cancelAll(); // user cancels before the backoff elapses
+    expect(manager.getAll()[0].status).toBe("error"); // cancelAll leaves errored items as-is...
+
+    await jest.advanceTimersByTimeAsync(10000); // ...but the pending timer must not fire
+
+    expect(manager.getAll().find((i) => i.id === id)?.status).toBe("error");
+    expect(uploadFile).toHaveBeenCalledTimes(1);
+  });
 });
