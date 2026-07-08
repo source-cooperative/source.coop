@@ -20,13 +20,12 @@ import {
 } from "@radix-ui/react-icons";
 import {
   ADMIN_DIMENSIONS,
-  ADMIN_WINDOWS,
   OTHER_KEY,
+  RETENTION_DAYS,
   getAdminBreakdown,
   isAnalyticsConfigured,
   type AdminBreakdown,
   type AdminDimension,
-  type AdminWindow,
 } from "@/lib/clients/analytics";
 import {
   AdminBreakdownChart,
@@ -37,10 +36,10 @@ import { accountUrl } from "@/lib/urls";
 
 export const metadata: Metadata = { title: "Admin — Analytics" };
 
-const DEFAULT_WINDOW: AdminWindow = "1wk";
-
 interface PageState {
-  window: AdminWindow;
+  /** UTC days, YYYY-MM-DD, inclusive; empty string = default */
+  from: string;
+  to: string;
   groupBy: AdminDimension[];
   account?: string;
   product?: string;
@@ -51,15 +50,28 @@ const first = (v: string | string[] | undefined) =>
 
 const numberFormat = new Intl.NumberFormat("en-US");
 
+const DAY_MS = 86_400_000;
+const isoDay = (ms: number) => new Date(ms).toISOString().slice(0, 10);
+const todayUtc = () => new Date().setUTCHours(0, 0, 0, 0);
+
+const dateParam = (v: string | string[] | undefined): string => {
+  const value = first(v) ?? "";
+  return /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : "";
+};
+
+// Whole weeks (plus "Today"), to avoid aliasing day-of-week patterns.
+const PRESETS = [
+  { label: "Today", days: 1 },
+  { label: "7d", days: 7 },
+  { label: "28d", days: 28 },
+  { label: "91d", days: 91 },
+];
+
 function parseState(params: Record<string, string | string[] | undefined>): PageState {
-  const windowParam = first(params.window);
   const groupByParam = first(params.groupBy);
   return {
-    // Object.hasOwn, not `in`: ?window=constructor must not match prototype keys.
-    window:
-      windowParam && Object.hasOwn(ADMIN_WINDOWS, windowParam)
-        ? (windowParam as AdminWindow)
-        : DEFAULT_WINDOW,
+    from: dateParam(params.from),
+    to: dateParam(params.to),
     // Absent → the default grouping; present but empty → no grouping at all.
     groupBy:
       groupByParam === undefined
@@ -68,6 +80,8 @@ function parseState(params: Record<string, string | string[] | undefined>): Page
             ...new Set(
               groupByParam
                 .split(",")
+                // Object.hasOwn, not `in`: ?groupBy=constructor must not
+                // match prototype keys.
                 .filter((d): d is AdminDimension =>
                   Object.hasOwn(ADMIN_DIMENSIONS, d),
                 ),
@@ -79,10 +93,9 @@ function parseState(params: Record<string, string | string[] | undefined>): Page
 }
 
 function pageUrl(state: PageState): string {
-  const params = new URLSearchParams({
-    window: state.window,
-    groupBy: state.groupBy.join(","),
-  });
+  const params = new URLSearchParams({ groupBy: state.groupBy.join(",") });
+  if (state.from) params.set("from", state.from);
+  if (state.to) params.set("to", state.to);
   if (state.account) params.set("account", state.account);
   if (state.product) params.set("product", state.product);
   return `${adminAnalyticsUrl()}?${params}`;
@@ -140,6 +153,22 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
     breakdown?.series.map((key, i) => [key, seriesColor(key, i, OTHER_KEY)]),
   );
 
+  // The resolved (clamped) range drives the presets, shift arrows, and the
+  // date inputs' defaults; fall back to the same default the client uses.
+  const today = todayUtc();
+  const range = breakdown?.range ?? { from: isoDay(today - 6 * DAY_MS), to: isoDay(today) };
+  const fromMs = Date.parse(`${range.from}T00:00:00Z`);
+  const toMs = Date.parse(`${range.to}T00:00:00Z`);
+  const rangeDays = Math.round((toMs - fromMs) / DAY_MS) + 1;
+  const shiftUrl = (direction: -1 | 1) =>
+    pageUrl({
+      ...state,
+      from: isoDay(fromMs + direction * rangeDays * DAY_MS),
+      to: isoDay(Math.min(toMs + direction * rangeDays * DAY_MS, today)),
+    });
+  const atToday = toMs >= today;
+  const atRetention = fromMs <= today - RETENTION_DAYS * DAY_MS;
+
   return (
     <Flex direction="column" gap="4">
       <Heading size="4">Analytics</Heading>
@@ -149,23 +178,32 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
           <Flex gap="4" wrap="wrap">
             <Box>
               <Text as="div" size="1" color="gray" mb="1">
-                Time range
+                Date range (UTC) — {range.from} → {range.to}
               </Text>
-              <Flex gap="1" wrap="wrap">
-                {(
-                  Object.keys(ADMIN_WINDOWS) as AdminWindow[]
-                ).map((window) => (
-                  <Button
-                    key={window}
-                    asChild
-                    size="1"
-                    variant={window === state.window ? "solid" : "soft"}
-                  >
-                    <Link href={pageUrl({ ...state, window })}>
-                      {ADMIN_WINDOWS[window].label}
-                    </Link>
-                  </Button>
-                ))}
+              <Flex gap="1" wrap="wrap" align="center">
+                <Button size="1" variant="soft" disabled={atRetention} asChild={!atRetention}>
+                  {atRetention ? <>‹</> : <Link href={shiftUrl(-1)}>‹</Link>}
+                </Button>
+                {PRESETS.map((preset) => {
+                  const from = isoDay(today - (preset.days - 1) * DAY_MS);
+                  const to = isoDay(today);
+                  const active = range.from === from && range.to === to;
+                  return (
+                    <Button
+                      key={preset.label}
+                      asChild
+                      size="1"
+                      variant={active ? "solid" : "soft"}
+                    >
+                      <Link href={pageUrl({ ...state, from, to })}>
+                        {preset.label}
+                      </Link>
+                    </Button>
+                  );
+                })}
+                <Button size="1" variant="soft" disabled={atToday} asChild={!atToday}>
+                  {atToday ? <>›</> : <Link href={shiftUrl(1)}>›</Link>}
+                </Button>
               </Flex>
             </Box>
             <Box>
@@ -198,13 +236,29 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
           </Flex>
 
           <form method="GET" action={adminAnalyticsUrl()}>
-            <input type="hidden" name="window" value={state.window} />
             <input
               type="hidden"
               name="groupBy"
               value={state.groupBy.join(",")}
             />
-            <Flex gap="2" wrap="wrap">
+            <Flex gap="2" wrap="wrap" align="center">
+              <TextField.Root
+                size="1"
+                type="date"
+                name="from"
+                defaultValue={range.from}
+                aria-label="From (UTC)"
+              />
+              <Text size="1" color="gray">
+                →
+              </Text>
+              <TextField.Root
+                size="1"
+                type="date"
+                name="to"
+                defaultValue={range.to}
+                aria-label="To (UTC)"
+              />
               <TextField.Root
                 size="1"
                 name="account"
@@ -239,8 +293,8 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
             <InfoCircledIcon />
           </Callout.Icon>
           <Callout.Text>
-            No traffic recorded for this selection in the past{" "}
-            {ADMIN_WINDOWS[state.window].label.toLowerCase()}.
+            No traffic recorded for this selection between {range.from} and{" "}
+            {range.to}.
           </Callout.Text>
         </Callout.Root>
       ) : (

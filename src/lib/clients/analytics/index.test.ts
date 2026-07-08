@@ -52,6 +52,15 @@ function todayUtc(): string {
   return d.toISOString().replace("T", " ").replace(".000Z", "");
 }
 
+/** YYYY-MM-DD for the UTC day n days ago. */
+const isoDaysAgo = (n: number) =>
+  new Date(new Date().setUTCHours(0, 0, 0, 0) - n * 86_400_000)
+    .toISOString()
+    .slice(0, 10);
+
+/** Inclusive single-day range covering today (hourly buckets). */
+const TODAY_RANGE = { from: isoDaysAgo(0), to: isoDaysAgo(0) };
+
 describe("getUsage", () => {
   it("queries with sampling weights and served-bytes filters", async () => {
     await getUsage("acct", "prod");
@@ -242,24 +251,29 @@ describe("getAdminBreakdown", () => {
       jsonResponse([{ bucket, bytes: 500, requests: "5" }]),
     );
 
-    const breakdown = await getAdminBreakdown({ window: "24h", groupBy: [] });
+    const breakdown = await getAdminBreakdown({ ...TODAY_RANGE, groupBy: [] });
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const sql = sentSql()[0];
+    // Single-day range → hourly buckets from today's UTC midnight, no upper bound
     expect(sql).toContain("toStartOfInterval(timestamp, INTERVAL '1' HOUR)");
-    expect(sql).toContain("INTERVAL '24' HOUR");
+    expect(sql).toContain("timestamp >= toStartOfDay(NOW() - INTERVAL '0' DAY)");
+    expect(sql).not.toContain("timestamp <");
 
+    expect(breakdown!.range).toEqual(TODAY_RANGE);
     expect(breakdown!.series).toEqual(["All traffic"]);
     expect(breakdown!.totals).toEqual({ bytes: 500, requests: 5 });
-    // 24 hourly buckets plus the in-progress one
-    expect(breakdown!.buckets.length).toBeGreaterThanOrEqual(24);
+    // Hourly buckets: midnight through the in-progress hour
+    expect(breakdown!.buckets.length).toBeGreaterThanOrEqual(1);
+    expect(breakdown!.buckets.length).toBeLessThanOrEqual(25);
     const filled = breakdown!.points.filter((p) => p["All traffic"]);
     expect(filled).toEqual([{ "All traffic": { bytes: 500, requests: 5 } }]);
   });
 
-  it("applies account/product filters", async () => {
+  it("applies account/product filters over a week range", async () => {
     await getAdminBreakdown({
-      window: "1wk",
+      from: isoDaysAgo(6),
+      to: isoDaysAgo(0),
       groupBy: [],
       account: "ft'w",
       product: "global",
@@ -267,8 +281,23 @@ describe("getAdminBreakdown", () => {
     const sql = sentSql()[0];
     expect(sql).toContain("blob1 = 'ft\\'w'");
     expect(sql).toContain("blob2 = 'global'");
-    expect(sql).toContain("INTERVAL '168' HOUR");
+    expect(sql).toContain("timestamp >= toStartOfDay(NOW() - INTERVAL '6' DAY)");
     expect(sql).toContain("toStartOfInterval(timestamp, INTERVAL '6' HOUR)");
+  });
+
+  it("swaps reversed bounds and bounds ranges that end before today", async () => {
+    const breakdown = await getAdminBreakdown({
+      from: isoDaysAgo(3),
+      to: isoDaysAgo(10),
+      groupBy: [],
+    });
+    const sql = sentSql()[0];
+    expect(sql).toContain("timestamp >= toStartOfDay(NOW() - INTERVAL '10' DAY)");
+    // Exclusive upper bound: the start of the day after `to` (3 days ago)
+    expect(sql).toContain("timestamp < toStartOfDay(NOW() - INTERVAL '2' DAY)");
+    // 8-day range → daily buckets
+    expect(sql).toContain("toStartOfInterval(timestamp, INTERVAL '24' HOUR)");
+    expect(breakdown!.range).toEqual({ from: isoDaysAgo(10), to: isoDaysAgo(3) });
   });
 
   it("ranks groups, charts the top slice, and derives Other from totals", async () => {
@@ -294,7 +323,7 @@ describe("getAdminBreakdown", () => {
     });
 
     const breakdown = await getAdminBreakdown({
-      window: "24h",
+      ...TODAY_RANGE,
       groupBy: ["product"],
     });
 
@@ -338,7 +367,7 @@ describe("getAdminBreakdown", () => {
     });
 
     const breakdown = await getAdminBreakdown({
-      window: "24h",
+      ...TODAY_RANGE,
       groupBy: ["account"],
     });
 
@@ -367,7 +396,7 @@ describe("getAdminBreakdown", () => {
     });
 
     const breakdown = await getAdminBreakdown({
-      window: "24h",
+      ...TODAY_RANGE,
       groupBy: ["account", "country"],
     });
     expect(breakdown!.series).toEqual(["a1 · United States (US)"]);
@@ -387,7 +416,7 @@ describe("getAdminBreakdown", () => {
     });
 
     const breakdown = await getAdminBreakdown({
-      window: "24h",
+      ...TODAY_RANGE,
       groupBy: ["country"],
     });
     expect(breakdown!.series).toEqual(["(unknown)"]);
@@ -397,7 +426,7 @@ describe("getAdminBreakdown", () => {
     const token = CONFIG.analytics.apiToken;
     (CONFIG.analytics as { apiToken: string }).apiToken = "";
     try {
-      expect(await getAdminBreakdown({ window: "24h", groupBy: [] })).toBeNull();
+      expect(await getAdminBreakdown({ ...TODAY_RANGE, groupBy: [] })).toBeNull();
     } finally {
       (CONFIG.analytics as { apiToken: string }).apiToken = token;
     }
@@ -410,7 +439,7 @@ describe("getAdminBreakdown", () => {
       text: async () => "denied",
     });
     await expect(
-      getAdminBreakdown({ window: "24h", groupBy: ["account"] }),
+      getAdminBreakdown({ ...TODAY_RANGE, groupBy: ["account"] }),
     ).rejects.toThrow("Analytics Engine query failed (403)");
   });
 });

@@ -24,10 +24,12 @@ import { CONFIG } from "@/lib/config";
 import { LOGGER } from "@/lib/logging";
 import { withTimeout } from "@/lib/with-timeout";
 
-export const USAGE_DAYS = 30;
+// Whole weeks only: a 30-day window sometimes holds 8 weekend days and
+// sometimes 10, aliasing day-of-week patterns into period comparisons.
+export const USAGE_DAYS = 28;
 
 /** Windows offered on the product analytics page (bounded by AE retention). */
-export const USAGE_WINDOWS = [7, 30, 90] as const;
+export const USAGE_WINDOWS = [7, 28, 91] as const;
 export type UsageWindow = (typeof USAGE_WINDOWS)[number];
 
 export interface UsageTotals {
@@ -67,14 +69,9 @@ export interface Usage {
   users: UsageUsers;
 }
 
-export const ADMIN_WINDOWS = {
-  "24h": { label: "24 hours", hours: 24, bucketHours: 1 },
-  "72h": { label: "72 hours", hours: 72, bucketHours: 3 },
-  "1wk": { label: "1 week", hours: 7 * 24, bucketHours: 6 },
-  "1mo": { label: "1 month", hours: 30 * 24, bucketHours: 24 },
-  "3mo": { label: "3 months", hours: 90 * 24, bucketHours: 72 },
-} as const;
-export type AdminWindow = keyof typeof ADMIN_WINDOWS;
+const DAY_MS = 86_400_000;
+/** Analytics Engine retains roughly three months of events. */
+export const RETENTION_DAYS = 92;
 
 export const ADMIN_DIMENSIONS = {
   account: { label: "Account", columns: ["blob1"] },
@@ -95,7 +92,10 @@ const TABLE_GROUP_LIMIT = 25;
 export const OTHER_KEY = "Other";
 
 export interface AdminQuery {
-  window: AdminWindow;
+  /** UTC day, YYYY-MM-DD, inclusive. Invalid/out-of-range values are clamped. */
+  from: string;
+  /** UTC day, YYYY-MM-DD, inclusive */
+  to: string;
   groupBy: AdminDimension[];
   account?: string;
   product?: string;
@@ -112,6 +112,8 @@ export interface AdminBreakdown {
   /** Ranked totals for the table (top groups, then optionally OTHER_KEY) */
   groups: { key: string; bytes: number; requests: number }[];
   totals: { bytes: number; requests: number };
+  /** The resolved (validated/clamped) inclusive UTC day range actually queried */
+  range: { from: string; to: string };
 }
 
 /**
@@ -441,12 +443,22 @@ function rowKey(row: Row, groupBy: AdminDimension[]): string {
     .join(" · ");
 }
 
+/** Parse a YYYY-MM-DD string as a UTC day start, or null. */
+function utcDay(value: string): number | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+  const ms = Date.parse(`${value}T00:00:00Z`);
+  return Number.isNaN(ms) ? null : ms;
+}
+
+const isoDay = (ms: number) => new Date(ms).toISOString().slice(0, 10);
+
 /**
- * Traffic over a time window, bucketed for a stacked timeseries and grouped
- * by zero or more dimensions. Group cardinality is unbounded (client IP
- * hashes especially), so this never fetches all groups: a totals query finds
- * the top groups, the timeseries query is filtered to the chart's top slice,
- * and a bucket-totals query provides the "Other" remainder per bucket.
+ * Traffic over an inclusive UTC day range, bucketed for a stacked timeseries
+ * and grouped by zero or more dimensions. Group cardinality is unbounded
+ * (client IP hashes especially), so this never fetches all groups: a totals
+ * query finds the top groups, the timeseries query is filtered to the
+ * chart's top slice, and a bucket-totals query provides the "Other"
+ * remainder per bucket.
  *
  * Returns null when analytics is unconfigured; throws on query failure (the
  * admin page surfaces errors rather than hiding them).
@@ -456,12 +468,34 @@ export async function getAdminBreakdown(
 ): Promise<AdminBreakdown | null> {
   if (!isAnalyticsConfigured()) return null;
 
-  const { hours, bucketHours } = ADMIN_WINDOWS[query.window];
+  // Resolve the range: default to the last 7 days, clamp to [retention, today],
+  // swap reversed bounds. Day offsets relative to NOW() keep the SQL in the
+  // toStartOfDay(NOW() - INTERVAL) form AE's strict validator accepts.
+  const today = new Date().setUTCHours(0, 0, 0, 0);
+  let fromMs = utcDay(query.from) ?? today - 6 * DAY_MS;
+  let toMs = utcDay(query.to) ?? today;
+  if (fromMs > toMs) [fromMs, toMs] = [toMs, fromMs];
+  toMs = Math.min(toMs, today);
+  fromMs = Math.min(Math.max(fromMs, today - RETENTION_DAYS * DAY_MS), toMs);
+  const fromDaysAgo = Math.round((today - fromMs) / DAY_MS);
+  const toDaysAgo = Math.round((today - toMs) / DAY_MS);
+
+  // Bucket size keeps the bar count readable across range lengths.
+  const rangeDays = fromDaysAgo - toDaysAgo + 1;
+  const bucketHours =
+    rangeDays <= 1 ? 1 : rangeDays <= 3 ? 3 : rangeDays <= 7 ? 6 : rangeDays <= 31 ? 24 : 72;
+
   const groupBy = [...new Set(query.groupBy)];
   const filters = [
     SERVED_FILTER,
-    `timestamp > NOW() - INTERVAL '${hours}' HOUR`,
+    `timestamp >= toStartOfDay(NOW() - INTERVAL '${fromDaysAgo}' DAY)`,
   ];
+  if (toDaysAgo > 0) {
+    // Exclusive upper bound: the start of the day after `to`.
+    filters.push(
+      `timestamp < toStartOfDay(NOW() - INTERVAL '${toDaysAgo - 1}' DAY)`,
+    );
+  }
   if (query.account) filters.push(`blob1 = ${sqlQuote(query.account)}`);
   if (query.product) filters.push(`blob2 = ${sqlQuote(query.product)}`);
   const from = `FROM ${CONFIG.analytics.dataset} WHERE ${filters.join(" AND ")}`;
@@ -490,10 +524,10 @@ export async function getAdminBreakdown(
   // Zero-filled bucket grid, epoch-aligned like toStartOfInterval; union in
   // any returned bucket that lands off-grid so data is never dropped.
   const bucketMs = bucketHours * 3_600_000;
-  const now = Date.now();
-  const gridStart = Math.floor((now - hours * 3_600_000) / bucketMs) * bucketMs;
+  const gridEnd = Math.min(Date.now(), toMs + DAY_MS - 1);
+  const gridStart = Math.floor(fromMs / bucketMs) * bucketMs;
   const grid = new Set<string>();
-  for (let t = gridStart; t <= now; t += bucketMs) {
+  for (let t = gridStart; t <= gridEnd; t += bucketMs) {
     grid.add(new Date(t).toISOString());
   }
   for (const row of bucketTotals) grid.add(parseDateTime(row.bucket));
@@ -503,12 +537,15 @@ export async function getAdminBreakdown(
     bucketTotals.map((row) => [parseDateTime(row.bucket), row]),
   );
 
+  const range = { from: isoDay(fromMs), to: isoDay(toMs) };
+
   if (!columns.length) {
     // No grouping: a single "All traffic" series.
     const key = "All traffic";
     return {
       buckets,
       bucketHours,
+      range,
       series: [key],
       points: buckets.map((b): AdminBreakdown["points"][number] => {
         const row = totalByBucket.get(b);
@@ -587,5 +624,5 @@ export async function getAdminBreakdown(
     groups.push({ key: OTHER_KEY, ...remainder });
   }
 
-  return { buckets, bucketHours, series, points, groups, totals };
+  return { buckets, bucketHours, range, series, points, groups, totals };
 }
