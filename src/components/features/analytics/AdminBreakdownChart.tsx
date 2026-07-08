@@ -1,7 +1,19 @@
 "use client";
 
-import { useState } from "react";
-import { Box, Flex, SegmentedControl, Text } from "@radix-ui/themes";
+import { useEffect, useRef, useState } from "react";
+import {
+  Box,
+  Dialog,
+  Flex,
+  IconButton,
+  SegmentedControl,
+  Text,
+} from "@radix-ui/themes";
+import {
+  CodeIcon,
+  EnterFullScreenIcon,
+  ExitFullScreenIcon,
+} from "@radix-ui/react-icons";
 import {
   Bar,
   BarChart,
@@ -27,6 +39,8 @@ interface AdminBreakdownChartProps {
   otherKey: string;
   /** From ?metric= so shared URLs reproduce the toggle state */
   initialMetric?: Metric;
+  /** SQL executed for this view, shown in the "view SQL" dialog */
+  queries?: string[];
 }
 
 const MONTHS = "Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split(" ");
@@ -80,8 +94,26 @@ export function AdminBreakdownChart({
   totals,
   otherKey,
   initialMetric = "bytes",
+  queries = [],
 }: AdminBreakdownChartProps) {
   const [metric, setMetric] = useState<Metric>(initialMetric);
+
+  // Native Fullscreen API on the chart block. Hidden where unsupported
+  // (e.g. iPhone Safari).
+  const rootRef = useRef<HTMLDivElement>(null);
+  const [fullscreen, setFullscreen] = useState(false);
+  const [canFullscreen, setCanFullscreen] = useState(false);
+  useEffect(() => {
+    setCanFullscreen(Boolean(document.fullscreenEnabled));
+    const onChange = () =>
+      setFullscreen(document.fullscreenElement === rootRef.current);
+    document.addEventListener("fullscreenchange", onChange);
+    return () => document.removeEventListener("fullscreenchange", onChange);
+  }, []);
+  const toggleFullscreen = () => {
+    if (document.fullscreenElement) void document.exitFullscreen();
+    else void rootRef.current?.requestFullscreen();
+  };
 
   // Both metrics are already in `points`, so the toggle never refetches —
   // but it lands in the URL (no server round-trip via replaceState) so the
@@ -105,7 +137,20 @@ export function AdminBreakdownChart({
   const colorAt = (s: number) => seriesColor(series[s], s, otherKey);
 
   return (
-    <Box>
+    <Box
+      ref={rootRef}
+      style={
+        fullscreen
+          ? {
+              background: "var(--color-background)",
+              padding: "var(--space-5)",
+              display: "flex",
+              flexDirection: "column",
+              overflow: "auto",
+            }
+          : undefined
+      }
+    >
       <Flex justify="between" align="center" mb="3" gap="3" wrap="wrap">
         <Text size="2" color="gray">
           {range.from} → {range.to}:{" "}
@@ -116,25 +161,80 @@ export function AdminBreakdownChart({
           </Text>{" "}
           {metric === "bytes" ? "served" : "requests"}
         </Text>
-        <SegmentedControl.Root
-          size="1"
-          value={metric}
-          onValueChange={(value) => changeMetric(value as Metric)}
-        >
-          <SegmentedControl.Item value="bytes">Bytes</SegmentedControl.Item>
-          <SegmentedControl.Item value="requests">
-            Requests
-          </SegmentedControl.Item>
-        </SegmentedControl.Root>
+        <Flex gap="2" align="center">
+          <SegmentedControl.Root
+            size="1"
+            value={metric}
+            onValueChange={(value) => changeMetric(value as Metric)}
+          >
+            <SegmentedControl.Item value="bytes">Bytes</SegmentedControl.Item>
+            <SegmentedControl.Item value="requests">
+              Requests
+            </SegmentedControl.Item>
+          </SegmentedControl.Root>
+          {queries.length > 0 && (
+            <Dialog.Root>
+              <Dialog.Trigger>
+                <IconButton size="1" variant="soft" aria-label="View SQL">
+                  <CodeIcon />
+                </IconButton>
+              </Dialog.Trigger>
+              <Dialog.Content maxWidth="720px">
+                <Dialog.Title size="3">Analytics Engine SQL</Dialog.Title>
+                <Dialog.Description size="1" color="gray" mb="3">
+                  The statements that produced this view, in execution order.
+                </Dialog.Description>
+                {queries.map((sql, i) => (
+                  <Box
+                    key={i}
+                    p="2"
+                    mb="2"
+                    style={{
+                      background: "var(--gray-2)",
+                      border: "1px solid var(--gray-4)",
+                      overflowX: "auto",
+                    }}
+                  >
+                    <Text
+                      as="div"
+                      size="1"
+                      style={{
+                        fontFamily: "var(--code-font-family)",
+                        whiteSpace: "pre-wrap",
+                        wordBreak: "break-word",
+                      }}
+                    >
+                      {sql}
+                    </Text>
+                  </Box>
+                ))}
+              </Dialog.Content>
+            </Dialog.Root>
+          )}
+          {canFullscreen && (
+            <IconButton
+              size="1"
+              variant="soft"
+              aria-label={fullscreen ? "Exit fullscreen" : "Fullscreen"}
+              onClick={toggleFullscreen}
+            >
+              {fullscreen ? <ExitFullScreenIcon /> : <EnterFullScreenIcon />}
+            </IconButton>
+          )}
+        </Flex>
       </Flex>
 
       <Box
         // Same as the card chart: keep clicks from moving focus (focus ring)
         // or starting a text selection on the SVG.
         onMouseDown={(event) => event.preventDefault()}
-        style={{ userSelect: "none", WebkitUserSelect: "none" }}
+        style={{
+          userSelect: "none",
+          WebkitUserSelect: "none",
+          ...(fullscreen && { flexGrow: 1, minHeight: 0 }),
+        }}
       >
-        <ResponsiveContainer width="100%" height={320}>
+        <ResponsiveContainer width="100%" height={fullscreen ? "100%" : 320}>
         <BarChart
           data={rows}
           margin={{ top: 4, right: 0, bottom: 0, left: 0 }}

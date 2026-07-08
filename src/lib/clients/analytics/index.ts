@@ -124,6 +124,8 @@ export interface AdminBreakdown {
   totals: { bytes: number; requests: number };
   /** The resolved (validated/clamped) inclusive UTC day range actually queried */
   range: { from: string; to: string };
+  /** The SQL statements executed, for the admin "show SQL" viewer */
+  queries: string[];
 }
 
 /**
@@ -523,17 +525,18 @@ export async function getAdminBreakdown(
   const aggregates = `SUM(_sample_interval * double1) AS bytes, SUM(_sample_interval) AS requests`;
   const bucketExpr = `toStartOfInterval(timestamp, INTERVAL '${bucketHours}' HOUR)`;
 
+  const columns = [...new Set(groupBy.flatMap((d) => ADMIN_DIMENSIONS[d].columns))];
+
   // Per-bucket overall totals — the chart's "Other" baseline and grand total.
   const bucketTotalsSql = `SELECT ${bucketExpr} AS bucket, ${aggregates} ${from} GROUP BY bucket ORDER BY bucket`;
+  const groupTotalsSql = columns.length
+    ? `SELECT ${columns.join(", ")}, ${aggregates} ${from} GROUP BY ${columns.join(", ")} ORDER BY bytes DESC LIMIT ${TABLE_GROUP_LIMIT}`
+    : null;
+  const queries = [bucketTotalsSql, ...(groupTotalsSql ? [groupTotalsSql] : [])];
 
-  const columns = [...new Set(groupBy.flatMap((d) => ADMIN_DIMENSIONS[d].columns))];
   const [bucketTotals, groupTotals] = await Promise.all([
     adminQuery(bucketTotalsSql),
-    columns.length
-      ? adminQuery(
-          `SELECT ${columns.join(", ")}, ${aggregates} ${from} GROUP BY ${columns.join(", ")} ORDER BY bytes DESC LIMIT ${TABLE_GROUP_LIMIT}`,
-        )
-      : Promise.resolve([]),
+    groupTotalsSql ? adminQuery(groupTotalsSql) : Promise.resolve([]),
   ]);
 
   const totals = {
@@ -573,6 +576,7 @@ export async function getAdminBreakdown(
       }),
       groups: totals.bytes || totals.requests ? [{ key, ...totals }] : [],
       totals,
+      queries,
     };
   }
 
@@ -592,9 +596,9 @@ export async function getAdminBreakdown(
           `(${columns.map((c) => `${c} = ${sqlQuote(str(row[c]))}`).join(" AND ")})`,
       )
       .join(" OR ");
-    seriesRows = await adminQuery(
-      `SELECT ${bucketExpr} AS bucket, ${columns.join(", ")}, ${aggregates} ${from} AND (${match}) GROUP BY bucket, ${columns.join(", ")} ORDER BY bucket`,
-    );
+    const seriesSql = `SELECT ${bucketExpr} AS bucket, ${columns.join(", ")}, ${aggregates} ${from} AND (${match}) GROUP BY bucket, ${columns.join(", ")} ORDER BY bucket`;
+    queries.push(seriesSql);
+    seriesRows = await adminQuery(seriesSql);
   }
 
   const chartKeys = chartRows.map((row) => rowKey(row, groupBy));
@@ -644,5 +648,5 @@ export async function getAdminBreakdown(
     groups.push({ key: OTHER_KEY, ...remainder });
   }
 
-  return { buckets, bucketHours, range, series, points, groups, totals };
+  return { buckets, bucketHours, range, series, points, groups, totals, queries };
 }
