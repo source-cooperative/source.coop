@@ -187,6 +187,8 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
   const fromMs = Date.parse(`${range.from}T00:00:00Z`);
   const toMs = Date.parse(`${range.to}T00:00:00Z`);
   const retentionEdge = today - RETENTION_DAYS * DAY_MS;
+  const rangeDays = Math.round((toMs - fromMs) / DAY_MS) + 1;
+  const rangeLabel = `${rangeDays} day${rangeDays === 1 ? "" : "s"}`;
   // Shift the whole range by N days, clamped so its length is preserved at
   // the edges (today forward, ~retention backward).
   const shiftUrl = (days: number) => {
@@ -217,9 +219,9 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
               <Flex gap="1" wrap="wrap" align="center">
                 <ShiftButton
                   label="«"
-                  help="Back 7 days"
+                  help={`Back ${rangeLabel} (the shown range)`}
                   disabled={atRetention}
-                  href={shiftUrl(-7)}
+                  href={shiftUrl(-rangeDays)}
                 />
                 <ShiftButton
                   label="‹"
@@ -252,9 +254,9 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
                 />
                 <ShiftButton
                   label="»"
-                  help="Forward 7 days"
+                  help={`Forward ${rangeLabel} (the shown range)`}
                   disabled={atToday}
-                  href={shiftUrl(7)}
+                  href={shiftUrl(rangeDays)}
                 />
               </Flex>
             </Box>
