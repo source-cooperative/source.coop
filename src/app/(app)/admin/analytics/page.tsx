@@ -34,6 +34,7 @@ import {
   seriesColor,
 } from "@/components/features/analytics";
 import { AdminFiltersForm } from "@/components/features/analytics/AdminFiltersForm";
+import { GroupByChips } from "@/components/features/analytics/GroupByChips";
 import { adminAnalyticsUrl, formatBytes } from "@/lib";
 import { accountUrl } from "@/lib/urls";
 
@@ -277,28 +278,15 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
               <Text as="div" size="1" color="gray" mb="1">
                 Group by
               </Text>
-              <Flex gap="1" wrap="wrap">
-                {(
+              <GroupByChips
+                dimensions={(
                   Object.keys(ADMIN_DIMENSIONS) as AdminDimension[]
-                ).map((dim) => {
-                  const active = state.groupBy.includes(dim);
-                  const groupBy = active
-                    ? state.groupBy.filter((d) => d !== dim)
-                    : [...state.groupBy, dim];
-                  return (
-                    <Button
-                      key={dim}
-                      asChild
-                      size="1"
-                      variant={active ? "solid" : "soft"}
-                    >
-                      <Link href={pageUrl({ ...state, groupBy })}>
-                        {ADMIN_DIMENSIONS[dim].label}
-                      </Link>
-                    </Button>
-                  );
-                })}
-              </Flex>
+                ).map((dim) => ({
+                  key: dim,
+                  label: ADMIN_DIMENSIONS[dim].label,
+                }))}
+                selected={state.groupBy}
+              />
             </Box>
             <Box>
               <Text as="div" size="1" color="gray" mb="1">
