@@ -21,6 +21,7 @@ import {
 import {
   ADMIN_DIMENSIONS,
   BUCKET_INTERVALS,
+  MAX_CHART_BUCKETS,
   OTHER_KEY,
   RETENTION_DAYS,
   getAdminBreakdown,
@@ -313,18 +314,38 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
                     Auto
                   </Link>
                 </Button>
-                {BUCKET_INTERVALS.map((bucket) => (
-                  <Button
-                    key={bucket.hours}
-                    asChild
-                    size="1"
-                    variant={state.bucketHours === bucket.hours ? "solid" : "soft"}
-                  >
-                    <Link href={pageUrl({ ...state, bucketHours: bucket.hours })}>
-                      {bucket.label}
-                    </Link>
-                  </Button>
-                ))}
+                {BUCKET_INTERVALS.map((bucket) => {
+                  // An interval that would draw more bars than the chart can
+                  // hold is disabled rather than silently coarsened.
+                  const maxDays = Math.floor(
+                    (MAX_CHART_BUCKETS * bucket.hours) / 24,
+                  );
+                  const fits = rangeDays <= maxDays;
+                  if (!fits) {
+                    return (
+                      <Tooltip
+                        key={bucket.hours}
+                        content={`${bucket.label} buckets fit ranges up to ${maxDays} days — this range spans ${rangeDays}`}
+                      >
+                        <Button size="1" variant="soft" disabled>
+                          {bucket.label}
+                        </Button>
+                      </Tooltip>
+                    );
+                  }
+                  return (
+                    <Button
+                      key={bucket.hours}
+                      asChild
+                      size="1"
+                      variant={state.bucketHours === bucket.hours ? "solid" : "soft"}
+                    >
+                      <Link href={pageUrl({ ...state, bucketHours: bucket.hours })}>
+                        {bucket.label}
+                      </Link>
+                    </Button>
+                  );
+                })}
               </Flex>
             </Box>
           </Flex>
@@ -369,6 +390,14 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
       ) : (
         <>
           <Card size="2">
+            {state.bucketHours !== undefined &&
+              breakdown.bucketHours !== state.bucketHours && (
+                <Text as="div" size="1" color="orange" mb="2">
+                  Showing {breakdown.bucketHours}-hour buckets — the requested
+                  interval would draw more than {MAX_CHART_BUCKETS} bars over
+                  this range.
+                </Text>
+              )}
             <AdminBreakdownChart
               buckets={breakdown.buckets}
               bucketHours={breakdown.bucketHours}

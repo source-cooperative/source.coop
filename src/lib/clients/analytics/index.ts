@@ -91,6 +91,12 @@ const CHART_SERIES_LIMIT = 6;
 const TABLE_GROUP_LIMIT = 25;
 export const OTHER_KEY = "Other";
 
+/**
+ * Ceiling on chart bars: beyond this the SVG gets unwieldy (stacked rects ×
+ * series). Intervals that would exceed it are escalated to the next size.
+ */
+export const MAX_CHART_BUCKETS = 400;
+
 /** Sum intervals selectable in the admin explorer. */
 export const BUCKET_INTERVALS = [
   { hours: 1, label: "Hourly" },
@@ -497,11 +503,10 @@ export async function getAdminBreakdown(
   // hourly over 92 days would be ~2,200 stacked bars.
   const rangeDays = fromDaysAgo - toDaysAgo + 1;
   const BUCKET_LADDER = [1, 3, 6, 24, 72, 168];
-  const MAX_BUCKETS = 400;
   let bucketHours = BUCKET_INTERVALS.some((b) => b.hours === query.bucketHours)
     ? (query.bucketHours as number)
     : rangeDays <= 1 ? 1 : rangeDays <= 3 ? 3 : rangeDays <= 7 ? 6 : rangeDays <= 31 ? 24 : 72;
-  while ((rangeDays * 24) / bucketHours > MAX_BUCKETS) {
+  while ((rangeDays * 24) / bucketHours > MAX_CHART_BUCKETS) {
     const next = BUCKET_LADDER.find((h) => h > bucketHours);
     if (!next) break;
     bucketHours = next;
