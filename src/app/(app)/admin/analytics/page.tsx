@@ -13,6 +13,7 @@ import {
   Table,
   Text,
   TextField,
+  Tooltip,
 } from "@radix-ui/themes";
 import {
   ExclamationTriangleIcon,
@@ -101,6 +102,32 @@ function pageUrl(state: PageState): string {
   return `${adminAnalyticsUrl()}?${params}`;
 }
 
+/** Range-shift arrow: a tooltipped link button, inert when at a boundary. */
+function ShiftButton({
+  label,
+  help,
+  href,
+  disabled,
+}: {
+  label: string;
+  help: string;
+  href: string;
+  disabled: boolean;
+}) {
+  const button = disabled ? (
+    <Button size="1" variant="soft" disabled>
+      {label}
+    </Button>
+  ) : (
+    <Button size="1" variant="soft" asChild>
+      <Link href={href} aria-label={help}>
+        {label}
+      </Link>
+    </Button>
+  );
+  return <Tooltip content={help}>{button}</Tooltip>;
+}
+
 /** Product/account group keys double as site paths ("acct" or "acct/prod"). */
 function groupHref(key: string, groupBy: AdminDimension[]): string | null {
   if (key === OTHER_KEY || groupBy.length !== 1) return null;
@@ -159,15 +186,22 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
   const range = breakdown?.range ?? { from: isoDay(today - 6 * DAY_MS), to: isoDay(today) };
   const fromMs = Date.parse(`${range.from}T00:00:00Z`);
   const toMs = Date.parse(`${range.to}T00:00:00Z`);
-  const rangeDays = Math.round((toMs - fromMs) / DAY_MS) + 1;
-  const shiftUrl = (direction: -1 | 1) =>
-    pageUrl({
+  const retentionEdge = today - RETENTION_DAYS * DAY_MS;
+  // Shift the whole range by N days, clamped so its length is preserved at
+  // the edges (today forward, ~retention backward).
+  const shiftUrl = (days: number) => {
+    const deltaMs =
+      days > 0
+        ? Math.min(days * DAY_MS, today - toMs)
+        : Math.max(days * DAY_MS, retentionEdge - fromMs);
+    return pageUrl({
       ...state,
-      from: isoDay(fromMs + direction * rangeDays * DAY_MS),
-      to: isoDay(Math.min(toMs + direction * rangeDays * DAY_MS, today)),
+      from: isoDay(fromMs + deltaMs),
+      to: isoDay(toMs + deltaMs),
     });
+  };
   const atToday = toMs >= today;
-  const atRetention = fromMs <= today - RETENTION_DAYS * DAY_MS;
+  const atRetention = fromMs <= retentionEdge;
 
   return (
     <Flex direction="column" gap="4">
@@ -178,12 +212,21 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
           <Flex gap="4" wrap="wrap">
             <Box>
               <Text as="div" size="1" color="gray" mb="1">
-                Date range (UTC) — {range.from} → {range.to}
+                Date range (UTC)
               </Text>
               <Flex gap="1" wrap="wrap" align="center">
-                <Button size="1" variant="soft" disabled={atRetention} asChild={!atRetention}>
-                  {atRetention ? <>‹</> : <Link href={shiftUrl(-1)}>‹</Link>}
-                </Button>
+                <ShiftButton
+                  label="«"
+                  help="Back 7 days"
+                  disabled={atRetention}
+                  href={shiftUrl(-7)}
+                />
+                <ShiftButton
+                  label="‹"
+                  help="Back 1 day"
+                  disabled={atRetention}
+                  href={shiftUrl(-1)}
+                />
                 {PRESETS.map((preset) => {
                   const from = isoDay(today - (preset.days - 1) * DAY_MS);
                   const to = isoDay(today);
@@ -201,9 +244,18 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
                     </Button>
                   );
                 })}
-                <Button size="1" variant="soft" disabled={atToday} asChild={!atToday}>
-                  {atToday ? <>›</> : <Link href={shiftUrl(1)}>›</Link>}
-                </Button>
+                <ShiftButton
+                  label="›"
+                  help="Forward 1 day"
+                  disabled={atToday}
+                  href={shiftUrl(1)}
+                />
+                <ShiftButton
+                  label="»"
+                  help="Forward 7 days"
+                  disabled={atToday}
+                  href={shiftUrl(7)}
+                />
               </Flex>
             </Box>
             <Box>
