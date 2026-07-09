@@ -219,6 +219,8 @@ describe("getProductBreakdowns", () => {
     expect(fileSql).toContain("ORDER BY requests DESC");
     expect(fileSql).toContain("LIMIT 10");
     expect(fileSql).toContain("blob1 = 'acct'");
+    // Keyless product GETs (blob3 = '') are probes/listings, not files
+    expect(fileSql).toContain("blob3 != ''");
   });
 
   it("returns no others aggregate when few countries", async () => {

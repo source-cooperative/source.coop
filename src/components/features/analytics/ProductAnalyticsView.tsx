@@ -200,13 +200,9 @@ export function ProductAnalyticsView({
                   <Table.Row key={file.path}>
                     <Table.RowHeaderCell>
                       <Text size="1" style={mono()}>
-                        {file.path ? (
-                          <Link href={objectUrl(accountId, productId, file.path)}>
-                            {file.path}
-                          </Link>
-                        ) : (
-                          "(unknown)"
-                        )}
+                        <Link href={objectUrl(accountId, productId, file.path)}>
+                          {file.path}
+                        </Link>
                       </Text>
                     </Table.RowHeaderCell>
                     <Table.Cell justify="end">

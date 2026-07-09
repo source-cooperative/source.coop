@@ -389,8 +389,10 @@ export async function getProductBreakdowns(
       usageQuery(
         `SELECT blob6 AS country, SUM(_sample_interval) AS requests ${from} GROUP BY country ORDER BY requests DESC`,
       ),
+      // blob3 = '' is a keyless product GET (trailing-slash/probe requests,
+      // not a real file) — keep those out of the top-files ranking.
       usageQuery(
-        `SELECT blob3 AS file, SUM(_sample_interval) AS requests, SUM(_sample_interval * double1) AS bytes ${from} GROUP BY file ORDER BY requests DESC LIMIT ${FILE_LIST_LIMIT}`,
+        `SELECT blob3 AS file, SUM(_sample_interval) AS requests, SUM(_sample_interval * double1) AS bytes ${from} AND blob3 != '' GROUP BY file ORDER BY requests DESC LIMIT ${FILE_LIST_LIMIT}`,
       ),
     ]);
 
