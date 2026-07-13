@@ -486,7 +486,9 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
                 const color = seriesColors.get(group.key);
                 const href = groupHref(group.key, state.groupBy);
                 return (
-                  <Table.Row key={group.key}>
+                  // align="center": the swatch/meter cells hold block-level
+                  // Flexes that otherwise top-align against the text cells.
+                  <Table.Row key={group.key} align="center">
                     <Table.Cell justify="end">
                       <Text size="1" color="gray" style={mono()}>
                         {/* The Other remainder isn't a ranked group */}
