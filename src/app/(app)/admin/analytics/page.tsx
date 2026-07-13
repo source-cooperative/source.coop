@@ -266,10 +266,14 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
           (group by + interval), split by the stats-row hairline. */}
       <Card size="2">
         <Flex gap="5" wrap="wrap">
+          {/* flexBasis 0: zones split the row by ratio instead of claiming
+              their content width, so GROUP BY/INTERVAL stay to the right
+              (inner chip rows wrap within the zone); minWidth only forces
+              stacking on truly narrow screens. */}
           <Flex
             direction="column"
             gap="3"
-            style={{ flexGrow: 1 }}
+            style={{ flexGrow: 3, flexBasis: 0, minWidth: 300 }}
           >
             <Box>
               <Box mb="1">
@@ -345,11 +349,15 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
 
           <Box
             width="1px"
-            display={{ initial: "none", md: "block" }}
+            display={{ initial: "none", sm: "block" }}
             style={{ background: "var(--gray-4)" }}
           />
 
-          <Flex direction="column" gap="3" style={{ flexGrow: 1 }}>
+          <Flex
+            direction="column"
+            gap="3"
+            style={{ flexGrow: 2, flexBasis: 0, minWidth: 260 }}
+          >
             <Box>
               <Box mb="1">
                 <MonoLabel>Group by</MonoLabel>
