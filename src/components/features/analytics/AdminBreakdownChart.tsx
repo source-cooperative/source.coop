@@ -24,6 +24,7 @@ import {
   YAxis,
 } from "recharts";
 import { formatBytes } from "@/lib/format";
+import { mono } from "./panels";
 import { seriesColor } from "./palette";
 
 type Metric = "bytes" | "requests";
@@ -152,7 +153,7 @@ export function AdminBreakdownChart({
       }
     >
       <Flex justify="between" align="center" mb="3" gap="3" wrap="wrap">
-        <Text size="2" color="gray">
+        <Text size="2" color="gray" style={mono()}>
           {range.from} → {range.to}:{" "}
           <Text weight="bold" color="gray" highContrast>
             {metric === "bytes"
@@ -244,14 +245,14 @@ export function AdminBreakdownChart({
           <XAxis
             dataKey="date"
             tickFormatter={(iso: string) => tickLabel(iso, bucketHours)}
-            tick={{ fill: "var(--gray-11)", fontSize: 11 }}
+            tick={{ fill: "var(--gray-11)", fontSize: 11, fontFamily: "var(--code-font-family)" }}
             tickLine={false}
             axisLine={{ stroke: "var(--gray-a6)" }}
             minTickGap={24}
           />
           <YAxis
             tickFormatter={(value: number) => formatMetric(value, metric)}
-            tick={{ fill: "var(--gray-11)", fontSize: 11 }}
+            tick={{ fill: "var(--gray-11)", fontSize: 11, fontFamily: "var(--code-font-family)" }}
             tickLine={false}
             axisLine={false}
             width={64}
@@ -272,12 +273,12 @@ export function AdminBreakdownChart({
               return (
                 <Box
                   p="2"
-                  style={{
+                  style={mono({
                     background: "var(--color-panel-solid)",
                     border: "1px solid var(--gray-6)",
                     boxShadow: "var(--shadow-3)",
                     maxWidth: 360,
-                  }}
+                  })}
                 >
                   <Text as="div" size="1" weight="bold" mb="1">
                     {bucketLabel(String(label), bucketHours)}
@@ -353,7 +354,7 @@ export function AdminBreakdownChart({
               flexShrink="0"
               style={{ background: colorAt(s) }}
             />
-            <Text size="1" color="gray">
+            <Text size="1" color="gray" style={mono()}>
               {key}
             </Text>
           </Flex>

@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Button, Flex } from "@radix-ui/themes";
+import { Button, Flex, Spinner } from "@radix-ui/themes";
 
-const DEBOUNCE_MS = 1000;
+const DEBOUNCE_MS = 500;
 
 interface GroupByChipsProps {
   dimensions: { key: string; label: string }[];
@@ -20,6 +20,8 @@ interface GroupByChipsProps {
 export function GroupByChips({ dimensions, selected }: GroupByChipsProps) {
   const router = useRouter();
   const [active, setActive] = useState(selected);
+  const [waiting, setWaiting] = useState(false);
+  const [navigating, startTransition] = useTransition();
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   // A pending push must die with the page: it reads window.location when it
@@ -31,17 +33,19 @@ export function GroupByChips({ dimensions, selected }: GroupByChipsProps) {
       ? active.filter((k) => k !== key)
       : [...active, key];
     setActive(next);
+    setWaiting(true);
     clearTimeout(timer.current);
     timer.current = setTimeout(() => {
+      setWaiting(false);
       const url = new URL(window.location.href);
       // Present-but-empty means "no grouping", distinct from the default.
       url.searchParams.set("groupBy", next.join(","));
-      router.push(url.pathname + url.search);
+      startTransition(() => router.push(url.pathname + url.search));
     }, DEBOUNCE_MS);
   };
 
   return (
-    <Flex gap="1" wrap="wrap">
+    <Flex gap="1" wrap="wrap" align="center">
       {dimensions.map((dim) => (
         <Button
           key={dim.key}
@@ -52,6 +56,7 @@ export function GroupByChips({ dimensions, selected }: GroupByChipsProps) {
           {dim.label}
         </Button>
       ))}
+      {(waiting || navigating) && <Spinner size="1" />}
     </Flex>
   );
 }

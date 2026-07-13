@@ -1,9 +1,9 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { Button, Flex, Text, TextField } from "@radix-ui/themes";
 
-const DEBOUNCE_MS = 1000;
+const DEBOUNCE_MS = 500;
 
 interface AdminFiltersFormProps {
   action: string;
@@ -13,9 +13,10 @@ interface AdminFiltersFormProps {
 }
 
 /**
- * The admin explorer's filter form. Edits auto-apply after a quiet second —
- * the debounce lets several edits (both dates, a couple of filters) land in
- * one reload — while Enter or Apply still submits immediately.
+ * The admin explorer's filter form. Edits auto-apply after a brief quiet
+ * period — the debounce lets several edits (both dates, a couple of filters)
+ * land in one reload — while Enter or Apply still submits immediately. The
+ * Apply button spins from the first detected edit until the reload lands.
  */
 export function AdminFiltersForm({
   action,
@@ -24,8 +25,10 @@ export function AdminFiltersForm({
 }: AdminFiltersFormProps) {
   const form = useRef<HTMLFormElement>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const [pending, setPending] = useState(false);
 
   const submitSoon = () => {
+    setPending(true);
     clearTimeout(timer.current);
     timer.current = setTimeout(() => form.current?.requestSubmit(), DEBOUNCE_MS);
   };
@@ -36,7 +39,10 @@ export function AdminFiltersForm({
       method="GET"
       action={action}
       onChange={submitSoon}
-      onSubmit={() => clearTimeout(timer.current)}
+      onSubmit={() => {
+        clearTimeout(timer.current);
+        setPending(true);
+      }}
     >
       {Object.entries(hidden).map(([name, value]) => (
         <input key={name} type="hidden" name={name} value={value} />
@@ -71,7 +77,7 @@ export function AdminFiltersForm({
           defaultValue={defaults.product}
           placeholder="Filter by product id"
         />
-        <Button size="1" variant="soft" type="submit">
+        <Button size="1" variant="soft" type="submit" loading={pending}>
           Apply
         </Button>
       </Flex>

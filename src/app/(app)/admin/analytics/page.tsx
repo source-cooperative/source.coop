@@ -33,7 +33,12 @@ import {
   AdminBreakdownChart,
   seriesColor,
 } from "@/components/features/analytics";
-import { HELP, Stat } from "@/components/features/analytics/panels";
+import {
+  HELP,
+  MonoLabel,
+  mono,
+  Stat,
+} from "@/components/features/analytics/panels";
 import { AdminFiltersForm } from "@/components/features/analytics/AdminFiltersForm";
 import { GroupByChips } from "@/components/features/analytics/GroupByChips";
 import { adminAnalyticsUrl, formatBytes } from "@/lib";
@@ -234,9 +239,9 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
         <Flex direction="column" gap="3">
           <Flex gap="4" wrap="wrap">
             <Box>
-              <Text as="div" size="1" color="gray" mb="1">
-                Date range (UTC)
-              </Text>
+              <Box mb="1">
+                <MonoLabel>Date range (UTC)</MonoLabel>
+              </Box>
               <Flex gap="1" wrap="wrap" align="center">
                 <ShiftButton
                   label="«"
@@ -282,9 +287,9 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
               </Flex>
             </Box>
             <Box>
-              <Text as="div" size="1" color="gray" mb="1">
-                Group by
-              </Text>
+              <Box mb="1">
+                <MonoLabel>Group by</MonoLabel>
+              </Box>
               <GroupByChips
                 dimensions={(
                   Object.keys(ADMIN_DIMENSIONS) as AdminDimension[]
@@ -296,9 +301,9 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
               />
             </Box>
             <Box>
-              <Text as="div" size="1" color="gray" mb="1">
-                Interval
-              </Text>
+              <Box mb="1">
+                <MonoLabel>Interval</MonoLabel>
+              </Box>
               <Flex gap="1" wrap="wrap">
                 <Button
                   asChild
@@ -445,19 +450,23 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
             <Table.Header>
               <Table.Row>
                 <Table.ColumnHeaderCell>
-                  {state.groupBy.length
-                    ? state.groupBy
-                        .map((d) => ADMIN_DIMENSIONS[d].label)
-                        .join(" · ")
-                    : "Scope"}
+                  <MonoLabel>
+                    {state.groupBy.length
+                      ? state.groupBy
+                          .map((d) => ADMIN_DIMENSIONS[d].label)
+                          .join(" · ")
+                      : "Scope"}
+                  </MonoLabel>
                 </Table.ColumnHeaderCell>
                 <Table.ColumnHeaderCell justify="end">
-                  Data served
+                  <MonoLabel help={HELP.served}>Data served</MonoLabel>
                 </Table.ColumnHeaderCell>
                 <Table.ColumnHeaderCell justify="end">
-                  Requests
+                  <MonoLabel help={HELP.requests}>Requests</MonoLabel>
                 </Table.ColumnHeaderCell>
-                <Table.ColumnHeaderCell>Share</Table.ColumnHeaderCell>
+                <Table.ColumnHeaderCell>
+                  <MonoLabel>Share</MonoLabel>
+                </Table.ColumnHeaderCell>
               </Table.Row>
             </Table.Header>
             <Table.Body>
@@ -479,18 +488,24 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
                             background: color ?? "var(--gray-4)",
                           }}
                         />
-                        {href ? (
-                          <Link href={href}>{group.key}</Link>
-                        ) : (
-                          group.key
-                        )}
+                        <Text size="1" style={mono()}>
+                          {href ? (
+                            <Link href={href}>{group.key}</Link>
+                          ) : (
+                            group.key
+                          )}
+                        </Text>
                       </Flex>
                     </Table.RowHeaderCell>
                     <Table.Cell justify="end">
-                      {formatBytes(group.bytes)}
+                      <Text size="1" style={mono()}>
+                        {formatBytes(group.bytes)}
+                      </Text>
                     </Table.Cell>
                     <Table.Cell justify="end">
-                      {numberFormat.format(Math.round(group.requests))}
+                      <Text size="1" style={mono()}>
+                        {numberFormat.format(Math.round(group.requests))}
+                      </Text>
                     </Table.Cell>
                     <Table.Cell>
                       <Flex align="center" gap="2">
@@ -508,7 +523,7 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
                             }}
                           />
                         </Box>
-                        <Text size="1" color="gray">
+                        <Text size="1" color="gray" style={mono()}>
                           {share.toFixed(1)}%
                         </Text>
                       </Flex>
