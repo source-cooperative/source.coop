@@ -132,6 +132,10 @@ export function AdminBreakdownChart({
   const [metric, setMetric] = useState<Metric>(initialMetric);
   const router = useRouter();
 
+  // History back/forward re-renders this mounted component with a different
+  // ?metric= — resync the local (instant-toggle) copy.
+  useEffect(() => setMetric(initialMetric), [initialMetric]);
+
   // Click/drag drill-down: a click narrows the range to that bucket, a drag
   // to the spanned buckets, both at the next finer interval. router.push
   // adds a history entry, so the browser back button zooms out.

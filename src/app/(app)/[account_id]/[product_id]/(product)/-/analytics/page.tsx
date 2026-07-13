@@ -2,6 +2,7 @@ import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Box, Button, Card, Flex, Heading, Text } from "@radix-ui/themes";
+import { LockClosedIcon } from "@radix-ui/react-icons";
 import { getPageSession } from "@/lib";
 import { isAuthorized } from "@/lib/api/authz";
 import { Actions } from "@/types/shared";
@@ -77,6 +78,14 @@ export default async function ProductAnalyticsPage({
       <Heading size="7" my="4">
         {product.title || product_id}
       </Heading>
+
+      <Flex align="center" gap="1" mb="3">
+        <LockClosedIcon width="12" height="12" color="var(--gray-9)" />
+        <Text size="1" color="gray">
+          Visible only to this product&apos;s owners, maintainers, and site
+          admins.
+        </Text>
+      </Flex>
 
       <Card size="2">
         <SectionHeader

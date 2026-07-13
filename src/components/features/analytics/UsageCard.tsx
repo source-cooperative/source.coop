@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Box, Card, Text } from "@radix-ui/themes";
+import { Box, Card, Flex, Text } from "@radix-ui/themes";
+import { LockClosedIcon } from "@radix-ui/react-icons";
 import { SectionHeader } from "@/components/core/SectionHeader";
 import { getUsage } from "@/lib/clients/analytics";
 import { productAnalyticsUrl } from "@/lib/urls";
@@ -60,6 +61,13 @@ export async function UsageCard({
             <Link href={productAnalyticsUrl(accountId, productId)}>
               <Text size="1">View all analytics →</Text>
             </Link>
+            <Flex align="center" gap="1" mt="2">
+              <LockClosedIcon width="11" height="11" color="var(--gray-9)" />
+              <Text size="1" color="gray">
+                The Users tab and full analytics are visible only to owners
+                and maintainers.
+              </Text>
+            </Flex>
           </Box>
         )}
       </SectionHeader>

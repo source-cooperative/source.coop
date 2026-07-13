@@ -319,6 +319,9 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
               </Flex>
             </Box>
             <AdminFiltersForm
+              // Remount on history traversal: the inputs are uncontrolled
+              // (defaultValue), so prop changes alone never reach them.
+              key={`${range.from}|${range.to}|${state.account ?? ""}|${state.product ?? ""}`}
               action={adminAnalyticsUrl()}
               defaults={{
                 // Date inputs are day-grained; a drilled sub-day range
@@ -350,6 +353,9 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
                 <MonoLabel>Group by</MonoLabel>
               </Box>
               <GroupByChips
+                // Remount when the URL-derived selection changes (history
+                // back/forward) — local chip state doesn't watch props.
+                key={state.groupBy.join(",")}
                 dimensions={(
                   Object.keys(ADMIN_DIMENSIONS) as AdminDimension[]
                 ).map((dim) => ({
