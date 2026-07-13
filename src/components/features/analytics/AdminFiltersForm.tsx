@@ -48,8 +48,10 @@ export function AdminFiltersForm({
       {Object.entries(hidden).map(([name, value]) => (
         <input key={name} type="hidden" name={name} value={value} />
       ))}
-      <Flex direction="column" gap="3">
-        <Flex gap="2" align="center" wrap="wrap">
+      {/* Dates stack vertically so the form stays narrow enough for the
+          FILTER BY block to sit beside them instead of wrapping under. */}
+      <Flex gap="5" wrap="wrap">
+        <Flex direction="column" gap="2">
           <TextField.Root
             size="1"
             type="datetime-local"
@@ -57,9 +59,6 @@ export function AdminFiltersForm({
             defaultValue={defaults.from}
             aria-label="From (UTC)"
           />
-          <Text size="1" color="gray">
-            →
-          </Text>
           <TextField.Root
             size="1"
             type="datetime-local"
@@ -67,8 +66,8 @@ export function AdminFiltersForm({
             defaultValue={defaults.to}
             aria-label="To (UTC, exclusive)"
           />
-          <Text size="1" color="gray">
-            end exclusive
+          <Text color="gray" style={{ fontSize: 11 }}>
+            UTC · end exclusive
           </Text>
         </Flex>
         <Box>
