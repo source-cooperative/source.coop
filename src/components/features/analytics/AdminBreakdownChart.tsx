@@ -24,7 +24,8 @@ import {
   YAxis,
 } from "recharts";
 import { formatBytes } from "@/lib/format";
-import { mono } from "./panels";
+import { Stat } from "./panels";
+import { HELP, mono } from "./style";
 import { seriesColor } from "./palette";
 
 type Metric = "bytes" | "requests";
@@ -32,11 +33,16 @@ type Metric = "bytes" | "requests";
 interface AdminBreakdownChartProps {
   buckets: string[];
   bucketHours: number;
-  /** Inclusive UTC day range the data covers */
-  range: { from: string; to: string };
   series: string[];
   points: Record<string, { bytes: number; requests: number }>[];
-  totals: { bytes: number; requests: number };
+  totals: {
+    bytes: number;
+    requests: number;
+    uniqueIps: number;
+    countries: number;
+  };
+  /** Elapsed wall-clock seconds within the range, for the bandwidth stat */
+  elapsedSeconds: number;
   otherKey: string;
   /** From ?metric= so shared URLs reproduce the toggle state */
   initialMetric?: Metric;
@@ -75,10 +81,16 @@ function formatMetric(value: number, metric: Metric): string {
   return metric === "bytes" ? formatBytes(value) : compact.format(value);
 }
 
-/** Average request rate over one bucket, e.g. "~0.43/s". */
-function requestRate(count: number, bucketHours: number): string {
-  const perSec = count / (bucketHours * 3600);
-  return `~${perSec >= 10 ? compact.format(perSec) : perSec.toFixed(2)}/s`;
+/** formatBytes chokes on sub-1 values (negative log); pin those to bytes. */
+const byteRate = (perSec: number) =>
+  `${perSec > 0 && perSec < 1 ? `${perSec.toFixed(2)} B` : formatBytes(perSec, 1)}/s`;
+
+/** Average rate over one bucket: "~0.43/s" requests, "~12.3 MB/s" bytes. */
+function rate(value: number, bucketHours: number, metric: Metric): string {
+  const perSec = value / (bucketHours * 3600);
+  return metric === "bytes"
+    ? `~${byteRate(perSec)}`
+    : `~${perSec >= 10 ? compact.format(perSec) : perSec.toFixed(2)}/s`;
 }
 
 /**
@@ -89,10 +101,10 @@ function requestRate(count: number, bucketHours: number): string {
 export function AdminBreakdownChart({
   buckets,
   bucketHours,
-  range,
   series,
   points,
   totals,
+  elapsedSeconds,
   otherKey,
   initialMetric = "bytes",
   queries = [],
@@ -152,16 +164,46 @@ export function AdminBreakdownChart({
           : undefined
       }
     >
-      <Flex justify="between" align="center" mb="3" gap="3" wrap="wrap">
-        <Text size="1" color="gray" style={mono()}>
-          {range.from} → {range.to}:{" "}
-          <Text weight="bold" color="gray" highContrast>
-            {metric === "bytes"
-              ? formatBytes(totals.bytes)
-              : plain.format(totals.requests)}
-          </Text>{" "}
-          {metric === "bytes" ? "served" : "requests"}
-        </Text>
+      <Flex
+        justify="between"
+        align="center"
+        mb="4"
+        pb="3"
+        gap="4"
+        wrap="wrap"
+        style={{ borderBottom: "1px solid var(--gray-4)" }}
+      >
+        <Flex style={{ flexGrow: 1 }}>
+          <Stat
+            label="Requests"
+            help={HELP.requests}
+            value={plain.format(Math.round(totals.requests))}
+          />
+          <Stat
+            label="Data served"
+            help={HELP.served}
+            value={formatBytes(totals.bytes, 1)}
+            divider
+          />
+          <Stat
+            label="Avg bandwidth"
+            help={HELP.bandwidth}
+            value={byteRate(totals.bytes / elapsedSeconds)}
+            divider
+          />
+          <Stat
+            label="Unique IPs"
+            help={HELP.uniqueIps}
+            value={plain.format(totals.uniqueIps)}
+            divider
+          />
+          <Stat
+            label="Countries"
+            help={HELP.countries}
+            value={plain.format(totals.countries)}
+            divider
+          />
+        </Flex>
         <Flex gap="2" align="center">
           <SegmentedControl.Root
             size="1"
@@ -300,12 +342,10 @@ export function AdminBreakdownChart({
                       </Text>
                       <Text size="1" weight="medium">
                         {formatMetric(entry.value, metric)}
-                        {metric === "requests" && (
-                          <Text color="gray">
-                            {" "}
-                            {requestRate(entry.value, bucketHours)}
-                          </Text>
-                        )}
+                        <Text color="gray">
+                          {" "}
+                          {rate(entry.value, bucketHours, metric)}
+                        </Text>
                       </Text>
                     </Flex>
                   ))}
@@ -317,12 +357,10 @@ export function AdminBreakdownChart({
                       </Text>
                       <Text size="1" weight="bold">
                         {formatMetric(total, metric)}
-                        {metric === "requests" && (
-                          <Text color="gray" weight="regular">
-                            {" "}
-                            {requestRate(total, bucketHours)}
-                          </Text>
-                        )}
+                        <Text color="gray" weight="regular">
+                          {" "}
+                          {rate(total, bucketHours, metric)}
+                        </Text>
                       </Text>
                     </Flex>
                   )}

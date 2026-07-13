@@ -35,7 +35,7 @@ import {
 } from "@/components/features/analytics";
 // Components come from the client module; HELP/mono must come from the
 // plain style module — client-module exports can't be called on the server.
-import { MonoLabel, Stat } from "@/components/features/analytics/panels";
+import { MonoLabel } from "@/components/features/analytics/panels";
 import { HELP, mono } from "@/components/features/analytics/style";
 import { AdminFiltersForm } from "@/components/features/analytics/AdminFiltersForm";
 import { GroupByChips } from "@/components/features/analytics/GroupByChips";
@@ -388,41 +388,6 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
       ) : (
         <>
           <Card size="2">
-            <Flex
-              mb="4"
-              pb="3"
-              style={{ borderBottom: "1px solid var(--gray-4)" }}
-            >
-              <Stat
-                label="Requests"
-                help={HELP.requests}
-                value={numberFormat.format(Math.round(breakdown.totals.requests))}
-              />
-              <Stat
-                label="Data served"
-                help={HELP.served}
-                value={formatBytes(breakdown.totals.bytes, 1)}
-                divider
-              />
-              <Stat
-                label="Avg bandwidth"
-                help={HELP.bandwidth}
-                value={`${formatBytes(breakdown.totals.bytes / elapsedSeconds, 1)}/s`}
-                divider
-              />
-              <Stat
-                label="Unique IPs"
-                help={HELP.uniqueIps}
-                value={numberFormat.format(breakdown.totals.uniqueIps)}
-                divider
-              />
-              <Stat
-                label="Countries"
-                help={HELP.countries}
-                value={numberFormat.format(breakdown.totals.countries)}
-                divider
-              />
-            </Flex>
             {state.bucketHours !== undefined &&
               breakdown.bucketHours !== state.bucketHours && (
                 <Text as="div" size="1" color="orange" mb="2">
@@ -434,12 +399,12 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
             <AdminBreakdownChart
               buckets={breakdown.buckets}
               bucketHours={breakdown.bucketHours}
-              range={breakdown.range}
               initialMetric={state.metric}
               queries={breakdown.queries}
               series={breakdown.series}
               points={breakdown.points}
               totals={breakdown.totals}
+              elapsedSeconds={elapsedSeconds}
               otherKey={OTHER_KEY}
             />
           </Card>
