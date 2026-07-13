@@ -33,12 +33,10 @@ import {
   AdminBreakdownChart,
   seriesColor,
 } from "@/components/features/analytics";
-import {
-  HELP,
-  MonoLabel,
-  mono,
-  Stat,
-} from "@/components/features/analytics/panels";
+// Components come from the client module; HELP/mono must come from the
+// plain style module — client-module exports can't be called on the server.
+import { MonoLabel, Stat } from "@/components/features/analytics/panels";
+import { HELP, mono } from "@/components/features/analytics/style";
 import { AdminFiltersForm } from "@/components/features/analytics/AdminFiltersForm";
 import { GroupByChips } from "@/components/features/analytics/GroupByChips";
 import { adminAnalyticsUrl, formatBytes } from "@/lib";

@@ -15,6 +15,9 @@ import {
 } from "recharts";
 import type { UsagePoint, UsageUsers } from "@/lib/clients/analytics";
 import { formatDateSSR } from "@/lib/format";
+import { HELP, mono } from "./style";
+
+export { HELP, mono };
 
 // Deterministic across server and client — no-arg toLocaleString() follows
 // the runtime locale and causes hydration mismatches.
@@ -34,25 +37,6 @@ export function parseActiveIndex(raw: unknown, length: number): number | null {
       : NaN;
   return Number.isInteger(index) && index >= 0 && index < length ? index : null;
 }
-
-export const HELP = {
-  downloads: "Number of successful downloads.",
-  served: "Total bytes downloaded.",
-  bandwidth: "Data served divided by the elapsed time in the range.",
-  requests: "Successful data requests (GET, status 200/206).",
-  countries: "Distinct countries requests originated from.",
-  dailyAvg: "Average downloads per day over the period.",
-  uniqueIps: "Distinct IP addresses that downloaded data in this period.",
-  registered: "Distinct signed-in users who downloaded data in this period.",
-  anon: "Download requests made without a signed-in user.",
-  frequency:
-    "How many times each unique IP address downloaded data in this period.",
-};
-
-export const mono = (extra?: React.CSSProperties): React.CSSProperties => ({
-  fontFamily: "var(--code-font-family)",
-  ...extra,
-});
 
 export function MonoLabel({
   children,
