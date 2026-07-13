@@ -140,6 +140,12 @@ describe("getUsage", () => {
     // Every earlier day is zero-filled
     expect(usage!.days[0]).toMatchObject({ bytes: 0, requests: 0 });
     expect(usage!.totals).toEqual({ bytes: 1024, requests: 7, countries: 2 });
+    // Dense 1..30 histogram plus one overflow bin; the 25× IP lands on its
+    // exact count, the 0.4 sampled fraction floors into 1.
+    const distribution = Array.from({ length: 31 }, (_, i) => ({
+      downloads: i + 1,
+      ips: [1, 3, 7, 25].filter((d) => d === i + 1).length + (i === 0 ? 1 : 0),
+    }));
     expect(usage!.users).toEqual({
       uniqueIps: 5,
       registered: 2,
@@ -150,6 +156,7 @@ describe("getUsage", () => {
         { label: "6–20×", count: 1 },
         { label: "20×+", count: 1 },
       ],
+      distribution,
     });
   });
 

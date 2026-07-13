@@ -4,7 +4,7 @@
  * Shared client-side pieces for the analytics card (UsagePanel) and the
  * product analytics page (ProductAnalyticsView).
  */
-import { Box, Flex, Text, Tooltip } from "@radix-ui/themes";
+import { Box, Flex, Grid, Text, Tooltip } from "@radix-ui/themes";
 import {
   BarChart,
   Bar,
@@ -12,7 +12,10 @@ import {
   XAxis,
   YAxis,
   ResponsiveContainer,
+  Tooltip as ChartTooltip,
 } from "recharts";
+// Types only — a value import would drag the server data layer (CONFIG,
+// LOGGER) into the client bundle.
 import type { UsagePoint, UsageUsers } from "@/lib/clients/analytics";
 import { formatDateSSR } from "@/lib/format";
 import { HELP, mono } from "./style";
@@ -181,7 +184,14 @@ export function DownloadsChart({
 }
 
 /** USERS tab body: unique IPs, registered vs anonymous usage, per-IP frequency. */
-export function UsersContent({ users }: { users: UsageUsers }) {
+export function UsersContent({
+  users,
+  wide,
+}: {
+  users: UsageUsers;
+  /** Side-by-side band/histogram layout — for page-width hosts, not the card */
+  wide?: boolean;
+}) {
   const maxFrequency = Math.max(1, users.uniqueIps);
   return (
     <>
@@ -206,44 +216,131 @@ export function UsersContent({ users }: { users: UsageUsers }) {
       </Flex>
 
       <Box mt="3">
-        <MonoLabel help={HELP.frequency}>
-          Unique IPs · Download frequency
-        </MonoLabel>
         {users.uniqueIps === 0 ? (
-          <Text as="div" size="1" color="gray" mt="2">
-            No download activity in this period.
-          </Text>
+          <>
+            <MonoLabel help={HELP.frequency}>
+              Unique IPs · Download frequency
+            </MonoLabel>
+            <Text as="div" size="1" color="gray" mt="2">
+              No download activity in this period.
+            </Text>
+          </>
         ) : (
-          <Box mt="2">
-            {users.frequency.map(({ label, count }) => (
-              <Flex key={label} align="center" gap="2" mb="2">
-                <Text size="1" style={mono({ width: 42, flexShrink: 0 })}>
-                  {label}
-                </Text>
-                <Box
-                  height="10px"
-                  style={{ flexGrow: 1, background: "var(--gray-4)" }}
-                >
-                  <Box
-                    height="10px"
-                    style={{
-                      width: `${(count / maxFrequency) * 100}%`,
-                      background: "var(--gray-12)",
-                    }}
-                  />
-                </Box>
-                <Text
-                  size="1"
-                  color="gray"
-                  style={mono({ width: 40, flexShrink: 0, textAlign: "right" })}
-                >
-                  {numberFormat.format(count)}
-                </Text>
-              </Flex>
-            ))}
-          </Box>
+          <Grid columns={wide ? { initial: "1", sm: "2" } : "1"} gap="4">
+            <Box>
+              <MonoLabel help={HELP.frequency}>By frequency band</MonoLabel>
+              <Box mt="2">
+                {users.frequency.map(({ label, count }) => (
+                  <Flex key={label} align="center" gap="2" mb="2">
+                    <Text size="1" style={mono({ width: 42, flexShrink: 0 })}>
+                      {label}
+                    </Text>
+                    <Box
+                      height="10px"
+                      style={{ flexGrow: 1, background: "var(--gray-4)" }}
+                    >
+                      <Box
+                        height="10px"
+                        style={{
+                          width: `${(count / maxFrequency) * 100}%`,
+                          background: "var(--gray-12)",
+                        }}
+                      />
+                    </Box>
+                    <Text
+                      size="1"
+                      color="gray"
+                      style={mono({ width: 40, flexShrink: 0, textAlign: "right" })}
+                    >
+                      {numberFormat.format(count)}
+                    </Text>
+                  </Flex>
+                ))}
+              </Box>
+            </Box>
+            <Box>
+              <MonoLabel help={HELP.distribution}>
+                IPs by download count
+              </MonoLabel>
+              <Box mt="2">
+                <DistributionChart distribution={users.distribution} />
+              </Box>
+            </Box>
+          </Grid>
         )}
       </Box>
     </>
+  );
+}
+
+/**
+ * Traditional histogram over the same per-IP population as the frequency
+ * bands: unique IPs (y) that made a given number of downloads (x). The last
+ * bin pools everything past the data layer's cap.
+ */
+function DistributionChart({
+  distribution,
+}: {
+  distribution: UsageUsers["distribution"];
+}) {
+  const cap = distribution.length - 1;
+  const data = distribution.map((bin) => ({
+    label: bin.downloads > cap ? `${cap}+` : String(bin.downloads),
+    ips: bin.ips,
+  }));
+  return (
+    <Box
+      role="img"
+      aria-label="Unique IPs by downloads per IP"
+      onMouseDown={(event) => event.preventDefault()}
+      style={{ userSelect: "none", WebkitUserSelect: "none" }}
+    >
+      <ResponsiveContainer width="100%" height={140}>
+        <BarChart
+          data={data}
+          margin={{ top: 4, right: 0, bottom: 0, left: 0 }}
+          barCategoryGap={1}
+          accessibilityLayer={false}
+        >
+          <XAxis
+            dataKey="label"
+            tick={{ fill: "var(--gray-11)", fontSize: 10, fontFamily: "var(--code-font-family)" }}
+            tickLine={false}
+            axisLine={{ stroke: "var(--gray-a6)" }}
+            minTickGap={16}
+          />
+          <YAxis
+            allowDecimals={false}
+            tick={{ fill: "var(--gray-11)", fontSize: 10, fontFamily: "var(--code-font-family)" }}
+            tickLine={false}
+            axisLine={false}
+            width={36}
+          />
+          <ChartTooltip
+            cursor={{ fill: "var(--gray-a3)" }}
+            isAnimationActive={false}
+            content={({ active, payload, label }) => {
+              if (!active || !payload?.length) return null;
+              return (
+                <Box
+                  p="2"
+                  style={mono({
+                    background: "var(--color-panel-solid)",
+                    border: "1px solid var(--gray-6)",
+                    boxShadow: "var(--shadow-3)",
+                  })}
+                >
+                  <Text size="1">
+                    {numberFormat.format(Number(payload[0].value) || 0)} IPs ·{" "}
+                    {label}× downloads
+                  </Text>
+                </Box>
+              );
+            }}
+          />
+          <Bar dataKey="ips" fill="var(--gray-12)" isAnimationActive={false} />
+        </BarChart>
+      </ResponsiveContainer>
+    </Box>
   );
 }

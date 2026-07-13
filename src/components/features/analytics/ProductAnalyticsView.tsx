@@ -224,7 +224,7 @@ export function ProductAnalyticsView({
       </Tabs.Content>
 
       <Tabs.Content value="users">
-        <UsersContent users={users} />
+        <UsersContent users={users} wide />
       </Tabs.Content>
     </Tabs.Root>
   );

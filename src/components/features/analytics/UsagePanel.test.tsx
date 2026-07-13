@@ -35,6 +35,11 @@ const users: UsageUsers = {
     { label: "6–20×", count: 2 },
     { label: "20×+", count: 1 },
   ],
+  distribution: [
+    { downloads: 1, ips: 520 },
+    { downloads: 2, ips: 6 },
+    { downloads: 3, ips: 29 }, // overflow bin ("2+" at this length)
+  ],
 };
 
 it("shows window downloads, data served, and countries", () => {

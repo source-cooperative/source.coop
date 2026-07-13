@@ -26,7 +26,13 @@ it("renders stats, country ranking, and top files", () => {
         productId="prod"
         days={days}
         totals={{ bytes: 2.3 * 1024 ** 3, requests: 12847, countries: 42 }}
-        users={{ uniqueIps: 0, registered: 0, anonRequests: 0, frequency: [] }}
+        users={{
+          uniqueIps: 0,
+          registered: 0,
+          anonRequests: 0,
+          frequency: [],
+          distribution: [],
+        }}
         breakdowns={{
           countries: [{ code: "US", name: "United States", requests: 3597 }],
           otherCountries: { count: 37, requests: 4231 },

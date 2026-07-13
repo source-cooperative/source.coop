@@ -15,6 +15,8 @@ export const HELP = {
   anon: "Download requests made without a signed-in user.",
   frequency:
     "How many times each unique IP address downloaded data in this period.",
+  distribution:
+    "Histogram over the same population: how many unique IP addresses (y) made a given number of downloads (x) in this period.",
 };
 
 export const mono = (extra?: CSSProperties): CSSProperties => ({
