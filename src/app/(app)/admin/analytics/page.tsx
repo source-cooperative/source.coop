@@ -45,11 +45,14 @@ import { accountUrl } from "@/lib/urls";
 export const metadata: Metadata = { title: "Admin — Analytics" };
 
 interface PageState {
-  /** UTC days, YYYY-MM-DD, inclusive; empty string = default */
+  /**
+   * UTC day "YYYY-MM-DD" (inclusive) or, from chart drill-downs, UTC
+   * instant "YYYY-MM-DDTHH:MM" (as `to`: exclusive); empty string = default
+   */
   from: string;
   to: string;
-  /** Sum interval in hours (a BUCKET_INTERVALS value); undefined = auto */
-  bucketHours?: number;
+  /** Sum interval in minutes (a BUCKET_INTERVALS value); undefined = auto */
+  bucketMinutes?: number;
   /** Chart metric toggle; "bytes" is the default and stays out of URLs */
   metric: "bytes" | "requests";
   groupBy: AdminDimension[];
@@ -68,8 +71,26 @@ const todayUtc = () => new Date().setUTCHours(0, 0, 0, 0);
 
 const dateParam = (v: string | string[] | undefined): string => {
   const value = first(v) ?? "";
-  return /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : "";
+  return /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2})?$/.test(value) ? value : "";
 };
+
+/** Parse a range param (day or instant) to ms; day-only = UTC day start. */
+const paramMs = (value: string): number =>
+  Date.parse(value.length === 10 ? `${value}T00:00:00Z` : `${value}:00Z`);
+
+/** "15-minute" / "6-hour" / "3-day" for any ladder value. */
+const bucketName = (minutes: number): string =>
+  minutes < 60
+    ? `${minutes}-minute`
+    : minutes < 1440
+      ? `${minutes / 60}-hour`
+      : `${minutes / 1440}-day`;
+
+/** "6 hours" / "16 days" — the longest range an interval can draw. */
+const spanName = (minutes: number): string =>
+  minutes < 1440
+    ? `${Math.floor(minutes / 60)} hours`
+    : `${Math.floor(minutes / 1440)} days`;
 
 // Whole weeks (plus "Today"), to avoid aliasing day-of-week patterns.
 const PRESETS = [
@@ -85,7 +106,7 @@ function parseState(params: Record<string, string | string[] | undefined>): Page
   return {
     from: dateParam(params.from),
     to: dateParam(params.to),
-    bucketHours: BUCKET_INTERVALS.some((b) => b.hours === interval)
+    bucketMinutes: BUCKET_INTERVALS.some((b) => b.minutes === interval)
       ? interval
       : undefined,
     metric: first(params.metric) === "requests" ? "requests" : "bytes",
@@ -113,7 +134,7 @@ function pageUrl(state: PageState): string {
   const params = new URLSearchParams({ groupBy: state.groupBy.join(",") });
   if (state.from) params.set("from", state.from);
   if (state.to) params.set("to", state.to);
-  if (state.bucketHours) params.set("interval", String(state.bucketHours));
+  if (state.bucketMinutes) params.set("interval", String(state.bucketMinutes));
   if (state.metric === "requests") params.set("metric", state.metric);
   if (state.account) params.set("account", state.account);
   if (state.product) params.set("product", state.product);
@@ -200,33 +221,40 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
 
   // The resolved (clamped) range drives the presets, shift arrows, and the
   // date inputs' defaults; fall back to the same default the client uses.
+  // A drilled range may be time-grained ("…THH:MM", exclusive `to`); the
+  // day-oriented controls operate on the days it touches.
   const today = todayUtc();
   const range = breakdown?.range ?? { from: isoDay(today - 6 * DAY_MS), to: isoDay(today) };
-  const fromMs = Date.parse(`${range.from}T00:00:00Z`);
-  const toMs = Date.parse(`${range.to}T00:00:00Z`);
+  const fromMs = paramMs(range.from);
+  const endMs =
+    range.to.length === 10 ? paramMs(range.to) + DAY_MS : paramMs(range.to);
+  const fromDayMs = Math.floor(fromMs / DAY_MS) * DAY_MS;
+  const lastDayMs = Math.floor((endMs - 1) / DAY_MS) * DAY_MS;
   const retentionEdge = today - RETENTION_DAYS * DAY_MS;
-  const rangeDays = Math.round((toMs - fromMs) / DAY_MS) + 1;
+  const rangeDays = Math.round((lastDayMs - fromDayMs) / DAY_MS) + 1;
+  const rangeMinutes = (endMs - fromMs) / 60_000;
   const rangeLabel = `${rangeDays} day${rangeDays === 1 ? "" : "s"}`;
   // Shift the whole range by N days, clamped so its length is preserved at
-  // the edges (today forward, ~retention backward).
+  // the edges (today forward, ~retention backward). Shifting a drilled
+  // sub-day range deliberately widens it back to whole days.
   const shiftUrl = (days: number) => {
     const deltaMs =
       days > 0
-        ? Math.min(days * DAY_MS, today - toMs)
-        : Math.max(days * DAY_MS, retentionEdge - fromMs);
+        ? Math.min(days * DAY_MS, today - lastDayMs)
+        : Math.max(days * DAY_MS, retentionEdge - fromDayMs);
     return pageUrl({
       ...state,
-      from: isoDay(fromMs + deltaMs),
-      to: isoDay(toMs + deltaMs),
+      from: isoDay(fromDayMs + deltaMs),
+      to: isoDay(lastDayMs + deltaMs),
     });
   };
-  const atToday = toMs >= today;
-  const atRetention = fromMs <= retentionEdge;
+  const atToday = lastDayMs >= today;
+  const atRetention = fromDayMs <= retentionEdge;
   // Bandwidth denominator: elapsed wall-clock within the range — a range
   // that includes today only counts the part that has happened.
   const elapsedSeconds = Math.max(
     1,
-    (Math.min(Date.now(), toMs + DAY_MS) - fromMs) / 1000,
+    (Math.min(Date.now(), endMs) - fromMs) / 1000,
   );
 
   return (
@@ -293,15 +321,17 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
             <AdminFiltersForm
               action={adminAnalyticsUrl()}
               defaults={{
-                from: range.from,
-                to: range.to,
+                // Date inputs are day-grained; a drilled sub-day range
+                // shows (and, if edited, submits) the days it touches.
+                from: isoDay(fromDayMs),
+                to: isoDay(lastDayMs),
                 account: state.account ?? "",
                 product: state.product ?? "",
               }}
               hidden={{
                 groupBy: state.groupBy.join(","),
-                ...(state.bucketHours && {
-                  interval: String(state.bucketHours),
+                ...(state.bucketMinutes && {
+                  interval: String(state.bucketMinutes),
                 }),
                 ...(state.metric === "requests" && { metric: state.metric }),
               }}
@@ -337,24 +367,22 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
                 <Button
                   asChild
                   size="1"
-                  variant={state.bucketHours === undefined ? "solid" : "soft"}
+                  variant={state.bucketMinutes === undefined ? "solid" : "soft"}
                 >
-                  <Link href={pageUrl({ ...state, bucketHours: undefined })}>
+                  <Link href={pageUrl({ ...state, bucketMinutes: undefined })}>
                     Auto
                   </Link>
                 </Button>
                 {BUCKET_INTERVALS.map((bucket) => {
                   // An interval that would draw more bars than the chart can
                   // hold is disabled rather than silently coarsened.
-                  const maxDays = Math.floor(
-                    (MAX_CHART_BUCKETS * bucket.hours) / 24,
-                  );
-                  const fits = rangeDays <= maxDays;
+                  const fits =
+                    rangeMinutes <= MAX_CHART_BUCKETS * bucket.minutes;
                   if (!fits) {
                     return (
                       <Tooltip
-                        key={bucket.hours}
-                        content={`${bucket.label} buckets fit ranges up to ${maxDays} days — this range spans ${rangeDays}`}
+                        key={bucket.minutes}
+                        content={`${bucket.label} buckets fit ranges up to ${spanName(MAX_CHART_BUCKETS * bucket.minutes)} — this range spans ${rangeLabel}`}
                       >
                         <Button size="1" variant="soft" disabled>
                           {bucket.label}
@@ -364,12 +392,12 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
                   }
                   return (
                     <Button
-                      key={bucket.hours}
+                      key={bucket.minutes}
                       asChild
                       size="1"
-                      variant={state.bucketHours === bucket.hours ? "solid" : "soft"}
+                      variant={state.bucketMinutes === bucket.minutes ? "solid" : "soft"}
                     >
-                      <Link href={pageUrl({ ...state, bucketHours: bucket.hours })}>
+                      <Link href={pageUrl({ ...state, bucketMinutes: bucket.minutes })}>
                         {bucket.label}
                       </Link>
                     </Button>
@@ -402,17 +430,17 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
       ) : (
         <>
           <Card size="2">
-            {state.bucketHours !== undefined &&
-              breakdown.bucketHours !== state.bucketHours && (
+            {state.bucketMinutes !== undefined &&
+              breakdown.bucketMinutes !== state.bucketMinutes && (
                 <Text as="div" size="1" color="orange" mb="2">
-                  Showing {breakdown.bucketHours}-hour buckets — the requested
-                  interval would draw more than {MAX_CHART_BUCKETS} bars over
-                  this range.
+                  Showing {bucketName(breakdown.bucketMinutes)} buckets — the
+                  requested interval would draw more than {MAX_CHART_BUCKETS}{" "}
+                  bars over this range.
                 </Text>
               )}
             <AdminBreakdownChart
               buckets={breakdown.buckets}
-              bucketHours={breakdown.bucketHours}
+              bucketMinutes={breakdown.bucketMinutes}
               initialMetric={state.metric}
               queries={breakdown.queries}
               series={breakdown.series}

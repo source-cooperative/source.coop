@@ -296,7 +296,7 @@ describe("getAdminBreakdown", () => {
   });
 
   it("honors a whitelisted sum interval and escalates unreadable ones", async () => {
-    await getAdminBreakdown({ ...TODAY_RANGE, groupBy: [], bucketHours: 6 });
+    await getAdminBreakdown({ ...TODAY_RANGE, groupBy: [], bucketMinutes: 360 });
     expect(sentSql()[0]).toContain("toStartOfInterval(timestamp, INTERVAL '6' HOUR)");
 
     fetchMock.mockClear();
@@ -305,14 +305,49 @@ describe("getAdminBreakdown", () => {
       from: isoDaysAgo(91),
       to: isoDaysAgo(0),
       groupBy: [],
-      bucketHours: 1,
+      bucketMinutes: 60,
     });
     expect(sentSql()[0]).toContain("toStartOfInterval(timestamp, INTERVAL '6' HOUR)");
 
     fetchMock.mockClear();
-    // Non-whitelisted values fall back to auto (1h for a single day).
-    await getAdminBreakdown({ ...TODAY_RANGE, groupBy: [], bucketHours: 5 });
+    // Minute buckets over a full day would be 1,440 bars — escalates to the
+    // 15-minute ladder rung, via AE's dedicated function.
+    const escalated = await getAdminBreakdown({
+      ...TODAY_RANGE,
+      groupBy: [],
+      bucketMinutes: 1,
+    });
+    expect(sentSql()[0]).toContain("toStartOfFifteenMinutes(timestamp)");
+    expect(escalated!.bucketMinutes).toBe(15);
+
+    fetchMock.mockClear();
+    // Non-whitelisted values fall back to auto (hourly for a single day).
+    await getAdminBreakdown({ ...TODAY_RANGE, groupBy: [], bucketMinutes: 5 });
     expect(sentSql()[0]).toContain("toStartOfInterval(timestamp, INTERVAL '1' HOUR)");
+  });
+
+  it("bounds sub-day drill ranges with toDateTime and buckets by minute", async () => {
+    const day = isoDaysAgo(1);
+    const breakdown = await getAdminBreakdown({
+      from: `${day}T13:00`,
+      to: `${day}T14:00`,
+      groupBy: [],
+      bucketMinutes: 1,
+    });
+
+    const sql = sentSql()[0];
+    expect(sql).toContain(`timestamp >= toDateTime('${day} 13:00:00')`);
+    expect(sql).toContain(`timestamp < toDateTime('${day} 14:00:00')`);
+    expect(sql).toContain("toStartOfMinute(timestamp) AS bucket");
+    expect(breakdown!.bucketMinutes).toBe(1);
+    expect(breakdown!.range).toEqual({
+      from: `${day}T13:00`,
+      to: `${day}T14:00`,
+    });
+    // Zero-filled minute grid over the drilled hour
+    expect(breakdown!.buckets).toHaveLength(60);
+    expect(breakdown!.buckets[0]).toBe(`${day}T13:00:00.000Z`);
+    expect(breakdown!.buckets[59]).toBe(`${day}T13:59:00.000Z`);
   });
 
   it("folds daily SQL buckets into weekly buckets aligned to the range start", async () => {
@@ -345,12 +380,12 @@ describe("getAdminBreakdown", () => {
       from: isoDaysAgo(13),
       to: isoDaysAgo(0),
       groupBy: ["product"],
-      bucketHours: 168,
+      bucketMinutes: 10080,
     });
 
     expect(sentSql()[0]).toContain("toStartOfDay(timestamp) AS bucket");
     expect(sentSql()[0]).not.toContain("toStartOfInterval");
-    expect(breakdown!.bucketHours).toBe(168);
+    expect(breakdown!.bucketMinutes).toBe(10080);
     // Two week buckets starting at `from`, not at epoch-aligned Thursdays
     expect(breakdown!.buckets).toEqual([
       `${isoDaysAgo(13)}T00:00:00.000Z`,

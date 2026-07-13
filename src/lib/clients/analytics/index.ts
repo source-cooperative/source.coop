@@ -97,21 +97,24 @@ export const OTHER_KEY = "Other";
  */
 export const MAX_CHART_BUCKETS = 400;
 
-/** Sum intervals selectable in the admin explorer. */
+/** Sum intervals selectable in the admin explorer, in minutes. */
 export const BUCKET_INTERVALS = [
-  { hours: 1, label: "Hourly" },
-  { hours: 6, label: "6-hour" },
-  { hours: 24, label: "Daily" },
-  { hours: 168, label: "Weekly" },
+  { minutes: 1, label: "Minute" },
+  { minutes: 60, label: "Hourly" },
+  { minutes: 360, label: "6-hour" },
+  { minutes: 1440, label: "Daily" },
+  { minutes: 10080, label: "Weekly" },
 ] as const;
 
 export interface AdminQuery {
-  /** UTC day, YYYY-MM-DD, inclusive. Invalid/out-of-range values are clamped. */
+  /**
+   * UTC day "YYYY-MM-DD" (inclusive) or UTC instant "YYYY-MM-DDTHH:MM"
+   * (as `to`, the exclusive end). Invalid/out-of-range values are clamped.
+   */
   from: string;
-  /** UTC day, YYYY-MM-DD, inclusive */
   to: string;
-  /** Sum interval override (a BUCKET_INTERVALS hours value); omit for auto */
-  bucketHours?: number;
+  /** Sum interval override (a BUCKET_INTERVALS minutes value); omit for auto */
+  bucketMinutes?: number;
   groupBy: AdminDimension[];
   account?: string;
   product?: string;
@@ -120,7 +123,7 @@ export interface AdminQuery {
 export interface AdminBreakdown {
   /** ISO bucket-start timestamps, oldest first, zero-filled */
   buckets: string[];
-  bucketHours: number;
+  bucketMinutes: number;
   /** Chart series keys ranked by bytes desc; last may be OTHER_KEY */
   series: string[];
   /** Per bucket, bytes/requests per series key (absent key = zero) */
@@ -134,7 +137,11 @@ export interface AdminBreakdown {
     uniqueIps: number;
     countries: number;
   };
-  /** The resolved (validated/clamped) inclusive UTC day range actually queried */
+  /**
+   * The resolved (validated/clamped) range actually queried, echoing the
+   * param grammar: day-grained "YYYY-MM-DD" pairs are inclusive, while
+   * time-grained "YYYY-MM-DDTHH:MM" pairs carry an exclusive `to`.
+   */
   range: { from: string; to: string };
   /** The SQL statements executed, for the admin "show SQL" viewer */
   queries: string[];
@@ -471,14 +478,21 @@ function rowKey(row: Row, groupBy: AdminDimension[]): string {
     .join(" · ");
 }
 
-/** Parse a YYYY-MM-DD string as a UTC day start, or null. */
-function utcDay(value: string): number | null {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
-  const ms = Date.parse(`${value}T00:00:00Z`);
-  return Number.isNaN(ms) ? null : ms;
+/** Parse "YYYY-MM-DD" (UTC day start) or "YYYY-MM-DDTHH:MM" (UTC instant). */
+function utcInstant(
+  value: string,
+): { ms: number; dayGrain: boolean } | null {
+  const dayGrain = /^\d{4}-\d{2}-\d{2}$/.test(value);
+  if (!dayGrain && !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value)) return null;
+  const ms = Date.parse(dayGrain ? `${value}T00:00:00Z` : `${value}:00Z`);
+  return Number.isNaN(ms) ? null : { ms, dayGrain };
 }
 
 const isoDay = (ms: number) => new Date(ms).toISOString().slice(0, 10);
+const isoMinute = (ms: number) => new Date(ms).toISOString().slice(0, 16);
+/** AE DateTime literal body, e.g. "2026-07-07 13:00:00". */
+const sqlDateTime = (ms: number) =>
+  new Date(ms).toISOString().slice(0, 19).replace("T", " ");
 
 /**
  * Traffic over an inclusive UTC day range, bucketed for a stacked timeseries
@@ -496,41 +510,67 @@ export async function getAdminBreakdown(
 ): Promise<AdminBreakdown | null> {
   if (!isAnalyticsConfigured()) return null;
 
-  // Resolve the range: default to the last 7 days, clamp to [retention, today],
-  // swap reversed bounds. Day offsets relative to NOW() keep the SQL in the
-  // toStartOfDay(NOW() - INTERVAL) form AE's strict validator accepts.
+  // Resolve the range: default to the last 7 days, clamp to [retention,
+  // now], swap reversed bounds. Internally the range is [fromMs, endMs) —
+  // a day-grained `to` is inclusive, a time-grained `to` IS the end.
   const today = new Date().setUTCHours(0, 0, 0, 0);
-  let fromMs = utcDay(query.from) ?? today - 6 * DAY_MS;
-  let toMs = utcDay(query.to) ?? today;
-  if (fromMs > toMs) [fromMs, toMs] = [toMs, fromMs];
-  toMs = Math.min(toMs, today);
-  fromMs = Math.min(Math.max(fromMs, today - RETENTION_DAYS * DAY_MS), toMs);
-  const fromDaysAgo = Math.round((today - fromMs) / DAY_MS);
-  const toDaysAgo = Math.round((today - toMs) / DAY_MS);
+  let a = utcInstant(query.from) ?? { ms: today - 6 * DAY_MS, dayGrain: true };
+  let b = utcInstant(query.to) ?? { ms: today, dayGrain: true };
+  if (a.ms > b.ms) [a, b] = [b, a];
+  let fromMs = a.ms;
+  let endMs = b.dayGrain ? b.ms + DAY_MS : b.ms;
+  if (endMs <= fromMs) endMs = fromMs + DAY_MS;
+  endMs = Math.min(endMs, today + DAY_MS);
+  fromMs = Math.min(
+    Math.max(fromMs, today - RETENTION_DAYS * DAY_MS),
+    endMs - 1,
+  );
+  // Both clamps are day-aligned, so grain survives clamping.
+  const dayGrained = a.dayGrain && b.dayGrain;
 
   // Bucket size: an explicit whitelisted interval, else auto by range
   // length. Either way escalate until the bar count stays drawable —
   // hourly over 92 days would be ~2,200 stacked bars.
-  const rangeDays = fromDaysAgo - toDaysAgo + 1;
-  const BUCKET_LADDER = [1, 3, 6, 24, 72, 168];
-  let bucketHours = BUCKET_INTERVALS.some((b) => b.hours === query.bucketHours)
-    ? (query.bucketHours as number)
-    : rangeDays <= 1 ? 1 : rangeDays <= 3 ? 3 : rangeDays <= 7 ? 6 : rangeDays <= 31 ? 24 : 72;
-  while ((rangeDays * 24) / bucketHours > MAX_CHART_BUCKETS) {
-    const next = BUCKET_LADDER.find((h) => h > bucketHours);
+  const DAY_MIN = 1440;
+  const rangeMinutes = (endMs - fromMs) / 60_000;
+  const BUCKET_LADDER = [1, 15, 60, 180, 360, 1440, 4320, 10080];
+  let bucketMinutes = BUCKET_INTERVALS.some(
+    (bucket) => bucket.minutes === query.bucketMinutes,
+  )
+    ? (query.bucketMinutes as number)
+    : rangeMinutes <= 120 ? 1
+    : rangeMinutes <= DAY_MIN ? 60
+    : rangeMinutes <= 3 * DAY_MIN ? 180
+    : rangeMinutes <= 7 * DAY_MIN ? 360
+    : rangeMinutes <= 31 * DAY_MIN ? 1440
+    : 4320;
+  while (rangeMinutes / bucketMinutes > MAX_CHART_BUCKETS) {
+    const next = BUCKET_LADDER.find((m) => m > bucketMinutes);
     if (!next) break;
-    bucketHours = next;
+    bucketMinutes = next;
   }
 
   const groupBy = [...new Set(query.groupBy)];
-  const filters = [
-    SERVED_FILTER,
-    `timestamp >= toStartOfDay(NOW() - INTERVAL '${fromDaysAgo}' DAY)`,
-  ];
-  if (toDaysAgo > 0) {
-    // Exclusive upper bound: the start of the day after `to`.
+  const filters = [SERVED_FILTER];
+  if (dayGrained) {
+    // Day offsets relative to NOW() keep the SQL in the
+    // toStartOfDay(NOW() - INTERVAL) form AE's strict validator accepts.
+    const fromDaysAgo = Math.round((today - fromMs) / DAY_MS);
     filters.push(
-      `timestamp < toStartOfDay(NOW() - INTERVAL '${toDaysAgo - 1}' DAY)`,
+      `timestamp >= toStartOfDay(NOW() - INTERVAL '${fromDaysAgo}' DAY)`,
+    );
+    if (endMs <= today) {
+      const endDaysAgo = Math.round((today - endMs) / DAY_MS);
+      filters.push(
+        `timestamp < toStartOfDay(NOW() - INTERVAL '${endDaysAgo}' DAY)`,
+      );
+    }
+  } else {
+    // Sub-day bounds (drill-down): absolute UTC literals via toDateTime,
+    // which the AE docs show accepting 'YYYY-MM-DD hh:mm:ss'.
+    filters.push(
+      `timestamp >= toDateTime('${sqlDateTime(fromMs)}')`,
+      `timestamp < toDateTime('${sqlDateTime(endMs)}')`,
     );
   }
   if (query.account) filters.push(`blob1 = ${sqlQuote(query.account)}`);
@@ -538,13 +578,20 @@ export async function getAdminBreakdown(
   const from = `FROM ${CONFIG.analytics.dataset} WHERE ${filters.join(" AND ")}`;
 
   const aggregates = `SUM(_sample_interval * double1) AS bytes, SUM(_sample_interval) AS requests`;
-  // AE's toStartOfInterval silently degrades to daily buckets for hour
-  // intervals above a day, so day-multiples group by day in SQL (the proven
-  // form) and get folded into buckets here, aligned to the range start.
-  const dayFold = bucketHours >= 24;
-  const bucketExpr = dayFold
-    ? `toStartOfDay(timestamp)`
-    : `toStartOfInterval(timestamp, INTERVAL '${bucketHours}' HOUR)`;
+  // Sub-hour buckets use AE's dedicated toStartOf* functions (documented,
+  // unlike MINUTE units for toStartOfInterval); hour multiples below a day
+  // use the proven toStartOfInterval HOUR form; day multiples group by day
+  // in SQL and get folded into buckets here, aligned to the range start
+  // (AE silently degrades >24h hour intervals to daily).
+  const dayFold = bucketMinutes >= DAY_MIN;
+  const bucketExpr =
+    bucketMinutes === 1
+      ? "toStartOfMinute(timestamp)"
+      : bucketMinutes === 15
+        ? "toStartOfFifteenMinutes(timestamp)"
+        : dayFold
+          ? "toStartOfDay(timestamp)"
+          : `toStartOfInterval(timestamp, INTERVAL '${bucketMinutes / 60}' HOUR)`;
 
   const columns = [...new Set(groupBy.flatMap((d) => ADMIN_DIMENSIONS[d].columns))];
 
@@ -577,10 +624,11 @@ export async function getAdminBreakdown(
   };
 
   // Zero-filled bucket grid anchored at the range start (day starts are also
-  // on AE's epoch-aligned sub-daily grid, since 1/3/6 divide 24); union in
-  // any returned bucket that lands off-grid so data is never dropped.
-  const bucketMs = bucketHours * 3_600_000;
-  const gridEnd = Math.min(Date.now(), toMs + DAY_MS - 1);
+  // on AE's epoch-aligned sub-daily grid, since 1/15/60/180/360 minutes all
+  // divide a day); union in any returned bucket that lands off-grid so data
+  // is never dropped.
+  const bucketMs = bucketMinutes * 60_000;
+  const gridEnd = Math.min(Date.now(), endMs - 1);
   const grid = new Set<string>();
   for (let t = fromMs; t <= gridEnd; t += bucketMs) {
     grid.add(new Date(t).toISOString());
@@ -602,14 +650,16 @@ export async function getAdminBreakdown(
   for (const bucket of totalByBucket.keys()) grid.add(bucket);
   const buckets = [...grid].sort();
 
-  const range = { from: isoDay(fromMs), to: isoDay(toMs) };
+  const range = dayGrained
+    ? { from: isoDay(fromMs), to: isoDay(endMs - DAY_MS) }
+    : { from: isoMinute(fromMs), to: isoMinute(endMs) };
 
   if (!columns.length) {
     // No grouping: a single "All traffic" series.
     const key = "All traffic";
     return {
       buckets,
-      bucketHours,
+      bucketMinutes,
       range,
       series: [key],
       points: buckets.map((b): AdminBreakdown["points"][number] => {
@@ -695,5 +745,5 @@ export async function getAdminBreakdown(
     groups.push({ key: OTHER_KEY, ...remainder });
   }
 
-  return { buckets, bucketHours, range, series, points, groups, totals, queries };
+  return { buckets, bucketMinutes, range, series, points, groups, totals, queries };
 }

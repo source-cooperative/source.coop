@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Box,
   Dialog,
@@ -18,13 +19,14 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
+  ReferenceArea,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
 import { formatBytes } from "@/lib/format";
-import { Stat } from "./panels";
+import { parseActiveIndex, Stat } from "./panels";
 import { HELP, mono } from "./style";
 import { seriesColor } from "./palette";
 
@@ -32,7 +34,7 @@ type Metric = "bytes" | "requests";
 
 interface AdminBreakdownChartProps {
   buckets: string[];
-  bucketHours: number;
+  bucketMinutes: number;
   series: string[];
   points: Record<string, { bytes: number; requests: number }>[];
   totals: {
@@ -51,26 +53,44 @@ interface AdminBreakdownChartProps {
 }
 
 const MONTHS = "Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split(" ");
+const DAY_MIN = 1440;
+const DAY_MS = 86_400_000;
 
-function tickLabel(iso: string, bucketHours: number): string {
+const hhmm = (d: Date) =>
+  `${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")}`;
+
+function tickLabel(iso: string, bucketMinutes: number): string {
   const d = new Date(iso);
   const day = `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]}`;
   // Sub-daily buckets need the time too; daily+ buckets always start at
   // 00:00 UTC, so the time would be noise.
-  return bucketHours < 24
-    ? `${day} ${String(d.getUTCHours()).padStart(2, "0")}:00`
-    : day;
+  return bucketMinutes < DAY_MIN ? `${day} ${hhmm(d)}` : day;
 }
 
-function bucketLabel(iso: string, bucketHours: number): string {
+function bucketLabel(iso: string, bucketMinutes: number): string {
   const d = new Date(iso);
   const day = `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
-  return bucketHours < 24
-    ? `${day} ${String(d.getUTCHours()).padStart(2, "0")}:00 UTC`
-    : bucketHours > 24
-      ? `${day} + ${bucketHours / 24 - 1}d`
+  return bucketMinutes < DAY_MIN
+    ? `${day} ${hhmm(d)} UTC`
+    : bucketMinutes > DAY_MIN
+      ? `${day} + ${bucketMinutes / DAY_MIN - 1}d`
       : day;
 }
+
+/**
+ * Zooming in: the interval shown after drilling into one bucket of a given
+ * size — weeks break into days, days into hours, hours into minutes.
+ */
+const DRILL_INTERVAL: Record<number, number> = {
+  10080: 1440,
+  4320: 1440,
+  1440: 60,
+  360: 60,
+  180: 60,
+  60: 1,
+  15: 1,
+  1: 1,
+};
 
 // en-US explicitly: this renders in SSR HTML, and locale-following
 // toLocaleString() would hydrate differently for non-en visitors.
@@ -86,8 +106,8 @@ const byteRate = (perSec: number) =>
   `${perSec > 0 && perSec < 1 ? `${perSec.toFixed(2)} B` : formatBytes(perSec, 1)}/s`;
 
 /** Average rate over one bucket: "~0.43/s" requests, "~12.3 MB/s" bytes. */
-function rate(value: number, bucketHours: number, metric: Metric): string {
-  const perSec = value / (bucketHours * 3600);
+function rate(value: number, bucketMinutes: number, metric: Metric): string {
+  const perSec = value / (bucketMinutes * 60);
   return metric === "bytes"
     ? `~${byteRate(perSec)}`
     : `~${perSec >= 10 ? compact.format(perSec) : perSec.toFixed(2)}/s`;
@@ -100,7 +120,7 @@ function rate(value: number, bucketHours: number, metric: Metric): string {
  */
 export function AdminBreakdownChart({
   buckets,
-  bucketHours,
+  bucketMinutes,
   series,
   points,
   totals,
@@ -110,6 +130,39 @@ export function AdminBreakdownChart({
   queries = [],
 }: AdminBreakdownChartProps) {
   const [metric, setMetric] = useState<Metric>(initialMetric);
+  const router = useRouter();
+
+  // Click/drag drill-down: a click narrows the range to that bucket, a drag
+  // to the spanned buckets, both at the next finer interval. router.push
+  // adds a history entry, so the browser back button zooms out.
+  const [drag, setDrag] = useState<{ start: number; end: number } | null>(null);
+  const drillTo = (i0: number, i1: number) => {
+    const lo = Math.min(i0, i1);
+    const hi = Math.max(i0, i1);
+    // A single minute bucket has nothing finer to show.
+    if (bucketMinutes === 1 && lo === hi) return;
+    const startMs = Date.parse(buckets[lo]);
+    const endMs = Date.parse(buckets[hi]) + bucketMinutes * 60_000;
+    const url = new URL(window.location.href);
+    if (startMs % DAY_MS === 0 && endMs % DAY_MS === 0) {
+      // Whole days: keep the friendlier inclusive-day param form.
+      url.searchParams.set("from", buckets[lo].slice(0, 10));
+      url.searchParams.set(
+        "to",
+        new Date(endMs - DAY_MS).toISOString().slice(0, 10),
+      );
+    } else {
+      url.searchParams.set("from", buckets[lo].slice(0, 16));
+      url.searchParams.set("to", new Date(endMs).toISOString().slice(0, 16));
+    }
+    url.searchParams.set(
+      "interval",
+      String(DRILL_INTERVAL[bucketMinutes] ?? bucketMinutes),
+    );
+    router.push(url.pathname + url.search);
+  };
+  const activeAt = (state: { activeTooltipIndex?: unknown } | null) =>
+    parseActiveIndex(state?.activeTooltipIndex, buckets.length);
 
   // Native Fullscreen API on the chart block. Hidden where unsupported
   // (e.g. iPhone Safari).
@@ -274,6 +327,7 @@ export function AdminBreakdownChart({
         style={{
           userSelect: "none",
           WebkitUserSelect: "none",
+          cursor: "crosshair",
           ...(fullscreen && { flexGrow: 1, minHeight: 0 }),
         }}
       >
@@ -282,11 +336,25 @@ export function AdminBreakdownChart({
           data={rows}
           margin={{ top: 4, right: 0, bottom: 0, left: 0 }}
           barCategoryGap="15%"
+          onMouseDown={(state) => {
+            const i = activeAt(state);
+            if (i !== null) setDrag({ start: i, end: i });
+          }}
+          onMouseMove={(state) => {
+            if (!drag) return;
+            const i = activeAt(state);
+            if (i !== null && i !== drag.end) setDrag({ ...drag, end: i });
+          }}
+          onMouseUp={() => {
+            if (drag) drillTo(drag.start, drag.end);
+            setDrag(null);
+          }}
+          onMouseLeave={() => setDrag(null)}
         >
           <CartesianGrid vertical={false} stroke="var(--gray-a4)" />
           <XAxis
             dataKey="date"
-            tickFormatter={(iso: string) => tickLabel(iso, bucketHours)}
+            tickFormatter={(iso: string) => tickLabel(iso, bucketMinutes)}
             tick={{ fill: "var(--gray-11)", fontSize: 11, fontFamily: "var(--code-font-family)" }}
             tickLine={false}
             axisLine={{ stroke: "var(--gray-a6)" }}
@@ -323,7 +391,7 @@ export function AdminBreakdownChart({
                   })}
                 >
                   <Text as="div" size="1" weight="bold" mb="1">
-                    {bucketLabel(String(label), bucketHours)}
+                    {bucketLabel(String(label), bucketMinutes)}
                   </Text>
                   {entries.map((entry) => (
                     <Flex key={entry.index} align="center" gap="2">
@@ -344,7 +412,7 @@ export function AdminBreakdownChart({
                         {formatMetric(entry.value, metric)}
                         <Text color="gray">
                           {" "}
-                          {rate(entry.value, bucketHours, metric)}
+                          {rate(entry.value, bucketMinutes, metric)}
                         </Text>
                       </Text>
                     </Flex>
@@ -359,7 +427,7 @@ export function AdminBreakdownChart({
                         {formatMetric(total, metric)}
                         <Text color="gray" weight="regular">
                           {" "}
-                          {rate(total, bucketHours, metric)}
+                          {rate(total, bucketMinutes, metric)}
                         </Text>
                       </Text>
                     </Flex>
@@ -379,6 +447,14 @@ export function AdminBreakdownChart({
               isAnimationActive={false}
             />
           ))}
+          {drag && drag.start !== drag.end && (
+            <ReferenceArea
+              x1={buckets[Math.min(drag.start, drag.end)]}
+              x2={buckets[Math.max(drag.start, drag.end)]}
+              fill="var(--gray-a5)"
+              stroke="var(--gray-8)"
+            />
+          )}
         </BarChart>
         </ResponsiveContainer>
       </Box>
@@ -400,7 +476,8 @@ export function AdminBreakdownChart({
       </Flex>
       <Text as="div" size="1" color="gray" mt="2">
         Times are UTC. Values are estimates — Analytics Engine samples
-        high-volume traffic.
+        high-volume traffic. Click a bar (or drag across several) to zoom in;
+        the browser back button zooms out.
       </Text>
     </Box>
   );
