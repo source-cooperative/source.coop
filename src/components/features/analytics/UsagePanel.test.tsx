@@ -29,16 +29,10 @@ const users: UsageUsers = {
   uniqueIps: 555,
   registered: 532,
   anonRequests: 12030,
-  frequency: [
-    { label: "1×", count: 520 },
-    { label: "2–5×", count: 9 },
-    { label: "6–20×", count: 2 },
-    { label: "20×+", count: 1 },
-  ],
   distribution: [
-    { downloads: 1, ips: 520 },
-    { downloads: 2, ips: 6 },
-    { downloads: 3, ips: 29 }, // overflow bin ("2+" at this length)
+    { label: "1", ips: 520 },
+    { label: "2", ips: 6 },
+    { label: "3–5", ips: 29 },
   ],
 };
 
@@ -61,7 +55,7 @@ it("renders downloads content without a tab selector for public viewers", () => 
   expect(screen.queryByText("Registered")).toBeNull();
 });
 
-it("shows registered/anon usage and frequency on the Users tab", async () => {
+it("shows registered/anon usage and the histogram on the Users tab", async () => {
   renderPanel(<UsagePanel days={days} totals={totals} users={users} />);
   await userEvent.click(screen.getByRole("tab", { name: /users/i }));
   expect(screen.getByText("Unique IPs")).toBeInTheDocument();
@@ -70,8 +64,10 @@ it("shows registered/anon usage and frequency on the Users tab", async () => {
   expect(screen.getByText("532")).toBeInTheDocument();
   expect(screen.getByText("Anon requests")).toBeInTheDocument();
   expect(screen.getByText("~12k")).toBeInTheDocument();
-  expect(screen.getByText("2–5×")).toBeInTheDocument();
-  expect(screen.getByText("520")).toBeInTheDocument();
+  expect(screen.getByText("IPs by download count")).toBeInTheDocument();
+  expect(
+    screen.getByRole("img", { name: /unique ips by downloads per ip/i }),
+  ).toBeInTheDocument();
 });
 
 it("accepts recharts 3's string activeTooltipIndex", () => {

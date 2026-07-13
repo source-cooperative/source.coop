@@ -30,7 +30,6 @@ it("renders stats, country ranking, and top files", () => {
           uniqueIps: 0,
           registered: 0,
           anonRequests: 0,
-          frequency: [],
           distribution: [],
         }}
         breakdowns={{

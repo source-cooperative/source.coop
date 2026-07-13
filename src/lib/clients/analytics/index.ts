@@ -43,16 +43,24 @@ export interface UsagePoint extends UsageTotals {
   date: string;
 }
 
-/** Download-frequency histogram buckets for unique client IPs. */
-export const FREQUENCY_BUCKETS = [
-  { label: "1×", max: 1 },
-  { label: "2–5×", max: 5 },
-  { label: "6–20×", max: 20 },
-  { label: "20×+", max: Infinity },
+/**
+ * Downloads-per-IP histogram bins. Quasi-log edges: the distribution is
+ * heavy-tailed (a 1× spike and a tail spanning orders of magnitude), so
+ * linear bins waste the axis on empty slots and pool the tail into one
+ * lump. Last bin is open-ended.
+ */
+export const FREQUENCY_BINS = [
+  { label: "1", max: 1 },
+  { label: "2", max: 2 },
+  { label: "3–5", max: 5 },
+  { label: "6–10", max: 10 },
+  { label: "11–25", max: 25 },
+  { label: "26–50", max: 50 },
+  { label: "51–100", max: 100 },
+  { label: "101–250", max: 250 },
+  { label: "251–1K", max: 1000 },
+  { label: "1K+", max: Infinity },
 ] as const;
-
-/** Histogram x-axis cap: downloads-per-IP beyond this pool into one bin. */
-export const FREQUENCY_CHART_MAX = 30;
 
 export interface UsageUsers {
   /** Distinct client IP hashes (blob8) that downloaded in the window */
@@ -61,14 +69,8 @@ export interface UsageUsers {
   registered: number;
   /** Sample-weighted requests with no signed-in user */
   anonRequests: number;
-  /** Per-FREQUENCY_BUCKETS count of unique client IP hashes (blob8) */
-  frequency: { label: string; count: number }[];
-  /**
-   * Unique IPs per exact download count: dense 1..FREQUENCY_CHART_MAX plus
-   * a final overflow bin (downloads = FREQUENCY_CHART_MAX + 1 stands for
-   * "more than the cap").
-   */
-  distribution: { downloads: number; ips: number }[];
+  /** Unique IPs per FREQUENCY_BINS downloads-per-IP bin, zero-filled */
+  distribution: { label: string; ips: number }[];
 }
 
 export interface Usage {
@@ -345,21 +347,16 @@ export async function getUsage(
       { bytes: 0, requests: 0, countries: num(windowRows[0]?.countries) },
     );
 
-    const frequency = FREQUENCY_BUCKETS.map(({ label }) => ({
+    const distribution = FREQUENCY_BINS.map(({ label }) => ({
       label,
-      count: 0,
+      ips: 0,
     }));
-    const distribution = Array.from(
-      { length: FREQUENCY_CHART_MAX + 1 },
-      (_, i) => ({ downloads: i + 1, ips: 0 }),
-    );
     for (const row of ipRows) {
       // Sampling makes per-IP counts fractional estimates; round, floor 1.
       const downloads = Math.max(1, Math.round(num(row.requests)));
-      frequency[
-        FREQUENCY_BUCKETS.findIndex((bucket) => downloads <= bucket.max)
-      ].count += 1;
-      distribution[Math.min(downloads, FREQUENCY_CHART_MAX + 1) - 1].ips += 1;
+      distribution[
+        FREQUENCY_BINS.findIndex((bin) => downloads <= bin.max)
+      ].ips += 1;
     }
 
     return {
@@ -370,7 +367,6 @@ export async function getUsage(
         uniqueIps: ipRows.length,
         registered: num(registeredRows[0]?.registered),
         anonRequests: num(windowRows[0]?.anon_requests),
-        frequency,
         distribution,
       },
     };

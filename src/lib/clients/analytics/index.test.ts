@@ -140,23 +140,24 @@ describe("getUsage", () => {
     // Every earlier day is zero-filled
     expect(usage!.days[0]).toMatchObject({ bytes: 0, requests: 0 });
     expect(usage!.totals).toEqual({ bytes: 1024, requests: 7, countries: 2 });
-    // Dense 1..30 histogram plus one overflow bin; the 25× IP lands on its
-    // exact count, the 0.4 sampled fraction floors into 1.
-    const distribution = Array.from({ length: 31 }, (_, i) => ({
-      downloads: i + 1,
-      ips: [1, 3, 7, 25].filter((d) => d === i + 1).length + (i === 0 ? 1 : 0),
-    }));
+    // Quasi-log bins: the 0.4 sampled fraction floors into "1" alongside
+    // the exact-1 IP; 3 → "3–5", 7 → "6–10", 25 → "11–25"; the rest zero.
     expect(usage!.users).toEqual({
       uniqueIps: 5,
       registered: 2,
       anonRequests: 5,
-      frequency: [
-        { label: "1×", count: 2 },
-        { label: "2–5×", count: 1 },
-        { label: "6–20×", count: 1 },
-        { label: "20×+", count: 1 },
+      distribution: [
+        { label: "1", ips: 2 },
+        { label: "2", ips: 0 },
+        { label: "3–5", ips: 1 },
+        { label: "6–10", ips: 1 },
+        { label: "11–25", ips: 1 },
+        { label: "26–50", ips: 0 },
+        { label: "51–100", ips: 0 },
+        { label: "101–250", ips: 0 },
+        { label: "251–1K", ips: 0 },
+        { label: "1K+", ips: 0 },
       ],
-      distribution,
     });
   });
 

@@ -13,10 +13,8 @@ export const HELP = {
   uniqueIps: "Distinct IP addresses that downloaded data in this period.",
   registered: "Distinct signed-in users who downloaded data in this period.",
   anon: "Download requests made without a signed-in user.",
-  frequency:
-    "How many times each unique IP address downloaded data in this period.",
   distribution:
-    "Histogram over the same population: how many unique IP addresses (y) made a given number of downloads (x) in this period.",
+    "How many unique IP addresses (y) made a given number of downloads (x) in this period. The x-axis bins are log-spaced — the tail spans orders of magnitude.",
 };
 
 export const mono = (extra?: CSSProperties): CSSProperties => ({
