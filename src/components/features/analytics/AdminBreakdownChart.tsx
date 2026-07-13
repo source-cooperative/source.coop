@@ -153,7 +153,7 @@ export function AdminBreakdownChart({
       }
     >
       <Flex justify="between" align="center" mb="3" gap="3" wrap="wrap">
-        <Text size="2" color="gray" style={mono()}>
+        <Text size="1" color="gray" style={mono()}>
           {range.from} → {range.to}:{" "}
           <Text weight="bold" color="gray" highContrast>
             {metric === "bytes"
