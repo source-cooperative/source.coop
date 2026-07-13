@@ -309,7 +309,9 @@ export async function getUsage(
 
     // Additive totals come from the grid days, so bars and headline always
     // agree; the extra (off-grid) partial day the SQL window touches is
-    // dropped with them. The uniques keep that sliver — they're estimates.
+    // dropped with them. The uniques (`countries` here, the users counts
+    // below) can't be re-summed from days, so they keep that sliver —
+    // they're estimates over a marginally wider span.
     const totals = points.reduce(
       (acc, day) => ({
         bytes: acc.bytes + day.bytes,

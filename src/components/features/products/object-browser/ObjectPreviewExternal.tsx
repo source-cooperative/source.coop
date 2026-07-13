@@ -7,8 +7,11 @@ import { ExternalLinkIcon } from "@radix-ui/react-icons";
 import type { CSSProperties } from "react";
 import { getExtension } from "@/lib/files";
 import { DuckDBConnection } from "@duckdb/node-api";
+import { cache } from "react";
 
-const isStacGeoParquet = async (sourceUrl: string): Promise<boolean> => {
+// cache(): the remote parquet-schema probe is requested by both the
+// "Open in new tab" link and the preview iframe in one render.
+const isStacGeoParquet = cache(async (sourceUrl: string): Promise<boolean> => {
   let db: DuckDBConnection | undefined;
   try {
     db = await DuckDBConnection.create();
@@ -33,7 +36,7 @@ const isStacGeoParquet = async (sourceUrl: string): Promise<boolean> => {
     // DuckDB connections should be closed to free up resources
     db?.closeSync();
   }
-};
+});
 
 interface ObjectPreviewExternalProps {
   account_id: string;

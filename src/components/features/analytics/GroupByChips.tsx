@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Flex } from "@radix-ui/themes";
 
@@ -21,6 +21,10 @@ export function GroupByChips({ dimensions, selected }: GroupByChipsProps) {
   const router = useRouter();
   const [active, setActive] = useState(selected);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  // A pending push must die with the page: it reads window.location when it
+  // fires, so after navigating away it would yank the user back here.
+  useEffect(() => () => clearTimeout(timer.current), []);
 
   const toggle = (key: string) => {
     const next = active.includes(key)
