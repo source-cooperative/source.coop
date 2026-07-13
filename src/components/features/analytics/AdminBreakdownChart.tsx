@@ -47,7 +47,7 @@ interface AdminBreakdownChartProps {
   elapsedSeconds: number;
   otherKey: string;
   /** From ?metric= so shared URLs reproduce the toggle state */
-  initialMetric?: Metric;
+  initialMetric: Metric;
   /** SQL executed for this view, shown in the "view SQL" dialog */
   queries?: string[];
 }
@@ -126,7 +126,7 @@ export function AdminBreakdownChart({
   totals,
   elapsedSeconds,
   otherKey,
-  initialMetric = "bytes",
+  initialMetric,
   queries = [],
 }: AdminBreakdownChartProps) {
   const [metric, setMetric] = useState<Metric>(initialMetric);
@@ -181,15 +181,16 @@ export function AdminBreakdownChart({
     else void rootRef.current?.requestFullscreen();
   };
 
-  // Both metrics are already in `points`, so the toggle never refetches —
-  // but it lands in the URL (no server round-trip via replaceState) so the
-  // page can be shared at its exact configuration.
+  // Both metrics ride in `points`, so the chart flips instantly from local
+  // state — but the ranking (table order, charted top slice) is computed
+  // server-side per metric, so the toggle also soft-navigates. replace, not
+  // push: the back button is reserved for drill-down zoom-out.
   const changeMetric = (value: Metric) => {
     setMetric(value);
     const url = new URL(window.location.href);
-    if (value === "requests") url.searchParams.set("metric", value);
+    if (value === "bytes") url.searchParams.set("metric", value);
     else url.searchParams.delete("metric");
-    window.history.replaceState(null, "", url);
+    router.replace(url.pathname + url.search);
   };
 
   // Series keys are arbitrary strings (account/product names, hashes), so

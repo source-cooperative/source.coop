@@ -467,6 +467,12 @@ describe("getAdminBreakdown", () => {
     expect(seriesSql).toContain("(blob1 = 'a1' AND blob2 = 'p1')");
     expect(seriesSql).toContain("(blob1 = 'a2' AND blob2 = 'p2')");
 
+    // Ranking follows the metric — requests by default
+    const rankSql = sentSql().find(
+      (sql) => sql.includes("GROUP BY blob1, blob2") && sql.includes("LIMIT"),
+    );
+    expect(rankSql).toContain("ORDER BY requests DESC");
+
     expect(breakdown!.series).toEqual(["a1/p1", "a2/p2", "Other"]);
     expect(breakdown!.totals).toEqual({
       bytes: 1000,
@@ -488,6 +494,18 @@ describe("getAdminBreakdown", () => {
       { key: "a2/p2", bytes: 300, requests: 3 },
       { key: "Other", bytes: 100, requests: 1 },
     ]);
+  });
+
+  it("ranks by bytes when that metric is selected", async () => {
+    await getAdminBreakdown({
+      ...TODAY_RANGE,
+      groupBy: ["account"],
+      metric: "bytes",
+    });
+    const rankSql = sentSql().find(
+      (sql) => sql.includes("GROUP BY blob1") && sql.includes("LIMIT"),
+    );
+    expect(rankSql).toContain("ORDER BY bytes DESC");
   });
 
   it("keeps a requests-only Other remainder visible", async () => {

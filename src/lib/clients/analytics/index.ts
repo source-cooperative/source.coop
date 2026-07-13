@@ -124,6 +124,8 @@ export interface AdminQuery {
   to: string;
   /** Sum interval override (a BUCKET_INTERVALS minutes value); omit for auto */
   bucketMinutes?: number;
+  /** Ranking metric: orders the groups table and picks the charted slice */
+  metric?: "bytes" | "requests";
   groupBy: AdminDimension[];
   account?: string;
   product?: string;
@@ -612,8 +614,9 @@ export async function getAdminBreakdown(
 
   // Per-bucket overall totals — the chart's "Other" baseline and grand total.
   const bucketTotalsSql = `SELECT ${bucketExpr} AS bucket, ${aggregates} ${from} GROUP BY bucket ORDER BY bucket`;
+  const rankBy = query.metric === "bytes" ? "bytes" : "requests";
   const groupTotalsSql = columns.length
-    ? `SELECT ${columns.join(", ")}, ${aggregates} ${from} GROUP BY ${columns.join(", ")} ORDER BY bytes DESC LIMIT ${TABLE_GROUP_LIMIT}`
+    ? `SELECT ${columns.join(", ")}, ${aggregates} ${from} GROUP BY ${columns.join(", ")} ORDER BY ${rankBy} DESC LIMIT ${TABLE_GROUP_LIMIT}`
     : null;
   // Headline uniques; blob8 = '' (IP unknown) is a value, not an IP, so
   // detect it and drop it from the distinct count.

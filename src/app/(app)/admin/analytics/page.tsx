@@ -53,7 +53,7 @@ interface PageState {
   to: string;
   /** Sum interval in minutes (a BUCKET_INTERVALS value); undefined = auto */
   bucketMinutes?: number;
-  /** Chart metric toggle; "bytes" is the default and stays out of URLs */
+  /** Chart/ranking metric; "requests" is the default and stays out of URLs */
   metric: "bytes" | "requests";
   groupBy: AdminDimension[];
   account?: string;
@@ -109,7 +109,7 @@ function parseState(params: Record<string, string | string[] | undefined>): Page
     bucketMinutes: BUCKET_INTERVALS.some((b) => b.minutes === interval)
       ? interval
       : undefined,
-    metric: first(params.metric) === "requests" ? "requests" : "bytes",
+    metric: first(params.metric) === "bytes" ? "bytes" : "requests",
     // Absent → the default grouping; present but empty → no grouping at all.
     groupBy:
       groupByParam === undefined
@@ -135,7 +135,7 @@ function pageUrl(state: PageState): string {
   if (state.from) params.set("from", state.from);
   if (state.to) params.set("to", state.to);
   if (state.bucketMinutes) params.set("interval", String(state.bucketMinutes));
-  if (state.metric === "requests") params.set("metric", state.metric);
+  if (state.metric === "bytes") params.set("metric", state.metric);
   if (state.account) params.set("account", state.account);
   if (state.product) params.set("product", state.product);
   return `${adminAnalyticsUrl()}?${params}`;
@@ -333,7 +333,7 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
                 ...(state.bucketMinutes && {
                   interval: String(state.bucketMinutes),
                 }),
-                ...(state.metric === "requests" && { metric: state.metric }),
+                ...(state.metric === "bytes" && { metric: state.metric }),
               }}
             />
           </Flex>
@@ -476,8 +476,9 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
             </Table.Header>
             <Table.Body>
               {breakdown.groups.map((group) => {
-                const share = breakdown.totals.bytes
-                  ? (group.bytes / breakdown.totals.bytes) * 100
+                // Share follows the active metric, like the row order.
+                const share = breakdown.totals[state.metric]
+                  ? (group[state.metric] / breakdown.totals[state.metric]) * 100
                   : 0;
                 const color = seriesColors.get(group.key);
                 const href = groupHref(group.key, state.groupBy);
