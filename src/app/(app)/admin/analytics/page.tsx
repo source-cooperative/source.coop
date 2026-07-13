@@ -454,6 +454,9 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
           <Table.Root size="1" variant="surface">
             <Table.Header>
               <Table.Row>
+                <Table.ColumnHeaderCell width="1%">
+                  <MonoLabel>#</MonoLabel>
+                </Table.ColumnHeaderCell>
                 <Table.ColumnHeaderCell>
                   <MonoLabel>
                     {state.groupBy.length
@@ -475,7 +478,7 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
               </Table.Row>
             </Table.Header>
             <Table.Body>
-              {breakdown.groups.map((group) => {
+              {breakdown.groups.map((group, index) => {
                 // Share follows the active metric, like the row order.
                 const share = breakdown.totals[state.metric]
                   ? (group[state.metric] / breakdown.totals[state.metric]) * 100
@@ -484,6 +487,12 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
                 const href = groupHref(group.key, state.groupBy);
                 return (
                   <Table.Row key={group.key}>
+                    <Table.Cell justify="end">
+                      <Text size="1" color="gray" style={mono()}>
+                        {/* The Other remainder isn't a ranked group */}
+                        {group.key === OTHER_KEY ? "" : index + 1}
+                      </Text>
+                    </Table.Cell>
                     <Table.RowHeaderCell>
                       <Flex align="center" gap="2">
                         <Box
