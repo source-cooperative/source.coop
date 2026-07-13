@@ -127,7 +127,13 @@ export interface AdminBreakdown {
   points: Record<string, { bytes: number; requests: number }>[];
   /** Ranked totals for the table (top groups, then optionally OTHER_KEY) */
   groups: { key: string; bytes: number; requests: number }[];
-  totals: { bytes: number; requests: number };
+  /** Whole-range headline stats; the uniques are sampling estimates */
+  totals: {
+    bytes: number;
+    requests: number;
+    uniqueIps: number;
+    countries: number;
+  };
   /** The resolved (validated/clamped) inclusive UTC day range actually queried */
   range: { from: string; to: string };
   /** The SQL statements executed, for the admin "show SQL" viewer */
@@ -547,16 +553,27 @@ export async function getAdminBreakdown(
   const groupTotalsSql = columns.length
     ? `SELECT ${columns.join(", ")}, ${aggregates} ${from} GROUP BY ${columns.join(", ")} ORDER BY bytes DESC LIMIT ${TABLE_GROUP_LIMIT}`
     : null;
-  const queries = [bucketTotalsSql, ...(groupTotalsSql ? [groupTotalsSql] : [])];
+  // Headline uniques; blob8 = '' (IP unknown) is a value, not an IP, so
+  // detect it and drop it from the distinct count.
+  const distinctSql = `SELECT COUNT(DISTINCT blob6) AS countries, COUNT(DISTINCT blob8) AS ips, sumIf(_sample_interval, blob8 = '') AS no_ip ${from}`;
+  const queries = [
+    bucketTotalsSql,
+    ...(groupTotalsSql ? [groupTotalsSql] : []),
+    distinctSql,
+  ];
 
-  const [bucketTotals, groupTotals] = await Promise.all([
+  const [bucketTotals, groupTotals, distinctRows] = await Promise.all([
     adminQuery(bucketTotalsSql),
     groupTotalsSql ? adminQuery(groupTotalsSql) : Promise.resolve([]),
+    adminQuery(distinctSql),
   ]);
 
+  const distinct = distinctRows[0] ?? {};
   const totals = {
     bytes: bucketTotals.reduce((sum, row) => sum + num(row.bytes), 0),
     requests: bucketTotals.reduce((sum, row) => sum + num(row.requests), 0),
+    uniqueIps: Math.max(0, num(distinct.ips) - (num(distinct.no_ip) > 0 ? 1 : 0)),
+    countries: num(distinct.countries),
   };
 
   // Zero-filled bucket grid anchored at the range start (day starts are also
@@ -599,7 +616,10 @@ export async function getAdminBreakdown(
         const row = totalByBucket.get(b);
         return row ? { [key]: row } : {};
       }),
-      groups: totals.bytes || totals.requests ? [{ key, ...totals }] : [],
+      groups:
+        totals.bytes || totals.requests
+          ? [{ key, bytes: totals.bytes, requests: totals.requests }]
+          : [],
       totals,
       queries,
     };

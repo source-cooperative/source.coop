@@ -38,6 +38,8 @@ export function parseActiveIndex(raw: unknown, length: number): number | null {
 export const HELP = {
   downloads: "Number of successful downloads.",
   served: "Total bytes downloaded.",
+  bandwidth: "Data served divided by the elapsed time in the range.",
+  requests: "Successful data requests (GET, status 200/206).",
   countries: "Distinct countries requests originated from.",
   dailyAvg: "Average downloads per day over the period.",
   uniqueIps: "Distinct IP addresses that downloaded data in this period.",

@@ -33,6 +33,7 @@ import {
   AdminBreakdownChart,
   seriesColor,
 } from "@/components/features/analytics";
+import { HELP, Stat } from "@/components/features/analytics/panels";
 import { AdminFiltersForm } from "@/components/features/analytics/AdminFiltersForm";
 import { GroupByChips } from "@/components/features/analytics/GroupByChips";
 import { adminAnalyticsUrl, formatBytes } from "@/lib";
@@ -218,6 +219,12 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
   };
   const atToday = toMs >= today;
   const atRetention = fromMs <= retentionEdge;
+  // Bandwidth denominator: elapsed wall-clock within the range — a range
+  // that includes today only counts the part that has happened.
+  const elapsedSeconds = Math.max(
+    1,
+    (Math.min(Date.now(), toMs + DAY_MS) - fromMs) / 1000,
+  );
 
   return (
     <Flex direction="column" gap="4">
@@ -378,6 +385,41 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
       ) : (
         <>
           <Card size="2">
+            <Flex
+              mb="4"
+              pb="3"
+              style={{ borderBottom: "1px solid var(--gray-4)" }}
+            >
+              <Stat
+                label="Requests"
+                help={HELP.requests}
+                value={numberFormat.format(Math.round(breakdown.totals.requests))}
+              />
+              <Stat
+                label="Data served"
+                help={HELP.served}
+                value={formatBytes(breakdown.totals.bytes, 1)}
+                divider
+              />
+              <Stat
+                label="Avg bandwidth"
+                help={HELP.bandwidth}
+                value={`${formatBytes(breakdown.totals.bytes / elapsedSeconds, 1)}/s`}
+                divider
+              />
+              <Stat
+                label="Unique IPs"
+                help={HELP.uniqueIps}
+                value={numberFormat.format(breakdown.totals.uniqueIps)}
+                divider
+              />
+              <Stat
+                label="Countries"
+                help={HELP.countries}
+                value={numberFormat.format(breakdown.totals.countries)}
+                divider
+              />
+            </Flex>
             {state.bucketHours !== undefined &&
               breakdown.bucketHours !== state.bucketHours && (
                 <Text as="div" size="1" color="orange" mb="2">

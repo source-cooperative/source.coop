@@ -255,16 +255,24 @@ describe("getAdminBreakdown", () => {
 
     const breakdown = await getAdminBreakdown({ ...TODAY_RANGE, groupBy: [] });
 
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    // Bucket totals plus the headline distinct-counts query
+    expect(fetchMock).toHaveBeenCalledTimes(2);
     const sql = sentSql()[0];
     // Single-day range → hourly buckets from today's UTC midnight, no upper bound
     expect(sql).toContain("toStartOfInterval(timestamp, INTERVAL '1' HOUR)");
     expect(sql).toContain("timestamp >= toStartOfDay(NOW() - INTERVAL '0' DAY)");
     expect(sql).not.toContain("timestamp <");
+    expect(sentSql()[1]).toContain("COUNT(DISTINCT blob6)");
+    expect(sentSql()[1]).toContain("COUNT(DISTINCT blob8)");
 
     expect(breakdown!.range).toEqual(TODAY_RANGE);
     expect(breakdown!.series).toEqual(["All traffic"]);
-    expect(breakdown!.totals).toEqual({ bytes: 500, requests: 5 });
+    expect(breakdown!.totals).toEqual({
+      bytes: 500,
+      requests: 5,
+      uniqueIps: 0,
+      countries: 0,
+    });
     // Hourly buckets: midnight through the in-progress hour
     expect(breakdown!.buckets.length).toBeGreaterThanOrEqual(1);
     expect(breakdown!.buckets.length).toBeLessThanOrEqual(25);
@@ -326,6 +334,10 @@ describe("getAdminBreakdown", () => {
           { bucket: aeDay(5), bytes: 30, requests: 1 },
         ]);
       }
+      if (sql.includes("COUNT(DISTINCT")) {
+        // '' present among the hashes (no_ip > 0) → one distinct value dropped
+        return jsonResponse([{ countries: 3, ips: 5, no_ip: 10 }]);
+      }
       return jsonResponse([{ blob1: "a1", blob2: "p1", bytes: 150, requests: 2 }]);
     });
 
@@ -352,7 +364,12 @@ describe("getAdminBreakdown", () => {
       },
       { Other: { bytes: 30, requests: 1 } },
     ]);
-    expect(breakdown!.totals).toEqual({ bytes: 210, requests: 4 });
+    expect(breakdown!.totals).toEqual({
+      bytes: 210,
+      requests: 4,
+      uniqueIps: 4,
+      countries: 3,
+    });
   });
 
   it("swaps reversed bounds and bounds ranges that end before today", async () => {
@@ -385,6 +402,10 @@ describe("getAdminBreakdown", () => {
         // Overall per-bucket totals (includes long-tail traffic)
         return jsonResponse([{ bucket, bytes: 1000, requests: 10 }]);
       }
+      if (sql.includes("COUNT(DISTINCT")) {
+        // No '' hash seen (no_ip = 0) → nothing subtracted
+        return jsonResponse([{ countries: 7, ips: 4, no_ip: 0 }]);
+      }
       // Ranked totals per group
       return jsonResponse([
         { blob1: "a1", blob2: "p1", bytes: 600, requests: 6 },
@@ -405,7 +426,12 @@ describe("getAdminBreakdown", () => {
     expect(seriesSql).toContain("(blob1 = 'a2' AND blob2 = 'p2')");
 
     expect(breakdown!.series).toEqual(["a1/p1", "a2/p2", "Other"]);
-    expect(breakdown!.totals).toEqual({ bytes: 1000, requests: 10 });
+    expect(breakdown!.totals).toEqual({
+      bytes: 1000,
+      requests: 10,
+      uniqueIps: 4,
+      countries: 7,
+    });
 
     const point = breakdown!.points.find((p) => p["a1/p1"]);
     expect(point).toEqual({
