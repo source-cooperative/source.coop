@@ -307,6 +307,54 @@ describe("getAdminBreakdown", () => {
     expect(sentSql()[0]).toContain("toStartOfInterval(timestamp, INTERVAL '1' HOUR)");
   });
 
+  it("folds daily SQL buckets into weekly buckets aligned to the range start", async () => {
+    // AE degrades >24h toStartOfInterval to daily buckets, so week buckets
+    // are assembled here from daily rows.
+    const aeDay = (n: number) => `${isoDaysAgo(n)} 00:00:00`;
+    fetchMock.mockImplementation(async (_url: string, init: { body: string }) => {
+      const sql = init.body;
+      if (sql.includes("GROUP BY bucket, blob1, blob2")) {
+        return jsonResponse([
+          { bucket: aeDay(13), blob1: "a1", blob2: "p1", bytes: 100, requests: 1 },
+          { bucket: aeDay(12), blob1: "a1", blob2: "p1", bytes: 50, requests: 1 },
+        ]);
+      }
+      if (sql.includes("GROUP BY bucket")) {
+        return jsonResponse([
+          { bucket: aeDay(13), bytes: 120, requests: 2 },
+          { bucket: aeDay(12), bytes: 60, requests: 1 },
+          { bucket: aeDay(5), bytes: 30, requests: 1 },
+        ]);
+      }
+      return jsonResponse([{ blob1: "a1", blob2: "p1", bytes: 150, requests: 2 }]);
+    });
+
+    const breakdown = await getAdminBreakdown({
+      from: isoDaysAgo(13),
+      to: isoDaysAgo(0),
+      groupBy: ["product"],
+      bucketHours: 168,
+    });
+
+    expect(sentSql()[0]).toContain("toStartOfDay(timestamp) AS bucket");
+    expect(sentSql()[0]).not.toContain("toStartOfInterval");
+    expect(breakdown!.bucketHours).toBe(168);
+    // Two week buckets starting at `from`, not at epoch-aligned Thursdays
+    expect(breakdown!.buckets).toEqual([
+      `${isoDaysAgo(13)}T00:00:00.000Z`,
+      `${isoDaysAgo(6)}T00:00:00.000Z`,
+    ]);
+    // Days 13+12 accumulate into week one; Other = bucket total - charted
+    expect(breakdown!.points).toEqual([
+      {
+        "a1/p1": { bytes: 150, requests: 2 },
+        Other: { bytes: 30, requests: 1 },
+      },
+      { Other: { bytes: 30, requests: 1 } },
+    ]);
+    expect(breakdown!.totals).toEqual({ bytes: 210, requests: 4 });
+  });
+
   it("swaps reversed bounds and bounds ranges that end before today", async () => {
     const breakdown = await getAdminBreakdown({
       from: isoDaysAgo(3),
@@ -317,8 +365,8 @@ describe("getAdminBreakdown", () => {
     expect(sql).toContain("timestamp >= toStartOfDay(NOW() - INTERVAL '10' DAY)");
     // Exclusive upper bound: the start of the day after `to` (3 days ago)
     expect(sql).toContain("timestamp < toStartOfDay(NOW() - INTERVAL '2' DAY)");
-    // 8-day range → daily buckets
-    expect(sql).toContain("toStartOfInterval(timestamp, INTERVAL '24' HOUR)");
+    // 8-day range → daily buckets, via the proven toStartOfDay form
+    expect(sql).toContain("toStartOfDay(timestamp) AS bucket");
     expect(breakdown!.range).toEqual({ from: isoDaysAgo(10), to: isoDaysAgo(3) });
   });
 

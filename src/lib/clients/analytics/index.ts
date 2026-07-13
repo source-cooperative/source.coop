@@ -532,7 +532,13 @@ export async function getAdminBreakdown(
   const from = `FROM ${CONFIG.analytics.dataset} WHERE ${filters.join(" AND ")}`;
 
   const aggregates = `SUM(_sample_interval * double1) AS bytes, SUM(_sample_interval) AS requests`;
-  const bucketExpr = `toStartOfInterval(timestamp, INTERVAL '${bucketHours}' HOUR)`;
+  // AE's toStartOfInterval silently degrades to daily buckets for hour
+  // intervals above a day, so day-multiples group by day in SQL (the proven
+  // form) and get folded into buckets here, aligned to the range start.
+  const dayFold = bucketHours >= 24;
+  const bucketExpr = dayFold
+    ? `toStartOfDay(timestamp)`
+    : `toStartOfInterval(timestamp, INTERVAL '${bucketHours}' HOUR)`;
 
   const columns = [...new Set(groupBy.flatMap((d) => ADMIN_DIMENSIONS[d].columns))];
 
@@ -553,21 +559,31 @@ export async function getAdminBreakdown(
     requests: bucketTotals.reduce((sum, row) => sum + num(row.requests), 0),
   };
 
-  // Zero-filled bucket grid, epoch-aligned like toStartOfInterval; union in
+  // Zero-filled bucket grid anchored at the range start (day starts are also
+  // on AE's epoch-aligned sub-daily grid, since 1/3/6 divide 24); union in
   // any returned bucket that lands off-grid so data is never dropped.
   const bucketMs = bucketHours * 3_600_000;
   const gridEnd = Math.min(Date.now(), toMs + DAY_MS - 1);
-  const gridStart = Math.floor(fromMs / bucketMs) * bucketMs;
   const grid = new Set<string>();
-  for (let t = gridStart; t <= gridEnd; t += bucketMs) {
+  for (let t = fromMs; t <= gridEnd; t += bucketMs) {
     grid.add(new Date(t).toISOString());
   }
-  for (const row of bucketTotals) grid.add(parseDateTime(row.bucket));
-  const buckets = [...grid].sort();
+  const fold = (iso: string): string => {
+    if (!dayFold) return iso;
+    const step = Math.max(0, Math.floor((Date.parse(iso) - fromMs) / bucketMs));
+    return new Date(fromMs + step * bucketMs).toISOString();
+  };
 
-  const totalByBucket = new Map(
-    bucketTotals.map((row) => [parseDateTime(row.bucket), row]),
-  );
+  const totalByBucket = new Map<string, { bytes: number; requests: number }>();
+  for (const row of bucketTotals) {
+    const bucket = fold(parseDateTime(row.bucket));
+    const acc = totalByBucket.get(bucket) ?? { bytes: 0, requests: 0 };
+    acc.bytes += num(row.bytes);
+    acc.requests += num(row.requests);
+    totalByBucket.set(bucket, acc);
+  }
+  for (const bucket of totalByBucket.keys()) grid.add(bucket);
+  const buckets = [...grid].sort();
 
   const range = { from: isoDay(fromMs), to: isoDay(toMs) };
 
@@ -581,7 +597,7 @@ export async function getAdminBreakdown(
       series: [key],
       points: buckets.map((b): AdminBreakdown["points"][number] => {
         const row = totalByBucket.get(b);
-        return row ? { [key]: { bytes: num(row.bytes), requests: num(row.requests) } } : {};
+        return row ? { [key]: row } : {};
       }),
       groups: totals.bytes || totals.requests ? [{ key, ...totals }] : [],
       totals,
@@ -614,11 +630,13 @@ export async function getAdminBreakdown(
   const points: AdminBreakdown["points"] = buckets.map(() => ({}));
   const bucketIndex = new Map(buckets.map((b, i) => [b, i]));
   for (const row of seriesRows) {
-    const i = bucketIndex.get(parseDateTime(row.bucket));
+    const i = bucketIndex.get(fold(parseDateTime(row.bucket)));
     if (i === undefined) continue;
-    points[i][rowKey(row, groupBy)] = {
-      bytes: num(row.bytes),
-      requests: num(row.requests),
+    const key = rowKey(row, groupBy);
+    const acc = points[i][key] ?? { bytes: 0, requests: 0 };
+    points[i][key] = {
+      bytes: acc.bytes + num(row.bytes),
+      requests: acc.requests + num(row.requests),
     };
   }
 
@@ -635,8 +653,8 @@ export async function getAdminBreakdown(
       { bytes: 0, requests: 0 },
     );
     const other = {
-      bytes: Math.max(0, num(total.bytes) - charted.bytes),
-      requests: Math.max(0, num(total.requests) - charted.requests),
+      bytes: Math.max(0, total.bytes - charted.bytes),
+      requests: Math.max(0, total.requests - charted.requests),
     };
     if (other.bytes > 0 || other.requests > 0) {
       points[i][OTHER_KEY] = other;
