@@ -46,8 +46,9 @@ export const metadata: Metadata = { title: "Admin — Analytics" };
 
 interface PageState {
   /**
-   * UTC day "YYYY-MM-DD" (inclusive) or, from chart drill-downs, UTC
-   * instant "YYYY-MM-DDTHH:MM" (as `to`: exclusive); empty string = default
+   * UTC day "YYYY-MM-DD" (inclusive) or UTC instant "YYYY-MM-DDTHH:MM"
+   * (as `to`: exclusive) from the datetime filters and chart drill-downs;
+   * empty string = default
    */
   from: string;
   to: string;
@@ -324,10 +325,11 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
               key={`${range.from}|${range.to}|${state.account ?? ""}|${state.product ?? ""}`}
               action={adminAnalyticsUrl()}
               defaults={{
-                // Date inputs are day-grained; a drilled sub-day range
-                // shows (and, if edited, submits) the days it touches.
-                from: isoDay(fromDayMs),
-                to: isoDay(lastDayMs),
+                // datetime-local values over the resolved [from, end) —
+                // midnight-aligned submissions collapse back to day grain
+                // in the data layer.
+                from: new Date(fromMs).toISOString().slice(0, 16),
+                to: new Date(endMs).toISOString().slice(0, 16),
                 account: state.account ?? "",
                 product: state.product ?? "",
               }}

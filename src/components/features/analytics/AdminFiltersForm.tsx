@@ -49,10 +49,10 @@ export function AdminFiltersForm({
         <input key={name} type="hidden" name={name} value={value} />
       ))}
       <Flex direction="column" gap="3">
-        <Flex gap="2" align="center">
+        <Flex gap="2" align="center" wrap="wrap">
           <TextField.Root
             size="1"
-            type="date"
+            type="datetime-local"
             name="from"
             defaultValue={defaults.from}
             aria-label="From (UTC)"
@@ -62,11 +62,14 @@ export function AdminFiltersForm({
           </Text>
           <TextField.Root
             size="1"
-            type="date"
+            type="datetime-local"
             name="to"
             defaultValue={defaults.to}
-            aria-label="To (UTC)"
+            aria-label="To (UTC, exclusive)"
           />
+          <Text size="1" color="gray">
+            end exclusive
+          </Text>
         </Flex>
         <Box>
           <Box mb="1">

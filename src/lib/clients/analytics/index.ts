@@ -538,8 +538,11 @@ export async function getAdminBreakdown(
     Math.max(fromMs, today - RETENTION_DAYS * DAY_MS),
     endMs - 1,
   );
-  // Both clamps are day-aligned, so grain survives clamping.
-  const dayGrained = a.dayGrain && b.dayGrain;
+  // Grain is decided by alignment, not input format: a datetime pair that
+  // lands on midnights (e.g. the filter form's T00:00 bounds) is a day
+  // range — it keeps the proven NOW()-relative SQL and the day-grained
+  // range echo. Both clamps are day-aligned, so alignment survives them.
+  const dayGrained = fromMs % DAY_MS === 0 && endMs % DAY_MS === 0;
 
   // Bucket size: an explicit whitelisted interval, else auto by range
   // length. Either way escalate until the bar count stays drawable —

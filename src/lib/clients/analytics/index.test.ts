@@ -334,6 +334,23 @@ describe("getAdminBreakdown", () => {
     expect(sentSql()[0]).toContain("toStartOfInterval(timestamp, INTERVAL '1' HOUR)");
   });
 
+  it("collapses midnight-aligned datetime bounds to the day-grained path", async () => {
+    // The filter form always submits datetime-local values; a pair landing
+    // on midnights is a plain day range and keeps the proven SQL forms.
+    const breakdown = await getAdminBreakdown({
+      from: `${isoDaysAgo(7)}T00:00`,
+      to: `${isoDaysAgo(0)}T00:00`, // exclusive → through yesterday
+      groupBy: [],
+    });
+    const sql = sentSql()[0];
+    expect(sql).toContain("toStartOfDay(NOW() - INTERVAL '7' DAY)");
+    expect(sql).not.toContain("toDateTime");
+    expect(breakdown!.range).toEqual({
+      from: isoDaysAgo(7),
+      to: isoDaysAgo(1),
+    });
+  });
+
   it("bounds sub-day drill ranges with toDateTime and buckets by minute", async () => {
     const day = isoDaysAgo(1);
     const breakdown = await getAdminBreakdown({
