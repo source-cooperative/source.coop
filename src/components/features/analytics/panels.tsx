@@ -116,7 +116,7 @@ export function HoverCaption({
           style={{ background: "var(--green-9)", flexShrink: 0 }}
         />
       )}
-      <MonoLabel>
+      <MonoLabel help={HELP.window}>
         {hovered === null
           ? `${days.length}-day downloads`
           : formatDateSSR(days[hovered].date)}

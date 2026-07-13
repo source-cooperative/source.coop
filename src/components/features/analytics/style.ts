@@ -5,6 +5,8 @@ import type { CSSProperties } from "react";
 
 export const HELP = {
   downloads: "Number of successful downloads.",
+  window:
+    "Dates are UTC calendar days: the window covers the most recent full days plus the in-progress UTC day.",
   served: "Total bytes downloaded.",
   bandwidth: "Data served divided by the elapsed time in the range.",
   requests: "Successful data requests (GET, status 200/206).",

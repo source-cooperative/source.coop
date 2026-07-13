@@ -4,6 +4,8 @@ import { LockClosedIcon } from "@radix-ui/react-icons";
 import { SectionHeader } from "@/components/core/SectionHeader";
 import { getUsage } from "@/lib/clients/analytics";
 import { productAnalyticsUrl } from "@/lib/urls";
+import { MonoLabel } from "./panels";
+import { HELP } from "./style";
 import { UsagePanel } from "./UsagePanel";
 
 interface UsageCardProps {
@@ -39,16 +41,7 @@ export async function UsageCard({
       <SectionHeader
         title="Product Analytics"
         rightButton={
-          <Text
-            size="1"
-            style={{
-              fontFamily: "var(--code-font-family)",
-              letterSpacing: "0.03em",
-              color: "var(--gray-10)",
-            }}
-          >
-            {usage.days.length} DAYS
-          </Text>
+          <MonoLabel help={HELP.window}>{usage.days.length} days</MonoLabel>
         }
       >
         <UsagePanel
