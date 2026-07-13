@@ -233,9 +233,15 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
     <Flex direction="column" gap="4">
       <Heading size="4">Analytics</Heading>
 
+      {/* Two zones: what data (dates + entity filters) | how it's drawn
+          (group by + interval), split by the stats-row hairline. */}
       <Card size="2">
-        <Flex direction="column" gap="3">
-          <Flex gap="4" wrap="wrap">
+        <Flex gap="5" wrap="wrap">
+          <Flex
+            direction="column"
+            gap="3"
+            style={{ flexGrow: 1 }}
+          >
             <Box>
               <Box mb="1">
                 <MonoLabel>Date range (UTC)</MonoLabel>
@@ -284,6 +290,31 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
                 />
               </Flex>
             </Box>
+            <AdminFiltersForm
+              action={adminAnalyticsUrl()}
+              defaults={{
+                from: range.from,
+                to: range.to,
+                account: state.account ?? "",
+                product: state.product ?? "",
+              }}
+              hidden={{
+                groupBy: state.groupBy.join(","),
+                ...(state.bucketHours && {
+                  interval: String(state.bucketHours),
+                }),
+                ...(state.metric === "requests" && { metric: state.metric }),
+              }}
+            />
+          </Flex>
+
+          <Box
+            width="1px"
+            display={{ initial: "none", md: "block" }}
+            style={{ background: "var(--gray-4)" }}
+          />
+
+          <Flex direction="column" gap="3" style={{ flexGrow: 1 }}>
             <Box>
               <Box mb="1">
                 <MonoLabel>Group by</MonoLabel>
@@ -347,23 +378,6 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
               </Flex>
             </Box>
           </Flex>
-
-          <AdminFiltersForm
-            action={adminAnalyticsUrl()}
-            defaults={{
-              from: range.from,
-              to: range.to,
-              account: state.account ?? "",
-              product: state.product ?? "",
-            }}
-            hidden={{
-              groupBy: state.groupBy.join(","),
-              ...(state.bucketHours && {
-                interval: String(state.bucketHours),
-              }),
-              ...(state.metric === "requests" && { metric: state.metric }),
-            }}
-          />
         </Flex>
       </Card>
 

@@ -1,7 +1,8 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Button, Flex, Text, TextField } from "@radix-ui/themes";
+import { Box, Button, Flex, Text, TextField } from "@radix-ui/themes";
+import { MonoLabel } from "./panels";
 
 const DEBOUNCE_MS = 500;
 
@@ -47,39 +48,48 @@ export function AdminFiltersForm({
       {Object.entries(hidden).map(([name, value]) => (
         <input key={name} type="hidden" name={name} value={value} />
       ))}
-      <Flex gap="2" wrap="wrap" align="center">
-        <TextField.Root
-          size="1"
-          type="date"
-          name="from"
-          defaultValue={defaults.from}
-          aria-label="From (UTC)"
-        />
-        <Text size="1" color="gray">
-          →
-        </Text>
-        <TextField.Root
-          size="1"
-          type="date"
-          name="to"
-          defaultValue={defaults.to}
-          aria-label="To (UTC)"
-        />
-        <TextField.Root
-          size="1"
-          name="account"
-          defaultValue={defaults.account}
-          placeholder="Filter by account id"
-        />
-        <TextField.Root
-          size="1"
-          name="product"
-          defaultValue={defaults.product}
-          placeholder="Filter by product id"
-        />
-        <Button size="1" variant="soft" type="submit" loading={pending}>
-          Apply
-        </Button>
+      <Flex direction="column" gap="3">
+        <Flex gap="2" align="center">
+          <TextField.Root
+            size="1"
+            type="date"
+            name="from"
+            defaultValue={defaults.from}
+            aria-label="From (UTC)"
+          />
+          <Text size="1" color="gray">
+            →
+          </Text>
+          <TextField.Root
+            size="1"
+            type="date"
+            name="to"
+            defaultValue={defaults.to}
+            aria-label="To (UTC)"
+          />
+        </Flex>
+        <Box>
+          <Box mb="1">
+            <MonoLabel>Filter by</MonoLabel>
+          </Box>
+          <Flex gap="2" wrap="wrap" align="center">
+            <TextField.Root
+              size="1"
+              name="account"
+              defaultValue={defaults.account}
+              placeholder="account id"
+            />
+            <TextField.Root
+              size="1"
+              name="product"
+              defaultValue={defaults.product}
+              placeholder="product id"
+            />
+            <Button size="1" variant="soft" type="submit" loading={pending}>
+              Apply
+            </Button>
+          </Flex>
+        </Box>
       </Flex>
     </form>
   );
