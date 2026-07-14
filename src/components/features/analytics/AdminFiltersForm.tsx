@@ -76,11 +76,13 @@ export function AdminFiltersForm({
   };
 
   return (
+    // No form-level onChange: Radix Select keeps a hidden native <select>
+    // whose change event would bubble here and submit a half-built filter
+    // row. The real text inputs each debounce explicitly instead.
     <form
       ref={form}
       method="GET"
       action={action}
-      onChange={submitSoon}
       onSubmit={() => {
         clearTimeout(timer.current);
         setPending(true);
@@ -89,9 +91,7 @@ export function AdminFiltersForm({
       {Object.entries(hidden).map(([name, value]) => (
         <input key={name} type="hidden" name={name} value={value} />
       ))}
-      {/* Dates stack vertically so the form stays narrow enough for the
-          FILTER BY block to sit beside them instead of wrapping under. */}
-      <Flex gap="5" wrap="wrap">
+      <Flex direction="column" gap="3">
         <Flex direction="column" gap="2">
           <TextField.Root
             size="1"
@@ -99,6 +99,7 @@ export function AdminFiltersForm({
             name="from"
             defaultValue={defaults.from}
             aria-label="From (UTC)"
+            onChange={submitSoon}
           />
           <TextField.Root
             size="1"
@@ -106,6 +107,7 @@ export function AdminFiltersForm({
             name="to"
             defaultValue={defaults.to}
             aria-label="To (UTC, exclusive)"
+            onChange={submitSoon}
           />
           <Text color="gray" style={{ fontSize: 11 }}>
             UTC · end exclusive
@@ -144,13 +146,14 @@ export function AdminFiltersForm({
                   size="1"
                   name={row.dim}
                   value={row.value}
-                  onChange={(event) =>
+                  onChange={(event) => {
                     setRows(
                       rows.map((r, i) =>
                         i === index ? { ...r, value: event.target.value } : r,
                       ),
-                    )
-                  }
+                    );
+                    submitSoon();
+                  }}
                   placeholder={PLACEHOLDER[row.dim] ?? "value"}
                 />
                 <IconButton
