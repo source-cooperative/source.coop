@@ -91,7 +91,9 @@ export function AdminFiltersForm({
       {Object.entries(hidden).map(([name, value]) => (
         <input key={name} type="hidden" name={name} value={value} />
       ))}
-      <Flex direction="column" gap="3">
+      {/* align start: stretched children would pull the datetime inputs
+          to the zone's full width. */}
+      <Flex direction="column" gap="3" align="start">
         <Flex direction="column" gap="2">
           <TextField.Root
             size="1"
