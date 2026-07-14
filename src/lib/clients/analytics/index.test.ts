@@ -288,17 +288,26 @@ describe("getAdminBreakdown", () => {
     expect(filled).toEqual([{ "All traffic": { bytes: 500, requests: 5 } }]);
   });
 
-  it("applies account/product filters over a week range", async () => {
+  it("applies dimension filters over a week range", async () => {
     await getAdminBreakdown({
       from: isoDaysAgo(6),
       to: isoDaysAgo(0),
       groupBy: [],
-      account: "ft'w",
-      product: "global",
+      filters: {
+        account: "ft'w",
+        product: "global",
+        country: "us",
+        client: "ab%_c",
+      },
     });
     const sql = sentSql()[0];
     expect(sql).toContain("blob1 = 'ft\\'w'");
     expect(sql).toContain("blob2 = 'global'");
+    // Country codes are stored uppercase
+    expect(sql).toContain("blob6 = 'US'");
+    // IP hashes prefix-match (the UI shows 12-char prefixes), with LIKE
+    // wildcards in the value escaped
+    expect(sql).toContain("blob8 LIKE 'ab\\\\%\\\\_c%'");
     expect(sql).toContain("timestamp >= toStartOfDay(NOW() - INTERVAL '6' DAY)");
     expect(sql).toContain("toStartOfInterval(timestamp, INTERVAL '6' HOUR)");
   });

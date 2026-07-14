@@ -57,8 +57,8 @@ interface PageState {
   /** Chart/ranking metric; "requests" is the default and stays out of URLs */
   metric: "bytes" | "requests";
   groupBy: AdminDimension[];
-  account?: string;
-  product?: string;
+  /** Per-dimension value filters, one URL param per dimension key */
+  filters: Partial<Record<AdminDimension, string>>;
 }
 
 const first = (v: string | string[] | undefined) =>
@@ -126,8 +126,11 @@ function parseState(params: Record<string, string | string[] | undefined>): Page
                 ),
             ),
           ],
-    account: first(params.account)?.trim() || undefined,
-    product: first(params.product)?.trim() || undefined,
+    filters: Object.fromEntries(
+      (Object.keys(ADMIN_DIMENSIONS) as AdminDimension[])
+        .map((dim) => [dim, first(params[dim])?.trim()])
+        .filter(([, value]) => value),
+    ),
   };
 }
 
@@ -137,8 +140,9 @@ function pageUrl(state: PageState): string {
   if (state.to) params.set("to", state.to);
   if (state.bucketMinutes) params.set("interval", String(state.bucketMinutes));
   if (state.metric === "bytes") params.set("metric", state.metric);
-  if (state.account) params.set("account", state.account);
-  if (state.product) params.set("product", state.product);
+  for (const [dim, value] of Object.entries(state.filters)) {
+    params.set(dim, value);
+  }
   return `${adminAnalyticsUrl()}?${params}`;
 }
 
@@ -324,18 +328,23 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
               </Flex>
             </Box>
             <AdminFiltersForm
-              // Remount on history traversal: the inputs are uncontrolled
-              // (defaultValue), so prop changes alone never reach them.
-              key={`${range.from}|${range.to}|${state.account ?? ""}|${state.product ?? ""}`}
+              // Remount on history traversal: the inputs hold client state,
+              // so prop changes alone never reach them.
+              key={`${range.from}|${range.to}|${JSON.stringify(state.filters)}`}
               action={adminAnalyticsUrl()}
+              dimensions={(
+                Object.keys(ADMIN_DIMENSIONS) as AdminDimension[]
+              ).map((dim) => ({
+                key: dim,
+                label: ADMIN_DIMENSIONS[dim].label,
+              }))}
               defaults={{
                 // datetime-local values over the resolved [from, end) —
                 // midnight-aligned submissions collapse back to day grain
                 // in the data layer.
                 from: new Date(fromMs).toISOString().slice(0, 16),
                 to: new Date(endMs).toISOString().slice(0, 16),
-                account: state.account ?? "",
-                product: state.product ?? "",
+                filters: state.filters,
               }}
               hidden={{
                 groupBy: state.groupBy.join(","),

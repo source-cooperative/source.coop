@@ -129,8 +129,8 @@ export interface AdminQuery {
   /** Ranking metric: orders the groups table and picks the charted slice */
   metric?: "bytes" | "requests";
   groupBy: AdminDimension[];
-  account?: string;
-  product?: string;
+  /** Per-dimension value filters (client = IP-hash prefix match) */
+  filters?: Partial<Record<AdminDimension, string>>;
 }
 
 export interface AdminBreakdown {
@@ -508,6 +508,20 @@ const sqlDateTime = (ms: number) =>
   new Date(ms).toISOString().slice(0, 19).replace("T", " ");
 
 /**
+ * WHERE clause per filterable dimension. Countries are stored as uppercase
+ * ISO codes. IP hashes prefix-match (LIKE is in the AE pattern-matching
+ * operators) because the UI surfaces only the first 12 hash characters;
+ * LIKE wildcards in the value are escaped.
+ */
+const FILTER_SQL: Record<AdminDimension, (value: string) => string> = {
+  account: (value) => `blob1 = ${sqlQuote(value)}`,
+  product: (value) => `blob2 = ${sqlQuote(value)}`,
+  country: (value) => `blob6 = ${sqlQuote(value.toUpperCase())}`,
+  client: (value) =>
+    `blob8 LIKE ${sqlQuote(`${value.replace(/[\\%_]/g, (m) => `\\${m}`)}%`)}`,
+};
+
+/**
  * Traffic over an inclusive UTC day range, bucketed for a stacked timeseries
  * and grouped by zero or more dimensions. Group cardinality is unbounded
  * (client IP hashes especially), so this never fetches all groups: a totals
@@ -589,8 +603,9 @@ export async function getAdminBreakdown(
       `timestamp < toDateTime('${sqlDateTime(endMs)}')`,
     );
   }
-  if (query.account) filters.push(`blob1 = ${sqlQuote(query.account)}`);
-  if (query.product) filters.push(`blob2 = ${sqlQuote(query.product)}`);
+  for (const [dim, value] of Object.entries(query.filters ?? {})) {
+    filters.push(FILTER_SQL[dim as AdminDimension](value));
+  }
   const from = `FROM ${CONFIG.analytics.dataset} WHERE ${filters.join(" AND ")}`;
 
   const aggregates = `SUM(_sample_interval * double1) AS bytes, SUM(_sample_interval) AS requests`;
