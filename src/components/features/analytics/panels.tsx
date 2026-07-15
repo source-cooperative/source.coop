@@ -9,6 +9,8 @@ import {
   BarChart,
   Bar,
   Cell,
+  ComposedChart,
+  Line,
   XAxis,
   YAxis,
   ResponsiveContainer,
@@ -224,25 +226,36 @@ export function UsersContent({ users }: { users: UsageUsers }) {
 }
 
 /**
- * Histogram of the per-IP population: unique IPs (y) per downloads-per-IP
- * bin (x). Bins are quasi-log (see FREQUENCY_BINS) — the distribution is
- * heavy-tailed, so linear bins would bury the tail.
+ * Pareto chart of the per-IP population: quasi-log downloads-per-IP bins
+ * (labels) ranked by the unique IPs they hold (bars), with a line
+ * accumulating toward the total — a few bands usually cover most IPs.
+ * Single axis: the line accumulates IP counts, not a second percent
+ * scale; tooltips carry the percentage.
  */
 function DistributionChart({
   distribution,
 }: {
   distribution: UsageUsers["distribution"];
 }) {
+  const total = distribution.reduce((sum, bin) => sum + bin.ips, 0);
+  let running = 0;
+  const data = distribution
+    .filter((bin) => bin.ips > 0) // zero bins add nothing to a ranked view
+    .sort((a, b) => b.ips - a.ips)
+    .map((bin) => {
+      running += bin.ips;
+      return { ...bin, cumulative: running, share: running / Math.max(1, total) };
+    });
   return (
     <Box
       role="img"
-      aria-label="Unique IPs by downloads per IP"
+      aria-label="Pareto chart of unique IPs by downloads per IP"
       onMouseDown={(event) => event.preventDefault()}
       style={{ userSelect: "none", WebkitUserSelect: "none" }}
     >
       <ResponsiveContainer width="100%" height={140}>
-        <BarChart
-          data={[...distribution]}
+        <ComposedChart
+          data={data}
           margin={{ top: 4, right: 0, bottom: 0, left: 0 }}
           barCategoryGap={1}
           accessibilityLayer={false}
@@ -266,6 +279,10 @@ function DistributionChart({
             isAnimationActive={false}
             content={({ active, payload, label }) => {
               if (!active || !payload?.length) return null;
+              const row = payload[0].payload as {
+                ips: number;
+                share: number;
+              };
               return (
                 <Box
                   p="2"
@@ -275,17 +292,50 @@ function DistributionChart({
                     boxShadow: "var(--shadow-3)",
                   })}
                 >
-                  <Text size="1">
-                    {numberFormat.format(Number(payload[0].value) || 0)} IPs ·{" "}
-                    {label} downloads
+                  <Text as="div" size="1">
+                    {numberFormat.format(row.ips)} IPs · {label} downloads
+                  </Text>
+                  <Text as="div" size="1" color="gray">
+                    cumulative {(row.share * 100).toFixed(0)}% of IPs
                   </Text>
                 </Box>
               );
             }}
           />
           <Bar dataKey="ips" fill="var(--gray-12)" isAnimationActive={false} />
-        </BarChart>
+          <Line
+            dataKey="cumulative"
+            stroke="var(--green-9)"
+            strokeWidth={2}
+            dot={{ r: 2, fill: "var(--green-9)", strokeWidth: 0 }}
+            isAnimationActive={false}
+          />
+        </ComposedChart>
       </ResponsiveContainer>
+      <Flex gap="3" mt="1">
+        <Flex align="center" gap="1">
+          <Box
+            width="8px"
+            height="8px"
+            flexShrink="0"
+            style={{ background: "var(--gray-12)" }}
+          />
+          <Text size="1" color="gray" style={mono()}>
+            IPs
+          </Text>
+        </Flex>
+        <Flex align="center" gap="1">
+          <Box
+            width="8px"
+            height="2px"
+            flexShrink="0"
+            style={{ background: "var(--green-9)" }}
+          />
+          <Text size="1" color="gray" style={mono()}>
+            cumulative
+          </Text>
+        </Flex>
+      </Flex>
     </Box>
   );
 }

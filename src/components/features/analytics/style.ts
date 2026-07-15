@@ -16,7 +16,7 @@ export const HELP = {
   registered: "Distinct signed-in users who downloaded data in this period.",
   anon: "Download requests made without a signed-in user.",
   distribution:
-    "How many unique IP addresses (y) made a given number of downloads (x) in this period. The x-axis bins are log-spaced — the tail spans orders of magnitude.",
+    "Download-count bands ranked by the unique IP addresses they hold; the line accumulates toward 100% of IPs. Band edges are log-spaced — the tail spans orders of magnitude.",
 };
 
 export const mono = (extra?: CSSProperties): CSSProperties => ({

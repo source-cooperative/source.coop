@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { Theme } from "@radix-ui/themes";
 import { ProductAnalyticsView } from "./ProductAnalyticsView";
 import type { UsagePoint } from "@/lib/clients/analytics";
@@ -57,4 +58,33 @@ it("renders stats, country ranking, and top files", () => {
     "/acct/prod/global-land-cover-2023.tif",
   );
   expect(screen.getByText("9,214")).toBeInTheDocument();
+});
+
+it("renders the Pareto chart on the Users tab", async () => {
+  render(
+    <Theme>
+      <ProductAnalyticsView
+        accountId="acct"
+        productId="prod"
+        days={days}
+        totals={{ bytes: 1024, requests: 10, countries: 1 }}
+        users={{
+          uniqueIps: 555,
+          registered: 5,
+          anonRequests: 10,
+          distribution: [
+            { label: "1", ips: 520 },
+            { label: "2", ips: 0 },
+            { label: "3–5", ips: 35 },
+          ],
+        }}
+        breakdowns={null}
+      />
+    </Theme>,
+  );
+  await userEvent.click(screen.getByRole("tab", { name: /users/i }));
+  expect(
+    screen.getByRole("img", { name: /pareto chart of unique ips/i }),
+  ).toBeInTheDocument();
+  expect(screen.getByText("cumulative")).toBeInTheDocument();
 });
