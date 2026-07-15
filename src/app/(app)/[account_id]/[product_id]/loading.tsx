@@ -38,7 +38,7 @@ export default function ProductDetailsLoading() {
         {/* Product Meta Card Skeleton - 1 column */}
         <Box width="100%" className="product-meta">
           <Card style={{ height: "100%" }} size={{ initial: "2", sm: "1" }}>
-            <SectionHeader title="Product Details">
+            <SectionHeader title="Details">
               <DataList.Root>
                 {/* Visibility Badge Skeleton */}
                 <DataList.Item>
@@ -96,7 +96,7 @@ export default function ProductDetailsLoading() {
       <Card mt="4">
         <Box>
           {/* Breadcrumb Skeleton */}
-          <SectionHeader title="Product Contents">
+          <SectionHeader title="Contents">
             <Flex
               pb="3"
               mb="3"
