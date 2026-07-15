@@ -62,6 +62,7 @@ interface ProductCreationFormProps {
   dataConnections?: DataConnection[]; // Connections the user may create against
   product?: Product; // Optional product for edit mode
   mode?: "create" | "edit"; // Mode of operation
+  defaultOwnerId?: string; // Preselected owner (e.g. from ?owner=…), create mode
 }
 
 export function ProductCreationForm({
@@ -69,12 +70,16 @@ export function ProductCreationForm({
   dataConnections = [],
   product,
   mode = "create",
+  defaultOwnerId,
 }: ProductCreationFormProps) {
   const isEditMode = mode === "edit" && product;
 
-  const [accountId, setAccountId] = useState(
-    isEditMode ? product.account_id : potentialOwnerAccounts[0]?.account_id
-  );
+  // In create mode, start on the preselected owner when given, else the first.
+  const initialOwnerId = isEditMode
+    ? product.account_id
+    : (defaultOwnerId ?? potentialOwnerAccounts[0]?.account_id);
+
+  const [accountId, setAccountId] = useState(initialOwnerId);
   const [productId, setProductId] = useState(
     isEditMode ? product.product_id : ""
   );
@@ -90,10 +95,7 @@ export function ProductCreationForm({
   // Data connection selection. In edit mode the storage backend is fixed once
   // the product exists, so we don't offer a selector — but we still resolve the
   // product's connection to constrain the visibility options.
-  const initialAccountId = isEditMode
-    ? product.account_id
-    : potentialOwnerAccounts[0]?.account_id;
-  const initialAvailable = connectionsForAccount(initialAccountId ?? "");
+  const initialAvailable = connectionsForAccount(initialOwnerId ?? "");
 
   const [dataConnectionId, setDataConnectionId] = useState(
     isEditMode

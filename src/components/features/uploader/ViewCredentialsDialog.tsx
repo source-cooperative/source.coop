@@ -54,6 +54,7 @@ export function ViewCredentialsDialog({
     `aws_access_key_id = ${credentials.accessKeyId}`,
     `aws_secret_access_key = ${credentials.secretAccessKey}`,
     `aws_session_token = ${credentials.sessionToken}`,
+    `endpoint_url = ${credentials.endpoint}`,
   ].join("\n");
 
   return (
@@ -104,7 +105,9 @@ export function ViewCredentialsDialog({
                 [
                   "Expiration",
                   <span key="expiration" title={credentials.expiration}>
-                    {new Date(credentials.expiration).toLocaleString()}
+                    {new Date(credentials.expiration).toLocaleString(undefined, {
+                      timeZoneName: "short",
+                    })}
                   </span>,
                   credentials.expiration,
                 ],
