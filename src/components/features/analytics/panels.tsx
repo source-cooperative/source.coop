@@ -226,11 +226,12 @@ export function UsersContent({ users }: { users: UsageUsers }) {
 }
 
 /**
- * Pareto chart of the per-IP population: quasi-log downloads-per-IP bins
- * (labels) ranked by the unique IPs they hold (bars), with a line
- * accumulating toward the total — a few bands usually cover most IPs.
- * Single axis: the line accumulates IP counts, not a second percent
- * scale; tooltips carry the percentage.
+ * Pareto-style chart of the per-IP population: quasi-log downloads-per-IP
+ * bins in their natural order (bars), with a line accumulating "IPs with
+ * this many downloads or fewer" toward the total. Single axis: the line
+ * accumulates IP counts, not a second percent scale; tooltips carry the
+ * percentage. Bins stay ordinal — ranking them by size would shuffle an
+ * ordered scale.
  */
 function DistributionChart({
   distribution,
@@ -238,14 +239,17 @@ function DistributionChart({
   distribution: UsageUsers["distribution"];
 }) {
   const total = distribution.reduce((sum, bin) => sum + bin.ips, 0);
+  // Trim trailing empty bins (a sparse product would waste half the axis);
+  // interior zeros stay — they are part of the distribution's shape.
+  let end = 0;
+  distribution.forEach((bin, i) => {
+    if (bin.ips > 0) end = i + 1;
+  });
   let running = 0;
-  const data = distribution
-    .filter((bin) => bin.ips > 0) // zero bins add nothing to a ranked view
-    .sort((a, b) => b.ips - a.ips)
-    .map((bin) => {
-      running += bin.ips;
-      return { ...bin, cumulative: running, share: running / Math.max(1, total) };
-    });
+  const data = distribution.slice(0, end).map((bin) => {
+    running += bin.ips;
+    return { ...bin, cumulative: running, share: running / Math.max(1, total) };
+  });
   return (
     <Box
       role="img"
@@ -296,7 +300,7 @@ function DistributionChart({
                     {numberFormat.format(row.ips)} IPs · {label} downloads
                   </Text>
                   <Text as="div" size="1" color="gray">
-                    cumulative {(row.share * 100).toFixed(0)}% of IPs
+                    {(row.share * 100).toFixed(0)}% of IPs at or below this
                   </Text>
                 </Box>
               );
