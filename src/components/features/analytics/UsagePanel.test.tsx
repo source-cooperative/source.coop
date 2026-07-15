@@ -1,8 +1,7 @@
 import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { Theme } from "@radix-ui/themes";
 import { UsagePanel, parseActiveIndex } from "./UsagePanel";
-import type { UsagePoint, UsageUsers } from "@/lib/clients/analytics";
+import type { UsagePoint } from "@/lib/clients/analytics";
 
 // Radix Tooltip needs the Theme provider (the app supplies it at the root).
 const renderPanel = (ui: React.ReactElement) => render(<Theme>{ui}</Theme>);
@@ -25,19 +24,8 @@ const days: UsagePoint[] = Array.from({ length: 30 }, (_, i) => ({
 
 const totals = { bytes: 10 * 1024 ** 3, requests: 12847, countries: 42 };
 
-const users: UsageUsers = {
-  uniqueIps: 555,
-  registered: 532,
-  anonRequests: 12030,
-  distribution: [
-    { label: "1", ips: 520 },
-    { label: "2", ips: 6 },
-    { label: "3–5", ips: 29 },
-  ],
-};
-
 it("shows window downloads, data served, and countries", () => {
-  renderPanel(<UsagePanel days={days} totals={totals} users={users} />);
+  renderPanel(<UsagePanel days={days} totals={totals} />);
   expect(screen.getByText("Downloads")).toBeInTheDocument();
   expect(screen.getByText("12,847")).toBeInTheDocument();
   expect(screen.getByText("Data served")).toBeInTheDocument();
@@ -47,27 +35,10 @@ it("shows window downloads, data served, and countries", () => {
   expect(screen.getByText("30-day downloads")).toBeInTheDocument();
 });
 
-it("renders downloads content without a tab selector for public viewers", () => {
+it("renders no tab selector or users content in the card", () => {
   renderPanel(<UsagePanel days={days} totals={totals} />);
   expect(screen.queryByRole("tab")).toBeNull();
-  expect(screen.getByText("Downloads")).toBeInTheDocument();
-  expect(screen.getByText("12,847")).toBeInTheDocument();
   expect(screen.queryByText("Registered")).toBeNull();
-});
-
-it("shows registered/anon usage and the histogram on the Users tab", async () => {
-  renderPanel(<UsagePanel days={days} totals={totals} users={users} />);
-  await userEvent.click(screen.getByRole("tab", { name: /users/i }));
-  expect(screen.getByText("Unique IPs")).toBeInTheDocument();
-  expect(screen.getByText("555")).toBeInTheDocument();
-  expect(screen.getByText("Registered")).toBeInTheDocument();
-  expect(screen.getByText("532")).toBeInTheDocument();
-  expect(screen.getByText("Anon requests")).toBeInTheDocument();
-  expect(screen.getByText("~12k")).toBeInTheDocument();
-  expect(screen.getByText("IPs by download count")).toBeInTheDocument();
-  expect(
-    screen.getByRole("img", { name: /unique ips by downloads per ip/i }),
-  ).toBeInTheDocument();
 });
 
 it("accepts recharts 3's string activeTooltipIndex", () => {

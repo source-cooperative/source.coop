@@ -13,17 +13,16 @@ interface UsageCardProps {
   productId: string;
   /**
    * Whether the viewer manages the product (owner/maintainer/admin):
-   * unlocks the USERS tab and the link to the /-/analytics page.
+   * unlocks the link to the /-/analytics page.
    */
   canManage?: boolean;
 }
 
 /**
- * Server component: fetches recent usage and renders the analytics card —
- * public viewers get the downloads stats; managers also get the USERS tab
- * and the "View all analytics" link. Renders nothing when analytics is
- * unconfigured or the query fails, so the page never depends on the
- * analytics backend. Render inside <Suspense>.
+ * Server component: fetches recent usage and renders the analytics card;
+ * managers also get the "View all analytics" link. Renders nothing when
+ * analytics is unconfigured or the query fails, so the page never depends
+ * on the analytics backend. Render inside <Suspense>.
  */
 export async function UsageCard({
   accountId,
@@ -44,14 +43,10 @@ export async function UsageCard({
           <MonoLabel help={HELP.window}>{usage.days.length} days</MonoLabel>
         }
       >
-        <UsagePanel
-          days={usage.days}
-          totals={usage.totals}
-          users={canManage ? usage.users : undefined}
-        />
+        <UsagePanel days={usage.days} totals={usage.totals} />
         {canManage && (
           <Box mt="3" pt="3" style={{ borderTop: "1px solid var(--gray-4)" }}>
-            <Tooltip content="The Users tab and full analytics are visible only to owners and maintainers.">
+            <Tooltip content="Full analytics are visible only to owners and maintainers.">
               <Link href={productAnalyticsUrl(accountId, productId)}>
                 <Flex display="inline-flex" align="center" gap="1">
                   <Text size="1">View all analytics →</Text>

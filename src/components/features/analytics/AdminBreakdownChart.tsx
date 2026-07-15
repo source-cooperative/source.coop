@@ -206,6 +206,10 @@ export function AdminBreakdownChart({
     ),
   }));
   const colorAt = (s: number) => seriesColor(series[s], s, otherKey);
+  // The 1px panel-colored segment separator erases bars once they get down
+  // to a few px wide (the stroke covers the entire fill) — dense charts
+  // drop it and let color changes separate the stack instead.
+  const separators = buckets.length <= 150;
 
   return (
     <Box
@@ -447,8 +451,8 @@ export function AdminBreakdownChart({
               dataKey={`s${s}`}
               stackId="traffic"
               fill={colorAt(s)}
-              stroke="var(--color-panel-solid)"
-              strokeWidth={1}
+              stroke={separators ? "var(--color-panel-solid)" : undefined}
+              strokeWidth={separators ? 1 : 0}
               isAnimationActive={false}
             />
           ))}

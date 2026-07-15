@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Box, Flex, Text } from "@radix-ui/themes";
+import { Box, Flex, Text, Tooltip } from "@radix-ui/themes";
+import { LockClosedIcon } from "@radix-ui/react-icons";
 import { productAnalyticsUrl, productUrl } from "@/lib/urls";
 
 interface ProductTabsProps {
@@ -46,13 +47,25 @@ export function ProductTabs({ accountId, productId, active }: ProductTabsProps) 
               marginBottom: -1,
             }}
           >
-            <Text
-              size="1"
-              weight={tab.key === active ? "bold" : "regular"}
-              style={label(tab.key === active)}
-            >
-              {tab.text}
-            </Text>
+            <Flex align="center" gap="1">
+              {tab.key === "analytics" && (
+                <Tooltip content="Visible only to this product's owners, maintainers, and site admins.">
+                  <LockClosedIcon
+                    width="11"
+                    height="11"
+                    color="var(--gray-9)"
+                    aria-label="Restricted"
+                  />
+                </Tooltip>
+              )}
+              <Text
+                size="1"
+                weight={tab.key === active ? "bold" : "regular"}
+                style={label(tab.key === active)}
+              >
+                {tab.text}
+              </Text>
+            </Flex>
           </Box>
         </Link>
       ))}

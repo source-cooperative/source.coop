@@ -1,17 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { Flex, Tabs, Text } from "@radix-ui/themes";
-import type { UsagePoint, UsageTotals, UsageUsers } from "@/lib/clients/analytics";
+import { Flex } from "@radix-ui/themes";
+import type { UsagePoint, UsageTotals } from "@/lib/clients/analytics";
 import { formatBytes } from "@/lib/format";
 import {
   DownloadsChart,
   HELP,
   HoverCaption,
-  mono,
   numberFormat,
   Stat,
-  UsersContent,
 } from "./panels";
 
 // Kept here for its existing unit tests / import sites.
@@ -20,24 +18,19 @@ export { parseActiveIndex } from "./panels";
 interface UsagePanelProps {
   days: UsagePoint[];
   totals: UsageTotals;
-  /**
-   * Manager-only extras: when provided, the DOWNLOADS/USERS tab selector
-   * appears. Public viewers get the downloads content alone.
-   */
-  users?: UsageUsers;
 }
 
 /**
  * Compact analytics card panel (issue #257 mocks): a stats row (downloads,
  * data served, countries) over a daily downloads bar chart — hovering a bar
- * shows that day's numbers. For product managers, a USERS tab adds
- * registered vs anonymous usage and a download-frequency histogram.
+ * shows that day's numbers. Users/audience detail lives on the full
+ * analytics page, not in the card.
  */
-export function UsagePanel({ days, totals, users }: UsagePanelProps) {
+export function UsagePanel({ days, totals }: UsagePanelProps) {
   const [hovered, setHovered] = useState<number | null>(null);
   const shown = hovered === null ? totals : days[hovered];
 
-  const downloads = (
+  return (
     <>
       <Flex mt="3" pb="3" style={{ borderBottom: "1px solid var(--gray-4)" }}>
         <Stat
@@ -69,30 +62,5 @@ export function UsagePanel({ days, totals, users }: UsagePanelProps) {
         />
       </Flex>
     </>
-  );
-
-  if (!users) return downloads;
-
-  return (
-    <Tabs.Root defaultValue="downloads">
-      <Tabs.List size="1">
-        <Tabs.Trigger value="downloads">
-          <Text size="1" style={mono({ letterSpacing: "0.03em" })}>
-            DOWNLOADS
-          </Text>
-        </Tabs.Trigger>
-        <Tabs.Trigger value="users">
-          <Text size="1" style={mono({ letterSpacing: "0.03em" })}>
-            USERS
-          </Text>
-        </Tabs.Trigger>
-      </Tabs.List>
-
-      <Tabs.Content value="downloads">{downloads}</Tabs.Content>
-
-      <Tabs.Content value="users">
-        <UsersContent users={users} />
-      </Tabs.Content>
-    </Tabs.Root>
   );
 }
