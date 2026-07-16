@@ -11,8 +11,10 @@ import {
   IconButton,
   Tooltip,
   DataList,
+  Callout,
+  Link,
 } from "@radix-ui/themes";
-import { CopyIcon, CheckIcon } from "@radix-ui/react-icons";
+import { CopyIcon, CheckIcon, InfoCircledIcon } from "@radix-ui/react-icons";
 import React, { useState } from "react";
 import { MonoText } from "@/components/core";
 
@@ -64,6 +66,23 @@ export function ViewCredentialsDialog({
         <Dialog.Description size="2" mb="4">
           Copy these temporary credentials to use in your applications.
         </Dialog.Description>
+
+        <Callout.Root size="1" mb="4">
+          <Callout.Icon>
+            <InfoCircledIcon />
+          </Callout.Icon>
+          <Callout.Text>
+            Prefer a simpler workflow? The{" "}
+            <Link
+              href="https://github.com/source-cooperative/source-coop-cli"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Source Coop CLI
+            </Link>{" "}
+            handles credentials for you.
+          </Callout.Text>
+        </Callout.Root>
 
         <Tabs.Root defaultValue="json">
           <Tabs.List>
