@@ -41,13 +41,29 @@ export function ViewCredentialsDialog({
     2
   );
 
-  const envFormat = [
-    `export AWS_ACCESS_KEY_ID="${credentials.accessKeyId}"`,
-    `export AWS_SECRET_ACCESS_KEY="${credentials.secretAccessKey}"`,
-    `export AWS_SESSION_TOKEN="${credentials.sessionToken}"`,
-    `export AWS_DEFAULT_REGION="${credentials.region}"`,
-    `export AWS_ENDPOINT_URL="${credentials.endpoint}"`,
-  ].join("\n");
+  const envFormats = {
+    bash: [
+      `export AWS_ACCESS_KEY_ID="${credentials.accessKeyId}"`,
+      `export AWS_SECRET_ACCESS_KEY="${credentials.secretAccessKey}"`,
+      `export AWS_SESSION_TOKEN="${credentials.sessionToken}"`,
+      `export AWS_DEFAULT_REGION="${credentials.region}"`,
+      `export AWS_ENDPOINT_URL="${credentials.endpoint}"`,
+    ].join("\n"),
+    powershell: [
+      `$env:AWS_ACCESS_KEY_ID = "${credentials.accessKeyId}"`,
+      `$env:AWS_SECRET_ACCESS_KEY = "${credentials.secretAccessKey}"`,
+      `$env:AWS_SESSION_TOKEN = "${credentials.sessionToken}"`,
+      `$env:AWS_DEFAULT_REGION = "${credentials.region}"`,
+      `$env:AWS_ENDPOINT_URL = "${credentials.endpoint}"`,
+    ].join("\n"),
+    cmd: [
+      `set AWS_ACCESS_KEY_ID=${credentials.accessKeyId}`,
+      `set AWS_SECRET_ACCESS_KEY=${credentials.secretAccessKey}`,
+      `set AWS_SESSION_TOKEN=${credentials.sessionToken}`,
+      `set AWS_DEFAULT_REGION=${credentials.region}`,
+      `set AWS_ENDPOINT_URL=${credentials.endpoint}`,
+    ].join("\n"),
+  };
 
   const iniFormat = [
     `[source-coop]`,
@@ -79,11 +95,7 @@ export function ViewCredentialsDialog({
               content={jsonFormat}
             />
 
-            <CredentialsTabContent
-              value="env"
-              title="For terminal/shell usage"
-              content={envFormat}
-            />
+            <EnvVarsTabContent envFormats={envFormats} />
 
             <CredentialsTabContent
               value="ini"
@@ -186,6 +198,56 @@ function CopyButton({ content, variant = "soft" }: CopyButtonProps) {
         {copied ? <CheckIcon /> : <CopyIcon />}
       </IconButton>
     </Tooltip>
+  );
+}
+
+interface EnvVarsTabContentProps {
+  envFormats: { bash: string; powershell: string; cmd: string };
+}
+
+function EnvVarsTabContent({ envFormats }: EnvVarsTabContentProps) {
+  return (
+    <Tabs.Content value="env">
+      <Flex direction="column" gap="2">
+        <Text size="1" weight="regular" color="gray">
+          For terminal/shell usage
+        </Text>
+        <Tabs.Root defaultValue="bash">
+          <Tabs.List size="1">
+            <Tabs.Trigger value="bash">Bash/Zsh (macOS/Linux)</Tabs.Trigger>
+            <Tabs.Trigger value="powershell">
+              PowerShell (Windows)
+            </Tabs.Trigger>
+            <Tabs.Trigger value="cmd">Command Prompt (Windows)</Tabs.Trigger>
+          </Tabs.List>
+          <Box pt="3">
+            {(
+              [
+                ["bash", envFormats.bash],
+                ["powershell", envFormats.powershell],
+                ["cmd", envFormats.cmd],
+              ] as const
+            ).map(([os, content]) => (
+              <Tabs.Content key={os} value={os}>
+                <Box style={{ position: "relative" }}>
+                  <Box
+                    style={{
+                      position: "absolute",
+                      top: "var(--space-4)",
+                      right: "var(--space-1)",
+                      zIndex: 1,
+                    }}
+                  >
+                    <CopyButton content={content} />
+                  </Box>
+                  <CodeBlock>{content}</CodeBlock>
+                </Box>
+              </Tabs.Content>
+            ))}
+          </Box>
+        </Tabs.Root>
+      </Flex>
+    </Tabs.Content>
   );
 }
 
