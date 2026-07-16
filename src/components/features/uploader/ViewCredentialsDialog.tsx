@@ -77,11 +77,11 @@ export function ViewCredentialsDialog({
               href="https://github.com/source-cooperative/source-coop-cli"
               target="_blank"
               rel="noopener noreferrer"
-              weight="bold"
             >
               Source Coop CLI
             </Link>{" "}
-            handles credentials for you.
+            handles credentials for you, with longer-lived credentials (up to
+            12 hours).
           </Callout.Text>
         </Callout.Root>
 
