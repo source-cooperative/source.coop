@@ -77,6 +77,7 @@ export function ViewCredentialsDialog({
               href="https://github.com/source-cooperative/source-coop-cli"
               target="_blank"
               rel="noopener noreferrer"
+              weight="bold"
             >
               Source Coop CLI
             </Link>{" "}
