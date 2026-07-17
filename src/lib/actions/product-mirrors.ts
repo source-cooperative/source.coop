@@ -1,10 +1,15 @@
 "use server";
 
 import { LOGGER } from "@/lib/logging";
-import { isAdmin } from "../api/authz";
+import { isAdmin, isAuthorized } from "../api/authz";
 import { getPageSession } from "../api/utils";
 import { productsTable, dataConnectionsTable } from "../clients";
-import { DataProvider, ProductMirror, resolveMirrorPrefix } from "@/types";
+import {
+  Actions,
+  DataProvider,
+  ProductMirror,
+  resolveMirrorPrefix,
+} from "@/types";
 import { FormState } from "@/components/core/DynamicForm";
 import { revalidatePath } from "next/cache";
 import { editProductDataConnectionsUrl } from "@/lib/urls";
@@ -278,6 +283,118 @@ export async function removeProductMirror(
       fieldErrors: {},
       data: formData,
       message: "Failed to remove data connection. Please try again.",
+      success: false,
+    };
+  }
+}
+
+// Unlike the admin-only actions above, editing a mirror's prefix is open to
+// the product's owners/maintainers (PutRepository), matching the edit-product
+// pages this form lives on.
+export async function updateMirrorPrefix(
+  _prevState: FormState<unknown>,
+  formData: FormData
+): Promise<FormState<unknown>> {
+  const session = await getPageSession();
+
+  if (!session?.identity_id) {
+    return {
+      fieldErrors: {},
+      data: formData,
+      message: "Unauthenticated",
+      success: false,
+    };
+  }
+
+  const accountId = formData.get("account_id") as string;
+  const productId = formData.get("product_id") as string;
+  const mirrorKey = formData.get("mirror_key") as string;
+  const prefix = ((formData.get("prefix") as string) || "").trim();
+
+  if (!accountId || !productId || !mirrorKey || !prefix) {
+    return {
+      fieldErrors: {},
+      data: formData,
+      message: "Missing required fields",
+      success: false,
+    };
+  }
+
+  try {
+    const product = await productsTable.fetchById(accountId, productId);
+    if (!product) {
+      return {
+        fieldErrors: {},
+        data: formData,
+        message: "Product not found",
+        success: false,
+      };
+    }
+
+    if (!isAuthorized(session, product, Actions.PutRepository)) {
+      return {
+        fieldErrors: {},
+        data: formData,
+        message: "Only product owners or maintainers can edit mirror prefixes",
+        success: false,
+      };
+    }
+
+    const existing = product.metadata.mirrors[mirrorKey];
+    if (!existing) {
+      return {
+        fieldErrors: {},
+        data: formData,
+        message: "Mirror not found",
+        success: false,
+      };
+    }
+
+    const updatedProduct = {
+      ...product,
+      metadata: {
+        ...product.metadata,
+        mirrors: {
+          ...product.metadata.mirrors,
+          [mirrorKey]: { ...existing, prefix },
+        },
+      },
+    };
+
+    await productsTable.update(updatedProduct, {
+      expectedUpdatedAt: product.updated_at,
+    });
+
+    LOGGER.info("Successfully updated mirror prefix", {
+      operation: "updateMirrorPrefix",
+      metadata: { accountId, productId, mirrorKey },
+    });
+
+    revalidatePath(editProductDataConnectionsUrl(accountId, productId));
+
+    return {
+      fieldErrors: {},
+      data: formData,
+      message: "Prefix updated successfully!",
+      success: true,
+    };
+  } catch (error) {
+    if (isConcurrentEdit(error)) {
+      return {
+        fieldErrors: {},
+        data: formData,
+        message: CONCURRENT_EDIT_MESSAGE,
+        success: false,
+      };
+    }
+    LOGGER.error("Error updating mirror prefix", {
+      operation: "updateMirrorPrefix",
+      error,
+    });
+    return {
+      fieldErrors: {},
+      data: formData,
+      message: "Failed to update prefix. Please try again.",
       success: false,
     };
   }

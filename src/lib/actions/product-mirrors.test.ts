@@ -2,10 +2,11 @@ import {
   addProductMirror,
   removeProductMirror,
   setPrimaryMirror,
+  updateMirrorPrefix,
 } from "./product-mirrors";
 import { productsTable, dataConnectionsTable } from "../clients";
 import { getPageSession } from "../api/utils";
-import { isAdmin } from "../api/authz";
+import { isAdmin, isAuthorized } from "../api/authz";
 import { DataConnection, Product, ProductMirror } from "@/types";
 
 jest.mock("../clients", () => ({
@@ -24,6 +25,7 @@ jest.mock("../api/utils", () => ({
 
 jest.mock("../api/authz", () => ({
   isAdmin: jest.fn(),
+  isAuthorized: jest.fn(),
 }));
 
 jest.mock("next/cache", () => ({
@@ -38,6 +40,9 @@ const mockGetPageSession = getPageSession as jest.MockedFunction<
   typeof getPageSession
 >;
 const mockIsAdmin = isAdmin as jest.MockedFunction<typeof isAdmin>;
+const mockIsAuthorized = isAuthorized as jest.MockedFunction<
+  typeof isAuthorized
+>;
 
 const FORM_STATE = {
   message: "",
@@ -87,6 +92,7 @@ beforeEach(() => {
     identity_id: "id-1",
   } as Awaited<ReturnType<typeof getPageSession>>);
   mockIsAdmin.mockReturnValue(true);
+  mockIsAuthorized.mockReturnValue(true);
   mockProductsTable.update.mockImplementation(async (p) => p);
   mockDataConnectionsTable.fetchById.mockResolvedValue(s3Connection);
 });
@@ -342,5 +348,72 @@ describe("setPrimaryMirror", () => {
     expect(updated.metadata.primary_mirror).toBe("conn-b");
     expect(updated.metadata.mirrors["conn-a"].is_primary).toBe(false);
     expect(updated.metadata.mirrors["conn-b"].is_primary).toBe(true);
+  });
+});
+
+describe("updateMirrorPrefix", () => {
+  test("rejects callers without PutRepository before any write", async () => {
+    mockProductsTable.fetchById.mockResolvedValue(
+      productWith({ "conn-a": mirror({ connection_id: "conn-a" }) }, "conn-a")
+    );
+    mockIsAuthorized.mockReturnValue(false);
+
+    const result = await updateMirrorPrefix(
+      FORM_STATE,
+      formDataFor({
+        account_id: "acct",
+        product_id: "prod",
+        mirror_key: "conn-a",
+        prefix: "new/prefix/",
+      })
+    );
+
+    expect(result.success).toBe(false);
+    expect(mockProductsTable.update).not.toHaveBeenCalled();
+  });
+
+  test("updates the mirror's prefix, leaving the rest intact", async () => {
+    mockProductsTable.fetchById.mockResolvedValue(
+      productWith(
+        {
+          "conn-a": mirror({ connection_id: "conn-a", is_primary: true }),
+          "conn-b": mirror({ connection_id: "conn-b" }),
+        },
+        "conn-a"
+      )
+    );
+
+    const result = await updateMirrorPrefix(
+      FORM_STATE,
+      formDataFor({
+        account_id: "acct",
+        product_id: "prod",
+        mirror_key: "conn-a",
+        prefix: "new/prefix/",
+      })
+    );
+
+    expect(result.success).toBe(true);
+    const updated = mockProductsTable.update.mock.calls[0][0];
+    expect(updated.metadata.mirrors["conn-a"]).toMatchObject({
+      prefix: "new/prefix/",
+      is_primary: true,
+    });
+    expect(updated.metadata.mirrors["conn-b"].prefix).toBe("acct/prod/");
+  });
+
+  test("rejects a blank prefix", async () => {
+    const result = await updateMirrorPrefix(
+      FORM_STATE,
+      formDataFor({
+        account_id: "acct",
+        product_id: "prod",
+        mirror_key: "conn-a",
+        prefix: "   ",
+      })
+    );
+
+    expect(result.success).toBe(false);
+    expect(mockProductsTable.update).not.toHaveBeenCalled();
   });
 });

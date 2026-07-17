@@ -11,8 +11,12 @@ import {
   addProductMirror,
   removeProductMirror,
   setPrimaryMirror,
+  updateMirrorPrefix,
 } from "@/lib/actions/product-mirrors";
-import { adminDataConnectionEditUrl } from "@/lib/urls";
+import {
+  adminDataConnectionEditUrl,
+  accountDataConnectionEditUrl,
+} from "@/lib/urls";
 import type { DataConnectionOption } from "./redact";
 
 interface ProductMirrorsManagerProps {
@@ -61,6 +65,10 @@ export function ProductMirrorsManager({
   );
   const [primaryState, primaryAction, primaryPending] = useActionState(
     setPrimaryMirror,
+    emptyFormState
+  );
+  const [prefixState, prefixAction, prefixPending] = useActionState(
+    updateMirrorPrefix,
     emptyFormState
   );
 
@@ -116,9 +124,20 @@ export function ProductMirrorsManager({
                     <Code size="2">{mirror.connection_id}</Code>
                     {(isAdmin || ownedConnections.has(mirror.connection_id)) && (
                       <Link
-                        href={adminDataConnectionEditUrl(mirror.connection_id)}
-                        aria-label={`Manage ${mirror.connection_id} in the admin data connections view`}
-                        title="Manage in admin"
+                        // Owned connections are managed under the owner
+                        // account's settings (reachable by its owners and
+                        // maintainers); only unowned (system) connections live
+                        // in the admin view, which non-admins can't open.
+                        href={
+                          ownedConnections.has(mirror.connection_id)
+                            ? accountDataConnectionEditUrl(
+                                product.account_id,
+                                mirror.connection_id
+                              )
+                            : adminDataConnectionEditUrl(mirror.connection_id)
+                        }
+                        aria-label={`Manage ${mirror.connection_id}`}
+                        title="Manage connection"
                         style={{
                           display: "inline-flex",
                           color: "var(--accent-11)",
@@ -135,7 +154,42 @@ export function ProductMirrorsManager({
                   </Badge>
                 </Table.Cell>
                 <Table.Cell>
-                  <Code size="2">{mirror.prefix}</Code>
+                  {/* Everyone who can open this page passed PutRepository
+                      (layout gate), so the prefix is editable for all viewers;
+                      the server action re-checks. */}
+                  <Form action={prefixAction} style={{ display: "inline" }}>
+                    <input
+                      type="hidden"
+                      name="account_id"
+                      value={product.account_id}
+                    />
+                    <input
+                      type="hidden"
+                      name="product_id"
+                      value={product.product_id}
+                    />
+                    <input type="hidden" name="mirror_key" value={key} />
+                    <Flex gap="2" align="center">
+                      <input
+                        name="prefix"
+                        defaultValue={mirror.prefix}
+                        required
+                        style={{
+                          ...formFieldStyle,
+                          fontFamily: "var(--code-font-family)",
+                        }}
+                      />
+                      <Button
+                        type="submit"
+                        size="1"
+                        variant="soft"
+                        disabled={prefixPending}
+                        loading={prefixPending}
+                      >
+                        Save
+                      </Button>
+                    </Flex>
+                  </Form>
                 </Table.Cell>
                 <Table.Cell>
                   {mirror.is_primary ? (
@@ -210,6 +264,11 @@ export function ProductMirrorsManager({
       {primaryState.message && (
         <Text size="2" color={primaryState.success ? "green" : "red"}>
           {primaryState.message}
+        </Text>
+      )}
+      {prefixState.message && (
+        <Text size="2" color={prefixState.success ? "green" : "red"}>
+          {prefixState.message}
         </Text>
       )}
 
