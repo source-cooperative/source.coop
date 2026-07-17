@@ -6,7 +6,7 @@ import { Link1Icon } from "@radix-ui/react-icons";
 import Form from "next/form";
 import Link from "next/link";
 import { formFieldStyle } from "@/components/core/DynamicForm";
-import { Product, ProductMirror } from "@/types";
+import { Product } from "@/types";
 import {
   addProductMirror,
   removeProductMirror,
@@ -29,19 +29,6 @@ interface ProductMirrorsManagerProps {
   /** Bare bucket/container name per connection id, shown on each card. */
   connectionBuckets: Record<string, string>;
 }
-
-// Distinct color per backend so GCS isn't confused with Azure. minio/ceph are
-// S3-compatible, hence orange like s3. Unknown types fall back to gray.
-const STORAGE_TYPE_COLOR: Record<
-  ProductMirror["storage_type"],
-  "orange" | "blue" | "green"
-> = {
-  s3: "orange",
-  minio: "orange",
-  ceph: "orange",
-  azure: "blue",
-  gcs: "green",
-};
 
 /** A labeled value on a mirror card. */
 function Field({
@@ -220,9 +207,7 @@ export function ProductMirrorsManager({
                 </Flex>
                 <Flex gap="5" wrap="wrap">
                   <Field label="Type">
-                    <Badge color={STORAGE_TYPE_COLOR[mirror.storage_type]}>
-                      {mirror.storage_type}
-                    </Badge>
+                    <Badge color="gray">{mirror.storage_type}</Badge>
                   </Field>
                   {connectionBuckets[mirror.connection_id] && (
                     <Field label="Bucket">
