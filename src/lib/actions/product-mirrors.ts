@@ -13,6 +13,7 @@ import {
 import { FormState } from "@/components/core/DynamicForm";
 import { revalidatePath } from "next/cache";
 import { editProductDataConnectionsUrl } from "@/lib/urls";
+import { canManageDataConnection } from "@/lib/data-connections";
 
 // These three actions fetch → mutate → productsTable.update(). The update is an
 // optimistic compare-and-swap on the product's updated_at, so two admins editing
@@ -289,8 +290,10 @@ export async function removeProductMirror(
 }
 
 // Unlike the admin-only actions above, editing a mirror's prefix is open to
-// the product's owners/maintainers (PutRepository), matching the edit-product
-// pages this form lives on.
+// non-admins — but requires the *intersection* of managing the product AND the
+// data connection: the caller must be an owner/maintainer of the product
+// (PutRepository) AND able to manage the underlying connection
+// (canManageDataConnection). Admins satisfy both.
 export async function updateMirrorPrefix(
   _prevState: FormState<unknown>,
   formData: FormData
@@ -346,6 +349,20 @@ export async function updateMirrorPrefix(
         fieldErrors: {},
         data: formData,
         message: "Mirror not found",
+        success: false,
+      };
+    }
+
+    // Product side authorized above; also require managing the connection.
+    const connection = await dataConnectionsTable.fetchById(
+      existing.connection_id
+    );
+    if (!connection || !(await canManageDataConnection(session, connection))) {
+      return {
+        fieldErrors: {},
+        data: formData,
+        message:
+          "You must be an owner or maintainer of both the product and the data connection to edit its prefix",
         success: false,
       };
     }

@@ -28,6 +28,9 @@ interface ProductMirrorsManagerProps {
   ownedConnectionIds: string[];
   /** Display name and bare bucket/container per connection id, per card. */
   connectionInfo: Record<string, { name: string; bucket: string }>;
+  // Connection ids whose mirror prefix this user may edit (needs both product
+  // and connection management). Others render the prefix read-only.
+  editablePrefixConnectionIds: string[];
 }
 
 /** A labeled value on a mirror card. */
@@ -61,8 +64,10 @@ export function ProductMirrorsManager({
   isAdmin,
   ownedConnectionIds,
   connectionInfo,
+  editablePrefixConnectionIds,
 }: ProductMirrorsManagerProps) {
   const ownedConnections = new Set(ownedConnectionIds);
+  const editablePrefixConnections = new Set(editablePrefixConnectionIds);
   const [addState, addAction, addPending] = useActionState(
     addProductMirror,
     emptyFormState
@@ -218,46 +223,54 @@ export function ProductMirrorsManager({
                     </Field>
                   )}
                 </Flex>
-                {/* Everyone who can open this page passed PutRepository
-                    (layout gate), so the prefix is editable for all viewers;
-                    the server action re-checks. */}
-                <Form action={prefixAction}>
-                  <input
-                    type="hidden"
-                    name="account_id"
-                    value={product.account_id}
-                  />
-                  <input
-                    type="hidden"
-                    name="product_id"
-                    value={product.product_id}
-                  />
-                  <input type="hidden" name="mirror_key" value={key} />
+                {/* Prefix is editable only for users who can manage both the
+                    product (page-access gate) and this connection; the server
+                    action re-checks. Others see it read-only. */}
+                {editablePrefixConnections.has(mirror.connection_id) ? (
+                  <Form action={prefixAction}>
+                    <input
+                      type="hidden"
+                      name="account_id"
+                      value={product.account_id}
+                    />
+                    <input
+                      type="hidden"
+                      name="product_id"
+                      value={product.product_id}
+                    />
+                    <input type="hidden" name="mirror_key" value={key} />
+                    <Field label="Prefix">
+                      <Flex gap="2" align="center">
+                        <input
+                          name="prefix"
+                          defaultValue={mirror.prefix}
+                          required
+                          style={{
+                            ...formFieldStyle,
+                            flex: 1,
+                            fontFamily: "var(--code-font-family)",
+                            fontSize: "var(--font-size-1)",
+                          }}
+                        />
+                        <Button
+                          type="submit"
+                          size="1"
+                          variant="soft"
+                          disabled={prefixPending}
+                          loading={prefixPending}
+                        >
+                          Save
+                        </Button>
+                      </Flex>
+                    </Field>
+                  </Form>
+                ) : (
                   <Field label="Prefix">
-                    <Flex gap="2" align="center">
-                      <input
-                        name="prefix"
-                        defaultValue={mirror.prefix}
-                        required
-                        style={{
-                          ...formFieldStyle,
-                          flex: 1,
-                          fontFamily: "var(--code-font-family)",
-                          fontSize: "var(--font-size-1)",
-                        }}
-                      />
-                      <Button
-                        type="submit"
-                        size="1"
-                        variant="soft"
-                        disabled={prefixPending}
-                        loading={prefixPending}
-                      >
-                        Save
-                      </Button>
-                    </Flex>
+                    <Code size="2" variant="ghost" color="gray">
+                      {mirror.prefix}
+                    </Code>
                   </Field>
-                </Form>
+                )}
               </Flex>
             </Card>
           ))}

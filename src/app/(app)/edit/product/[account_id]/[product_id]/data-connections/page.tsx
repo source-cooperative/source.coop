@@ -1,5 +1,6 @@
 import { getPageSession } from "@/lib/api/utils";
 import { isAdmin } from "@/lib/api/authz";
+import { canManageDataConnection } from "@/lib/data-connections";
 import { productsTable, dataConnectionsTable } from "@/lib/clients";
 import { notFound } from "next/navigation";
 import { ProductMirrorsManager } from "@/components/features/data-connections";
@@ -59,6 +60,19 @@ export default async function ProductDataConnectionsPage({
     ])
   );
 
+  // Editing a mirror's prefix needs the intersection of product and connection
+  // management. Page access already required PutRepository on the product (the
+  // layout gate), so here we only resolve the connection side per mirror.
+  const editablePrefixConnectionIds = (
+    await Promise.all(
+      mirrorConnections.map(async (c) =>
+        (await canManageDataConnection(session, c))
+          ? c.data_connection_id
+          : null
+      )
+    )
+  ).filter((id): id is string => id != null);
+
   return (
     <ProductMirrorsManager
       product={product}
@@ -66,6 +80,7 @@ export default async function ProductDataConnectionsPage({
       isAdmin={userIsAdmin}
       ownedConnectionIds={ownedConnectionIds}
       connectionInfo={connectionInfo}
+      editablePrefixConnectionIds={editablePrefixConnectionIds}
     />
   );
 }

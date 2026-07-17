@@ -7,6 +7,7 @@ import {
 import { productsTable, dataConnectionsTable } from "../clients";
 import { getPageSession } from "../api/utils";
 import { isAdmin, isAuthorized } from "../api/authz";
+import { canManageDataConnection } from "@/lib/data-connections";
 import { DataConnection, Product, ProductMirror } from "@/types";
 
 jest.mock("../clients", () => ({
@@ -28,6 +29,10 @@ jest.mock("../api/authz", () => ({
   isAuthorized: jest.fn(),
 }));
 
+jest.mock("@/lib/data-connections", () => ({
+  canManageDataConnection: jest.fn(),
+}));
+
 jest.mock("next/cache", () => ({
   revalidatePath: jest.fn(),
 }));
@@ -43,6 +48,10 @@ const mockIsAdmin = isAdmin as jest.MockedFunction<typeof isAdmin>;
 const mockIsAuthorized = isAuthorized as jest.MockedFunction<
   typeof isAuthorized
 >;
+const mockCanManageDataConnection =
+  canManageDataConnection as jest.MockedFunction<
+    typeof canManageDataConnection
+  >;
 
 const FORM_STATE = {
   message: "",
@@ -93,6 +102,7 @@ beforeEach(() => {
   } as Awaited<ReturnType<typeof getPageSession>>);
   mockIsAdmin.mockReturnValue(true);
   mockIsAuthorized.mockReturnValue(true);
+  mockCanManageDataConnection.mockResolvedValue(true);
   mockProductsTable.update.mockImplementation(async (p) => p);
   mockDataConnectionsTable.fetchById.mockResolvedValue(s3Connection);
 });
@@ -357,6 +367,48 @@ describe("updateMirrorPrefix", () => {
       productWith({ "conn-a": mirror({ connection_id: "conn-a" }) }, "conn-a")
     );
     mockIsAuthorized.mockReturnValue(false);
+
+    const result = await updateMirrorPrefix(
+      FORM_STATE,
+      formDataFor({
+        account_id: "acct",
+        product_id: "prod",
+        mirror_key: "conn-a",
+        prefix: "new/prefix/",
+      })
+    );
+
+    expect(result.success).toBe(false);
+    expect(mockProductsTable.update).not.toHaveBeenCalled();
+  });
+
+  test("rejects a product manager who can't manage the connection", async () => {
+    mockProductsTable.fetchById.mockResolvedValue(
+      productWith({ "conn-a": mirror({ connection_id: "conn-a" }) }, "conn-a")
+    );
+    mockIsAuthorized.mockReturnValue(true); // product side OK
+    mockCanManageDataConnection.mockResolvedValue(false); // connection side denied
+
+    const result = await updateMirrorPrefix(
+      FORM_STATE,
+      formDataFor({
+        account_id: "acct",
+        product_id: "prod",
+        mirror_key: "conn-a",
+        prefix: "new/prefix/",
+      })
+    );
+
+    expect(result.success).toBe(false);
+    expect(result.message).toMatch(/both the product and the data connection/i);
+    expect(mockProductsTable.update).not.toHaveBeenCalled();
+  });
+
+  test("rejects when the mirror's connection no longer exists", async () => {
+    mockProductsTable.fetchById.mockResolvedValue(
+      productWith({ "conn-a": mirror({ connection_id: "conn-a" }) }, "conn-a")
+    );
+    mockDataConnectionsTable.fetchById.mockResolvedValue(null);
 
     const result = await updateMirrorPrefix(
       FORM_STATE,
