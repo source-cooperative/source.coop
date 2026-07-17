@@ -26,8 +26,8 @@ interface ProductMirrorsManagerProps {
   // Connection ids owned by the product owner; their admin form is reachable
   // even by non-admins, so we render the link for them.
   ownedConnectionIds: string[];
-  /** Bare bucket/container name per connection id, shown on each card. */
-  connectionBuckets: Record<string, string>;
+  /** Display name and bare bucket/container per connection id, per card. */
+  connectionInfo: Record<string, { name: string; bucket: string }>;
 }
 
 /** A labeled value on a mirror card. */
@@ -60,7 +60,7 @@ export function ProductMirrorsManager({
   availableConnections,
   isAdmin,
   ownedConnectionIds,
-  connectionBuckets,
+  connectionInfo,
 }: ProductMirrorsManagerProps) {
   const ownedConnections = new Set(ownedConnectionIds);
   const [addState, addAction, addPending] = useActionState(
@@ -123,7 +123,12 @@ export function ProductMirrorsManager({
                 <Flex justify="between" align="start" gap="3" wrap="wrap">
                   <Field label="Connection">
                     <Flex align="center" gap="2">
-                      <Code size="2">{mirror.connection_id}</Code>
+                      <Text size="2" weight="medium">
+                        {/* Fall back to the id when the connection no longer
+                            loads (e.g. deleted). */}
+                        {connectionInfo[mirror.connection_id]?.name ??
+                          mirror.connection_id}
+                      </Text>
                       {mirror.is_primary && (
                         <Badge color="green">Primary</Badge>
                       )}
@@ -207,12 +212,12 @@ export function ProductMirrorsManager({
                 </Flex>
                 <Flex gap="5" wrap="wrap">
                   <Field label="Type">
-                    <Badge color="gray">{mirror.storage_type}</Badge>
+                    <Text size="2">{mirror.storage_type}</Text>
                   </Field>
-                  {connectionBuckets[mirror.connection_id] && (
+                  {connectionInfo[mirror.connection_id] && (
                     <Field label="Bucket">
                       <Code size="2" variant="ghost" color="gray">
-                        {connectionBuckets[mirror.connection_id]}
+                        {connectionInfo[mirror.connection_id].bucket}
                       </Code>
                     </Field>
                   )}

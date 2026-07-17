@@ -48,11 +48,14 @@ export default async function ProductDataConnectionsPage({
     .filter((c) => c.owner === product.account_id)
     .map((c) => c.data_connection_id);
 
-  // Bare bucket/container name per connection, shown on the mirror cards.
-  const connectionBuckets = Object.fromEntries(
+  // Display name and bare bucket/container per connection, for the cards.
+  const connectionInfo = Object.fromEntries(
     mirrorConnections.map((c) => [
       c.data_connection_id,
-      "bucket" in c.details ? c.details.bucket : c.details.container_name,
+      {
+        name: c.name,
+        bucket: "bucket" in c.details ? c.details.bucket : c.details.container_name,
+      },
     ])
   );
 
@@ -62,7 +65,7 @@ export default async function ProductDataConnectionsPage({
       availableConnections={availableConnections}
       isAdmin={userIsAdmin}
       ownedConnectionIds={ownedConnectionIds}
-      connectionBuckets={connectionBuckets}
+      connectionInfo={connectionInfo}
     />
   );
 }
