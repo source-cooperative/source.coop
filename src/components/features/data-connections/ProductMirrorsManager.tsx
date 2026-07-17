@@ -93,7 +93,11 @@ export function ProductMirrorsManager({
     emptyFormState
   );
 
-  const mirrors = Object.entries(product.metadata.mirrors);
+  // Primary mirror first, then stable by key.
+  const mirrors = Object.entries(product.metadata.mirrors).sort(
+    ([keyA, a], [keyB, b]) =>
+      Number(b.is_primary) - Number(a.is_primary) || keyA.localeCompare(keyB)
+  );
 
   const usedConnectionIds = new Set(
     mirrors.map(([, mirror]) => mirror.connection_id)
@@ -130,28 +134,14 @@ export function ProductMirrorsManager({
             <Card key={key}>
               <Flex direction="column" gap="3">
                 <Flex justify="between" align="start" gap="3" wrap="wrap">
-                  <Flex gap="5" wrap="wrap">
-                    <Field label="Connection">
-                      <Flex align="center" gap="2">
-                        <Code size="2">{mirror.connection_id}</Code>
-                        {mirror.is_primary && (
-                          <Badge color="green">Primary</Badge>
-                        )}
-                      </Flex>
-                    </Field>
-                    <Field label="Type">
-                      <Badge color={STORAGE_TYPE_COLOR[mirror.storage_type]}>
-                        {mirror.storage_type}
-                      </Badge>
-                    </Field>
-                    {connectionBuckets[mirror.connection_id] && (
-                      <Field label="Bucket">
-                        <Code size="2" variant="ghost" color="gray">
-                          {connectionBuckets[mirror.connection_id]}
-                        </Code>
-                      </Field>
-                    )}
-                  </Flex>
+                  <Field label="Connection">
+                    <Flex align="center" gap="2">
+                      <Code size="2">{mirror.connection_id}</Code>
+                      {mirror.is_primary && (
+                        <Badge color="green">Primary</Badge>
+                      )}
+                    </Flex>
+                  </Field>
                   <Flex align="center" gap="2">
                     {(isAdmin ||
                       ownedConnections.has(mirror.connection_id)) && (
@@ -227,6 +217,20 @@ export function ProductMirrorsManager({
                       </Form>
                     )}
                   </Flex>
+                </Flex>
+                <Flex gap="5" wrap="wrap">
+                  <Field label="Type">
+                    <Badge color={STORAGE_TYPE_COLOR[mirror.storage_type]}>
+                      {mirror.storage_type}
+                    </Badge>
+                  </Field>
+                  {connectionBuckets[mirror.connection_id] && (
+                    <Field label="Bucket">
+                      <Code size="2" variant="ghost" color="gray">
+                        {connectionBuckets[mirror.connection_id]}
+                      </Code>
+                    </Field>
+                  )}
                 </Flex>
                 {/* Everyone who can open this page passed PutRepository
                     (layout gate), so the prefix is editable for all viewers;
