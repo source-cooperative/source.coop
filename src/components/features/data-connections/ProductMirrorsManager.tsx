@@ -26,6 +26,8 @@ interface ProductMirrorsManagerProps {
   // Connection ids owned by the product owner; their admin form is reachable
   // even by non-admins, so we render the link for them.
   ownedConnectionIds: string[];
+  /** Bare bucket/container name per connection id, shown on each card. */
+  connectionBuckets: Record<string, string>;
 }
 
 // Distinct color per backend so GCS isn't confused with Azure. minio/ceph are
@@ -53,6 +55,7 @@ export function ProductMirrorsManager({
   availableConnections,
   isAdmin,
   ownedConnectionIds,
+  connectionBuckets,
 }: ProductMirrorsManagerProps) {
   const ownedConnections = new Set(ownedConnectionIds);
   const [addState, addAction, addPending] = useActionState(
@@ -139,6 +142,11 @@ export function ProductMirrorsManager({
                     <Badge color={STORAGE_TYPE_COLOR[mirror.storage_type]}>
                       {mirror.storage_type}
                     </Badge>
+                    {connectionBuckets[mirror.connection_id] && (
+                      <Code size="1" variant="ghost" color="gray">
+                        {connectionBuckets[mirror.connection_id]}
+                      </Code>
+                    )}
                     {mirror.is_primary && <Badge color="green">Primary</Badge>}
                   </Flex>
                   {isAdmin && (

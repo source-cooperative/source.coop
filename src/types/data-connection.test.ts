@@ -300,6 +300,33 @@ describe("DataConnectionDetails (S3-compatible + GCP variants)", () => {
     expect(details).toMatchObject({ bucket: "my-gcs-bucket" });
   });
 
+  test.each([
+    ["a URI-style name", "s3://my-bucket"],
+    ["a name with slashes", "my-bucket/data"],
+    ["an empty name", ""],
+  ])("rejects %s as a bucket", (_label, bucket) => {
+    expect(() =>
+      DataConnnectionDetailsSchema.parse({
+        provider: "s3",
+        bucket,
+        base_prefix: "",
+        region: "us-east-1",
+      })
+    ).toThrow();
+  });
+
+  test("rejects a URI-style Azure container name", () => {
+    expect(() =>
+      DataConnnectionDetailsSchema.parse({
+        provider: "az",
+        account_name: "acct",
+        container_name: "https://acct.blob.core.windows.net/container",
+        base_prefix: "",
+        region: "westeurope",
+      })
+    ).toThrow();
+  });
+
   test("parses a full GCP connection with workload-identity auth", () => {
     const dc = DataConnectionSchema.parse({
       data_connection_id: "gcs-conn",

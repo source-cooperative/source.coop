@@ -39,13 +39,22 @@ export default async function ProductDataConnectionsPage({
       Object.values(product.metadata.mirrors).map((m) => m.connection_id)
     ),
   ];
-  const ownedConnectionIds = (
+  const mirrorConnections = (
     await Promise.all(
       mirrorConnectionIds.map((id) => dataConnectionsTable.fetchById(id))
     )
-  )
-    .filter((c) => c?.owner === product.account_id)
-    .map((c) => c!.data_connection_id);
+  ).filter((c) => c != null);
+  const ownedConnectionIds = mirrorConnections
+    .filter((c) => c.owner === product.account_id)
+    .map((c) => c.data_connection_id);
+
+  // Bare bucket/container name per connection, shown on the mirror cards.
+  const connectionBuckets = Object.fromEntries(
+    mirrorConnections.map((c) => [
+      c.data_connection_id,
+      "bucket" in c.details ? c.details.bucket : c.details.container_name,
+    ])
+  );
 
   return (
     <ProductMirrorsManager
@@ -53,6 +62,7 @@ export default async function ProductDataConnectionsPage({
       availableConnections={availableConnections}
       isAdmin={userIsAdmin}
       ownedConnectionIds={ownedConnectionIds}
+      connectionBuckets={connectionBuckets}
     />
   );
 }

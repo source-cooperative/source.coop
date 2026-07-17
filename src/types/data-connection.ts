@@ -190,10 +190,27 @@ export type DataConnectionAuthentication = z.infer<
   typeof DataConnectionAuthenticationSchema
 >;
 
+/**
+ * A bare bucket/container name — not a URI (`s3://bucket`) or a path. Cloud
+ * providers all forbid slashes in bucket names, so rejecting `/` also rejects
+ * any scheme prefix; the scheme check just gives a clearer message.
+ */
+const BucketNameSchema = z
+  .string()
+  .min(1, "Bucket name is required")
+  .refine(
+    (name) => !name.includes("://"),
+    "Enter the bare bucket name, without a scheme like s3://"
+  )
+  .refine(
+    (name) => !name.includes("/"),
+    "Bucket name may not contain slashes"
+  );
+
 export const S3DataConnectionSchema = z
   .object({
     provider: z.literal(DataProvider.S3),
-    bucket: z.string(),
+    bucket: BucketNameSchema,
     base_prefix: z.string(),
     region: z.nativeEnum(S3Regions),
     /**
@@ -208,7 +225,7 @@ export const AzureDataConnectionSchema = z
   .object({
     provider: z.literal(DataProvider.Azure),
     account_name: z.string(),
-    container_name: z.string(),
+    container_name: BucketNameSchema,
     base_prefix: z.string(),
     region: z.nativeEnum(AzureRegions),
   })
@@ -222,7 +239,7 @@ export const AzureDataConnectionSchema = z
 export const GcpDataConnectionSchema = z
   .object({
     provider: z.literal(DataProvider.GCP),
-    bucket: z.string(),
+    bucket: BucketNameSchema,
     base_prefix: z.string(),
   })
   .openapi("GcpDataConnection");
