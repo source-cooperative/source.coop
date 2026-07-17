@@ -279,6 +279,15 @@ export function ProductMirrorsManager({
           {prefixState.message}
         </Text>
       )}
+      {(addState.success ||
+        removeState.success ||
+        primaryState.success ||
+        prefixState.success) && (
+        <Text size="2" color="amber">
+          Data connections are cached on the data proxy; changes may take up to
+          5 minutes to take effect.
+        </Text>
+      )}
 
       {isAdmin && unusedConnections.length > 0 && (
         <Flex direction="column" gap="2">
