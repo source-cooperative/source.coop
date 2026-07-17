@@ -177,6 +177,7 @@ export function ProductMirrorsManager({
                         style={{
                           ...formFieldStyle,
                           fontFamily: "var(--code-font-family)",
+                          fontSize: "var(--font-size-1)",
                         }}
                       />
                       <Button
