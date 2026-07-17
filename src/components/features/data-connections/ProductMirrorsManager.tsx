@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { Text, Table, Flex, Badge, Button, Heading, Code } from "@radix-ui/themes";
+import { Text, Card, Flex, Badge, Button, Heading, Code } from "@radix-ui/themes";
 import { Link1Icon, ExternalLinkIcon } from "@radix-ui/react-icons";
 import Form from "next/form";
 import Link from "next/link";
@@ -104,25 +104,15 @@ export function ProductMirrorsManager({
           </Text>
         </Flex>
       ) : (
-        <Table.Root>
-          <Table.Header>
-            <Table.Row>
-              <Table.ColumnHeaderCell>Connection</Table.ColumnHeaderCell>
-              <Table.ColumnHeaderCell>Type</Table.ColumnHeaderCell>
-              <Table.ColumnHeaderCell>Prefix</Table.ColumnHeaderCell>
-              <Table.ColumnHeaderCell>Primary</Table.ColumnHeaderCell>
-              {isAdmin && (
-                <Table.ColumnHeaderCell>Actions</Table.ColumnHeaderCell>
-              )}
-            </Table.Row>
-          </Table.Header>
-          <Table.Body>
-            {mirrors.map(([key, mirror]) => (
-              <Table.Row key={key}>
-                <Table.Cell>
+        <Flex direction="column" gap="3">
+          {mirrors.map(([key, mirror]) => (
+            <Card key={key}>
+              <Flex direction="column" gap="3">
+                <Flex justify="between" align="center" gap="3" wrap="wrap">
                   <Flex align="center" gap="2">
                     <Code size="2">{mirror.connection_id}</Code>
-                    {(isAdmin || ownedConnections.has(mirror.connection_id)) && (
+                    {(isAdmin ||
+                      ownedConnections.has(mirror.connection_id)) && (
                       <Link
                         // Owned connections are managed under the owner
                         // account's settings (reachable by its owners and
@@ -146,115 +136,111 @@ export function ProductMirrorsManager({
                         <ExternalLinkIcon />
                       </Link>
                     )}
+                    <Badge color={STORAGE_TYPE_COLOR[mirror.storage_type]}>
+                      {mirror.storage_type}
+                    </Badge>
+                    {mirror.is_primary && <Badge color="green">Primary</Badge>}
                   </Flex>
-                </Table.Cell>
-                <Table.Cell>
-                  <Badge color={STORAGE_TYPE_COLOR[mirror.storage_type]}>
-                    {mirror.storage_type}
-                  </Badge>
-                </Table.Cell>
-                <Table.Cell>
-                  {/* Everyone who can open this page passed PutRepository
-                      (layout gate), so the prefix is editable for all viewers;
-                      the server action re-checks. */}
-                  <Form action={prefixAction} style={{ display: "inline" }}>
-                    <input
-                      type="hidden"
-                      name="account_id"
-                      value={product.account_id}
-                    />
-                    <input
-                      type="hidden"
-                      name="product_id"
-                      value={product.product_id}
-                    />
-                    <input type="hidden" name="mirror_key" value={key} />
-                    <Flex gap="2" align="center">
-                      <input
-                        name="prefix"
-                        defaultValue={mirror.prefix}
-                        required
-                        style={{
-                          ...formFieldStyle,
-                          fontFamily: "var(--code-font-family)",
-                          fontSize: "var(--font-size-1)",
-                        }}
-                      />
-                      <Button
-                        type="submit"
-                        size="1"
-                        variant="soft"
-                        disabled={prefixPending}
-                        loading={prefixPending}
-                      >
-                        Save
-                      </Button>
+                  {isAdmin && (
+                    <Flex align="center" gap="2">
+                      {!mirror.is_primary && (
+                        <Form
+                          action={primaryAction}
+                          style={{ display: "inline" }}
+                        >
+                          <input
+                            type="hidden"
+                            name="account_id"
+                            value={product.account_id}
+                          />
+                          <input
+                            type="hidden"
+                            name="product_id"
+                            value={product.product_id}
+                          />
+                          <input type="hidden" name="mirror_key" value={key} />
+                          <Button
+                            type="submit"
+                            size="1"
+                            variant="soft"
+                            disabled={primaryPending}
+                            loading={primaryPending}
+                          >
+                            Set Primary
+                          </Button>
+                        </Form>
+                      )}
+                      <Form action={removeAction} style={{ display: "inline" }}>
+                        <input
+                          type="hidden"
+                          name="account_id"
+                          value={product.account_id}
+                        />
+                        <input
+                          type="hidden"
+                          name="product_id"
+                          value={product.product_id}
+                        />
+                        <input type="hidden" name="mirror_key" value={key} />
+                        <Button
+                          type="submit"
+                          size="1"
+                          variant="soft"
+                          color="red"
+                          disabled={removePending}
+                          loading={removePending}
+                        >
+                          Remove
+                        </Button>
+                      </Form>
                     </Flex>
-                  </Form>
-                </Table.Cell>
-                <Table.Cell>
-                  {mirror.is_primary ? (
-                    <Badge color="green">Primary</Badge>
-                  ) : isAdmin ? (
-                    <Form action={primaryAction} style={{ display: "inline" }}>
-                      <input
-                        type="hidden"
-                        name="account_id"
-                        value={product.account_id}
-                      />
-                      <input
-                        type="hidden"
-                        name="product_id"
-                        value={product.product_id}
-                      />
-                      <input type="hidden" name="mirror_key" value={key} />
-                      <Button
-                        type="submit"
-                        size="1"
-                        variant="soft"
-                        disabled={primaryPending}
-                        loading={primaryPending}
-                      >
-                        Set Primary
-                      </Button>
-                    </Form>
-                  ) : (
-                    <Text size="2" color="gray">
-                      -
-                    </Text>
                   )}
-                </Table.Cell>
-                {isAdmin && (
-                  <Table.Cell>
-                    <Form action={removeAction} style={{ display: "inline" }}>
-                      <input
-                        type="hidden"
-                        name="account_id"
-                        value={product.account_id}
-                      />
-                      <input
-                        type="hidden"
-                        name="product_id"
-                        value={product.product_id}
-                      />
-                      <input type="hidden" name="mirror_key" value={key} />
-                      <Button
-                        type="submit"
-                        size="1"
-                        variant="soft"
-                        color="red"
-                        disabled={removePending}
-                        loading={removePending}
-                      >
-                        Remove
-                      </Button>
-                    </Form>
-                  </Table.Cell>
-                )}
-              </Table.Row>
-            ))}
-          </Table.Body>
-        </Table.Root>
+                </Flex>
+                {/* Everyone who can open this page passed PutRepository
+                    (layout gate), so the prefix is editable for all viewers;
+                    the server action re-checks. */}
+                <Form action={prefixAction}>
+                  <input
+                    type="hidden"
+                    name="account_id"
+                    value={product.account_id}
+                  />
+                  <input
+                    type="hidden"
+                    name="product_id"
+                    value={product.product_id}
+                  />
+                  <input type="hidden" name="mirror_key" value={key} />
+                  <Flex gap="2" align="center">
+                    <Text size="1" color="gray">
+                      Prefix
+                    </Text>
+                    <input
+                      name="prefix"
+                      defaultValue={mirror.prefix}
+                      required
+                      style={{
+                        ...formFieldStyle,
+                        flex: 1,
+                        fontFamily: "var(--code-font-family)",
+                        fontSize: "var(--font-size-1)",
+                      }}
+                    />
+                    <Button
+                      type="submit"
+                      size="1"
+                      variant="soft"
+                      disabled={prefixPending}
+                      loading={prefixPending}
+                    >
+                      Save
+                    </Button>
+                  </Flex>
+                </Form>
+              </Flex>
+            </Card>
+          ))}
+        </Flex>
       )}
 
       {removeState.message && (
