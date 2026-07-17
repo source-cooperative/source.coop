@@ -121,19 +121,15 @@ export function ProductMirrorsManager({
             <Card key={key}>
               <Flex direction="column" gap="3">
                 <Flex justify="between" align="start" gap="3" wrap="wrap">
-                  <Field label="Connection">
-                    <Flex align="center" gap="2">
-                      <Text size="2" weight="medium">
-                        {/* Fall back to the id when the connection no longer
-                            loads (e.g. deleted). */}
-                        {connectionInfo[mirror.connection_id]?.name ??
-                          mirror.connection_id}
-                      </Text>
-                      {mirror.is_primary && (
-                        <Badge color="green">Primary</Badge>
-                      )}
-                    </Flex>
-                  </Field>
+                  <Flex align="center" gap="2">
+                    <Text size="2" weight="medium">
+                      {/* Fall back to the id when the connection no longer
+                          loads (e.g. deleted). */}
+                      {connectionInfo[mirror.connection_id]?.name ??
+                        mirror.connection_id}
+                    </Text>
+                    {mirror.is_primary && <Badge color="green">Primary</Badge>}
+                  </Flex>
                   <Flex align="center" gap="2">
                     {(isAdmin ||
                       ownedConnections.has(mirror.connection_id)) && (
