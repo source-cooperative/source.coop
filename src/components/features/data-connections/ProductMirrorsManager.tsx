@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import { Text, Card, Flex, Badge, Button, Heading, Code } from "@radix-ui/themes";
-import { Link1Icon, ExternalLinkIcon } from "@radix-ui/react-icons";
+import { Link1Icon } from "@radix-ui/react-icons";
 import Form from "next/form";
 import Link from "next/link";
 import { formFieldStyle } from "@/components/core/DynamicForm";
@@ -42,6 +42,24 @@ const STORAGE_TYPE_COLOR: Record<
   azure: "blue",
   gcs: "green",
 };
+
+/** A labeled value on a mirror card. */
+function Field({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Flex direction="column" gap="1">
+      <Text size="1" color="gray">
+        {label}
+      </Text>
+      {children}
+    </Flex>
+  );
+}
 
 const emptyFormState = {
   message: "",
@@ -111,73 +129,79 @@ export function ProductMirrorsManager({
           {mirrors.map(([key, mirror]) => (
             <Card key={key}>
               <Flex direction="column" gap="3">
-                <Flex justify="between" align="center" gap="3" wrap="wrap">
+                <Flex justify="between" align="start" gap="3" wrap="wrap">
+                  <Flex gap="5" wrap="wrap">
+                    <Field label="Connection">
+                      <Flex align="center" gap="2">
+                        <Code size="2">{mirror.connection_id}</Code>
+                        {mirror.is_primary && (
+                          <Badge color="green">Primary</Badge>
+                        )}
+                      </Flex>
+                    </Field>
+                    <Field label="Type">
+                      <Badge color={STORAGE_TYPE_COLOR[mirror.storage_type]}>
+                        {mirror.storage_type}
+                      </Badge>
+                    </Field>
+                    {connectionBuckets[mirror.connection_id] && (
+                      <Field label="Bucket">
+                        <Code size="2" variant="ghost" color="gray">
+                          {connectionBuckets[mirror.connection_id]}
+                        </Code>
+                      </Field>
+                    )}
+                  </Flex>
                   <Flex align="center" gap="2">
-                    <Code size="2">{mirror.connection_id}</Code>
                     {(isAdmin ||
                       ownedConnections.has(mirror.connection_id)) && (
-                      <Link
-                        // Owned connections are managed under the owner
-                        // account's settings (reachable by its owners and
-                        // maintainers); only unowned (system) connections live
-                        // in the admin view, which non-admins can't open.
-                        href={
-                          ownedConnections.has(mirror.connection_id)
-                            ? accountDataConnectionEditUrl(
-                                product.account_id,
-                                mirror.connection_id
-                              )
-                            : adminDataConnectionEditUrl(mirror.connection_id)
-                        }
-                        aria-label={`Manage ${mirror.connection_id}`}
-                        title="Manage connection"
-                        style={{
-                          display: "inline-flex",
-                          color: "var(--accent-11)",
-                        }}
-                      >
-                        <ExternalLinkIcon />
-                      </Link>
-                    )}
-                    <Badge color={STORAGE_TYPE_COLOR[mirror.storage_type]}>
-                      {mirror.storage_type}
-                    </Badge>
-                    {connectionBuckets[mirror.connection_id] && (
-                      <Code size="1" variant="ghost" color="gray">
-                        {connectionBuckets[mirror.connection_id]}
-                      </Code>
-                    )}
-                    {mirror.is_primary && <Badge color="green">Primary</Badge>}
-                  </Flex>
-                  {isAdmin && (
-                    <Flex align="center" gap="2">
-                      {!mirror.is_primary && (
-                        <Form
-                          action={primaryAction}
-                          style={{ display: "inline" }}
+                      <Button asChild size="1" variant="soft">
+                        <Link
+                          // Owned connections are managed under the owner
+                          // account's settings (reachable by its owners and
+                          // maintainers); only unowned (system) connections
+                          // live in the admin view, which non-admins can't
+                          // open.
+                          href={
+                            ownedConnections.has(mirror.connection_id)
+                              ? accountDataConnectionEditUrl(
+                                  product.account_id,
+                                  mirror.connection_id
+                                )
+                              : adminDataConnectionEditUrl(
+                                  mirror.connection_id
+                                )
+                          }
                         >
-                          <input
-                            type="hidden"
-                            name="account_id"
-                            value={product.account_id}
-                          />
-                          <input
-                            type="hidden"
-                            name="product_id"
-                            value={product.product_id}
-                          />
-                          <input type="hidden" name="mirror_key" value={key} />
-                          <Button
-                            type="submit"
-                            size="1"
-                            variant="soft"
-                            disabled={primaryPending}
-                            loading={primaryPending}
-                          >
-                            Set Primary
-                          </Button>
-                        </Form>
-                      )}
+                          Edit
+                        </Link>
+                      </Button>
+                    )}
+                    {isAdmin && !mirror.is_primary && (
+                      <Form action={primaryAction} style={{ display: "inline" }}>
+                        <input
+                          type="hidden"
+                          name="account_id"
+                          value={product.account_id}
+                        />
+                        <input
+                          type="hidden"
+                          name="product_id"
+                          value={product.product_id}
+                        />
+                        <input type="hidden" name="mirror_key" value={key} />
+                        <Button
+                          type="submit"
+                          size="1"
+                          variant="soft"
+                          disabled={primaryPending}
+                          loading={primaryPending}
+                        >
+                          Set Primary
+                        </Button>
+                      </Form>
+                    )}
+                    {isAdmin && (
                       <Form action={removeAction} style={{ display: "inline" }}>
                         <input
                           type="hidden"
@@ -201,8 +225,8 @@ export function ProductMirrorsManager({
                           Remove
                         </Button>
                       </Form>
-                    </Flex>
-                  )}
+                    )}
+                  </Flex>
                 </Flex>
                 {/* Everyone who can open this page passed PutRepository
                     (layout gate), so the prefix is editable for all viewers;
@@ -219,31 +243,30 @@ export function ProductMirrorsManager({
                     value={product.product_id}
                   />
                   <input type="hidden" name="mirror_key" value={key} />
-                  <Flex gap="2" align="center">
-                    <Text size="1" color="gray">
-                      Prefix
-                    </Text>
-                    <input
-                      name="prefix"
-                      defaultValue={mirror.prefix}
-                      required
-                      style={{
-                        ...formFieldStyle,
-                        flex: 1,
-                        fontFamily: "var(--code-font-family)",
-                        fontSize: "var(--font-size-1)",
-                      }}
-                    />
-                    <Button
-                      type="submit"
-                      size="1"
-                      variant="soft"
-                      disabled={prefixPending}
-                      loading={prefixPending}
-                    >
-                      Save
-                    </Button>
-                  </Flex>
+                  <Field label="Prefix">
+                    <Flex gap="2" align="center">
+                      <input
+                        name="prefix"
+                        defaultValue={mirror.prefix}
+                        required
+                        style={{
+                          ...formFieldStyle,
+                          flex: 1,
+                          fontFamily: "var(--code-font-family)",
+                          fontSize: "var(--font-size-1)",
+                        }}
+                      />
+                      <Button
+                        type="submit"
+                        size="1"
+                        variant="soft"
+                        disabled={prefixPending}
+                        loading={prefixPending}
+                      >
+                        Save
+                      </Button>
+                    </Flex>
+                  </Field>
                 </Form>
               </Flex>
             </Card>
