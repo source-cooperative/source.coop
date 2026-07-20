@@ -6,7 +6,7 @@ import {
 } from "@/lib/clients/database";
 import { type IndividualAccount, Actions } from "@/types";
 import { getPageSession } from "@/lib/api/utils";
-import { isAuthorized } from "@/lib/api/authz";
+import { isAdmin, isAuthorized } from "@/lib/api/authz";
 import { IndividualProfile } from "@/components/features/profiles/IndividualProfile";
 
 interface IndividualProfilePageProps {
@@ -51,6 +51,12 @@ export async function IndividualProfilePage({
       organizations={organizations}
       showWelcome={showWelcome}
       canEdit={isAuthorized(session, account, Actions.PutAccountProfile)}
+      // Admins (never an already-impersonated session, whose account is the
+      // non-admin target) can view the app as this user, unless it's their own.
+      canImpersonate={
+        isAdmin(session) &&
+        session?.account?.account_id !== account.account_id
+      }
     />
   );
 }

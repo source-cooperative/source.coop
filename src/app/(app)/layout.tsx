@@ -3,6 +3,7 @@ import { Box, Container, Flex } from "@radix-ui/themes";
 import { Navigation, Footer } from "@/components";
 import { VerificationBanner } from "@/components/features/auth/VerificationBanner";
 import { StepUpGuard } from "@/components/features/auth/StepUpGuard";
+import { ImpersonationBanner } from "@/components/features/admin/ImpersonationBanner";
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -27,6 +28,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
            */}
           <Suspense fallback={null}>
             <VerificationBanner />
+          </Suspense>
+          <Suspense fallback={null}>
+            <ImpersonationBanner />
           </Suspense>
           {children}
         </Container>

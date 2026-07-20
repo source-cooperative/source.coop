@@ -18,4 +18,11 @@ export interface UserSession {
   account?: Account;
   memberships?: Membership[];
   orySession?: Session;
+  /**
+   * Present only when an admin is viewing the app as another user. Holds the
+   * real admin's identity so the UI can surface a banner; every other field on
+   * this session belongs to the impersonated target. See
+   * `src/lib/services/impersonation.ts`.
+   */
+  impersonator?: { account_id: string; name: string };
 }
