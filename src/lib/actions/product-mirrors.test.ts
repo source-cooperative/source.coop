@@ -468,4 +468,46 @@ describe("updateMirrorPrefix", () => {
     expect(result.success).toBe(false);
     expect(mockProductsTable.update).not.toHaveBeenCalled();
   });
+
+  test("appends a trailing slash so prefixes are directory boundaries", async () => {
+    mockProductsTable.fetchById.mockResolvedValue(
+      productWith({ "conn-a": mirror({ connection_id: "conn-a" }) }, "conn-a")
+    );
+
+    const result = await updateMirrorPrefix(
+      FORM_STATE,
+      formDataFor({
+        account_id: "acct",
+        product_id: "prod",
+        mirror_key: "conn-a",
+        prefix: "acct/prod", // no trailing slash
+      })
+    );
+
+    expect(result.success).toBe(true);
+    const updated = mockProductsTable.update.mock.calls[0][0];
+    expect(updated.metadata.mirrors["conn-a"].prefix).toBe("acct/prod/");
+  });
+
+  test.each(["/acct/prod", "acct/../other", ".."])(
+    "rejects an unsafe prefix %p before any write",
+    async (prefix) => {
+      mockProductsTable.fetchById.mockResolvedValue(
+        productWith({ "conn-a": mirror({ connection_id: "conn-a" }) }, "conn-a")
+      );
+
+      const result = await updateMirrorPrefix(
+        FORM_STATE,
+        formDataFor({
+          account_id: "acct",
+          product_id: "prod",
+          mirror_key: "conn-a",
+          prefix,
+        })
+      );
+
+      expect(result.success).toBe(false);
+      expect(mockProductsTable.update).not.toHaveBeenCalled();
+    }
+  );
 });
