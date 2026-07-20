@@ -135,10 +135,12 @@ export async function addProductMirror(
       };
     }
 
-    const prefix = resolveMirrorPrefix(
-      connection.prefix_template,
-      accountId,
-      productId
+    // Normalize before storing (not just comparing): a prefix_template may omit
+    // the trailing slash (it's optional in the schema), and the raw value is
+    // what's later concatenated into keys — so "acct/prod" would match keys
+    // under "acct/prod2/" and slip past the overlap check below.
+    const prefix = normalizePrefix(
+      resolveMirrorPrefix(connection.prefix_template, accountId, productId)
     );
 
     // Guards against a prefix_template that omits {{repository.repository_id}}
