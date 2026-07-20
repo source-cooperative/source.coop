@@ -1,7 +1,7 @@
 "use client";
 import { useState, type CSSProperties } from "react";
 import { Flex, DropdownMenu, Text, Box } from "@radix-ui/themes";
-import { ChevronDownIcon, PlusIcon, DashIcon } from "@radix-ui/react-icons";
+import { ChevronDownIcon, PlusIcon } from "@radix-ui/react-icons";
 import styles from "./Navigation.module.css";
 import {
   accountUrl,
@@ -132,10 +132,7 @@ export function AccountDropdown({
                 ? products.slice(0, 20).map((product) => ({
                     href: productUrl(account.account_id, product.product_id),
                     children: (
-                      <>
-                        <DashIcon style={{ color: "var(--gray-a10)" }} />
-                        <span style={entityNameStyle}>{product.title}</span>
-                      </>
+                      <span style={entityNameStyle}>{product.title}</span>
                     ),
                   }))
                 : [
@@ -145,8 +142,10 @@ export function AccountDropdown({
                       disabled: true,
                     },
                   ]),
-              // Create a product for this account, at the bottom of its list.
+              // Create a product for this account, at the bottom of its list,
+              // set off from the products above by a divider.
               {
+                separator: true,
                 href: canCreateProduct
                   ? newProductUrl(account.account_id)
                   : undefined,
