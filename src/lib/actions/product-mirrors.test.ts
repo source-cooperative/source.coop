@@ -14,6 +14,7 @@ jest.mock("../clients", () => ({
   productsTable: {
     fetchById: jest.fn(),
     update: jest.fn(),
+    listProductsByConnectionId: jest.fn(),
   },
   dataConnectionsTable: {
     fetchById: jest.fn(),
@@ -104,8 +105,25 @@ beforeEach(() => {
   mockIsAuthorized.mockReturnValue(true);
   mockCanManageDataConnection.mockResolvedValue(true);
   mockProductsTable.update.mockImplementation(async (p) => p);
+  mockProductsTable.listProductsByConnectionId.mockResolvedValue([]);
   mockDataConnectionsTable.fetchById.mockResolvedValue(s3Connection);
 });
+
+// A different product mirroring to `connectionId` at `prefix`, for overlap tests.
+function siblingProduct(
+  productId: string,
+  connectionId: string,
+  prefix: string
+): Product {
+  return {
+    account_id: "acct",
+    product_id: productId,
+    metadata: {
+      mirrors: { [connectionId]: mirror({ connection_id: connectionId, prefix }) },
+      primary_mirror: connectionId,
+    },
+  } as Product;
+}
 
 describe("addProductMirror", () => {
   test("rejects non-admins before any write", async () => {
@@ -145,6 +163,27 @@ describe("addProductMirror", () => {
       prefix: "acct/prod/",
       is_primary: true,
     });
+  });
+
+  test("rejects when the resolved prefix overlaps another product on the connection", async () => {
+    mockProductsTable.fetchById.mockResolvedValue(productWith({}, ""));
+    // s3Connection resolves to "acct/prod/"; a sibling nested under it overlaps.
+    mockProductsTable.listProductsByConnectionId.mockResolvedValue([
+      siblingProduct("other-prod", "conn-a", "acct/prod/sub/"),
+    ]);
+
+    const result = await addProductMirror(
+      FORM_STATE,
+      formDataFor({
+        account_id: "acct",
+        product_id: "prod",
+        connection_id: "conn-a",
+      })
+    );
+
+    expect(result.success).toBe(false);
+    expect(result.message).toMatch(/overlap/i);
+    expect(mockProductsTable.update).not.toHaveBeenCalled();
   });
 
   test("passes the read updated_at as an optimistic lock and reports conflicts", async () => {
@@ -190,6 +229,29 @@ describe("addProductMirror", () => {
 
     const updated = mockProductsTable.update.mock.calls[0][0];
     expect(updated.metadata.mirrors["conn-a"].prefix).toBe("");
+  });
+
+  test("slash-terminates a prefix from a template missing its trailing slash", async () => {
+    // Without this, the stored "acct/prod" literally matches keys under a
+    // sibling "acct/prod2/", overlapping despite the normalized overlap check.
+    mockProductsTable.fetchById.mockResolvedValue(productWith({}, ""));
+    mockDataConnectionsTable.fetchById.mockResolvedValue({
+      data_connection_id: "conn-a",
+      prefix_template: "{{repository.account_id}}/{{repository.repository_id}}",
+      details: { provider: "s3" },
+    } as DataConnection);
+
+    await addProductMirror(
+      FORM_STATE,
+      formDataFor({
+        account_id: "acct",
+        product_id: "prod",
+        connection_id: "conn-a",
+      })
+    );
+
+    const updated = mockProductsTable.update.mock.calls[0][0];
+    expect(updated.metadata.mirrors["conn-a"].prefix).toBe("acct/prod/");
   });
 
   test("maps a GCP connection to the gcs storage type", async () => {
@@ -510,4 +572,78 @@ describe("updateMirrorPrefix", () => {
       expect(mockProductsTable.update).not.toHaveBeenCalled();
     }
   );
+
+  test.each([
+    ["nested under a sibling", "alice/foo/bar", "alice/foo/"],
+    ["containing a sibling", "alice/foo", "alice/foo/bar/"],
+  ])(
+    "rejects a prefix %s on the same connection",
+    async (_desc, prefix, siblingPrefix) => {
+      mockProductsTable.fetchById.mockResolvedValue(
+        productWith({ "conn-a": mirror({ connection_id: "conn-a" }) }, "conn-a")
+      );
+      mockProductsTable.listProductsByConnectionId.mockResolvedValue([
+        siblingProduct("other-prod", "conn-a", siblingPrefix),
+      ]);
+
+      const result = await updateMirrorPrefix(
+        FORM_STATE,
+        formDataFor({
+          account_id: "acct",
+          product_id: "prod",
+          mirror_key: "conn-a",
+          prefix,
+        })
+      );
+
+      expect(result.success).toBe(false);
+      expect(result.message).toMatch(/overlaps/i);
+      expect(mockProductsTable.update).not.toHaveBeenCalled();
+    }
+  );
+
+  test("ignores the product being edited when checking overlap", async () => {
+    mockProductsTable.fetchById.mockResolvedValue(
+      productWith({ "conn-a": mirror({ connection_id: "conn-a" }) }, "conn-a")
+    );
+    // The scan returns this very product; its own prefix must not block itself.
+    mockProductsTable.listProductsByConnectionId.mockResolvedValue([
+      siblingProduct("prod", "conn-a", "alice/foo/"),
+    ]);
+
+    const result = await updateMirrorPrefix(
+      FORM_STATE,
+      formDataFor({
+        account_id: "acct",
+        product_id: "prod",
+        mirror_key: "conn-a",
+        prefix: "alice/foo/bar/",
+      })
+    );
+
+    expect(result.success).toBe(true);
+    expect(mockProductsTable.update).toHaveBeenCalled();
+  });
+
+  test("allows a non-overlapping sibling prefix", async () => {
+    mockProductsTable.fetchById.mockResolvedValue(
+      productWith({ "conn-a": mirror({ connection_id: "conn-a" }) }, "conn-a")
+    );
+    mockProductsTable.listProductsByConnectionId.mockResolvedValue([
+      siblingProduct("other-prod", "conn-a", "bob/other/"),
+    ]);
+
+    const result = await updateMirrorPrefix(
+      FORM_STATE,
+      formDataFor({
+        account_id: "acct",
+        product_id: "prod",
+        mirror_key: "conn-a",
+        prefix: "alice/foo/",
+      })
+    );
+
+    expect(result.success).toBe(true);
+    expect(mockProductsTable.update).toHaveBeenCalled();
+  });
 });
