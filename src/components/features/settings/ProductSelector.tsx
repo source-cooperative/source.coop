@@ -67,7 +67,7 @@ function ProductDisplay({
   selected?: boolean;
 }) {
   return (
-    <Text size="2" color="gray" weight={selected ? "bold" : "regular"}>
+    <Text size="2" color="gray" weight={selected ? "bold" : "medium"}>
       {product.title}
     </Text>
   );
