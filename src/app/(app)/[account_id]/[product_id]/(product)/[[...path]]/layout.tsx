@@ -131,7 +131,7 @@ export default async function ProductLayout({
           <Dropzone product={product} prefix={prefix}>
             <Card>
               <SectionHeader
-                title="Product Contents"
+                title="Contents"
                 rightButton={
                   canWriteData && (
                     <FetchCredentialsButton

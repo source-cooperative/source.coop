@@ -35,7 +35,7 @@ export default function ProductDetailsLoading() {
         <Card>
           <Box>
             {/* Breadcrumb Skeleton */}
-            <SectionHeader title="Product Contents">
+            <SectionHeader title="Contents">
               <Flex
                 pb="3"
                 mb="3"
@@ -58,7 +58,7 @@ export default function ProductDetailsLoading() {
       {/* Right column: details + analytics stacked */}
       <Flex width="100%" className="product-meta" direction="column" gap="4">
         <Card size={{ initial: "2", sm: "1" }}>
-          <SectionHeader title="Product Details">
+          <SectionHeader title="Details">
             <DataList.Root>
               {/* Visibility Badge Skeleton */}
               <DataList.Item>
