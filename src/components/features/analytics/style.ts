@@ -1,0 +1,25 @@
+// Shared analytics styling constants. Deliberately NOT a "use client"
+// module: server components (the admin page) call mono() and read HELP,
+// and client-module exports can't be invoked across the RSC boundary.
+import type { CSSProperties } from "react";
+
+export const HELP = {
+  downloads: "Number of successful downloads.",
+  window:
+    "Dates are UTC calendar days: the window covers the most recent full days plus the in-progress UTC day.",
+  served: "Total bytes downloaded.",
+  bandwidth: "Data served divided by the elapsed time in the range.",
+  requests: "Successful data requests (GET, status 200/206).",
+  countries: "Distinct countries requests originated from.",
+  dailyAvg: "Average downloads per day over the period.",
+  uniqueIps: "Distinct IP addresses that downloaded data in this period.",
+  registered: "Distinct signed-in users who downloaded data in this period.",
+  anon: "Download requests made without a signed-in user.",
+  distribution:
+    "Unique IP addresses per download-count band; the line accumulates IPs with that many downloads or fewer, toward 100%. Band edges are log-spaced — the tail spans orders of magnitude.",
+};
+
+export const mono = (extra?: CSSProperties): CSSProperties => ({
+  fontFamily: "var(--code-font-family)",
+  ...extra,
+});
