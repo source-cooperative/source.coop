@@ -1,8 +1,17 @@
 "use client";
 
 import { useActionState } from "react";
-import { Text, Card, Flex, Badge, Button, Heading, Code } from "@radix-ui/themes";
-import { Link1Icon } from "@radix-ui/react-icons";
+import {
+  Text,
+  Card,
+  Flex,
+  Badge,
+  Button,
+  Heading,
+  Code,
+  Tooltip,
+} from "@radix-ui/themes";
+import { Link1Icon, InfoCircledIcon } from "@radix-ui/react-icons";
 import Form from "next/form";
 import Link from "next/link";
 import { formFieldStyle } from "@/components/core/DynamicForm";
@@ -33,19 +42,28 @@ interface ProductMirrorsManagerProps {
   editablePrefixConnectionIds: string[];
 }
 
-/** A labeled value on a mirror card. */
+/** A labeled value on a mirror card, with an optional info tooltip. */
 function Field({
   label,
+  hint,
   children,
 }: {
   label: string;
+  hint?: string;
   children: React.ReactNode;
 }) {
   return (
     <Flex direction="column" gap="1">
-      <Text size="1" color="gray">
-        {label}
-      </Text>
+      <Flex align="center" gap="1">
+        <Text size="1" color="gray">
+          {label}
+        </Text>
+        {hint && (
+          <Tooltip content={hint}>
+            <InfoCircledIcon color="var(--gray-8)" />
+          </Tooltip>
+        )}
+      </Flex>
       {children}
     </Flex>
   );
@@ -239,7 +257,10 @@ export function ProductMirrorsManager({
                       value={product.product_id}
                     />
                     <input type="hidden" name="mirror_key" value={key} />
-                    <Field label="Prefix">
+                    <Field
+                      label="Prefix"
+                      hint="You can edit this prefix because you manage both this product and its data connection."
+                    >
                       <Flex gap="2" align="center">
                         <input
                           name="prefix"
