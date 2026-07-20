@@ -283,7 +283,7 @@ export function DataConnectionForm({
         <Field
           label="Prefix Template"
           name="prefix_template"
-          description="Template for the object-key prefix each product receives within the bucket/container. {{repository.account_id}} and {{repository.repository_id}} are substituted when a product attaches this connection."
+          description="Template for the object-key prefix each product receives within the bucket/container. {{repository.account_id}} and {{repository.repository_id}} are substituted when a product attaches this connection. Example: {{repository.account_id}}/{{repository.repository_id}}/"
           errors={state.fieldErrors?.prefix_template}
         >
           <input
@@ -294,13 +294,7 @@ export function DataConnectionForm({
               // failed submit instead of reverting to the stored value.
               state.data.has("prefix_template")
                 ? (state.data.get("prefix_template") as string)
-                : mode === "create"
-                  ? // Creating: pre-fill the default so admins don't retype it.
-                    "{{repository.account_id}}/{{repository.repository_id}}/"
-                  : // Editing: show the stored value, empty if it was cleared.
-                    // Don't fall back to the default, or a cleared prefix would
-                    // reappear on reload.
-                    (dataConnection?.prefix_template ?? "")
+                : (dataConnection?.prefix_template ?? "")
             }
             style={fieldStyle}
           />
