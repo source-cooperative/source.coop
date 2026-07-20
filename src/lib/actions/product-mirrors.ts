@@ -7,6 +7,7 @@ import { productsTable, dataConnectionsTable } from "../clients";
 import {
   Actions,
   DataProvider,
+  Product,
   ProductMirror,
   resolveMirrorPrefix,
 } from "@/types";
@@ -27,6 +28,44 @@ function isConcurrentEdit(error: unknown): boolean {
     error instanceof Error &&
     error.name === "ConditionalCheckFailedException"
   );
+}
+
+// Slash-terminate so prefixes compare on directory boundaries; root ("") stays
+// "". Keys are built by literal concatenation (`${prefix}${key}`), so without a
+// trailing slash "acct/prod" would also match "acct/prod2/".
+const normalizePrefix = (p: string) => (p === "" || p.endsWith("/") ? p : `${p}/`);
+
+// Prefixes on the same connection (= same bucket) overlap when one is nested in
+// the other (either direction). `"".startsWith(x)` semantics make a root prefix
+// overlap everything, which is correct — a root prefix owns the whole bucket.
+const prefixesOverlap = (a: string, b: string) =>
+  a.startsWith(b) || b.startsWith(a);
+
+// The first *other* product mirroring to this connection whose prefix overlaps
+// `prefix`, or null. Excludes the product being edited (self).
+//
+// ponytail: listProductsByConnectionId is a full table scan (no GSI on the
+// mirror map's connection_id). Fine for this low-traffic admin path; if product
+// volume explodes, add a denormalized connection index.
+async function findPrefixConflict(
+  connectionId: string,
+  prefix: string,
+  self: { accountId: string; productId: string }
+): Promise<Product | null> {
+  const normalized = normalizePrefix(prefix);
+  const siblings = await productsTable.listProductsByConnectionId(connectionId);
+  for (const p of siblings) {
+    if (p.account_id === self.accountId && p.product_id === self.productId) {
+      continue;
+    }
+    const m = Object.values(p.metadata.mirrors).find(
+      (mm) => mm.connection_id === connectionId
+    );
+    if (m && prefixesOverlap(normalized, normalizePrefix(m.prefix))) {
+      return p;
+    }
+  }
+  return null;
 }
 
 export async function addProductMirror(
@@ -101,6 +140,22 @@ export async function addProductMirror(
       accountId,
       productId
     );
+
+    // Guards against a prefix_template that omits {{repository.repository_id}}
+    // (two products resolve to the same prefix) or attaching a second product at
+    // a shared root prefix.
+    const conflict = await findPrefixConflict(connectionId, prefix, {
+      accountId,
+      productId,
+    });
+    if (conflict) {
+      return {
+        fieldErrors: {},
+        data: formData,
+        message: `This connection's prefix would overlap product ${conflict.account_id}/${conflict.product_id}. Adjust the connection's prefix template.`,
+        success: false,
+      };
+    }
 
     const isFirst = Object.keys(product.metadata.mirrors).length === 0;
 
@@ -328,8 +383,6 @@ export async function updateMirrorPrefix(
   // concatenation (`${prefix}${key}`), so reject traversal/leading-slash and
   // force a trailing separator — without it "acct/prod" also matches keys under
   // "acct/prod2/" on a shared connection.
-  // ponytail: no cross-product collision scan; managing the connection already
-  // grants broad access. Add a scan if prefix overlap becomes a real problem.
   if (rawPrefix.includes("..") || rawPrefix.startsWith("/")) {
     return {
       fieldErrors: {},
@@ -380,6 +433,19 @@ export async function updateMirrorPrefix(
         data: formData,
         message:
           "You must be an owner or maintainer of both the product and the data connection to edit its prefix",
+        success: false,
+      };
+    }
+
+    const conflict = await findPrefixConflict(existing.connection_id, prefix, {
+      accountId,
+      productId,
+    });
+    if (conflict) {
+      return {
+        fieldErrors: {},
+        data: formData,
+        message: `This prefix overlaps product ${conflict.account_id}/${conflict.product_id} on the same data connection. Choose a non-overlapping prefix.`,
         success: false,
       };
     }
