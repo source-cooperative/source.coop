@@ -314,7 +314,7 @@ export async function updateMirrorPrefix(
   const mirrorKey = formData.get("mirror_key") as string;
   const rawPrefix = ((formData.get("prefix") as string) || "").trim();
 
-  if (!accountId || !productId || !mirrorKey || !rawPrefix) {
+  if (!accountId || !productId || !mirrorKey) {
     return {
       fieldErrors: {},
       data: formData,
@@ -338,7 +338,8 @@ export async function updateMirrorPrefix(
       success: false,
     };
   }
-  const prefix = rawPrefix.endsWith("/") ? rawPrefix : `${rawPrefix}/`;
+  const prefix =
+    !rawPrefix || rawPrefix.endsWith("/") ? rawPrefix : `${rawPrefix}/`;
 
   try {
     const product = await productsTable.fetchById(accountId, productId);
