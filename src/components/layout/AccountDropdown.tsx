@@ -132,7 +132,11 @@ export function AccountDropdown({
                 ? products.slice(0, 20).map((product) => ({
                     href: productUrl(account.account_id, product.product_id),
                     children: (
-                      <Text style={entityNameStyle} weight="medium">
+                      <Text
+                        className={styles.productName}
+                        style={entityNameStyle}
+                        weight="medium"
+                      >
                         {product.title}
                       </Text>
                     ),
