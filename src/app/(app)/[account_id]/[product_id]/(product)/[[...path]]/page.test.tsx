@@ -1,7 +1,6 @@
 /** @jest-environment node */
 
 // Mock component imports first
-jest.mock("./loading", () => ({}));
 jest.mock("@/components/features/metadata/ProductMetadata", () => {
   const { generateProductMetadata } = jest.requireActual(
     "@/components/features/metadata/ProductMetadata",
