@@ -265,7 +265,7 @@ export function ProductMirrorsManager({
                         <input
                           name="prefix"
                           defaultValue={mirror.prefix}
-                          required
+                          placeholder="(connection root)"
                           style={{
                             ...formFieldStyle,
                             flex: 1,

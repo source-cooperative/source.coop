@@ -454,7 +454,11 @@ describe("updateMirrorPrefix", () => {
     expect(updated.metadata.mirrors["conn-b"].prefix).toBe("acct/prod/");
   });
 
-  test("rejects a blank prefix", async () => {
+  test("accepts a blank prefix, mirroring at the connection root", async () => {
+    mockProductsTable.fetchById.mockResolvedValue(
+      productWith({ "conn-a": mirror({ connection_id: "conn-a" }) }, "conn-a")
+    );
+
     const result = await updateMirrorPrefix(
       FORM_STATE,
       formDataFor({
@@ -465,8 +469,9 @@ describe("updateMirrorPrefix", () => {
       })
     );
 
-    expect(result.success).toBe(false);
-    expect(mockProductsTable.update).not.toHaveBeenCalled();
+    expect(result.success).toBe(true);
+    const updated = mockProductsTable.update.mock.calls[0][0];
+    expect(updated.metadata.mirrors["conn-a"].prefix).toBe("");
   });
 
   test("appends a trailing slash so prefixes are directory boundaries", async () => {
