@@ -17,6 +17,7 @@ import { ProductsList } from "../products/ProductsList";
 import { WebsiteLink } from "./WebsiteLink";
 import { EmailVerificationStatus } from "./EmailVerificationStatus";
 import { AvatarLinkCompact, EditButton } from "@/components/core";
+import { ViewAsButton } from "@/components/features/admin/ViewAsButton";
 import { WelcomeCallout } from "./WelcomeCallout";
 
 interface IndividualProfileProps {
@@ -27,6 +28,7 @@ interface IndividualProfileProps {
   organizations: OrganizationalAccount[];
   showWelcome?: boolean;
   canEdit: boolean;
+  canImpersonate?: boolean;
 }
 
 export function IndividualProfile({
@@ -37,6 +39,7 @@ export function IndividualProfile({
   organizations,
   showWelcome = false,
   canEdit,
+  canImpersonate = false,
 }: IndividualProfileProps) {
   const primaryEmail = account.emails?.find((email) => email.is_primary);
   return (
@@ -61,9 +64,14 @@ export function IndividualProfile({
               )}
             </Box>
           </Flex>
-          {canEdit && (
-            <EditButton href={editAccountProfileUrl(account.account_id)} />
-          )}
+          <Flex gap="2" align="center">
+            {canImpersonate && (
+              <ViewAsButton targetAccountId={account.account_id} />
+            )}
+            {canEdit && (
+              <EditButton href={editAccountProfileUrl(account.account_id)} />
+            )}
+          </Flex>
         </Flex>
       </Box>
 
