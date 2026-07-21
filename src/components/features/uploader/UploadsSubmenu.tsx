@@ -6,7 +6,6 @@ import {
   DropdownMenu,
   Text,
   Badge,
-  Box,
   Progress,
   IconButton,
   ScrollArea,
@@ -152,7 +151,6 @@ export function UploadsSubmenu() {
           </ScrollArea>
         </DropdownMenu.SubContent>
       </DropdownMenu.Sub>
-      <DropdownMenu.Separator />
     </>
   );
 }

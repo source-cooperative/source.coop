@@ -2,7 +2,8 @@ import "server-only";
 
 import { LOGGER } from "@/lib";
 import { fileSourceUrl } from "@/lib/urls";
-import { Box, Code } from "@radix-ui/themes";
+import { Box, Code, Flex, Link } from "@radix-ui/themes";
+import { ExternalLinkIcon } from "@radix-ui/react-icons";
 import type { CSSProperties } from "react";
 import { getExtension } from "@/lib/files";
 import { DuckDBConnection } from "@duckdb/node-api";
@@ -68,18 +69,27 @@ const getIframeAttributes = async (
         src: `https://source-cooperative.github.io/csv-table/?iframe=true&url=${url}`,
         style: { border: "1px solid var(--gray-5)" },
       };
-    // TIFF is disabled until https://github.com/source-cooperative/source.coop/issues/221 is fixed.
-    // case "tif":
-    // case "tiff":
+    case "tif":
+    case "tiff":
+      return {
+        src: `https://source-cooperative.github.io/cog-viewer/?url=${url}`,
+        style: { border: "1px solid var(--gray-5)" },
+      };
     case "avif":
     case "bmp":
     case "gif":
     case "jpg":
     case "jpeg":
+    case "png":
     case "svg":
     case "webp":
       return {
         src: `https://source-cooperative.github.io/image-viewer/?url=${url}`,
+        style: { border: "1px solid var(--gray-5)" },
+      };
+    case "pdf":
+      return {
+        src: `https://source-cooperative.github.io/pdf-viewer/?url=${url}`,
         style: { border: "1px solid var(--gray-5)" },
       };
     case "glb":
@@ -93,6 +103,13 @@ const getIframeAttributes = async (
     case "zip":
       return {
         src: `https://source-cooperative.github.io/zip-viewer/?url=${url}`,
+        style: { border: "1px solid var(--gray-5)" },
+      };
+    case "json":
+    case "jsonl":
+    case "ndjson":
+      return {
+        src: `https://source-cooperative.github.io/json-viewer/?url=${url}`,
         style: { border: "1px solid var(--gray-5)" },
       };
     default:
@@ -126,6 +143,14 @@ export async function ObjectPreviewExternal(props: ObjectPreviewExternalProps) {
   const { src, style } = iframeProps;
   return (
     <Box mt="4" pt="4" style={{ borderTop: "1px solid var(--gray-6)" }}>
+      <Flex justify="end" mb="2">
+        <Link href={src} target="_blank" rel="noopener noreferrer" size="1">
+          <Flex align="center" gap="1">
+            Open in new tab
+            <ExternalLinkIcon width="14" height="14" />
+          </Flex>
+        </Link>
+      </Flex>
       <iframe
         width="100%"
         height="600px"

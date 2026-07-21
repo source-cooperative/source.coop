@@ -5,26 +5,29 @@ import {
   SettingsHeader,
 } from "@/components/features/settings";
 import { getPageSession } from "@/lib/api/utils";
-import { isAuthorized } from "@/lib/api/authz";
+import { isAuthorized, canManageAccountDataConnections } from "@/lib/api/authz";
 import { Actions } from "@/types";
 import { accountsTable } from "@/lib/clients/database";
-import { notFound, redirect } from "next/navigation";
-import { CONFIG } from "@/lib/config";
+import { notFound } from "next/navigation";
+import { LoginRequired } from "@/components/core";
 import {
   PersonIcon,
   LockClosedIcon,
   Pencil1Icon,
-  GearIcon,
   ImageIcon,
+  Link1Icon,
+  ExternalLinkIcon,
 } from "@radix-ui/react-icons";
 import {
   editAccountProfileUrl,
   editAccountProfilePictureUrl,
   editAccountPermissionsUrl,
   editAccountMembershipsUrl,
+  accountDataConnectionsUrl,
   accountUrl,
+  orySettingsUrl,
 } from "@/lib/urls";
-import { ExternalLink } from "@/components/core/ExternalLink";
+import { LinkAway } from "@/components/core/LinkAway";
 import { getManageableAccounts } from "@/lib/clients/lookups";
 
 interface AccountLayoutProps {
@@ -41,7 +44,7 @@ export default async function AccountLayout({
   const userSession = await getPageSession();
 
   if (!userSession?.account) {
-    redirect(CONFIG.auth.routes.login);
+    return <LoginRequired />;
   }
 
   const accountToEdit = await accountsTable.fetchById(account_id);
@@ -61,18 +64,28 @@ export default async function AccountLayout({
   const canReadAccount = isAuthorized(
     userSession,
     accountToEdit,
-    Actions.GetAccount
+    Actions.GetAccount,
   );
   const canReadMembership = isAuthorized(
     userSession,
     accountToEdit,
-    Actions.ListAccountMemberships
+    Actions.ListAccountMemberships,
   );
   const canEditAccount = isAuthorized(
     userSession,
     accountToEdit,
-    Actions.PutAccountProfile
+    Actions.PutAccountProfile,
   );
+  const canManageDataConnections = canManageAccountDataConnections(
+    userSession,
+    accountToEdit,
+  );
+
+  // Authentication details (email, password, keys) live in Ory and can only
+  // be changed by the account owner themselves — not by an admin acting on
+  // someone else's account.
+  const isOwnAccount =
+    userSession.account.account_id === accountToEdit.account_id;
 
   const menuItems = [
     {
@@ -89,6 +102,26 @@ export default async function AccountLayout({
       icon: <ImageIcon width="16" height="16" />,
       condition: canEditAccount,
     },
+    {
+      id: "data-connections",
+      label: "Data Connections",
+      href: accountDataConnectionsUrl(account_id),
+      icon: <Link1Icon width="16" height="16" />,
+      condition: canManageDataConnections,
+    },
+    // Permissions (account flags) apply to both individuals and organizations;
+    // view requires GetAccountFlags, edit is admin-only (enforced in the form).
+    {
+      id: "permissions",
+      label: "Permissions",
+      href: editAccountPermissionsUrl(account_id),
+      icon: <LockClosedIcon width="16" height="16" />,
+      condition: isAuthorized(
+        userSession,
+        accountToEdit,
+        Actions.GetAccountFlags,
+      ),
+    },
     ...(accountToEdit.type === "organization"
       ? [
           {
@@ -101,15 +134,15 @@ export default async function AccountLayout({
         ]
       : [
           {
-            id: "permissions",
-            label: "Permissions",
-            href: editAccountPermissionsUrl(account_id),
-            icon: <LockClosedIcon width="16" height="16" />,
-            condition: isAuthorized(
-              userSession,
-              accountToEdit,
-              Actions.GetAccount
-            ),
+            id: "authentication",
+            label: "Authentication",
+            href: orySettingsUrl(),
+            icon: <ExternalLinkIcon width="16" height="16" />,
+            condition: canReadAccount,
+            external: true,
+            disabled: !isOwnAccount,
+            disabledTooltip:
+              "Admins can't edit another user's authentication details.",
           },
         ]),
   ];
@@ -123,9 +156,9 @@ export default async function AccountLayout({
           linkToSameView
         />
 
-        <ExternalLink href={accountUrl(accountToEdit.account_id)}>
+        <LinkAway href={accountUrl(accountToEdit.account_id)}>
           View Profile
-        </ExternalLink>
+        </LinkAway>
       </SettingsHeader>
 
       <SettingsLayout menuItems={menuItems}>{children}</SettingsLayout>

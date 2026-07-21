@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { Pencil1Icon, PersonIcon } from "@radix-ui/react-icons";
+import { Pencil1Icon, PersonIcon, Link1Icon } from "@radix-ui/react-icons";
 import { Flex } from "@radix-ui/themes";
 import {
   SettingsLayout,
@@ -8,16 +8,17 @@ import {
   AccountSelector,
 } from "@/components/features/settings";
 import { getPageSession } from "@/lib/api/utils";
-import { isAuthorized } from "@/lib/api/authz";
+import { isAuthorized, isAdmin } from "@/lib/api/authz";
 import { Actions } from "@/types";
 import { productsTable } from "@/lib/clients/database";
-import { notFound, redirect } from "next/navigation";
-import { CONFIG } from "@/lib/config";
-import { ExternalLink } from "@/components/core/ExternalLink";
+import { notFound } from "next/navigation";
+import { LinkAway } from "@/components/core/LinkAway";
+import { LoginRequired } from "@/components/core";
 import {
   productUrl,
   editProductDetailsUrl,
   editProductMembershipsUrl,
+  editProductDataConnectionsUrl,
 } from "@/lib/urls";
 import { getManageableAccounts } from "@/lib/clients/lookups";
 
@@ -35,7 +36,7 @@ export default async function ProductLayout({
   const session = await getPageSession();
 
   if (!session?.account) {
-    redirect(CONFIG.auth.routes.login);
+    return <LoginRequired />;
   }
 
   const product = await productsTable.fetchById(account_id, product_id);
@@ -81,6 +82,13 @@ export default async function ProductLayout({
       icon: <PersonIcon width="16" height="16" />,
       condition: canReadMembership,
     },
+    {
+      id: "data-connections",
+      label: "Data Connections",
+      href: editProductDataConnectionsUrl(account_id, product_id),
+      icon: <Link1Icon width="16" height="16" />,
+      condition: canEditProduct || isAdmin(session),
+    },
   ];
 
   return (
@@ -97,9 +105,9 @@ export default async function ProductLayout({
           />
         </Flex>
 
-        <ExternalLink href={productUrl(product.account_id, product.product_id)}>
+        <LinkAway href={productUrl(product.account_id, product.product_id)}>
           View Product
-        </ExternalLink>
+        </LinkAway>
       </SettingsHeader>
       <SettingsLayout menuItems={menuItems}>{children}</SettingsLayout>
     </>

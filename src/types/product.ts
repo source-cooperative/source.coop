@@ -4,19 +4,14 @@ import { AccountSchema } from "@/types/account";
 
 extendZodWithOpenApi(z);
 
-// Mirror configuration and status tracking
-// ProductMirror describes a storage mirror for a product, including config, sync status, and stats.
+// ProductMirror describes a storage mirror for a product: which data connection
+// backs it, the key prefix under which the product's objects live, and whether
+// it is the primary mirror.
 export const ProductMirrorSchema = z
   .object({
     storage_type: z.enum(["s3", "azure", "gcs", "minio", "ceph"]),
     connection_id: z.string(), // Reference to storage connection config
     prefix: z.string(), // Format: "{account_id}/{product_id}/"
-    config: z.object({
-      region: z.string().optional(), // For S3/GCS
-      bucket: z.string().optional(), // For S3/GCS
-      container: z.string().optional(), // For Azure
-      endpoint: z.string().optional(), // For MinIO/Ceph
-    }),
     // Mirror-specific settings
     is_primary: z.boolean(), // Is this the primary mirror?
   })
@@ -24,28 +19,36 @@ export const ProductMirrorSchema = z
 
 export type ProductMirror = z.infer<typeof ProductMirrorSchema>;
 
+// A Digital Object Identifier: "10.<registrant>/<suffix>" (e.g. 10.1234/foo.bar).
+// Stored bare (without the https://doi.org/ prefix), since that prefix is added
+// when rendering links and schema.org identifiers. Pattern from Crossref:
+// https://www.crossref.org/blog/dois-and-matching-regular-expressions/
+const DOI_REGEX = /^10\.\d{4,9}\/[-._;()/:A-Za-z0-9]+$/;
+
+export const DoiSchema = z
+  .string()
+  .trim()
+  .regex(DOI_REGEX, "Invalid DOI (expected a bare DOI such as 10.1234/foo.bar)");
+
 // Metadata for a product, including mirrors, roles, and tags
 export const ProductMetadataSchema = z
   .object({
     mirrors: z.record(ProductMirrorSchema),
     primary_mirror: z.string(), // Key of the primary mirror (e.g., "aws-us-east-1")
     tags: z.array(z.string()).optional(),
-    doi: z.string().optional(), // Digital Object Identifier
+    doi: DoiSchema.optional(), // Digital Object Identifier
   })
   .openapi("ProductMetadata");
 
 export type ProductMetadata = z.infer<typeof ProductMetadataSchema>;
 
-export enum ProductDataMode {
-  Open = "open",
-  Subscription = "subscription",
-  Private = "private",
+export enum ProductVisibility {
+  Public = "public",
+  Unlisted = "unlisted",
+  Restricted = "restricted",
 }
-export const ProductDataModeSchema = z
-  .nativeEnum(ProductDataMode, {
-    errorMap: () => ({ message: "Invalid product data mode" }),
-  })
-  .openapi("ProductDataMode");
+
+export const ProductVisibilitySchema = z.nativeEnum(ProductVisibility).openapi("ProductVisibility");
 
 // Main product interface matching new schema
 // Product is the main product entity, including metadata and optional account
@@ -57,12 +60,11 @@ export const ProductSchema = z
     description: z.string(),
     created_at: z.string(),
     updated_at: z.string(),
-    visibility: z.enum(["public", "unlisted", "restricted"]),
+    visibility: ProductVisibilitySchema,
     metadata: ProductMetadataSchema,
     account: AccountSchema.optional(),
     disabled: z.boolean(),
     featured: z.number(),
-    data_mode: ProductDataModeSchema,
     search_text: z.string().optional(),
   })
   .openapi("Product");
@@ -75,7 +77,6 @@ export const ProductCreationRequestSchema = ProductSchema.omit({
   account: true,
   disabled: true,
   featured: true,
-  data_mode: true,
   metadata: true,
 }).openapi("ProductCreationRequest");
 

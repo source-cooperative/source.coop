@@ -2,10 +2,19 @@
 
 import { useState } from "react";
 import { Account } from "@/types";
-import { Button, Flex, Text, Box, TextField, Tooltip } from "@radix-ui/themes";
+import {
+  Button,
+  Flex,
+  Text,
+  Box,
+  TextField,
+  Tooltip,
+  Link,
+} from "@radix-ui/themes";
 import { TrashIcon } from "@radix-ui/react-icons";
 import { DynamicForm, FormField } from "@/components/core";
 import { updateAccountProfile } from "@/lib/actions/account";
+import { orySettingsUrl } from "@/lib/urls";
 
 interface Website {
   url: string;
@@ -20,6 +29,7 @@ interface EditProfileFormData {
   email: string;
   description: string;
   orcid?: string;
+  ror_id?: string;
   websites?: string;
   bio?: string;
 }
@@ -59,6 +69,10 @@ export function EditProfileForm({
       (initialAccount.type === "individual" &&
         initialAccount.metadata_public?.orcid) ||
       "",
+    ror_id:
+      (initialAccount.type === "organization" &&
+        initialAccount.metadata_public?.ror_id) ||
+      "",
   };
 
   const fields: FormField<EditProfileFormData>[] = [
@@ -77,9 +91,14 @@ export function EditProfileForm({
       readOnly: initialAccount.type === "individual",
       placeholder: "you@example.com",
       description:
-        initialAccount.type === "individual"
-          ? "Your primary email address"
-          : "Contact email for your organization",
+        initialAccount.type === "individual" ? (
+          <>
+            Your primary email address. You can change it in your{" "}
+            <Link href={orySettingsUrl()} target="_blank" rel="noopener noreferrer">account settings</Link>.
+          </>
+        ) : (
+          "Contact email for your organization"
+        ),
     },
     {
       label: initialAccount.type === "individual" ? "Bio" : "Description",
@@ -105,6 +124,17 @@ export function EditProfileForm({
             type: "text" as const,
             placeholder: "0000-0002-1825-0097",
             description: "Your ORCID identifier (optional)",
+          } as const,
+        ]
+      : []),
+    ...(initialAccount.type === "organization"
+      ? [
+          {
+            label: "ROR ID",
+            name: "ror_id",
+            type: "text" as const,
+            placeholder: "03yrm5c26",
+            description: "Your Research Organization Registry identifier (optional)",
           } as const,
         ]
       : []),

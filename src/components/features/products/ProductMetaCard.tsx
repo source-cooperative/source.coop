@@ -10,7 +10,7 @@ interface ProductMetaCardProps {
 export function ProductMetaCard({ product }: ProductMetaCardProps) {
   return (
     <Card style={{ height: '100%' }} size={{ initial: '2', sm: '1' }}>
-      <SectionHeader title="Product Details">
+      <SectionHeader title="Details">
         <ProductMetaContent product={product} />
       </SectionHeader>
     </Card>

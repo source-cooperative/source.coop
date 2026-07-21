@@ -16,12 +16,14 @@ import { SectionHeader } from "@/components/core/SectionHeader";
 import { Dropzone } from "@/components/features/uploader/Dropzone";
 import { getPageSession } from "@/lib";
 import { isAuthorized } from "@/lib/api/authz";
-import { productsTable } from "@/lib/clients/database";
+import { dataConnectionsTable, productsTable } from "@/lib/clients/database";
 import { productUrl } from "@/lib/urls";
 import { Actions } from "@/types/shared";
-import { Box, Card, Flex } from "@radix-ui/themes";
-import { notFound } from "next/navigation";
+import { Box, Callout, Card, Flex } from "@radix-ui/themes";
+import { ExclamationTriangleIcon } from "@radix-ui/react-icons";
 import { getPendingInvitation } from "@/lib/actions/memberships";
+import { ProductSchemaMetadata } from "@/components/features/products/ProductSchemaMetadata";
+import { getAuthorizedProduct } from "./data";
 
 interface ProductLayoutProps {
   children: React.ReactNode;
@@ -34,20 +36,46 @@ export default async function ProductLayout({
   children,
   readme,
 }: ProductLayoutProps) {
-  // Then check if product exists
+  // Fetch + authorize in one place. Throws a 404 for missing products or
+  // unauthorized viewers. The session is also needed below for the write check.
   const { account_id, product_id, path } = await params;
+  const product = await getAuthorizedProduct(account_id, product_id);
   const session = await getPageSession();
-  const product = await productsTable.fetchById(account_id, product_id);
-  if (!product) {
-    notFound();
-  }
   const prefix = path ? path.join("/") : "";
+
+  // Hide data-editing controls when the backing data connection is read-only
+  const primaryMirror =
+    product.metadata.mirrors[product.metadata.primary_mirror];
+  const dataConnection = primaryMirror
+    ? await dataConnectionsTable.fetchById(primaryMirror.connection_id)
+    : null;
+  const canWriteData =
+    !!dataConnection &&
+    !dataConnection.read_only &&
+    isAuthorized(session, product, Actions.WriteRepositoryData);
 
   // Check for pending invitation
   const pendingInvitation = await getPendingInvitation(account_id, product_id);
 
   return (
     <>
+      <ProductSchemaMetadata product={product} />
+      {/* A deactivated product is visible only to its owners/maintainers and
+          admins (backend authz 404s everyone else) — make that state
+          unmistakable to whoever can see it. */}
+      {product.disabled && (
+        <Box mt="4">
+          <Callout.Root color="amber" role="alert">
+            <Callout.Icon>
+              <ExclamationTriangleIcon />
+            </Callout.Icon>
+            <Callout.Text>
+              This product is deactivated. It is hidden from everyone except its
+              owners and administrators.
+            </Callout.Text>
+          </Callout.Root>
+        </Box>
+      )}
       {/* Show pending invitation banner if exists */}
       {pendingInvitation && (
         <PendingInvitationBanner
@@ -64,9 +92,9 @@ export default async function ProductLayout({
         <Dropzone product={product} prefix={prefix}>
           <Card>
             <SectionHeader
-              title="Product Contents"
+              title="Contents"
               rightButton={
-                isAuthorized(session, product, Actions.WriteRepositoryData) && (
+                canWriteData && (
                   <FetchCredentialsButton
                     scope={{ accountId: account_id, productId: product_id }}
                     prefix={prefix}

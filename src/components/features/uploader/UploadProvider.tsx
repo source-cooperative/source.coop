@@ -10,6 +10,7 @@ import {
   useRef,
 } from "react";
 import { S3UploadService } from "@/lib/services/s3-upload";
+import { getTemporaryCredentials } from "@/lib";
 import { useS3Credentials } from "./CredentialsProvider";
 import type { CredentialsScope } from "./CredentialsProvider";
 import { useBeforeUnload } from "@/hooks/useBeforeUnload";
@@ -33,6 +34,8 @@ interface UploadContextType {
   cancelUpload: (id: string) => Promise<void>;
   cancelAllUploads: (scope?: CredentialsScope) => Promise<void>;
   retryUpload: (id: string) => Promise<void>;
+  deleteObject: (key: string, scope: CredentialsScope) => Promise<void>;
+  deletePrefix: (prefix: string, scope: CredentialsScope) => Promise<void>;
   clearUploads: (status?: UploadStatus, scope?: CredentialsScope) => void;
   clearAllUploads: (scope?: CredentialsScope) => void;
   getUploadsForScope: (scope: CredentialsScope) => ScopedUploadItem[];
@@ -87,7 +90,28 @@ export function UploadProvider({ children }: UploadProviderProps) {
       for (const [scope, credentials] of getAllCredentials()) {
         const key = s3ServiceKey(scope);
         if (!next.has(key)) {
-          next.set(key, new S3UploadService(credentials));
+          // endpoint/bucket/region/prefix are stable per scope (taken from the
+          // first mint); only the STS token rotates. Hand the client a provider
+          // that re-mints via the server action so the SDK refreshes it before
+          // expiry, keeping long uploads alive (#401).
+          next.set(
+            key,
+            new S3UploadService({
+              endpoint: credentials.endpoint,
+              bucket: credentials.bucket,
+              region: credentials.region,
+              prefix: credentials.prefix,
+              credentials: async () => {
+                const c = await getTemporaryCredentials(scope);
+                return {
+                  accessKeyId: c.accessKeyId,
+                  secretAccessKey: c.secretAccessKey,
+                  sessionToken: c.sessionToken,
+                  expiration: new Date(c.expiration),
+                };
+              },
+            })
+          );
         }
       }
       return next;
@@ -95,8 +119,7 @@ export function UploadProvider({ children }: UploadProviderProps) {
   }, [getAllCredentials]);
 
   const getS3Service = (scope: CredentialsScope) => {
-    const key = `${scope.accountId}:${scope.productId}`;
-    return s3Services.get(key) || null;
+    return s3Services.get(s3ServiceKey(scope)) || null;
   };
 
   const uploadFiles = useCallback(
@@ -128,6 +151,26 @@ export function UploadProvider({ children }: UploadProviderProps) {
   const retryUpload = useCallback(async (id: string) => {
     await queueRef.current!.retry(id);
   }, []);
+
+  const deleteObject = useCallback(
+    async (key: string, scope: CredentialsScope) => {
+      const s3Service = getS3Service(scope);
+      if (!s3Service)
+        throw new Error(`No S3 service available for scope ${s3ServiceKey(scope)}`);
+      await s3Service.deleteObject(key);
+    },
+    [s3Services]
+  );
+
+  const deletePrefix = useCallback(
+    async (prefix: string, scope: CredentialsScope) => {
+      const s3Service = getS3Service(scope);
+      if (!s3Service)
+        throw new Error(`No S3 service available for scope ${s3ServiceKey(scope)}`);
+      await s3Service.deletePrefix(prefix);
+    },
+    [s3Services]
+  );
 
   const clearUploads = useCallback(
     (status?: UploadStatus, scope?: CredentialsScope) => {
@@ -161,6 +204,8 @@ export function UploadProvider({ children }: UploadProviderProps) {
     cancelUpload,
     cancelAllUploads,
     retryUpload,
+    deleteObject,
+    deletePrefix,
     clearUploads,
     clearAllUploads,
     getUploadsForScope,

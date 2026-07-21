@@ -4,7 +4,7 @@
  *   get:
  *     tags: [Data Connections]
  *     summary: List data connections
- *     description: Retrieves a list of data connections. The list is sanitized of data connection credentials based on the user's permissions.
+ *     description: Retrieves a list of data connections. Secret-bearing authentication (static keys/tokens) is always stripped; secret-less federated config (role ARN, workload-identity IDs) is returned to any authorized caller.
  *     responses:
  *       200:
  *         description: Successfully retrieved the list of data connections
@@ -18,9 +18,10 @@
  *         description: Internal server error
  */
 import { NextRequest, NextResponse } from "next/server";
-import { Actions, DataConnectionSchema, DataConnection } from "@/types";
+import { Actions, DataConnectionSchema } from "@/types";
 import { StatusCodes } from "http-status-codes";
 import { isAuthorized } from "@/lib/api/authz";
+import { sanitizeDataConnection } from "@/lib/api/sanitize-data-connection";
 import { getApiSession } from "@/lib/api/utils";
 import { dataConnectionsTable } from "@/lib/clients/database";
 import { LOGGER } from "@/lib";
@@ -33,17 +34,11 @@ export async function GET(request: NextRequest) {
     const filteredConnections = dataConnections.filter((dataConnection) =>
       isAuthorized(session, dataConnection, Actions.GetDataConnection)
     );
-    const sanitizedConnections = filteredConnections.map((connection) => {
-      const sanitized = DataConnectionSchema.omit({
-        authentication: true,
-      }).parse(connection);
-      if (
-        isAuthorized(session, connection, Actions.ViewDataConnectionCredentials)
-      ) {
-        return DataConnectionSchema.parse(connection);
-      }
-      return sanitized;
-    });
+    // sanitizeDataConnection strips secret-bearing authentication (write-only).
+    const sanitizedConnections = filteredConnections.map((connection) =>
+      sanitizeDataConnection(connection)
+    );
+
     return NextResponse.json(sanitizedConnections, { status: StatusCodes.OK });
   } catch (err: any) {
     return NextResponse.json(
@@ -85,17 +80,32 @@ export async function POST(request: NextRequest) {
     const session = await getApiSession(request);
     const body = await request.json();
     const dataConnection = DataConnectionSchema.parse(body);
+    // Auth before validation: an unauthenticated request must get 401, not leak
+    // that `--` is reserved via a 400.
     if (!isAuthorized(session, dataConnection, Actions.CreateDataConnection)) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: StatusCodes.UNAUTHORIZED }
       );
     }
+    // `--` is reserved as the account-namespacing delimiter (`owner--slug`).
+    // The schema regex permits it for namespaced ids; reject it on unowned
+    // (admin-created) ids so an admin can't squat an account's slug namespace.
+    if (
+      !dataConnection.owner &&
+      dataConnection.data_connection_id.includes("--")
+    ) {
+      return NextResponse.json(
+        { error: "ID may not contain consecutive hyphens (--)" },
+        { status: StatusCodes.BAD_REQUEST }
+      );
+    }
     try {
       const createdDataConnection = await dataConnectionsTable.create(
         dataConnection
       );
-      return NextResponse.json(createdDataConnection, {
+      // Strip secret-bearing auth from the create response too (write-only).
+      return NextResponse.json(sanitizeDataConnection(createdDataConnection), {
         status: StatusCodes.OK,
       });
     } catch (e) {

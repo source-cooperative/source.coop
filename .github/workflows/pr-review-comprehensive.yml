@@ -1,10 +1,22 @@
-name: Claude Auto Review with Tracking
+name: Claude Auto Review
 on:
   pull_request:
     types: [opened, synchronize, ready_for_review, reopened]
+    # Skip when a PR touches workflow files: the action can't validate/run
+    # against modified workflows and fails with "401 Unauthorized - Workflow
+    # validation failed".
+    paths-ignore:
+      - '.github/workflows/**'
+
+# Cancel an in-flight review when a new commit is pushed: the latest commit is
+# the only one worth reviewing, and all runs share one sticky comment anyway.
+concurrency:
+  group: claude-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 jobs:
   review:
+    if: github.event.pull_request.user.type != 'Bot'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -18,18 +30,35 @@ jobs:
       - uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          track_progress: true # ✨ Enables tracking comments
+          # Allow the github-actions bot to trigger the review so that
+          # Claude-authored PRs get reviewed. Without this, the action
+          # aborts on bot actors ("Workflow initiated by non-human 
+          # actor").
+          allowed_bots: "github-actions"
+          # Deliver the review as ONE sticky PR comment that updates in place each
+          # run. track_progress forces tag mode (a single tracking comment the
+          # action owns and updates with the final result on these pull_request
+          # events); use_sticky_comment makes it the SAME comment across pushes.
+          # Replaces the prior formal-review approach, which left multiple reviews
+          # per run and accumulated undismissable COMMENTED reviews across runs
+          # (GitHub can't dismiss or delete a submitted COMMENTED review).
+          track_progress: true
+          use_sticky_comment: true
           prompt: |
             REPO: ${{ github.repository }}
-            PR NUMBER: ${{ github.event.pull_request.number }}
+            PR: ${{ github.event.pull_request.number }}
 
-            Please review this pull request with a focus on:
-            - Code quality and best practices
-            - Potential bugs or issues
-            - Security implications
-            - Performance considerations
+            Review this pull request's diff for correctness bugs, security issues,
+            and clear best-practice problems. Skip nits and anything the linter or
+            formatter already enforces.
 
-            Provide detailed feedback using inline comments for specific issues.
-
+            Your final message is delivered as the PR review comment automatically —
+            do NOT post any comment or review yourself. Just produce the review:
+            - Start with a single bold verdict line: `**✅ No blocking issues — safe
+              to merge.**` when nothing is blocking, or `**❌ Changes requested — see
+              findings below.**` when there are blocking issues.
+            - Follow with a short bullet list of findings, each citing `path:line`
+              and, where a concrete fix exists, a fenced code block with the fix.
+            - If nothing is blocking, say so briefly; do not pad.
           claude_args: |
-            --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*)"
+            --allowedTools "Bash(gh pr diff:*),Bash(gh pr view:*)"

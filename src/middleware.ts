@@ -65,11 +65,34 @@ const handleLegacyRedirects = (request: NextRequest): NextResponse | null => {
 
 const ory = createOryMiddleware({});
 
+// Paths the Ory middleware proxies (self-service flows, session checks). For
+// everything else it returns a no-op NextResponse.next().
+// See node_modules/@ory/nextjs/dist/middleware (proxyRequest match list).
+const ORY_PROXIED_PREFIXES = [
+  "/self-service",
+  "/sessions/whoami",
+  "/ui",
+  "/.well-known/ory",
+  "/.ory",
+];
+
 export const middleware = async (request: NextRequest) => {
-  for (const handler of [handleLegacyRedirects, handleChromeDevTools, ory]) {
+  for (const handler of [handleLegacyRedirects, handleChromeDevTools]) {
     const response = await handler(request);
     if (response) return response;
   }
+
+  // Let Ory handle its own endpoints (it returns proxied responses with
+  // redirects / Set-Cookie that we must not discard).
+  if (
+    ORY_PROXIED_PREFIXES.some((prefix) =>
+      request.nextUrl.pathname.startsWith(prefix),
+    )
+  ) {
+    return ory(request);
+  }
+
+  return NextResponse.next();
 };
 
 export const config = {

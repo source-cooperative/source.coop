@@ -1,0 +1,57 @@
+import { Metadata } from "next";
+import { Suspense } from "react";
+import { Flex, Heading, Text } from "@radix-ui/themes";
+import { notFound } from "next/navigation";
+import { dataConnectionsTable } from "@/lib/clients";
+import {
+  DataConnectionForm,
+  DeleteConnectionControl,
+} from "@/components/features/data-connections";
+import { ConnectionUsage } from "@/components/features/data-connections/ConnectionUsage";
+import { toEditableDataConnection } from "@/components/features/data-connections/redact";
+
+export const metadata: Metadata = {
+  title: "Admin — Edit data connection",
+};
+
+interface EditDataConnectionPageProps {
+  params: Promise<{ data_connection_id: string }>;
+}
+
+export default async function EditDataConnectionPage({
+  params,
+}: EditDataConnectionPageProps) {
+  const { data_connection_id } = await params;
+  const dataConnection = await dataConnectionsTable.fetchById(
+    data_connection_id
+  );
+
+  if (!dataConnection) {
+    notFound();
+  }
+
+  return (
+    <Flex direction="column" gap="4">
+      <Flex justify="between" align="center">
+        <Heading size="4">Edit Data Connection</Heading>
+        <DeleteConnectionControl
+          connectionId={dataConnection.data_connection_id}
+        />
+      </Flex>
+      <DataConnectionForm
+        mode="edit"
+        dataConnection={toEditableDataConnection(dataConnection)}
+      />
+
+      <Suspense
+        fallback={
+          <Text size="2" color="gray">
+            Loading product usage…
+          </Text>
+        }
+      >
+        <ConnectionUsage connectionId={dataConnection.data_connection_id} />
+      </Suspense>
+    </Flex>
+  );
+}

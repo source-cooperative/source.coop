@@ -1,6 +1,14 @@
 "use client";
 
-import { Box, Flex, Tooltip, IconButton } from "@radix-ui/themes";
+import {
+  Box,
+  Flex,
+  Tooltip,
+  IconButton,
+  AlertDialog,
+  Button,
+  Text,
+} from "@radix-ui/themes";
 import {
   ChevronRightIcon,
   FileIcon,
@@ -9,16 +17,21 @@ import {
   CheckIcon,
   Cross2Icon,
   ReloadIcon,
+  TrashIcon,
 } from "@radix-ui/react-icons";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { MonoText } from "@/components/core";
 import type { FileNode } from "./utils";
 import type { Product } from "@/types";
-import { formatFileSize } from "./utils";
+import { formatBytes } from "@/lib/format";
 import { objectUrl } from "@/lib/urls";
 import styles from "./ObjectBrowser.module.css";
 import { useState } from "react";
-import { useUploadManager } from "@/components/features/uploader";
+import {
+  useUploadManager,
+  useS3Credentials,
+} from "@/components/features/uploader";
 
 interface DirectoryRowProps {
   item: FileNode;
@@ -30,6 +43,9 @@ interface DirectoryRowProps {
   setFocusedIndex?: (index: number) => void;
   itemRefs?: React.MutableRefObject<(HTMLAnchorElement | null)[]>;
   virtualRow?: { start: number };
+  /** Called with the item's path after a successful delete, so the list can
+      hide it immediately without waiting for the (eventually-consistent) refetch. */
+  onDeleted?: (path: string) => void;
 }
 
 export function DirectoryRow({
@@ -42,9 +58,21 @@ export function DirectoryRow({
   setFocusedIndex,
   itemRefs,
   virtualRow,
+  onDeleted,
 }: DirectoryRowProps) {
   const [copiedField, setCopiedField] = useState<string | null>(null);
-  const { cancelUpload, retryUpload, getUploadsForScope } = useUploadManager();
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const router = useRouter();
+  const {
+    cancelUpload,
+    retryUpload,
+    getUploadsForScope,
+    deleteObject,
+    deletePrefix,
+  } = useUploadManager();
+  const { getCredentials } = useS3Credentials();
 
   // Get uploads for this specific product scope
   const scope = {
@@ -52,6 +80,40 @@ export function DirectoryRow({
     productId: product.product_id,
   };
   const scopedUploads = getUploadsForScope(scope);
+
+  // Edit mode is "user has fetched write credentials for this product" — the
+  // same signal the upload controls use. Delete is gated on it.
+  const canEdit = !!getCredentials(scope);
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      if (item.isDirectory) {
+        await deletePrefix(item.path, scope);
+      } else {
+        await deleteObject(item.path, scope);
+      }
+      // Hide it now (the refetch below can be stale), then reconcile.
+      onDeleted?.(item.path);
+      setConfirmOpen(false);
+      router.refresh(); // re-fetch the server-rendered listing
+    } catch (error) {
+      // Keep the dialog open and tell the user — a partial failure on a large
+      // prefix otherwise looks just like the stale-listing case. A prefix delete
+      // is per-object and non-atomic, so a mid-way failure leaves some objects
+      // gone and the rest intact; warn about that. A single file is all-or-nothing.
+      console.error("Delete failed", error);
+      const reason = error instanceof Error ? error.message : "request failed";
+      setDeleteError(
+        item.isDirectory
+          ? `Delete may be partial — ${reason}. Retry to remove remaining items.`
+          : `Delete failed — ${reason}. Please retry.`
+      );
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   // Find the upload ID for this item if it's uploading
   const uploadItem = scopedUploads.find((upload) => upload.key === item.path);
@@ -147,7 +209,7 @@ export function DirectoryRow({
               {/* File size */}
               {!item.isDirectory && item.size > 0 && (
                 <MonoText color="gray" size="1" style={{ flexShrink: 0 }}>
-                  {formatFileSize(item.size)}
+                  {formatBytes(item.size)}
                 </MonoText>
               )}
 
@@ -239,6 +301,64 @@ export function DirectoryRow({
                     </IconButton>
                   </Tooltip>
                 </Flex>
+              )}
+
+              {/* Delete button — only in edit mode, for files and folders */}
+              {canEdit && !isUploading && (
+                <AlertDialog.Root
+                  open={confirmOpen}
+                  onOpenChange={(o) => {
+                    setConfirmOpen(o);
+                    if (!o) setDeleteError(null);
+                  }}
+                >
+                  <AlertDialog.Trigger>
+                    <IconButton
+                      variant="soft"
+                      size="1"
+                      color="red"
+                      onClick={(e) => e.stopPropagation()}
+                      style={{ minWidth: "auto", cursor: "pointer" }}
+                      aria-label={`Delete ${item.name}`}
+                    >
+                      <TrashIcon width={14} height={14} />
+                    </IconButton>
+                  </AlertDialog.Trigger>
+                  <AlertDialog.Content maxWidth="450px">
+                    <AlertDialog.Title>
+                      Delete {item.isDirectory ? "folder" : "file"}
+                    </AlertDialog.Title>
+                    <AlertDialog.Description size="2">
+                      Are you sure you want to delete{" "}
+                      <strong>{item.name}</strong>
+                      {item.isDirectory ? " and everything inside it" : ""}? This
+                      action cannot be undone.
+                    </AlertDialog.Description>
+                    <Flex gap="3" mt="4" justify="end">
+                      <AlertDialog.Cancel>
+                        <Button variant="soft" color="gray" disabled={deleting}>
+                          Cancel
+                        </Button>
+                      </AlertDialog.Cancel>
+                      {/* Not AlertDialog.Action: that closes the dialog on
+                          click. We close manually after the async delete
+                          resolves so it stays open (disabled) while in flight. */}
+                      <Button
+                        color="red"
+                        onClick={handleDelete}
+                        disabled={deleting}
+                        loading={deleting}
+                      >
+                        Delete
+                      </Button>
+                    </Flex>
+                    {deleteError && (
+                      <Text as="p" size="1" color="red" mt="2">
+                        {deleteError}
+                      </Text>
+                    )}
+                  </AlertDialog.Content>
+                </AlertDialog.Root>
               )}
             </Flex>
           </Box>

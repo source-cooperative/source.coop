@@ -43,7 +43,6 @@ import {
   MembershipRole,
   MembershipState,
   Product,
-  ProductDataMode,
   UserSession,
 } from "@/types";
 import { match } from "ts-pattern";
@@ -66,6 +65,7 @@ type ActionResourceMap = {
   [Actions.GetRepository]: Product;
   [Actions.ListRepository]: Product;
   [Actions.PutRepository]: Product;
+  [Actions.DeleteRepository]: Product;
   [Actions.DisableRepository]: Product;
   [Actions.ReadRepositoryData]: Product;
   [Actions.WriteRepositoryData]: Product;
@@ -94,7 +94,6 @@ type ActionResourceMap = {
   [Actions.CreateDataConnection]: DataConnection;
   [Actions.DisableDataConnection]: DataConnection;
   [Actions.UseDataConnection]: DataConnection;
-  [Actions.ViewDataConnectionCredentials]: DataConnection;
   [Actions.PutDataConnection]: DataConnection;
   [Actions.DeleteDataConnection]: DataConnection;
 };
@@ -170,6 +169,11 @@ export function isAuthorized(
   principal: UserSession | null,
   resource: Product,
   action: Actions.PutRepository
+): boolean;
+export function isAuthorized(
+  principal: UserSession | null,
+  resource: Product,
+  action: Actions.DeleteRepository
 ): boolean;
 export function isAuthorized(
   principal: UserSession | null,
@@ -275,11 +279,6 @@ export function isAuthorized(
 export function isAuthorized(
   principal: UserSession | null,
   resource: DataConnection,
-  action: Actions.ViewDataConnectionCredentials
-): boolean;
-export function isAuthorized(
-  principal: UserSession | null,
-  resource: DataConnection,
   action: Actions.PutDataConnection
 ): boolean;
 export function isAuthorized(
@@ -319,6 +318,9 @@ export function isAuthorized(
       )
       .with(Actions.PutRepository, () =>
         putRepository(principal, resource as ResourceForAction<Actions.PutRepository>)
+      )
+      .with(Actions.DeleteRepository, () =>
+        deleteRepository(principal, resource as ResourceForAction<Actions.DeleteRepository>)
       )
       .with(Actions.ListRepository, () =>
         listRepository(principal, resource as ResourceForAction<Actions.ListRepository>)
@@ -395,9 +397,6 @@ export function isAuthorized(
       .with(Actions.UseDataConnection, () =>
         useDataConnection(principal, resource as ResourceForAction<Actions.UseDataConnection>)
       )
-      .with(Actions.ViewDataConnectionCredentials, () =>
-        viewDataConnectionCredentials(principal, resource as ResourceForAction<Actions.ViewDataConnectionCredentials>)
-      )
       .with(Actions.PutDataConnection, () =>
         putDataConnection(principal, resource as ResourceForAction<Actions.PutDataConnection>)
       )
@@ -452,6 +451,11 @@ function disableDataConnection(
   return false;
 }
 
+// Models what the *connection* permits, not whether the caller is
+// authenticated. A connection that is not read-only and carries no
+// required_flag is usable by anyone — including an anonymous principal — so
+// callers (e.g. createProduct, listUsableDataConnections) must apply their own
+// auth guard before relying on this result.
 function useDataConnection(
   principal: UserSession | null,
   dataConnection: DataConnection
@@ -476,21 +480,6 @@ function useDataConnection(
   } else {
     return true;
   }
-}
-
-function viewDataConnectionCredentials(
-  principal: UserSession | null,
-  _dataConnection: DataConnection
-): boolean {
-  if (principal?.account?.disabled) {
-    return false;
-  }
-
-  if (isAdmin(principal)) {
-    return true;
-  }
-
-  return false;
 }
 
 function putDataConnection(
@@ -521,6 +510,46 @@ function deleteDataConnection(
   }
 
   return false;
+}
+
+/**
+ * Whether `session` may create/manage data connections *owned by* `account`.
+ *
+ * The per-action authz functions above only ever see a connection's `owner`
+ * id, so they can't check the owner account's capability flag and stay
+ * admin-only — which keeps the public `/api/v1/data-connections` routes
+ * admin-only. This helper takes the owner *account* (the account-scoped UI has
+ * already fetched it) so it can additionally require the platform-granted
+ * CREATE_DATA_CONNECTIONS flag: an account (individual or org) must hold it to
+ * own connections at all. Admins bypass the flag.
+ */
+export function canManageAccountDataConnections(
+  session: UserSession | null,
+  account: Account
+): boolean {
+  if (session?.account?.disabled) {
+    return false;
+  }
+
+  if (isAdmin(session)) {
+    return true;
+  }
+
+  // A disabled owner account can't have its connections managed by its members
+  // (admins, handled above, still can). Mirrors getAccountFlags/putAccountProfile.
+  if (account.disabled) {
+    return false;
+  }
+
+  if (!account.flags?.includes(AccountFlags.CREATE_DATA_CONNECTIONS)) {
+    return false;
+  }
+
+  return hasRole(
+    session,
+    [MembershipRole.Owners, MembershipRole.Maintainers],
+    account.account_id
+  );
 }
 
 function putAccountFlags(
@@ -675,13 +704,21 @@ function readRepositoryData(
     return true;
   }
 
-  // If the repository is disabled, they are not authorized
+  // A deactivated product stays visible to its owners and maintainers — the
+  // same people who can deactivate it — but is hidden from everyone else,
+  // including ReadData members and public/unlisted viewers. (Re-activating a
+  // deactivated product remains admin-only; see putRepository.)
   if (product.disabled) {
-    return false;
+    return hasRole(
+      principal,
+      [MembershipRole.Owners, MembershipRole.Maintainers],
+      product.account_id,
+      product.product_id
+    );
   }
 
-  // If the repository is open, everyone is authorized
-  if (product.data_mode === ProductDataMode.Open) {
+  // If the repository is public or unlisted, everyone is authorized
+  if (product.visibility === "public" || product.visibility === "unlisted") {
     return true;
   }
 
@@ -718,14 +755,21 @@ function getRepository(
     return true;
   }
 
-  // If the repository is disabled, they are not authorized
+  // A deactivated product stays visible to its owners and maintainers — the
+  // same people who can deactivate it — but is hidden from everyone else,
+  // including ReadData members and public/unlisted viewers. (Re-activating a
+  // deactivated product remains admin-only; see putRepository.)
   if (product.disabled) {
-    return false;
+    return hasRole(
+      principal,
+      [MembershipRole.Owners, MembershipRole.Maintainers],
+      product.account_id,
+      product.product_id
+    );
   }
 
-  // If the repository is open, everyone is authorized
-  // TODO: Right now we are treating unset data_mode as open
-  if (!product.data_mode || product.data_mode === ProductDataMode.Open) {
+  // If the repository is public or unlisted, everyone is authorized
+  if (product.visibility === "public" || product.visibility === "unlisted") {
     return true;
   }
 
@@ -767,12 +811,8 @@ function listRepository(
     return false;
   }
 
-  // If the repository is listed , everyone is authorized
-  if (
-    // product.state === RepositoryState.Listed &&
-    // product.data_mode === RepositoryDataMode.Open
-    product.visibility === "public"
-  ) {
+  // If the repository is public, everyone is authorized
+  if (product.visibility === "public") {
     return true;
   }
 
@@ -795,6 +835,38 @@ function listRepository(
       MembershipRole.ReadData,
       MembershipRole.WriteData,
     ],
+    product.account_id,
+    product.product_id
+  );
+}
+
+function deleteRepository(
+  principal: UserSession | null,
+  product: Product
+): boolean {
+  if (!principal?.account) {
+    return false;
+  }
+
+  if (principal?.account?.disabled) {
+    return false;
+  }
+
+  if (isAdmin(principal)) {
+    return true;
+  }
+
+  if (product.disabled) {
+    return false;
+  }
+
+  if (principal?.account?.account_id === product.account_id) {
+    return true;
+  }
+
+  return hasRole(
+    principal,
+    [MembershipRole.Owners],
     product.account_id,
     product.product_id
   );

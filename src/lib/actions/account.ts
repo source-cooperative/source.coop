@@ -21,14 +21,13 @@ import { isAuthorized } from "../api/authz";
 import { getPageSession } from "../api/utils";
 import { accountsTable, membershipsTable } from "../clients";
 import { FormState } from "@/components/core/DynamicForm";
-import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import {
   accountUrl,
   editAccountPermissionsUrl,
   editAccountProfileUrl,
 } from "@/lib/urls";
-import { v4 as uuidv4 } from "uuid";
+import { randomUUID } from "crypto";
 
 /**
  * Creates a new account.
@@ -120,16 +119,24 @@ export async function createAccount(
       role: MembershipRole.Owners,
       state: MembershipState.Member,
       state_changed: new Date().toISOString(),
-      membership_id: uuidv4(),
+      membership_id: randomUUID(),
       membership_account_id: account.account_id,
     });
   }
 
-  redirect(
-    account.type === AccountType.INDIVIDUAL
-      ? accountUrl(account.account_id, "welcome=true")
-      : accountUrl(account.account_id)
-  );
+  // Navigate on the client (see FormState.redirectTo) rather than redirect()
+  // here, so the shared layout's auth UI re-renders and the freshly onboarded
+  // user isn't shown as logged out until a full reload.
+  return {
+    fieldErrors: {},
+    data: formData,
+    message: "",
+    success: true,
+    redirectTo:
+      account.type === AccountType.INDIVIDUAL
+        ? accountUrl(account.account_id, "welcome=true")
+        : accountUrl(account.account_id),
+  };
 }
 
 /**
@@ -189,6 +196,7 @@ export async function updateAccountProfile(
     const name = formData.get("name") as string;
     const description = formData.get("description") as string;
     const orcid = formData.get("orcid") as string;
+    const ror_id = formData.get("ror_id") as string;
 
     // Extract websites from form data (handle both indexed and direct approaches)
     const websites: string[] = [];
@@ -260,6 +268,7 @@ export async function updateAccountProfile(
         ...currentAccount.metadata_public,
         bio: description || undefined,
         orcid: orcid || undefined,
+        ror_id: ror_id || undefined,
         domains: validWebsites,
       },
       updated_at: new Date().toISOString(),

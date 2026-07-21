@@ -1,6 +1,6 @@
 @font-face {
   font-family: "Berkeley Mono";
-  src: url("/fonts/BerkeleyMono-Regular.woff2") format("woff2");
+  src: url("https://assets.radiant.earth/fonts/BerkeleyMono-Regular.woff2") format("woff2");
   font-weight: 400;
   font-style: normal;
   font-display: swap;
@@ -8,7 +8,7 @@
 
 @font-face {
   font-family: "Berkeley Mono";
-  src: url("/fonts/BerkeleyMono-Bold.woff2") format("woff2");
+  src: url("https://assets.radiant.earth/fonts/BerkeleyMono-Bold.woff2") format("woff2");
   font-weight: 700;
   font-style: normal;
   font-display: swap;
@@ -16,7 +16,7 @@
 
 @font-face {
   font-family: "Berkeley Mono";
-  src: url("/fonts/BerkeleyMono-Italic.woff2") format("woff2");
+  src: url("https://assets.radiant.earth/fonts/BerkeleyMono-Oblique.woff2") format("woff2");
   font-weight: 400;
   font-style: italic;
   font-display: swap;
@@ -24,7 +24,7 @@
 
 @font-face {
   font-family: "Berkeley Mono";
-  src: url("/fonts/BerkeleyMono-BoldItalic.woff2") format("woff2");
+  src: url("https://assets.radiant.earth/fonts/BerkeleyMono-Bold-Oblique.woff2") format("woff2");
   font-weight: 700;
   font-style: italic;
   font-display: swap;
@@ -69,6 +69,23 @@ a:hover {
 /* Dark mode hover */
 :root[class~="dark"] a:hover {
   color: white !important;
+}
+
+/* Dropdown menu item links should inherit the item's color in every state,
+   overriding the global a/a:hover rules above so highlighted rows don't
+   render as dark text on a tinted background. Covers both a nested <a> and an
+   <a> rendered AS the menu item itself (Radix `asChild`). The :root-prefixed
+   hover selectors mirror the global hover rules' specificity so they win.
+   NOTE: `.rt-BaseMenuItem` is a @radix-ui/themes internal class (verified
+   against themes 3.2.1); re-check these selectors when bumping themes. */
+.rt-BaseMenuItem a,
+a.rt-BaseMenuItem,
+:root:not([class~="dark"]) .rt-BaseMenuItem a:hover,
+:root[class~="dark"] .rt-BaseMenuItem a:hover,
+:root:not([class~="dark"]) a.rt-BaseMenuItem:hover,
+:root[class~="dark"] a.rt-BaseMenuItem:hover {
+  color: inherit !important;
+  text-decoration: none !important;
 }
 
 .repository-listing {

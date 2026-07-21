@@ -14,10 +14,12 @@ import { z } from "zod";
 import {
   MIN_ID_LENGTH,
   MAX_ID_LENGTH,
+  MAX_DATA_CONNECTION_ID_LENGTH,
   ID_REGEX,
-  RepositoryDataMode,
+  DATA_CONNECTION_ID_REGEX,
   AccountFlags,
 } from "./shared";
+import { ProductVisibility } from "./product";
 
 extendZodWithOpenApi(z);
 
@@ -28,6 +30,11 @@ export enum DataProvider {
 }
 
 export enum S3Regions {
+  /**
+   * For S3-compatible backends (e.g. Cloudflare R2) that don't use an AWS
+   * region. Pair with a custom `endpoint` on the connection.
+   */
+  AUTO = "auto",
   AF_SOUTH_1 = "af-south-1",
   AP_EAST_1 = "ap-east-1",
   AP_NORTHEAST_1 = "ap-northeast-1",
@@ -70,45 +77,112 @@ export enum AzureRegions {
 
 export enum DataConnectionAuthenticationType {
   S3AccessKey = "s3_access_key",
-  S3IAMRole = "s3_iam_role",
+  /**
+   * V2 federated backend access: the proxy presents its own OIDC identity to the
+   * data provider's AWS account and assumes `role_arn` via
+   * `AssumeRoleWithWebIdentity`, so no long-lived backend credentials are stored.
+   * (Renamed from the unused V1 `s3_iam_role` placeholder.)
+   */
+  S3WebIdentityRole = "s3_web_identity_role",
+  /**
+   * V2 federated GCS access via GCP Workload Identity Federation: the proxy's
+   * OIDC token is exchanged at GCP STS for a token that impersonates a service
+   * account. Scaffolded — not yet implemented by the proxy/multistore.
+   */
+  GcpWorkloadIdentity = "gcp_workload_identity",
+  /**
+   * V2 federated Azure Blob access via Azure Workload Identity Federation: the
+   * proxy's OIDC token is exchanged at Azure AD for a bearer token. Scaffolded —
+   * not yet implemented by the proxy/multistore.
+   */
+  AzureWorkloadIdentity = "azure_workload_identity",
   AzureSasToken = "az_sas_token",
-  S3ECSTaskRole = "s3_ecs_task_role",
-  S3Local = "s3_local",
 }
-
-export const S3LocalAuthenticationSchema = z
-  .object({
-    type: z.literal(DataConnectionAuthenticationType.S3Local),
-  })
-  .openapi("S3LocalAuthentication");
-
-export const S3ECSTaskRoleAuthenticationSchema = z
-  .object({
-    type: z.literal(DataConnectionAuthenticationType.S3ECSTaskRole),
-  })
-  .openapi("S3ECSTaskRoleAuthentication");
 
 export const S3AccessKeyAuthenticationSchema = z
   .object({
     type: z.literal(DataConnectionAuthenticationType.S3AccessKey),
-    access_key_id: z.string(),
-    secret_access_key: z.string(),
+    access_key_id: z.string().min(1, "Access Key ID is required"),
+    secret_access_key: z.string().min(1, "Secret Access Key is required"),
   })
   .openapi("S3AccessKeyAuthentication");
 
 export const AzureSasTokenAuthenticationSchema = z
   .object({
     type: z.literal(DataConnectionAuthenticationType.AzureSasToken),
-    sas_token: z.string(),
+    sas_token: z.string().min(1, "SAS Token is required"),
   })
   .openapi("AzureSasTokenAuthentication");
+
+/**
+ * IAM role ARN: `arn:{partition}:iam::{account}:role/{path}{name}`. The
+ * partition class (`aws`, `aws-us-gov`, `aws-cn`) and an optional role path are
+ * allowed so GovCloud/China and pathed roles are not rejected. The role
+ * path/name segment is restricted to the characters AWS permits
+ * (`[A-Za-z0-9+=,.@_-]`, plus `/` for the path), so malformed ARNs are
+ * rejected here rather than at AWS STS call time.
+ */
+const IAM_ROLE_ARN_REGEX = /^arn:aws[a-z-]*:iam::\d{12}:role\/[A-Za-z0-9+=,.@/_-]+$/;
+
+/**
+ * V2 federated S3 access. `role_arn` is the customer-owned IAM role the proxy
+ * assumes via `AssumeRoleWithWebIdentity`. It is *not* a secret (it's an ARN),
+ * so it can be surfaced to the proxy without exposing credentials.
+ */
+export const S3WebIdentityRoleAuthenticationSchema = z
+  .object({
+    type: z.literal(DataConnectionAuthenticationType.S3WebIdentityRole),
+    role_arn: z.string().regex(IAM_ROLE_ARN_REGEX, "Invalid IAM role ARN"),
+  })
+  .openapi("S3WebIdentityRoleAuthentication");
+
+/**
+ * V2 federated GCS access via GCP Workload Identity Federation. The proxy
+ * exchanges its OIDC assertion at GCP STS — the `workload_identity_provider`
+ * resource is itself the exchange audience — for a token that impersonates
+ * `service_account`. Neither field is a secret. Scaffolded — not yet wired in
+ * the proxy/multistore.
+ */
+export const GcpWorkloadIdentityAuthenticationSchema = z
+  .object({
+    type: z.literal(DataConnectionAuthenticationType.GcpWorkloadIdentity),
+    /** Full WIF provider resource: `//iam.googleapis.com/projects/.../providers/...`. */
+    workload_identity_provider: z
+      .string()
+      .startsWith("//iam.googleapis.com/projects/"),
+    /**
+     * Service account email the exchanged token impersonates for GCS. User-
+     * managed service accounts (the kind used for WIF) always live under the
+     * `.iam.gserviceaccount.com` domain, e.g. `sa@project.iam.gserviceaccount.com`.
+     */
+    service_account: z.string().email().endsWith(".iam.gserviceaccount.com"),
+  })
+  .openapi("GcpWorkloadIdentityAuthentication");
+
+/**
+ * V2 federated Azure Blob access via Azure Workload Identity Federation. The
+ * proxy exchanges its OIDC assertion at Azure AD (audience
+ * `api://AzureADTokenExchange`, a constant) for a bearer token, using the app
+ * registration identified by `tenant_id` + `client_id`. Neither field is a
+ * secret. Scaffolded — not yet wired in the proxy/multistore.
+ */
+export const AzureWorkloadIdentityAuthenticationSchema = z
+  .object({
+    type: z.literal(DataConnectionAuthenticationType.AzureWorkloadIdentity),
+    /** Azure AD tenant (directory) ID. */
+    tenant_id: z.string().uuid(),
+    /** App registration (client) ID holding the federated identity credential. */
+    client_id: z.string().uuid(),
+  })
+  .openapi("AzureWorkloadIdentityAuthentication");
 
 export const DataConnectionAuthenticationSchema = z
   .discriminatedUnion("type", [
     S3AccessKeyAuthenticationSchema,
+    S3WebIdentityRoleAuthenticationSchema,
+    GcpWorkloadIdentityAuthenticationSchema,
+    AzureWorkloadIdentityAuthenticationSchema,
     AzureSasTokenAuthenticationSchema,
-    S3ECSTaskRoleAuthenticationSchema,
-    S3LocalAuthenticationSchema,
   ])
   .openapi("DataConnectionAuthentication");
 
@@ -116,12 +190,34 @@ export type DataConnectionAuthentication = z.infer<
   typeof DataConnectionAuthenticationSchema
 >;
 
+/**
+ * A bare bucket/container name — not a URI (`s3://bucket`) or a path. Cloud
+ * providers all forbid slashes in bucket names, so rejecting `/` also rejects
+ * any scheme prefix; the scheme check just gives a clearer message.
+ */
+const BucketNameSchema = z
+  .string()
+  .min(1, "Bucket name is required")
+  .refine(
+    (name) => !name.includes("://"),
+    "Enter the bare bucket name, without a scheme like s3://"
+  )
+  .refine(
+    (name) => !name.includes("/"),
+    "Bucket name may not contain slashes"
+  );
+
 export const S3DataConnectionSchema = z
   .object({
     provider: z.literal(DataProvider.S3),
-    bucket: z.string(),
+    bucket: BucketNameSchema,
     base_prefix: z.string(),
     region: z.nativeEnum(S3Regions),
+    /**
+     * Custom S3-compatible endpoint for non-AWS backends (Cloudflare R2, MinIO,
+     * Ceph). Omit for AWS S3, which derives its endpoint from `region`.
+     */
+    endpoint: z.optional(z.string().url()),
   })
   .openapi("S3DataConnection");
 
@@ -129,19 +225,34 @@ export const AzureDataConnectionSchema = z
   .object({
     provider: z.literal(DataProvider.Azure),
     account_name: z.string(),
-    container_name: z.string(),
+    container_name: BucketNameSchema,
     base_prefix: z.string(),
     region: z.nativeEnum(AzureRegions),
   })
   .openapi("AzureDataConnection");
 
+/**
+ * Google Cloud Storage. Access is keyless via GCP Workload Identity Federation
+ * (the `gcp_workload_identity` authentication variant), so no region/endpoint is
+ * needed to address the bucket.
+ */
+export const GcpDataConnectionSchema = z
+  .object({
+    provider: z.literal(DataProvider.GCP),
+    bucket: BucketNameSchema,
+    base_prefix: z.string(),
+  })
+  .openapi("GcpDataConnection");
+
 export type S3DataConnection = z.infer<typeof S3DataConnectionSchema>;
 export type AzureDataConnection = z.infer<typeof AzureDataConnectionSchema>;
+export type GcpDataConnection = z.infer<typeof GcpDataConnectionSchema>;
 
 export const DataConnnectionDetailsSchema = z
   .discriminatedUnion("provider", [
     S3DataConnectionSchema,
     AzureDataConnectionSchema,
+    GcpDataConnectionSchema,
   ])
   .openapi("DataConnectionDetails");
 
@@ -149,23 +260,144 @@ export type DataConnectionDetails = z.infer<
   typeof DataConnnectionDetailsSchema
 >;
 
-export const DataConnectionSchema = z
+/**
+ * Authentication variants permitted for each provider. `authentication` is
+ * optional (omitted ⇒ unsigned), so this pairing is only checked when it is
+ * present. A discriminated union can't express this cross-field
+ * (`details.provider` ↔ `authentication.type`) constraint on its own, so it is
+ * enforced with a `superRefine` on the full connection.
+ */
+const PROVIDER_AUTH_TYPES: Record<
+  DataProvider,
+  readonly DataConnectionAuthenticationType[]
+> = {
+  [DataProvider.S3]: [
+    DataConnectionAuthenticationType.S3AccessKey,
+    DataConnectionAuthenticationType.S3WebIdentityRole,
+  ],
+  [DataProvider.Azure]: [
+    DataConnectionAuthenticationType.AzureWorkloadIdentity,
+    DataConnectionAuthenticationType.AzureSasToken,
+  ],
+  [DataProvider.GCP]: [DataConnectionAuthenticationType.GcpWorkloadIdentity],
+};
+
+/**
+ * The connection object shape. Exported separately from {@link DataConnectionSchema}
+ * because object-only operations (`.omit()`, OpenAPI registration) need the
+ * underlying `ZodObject`, which the cross-field `superRefine` below wraps into a
+ * `ZodEffects`.
+ */
+export const DataConnectionObjectSchema = z
   .object({
     data_connection_id: z
       .string()
       .min(MIN_ID_LENGTH)
-      .max(MAX_ID_LENGTH)
+      .max(MAX_DATA_CONNECTION_ID_LENGTH)
       .toLowerCase()
-      .regex(ID_REGEX, "Invalid data connection ID format")
+      .regex(DATA_CONNECTION_ID_REGEX, "Invalid data connection ID format")
       .openapi({ example: "data-connection-id" }),
     name: z.string(),
     prefix_template: z.optional(z.string()),
     read_only: z.boolean(),
-    allowed_data_modes: z.array(z.nativeEnum(RepositoryDataMode)),
+    // Visibilities a product may use on this connection; enforced at product
+    // creation (see createProduct in src/lib/actions/products.ts).
+    allowed_visibilities: z.array(z.nativeEnum(ProductVisibility)),
     required_flag: z.optional(z.nativeEnum(AccountFlags)),
+    /**
+     * Account (individual or organization) that owns this connection. Absent =
+     * unowned (e.g. Source Cooperative-managed), usable by any account; set ⇒
+     * only that account's products may use it (enforced in `createProduct`). The
+     * proxy also keys its federated-credential cache off this: owned ⇒ per
+     * product-grained subject, unowned ⇒ one shared credential per connection.
+     */
+    owner: z.optional(
+      z
+        .string()
+        .min(MIN_ID_LENGTH)
+        .max(MAX_ID_LENGTH)
+        .regex(ID_REGEX, "Invalid account ID format")
+    ),
     details: DataConnnectionDetailsSchema,
     authentication: z.optional(DataConnectionAuthenticationSchema),
   })
   .openapi("DataConnection");
 
+/**
+ * Full data connection schema: the object shape plus the cross-field checks
+ * that `authentication.type` is valid for `details.provider` and that unsigned
+ * (no-auth) connections are read-only. Use this for parsing/
+ * validating whole connections; use {@link DataConnectionObjectSchema} when you
+ * need `ZodObject` operations such as `.omit()`.
+ */
+export const DataConnectionSchema = DataConnectionObjectSchema.superRefine(
+  (connection, ctx) => {
+    const { authentication, details } = connection;
+    if (!authentication) {
+      // Unsigned (omitted auth) ⇒ anonymous/public access, so it must be
+      // read-only: there are no credentials to authorize writes with.
+      if (!connection.read_only) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["read_only"],
+          message: "Unsigned connections must be read-only",
+        });
+      }
+      return;
+    }
+    if (
+      !PROVIDER_AUTH_TYPES[details.provider].includes(authentication.type)
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["authentication", "type"],
+        message: `Authentication type "${authentication.type}" is not valid for provider "${details.provider}"`,
+      });
+    }
+  }
+);
+
 export type DataConnection = z.infer<typeof DataConnectionSchema>;
+
+/**
+ * The object-key prefix a product mirror receives on this connection.
+ * Substitutes the repository tokens in `prefix_template`; an empty/undefined
+ * template means "no prefix" — the product mirrors at the bucket root.
+ *
+ * Single source of truth: both product creation (`createProduct`) and attaching
+ * a connection later (`addProductMirror`) call this, so the two paths can't
+ * diverge on how a prefix is computed.
+ */
+export function resolveMirrorPrefix(
+  prefixTemplate: string | undefined,
+  accountId: string,
+  productId: string
+): string {
+  return (prefixTemplate ?? "")
+    .replaceAll("{{repository.account_id}}", accountId)
+    .replaceAll("{{repository.repository_id}}", productId);
+}
+
+/**
+ * Whether an authentication variant carries a usable secret — and so must never
+ * be returned by the read API (`sanitizeDataConnection` strips it for everyone;
+ * such secrets are write-only). The V2 federation variants (web identity /
+ * workload identity) are secret-less; only the static-credential variants carry
+ * secrets.
+ */
+export function isSecretBearingAuth(
+  auth: DataConnectionAuthentication
+): boolean {
+  // Default-deny on exposure: a type is treated as secret-bearing (stripped from
+  // read responses) unless it is explicitly listed below as secret-less. So a
+  // newly-added or unknown variant fails safe — never accidentally exposed;
+  // exposing a type requires a deliberate edit to this allowlist.
+  switch (auth.type) {
+    case DataConnectionAuthenticationType.S3WebIdentityRole:
+    case DataConnectionAuthenticationType.GcpWorkloadIdentity:
+    case DataConnectionAuthenticationType.AzureWorkloadIdentity:
+      return false;
+    default:
+      return true;
+  }
+}

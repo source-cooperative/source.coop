@@ -1,15 +1,13 @@
 import { Metadata } from "next";
-import { redirect } from "next/navigation";
 import { FormTitle } from "@/components/core/FormTitle";
 import { AccountFlagsForm } from "@/components/features/accounts/AccountFlagsForm";
-import { accountsTable, isOrganizationalAccount } from "@/lib/clients";
+import { accountsTable } from "@/lib/clients";
 import { Box } from "@radix-ui/themes";
 import { getPageSession } from "@/lib/api/utils";
 import { NotAuthorizedPage } from "@/components/core";
 import { notFound } from "next/navigation";
 import { isAuthorized } from "@/lib/api/authz";
 import { Actions } from "@/types";
-import { editAccountProfileUrl } from "@/lib/urls";
 
 export async function generateMetadata({
   params,
@@ -31,9 +29,6 @@ export default async function PermissionsPage({ params }: PageProps) {
   const account = await accountsTable.fetchById(account_id);
   if (!account) {
     notFound();
-  }
-  if (isOrganizationalAccount(account)) {
-    redirect(editAccountProfileUrl(account_id));
   }
   if (!isAuthorized(session, account, Actions.GetAccountFlags)) {
     return <NotAuthorizedPage />;

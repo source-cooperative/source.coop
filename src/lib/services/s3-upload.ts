@@ -1,16 +1,31 @@
-import { S3Client } from "@aws-sdk/client-s3";
+import {
+  S3Client,
+  DeleteObjectCommand,
+  ListObjectsV2Command,
+} from "@aws-sdk/client-s3";
 import { Upload } from "@aws-sdk/lib-storage";
+import type { AwsCredentialIdentityProvider } from "@aws-sdk/types";
 
 export interface S3UploadConfig {
+  /** Data proxy endpoint. Uploads are path-style and routed through the proxy. */
+  endpoint: string;
   bucket: string;
   region: string;
   prefix: string;
-  accessKeyId: string;
-  secretAccessKey: string;
-  sessionToken: string;
-  chunkSize?: number;
-  maxConcurrent?: number;
+  /**
+   * Async provider for the proxy STS credentials. Handed straight to the S3
+   * client so the SDK re-invokes it ~5 min before each token's `expiration`
+   * (it auto-refreshes any provider whose identity carries an `expiration`
+   * Date). A static credential object would never refresh, so a multi-hour
+   * upload dies the moment the first token expires — issue #401.
+   */
+  credentials: AwsCredentialIdentityProvider;
 }
+
+// 5MB parts, 4 concurrent — S3's minimum part size and a sensible browser
+// concurrency. Inlined: no caller has ever needed to override them.
+const PART_SIZE = 5 * 1024 * 1024;
+const QUEUE_SIZE = 4;
 
 export interface S3UploadParams {
   file: File;
@@ -30,21 +45,17 @@ export interface S3UploadResult {
 export class S3UploadService {
   private client: S3Client;
   private config: S3UploadConfig;
-  private chunkSize: number;
-  private maxConcurrent: number;
 
   constructor(config: S3UploadConfig) {
     this.config = config;
-    this.chunkSize = config.chunkSize || 5 * 1024 * 1024; // 5MB default
-    this.maxConcurrent = config.maxConcurrent || 4;
 
     this.client = new S3Client({
+      endpoint: config.endpoint,
       region: config.region,
-      credentials: {
-        accessKeyId: config.accessKeyId,
-        secretAccessKey: config.secretAccessKey,
-        sessionToken: config.sessionToken,
-      },
+      // The proxy addresses objects as ${endpoint}/${bucket}/${key}, matching
+      // the server-side read client (S3StorageClient).
+      forcePathStyle: true,
+      credentials: config.credentials,
     });
   }
 
@@ -63,8 +74,8 @@ export class S3UploadService {
         Body: file,
         ContentType: file.type || "application/octet-stream",
       },
-      queueSize: this.maxConcurrent,
-      partSize: this.chunkSize,
+      queueSize: QUEUE_SIZE,
+      partSize: PART_SIZE,
       leavePartsOnError: false,
     });
 
@@ -84,17 +95,53 @@ export class S3UploadService {
     };
   }
 
-  /**
-   * Cancel an upload
-   */
-  async cancelUpload(upload: Upload): Promise<void> {
-    await upload.abort();
+  /** DELETE one absolute object key (already includes the product prefix). */
+  private async deleteKey(key: string): Promise<void> {
+    await this.client.send(
+      new DeleteObjectCommand({ Bucket: this.config.bucket, Key: key })
+    );
+  }
+
+  /** Delete a single object. `key` is relative to the product prefix. */
+  async deleteObject(key: string): Promise<void> {
+    await this.deleteKey(`${this.config.prefix}${key}`);
   }
 
   /**
-   * Get the S3 client (for other operations if needed)
+   * Delete every object under a prefix (relative to the product prefix).
+   *
+   * Deletes per object via DELETE /{bucket}/{key} rather than the bucket-root
+   * multi-object DeleteObjects (?delete) endpoint: the data proxy routes by
+   * object key and 404s the bucket-root request (NoSuchBucket). We delete in
+   * small concurrent batches to bound the request rate.
+   *
+   * ponytail: per-object DELETE — fine for normal folders, slower for a
+   * many-thousand-chunk store (e.g. Zarr). Switch back to DeleteObjects if the
+   * proxy ever supports it (see data-proxy-storage-access memory).
    */
-  getClient(): S3Client {
-    return this.client;
+  async deletePrefix(prefix: string): Promise<void> {
+    const CONCURRENCY = 8;
+    const fullPrefix = `${this.config.prefix}${prefix}`;
+    let continuationToken: string | undefined;
+    do {
+      const listed = await this.client.send(
+        new ListObjectsV2Command({
+          Bucket: this.config.bucket,
+          Prefix: fullPrefix,
+          ContinuationToken: continuationToken,
+        })
+      );
+      const keys = (listed.Contents ?? [])
+        .map((o) => o.Key)
+        .filter((k): k is string => !!k);
+      for (let i = 0; i < keys.length; i += CONCURRENCY) {
+        await Promise.all(
+          keys.slice(i, i + CONCURRENCY).map((k) => this.deleteKey(k))
+        );
+      }
+      continuationToken = listed.IsTruncated
+        ? listed.NextContinuationToken
+        : undefined;
+    } while (continuationToken);
   }
 }

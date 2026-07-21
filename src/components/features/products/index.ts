@@ -1,3 +1,4 @@
+export * from "./DeleteProductModal";
 export * from "./ProductListItem";
 export * from "./ProductSummaryCard";
 export * from "./ProductMetaContent";
@@ -8,6 +9,8 @@ export * from "./ProductSearchResult";
 export * from "./TagList";
 export * from "./object-browser";
 export * from "./ChecksumVerifier";
+export * from "./ProxyCredentialsGate";
+export * from "./ProductDataUnavailable";
 export * from "./ProductsFilters";
 export * from "./ProductsList";
 export * from "./Pagination";

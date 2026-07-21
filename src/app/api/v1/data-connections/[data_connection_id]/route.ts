@@ -4,7 +4,7 @@
  *   get:
  *     tags: [Data Connections]
  *     summary: Get data connection details
- *     description: Retrieves the details of a specific data connection. Authentication details are redacted unless the user has appropriate permissions.
+ *     description: Retrieves the details of a specific data connection. Secret-bearing authentication (static keys/tokens) is always stripped; secret-less federated config (role ARN, workload-identity IDs) is returned to any authorized caller.
  *     parameters:
  *       - in: path
  *         name: data_connection_id
@@ -30,6 +30,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Actions, DataConnectionSchema } from "@/types";
 import { StatusCodes } from "http-status-codes";
 import { isAdmin, isAuthorized } from "@/lib/api/authz";
+import { sanitizeDataConnection } from "@/lib/api/sanitize-data-connection";
 import { getApiSession } from "@/lib/api/utils";
 import { dataConnectionsTable } from "@/lib/clients";
 
@@ -41,7 +42,7 @@ export async function GET(
     const session = await getApiSession(request);
 
     const { data_connection_id } = await params;
-    let dataConnection = await dataConnectionsTable.fetchById(
+    const dataConnection = await dataConnectionsTable.fetchById(
       data_connection_id
     );
     if (!dataConnection) {
@@ -58,20 +59,10 @@ export async function GET(
       );
     }
 
-    // Sanitize connection if user doesn't have permission to view credentials
-    if (
-      !isAuthorized(
-        session,
-        dataConnection,
-        Actions.ViewDataConnectionCredentials
-      )
-    ) {
-      dataConnection = DataConnectionSchema.omit({
-        authentication: true,
-      }).parse(dataConnection);
-    }
+    // sanitizeDataConnection strips secret-bearing authentication (write-only).
+    const sanitized = sanitizeDataConnection(dataConnection);
 
-    return NextResponse.json(dataConnection, { status: StatusCodes.OK });
+    return NextResponse.json(sanitized, { status: StatusCodes.OK });
   } catch (err: unknown) {
     const errorMessage =
       err instanceof Error ? err.message : "Internal server error";
@@ -145,14 +136,20 @@ export async function PUT(
         { status: StatusCodes.UNAUTHORIZED }
       );
     }
+    // Admin-only route: the spread lets the body overwrite any field, including
+    // `owner` (now load-bearing for account-scoped authz). Acceptable since only
+    // platform admins reach here; the account-scoped server actions preserve it.
     const updatedDataConnection = {
       ...existingDataConnection,
       ...dataConnectionUpdate,
     };
-    const dataConnection = await dataConnectionsTable.create(
+    // update() (attribute_exists guard), not create() (attribute_not_exists):
+    // the connection already exists, so create() would fail its condition → 500.
+    const dataConnection = await dataConnectionsTable.update(
       updatedDataConnection
     );
-    return NextResponse.json(dataConnection, { status: StatusCodes.OK });
+    const sanitized = sanitizeDataConnection(dataConnection);
+    return NextResponse.json(sanitized, { status: StatusCodes.OK });
   } catch (err: unknown) {
     const errorMessage =
       err instanceof Error ? err.message : "Internal server error";

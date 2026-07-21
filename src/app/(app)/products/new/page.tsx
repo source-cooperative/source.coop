@@ -1,11 +1,17 @@
 import { ProductCreationForm } from "@/components/features/products/ProductCreationForm";
 import { accountsTable, getPageSession, membershipsTable } from "@/lib";
 import { isAuthorized } from "@/lib/api/authz";
-import { Actions, MembershipState } from "@/types";
+import { listUsableDataConnections } from "@/lib/data-connections";
+import { Actions, DataConnectionObjectSchema, MembershipState } from "@/types";
 import { Heading, Text } from "@radix-ui/themes";
 import { FormTitle } from "@/components/core";
 
-export default async function NewProductPage() {
+export default async function NewProductPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ owner?: string }>;
+}) {
+  const { owner } = await searchParams;
   const session = await getPageSession();
   if (!session?.account) {
     return (
@@ -45,6 +51,14 @@ export default async function NewProductPage() {
     )),
   ];
 
+  // Strip credentials before handing connections to the client component.
+  const dataConnections = (await listUsableDataConnections(session)).map(
+    (connection) =>
+      DataConnectionObjectSchema.omit({ authentication: true }).parse(
+        connection
+      )
+  );
+
   return (
     <>
       <FormTitle
@@ -52,7 +66,17 @@ export default async function NewProductPage() {
         description="Create a new product to share with others"
       />
 
-      <ProductCreationForm potentialOwnerAccounts={potentialOwnerAccounts} />
+      <ProductCreationForm
+        potentialOwnerAccounts={potentialOwnerAccounts}
+        dataConnections={dataConnections}
+        defaultOwnerId={
+          // Preselect the owner from ?owner=… (e.g. "New product" opened from an
+          // org's menu), but only if the user can actually own products there.
+          potentialOwnerAccounts.some((a) => a.account_id === owner)
+            ? owner
+            : undefined
+        }
+      />
     </>
   );
 }

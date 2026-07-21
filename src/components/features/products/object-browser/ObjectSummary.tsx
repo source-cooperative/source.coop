@@ -8,9 +8,8 @@ import type {
 } from "@/types";
 import { DateText } from "@/components/display";
 import { ChecksumVerifier } from "../ChecksumVerifier";
-import { formatFileSize } from "./utils";
 import { MonoText, CopyToClipboard } from "@/components/core";
-import { fileSourceUrl } from "@/lib";
+import { fileSourceUrl, formatBytes } from "@/lib";
 
 interface ObjectSummaryProps {
   product: Product;
@@ -55,7 +54,7 @@ export function ObjectSummary({
         <DataList.Item>
           <DataList.Label>Size</DataList.Label>
           <DataList.Value>
-            <MonoText>{formatFileSize(objectInfo.size)}</MonoText>
+            <MonoText>{formatBytes(objectInfo.size)}</MonoText>
           </DataList.Value>
         </DataList.Item>
 

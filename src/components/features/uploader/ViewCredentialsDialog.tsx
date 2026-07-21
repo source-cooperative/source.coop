@@ -11,11 +11,13 @@ import {
   IconButton,
   Tooltip,
   DataList,
+  Callout,
+  Link,
+  SegmentedControl,
 } from "@radix-ui/themes";
-import { CopyIcon, CheckIcon } from "@radix-ui/react-icons";
+import { CopyIcon, CheckIcon, InfoCircledIcon } from "@radix-ui/react-icons";
 import React, { useState } from "react";
 import { MonoText } from "@/components/core";
-import { Icon } from "@radix-ui/react-select";
 
 interface ViewCredentialsDialogProps {
   credentials: TemporaryCredentials;
@@ -28,22 +30,41 @@ export function ViewCredentialsDialog({
   open,
   onOpenChange,
 }: ViewCredentialsDialogProps) {
+  // The credentials are only valid against the data proxy, so the endpoint must
+  // travel with them — an SDK pointed at the default AWS endpoint would 403.
   const jsonFormat = JSON.stringify(
     {
       aws_access_key_id: credentials.accessKeyId,
       aws_secret_access_key: credentials.secretAccessKey,
       aws_session_token: credentials.sessionToken,
       region_name: credentials.region,
+      endpoint_url: credentials.endpoint,
     },
     null,
     2
   );
 
+  const [envShell, setEnvShell] = useState<"sh" | "ps">("sh");
   const envFormat = [
-    `export AWS_ACCESS_KEY_ID="${credentials.accessKeyId}"`,
-    `export AWS_SECRET_ACCESS_KEY="${credentials.secretAccessKey}"`,
-    `export AWS_SESSION_TOKEN="${credentials.sessionToken}"`,
-    `export AWS_DEFAULT_REGION="${credentials.region}"`,
+    ["AWS_ACCESS_KEY_ID", credentials.accessKeyId],
+    ["AWS_SECRET_ACCESS_KEY", credentials.secretAccessKey],
+    ["AWS_SESSION_TOKEN", credentials.sessionToken],
+    ["AWS_DEFAULT_REGION", credentials.region],
+    ["AWS_ENDPOINT_URL", credentials.endpoint],
+  ]
+    .map(([name, value]) =>
+      envShell === "sh"
+        ? `export ${name}="${value}"`
+        : `$env:${name}="${value}"`
+    )
+    .join("\n");
+
+  const iniFormat = [
+    `[source-coop]`,
+    `aws_access_key_id = ${credentials.accessKeyId}`,
+    `aws_secret_access_key = ${credentials.secretAccessKey}`,
+    `aws_session_token = ${credentials.sessionToken}`,
+    `endpoint_url = ${credentials.endpoint}`,
   ].join("\n");
 
   return (
@@ -54,10 +75,29 @@ export function ViewCredentialsDialog({
           Copy these temporary credentials to use in your applications.
         </Dialog.Description>
 
+        <Callout.Root size="1" mb="4">
+          <Callout.Icon>
+            <InfoCircledIcon />
+          </Callout.Icon>
+          <Callout.Text>
+            Prefer a simpler workflow? The{" "}
+            <Link
+              href="https://github.com/source-cooperative/source-coop-cli"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Source Coop CLI
+            </Link>{" "}
+            handles credentials for you, with longer-lived credentials (up to
+            12 hours).
+          </Callout.Text>
+        </Callout.Root>
+
         <Tabs.Root defaultValue="json">
           <Tabs.List>
             <Tabs.Trigger value="json">JSON (SDK)</Tabs.Trigger>
             <Tabs.Trigger value="env">Environment Variables</Tabs.Trigger>
+            <Tabs.Trigger value="ini">INI</Tabs.Trigger>
           </Tabs.List>
 
           <Box pt="3">
@@ -71,6 +111,26 @@ export function ViewCredentialsDialog({
               value="env"
               title="For terminal/shell usage"
               content={envFormat}
+              controls={
+                <SegmentedControl.Root
+                  size="1"
+                  value={envShell}
+                  onValueChange={(value) => setEnvShell(value as "sh" | "ps")}
+                >
+                  <SegmentedControl.Item value="sh">
+                    macOS / Linux
+                  </SegmentedControl.Item>
+                  <SegmentedControl.Item value="ps">
+                    Windows (PowerShell)
+                  </SegmentedControl.Item>
+                </SegmentedControl.Root>
+              }
+            />
+
+            <CredentialsTabContent
+              value="ini"
+              title="For ~/.aws/credentials (AWS CLI profile)"
+              content={iniFormat}
             />
           </Box>
         </Tabs.Root>
@@ -87,7 +147,9 @@ export function ViewCredentialsDialog({
                 [
                   "Expiration",
                   <span key="expiration" title={credentials.expiration}>
-                    {new Date(credentials.expiration).toLocaleString()}
+                    {new Date(credentials.expiration).toLocaleString(undefined, {
+                      timeZoneName: "short",
+                    })}
                   </span>,
                   credentials.expiration,
                 ],
@@ -173,19 +235,24 @@ interface CredentialsTabContentProps {
   value: string;
   title: string;
   content: string;
+  controls?: React.ReactNode;
 }
 
 function CredentialsTabContent({
   value,
   title,
   content,
+  controls,
 }: CredentialsTabContentProps) {
   return (
     <Tabs.Content value={value}>
       <Flex direction="column" gap="2">
-        <Text size="1" weight="regular" color="gray">
-          {title}
-        </Text>
+        <Flex align="center" justify="between" gap="2">
+          <Text size="1" weight="regular" color="gray">
+            {title}
+          </Text>
+          {controls}
+        </Flex>
         <Box style={{ position: "relative" }}>
           <Box
             style={{

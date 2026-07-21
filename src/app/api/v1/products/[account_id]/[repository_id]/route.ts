@@ -60,13 +60,38 @@ export async function GET(
         {
           error: `Repository with ID ${account_id}/${repository_id} not found`,
         },
-        { status: StatusCodes.NOT_FOUND }
+        { status: StatusCodes.NOT_FOUND },
       );
     }
     if (!isAuthorized(session, repository, Actions.GetRepository)) {
+      // A deactivated product should be indistinguishable from a missing one
+      // for anyone not permitted to view it: return 404 instead of a 401 that
+      // would leak its existence.
+      if (repository.disabled) {
+        return NextResponse.json(
+          {
+            error: `Repository with ID ${account_id}/${repository_id} not found`,
+          },
+          { status: StatusCodes.NOT_FOUND },
+        );
+      }
+      // Distinguish the three ways this 401 happens: no session at all (the
+      // OIDC token failed to verify or its subject didn't resolve — see the
+      // authenticateWithOidcToken warnings) vs. a resolved session that simply
+      // isn't authorized for this product (compare the account ids below).
+      LOGGER.warn("Product read authorization denied", {
+        operation: "products.GET",
+        metadata: {
+          hasSession: !!session,
+          sessionAccountId: session?.account?.account_id,
+          productAccountId: repository.account_id,
+          productId: repository.product_id,
+          visibility: repository.visibility,
+        },
+      });
       return NextResponse.json(
         { error: "Unauthorized" },
-        { status: StatusCodes.UNAUTHORIZED }
+        { status: StatusCodes.UNAUTHORIZED },
       );
     }
     return NextResponse.json(repository, { status: StatusCodes.OK });
@@ -78,7 +103,7 @@ export async function GET(
     });
     return NextResponse.json(
       { error: err.message || "Internal server error" },
-      { status: StatusCodes.INTERNAL_SERVER_ERROR }
+      { status: StatusCodes.INTERNAL_SERVER_ERROR },
     );
   }
 }
@@ -212,7 +237,9 @@ export async function GET(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ account_id: string; repository_id: string }> }
+  {
+    params,
+  }: { params: Promise<{ account_id: string; repository_id: string }> },
 ) {
   try {
     const session = await getApiSession(request);
@@ -223,13 +250,13 @@ export async function DELETE(
         {
           error: `Repository with ID ${account_id}/${repository_id} not found`,
         },
-        { status: StatusCodes.NOT_FOUND }
+        { status: StatusCodes.NOT_FOUND },
       );
     }
     if (!isAuthorized(session, repository, Actions.DisableRepository)) {
       return NextResponse.json(
         { error: "Unauthorized" },
-        { status: StatusCodes.UNAUTHORIZED }
+        { status: StatusCodes.UNAUTHORIZED },
       );
     }
     // repository.disabled = true; // TODO: Does disabled need to be supported?
@@ -238,7 +265,7 @@ export async function DELETE(
   } catch (err: any) {
     return NextResponse.json(
       { error: err.message || "Internal server error" },
-      { status: StatusCodes.INTERNAL_SERVER_ERROR }
+      { status: StatusCodes.INTERNAL_SERVER_ERROR },
     );
   }
 }
