@@ -28,11 +28,11 @@ interface DataConnectionFormProps {
   ownerAccountId?: string;
 }
 
-// Storage providers limited to those with a `details` schema (S3, Azure, GCP).
+// Storage providers limited to those with a `details` schema (S3, Azure, GCS).
 const providerOptions: Array<{ value: DataProvider; label: string }> = [
   { value: DataProvider.S3, label: "S3 / S3-compatible (R2, MinIO)" },
   { value: DataProvider.Azure, label: "Azure" },
-  { value: DataProvider.GCP, label: "GCP (GCS)" },
+  { value: DataProvider.GCS, label: "Google Cloud Storage" },
 ];
 
 const s3AuthTypes = [
@@ -50,7 +50,7 @@ const gcpAuthTypes = [DataConnectionAuthenticationType.GcpWorkloadIdentity];
 const authTypesByProvider: Record<string, DataConnectionAuthenticationType[]> = {
   [DataProvider.S3]: s3AuthTypes,
   [DataProvider.Azure]: azureAuthTypes,
-  [DataProvider.GCP]: gcpAuthTypes,
+  [DataProvider.GCS]: gcpAuthTypes,
 };
 
 const AUTH_TYPE_LABELS: Record<DataConnectionAuthenticationType, string> = {
@@ -481,7 +481,7 @@ export function DataConnectionForm({
           </>
         )}
 
-        {provider === DataProvider.GCP && (
+        {provider === DataProvider.GCS && (
           <>
             <Field
               label="Bucket"
@@ -494,7 +494,7 @@ export function DataConnectionForm({
                 name="bucket"
                 defaultValue={
                   (state.data.get("bucket") as string) ||
-                  (dataConnection?.details.provider === DataProvider.GCP
+                  (dataConnection?.details.provider === DataProvider.GCS
                     ? dataConnection.details.bucket
                     : "")
                 }
@@ -513,7 +513,7 @@ export function DataConnectionForm({
                 name="base_prefix"
                 defaultValue={
                   (state.data.get("base_prefix") as string) ||
-                  (dataConnection?.details.provider === DataProvider.GCP
+                  (dataConnection?.details.provider === DataProvider.GCS
                     ? dataConnection.details.base_prefix
                     : "")
                 }
