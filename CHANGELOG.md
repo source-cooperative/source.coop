@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.3](https://github.com/source-cooperative/source.coop/compare/v1.4.2...v1.4.3) (2026-07-22)
+
+
+### Bug Fixes
+
+* **data-connections:** align provider values to the backend vocabulary ([#455](https://github.com/source-cooperative/source.coop/issues/455)) ([06adc4c](https://github.com/source-cooperative/source.coop/commit/06adc4cc8747038e61d4244ba1961998d27b7b5d))
+
 ## [1.4.2](https://github.com/source-cooperative/source.coop/compare/v1.4.1...v1.4.2) (2026-07-21)
 
 
