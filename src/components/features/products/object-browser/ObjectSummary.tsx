@@ -28,7 +28,7 @@ export function ObjectSummary({
   const details = connectionDetails?.dataConnection.details;
   const prefix = connectionDetails?.primaryMirror.prefix;
   const cloudUri =
-    details?.provider === "az"
+    details?.provider === "azure"
       ? `https://${details.account_name}.blob.core.windows.net/${details.container_name}/${prefix}${objectInfo.path}`
       : details?.provider === "s3"
       ? `s3://${details.bucket}/${prefix}${objectInfo.path}`

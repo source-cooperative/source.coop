@@ -1,4 +1,4 @@
-import { DataConnection } from "@/types";
+import { DataConnection, DataProvider } from "@/types";
 import {
   PutItemCommand,
   ResourceNotFoundException,
@@ -12,6 +12,23 @@ import {
 } from "@aws-sdk/lib-dynamodb";
 import { marshall } from "@aws-sdk/util-dynamodb";
 import { BaseTable } from "./base";
+
+// Rows persisted before DataProvider was aligned to the backend storage
+// vocabulary carry the old provider values. Normalize them on read so old
+// connections surface (and downstream, derive `storage_type`) with current
+// values.
+// ponytail: read-time shim; drop once all rows are backfilled to canonical values.
+const LEGACY_PROVIDER_ALIASES: Record<string, DataProvider> = {
+  az: DataProvider.Azure,
+  gcp: DataProvider.GCS,
+};
+
+export function normalizeConnection(item: DataConnection): DataConnection {
+  const canonical = LEGACY_PROVIDER_ALIASES[item.details?.provider as string];
+  return canonical
+    ? { ...item, details: { ...item.details, provider: canonical } as DataConnection["details"] }
+    : item;
+}
 
 /**
  * Class for managing data connection operations in DynamoDB
@@ -30,7 +47,8 @@ export class DataConnectionsTable extends BaseTable {
           },
         })
       );
-      return (result.Items?.[0] as DataConnection) ?? null;
+      const item = result.Items?.[0] as DataConnection | undefined;
+      return item ? normalizeConnection(item) : null;
     } catch (error) {
       if (error instanceof ResourceNotFoundException) return null;
 
@@ -49,7 +67,7 @@ export class DataConnectionsTable extends BaseTable {
       );
       // Unsorted: callers order as they need (e.g. the admin page sorts by
       // provider then name). Sorting here would express no useful intent.
-      return (result.Items ?? []) as DataConnection[];
+      return ((result.Items ?? []) as DataConnection[]).map(normalizeConnection);
     } catch (error) {
       this.logError("listAll", error);
       throw error;

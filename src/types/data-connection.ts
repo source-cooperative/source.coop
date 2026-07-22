@@ -23,10 +23,17 @@ import { ProductVisibility } from "./product";
 
 extendZodWithOpenApi(z);
 
+/**
+ * Storage backend a data connection targets. Values are drawn from the backend
+ * wire vocabulary (`ProductMirror.storage_type` in {@link module:types/product}),
+ * so a mirror's `storage_type` is just the connection's `provider` — no
+ * translation. `Azure`/`GCS` were once `"az"`/`"gcp"`; legacy rows are
+ * normalized on read (see the data-connections DynamoDB client).
+ */
 export enum DataProvider {
   S3 = "s3",
-  Azure = "az",
-  GCP = "gcp",
+  Azure = "azure",
+  GCS = "gcs",
 }
 
 export enum S3Regions {
@@ -236,23 +243,23 @@ export const AzureDataConnectionSchema = z
  * (the `gcp_workload_identity` authentication variant), so no region/endpoint is
  * needed to address the bucket.
  */
-export const GcpDataConnectionSchema = z
+export const GcsDataConnectionSchema = z
   .object({
-    provider: z.literal(DataProvider.GCP),
+    provider: z.literal(DataProvider.GCS),
     bucket: BucketNameSchema,
     base_prefix: z.string(),
   })
-  .openapi("GcpDataConnection");
+  .openapi("GcsDataConnection");
 
 export type S3DataConnection = z.infer<typeof S3DataConnectionSchema>;
 export type AzureDataConnection = z.infer<typeof AzureDataConnectionSchema>;
-export type GcpDataConnection = z.infer<typeof GcpDataConnectionSchema>;
+export type GcsDataConnection = z.infer<typeof GcsDataConnectionSchema>;
 
 export const DataConnnectionDetailsSchema = z
   .discriminatedUnion("provider", [
     S3DataConnectionSchema,
     AzureDataConnectionSchema,
-    GcpDataConnectionSchema,
+    GcsDataConnectionSchema,
   ])
   .openapi("DataConnectionDetails");
 
@@ -279,7 +286,7 @@ const PROVIDER_AUTH_TYPES: Record<
     DataConnectionAuthenticationType.AzureWorkloadIdentity,
     DataConnectionAuthenticationType.AzureSasToken,
   ],
-  [DataProvider.GCP]: [DataConnectionAuthenticationType.GcpWorkloadIdentity],
+  [DataProvider.GCS]: [DataConnectionAuthenticationType.GcpWorkloadIdentity],
 };
 
 /**
