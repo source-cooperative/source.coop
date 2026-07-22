@@ -27,8 +27,8 @@ extendZodWithOpenApi(z);
  * Storage backend a data connection targets. Values are the provider strings the
  * data proxy matches on to build a storage client, so nothing between a
  * connection and its product mirror needs translation. `Azure`/`GCS` were once
- * `"az"`/`"gcp"`; legacy rows are normalized on read (see the data-connections
- * DynamoDB client).
+ * `"az"`/`"gcp"`; existing rows are converted by
+ * `scripts/migrate-provider-values.ts` (run before deploying).
  */
 export enum DataProvider {
   S3 = "s3",
