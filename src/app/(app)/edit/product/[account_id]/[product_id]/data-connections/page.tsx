@@ -56,6 +56,7 @@ export default async function ProductDataConnectionsPage({
       {
         name: c.name,
         bucket: "bucket" in c.details ? c.details.bucket : c.details.container_name,
+        provider: c.details.provider,
       },
     ])
   );
