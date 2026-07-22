@@ -192,12 +192,12 @@ describe("addProductMirror", () => {
     expect(updated.metadata.mirrors["conn-a"].prefix).toBe("");
   });
 
-  test("maps a GCP connection to the gcs storage type", async () => {
+  test("derives a mirror's storage_type from the connection provider", async () => {
     mockProductsTable.fetchById.mockResolvedValue(productWith({}, ""));
     mockDataConnectionsTable.fetchById.mockResolvedValue({
       data_connection_id: "conn-a",
       prefix_template: "{{repository.account_id}}/{{repository.repository_id}}/",
-      details: { provider: "gcp" },
+      details: { provider: "gcs" },
     } as DataConnection);
 
     await addProductMirror(

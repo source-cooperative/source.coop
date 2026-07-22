@@ -110,7 +110,7 @@ export async function addProductMirror(
     > = {
       [DataProvider.S3]: "s3",
       [DataProvider.Azure]: "azure",
-      [DataProvider.GCP]: "gcs",
+      [DataProvider.GCS]: "gcs",
     };
 
     const mirror: ProductMirror = {
