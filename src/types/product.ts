@@ -9,7 +9,6 @@ extendZodWithOpenApi(z);
 // it is the primary mirror.
 export const ProductMirrorSchema = z
   .object({
-    storage_type: z.enum(["s3", "azure", "gcs", "minio", "ceph"]),
     connection_id: z.string(), // Reference to storage connection config
     prefix: z.string(), // Format: "{account_id}/{product_id}/"
     // Mirror-specific settings

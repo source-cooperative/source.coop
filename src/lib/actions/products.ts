@@ -6,7 +6,6 @@ import {
   ProductCreationRequestSchema,
   type Product,
   type ProductCreationRequest,
-  type ProductMirror,
   type ProductVisibility,
   resolveMirrorPrefix,
 } from "@/types";
@@ -229,10 +228,6 @@ export async function createProduct(
       primary_mirror: dataConnection.data_connection_id,
       mirrors: {
         [dataConnection.data_connection_id]: {
-          // provider values are the backend storage vocabulary; the cast bridges
-          // TS's nominal string-enum → literal-union gap (see DataProvider).
-          storage_type: dataConnection.details
-            .provider as ProductMirror["storage_type"],
           connection_id: dataConnection.data_connection_id,
           prefix: resolveMirrorPrefix(
             dataConnection.prefix_template,

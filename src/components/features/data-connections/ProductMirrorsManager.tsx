@@ -35,8 +35,11 @@ interface ProductMirrorsManagerProps {
   // Connection ids owned by the product owner; their admin form is reachable
   // even by non-admins, so we render the link for them.
   ownedConnectionIds: string[];
-  /** Display name and bare bucket/container per connection id, per card. */
-  connectionInfo: Record<string, { name: string; bucket: string }>;
+  /** Display name, provider, and bare bucket/container per connection id, per card. */
+  connectionInfo: Record<
+    string,
+    { name: string; bucket: string; provider: string }
+  >;
   // Connection ids whose mirror prefix this user may edit (needs both product
   // and connection management). Others render the prefix read-only.
   editablePrefixConnectionIds: string[];
@@ -231,7 +234,9 @@ export function ProductMirrorsManager({
                 </Flex>
                 <Flex gap="5" wrap="wrap">
                   <Field label="Type">
-                    <Text size="2">{mirror.storage_type}</Text>
+                    <Text size="2">
+                      {connectionInfo[mirror.connection_id]?.provider}
+                    </Text>
                   </Field>
                   {connectionInfo[mirror.connection_id] && (
                     <Field label="Bucket">

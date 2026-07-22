@@ -1,5 +1,5 @@
 import { normalizeConnection } from "./data-connections";
-import { DataConnection, DataProvider, ProductMirrorSchema } from "@/types";
+import { DataConnection, DataProvider } from "@/types";
 
 const base = {
   data_connection_id: "conn-a",
@@ -31,20 +31,5 @@ describe("normalizeConnection (legacy provider read-shim)", () => {
       details: { provider: DataProvider.S3, bucket: "b", base_prefix: "", region: "us-east-1" },
     } as DataConnection;
     expect(normalizeConnection(conn)).toBe(conn);
-  });
-});
-
-// Guards the `details.provider as storage_type` casts in products/product-mirrors:
-// every DataProvider value must be a valid ProductMirror storage_type.
-describe("DataProvider ⊆ ProductMirror storage_type", () => {
-  test.each(Object.values(DataProvider))("%s is a valid storage_type", (provider) => {
-    expect(() =>
-      ProductMirrorSchema.parse({
-        storage_type: provider,
-        connection_id: "c",
-        prefix: "",
-        is_primary: true,
-      })
-    ).not.toThrow();
   });
 });

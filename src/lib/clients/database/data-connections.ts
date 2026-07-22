@@ -15,8 +15,7 @@ import { BaseTable } from "./base";
 
 // Rows persisted before DataProvider was aligned to the backend storage
 // vocabulary carry the old provider values. Normalize them on read so old
-// connections surface (and downstream, derive `storage_type`) with current
-// values.
+// connections surface with current values the data proxy accepts.
 // ponytail: read-time shim; drop once all rows are backfilled to canonical values.
 const LEGACY_PROVIDER_ALIASES: Record<string, DataProvider> = {
   az: DataProvider.Azure,

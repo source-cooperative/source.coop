@@ -100,10 +100,6 @@ export async function addProductMirror(
     const isFirst = Object.keys(product.metadata.mirrors).length === 0;
 
     const mirror: ProductMirror = {
-      // provider values are the backend storage vocabulary; the cast bridges
-      // TS's nominal string-enum → literal-union gap (see DataProvider).
-      storage_type: connection.details
-        .provider as ProductMirror["storage_type"],
       connection_id: connectionId,
       prefix,
       is_primary: isFirst,
