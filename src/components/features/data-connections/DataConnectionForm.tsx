@@ -31,7 +31,7 @@ interface DataConnectionFormProps {
 // Storage providers limited to those with a `details` schema (S3, Azure, GCS).
 const providerOptions: Array<{ value: DataProvider; label: string }> = [
   { value: DataProvider.S3, label: "S3 / S3-compatible (R2, MinIO)" },
-  { value: DataProvider.Azure, label: "Azure" },
+  { value: DataProvider.Azure, label: "Azure Blob Storage" },
   { value: DataProvider.GCS, label: "Google Cloud Storage" },
 ];
 
