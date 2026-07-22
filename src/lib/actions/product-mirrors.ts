@@ -4,12 +4,7 @@ import { LOGGER } from "@/lib/logging";
 import { isAdmin, isAuthorized } from "../api/authz";
 import { getPageSession } from "../api/utils";
 import { productsTable, dataConnectionsTable } from "../clients";
-import {
-  Actions,
-  DataProvider,
-  ProductMirror,
-  resolveMirrorPrefix,
-} from "@/types";
+import { Actions, ProductMirror, resolveMirrorPrefix } from "@/types";
 import { FormState } from "@/components/core/DynamicForm";
 import { revalidatePath } from "next/cache";
 import { editProductDataConnectionsUrl } from "@/lib/urls";
@@ -104,17 +99,7 @@ export async function addProductMirror(
 
     const isFirst = Object.keys(product.metadata.mirrors).length === 0;
 
-    const storageTypeByProvider: Record<
-      DataProvider,
-      ProductMirror["storage_type"]
-    > = {
-      [DataProvider.S3]: "s3",
-      [DataProvider.Azure]: "azure",
-      [DataProvider.GCS]: "gcs",
-    };
-
     const mirror: ProductMirror = {
-      storage_type: storageTypeByProvider[connection.details.provider],
       connection_id: connectionId,
       prefix,
       is_primary: isFirst,
