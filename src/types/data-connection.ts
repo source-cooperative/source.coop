@@ -27,8 +27,8 @@ extendZodWithOpenApi(z);
  * Storage backend a data connection targets. Values are drawn from the backend
  * wire vocabulary (`ProductMirror.storage_type` in {@link module:types/product}),
  * so a mirror's `storage_type` is just the connection's `provider` — no
- * translation. `Azure`/`GCS` were once `"az"`/`"gcp"`; legacy rows are
- * normalized on read (see the data-connections DynamoDB client).
+ * translation. `Azure`/`GCS` were once `"az"`/`"gcp"`; existing rows are
+ * converted by `scripts/migrate-provider-values.ts` (run before deploying).
  */
 export enum DataProvider {
   S3 = "s3",
