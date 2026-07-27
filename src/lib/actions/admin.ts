@@ -1,12 +1,17 @@
 "use server";
 
 import { z } from "zod";
+import { redirect } from "next/navigation";
 import { LOGGER } from "@/lib/logging";
 import { isAdmin } from "../api/authz";
 import { getOryIdentityIdByEmail, getPageSession } from "../api/utils";
-import { accountsTable } from "../clients";
+import { accountsTable, isIndividualAccount } from "../clients";
 import { FormState } from "@/components/core/DynamicForm";
 import { accountUrl } from "@/lib/urls";
+import {
+  setImpersonationTarget,
+  clearImpersonationTarget,
+} from "@/lib/services/impersonation";
 
 const LookupSchema = z.object({
   email: z.string().trim().email("Enter a valid email address"),
@@ -85,4 +90,29 @@ export async function lookupUserByEmail(
     success: true,
     redirectTo: accountUrl(account.account_id),
   };
+}
+
+/**
+ * Admin-only: start viewing the app as another (individual) user. Sets the
+ * impersonation cookie that `getPageSession` honors, then reloads onto the
+ * target's profile. `getPageSession()` here resolves the REAL admin (the
+ * cookie isn't set yet), so the `isAdmin` gate can't be bypassed by an
+ * already-impersonated session.
+ */
+export async function startImpersonation(formData: FormData): Promise<void> {
+  const session = await getPageSession();
+  if (!isAdmin(session)) return; // button is admin-only; ignore stray posts
+
+  const account_id = String(formData.get("account_id") ?? "");
+  const target = await accountsTable.fetchById(account_id);
+  if (!target || target.disabled || !isIndividualAccount(target)) return;
+
+  await setImpersonationTarget(account_id);
+  redirect(accountUrl(account_id));
+}
+
+/** Stop impersonating and return home. Safe for anyone — just clears a cookie. */
+export async function stopImpersonation(): Promise<void> {
+  await clearImpersonationTarget();
+  redirect("/");
 }

@@ -1,6 +1,7 @@
 import { CONFIG, LOGGER } from "@/lib";
 import { NextRequest, NextResponse } from "next/server";
 import { PROXY_CREDS_COOKIE_NAME } from "@/lib/services/proxy-credentials-shared";
+import { IMPERSONATION_COOKIE_NAME } from "@/lib/services/impersonation";
 
 export async function GET(request: NextRequest) {
   const returnTo = new URL(request.url).origin;
@@ -40,6 +41,14 @@ export async function GET(request: NextRequest) {
   // proxy-credentials-cache.ts — on HTTPS a clearing Set-Cookie that omits
   // `secure` can be ignored, leaving the cookie alive until its own maxAge.
   res.cookies.set(PROXY_CREDS_COOKIE_NAME, "", {
+    path: "/",
+    maxAge: 0,
+    httpOnly: true,
+    secure: true,
+    sameSite: "lax",
+  });
+  // Also drop any active impersonation so the next session starts as itself.
+  res.cookies.set(IMPERSONATION_COOKIE_NAME, "", {
     path: "/",
     maxAge: 0,
     httpOnly: true,

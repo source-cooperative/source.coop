@@ -42,6 +42,7 @@ import md5 from "md5";
 import { authenticateWithOidcToken } from "./oidc";
 import { CONFIG } from "@/lib/config";
 import { LOGGER } from "@/lib/logging";
+import { applyImpersonation } from "@/lib/services/impersonation";
 
 /**
  * Retrieves the current user session from the request context.
@@ -117,13 +118,14 @@ export async function getPageSession(): Promise<UserSession | null> {
     ),
   );
 
-  // Return the user session
-  return {
+  // Return the user session — swapped to the target when an admin is viewing
+  // the app as another user (no-op for everyone else).
+  return applyImpersonation({
     identity_id,
     orySession,
     account,
     memberships: filteredMemberships,
-  };
+  });
 }
 
 /**
