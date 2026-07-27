@@ -31,6 +31,11 @@ import type { DataConnectionOption } from "./redact";
 interface ProductMirrorsManagerProps {
   product: Product;
   availableConnections: DataConnectionOption[];
+  // Whether the viewer administers the owning account (org owner/maintainer, the
+  // account itself, or an admin). Product-scoped maintainers reach this page but
+  // may not change which storage the account's product mirrors to.
+  canManageMirrors: boolean;
+  // Admins additionally get the /admin edit link for system-level connections.
   isAdmin: boolean;
   // Connection ids owned by the product owner; their admin form is reachable
   // even by non-admins, so we render the link for them.
@@ -79,6 +84,7 @@ const emptyFormState = {
 export function ProductMirrorsManager({
   product,
   availableConnections,
+  canManageMirrors,
   isAdmin,
   ownedConnectionIds,
   connectionInfo,
@@ -120,6 +126,13 @@ export function ProductMirrorsManager({
     <Flex direction="column" gap="4">
       <Heading size="4">Data Connections</Heading>
 
+      {!canManageMirrors && (
+        <Text size="2" color="gray">
+          Only owners and maintainers of <Code>{product.account_id}</Code> can
+          change this product&apos;s data connections.
+        </Text>
+      )}
+
       {mirrors.length === 0 ? (
         <Flex
           direction="column"
@@ -133,7 +146,7 @@ export function ProductMirrorsManager({
             No data connections
           </Text>
           <Text size="2" color="gray">
-            {isAdmin
+            {canManageMirrors
               ? "Add a data connection to this product."
               : "No data connections have been configured for this product."}
           </Text>
@@ -178,7 +191,7 @@ export function ProductMirrorsManager({
                         </Link>
                       </Button>
                     )}
-                    {isAdmin && !mirror.is_primary && (
+                    {canManageMirrors && !mirror.is_primary && (
                       <Form action={primaryAction} style={{ display: "inline" }}>
                         <input
                           type="hidden"
@@ -202,7 +215,7 @@ export function ProductMirrorsManager({
                         </Button>
                       </Form>
                     )}
-                    {isAdmin && (
+                    {canManageMirrors && (
                       <Form action={removeAction} style={{ display: "inline" }}>
                         <input
                           type="hidden"
@@ -323,7 +336,7 @@ export function ProductMirrorsManager({
         </Text>
       )}
 
-      {isAdmin && unusedConnections.length > 0 && (
+      {canManageMirrors && unusedConnections.length > 0 && (
         <Flex direction="column" gap="2">
           <Text size="3" weight="medium">
             Add Data Connection

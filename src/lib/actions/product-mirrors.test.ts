@@ -4,13 +4,17 @@ import {
   setPrimaryMirror,
   updateMirrorPrefix,
 } from "./product-mirrors";
-import { productsTable, dataConnectionsTable } from "../clients";
+import { accountsTable, productsTable, dataConnectionsTable } from "../clients";
 import { getPageSession } from "../api/utils";
-import { isAdmin, isAuthorized } from "../api/authz";
-import { canManageDataConnection } from "@/lib/data-connections";
-import { DataConnection, Product, ProductMirror } from "@/types";
+import { canManageAccount, isAuthorized } from "../api/authz";
+import {
+  canManageDataConnection,
+  canUseDataConnectionFor,
+} from "@/lib/data-connections";
+import { Account, DataConnection, Product, ProductMirror } from "@/types";
 
 jest.mock("../clients", () => ({
+  accountsTable: { fetchById: jest.fn() },
   productsTable: {
     fetchById: jest.fn(),
     update: jest.fn(),
@@ -25,12 +29,13 @@ jest.mock("../api/utils", () => ({
 }));
 
 jest.mock("../api/authz", () => ({
-  isAdmin: jest.fn(),
+  canManageAccount: jest.fn(),
   isAuthorized: jest.fn(),
 }));
 
 jest.mock("@/lib/data-connections", () => ({
   canManageDataConnection: jest.fn(),
+  canUseDataConnectionFor: jest.fn(),
 }));
 
 jest.mock("next/cache", () => ({
@@ -44,7 +49,12 @@ const mockDataConnectionsTable = dataConnectionsTable as jest.Mocked<
 const mockGetPageSession = getPageSession as jest.MockedFunction<
   typeof getPageSession
 >;
-const mockIsAdmin = isAdmin as jest.MockedFunction<typeof isAdmin>;
+const mockAccountsTable = accountsTable as jest.Mocked<typeof accountsTable>;
+const mockCanManageAccount = canManageAccount as jest.MockedFunction<
+  typeof canManageAccount
+>;
+const mockCanUseDataConnectionFor =
+  canUseDataConnectionFor as jest.MockedFunction<typeof canUseDataConnectionFor>;
 const mockIsAuthorized = isAuthorized as jest.MockedFunction<
   typeof isAuthorized
 >;
@@ -100,7 +110,11 @@ beforeEach(() => {
   mockGetPageSession.mockResolvedValue({
     identity_id: "id-1",
   } as Awaited<ReturnType<typeof getPageSession>>);
-  mockIsAdmin.mockReturnValue(true);
+  mockAccountsTable.fetchById.mockResolvedValue({
+    account_id: "acct",
+  } as Account);
+  mockCanManageAccount.mockReturnValue(true);
+  mockCanUseDataConnectionFor.mockReturnValue(true);
   mockIsAuthorized.mockReturnValue(true);
   mockCanManageDataConnection.mockResolvedValue(true);
   mockProductsTable.update.mockImplementation(async (p) => p);
@@ -108,8 +122,8 @@ beforeEach(() => {
 });
 
 describe("addProductMirror", () => {
-  test("rejects non-admins before any write", async () => {
-    mockIsAdmin.mockReturnValue(false);
+  test("rejects a caller who does not manage the owning account", async () => {
+    mockCanManageAccount.mockReturnValue(false);
 
     const result = await addProductMirror(
       FORM_STATE,
@@ -519,20 +533,19 @@ describe("updateMirrorPrefix", () => {
 
 // Regression: https://github.com/source-cooperative/source.coop/issues/461
 //
-// BYOB — an org holds CREATE_DATA_CONNECTIONS, owns a data connection, and owns
-// a product. An owner of that org can manage both the product (PutRepository)
-// and the connection (canManageDataConnection), but every mutating mirror
-// action is gated on `isAdmin` alone, so they cannot associate their own
-// connection with their own product.
-describe("issue #461: an account manager can manage their own product's mirrors", () => {
-  // Non-admin org owner: authorized on the product, may manage the connection.
+// BYOB — an org owns a data connection and a product, and an owner/maintainer of
+// that org associates the two. Managing a product's mirrors is gated on
+// administering the *owning account*, not on PutRepository (which a membership
+// scoped to a single product also satisfies).
+describe("issue #461: an org owner manages their product's mirrors", () => {
+  // Non-admin org owner/maintainer: manages the account, not necessarily the
+  // connection itself.
   const asAccountManager = () => {
-    mockIsAdmin.mockReturnValue(false);
-    mockIsAuthorized.mockReturnValue(true);
-    mockCanManageDataConnection.mockResolvedValue(true);
+    mockCanManageAccount.mockReturnValue(true);
+    mockCanManageDataConnection.mockResolvedValue(false);
   };
 
-  test("adds a connection they own to a product they own", async () => {
+  test("adds a connection available to the account", async () => {
     asAccountManager();
     mockProductsTable.fetchById.mockResolvedValue(productWith({}, ""));
     mockDataConnectionsTable.fetchById.mockResolvedValue({
@@ -550,12 +563,17 @@ describe("issue #461: an account manager can manage their own product's mirrors"
     );
 
     expect(result.success).toBe(true);
+    expect(mockCanUseDataConnectionFor).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ owner: "acct" }),
+      "acct"
+    );
     expect(
       mockProductsTable.update.mock.calls[0][0].metadata.mirrors["conn-a"]
     ).toMatchObject({ connection_id: "conn-a", is_primary: true });
   });
 
-  test("removes a mirror on a connection they own", async () => {
+  test("removes a mirror", async () => {
     asAccountManager();
     mockProductsTable.fetchById.mockResolvedValue(
       productWith(
@@ -573,7 +591,7 @@ describe("issue #461: an account manager can manage their own product's mirrors"
     expect(mockProductsTable.update).toHaveBeenCalled();
   });
 
-  test("promotes one of their own mirrors to primary", async () => {
+  test("promotes a mirror to primary", async () => {
     asAccountManager();
     mockProductsTable.fetchById.mockResolvedValue(
       productWith(
@@ -596,9 +614,9 @@ describe("issue #461: an account manager can manage their own product's mirrors"
     );
   });
 
-  test("still refuses a connection the caller may not manage", async () => {
+  test("refuses a connection unavailable to the account", async () => {
     asAccountManager();
-    mockCanManageDataConnection.mockResolvedValue(false);
+    mockCanUseDataConnectionFor.mockReturnValue(false);
     mockProductsTable.fetchById.mockResolvedValue(productWith({}, ""));
     mockDataConnectionsTable.fetchById.mockResolvedValue({
       ...s3Connection,
@@ -615,13 +633,42 @@ describe("issue #461: an account manager can manage their own product's mirrors"
     );
 
     expect(result.success).toBe(false);
+    expect(result.message).toContain("not available for this account");
     expect(mockProductsTable.update).not.toHaveBeenCalled();
   });
 
-  test("still refuses someone with no rights on the product", async () => {
+  test.each([
+    ["addProductMirror", addProductMirror, { connection_id: "conn-a" }],
+    ["removeProductMirror", removeProductMirror, { mirror_key: "conn-a" }],
+    ["setPrimaryMirror", setPrimaryMirror, { mirror_key: "conn-a" }],
+  ])(
+    "%s refuses a product maintainer who does not manage the owning account",
+    async (_name, action, extra) => {
+      // PutRepository holds (product-scoped membership) but the account check
+      // does not — the connections belong to the account, not the product.
+      mockIsAuthorized.mockReturnValue(true);
+      mockCanManageAccount.mockReturnValue(false);
+      mockProductsTable.fetchById.mockResolvedValue(
+        productWith(
+          { "conn-a": mirror({ connection_id: "conn-a", is_primary: true }) },
+          "conn-a"
+        )
+      );
+
+      const result = await action(
+        FORM_STATE,
+        formDataFor({ account_id: "acct", product_id: "prod", ...extra })
+      );
+
+      expect(result.success).toBe(false);
+      expect(result.message).toContain("Only owners and maintainers");
+      expect(mockProductsTable.update).not.toHaveBeenCalled();
+    }
+  );
+
+  test("refuses when the owning account no longer exists", async () => {
     asAccountManager();
-    mockIsAuthorized.mockReturnValue(false);
-    mockProductsTable.fetchById.mockResolvedValue(productWith({}, ""));
+    mockAccountsTable.fetchById.mockResolvedValue(null);
 
     const result = await addProductMirror(
       FORM_STATE,

@@ -1,11 +1,18 @@
 import {
   canManageDataConnection,
+  canUseDataConnectionFor,
   listUsableDataConnections,
 } from "./data-connections";
 import { isAdmin, canManageAccountDataConnections } from "@/lib/api/authz";
 import { accountsTable, dataConnectionsTable } from "@/lib/clients/database";
 import { sessions } from "@/lib/api/utils.mock";
-import { Account, DataConnection, DataProvider, UserSession } from "@/types";
+import {
+  Account,
+  AccountFlags,
+  DataConnection,
+  DataProvider,
+  UserSession,
+} from "@/types";
 
 jest.mock("@/lib/api/authz", () => ({
   // listUsableDataConnections is exercised against the real isAuthorized (the
@@ -152,5 +159,49 @@ describe("listUsableDataConnections (issue #461)", () => {
     expect(
       ids(await listUsableDataConnections(sessions["organization-owner-user"]))
     ).toEqual([]);
+  });
+});
+
+// Which connections may back a product owned by a given account: system-level
+// (unowned) plus the account's own. See issue #461. Uses the real `isAuthorized`.
+describe("canUseDataConnectionFor", () => {
+  const user = sessions["regular-user"];
+
+  test("accepts a system-level (unowned) connection", () => {
+    expect(
+      canUseDataConnectionFor(user, connection({ owner: undefined }), "acme")
+    ).toBe(true);
+  });
+
+  test("accepts a connection the account owns", () => {
+    expect(
+      canUseDataConnectionFor(user, connection({ owner: "acme" }), "acme")
+    ).toBe(true);
+  });
+
+  test("rejects a connection another account owns", () => {
+    expect(
+      canUseDataConnectionFor(user, connection({ owner: "rival" }), "acme")
+    ).toBe(false);
+  });
+
+  test("rejects a read-only connection even when the account owns it", () => {
+    expect(
+      canUseDataConnectionFor(
+        user,
+        connection({ owner: "acme", read_only: true }),
+        "acme"
+      )
+    ).toBe(false);
+  });
+
+  test("rejects a flag-gated system connection the caller lacks the flag for", () => {
+    expect(
+      canUseDataConnectionFor(
+        user,
+        connection({ required_flag: AccountFlags.CREATE_DATA_CONNECTIONS }),
+        "acme"
+      )
+    ).toBe(false);
   });
 });
