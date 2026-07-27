@@ -516,3 +516,123 @@ describe("updateMirrorPrefix", () => {
     }
   );
 });
+
+// Regression: https://github.com/source-cooperative/source.coop/issues/461
+//
+// BYOB — an org holds CREATE_DATA_CONNECTIONS, owns a data connection, and owns
+// a product. An owner of that org can manage both the product (PutRepository)
+// and the connection (canManageDataConnection), but every mutating mirror
+// action is gated on `isAdmin` alone, so they cannot associate their own
+// connection with their own product.
+describe("issue #461: an account manager can manage their own product's mirrors", () => {
+  // Non-admin org owner: authorized on the product, may manage the connection.
+  const asAccountManager = () => {
+    mockIsAdmin.mockReturnValue(false);
+    mockIsAuthorized.mockReturnValue(true);
+    mockCanManageDataConnection.mockResolvedValue(true);
+  };
+
+  test("adds a connection they own to a product they own", async () => {
+    asAccountManager();
+    mockProductsTable.fetchById.mockResolvedValue(productWith({}, ""));
+    mockDataConnectionsTable.fetchById.mockResolvedValue({
+      ...s3Connection,
+      owner: "acct",
+    } as DataConnection);
+
+    const result = await addProductMirror(
+      FORM_STATE,
+      formDataFor({
+        account_id: "acct",
+        product_id: "prod",
+        connection_id: "conn-a",
+      })
+    );
+
+    expect(result.success).toBe(true);
+    expect(
+      mockProductsTable.update.mock.calls[0][0].metadata.mirrors["conn-a"]
+    ).toMatchObject({ connection_id: "conn-a", is_primary: true });
+  });
+
+  test("removes a mirror on a connection they own", async () => {
+    asAccountManager();
+    mockProductsTable.fetchById.mockResolvedValue(
+      productWith(
+        { "conn-a": mirror({ connection_id: "conn-a", is_primary: true }) },
+        "conn-a"
+      )
+    );
+
+    const result = await removeProductMirror(
+      FORM_STATE,
+      formDataFor({ account_id: "acct", product_id: "prod", mirror_key: "conn-a" })
+    );
+
+    expect(result.success).toBe(true);
+    expect(mockProductsTable.update).toHaveBeenCalled();
+  });
+
+  test("promotes one of their own mirrors to primary", async () => {
+    asAccountManager();
+    mockProductsTable.fetchById.mockResolvedValue(
+      productWith(
+        {
+          "conn-a": mirror({ connection_id: "conn-a", is_primary: true }),
+          "conn-b": mirror({ connection_id: "conn-b", is_primary: false }),
+        },
+        "conn-a"
+      )
+    );
+
+    const result = await setPrimaryMirror(
+      FORM_STATE,
+      formDataFor({ account_id: "acct", product_id: "prod", mirror_key: "conn-b" })
+    );
+
+    expect(result.success).toBe(true);
+    expect(mockProductsTable.update.mock.calls[0][0].metadata.primary_mirror).toBe(
+      "conn-b"
+    );
+  });
+
+  test("still refuses a connection the caller may not manage", async () => {
+    asAccountManager();
+    mockCanManageDataConnection.mockResolvedValue(false);
+    mockProductsTable.fetchById.mockResolvedValue(productWith({}, ""));
+    mockDataConnectionsTable.fetchById.mockResolvedValue({
+      ...s3Connection,
+      owner: "someone-else",
+    } as DataConnection);
+
+    const result = await addProductMirror(
+      FORM_STATE,
+      formDataFor({
+        account_id: "acct",
+        product_id: "prod",
+        connection_id: "conn-a",
+      })
+    );
+
+    expect(result.success).toBe(false);
+    expect(mockProductsTable.update).not.toHaveBeenCalled();
+  });
+
+  test("still refuses someone with no rights on the product", async () => {
+    asAccountManager();
+    mockIsAuthorized.mockReturnValue(false);
+    mockProductsTable.fetchById.mockResolvedValue(productWith({}, ""));
+
+    const result = await addProductMirror(
+      FORM_STATE,
+      formDataFor({
+        account_id: "acct",
+        product_id: "prod",
+        connection_id: "conn-a",
+      })
+    );
+
+    expect(result.success).toBe(false);
+    expect(mockProductsTable.update).not.toHaveBeenCalled();
+  });
+});

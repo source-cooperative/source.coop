@@ -1,12 +1,17 @@
-import { canManageDataConnection } from "./data-connections";
+import {
+  canManageDataConnection,
+  listUsableDataConnections,
+} from "./data-connections";
 import { isAdmin, canManageAccountDataConnections } from "@/lib/api/authz";
-import { accountsTable } from "@/lib/clients/database";
-import { Account, DataConnection, UserSession } from "@/types";
+import { accountsTable, dataConnectionsTable } from "@/lib/clients/database";
+import { sessions } from "@/lib/api/utils.mock";
+import { Account, DataConnection, DataProvider, UserSession } from "@/types";
 
 jest.mock("@/lib/api/authz", () => ({
-  // isAuthorized is imported by the module under test (listUsableDataConnections)
-  // but unused by these tests; stub it so the import resolves.
-  isAuthorized: jest.fn(),
+  // listUsableDataConnections is exercised against the real isAuthorized (the
+  // point of those tests is the authz predicate); the two helpers below are
+  // stubbed for the canManageDataConnection tests.
+  ...jest.requireActual("@/lib/api/authz"),
   isAdmin: jest.fn(),
   canManageAccountDataConnections: jest.fn(),
 }));
@@ -92,5 +97,60 @@ describe("canManageDataConnection", () => {
       await canManageDataConnection(session, connection({ owner: "ghost" }))
     ).toBe(false);
     expect(mockCanManageAccount).not.toHaveBeenCalled();
+  });
+});
+
+// Regression: https://github.com/source-cooperative/source.coop/issues/461
+//
+// Symptom 1 of the issue — the org's connection is missing from the data
+// connection selector on /products/new. This is the server half of that path:
+// the list handed to ProductCreationForm. Uses the real `isAuthorized`.
+describe("listUsableDataConnections (issue #461)", () => {
+  // A BYOB connection created through the org's account-scoped UI.
+  const orgConnection = {
+    data_connection_id: "organization--byob",
+    name: "Org BYOB",
+    read_only: false,
+    allowed_visibilities: ["public"],
+    owner: "organization",
+    details: {
+      provider: DataProvider.S3,
+      bucket: "org-bucket",
+      base_prefix: "",
+      region: "us-west-2",
+    },
+  } as unknown as DataConnection;
+
+  const listing = (connections: DataConnection[]) =>
+    (dataConnectionsTable.listAll as jest.Mock).mockResolvedValue(connections);
+
+  const ids = (connections: DataConnection[]) =>
+    connections.map((c) => c.data_connection_id);
+
+  test("offers an org's own connection to an org owner", async () => {
+    listing([orgConnection]);
+    expect(
+      ids(await listUsableDataConnections(sessions["organization-owner-user"]))
+    ).toEqual(["organization--byob"]);
+  });
+
+  test("does not require the *user* to hold CREATE_DATA_CONNECTIONS", async () => {
+    // Per the issue: the flag belongs on the owner account, not the member.
+    // organization-owner-user carries no create_data_connections flag.
+    expect(
+      sessions["organization-owner-user"]?.account?.flags
+    ).not.toContain("create_data_connections");
+
+    listing([orgConnection]);
+    expect(
+      ids(await listUsableDataConnections(sessions["organization-owner-user"]))
+    ).toEqual(["organization--byob"]);
+  });
+
+  test("keeps a read-only connection out of the list", async () => {
+    listing([{ ...orgConnection, read_only: true } as DataConnection]);
+    expect(
+      ids(await listUsableDataConnections(sessions["organization-owner-user"]))
+    ).toEqual([]);
   });
 });
