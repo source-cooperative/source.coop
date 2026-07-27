@@ -45,9 +45,11 @@ export async function canManageDataConnection(
  * flag-gated connections) and must be available to that account — either
  * system-level (unowned) or owned by it.
  *
- * This is the connection half of associating a connection with a product; the
- * caller must separately hold `PutRepository` on the product. `createProduct`
- * applies the same two rules inline, but reports them as distinct field errors.
+ * This is only the connection half of associating the two; the caller side is
+ * each call site's own gate — `canManageAccount` on the owning account for the
+ * mirror actions, `Actions.CreateRepository` for `createProduct` (which applies
+ * the same two connection rules inline, to report them as distinct field
+ * errors).
  */
 export function canUseDataConnectionFor(
   session: UserSession | null,
