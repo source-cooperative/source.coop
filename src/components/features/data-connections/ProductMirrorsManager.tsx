@@ -42,7 +42,7 @@ interface ProductMirrorsManagerProps {
   ownedConnectionIds: string[];
   /** Display name and bare bucket/container per connection id, per card. */
   connectionInfo: Record<string, { name: string; bucket: string }>;
-  // Connection ids whose mirror prefix this user may edit (needs both product
+  // Connection ids whose mirror prefix this user may edit (needs both account
   // and connection management). Others render the prefix read-only.
   editablePrefixConnectionIds: string[];
 }
@@ -255,8 +255,8 @@ export function ProductMirrorsManager({
                   )}
                 </Flex>
                 {/* Prefix is editable only for users who can manage both the
-                    product (page-access gate) and this connection; the server
-                    action re-checks. Others see it read-only. */}
+                    owning account and this connection; the server action
+                    re-checks. Others see it read-only. */}
                 {editablePrefixConnections.has(mirror.connection_id) ? (
                   <Form action={prefixAction}>
                     <input
@@ -272,7 +272,7 @@ export function ProductMirrorsManager({
                     <input type="hidden" name="mirror_key" value={key} />
                     <Field
                       label="Prefix"
-                      hint="You can edit this prefix because you manage both this product and its data connection."
+                      hint="You can edit this prefix because you manage both this product's account and its data connection."
                     >
                       <Flex gap="2" align="center">
                         <input

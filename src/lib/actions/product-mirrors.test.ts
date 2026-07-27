@@ -6,7 +6,7 @@ import {
 } from "./product-mirrors";
 import { accountsTable, productsTable, dataConnectionsTable } from "../clients";
 import { getPageSession } from "../api/utils";
-import { canManageAccount, isAuthorized } from "../api/authz";
+import { canManageAccount } from "../api/authz";
 import {
   canManageDataConnection,
   canUseDataConnectionFor,
@@ -30,7 +30,6 @@ jest.mock("../api/utils", () => ({
 
 jest.mock("../api/authz", () => ({
   canManageAccount: jest.fn(),
-  isAuthorized: jest.fn(),
 }));
 
 jest.mock("@/lib/data-connections", () => ({
@@ -55,9 +54,6 @@ const mockCanManageAccount = canManageAccount as jest.MockedFunction<
 >;
 const mockCanUseDataConnectionFor =
   canUseDataConnectionFor as jest.MockedFunction<typeof canUseDataConnectionFor>;
-const mockIsAuthorized = isAuthorized as jest.MockedFunction<
-  typeof isAuthorized
->;
 const mockCanManageDataConnection =
   canManageDataConnection as jest.MockedFunction<
     typeof canManageDataConnection
@@ -115,7 +111,6 @@ beforeEach(() => {
   } as Account);
   mockCanManageAccount.mockReturnValue(true);
   mockCanUseDataConnectionFor.mockReturnValue(true);
-  mockIsAuthorized.mockReturnValue(true);
   mockCanManageDataConnection.mockResolvedValue(true);
   mockProductsTable.update.mockImplementation(async (p) => p);
   mockDataConnectionsTable.fetchById.mockResolvedValue(s3Connection);
@@ -376,11 +371,11 @@ describe("setPrimaryMirror", () => {
 });
 
 describe("updateMirrorPrefix", () => {
-  test("rejects callers without PutRepository before any write", async () => {
+  test("rejects callers who don't manage the owning account, before any write", async () => {
     mockProductsTable.fetchById.mockResolvedValue(
       productWith({ "conn-a": mirror({ connection_id: "conn-a" }) }, "conn-a")
     );
-    mockIsAuthorized.mockReturnValue(false);
+    mockCanManageAccount.mockReturnValue(false);
 
     const result = await updateMirrorPrefix(
       FORM_STATE,
@@ -396,11 +391,11 @@ describe("updateMirrorPrefix", () => {
     expect(mockProductsTable.update).not.toHaveBeenCalled();
   });
 
-  test("rejects a product manager who can't manage the connection", async () => {
+  test("rejects an account manager who can't manage the connection", async () => {
     mockProductsTable.fetchById.mockResolvedValue(
       productWith({ "conn-a": mirror({ connection_id: "conn-a" }) }, "conn-a")
     );
-    mockIsAuthorized.mockReturnValue(true); // product side OK
+    mockCanManageAccount.mockReturnValue(true); // account side OK
     mockCanManageDataConnection.mockResolvedValue(false); // connection side denied
 
     const result = await updateMirrorPrefix(
@@ -414,7 +409,7 @@ describe("updateMirrorPrefix", () => {
     );
 
     expect(result.success).toBe(false);
-    expect(result.message).toMatch(/both the product and the data connection/i);
+    expect(result.message).toMatch(/both this account and the data connection/i);
     expect(mockProductsTable.update).not.toHaveBeenCalled();
   });
 
@@ -641,13 +636,18 @@ describe("issue #461: an org owner manages their product's mirrors", () => {
     ["addProductMirror", addProductMirror, { connection_id: "conn-a" }],
     ["removeProductMirror", removeProductMirror, { mirror_key: "conn-a" }],
     ["setPrimaryMirror", setPrimaryMirror, { mirror_key: "conn-a" }],
+    [
+      "updateMirrorPrefix",
+      updateMirrorPrefix,
+      { mirror_key: "conn-a", prefix: "new/prefix/" },
+    ],
   ])(
     "%s refuses a product maintainer who does not manage the owning account",
     async (_name, action, extra) => {
-      // PutRepository holds (product-scoped membership) but the account check
-      // does not — the connections belong to the account, not the product.
-      mockIsAuthorized.mockReturnValue(true);
+      // All four gate on the account: a membership scoped to this one product
+      // must not reach the account's storage, nor re-point where it lives.
       mockCanManageAccount.mockReturnValue(false);
+      mockCanManageDataConnection.mockResolvedValue(true);
       mockProductsTable.fetchById.mockResolvedValue(
         productWith(
           { "conn-a": mirror({ connection_id: "conn-a", is_primary: true }) },

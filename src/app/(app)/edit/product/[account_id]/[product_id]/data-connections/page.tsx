@@ -74,18 +74,20 @@ export default async function ProductDataConnectionsPage({
     ])
   );
 
-  // Editing a mirror's prefix needs the intersection of product and connection
-  // management. Page access already required PutRepository on the product (the
-  // layout gate), so here we only resolve the connection side per mirror.
-  const editablePrefixConnectionIds = (
-    await Promise.all(
-      mirrorConnections.map(async (c) =>
-        (await canManageDataConnection(session, c))
-          ? c.data_connection_id
-          : null
-      )
-    )
-  ).filter((id): id is string => id != null);
+  // Editing a mirror's prefix needs the intersection of the account gate above
+  // and managing the connection itself, so resolve the connection side per
+  // mirror — a prefix re-points where the product's data lives.
+  const editablePrefixConnectionIds = canManageMirrors
+    ? (
+        await Promise.all(
+          mirrorConnections.map(async (c) =>
+            (await canManageDataConnection(session, c))
+              ? c.data_connection_id
+              : null
+          )
+        )
+      ).filter((id): id is string => id != null)
+    : [];
 
   return (
     <ProductMirrorsManager

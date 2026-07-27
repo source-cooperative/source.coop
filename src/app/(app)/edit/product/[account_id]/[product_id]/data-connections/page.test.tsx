@@ -107,6 +107,7 @@ async function renderPageProps() {
   return element.props as {
     availableConnections: { data_connection_id: string }[];
     canManageMirrors: boolean;
+    editablePrefixConnectionIds: string[];
     isAdmin: boolean;
   };
 }
@@ -156,6 +157,30 @@ describe("issue #461: product data-connections picker", () => {
     expect(props.availableConnections).toEqual([]);
     // The listing is skipped entirely rather than filtered client-side.
     expect(mockDataConnectionsTable.listAll).not.toHaveBeenCalled();
+    // Nor may they re-point an existing mirror's prefix, even on a connection
+    // they could otherwise manage.
+    expect(props.editablePrefixConnectionIds).toEqual([]);
+  });
+
+  test("lets an org manager edit the prefix of a connection they manage", async () => {
+    mockProductsTable.fetchById.mockResolvedValue({
+      ...orgProduct,
+      metadata: {
+        primary_mirror: "organization--byob",
+        mirrors: {
+          "organization--byob": {
+            storage_type: "s3",
+            connection_id: "organization--byob",
+            prefix: "prod/",
+            is_primary: true,
+          },
+        },
+      },
+    } as unknown as Product);
+
+    const props = await renderPageProps();
+
+    expect(props.editablePrefixConnectionIds).toEqual(["organization--byob"]);
   });
 
   test("offers nothing when the owning account no longer exists", async () => {

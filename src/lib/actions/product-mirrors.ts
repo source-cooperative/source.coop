@@ -1,15 +1,10 @@
 "use server";
 
 import { LOGGER } from "@/lib/logging";
-import { canManageAccount, isAuthorized } from "../api/authz";
+import { canManageAccount } from "../api/authz";
 import { getPageSession } from "../api/utils";
 import { accountsTable, productsTable, dataConnectionsTable } from "../clients";
-import {
-  Actions,
-  DataProvider,
-  ProductMirror,
-  resolveMirrorPrefix,
-} from "@/types";
+import { DataProvider, ProductMirror, resolveMirrorPrefix } from "@/types";
 import { FormState } from "@/components/core/DynamicForm";
 import { revalidatePath } from "next/cache";
 import { editProductDataConnectionsUrl } from "@/lib/urls";
@@ -320,12 +315,14 @@ export async function removeProductMirror(
   }
 }
 
-// Editing a mirror's prefix requires the *intersection* of managing the product
-// AND the data connection: the caller must be an owner/maintainer of the product
-// (PutRepository) AND able to manage the underlying connection
-// (canManageDataConnection). Admins satisfy both. Note this is a different (and
-// in the product-scoped case, narrower) gate than the account-management check
-// the three actions above use.
+// Editing a mirror's prefix is the *intersection* of the account gate the three
+// actions above use AND managing the underlying connection
+// (canManageDataConnection). Admins satisfy both.
+//
+// The connection half is not redundant: a prefix says where in the bucket this
+// product's data lives, so on a shared system-level connection an unrestricted
+// prefix would let one account point its product at another's objects. Only
+// someone who controls the connection may re-point a mirror on it.
 export async function updateMirrorPrefix(
   _prevState: FormState<unknown>,
   formData: FormData
@@ -374,21 +371,17 @@ export async function updateMirrorPrefix(
     !rawPrefix || rawPrefix.endsWith("/") ? rawPrefix : `${rawPrefix}/`;
 
   try {
+    const denied = await denyUnlessAccountManager(session, accountId);
+    if (denied) {
+      return { fieldErrors: {}, data: formData, message: denied, success: false };
+    }
+
     const product = await productsTable.fetchById(accountId, productId);
     if (!product) {
       return {
         fieldErrors: {},
         data: formData,
         message: "Product not found",
-        success: false,
-      };
-    }
-
-    if (!isAuthorized(session, product, Actions.PutRepository)) {
-      return {
-        fieldErrors: {},
-        data: formData,
-        message: "Only product owners or maintainers can edit mirror prefixes",
         success: false,
       };
     }
@@ -403,7 +396,7 @@ export async function updateMirrorPrefix(
       };
     }
 
-    // Product side authorized above; also require managing the connection.
+    // Account side authorized above; also require managing the connection.
     const connection = await dataConnectionsTable.fetchById(
       existing.connection_id
     );
@@ -412,7 +405,7 @@ export async function updateMirrorPrefix(
         fieldErrors: {},
         data: formData,
         message:
-          "You must be an owner or maintainer of both the product and the data connection to edit its prefix",
+          "You must be able to manage both this account and the data connection to edit its prefix",
         success: false,
       };
     }
