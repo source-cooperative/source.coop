@@ -224,6 +224,9 @@ describe("getProductBreakdowns", () => {
           { day: "2026-07-27 00:00:00", requests: 15, bytes: 70 },
         ]);
       }
+      if (sql.includes("COUNT(DISTINCT blob3)")) {
+        return jsonResponse([{ files: 12, requests: 500, bytes: 5000 }]);
+      }
       if (sql.includes("GROUP BY country")) {
         return jsonResponse([
           { country: "US", requests: 100, bytes: 900 },
@@ -285,6 +288,13 @@ describe("getProductBreakdowns", () => {
         otherCountries: { requests: 4, bytes: 50 },
       },
     ]);
+    // Remainder reconciles the table to the file-traffic total: 12 distinct
+    // files less the 2 listed; 500-100 requests; 5000-1500 bytes.
+    expect(breakdowns!.otherFiles).toEqual({
+      count: 10,
+      requests: 400,
+      bytes: 3500,
+    });
 
     // Per-day wave is scoped to the window's top entries, escaped and quoted.
     const dayCountrySql = sentSql().find((sql) =>

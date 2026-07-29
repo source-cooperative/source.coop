@@ -359,6 +359,34 @@ export function ProductAnalyticsView({
                     </Table.Cell>
                   </Table.Row>
                 ))}
+                {breakdowns.otherFiles && (
+                  <Table.Row>
+                    <Table.RowHeaderCell>
+                      <Text size="1" color="gray" style={mono()}>
+                        {numberFormat.format(breakdowns.otherFiles.count)} other
+                        files
+                      </Text>
+                    </Table.RowHeaderCell>
+                    {/* The remainder is window-wide only — no per-day/country
+                        slice data, so it blanks while a slice is active. */}
+                    <Table.Cell justify="end">
+                      <Text size="1" color="gray" style={mono()}>
+                        {fileSliceCountry !== null || dayValuesLists
+                          ? "—"
+                          : numberFormat.format(
+                              Math.round(breakdowns.otherFiles.requests),
+                            )}
+                      </Text>
+                    </Table.Cell>
+                    <Table.Cell justify="end">
+                      <Text size="1" color="gray" style={mono()}>
+                        {fileSliceCountry !== null || dayValuesLists
+                          ? "—"
+                          : formatBytes(breakdowns.otherFiles.bytes, 1)}
+                      </Text>
+                    </Table.Cell>
+                  </Table.Row>
+                )}
               </Table.Body>
             </Table.Root>
           )}

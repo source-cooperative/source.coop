@@ -426,6 +426,11 @@ export interface ProductBreakdowns {
     /** Window values from countries outside the top list */
     otherCountries: SliceTotals;
   }[];
+  /**
+   * Remainder of file traffic outside the top list — lets the table sum to
+   * the file-traffic total. Window-wide only (no per-day/country slices).
+   */
+  otherFiles: { count: number; requests: number; bytes: number } | null;
 }
 
 /**
@@ -441,7 +446,7 @@ export async function getProductBreakdowns(
   const from = usageFrom(accountId, productId, undefined, days);
 
   try {
-    const [countryRows, fileRows] = await Promise.all([
+    const [countryRows, fileRows, fileTotalRows] = await Promise.all([
       usageQuery(
         `SELECT blob6 AS country, SUM(_sample_interval) AS requests, SUM(_sample_interval * double1) AS bytes ${from} GROUP BY country ORDER BY requests DESC`,
       ),
@@ -449,6 +454,9 @@ export async function getProductBreakdowns(
       // not a real file) — keep those out of the top-files ranking.
       usageQuery(
         `SELECT blob3 AS file, SUM(_sample_interval) AS requests, SUM(_sample_interval * double1) AS bytes, COUNT(DISTINCT blob6) AS countries ${from} AND blob3 != '' GROUP BY file ORDER BY requests DESC LIMIT ${FILE_LIST_LIMIT}`,
+      ),
+      usageQuery(
+        `SELECT COUNT(DISTINCT blob3) AS files, SUM(_sample_interval) AS requests, SUM(_sample_interval * double1) AS bytes ${from} AND blob3 != ''`,
       ),
     ]);
 
@@ -574,6 +582,24 @@ export async function getProductBreakdowns(
           bytes: 0,
         },
       })),
+      // Sampling makes the parts fractional estimates; clamp the remainder.
+      otherFiles: (() => {
+        const count = num(fileTotalRows[0]?.files) - fileRows.length;
+        if (count <= 0) return null;
+        return {
+          count,
+          requests: Math.max(
+            0,
+            num(fileTotalRows[0]?.requests) -
+              fileRows.reduce((sum, row) => sum + num(row.requests), 0),
+          ),
+          bytes: Math.max(
+            0,
+            num(fileTotalRows[0]?.bytes) -
+              fileRows.reduce((sum, row) => sum + num(row.bytes), 0),
+          ),
+        };
+      })(),
     };
   } catch (error) {
     LOGGER.warn("Analytics breakdown query failed", {
