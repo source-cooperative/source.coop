@@ -56,8 +56,28 @@ export function ProductAnalyticsView({
   const [pin, setPin] = useState<Slice | null>(null);
   const dayIndex = hover?.type === "day" ? hover.index : null;
   const day = dayIndex === null ? null : days[dayIndex].date;
-  // A hovered country/file previews that slice, overriding any pin.
-  const slice = hover && hover.type !== "day" ? hover : pin;
+  const hoverEntity = hover && hover.type !== "day" ? hover : null;
+  // Hovering the opposite type of an active pin is additive: the pin keeps
+  // scoping the lists and chart, and the stats narrow to pin ∩ hover (from
+  // the country×file cross data). A same-type hover previews that row instead.
+  const cross =
+    pin && hoverEntity && pin.type !== hoverEntity.type
+      ? {
+          path:
+            pin.type === "file"
+              ? pin.path
+              : hoverEntity.type === "file"
+                ? hoverEntity.path
+                : "",
+          code:
+            pin.type === "country"
+              ? pin.code
+              : hoverEntity.type === "country"
+                ? hoverEntity.code
+                : "",
+        }
+      : null;
+  const slice = cross ? pin : (hoverEntity ?? pin);
   const sliceCountry =
     slice?.type === "country"
       ? slice.code === "·"
@@ -78,18 +98,34 @@ export function ProductAnalyticsView({
     : slice?.type === "country" && slice.code === "·"
       ? (breakdowns?.otherCountries?.count ?? 0)
       : 1;
-  const shown = sliceEntity
-    ? day !== null
-      ? {
-          ...(sliceEntity.byDay[day] ?? { requests: 0, bytes: 0 }),
-          countries:
-            sliceFile ? (sliceFile.byDay[day]?.countries ?? 0) : sliceCountries,
-        }
-      : { requests: sliceEntity.requests, bytes: sliceEntity.bytes, countries: sliceCountries }
-    : day !== null
-      ? days[dayIndex!]
-      : totals;
-  const avgRequests = (sliceEntity?.requests ?? totals.requests) / days.length;
+  // Intersection values for an additive pin + hover; countries is 1 for a
+  // single country and unknowable (NaN → rendered "—") for the others row.
+  const crossValues = cross
+    ? {
+        ...((cross.code === "·"
+          ? breakdowns?.files.find((f) => f.path === cross.path)?.otherCountries
+          : breakdowns?.files.find((f) => f.path === cross.path)?.byCountry[
+              cross.code
+            ]) ?? { requests: 0, bytes: 0 }),
+        countries: cross.code === "·" ? NaN : 1,
+      }
+    : null;
+  const shown =
+    crossValues ??
+    (sliceEntity
+      ? day !== null
+        ? {
+            ...(sliceEntity.byDay[day] ?? { requests: 0, bytes: 0 }),
+            countries:
+              sliceFile ? (sliceFile.byDay[day]?.countries ?? 0) : sliceCountries,
+          }
+        : { requests: sliceEntity.requests, bytes: sliceEntity.bytes, countries: sliceCountries }
+      : day !== null
+        ? days[dayIndex!]
+        : totals);
+  const avgRequests =
+    (crossValues?.requests ?? sliceEntity?.requests ?? totals.requests) /
+    days.length;
 
   let chartDays = days;
   if (sliceEntity) {
@@ -158,11 +194,15 @@ export function ProductAnalyticsView({
     fileRows.sort((a, b) => b.shown.requests - a.shown.requests);
   }
 
-  const filterLabel = slice
-    ? slice.type === "country"
-      ? countryRows.find((row) => row.code === slice.code)?.label
-      : slice.path
-    : null;
+  const countryRowLabel = (code: string) =>
+    countryRows.find((row) => row.code === code)?.label;
+  const filterLabel = cross
+    ? `${countryRowLabel(cross.code)} · ${cross.path}`
+    : slice
+      ? slice.type === "country"
+        ? countryRowLabel(slice.code)
+        : slice.path
+      : null;
   const togglePin = (next: Slice) =>
     setPin(
       pin &&
@@ -217,7 +257,11 @@ export function ProductAnalyticsView({
           <Stat
             label="Countries"
             help={HELP.countries}
-            value={numberFormat.format(shown.countries)}
+            value={
+              Number.isFinite(shown.countries)
+                ? numberFormat.format(shown.countries)
+                : "—"
+            }
             divider
           />
         </Flex>
