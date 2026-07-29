@@ -46,11 +46,30 @@ export function ProductAnalyticsView({
 }: ProductAnalyticsViewProps) {
   const [hovered, setHovered] = useState<number | null>(null);
   const shown = hovered === null ? totals : days[hovered];
-  const maxCountry = Math.max(
-    1,
-    ...(breakdowns?.countries.map((c) => c.requests) ?? []),
-    breakdowns?.otherCountries?.requests ?? 0,
-  );
+  // Hovering a bar narrows the country/file panels to that UTC day.
+  const day = hovered === null ? null : days[hovered].date;
+  const countryRows = breakdowns
+    ? [
+        ...breakdowns.countries.map((c) => ({
+          code: c.code,
+          label: c.name,
+          requests: day === null ? c.requests : (c.byDay[day] ?? 0),
+        })),
+        ...(breakdowns.otherCountries
+          ? [
+              {
+                code: "·",
+                label: `${breakdowns.otherCountries.count} others`,
+                requests:
+                  day === null
+                    ? breakdowns.otherCountries.requests
+                    : (breakdowns.otherCountries.byDay[day] ?? 0),
+              },
+            ]
+          : []),
+      ]
+    : [];
+  const maxCountry = Math.max(1, ...countryRows.map((row) => row.requests));
 
   return (
     <Tabs.Root defaultValue="downloads">
@@ -113,22 +132,7 @@ export function ProductAnalyticsView({
               </Text>
             ) : (
               <Box mt="2">
-                {[
-                  ...breakdowns.countries.map((c) => ({
-                    code: c.code,
-                    label: c.name,
-                    requests: c.requests,
-                  })),
-                  ...(breakdowns.otherCountries
-                    ? [
-                        {
-                          code: "·",
-                          label: `${breakdowns.otherCountries.count} others`,
-                          requests: breakdowns.otherCountries.requests,
-                        },
-                      ]
-                    : []),
-                ].map((row) => (
+                {countryRows.map((row) => (
                   <Flex key={`${row.code}-${row.label}`} gap="2" mb="2" align="start">
                     <Text
                       size="1"
@@ -196,27 +200,35 @@ export function ProductAnalyticsView({
                 </Table.Row>
               </Table.Header>
               <Table.Body>
-                {breakdowns.files.map((file) => (
-                  <Table.Row key={file.path}>
-                    <Table.RowHeaderCell>
-                      <Text size="1" style={mono()}>
-                        <Link href={objectUrl(accountId, productId, file.path)}>
-                          {file.path}
-                        </Link>
-                      </Text>
-                    </Table.RowHeaderCell>
-                    <Table.Cell justify="end">
-                      <Text size="1" style={mono()}>
-                        {numberFormat.format(Math.round(file.requests))}
-                      </Text>
-                    </Table.Cell>
-                    <Table.Cell justify="end">
-                      <Text size="1" style={mono()}>
-                        {formatBytes(file.bytes, 1)}
-                      </Text>
-                    </Table.Cell>
-                  </Table.Row>
-                ))}
+                {breakdowns.files.map((file) => {
+                  const shownFile =
+                    day === null
+                      ? file
+                      : (file.byDay[day] ?? { requests: 0, bytes: 0 });
+                  return (
+                    <Table.Row key={file.path}>
+                      <Table.RowHeaderCell>
+                        <Text size="1" style={mono()}>
+                          <Link
+                            href={objectUrl(accountId, productId, file.path)}
+                          >
+                            {file.path}
+                          </Link>
+                        </Text>
+                      </Table.RowHeaderCell>
+                      <Table.Cell justify="end">
+                        <Text size="1" style={mono()}>
+                          {numberFormat.format(Math.round(shownFile.requests))}
+                        </Text>
+                      </Table.Cell>
+                      <Table.Cell justify="end">
+                        <Text size="1" style={mono()}>
+                          {formatBytes(shownFile.bytes, 1)}
+                        </Text>
+                      </Table.Cell>
+                    </Table.Row>
+                  );
+                })}
               </Table.Body>
             </Table.Root>
           )}

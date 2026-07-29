@@ -392,13 +392,21 @@ function parseUsageAggregates(row: Row): UsageTotals {
 const COUNTRY_LIST_LIMIT = 5;
 const FILE_LIST_LIMIT = 10;
 
+/** Per-UTC-day values keyed by the day's ISO timestamp (UsagePoint.date). */
+type ByDay<T> = Record<string, T>;
+
 export interface ProductBreakdowns {
   /** Top countries by downloads */
-  countries: { code: string; name: string; requests: number }[];
+  countries: { code: string; name: string; requests: number; byDay: ByDay<number> }[];
   /** Aggregate of the remaining countries, if any */
-  otherCountries: { count: number; requests: number } | null;
+  otherCountries: { count: number; requests: number; byDay: ByDay<number> } | null;
   /** Top objects by downloads */
-  files: { path: string; requests: number; bytes: number }[];
+  files: {
+    path: string;
+    requests: number;
+    bytes: number;
+    byDay: ByDay<{ requests: number; bytes: number }>;
+  }[];
 }
 
 /**
@@ -426,22 +434,77 @@ export async function getProductBreakdowns(
     ]);
 
     const rest = countryRows.slice(COUNTRY_LIST_LIMIT);
+    const topCountries = countryRows
+      .slice(0, COUNTRY_LIST_LIMIT)
+      .map((row) => str(row.country));
+    const topFiles = fileRows.map((row) => str(row.file));
+
+    // Second wave, scoped to the window's top entries with IN (bounded rows,
+    // unlike a full GROUP BY day+file) — per-day values for hover.
+    const countryIn = topCountries.map(sqlQuote).join(", ");
+    const [countryDayRows, otherDayRows, fileDayRows] = await Promise.all([
+      topCountries.length
+        ? usageQuery(
+            `SELECT toStartOfDay(timestamp) AS day, blob6 AS country, SUM(_sample_interval) AS requests ${from} AND blob6 IN (${countryIn}) GROUP BY day, country`,
+          )
+        : [],
+      rest.length
+        ? usageQuery(
+            `SELECT toStartOfDay(timestamp) AS day, SUM(_sample_interval) AS requests ${from} AND blob6 NOT IN (${countryIn}) GROUP BY day`,
+          )
+        : [],
+      topFiles.length
+        ? usageQuery(
+            `SELECT toStartOfDay(timestamp) AS day, blob3 AS file, SUM(_sample_interval) AS requests, SUM(_sample_interval * double1) AS bytes ${from} AND blob3 IN (${topFiles.map(sqlQuote).join(", ")}) GROUP BY day, file`,
+          )
+        : [],
+    ]);
+
+    const countryByDay = new Map<string, Record<string, number>>();
+    for (const row of countryDayRows) {
+      const key = str(row.country);
+      const days = countryByDay.get(key) ?? {};
+      days[parseDateTime(row.day)] = num(row.requests);
+      countryByDay.set(key, days);
+    }
+    const fileByDay = new Map<
+      string,
+      Record<string, { requests: number; bytes: number }>
+    >();
+    for (const row of fileDayRows) {
+      const key = str(row.file);
+      const days = fileByDay.get(key) ?? {};
+      days[parseDateTime(row.day)] = {
+        requests: num(row.requests),
+        bytes: num(row.bytes),
+      };
+      fileByDay.set(key, days);
+    }
+
     return {
       countries: countryRows.slice(0, COUNTRY_LIST_LIMIT).map((row) => ({
         code: str(row.country) || "??",
         name: countryName(str(row.country)),
         requests: num(row.requests),
+        byDay: countryByDay.get(str(row.country)) ?? {},
       })),
       otherCountries: rest.length
         ? {
             count: rest.length,
             requests: rest.reduce((sum, row) => sum + num(row.requests), 0),
+            byDay: Object.fromEntries(
+              otherDayRows.map((row) => [
+                parseDateTime(row.day),
+                num(row.requests),
+              ]),
+            ),
           }
         : null,
       files: fileRows.map((row) => ({
         path: str(row.file),
         requests: num(row.requests),
         bytes: num(row.bytes),
+        byDay: fileByDay.get(str(row.file)) ?? {},
       })),
     };
   } catch (error) {

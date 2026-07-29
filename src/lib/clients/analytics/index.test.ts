@@ -192,6 +192,21 @@ describe("getProductBreakdowns", () => {
   it("ranks countries with an others aggregate and lists top files", async () => {
     fetchMock.mockImplementation(async (_url: string, init: { body: string }) => {
       const sql = init.body;
+      if (sql.includes("GROUP BY day, country")) {
+        return jsonResponse([
+          { day: "2026-07-27 00:00:00", country: "US", requests: 60 },
+          { day: "2026-07-26 00:00:00", country: "US", requests: "40" },
+          { day: "2026-07-27 00:00:00", country: "DE", requests: 50 },
+        ]);
+      }
+      if (sql.includes("GROUP BY day, file")) {
+        return jsonResponse([
+          { day: "2026-07-27 00:00:00", file: "a.tif", requests: 25, bytes: 400 },
+        ]);
+      }
+      if (sql.includes("NOT IN")) {
+        return jsonResponse([{ day: "2026-07-27 00:00:00", requests: 15 }]);
+      }
       if (sql.includes("GROUP BY country")) {
         return jsonResponse([
           { country: "US", requests: 100 },
@@ -216,12 +231,37 @@ describe("getProductBreakdowns", () => {
       code: "US",
       name: "United States",
       requests: 100,
+      byDay: {
+        "2026-07-27T00:00:00.000Z": 60,
+        "2026-07-26T00:00:00.000Z": 40,
+      },
     });
-    expect(breakdowns!.otherCountries).toEqual({ count: 2, requests: 15 });
+    expect(breakdowns!.otherCountries).toEqual({
+      count: 2,
+      requests: 15,
+      byDay: { "2026-07-27T00:00:00.000Z": 15 },
+    });
     expect(breakdowns!.files).toEqual([
-      { path: "a.tif", requests: 60, bytes: 1000 },
-      { path: "b.json", requests: 40, bytes: 500 },
+      {
+        path: "a.tif",
+        requests: 60,
+        bytes: 1000,
+        byDay: { "2026-07-27T00:00:00.000Z": { requests: 25, bytes: 400 } },
+      },
+      { path: "b.json", requests: 40, bytes: 500, byDay: {} },
     ]);
+
+    // Per-day wave is scoped to the window's top entries, escaped and quoted.
+    const dayCountrySql = sentSql().find((sql) =>
+      sql.includes("GROUP BY day, country"),
+    );
+    expect(dayCountrySql).toContain("blob6 IN ('US', 'DE', 'BR', 'GB', 'IN')");
+    const othersSql = sentSql().find((sql) => sql.includes("NOT IN"));
+    expect(othersSql).toContain("blob6 NOT IN ('US', 'DE', 'BR', 'GB', 'IN')");
+    const dayFileSql = sentSql().find((sql) =>
+      sql.includes("GROUP BY day, file"),
+    );
+    expect(dayFileSql).toContain("blob3 IN ('a.tif', 'b.json')");
 
     const fileSql = sentSql().find((sql) => sql.includes("GROUP BY file"));
     expect(fileSql).toContain("ORDER BY requests DESC");
