@@ -44,145 +44,123 @@ export function ProductAnalyticsView({
   users,
   breakdowns,
 }: ProductAnalyticsViewProps) {
-  // One hover at a time; each panel narrows the other two to its slice.
-  // Clicking a country/file row pins that slice so the chart and stats stay
-  // scoped to it — hovering a day then interrogates values within the pin.
-  type Slice =
+  // One pin per dimension (country, file, day), each toggled by clicking a
+  // row or chart bar; the pins compose into an intersection filter. A hover
+  // substitutes for its own dimension's pin while the cursor is there, so
+  // sweeping rows previews siblings without dropping the other pins. Lists
+  // never take values from their own dimension, so hovering/pinning a row
+  // re-values only the *other* panels and rows can't shuffle under the
+  // cursor.
+  const [hover, setHover] = useState<
+    | { type: "day"; index: number }
     | { type: "country"; code: string }
-    | { type: "file"; path: string };
-  const [hover, setHover] = useState<({ type: "day"; index: number } | Slice) | null>(
-    null,
-  );
-  const [pin, setPin] = useState<Slice | null>(null);
-  const dayIndex = hover?.type === "day" ? hover.index : null;
-  const day = dayIndex === null ? null : days[dayIndex].date;
-  const hoverEntity = hover && hover.type !== "day" ? hover : null;
-  // Hovering the opposite type of an active pin is additive: the pin keeps
-  // scoping the lists and chart, and the stats narrow to pin ∩ hover (from
-  // the country×file cross data). A same-type hover previews that row instead.
-  const cross =
-    pin && hoverEntity && pin.type !== hoverEntity.type
-      ? {
-          path:
-            pin.type === "file"
-              ? pin.path
-              : hoverEntity.type === "file"
-                ? hoverEntity.path
-                : "",
-          code:
-            pin.type === "country"
-              ? pin.code
-              : hoverEntity.type === "country"
-                ? hoverEntity.code
-                : "",
-        }
-      : null;
-  const slice = cross ? pin : (hoverEntity ?? pin);
-  const sliceCountry =
-    slice?.type === "country"
-      ? slice.code === "·"
-        ? breakdowns?.otherCountries
-        : breakdowns?.countries.find((c) => c.code === slice.code)
-      : undefined;
-  const sliceFile =
-    slice?.type === "file"
-      ? breakdowns?.files.find((f) => f.path === slice.path)
-      : undefined;
-  const sliceEntity = sliceCountry ?? sliceFile;
+    | { type: "file"; path: string }
+    | null
+  >(null);
+  const [pins, setPins] = useState<{
+    country: string | null;
+    file: string | null;
+    day: number | null;
+  }>({ country: null, file: null, day: null });
+  const effCountry = hover?.type === "country" ? hover.code : pins.country;
+  const effFile = hover?.type === "file" ? hover.path : pins.file;
+  const effDay = hover?.type === "day" ? hover.index : pins.day;
+  const day = effDay === null ? null : days[effDay].date;
 
-  // Stats row: the active slice's window totals, or its single-day values
-  // while a chart day is hovered. `countries` is 1 for one country, the
-  // aggregate's count for the others row, and per-slice for files.
-  const sliceCountries = sliceFile
-    ? sliceFile.countries
-    : slice?.type === "country" && slice.code === "·"
-      ? (breakdowns?.otherCountries?.count ?? 0)
-      : 1;
-  // Intersection values for an additive pin + hover; countries is 1 for a
-  // single country and unknowable (NaN → rendered "—") for the others row.
-  const crossFile = cross
-    ? breakdowns?.files.find((f) => f.path === cross.path)
-    : undefined;
-  const crossEntry = cross
-    ? ((cross.code === "·"
-        ? crossFile?.otherCountries
-        : crossFile?.byCountry[cross.code]) ?? null)
-    : null;
-  const crossValues = cross
-    ? {
-        requests: crossEntry?.requests ?? 0,
-        bytes: crossEntry?.bytes ?? 0,
-        countries: cross.code === "·" ? NaN : 1,
-      }
-    : null;
-  const shown =
-    crossValues ??
-    (sliceEntity
+  const zeroEntry = {
+    requests: 0,
+    bytes: 0,
+    byDay: {} as Record<string, { requests: number; bytes: number }>,
+  };
+  // The "·" code is the others aggregate's row.
+  const countryEntity =
+    effCountry !== null
+      ? effCountry === "·"
+        ? breakdowns?.otherCountries
+        : breakdowns?.countries.find((c) => c.code === effCountry)
+      : undefined;
+  const fileEntity =
+    effFile !== null
+      ? breakdowns?.files.find((f) => f.path === effFile)
+      : undefined;
+  // The active country∩file entity: window totals plus a per-day series
+  // (from the day×country×file cube when both dimensions are set).
+  const entity =
+    countryEntity && fileEntity
+      ? ((effCountry === "·"
+          ? fileEntity.otherCountries
+          : fileEntity.byCountry[effCountry!]) ?? zeroEntry)
+      : (countryEntity ?? fileEntity ?? null);
+
+  // Countries stat: 1 for one country; the others row's distinct count is
+  // window-wide only, so it's unknowable (NaN → "—") when further narrowed.
+  const shownCountries = countryEntity
+    ? effCountry === "·"
+      ? fileEntity || day !== null
+        ? NaN
+        : (breakdowns?.otherCountries?.count ?? 0)
+      : 1
+    : fileEntity
       ? day !== null
-        ? {
-            ...(sliceEntity.byDay[day] ?? { requests: 0, bytes: 0 }),
-            countries:
-              sliceFile ? (sliceFile.byDay[day]?.countries ?? 0) : sliceCountries,
-          }
-        : { requests: sliceEntity.requests, bytes: sliceEntity.bytes, countries: sliceCountries }
+        ? (fileEntity.byDay[day]?.countries ?? 0)
+        : fileEntity.countries
       : day !== null
-        ? days[dayIndex!]
-        : totals);
-  const avgRequests =
-    (crossValues?.requests ?? sliceEntity?.requests ?? totals.requests) /
-    days.length;
+        ? days[effDay!].countries
+        : totals.countries;
+  const shown = {
+    ...(entity
+      ? day !== null
+        ? (entity.byDay[day] ?? zeroEntry)
+        : entity
+      : day !== null
+        ? days[effDay!]
+        : totals),
+    countries: shownCountries,
+  };
+  const avgRequests = (entity?.requests ?? totals.requests) / days.length;
 
   let chartDays = days;
-  if (cross) {
-    // Additive pin + hover: chart the intersection's daily series (from the
-    // day×country×file cube).
+  if (entity) {
     chartDays = days.map((d) => ({
       ...d,
-      requests: crossEntry?.byDay[d.date]?.requests ?? 0,
-      bytes: crossEntry?.byDay[d.date]?.bytes ?? 0,
-    }));
-  } else if (sliceEntity) {
-    chartDays = days.map((d) => ({
-      ...d,
-      requests: sliceEntity.byDay[d.date]?.requests ?? 0,
-      bytes: sliceEntity.byDay[d.date]?.bytes ?? 0,
+      requests: entity.byDay[d.date]?.requests ?? 0,
+      bytes: entity.byDay[d.date]?.bytes ?? 0,
     }));
   }
 
-  // Lists: a file slice re-values the country list and vice versa; a hovered
-  // day re-values both only when nothing is pinned (no day×country×file data).
-  const dayValuesLists = day !== null && !pin;
-  const countrySliceFile = sliceFile;
+  // Country list: driven by the effective file and day, never by a country.
   const countryRows = breakdowns
     ? [
-        ...breakdowns.countries.map((c) => ({
-          code: c.code,
-          label: c.name,
-          requests: countrySliceFile
-            ? (countrySliceFile.byCountry[c.code]?.requests ?? 0)
-            : dayValuesLists
-              ? (c.byDay[day!]?.requests ?? 0)
-              : c.requests,
-        })),
+        ...breakdowns.countries.map((c) => {
+          const e = fileEntity
+            ? (fileEntity.byCountry[c.code] ?? zeroEntry)
+            : c;
+          return {
+            code: c.code,
+            label: c.name,
+            requests: day !== null ? (e.byDay[day]?.requests ?? 0) : e.requests,
+          };
+        }),
         ...(breakdowns.otherCountries
           ? [
               {
                 code: "·",
                 label: `${breakdowns.otherCountries.count} others`,
-                requests: countrySliceFile
-                  ? countrySliceFile.otherCountries.requests
-                  : dayValuesLists
-                    ? (breakdowns.otherCountries.byDay[day!]?.requests ?? 0)
-                    : breakdowns.otherCountries.requests,
+                requests: (() => {
+                  const e = fileEntity
+                    ? fileEntity.otherCountries
+                    : breakdowns.otherCountries;
+                  return day !== null
+                    ? (e.byDay[day]?.requests ?? 0)
+                    : e.requests;
+                })(),
               },
             ]
           : []),
       ]
     : [];
-  // Re-rank by the active slice's values, others pinned last. A hovered
-  // country never re-sorts its own list (its values stay window-wide), so
-  // rows can't shuffle under the cursor.
-  if (countrySliceFile || dayValuesLists) {
+  // Re-rank by the active filter's values, others pinned last.
+  if (fileEntity || day !== null) {
     countryRows.sort(
       (a, b) =>
         Number(a.code === "·") - Number(b.code === "·") ||
@@ -191,41 +169,33 @@ export function ProductAnalyticsView({
   }
   const maxCountry = Math.max(1, ...countryRows.map((row) => row.requests));
 
-  const fileSliceCountry = slice?.type === "country" ? slice.code : null;
-  const fileRows = (breakdowns?.files ?? []).map((file) => ({
-    path: file.path,
-    shown:
-      fileSliceCountry !== null
-        ? fileSliceCountry === "·"
+  // Files table: driven by the effective country and day, never by a file.
+  const fileRows = (breakdowns?.files ?? []).map((file) => {
+    const e =
+      effCountry !== null
+        ? effCountry === "·"
           ? file.otherCountries
-          : (file.byCountry[fileSliceCountry] ?? { requests: 0, bytes: 0 })
-        : dayValuesLists
-          ? (file.byDay[day!] ?? { requests: 0, bytes: 0 })
-          : file,
-  }));
-  if (fileSliceCountry !== null || dayValuesLists) {
+          : (file.byCountry[effCountry] ?? zeroEntry)
+        : file;
+    return {
+      path: file.path,
+      shown: day !== null ? (e.byDay[day] ?? zeroEntry) : e,
+    };
+  });
+  if (effCountry !== null || day !== null) {
     fileRows.sort((a, b) => b.shown.requests - a.shown.requests);
   }
 
   const countryRowLabel = (code: string) =>
     countryRows.find((row) => row.code === code)?.label;
-  const filterLabel = cross
-    ? `${countryRowLabel(cross.code)} · ${cross.path}`
-    : slice
-      ? slice.type === "country"
-        ? countryRowLabel(slice.code)
-        : slice.path
-      : null;
-  const togglePin = (next: Slice) =>
-    setPin(
-      pin &&
-        pin.type === next.type &&
-        (pin.type === "country"
-          ? pin.code === (next as { code: string }).code
-          : pin.path === (next as { path: string }).path)
-        ? null
-        : next,
-    );
+  const filterLabel =
+    [effCountry !== null ? countryRowLabel(effCountry) : null, effFile]
+      .filter(Boolean)
+      .join(" · ") || null;
+  const togglePin = <K extends "country" | "file" | "day">(
+    dim: K,
+    value: NonNullable<(typeof pins)[K]>,
+  ) => setPins((p) => ({ ...p, [dim]: p[dim] === value ? null : value }));
   const rowHighlight = (isPin: boolean, isHover: boolean) =>
     isPin
       ? { background: "var(--green-a3)", cursor: "pointer" }
@@ -281,13 +251,14 @@ export function ProductAnalyticsView({
 
         <Grid columns={{ initial: "1", md: "5" }} gap="6" mt="4">
           <Box style={{ gridColumn: "span 3" }}>
-            <HoverCaption days={days} hovered={dayIndex} filterLabel={filterLabel} />
+            <HoverCaption days={days} hovered={effDay} filterLabel={filterLabel} />
             <DownloadsChart
               days={chartDays}
-              hovered={dayIndex}
+              hovered={effDay}
               onHover={(index) =>
                 setHover(index === null ? null : { type: "day", index })
               }
+              onSelect={(index) => index !== null && togglePin("day", index)}
               height={180}
             />
           </Box>
@@ -310,11 +281,9 @@ export function ProductAnalyticsView({
                       setHover({ type: "country", code: row.code })
                     }
                     onMouseLeave={() => setHover(null)}
-                    onClick={() =>
-                      togglePin({ type: "country", code: row.code })
-                    }
+                    onClick={() => togglePin("country", row.code)}
                     style={rowHighlight(
-                      pin?.type === "country" && pin.code === row.code,
+                      pins.country === row.code,
                       hover?.type === "country" && hover.code === row.code,
                     )}
                   >
@@ -391,9 +360,9 @@ export function ProductAnalyticsView({
                       setHover({ type: "file", path: file.path })
                     }
                     onMouseLeave={() => setHover(null)}
-                    onClick={() => togglePin({ type: "file", path: file.path })}
+                    onClick={() => togglePin("file", file.path)}
                     style={rowHighlight(
-                      pin?.type === "file" && pin.path === file.path,
+                      pins.file === file.path,
                       hover?.type === "file" && hover.path === file.path,
                     )}
                   >
@@ -428,7 +397,7 @@ export function ProductAnalyticsView({
                         slice data, so it blanks while a slice is active. */}
                     <Table.Cell justify="end">
                       <Text size="1" color="gray" style={mono()}>
-                        {fileSliceCountry !== null || dayValuesLists
+                        {effCountry !== null || day !== null
                           ? "—"
                           : numberFormat.format(
                               Math.round(breakdowns.otherFiles.requests),
@@ -437,7 +406,7 @@ export function ProductAnalyticsView({
                     </Table.Cell>
                     <Table.Cell justify="end">
                       <Text size="1" color="gray" style={mono()}>
-                        {fileSliceCountry !== null || dayValuesLists
+                        {effCountry !== null || day !== null
                           ? "—"
                           : formatBytes(breakdowns.otherFiles.bytes, 1)}
                       </Text>
