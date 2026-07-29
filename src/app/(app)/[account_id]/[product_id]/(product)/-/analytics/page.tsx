@@ -80,7 +80,7 @@ export default async function ProductAnalyticsPage({
 
       <Card size="2">
         <SectionHeader
-          title="Product Analytics"
+          title="Analytics"
           rightButton={
             <Flex gap="1">
               {USAGE_WINDOWS.map((days) => (
