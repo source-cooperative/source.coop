@@ -395,21 +395,36 @@ const FILE_LIST_LIMIT = 10;
 /** Per-UTC-day values keyed by the day's ISO timestamp (UsagePoint.date). */
 type ByDay<T> = Record<string, T>;
 
+interface SliceTotals {
+  requests: number;
+  bytes: number;
+}
+
 export interface ProductBreakdowns {
   /** Top countries by downloads */
-  countries: { code: string; name: string; requests: number; byDay: ByDay<number> }[];
+  countries: {
+    code: string;
+    name: string;
+    requests: number;
+    bytes: number;
+    byDay: ByDay<SliceTotals>;
+  }[];
   /** Aggregate of the remaining countries, if any */
-  otherCountries: { count: number; requests: number; byDay: ByDay<number> } | null;
+  otherCountries:
+    | { count: number; requests: number; bytes: number; byDay: ByDay<SliceTotals> }
+    | null;
   /** Top objects by downloads */
   files: {
     path: string;
     requests: number;
     bytes: number;
-    byDay: ByDay<{ requests: number; bytes: number }>;
+    /** Distinct countries the object was downloaded from */
+    countries: number;
+    byDay: ByDay<SliceTotals & { countries: number }>;
     /** Window values per top-country code (countries[].code) */
-    byCountry: Record<string, { requests: number; bytes: number }>;
+    byCountry: Record<string, SliceTotals>;
     /** Window values from countries outside the top list */
-    otherCountries: { requests: number; bytes: number };
+    otherCountries: SliceTotals;
   }[];
 }
 
@@ -428,12 +443,12 @@ export async function getProductBreakdowns(
   try {
     const [countryRows, fileRows] = await Promise.all([
       usageQuery(
-        `SELECT blob6 AS country, SUM(_sample_interval) AS requests ${from} GROUP BY country ORDER BY requests DESC`,
+        `SELECT blob6 AS country, SUM(_sample_interval) AS requests, SUM(_sample_interval * double1) AS bytes ${from} GROUP BY country ORDER BY requests DESC`,
       ),
       // blob3 = '' is a keyless product GET (trailing-slash/probe requests,
       // not a real file) — keep those out of the top-files ranking.
       usageQuery(
-        `SELECT blob3 AS file, SUM(_sample_interval) AS requests, SUM(_sample_interval * double1) AS bytes ${from} AND blob3 != '' GROUP BY file ORDER BY requests DESC LIMIT ${FILE_LIST_LIMIT}`,
+        `SELECT blob3 AS file, SUM(_sample_interval) AS requests, SUM(_sample_interval * double1) AS bytes, COUNT(DISTINCT blob6) AS countries ${from} AND blob3 != '' GROUP BY file ORDER BY requests DESC LIMIT ${FILE_LIST_LIMIT}`,
       ),
     ]);
 
@@ -451,17 +466,17 @@ export async function getProductBreakdowns(
       await Promise.all([
       topCountries.length
         ? usageQuery(
-            `SELECT toStartOfDay(timestamp) AS day, blob6 AS country, SUM(_sample_interval) AS requests ${from} AND blob6 IN (${countryIn}) GROUP BY day, country`,
+            `SELECT toStartOfDay(timestamp) AS day, blob6 AS country, SUM(_sample_interval) AS requests, SUM(_sample_interval * double1) AS bytes ${from} AND blob6 IN (${countryIn}) GROUP BY day, country`,
           )
         : [],
       rest.length
         ? usageQuery(
-            `SELECT toStartOfDay(timestamp) AS day, SUM(_sample_interval) AS requests ${from} AND blob6 NOT IN (${countryIn}) GROUP BY day`,
+            `SELECT toStartOfDay(timestamp) AS day, SUM(_sample_interval) AS requests, SUM(_sample_interval * double1) AS bytes ${from} AND blob6 NOT IN (${countryIn}) GROUP BY day`,
           )
         : [],
       topFiles.length
         ? usageQuery(
-            `SELECT toStartOfDay(timestamp) AS day, blob3 AS file, SUM(_sample_interval) AS requests, SUM(_sample_interval * double1) AS bytes ${from} AND blob3 IN (${fileIn}) GROUP BY day, file`,
+            `SELECT toStartOfDay(timestamp) AS day, blob3 AS file, SUM(_sample_interval) AS requests, SUM(_sample_interval * double1) AS bytes, COUNT(DISTINCT blob6) AS countries ${from} AND blob3 IN (${fileIn}) GROUP BY day, file`,
           )
         : [],
       // Country × file cross — serves both hover directions (a country's
@@ -478,16 +493,22 @@ export async function getProductBreakdowns(
         : [],
     ]);
 
-    const countryByDay = new Map<string, Record<string, number>>();
+    const countryByDay = new Map<
+      string,
+      Record<string, { requests: number; bytes: number }>
+    >();
     for (const row of countryDayRows) {
       const key = str(row.country);
       const days = countryByDay.get(key) ?? {};
-      days[parseDateTime(row.day)] = num(row.requests);
+      days[parseDateTime(row.day)] = {
+        requests: num(row.requests),
+        bytes: num(row.bytes),
+      };
       countryByDay.set(key, days);
     }
     const fileByDay = new Map<
       string,
-      Record<string, { requests: number; bytes: number }>
+      Record<string, { requests: number; bytes: number; countries: number }>
     >();
     for (const row of fileDayRows) {
       const key = str(row.file);
@@ -495,6 +516,7 @@ export async function getProductBreakdowns(
       days[parseDateTime(row.day)] = {
         requests: num(row.requests),
         bytes: num(row.bytes),
+        countries: num(row.countries),
       };
       fileByDay.set(key, days);
     }
@@ -524,16 +546,18 @@ export async function getProductBreakdowns(
         code: str(row.country) || "??",
         name: countryName(str(row.country)),
         requests: num(row.requests),
+        bytes: num(row.bytes),
         byDay: countryByDay.get(str(row.country)) ?? {},
       })),
       otherCountries: rest.length
         ? {
             count: rest.length,
             requests: rest.reduce((sum, row) => sum + num(row.requests), 0),
+            bytes: rest.reduce((sum, row) => sum + num(row.bytes), 0),
             byDay: Object.fromEntries(
               otherDayRows.map((row) => [
                 parseDateTime(row.day),
-                num(row.requests),
+                { requests: num(row.requests), bytes: num(row.bytes) },
               ]),
             ),
           }
@@ -542,6 +566,7 @@ export async function getProductBreakdowns(
         path: str(row.file),
         requests: num(row.requests),
         bytes: num(row.bytes),
+        countries: num(row.countries),
         byDay: fileByDay.get(str(row.file)) ?? {},
         byCountry: fileByCountry.get(str(row.file)) ?? {},
         otherCountries: fileOthers.get(str(row.file)) ?? {
