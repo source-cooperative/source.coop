@@ -1,6 +1,14 @@
 import type { ComponentType, ComponentProps } from "react";
-import { MagnifyingGlassIcon, Link1Icon } from "@radix-ui/react-icons";
-import { adminUserLookupUrl, adminDataConnectionsUrl } from "@/lib";
+import {
+  MagnifyingGlassIcon,
+  Link1Icon,
+  BarChartIcon,
+} from "@radix-ui/react-icons";
+import {
+  adminAnalyticsUrl,
+  adminUserLookupUrl,
+  adminDataConnectionsUrl,
+} from "@/lib";
 
 type IconProps = ComponentProps<typeof MagnifyingGlassIcon>;
 
@@ -17,6 +25,12 @@ export interface AdminTool {
 }
 
 export const ADMIN_TOOLS: AdminTool[] = [
+  {
+    name: "Analytics",
+    description: "Explore which accounts and products serve the most traffic.",
+    href: adminAnalyticsUrl(),
+    Icon: BarChartIcon,
+  },
   {
     name: "User Lookup",
     description: "Find a user by email and open their profile.",

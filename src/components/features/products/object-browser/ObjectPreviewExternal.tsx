@@ -2,13 +2,16 @@ import "server-only";
 
 import { LOGGER } from "@/lib";
 import { fileSourceUrl } from "@/lib/urls";
-import { Box, Code, Flex, Link } from "@radix-ui/themes";
+import { Code, Flex, Link } from "@radix-ui/themes";
 import { ExternalLinkIcon } from "@radix-ui/react-icons";
 import type { CSSProperties } from "react";
 import { getExtension } from "@/lib/files";
 import { DuckDBConnection } from "@duckdb/node-api";
+import { cache } from "react";
 
-const isStacGeoParquet = async (sourceUrl: string): Promise<boolean> => {
+// cache(): the remote parquet-schema probe is requested by both the
+// "Open in new tab" link and the preview iframe in one render.
+const isStacGeoParquet = cache(async (sourceUrl: string): Promise<boolean> => {
   let db: DuckDBConnection | undefined;
   try {
     db = await DuckDBConnection.create();
@@ -33,7 +36,7 @@ const isStacGeoParquet = async (sourceUrl: string): Promise<boolean> => {
     // DuckDB connections should be closed to free up resources
     db?.closeSync();
   }
-};
+});
 
 interface ObjectPreviewExternalProps {
   account_id: string;
@@ -41,40 +44,25 @@ interface ObjectPreviewExternalProps {
   object_path: string;
 }
 
-const getIframeAttributes = async (
+export const getIframeSrc = async (
   sourceUrl: string,
   extension: string,
-): Promise<{ src: string; style?: CSSProperties } | null> => {
+): Promise<string | null> => {
   const url = encodeURIComponent(sourceUrl);
   switch (extension) {
     case "pmtiles":
-      return {
-        src: `https://pmtiles.io/#url=${url}&iframe=true`,
-        style: { border: "none" },
-      };
+      return `https://pmtiles.io/#url=${url}&iframe=true`;
     case "parquet":
       if (await isStacGeoParquet(sourceUrl)) {
-        return {
-          src: `https://developmentseed.org/stac-map?href=${url}`,
-          style: { border: "1px solid var(--gray-5)" },
-        };
+        return `https://developmentseed.org/stac-map?href=${url}`;
       }
-      return {
-        src: `https://source-cooperative.github.io/parquet-table/?iframe=true&url=${url}`,
-        style: { border: "1px solid var(--gray-5)" },
-      };
+      return `https://source-cooperative.github.io/parquet-table/?iframe=true&url=${url}`;
     case "csv":
     case "tsv":
-      return {
-        src: `https://source-cooperative.github.io/csv-table/?iframe=true&url=${url}`,
-        style: { border: "1px solid var(--gray-5)" },
-      };
+      return `https://source-cooperative.github.io/csv-table/?iframe=true&url=${url}`;
     case "tif":
     case "tiff":
-      return {
-        src: `https://source-cooperative.github.io/cog-viewer/?url=${url}`,
-        style: { border: "1px solid var(--gray-5)" },
-      };
+      return `https://source-cooperative.github.io/cog-viewer/?url=${url}`;
     case "avif":
     case "bmp":
     case "gif":
@@ -83,35 +71,20 @@ const getIframeAttributes = async (
     case "png":
     case "svg":
     case "webp":
-      return {
-        src: `https://source-cooperative.github.io/image-viewer/?url=${url}`,
-        style: { border: "1px solid var(--gray-5)" },
-      };
+      return `https://source-cooperative.github.io/image-viewer/?url=${url}`;
     case "pdf":
-      return {
-        src: `https://source-cooperative.github.io/pdf-viewer/?url=${url}`,
-        style: { border: "1px solid var(--gray-5)" },
-      };
+      return `https://source-cooperative.github.io/pdf-viewer/?url=${url}`;
     case "glb":
     case "gltf":
     case "obj":
     case "stl":
-      return {
-        src: `https://source-cooperative.github.io/model-viewer/?url=${url}`,
-        style: { border: "1px solid var(--gray-5)" },
-      };
+      return `https://source-cooperative.github.io/model-viewer/?url=${url}`;
     case "zip":
-      return {
-        src: `https://source-cooperative.github.io/zip-viewer/?url=${url}`,
-        style: { border: "1px solid var(--gray-5)" },
-      };
+      return `https://source-cooperative.github.io/zip-viewer/?url=${url}`;
     case "json":
     case "jsonl":
     case "ndjson":
-      return {
-        src: `https://source-cooperative.github.io/json-viewer/?url=${url}`,
-        style: { border: "1px solid var(--gray-5)" },
-      };
+      return `https://source-cooperative.github.io/json-viewer/?url=${url}`;
     default:
       return null;
   }
@@ -125,43 +98,30 @@ export async function ObjectPreviewExternal(props: ObjectPreviewExternalProps) {
     return null;
   }
 
-  const iframeProps = await getIframeAttributes(cloudUri, extension);
-  if (!iframeProps) {
+  const src = await getIframeSrc(cloudUri, extension);
+  if (!src) {
     return (
-      <Box mt="4" pt="4" style={{ borderTop: "1px solid var(--gray-6)" }}>
-        <p>
-          No preview available for file type <Code>.{extension}</Code>.{" "}
-          <a href="https://github.com/source-cooperative/source.coop/issues">
-            Open an issue
-          </a>{" "}
-          if you would like support for this file type.
-        </p>
-      </Box>
+      <p>
+        No preview available for file type <Code>.{extension}</Code>.{" "}
+        <a href="https://github.com/source-cooperative/source.coop/issues">
+          Open an issue
+        </a>{" "}
+        if you would like support for this file type.
+      </p>
     );
   }
 
-  const { src, style } = iframeProps;
   return (
-    <Box mt="4" pt="4" style={{ borderTop: "1px solid var(--gray-6)" }}>
-      <Flex justify="end" mb="2">
-        <Link href={src} target="_blank" rel="noopener noreferrer" size="1">
-          <Flex align="center" gap="1">
-            Open in new tab
-            <ExternalLinkIcon width="14" height="14" />
-          </Flex>
-        </Link>
-      </Flex>
-      <iframe
-        width="100%"
-        height="600px"
-        allow="fullscreen"
-        style={style}
-        src={src}
-        title={`Preview of ${props.object_path}`}
-        loading="lazy"
-      >
-        Your browser does not support iframes.
-      </iframe>
-    </Box>
+    <iframe
+      width="100%"
+      height="600px"
+      allow="fullscreen"
+      style={{ border: "1px solid var(--gray-5)" }}
+      src={src}
+      title={`Preview of ${props.object_path}`}
+      loading="lazy"
+    >
+      Your browser does not support iframes.
+    </iframe>
   );
 }
