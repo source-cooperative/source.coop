@@ -44,16 +44,50 @@ export function ProductAnalyticsView({
   users,
   breakdowns,
 }: ProductAnalyticsViewProps) {
-  const [hovered, setHovered] = useState<number | null>(null);
-  const shown = hovered === null ? totals : days[hovered];
-  // Hovering a bar narrows the country/file panels to that UTC day.
-  const day = hovered === null ? null : days[hovered].date;
+  // One hover at a time; each panel narrows the other two to its slice.
+  const [hover, setHover] = useState<
+    | { type: "day"; index: number }
+    | { type: "country"; code: string }
+    | { type: "file"; path: string }
+    | null
+  >(null);
+  const dayIndex = hover?.type === "day" ? hover.index : null;
+  const shown = dayIndex === null ? totals : days[dayIndex];
+  const day = dayIndex === null ? null : days[dayIndex].date;
+  const hoveredCountry = hover?.type === "country" ? hover.code : null;
+  const hoveredFile =
+    hover?.type === "file"
+      ? breakdowns?.files.find((f) => f.path === hover.path)
+      : undefined;
+
+  // The "·" code is the others aggregate's row.
+  const countryByDay = (code: string) =>
+    (code === "·"
+      ? breakdowns?.otherCountries?.byDay
+      : breakdowns?.countries.find((c) => c.code === code)?.byDay) ?? {};
+  let chartDays = days;
+  if (hoveredCountry !== null) {
+    const byDay = countryByDay(hoveredCountry);
+    chartDays = days.map((d) => ({ ...d, requests: byDay[d.date] ?? 0 }));
+  } else if (hoveredFile) {
+    chartDays = days.map((d) => ({
+      ...d,
+      requests: hoveredFile.byDay[d.date]?.requests ?? 0,
+      bytes: hoveredFile.byDay[d.date]?.bytes ?? 0,
+    }));
+  }
+
   const countryRows = breakdowns
     ? [
         ...breakdowns.countries.map((c) => ({
           code: c.code,
           label: c.name,
-          requests: day === null ? c.requests : (c.byDay[day] ?? 0),
+          requests:
+            day !== null
+              ? (c.byDay[day] ?? 0)
+              : hoveredFile
+                ? (hoveredFile.byCountry[c.code]?.requests ?? 0)
+                : c.requests,
         })),
         ...(breakdowns.otherCountries
           ? [
@@ -61,15 +95,49 @@ export function ProductAnalyticsView({
                 code: "·",
                 label: `${breakdowns.otherCountries.count} others`,
                 requests:
-                  day === null
-                    ? breakdowns.otherCountries.requests
-                    : (breakdowns.otherCountries.byDay[day] ?? 0),
+                  day !== null
+                    ? (breakdowns.otherCountries.byDay[day] ?? 0)
+                    : hoveredFile
+                      ? hoveredFile.otherCountries.requests
+                      : breakdowns.otherCountries.requests,
               },
             ]
           : []),
       ]
     : [];
+  // Re-rank by the hovered slice's values, others pinned last. A hovered
+  // country never re-sorts its own list (its values stay window-wide), so
+  // rows can't shuffle under the cursor.
+  if (day !== null || hoveredFile) {
+    countryRows.sort(
+      (a, b) =>
+        Number(a.code === "·") - Number(b.code === "·") ||
+        b.requests - a.requests,
+    );
+  }
   const maxCountry = Math.max(1, ...countryRows.map((row) => row.requests));
+
+  const fileRows = (breakdowns?.files ?? []).map((file) => ({
+    path: file.path,
+    shown:
+      day !== null
+        ? (file.byDay[day] ?? { requests: 0, bytes: 0 })
+        : hoveredCountry !== null
+          ? hoveredCountry === "·"
+            ? file.otherCountries
+            : (file.byCountry[hoveredCountry] ?? { requests: 0, bytes: 0 })
+          : file,
+  }));
+  if (day !== null || hoveredCountry !== null) {
+    fileRows.sort((a, b) => b.shown.requests - a.shown.requests);
+  }
+
+  const filterLabel =
+    hoveredCountry !== null
+      ? countryRows.find((row) => row.code === hoveredCountry)?.label
+      : hover?.type === "file"
+        ? hover.path
+        : null;
 
   return (
     <Tabs.Root defaultValue="downloads">
@@ -115,11 +183,13 @@ export function ProductAnalyticsView({
 
         <Grid columns={{ initial: "1", md: "5" }} gap="6" mt="4">
           <Box style={{ gridColumn: "span 3" }}>
-            <HoverCaption days={days} hovered={hovered} />
+            <HoverCaption days={days} hovered={dayIndex} filterLabel={filterLabel} />
             <DownloadsChart
-              days={days}
-              hovered={hovered}
-              onHover={setHovered}
+              days={chartDays}
+              hovered={dayIndex}
+              onHover={(index) =>
+                setHover(index === null ? null : { type: "day", index })
+              }
               height={180}
             />
           </Box>
@@ -133,7 +203,21 @@ export function ProductAnalyticsView({
             ) : (
               <Box mt="2">
                 {countryRows.map((row) => (
-                  <Flex key={`${row.code}-${row.label}`} gap="2" mb="2" align="start">
+                  <Flex
+                    key={`${row.code}-${row.label}`}
+                    gap="2"
+                    mb="2"
+                    align="start"
+                    onMouseEnter={() =>
+                      setHover({ type: "country", code: row.code })
+                    }
+                    onMouseLeave={() => setHover(null)}
+                    style={
+                      hoveredCountry === row.code
+                        ? { background: "var(--green-a2)" }
+                        : undefined
+                    }
+                  >
                     <Text
                       size="1"
                       color="gray"
@@ -200,35 +284,38 @@ export function ProductAnalyticsView({
                 </Table.Row>
               </Table.Header>
               <Table.Body>
-                {breakdowns.files.map((file) => {
-                  const shownFile =
-                    day === null
-                      ? file
-                      : (file.byDay[day] ?? { requests: 0, bytes: 0 });
-                  return (
-                    <Table.Row key={file.path}>
-                      <Table.RowHeaderCell>
-                        <Text size="1" style={mono()}>
-                          <Link
-                            href={objectUrl(accountId, productId, file.path)}
-                          >
-                            {file.path}
-                          </Link>
-                        </Text>
-                      </Table.RowHeaderCell>
-                      <Table.Cell justify="end">
-                        <Text size="1" style={mono()}>
-                          {numberFormat.format(Math.round(shownFile.requests))}
-                        </Text>
-                      </Table.Cell>
-                      <Table.Cell justify="end">
-                        <Text size="1" style={mono()}>
-                          {formatBytes(shownFile.bytes, 1)}
-                        </Text>
-                      </Table.Cell>
-                    </Table.Row>
-                  );
-                })}
+                {fileRows.map((file) => (
+                  <Table.Row
+                    key={file.path}
+                    onMouseEnter={() =>
+                      setHover({ type: "file", path: file.path })
+                    }
+                    onMouseLeave={() => setHover(null)}
+                    style={
+                      hoveredFile?.path === file.path
+                        ? { background: "var(--green-a2)" }
+                        : undefined
+                    }
+                  >
+                    <Table.RowHeaderCell>
+                      <Text size="1" style={mono()}>
+                        <Link href={objectUrl(accountId, productId, file.path)}>
+                          {file.path}
+                        </Link>
+                      </Text>
+                    </Table.RowHeaderCell>
+                    <Table.Cell justify="end">
+                      <Text size="1" style={mono()}>
+                        {numberFormat.format(Math.round(file.shown.requests))}
+                      </Text>
+                    </Table.Cell>
+                    <Table.Cell justify="end">
+                      <Text size="1" style={mono()}>
+                        {formatBytes(file.shown.bytes, 1)}
+                      </Text>
+                    </Table.Cell>
+                  </Table.Row>
+                ))}
               </Table.Body>
             </Table.Root>
           )}

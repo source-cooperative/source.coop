@@ -105,13 +105,16 @@ export function Stat({
 export function HoverCaption({
   days,
   hovered,
+  filterLabel,
 }: {
   days: UsagePoint[];
   hovered: number | null;
+  /** Non-day filter (hovered country/file) the chart is narrowed to */
+  filterLabel?: string | null;
 }) {
   return (
     <Flex align="center" gap="2" mb="2">
-      {hovered !== null && (
+      {(hovered !== null || filterLabel) && (
         <Box
           width="8px"
           height="8px"
@@ -119,9 +122,9 @@ export function HoverCaption({
         />
       )}
       <MonoLabel help={HELP.window}>
-        {hovered === null
-          ? `${days.length}-day downloads`
-          : formatDateSSR(days[hovered].date)}
+        {hovered !== null
+          ? formatDateSSR(days[hovered].date)
+          : (filterLabel ?? `${days.length}-day downloads`)}
       </MonoLabel>
     </Flex>
   );

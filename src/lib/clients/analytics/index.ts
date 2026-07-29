@@ -406,6 +406,10 @@ export interface ProductBreakdowns {
     requests: number;
     bytes: number;
     byDay: ByDay<{ requests: number; bytes: number }>;
+    /** Window values per top-country code (countries[].code) */
+    byCountry: Record<string, { requests: number; bytes: number }>;
+    /** Window values from countries outside the top list */
+    otherCountries: { requests: number; bytes: number };
   }[];
 }
 
@@ -442,7 +446,9 @@ export async function getProductBreakdowns(
     // Second wave, scoped to the window's top entries with IN (bounded rows,
     // unlike a full GROUP BY day+file) — per-day values for hover.
     const countryIn = topCountries.map(sqlQuote).join(", ");
-    const [countryDayRows, otherDayRows, fileDayRows] = await Promise.all([
+    const fileIn = topFiles.map(sqlQuote).join(", ");
+    const [countryDayRows, otherDayRows, fileDayRows, crossRows, fileOtherRows] =
+      await Promise.all([
       topCountries.length
         ? usageQuery(
             `SELECT toStartOfDay(timestamp) AS day, blob6 AS country, SUM(_sample_interval) AS requests ${from} AND blob6 IN (${countryIn}) GROUP BY day, country`,
@@ -455,7 +461,19 @@ export async function getProductBreakdowns(
         : [],
       topFiles.length
         ? usageQuery(
-            `SELECT toStartOfDay(timestamp) AS day, blob3 AS file, SUM(_sample_interval) AS requests, SUM(_sample_interval * double1) AS bytes ${from} AND blob3 IN (${topFiles.map(sqlQuote).join(", ")}) GROUP BY day, file`,
+            `SELECT toStartOfDay(timestamp) AS day, blob3 AS file, SUM(_sample_interval) AS requests, SUM(_sample_interval * double1) AS bytes ${from} AND blob3 IN (${fileIn}) GROUP BY day, file`,
+          )
+        : [],
+      // Country × file cross — serves both hover directions (a country's
+      // per-file values and a file's per-country values).
+      topCountries.length && topFiles.length
+        ? usageQuery(
+            `SELECT blob6 AS country, blob3 AS file, SUM(_sample_interval) AS requests, SUM(_sample_interval * double1) AS bytes ${from} AND blob6 IN (${countryIn}) AND blob3 IN (${fileIn}) GROUP BY country, file`,
+          )
+        : [],
+      rest.length && topFiles.length
+        ? usageQuery(
+            `SELECT blob3 AS file, SUM(_sample_interval) AS requests, SUM(_sample_interval * double1) AS bytes ${from} AND blob6 NOT IN (${countryIn}) AND blob3 IN (${fileIn}) GROUP BY file`,
           )
         : [],
     ]);
@@ -480,6 +498,26 @@ export async function getProductBreakdowns(
       };
       fileByDay.set(key, days);
     }
+    const fileByCountry = new Map<
+      string,
+      Record<string, { requests: number; bytes: number }>
+    >();
+    for (const row of crossRows) {
+      const key = str(row.file);
+      const countries = fileByCountry.get(key) ?? {};
+      // Same code normalization as countries[].code, so lookups line up.
+      countries[str(row.country) || "??"] = {
+        requests: num(row.requests),
+        bytes: num(row.bytes),
+      };
+      fileByCountry.set(key, countries);
+    }
+    const fileOthers = new Map(
+      fileOtherRows.map((row) => [
+        str(row.file),
+        { requests: num(row.requests), bytes: num(row.bytes) },
+      ]),
+    );
 
     return {
       countries: countryRows.slice(0, COUNTRY_LIST_LIMIT).map((row) => ({
@@ -505,6 +543,11 @@ export async function getProductBreakdowns(
         requests: num(row.requests),
         bytes: num(row.bytes),
         byDay: fileByDay.get(str(row.file)) ?? {},
+        byCountry: fileByCountry.get(str(row.file)) ?? {},
+        otherCountries: fileOthers.get(str(row.file)) ?? {
+          requests: 0,
+          bytes: 0,
+        },
       })),
     };
   } catch (error) {
