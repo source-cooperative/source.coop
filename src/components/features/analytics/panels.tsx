@@ -109,7 +109,7 @@ export function HoverCaption({
 }: {
   days: UsagePoint[];
   hovered: number | null;
-  /** Non-day filter (hovered country/file) the chart is narrowed to */
+  /** Transient hover preview (hovered country/file name) */
   filterLabel?: string | null;
 }) {
   return (
@@ -122,9 +122,9 @@ export function HoverCaption({
         />
       )}
       <MonoLabel help={HELP.window}>
-        {[filterLabel, hovered !== null ? formatDateSSR(days[hovered].date) : null]
-          .filter(Boolean)
-          .join(" · ") || `${days.length}-day downloads`}
+        {hovered !== null
+          ? formatDateSSR(days[hovered].date)
+          : (filterLabel ?? `${days.length}-day downloads`)}
       </MonoLabel>
     </Flex>
   );

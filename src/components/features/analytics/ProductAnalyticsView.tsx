@@ -9,7 +9,7 @@ import type {
   UsageTotals,
   UsageUsers,
 } from "@/lib/clients/analytics";
-import { formatBytes } from "@/lib/format";
+import { formatBytes, formatDateSSR } from "@/lib/format";
 import { objectUrl } from "@/lib/urls";
 import {
   DownloadsChart,
@@ -188,10 +188,22 @@ export function ProductAnalyticsView({
 
   const countryRowLabel = (code: string) =>
     countryRows.find((row) => row.code === code)?.label;
-  const filterLabel =
-    [effCountry !== null ? countryRowLabel(effCountry) : null, effFile]
+  // Persistent pins live on their own caption line above the transient hover
+  // line, so the two states stay visually distinct.
+  const pinnedLabel =
+    [
+      pins.country !== null ? countryRowLabel(pins.country) : null,
+      pins.file,
+      pins.day !== null ? formatDateSSR(days[pins.day].date) : null,
+    ]
       .filter(Boolean)
       .join(" · ") || null;
+  const hoverLabel =
+    hover && hover.type !== "day"
+      ? hover.type === "country"
+        ? countryRowLabel(hover.code)
+        : hover.path
+      : null;
   const togglePin = <K extends "country" | "file" | "day">(
     dim: K,
     value: NonNullable<(typeof pins)[K]>,
@@ -251,7 +263,21 @@ export function ProductAnalyticsView({
 
         <Grid columns={{ initial: "1", md: "5" }} gap="6" mt="4">
           <Box style={{ gridColumn: "span 3" }}>
-            <HoverCaption days={days} hovered={effDay} filterLabel={filterLabel} />
+            {pinnedLabel && (
+              <Flex align="center" gap="2" mb="1">
+                <Box
+                  width="8px"
+                  height="8px"
+                  style={{ background: "var(--green-9)", flexShrink: 0 }}
+                />
+                <MonoLabel>pinned: {pinnedLabel}</MonoLabel>
+              </Flex>
+            )}
+            <HoverCaption
+              days={days}
+              hovered={hover?.type === "day" ? hover.index : null}
+              filterLabel={hoverLabel}
+            />
             <DownloadsChart
               days={chartDays}
               hovered={effDay}
