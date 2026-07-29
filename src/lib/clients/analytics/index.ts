@@ -19,6 +19,7 @@
  *
  * Server-only: queries run over the SQL API with an account-level token.
  */
+import "server-only";
 import { unstable_cache } from "next/cache";
 import { CONFIG } from "@/lib/config";
 import { LOGGER } from "@/lib/logging";
