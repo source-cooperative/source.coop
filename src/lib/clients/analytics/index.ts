@@ -421,10 +421,10 @@ export interface ProductBreakdowns {
     /** Distinct countries the object was downloaded from */
     countries: number;
     byDay: ByDay<SliceTotals & { countries: number }>;
-    /** Window values per top-country code (countries[].code) */
-    byCountry: Record<string, SliceTotals>;
-    /** Window values from countries outside the top list */
-    otherCountries: SliceTotals;
+    /** Window and per-day values per top-country code (countries[].code) */
+    byCountry: Record<string, SliceTotals & { byDay: ByDay<SliceTotals> }>;
+    /** Window and per-day values from countries outside the top list */
+    otherCountries: SliceTotals & { byDay: ByDay<SliceTotals> };
   }[];
   /**
    * Remainder of file traffic outside the top list — lets the table sum to
@@ -470,8 +470,15 @@ export async function getProductBreakdowns(
     // unlike a full GROUP BY day+file) — per-day values for hover.
     const countryIn = topCountries.map(sqlQuote).join(", ");
     const fileIn = topFiles.map(sqlQuote).join(", ");
-    const [countryDayRows, otherDayRows, fileDayRows, crossRows, fileOtherRows] =
-      await Promise.all([
+    const [
+      countryDayRows,
+      otherDayRows,
+      fileDayRows,
+      crossRows,
+      fileOtherRows,
+      cubeRows,
+      otherCubeRows,
+    ] = await Promise.all([
       topCountries.length
         ? usageQuery(
             `SELECT toStartOfDay(timestamp) AS day, blob6 AS country, SUM(_sample_interval) AS requests, SUM(_sample_interval * double1) AS bytes ${from} AND blob6 IN (${countryIn}) GROUP BY day, country`,
@@ -497,6 +504,19 @@ export async function getProductBreakdowns(
       rest.length && topFiles.length
         ? usageQuery(
             `SELECT blob3 AS file, SUM(_sample_interval) AS requests, SUM(_sample_interval * double1) AS bytes ${from} AND blob6 NOT IN (${countryIn}) AND blob3 IN (${fileIn}) GROUP BY file`,
+          )
+        : [],
+      // Day × country × file cube for the pinned-intersection chart. Bounded
+      // to top-5 × top-10 × window days (< AE's ~10k row cap; sparse in
+      // practice since rows only exist where traffic occurred).
+      topCountries.length && topFiles.length
+        ? usageQuery(
+            `SELECT toStartOfDay(timestamp) AS day, blob6 AS country, blob3 AS file, SUM(_sample_interval) AS requests, SUM(_sample_interval * double1) AS bytes ${from} AND blob6 IN (${countryIn}) AND blob3 IN (${fileIn}) GROUP BY day, country, file`,
+          )
+        : [],
+      rest.length && topFiles.length
+        ? usageQuery(
+            `SELECT toStartOfDay(timestamp) AS day, blob3 AS file, SUM(_sample_interval) AS requests, SUM(_sample_interval * double1) AS bytes ${from} AND blob6 NOT IN (${countryIn}) AND blob3 IN (${fileIn}) GROUP BY day, file`,
           )
         : [],
     ]);
@@ -528,24 +548,50 @@ export async function getProductBreakdowns(
       };
       fileByDay.set(key, days);
     }
+    const cube = new Map<string, Record<string, SliceTotals>>();
+    for (const row of cubeRows) {
+      const key = `${str(row.file)} ${str(row.country) || "??"}`;
+      const days = cube.get(key) ?? {};
+      days[parseDateTime(row.day)] = {
+        requests: num(row.requests),
+        bytes: num(row.bytes),
+      };
+      cube.set(key, days);
+    }
+    const otherCube = new Map<string, Record<string, SliceTotals>>();
+    for (const row of otherCubeRows) {
+      const key = str(row.file);
+      const days = otherCube.get(key) ?? {};
+      days[parseDateTime(row.day)] = {
+        requests: num(row.requests),
+        bytes: num(row.bytes),
+      };
+      otherCube.set(key, days);
+    }
     const fileByCountry = new Map<
       string,
-      Record<string, { requests: number; bytes: number }>
+      Record<string, SliceTotals & { byDay: ByDay<SliceTotals> }>
     >();
     for (const row of crossRows) {
       const key = str(row.file);
       const countries = fileByCountry.get(key) ?? {};
       // Same code normalization as countries[].code, so lookups line up.
-      countries[str(row.country) || "??"] = {
+      const code = str(row.country) || "??";
+      countries[code] = {
         requests: num(row.requests),
         bytes: num(row.bytes),
+        byDay: cube.get(`${key} ${code}`) ?? {},
       };
       fileByCountry.set(key, countries);
     }
     const fileOthers = new Map(
       fileOtherRows.map((row) => [
         str(row.file),
-        { requests: num(row.requests), bytes: num(row.bytes) },
+        {
+          requests: num(row.requests),
+          bytes: num(row.bytes),
+          byDay: otherCube.get(str(row.file)) ?? {},
+        },
       ]),
     );
 
@@ -580,6 +626,7 @@ export async function getProductBreakdowns(
         otherCountries: fileOthers.get(str(row.file)) ?? {
           requests: 0,
           bytes: 0,
+          byDay: {},
         },
       })),
       // Sampling makes the parts fractional estimates; clamp the remainder.

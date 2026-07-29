@@ -100,13 +100,18 @@ export function ProductAnalyticsView({
       : 1;
   // Intersection values for an additive pin + hover; countries is 1 for a
   // single country and unknowable (NaN → rendered "—") for the others row.
+  const crossFile = cross
+    ? breakdowns?.files.find((f) => f.path === cross.path)
+    : undefined;
+  const crossEntry = cross
+    ? ((cross.code === "·"
+        ? crossFile?.otherCountries
+        : crossFile?.byCountry[cross.code]) ?? null)
+    : null;
   const crossValues = cross
     ? {
-        ...((cross.code === "·"
-          ? breakdowns?.files.find((f) => f.path === cross.path)?.otherCountries
-          : breakdowns?.files.find((f) => f.path === cross.path)?.byCountry[
-              cross.code
-            ]) ?? { requests: 0, bytes: 0 }),
+        requests: crossEntry?.requests ?? 0,
+        bytes: crossEntry?.bytes ?? 0,
         countries: cross.code === "·" ? NaN : 1,
       }
     : null;
@@ -128,7 +133,15 @@ export function ProductAnalyticsView({
     days.length;
 
   let chartDays = days;
-  if (sliceEntity) {
+  if (cross) {
+    // Additive pin + hover: chart the intersection's daily series (from the
+    // day×country×file cube).
+    chartDays = days.map((d) => ({
+      ...d,
+      requests: crossEntry?.byDay[d.date]?.requests ?? 0,
+      bytes: crossEntry?.byDay[d.date]?.bytes ?? 0,
+    }));
+  } else if (sliceEntity) {
     chartDays = days.map((d) => ({
       ...d,
       requests: sliceEntity.byDay[d.date]?.requests ?? 0,

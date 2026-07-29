@@ -192,6 +192,22 @@ describe("getProductBreakdowns", () => {
   it("ranks countries with an others aggregate and lists top files", async () => {
     fetchMock.mockImplementation(async (_url: string, init: { body: string }) => {
       const sql = init.body;
+      if (sql.includes("GROUP BY day, country, file")) {
+        return jsonResponse([
+          {
+            day: "2026-07-27 00:00:00",
+            country: "US",
+            file: "a.tif",
+            requests: 12,
+            bytes: 150,
+          },
+        ]);
+      }
+      if (sql.includes("NOT IN") && sql.includes("GROUP BY day, file")) {
+        return jsonResponse([
+          { day: "2026-07-27 00:00:00", file: "b.json", requests: 2, bytes: 20 },
+        ]);
+      }
       if (sql.includes("GROUP BY day, country")) {
         return jsonResponse([
           { day: "2026-07-27 00:00:00", country: "US", requests: 60, bytes: 600 },
@@ -273,10 +289,16 @@ describe("getProductBreakdowns", () => {
           "2026-07-27T00:00:00.000Z": { requests: 25, bytes: 400, countries: 2 },
         },
         byCountry: {
-          US: { requests: 20, bytes: 300 },
-          DE: { requests: 5, bytes: 100 },
+          US: {
+            requests: 20,
+            bytes: 300,
+            byDay: {
+              "2026-07-27T00:00:00.000Z": { requests: 12, bytes: 150 },
+            },
+          },
+          DE: { requests: 5, bytes: 100, byDay: {} },
         },
-        otherCountries: { requests: 0, bytes: 0 },
+        otherCountries: { requests: 0, bytes: 0, byDay: {} },
       },
       {
         path: "b.json",
@@ -285,7 +307,11 @@ describe("getProductBreakdowns", () => {
         countries: 2,
         byDay: {},
         byCountry: {},
-        otherCountries: { requests: 4, bytes: 50 },
+        otherCountries: {
+          requests: 4,
+          bytes: 50,
+          byDay: { "2026-07-27T00:00:00.000Z": { requests: 2, bytes: 20 } },
+        },
       },
     ]);
     // Remainder reconciles the table to the file-traffic total: 12 distinct
