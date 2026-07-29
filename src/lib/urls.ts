@@ -17,6 +17,7 @@ export const docsUrl = () => "https://docs.source.coop";
 
 // Admin URLs
 export const adminUrl = () => "/admin";
+export const adminAnalyticsUrl = () => "/admin/analytics";
 export const adminUserLookupUrl = () => "/admin/user-lookup";
 export const adminDataConnectionsUrl = () => "/admin/data-connections";
 export const adminDataConnectionCreateUrl = () =>
@@ -42,6 +43,13 @@ export const loginUrl = (returnTo?: string) => {
   return `${base}${sep}return_to=${encodeURIComponent(returnTo)}`;
 };
 export const onboardingUrl = () => "/onboarding";
+
+// Product analytics (maintainers/owners/admins). The query param is
+// rewritten by middleware to the internal /-/analytics route, so object
+// paths can never be shadowed and layouts (which can't read search params)
+// stay out of the loop.
+export const productAnalyticsUrl = (account_id: string, product_id: string) =>
+  `/${account_id}/${product_id}?tab=analytics`;
 
 // Object URLs
 export const objectUrl = (

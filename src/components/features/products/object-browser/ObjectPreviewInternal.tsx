@@ -1,4 +1,3 @@
-import { Box } from "@radix-ui/themes";
 import { LOGGER } from "@/lib";
 import { getStorageClient } from "@/lib/clients/storage";
 import { MarkdownViewer } from "@/components/features/markdown/MarkdownViewer";
@@ -63,14 +62,11 @@ export async function ObjectPreviewInternal(props: ObjectPreviewInternalProps) {
     return null;
   }
 
-  const extension = getExtension(props.object_path);
-  return (
-    <Box mt="4" pt="4" style={{ borderTop: "1px solid var(--gray-6)" }}>
-      {extension === "md" || extension === "markdown" ? (
-        <MarkdownViewer content={content} />
-      ) : (
-        <TextViewer content={content} />
-      )}
-    </Box>
-  );
+  switch (getExtension(props.object_path)) {
+    case "md":
+    case "markdown":
+      return <MarkdownViewer content={content} />;
+    default:
+      return <TextViewer content={content} />;
+  }
 }
