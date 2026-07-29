@@ -105,12 +105,12 @@ function formatMetric(value: number, metric: Metric): string {
 const byteRate = (perSec: number) =>
   `${perSec > 0 && perSec < 1 ? `${perSec.toFixed(2)} B` : formatBytes(perSec, 1)}/s`;
 
-/** Average rate over one bucket: "~0.43/s" requests, "~12.3 MB/s" bytes. */
+/** Average rate over one bucket: "0.43/s" requests, "12.3 MB/s" bytes. */
 function rate(value: number, bucketMinutes: number, metric: Metric): string {
   const perSec = value / (bucketMinutes * 60);
   return metric === "bytes"
-    ? `~${byteRate(perSec)}`
-    : `~${perSec >= 10 ? compact.format(perSec) : perSec.toFixed(2)}/s`;
+    ? byteRate(perSec)
+    : `${perSec >= 10 ? compact.format(perSec) : perSec.toFixed(2)}/s`;
 }
 
 /**

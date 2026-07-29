@@ -45,8 +45,8 @@ it("renders stats, country ranking, and top files", () => {
   );
 
   expect(screen.getByText("12,847")).toBeInTheDocument();
-  // Daily avg = ~round(12847 / 30)
-  expect(screen.getByText("~428")).toBeInTheDocument();
+  // Daily avg = round(12847 / 30)
+  expect(screen.getByText("428")).toBeInTheDocument();
   expect(screen.getByText("By country")).toBeInTheDocument();
   expect(screen.getByText("United States")).toBeInTheDocument();
   expect(screen.getByText("37 others")).toBeInTheDocument();

@@ -89,7 +89,7 @@ export function ProductAnalyticsView({
           <Stat
             label="Daily avg"
             help={HELP.dailyAvg}
-            value={`~${numberFormat.format(Math.round(totals.requests / days.length))}`}
+            value={numberFormat.format(Math.round(totals.requests / days.length))}
             divider
           />
         </Flex>

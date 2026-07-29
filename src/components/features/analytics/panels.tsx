@@ -204,7 +204,7 @@ export function UsersContent({ users }: { users: UsageUsers }) {
         <Stat
           label="Anon requests"
           help={HELP.anon}
-          value={`~${compactFormat.format(Math.round(users.anonRequests)).toLowerCase()}`}
+          value={compactFormat.format(Math.round(users.anonRequests)).toLowerCase()}
           divider
         />
       </Flex>
