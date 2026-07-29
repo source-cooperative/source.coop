@@ -23,10 +23,17 @@ import { ProductVisibility } from "./product";
 
 extendZodWithOpenApi(z);
 
+/**
+ * Storage backend a data connection targets. Values are drawn from the backend
+ * wire vocabulary (`ProductMirror.storage_type` in {@link module:types/product}),
+ * so a mirror's `storage_type` is just the connection's `provider` — no
+ * translation. `Azure`/`GCS` were once `"az"`/`"gcp"`; existing rows are
+ * converted by `scripts/migrate-provider-values.ts` (run before deploying).
+ */
 export enum DataProvider {
   S3 = "s3",
-  Azure = "az",
-  GCP = "gcp",
+  Azure = "azure",
+  GCS = "gcs",
 }
 
 export enum S3Regions {
@@ -190,10 +197,27 @@ export type DataConnectionAuthentication = z.infer<
   typeof DataConnectionAuthenticationSchema
 >;
 
+/**
+ * A bare bucket/container name — not a URI (`s3://bucket`) or a path. Cloud
+ * providers all forbid slashes in bucket names, so rejecting `/` also rejects
+ * any scheme prefix; the scheme check just gives a clearer message.
+ */
+const BucketNameSchema = z
+  .string()
+  .min(1, "Bucket name is required")
+  .refine(
+    (name) => !name.includes("://"),
+    "Enter the bare bucket name, without a scheme like s3://"
+  )
+  .refine(
+    (name) => !name.includes("/"),
+    "Bucket name may not contain slashes"
+  );
+
 export const S3DataConnectionSchema = z
   .object({
     provider: z.literal(DataProvider.S3),
-    bucket: z.string(),
+    bucket: BucketNameSchema,
     base_prefix: z.string(),
     region: z.nativeEnum(S3Regions),
     /**
@@ -208,7 +232,7 @@ export const AzureDataConnectionSchema = z
   .object({
     provider: z.literal(DataProvider.Azure),
     account_name: z.string(),
-    container_name: z.string(),
+    container_name: BucketNameSchema,
     base_prefix: z.string(),
     region: z.nativeEnum(AzureRegions),
   })
@@ -219,23 +243,23 @@ export const AzureDataConnectionSchema = z
  * (the `gcp_workload_identity` authentication variant), so no region/endpoint is
  * needed to address the bucket.
  */
-export const GcpDataConnectionSchema = z
+export const GcsDataConnectionSchema = z
   .object({
-    provider: z.literal(DataProvider.GCP),
-    bucket: z.string(),
+    provider: z.literal(DataProvider.GCS),
+    bucket: BucketNameSchema,
     base_prefix: z.string(),
   })
-  .openapi("GcpDataConnection");
+  .openapi("GcsDataConnection");
 
 export type S3DataConnection = z.infer<typeof S3DataConnectionSchema>;
 export type AzureDataConnection = z.infer<typeof AzureDataConnectionSchema>;
-export type GcpDataConnection = z.infer<typeof GcpDataConnectionSchema>;
+export type GcsDataConnection = z.infer<typeof GcsDataConnectionSchema>;
 
 export const DataConnnectionDetailsSchema = z
   .discriminatedUnion("provider", [
     S3DataConnectionSchema,
     AzureDataConnectionSchema,
-    GcpDataConnectionSchema,
+    GcsDataConnectionSchema,
   ])
   .openapi("DataConnectionDetails");
 
@@ -262,7 +286,7 @@ const PROVIDER_AUTH_TYPES: Record<
     DataConnectionAuthenticationType.AzureWorkloadIdentity,
     DataConnectionAuthenticationType.AzureSasToken,
   ],
-  [DataProvider.GCP]: [DataConnectionAuthenticationType.GcpWorkloadIdentity],
+  [DataProvider.GCS]: [DataConnectionAuthenticationType.GcpWorkloadIdentity],
 };
 
 /**

@@ -1,5 +1,43 @@
 # Changelog
 
+## [1.4.2](https://github.com/source-cooperative/source.coop/compare/v1.4.1...v1.4.2) (2026-07-21)
+
+
+### Features
+
+* add external link icon to open data viewers in a new tab ([#418](https://github.com/source-cooperative/source.coop/issues/418)) ([a646bfb](https://github.com/source-cooperative/source.coop/commit/a646bfb23c1982f021acfa57c84de781a006a84c))
+* add external link to open data viewer in a new tab ([b3191d7](https://github.com/source-cooperative/source.coop/commit/b3191d772d7126e0eb3be6ff29e94ad8ad0a9317)), closes [#417](https://github.com/source-cooperative/source.coop/issues/417)
+* **credentials:** add callout pointing to Source Coop CLI ([#438](https://github.com/source-cooperative/source.coop/issues/438)) ([2002694](https://github.com/source-cooperative/source.coop/commit/2002694c230807bc4a24f14f12c1afa899499417))
+* **credentials:** add OS selector for env var format ([#439](https://github.com/source-cooperative/source.coop/issues/439)) ([f5f08ef](https://github.com/source-cooperative/source.coop/commit/f5f08ef3dbb5b758faf07738b91e186c656ed0c9)), closes [#434](https://github.com/source-cooperative/source.coop/issues/434)
+* **data-connections:** move prefix template to helptext example ([#446](https://github.com/source-cooperative/source.coop/issues/446)) ([f420486](https://github.com/source-cooperative/source.coop/commit/f4204869fef5bc8fe3ef6f294e74a2b6e2c7ed59))
+* **nav:** account-centric dropdown menu ([#404](https://github.com/source-cooperative/source.coop/issues/404)) ([c6e05b7](https://github.com/source-cooperative/source.coop/commit/c6e05b7f5f82b3b3acf6a044e2be3c519733a1f6))
+* **nav:** drop dash icons, divide "New product" in account dropdown ([#442](https://github.com/source-cooperative/source.coop/issues/442)) ([da845b1](https://github.com/source-cooperative/source.coop/commit/da845b112eba8263640bc88846a2525e410950f1))
+* **nav:** omit disabled products, polish account-dropdown product links ([#447](https://github.com/source-cooperative/source.coop/issues/447)) ([9332a7f](https://github.com/source-cooperative/source.coop/commit/9332a7fc8147a084d6d7943a60217aa373078e37))
+* return to current page after logout ([#411](https://github.com/source-cooperative/source.coop/issues/411)) ([c0a75e6](https://github.com/source-cooperative/source.coop/commit/c0a75e6c5ddd18fca29f81e6e7962338a34a8bf0))
+* **uploader:** auto-retry uploads on transient network errors ([ff10161](https://github.com/source-cooperative/source.coop/commit/ff10161109d9a2d057acdef2e9ae064a79d1e970)), closes [#425](https://github.com/source-cooperative/source.coop/issues/425)
+
+
+### Bug Fixes
+
+* automatically retry uploads on transient network errors ([#427](https://github.com/source-cooperative/source.coop/issues/427)) ([58f4625](https://github.com/source-cooperative/source.coop/commit/58f46251faddf7914ddb82380e1f372c21d7d274))
+* **login:** refresh return_to on query-only navigation ([#419](https://github.com/source-cooperative/source.coop/issues/419)) ([c98aa1e](https://github.com/source-cooperative/source.coop/commit/c98aa1e866b9dc017f8fc4742772cc2c89f5b388))
+* **mirrors:** account-scoped connection links + owner-editable mirror prefix ([#440](https://github.com/source-cooperative/source.coop/issues/440)) ([53c9b68](https://github.com/source-cooperative/source.coop/commit/53c9b686cdcac15eb33f1c7f3c5d5ce68ebed873))
+* **mirrors:** allow empty mirror prefix (connection root) ([#448](https://github.com/source-cooperative/source.coop/issues/448)) ([0c6ea54](https://github.com/source-cooperative/source.coop/commit/0c6ea54c33b76b514455a268180fbbe6a59c3ed2))
+* **product:** remove object preview loading skeleton ([#420](https://github.com/source-cooperative/source.coop/issues/420)) ([927a14c](https://github.com/source-cooperative/source.coop/commit/927a14c8dec242c1da1bab322a0f7d747af8635b))
+* **product:** shorten product page card titles ([#430](https://github.com/source-cooperative/source.coop/issues/430)) ([98d8d2e](https://github.com/source-cooperative/source.coop/commit/98d8d2ef0a390a31b14646896700b8acee90e26d))
+* **product:** stop directory-nav skeleton flash ([#449](https://github.com/source-cooperative/source.coop/issues/449)) ([a98d5fa](https://github.com/source-cooperative/source.coop/commit/a98d5fa86a22b3d76a7cd9ede843737faed682be))
+* **uploader:** cancel pending auto-retry timers on cancel/clear/retry ([d6535bc](https://github.com/source-cooperative/source.coop/commit/d6535bc31545054478f47976015a3fb0c07533f3))
+* **uploader:** include endpoint_url in INI credentials format ([#431](https://github.com/source-cooperative/source.coop/issues/431)) ([f3fe3c0](https://github.com/source-cooperative/source.coop/commit/f3fe3c07430b80adef0f70c7a35a083dc27f96c8))
+* **uploader:** show timezone abbreviation on credentials expiration ([3444032](https://github.com/source-cooperative/source.coop/commit/34440324ca0e8b90e7ed973ec1ee6c0fa1f0cd9e)), closes [#424](https://github.com/source-cooperative/source.coop/issues/424)
+* **uploader:** show timezone abbreviation on credentials expiration ([#426](https://github.com/source-cooperative/source.coop/issues/426)) ([75c4f79](https://github.com/source-cooperative/source.coop/commit/75c4f79b12f95a73edb945653daa6c063a2bcb8f))
+* use full Apache 2.0 license text so GitHub can detect it ([6cd3f36](https://github.com/source-cooperative/source.coop/commit/6cd3f3692f9cc63a43ba53f456e76157bf847a07)), closes [#422](https://github.com/source-cooperative/source.coop/issues/422)
+* use full Apache 2.0 license text so GitHub can detect it ([#423](https://github.com/source-cooperative/source.coop/issues/423)) ([8c1b102](https://github.com/source-cooperative/source.coop/commit/8c1b1026d939d0124a4f8cb3c9ee04f49517f33e))
+
+
+### Miscellaneous Chores
+
+* release 1.4.2 ([318a877](https://github.com/source-cooperative/source.coop/commit/318a877bd42aa9c1641a43eb93f0b0df25761e66))
+
 ## [1.4.1](https://github.com/source-cooperative/source.coop/compare/v1.4.0...v1.4.1) (2026-07-03)
 
 

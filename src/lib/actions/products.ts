@@ -27,7 +27,7 @@ const STORAGE_TYPE_BY_PROVIDER: Record<
 > = {
   [DataProvider.S3]: "s3",
   [DataProvider.Azure]: "azure",
-  [DataProvider.GCP]: "gcs",
+  [DataProvider.GCS]: "gcs",
 };
 
 export interface PaginatedProductsResult {

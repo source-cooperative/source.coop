@@ -499,9 +499,9 @@ function buildDataConnectionFromForm(
       // Omit when blank so AWS S3 connections have no endpoint field.
       ...(endpoint ? { endpoint } : {}),
     };
-  } else if (provider === DataProvider.GCP) {
+  } else if (provider === DataProvider.GCS) {
     details = {
-      provider: DataProvider.GCP,
+      provider: DataProvider.GCS,
       bucket: formData.get("bucket") as string,
       base_prefix: (formData.get("base_prefix") as string) || "",
     };

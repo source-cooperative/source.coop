@@ -12,7 +12,7 @@ const PROVIDER_BADGE: Record<
 > = {
   [DataProvider.S3]: { label: "S3", color: "orange" },
   [DataProvider.Azure]: { label: "Azure", color: "blue" },
-  [DataProvider.GCP]: { label: "GCP", color: "green" },
+  [DataProvider.GCS]: { label: "GCS", color: "green" },
 };
 
 interface DataConnectionsTableProps {

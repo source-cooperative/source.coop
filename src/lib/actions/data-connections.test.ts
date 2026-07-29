@@ -294,13 +294,13 @@ describe("createDataConnection", () => {
     ).toBe(false);
   });
 
-  test("creates a GCP (GCS) connection with workload-identity auth", async () => {
+  test("creates a GCS connection with workload-identity auth", async () => {
     const result = await createDataConnection(
       FORM_STATE,
       formDataFor({
         data_connection_id: "gcs-connection",
         name: "GCS Connection",
-        provider: DataProvider.GCP,
+        provider: DataProvider.GCS,
         bucket: "my-gcs-bucket",
         base_prefix: "",
         visibility_public: "on",
@@ -313,7 +313,7 @@ describe("createDataConnection", () => {
 
     expect(result.success).toBe(true);
     expect(mockTable.create.mock.calls[0][0].details).toMatchObject({
-      provider: DataProvider.GCP,
+      provider: DataProvider.GCS,
       bucket: "my-gcs-bucket",
     });
     expect(mockTable.create.mock.calls[0][0].authentication).toMatchObject({
