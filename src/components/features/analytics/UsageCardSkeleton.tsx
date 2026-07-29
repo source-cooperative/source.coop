@@ -10,7 +10,7 @@ import { SectionHeader } from "@/components/core/SectionHeader";
 export function UsageCardSkeleton() {
   return (
     <Card size={{ initial: "2", sm: "1" }} style={{ flexShrink: 0 }}>
-      <SectionHeader title="Product Analytics">
+      <SectionHeader title="Analytics">
         <Skeleton width="120px" height="16px" />
         <Flex gap="3" mt="3">
           <Skeleton width="80px" height="40px" />

@@ -27,7 +27,7 @@ export async function UsageCard({ accountId, productId }: UsageCardProps) {
     // (Radix Card is overflow:hidden).
     <Card size={{ initial: "2", sm: "1" }} style={{ flexShrink: 0 }}>
       <SectionHeader
-        title="Product Analytics"
+        title="Analytics"
         rightButton={
           <MonoLabel help={HELP.window}>{usage.days.length} days</MonoLabel>
         }
