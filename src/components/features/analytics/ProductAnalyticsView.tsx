@@ -75,6 +75,12 @@ export function ProductAnalyticsView({
             value={numberFormat.format(Math.round(shown.requests))}
           />
           <Stat
+            label="Daily avg"
+            help={HELP.dailyAvg}
+            value={numberFormat.format(Math.round(totals.requests / days.length))}
+            divider
+          />
+          <Stat
             label="Data served"
             help={HELP.served}
             value={formatBytes(shown.bytes, 1)}
@@ -84,12 +90,6 @@ export function ProductAnalyticsView({
             label="Countries"
             help={HELP.countries}
             value={numberFormat.format(shown.countries)}
-            divider
-          />
-          <Stat
-            label="Daily avg"
-            help={HELP.dailyAvg}
-            value={numberFormat.format(Math.round(totals.requests / days.length))}
             divider
           />
         </Flex>
