@@ -7,7 +7,7 @@ import { isAccessDeniedError } from "@/lib/storage/s3";
 import { isAuthorized } from "@/lib/api/authz";
 import { Actions, DataConnection, ProductMirror, ProductObject } from "@/types";
 import { readProxyCredentials } from "@/lib/services/proxy-credentials-read";
-import { getExtension, isViewableStorePath } from "@/lib/files";
+import { getExtension, isStoreExtension } from "@/lib/files";
 import {
   StorePreview,
   StorePreviewLoading,
@@ -263,7 +263,7 @@ export default async function ProductPathPage({ params }: PageProps) {
   // so it never blocks the listing, and renders nothing when the store isn't
   // viewable.
   const storeExtension = getExtension(effectivePrefix);
-  if (storeExtension && isViewableStorePath(effectivePrefix)) {
+  if (isStoreExtension(storeExtension)) {
     return (
       <>
         {directoryList}

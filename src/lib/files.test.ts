@@ -1,4 +1,9 @@
-import { getExtension, isViewableStorePath, STORE_EXTENSIONS } from "./files";
+import {
+  getExtension,
+  isStoreExtension,
+  isViewableStorePath,
+  STORE_EXTENSIONS,
+} from "./files";
 
 describe("getExtension", () => {
   it("returns the lowercased suffix of the last path segment", () => {
@@ -11,6 +16,15 @@ describe("getExtension", () => {
     expect(getExtension("chunks")).toBeUndefined();
     expect(getExtension("a/b/chunks")).toBeUndefined();
     expect(getExtension("")).toBeUndefined();
+  });
+});
+
+describe("isStoreExtension", () => {
+  it("is true for a configured store extension, false otherwise", () => {
+    expect(isStoreExtension("zarr")).toBe(true);
+    expect(isStoreExtension("icechunk")).toBe(true);
+    expect(isStoreExtension("tif")).toBe(false);
+    expect(isStoreExtension(undefined)).toBe(false);
   });
 });
 

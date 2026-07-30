@@ -129,6 +129,33 @@ describe("probeStore — Zarr v2 (non-consolidated .zgroup)", () => {
   });
 });
 
+describe("probeStore — Zarr v2 (bare root array, no .zgroup/.zmetadata)", () => {
+  // A single-array store where the root *is* the array: `.zarray` at the root,
+  // no `.zgroup` and no consolidated `.zmetadata` (e.g. zarr.save_array). Mirrors
+  // the v3 "root itself is an array" case.
+  it("is renderable when the store root itself is a .zarray", async () => {
+    const s3 = fakeS3({
+      "r.zarr/.zarray": json({
+        shape: [4, 4],
+        chunks: [2, 2],
+        dtype: "<f4",
+        dimension_separator: ".",
+      }),
+      "r.zarr/0.0": Buffer.from([1, 2, 3]),
+    });
+    const r = await probeStore({ ...base, s3, storePath: "r.zarr", extension: "zarr" });
+    expect(r).toMatchObject({ renderable: true, format: "zarr2", chunkCanary: "ok" });
+  });
+
+  it("stays 'inconclusive' when the root array's first chunk 404s", async () => {
+    const s3 = fakeS3({
+      "r.zarr/.zarray": json({ shape: [2], chunks: [2], dtype: "<i4" }),
+    });
+    const r = await probeStore({ ...base, s3, storePath: "r.zarr", extension: "zarr" });
+    expect(r).toMatchObject({ renderable: true, format: "zarr2", chunkCanary: "inconclusive" });
+  });
+});
+
 describe("probeStore — Zarr negatives", () => {
   it("is not renderable when no metadata exists at the root", async () => {
     const s3 = fakeS3({});

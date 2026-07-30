@@ -187,6 +187,14 @@ async function probeZarr(args: ProbeStoreArgs): Promise<StoreProbe> {
     return { renderable: false, format: "zarr2", reason: "v2 group has no arrays" };
   }
 
+  // Tier 1/2d: Zarr v2 root IS the array itself — a bare single-array store with
+  // `.zarray` at the root and no `.zgroup`/`.zmetadata` (mirrors the v3 case in
+  // findArrayV3 where the root node_type is "array").
+  const rootV2 = await getJson(io, ".zarray");
+  if (isObject(rootV2) && isValidV2Array(rootV2)) {
+    return finishZarr(io, "zarr2", { path: "", version: 2, meta: rootV2 });
+  }
+
   return { renderable: false, reason: "no zarr metadata at store root" };
 }
 
