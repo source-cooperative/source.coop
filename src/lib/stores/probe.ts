@@ -306,6 +306,20 @@ function firstChunkKeyV3(meta: Record<string, unknown>): string | null {
 async function probeIcechunk(args: ProbeStoreArgs): Promise<StoreProbe> {
   const io: Io = args;
 
+  // Two on-disk layouts exist, so try each in turn:
+  //   • Legacy (spec <2.x): a per-branch ref file under refs/branch.{name}/
+  //     ref.json points at the current snapshot.
+  //   • Current (spec 2.x, "ic-2.*"): there is no refs/ prefix — branch/tag
+  //     pointers and config live in a single root `repo` info object.
+  return (await probeIcechunkRefs(io)) ?? (await probeIcechunkRepoInfo(io));
+}
+
+/**
+ * Legacy layout: refs/branch.{name}/ref.json → snapshots/{id}. Returns null when
+ * no branch ref exists at all (so the caller can try the current layout); a
+ * terminal `renderable:false` only when a ref exists but its snapshot is broken.
+ */
+async function probeIcechunkRefs(io: Io): Promise<StoreProbe | null> {
   // Tier 1: the branch ref points at the current snapshot. main is the default;
   // fall back to discovering any branch under refs/ if it's named differently.
   let ref = await getJson(io, "refs/branch.main/ref.json");
@@ -315,7 +329,7 @@ async function probeIcechunk(args: ProbeStoreArgs): Promise<StoreProbe> {
     if (branch) ref = await getJson(io, `refs/${branch}/ref.json`);
   }
   if (!isObject(ref) || typeof ref.snapshot !== "string" || !ref.snapshot) {
-    return { renderable: false, reason: "no icechunk branch ref" };
+    return null;
   }
 
   // Tier 2: the snapshot the ref points at must exist.
@@ -330,13 +344,29 @@ async function probeIcechunk(args: ProbeStoreArgs): Promise<StoreProbe> {
   // multi-MB (they hold the whole manifest), so read only the leading magic
   // bytes via a Range request rather than downloading the entire object.
   const snapshot = await getBytes(io, snapshotRel, `bytes=0-${ICECHUNK_MAGIC.length - 1}`);
-  const chunkCanary =
-    snapshot && snapshot.length > 0 && snapshot.subarray(0, ICECHUNK_MAGIC.length).equals(ICECHUNK_MAGIC)
-      ? "ok"
-      : "inconclusive";
-
-  return { renderable: true, format: "icechunk", chunkCanary };
+  return { renderable: true, format: "icechunk", chunkCanary: hasIcechunkMagic(snapshot) ? "ok" : "inconclusive" };
 }
+
+/**
+ * Current layout (Icechunk spec 2.x): the root `repo` info object holds the
+ * branch/tag pointers and config that used to live under refs/. Resolving the
+ * exact snapshot would mean decoding its zstd/binary body, so instead we gate on
+ * the object existing and carrying the Icechunk magic header — enough to confirm
+ * a real store worth handing to the viewer, which resolves the branch itself.
+ * Read only the leading magic bytes; the repo info object can be multi-MB.
+ */
+async function probeIcechunkRepoInfo(io: Io): Promise<StoreProbe> {
+  const repo = await getBytes(io, "repo", `bytes=0-${ICECHUNK_MAGIC.length - 1}`);
+  if (hasIcechunkMagic(repo)) {
+    return { renderable: true, format: "icechunk", chunkCanary: "ok" };
+  }
+  return { renderable: false, reason: "no icechunk ref or repo info object" };
+}
+
+const hasIcechunkMagic = (buf: Buffer | null): boolean =>
+  !!buf &&
+  buf.length >= ICECHUNK_MAGIC.length &&
+  buf.subarray(0, ICECHUNK_MAGIC.length).equals(ICECHUNK_MAGIC);
 
 // ── small utilities ──────────────────────────────────────────────────────────
 

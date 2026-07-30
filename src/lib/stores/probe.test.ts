@@ -187,9 +187,41 @@ describe("probeStore — Icechunk", () => {
     expect(r).toMatchObject({ renderable: false, format: "icechunk" });
   });
 
-  it("is not renderable when there is no branch ref", async () => {
+  it("is not renderable when there is no ref or repo info object", async () => {
     const s3 = fakeS3({});
     const r = await probeStore({ ...base, s3, storePath: "s.icechunk", extension: "icechunk" });
-    expect(r).toMatchObject({ renderable: false, reason: "no icechunk branch ref" });
+    expect(r).toMatchObject({ renderable: false });
+  });
+});
+
+describe("probeStore — Icechunk (spec 2.x repo-info layout, no refs/)", () => {
+  // Icechunk >=2.x drops the refs/ prefix: branch/tag pointers and config live
+  // in a single root `repo` info object that starts with the Icechunk magic
+  // header (e.g. "ICE🧊CHUNKic-2.1.1…"). See https://icechunk.io/en/stable/spec/.
+  const repoInfo = Buffer.concat([ICECHUNK_MAGIC, Buffer.from("ic-2.1.1\x00rest")]);
+
+  it("is renderable from the root `repo` info object when there is no refs/", async () => {
+    const s3 = fakeS3({
+      "s.icechunk/repo": repoInfo,
+      // Content-addressed snapshot id (no derivable "first" snapshot); presence
+      // only. Crucially there is NO refs/branch.main/ref.json here.
+      "s.icechunk/snapshots/000XCS6VJBQ56YBKC98G": ICECHUNK_MAGIC,
+    });
+    const r = await probeStore({ ...base, s3, storePath: "s.icechunk", extension: "icechunk" });
+    expect(r).toMatchObject({ renderable: true, format: "icechunk", chunkCanary: "ok" });
+    // Tier 1/2 must Range-read only the magic header of the (possibly multi-MB)
+    // repo info object, never download it whole.
+    expect(s3.getObject).toHaveBeenCalledWith(
+      expect.objectContaining({
+        object_path: "s.icechunk/repo",
+        range: `bytes=0-${ICECHUNK_MAGIC.length - 1}`,
+      }),
+    );
+  });
+
+  it("is not renderable when the root `repo` object lacks the Icechunk magic", async () => {
+    const s3 = fakeS3({ "s.icechunk/repo": Buffer.from("not an icechunk repo") });
+    const r = await probeStore({ ...base, s3, storePath: "s.icechunk", extension: "icechunk" });
+    expect(r.renderable).toBe(false);
   });
 });
