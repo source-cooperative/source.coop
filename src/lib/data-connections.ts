@@ -1,6 +1,43 @@
 import { Actions, DataConnection, UserSession } from "@/types";
-import { isAuthorized } from "@/lib/api/authz";
-import { dataConnectionsTable } from "@/lib/clients/database";
+import {
+  isAuthorized,
+  isAdmin,
+  canManageAccountDataConnections,
+} from "@/lib/api/authz";
+import { accountsTable, dataConnectionsTable } from "@/lib/clients/database";
+
+/**
+ * Whether `session` may manage (edit/delete) the connection *itself*: admins
+ * can manage any; a system-owned (unowned) connection is admin-only; an
+ * account-owned connection is managed by that account's owners/maintainers
+ * (canManageAccountDataConnections, which also requires the account's
+ * CREATE_DATA_CONNECTIONS flag).
+ *
+ * This mirrors the rule the private `canManageConnection` in
+ * actions/data-connections.ts applies to connection CRUD, but computes the
+ * admin decision itself instead of taking it as a param, so non-action callers
+ * (e.g. the product mirror-prefix action) can reuse it.
+ */
+export async function canManageDataConnection(
+  session: UserSession | null,
+  connection: DataConnection
+): Promise<boolean> {
+  if (session?.account?.disabled) {
+    return false;
+  }
+  if (isAdmin(session)) {
+    return true;
+  }
+  // System-owned connections are admin-only.
+  if (!connection.owner) {
+    return false;
+  }
+  const ownerAccount = await accountsTable.fetchById(connection.owner);
+  if (!ownerAccount) {
+    return false;
+  }
+  return canManageAccountDataConnections(session, ownerAccount);
+}
 
 /**
  * List the data connections a user is permitted to use when creating a product.

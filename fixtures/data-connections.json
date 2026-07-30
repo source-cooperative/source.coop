@@ -55,7 +55,7 @@
     "read_only": false,
     "allowed_visibilities": ["public", "unlisted", "restricted"],
     "details": {
-      "provider": "az",
+      "provider": "azure",
       "account_name": "sourcecoopstorage",
       "container_name": "data",
       "base_prefix": "",

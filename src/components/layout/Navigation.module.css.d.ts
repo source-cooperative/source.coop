@@ -11,6 +11,7 @@ declare const styles: {
   readonly mobileRowChevron: string;
   readonly mobileRowChevronOpen: string;
   readonly mobileDot: string;
+  readonly productName: string;
 };
 
 export default styles;

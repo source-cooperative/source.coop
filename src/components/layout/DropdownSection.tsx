@@ -1,7 +1,7 @@
 "use client";
 import { DropdownMenu, Tooltip } from "@radix-ui/themes";
 import Link from "next/link";
-import { CSSProperties, ReactNode } from "react";
+import { CSSProperties, Fragment, ReactNode } from "react";
 
 // Used by Links rendered AS a menu item (Radix `asChild`). The Link inherits
 // the item's padding/layout/highlight from Radix, so we only neutralize the
@@ -24,6 +24,8 @@ export interface DropdownItem {
   condition?: boolean;
   /** Shown on hover when the item is disabled (e.g. why an action is blocked). */
   tooltip?: ReactNode;
+  /** Render a separator immediately before this item. */
+  separator?: boolean;
 }
 
 // Render a list of menu items, honoring each item's `condition`. Shared by the
@@ -36,8 +38,8 @@ function DropdownItems({ items }: { items: DropdownItem[] }) {
     // let React reconcile the wrong node.
     .map((item, index) => ({ item, index }))
     .filter(({ item: { condition = true } }) => condition)
-    .map(({ item, index }) =>
-      item.disabled && item.tooltip ? (
+    .map(({ item, index }) => {
+      const rendered = item.disabled && item.tooltip ? (
         // Blocked action: a real (disabled) menu item keeps the menu's padding,
         // wrapped in a span so pointer-events stay alive for the tooltip to fire.
         <Tooltip key={index} content={item.tooltip}>
@@ -71,8 +73,16 @@ function DropdownItems({ items }: { items: DropdownItem[] }) {
         >
           {item.children}
         </DropdownMenu.Item>
-      )
-    );
+      );
+      return item.separator ? (
+        <Fragment key={index}>
+          <DropdownMenu.Separator />
+          {rendered}
+        </Fragment>
+      ) : (
+        rendered
+      );
+    });
 }
 
 const visibleCount = (items: DropdownItem[]) =>

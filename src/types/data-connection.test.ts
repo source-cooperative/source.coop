@@ -290,23 +290,50 @@ describe("DataConnectionDetails (S3-compatible + GCP variants)", () => {
     ).toThrow();
   });
 
-  test("parses a GCP (GCS) connection", () => {
+  test("parses a GCS connection", () => {
     const details = DataConnnectionDetailsSchema.parse({
-      provider: "gcp",
+      provider: "gcs",
       bucket: "my-gcs-bucket",
       base_prefix: "data/",
     });
-    expect(details.provider).toBe(DataProvider.GCP);
+    expect(details.provider).toBe(DataProvider.GCS);
     expect(details).toMatchObject({ bucket: "my-gcs-bucket" });
   });
 
-  test("parses a full GCP connection with workload-identity auth", () => {
+  test.each([
+    ["a URI-style name", "s3://my-bucket"],
+    ["a name with slashes", "my-bucket/data"],
+    ["an empty name", ""],
+  ])("rejects %s as a bucket", (_label, bucket) => {
+    expect(() =>
+      DataConnnectionDetailsSchema.parse({
+        provider: "s3",
+        bucket,
+        base_prefix: "",
+        region: "us-east-1",
+      })
+    ).toThrow();
+  });
+
+  test("rejects a URI-style Azure container name", () => {
+    expect(() =>
+      DataConnnectionDetailsSchema.parse({
+        provider: "azure",
+        account_name: "acct",
+        container_name: "https://acct.blob.core.windows.net/container",
+        base_prefix: "",
+        region: "westeurope",
+      })
+    ).toThrow();
+  });
+
+  test("parses a full GCS connection with workload-identity auth", () => {
     const dc = DataConnectionSchema.parse({
       data_connection_id: "gcs-conn",
       name: "GCS",
       read_only: false,
       allowed_visibilities: [],
-      details: { provider: "gcp", bucket: "my-gcs-bucket", base_prefix: "" },
+      details: { provider: "gcs", bucket: "my-gcs-bucket", base_prefix: "" },
       authentication: {
         type: "gcp_workload_identity",
         workload_identity_provider:
@@ -314,7 +341,7 @@ describe("DataConnectionDetails (S3-compatible + GCP variants)", () => {
         service_account: "sa@my-project.iam.gserviceaccount.com",
       },
     });
-    expect(dc.details.provider).toBe(DataProvider.GCP);
+    expect(dc.details.provider).toBe(DataProvider.GCS);
     expect(dc.authentication?.type).toBe(
       DataConnectionAuthenticationType.GcpWorkloadIdentity
     );
@@ -334,7 +361,7 @@ describe("DataConnection provider ↔ authentication cross-validation", () => {
     base_prefix: "",
     region: "us-west-2",
   };
-  const gcpDetails = { provider: "gcp", bucket: "example-bucket", base_prefix: "" };
+  const gcpDetails = { provider: "gcs", bucket: "example-bucket", base_prefix: "" };
   const s3WebIdentityAuth = {
     type: "s3_web_identity_role",
     role_arn: "arn:aws:iam::123456789012:role/source-coop",
