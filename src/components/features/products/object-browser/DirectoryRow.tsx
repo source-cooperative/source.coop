@@ -24,7 +24,7 @@ import { useRouter } from "next/navigation";
 import { MonoText } from "@/components/core";
 import type { FileNode } from "./utils";
 import type { Product } from "@/types";
-import { formatBytes } from "@/lib/format";
+import { formatBytes, formatDate, formatRelativeTime } from "@/lib/format";
 import { objectUrl } from "@/lib/urls";
 import styles from "./ObjectBrowser.module.css";
 import { useState } from "react";
@@ -211,6 +211,23 @@ export function DirectoryRow({
                 <MonoText color="gray" size="1" style={{ flexShrink: 0 }}>
                   {formatBytes(item.size)}
                 </MonoText>
+              )}
+
+              {/* Last modified — directories have no real mtime, so files only.
+                  suppressHydrationWarning: "now" differs between server and
+                  client render, so a just-uploaded file can disagree by seconds. */}
+              {!item.isDirectory && item.updated_at && (
+                <Tooltip content={formatDate(item.updated_at, true)}>
+                  <MonoText
+                    color="gray"
+                    size="1"
+                    title={formatDate(item.updated_at, true)}
+                    suppressHydrationWarning
+                    style={{ flexShrink: 0, whiteSpace: "nowrap" }}
+                  >
+                    {formatRelativeTime(item.updated_at)}
+                  </MonoText>
+                </Tooltip>
               )}
 
               {/* Upload control buttons */}
