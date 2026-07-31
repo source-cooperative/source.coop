@@ -25,6 +25,34 @@ export function formatDateSSR(date: string): string {
   return `${day} ${month} ${year}`;
 }
 
+const RELATIVE_UNITS: [Intl.RelativeTimeFormatUnit, number][] = [
+  ['year', 365 * 24 * 3600],
+  ['month', 30 * 24 * 3600],
+  ['week', 7 * 24 * 3600],
+  ['day', 24 * 3600],
+  ['hour', 3600],
+  ['minute', 60],
+  ['second', 1],
+];
+
+/**
+ * Format a date string as a relative time, e.g. "3 weeks ago".
+ * @param date The date string to format
+ * @param now Reference point, for testing
+ * @returns A relative time string, or "" if the date is unparseable
+ */
+export function formatRelativeTime(date: string, now: Date = new Date()): string {
+  const seconds = (new Date(date).getTime() - now.getTime()) / 1000;
+  if (Number.isNaN(seconds)) return '';
+  const [unit, perUnit] =
+    RELATIVE_UNITS.find(([, s]) => Math.abs(seconds) >= s) ??
+    RELATIVE_UNITS[RELATIVE_UNITS.length - 1];
+  return new Intl.RelativeTimeFormat('en', { numeric: 'auto' }).format(
+    Math.round(seconds / perUnit),
+    unit
+  );
+}
+
 /**
  * Format a date string into a human-readable format with optional time
  * @param date The date string to format
