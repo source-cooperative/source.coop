@@ -40,6 +40,29 @@ export async function canManageDataConnection(
 }
 
 /**
+ * Whether `connection` may back a product owned by `accountId`: the connection
+ * itself must permit the caller (`UseDataConnection` covers read-only and
+ * flag-gated connections) and must be available to that account — either
+ * system-level (unowned) or owned by it.
+ *
+ * This is only the connection half of associating the two; the caller side is
+ * each call site's own gate — `canManageAccount` on the owning account for the
+ * mirror actions, `Actions.CreateRepository` for `createProduct` (which applies
+ * the same two connection rules inline, to report them as distinct field
+ * errors).
+ */
+export function canUseDataConnectionFor(
+  session: UserSession | null,
+  connection: DataConnection,
+  accountId: string
+): boolean {
+  return (
+    isAuthorized(session, connection, Actions.UseDataConnection) &&
+    (!connection.owner || connection.owner === accountId)
+  );
+}
+
+/**
  * List the data connections a user is permitted to use when creating a product.
  *
  * A connection is usable when the session is authorized both to read it
