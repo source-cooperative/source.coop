@@ -18,8 +18,3 @@ export const STORE_EXTENSIONS = ["zarr", "icechunk"] as const;
 
 export const isStoreExtension = (ext: string | undefined): ext is string =>
   !!ext && (STORE_EXTENSIONS as readonly string[]).includes(ext);
-
-export const isViewableStorePath = (object_path: string): boolean =>
-  // A store prefix is often addressed with a trailing slash (e.g. `store.zarr/`),
-  // which would otherwise leave getExtension inspecting an empty last segment.
-  isStoreExtension(getExtension(object_path.replace(/\/$/, "")));
