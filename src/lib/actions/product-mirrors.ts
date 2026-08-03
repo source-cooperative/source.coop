@@ -1,17 +1,43 @@
 "use server";
 
 import { LOGGER } from "@/lib/logging";
-import { isAdmin, isAuthorized } from "../api/authz";
+import { canManageAccount } from "../api/authz";
 import { getPageSession } from "../api/utils";
-import { productsTable, dataConnectionsTable } from "../clients";
-import { Actions, ProductMirror, resolveMirrorPrefix } from "@/types";
+import { accountsTable, productsTable, dataConnectionsTable } from "../clients";
+import { ProductMirror, resolveMirrorPrefix } from "@/types";
 import { FormState } from "@/components/core/DynamicForm";
 import { revalidatePath } from "next/cache";
 import { editProductDataConnectionsUrl } from "@/lib/urls";
-import { canManageDataConnection } from "@/lib/data-connections";
+import {
+  canManageDataConnection,
+  canUseDataConnectionFor,
+} from "@/lib/data-connections";
+
+/**
+ * A product's mirrors are the *owning account's* storage, so managing them is
+ * gated on administering that account (owner/maintainer of the org, the
+ * individual account itself, or an admin) — not on `PutRepository`, which a
+ * membership scoped to this one product also satisfies.
+ *
+ * Returns the message to report when the caller is not permitted, or null when
+ * they are.
+ */
+const NOT_ACCOUNT_MANAGER_MESSAGE =
+  "Only owners and maintainers of the owning account can manage this product's data connections";
+
+async function denyUnlessAccountManager(
+  session: Awaited<ReturnType<typeof getPageSession>>,
+  accountId: string
+): Promise<string | null> {
+  const account = await accountsTable.fetchById(accountId);
+  if (!account || !canManageAccount(session, account)) {
+    return NOT_ACCOUNT_MANAGER_MESSAGE;
+  }
+  return null;
+}
 
 // These three actions fetch → mutate → productsTable.update(). The update is an
-// optimistic compare-and-swap on the product's updated_at, so two admins editing
+// optimistic compare-and-swap on the product's updated_at, so two people editing
 // the same product's mirrors concurrently can't silently clobber each other —
 // the second write fails and the action reports a conflict instead.
 const CONCURRENT_EDIT_MESSAGE =
@@ -39,15 +65,6 @@ export async function addProductMirror(
     };
   }
 
-  if (!isAdmin(session)) {
-    return {
-      fieldErrors: {},
-      data: formData,
-      message: "Only admins can manage product mirrors",
-      success: false,
-    };
-  }
-
   const accountId = formData.get("account_id") as string;
   const productId = formData.get("product_id") as string;
   const connectionId = formData.get("connection_id") as string;
@@ -62,6 +79,13 @@ export async function addProductMirror(
   }
 
   try {
+    // Authorize before any product/connection I/O, so an unprivileged caller
+    // can't probe which products or connections exist.
+    const denied = await denyUnlessAccountManager(session, accountId);
+    if (denied) {
+      return { fieldErrors: {}, data: formData, message: denied, success: false };
+    }
+
     const product = await productsTable.fetchById(accountId, productId);
     if (!product) {
       return {
@@ -78,6 +102,17 @@ export async function addProductMirror(
         fieldErrors: {},
         data: formData,
         message: "Data connection not found",
+        success: false,
+      };
+    }
+
+    // The connection must be available to this account: system-level (unowned)
+    // or owned by it, and usable at all (not read-only / flag-gated).
+    if (!canUseDataConnectionFor(session, connection, accountId)) {
+      return {
+        fieldErrors: {},
+        data: formData,
+        message: "This data connection is not available for this account",
         success: false,
       };
     }
@@ -168,15 +203,6 @@ export async function removeProductMirror(
     };
   }
 
-  if (!isAdmin(session)) {
-    return {
-      fieldErrors: {},
-      data: formData,
-      message: "Only admins can manage product mirrors",
-      success: false,
-    };
-  }
-
   const accountId = formData.get("account_id") as string;
   const productId = formData.get("product_id") as string;
   const mirrorKey = formData.get("mirror_key") as string;
@@ -191,6 +217,11 @@ export async function removeProductMirror(
   }
 
   try {
+    const denied = await denyUnlessAccountManager(session, accountId);
+    if (denied) {
+      return { fieldErrors: {}, data: formData, message: denied, success: false };
+    }
+
     const product = await productsTable.fetchById(accountId, productId);
     if (!product) {
       return {
@@ -274,11 +305,14 @@ export async function removeProductMirror(
   }
 }
 
-// Unlike the admin-only actions above, editing a mirror's prefix is open to
-// non-admins — but requires the *intersection* of managing the product AND the
-// data connection: the caller must be an owner/maintainer of the product
-// (PutRepository) AND able to manage the underlying connection
+// Editing a mirror's prefix is the *intersection* of the account gate the three
+// actions above use AND managing the underlying connection
 // (canManageDataConnection). Admins satisfy both.
+//
+// The connection half is not redundant: a prefix says where in the bucket this
+// product's data lives, so on a shared system-level connection an unrestricted
+// prefix would let one account point its product at another's objects. Only
+// someone who controls the connection may re-point a mirror on it.
 export async function updateMirrorPrefix(
   _prevState: FormState<unknown>,
   formData: FormData
@@ -327,21 +361,17 @@ export async function updateMirrorPrefix(
     !rawPrefix || rawPrefix.endsWith("/") ? rawPrefix : `${rawPrefix}/`;
 
   try {
+    const denied = await denyUnlessAccountManager(session, accountId);
+    if (denied) {
+      return { fieldErrors: {}, data: formData, message: denied, success: false };
+    }
+
     const product = await productsTable.fetchById(accountId, productId);
     if (!product) {
       return {
         fieldErrors: {},
         data: formData,
         message: "Product not found",
-        success: false,
-      };
-    }
-
-    if (!isAuthorized(session, product, Actions.PutRepository)) {
-      return {
-        fieldErrors: {},
-        data: formData,
-        message: "Only product owners or maintainers can edit mirror prefixes",
         success: false,
       };
     }
@@ -356,7 +386,7 @@ export async function updateMirrorPrefix(
       };
     }
 
-    // Product side authorized above; also require managing the connection.
+    // Account side authorized above; also require managing the connection.
     const connection = await dataConnectionsTable.fetchById(
       existing.connection_id
     );
@@ -365,7 +395,7 @@ export async function updateMirrorPrefix(
         fieldErrors: {},
         data: formData,
         message:
-          "You must be an owner or maintainer of both the product and the data connection to edit its prefix",
+          "You must be able to manage both this account and the data connection to edit its prefix",
         success: false,
       };
     }
@@ -435,15 +465,6 @@ export async function setPrimaryMirror(
     };
   }
 
-  if (!isAdmin(session)) {
-    return {
-      fieldErrors: {},
-      data: formData,
-      message: "Only admins can manage product mirrors",
-      success: false,
-    };
-  }
-
   const accountId = formData.get("account_id") as string;
   const productId = formData.get("product_id") as string;
   const mirrorKey = formData.get("mirror_key") as string;
@@ -458,6 +479,11 @@ export async function setPrimaryMirror(
   }
 
   try {
+    const denied = await denyUnlessAccountManager(session, accountId);
+    if (denied) {
+      return { fieldErrors: {}, data: formData, message: denied, success: false };
+    }
+
     const product = await productsTable.fetchById(accountId, productId);
     if (!product) {
       return {
