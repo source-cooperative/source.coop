@@ -3,7 +3,6 @@ import { ProductMetadataSchema } from "./product";
 const baseMetadata = {
   mirrors: {
     "primary-data-connection": {
-      storage_type: "s3" as const,
       connection_id: "primary-data-connection",
       prefix: "account/product/",
       is_primary: true,
