@@ -117,7 +117,6 @@ describe("createProduct", () => {
     const created = (productsTable.create as jest.Mock).mock.calls[0][0];
     expect(created.metadata.primary_mirror).toBe("conn-x");
     expect(created.metadata.mirrors["conn-x"]).toMatchObject({
-      storage_type: "s3",
       connection_id: "conn-x",
       prefix: "alice/my-product/",
       is_primary: true,

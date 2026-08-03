@@ -24,11 +24,11 @@ import { ProductVisibility } from "./product";
 extendZodWithOpenApi(z);
 
 /**
- * Storage backend a data connection targets. Values are drawn from the backend
- * wire vocabulary (`ProductMirror.storage_type` in {@link module:types/product}),
- * so a mirror's `storage_type` is just the connection's `provider` — no
- * translation. `Azure`/`GCS` were once `"az"`/`"gcp"`; existing rows are
- * converted by `scripts/migrate-provider-values.ts` (run before deploying).
+ * Storage backend a data connection targets. Values are the provider strings the
+ * data proxy matches on to build a storage client, so nothing between a
+ * connection and its product mirror needs translation. `Azure`/`GCS` were once
+ * `"az"`/`"gcp"`; existing rows are converted by
+ * `scripts/migrate-provider-values.ts` (run before deploying).
  */
 export enum DataProvider {
   S3 = "s3",

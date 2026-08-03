@@ -3,11 +3,9 @@
 import { productsTable, membershipsTable, dataConnectionsTable } from "@/lib/clients/database";
 import {
   Actions,
-  DataProvider,
   ProductCreationRequestSchema,
   type Product,
   type ProductCreationRequest,
-  type ProductMirror,
   type ProductVisibility,
   resolveMirrorPrefix,
 } from "@/types";
@@ -19,16 +17,6 @@ import { productUrl, editProductDetailsUrl, accountUrl } from "@/lib/urls";
 import { getProxyCredentials } from "@/lib/actions/proxy-credentials";
 import { readProxyCredentials } from "@/lib/services/proxy-credentials-read";
 import { getStorageClient } from "@/lib/clients/storage";
-
-// Map a data connection's storage provider to the product mirror's storage_type.
-const STORAGE_TYPE_BY_PROVIDER: Record<
-  DataProvider,
-  ProductMirror["storage_type"]
-> = {
-  [DataProvider.S3]: "s3",
-  [DataProvider.Azure]: "azure",
-  [DataProvider.GCS]: "gcs",
-};
 
 export interface PaginatedProductsResult {
   products: Product[];
@@ -240,8 +228,6 @@ export async function createProduct(
       primary_mirror: dataConnection.data_connection_id,
       mirrors: {
         [dataConnection.data_connection_id]: {
-          storage_type:
-            STORAGE_TYPE_BY_PROVIDER[dataConnection.details.provider],
           connection_id: dataConnection.data_connection_id,
           prefix: resolveMirrorPrefix(
             dataConnection.prefix_template,
