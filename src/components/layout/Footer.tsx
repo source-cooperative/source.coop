@@ -13,6 +13,11 @@ import { MonoText } from "@/components/core";
 import { homeUrl, productListUrl } from "@/lib/urls";
 import { Logo } from "./Logo";
 
+// ponytail: at 0.75rem these links are ~15px tall, under the 24px WCAG 2.2
+// minimum. inline-block is what makes the padding count toward the hit box —
+// vertical padding on an inline element paints without growing it.
+const tapTarget = { display: "inline-block", paddingBlock: "5px" } as const;
+
 export function Footer() {
   const pathname = usePathname();
 
@@ -40,6 +45,7 @@ export function Footer() {
                         href="https://docs.source.coop"
                         color="gray"
                         underline="always"
+                        style={tapTarget}
                       >
                         Docs
                       </RadixLink>
@@ -49,6 +55,7 @@ export function Footer() {
                         href="https://www.youtube.com/@GreatDataProducts"
                         color="gray"
                         underline="always"
+                        style={tapTarget}
                       >
                         YouTube
                       </RadixLink>
@@ -58,6 +65,7 @@ export function Footer() {
                         href="https://www.linkedin.com/company/sourcecooperative/"
                         color="gray"
                         underline="always"
+                        style={tapTarget}
                       >
                         LinkedIn
                       </RadixLink>
@@ -67,6 +75,7 @@ export function Footer() {
                         href="https://github.com/source-cooperative/"
                         color="gray"
                         underline="always"
+                        style={tapTarget}
                       >
                         Github
                       </RadixLink>
