@@ -23,13 +23,6 @@ jest.mock("@/components/features/products/object-browser/ObjectPreview", () => {
     ObjectPreviewLoading: jest.fn(),
   };
 });
-jest.mock("@/components/features/products/object-browser/StorePreview", () => {
-  return {
-    StorePreview: jest.fn(),
-    StorePreviewLoading: jest.fn(),
-  };
-});
-
 jest.mock("@/lib", () => ({
   productsTable: {
     fetchById: jest.fn(),
@@ -85,7 +78,6 @@ import { readProxyCredentials } from "@/lib/services/proxy-credentials-read";
 import { getStorageClient } from "@/lib/clients/storage";
 import { ProductDataUnavailable } from "@/components/features/products/ProductDataUnavailable";
 import { DirectoryList } from "@/components/features/products/object-browser/DirectoryList";
-import { StorePreview } from "@/components/features/products/object-browser/StorePreview";
 import { ProxyCredentialsGate } from "@/components/features/products/ProxyCredentialsGate";
 import { S3ServiceException } from "@aws-sdk/client-s3";
 import { Actions } from "@/types/shared";
@@ -436,7 +428,7 @@ describe("ProductPathPage store viewer (.zarr / .icechunk)", () => {
     jest.clearAllMocks();
   });
 
-  it("renders the StorePreview viewer below the normal directory listing for an .icechunk prefix", async () => {
+  it("renders the normal directory listing for an .icechunk prefix (the viewer lives in the @preview slot)", async () => {
     (productsTable.fetchById as jest.Mock).mockResolvedValue({
       product_id: "test-product",
       visibility: "public",
@@ -463,20 +455,10 @@ describe("ProductPathPage store viewer (.zarr / .icechunk)", () => {
       }),
     });
 
-    // The store branch returns a fragment: the normal <DirectoryList/> followed
-    // by <Suspense><StorePreview/></Suspense>.
-    const [directoryList, suspense] = element.props.children;
-    expect(suspense.props.children.type).toBe(StorePreview);
-    expect(suspense.props.children.props.object_path).toBe("gfs.icechunk");
-    expect(suspense.props.children.props.extension).toBe("icechunk");
-    // The request's resolved creds are threaded through so the probe's storage
-    // client doesn't re-read the cookie.
-    expect(suspense.props.children.props.creds).toMatchObject({
-      accessKeyId: "A",
-      secretAccessKey: "S",
-    });
-    expect(directoryList.type).toBe(DirectoryList);
-    // The normal file browser is still populated (listing IS performed now).
+    // A store is a prefix, so the main slot just lists it — the zarr-viewer is
+    // rendered full-width by the @preview slot, outside the Contents card.
+    expect(element.type).toBe(DirectoryList);
+    expect(element.props.prefix).toBe("gfs.icechunk");
     expect(listObjects).toHaveBeenCalled();
   });
 });

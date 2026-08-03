@@ -1,15 +1,12 @@
 import "server-only";
 
-import { Box, Skeleton } from "@radix-ui/themes";
-
 import { LOGGER } from "@/lib";
 import { fileSourceUrl } from "@/lib/urls";
 import { getStorageClient } from "@/lib/clients/storage";
 import type { ProxyCredentials } from "@/lib/actions/proxy-credentials";
 import { probeStore } from "@/lib/stores/probe";
-import { PreviewIframe } from "./PreviewIframe";
 
-interface StorePreviewProps {
+interface StoreViewerArgs {
   account_id: string;
   product_id: string;
   /** The store prefix relative to the product, e.g. `gfs.icechunk`. */
@@ -25,20 +22,18 @@ interface StorePreviewProps {
 }
 
 /**
- * Embeds the external zarr-viewer for a `.zarr` / `.icechunk` store — but only
- * after cheap server-side checks confirm the store is actually renderable
- * (see `probeStore`). When the checks don't pass we render nothing; the normal
- * directory listing beneath this component is always shown regardless, so the
- * store's files stay browsable. Rendered inside a Suspense boundary so the
- * probe never blocks the rest of the page.
+ * The external zarr-viewer URL for a `.zarr` / `.icechunk` store, or `null`
+ * when cheap server-side checks say the store isn't actually renderable (see
+ * `probeStore`). `null` means the preview card is skipped entirely; the normal
+ * directory listing is shown regardless, so the store's files stay browsable.
  */
-export async function StorePreview({
+export async function storeViewerUrl({
   account_id,
   product_id,
   object_path,
   extension,
   creds,
-}: StorePreviewProps) {
+}: StoreViewerArgs): Promise<string | null> {
   const s3 = await getStorageClient(creds);
   const probe = await probeStore({
     s3,
@@ -50,9 +45,15 @@ export async function StorePreview({
 
   if (!probe.renderable) {
     LOGGER.debug("Store not renderable; skipping viewer", {
-      operation: "StorePreview",
+      operation: "storeViewerUrl",
       context: "store validation",
-      metadata: { account_id, product_id, object_path, extension, reason: probe.reason },
+      metadata: {
+        account_id,
+        product_id,
+        object_path,
+        extension,
+        reason: probe.reason,
+      },
     });
     return null;
   }
@@ -60,21 +61,5 @@ export async function StorePreview({
   const url = encodeURIComponent(
     fileSourceUrl({ account_id, product_id, object_path }),
   );
-  return (
-    <PreviewIframe
-      src={`https://source-cooperative.github.io/zarr-viewer/?url=${url}`}
-      style={{ border: "1px solid var(--gray-5)" }}
-      title={`Preview of ${object_path}`}
-    />
-  );
-}
-
-export function StorePreviewLoading() {
-  return (
-    <Skeleton>
-      <Box mt="4" pt="4" style={{ borderTop: "1px solid var(--gray-6)" }}>
-        <Box width="100%" height="600px" />
-      </Box>
-    </Skeleton>
-  );
+  return `https://source-cooperative.github.io/zarr-viewer/?url=${url}`;
 }

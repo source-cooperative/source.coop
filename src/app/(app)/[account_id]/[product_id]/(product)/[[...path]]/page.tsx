@@ -1,5 +1,4 @@
 import { Metadata } from "next";
-import { Suspense } from "react";
 
 import { LOGGER, dataConnectionsTable, getPageSession } from "@/lib";
 import { getStorageClient } from "@/lib/clients/storage";
@@ -7,11 +6,6 @@ import { isAccessDeniedError } from "@/lib/storage/s3";
 import { isAuthorized } from "@/lib/api/authz";
 import { Actions, DataConnection, ProductMirror, ProductObject } from "@/types";
 import { readProxyCredentials } from "@/lib/services/proxy-credentials-read";
-import { getExtension, isStoreExtension } from "@/lib/files";
-import {
-  StorePreview,
-  StorePreviewLoading,
-} from "@/components/features/products/object-browser/StorePreview";
 import { getAuthorizedProduct } from "./data";
 import { ProxyCredentialsGate } from "@/components/features/products/ProxyCredentialsGate";
 import { ProductDataUnavailable } from "@/components/features/products/ProductDataUnavailable";
@@ -246,7 +240,10 @@ export default async function ProductPathPage({ params }: PageProps) {
     }),
   ];
 
-  const directoryList = (
+  // A .zarr / .icechunk store is a key prefix (a "directory"), so it renders the
+  // normal directory listing here — users can browse/download its files — while
+  // the zarr-viewer renders full-width via the @preview slot.
+  return (
     <DirectoryList
       product={product}
       objects={objects.filter(
@@ -255,30 +252,4 @@ export default async function ProductPathPage({ params }: PageProps) {
       prefix={effectivePrefix}
     />
   );
-
-  // A .zarr / .icechunk store is a key prefix (a "directory"), so it always
-  // renders the normal directory listing (users can browse/download its files).
-  // Below that, when cheap server-side checks confirm it's a renderable store,
-  // we embed the zarr-viewer. The probe runs inside StorePreview under Suspense,
-  // so it never blocks the listing, and renders nothing when the store isn't
-  // viewable.
-  const storeExtension = getExtension(effectivePrefix);
-  if (isStoreExtension(storeExtension)) {
-    return (
-      <>
-        {directoryList}
-        <Suspense fallback={<StorePreviewLoading />}>
-          <StorePreview
-            account_id={account_id}
-            product_id={product_id}
-            object_path={effectivePrefix}
-            extension={storeExtension}
-            creds={creds ?? null}
-          />
-        </Suspense>
-      </>
-    );
-  }
-
-  return directoryList;
 }

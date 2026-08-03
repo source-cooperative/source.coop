@@ -15,8 +15,7 @@ jest.mock("@/lib/urls", () => ({
   }) => `https://data.source.coop/${account_id}/${product_id}/${object_path}`,
 }));
 
-import { StorePreview } from "./StorePreview";
-import { PreviewIframe } from "./PreviewIframe";
+import { storeViewerUrl } from "./storeViewer";
 import { getStorageClient } from "@/lib/clients/storage";
 import { probeStore } from "@/lib/stores/probe";
 
@@ -27,29 +26,27 @@ const creds = {
   expiration: "2099-01-01T00:00:00.000Z",
 };
 
-const props = {
+const args = {
   account_id: "bkr",
   product_id: "gfs",
   object_path: "gfs.icechunk",
   extension: "icechunk",
   creds,
-} as Parameters<typeof StorePreview>[0];
+} as Parameters<typeof storeViewerUrl>[0];
 
-describe("StorePreview", () => {
+describe("storeViewerUrl", () => {
   beforeEach(() => {
-    (getStorageClient as jest.Mock).mockResolvedValue({});
     jest.clearAllMocks();
+    (getStorageClient as jest.Mock).mockResolvedValue({});
   });
 
-  it("renders the zarr-viewer iframe with the encoded source URL when renderable", async () => {
-    (getStorageClient as jest.Mock).mockResolvedValue({});
-    (probeStore as jest.Mock).mockResolvedValue({ renderable: true, format: "icechunk" });
+  it("returns the zarr-viewer URL with the encoded source URL when renderable", async () => {
+    (probeStore as jest.Mock).mockResolvedValue({
+      renderable: true,
+      format: "icechunk",
+    });
 
-    const element = await StorePreview(props);
-
-    expect(element).not.toBeNull();
-    expect(element!.type).toBe(PreviewIframe);
-    expect(element!.props.src).toBe(
+    await expect(storeViewerUrl(args)).resolves.toBe(
       "https://source-cooperative.github.io/zarr-viewer/?url=" +
         encodeURIComponent("https://data.source.coop/bkr/gfs/gfs.icechunk"),
     );
@@ -57,12 +54,12 @@ describe("StorePreview", () => {
     expect(getStorageClient).toHaveBeenCalledWith(creds);
   });
 
-  it("renders nothing when the store isn't renderable", async () => {
-    (getStorageClient as jest.Mock).mockResolvedValue({});
-    (probeStore as jest.Mock).mockResolvedValue({ renderable: false, reason: "no metadata" });
+  it("returns null when the store isn't renderable", async () => {
+    (probeStore as jest.Mock).mockResolvedValue({
+      renderable: false,
+      reason: "no metadata",
+    });
 
-    const element = await StorePreview(props);
-
-    expect(element).toBeNull();
+    await expect(storeViewerUrl(args)).resolves.toBeNull();
   });
 });
