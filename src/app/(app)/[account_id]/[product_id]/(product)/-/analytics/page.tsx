@@ -1,7 +1,17 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Box, Button, Card, Flex, Heading, Text } from "@radix-ui/themes";
+import { InfoCircledIcon } from "@radix-ui/react-icons";
+import {
+  Box,
+  Button,
+  Callout,
+  Card,
+  Flex,
+  Heading,
+  Link as RadixLink,
+  Text,
+} from "@radix-ui/themes";
 import { getPageSession } from "@/lib";
 import { isAuthorized } from "@/lib/api/authz";
 import { Actions } from "@/types/shared";
@@ -77,6 +87,21 @@ export default async function ProductAnalyticsPage({
       <Heading size="7" my="4">
         {product.title || product_id}
       </Heading>
+
+      <Callout.Root color="blue" role="status" mb="4">
+        <Callout.Icon>
+          <InfoCircledIcon />
+        </Callout.Icon>
+        <Callout.Text>
+          Analytics is a preview feature. The metrics shown here and who can
+          access them may change in the near future. Let us know what you think
+          at{" "}
+          <RadixLink href="mailto:hello@source.coop">
+            hello@source.coop
+          </RadixLink>
+          .
+        </Callout.Text>
+      </Callout.Root>
 
       <Card size="2">
         <SectionHeader
