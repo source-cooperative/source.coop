@@ -1,7 +1,10 @@
 import { getPageSession } from "@/lib/api/utils";
-import { isAdmin } from "@/lib/api/authz";
-import { canManageDataConnection } from "@/lib/data-connections";
-import { productsTable, dataConnectionsTable } from "@/lib/clients";
+import { canManageAccount, isAdmin } from "@/lib/api/authz";
+import {
+  canManageDataConnection,
+  canUseDataConnectionFor,
+} from "@/lib/data-connections";
+import { accountsTable, productsTable, dataConnectionsTable } from "@/lib/clients";
 import { notFound } from "next/navigation";
 import { ProductMirrorsManager } from "@/components/features/data-connections";
 import { toDataConnectionOption } from "@/components/features/data-connections/redact";
@@ -24,11 +27,22 @@ export default async function ProductDataConnectionsPage({
 
   const userIsAdmin = isAdmin(session);
 
-  // Connections are only needed to populate the admin "add" picker; non-admins
-  // see their existing mirrors read-only. Redact to a secret-free option shape
-  // so credentials never reach the client.
-  const availableConnections = userIsAdmin
-    ? (await dataConnectionsTable.listAll()).map(toDataConnectionOption)
+  // Mirrors are the owning account's storage, so managing them requires
+  // administering that account — an owner/maintainer of the org (or an admin).
+  // The layout's PutRepository gate also admits a membership scoped to this one
+  // product; such a user sees their mirrors read-only and is told why.
+  const ownerAccount = await accountsTable.fetchById(product.account_id);
+  const canManageMirrors =
+    ownerAccount != null && canManageAccount(session, ownerAccount);
+
+  // Connections are only needed to populate the "add" picker. Offer exactly what
+  // may back a product of this account: system-level (unowned) connections plus
+  // the account's own. Redact to a secret-free option shape so credentials never
+  // reach the client.
+  const availableConnections = canManageMirrors
+    ? (await dataConnectionsTable.listAll())
+        .filter((c) => canUseDataConnectionFor(session, c, product.account_id))
+        .map(toDataConnectionOption)
     : [];
 
   // A mirror only links to a connection's admin form when the product owner
@@ -60,23 +74,26 @@ export default async function ProductDataConnectionsPage({
     ])
   );
 
-  // Editing a mirror's prefix needs the intersection of product and connection
-  // management. Page access already required PutRepository on the product (the
-  // layout gate), so here we only resolve the connection side per mirror.
-  const editablePrefixConnectionIds = (
-    await Promise.all(
-      mirrorConnections.map(async (c) =>
-        (await canManageDataConnection(session, c))
-          ? c.data_connection_id
-          : null
-      )
-    )
-  ).filter((id): id is string => id != null);
+  // Editing a mirror's prefix needs the intersection of the account gate above
+  // and managing the connection itself, so resolve the connection side per
+  // mirror — a prefix re-points where the product's data lives.
+  const editablePrefixConnectionIds = canManageMirrors
+    ? (
+        await Promise.all(
+          mirrorConnections.map(async (c) =>
+            (await canManageDataConnection(session, c))
+              ? c.data_connection_id
+              : null
+          )
+        )
+      ).filter((id): id is string => id != null)
+    : [];
 
   return (
     <ProductMirrorsManager
       product={product}
       availableConnections={availableConnections}
+      canManageMirrors={canManageMirrors}
       isAdmin={userIsAdmin}
       ownedConnectionIds={ownedConnectionIds}
       connectionInfo={connectionInfo}
