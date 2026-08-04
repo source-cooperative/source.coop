@@ -2,12 +2,11 @@ import "server-only";
 
 import { LOGGER } from "@/lib";
 import { fileSourceUrl } from "@/lib/urls";
-import { Code, Flex, Link } from "@radix-ui/themes";
-import { ExternalLinkIcon } from "@radix-ui/react-icons";
-import type { CSSProperties } from "react";
+import { Code } from "@radix-ui/themes";
 import { getExtension } from "@/lib/files";
 import { DuckDBConnection } from "@duckdb/node-api";
 import { cache } from "react";
+import { PreviewIframe } from "./PreviewIframe";
 
 // cache(): the remote parquet-schema probe is requested by both the
 // "Open in new tab" link and the preview iframe in one render.
@@ -112,16 +111,6 @@ export async function ObjectPreviewExternal(props: ObjectPreviewExternalProps) {
   }
 
   return (
-    <iframe
-      width="100%"
-      height="600px"
-      allow="fullscreen"
-      style={{ border: "1px solid var(--gray-5)" }}
-      src={src}
-      title={`Preview of ${props.object_path}`}
-      loading="lazy"
-    >
-      Your browser does not support iframes.
-    </iframe>
+    <PreviewIframe src={src} title={`Preview of ${props.object_path}`} />
   );
 }
