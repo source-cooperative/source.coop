@@ -137,7 +137,9 @@ describe("listUsableDataConnections (issue #461)", () => {
   test("offers an org's own connection to an org owner", async () => {
     listing([orgConnection]);
     expect(
-      ids(await listUsableDataConnections(sessions["organization-owner-user"]))
+      ids(await listUsableDataConnections(sessions["organization-owner-user"], [
+        "organization",
+      ]))
     ).toEqual(["organization--byob"]);
   });
 
@@ -150,15 +152,36 @@ describe("listUsableDataConnections (issue #461)", () => {
 
     listing([orgConnection]);
     expect(
-      ids(await listUsableDataConnections(sessions["organization-owner-user"]))
+      ids(await listUsableDataConnections(sessions["organization-owner-user"], [
+        "organization",
+      ]))
     ).toEqual(["organization--byob"]);
   });
 
   test("keeps a read-only connection out of the list", async () => {
     listing([{ ...orgConnection, read_only: true } as DataConnection]);
     expect(
-      ids(await listUsableDataConnections(sessions["organization-owner-user"]))
+      ids(await listUsableDataConnections(sessions["organization-owner-user"], [
+        "organization",
+      ]))
     ).toEqual([]);
+  });
+
+  // The owner filter has to happen here, not in ProductCreationForm: an owned
+  // connection carries its account's bucket name and prefixes, so a client-side
+  // filter would still have shipped them to every user's browser.
+  test("withholds another account's connection from the listing", async () => {
+    listing([orgConnection]);
+    expect(
+      ids(await listUsableDataConnections(sessions["regular-user"], ["regular"]))
+    ).toEqual([]);
+  });
+
+  test("still offers system-level connections to any account", async () => {
+    listing([{ ...orgConnection, owner: undefined } as DataConnection]);
+    expect(
+      ids(await listUsableDataConnections(sessions["regular-user"], ["regular"]))
+    ).toEqual(["organization--byob"]);
   });
 });
 
@@ -205,3 +228,4 @@ describe("canUseDataConnectionFor", () => {
     ).toBe(false);
   });
 });
+

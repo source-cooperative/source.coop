@@ -51,12 +51,17 @@ export default async function NewProductPage({
     )),
   ];
 
-  // Strip credentials before handing connections to the client component.
-  const dataConnections = (await listUsableDataConnections(session)).map(
-    (connection) =>
-      DataConnectionObjectSchema.omit({ authentication: true }).parse(
-        connection
-      )
+  // Only connections usable by an account this user can create products under —
+  // an owned connection exposes its account's bucket names and prefixes, so the
+  // form's owner filter must not be the only one. Strip credentials before
+  // handing what remains to the client component.
+  const dataConnections = (
+    await listUsableDataConnections(
+      session,
+      potentialOwnerAccounts.map((account) => account.account_id)
+    )
+  ).map((connection) =>
+    DataConnectionObjectSchema.omit({ authentication: true }).parse(connection)
   );
 
   return (
