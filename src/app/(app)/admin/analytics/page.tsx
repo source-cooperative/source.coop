@@ -1,5 +1,6 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { Flex, Heading } from "@radix-ui/themes";
 import { getPageSession } from "@/lib";
 import { isAdmin } from "@/lib/api/authz";
 import {
@@ -24,10 +25,15 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
   }
 
   return (
-    <BreakdownExplorer
-      baseUrl={adminAnalyticsUrl()}
-      searchParams={await searchParams}
-      dimensions={Object.keys(ADMIN_DIMENSIONS) as AdminDimension[]}
-    />
+    // The account view titles itself with the account name; only the admin
+    // tool needs a heading naming the page.
+    <Flex direction="column" gap="4">
+      <Heading size="4">Analytics</Heading>
+      <BreakdownExplorer
+        baseUrl={adminAnalyticsUrl()}
+        searchParams={await searchParams}
+        dimensions={Object.keys(ADMIN_DIMENSIONS) as AdminDimension[]}
+      />
+    </Flex>
   );
 }

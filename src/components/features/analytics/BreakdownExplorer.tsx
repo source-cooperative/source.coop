@@ -6,7 +6,6 @@ import {
   Callout,
   Card,
   Flex,
-  Heading,
   Table,
   Text,
   Tooltip,
@@ -184,7 +183,7 @@ interface BreakdownExplorerProps {
    * scoped view (e.g. one account's) pins its dimension.
    */
   scopeFilters?: Partial<Record<AdminDimension, string>>;
-  /** Rendered under the heading, above the controls (e.g. a preview notice) */
+  /** Rendered above the controls (e.g. a preview notice) */
   notice?: ReactNode;
 }
 
@@ -206,7 +205,6 @@ export async function BreakdownExplorer({
   if (!isAnalyticsConfigured()) {
     return (
       <Flex direction="column" gap="4">
-        <Heading size="4">Analytics</Heading>
         {notice}
         <Callout.Root color="gray">
           <Callout.Icon>
@@ -297,8 +295,6 @@ export async function BreakdownExplorer({
 
   return (
     <Flex direction="column" gap="4">
-      <Heading size="4">Analytics</Heading>
-
       {notice}
 
       {/* Two zones: what data (dates + entity filters) | how it's drawn
