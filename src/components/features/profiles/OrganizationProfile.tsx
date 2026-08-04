@@ -131,10 +131,10 @@ export function OrganizationProfile({
             Products
           </Heading>
           {canCreateProduct && (
-            <RadixLink asChild size="2">
+            <RadixLink asChild size="1">
               <Link href={newProductUrl(account.account_id)}>
                 <Flex as="span" align="center" gap="1">
-                  <PlusIcon /> New product
+                  <PlusIcon width="12" height="12" /> New product
                 </Flex>
               </Link>
             </RadixLink>

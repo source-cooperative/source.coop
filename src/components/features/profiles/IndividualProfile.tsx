@@ -125,10 +125,10 @@ export function IndividualProfile({
           <Flex justify="between" align="center" mb="2">
             <Heading size="4">Products</Heading>
             {canCreateProduct && (
-              <RadixLink asChild size="2">
+              <RadixLink asChild size="1">
                 <Link href={newProductUrl(account.account_id)}>
                   <Flex as="span" align="center" gap="1">
-                    <PlusIcon /> New product
+                    <PlusIcon width="12" height="12" /> New product
                   </Flex>
                 </Link>
               </RadixLink>
