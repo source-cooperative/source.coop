@@ -8,6 +8,7 @@ import {
   Flex,
   Grid,
 } from "@radix-ui/themes";
+import { PlusIcon } from "@radix-ui/react-icons";
 import Link from "next/link";
 import type {
   IndividualAccount,
@@ -131,7 +132,11 @@ export function OrganizationProfile({
           </Heading>
           {canCreateProduct && (
             <RadixLink asChild size="2">
-              <Link href={newProductUrl(account.account_id)}>New product</Link>
+              <Link href={newProductUrl(account.account_id)}>
+                <Flex as="span" align="center" gap="1">
+                  <PlusIcon /> New product
+                </Flex>
+              </Link>
             </RadixLink>
           )}
         </Flex>
