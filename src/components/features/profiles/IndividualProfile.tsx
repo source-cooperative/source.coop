@@ -126,7 +126,7 @@ export function IndividualProfile({
           <Flex justify="between" align="center" mb="2">
             <Heading size="4">Products</Heading>
             {canCreateProduct && (
-              <Button asChild size="1" variant="soft">
+              <Button asChild size="1" variant="outline">
                 <Link href={newProductUrl(account.account_id)}>
                   <PlusIcon /> New product
                 </Link>

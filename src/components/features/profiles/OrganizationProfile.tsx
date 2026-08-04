@@ -132,7 +132,7 @@ export function OrganizationProfile({
             Products
           </Heading>
           {canCreateProduct && (
-            <Button asChild size="1" variant="soft">
+            <Button asChild size="1" variant="outline">
               <Link href={newProductUrl(account.account_id)}>
                 <PlusIcon /> New product
               </Link>
