@@ -2,12 +2,15 @@
 
 import {
   Box,
+  Button,
   Heading,
   Text,
   Link as RadixLink,
   Flex,
   Grid,
 } from "@radix-ui/themes";
+import { PlusIcon } from "@radix-ui/react-icons";
+import Link from "next/link";
 import type {
   IndividualAccount,
   OrganizationalAccount,
@@ -20,7 +23,7 @@ import { OrganizationMembers } from "./OrganizationMembers";
 import { ProfileAvatar } from "./ProfileAvatar";
 import { WebsiteLink } from "./WebsiteLink";
 import { ProfileLocation } from "./ProfileLocation";
-import { editAccountProfileUrl } from "@/lib/urls";
+import { editAccountProfileUrl, newProductUrl } from "@/lib/urls";
 import { EditButton } from "@/components/core";
 
 interface OrganizationProfileProps {
@@ -30,6 +33,7 @@ interface OrganizationProfileProps {
   admins: IndividualAccount[];
   members: IndividualAccount[];
   canEdit: boolean;
+  canCreateProduct: boolean;
 }
 
 export function OrganizationProfile({
@@ -39,6 +43,7 @@ export function OrganizationProfile({
   admins,
   members,
   canEdit,
+  canCreateProduct,
 }: OrganizationProfileProps) {
   return (
     <Box>
@@ -122,9 +127,18 @@ export function OrganizationProfile({
       </Grid>
 
       <Box>
-        <Heading as="h2" size="4" mb="2">
-          Products
-        </Heading>
+        <Flex justify="between" align="center" mb="2">
+          <Heading as="h2" size="4">
+            Products
+          </Heading>
+          {canCreateProduct && (
+            <Button asChild size="1" variant="soft">
+              <Link href={newProductUrl(account.account_id)}>
+                <PlusIcon /> New product
+              </Link>
+            </Button>
+          )}
+        </Flex>
         {products.length > 0 ? (
           <ProductsList products={products} />
         ) : (

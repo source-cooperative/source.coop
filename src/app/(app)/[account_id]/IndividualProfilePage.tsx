@@ -41,16 +41,22 @@ export async function IndividualProfilePage({
     )
   ).filter(isOrganizationalAccount);
 
+  const isOwner = session?.account?.account_id === account.account_id;
+
   // For individual accounts
   return (
     <IndividualProfile
       account={account as IndividualAccount}
-      isOwner={session?.account?.account_id === account.account_id}
+      isOwner={isOwner}
       ownedProducts={products}
       contributedProducts={[]}
       organizations={organizations}
       showWelcome={showWelcome}
       canEdit={isAuthorized(session, account, Actions.PutAccountProfile)}
+      // Products can only be created under your own individual account.
+      canCreateProduct={
+        isOwner && isAuthorized(session, "*", Actions.CreateRepository)
+      }
     />
   );
 }

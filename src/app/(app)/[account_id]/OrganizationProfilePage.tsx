@@ -106,6 +106,11 @@ export async function OrganizationProfilePage({
           admins={admins}
           members={members}
           canEdit={isAuthorized(session, account, Actions.PutAccountProfile)}
+          // Matches /products/new, which offers every org you're a member of
+          // as a potential owner.
+          canCreateProduct={
+            !!isMember && isAuthorized(session, "*", Actions.CreateRepository)
+          }
         />
       </Box>
     </Container>
