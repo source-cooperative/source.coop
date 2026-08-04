@@ -134,7 +134,13 @@ export function IndividualProfile({
               </RadixLink>
             )}
           </Flex>
-          <ProductsList products={ownedProducts} />
+          {ownedProducts.length > 0 ? (
+            <ProductsList products={ownedProducts} />
+          ) : (
+            <Text as="p" size="2">
+              No products available.
+            </Text>
+          )}
         </Box>
       )}
 
