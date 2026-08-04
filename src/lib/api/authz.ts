@@ -452,10 +452,18 @@ function disableDataConnection(
 }
 
 // Models what the *connection* permits, not whether the caller is
-// authenticated. A connection that is not read-only and carries no
-// required_flag is usable by anyone — including an anonymous principal — so
-// callers (e.g. createProduct, listUsableDataConnections) must apply their own
-// auth guard before relying on this result.
+// authenticated. A connection carrying no required_flag is usable by anyone —
+// including an anonymous principal — so callers (e.g. createProduct,
+// listUsableDataConnections) must apply their own auth guard before relying on
+// this result.
+//
+// `read_only` is deliberately not a gate here. It says the platform holds
+// read-only credentials, so a product on such a connection is a catalog entry
+// over externally managed data — the layout hides the upload controls and
+// deleteProduct never touches the objects. What a product exposes is decided by
+// its mirror prefix, not by this flag: a connection with no prefix_template
+// mirrors at the bucket root (resolveMirrorPrefix) whether or not it is
+// read-only, so refusing read-only connections here prevented nothing.
 function useDataConnection(
   principal: UserSession | null,
   dataConnection: DataConnection
@@ -466,10 +474,6 @@ function useDataConnection(
 
   if (isAdmin(principal)) {
     return true;
-  }
-
-  if (dataConnection.read_only) {
-    return false;
   }
 
   if (dataConnection.required_flag) {
