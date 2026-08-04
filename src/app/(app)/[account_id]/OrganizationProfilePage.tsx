@@ -10,6 +10,7 @@ import {
 import {
   type IndividualAccount,
   type OrganizationalAccount,
+  type Product,
   Actions,
   MembershipRole,
   MembershipState,
@@ -106,6 +107,13 @@ export async function OrganizationProfilePage({
           admins={admins}
           members={members}
           canEdit={isAuthorized(session, account, Actions.PutAccountProfile)}
+          canCreateProduct={isAuthorized(
+            session,
+            // Same partial-product check the create action runs, so the link
+            // only appears when the create would actually be allowed.
+            { account_id: account.account_id } as Product,
+            Actions.CreateRepository
+          )}
         />
       </Box>
     </Container>

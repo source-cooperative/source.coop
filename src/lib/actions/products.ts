@@ -171,8 +171,8 @@ export async function createProduct(
     };
   }
 
-  // Enforce that the user may create products against this connection. This
-  // covers read-only connections and connections gated behind an account flag.
+  // Enforce that the user may create products against this connection
+  // (connections gated behind an account flag).
   if (!isAuthorized(session, dataConnection, Actions.UseDataConnection)) {
     return {
       fieldErrors: {},
