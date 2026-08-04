@@ -19,6 +19,8 @@ export interface ObjectPath {
 
 export interface GetObjectParams extends ObjectPath {
   versionId?: string;
+  /** Optional HTTP Range header value, e.g. "bytes=0-11", for a partial read. */
+  range?: string;
 }
 
 export interface GetObjectResult {

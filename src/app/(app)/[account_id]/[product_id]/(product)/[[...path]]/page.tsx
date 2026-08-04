@@ -240,6 +240,9 @@ export default async function ProductPathPage({ params }: PageProps) {
     }),
   ];
 
+  // A .zarr / .icechunk store is a key prefix (a "directory"), so it renders the
+  // normal directory listing here — users can browse/download its files — while
+  // the zarr-viewer renders full-width via the @preview slot.
   return (
     <DirectoryList
       product={product}
