@@ -41,8 +41,8 @@ export async function canManageDataConnection(
 
 /**
  * Whether `connection` may back a product owned by `accountId`: the connection
- * itself must permit the caller (`UseDataConnection` covers read-only and
- * flag-gated connections) and must be available to that account — either
+ * itself must permit the caller (`UseDataConnection` covers flag-gated
+ * connections) and must be available to that account — either
  * system-level (unowned) or owned by it.
  *
  * This is only the connection half of associating the two; the caller side is

@@ -107,7 +107,7 @@ export async function addProductMirror(
     }
 
     // The connection must be available to this account: system-level (unowned)
-    // or owned by it, and usable at all (not read-only / flag-gated).
+    // or owned by it, and usable at all (not flag-gated).
     if (!canUseDataConnectionFor(session, connection, accountId)) {
       return {
         fieldErrors: {},
