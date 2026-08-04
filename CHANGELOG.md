@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.5.0](https://github.com/source-cooperative/source.coop/compare/v1.4.3...v1.5.0) (2026-08-04)
+
+
+### Features
+
+* analytics suite — product/object usage cards + admin traffic explorer ([#421](https://github.com/source-cooperative/source.coop/issues/421)) ([73cc607](https://github.com/source-cooperative/source.coop/commit/73cc607c71f7a6cabb9a93f72fee5e69bffe0ddf))
+* **analytics:** flag product analytics as a preview ([#466](https://github.com/source-cooperative/source.coop/issues/466)) ([255ec32](https://github.com/source-cooperative/source.coop/commit/255ec322a2aa7170b7c6c73c3943778db1e17537))
+* **analytics:** rename product analytics card to "Analytics" ([#464](https://github.com/source-cooperative/source.coop/issues/464)) ([a5a6563](https://github.com/source-cooperative/source.coop/commit/a5a65633b2a23bb64c97ec4698c2270523287abb))
+* **profiles:** add "New product" link to profile products list ([#479](https://github.com/source-cooperative/source.coop/issues/479)) ([4d4de77](https://github.com/source-cooperative/source.coop/commit/4d4de77f58ae91e6d9fa7a6a7b96a0870e572b2b))
+* zarr/icechunk viewer ([#415](https://github.com/source-cooperative/source.coop/issues/415)) ([4cbc853](https://github.com/source-cooperative/source.coop/commit/4cbc853ae7dfcb2f9d77cf80a05daa9bb6c9ad60))
+
+
+### Bug Fixes
+
+* **data-connections:** stop blocking non-admins from read-only connections ([#482](https://github.com/source-cooperative/source.coop/issues/482)) ([ac35821](https://github.com/source-cooperative/source.coop/commit/ac358216f9f1299375441298e1dd3e0b69a3b99b))
+* don't disable product search/tags inputs during navigation ([adfce8b](https://github.com/source-cooperative/source.coop/commit/adfce8b07e29c1ac0eb010b8de69f5b2f017a6ea)), closes [#467](https://github.com/source-cooperative/source.coop/issues/467)
+* don't disable product search/tags inputs during navigation ([#468](https://github.com/source-cooperative/source.coop/issues/468)) ([203c0ec](https://github.com/source-cooperative/source.coop/commit/203c0ec09135784e6797dd79c10bdc5279faae04))
+* let org owners/maintainers associate data connections with products ([#462](https://github.com/source-cooperative/source.coop/issues/462)) ([e9b7c54](https://github.com/source-cooperative/source.coop/commit/e9b7c54a1517b5eb7ba3e87d23939da6672e9375))
+
 ## [1.4.3](https://github.com/source-cooperative/source.coop/compare/v1.4.2...v1.4.3) (2026-07-27)
 
 
