@@ -44,9 +44,9 @@ export type DataConnectionDenial = "not-usable" | "wrong-account";
 /**
  * Why `connection` may not back a product owned by `accountId`, or null if it
  * may. Two rules: the connection itself must permit the caller
- * (`not-usable` — `UseDataConnection` covers read-only and flag-gated
- * connections), and it must be available to that account — either system-level
- * (unowned) or owned by it (`wrong-account`).
+ * (`not-usable` — `UseDataConnection` covers flag-gated connections), and it
+ * must be available to that account — either system-level (unowned) or owned
+ * by it (`wrong-account`).
  *
  * The reason is returned rather than a bare boolean so `createProduct` can
  * surface each rule as its own form field error; callers that only need a

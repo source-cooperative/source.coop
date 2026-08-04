@@ -37,12 +37,17 @@ function regionOf(connection: DataConnection): string | undefined {
 
 // A new product defaults to a us-west-2 connection when one is available — the
 // region we steer unsure users toward — and otherwise to the first option.
+// Read-only connections are never defaulted to: they can back a product, but it
+// would have no upload controls, which is not a choice to make on the user's
+// behalf.
 const DEFAULT_REGION = "us-west-2";
 function pickDefaultConnection(
   connections: DataConnection[]
 ): DataConnection | undefined {
+  const writable = connections.filter((c) => !c.read_only);
+  const preferred = writable.length ? writable : connections;
   return (
-    connections.find((c) => regionOf(c) === DEFAULT_REGION) ?? connections[0]
+    preferred.find((c) => regionOf(c) === DEFAULT_REGION) ?? preferred[0]
   );
 }
 
