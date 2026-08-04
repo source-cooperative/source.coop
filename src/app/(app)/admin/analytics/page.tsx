@@ -33,6 +33,7 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
         baseUrl={adminAnalyticsUrl()}
         searchParams={await searchParams}
         dimensions={Object.keys(ADMIN_DIMENSIONS) as AdminDimension[]}
+        showSql
       />
     </Flex>
   );

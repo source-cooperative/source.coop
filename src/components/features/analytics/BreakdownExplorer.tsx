@@ -183,6 +183,14 @@ interface BreakdownExplorerProps {
    * scoped view (e.g. one account's) pins its dimension.
    */
   scopeFilters?: Partial<Record<AdminDimension, string>>;
+  /**
+   * Offer the "View SQL" debug dialog. Default closed: the statements name
+   * the Analytics Engine dataset and its blob1–blob9 layout, internal infra
+   * detail an account's owners have no business seeing. Withheld by not
+   * sending the prop at all — hiding the trigger would still ship the SQL
+   * in the client payload.
+   */
+  showSql?: boolean;
   /** Rendered above the controls (e.g. a preview notice) */
   notice?: ReactNode;
 }
@@ -198,6 +206,7 @@ export async function BreakdownExplorer({
   searchParams,
   dimensions,
   scopeFilters,
+  showSql = false,
   notice,
 }: BreakdownExplorerProps) {
   const state = parseState(searchParams, dimensions);
@@ -489,7 +498,7 @@ export async function BreakdownExplorer({
               buckets={breakdown.buckets}
               bucketMinutes={breakdown.bucketMinutes}
               initialMetric={state.metric}
-              queries={breakdown.queries}
+              queries={showSql ? breakdown.queries : undefined}
               series={breakdown.series}
               points={breakdown.points}
               totals={breakdown.totals}
