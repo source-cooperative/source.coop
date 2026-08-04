@@ -4,7 +4,7 @@ import {
   membershipsTable,
   productsTable,
 } from "@/lib/clients/database";
-import { type IndividualAccount, Actions } from "@/types";
+import { type IndividualAccount, type Product, Actions } from "@/types";
 import { getPageSession } from "@/lib/api/utils";
 import { isAuthorized } from "@/lib/api/authz";
 import { IndividualProfile } from "@/components/features/profiles/IndividualProfile";
@@ -41,22 +41,23 @@ export async function IndividualProfilePage({
     )
   ).filter(isOrganizationalAccount);
 
-  const isOwner = session?.account?.account_id === account.account_id;
-
   // For individual accounts
   return (
     <IndividualProfile
       account={account as IndividualAccount}
-      isOwner={isOwner}
+      isOwner={session?.account?.account_id === account.account_id}
       ownedProducts={products}
       contributedProducts={[]}
       organizations={organizations}
       showWelcome={showWelcome}
       canEdit={isAuthorized(session, account, Actions.PutAccountProfile)}
-      // Products can only be created under your own individual account.
-      canCreateProduct={
-        isOwner && isAuthorized(session, "*", Actions.CreateRepository)
-      }
+      canCreateProduct={isAuthorized(
+        session,
+        // Same partial-product check the create action runs, so the link only
+        // appears when the create would actually be allowed.
+        { account_id: account.account_id } as Product,
+        Actions.CreateRepository
+      )}
     />
   );
 }
