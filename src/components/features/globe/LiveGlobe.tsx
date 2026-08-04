@@ -160,7 +160,7 @@ export function LiveGlobe({
 
       // Add clouds
       if (showClouds) {
-        new TextureLoader().load("/img/clouds.png", (texture) => {
+        new TextureLoader().load("/img/clouds.webp", (texture) => {
           if (cancelled || !globe) return;
           clouds = new Mesh(
             new SphereGeometry(
@@ -168,8 +168,12 @@ export function LiveGlobe({
               75,
               75,
             ),
+            // ponytail: alphaMap, not map. The old RGBA PNG was white wherever
+            // alpha > 0 and black elsewhere, so its colour channel carried no
+            // information the mask doesn't — dropping it let the mask compress
+            // as plain greyscale (4.8MB -> 922KB) at full 4096x2048.
             new MeshPhongMaterial({
-              map: texture,
+              alphaMap: texture,
               transparent: true,
               opacity: 0.3,
             }),
@@ -533,7 +537,7 @@ export function LiveGlobe({
           width={width}
           height={height}
           backgroundColor="rgba(0,0,0,0)"
-          globeImageUrl="/img/earth-blue-marble.jpg"
+          globeImageUrl="/img/earth-blue-marble.webp"
           showAtmosphere={false}
           onGlobeReady={() => {
             globeReadyRef.current = true;

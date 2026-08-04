@@ -43,9 +43,9 @@ export default async function Landing() {
 
   return (
     <>
-      {/* Preload globe textures so they're cached before the client component mounts */}
-      <link rel="preload" href="/img/earth-blue-marble.jpg" as="image" />
-      <link rel="preload" href="/img/clouds.png" as="image" />
+      {/* ponytail: no texture preload — LiveGlobe is dynamic({ ssr: false }), so it
+          mounts after hydration anyway. Preloading pulled 6.5MB into the critical
+          window ahead of the render-blocking CSS that gates first paint. */}
       <Box className={styles.landing} px={{ sm: "6", lg: "9" }}>
         <Box className={styles.landingInner} mx="auto" maxWidth="1400px">
           <Navigation />
