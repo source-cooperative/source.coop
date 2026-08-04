@@ -3311,9 +3311,7 @@ describe("Authorization Tests", () => {
       true
     );
 
-    // read_only does not gate use: it means the platform holds read-only
-    // credentials, so the product is a catalog entry over externally managed
-    // data. What a product exposes is set by its mirror prefix, not this flag.
+    // read_only does not gate use; see #482.
     dataConnection.read_only = true;
     expect(isAuthorized(sessions["admin"], dataConnection, action)).toBe(true);
     expect(

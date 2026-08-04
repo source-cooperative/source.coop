@@ -154,9 +154,6 @@ describe("listUsableDataConnections (issue #461)", () => {
     ).toEqual(["organization--byob"]);
   });
 
-  // read_only means the platform can't write to the storage, not that the
-  // connection is off-limits — the resulting product is a catalog entry over
-  // data managed outside Source Cooperative.
   test("offers a read-only connection", async () => {
     listing([{ ...orgConnection, read_only: true } as DataConnection]);
     expect(
