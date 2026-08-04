@@ -12,9 +12,13 @@
 
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { Box } from "@radix-ui/themes";
 import { OrganizationProfilePage } from "@/app/(app)/[account_id]/OrganizationProfilePage";
 import { accountsTable, isOrganizationalAccount } from "@/lib/clients/database";
 import { IndividualProfilePage } from "./IndividualProfilePage";
+import { AccountTabs } from "@/components/features/analytics";
+import { getPageSession } from "@/lib/api/utils";
+import { canManageAccount } from "@/lib/api/authz";
 import {
   generateNotFoundMetadata,
   generateAccountMetadata,
@@ -49,6 +53,13 @@ export default async function AccountPage({ params, searchParams }: PageProps) {
   return (
     <>
       <AccountSchemaMetadata account={account} />
+      {/* Tab strip only for people who can manage the account — the
+          analytics route 404s everyone else. */}
+      {canManageAccount(await getPageSession(), account) && (
+        <Box mt="4">
+          <AccountTabs accountId={account_id} active="profile" />
+        </Box>
+      )}
       {isOrganizationalAccount(account) ? (
         <OrganizationProfilePage account={account} />
       ) : (
