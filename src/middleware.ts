@@ -63,7 +63,7 @@ const handleLegacyRedirects = (request: NextRequest): NextResponse | null => {
   return null;
 };
 
-// Top-level routes that share the /{segment}/{segment} shape but are not
+// Top-level routes that share the /{segment}[/{segment}] shape but are not
 // account/product pages — the analytics rewrite must leave them alone.
 const NON_ACCOUNT_SEGMENTS = new Set([
   "admin",
@@ -78,19 +78,20 @@ const NON_ACCOUNT_SEGMENTS = new Set([
 ]);
 
 /**
- * Serve the maintainer analytics view on the product root via a query param
- * (`/{account}/{product}?tab=analytics`). Layouts can't read search params,
- * so the view lives at the internal `/-/analytics` route (which also keeps
- * it from shadowing real object paths) and the query-param URL is rewritten
- * to it here. Other params (e.g. `window`) pass through.
+ * Serve the maintainer analytics view on an account or product root via a
+ * query param (`/{account}?tab=analytics`, `/{account}/{product}?tab=analytics`).
+ * Layouts can't read search params, so the view lives at the internal
+ * `/-/analytics` route (which also keeps it from shadowing real object
+ * paths) and the query-param URL is rewritten to it here. Other params
+ * (e.g. `window`) pass through.
  *
  * Exported for tests: the failure mode is a silently dead ANALYTICS tab.
  */
-export const handleProductAnalyticsTab = (
+export const handleAnalyticsTab = (
   request: NextRequest,
 ): NextResponse | null => {
   const { pathname, searchParams } = request.nextUrl;
-  const match = pathname.match(/^\/([^/]+)\/[^/]+$/);
+  const match = pathname.match(/^\/([^/]+)(\/[^/]+)?$/);
   if (
     searchParams.get("tab") === "analytics" &&
     match &&
@@ -135,7 +136,7 @@ export const middleware = async (request: NextRequest) => {
     return ory(request);
   }
 
-  const analyticsRewrite = handleProductAnalyticsTab(request);
+  const analyticsRewrite = handleAnalyticsTab(request);
   if (analyticsRewrite) return analyticsRewrite;
 
   return NextResponse.next();
