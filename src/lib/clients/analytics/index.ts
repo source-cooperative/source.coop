@@ -392,13 +392,45 @@ function parseUsageAggregates(row: Row): UsageTotals {
 const COUNTRY_LIST_LIMIT = 5;
 const FILE_LIST_LIMIT = 10;
 
+/** Per-UTC-day values keyed by the day's ISO timestamp (UsagePoint.date). */
+type ByDay<T> = Record<string, T>;
+
+interface SliceTotals {
+  requests: number;
+  bytes: number;
+}
+
 export interface ProductBreakdowns {
   /** Top countries by downloads */
-  countries: { code: string; name: string; requests: number }[];
+  countries: {
+    code: string;
+    name: string;
+    requests: number;
+    bytes: number;
+    byDay: ByDay<SliceTotals>;
+  }[];
   /** Aggregate of the remaining countries, if any */
-  otherCountries: { count: number; requests: number } | null;
+  otherCountries:
+    | { count: number; requests: number; bytes: number; byDay: ByDay<SliceTotals> }
+    | null;
   /** Top objects by downloads */
-  files: { path: string; requests: number; bytes: number }[];
+  files: {
+    path: string;
+    requests: number;
+    bytes: number;
+    /** Distinct countries the object was downloaded from */
+    countries: number;
+    byDay: ByDay<SliceTotals & { countries: number }>;
+    /** Window and per-day values per top-country code (countries[].code) */
+    byCountry: Record<string, SliceTotals & { byDay: ByDay<SliceTotals> }>;
+    /** Window and per-day values from countries outside the top list */
+    otherCountries: SliceTotals & { byDay: ByDay<SliceTotals> };
+  }[];
+  /**
+   * Remainder of file traffic outside the top list — lets the table sum to
+   * the file-traffic total. Window-wide only (no per-day/country slices).
+   */
+  otherFiles: { count: number; requests: number; bytes: number } | null;
 }
 
 /**
@@ -414,35 +446,207 @@ export async function getProductBreakdowns(
   const from = usageFrom(accountId, productId, undefined, days);
 
   try {
-    const [countryRows, fileRows] = await Promise.all([
+    const [countryRows, fileRows, fileTotalRows] = await Promise.all([
       usageQuery(
-        `SELECT blob6 AS country, SUM(_sample_interval) AS requests ${from} GROUP BY country ORDER BY requests DESC`,
+        `SELECT blob6 AS country, SUM(_sample_interval) AS requests, SUM(_sample_interval * double1) AS bytes ${from} GROUP BY country ORDER BY requests DESC`,
       ),
       // blob3 = '' is a keyless product GET (trailing-slash/probe requests,
       // not a real file) — keep those out of the top-files ranking.
       usageQuery(
-        `SELECT blob3 AS file, SUM(_sample_interval) AS requests, SUM(_sample_interval * double1) AS bytes ${from} AND blob3 != '' GROUP BY file ORDER BY requests DESC LIMIT ${FILE_LIST_LIMIT}`,
+        `SELECT blob3 AS file, SUM(_sample_interval) AS requests, SUM(_sample_interval * double1) AS bytes, COUNT(DISTINCT blob6) AS countries ${from} AND blob3 != '' GROUP BY file ORDER BY requests DESC LIMIT ${FILE_LIST_LIMIT}`,
+      ),
+      usageQuery(
+        `SELECT COUNT(DISTINCT blob3) AS files, SUM(_sample_interval) AS requests, SUM(_sample_interval * double1) AS bytes ${from} AND blob3 != ''`,
       ),
     ]);
 
     const rest = countryRows.slice(COUNTRY_LIST_LIMIT);
+    const topCountries = countryRows
+      .slice(0, COUNTRY_LIST_LIMIT)
+      .map((row) => str(row.country));
+    const topFiles = fileRows.map((row) => str(row.file));
+
+    // Second wave, scoped to the window's top entries with IN (bounded rows,
+    // unlike a full GROUP BY day+file) — per-day values for hover.
+    const countryIn = topCountries.map(sqlQuote).join(", ");
+    const fileIn = topFiles.map(sqlQuote).join(", ");
+    const [
+      countryDayRows,
+      otherDayRows,
+      fileDayRows,
+      crossRows,
+      fileOtherRows,
+      cubeRows,
+      otherCubeRows,
+    ] = await Promise.all([
+      topCountries.length
+        ? usageQuery(
+            `SELECT toStartOfDay(timestamp) AS day, blob6 AS country, SUM(_sample_interval) AS requests, SUM(_sample_interval * double1) AS bytes ${from} AND blob6 IN (${countryIn}) GROUP BY day, country`,
+          )
+        : [],
+      rest.length
+        ? usageQuery(
+            `SELECT toStartOfDay(timestamp) AS day, SUM(_sample_interval) AS requests, SUM(_sample_interval * double1) AS bytes ${from} AND blob6 NOT IN (${countryIn}) GROUP BY day`,
+          )
+        : [],
+      topFiles.length
+        ? usageQuery(
+            `SELECT toStartOfDay(timestamp) AS day, blob3 AS file, SUM(_sample_interval) AS requests, SUM(_sample_interval * double1) AS bytes, COUNT(DISTINCT blob6) AS countries ${from} AND blob3 IN (${fileIn}) GROUP BY day, file`,
+          )
+        : [],
+      // Country × file cross — serves both hover directions (a country's
+      // per-file values and a file's per-country values).
+      topCountries.length && topFiles.length
+        ? usageQuery(
+            `SELECT blob6 AS country, blob3 AS file, SUM(_sample_interval) AS requests, SUM(_sample_interval * double1) AS bytes ${from} AND blob6 IN (${countryIn}) AND blob3 IN (${fileIn}) GROUP BY country, file`,
+          )
+        : [],
+      rest.length && topFiles.length
+        ? usageQuery(
+            `SELECT blob3 AS file, SUM(_sample_interval) AS requests, SUM(_sample_interval * double1) AS bytes ${from} AND blob6 NOT IN (${countryIn}) AND blob3 IN (${fileIn}) GROUP BY file`,
+          )
+        : [],
+      // Day × country × file cube for the pinned-intersection chart. Bounded
+      // to top-5 × top-10 × window days (< AE's ~10k row cap; sparse in
+      // practice since rows only exist where traffic occurred).
+      topCountries.length && topFiles.length
+        ? usageQuery(
+            `SELECT toStartOfDay(timestamp) AS day, blob6 AS country, blob3 AS file, SUM(_sample_interval) AS requests, SUM(_sample_interval * double1) AS bytes ${from} AND blob6 IN (${countryIn}) AND blob3 IN (${fileIn}) GROUP BY day, country, file`,
+          )
+        : [],
+      rest.length && topFiles.length
+        ? usageQuery(
+            `SELECT toStartOfDay(timestamp) AS day, blob3 AS file, SUM(_sample_interval) AS requests, SUM(_sample_interval * double1) AS bytes ${from} AND blob6 NOT IN (${countryIn}) AND blob3 IN (${fileIn}) GROUP BY day, file`,
+          )
+        : [],
+    ]);
+
+    const countryByDay = new Map<
+      string,
+      Record<string, { requests: number; bytes: number }>
+    >();
+    for (const row of countryDayRows) {
+      const key = str(row.country);
+      const days = countryByDay.get(key) ?? {};
+      days[parseDateTime(row.day)] = {
+        requests: num(row.requests),
+        bytes: num(row.bytes),
+      };
+      countryByDay.set(key, days);
+    }
+    const fileByDay = new Map<
+      string,
+      Record<string, { requests: number; bytes: number; countries: number }>
+    >();
+    for (const row of fileDayRows) {
+      const key = str(row.file);
+      const days = fileByDay.get(key) ?? {};
+      days[parseDateTime(row.day)] = {
+        requests: num(row.requests),
+        bytes: num(row.bytes),
+        countries: num(row.countries),
+      };
+      fileByDay.set(key, days);
+    }
+    const cube = new Map<string, Record<string, SliceTotals>>();
+    for (const row of cubeRows) {
+      const key = `${str(row.file)} ${str(row.country) || "??"}`;
+      const days = cube.get(key) ?? {};
+      days[parseDateTime(row.day)] = {
+        requests: num(row.requests),
+        bytes: num(row.bytes),
+      };
+      cube.set(key, days);
+    }
+    const otherCube = new Map<string, Record<string, SliceTotals>>();
+    for (const row of otherCubeRows) {
+      const key = str(row.file);
+      const days = otherCube.get(key) ?? {};
+      days[parseDateTime(row.day)] = {
+        requests: num(row.requests),
+        bytes: num(row.bytes),
+      };
+      otherCube.set(key, days);
+    }
+    const fileByCountry = new Map<
+      string,
+      Record<string, SliceTotals & { byDay: ByDay<SliceTotals> }>
+    >();
+    for (const row of crossRows) {
+      const key = str(row.file);
+      const countries = fileByCountry.get(key) ?? {};
+      // Same code normalization as countries[].code, so lookups line up.
+      const code = str(row.country) || "??";
+      countries[code] = {
+        requests: num(row.requests),
+        bytes: num(row.bytes),
+        byDay: cube.get(`${key} ${code}`) ?? {},
+      };
+      fileByCountry.set(key, countries);
+    }
+    const fileOthers = new Map(
+      fileOtherRows.map((row) => [
+        str(row.file),
+        {
+          requests: num(row.requests),
+          bytes: num(row.bytes),
+          byDay: otherCube.get(str(row.file)) ?? {},
+        },
+      ]),
+    );
+
     return {
       countries: countryRows.slice(0, COUNTRY_LIST_LIMIT).map((row) => ({
         code: str(row.country) || "??",
         name: countryName(str(row.country)),
         requests: num(row.requests),
+        bytes: num(row.bytes),
+        byDay: countryByDay.get(str(row.country)) ?? {},
       })),
       otherCountries: rest.length
         ? {
             count: rest.length,
             requests: rest.reduce((sum, row) => sum + num(row.requests), 0),
+            bytes: rest.reduce((sum, row) => sum + num(row.bytes), 0),
+            byDay: Object.fromEntries(
+              otherDayRows.map((row) => [
+                parseDateTime(row.day),
+                { requests: num(row.requests), bytes: num(row.bytes) },
+              ]),
+            ),
           }
         : null,
       files: fileRows.map((row) => ({
         path: str(row.file),
         requests: num(row.requests),
         bytes: num(row.bytes),
+        countries: num(row.countries),
+        byDay: fileByDay.get(str(row.file)) ?? {},
+        byCountry: fileByCountry.get(str(row.file)) ?? {},
+        otherCountries: fileOthers.get(str(row.file)) ?? {
+          requests: 0,
+          bytes: 0,
+          byDay: {},
+        },
       })),
+      // Sampling makes the parts fractional estimates; clamp the remainder.
+      otherFiles: (() => {
+        const count = num(fileTotalRows[0]?.files) - fileRows.length;
+        if (count <= 0) return null;
+        return {
+          count,
+          requests: Math.max(
+            0,
+            num(fileTotalRows[0]?.requests) -
+              fileRows.reduce((sum, row) => sum + num(row.requests), 0),
+          ),
+          bytes: Math.max(
+            0,
+            num(fileTotalRows[0]?.bytes) -
+              fileRows.reduce((sum, row) => sum + num(row.bytes), 0),
+          ),
+        };
+      })(),
     };
   } catch (error) {
     LOGGER.warn("Analytics breakdown query failed", {

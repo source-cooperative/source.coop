@@ -192,20 +192,71 @@ describe("getProductBreakdowns", () => {
   it("ranks countries with an others aggregate and lists top files", async () => {
     fetchMock.mockImplementation(async (_url: string, init: { body: string }) => {
       const sql = init.body;
+      if (sql.includes("GROUP BY day, country, file")) {
+        return jsonResponse([
+          {
+            day: "2026-07-27 00:00:00",
+            country: "US",
+            file: "a.tif",
+            requests: 12,
+            bytes: 150,
+          },
+        ]);
+      }
+      if (sql.includes("NOT IN") && sql.includes("GROUP BY day, file")) {
+        return jsonResponse([
+          { day: "2026-07-27 00:00:00", file: "b.json", requests: 2, bytes: 20 },
+        ]);
+      }
+      if (sql.includes("GROUP BY day, country")) {
+        return jsonResponse([
+          { day: "2026-07-27 00:00:00", country: "US", requests: 60, bytes: 600 },
+          { day: "2026-07-26 00:00:00", country: "US", requests: "40", bytes: 300 },
+          { day: "2026-07-27 00:00:00", country: "DE", requests: 50, bytes: 200 },
+        ]);
+      }
+      if (sql.includes("GROUP BY day, file")) {
+        return jsonResponse([
+          {
+            day: "2026-07-27 00:00:00",
+            file: "a.tif",
+            requests: 25,
+            bytes: 400,
+            countries: 2,
+          },
+        ]);
+      }
+      if (sql.includes("GROUP BY country, file")) {
+        return jsonResponse([
+          { country: "US", file: "a.tif", requests: 20, bytes: 300 },
+          { country: "DE", file: "a.tif", requests: 5, bytes: 100 },
+        ]);
+      }
+      if (sql.includes("NOT IN") && sql.includes("GROUP BY file")) {
+        return jsonResponse([{ file: "b.json", requests: 4, bytes: 50 }]);
+      }
+      if (sql.includes("NOT IN")) {
+        return jsonResponse([
+          { day: "2026-07-27 00:00:00", requests: 15, bytes: 70 },
+        ]);
+      }
+      if (sql.includes("COUNT(DISTINCT blob3)")) {
+        return jsonResponse([{ files: 12, requests: 500, bytes: 5000 }]);
+      }
       if (sql.includes("GROUP BY country")) {
         return jsonResponse([
-          { country: "US", requests: 100 },
-          { country: "DE", requests: 50 },
-          { country: "BR", requests: 40 },
-          { country: "GB", requests: 30 },
-          { country: "IN", requests: "20" },
-          { country: "FR", requests: 10 },
-          { country: "", requests: 5 },
+          { country: "US", requests: 100, bytes: 900 },
+          { country: "DE", requests: 50, bytes: 500 },
+          { country: "BR", requests: 40, bytes: 400 },
+          { country: "GB", requests: 30, bytes: 300 },
+          { country: "IN", requests: "20", bytes: "200" },
+          { country: "FR", requests: 10, bytes: 100 },
+          { country: "", requests: 5, bytes: 40 },
         ]);
       }
       return jsonResponse([
-        { file: "a.tif", requests: 60, bytes: 1000 },
-        { file: "b.json", requests: "40", bytes: "500" },
+        { file: "a.tif", requests: 60, bytes: 1000, countries: 3 },
+        { file: "b.json", requests: "40", bytes: "500", countries: "2" },
       ]);
     });
 
@@ -216,12 +267,77 @@ describe("getProductBreakdowns", () => {
       code: "US",
       name: "United States",
       requests: 100,
+      bytes: 900,
+      byDay: {
+        "2026-07-27T00:00:00.000Z": { requests: 60, bytes: 600 },
+        "2026-07-26T00:00:00.000Z": { requests: 40, bytes: 300 },
+      },
     });
-    expect(breakdowns!.otherCountries).toEqual({ count: 2, requests: 15 });
+    expect(breakdowns!.otherCountries).toEqual({
+      count: 2,
+      requests: 15,
+      bytes: 140,
+      byDay: { "2026-07-27T00:00:00.000Z": { requests: 15, bytes: 70 } },
+    });
     expect(breakdowns!.files).toEqual([
-      { path: "a.tif", requests: 60, bytes: 1000 },
-      { path: "b.json", requests: 40, bytes: 500 },
+      {
+        path: "a.tif",
+        requests: 60,
+        bytes: 1000,
+        countries: 3,
+        byDay: {
+          "2026-07-27T00:00:00.000Z": { requests: 25, bytes: 400, countries: 2 },
+        },
+        byCountry: {
+          US: {
+            requests: 20,
+            bytes: 300,
+            byDay: {
+              "2026-07-27T00:00:00.000Z": { requests: 12, bytes: 150 },
+            },
+          },
+          DE: { requests: 5, bytes: 100, byDay: {} },
+        },
+        otherCountries: { requests: 0, bytes: 0, byDay: {} },
+      },
+      {
+        path: "b.json",
+        requests: 40,
+        bytes: 500,
+        countries: 2,
+        byDay: {},
+        byCountry: {},
+        otherCountries: {
+          requests: 4,
+          bytes: 50,
+          byDay: { "2026-07-27T00:00:00.000Z": { requests: 2, bytes: 20 } },
+        },
+      },
     ]);
+    // Remainder reconciles the table to the file-traffic total: 12 distinct
+    // files less the 2 listed; 500-100 requests; 5000-1500 bytes.
+    expect(breakdowns!.otherFiles).toEqual({
+      count: 10,
+      requests: 400,
+      bytes: 3500,
+    });
+
+    // Per-day wave is scoped to the window's top entries, escaped and quoted.
+    const dayCountrySql = sentSql().find((sql) =>
+      sql.includes("GROUP BY day, country"),
+    );
+    expect(dayCountrySql).toContain("blob6 IN ('US', 'DE', 'BR', 'GB', 'IN')");
+    const othersSql = sentSql().find((sql) => sql.includes("NOT IN"));
+    expect(othersSql).toContain("blob6 NOT IN ('US', 'DE', 'BR', 'GB', 'IN')");
+    const dayFileSql = sentSql().find((sql) =>
+      sql.includes("GROUP BY day, file"),
+    );
+    expect(dayFileSql).toContain("blob3 IN ('a.tif', 'b.json')");
+    const crossSql = sentSql().find((sql) =>
+      sql.includes("GROUP BY country, file"),
+    );
+    expect(crossSql).toContain("blob6 IN ('US', 'DE', 'BR', 'GB', 'IN')");
+    expect(crossSql).toContain("blob3 IN ('a.tif', 'b.json')");
 
     const fileSql = sentSql().find((sql) => sql.includes("GROUP BY file"));
     expect(fileSql).toContain("ORDER BY requests DESC");

@@ -105,13 +105,16 @@ export function Stat({
 export function HoverCaption({
   days,
   hovered,
+  filterLabel,
 }: {
   days: UsagePoint[];
   hovered: number | null;
+  /** Transient hover preview (hovered country/file name) */
+  filterLabel?: string | null;
 }) {
   return (
     <Flex align="center" gap="2" mb="2">
-      {hovered !== null && (
+      {(hovered !== null || filterLabel) && (
         <Box
           width="8px"
           height="8px"
@@ -119,9 +122,9 @@ export function HoverCaption({
         />
       )}
       <MonoLabel help={HELP.window}>
-        {hovered === null
-          ? `${days.length}-day downloads`
-          : formatDateSSR(days[hovered].date)}
+        {hovered !== null
+          ? formatDateSSR(days[hovered].date)
+          : (filterLabel ?? `${days.length}-day downloads`)}
       </MonoLabel>
     </Flex>
   );
@@ -132,11 +135,14 @@ export function DownloadsChart({
   days,
   hovered,
   onHover,
+  onSelect,
   height,
 }: {
   days: UsagePoint[];
   hovered: number | null;
   onHover: (index: number | null) => void;
+  /** Bar click, for pinning a day */
+  onSelect?: (index: number | null) => void;
   height: number;
 }) {
   return (
@@ -163,6 +169,11 @@ export function DownloadsChart({
           accessibilityLayer={false}
           onMouseMove={(state) =>
             onHover(parseActiveIndex(state?.activeTooltipIndex, days.length))
+          }
+          onClick={
+            onSelect &&
+            ((state) =>
+              onSelect(parseActiveIndex(state?.activeTooltipIndex, days.length)))
           }
         >
           <XAxis dataKey="date" hide />
