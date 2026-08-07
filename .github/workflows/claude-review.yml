@@ -1,0 +1,29 @@
+name: Claude Auto Review
+
+# Thin caller for the org-wide review workflow in source-cooperative/.github.
+# Only the trigger, permissions, and the token live here; the prompt, plugins,
+# concurrency, and action version are shared. See that repo's README.
+on:
+  pull_request:
+    # No ready_for_review: drafts are already reviewed on opened/synchronize, so
+    # flipping to ready re-runs the same review against an unchanged diff.
+    types: [opened, synchronize, reopened]
+    # Skip when a PR touches workflow files: the action can't validate/run
+    # against modified workflows and fails with "401 Unauthorized - Workflow
+    # validation failed".
+    paths-ignore:
+      - '.github/workflows/**'
+
+jobs:
+  review:
+    uses: source-cooperative/.github/.github/workflows/claude-pr-review.yml@main
+    # Granted here because a called workflow can only maintain or reduce the
+    # caller's token permissions, never elevate them.
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write
+    # Mapped explicitly rather than `secrets: inherit` so the review job gets
+    # only this token, not every secret this repo holds.
+    secrets:
+      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
