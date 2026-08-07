@@ -49,126 +49,133 @@ export default async function Landing() {
       <Box className={styles.landing} px={{ sm: "6", lg: "9" }}>
         <Box className={styles.landingInner} mx="auto" maxWidth="1400px">
           <Navigation />
-          <Section className={styles.heroSection} px="4">
-            <Container>
-              <Flex align="center" gap="4">
-                <Flex
-                  direction="column"
-                  gap="4"
-                  className={styles.heroContent}
-                  minWidth={{ sm: "60ch" }}
-                >
-                  <Heading size={{ initial: "8", xs: "9" }} my="5">
-                    The Cooperative Data Publishing Utility
-                  </Heading>
-                  <Text size={{ xs: "5", sm: "6" }} weight="bold">
-                    Data publishing at any scale for everyone.
-                  </Text>
-                  <Text size={{ xs: "5", sm: "6" }}>
-                    Upload, share, and access data without needing to build or
-                    maintain your own infrastructure.
-                  </Text>
+          {/* ponytail: main starts after Navigation rather than wrapping the
+              whole page — Landing.module.css pins the nav background with
+              `.landingInner > nav`, so the nav has to stay a direct child. */}
+          <main>
+            <Section className={styles.heroSection} px="4">
+              <Container>
+                <Flex align="center" gap="4">
                   <Flex
+                    direction="column"
                     gap="4"
-                    align={{ initial: "stretch", xs: "start" }}
-                    direction={{ initial: "column", sm: "row" }}
+                    className={styles.heroContent}
+                    minWidth={{ sm: "60ch" }}
                   >
-                    <Link href="https://docs.source.coop">
-                      <Button
-                        size="3"
-                        className={styles.subheading}
-                        variant="outline"
-                        highContrast
-                      >
-                        Read the docs &rarr;
-                      </Button>
-                    </Link>
-                    <Link href={productListUrl()}>
-                      <Button
-                        size="3"
-                        className={styles.subheading}
-                        variant="solid"
-                        highContrast
-                      >
-                        Explore Data Products &rarr;
-                      </Button>
-                    </Link>
+                    <Heading size={{ initial: "8", xs: "9" }} my="5">
+                      The Cooperative Data Publishing Utility
+                    </Heading>
+                    <Text size={{ xs: "5", sm: "6" }} weight="bold">
+                      Data publishing at any scale for everyone.
+                    </Text>
+                    <Text size={{ xs: "5", sm: "6" }}>
+                      Upload, share, and access data without needing to build or
+                      maintain your own infrastructure.
+                    </Text>
+                    <Flex
+                      gap="4"
+                      align={{ initial: "stretch", xs: "start" }}
+                      direction={{ initial: "column", sm: "row" }}
+                    >
+                      <Link href="https://docs.source.coop">
+                        <Button
+                          size="3"
+                          className={styles.subheading}
+                          variant="outline"
+                          highContrast
+                        >
+                          Read the docs &rarr;
+                        </Button>
+                      </Link>
+                      <Link href={productListUrl()}>
+                        <Button
+                          size="3"
+                          className={styles.subheading}
+                          variant="solid"
+                          highContrast
+                        >
+                          Explore Data Products &rarr;
+                        </Button>
+                      </Link>
+                    </Flex>
+                  </Flex>
+                  <Flex
+                    display={{ initial: "none", sm: "flex" }}
+                    className={styles.heroImageContainer}
+                    flexShrink="0"
+                    style={{ flexBasis: "600px" }}
+                  >
+                    <HeroGlobe wsUrl={CONFIG.locationWs.url || ""} />
                   </Flex>
                 </Flex>
+              </Container>
+            </Section>
+            <Section className={styles.productsSection} px="4">
+              <Container>
+                <SectionSubheading>Explore Source Datasets</SectionSubheading>
+                <Heading size="8" mb="6">
+                  Featured Products
+                </Heading>
+                <ProductsList products={products} grid />
+              </Container>
+            </Section>
+            <Section px="4">
+              <Container>
+                <SectionSubheading>
+                  What is Source Cooperative?
+                </SectionSubheading>
                 <Flex
-                  display={{ initial: "none", sm: "flex" }}
-                  className={styles.heroImageContainer}
-                  flexShrink="0"
-                  style={{ flexBasis: "600px" }}
+                  direction={{ initial: "column", sm: "row" }}
+                  align="start"
+                  gap="8"
                 >
-                  <HeroGlobe wsUrl={CONFIG.locationWs.url || ""} />
+                  <Box flexBasis="50%">
+                    <Heading size="8" mb="6">
+                      The Challenge
+                    </Heading>
+                    <Text>
+                      Scientific data infrastructure wasn&apos;t built for
+                      cross-border, cross-sector cooperation.
+                      <br />
+                      <br />
+                      Addressing global challenges means combining data from
+                      governments, research institutions, commercial providers,
+                      and civil society—each with its own formats, access
+                      patterns, and APIs.
+                      <br />
+                      <br />
+                      Data engineers, scientists, and researchers spend more
+                      time wrangling infrastructure than doing their actual
+                      work, hampering collaboration and limiting informed
+                      decision making.
+                    </Text>
+                  </Box>
+                  <Box flexBasis="50%">
+                    <Heading size="8" mb="6">
+                      Our Solution
+                    </Heading>
+                    <Text>
+                      Source is a nonprofit data publishing utility built on
+                      commodity cloud object storage. Researchers publish data
+                      at any scale without running servers, building portals, or
+                      writing APIs.
+                      <br />
+                      <br />
+                      Source handles cloud infrastructure so researchers can
+                      focus on their data, not their hosting. Users access
+                      everything through standard URLs that work with existing
+                      tools—no custom portals, no proprietary APIs.
+                      <br />
+                      <br />
+                      The service is intentionally commoditized: built to resist
+                      lock-in and designed so that no single provider, funder,
+                      or political decision can make research data disappear.
+                    </Text>
+                  </Box>
                 </Flex>
-              </Flex>
-            </Container>
-          </Section>
-          <Section className={styles.productsSection} px="4">
-            <Container>
-              <SectionSubheading>Explore Source Datasets</SectionSubheading>
-              <Heading size="8" mb="6">
-                Featured Products
-              </Heading>
-              <ProductsList products={products} grid />
-            </Container>
-          </Section>
-          <Section px="4">
-            <Container>
-              <SectionSubheading>What is Source Cooperative?</SectionSubheading>
-              <Flex
-                direction={{ initial: "column", sm: "row" }}
-                align="start"
-                gap="8"
-              >
-                <Box flexBasis="50%">
-                  <Heading size="8" mb="6">
-                    The Challenge
-                  </Heading>
-                  <Text>
-                    Scientific data infrastructure wasn&apos;t built for
-                    cross-border, cross-sector cooperation.
-                    <br />
-                    <br />
-                    Addressing global challenges means combining data from
-                    governments, research institutions, commercial providers,
-                    and civil society—each with its own formats, access
-                    patterns, and APIs.
-                    <br />
-                    <br />
-                    Data engineers, scientists, and researchers spend more time
-                    wrangling infrastructure than doing their actual work,
-                    hampering collaboration and limiting informed decision
-                    making.
-                  </Text>
-                </Box>
-                <Box flexBasis="50%">
-                  <Heading size="8" mb="6">
-                    Our Solution
-                  </Heading>
-                  <Text>
-                    Source is a nonprofit data publishing utility built on
-                    commodity cloud object storage. Researchers publish data at
-                    any scale without running servers, building portals, or
-                    writing APIs.
-                    <br />
-                    <br />
-                    Source handles cloud infrastructure so researchers can focus
-                    on their data, not their hosting. Users access everything
-                    through standard URLs that work with existing tools—no
-                    custom portals, no proprietary APIs.
-                    <br />
-                    <br />
-                    The service is intentionally commoditized: built to resist
-                    lock-in and designed so that no single provider, funder, or
-                    political decision can make research data disappear.
-                  </Text>
-                </Box>
-              </Flex>
-            </Container>
-          </Section>
+              </Container>
+            </Section>
+          </main>
         </Box>
       </Box>
       <ThemeInverseComponent>
@@ -311,9 +318,9 @@ export default async function Landing() {
                 </Box>
                 <Box flexGrow="1">
                   <Text size="5" mb="4" as="div">
-                    Source Cooperative supports your data lifecycle, from prototyping
-                    to public release, without navigating corporate cloud
-                    policies.
+                    Source Cooperative supports your data lifecycle, from
+                    prototyping to public release, without navigating corporate
+                    cloud policies.
                   </Text>
                   <Link href={productListUrl()}>
                     <Button className={styles.subheading} highContrast>
