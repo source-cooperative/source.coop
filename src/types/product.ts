@@ -1,6 +1,7 @@
 import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
 import { z } from "zod";
 import { AccountSchema } from "@/types/account";
+import { ID_REGEX, MAX_ID_LENGTH, MIN_ID_LENGTH } from "@/types/shared";
 
 extendZodWithOpenApi(z);
 
@@ -23,6 +24,17 @@ export type ProductMirror = z.infer<typeof ProductMirrorSchema>;
 // when rendering links and schema.org identifiers. Pattern from Crossref:
 // https://www.crossref.org/blog/dois-and-matching-regular-expressions/
 const DOI_REGEX = /^10\.\d{4,9}\/[-._;()/:A-Za-z0-9]+$/;
+
+export const ProductIdSchema = z
+  .string()
+  .min(MIN_ID_LENGTH, `Product ID must be at least ${MIN_ID_LENGTH} characters`)
+  .max(MAX_ID_LENGTH, `Product ID must not exceed ${MAX_ID_LENGTH} characters`)
+  .toLowerCase()
+  .regex(
+    ID_REGEX,
+    "Product ID may only contain lowercase letters, numbers and hyphens, and may not begin or end with a hyphen OR contain consecutive hyphens"
+  )
+  .openapi({ example: "product-id" });
 
 export const DoiSchema = z
   .string()
@@ -53,7 +65,12 @@ export const ProductVisibilitySchema = z.nativeEnum(ProductVisibility).openapi("
 // Product is the main product entity, including metadata and optional account
 export const ProductSchema = z
   .object({
-    product_id: z.string(), // Partition Key
+    // Partition Key. Same slug rules as account_id (see BaseAccountSchema), so
+    // `${account_id}/${product_id}` stays a stable, case-insensitive URL path:
+    // DynamoDB keys are case-sensitive, so an uppercase id would only ever be
+    // reachable at its exact spelling. The product form's client-side check
+    // (useProductIdValidation) is UX only — this is the enforcing one.
+    product_id: ProductIdSchema,
     account_id: z.string(), // Sort Key
     title: z.string(),
     description: z.string(),

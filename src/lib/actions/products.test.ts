@@ -151,6 +151,47 @@ describe("createProduct", () => {
     expect(productsTable.create).not.toHaveBeenCalled();
   });
 
+  // The product form blocks non-slug ids client-side, but a server action is
+  // just an HTTP endpoint — these cover a caller posting to it directly.
+  test("lowercases a capitalized product ID", async () => {
+    (dataConnectionsTable.fetchById as jest.Mock).mockResolvedValue(
+      connection({
+        prefix_template:
+          "{{repository.account_id}}/{{repository.repository_id}}/",
+      })
+    );
+
+    const result = await createProduct(
+      undefined,
+      buildFormData({ product_id: "MyProduct" })
+    );
+
+    expect(result.success).toBe(true);
+    const created = (productsTable.create as jest.Mock).mock.calls[0][0];
+    expect(created.product_id).toBe("myproduct");
+    // The mirror prefix is derived from the same normalized id.
+    expect(created.metadata.mirrors["conn-x"].prefix).toBe("alice/myproduct/");
+  });
+
+  test.each([
+    ["a space", "my product"],
+    ["an underscore", "my_product"],
+    ["a slash", "my/product"],
+    ["a leading hyphen", "-my-product"],
+    ["consecutive hyphens", "my--product"],
+    ["too few characters", "ab"],
+    ["too many characters", "a".repeat(41)],
+  ])("rejects a product ID with %s", async (_label, productId) => {
+    const result = await createProduct(
+      undefined,
+      buildFormData({ product_id: productId })
+    );
+
+    expect(result.success).toBe(false);
+    expect(result.fieldErrors.product_id).toBeDefined();
+    expect(productsTable.create).not.toHaveBeenCalled();
+  });
+
   test("rejects unauthorized creation before any data connection lookup", async () => {
     (isAuthorized as jest.Mock).mockImplementation(
       (_session, _resource, action) => action !== Actions.CreateRepository
