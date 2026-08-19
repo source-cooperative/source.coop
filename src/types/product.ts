@@ -1,6 +1,7 @@
 import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
 import { z } from "zod";
 import { AccountSchema } from "@/types/account";
+import { MIN_ID_LENGTH, MAX_ID_LENGTH, ID_REGEX } from "@/types/shared";
 
 extendZodWithOpenApi(z);
 
@@ -53,7 +54,15 @@ export const ProductVisibilitySchema = z.nativeEnum(ProductVisibility).openapi("
 // Product is the main product entity, including metadata and optional account
 export const ProductSchema = z
   .object({
-    product_id: z.string(), // Partition Key
+    product_id: z
+      .string()
+      .min(MIN_ID_LENGTH, `Product ID must be at least ${MIN_ID_LENGTH} characters`)
+      .max(MAX_ID_LENGTH, `Product ID must not exceed ${MAX_ID_LENGTH} characters`)
+      .toLowerCase()
+      .regex(
+        ID_REGEX,
+        "Product ID may not begin or end with a hyphen OR contain consecutive hyphens"
+      ), // Partition Key
     account_id: z.string(), // Sort Key
     title: z.string(),
     description: z.string(),
