@@ -255,7 +255,7 @@ export function AdminBreakdownChart({
           />
           <Stat
             label="Unique IPs"
-            help={HELP.uniqueIps}
+            help={HELP.uniqueIpsSampled}
             value={plain.format(totals.uniqueIps)}
             divider
           />

@@ -12,9 +12,15 @@ export const HELP = {
   requests: "Successful data requests (GET, status 200/206).",
   countries: "Distinct countries requests originated from.",
   dailyAvg: "Average downloads per day over the period.",
-  uniqueIps: "Distinct IP addresses that downloaded data in this period.",
-  registered: "Distinct signed-in users who downloaded data in this period.",
-  anon: "Download requests made without a signed-in user.",
+  uniqueIps:
+    "Distinct IP addresses that downloaded data in this period. A lower bound — Analytics Engine samples very high-volume traffic before we see it.",
+  // The admin explorer usually scans every index value at once, which is the
+  // worst case for Analytics Engine's resolution picker — so unlike the
+  // per-product stat, this one is not sliced back to full resolution.
+  uniqueIpsSampled:
+    "Distinct IP hashes surviving Analytics Engine sampling — a lower bound that shrinks as the range widens.",
+  registered: "Downloads by signed-in users.",
+  anon: "Downloads with no signed-in user.",
   distribution:
     "Unique IP addresses per download-count band; the line accumulates IPs with that many downloads or fewer, toward 100%. Band edges are log-spaced — the tail spans orders of magnitude.",
 };
