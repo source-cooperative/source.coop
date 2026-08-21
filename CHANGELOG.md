@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.5.1](https://github.com/source-cooperative/source.coop/compare/v1.5.0...v1.5.1) (2026-08-21)
+
+
+### Bug Fixes
+
+* **accounts:** make account creation a conditional write ([#492](https://github.com/source-cooperative/source.coop/issues/492)) ([0043ada](https://github.com/source-cooperative/source.coop/commit/0043ada5b2c100a8d4c94e7a835bf3378c04466a))
+* **products:** enforce lowercase-only product IDs ([#489](https://github.com/source-cooperative/source.coop/issues/489)) ([c1df4a8](https://github.com/source-cooperative/source.coop/commit/c1df4a8018548c54f9550e066d0abc0c84bc49b3))
+
 ## [1.5.0](https://github.com/source-cooperative/source.coop/compare/v1.4.3...v1.5.0) (2026-08-04)
 
 
