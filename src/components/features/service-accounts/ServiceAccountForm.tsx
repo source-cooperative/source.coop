@@ -2,7 +2,6 @@
 
 import React, { useState } from "react";
 import {
-  Badge,
   Box,
   Button,
   Callout,
@@ -10,10 +9,8 @@ import {
   Checkbox,
   Code,
   Flex,
-  Heading,
   Radio,
   Separator,
-  Table,
   Text,
 } from "@radix-ui/themes";
 import { InfoCircledIcon, TrashIcon, PlusIcon } from "@radix-ui/react-icons";
@@ -21,14 +18,27 @@ import { formFieldStyle as fieldStyle } from "@/components/core/DynamicForm";
 import {
   planChanges,
   validate,
+  sanitizeName,
+  serviceAccountId,
   ROLES,
   ROLES_ORDER,
-  SERVICE_ID_PREFIX,
   type Plan,
   type RoleId,
   type ServiceAccountFormValues,
   type SignInMethod,
 } from "./plan";
+import { ServiceAccountDetail } from "./ServiceAccountDetail";
+
+/** Mock key, formatted like the real one would be. Never leaves the browser. */
+function mockApiKey(): string {
+  const bytes = new Uint8Array(24);
+  crypto.getRandomValues(bytes);
+  const body = Array.from(bytes)
+    .map((b) => b.toString(36).padStart(2, "0"))
+    .join("")
+    .slice(0, 32);
+  return `sc_sa_${body}`;
+}
 
 interface Props {
   ownerAccountId: string;
@@ -80,6 +90,10 @@ export function ServiceAccountForm({
   ]);
 
   const [plan, setPlan] = useState<Plan | null>(null);
+  const [submitted, setSubmitted] = useState<ServiceAccountFormValues | null>(
+    null
+  );
+  const [issuedKey, setIssuedKey] = useState<string | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
 
   const values: ServiceAccountFormValues = {
@@ -98,7 +112,20 @@ export function ServiceAccountForm({
     event.preventDefault();
     const found = validate(values);
     setErrors(found);
-    setPlan(found.length ? null : planChanges(values));
+    if (found.length) {
+      setPlan(null);
+      return;
+    }
+    // A key is only shown once, so it is minted at "create" time, not on
+    // every render of the detail view.
+    setIssuedKey(
+      values.signInMethods.some((m) => m.kind === "api_key")
+        ? mockApiKey()
+        : null
+    );
+    setSubmitted(values);
+    setPlan(planChanges(values));
+    window.scrollTo({ top: 0 });
   }
 
   function updateMethod(index: number, next: SignInMethod) {
@@ -124,6 +151,21 @@ export function ServiceAccountForm({
     });
   }
 
+  if (plan && submitted) {
+    return (
+      <ServiceAccountDetail
+        plan={plan}
+        values={submitted}
+        issuedKey={issuedKey}
+        onEdit={() => {
+          // Rehydration is free: the form state was never cleared.
+          setPlan(null);
+          setSubmitted(null);
+        }}
+      />
+    );
+  }
+
   return (
     <Flex direction="column" gap="5">
       <Callout.Root color="amber">
@@ -143,13 +185,16 @@ export function ServiceAccountForm({
             label="Name"
             description={
               <>
-                Stored as{" "}
-                <Code>
-                  {SERVICE_ID_PREFIX}
-                  {name || "<name>"}
-                </Code>
-                . Service accounts use a reserved prefix so they can never
-                collide with a person&rsquo;s account name.
+                Anything readable — the id is derived from it. Service accounts
+                use a reserved <Code>svc--</Code> prefix, which no human account
+                name can contain, so the two can never collide.
+                {sanitizeName(name) && (
+                  <>
+                    {" "}
+                    This one would be stored as{" "}
+                    <Code>{serviceAccountId(name)}</Code>.
+                  </>
+                )}
               </>
             }
           >
@@ -157,7 +202,7 @@ export function ServiceAccountForm({
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="nightly-sync"
+              placeholder="Nightly Sync"
               style={fieldStyle}
             />
           </Field>
@@ -283,11 +328,18 @@ export function ServiceAccountForm({
                           Expires after
                         </Text>
                         <select
-                          value={method.expiresInDays}
+                          value={
+                            method.expiresInDays === null
+                              ? "never"
+                              : method.expiresInDays
+                          }
                           onChange={(e) =>
                             updateMethod(index, {
                               kind: "api_key",
-                              expiresInDays: Number(e.target.value),
+                              expiresInDays:
+                                e.target.value === "never"
+                                  ? null
+                                  : Number(e.target.value),
                             })
                           }
                           style={{ ...fieldStyle, maxWidth: 220 }}
@@ -295,10 +347,13 @@ export function ServiceAccountForm({
                           <option value={30}>30 days</option>
                           <option value={90}>90 days</option>
                           <option value={365}>365 days</option>
+                          <option value="never">Never expires</option>
                         </select>
                         <Text size="1" color="gray">
-                          Keys always expire. The secret is shown once when the
-                          account is created and never stored in readable form.
+                          The secret is shown once when the account is created
+                          and never stored in readable form.
+                          {method.expiresInDays === null &&
+                            " A key with no expiry can only be withdrawn by revoking it."}
                         </Text>
                       </Flex>
                     )}
@@ -494,116 +549,6 @@ export function ServiceAccountForm({
         </Flex>
       </form>
 
-      {plan && <PlanPreview plan={plan} />}
     </Flex>
-  );
-}
-
-function PlanPreview({ plan }: { plan: Plan }) {
-  return (
-    <Box mt="4">
-      <Separator size="4" mb="4" />
-      <Heading size="5" mb="1">
-        What this would create
-      </Heading>
-      <Text size="2" color="gray">
-        Creating <Code>{plan.serviceAccountId}</Code> would write these rows.
-      </Text>
-
-      <Flex direction="column" gap="4" mt="4">
-        {plan.tables.map((table) => (
-          <Card key={table.table}>
-            <Flex align="center" gap="2" mb="1">
-              <Heading size="3">
-                <Code>{table.table}</Code>
-              </Heading>
-              <Badge color={table.status === "new table" ? "orange" : "gray"}>
-                {table.status}
-              </Badge>
-              <Text size="1" color="gray">
-                {table.purpose}
-              </Text>
-            </Flex>
-
-            {table.rows.length === 0 ? (
-              <Text size="2" color="gray">
-                No rows.
-              </Text>
-            ) : (
-              <Flex direction="column" gap="3" mt="2">
-                {table.rows.map((row, index) => (
-                  <Box key={index}>
-                    <Table.Root size="1" variant="surface">
-                      <Table.Body>
-                        {Object.entries(row.fields).map(([key, value]) => (
-                          <Table.Row key={key}>
-                            <Table.RowHeaderCell
-                              style={{ width: "40%", whiteSpace: "nowrap" }}
-                            >
-                              <Text size="1" color="gray">
-                                {key}
-                              </Text>
-                            </Table.RowHeaderCell>
-                            <Table.Cell>
-                              <Code size="1">{value}</Code>
-                            </Table.Cell>
-                          </Table.Row>
-                        ))}
-                      </Table.Body>
-                    </Table.Root>
-                    {row.note && (
-                      <Text size="1" color="gray" as="p" mt="1">
-                        {row.note}
-                      </Text>
-                    )}
-                  </Box>
-                ))}
-              </Flex>
-            )}
-          </Card>
-        ))}
-
-        <Card>
-          <Heading size="3" mb="2">
-            How the software would be configured
-          </Heading>
-          <Flex direction="column" gap="3">
-            {plan.workloadConfig.map((block) => (
-              <Box key={block.title}>
-                <Text size="2" weight="medium">
-                  {block.title}
-                </Text>
-                <Box
-                  mt="1"
-                  p="3"
-                  style={{
-                    background: "var(--gray-3)",
-                    border: "1px solid var(--gray-6)",
-                    overflowX: "auto",
-                  }}
-                >
-                  <pre style={{ margin: 0 }}>
-                    <Code size="1">{block.lines.join("\n")}</Code>
-                  </pre>
-                </Box>
-              </Box>
-            ))}
-          </Flex>
-        </Card>
-
-        <Callout.Root color="gray">
-          <Callout.Icon>
-            <InfoCircledIcon />
-          </Callout.Icon>
-          <Callout.Text>
-            <Flex direction="column" gap="1">
-              {plan.caveats.map((caveat) => (
-                <span key={caveat}>{caveat}</span>
-              ))}
-            </Flex>
-          </Callout.Text>
-        </Callout.Root>
-      </Flex>
-    </Box>
   );
 }

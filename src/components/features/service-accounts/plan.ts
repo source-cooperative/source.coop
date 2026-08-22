@@ -30,7 +30,7 @@ export const ROLES_ORDER: RoleId[] = ["full_access", "read_only"];
 
 export type SignInMethod =
   | { kind: "github"; repository: string; ref: string }
-  | { kind: "api_key"; expiresInDays: number };
+  | { kind: "api_key"; expiresInDays: number | null };
 
 export type ProductGrant = { product_id: string; permission: "read" | "write" };
 
@@ -64,7 +64,7 @@ export interface Plan {
   serviceAccountId: string;
   tables: PlannedTable[];
   /** Environment variables the workload would use, per sign-in method. */
-  workloadConfig: { title: string; lines: string[] }[];
+  workloadConfig: { title: string; language: string; lines: string[] }[];
   /** Things the mock deliberately does not do. */
   caveats: string[];
 }
@@ -75,8 +75,21 @@ export interface Plan {
  */
 export const SERVICE_ID_PREFIX = "svc--";
 
+/**
+ * Derive the stored id from the name a human typed. `ID_REGEX` allows only
+ * lowercase alphanumerics and single hyphens, so anything else collapses to a
+ * hyphen and the result is trimmed of leading/trailing ones.
+ */
+export function sanitizeName(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
 export function serviceAccountId(name: string): string {
-  return `${SERVICE_ID_PREFIX}${name}`;
+  return `${SERVICE_ID_PREFIX}${sanitizeName(name)}`;
 }
 
 /** GitHub's `sub` claim for a workflow running on a branch ref. */
@@ -90,11 +103,12 @@ export const SOURCE_ISSUER = "https://auth.source.coop";
 export function validate(values: ServiceAccountFormValues): string[] {
   const errors: string[] = [];
 
+  const derived = sanitizeName(values.name);
   if (!values.name.trim()) {
     errors.push("Give the service account a name.");
-  } else if (!/^[a-z0-9](?:(?!--)[a-z0-9-])*[a-z0-9]$/.test(values.name)) {
+  } else if (!derived) {
     errors.push(
-      "Name must be lowercase letters, numbers and single hyphens — no double hyphens, and it can't start or end with one."
+      "That name has no letters or numbers in it, so there's nothing to build an id from."
     );
   }
 
@@ -154,7 +168,10 @@ export function planChanges(values: ServiceAccountFormValues): Plan {
             service_account_id: id,
             issuer: SOURCE_ISSUER,
             subject: "talos:<actor_id assigned when the key is issued>",
-            key_expires_at: `+${method.expiresInDays} days`,
+            key_expires_at:
+              method.expiresInDays === null
+                ? "never"
+                : `+${method.expiresInDays} days`,
           },
           note: "The key itself is stored hashed by the key service and shown to you once.",
         }
@@ -188,26 +205,49 @@ export function planChanges(values: ServiceAccountFormValues): Plan {
     ? "arn:aws:iam::000000000000:role/full-access"
     : "arn:aws:iam::000000000000:role/read-only";
 
+  const bucketExample =
+    values.accessScope === "all"
+      ? `${values.ownerAccountId}:<product>`
+      : `${values.ownerAccountId}:${values.productGrants[0]?.product_id ?? "<product>"}`;
+
   const workloadConfig = values.signInMethods.map((method) =>
     method.kind === "github"
       ? {
           title: `GitHub Actions — ${method.repository} @ ${method.ref}`,
+          language: "yaml",
           lines: [
             "permissions:",
             "  id-token: write",
+            "  contents: read",
+            "",
             "env:",
-            `  AWS_ROLE_ARN: ${roleArn}`,
-            "  AWS_WEB_IDENTITY_TOKEN_FILE: ${{ runner.temp }}/token",
             "  AWS_ENDPOINT_URL_STS: https://data.source.coop/.sts",
+            "",
+            "steps:",
+            "  - uses: aws-actions/configure-aws-credentials@v4",
+            "    with:",
+            `      role-to-assume: ${roleArn}`,
+            "      aws-region: us-west-2",
+            "      audience: source-cooperative",
+            "",
+            "  - name: Publish",
+            `    run: aws s3 sync ./out s3://${bucketExample}/ \\`,
+            "      --endpoint-url https://data.source.coop",
           ],
         }
       : {
           title: "API key, refreshed by the Source CLI",
+          language: "bash",
           lines: [
-            "source-coop login --service-account   # writes and refreshes the token file",
+            "# The CLI keeps the token file fresh; the AWS SDK does the rest.",
+            "source-coop login --service-account",
+            "",
             `export AWS_ROLE_ARN=${roleArn}`,
             "export AWS_WEB_IDENTITY_TOKEN_FILE=~/.source/token",
             "export AWS_ENDPOINT_URL_STS=https://data.source.coop/.sts",
+            "",
+            `aws s3 sync ./out s3://${bucketExample}/ \\`,
+            "  --endpoint-url https://data.source.coop",
           ],
         }
   );
@@ -217,7 +257,14 @@ export function planChanges(values: ServiceAccountFormValues): Plan {
     "`identity_bindings` does not exist yet, and `accounts` has no `service` type or `owner_account_id` column.",
     "Roles only ever subtract. A role can never turn a read grant into a write grant.",
     "Revoking a grant stops new access in about a minute; credentials already issued last up to an hour.",
+    "aws-actions/configure-aws-credentials also calls GetCallerIdentity, which /.sts does not implement yet — tracked as its own item in #491.",
   ];
+
+  if (values.signInMethods.some((m) => m.kind === "api_key" && m.expiresInDays === null)) {
+    caveats.push(
+      "A key with no expiry is only as revocable as the revoke button — #491 currently proposes that every key must expire, so this option is a deliberate departure worth deciding on."
+    );
+  }
 
   if (values.allowedRoles.length === ROLES_ORDER.length) {
     caveats.push(

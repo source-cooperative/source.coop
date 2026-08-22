@@ -2,12 +2,13 @@ import {
   planChanges,
   validate,
   githubSubject,
+  sanitizeName,
   serviceAccountId,
   type ServiceAccountFormValues,
 } from "./plan";
 
 const base: ServiceAccountFormValues = {
-  name: "nightly-sync",
+  name: "Nightly Sync",
   ownerAccountId: "noaa",
   signInMethods: [
     { kind: "github", repository: "myorg/myrepo", ref: "refs/heads/main" },
@@ -19,9 +20,13 @@ const base: ServiceAccountFormValues = {
 };
 
 describe("service account planner", () => {
-  it("namespaces the id so it can't collide with a human account", () => {
+  it("derives the stored id from the name a human typed", () => {
     // ID_REGEX forbids `--` in human ids, which is what makes the prefix safe.
-    expect(serviceAccountId("nightly-sync")).toBe("svc--nightly-sync");
+    expect(serviceAccountId("Nightly Sync")).toBe("svc--nightly-sync");
+  });
+
+  it("sanitizes punctuation, casing and spacing out of the name", () => {
+    expect(sanitizeName("  NOAA's Buoy Uploader! ")).toBe("noaa-s-buoy-uploader");
   });
 
   it("builds a GitHub subject matching the OIDC `sub` claim", () => {
@@ -75,8 +80,34 @@ describe("service account planner", () => {
     );
   });
 
-  it("rejects a name containing a double hyphen so it can't forge the reserved prefix", () => {
-    expect(validate({ ...base, name: "evil--thing" }).length).toBeGreaterThan(0);
+  it("collapses a double hyphen so a name cannot forge a second reserved prefix", () => {
+    expect(serviceAccountId("evil--thing")).toBe("svc--evil-thing");
+  });
+
+  it("rejects a name with nothing to build an id from", () => {
+    expect(validate({ ...base, name: "!!!" })).toContainEqual(
+      expect.stringContaining("nothing to build an id from")
+    );
+  });
+
+  it("records a key with no expiry as never expiring", () => {
+    const plan = planChanges({
+      ...base,
+      signInMethods: [{ kind: "api_key", expiresInDays: null }],
+    });
+    const bindings = plan.tables.find((t) => t.table === "identity_bindings")!;
+    expect(bindings.rows[0].fields.key_expires_at).toBe("never");
+    // A non-expiring key is a departure from the epic, so it must be surfaced.
+    expect(plan.caveats.join(" ")).toContain("no expiry");
+  });
+
+  it("uses the official AWS action for the GitHub workflow", () => {
+    const yaml = planChanges(base).workloadConfig[0];
+    expect(yaml.language).toBe("yaml");
+    expect(yaml.lines.join("\n")).toContain(
+      "aws-actions/configure-aws-credentials@v4"
+    );
+    expect(yaml.lines.join("\n")).toContain("id-token: write");
   });
 
   it("rejects a malformed GitHub repository", () => {
