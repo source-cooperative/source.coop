@@ -236,11 +236,17 @@ export function planChanges(values: ServiceAccountFormValues): Plan {
           ],
         }
       : {
-          title: "API key, refreshed by the Source CLI",
+          title: "API key, exchanged by the Source CLI",
           language: "bash",
           lines: [
-            "# The CLI keeps the token file fresh; the AWS SDK does the rest.",
-            "source-coop login --service-account",
+            "# Store the key once in the OS keychain — Keychain on macOS, Secret",
+            "# Service on Linux, Credential Manager on Windows. The CLI reads it",
+            "# from there, so it never lands in a dotfile or an env var.",
+            "source-coop auth login --service-account",
+            "",
+            "# Exchange it for a short-lived identity token. The CLI writes the",
+            "# token to stdout, so you decide where it lives.",
+            "source-coop token > ~/.source/token",
             "",
             `export AWS_ROLE_ARN=${roleArn}`,
             "export AWS_WEB_IDENTITY_TOKEN_FILE=~/.source/token",
@@ -248,6 +254,9 @@ export function planChanges(values: ServiceAccountFormValues): Plan {
             "",
             `aws s3 sync ./out s3://${bucketExample}/ \\`,
             "  --endpoint-url https://data.source.coop",
+            "",
+            "# The token is short-lived. Re-run the exchange on a timer before",
+            "# it expires — the AWS SDK re-reads the file, so nothing restarts.",
           ],
         }
   );

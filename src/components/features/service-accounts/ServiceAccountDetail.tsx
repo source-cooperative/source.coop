@@ -71,8 +71,10 @@ export function ServiceAccountDetail({
                 <CopyToClipboard text={issuedKey} />
               </Flex>
               <Text size="1" color="gray">
-                Source stores only a hash of this key. If you lose it, issue a
-                new one and revoke this one — it cannot be recovered.
+                Hand it to the CLI with <Code size="1">source-coop auth login</Code>,
+                which keeps it in your OS keychain rather than a dotfile or an
+                environment variable. Source stores only a hash — if you lose
+                it, issue a new one and revoke this one.
               </Text>
             </Flex>
           </Callout.Text>

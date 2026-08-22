@@ -13,7 +13,6 @@ import {
   Flex,
   Grid,
   Heading,
-  Separator,
   Table,
   Text,
 } from "@radix-ui/themes";
@@ -241,6 +240,7 @@ function ServiceAccountCard({ entry }: { entry: ServiceAccountRow }) {
     plan: LifecyclePlan;
   } | null>(null);
   const [showMock, setShowMock] = useState(false);
+  const [showUsage, setShowUsage] = useState(false);
 
   return (
     <Card>
@@ -318,26 +318,10 @@ function ServiceAccountCard({ entry }: { entry: ServiceAccountRow }) {
           </Fact>
         </Grid>
 
-        <Separator size="4" />
-
-        <Box asChild>
-          <details>
-            <summary style={{ cursor: "pointer", listStyle: "revert" }}>
-              <Text size="2" weight="medium">
-                How to use this
-              </Text>
-            </summary>
-            <Flex direction="column" gap="4" mt="3">
-              {entry.plan.workloadConfig.map((block) => (
-                <CodeBlock
-                  key={block.title}
-                  title={block.title}
-                  language={block.language}
-                  lines={block.lines}
-                />
-              ))}
-            </Flex>
-          </details>
+        <Box>
+          <Button variant="ghost" size="2" onClick={() => setShowUsage(true)}>
+            Usage example
+          </Button>
         </Box>
 
         <Flex gap="4" wrap="wrap">
@@ -349,6 +333,35 @@ function ServiceAccountCard({ entry }: { entry: ServiceAccountRow }) {
           </Text>
         </Flex>
       </Flex>
+
+      <Dialog.Root open={showUsage} onOpenChange={setShowUsage}>
+        <Dialog.Content
+          maxWidth="760px"
+          style={{ maxHeight: "80vh", overflowY: "auto" }}
+        >
+          <Dialog.Title>Using {entry.values.name}</Dialog.Title>
+          <Dialog.Description size="2" color="gray" mb="4">
+            One block per sign-in method.
+          </Dialog.Description>
+
+          <Flex direction="column" gap="4">
+            {entry.plan.workloadConfig.map((block) => (
+              <CodeBlock
+                key={block.title}
+                title={block.title}
+                language={block.language}
+                lines={block.lines}
+              />
+            ))}
+          </Flex>
+
+          <Flex justify="end" mt="4">
+            <Dialog.Close>
+              <Button variant="soft">Close</Button>
+            </Dialog.Close>
+          </Flex>
+        </Dialog.Content>
+      </Dialog.Root>
 
       <Dialog.Root open={showMock} onOpenChange={setShowMock}>
         <Dialog.Content

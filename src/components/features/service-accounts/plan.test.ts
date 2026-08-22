@@ -112,6 +112,20 @@ describe("service account planner", () => {
     expect(yaml.lines.join("\n")).toContain("id-token: write");
   });
 
+  it("has the CLI write the token to stdout rather than pick a path", () => {
+    const plan = planChanges({
+      ...base,
+      signInMethods: [{ kind: "api_key", expiresInDays: 90 }],
+    });
+    const script = plan.workloadConfig[0].lines.join("\n");
+    // The redirect is what chooses the location — the CLI assumes nothing.
+    expect(script).toContain("source-coop token > ");
+    expect(script).toContain("AWS_WEB_IDENTITY_TOKEN_FILE=");
+    // And the key itself lives in the keychain, not an env var or dotfile.
+    expect(script).toContain("keychain");
+    expect(script).not.toContain("export SOURCE_API_KEY");
+  });
+
   it("rejects a malformed GitHub repository", () => {
     expect(
       validate({
