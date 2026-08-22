@@ -1,6 +1,9 @@
 export { ServiceAccountForm } from "./ServiceAccountForm";
 export { ServiceAccountDetail } from "./ServiceAccountDetail";
-export { ServiceAccountList } from "./ServiceAccountList";
+export {
+  ServiceAccountList,
+  type ServiceAccountRow,
+} from "./ServiceAccountList";
 export { CodeBlock } from "./CodeBlock";
 export { DangerZone } from "./DangerZone";
 export { loadAccountOrNotFound } from "./guard";

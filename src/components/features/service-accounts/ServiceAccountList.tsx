@@ -35,14 +35,19 @@ function describeAccess(entry: MockServiceAccount): string {
   return `${productGrants.length} products`;
 }
 
+/**
+ * Each row arrives with its own `href`, resolved on the server. A function prop
+ * cannot cross the server/client boundary, so the caller cannot pass a URL
+ * builder.
+ */
+export type ServiceAccountRow = MockServiceAccount & { href: string };
+
 export function ServiceAccountList({
   accounts,
   createHref,
-  detailHref,
 }: {
-  accounts: MockServiceAccount[];
+  accounts: ServiceAccountRow[];
   createHref: string;
-  detailHref: (name: string) => string;
 }) {
   return (
     <Flex direction="column" gap="4">
@@ -96,7 +101,7 @@ export function ServiceAccountList({
                 <Table.Row key={entry.values.name}>
                   <Table.RowHeaderCell>
                     <Flex direction="column" gap="1">
-                      <NextLink href={detailHref(entry.values.name)}>
+                      <NextLink href={entry.href}>
                         <Text size="2" weight="medium">
                           {entry.values.name}
                         </Text>

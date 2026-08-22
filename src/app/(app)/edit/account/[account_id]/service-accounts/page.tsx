@@ -6,10 +6,7 @@ import {
   loadAccountOrNotFound,
   mockServiceAccounts,
 } from "@/components/features/service-accounts";
-import {
-  createServiceAccountUrl,
-  serviceAccountUrl,
-} from "@/lib/urls";
+import { createServiceAccountUrl, serviceAccountUrl } from "@/lib/urls";
 
 export const metadata: Metadata = {
   title: "Service accounts",
@@ -36,9 +33,11 @@ export default async function ServiceAccountsPage({ params }: PageProps) {
         description="Logins for software — a nightly sync, a publishing pipeline — granted and revoked without sharing anyone's account."
       />
       <ServiceAccountList
-        accounts={accounts}
+        accounts={accounts.map((entry) => ({
+          ...entry,
+          href: serviceAccountUrl(account_id, entry.values.name),
+        }))}
         createHref={createServiceAccountUrl(account_id)}
-        detailHref={(name) => serviceAccountUrl(account_id, name)}
       />
     </Box>
   );
