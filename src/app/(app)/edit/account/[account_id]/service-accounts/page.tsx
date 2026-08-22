@@ -5,8 +5,9 @@ import {
   ServiceAccountList,
   loadAccountOrNotFound,
   mockServiceAccounts,
+  planChanges,
 } from "@/components/features/service-accounts";
-import { createServiceAccountUrl, serviceAccountUrl } from "@/lib/urls";
+import { createServiceAccountUrl } from "@/lib/urls";
 
 export const metadata: Metadata = {
   title: "Service accounts",
@@ -35,7 +36,10 @@ export default async function ServiceAccountsPage({ params }: PageProps) {
       <ServiceAccountList
         accounts={accounts.map((entry) => ({
           ...entry,
-          href: serviceAccountUrl(account_id, entry.values.name),
+          plan: planChanges(entry.values),
+          editHref: `${createServiceAccountUrl(account_id)}?prefill=${encodeURIComponent(
+            entry.values.name
+          )}`,
         }))}
         createHref={createServiceAccountUrl(account_id)}
       />

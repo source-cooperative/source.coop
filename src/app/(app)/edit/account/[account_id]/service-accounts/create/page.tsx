@@ -45,7 +45,6 @@ export default async function CreateServiceAccountPage({
         ownerType={ownerType}
         products={products}
         initialValues={existing?.values}
-        initiallyDisabled={existing?.disabled ?? false}
       />
     </Box>
   );

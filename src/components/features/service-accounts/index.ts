@@ -6,7 +6,6 @@ export {
 } from "./ServiceAccountList";
 export { CodeBlock } from "./CodeBlock";
 export { MockDisclosure } from "./MockDisclosure";
-export { DangerZone } from "./DangerZone";
 export { loadAccountOrNotFound } from "./guard";
 export { mockServiceAccounts, type MockServiceAccount } from "./fixtures";
 export * from "./plan";

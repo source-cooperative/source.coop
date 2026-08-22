@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import NextLink from "next/link";
 import {
   Badge,
   Box,
@@ -35,19 +34,11 @@ export function ServiceAccountDetail({
   values,
   issuedKey,
   onEdit,
-  editHref,
-  lastAuthenticated,
-  disabled,
 }: {
   plan: Plan;
   values: ServiceAccountFormValues;
   issuedKey: string | null;
-  /** In-page edit, used right after a mock create. */
-  onEdit?: () => void;
-  /** Route-based edit, used when arriving from the list. */
-  editHref?: string;
-  lastAuthenticated?: string | null;
-  disabled?: boolean;
+  onEdit: () => void;
 }) {
   return (
     <Flex direction="column" gap="5">
@@ -55,24 +46,12 @@ export function ServiceAccountDetail({
         <Box>
           <Heading size="6">{values.name}</Heading>
           <Flex align="center" gap="2" mt="1">
-            <Code>{plan.serviceAccountId}</Code>
-            <CopyToClipboard text={plan.serviceAccountId} />
-            <Badge color={disabled ? "gray" : "green"}>
-              {disabled ? "Disabled" : "Active"}
-            </Badge>
+            <Badge color="green">Active</Badge>
           </Flex>
         </Box>
-        {editHref ? (
-          <Button variant="soft" asChild>
-            <NextLink href={editHref}>
-              <Pencil1Icon /> Edit
-            </NextLink>
-          </Button>
-        ) : (
-          <Button variant="soft" onClick={onEdit}>
-            <Pencil1Icon /> Edit
-          </Button>
-        )}
+        <Button variant="soft" onClick={onEdit}>
+          <Pencil1Icon /> Edit
+        </Button>
       </Flex>
 
       {issuedKey && (
@@ -166,7 +145,7 @@ export function ServiceAccountDetail({
             <DataList.Label minWidth="140px">Last authenticated</DataList.Label>
             <DataList.Value>
               <Text size="2" color="gray">
-                {lastAuthenticated ?? "Never"}
+                Never
               </Text>
             </DataList.Value>
           </DataList.Item>

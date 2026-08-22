@@ -1,5 +1,6 @@
 "use client";
 
+import React, { useState } from "react";
 import NextLink from "next/link";
 import {
   Badge,
@@ -7,30 +8,37 @@ import {
   Button,
   Card,
   Code,
+  DropdownMenu,
   Flex,
   Grid,
   Heading,
+  Separator,
+  Table,
   Text,
 } from "@radix-ui/themes";
 import { PlusIcon } from "@radix-ui/react-icons";
-import { ROLES, serviceAccountId } from "./plan";
+import { CodeBlock } from "./CodeBlock";
 import { MockDisclosure } from "./MockDisclosure";
+import {
+  ROLES,
+  planDelete,
+  planDisable,
+  type LifecyclePlan,
+  type Plan,
+} from "./plan";
 import type { MockServiceAccount } from "./fixtures";
 
 /**
- * Each row arrives with its own `href`, resolved on the server. A function prop
- * cannot cross the server/client boundary, so the caller cannot pass a URL
- * builder.
+ * Each card arrives with its `editHref` and its planned rows resolved on the
+ * server. A function prop cannot cross the server/client boundary, so the
+ * caller cannot pass builders.
  */
-export type ServiceAccountRow = MockServiceAccount & { href: string };
+export type ServiceAccountRow = MockServiceAccount & {
+  editHref: string;
+  plan: Plan;
+};
 
-function Fact({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
+function Fact({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <Flex direction="column" gap="1">
       <Text size="1" color="gray">
@@ -71,7 +79,6 @@ function accessLines(entry: ServiceAccountRow): React.ReactNode[] {
       </Text>,
     ];
   }
-
   if (productGrants.length === 0) {
     return [
       <Text size="2" color="gray" key="none">
@@ -79,13 +86,265 @@ function accessLines(entry: ServiceAccountRow): React.ReactNode[] {
       </Text>,
     ];
   }
-
   return productGrants.map((grant) => (
     <Text size="2" key={grant.product_id}>
       <Code size="1">{grant.product_id}</Code> —{" "}
       {grant.permission === "write" ? "read and write" : "read"}
     </Text>
   ));
+}
+
+type Pending = "disable" | "enable" | "delete";
+
+/** Edit, disable/enable and delete for one card. Changes nothing. */
+function CardActions({
+  entry,
+  onResult,
+}: {
+  entry: ServiceAccountRow;
+  onResult: (result: { action: Pending; plan: LifecyclePlan } | null) => void;
+}) {
+  const [pending, setPending] = useState<Pending | null>(null);
+  const toggle: Pending = entry.disabled ? "enable" : "disable";
+
+  function confirm(action: Pending) {
+    onResult({
+      action,
+      plan:
+        action === "delete"
+          ? planDelete(entry.values)
+          : planDisable(entry.values, action === "disable"),
+    });
+    setPending(null);
+  }
+
+  if (pending) {
+    return (
+      <Flex gap="2" align="center" wrap="wrap">
+        <Text size="1" color={pending === "delete" ? "red" : "gray"}>
+          {pending === "delete"
+            ? `Delete ${entry.values.name}?`
+            : `${pending === "enable" ? "Enable" : "Disable"} ${entry.values.name}?`}
+        </Text>
+        <Button
+          size="1"
+          color={pending === "delete" ? "red" : "amber"}
+          onClick={() => confirm(pending)}
+        >
+          Confirm
+        </Button>
+        <Button
+          size="1"
+          variant="soft"
+          color="gray"
+          onClick={() => {
+            setPending(null);
+            onResult(null);
+          }}
+        >
+          Cancel
+        </Button>
+      </Flex>
+    );
+  }
+
+  return (
+    <DropdownMenu.Root>
+      <DropdownMenu.Trigger>
+        <Button size="2" variant="soft">
+          Manage
+          <DropdownMenu.TriggerIcon />
+        </Button>
+      </DropdownMenu.Trigger>
+      <DropdownMenu.Content>
+        <DropdownMenu.Item asChild>
+          <NextLink href={entry.editHref}>Edit</NextLink>
+        </DropdownMenu.Item>
+        <DropdownMenu.Item onSelect={() => setPending(toggle)}>
+          {entry.disabled ? "Enable" : "Disable"}
+        </DropdownMenu.Item>
+        <DropdownMenu.Separator />
+        <DropdownMenu.Item color="red" onSelect={() => setPending("delete")}>
+          Delete
+        </DropdownMenu.Item>
+      </DropdownMenu.Content>
+    </DropdownMenu.Root>
+  );
+}
+
+function PlannedRows({ plan }: { plan: Plan }) {
+  return (
+    <Flex direction="column" gap="4">
+      {plan.tables.map((table) => (
+        <Box key={table.table}>
+          <Flex align="center" gap="2" mb="2" wrap="wrap">
+            <Text size="2" weight="medium">
+              <Code>{table.table}</Code>
+            </Text>
+            <Badge color={table.status === "new table" ? "orange" : "gray"}>
+              {table.status}
+            </Badge>
+            <Text size="1" color="gray">
+              {table.purpose}
+            </Text>
+          </Flex>
+          <Flex direction="column" gap="3">
+            {table.rows.map((row, index) => (
+              <Box key={index}>
+                <Table.Root size="1" variant="surface">
+                  <Table.Body>
+                    {Object.entries(row.fields).map(([key, value]) => (
+                      <Table.Row key={key}>
+                        <Table.RowHeaderCell
+                          style={{ width: "40%", whiteSpace: "nowrap" }}
+                        >
+                          <Text size="1" color="gray">
+                            {key}
+                          </Text>
+                        </Table.RowHeaderCell>
+                        <Table.Cell>
+                          <Code size="1">{value}</Code>
+                        </Table.Cell>
+                      </Table.Row>
+                    ))}
+                  </Table.Body>
+                </Table.Root>
+                {row.note && (
+                  <Text size="1" color="gray" as="p" mt="1">
+                    {row.note}
+                  </Text>
+                )}
+              </Box>
+            ))}
+          </Flex>
+        </Box>
+      ))}
+      <Flex direction="column" gap="1">
+        {plan.caveats.map((caveat) => (
+          <Text size="1" color="gray" key={caveat}>
+            {caveat}
+          </Text>
+        ))}
+      </Flex>
+    </Flex>
+  );
+}
+
+function ServiceAccountCard({ entry }: { entry: ServiceAccountRow }) {
+  const [result, setResult] = useState<{
+    action: Pending;
+    plan: LifecyclePlan;
+  } | null>(null);
+
+  return (
+    <Card>
+      <Flex direction="column" gap="4">
+        <Flex justify="between" align="start" gap="3" wrap="wrap">
+          <Flex align="center" gap="2" wrap="wrap">
+            <Heading size="4">{entry.values.name}</Heading>
+            <Badge color={entry.disabled ? "gray" : "green"}>
+              {entry.disabled ? "Disabled" : "Active"}
+            </Badge>
+          </Flex>
+          <CardActions entry={entry} onResult={setResult} />
+        </Flex>
+
+        {result && (
+          <MockDisclosure
+            summary={`Design mock — nothing was ${
+              result.action === "delete" ? "deleted" : "changed"
+            }. Show what ${
+              result.action === "delete" ? "deleting" : `${result.action}ing`
+            } would do.`}
+          >
+            <Flex direction="column" gap="3">
+              <Flex direction="column" gap="1">
+                {result.plan.changes.map((change) => (
+                  <Text size="2" key={`${change.table}-${change.detail}`}>
+                    <Badge
+                      color={change.operation === "delete" ? "red" : "amber"}
+                      variant="soft"
+                    >
+                      {change.operation}
+                    </Badge>{" "}
+                    <Code size="1">{change.table}</Code> — {change.detail}
+                  </Text>
+                ))}
+              </Flex>
+              <Flex direction="column" gap="1">
+                {result.plan.effects.map((effect) => (
+                  <Text size="1" color="gray" key={effect}>
+                    {effect}
+                  </Text>
+                ))}
+              </Flex>
+            </Flex>
+          </MockDisclosure>
+        )}
+
+        <Grid columns={{ initial: "1", sm: "3" }} gap="4">
+          <Fact label="Signs in via">
+            <Flex direction="column" gap="1">
+              {signInLines(entry)}
+            </Flex>
+          </Fact>
+          <Fact label="Can reach">
+            <Flex direction="column" gap="1">
+              {accessLines(entry)}
+            </Flex>
+          </Fact>
+          <Fact label="Roles it may use">
+            <Flex gap="1" wrap="wrap">
+              {entry.values.allowedRoles.map((role) => (
+                <Badge
+                  key={role}
+                  color={role === "read_only" ? "blue" : "iris"}
+                  variant="soft"
+                >
+                  {ROLES[role].label}
+                </Badge>
+              ))}
+            </Flex>
+          </Fact>
+        </Grid>
+
+        <Separator size="4" />
+
+        <Box asChild>
+          <details>
+            <summary style={{ cursor: "pointer", listStyle: "revert" }}>
+              <Text size="2" weight="medium">
+                How to use this
+              </Text>
+            </summary>
+            <Flex direction="column" gap="4" mt="3">
+              {entry.plan.workloadConfig.map((block) => (
+                <CodeBlock
+                  key={block.title}
+                  title={block.title}
+                  language={block.language}
+                  lines={block.lines}
+                />
+              ))}
+            </Flex>
+          </details>
+        </Box>
+
+        <MockDisclosure summary="Design mock — show the rows behind this service account.">
+          <PlannedRows plan={entry.plan} />
+        </MockDisclosure>
+
+        <Flex gap="4" wrap="wrap">
+          <Text size="1" color="gray">
+            Last authenticated {entry.lastAuthenticated ?? "never"}
+          </Text>
+          <Text size="1" color="gray">
+            Created {entry.createdAt}
+          </Text>
+        </Flex>
+      </Flex>
+    </Card>
+  );
 }
 
 export function ServiceAccountList({
@@ -100,8 +359,8 @@ export function ServiceAccountList({
       <MockDisclosure summary="Design mock — these service accounts are fabricated. What is this?">
         <Text size="2" as="p">
           Nothing here is stored. The accounts below are invented so the flow
-          proposed in <Code>#491</Code> can be clicked through — open one, or
-          create a new one, to see the database rows the real thing would
+          proposed in <Code>#491</Code> can be clicked through — expand a card,
+          or create a new one, to see the database rows the real thing would
           write.
         </Text>
       </MockDisclosure>
@@ -129,66 +388,7 @@ export function ServiceAccountList({
       ) : (
         <Flex direction="column" gap="3">
           {accounts.map((entry) => (
-            <Card key={entry.values.name}>
-              <Flex direction="column" gap="4">
-                <Flex justify="between" align="start" gap="3" wrap="wrap">
-                  <Box>
-                    <Flex align="center" gap="2" wrap="wrap">
-                      <Heading size="4">
-                        <NextLink href={entry.href}>{entry.values.name}</NextLink>
-                      </Heading>
-                      <Badge color={entry.disabled ? "gray" : "green"}>
-                        {entry.disabled ? "Disabled" : "Active"}
-                      </Badge>
-                    </Flex>
-                    <Code size="1" color="gray">
-                      {serviceAccountId(entry.values.name)}
-                    </Code>
-                  </Box>
-
-                  <Button variant="soft" size="2" asChild>
-                    <NextLink href={entry.href}>Manage</NextLink>
-                  </Button>
-                </Flex>
-
-                <Grid columns={{ initial: "1", sm: "3" }} gap="4">
-                  <Fact label="Signs in via">
-                    <Flex direction="column" gap="1">
-                      {signInLines(entry)}
-                    </Flex>
-                  </Fact>
-
-                  <Fact label="Can reach">
-                    <Flex direction="column" gap="1">
-                      {accessLines(entry)}
-                    </Flex>
-                  </Fact>
-
-                  <Fact label="Roles it may use">
-                    <Flex gap="1" wrap="wrap">
-                      {entry.values.allowedRoles.map((role) => (
-                        <Badge
-                          key={role}
-                          color={role === "read_only" ? "blue" : "iris"}
-                          variant="soft"
-                        >
-                          {ROLES[role].label}
-                        </Badge>
-                      ))}
-                    </Flex>
-                  </Fact>
-                </Grid>
-
-                <Flex gap="4" wrap="wrap">
-                  <Text size="1" color="gray">
-                    Last authenticated {entry.lastAuthenticated ?? "never"}
-                  </Text>
-                  <Text size="1" color="gray">
-                    Created {entry.createdAt}
-                  </Text>
-                </Flex>
-              </Flex>
-            </Card>
+            <ServiceAccountCard key={entry.values.name} entry={entry} />
           ))}
         </Flex>
       )}

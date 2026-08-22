@@ -18,8 +18,6 @@ import { formFieldStyle as fieldStyle } from "@/components/core/DynamicForm";
 import {
   planChanges,
   validate,
-  sanitizeName,
-  serviceAccountId,
   ROLES,
   ROLES_ORDER,
   type Plan,
@@ -28,7 +26,6 @@ import {
   type SignInMethod,
 } from "./plan";
 import { ServiceAccountDetail } from "./ServiceAccountDetail";
-import { DangerZone } from "./DangerZone";
 import { MockDisclosure } from "./MockDisclosure";
 
 /** Mock key, formatted like the real one would be. Never leaves the browser. */
@@ -48,8 +45,6 @@ interface Props {
   products: { product_id: string; title: string }[];
   /** Present when editing one of the fabricated accounts. */
   initialValues?: ServiceAccountFormValues;
-  /** Whether the account being edited is currently disabled. */
-  initiallyDisabled?: boolean;
 }
 
 function Field({
@@ -81,7 +76,6 @@ export function ServiceAccountForm({
   ownerType,
   products,
   initialValues,
-  initiallyDisabled = false,
 }: Props) {
   const isExisting = Boolean(initialValues);
 
@@ -203,20 +197,7 @@ export function ServiceAccountForm({
         <Flex direction="column" gap="5">
           <Field
             label="Name"
-            description={
-              <>
-                Anything readable — the id is derived from it. Service accounts
-                use a reserved <Code>svc--</Code> prefix, which no human account
-                name can contain, so the two can never collide.
-                {sanitizeName(name) && (
-                  <>
-                    {" "}
-                    This one would be stored as{" "}
-                    <Code>{serviceAccountId(name)}</Code>.
-                  </>
-                )}
-              </>
-            }
+            description="How you'll recognise this service account in the list."
           >
             <input
               type="text"
@@ -565,9 +546,6 @@ export function ServiceAccountForm({
         </Flex>
       </form>
 
-      {isExisting && (
-        <DangerZone values={values} disabled={initiallyDisabled} />
-      )}
     </Flex>
   );
 }
