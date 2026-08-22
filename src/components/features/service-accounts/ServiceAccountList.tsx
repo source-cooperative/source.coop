@@ -8,6 +8,7 @@ import {
   Button,
   Card,
   Code,
+  Dialog,
   DropdownMenu,
   Flex,
   Grid,
@@ -100,9 +101,11 @@ type Pending = "disable" | "enable" | "delete";
 function CardActions({
   entry,
   onResult,
+  onShowMock,
 }: {
   entry: ServiceAccountRow;
   onResult: (result: { action: Pending; plan: LifecyclePlan } | null) => void;
+  onShowMock: () => void;
 }) {
   const [pending, setPending] = useState<Pending | null>(null);
   const toggle: Pending = entry.disabled ? "enable" : "disable";
@@ -167,6 +170,8 @@ function CardActions({
         <DropdownMenu.Item color="red" onSelect={() => setPending("delete")}>
           Delete
         </DropdownMenu.Item>
+        <DropdownMenu.Separator />
+        <DropdownMenu.Item onSelect={onShowMock}>Mock Details</DropdownMenu.Item>
       </DropdownMenu.Content>
     </DropdownMenu.Root>
   );
@@ -235,6 +240,7 @@ function ServiceAccountCard({ entry }: { entry: ServiceAccountRow }) {
     action: Pending;
     plan: LifecyclePlan;
   } | null>(null);
+  const [showMock, setShowMock] = useState(false);
 
   return (
     <Card>
@@ -246,7 +252,11 @@ function ServiceAccountCard({ entry }: { entry: ServiceAccountRow }) {
               {entry.disabled ? "Disabled" : "Active"}
             </Badge>
           </Flex>
-          <CardActions entry={entry} onResult={setResult} />
+          <CardActions
+            entry={entry}
+            onResult={setResult}
+            onShowMock={() => setShowMock(true)}
+          />
         </Flex>
 
         {result && (
@@ -330,10 +340,6 @@ function ServiceAccountCard({ entry }: { entry: ServiceAccountRow }) {
           </details>
         </Box>
 
-        <MockDisclosure summary="Design mock — show the rows behind this service account.">
-          <PlannedRows plan={entry.plan} />
-        </MockDisclosure>
-
         <Flex gap="4" wrap="wrap">
           <Text size="1" color="gray">
             Last authenticated {entry.lastAuthenticated ?? "never"}
@@ -343,6 +349,27 @@ function ServiceAccountCard({ entry }: { entry: ServiceAccountRow }) {
           </Text>
         </Flex>
       </Flex>
+
+      <Dialog.Root open={showMock} onOpenChange={setShowMock}>
+        <Dialog.Content
+          maxWidth="760px"
+          style={{ maxHeight: "80vh", overflowY: "auto" }}
+        >
+          <Dialog.Title>{entry.values.name}</Dialog.Title>
+          <Dialog.Description size="2" color="gray" mb="4">
+            Design mock — nothing is stored. These are the rows this service
+            account would be made of.
+          </Dialog.Description>
+
+          <PlannedRows plan={entry.plan} />
+
+          <Flex justify="end" mt="4">
+            <Dialog.Close>
+              <Button variant="soft">Close</Button>
+            </Dialog.Close>
+          </Flex>
+        </Dialog.Content>
+      </Dialog.Root>
     </Card>
   );
 }
