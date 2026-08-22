@@ -298,3 +298,74 @@ export function planChanges(values: ServiceAccountFormValues): Plan {
     caveats,
   };
 }
+
+/** A row-level change from disabling or deleting an existing service account. */
+export interface LifecycleChange {
+  table: string;
+  operation: "update" | "delete";
+  detail: string;
+}
+
+export interface LifecyclePlan {
+  changes: LifecycleChange[];
+  /** What actually stops, and when. */
+  effects: string[];
+}
+
+function grantCount(values: ServiceAccountFormValues): number {
+  return values.accessScope === "all" ? 1 : values.productGrants.length;
+}
+
+export function planDisable(
+  values: ServiceAccountFormValues,
+  nextDisabled: boolean
+): LifecyclePlan {
+  return {
+    changes: [
+      {
+        table: "accounts",
+        operation: "update",
+        detail: `${serviceAccountId(values.name)} — disabled = ${nextDisabled}`,
+      },
+    ],
+    effects: nextDisabled
+      ? [
+          "Every sign-in method stops working; no new credentials are issued.",
+          "Grants and sign-in methods are left in place, so re-enabling restores exactly what was there.",
+          "Credentials already issued keep working until they expire — up to an hour.",
+        ]
+      : [
+          "Sign-in methods work again immediately, with the grants that were already recorded.",
+        ],
+  };
+}
+
+export function planDelete(values: ServiceAccountFormValues): LifecyclePlan {
+  const grants = grantCount(values);
+  return {
+    changes: [
+      {
+        table: "memberships",
+        operation: "delete",
+        detail: `${grants} row${grants === 1 ? "" : "s"} — every grant this account held`,
+      },
+      {
+        table: "identity_bindings",
+        operation: "delete",
+        detail: `${values.signInMethods.length} row${
+          values.signInMethods.length === 1 ? "" : "s"
+        } — every way it could sign in`,
+      },
+      {
+        table: "accounts",
+        operation: "delete",
+        detail: serviceAccountId(values.name),
+      },
+    ],
+    effects: [
+      "Permanent. Nothing here can be restored, and the id is not reusable.",
+      "Credentials already issued keep working until they expire — up to an hour. Disabling first, then deleting once that window has passed, closes it.",
+      "Any API key issued to this account is revoked along with its binding.",
+    ],
+  };
+}

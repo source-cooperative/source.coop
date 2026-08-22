@@ -1,5 +1,7 @@
 import {
   planChanges,
+  planDelete,
+  planDisable,
   validate,
   githubSubject,
   sanitizeName,
@@ -121,5 +123,34 @@ describe("service account planner", () => {
 
   it("accepts a well-formed submission", () => {
     expect(validate(base)).toEqual([]);
+  });
+
+  it("disabling touches only the account row and keeps grants intact", () => {
+    const plan = planDisable(base, true);
+    expect(plan.changes).toHaveLength(1);
+    expect(plan.changes[0]).toMatchObject({
+      table: "accounts",
+      operation: "update",
+    });
+    expect(plan.effects.join(" ")).toContain("re-enabling");
+  });
+
+  it("deleting removes grants and bindings as well as the account", () => {
+    const plan = planDelete({
+      ...base,
+      signInMethods: [
+        { kind: "github", repository: "myorg/myrepo", ref: "refs/heads/main" },
+        { kind: "api_key", expiresInDays: 90 },
+      ],
+    });
+    expect(plan.changes.map((c) => c.table)).toEqual([
+      "memberships",
+      "identity_bindings",
+      "accounts",
+    ]);
+    expect(plan.changes.every((c) => c.operation === "delete")).toBe(true);
+    expect(plan.changes[1].detail).toContain("2 rows");
+    // The honest part: deletion does not recall live credentials.
+    expect(plan.effects.join(" ")).toContain("up to an hour");
   });
 });

@@ -28,6 +28,7 @@ import {
   type SignInMethod,
 } from "./plan";
 import { ServiceAccountDetail } from "./ServiceAccountDetail";
+import { DangerZone } from "./DangerZone";
 
 /** Mock key, formatted like the real one would be. Never leaves the browser. */
 function mockApiKey(): string {
@@ -44,6 +45,10 @@ interface Props {
   ownerAccountId: string;
   ownerType: "individual" | "organization";
   products: { product_id: string; title: string }[];
+  /** Present when editing one of the fabricated accounts. */
+  initialValues?: ServiceAccountFormValues;
+  /** Whether the account being edited is currently disabled. */
+  initiallyDisabled?: boolean;
 }
 
 function Field({
@@ -74,20 +79,36 @@ export function ServiceAccountForm({
   ownerAccountId,
   ownerType,
   products,
+  initialValues,
+  initiallyDisabled = false,
 }: Props) {
-  const [name, setName] = useState("");
-  const [signInMethods, setSignInMethods] = useState<SignInMethod[]>([
-    { kind: "github", repository: "", ref: "refs/heads/main" },
-  ]);
-  const [accessScope, setAccessScope] = useState<"all" | "subset">("subset");
-  const [allPermission, setAllPermission] = useState<"read" | "write">("read");
+  const isExisting = Boolean(initialValues);
+
+  const [name, setName] = useState(initialValues?.name ?? "");
+  const [signInMethods, setSignInMethods] = useState<SignInMethod[]>(
+    initialValues?.signInMethods ?? [
+      { kind: "github", repository: "", ref: "refs/heads/main" },
+    ]
+  );
+  const [accessScope, setAccessScope] = useState<"all" | "subset">(
+    initialValues?.accessScope ?? "subset"
+  );
+  const [allPermission, setAllPermission] = useState<"read" | "write">(
+    initialValues?.allPermission ?? "read"
+  );
   const [productGrants, setProductGrants] = useState<
     Record<string, "read" | "write">
-  >({});
-  const [allowedRoles, setAllowedRoles] = useState<RoleId[]>([
-    "full_access",
-    "read_only",
-  ]);
+  >(
+    Object.fromEntries(
+      (initialValues?.productGrants ?? []).map((grant) => [
+        grant.product_id,
+        grant.permission,
+      ])
+    )
+  );
+  const [allowedRoles, setAllowedRoles] = useState<RoleId[]>(
+    initialValues?.allowedRoles ?? ["full_access", "read_only"]
+  );
 
   const [plan, setPlan] = useState<Plan | null>(null);
   const [submitted, setSubmitted] = useState<ServiceAccountFormValues | null>(
@@ -205,17 +226,11 @@ export function ServiceAccountForm({
               placeholder="Nightly Sync"
               style={fieldStyle}
             />
-          </Field>
-
-          <Field
-            label="Owner"
-            description={
-              ownerType === "organization"
-                ? "Owned by the organization, so it survives any member leaving."
-                : "Owned by you personally, so it is disabled if your account is. An organization-owned account would outlive you leaving."
-            }
-          >
-            <Code>{ownerAccountId}</Code>
+            <Text size="1" color="gray" mt="1" as="p">
+              {ownerType === "organization"
+                ? "Owned by this organization, so it survives any member leaving."
+                : "Owned by you personally, so it is disabled if your account is — an organization-owned one would outlive you leaving."}
+            </Text>
           </Field>
 
           <Separator size="4" />
@@ -543,12 +558,17 @@ export function ServiceAccountForm({
 
           <Box>
             <Button type="submit" size="3">
-              Show what this would create
+              {isExisting
+                ? "Show what this would change"
+                : "Show what this would create"}
             </Button>
           </Box>
         </Flex>
       </form>
 
+      {isExisting && (
+        <DangerZone values={values} disabled={initiallyDisabled} />
+      )}
     </Flex>
   );
 }

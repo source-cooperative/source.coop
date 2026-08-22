@@ -71,6 +71,10 @@ export const editAccountMembershipsUrl = (account_id: string) =>
   `/edit/account/${account_id}/memberships`;
 export const editAccountServiceAccountsUrl = (account_id: string) =>
   `/edit/account/${account_id}/service-accounts`;
+export const createServiceAccountUrl = (account_id: string) =>
+  `/edit/account/${account_id}/service-accounts/create`;
+export const serviceAccountUrl = (account_id: string, service_account_id: string) =>
+  `/edit/account/${account_id}/service-accounts/${encodeURIComponent(service_account_id)}`;
 export const editAccountViewUrl = (account_id: string, view: string) =>
   `/edit/account/${account_id}/${view}`;
 export const editProductUrl = (account_id: string, product_id: string) =>

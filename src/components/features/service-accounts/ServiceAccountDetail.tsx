@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import NextLink from "next/link";
 import {
   Badge,
   Box,
@@ -34,11 +35,19 @@ export function ServiceAccountDetail({
   values,
   issuedKey,
   onEdit,
+  editHref,
+  lastAuthenticated,
+  disabled,
 }: {
   plan: Plan;
   values: ServiceAccountFormValues;
   issuedKey: string | null;
-  onEdit: () => void;
+  /** In-page edit, used right after a mock create. */
+  onEdit?: () => void;
+  /** Route-based edit, used when arriving from the list. */
+  editHref?: string;
+  lastAuthenticated?: string | null;
+  disabled?: boolean;
 }) {
   return (
     <Flex direction="column" gap="5">
@@ -47,9 +56,9 @@ export function ServiceAccountDetail({
           <InfoCircledIcon />
         </Callout.Icon>
         <Callout.Text>
-          <strong>Design mock.</strong> Nothing was saved. This stands in for
-          the page you&rsquo;d land on after creating a service account, so the
-          data model in #491 can be reviewed before it&rsquo;s built.
+          <strong>Design mock.</strong> Nothing is stored. This stands in for a
+          service account&rsquo;s detail page, so the data model in #491 can be
+          reviewed before it&rsquo;s built.
         </Callout.Text>
       </Callout.Root>
 
@@ -59,12 +68,22 @@ export function ServiceAccountDetail({
           <Flex align="center" gap="2" mt="1">
             <Code>{plan.serviceAccountId}</Code>
             <CopyToClipboard text={plan.serviceAccountId} />
-            <Badge color="green">Active</Badge>
+            <Badge color={disabled ? "gray" : "green"}>
+              {disabled ? "Disabled" : "Active"}
+            </Badge>
           </Flex>
         </Box>
-        <Button variant="soft" onClick={onEdit}>
-          <Pencil1Icon /> Edit
-        </Button>
+        {editHref ? (
+          <Button variant="soft" asChild>
+            <NextLink href={editHref}>
+              <Pencil1Icon /> Edit
+            </NextLink>
+          </Button>
+        ) : (
+          <Button variant="soft" onClick={onEdit}>
+            <Pencil1Icon /> Edit
+          </Button>
+        )}
       </Flex>
 
       {issuedKey && (
@@ -97,13 +116,6 @@ export function ServiceAccountDetail({
           Summary
         </Heading>
         <DataList.Root>
-          <DataList.Item>
-            <DataList.Label minWidth="140px">Owner</DataList.Label>
-            <DataList.Value>
-              <Code>{values.ownerAccountId}</Code>
-            </DataList.Value>
-          </DataList.Item>
-
           <DataList.Item>
             <DataList.Label minWidth="140px">Signs in via</DataList.Label>
             <DataList.Value>
@@ -165,7 +177,7 @@ export function ServiceAccountDetail({
             <DataList.Label minWidth="140px">Last authenticated</DataList.Label>
             <DataList.Value>
               <Text size="2" color="gray">
-                Never
+                {lastAuthenticated ?? "Never"}
               </Text>
             </DataList.Value>
           </DataList.Item>
