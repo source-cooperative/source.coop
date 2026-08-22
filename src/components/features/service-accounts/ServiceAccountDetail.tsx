@@ -12,7 +12,6 @@ import {
   DataList,
   Flex,
   Heading,
-  Separator,
   Table,
   Text,
 } from "@radix-ui/themes";
@@ -23,6 +22,7 @@ import {
 } from "@radix-ui/react-icons";
 import { CopyToClipboard } from "@/components/core/CopyToClipboard";
 import { CodeBlock } from "./CodeBlock";
+import { MockDisclosure } from "./MockDisclosure";
 import { ROLES, type Plan, type ServiceAccountFormValues } from "./plan";
 
 /**
@@ -51,17 +51,6 @@ export function ServiceAccountDetail({
 }) {
   return (
     <Flex direction="column" gap="5">
-      <Callout.Root color="amber">
-        <Callout.Icon>
-          <InfoCircledIcon />
-        </Callout.Icon>
-        <Callout.Text>
-          <strong>Design mock.</strong> Nothing is stored. This stands in for a
-          service account&rsquo;s detail page, so the data model in #491 can be
-          reviewed before it&rsquo;s built.
-        </Callout.Text>
-      </Callout.Root>
-
       <Flex justify="between" align="start" gap="3" wrap="wrap">
         <Box>
           <Heading size="6">{values.name}</Heading>
@@ -203,17 +192,8 @@ export function ServiceAccountDetail({
         </Flex>
       </Card>
 
-      <Separator size="4" />
-
-      <Box>
-        <Heading size="5" mb="1">
-          What this would have written
-        </Heading>
-        <Text size="2" color="gray">
-          The point of the mock: the rows behind the screen above.
-        </Text>
-
-        <Flex direction="column" gap="4" mt="4">
+      <MockDisclosure summary="Design mock — nothing is stored. Show the rows this would have written.">
+        <Flex direction="column" gap="4">
           {plan.tables.map((table) => (
             <Card key={table.table}>
               <Flex align="center" gap="2" mb="1" wrap="wrap">
@@ -279,7 +259,7 @@ export function ServiceAccountDetail({
             </Callout.Text>
           </Callout.Root>
         </Flex>
-      </Box>
+      </MockDisclosure>
     </Flex>
   );
 }

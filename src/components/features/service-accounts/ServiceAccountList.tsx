@@ -5,15 +5,15 @@ import {
   Badge,
   Box,
   Button,
-  Callout,
   Card,
   Code,
   Flex,
   Table,
   Text,
 } from "@radix-ui/themes";
-import { InfoCircledIcon, PlusIcon } from "@radix-ui/react-icons";
+import { PlusIcon } from "@radix-ui/react-icons";
 import { ROLES, serviceAccountId } from "./plan";
+import { MockDisclosure } from "./MockDisclosure";
 import type { MockServiceAccount } from "./fixtures";
 
 function describeSignIn(entry: MockServiceAccount): string[] {
@@ -51,16 +51,14 @@ export function ServiceAccountList({
 }) {
   return (
     <Flex direction="column" gap="4">
-      <Callout.Root color="amber">
-        <Callout.Icon>
-          <InfoCircledIcon />
-        </Callout.Icon>
-        <Callout.Text>
-          <strong>Design mock.</strong> These service accounts are fabricated
-          and nothing is stored. This exists so the flow and data model proposed
-          in #491 can be reviewed before they are built.
-        </Callout.Text>
-      </Callout.Root>
+      <MockDisclosure summary="Design mock — these service accounts are fabricated. What is this?">
+        <Text size="2" as="p">
+          Nothing here is stored. The accounts below are invented so the flow
+          proposed in <Code>#491</Code> can be clicked through — open one, or
+          create a new one, to see the database rows the real thing would
+          write.
+        </Text>
+      </MockDisclosure>
 
       <Flex justify="end">
         <Button asChild>

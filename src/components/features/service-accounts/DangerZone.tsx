@@ -5,14 +5,13 @@ import {
   Badge,
   Box,
   Button,
-  Callout,
   Card,
   Code,
   Flex,
   Heading,
   Text,
 } from "@radix-ui/themes";
-import { ExclamationTriangleIcon } from "@radix-ui/react-icons";
+import { MockDisclosure } from "./MockDisclosure";
 import {
   planDelete,
   planDisable,
@@ -146,17 +145,14 @@ export function DangerZone({
 
       {result && (
         <Box mt="4">
-          <Callout.Root color={result.action === "delete" ? "red" : "amber"}>
-            <Callout.Icon>
-              <ExclamationTriangleIcon />
-            </Callout.Icon>
-            <Callout.Text>
-              <Flex direction="column" gap="3">
-                <Text size="2" weight="medium">
-                  Nothing was changed — this is what{" "}
-                  {result.action === "delete" ? "deleting" : `${result.action}ing`} would do.
-                </Text>
-
+          <MockDisclosure
+            summary={`Design mock — nothing was ${
+              result.action === "delete" ? "deleted" : "changed"
+            }. Show what ${
+              result.action === "delete" ? "deleting" : `${result.action}ing`
+            } would do.`}
+          >
+            <Flex direction="column" gap="3">
                 <Flex direction="column" gap="1">
                   {result.plan.changes.map((change) => (
                     <Text size="2" key={`${change.table}-${change.detail}`}>
@@ -178,9 +174,8 @@ export function DangerZone({
                     </Text>
                   ))}
                 </Flex>
-              </Flex>
-            </Callout.Text>
-          </Callout.Root>
+            </Flex>
+          </MockDisclosure>
         </Box>
       )}
     </Card>

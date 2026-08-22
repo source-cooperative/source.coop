@@ -29,6 +29,7 @@ import {
 } from "./plan";
 import { ServiceAccountDetail } from "./ServiceAccountDetail";
 import { DangerZone } from "./DangerZone";
+import { MockDisclosure } from "./MockDisclosure";
 
 /** Mock key, formatted like the real one would be. Never leaves the browser. */
 function mockApiKey(): string {
@@ -189,16 +190,14 @@ export function ServiceAccountForm({
 
   return (
     <Flex direction="column" gap="5">
-      <Callout.Root color="amber">
-        <Callout.Icon>
-          <InfoCircledIcon />
-        </Callout.Icon>
-        <Callout.Text>
-          <strong>Design mock.</strong> Nothing here is saved. Submitting shows
-          the database rows this would write, so we can review the data model in{" "}
-          <Code>#491</Code> before building it.
-        </Callout.Text>
-      </Callout.Root>
+      <MockDisclosure summary="Design mock — nothing is saved. What is this?">
+        <Text size="2" as="p">
+          This form stands in for the service-account flow proposed in{" "}
+          <Code>#491</Code>. Filling it in and submitting shows the database
+          rows the real thing would write, so the data model can be reviewed
+          before it is built. No account is created and no key is issued.
+        </Text>
+      </MockDisclosure>
 
       <form onSubmit={handleSubmit}>
         <Flex direction="column" gap="5">
