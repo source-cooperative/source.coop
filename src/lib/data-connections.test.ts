@@ -154,11 +154,11 @@ describe("listUsableDataConnections (issue #461)", () => {
     ).toEqual(["organization--byob"]);
   });
 
-  test("keeps a read-only connection out of the list", async () => {
+  test("offers a read-only connection", async () => {
     listing([{ ...orgConnection, read_only: true } as DataConnection]);
     expect(
       ids(await listUsableDataConnections(sessions["organization-owner-user"]))
-    ).toEqual([]);
+    ).toEqual(["organization--byob"]);
   });
 });
 
@@ -185,14 +185,24 @@ describe("canUseDataConnectionFor", () => {
     ).toBe(false);
   });
 
-  test("rejects a read-only connection even when the account owns it", () => {
+  test("accepts a read-only connection the account owns", () => {
     expect(
       canUseDataConnectionFor(
         user,
         connection({ owner: "acme", read_only: true }),
         "acme"
       )
-    ).toBe(false);
+    ).toBe(true);
+  });
+
+  test("accepts a read-only system-level connection", () => {
+    expect(
+      canUseDataConnectionFor(
+        user,
+        connection({ owner: undefined, read_only: true }),
+        "acme"
+      )
+    ).toBe(true);
   });
 
   test("rejects a flag-gated system connection the caller lacks the flag for", () => {

@@ -452,10 +452,10 @@ function disableDataConnection(
 }
 
 // Models what the *connection* permits, not whether the caller is
-// authenticated. A connection that is not read-only and carries no
-// required_flag is usable by anyone — including an anonymous principal — so
-// callers (e.g. createProduct, listUsableDataConnections) must apply their own
-// auth guard before relying on this result.
+// authenticated. A connection carrying no required_flag is usable by anyone —
+// including an anonymous principal — so callers (e.g. createProduct,
+// listUsableDataConnections) must apply their own auth guard before relying on
+// this result.
 function useDataConnection(
   principal: UserSession | null,
   dataConnection: DataConnection
@@ -466,10 +466,6 @@ function useDataConnection(
 
   if (isAdmin(principal)) {
     return true;
-  }
-
-  if (dataConnection.read_only) {
-    return false;
   }
 
   if (dataConnection.required_flag) {

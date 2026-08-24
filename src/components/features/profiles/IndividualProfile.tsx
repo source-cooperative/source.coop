@@ -6,12 +6,14 @@ import {
   Flex,
   Link as RadixLink,
 } from "@radix-ui/themes";
+import { PlusIcon } from "@radix-ui/react-icons";
+import Link from "next/link";
 import type {
   IndividualAccount,
   OrganizationalAccount,
   Product,
 } from "@/types";
-import { editAccountProfileUrl } from "@/lib/urls";
+import { editAccountProfileUrl, newProductUrl } from "@/lib/urls";
 import { ProfileAvatar } from "./ProfileAvatar";
 import { ProductsList } from "../products/ProductsList";
 import { WebsiteLink } from "./WebsiteLink";
@@ -27,6 +29,7 @@ interface IndividualProfileProps {
   organizations: OrganizationalAccount[];
   showWelcome?: boolean;
   canEdit: boolean;
+  canCreateProduct: boolean;
 }
 
 export function IndividualProfile({
@@ -37,6 +40,7 @@ export function IndividualProfile({
   organizations,
   showWelcome = false,
   canEdit,
+  canCreateProduct,
 }: IndividualProfileProps) {
   const primaryEmail = account.emails?.find((email) => email.is_primary);
   return (
@@ -116,12 +120,27 @@ export function IndividualProfile({
         </Box>
       )}
 
-      {ownedProducts.length > 0 && (
+      {(ownedProducts.length > 0 || canCreateProduct) && (
         <Box mb="6">
-          <Heading size="4" mb="2">
-            Products
-          </Heading>
-          <ProductsList products={ownedProducts} />
+          <Flex justify="between" align="center" mb="2">
+            <Heading size="4">Products</Heading>
+            {canCreateProduct && (
+              <RadixLink asChild size="1">
+                <Link href={newProductUrl(account.account_id)}>
+                  <Flex as="span" align="center" gap="1">
+                    <PlusIcon width="12" height="12" /> New product
+                  </Flex>
+                </Link>
+              </RadixLink>
+            )}
+          </Flex>
+          {ownedProducts.length > 0 ? (
+            <ProductsList products={ownedProducts} />
+          ) : (
+            <Text as="p" size="2">
+              No products available.
+            </Text>
+          )}
         </Box>
       )}
 

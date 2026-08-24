@@ -2,6 +2,7 @@
 
 import { LOGGER } from "@/lib/logging";
 import {
+  Account,
   AccountCreationRequestSchema,
   Actions,
   AccountCreationRequest,
@@ -104,8 +105,31 @@ export async function createAccount(
     };
   }
 
-  // Create account
-  const account = await accountsTable.create(newAccount);
+  // Create account. `account_id` is caller-supplied and never checked for
+  // availability beforehand, so the conditional write in `create` is what stops
+  // one account being written over another. A collision is an ordinary signup
+  // outcome, not only an attack, so report it on the field rather than letting
+  // it surface as a server error.
+  let account: Account;
+  try {
+    account = await accountsTable.create(newAccount);
+  } catch (error) {
+    if ((error as { name?: string })?.name === "ConditionalCheckFailedException") {
+      LOGGER.warn("Account creation rejected: account_id already taken", {
+        operation: "createAccount",
+        context: "account creation",
+        metadata: { account_id: newAccount.account_id },
+      });
+      return {
+        fieldErrors: { account_id: ["That account ID is already taken."] },
+        data: formData,
+        message: "That account ID is already taken",
+        success: false,
+      };
+    }
+    throw error;
+  }
+
   LOGGER.info("Successfully created account", {
     operation: "createAccount",
     context: "account creation",

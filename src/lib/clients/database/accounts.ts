@@ -130,13 +130,34 @@ export class AccountsTable extends BaseTable {
     }
   }
 
+  /**
+   * Creates an account, failing if `account_id` is already taken.
+   *
+   * `account_id` is the table's partition key, so an unconditioned `PutCommand`
+   * would *replace* an existing row rather than fail. `account_id` is chosen by
+   * the caller at signup and never checked for availability beforehand, so the
+   * conditional write is what keeps one account from being written over another
+   * -- including one bound to a different `identity_id`.
+   *
+   * Throws `ConditionalCheckFailedException` when the id is taken; callers that
+   * accept a user-supplied id should catch it and report the collision rather
+   * than surfacing a server error.
+   */
   async create(account: Account): Promise<Account> {
-    await this.client.send(
-      new PutCommand({
-        TableName: this.table,
-        Item: account,
-      })
-    );
+    try {
+      await this.client.send(
+        new PutCommand({
+          TableName: this.table,
+          Item: account,
+          ConditionExpression: "attribute_not_exists(account_id)",
+        })
+      );
+    } catch (error) {
+      if ((error as { name?: string })?.name !== "ConditionalCheckFailedException") {
+        this.logError("create", error, { account_id: account.account_id });
+      }
+      throw error;
+    }
 
     return account;
   }
