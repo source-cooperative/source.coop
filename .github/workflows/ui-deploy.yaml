@@ -1,0 +1,47 @@
+name: Deploy Storybook
+
+# Storybook is published at ui.source.coop as a second Vercel project on this
+# same repo. vercel.json disables git deploys for `main` only, so:
+#   - every other branch still auto-deploys as a Vercel preview (PR previews are
+#     free, no workflow needed)
+#   - `main` needs this workflow, exactly as staging-deploy.yaml does for the app
+#
+# The build itself is defined in the Vercel project (Build Command
+# `npm run build-storybook`, Output Directory `storybook-static`), because
+# `vercel deploy` uploads source and builds remotely — the same pattern the app's
+# deploy workflows use.
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+# No id-token: write here — unlike the app's workflows there is no CDK job and
+# no AWS role to assume. Storybook is a static bundle.
+permissions:
+  contents: read
+
+concurrency:
+  group: ui
+  cancel-in-progress: false
+
+jobs:
+  deploy-vercel:
+    runs-on: ubuntu-latest
+    environment:
+      name: UI
+      url: https://ui.source.coop
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      # The app's project id is VERCEL_PROJECT_ID; this is the Storybook project.
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_UI }}
+    steps:
+      - uses: actions/checkout@v4.2.2
+      - uses: actions/setup-node@v4.4.0
+        with:
+          node-version: 22
+      - run: npm install -g vercel
+      - name: Deploy Storybook to Vercel
+        run: vercel deploy --prod --yes --token=$VERCEL_TOKEN
