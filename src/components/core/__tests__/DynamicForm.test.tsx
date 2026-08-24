@@ -163,6 +163,28 @@ describe("DynamicForm label wiring", () => {
     expect(screen.getByLabelText("Status")).toBeInTheDocument();
   });
 
+  it("marks a dangerWhenOff switch red only while it is off", () => {
+    const danger = {
+      type: "switch" as const,
+      invert: true,
+      dangerWhenOff: true,
+      controlled: true as const,
+      onValueChange: () => {},
+    };
+
+    renderForm([
+      { ...danger, label: "Deactivated product", name: "off", value: "true" },
+      { ...danger, label: "Active product", name: "on", value: "false" },
+    ]);
+
+    expect(screen.getByLabelText("Deactivated product")).toHaveClass(
+      "switch-danger"
+    );
+    expect(screen.getByLabelText("Active product")).not.toHaveClass(
+      "switch-danger"
+    );
+  });
+
   it("leaves no label pointing at an id that does not exist", () => {
     // The defect this whole refactor exists to prevent, asserted across every
     // field type at once.
