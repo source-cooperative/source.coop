@@ -168,10 +168,6 @@ export function LiveGlobe({
               75,
               75,
             ),
-            // ponytail: alphaMap, not map. The old RGBA PNG was white wherever
-            // alpha > 0 and black elsewhere, so its colour channel carried no
-            // information the mask doesn't — dropping it let the mask compress
-            // as plain greyscale (4.8MB -> 922KB) at full 4096x2048.
             new MeshPhongMaterial({
               alphaMap: texture,
               transparent: true,
