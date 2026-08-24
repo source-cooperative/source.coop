@@ -353,8 +353,14 @@ export function DynamicForm<T extends Record<string, any>>({
                 key={option.value}
                 value={option.value}
                 disabled={option.disabled}
+                // Radix centres item content on both axes. Options sit in a row
+                // and rarely have equal-length descriptions, so a short card
+                // floats mid-height and indents from the left while its
+                // neighbours start at the top. They have to share a baseline to
+                // read as one set.
+                style={{ alignItems: "flex-start", justifyContent: "flex-start" }}
               >
-                <Flex align="start" gap="2">
+                <Flex align="start" gap="2" width="100%">
                   <RadioDot
                     checked={value === option.value}
                     disabled={option.disabled}
