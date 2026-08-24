@@ -323,9 +323,6 @@ export function ProductCreationForm({
             label: "Status",
             name: "disabled" as keyof Product,
             type: "switch",
-            // Belongs with Visibility: both answer "who can reach this", and a
-            // section holding one field repeated its own name as that field's
-            // label.
             section: "Access",
             switchLabel: disabled ? "Deactivated" : "Active",
             invert: true,
