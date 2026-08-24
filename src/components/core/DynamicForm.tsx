@@ -356,7 +356,9 @@ export function DynamicForm<T extends Record<string, any>>({
       // Radix RadioCards is not a form control, so the value rides a hidden
       // input. Radio cards are for a handful of options that each need a
       // sentence; anything longer stays a select.
-      const value = field.controlled ? field.value ?? "" : defaultValueFor(field);
+      // Narrowed to ValueDrivenFormField by the discriminant, so `value` is
+      // present and controlled — no uncontrolled fallback to reach.
+      const value = field.value;
       return (
         <>
           <input type="hidden" name={name} value={value} />
@@ -409,7 +411,7 @@ export function DynamicForm<T extends Record<string, any>>({
     }
 
     if (field.type === "switch") {
-      const raw = (field.controlled ? field.value : defaultValueFor(field)) === "true";
+      const raw = field.value === "true";
       const checked = field.invert ? !raw : raw;
       return (
         <>

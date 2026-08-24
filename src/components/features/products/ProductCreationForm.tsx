@@ -150,12 +150,6 @@ export function ProductCreationForm({
     isEditMode ? product.disabled : false
   );
 
-  // The currently selected visibility must always be selectable, even if it
-  // falls outside the connection's allowed set (e.g. legacy data drift).
-  const visibilityOptions = ALL_VISIBILITIES.includes(visibility)
-    ? ALL_VISIBILITIES
-    : [visibility, ...ALL_VISIBILITIES];
-
   // When the connection changes, drop a now-disallowed visibility back to a
   // permitted one so the form can't submit an invalid combination.
   const handleConnectionChange = (value: string) => {
@@ -301,15 +295,18 @@ export function ProductCreationForm({
       description: connectionMissing
         ? "This product's data connection could not be found, so its visibility can't be changed."
         : "Who can reach this product. The options depend on its data connection.",
-      options: visibilityOptions.map((value) => {
+      // Every visibility is listed; the connection decides which are selectable.
+      options: ALL_VISIBILITIES.map((value) => {
         const permitted = allowedVisibilities.includes(value);
         return {
           value,
           label: VISIBILITY_LABELS[value],
           description: VISIBILITY_DESCRIPTIONS[value],
+          // The current value stays selectable even when the connection no
+          // longer permits it (legacy drift), so an edit of some other field
+          // isn't blocked by a visibility the user didn't choose today.
           // The greyed-out card carries "unavailable" by itself, and the help
           // text above already says the options follow the data connection.
-          // Naming the connection on each blocked card only repeated it.
           disabled: !permitted && value !== visibility,
         };
       }),
