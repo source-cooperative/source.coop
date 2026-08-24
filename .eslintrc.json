@@ -5,13 +5,18 @@
     "plugin:@typescript-eslint/recommended",
     "next/core-web-vitals"
   ],
-  "plugins": ["@typescript-eslint"],
+  "plugins": [
+    "@typescript-eslint"
+  ],
   "rules": {
     "@typescript-eslint/no-explicit-any": "warn",
-    "@typescript-eslint/no-unused-vars": ["warn", { 
-      "argsIgnorePattern": "^_",
-      "varsIgnorePattern": "^_"
-    }],
+    "@typescript-eslint/no-unused-vars": [
+      "warn",
+      {
+        "argsIgnorePattern": "^_",
+        "varsIgnorePattern": "^_"
+      }
+    ],
     "@typescript-eslint/no-require-imports": "warn",
     "prefer-const": [
       "error",
@@ -20,5 +25,33 @@
       }
     ]
   },
-  "ignorePatterns": ["node_modules/", ".next/", "public/", "**/*.d.ts"]
+  "overrides": [
+    {
+      "files": [
+        "src/components/**/*.tsx"
+      ],
+      "excludedFiles": [
+        "**/__tests__/**"
+      ],
+      "rules": {
+        "no-restricted-syntax": [
+          "error",
+          {
+            "selector": "JSXOpeningElement[name.name=/^(select|textarea)$/]",
+            "message": "Use Radix Themes Select/TextArea inside a <Field>. A raw control skips the theme (focus ring, disabled state, dark mode)."
+          },
+          {
+            "selector": "JSXOpeningElement[name.name=\"input\"]:not(:has(JSXAttribute[name.name=\"type\"][value.value=/^(hidden|file)$/]))",
+            "message": "Use Radix Themes TextField/Checkbox/Switch inside a <Field>. A raw control skips the theme (focus ring, disabled state, dark mode). type=\"hidden\" and type=\"file\" are exempt."
+          }
+        ]
+      }
+    }
+  ],
+  "ignorePatterns": [
+    "node_modules/",
+    ".next/",
+    "public/",
+    "**/*.d.ts"
+  ]
 }

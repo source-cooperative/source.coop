@@ -14,7 +14,7 @@ import {
   DataConnection,
   DataConnectionObjectSchema,
 } from "@/types";
-import { Box, Separator, Text } from "@radix-ui/themes";
+import { DangerZone } from "@/components/core";
 
 export async function generateMetadata({
   params,
@@ -75,21 +75,18 @@ export default async function DetailsPage({ params }: PageProps) {
       />
 
       {canDelete && (
-        <>
-          <Separator size="4" my="6" />
-          <Box>
-            <Text as="p" size="2" color="gray" mb="3">
-              Deleting this product is permanent and cannot be undone. All
-              associated data, memberships, and records will be removed.
-            </Text>
+        <DangerZone
+          title="Delete this product"
+          description="Permanent. Removes the product record, its memberships and its access records. Whether the underlying objects go too depends on the data connection."
+          action={
             <DeleteProductModal
               accountId={account_id}
               productId={product_id}
               canPreserveData={canPreserveData}
               dataReadOnly={!!connection?.read_only}
             />
-          </Box>
-        </>
+          }
+        />
       )}
     </>
   );

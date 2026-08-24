@@ -60,12 +60,20 @@ export const AccountDomainSchema = z.object({
 // Export the type for use in other files
 export type AccountDomain = z.infer<typeof AccountDomainSchema>;
 
+// Exported so the edit form's character counter reads the same number the
+// validator enforces, rather than a second one written into help text.
+export const BIO_MAX_LENGTH = 1024;
+
 const BaseAccountProfileSchema = z.object({
   bio: z
     .preprocess((bio) => {
       if (!bio || typeof bio !== "string") return undefined;
       return bio === "" ? undefined : bio;
-    }, z.optional(z.string().max(1024, "Bio must not exceed 1024 characters")))
+    }, z.optional(
+      z
+        .string()
+        .max(BIO_MAX_LENGTH, `Bio must not exceed ${BIO_MAX_LENGTH} characters`)
+    ))
     .openapi({ example: "Software Engineer @radiantearth" }),
   location: z
     .preprocess((location) => {

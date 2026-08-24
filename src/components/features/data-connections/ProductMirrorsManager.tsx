@@ -10,11 +10,12 @@ import {
   Heading,
   Code,
   Tooltip,
+  Select,
+  TextField,
 } from "@radix-ui/themes";
 import { Link1Icon, InfoCircledIcon } from "@radix-ui/react-icons";
 import Form from "next/form";
 import Link from "next/link";
-import { formFieldStyle } from "@/components/core/DynamicForm";
 import { Product } from "@/types";
 import {
   addProductMirror,
@@ -280,15 +281,14 @@ export function ProductMirrorsManager({
                       hint="You can edit this prefix because you manage both this product's account and its data connection."
                     >
                       <Flex gap="2" align="center">
-                        <input
+                        <TextField.Root
                           name="prefix"
+                          size="1"
                           defaultValue={mirror.prefix}
                           placeholder="(connection root)"
                           style={{
-                            ...formFieldStyle,
                             flex: 1,
                             fontFamily: "var(--code-font-family)",
-                            fontSize: "var(--font-size-1)",
                           }}
                         />
                         <Button
@@ -358,25 +358,23 @@ export function ProductMirrorsManager({
               value={product.product_id}
             />
             <Flex gap="2" align="end">
-              <select
-                name="connection_id"
-                required
-                defaultValue=""
-                style={{ ...formFieldStyle, flex: 1 }}
-              >
-                <option value="" disabled>
-                  Select a data connection...
-                </option>
-                {unusedConnections.map((conn) => (
-                  <option
-                    key={conn.data_connection_id}
-                    value={conn.data_connection_id}
-                  >
-                    {conn.name} ({conn.provider}
-                    {conn.region ? ` - ${conn.region}` : ""})
-                  </option>
-                ))}
-              </select>
+              <Select.Root name="connection_id" size="2" required>
+                <Select.Trigger
+                  placeholder="Select a data connection..."
+                  style={{ flex: 1 }}
+                />
+                <Select.Content>
+                  {unusedConnections.map((conn) => (
+                    <Select.Item
+                      key={conn.data_connection_id}
+                      value={conn.data_connection_id}
+                    >
+                      {conn.name} ({conn.provider}
+                      {conn.region ? ` - ${conn.region}` : ""})
+                    </Select.Item>
+                  ))}
+                </Select.Content>
+              </Select.Root>
               <Button
                 type="submit"
                 size="2"
