@@ -39,14 +39,32 @@ export type ServiceAccountRow = MockServiceAccount & {
   plan: Plan;
 };
 
+/**
+ * Type scale, in px. The theme runs at `scaling: "110%"`, which multiplies every
+ * Radix size step — `size="1"` lands at 13.2px, big enough that a mono value
+ * stops reading as subordinate to the text above it. These are the rendered
+ * sizes the design calls for, so they are set directly.
+ */
+const TYPE = {
+  label: 11,
+  value: 14.5,
+  monoValue: 13,
+  monoDetail: 12.5,
+  chip: 11,
+  meta: 11,
+  action: 14,
+} as const;
+
+const MONO = "var(--code-font-family)";
+
 /** Small caps label in the app's code face — used for anything a machine reads. */
 function FieldLabel({ children }: { children: React.ReactNode }) {
   return (
     <Text
-      size="1"
       color="gray"
       style={{
-        fontFamily: "var(--code-font-family)",
+        fontFamily: MONO,
+        fontSize: TYPE.label,
         letterSpacing: "0.06em",
         textTransform: "uppercase",
       }}
@@ -59,14 +77,28 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
 function Mono({
   children,
   color,
-  size = "2",
+  size = TYPE.monoValue,
 }: {
   children: React.ReactNode;
   color?: "gray";
-  size?: "1" | "2";
+  size?: number;
 }) {
   return (
-    <Text size={size} color={color} style={{ fontFamily: "var(--code-font-family)" }}>
+    <Text color={color} style={{ fontFamily: MONO, fontSize: size }}>
+      {children}
+    </Text>
+  );
+}
+
+function Value({
+  children,
+  muted,
+}: {
+  children: React.ReactNode;
+  muted?: boolean;
+}) {
+  return (
+    <Text color={muted ? "gray" : undefined} style={{ fontSize: TYPE.value }}>
       {children}
     </Text>
   );
@@ -94,9 +126,9 @@ function StatusMark({ disabled }: { disabled?: boolean }) {
         }}
       />
       <Text
-        size="1"
         style={{
-          fontFamily: "var(--code-font-family)",
+          fontFamily: MONO,
+          fontSize: TYPE.label,
           letterSpacing: "0.06em",
           textTransform: "uppercase",
           color: disabled ? "var(--gray-11)" : "var(--green-11)",
@@ -139,7 +171,7 @@ function LinkButton({
   muted?: boolean;
 }) {
   return (
-    <Link asChild size="2" color="gray" highContrast={!muted}>
+    <Link asChild color="gray" highContrast={!muted}>
       <button
         type="button"
         onClick={onClick}
@@ -147,7 +179,8 @@ function LinkButton({
           background: "none",
           border: 0,
           padding: 0,
-          font: "inherit",
+          fontFamily: "inherit",
+          fontSize: TYPE.action,
           cursor: "var(--cursor-link)",
         }}
       >
@@ -161,24 +194,24 @@ function signInLines(entry: ServiceAccountRow): React.ReactNode[] {
   const muted = entry.disabled ? "gray" : undefined;
   return entry.values.signInMethods.map((method, index) =>
     method.kind === "github" ? (
-      <Flex direction="column" key={index}>
-        <Text size="2" color={muted}>
-          GitHub
-        </Text>
-        <Mono size="1" color="gray">
-          {method.repository}
-        </Mono>
-        <Mono size="1" color="gray">
-          {method.ref}
-        </Mono>
+      <Flex direction="column" gap="2" key={index}>
+        <Value muted={Boolean(muted)}>GitHub</Value>
+        <Flex direction="column">
+          <Mono size={TYPE.monoDetail} color="gray">
+            {method.repository}
+          </Mono>
+          <Mono size={TYPE.monoDetail} color="gray">
+            {method.ref}
+          </Mono>
+        </Flex>
       </Flex>
     ) : (
-      <Text size="2" color={muted} key={index}>
+      <Value muted={Boolean(muted)} key={index}>
         API key —{" "}
         {method.expiresInDays === null
           ? "no expiry"
           : `expires in ${method.expiresInDays} days`}
-      </Text>
+      </Value>
     )
   );
 }
@@ -193,13 +226,9 @@ function accessLines(entry: ServiceAccountRow): React.ReactNode[] {
   if (accessScope === "all") {
     return [
       <Flex align="baseline" gap="2" key="all" wrap="wrap">
-        <Text size="2" color={muted}>
-          Every product under
-        </Text>
-        <Mono size="1" color="gray">
-          {ownerAccountId}
-        </Mono>
-        <Text size="2" color="gray">
+        <Value muted={Boolean(muted)}>Every product under</Value>
+        <Mono color="gray">{ownerAccountId}</Mono>
+        <Text color="gray" style={{ fontSize: TYPE.monoValue }}>
           {permission(allPermission)}
         </Text>
       </Flex>,
@@ -207,17 +236,15 @@ function accessLines(entry: ServiceAccountRow): React.ReactNode[] {
   }
   if (productGrants.length === 0) {
     return [
-      <Text size="2" color="gray" key="none">
+      <Value muted key="none">
         No products
-      </Text>,
+      </Value>,
     ];
   }
   return productGrants.map((grant) => (
     <Flex align="baseline" gap="2" key={grant.product_id} wrap="wrap">
-      <Mono size="2" color={muted}>
-        {grant.product_id}
-      </Mono>
-      <Text size="2" color="gray">
+      <Mono color={muted}>{grant.product_id}</Mono>
+      <Text color="gray" style={{ fontSize: TYPE.monoValue }}>
         {permission(grant.permission)}
       </Text>
     </Flex>
@@ -283,7 +310,13 @@ function CardActions({
   return (
     <DropdownMenu.Root>
       <DropdownMenu.Trigger>
-        <Button size="2" variant="soft">
+        <Button
+          size="2"
+          variant="surface"
+          color="gray"
+          highContrast
+          style={{ fontSize: TYPE.action }}
+        >
           Manage
           <DropdownMenu.TriggerIcon />
         </Button>
@@ -381,9 +414,8 @@ function ServiceAccountCard({ entry }: { entry: ServiceAccountRow }) {
         align="center"
         gap="3"
         wrap="wrap"
-        px="4"
-        py="3"
         style={{
+          padding: "15px 22px",
           background: "var(--gray-2)",
           borderBottom: "1px solid var(--gray-5)",
         }}
@@ -411,7 +443,11 @@ function ServiceAccountCard({ entry }: { entry: ServiceAccountRow }) {
         </Flex>
       </Flex>
 
-      <Grid columns={{ initial: "1", sm: "3" }} gap="5" px="4" py="5">
+      <Grid
+        columns={{ initial: "1", sm: "3" }}
+        gap="5"
+        style={{ padding: "24px 22px" }}
+      >
         <Fact label="Signs in via">
           <Flex direction="column" gap="2">
             {signInLines(entry)}
@@ -430,7 +466,7 @@ function ServiceAccountCard({ entry }: { entry: ServiceAccountRow }) {
                 variant="outline"
                 color="gray"
                 highContrast={role === "full_access" && !entry.disabled}
-                style={{ fontFamily: "var(--code-font-family)" }}
+                style={{ fontFamily: MONO, fontSize: TYPE.chip }}
               >
                 {ROLES[role].label.toLowerCase()}
               </Badge>
@@ -440,7 +476,7 @@ function ServiceAccountCard({ entry }: { entry: ServiceAccountRow }) {
       </Grid>
 
       {result && (
-        <Box px="4" pb="4">
+        <Box style={{ padding: "0 22px 22px" }}>
           <MockDisclosure
             summary={`Design mock — nothing was ${
               result.action === "delete" ? "deleted" : "changed"
@@ -477,14 +513,15 @@ function ServiceAccountCard({ entry }: { entry: ServiceAccountRow }) {
       <Flex
         gap="4"
         wrap="wrap"
-        px="4"
-        py="2"
-        style={{ borderTop: "1px solid var(--gray-4)" }}
+        style={{
+          padding: "11px 22px",
+          borderTop: "1px solid var(--gray-4)",
+        }}
       >
-        <Mono size="1" color="gray">
+        <Mono size={TYPE.meta} color="gray">
           last used {entry.lastAuthenticated ?? "never"}
         </Mono>
-        <Mono size="1" color="gray">
+        <Mono size={TYPE.meta} color="gray">
           created {entry.createdAt}
         </Mono>
       </Flex>
