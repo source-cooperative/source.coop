@@ -90,6 +90,27 @@ function Mono({
   );
 }
 
+/** Muted attribute sitting under a value — a repository, a ref, an expiry. */
+function Detail({
+  children,
+  mono,
+}: {
+  children: React.ReactNode;
+  mono?: boolean;
+}) {
+  return (
+    <Text
+      color="gray"
+      style={{
+        fontSize: TYPE.monoDetail,
+        ...(mono ? { fontFamily: MONO } : null),
+      }}
+    >
+      {children}
+    </Text>
+  );
+}
+
 function Value({
   children,
   muted,
@@ -164,14 +185,14 @@ function ServiceAccountIcon({ disabled }: { disabled?: boolean }) {
 function LinkButton({
   children,
   onClick,
-  muted,
 }: {
   children: React.ReactNode;
   onClick: () => void;
-  muted?: boolean;
 }) {
   return (
-    <Link asChild color="gray" highContrast={!muted}>
+    // No highContrast: the muted grey sits better against the tinted band than
+    // gray-12, which competed with the account name beside it.
+    <Link asChild color="gray">
       <button
         type="button"
         onClick={onClick}
@@ -197,21 +218,19 @@ function signInLines(entry: ServiceAccountRow): React.ReactNode[] {
       <Flex direction="column" gap="2" key={index}>
         <Value muted={Boolean(muted)}>GitHub</Value>
         <Flex direction="column">
-          <Mono size={TYPE.monoDetail} color="gray">
-            {method.repository}
-          </Mono>
-          <Mono size={TYPE.monoDetail} color="gray">
-            {method.ref}
-          </Mono>
+          <Detail mono>{method.repository}</Detail>
+          <Detail mono>{method.ref}</Detail>
         </Flex>
       </Flex>
     ) : (
-      <Value muted={Boolean(muted)} key={index}>
-        API key —{" "}
-        {method.expiresInDays === null
-          ? "no expiry"
-          : `expires in ${method.expiresInDays} days`}
-      </Value>
+      <Flex direction="column" gap="2" key={index}>
+        <Value muted={Boolean(muted)}>API key</Value>
+        <Detail>
+          {method.expiresInDays === null
+            ? "no expiry"
+            : `expires in ${method.expiresInDays} days`}
+        </Detail>
+      </Flex>
     )
   );
 }
@@ -432,7 +451,7 @@ function ServiceAccountCard({ entry }: { entry: ServiceAccountRow }) {
         </Flex>
 
         <Flex align="center" gap="4">
-          <LinkButton onClick={() => setShowUsage(true)} muted={entry.disabled}>
+          <LinkButton onClick={() => setShowUsage(true)}>
             Usage example
           </LinkButton>
           <CardActions
