@@ -1,6 +1,6 @@
 {
   "name": "source-cooperative",
-  "version": "1.4.3",
+  "version": "1.5.1",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",

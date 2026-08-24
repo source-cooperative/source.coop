@@ -236,7 +236,11 @@ export class S3StorageClient {
 
   async getObject(params: GetObjectParams): Promise<GetObjectResult> {
     const response = await this.client.send(
-      new GetObjectCommand({ Bucket: params.account_id, Key: keyFor(params) }),
+      new GetObjectCommand({
+        Bucket: params.account_id,
+        Key: keyFor(params),
+        Range: params.range,
+      }),
     );
     const chunks: Uint8Array[] = [];
     for await (const chunk of response.Body as Readable) {

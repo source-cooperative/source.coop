@@ -169,7 +169,6 @@ describe("issue #461: product data-connections picker", () => {
         primary_mirror: "organization--byob",
         mirrors: {
           "organization--byob": {
-            storage_type: "s3",
             connection_id: "organization--byob",
             prefix: "prod/",
             is_primary: true,
