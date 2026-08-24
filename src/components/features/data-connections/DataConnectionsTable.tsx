@@ -6,14 +6,19 @@ import { AccountInfoHoverCard } from "@/components/core/AccountInfoHoverCard";
 import { MonoText } from "@/components/core/MonoText";
 import { accountUrl } from "@/lib/urls";
 
-const PROVIDER_BADGE: Record<
-  DataProvider,
-  { label: string; color: "orange" | "blue" | "green" }
-> = {
-  [DataProvider.S3]: { label: "S3", color: "orange" },
-  [DataProvider.Azure]: { label: "Azure", color: "blue" },
-  [DataProvider.GCS]: { label: "GCS", color: "green" },
+const PROVIDER_LABEL: Record<DataProvider, string> = {
+  [DataProvider.S3]: "s3",
+  [DataProvider.Azure]: "azure",
+  [DataProvider.GCS]: "gcs",
 };
+
+/** GCS federates without a key, so it has no region to show. */
+function storageSummary(connection: DataConnection): string {
+  const provider = PROVIDER_LABEL[connection.details.provider];
+  const region =
+    "region" in connection.details ? connection.details.region : undefined;
+  return region ? `${provider} · ${region}` : provider;
+}
 
 interface DataConnectionsTableProps {
   connections: DataConnection[];
@@ -96,10 +101,8 @@ export function DataConnectionsTable({
           {ownerAccounts && (
             <Table.ColumnHeaderCell>Owner</Table.ColumnHeaderCell>
           )}
-          <Table.ColumnHeaderCell>Provider</Table.ColumnHeaderCell>
-          <Table.ColumnHeaderCell>Region</Table.ColumnHeaderCell>
-          <Table.ColumnHeaderCell>Read Only</Table.ColumnHeaderCell>
-          <Table.ColumnHeaderCell>Visibilities</Table.ColumnHeaderCell>
+          <Table.ColumnHeaderCell>Storage</Table.ColumnHeaderCell>
+          <Table.ColumnHeaderCell>Allows</Table.ColumnHeaderCell>
         </Table.Row>
       </Table.Header>
       <Table.Body>
@@ -107,12 +110,27 @@ export function DataConnectionsTable({
           <Table.Row key={conn.data_connection_id}>
             <Table.Cell>
               <Flex direction="column">
-                <Link
-                  href={editHref(conn.data_connection_id)}
-                  style={{ color: "var(--accent-11)" }}
-                >
-                  {conn.name}
-                </Link>
+                <Flex align="center" gap="2">
+                  <Link
+                    href={editHref(conn.data_connection_id)}
+                    style={{ color: "var(--accent-11)" }}
+                  >
+                    {conn.name}
+                  </Link>
+                  {conn.read_only && (
+                    <Text
+                      size="1"
+                      color="gray"
+                      style={{
+                        border: "1px solid var(--gray-7)",
+                        padding: "0 6px",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      Read only
+                    </Text>
+                  )}
+                </Flex>
                 <Text
                   size="1"
                   color="gray"
@@ -128,19 +146,9 @@ export function DataConnectionsTable({
               </Table.Cell>
             )}
             <Table.Cell>
-              <Badge color={PROVIDER_BADGE[conn.details.provider].color}>
-                {PROVIDER_BADGE[conn.details.provider].label}
-              </Badge>
-            </Table.Cell>
-            <Table.Cell>
-              <Text size="2">
-                {"region" in conn.details ? conn.details.region : "—"}
-              </Text>
-            </Table.Cell>
-            <Table.Cell>
-              <Badge color={conn.read_only ? "red" : "green"}>
-                {conn.read_only ? "Yes" : "No"}
-              </Badge>
+              <MonoText size="1" color="gray">
+                {storageSummary(conn)}
+              </MonoText>
             </Table.Cell>
             <Table.Cell>
               <Flex gap="1" wrap="wrap">

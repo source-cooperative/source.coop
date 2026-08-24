@@ -1,22 +1,28 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState, startTransition } from "react";
 import {
   Text,
-  Card,
   Flex,
-  Badge,
+  Box,
   Button,
-  Heading,
+  IconButton,
   Code,
-  Tooltip,
+  Callout,
   Select,
   TextField,
+  DropdownMenu,
+  AlertDialog,
 } from "@radix-ui/themes";
-import { Link1Icon, InfoCircledIcon } from "@radix-ui/react-icons";
+import {
+  Link1Icon,
+  InfoCircledIcon,
+  DotsHorizontalIcon,
+} from "@radix-ui/react-icons";
 import Form from "next/form";
 import Link from "next/link";
 import { Product } from "@/types";
+import { Field, FormTitle, SectionHeader } from "@/components/core";
 import {
   addProductMirror,
   removeProductMirror,
@@ -49,33 +55,6 @@ interface ProductMirrorsManagerProps {
   // Connection ids whose mirror prefix this user may edit (needs both account
   // and connection management). Others render the prefix read-only.
   editablePrefixConnectionIds: string[];
-}
-
-/** A labeled value on a mirror card, with an optional info tooltip. */
-function Field({
-  label,
-  hint,
-  children,
-}: {
-  label: string;
-  hint?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <Flex direction="column" gap="1">
-      <Flex align="center" gap="1">
-        <Text size="1" color="gray">
-          {label}
-        </Text>
-        {hint && (
-          <Tooltip content={hint}>
-            <InfoCircledIcon color="var(--gray-8)" />
-          </Tooltip>
-        )}
-      </Flex>
-      {children}
-    </Flex>
-  );
 }
 
 const emptyFormState = {
@@ -113,6 +92,27 @@ export function ProductMirrorsManager({
     emptyFormState
   );
 
+  // Which mirror the last action targeted, so its result renders on that row
+  // instead of joining a pile of messages at the foot of the page.
+  const [actedOn, setActedOn] = useState<string | null>(null);
+  // The mirror queued for removal, i.e. the open confirmation.
+  const [pendingRemoval, setPendingRemoval] = useState<string | null>(null);
+
+  // Dispatching directly rather than through a <Form> per action: all three
+  // carry the same three values, so as markup they were nine hidden inputs per
+  // card, and a menu item cannot submit a form it does not contain.
+  const dispatchForMirror = (
+    action: (formData: FormData) => void,
+    mirrorKey: string
+  ) => {
+    const formData = new FormData();
+    formData.set("account_id", product.account_id);
+    formData.set("product_id", product.product_id);
+    formData.set("mirror_key", mirrorKey);
+    setActedOn(mirrorKey);
+    startTransition(() => action(formData));
+  };
+
   // Primary mirror first, then stable by key.
   const mirrors = Object.entries(product.metadata.mirrors).sort(
     ([keyA, a], [keyB, b]) =>
@@ -126,15 +126,58 @@ export function ProductMirrorsManager({
     (conn) => !usedConnectionIds.has(conn.data_connection_id)
   );
 
+  const removalTarget = pendingRemoval
+    ? product.metadata.mirrors[pendingRemoval]
+    : undefined;
+  const removalName = removalTarget
+    ? (connectionInfo[removalTarget.connection_id]?.name ??
+      removalTarget.connection_id)
+    : "";
+
+  /** The result of the last action, shown against the row that caused it. */
+  const rowMessage = (key: string) => {
+    if (actedOn !== key) return null;
+    const state = [removeState, primaryState, prefixState].find(
+      (candidate) => candidate.message
+    );
+    if (!state) return null;
+    return (
+      <Text size="1" color={state.success ? "green" : "red"}>
+        {state.message}
+      </Text>
+    );
+  };
+
   return (
-    <Flex direction="column" gap="4">
-      <Heading size="4">Data Connections</Heading>
+    <Box>
+      <FormTitle
+        title="Data Connections"
+        description="Where this product's objects live. The primary connection is the one visitors download from."
+      />
 
       {!canManageMirrors && (
-        <Text size="2" color="gray">
-          Only owners and maintainers of <Code>{product.account_id}</Code> can
-          change this product&apos;s data connections.
-        </Text>
+        <Callout.Root size="1" color="gray" mb="4">
+          <Callout.Icon>
+            <InfoCircledIcon />
+          </Callout.Icon>
+          <Callout.Text>
+            Only owners and maintainers of <Code>{product.account_id}</Code> can
+            change this product&apos;s data connections.
+          </Callout.Text>
+        </Callout.Root>
+      )}
+
+      {/* Standing, not fired after a save: it is worth knowing before acting. */}
+      {canManageMirrors && mirrors.length > 0 && (
+        <Callout.Root size="1" color="gray" mb="4">
+          <Callout.Icon>
+            <InfoCircledIcon />
+          </Callout.Icon>
+          <Callout.Text>
+            The data proxy caches these settings. Changes here can take up to
+            five minutes to take effect.
+          </Callout.Text>
+        </Callout.Root>
       )}
 
       {mirrors.length === 0 ? (
@@ -157,241 +200,293 @@ export function ProductMirrorsManager({
         </Flex>
       ) : (
         <Flex direction="column" gap="3">
-          {mirrors.map(([key, mirror]) => (
-            <Card key={key}>
-              <Flex direction="column" gap="3">
-                <Flex justify="between" align="start" gap="3" wrap="wrap">
-                  <Flex align="center" gap="2">
-                    <Text size="2" weight="medium">
-                      {/* Fall back to the id when the connection no longer
-                          loads (e.g. deleted). */}
-                      {connectionInfo[mirror.connection_id]?.name ??
-                        mirror.connection_id}
-                    </Text>
-                    {mirror.is_primary && <Badge color="green">Primary</Badge>}
-                  </Flex>
-                  <Flex align="center" gap="2">
-                    {(isAdmin ||
-                      ownedConnections.has(mirror.connection_id)) && (
-                      <Button asChild size="1" variant="soft">
-                        <Link
-                          // Owned connections are managed under the owner
-                          // account's settings (reachable by its owners and
-                          // maintainers); only unowned (system) connections
-                          // live in the admin view, which non-admins can't
-                          // open.
-                          href={
-                            ownedConnections.has(mirror.connection_id)
-                              ? accountDataConnectionEditUrl(
-                                  product.account_id,
-                                  mirror.connection_id
-                                )
-                              : adminDataConnectionEditUrl(
-                                  mirror.connection_id
-                                )
-                          }
+          {mirrors.map(([key, mirror]) => {
+            const info = connectionInfo[mirror.connection_id];
+            const canEditPrefix = editablePrefixConnections.has(
+              mirror.connection_id
+            );
+            const canOpenConnection =
+              isAdmin || ownedConnections.has(mirror.connection_id);
+
+            return (
+              <Box
+                key={key}
+                style={{
+                  border: "1px solid var(--gray-6)",
+                  backgroundColor: "var(--color-panel-solid)",
+                }}
+              >
+                <Flex justify="between" align="start" gap="3" p="4">
+                  <Box minWidth="0">
+                    <Flex align="center" gap="2">
+                      <Text size="2" weight="medium">
+                        {/* Fall back to the id when the connection no longer
+                            loads (e.g. deleted). */}
+                        {info?.name ?? mirror.connection_id}
+                      </Text>
+                      {mirror.is_primary && (
+                        <Text
+                          size="1"
+                          color="gray"
+                          style={{
+                            border: "1px solid var(--gray-7)",
+                            padding: "0 6px",
+                            textTransform: "uppercase",
+                            letterSpacing: "0.04em",
+                          }}
                         >
-                          Edit
-                        </Link>
-                      </Button>
+                          Primary
+                        </Text>
+                      )}
+                    </Flex>
+                    {info && (
+                      <Text
+                        size="1"
+                        color="gray"
+                        mt="1"
+                        style={{
+                          fontFamily: "var(--code-font-family)",
+                          display: "block",
+                        }}
+                      >
+                        {info.provider} · {info.bucket}
+                      </Text>
                     )}
-                    {canManageMirrors && !mirror.is_primary && (
-                      <Form action={primaryAction} style={{ display: "inline" }}>
-                        <input
-                          type="hidden"
-                          name="account_id"
-                          value={product.account_id}
-                        />
-                        <input
-                          type="hidden"
-                          name="product_id"
-                          value={product.product_id}
-                        />
-                        <input type="hidden" name="mirror_key" value={key} />
-                        <Button
-                          type="submit"
+                  </Box>
+
+                  {/* One affordance rather than three same-weight buttons, so
+                      the destructive one stops competing with the routine ones. */}
+                  {(canManageMirrors || canOpenConnection) && (
+                    <DropdownMenu.Root>
+                      <DropdownMenu.Trigger>
+                        <IconButton
                           size="1"
                           variant="soft"
-                          disabled={primaryPending}
-                          loading={primaryPending}
+                          color="gray"
+                          aria-label={`Actions for ${info?.name ?? mirror.connection_id}`}
+                          disabled={removePending || primaryPending}
                         >
-                          Set Primary
-                        </Button>
-                      </Form>
-                    )}
-                    {canManageMirrors && (
-                      <Form action={removeAction} style={{ display: "inline" }}>
-                        <input
-                          type="hidden"
-                          name="account_id"
-                          value={product.account_id}
-                        />
-                        <input
-                          type="hidden"
-                          name="product_id"
-                          value={product.product_id}
-                        />
-                        <input type="hidden" name="mirror_key" value={key} />
-                        <Button
-                          type="submit"
-                          size="1"
-                          variant="soft"
-                          color="red"
-                          disabled={removePending}
-                          loading={removePending}
-                        >
-                          Remove
-                        </Button>
-                      </Form>
-                    )}
-                  </Flex>
-                </Flex>
-                <Flex gap="5" wrap="wrap">
-                  <Field label="Type">
-                    <Text size="2">
-                      {connectionInfo[mirror.connection_id]?.provider}
-                    </Text>
-                  </Field>
-                  {connectionInfo[mirror.connection_id] && (
-                    <Field label="Bucket">
-                      <Code size="2" variant="ghost" color="gray">
-                        {connectionInfo[mirror.connection_id].bucket}
-                      </Code>
-                    </Field>
+                          <DotsHorizontalIcon />
+                        </IconButton>
+                      </DropdownMenu.Trigger>
+                      <DropdownMenu.Content>
+                        {canManageMirrors && !mirror.is_primary && (
+                          <DropdownMenu.Item
+                            onSelect={() =>
+                              dispatchForMirror(primaryAction, key)
+                            }
+                          >
+                            Make primary
+                          </DropdownMenu.Item>
+                        )}
+                        {canOpenConnection && (
+                          <DropdownMenu.Item asChild>
+                            <Link
+                              // Owned connections are managed under the owner
+                              // account's settings (reachable by its owners and
+                              // maintainers); only unowned (system) connections
+                              // live in the admin view, which non-admins can't
+                              // open.
+                              href={
+                                ownedConnections.has(mirror.connection_id)
+                                  ? accountDataConnectionEditUrl(
+                                      product.account_id,
+                                      mirror.connection_id
+                                    )
+                                  : adminDataConnectionEditUrl(
+                                      mirror.connection_id
+                                    )
+                              }
+                            >
+                              Edit connection
+                            </Link>
+                          </DropdownMenu.Item>
+                        )}
+                        {canManageMirrors && (
+                          <>
+                            <DropdownMenu.Separator />
+                            <DropdownMenu.Item
+                              color="red"
+                              onSelect={() => setPendingRemoval(key)}
+                            >
+                              Remove from product…
+                            </DropdownMenu.Item>
+                          </>
+                        )}
+                      </DropdownMenu.Content>
+                    </DropdownMenu.Root>
                   )}
                 </Flex>
+
                 {/* Prefix is editable only for users who can manage both the
                     owning account and this connection; the server action
                     re-checks. Others see it read-only. */}
-                {editablePrefixConnections.has(mirror.connection_id) ? (
-                  <Form action={prefixAction}>
-                    <input
-                      type="hidden"
-                      name="account_id"
-                      value={product.account_id}
-                    />
-                    <input
-                      type="hidden"
-                      name="product_id"
-                      value={product.product_id}
-                    />
-                    <input type="hidden" name="mirror_key" value={key} />
-                    <Field
-                      label="Prefix"
-                      hint="You can edit this prefix because you manage both this product's account and its data connection."
-                    >
-                      <Flex gap="2" align="center">
-                        <TextField.Root
-                          name="prefix"
-                          size="1"
-                          defaultValue={mirror.prefix}
-                          placeholder="(connection root)"
-                          style={{
-                            flex: 1,
-                            fontFamily: "var(--code-font-family)",
-                          }}
-                        />
-                        <Button
-                          type="submit"
-                          size="1"
-                          variant="soft"
-                          disabled={prefixPending}
-                          loading={prefixPending}
-                        >
-                          Save
-                        </Button>
-                      </Flex>
+                <Box
+                  p="4"
+                  style={{
+                    borderTop: "1px solid var(--gray-5)",
+                    backgroundColor: "var(--gray-2)",
+                  }}
+                >
+                  {canEditPrefix ? (
+                    <Form action={prefixAction}>
+                      <input
+                        type="hidden"
+                        name="account_id"
+                        value={product.account_id}
+                      />
+                      <input
+                        type="hidden"
+                        name="product_id"
+                        value={product.product_id}
+                      />
+                      <input type="hidden" name="mirror_key" value={key} />
+                      <Field
+                        label="Prefix"
+                        help="Where this product's objects sit inside the connection. You can change it because you manage both this product's account and its connection."
+                      >
+                        {(controlProps) => (
+                          <Flex gap="2" align="center">
+                            <TextField.Root
+                              {...controlProps}
+                              name="prefix"
+                              size="1"
+                              defaultValue={mirror.prefix}
+                              placeholder="(connection root)"
+                              style={{
+                                flex: 1,
+                                fontFamily: "var(--code-font-family)",
+                              }}
+                            />
+                            <Button
+                              type="submit"
+                              size="1"
+                              variant="soft"
+                              onClick={() => setActedOn(key)}
+                              disabled={prefixPending}
+                              loading={prefixPending}
+                            >
+                              Save
+                            </Button>
+                          </Flex>
+                        )}
+                      </Field>
+                    </Form>
+                  ) : (
+                    <Field label="Prefix" group>
+                      <Code size="2" variant="ghost" color="gray">
+                        {mirror.prefix || "(connection root)"}
+                      </Code>
                     </Field>
-                  </Form>
-                ) : (
-                  <Field label="Prefix">
-                    <Code size="2" variant="ghost" color="gray">
-                      {mirror.prefix}
-                    </Code>
-                  </Field>
-                )}
-              </Flex>
-            </Card>
-          ))}
+                  )}
+
+                  {rowMessage(key) && <Box mt="2">{rowMessage(key)}</Box>}
+                </Box>
+              </Box>
+            );
+          })}
         </Flex>
       )}
 
-      {removeState.message && (
-        <Text size="2" color={removeState.success ? "green" : "red"}>
-          {removeState.message}
-        </Text>
-      )}
-      {primaryState.message && (
-        <Text size="2" color={primaryState.success ? "green" : "red"}>
-          {primaryState.message}
-        </Text>
-      )}
-      {prefixState.message && (
-        <Text size="2" color={prefixState.success ? "green" : "red"}>
-          {prefixState.message}
-        </Text>
-      )}
-      {(addState.success ||
-        removeState.success ||
-        primaryState.success ||
-        prefixState.success) && (
-        <Text size="2" color="amber">
-          Data connections are cached on the data proxy; changes may take up to
-          5 minutes to take effect.
-        </Text>
-      )}
-
-      {canManageMirrors && unusedConnections.length > 0 && (
-        <Flex direction="column" gap="2">
-          <Text size="3" weight="medium">
-            Add Data Connection
-          </Text>
-          <Form action={addAction}>
-            <input
-              type="hidden"
-              name="account_id"
-              value={product.account_id}
-            />
-            <input
-              type="hidden"
-              name="product_id"
-              value={product.product_id}
-            />
-            <Flex gap="2" align="end">
-              <Select.Root name="connection_id" size="2" required>
-                <Select.Trigger
-                  placeholder="Select a data connection..."
-                  style={{ flex: 1 }}
+      {canManageMirrors && (
+        <Box mt="6">
+          <SectionHeader title="Add a connection">
+            {unusedConnections.length === 0 ? (
+              <Text size="2" color="gray">
+                {availableConnections.length === 0
+                  ? "No other connections are available to this account."
+                  : "Every connection available to this account is already attached."}
+              </Text>
+            ) : (
+              <Form action={addAction}>
+                <input
+                  type="hidden"
+                  name="account_id"
+                  value={product.account_id}
                 />
-                <Select.Content>
-                  {unusedConnections.map((conn) => (
-                    <Select.Item
-                      key={conn.data_connection_id}
-                      value={conn.data_connection_id}
-                    >
-                      {conn.name} ({conn.provider}
-                      {conn.region ? ` - ${conn.region}` : ""})
-                    </Select.Item>
-                  ))}
-                </Select.Content>
-              </Select.Root>
-              <Button
-                type="submit"
+                <input
+                  type="hidden"
+                  name="product_id"
+                  value={product.product_id}
+                />
+                <Flex gap="2" align="center">
+                  <Select.Root name="connection_id" size="2" required>
+                    <Select.Trigger
+                      placeholder="Choose a connection…"
+                      style={{ flex: 1 }}
+                    />
+                    <Select.Content>
+                      {unusedConnections.map((conn) => (
+                        <Select.Item
+                          key={conn.data_connection_id}
+                          value={conn.data_connection_id}
+                        >
+                          {conn.name} ({conn.provider}
+                          {conn.region ? ` - ${conn.region}` : ""})
+                        </Select.Item>
+                      ))}
+                    </Select.Content>
+                  </Select.Root>
+                  <Button
+                    type="submit"
+                    size="2"
+                    disabled={addPending}
+                    loading={addPending}
+                  >
+                    Add
+                  </Button>
+                </Flex>
+              </Form>
+            )}
+            {addState.message && (
+              <Text
+                as="p"
                 size="2"
-                disabled={addPending}
-                loading={addPending}
+                mt="2"
+                color={addState.success ? "green" : "red"}
               >
-                Add
-              </Button>
-            </Flex>
-          </Form>
-          {addState.message && (
-            <Text size="2" color={addState.success ? "green" : "red"}>
-              {addState.message}
-            </Text>
-          )}
-        </Flex>
+                {addState.message}
+              </Text>
+            )}
+          </SectionHeader>
+        </Box>
       )}
-    </Flex>
+
+      {/* Removing a mirror re-points where this product is served from, so it
+          asks first — as deleting a connection already does. */}
+      <AlertDialog.Root
+        open={pendingRemoval !== null}
+        onOpenChange={(open) => !open && setPendingRemoval(null)}
+      >
+        <AlertDialog.Content maxWidth="450px">
+          <AlertDialog.Title>Remove {removalName}?</AlertDialog.Title>
+          <AlertDialog.Description size="2">
+            This product will no longer be served from that storage. The objects
+            themselves are not deleted, and you can attach the connection again
+            later.
+          </AlertDialog.Description>
+          <Flex gap="3" mt="4" justify="end">
+            <AlertDialog.Cancel>
+              <Button variant="soft" color="gray">
+                Cancel
+              </Button>
+            </AlertDialog.Cancel>
+            <Button
+              color="red"
+              disabled={removePending}
+              loading={removePending}
+              onClick={() => {
+                if (pendingRemoval) {
+                  dispatchForMirror(removeAction, pendingRemoval);
+                }
+                setPendingRemoval(null);
+              }}
+            >
+              Remove
+            </Button>
+          </Flex>
+        </AlertDialog.Content>
+      </AlertDialog.Root>
+    </Box>
   );
 }
