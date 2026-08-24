@@ -64,6 +64,33 @@ const emptyFormState = {
   success: false,
 };
 
+/** Which per-mirror action a result came from. */
+export type MirrorAction = "remove" | "primary" | "prefix";
+
+interface ActionResult {
+  message: string;
+  success: boolean;
+}
+
+/**
+ * The result belonging to one row, or null.
+ *
+ * Each action has its own useActionState, and those never reset — a state keeps
+ * its last message until that same action runs again. So "whichever state still
+ * has a message" is not the same question as "what just happened here": remove a
+ * mirror, then save a prefix on another row, and the stale remove message would
+ * win on the row that saved. Both the row and the action have to match.
+ */
+export function resultForRow(
+  acted: { key: string; action: MirrorAction } | null,
+  key: string,
+  states: Record<MirrorAction, ActionResult>
+): ActionResult | null {
+  if (acted?.key !== key) return null;
+  const state = states[acted.action];
+  return state.message ? state : null;
+}
+
 export function ProductMirrorsManager({
   product,
   availableConnections,
@@ -92,9 +119,13 @@ export function ProductMirrorsManager({
     emptyFormState
   );
 
-  // Which mirror the last action targeted, so its result renders on that row
-  // instead of joining a pile of messages at the foot of the page.
-  const [actedOn, setActedOn] = useState<string | null>(null);
+  // Which mirror the last action targeted and which action it was, so its result
+  // renders on that row instead of joining a pile of messages at the foot of the
+  // page. The action matters as much as the row — see resultForRow.
+  const [actedOn, setActedOn] = useState<{
+    key: string;
+    action: MirrorAction;
+  } | null>(null);
   // The mirror queued for removal, i.e. the open confirmation.
   const [pendingRemoval, setPendingRemoval] = useState<string | null>(null);
 
@@ -103,13 +134,14 @@ export function ProductMirrorsManager({
   // card, and a menu item cannot submit a form it does not contain.
   const dispatchForMirror = (
     action: (formData: FormData) => void,
-    mirrorKey: string
+    mirrorKey: string,
+    kind: MirrorAction
   ) => {
     const formData = new FormData();
     formData.set("account_id", product.account_id);
     formData.set("product_id", product.product_id);
     formData.set("mirror_key", mirrorKey);
-    setActedOn(mirrorKey);
+    setActedOn({ key: mirrorKey, action: kind });
     startTransition(() => action(formData));
   };
 
@@ -136,10 +168,11 @@ export function ProductMirrorsManager({
 
   /** The result of the last action, shown against the row that caused it. */
   const rowMessage = (key: string) => {
-    if (actedOn !== key) return null;
-    const state = [removeState, primaryState, prefixState].find(
-      (candidate) => candidate.message
-    );
+    const state = resultForRow(actedOn, key, {
+      remove: removeState,
+      primary: primaryState,
+      prefix: prefixState,
+    });
     if (!state) return null;
     return (
       <Text size="1" color={state.success ? "green" : "red"}>
@@ -273,7 +306,7 @@ export function ProductMirrorsManager({
                         {canManageMirrors && !mirror.is_primary && (
                           <DropdownMenu.Item
                             onSelect={() =>
-                              dispatchForMirror(primaryAction, key)
+                              dispatchForMirror(primaryAction, key, "primary")
                             }
                           >
                             Make primary
@@ -362,7 +395,7 @@ export function ProductMirrorsManager({
                               type="submit"
                               size="1"
                               variant="soft"
-                              onClick={() => setActedOn(key)}
+                              onClick={() => setActedOn({ key, action: "prefix" })}
                               disabled={prefixPending}
                               loading={prefixPending}
                             >
@@ -477,7 +510,7 @@ export function ProductMirrorsManager({
               loading={removePending}
               onClick={() => {
                 if (pendingRemoval) {
-                  dispatchForMirror(removeAction, pendingRemoval);
+                  dispatchForMirror(removeAction, pendingRemoval, "remove");
                 }
                 setPendingRemoval(null);
               }}
