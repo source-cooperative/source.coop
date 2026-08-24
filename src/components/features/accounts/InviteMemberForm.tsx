@@ -68,6 +68,8 @@ export function InviteMemberForm({
           Invite a user to join {organization.name} as a member.
         </Dialog.Description>
 
+        {/* Cancel goes through the form's own action row — as a sibling of the
+            form it produced a second right-aligned row under the submit. */}
         <DynamicForm<InviteMemberFormData>
           fields={fields}
           action={inviteMember}
@@ -80,15 +82,14 @@ export function InviteMemberForm({
             product_id: product?.product_id,
           }}
           onSuccess={() => setOpen(false)}
+          secondaryAction={
+            <Dialog.Close>
+              <Button type="button" size="3" variant="soft" color="gray">
+                Cancel
+              </Button>
+            </Dialog.Close>
+          }
         />
-
-        <Flex gap="3" mt="4" justify="end">
-          <Dialog.Close>
-            <Button variant="soft" color="gray">
-              Cancel
-            </Button>
-          </Dialog.Close>
-        </Flex>
       </Dialog.Content>
     </Dialog.Root>
   );

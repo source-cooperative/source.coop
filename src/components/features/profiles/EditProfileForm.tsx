@@ -5,8 +5,8 @@ import { Account } from "@/types";
 import {
   Button,
   Flex,
-  Text,
   Box,
+  IconButton,
   TextField,
   Tooltip,
   Link,
@@ -15,6 +15,7 @@ import { TrashIcon } from "@radix-ui/react-icons";
 import { DynamicForm, FormField } from "@/components/core";
 import { updateAccountProfile } from "@/lib/actions/account";
 import { orySettingsUrl } from "@/lib/urls";
+import { BIO_MAX_LENGTH } from "@/types/account";
 
 interface Website {
   url: string;
@@ -44,6 +45,11 @@ export function EditProfileForm({
       ? accountWebsites.map((domain) => ({ url: domain.domain }))
       : [{ url: "" }]; // Start with one empty website field if no existing websites
   });
+
+  // Controlled so the character counter tracks what is actually in the field.
+  const [description, setDescription] = useState(
+    initialAccount.metadata_public?.bio || ""
+  );
 
   const handleWebsiteChange = (index: number, url: string) => {
     setWebsites((prev) =>
@@ -77,10 +83,11 @@ export function EditProfileForm({
 
   const fields: FormField<EditProfileFormData>[] = [
     {
-      label: "Name (Required)",
+      label: "Name",
       name: "name",
       type: "text",
       required: true,
+      section: "Identity",
       placeholder: "Your Name",
       description: "This is the name that will be displayed on your profile",
     },
@@ -89,6 +96,8 @@ export function EditProfileForm({
       name: "email",
       type: "email",
       readOnly: true,
+      section: "Identity",
+      mono: true,
       placeholder: "you@example.com",
       description:
         initialAccount.type === "individual" ? (
@@ -104,16 +113,22 @@ export function EditProfileForm({
       label: initialAccount.type === "individual" ? "Bio" : "Description",
       name: "description",
       type: "textarea",
+      section: "About",
+      // BIO_MAX_LENGTH comes from the schema that validates this, so the
+      // counter and the validator cannot drift apart the way the old
+      // "220 characters maximum" help text had.
+      maxLength: BIO_MAX_LENGTH,
+      controlled: true,
+      value: description,
+      onValueChange: setDescription,
       ...(initialAccount.type === "individual"
         ? {
             placeholder: "Tell us about yourself",
-            description:
-              "A brief description of yourself or your work (220 characters maximum)",
+            description: "A brief description of yourself or your work",
           }
         : {
             placeholder: "Tell us about your organization",
-            description:
-              "A brief description of your organization (220 characters maximum)",
+            description: "A brief description of your organization",
           }),
     },
     ...(initialAccount.type === "individual"
@@ -122,6 +137,8 @@ export function EditProfileForm({
             label: "ORCID ID",
             name: "orcid",
             type: "text" as const,
+            section: "Identifiers",
+            mono: true,
             placeholder: "0000-0002-1825-0097",
             description: "Your ORCID identifier (optional)",
           } as const,
@@ -133,6 +150,8 @@ export function EditProfileForm({
             label: "ROR ID",
             name: "ror_id",
             type: "text" as const,
+            section: "Identifiers",
+            mono: true,
             placeholder: "03yrm5c26",
             description: "Your Research Organization Registry identifier (optional)",
           } as const,
@@ -142,22 +161,19 @@ export function EditProfileForm({
       label: "Websites",
       name: "websites",
       type: "custom",
+      section: "Links",
       description: "Add websites associated with your profile",
       customComponent: (
         <Box>
           <Flex direction="column" gap="3">
             {websites.map((website, index) => (
-              <Box key={`website-${index}`}>
-                <WebsiteInputField
-                  value={website.url}
-                  onChange={(value) => handleWebsiteChange(index, value)}
-                  onRemove={() => removeWebsite(index)}
-                  showRemoveButton={websites.length > 1}
-                />
-                <Text size="1" color="gray" mt="1">
-                  Website URL
-                </Text>
-              </Box>
+              <WebsiteInputField
+                key={`website-${index}`}
+                value={website.url}
+                onChange={(value) => handleWebsiteChange(index, value)}
+                onRemove={() => removeWebsite(index)}
+                showRemoveButton={websites.length > 1}
+              />
             ))}
           </Flex>
           <Box mt="3">
@@ -200,8 +216,6 @@ function WebsiteInputField({
   onRemove?: () => void;
   showRemoveButton: boolean;
 }) {
-  const [isHovering, setIsHovering] = useState(false);
-
   return (
     <Flex align="center" gap="2">
       <Box style={{ flexGrow: 1 }}>
@@ -211,28 +225,24 @@ function WebsiteInputField({
           onChange={(e) => onChange(e.target.value)}
           size="3"
           variant="surface"
-          style={{ width: "100%" }}
+          style={{
+            width: "100%",
+            fontFamily: "var(--code-font-family)",
+          }}
         />
       </Box>
       {showRemoveButton && onRemove && (
         <Tooltip content="Remove website">
-          <Box
-            style={{
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              padding: "6px",
-            }}
+          <IconButton
+            type="button"
+            size="3"
+            variant="ghost"
+            color="gray"
+            aria-label="Remove website"
             onClick={onRemove}
-            onMouseEnter={() => setIsHovering(true)}
-            onMouseLeave={() => setIsHovering(false)}
           >
-            <TrashIcon
-              color={isHovering ? "tomato" : "gray"}
-              width="18"
-              height="18"
-            />
-          </Box>
+            <TrashIcon width="18" height="18" />
+          </IconButton>
         </Tooltip>
       )}
     </Flex>

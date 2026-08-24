@@ -14,6 +14,14 @@ const VISIBILITY_LABELS: Record<ProductVisibility, string> = {
   [ProductVisibility.Restricted]: "Restricted",
 };
 
+const VISIBILITY_DESCRIPTIONS: Record<ProductVisibility, string> = {
+  [ProductVisibility.Public]:
+    "Anyone can find and download it. Appears in search and the product feed.",
+  [ProductVisibility.Unlisted]:
+    "Anyone with the link can download it. Hidden from search and the feed.",
+  [ProductVisibility.Restricted]: "Members of this product only.",
+};
+
 // Fallback when no data connection is selected (e.g. legacy products in edit
 // mode whose connection can no longer be resolved).
 const ALL_VISIBILITIES: ProductVisibility[] = [
@@ -25,9 +33,12 @@ const ALL_VISIBILITIES: ProductVisibility[] = [
 function allowedVisibilitiesFor(
   connection: DataConnection | undefined
 ): ProductVisibility[] {
-  return connection?.allowed_visibilities?.length
-    ? connection.allowed_visibilities
-    : ALL_VISIBILITIES;
+  // A connection that resolves but permits nothing is not the same as one that
+  // could not be resolved. The `?.length` check used to conflate them, so a
+  // connection with an empty allowed_visibilities offered all three options
+  // while createProduct/updateProduct rejected every one of them — the form
+  // promised a choice the server always refused.
+  return connection ? connection.allowed_visibilities : ALL_VISIBILITIES;
 }
 
 // Region is only present on S3/Azure connections, not GCP (keyless WIF).
@@ -91,10 +102,16 @@ export function ProductCreationForm({
   const validationState = useProductIdValidation(productId, accountId);
 
   // Connections available to the currently selected owner account: either
-  // unowned (Source-Coop-managed) or explicitly owned by that account.
+  // unowned (Source-Coop-managed) or explicitly owned by that account. A
+  // connection permitting no visibilities is excluded: createProduct rejects
+  // every visibility against it, so offering it would only produce a dead end.
+  // Edit mode is unaffected — the product's existing connection is passed in
+  // separately and stays resolvable whatever it permits.
   const connectionsForAccount = (forAccountId: string) =>
     dataConnections.filter(
-      (dc) => !dc.owner || dc.owner === forAccountId
+      (dc) =>
+        (!dc.owner || dc.owner === forAccountId) &&
+        dc.allowed_visibilities.length > 0
     );
 
   // Data connection selection. In edit mode the storage backend is fixed once
@@ -132,12 +149,6 @@ export function ProductCreationForm({
   const [disabled, setDisabled] = useState<boolean>(
     isEditMode ? product.disabled : false
   );
-
-  // The currently selected visibility must always be selectable, even if it
-  // falls outside the connection's allowed set (e.g. legacy data drift).
-  const visibilityOptions = allowedVisibilities.includes(visibility)
-    ? allowedVisibilities
-    : [visibility, ...allowedVisibilities];
 
   // When the connection changes, drop a now-disallowed visibility back to a
   // permitted one so the form can't submit an invalid combination.
@@ -178,6 +189,7 @@ export function ProductCreationForm({
       name: "title",
       type: "text",
       required: true,
+      section: "Description",
       description: "The name of your product",
       placeholder: "Enter product name",
     },
@@ -190,6 +202,7 @@ export function ProductCreationForm({
             name: "account_id",
             type: "select",
             required: true,
+            section: "Description",
             description: "The account that owns the product",
             options: potentialOwnerAccounts.map((account) => ({
               value: account.account_id,
@@ -204,6 +217,8 @@ export function ProductCreationForm({
             name: "product_id",
             type: "text",
             required: true,
+            section: "Description",
+            mono: true,
             description: "The ID of your product",
             placeholder: "Enter product ID",
             controlled: true,
@@ -234,6 +249,7 @@ export function ProductCreationForm({
       name: "description",
       type: "textarea",
       required: false,
+      section: "Description",
       description: "A brief description of your product",
       placeholder: "Describe your product",
     },
@@ -247,6 +263,7 @@ export function ProductCreationForm({
             name: "data_connection_id" as keyof Product,
             type: "select",
             required: true,
+            section: "Storage",
             description:
               "Where this product's data is stored. Determines the available region and visibility options. If you're unsure, choose a us-west-2 connection.",
             options: [...availableConnections]
@@ -272,15 +289,27 @@ export function ProductCreationForm({
     {
       label: "Visibility",
       name: "visibility",
-      type: "select",
+      type: "radio-cards",
       required: true,
+      section: "Access",
       description: connectionMissing
         ? "This product's data connection could not be found, so its visibility can't be changed."
-        : "Your product's visibility. The available options depend on the product's primary data connection.",
-      options: visibilityOptions.map((value) => ({
-        value,
-        label: VISIBILITY_LABELS[value],
-      })),
+        : "Who can reach this product. The options depend on its data connection.",
+      // Every visibility is listed; the connection decides which are selectable.
+      options: ALL_VISIBILITIES.map((value) => {
+        const permitted = allowedVisibilities.includes(value);
+        return {
+          value,
+          label: VISIBILITY_LABELS[value],
+          description: VISIBILITY_DESCRIPTIONS[value],
+          // The current value stays selectable even when the connection no
+          // longer permits it (legacy drift), so an edit of some other field
+          // isn't blocked by a visibility the user didn't choose today.
+          // The greyed-out card carries "unavailable" by itself, and the help
+          // text above already says the options follow the data connection.
+          disabled: !permitted && value !== visibility,
+        };
+      }),
       readOnly: connectionMissing,
       controlled: true,
       value: visibility,
@@ -293,14 +322,12 @@ export function ProductCreationForm({
           {
             label: "Status",
             name: "disabled" as keyof Product,
-            type: "select",
-            required: true,
+            type: "switch",
+            section: "Status",
+            switchLabel: disabled ? "Deactivated" : "Active",
+            invert: true,
             description:
-              "A deactivated product is inaccessible via the data.source.coop API and hidden from the source.coop UI for everyone except administrators. This does not delete the product's data — it only makes it unavailable. Reactivating it afterwards requires a Source Cooperative administrator.",
-            options: [
-              { value: "false", label: "Active" },
-              { value: "true", label: "Deactivated" },
-            ],
+              "Deactivating hides the product from source.coop and blocks the data.source.coop API. The data is kept, but only a Source Cooperative administrator can reactivate it.",
             controlled: true,
             value: String(disabled),
             onValueChange: (value) => setDisabled(value === "true"),

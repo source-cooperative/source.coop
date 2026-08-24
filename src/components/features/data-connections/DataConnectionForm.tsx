@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useActionState, startTransition } from "react";
-import { Button, Text, Flex, Checkbox, Code } from "@radix-ui/themes";
+import { Text, Flex, Checkbox, Code, Select, TextField } from "@radix-ui/themes";
 import { CopyToClipboard } from "@/components/core/CopyToClipboard";
 import { useRouter } from "next/navigation";
 import {
@@ -12,7 +12,7 @@ import {
   ProductVisibility,
   AccountFlags,
 } from "@/types";
-import { formFieldStyle as fieldStyle } from "@/components/core/DynamicForm";
+import { Field, FormActions } from "@/components/core";
 import {
   createDataConnection,
   updateDataConnection,
@@ -81,51 +81,8 @@ const AUTH_TYPE_DESCRIPTIONS: Partial<
     "Keyless: the proxy federates into a GCP service account via Workload Identity.",
 };
 
-function FieldErrors({ errors, name }: { errors?: string[]; name: string }) {
-  if (!errors?.length) return null;
-  return (
-    <>
-      {errors.map((error, index) => (
-        <Text size="1" color="red" key={`${name}-${index}`}>
-          {error}
-        </Text>
-      ))}
-    </>
-  );
-}
-
-/**
- * Labelled field wrapper: renders the label, a gray description of what the
- * field does, the control, and any server-side validation errors.
- */
-function Field({
-  label,
-  name,
-  description,
-  errors,
-  children,
-}: {
-  label: string;
-  name: string;
-  description?: React.ReactNode;
-  errors?: string[];
-  children: React.ReactNode;
-}) {
-  return (
-    <Flex direction="column" gap="1">
-      <Text size="3" weight="medium">
-        {label}
-      </Text>
-      {description && (
-        <Text size="1" color="gray">
-          {description}
-        </Text>
-      )}
-      {children}
-      <FieldErrors name={name} errors={errors} />
-    </Flex>
-  );
-}
+// Radix Select has no empty-string item value; this stands in for "unset".
+const NONE = "__none__";
 
 export function DataConnectionForm({
   dataConnection,
@@ -157,6 +114,23 @@ export function DataConnectionForm({
 
   const [authType, setAuthType] = useState<string>(
     dataConnection?.authentication?.type || ""
+  );
+
+  // Controlled for the same reason as the checkboxes below: a Radix Select is
+  // not a native form control that re-seeds itself from `state.data` after a
+  // failed submit, so the user's choice lives in state.
+  const [requiredFlag, setRequiredFlag] = useState<string>(
+    dataConnection?.required_flag ?? ""
+  );
+  const [s3Region, setS3Region] = useState<string>(
+    dataConnection?.details.provider === DataProvider.S3
+      ? dataConnection.details.region
+      : ""
+  );
+  const [azureRegion, setAzureRegion] = useState<string>(
+    dataConnection?.details.provider === DataProvider.Azure
+      ? dataConnection.details.region
+      : ""
   );
 
   // Controlled so the user's selections survive a re-render after a failed
@@ -235,76 +209,77 @@ export function DataConnectionForm({
         )}
         <Field
           label="Connection ID"
-          name="data_connection_id"
-          description={
+          help={
             ownerAccountId && mode === "create"
               ? `Lowercase letters, numbers, and hyphens only. It will be stored as ${ownerAccountId}--<id>; cannot be changed after creation.`
               : "Unique identifier used in URLs and as the storage key. Lowercase letters, numbers, and hyphens only; cannot be changed after creation."
           }
           errors={state.fieldErrors?.data_connection_id}
         >
-          <input
-            type="text"
-            name="data_connection_id"
-            required
-            placeholder="my-data-connection"
-            readOnly={mode === "edit"}
-            defaultValue={
-              (state.data.get("data_connection_id") as string) ||
-              dataConnection?.data_connection_id ||
-              ""
-            }
-            style={{
-              ...fieldStyle,
-              ...(mode === "edit"
-                ? { backgroundColor: "var(--gray-3)", cursor: "not-allowed" }
-                : {}),
-            }}
-          />
+          {(props) => (
+            <TextField.Root
+              {...props}
+              type="text"
+              name="data_connection_id"
+              required
+              placeholder="my-data-connection"
+              readOnly={mode === "edit"}
+              defaultValue={
+                (state.data.get("data_connection_id") as string) ||
+                dataConnection?.data_connection_id ||
+                ""
+              }
+              variant={mode === "edit" ? "soft" : "surface"}
+            />
+          )}
         </Field>
 
         <Field
           label="Name"
-          name="name"
-          description="Human-readable label shown in admin lists and the product mirror picker."
+          help="Human-readable label shown in admin lists and the product mirror picker."
           errors={state.fieldErrors?.name}
         >
-          <input
-            type="text"
-            name="name"
-            required
-            defaultValue={
-              (state.data.get("name") as string) || dataConnection?.name || ""
-            }
-            style={fieldStyle}
-          />
+          {(props) => (
+            <TextField.Root
+              {...props}
+              type="text"
+              name="name"
+              required
+              defaultValue={
+                (state.data.get("name") as string) || dataConnection?.name || ""
+              }
+              size="3"
+            />
+          )}
         </Field>
 
         <Field
           label="Prefix Template"
-          name="prefix_template"
-          description="Template for the object-key prefix each product receives within the bucket/container. {{repository.account_id}} and {{repository.repository_id}} are substituted when a product attaches this connection. Example: {{repository.account_id}}/{{repository.repository_id}}/"
+          help="Template for the object-key prefix each product receives within the bucket/container. {{repository.account_id}} and {{repository.repository_id}} are substituted when a product attaches this connection. Example: {{repository.account_id}}/{{repository.repository_id}}/"
           errors={state.fieldErrors?.prefix_template}
         >
-          <input
-            type="text"
-            name="prefix_template"
-            defaultValue={
-              // has()-check, not ||: preserve a user-cleared value across a
-              // failed submit instead of reverting to the stored value.
-              state.data.has("prefix_template")
-                ? (state.data.get("prefix_template") as string)
-                : (dataConnection?.prefix_template ?? "")
-            }
-            style={fieldStyle}
-          />
+          {(props) => (
+            <TextField.Root
+              {...props}
+              type="text"
+              name="prefix_template"
+              defaultValue={
+                // has()-check, not ||: preserve a user-cleared value across a
+                // failed submit instead of reverting to the stored value.
+                state.data.has("prefix_template")
+                  ? (state.data.get("prefix_template") as string)
+                  : (dataConnection?.prefix_template ?? "")
+              }
+              size="3"
+            />
+          )}
         </Field>
 
         <Field
           label="Read Only"
-          name="read_only"
-          description="Prevents products from writing or modifying data through this connection — browse and download only. Required for unsigned (no-auth) connections."
+          help="Prevents products from writing or modifying data through this connection — browse and download only. Required for unsigned (no-auth) connections."
           errors={state.fieldErrors?.read_only}
+          group
         >
           <Flex align="center" gap="2" asChild>
             <label>
@@ -320,9 +295,9 @@ export function DataConnectionForm({
 
         <Field
           label="Allowed Visibilities"
-          name="allowed_visibilities"
-          description="Product visibilities permitted to use this connection. (Not currently enforced.)"
+          help="Which visibilities a product on this connection may use. Checked when a product is created and whenever its visibility changes."
           errors={state.fieldErrors?.allowed_visibilities}
+          group
         >
           <Flex direction="column" gap="2">
             {Object.values(ProductVisibility).map((visibility) => (
@@ -346,49 +321,64 @@ export function DataConnectionForm({
         {!ownerAccountId && (
           <Field
             label="Required Flag"
-            name="required_flag"
-            description="Account flag a user must have for their products to use this connection. Choose None for no restriction. (Not currently enforced.)"
+            help="Account flag an owner must hold before this connection can back their products. Choose None for no restriction."
             errors={state.fieldErrors?.required_flag}
           >
-            <select
-              name="required_flag"
-              defaultValue={
-                // has()-check, not ||: a user-selected "None" ("") must survive a
-                // failed submit instead of reverting to the stored flag.
-                state.data.has("required_flag")
-                  ? (state.data.get("required_flag") as string)
-                  : (dataConnection?.required_flag ?? "")
-              }
-              style={fieldStyle}
-            >
-              <option value="">None</option>
-              {Object.values(AccountFlags).map((flag) => (
-                <option key={flag} value={flag}>
-                  {flag}
-                </option>
-              ))}
-            </select>
+            {(props) => (
+              <>
+                {/* The Select is UI only; the hidden input carries "" for None,
+                    which Radix cannot express as an item value. */}
+                <input type="hidden" name="required_flag" value={requiredFlag} />
+                <Select.Root
+                  size="3"
+                  value={requiredFlag || NONE}
+                  onValueChange={(value) =>
+                    setRequiredFlag(value === NONE ? "" : value)
+                  }
+                >
+                  <Select.Trigger
+                    {...props}
+                    style={{ width: "100%" }}
+                  />
+                  <Select.Content>
+                    <Select.Item value={NONE}>None</Select.Item>
+                    {Object.values(AccountFlags).map((flag) => (
+                      <Select.Item key={flag} value={flag}>
+                        {flag}
+                      </Select.Item>
+                    ))}
+                  </Select.Content>
+                </Select.Root>
+              </>
+            )}
           </Field>
         )}
 
         <Field
           label="Provider"
-          name="provider"
-          description="Storage backend type. Determines the connection and authentication fields shown below."
+          help="Storage backend type. Determines the connection and authentication fields shown below."
           errors={state.fieldErrors?.provider}
         >
-          <select
-            name="provider"
-            value={provider}
-            onChange={(e) => handleProviderChange(e.target.value)}
-            style={fieldStyle}
-          >
-            {providerOptions.map((p) => (
-              <option key={p.value} value={p.value}>
-                {p.label}
-              </option>
-            ))}
-          </select>
+          {(props) => (
+            <Select.Root
+              name="provider"
+              size="3"
+              value={provider}
+              onValueChange={handleProviderChange}
+            >
+              <Select.Trigger
+                {...props}
+                style={{ width: "100%" }}
+              />
+              <Select.Content>
+                {providerOptions.map((p) => (
+                  <Select.Item key={p.value} value={p.value}>
+                    {p.label}
+                  </Select.Item>
+                ))}
+              </Select.Content>
+            </Select.Root>
+          )}
         </Field>
 
         {/* Provider-specific fields */}
@@ -396,87 +386,94 @@ export function DataConnectionForm({
           <>
             <Field
               label="Bucket"
-              name="bucket"
-              description="Name of the S3 bucket that stores the data."
+              help="Name of the S3 bucket that stores the data."
               errors={state.fieldErrors?.bucket}
             >
-              <input
-                type="text"
-                name="bucket"
-                defaultValue={
-                  (state.data.get("bucket") as string) ||
-                  (dataConnection?.details.provider === DataProvider.S3
-                    ? dataConnection.details.bucket
-                    : "")
-                }
-                style={fieldStyle}
-              />
+              {(props) => (
+                <TextField.Root
+                  {...props}
+                  type="text"
+                  name="bucket"
+                  defaultValue={
+                    (state.data.get("bucket") as string) ||
+                    (dataConnection?.details.provider === DataProvider.S3
+                      ? dataConnection.details.bucket
+                      : "")
+                  }
+                  size="3"
+                />
+              )}
             </Field>
 
             <Field
               label="Base Prefix"
-              name="base_prefix"
-              description="Optional key prefix prepended to every object path in the bucket (a shared root folder). Leave blank for the bucket root."
+              help="Optional key prefix prepended to every object path in the bucket (a shared root folder). Leave blank for the bucket root."
               errors={state.fieldErrors?.base_prefix}
             >
-              <input
-                type="text"
-                name="base_prefix"
-                defaultValue={
-                  (state.data.get("base_prefix") as string) ||
-                  (dataConnection?.details.provider === DataProvider.S3
-                    ? dataConnection.details.base_prefix
-                    : "")
-                }
-                style={fieldStyle}
-              />
+              {(props) => (
+                <TextField.Root
+                  {...props}
+                  type="text"
+                  name="base_prefix"
+                  defaultValue={
+                    (state.data.get("base_prefix") as string) ||
+                    (dataConnection?.details.provider === DataProvider.S3
+                      ? dataConnection.details.base_prefix
+                      : "")
+                  }
+                  size="3"
+                />
+              )}
             </Field>
 
             <Field
               label="Region"
-              name="region"
-              description="AWS region the bucket is hosted in. Use “auto” for S3-compatible backends like Cloudflare R2."
+              help="AWS region the bucket is hosted in. Use “auto” for S3-compatible backends like Cloudflare R2."
               errors={state.fieldErrors?.region}
             >
-              <select
-                name="region"
-                defaultValue={
-                  (state.data.get("region") as string) ||
-                  (dataConnection?.details.provider === DataProvider.S3
-                    ? dataConnection.details.region
-                    : "")
-                }
-                style={fieldStyle}
-              >
-                <option value="" disabled>
-                  Select a region
-                </option>
-                {Object.values(S3Regions).map((region) => (
-                  <option key={region} value={region}>
-                    {region}
-                  </option>
-                ))}
-              </select>
+              {(props) => (
+                <Select.Root
+                  name="region"
+                  size="3"
+                  value={s3Region || undefined}
+                  onValueChange={setS3Region}
+                >
+                  <Select.Trigger
+                    {...props}
+                    placeholder="Select a region"
+                    style={{ width: "100%" }}
+                  />
+                  <Select.Content>
+                    {Object.values(S3Regions).map((region) => (
+                      <Select.Item key={region} value={region}>
+                        {region}
+                      </Select.Item>
+                    ))}
+                  </Select.Content>
+                </Select.Root>
+              )}
             </Field>
 
             <Field
               label="Endpoint"
-              name="endpoint"
-              description="Custom S3-compatible endpoint for non-AWS backends (Cloudflare R2, MinIO, Ceph). Leave blank for AWS S3."
+              help="Custom S3-compatible endpoint for non-AWS backends (Cloudflare R2, MinIO, Ceph). Leave blank for AWS S3."
               errors={state.fieldErrors?.endpoint}
             >
-              <input
-                type="text"
-                name="endpoint"
-                placeholder="https://<account>.r2.cloudflarestorage.com"
-                defaultValue={
-                  (state.data.get("endpoint") as string) ||
-                  (dataConnection?.details.provider === DataProvider.S3
-                    ? dataConnection.details.endpoint ?? ""
-                    : "")
-                }
-                style={fieldStyle}
-              />
+              {(props) => (
+                <TextField.Root
+                  {...props}
+                  type="text"
+                  name="endpoint"
+                  placeholder="https://<account>.r2.cloudflarestorage.com"
+                  defaultValue={
+                    (state.data.get("endpoint") as string) ||
+                    (dataConnection?.details.provider === DataProvider.S3
+                      ? dataConnection.details.endpoint ?? ""
+                      : "")
+                  }
+                  size="3"
+                />
+              )}
             </Field>
           </>
         )}
@@ -485,40 +482,44 @@ export function DataConnectionForm({
           <>
             <Field
               label="Bucket"
-              name="bucket"
-              description="Name of the Google Cloud Storage bucket."
+              help="Name of the Google Cloud Storage bucket."
               errors={state.fieldErrors?.bucket}
             >
-              <input
-                type="text"
-                name="bucket"
-                defaultValue={
-                  (state.data.get("bucket") as string) ||
-                  (dataConnection?.details.provider === DataProvider.GCS
-                    ? dataConnection.details.bucket
-                    : "")
-                }
-                style={fieldStyle}
-              />
+              {(props) => (
+                <TextField.Root
+                  {...props}
+                  type="text"
+                  name="bucket"
+                  defaultValue={
+                    (state.data.get("bucket") as string) ||
+                    (dataConnection?.details.provider === DataProvider.GCS
+                      ? dataConnection.details.bucket
+                      : "")
+                  }
+                  size="3"
+                />
+              )}
             </Field>
 
             <Field
               label="Base Prefix"
-              name="base_prefix"
-              description="Optional key prefix prepended to every object path in the bucket. Leave blank for the bucket root."
+              help="Optional key prefix prepended to every object path in the bucket. Leave blank for the bucket root."
               errors={state.fieldErrors?.base_prefix}
             >
-              <input
-                type="text"
-                name="base_prefix"
-                defaultValue={
-                  (state.data.get("base_prefix") as string) ||
-                  (dataConnection?.details.provider === DataProvider.GCS
-                    ? dataConnection.details.base_prefix
-                    : "")
-                }
-                style={fieldStyle}
-              />
+              {(props) => (
+                <TextField.Root
+                  {...props}
+                  type="text"
+                  name="base_prefix"
+                  defaultValue={
+                    (state.data.get("base_prefix") as string) ||
+                    (dataConnection?.details.provider === DataProvider.GCS
+                      ? dataConnection.details.base_prefix
+                      : "")
+                  }
+                  size="3"
+                />
+              )}
             </Field>
           </>
         )}
@@ -527,112 +528,128 @@ export function DataConnectionForm({
           <>
             <Field
               label="Account Name"
-              name="account_name"
-              description="Azure Storage account name."
+              help="Azure Storage account name."
               errors={state.fieldErrors?.account_name}
             >
-              <input
-                type="text"
-                name="account_name"
-                defaultValue={
-                  (state.data.get("account_name") as string) ||
-                  (dataConnection?.details.provider === DataProvider.Azure
-                    ? dataConnection.details.account_name
-                    : "")
-                }
-                style={fieldStyle}
-              />
+              {(props) => (
+                <TextField.Root
+                  {...props}
+                  type="text"
+                  name="account_name"
+                  defaultValue={
+                    (state.data.get("account_name") as string) ||
+                    (dataConnection?.details.provider === DataProvider.Azure
+                      ? dataConnection.details.account_name
+                      : "")
+                  }
+                  size="3"
+                />
+              )}
             </Field>
 
             <Field
               label="Container Name"
-              name="container_name"
-              description="Azure Blob Storage container name."
+              help="Azure Blob Storage container name."
               errors={state.fieldErrors?.container_name}
             >
-              <input
-                type="text"
-                name="container_name"
-                defaultValue={
-                  (state.data.get("container_name") as string) ||
-                  (dataConnection?.details.provider === DataProvider.Azure
-                    ? dataConnection.details.container_name
-                    : "")
-                }
-                style={fieldStyle}
-              />
+              {(props) => (
+                <TextField.Root
+                  {...props}
+                  type="text"
+                  name="container_name"
+                  defaultValue={
+                    (state.data.get("container_name") as string) ||
+                    (dataConnection?.details.provider === DataProvider.Azure
+                      ? dataConnection.details.container_name
+                      : "")
+                  }
+                  size="3"
+                />
+              )}
             </Field>
 
             <Field
               label="Base Prefix"
-              name="base_prefix"
-              description="Optional key prefix prepended to every object path in the container. Leave blank for the container root."
+              help="Optional key prefix prepended to every object path in the container. Leave blank for the container root."
               errors={state.fieldErrors?.base_prefix}
             >
-              <input
-                type="text"
-                name="base_prefix"
-                defaultValue={
-                  (state.data.get("base_prefix") as string) ||
-                  (dataConnection?.details.provider === DataProvider.Azure
-                    ? dataConnection.details.base_prefix
-                    : "")
-                }
-                style={fieldStyle}
-              />
+              {(props) => (
+                <TextField.Root
+                  {...props}
+                  type="text"
+                  name="base_prefix"
+                  defaultValue={
+                    (state.data.get("base_prefix") as string) ||
+                    (dataConnection?.details.provider === DataProvider.Azure
+                      ? dataConnection.details.base_prefix
+                      : "")
+                  }
+                  size="3"
+                />
+              )}
             </Field>
 
             <Field
               label="Region"
-              name="region"
-              description="Azure region the storage account is hosted in."
+              help="Azure region the storage account is hosted in."
               errors={state.fieldErrors?.region}
             >
-              <select
-                name="region"
-                defaultValue={
-                  (state.data.get("region") as string) ||
-                  (dataConnection?.details.provider === DataProvider.Azure
-                    ? dataConnection.details.region
-                    : "")
-                }
-                style={fieldStyle}
-              >
-                <option value="" disabled>
-                  Select a region
-                </option>
-                {Object.values(AzureRegions).map((region) => (
-                  <option key={region} value={region}>
-                    {region}
-                  </option>
-                ))}
-              </select>
+              {(props) => (
+                <Select.Root
+                  name="region"
+                  size="3"
+                  value={azureRegion || undefined}
+                  onValueChange={setAzureRegion}
+                >
+                  <Select.Trigger
+                    {...props}
+                    placeholder="Select a region"
+                    style={{ width: "100%" }}
+                  />
+                  <Select.Content>
+                    {Object.values(AzureRegions).map((region) => (
+                      <Select.Item key={region} value={region}>
+                        {region}
+                      </Select.Item>
+                    ))}
+                  </Select.Content>
+                </Select.Root>
+              )}
             </Field>
           </>
         )}
 
         <Field
           label="Authentication Type"
-          name="auth_type"
-          description={
+          help={
             (authType && AUTH_TYPE_DESCRIPTIONS[authType as DataConnectionAuthenticationType]) ||
             "How the data proxy authenticates to this backend when serving the product's data. Choose None for unsigned (public) access."
           }
           errors={state.fieldErrors?.auth_type}
         >
-          <select
-            name="auth_type"
-            value={authType}
-            onChange={(e) => setAuthType(e.target.value)}
-            style={fieldStyle}
-          >
-            <option value="">None (unsigned)</option>
-            {authOptions.map((type) => (
-              <option key={type} value={type}>
-                {AUTH_TYPE_LABELS[type]}
-              </option>
-            ))}
-          </select>
+          {(props) => (
+            <>
+              <input type="hidden" name="auth_type" value={authType} />
+              <Select.Root
+                size="3"
+                value={authType || NONE}
+                onValueChange={(value) => setAuthType(value === NONE ? "" : value)}
+              >
+                <Select.Trigger
+                  {...props}
+                  style={{ width: "100%" }}
+                />
+                <Select.Content>
+                  <Select.Item value={NONE}>None (unsigned)</Select.Item>
+                  {authOptions.map((type) => (
+                    <Select.Item key={type} value={type}>
+                      {AUTH_TYPE_LABELS[type]}
+                    </Select.Item>
+                  ))}
+                </Select.Content>
+              </Select.Root>
+            </>
+          )}
         </Field>
 
         {/* Auth-specific fields */}
@@ -640,40 +657,44 @@ export function DataConnectionForm({
           <>
             <Field
               label="Access Key ID"
-              name="access_key_id"
-              description={withSecretHint(
+              help={withSecretHint(
                 "AWS access key ID for static-credential access."
               )}
               errors={state.fieldErrors?.access_key_id}
             >
-              <input
-                type="text"
-                name="access_key_id"
-                autoComplete="off"
-                required={mode === "create"}
-                defaultValue={(state.data.get("access_key_id") as string) || ""}
-                style={fieldStyle}
-              />
+              {(props) => (
+                <TextField.Root
+                  {...props}
+                  type="text"
+                  name="access_key_id"
+                  autoComplete="off"
+                  required={mode === "create"}
+                  defaultValue={(state.data.get("access_key_id") as string) || ""}
+                  size="3"
+                />
+              )}
             </Field>
 
             <Field
               label="Secret Access Key"
-              name="secret_access_key"
-              description={withSecretHint(
+              help={withSecretHint(
                 "AWS secret access key paired with the access key ID. Never shown after saving."
               )}
               errors={state.fieldErrors?.secret_access_key}
             >
-              <input
-                type="password"
-                name="secret_access_key"
-                autoComplete="new-password"
-                required={mode === "create"}
-                defaultValue={
-                  (state.data.get("secret_access_key") as string) || ""
-                }
-                style={fieldStyle}
-              />
+              {(props) => (
+                <TextField.Root
+                  {...props}
+                  type="password"
+                  name="secret_access_key"
+                  autoComplete="new-password"
+                  required={mode === "create"}
+                  defaultValue={
+                    (state.data.get("secret_access_key") as string) || ""
+                  }
+                  size="3"
+                />
+              )}
             </Field>
           </>
         )}
@@ -681,20 +702,22 @@ export function DataConnectionForm({
         {authType === DataConnectionAuthenticationType.AzureSasToken && (
           <Field
             label="SAS Token"
-            name="sas_token"
-            description={withSecretHint(
+            help={withSecretHint(
               "Azure shared access signature granting access to the container. Never shown after saving."
             )}
             errors={state.fieldErrors?.sas_token}
           >
-            <input
-              type="password"
-              name="sas_token"
-              autoComplete="new-password"
-              required={mode === "create"}
-              defaultValue={(state.data.get("sas_token") as string) || ""}
-              style={fieldStyle}
-            />
+            {(props) => (
+              <TextField.Root
+                {...props}
+                type="password"
+                name="sas_token"
+                autoComplete="new-password"
+                required={mode === "create"}
+                defaultValue={(state.data.get("sas_token") as string) || ""}
+                size="3"
+              />
+            )}
           </Field>
         )}
 
@@ -702,27 +725,28 @@ export function DataConnectionForm({
           <>
             <Field
               label="Role ARN"
-              name="role_arn"
-              description="IAM role the proxy assumes via AssumeRoleWithWebIdentity (keyless federation). This is an ARN, not a secret."
+              help="IAM role the proxy assumes via AssumeRoleWithWebIdentity (keyless federation). This is an ARN, not a secret."
               errors={state.fieldErrors?.role_arn}
             >
-              <input
-                type="text"
-                name="role_arn"
-                required
-                placeholder="arn:aws:iam::123456789012:role/my-role"
-                defaultValue={
-                  (state.data.get("role_arn") as string) || initialRoleArn
-                }
-                style={fieldStyle}
-              />
+              {(props) => (
+                <TextField.Root
+                  {...props}
+                  type="text"
+                  name="role_arn"
+                  required
+                  placeholder="arn:aws:iam::123456789012:role/my-role"
+                  defaultValue={
+                    (state.data.get("role_arn") as string) || initialRoleArn
+                  }
+                  size="3"
+                />
+              )}
             </Field>
 
             {mode === "edit" && (
               <Field
                 label="Trust-policy subject"
-                name="sub_pattern"
-                description={
+                help={
                   <>
                     The proxy presents this OIDC subject when assuming the role.
                     In the role&apos;s trust policy, add a{" "}
@@ -735,6 +759,7 @@ export function DataConnectionForm({
                     .
                   </>
                 }
+                group
               >
                 <Flex align="center" gap="2">
                   <Code size="2" variant="soft">
@@ -751,38 +776,42 @@ export function DataConnectionForm({
           <>
             <Field
               label="Tenant ID"
-              name="tenant_id"
-              description="Azure AD tenant (directory) ID used for workload-identity federation."
+              help="Azure AD tenant (directory) ID used for workload-identity federation."
               errors={state.fieldErrors?.tenant_id}
             >
-              <input
-                type="text"
-                name="tenant_id"
-                required
-                placeholder="00000000-0000-0000-0000-000000000000"
-                defaultValue={
-                  (state.data.get("tenant_id") as string) || initialTenantId
-                }
-                style={fieldStyle}
-              />
+              {(props) => (
+                <TextField.Root
+                  {...props}
+                  type="text"
+                  name="tenant_id"
+                  required
+                  placeholder="00000000-0000-0000-0000-000000000000"
+                  defaultValue={
+                    (state.data.get("tenant_id") as string) || initialTenantId
+                  }
+                  size="3"
+                />
+              )}
             </Field>
 
             <Field
               label="Client ID"
-              name="client_id"
-              description="App registration (client) ID that holds the federated identity credential."
+              help="App registration (client) ID that holds the federated identity credential."
               errors={state.fieldErrors?.client_id}
             >
-              <input
-                type="text"
-                name="client_id"
-                required
-                placeholder="00000000-0000-0000-0000-000000000000"
-                defaultValue={
-                  (state.data.get("client_id") as string) || initialClientId
-                }
-                style={fieldStyle}
-              />
+              {(props) => (
+                <TextField.Root
+                  {...props}
+                  type="text"
+                  name="client_id"
+                  required
+                  placeholder="00000000-0000-0000-0000-000000000000"
+                  defaultValue={
+                    (state.data.get("client_id") as string) || initialClientId
+                  }
+                  size="3"
+                />
+              )}
             </Field>
           </>
         )}
@@ -792,57 +821,54 @@ export function DataConnectionForm({
           <>
             <Field
               label="Workload Identity Provider"
-              name="workload_identity_provider"
-              description="Full GCP Workload Identity provider resource. Not a secret."
+              help="Full GCP Workload Identity provider resource. Not a secret."
               errors={state.fieldErrors?.workload_identity_provider}
             >
-              <input
-                type="text"
-                name="workload_identity_provider"
-                required
-                placeholder="//iam.googleapis.com/projects/123/locations/global/workloadIdentityPools/pool/providers/provider"
-                defaultValue={
-                  (state.data.get("workload_identity_provider") as string) ||
-                  initialWorkloadIdentityProvider
-                }
-                style={fieldStyle}
-              />
+              {(props) => (
+                <TextField.Root
+                  {...props}
+                  type="text"
+                  name="workload_identity_provider"
+                  required
+                  placeholder="//iam.googleapis.com/projects/123/locations/global/workloadIdentityPools/pool/providers/provider"
+                  defaultValue={
+                    (state.data.get("workload_identity_provider") as string) ||
+                    initialWorkloadIdentityProvider
+                  }
+                  size="3"
+                />
+              )}
             </Field>
 
             <Field
               label="Service Account"
-              name="service_account"
-              description="Email of the GCP service account the proxy impersonates. Not a secret."
+              help="Email of the GCP service account the proxy impersonates. Not a secret."
               errors={state.fieldErrors?.service_account}
             >
-              <input
-                type="text"
-                name="service_account"
-                required
-                placeholder="sa@my-project.iam.gserviceaccount.com"
-                defaultValue={
-                  (state.data.get("service_account") as string) ||
-                  initialServiceAccount
-                }
-                style={fieldStyle}
-              />
+              {(props) => (
+                <TextField.Root
+                  {...props}
+                  type="text"
+                  name="service_account"
+                  required
+                  placeholder="sa@my-project.iam.gserviceaccount.com"
+                  defaultValue={
+                    (state.data.get("service_account") as string) ||
+                    initialServiceAccount
+                  }
+                  size="3"
+                />
+              )}
             </Field>
           </>
         )}
 
-        {/* Submit */}
-        <Flex mt="4" justify="end">
-          <Flex direction="column" gap="2" align="end">
-            <Button size="3" type="submit" disabled={pending} loading={pending}>
-              {mode === "create" ? "Create Connection" : "Update Connection"}
-            </Button>
-            {state?.message && (
-              <Text size="1" color={state.success ? "green" : "red"}>
-                {state.message}
-              </Text>
-            )}
-          </Flex>
-        </Flex>
+        <FormActions
+          submitLabel={mode === "create" ? "Create Connection" : "Update Connection"}
+          pending={pending}
+          message={state?.message}
+          success={state.success}
+        />
       </Flex>
     </form>
   );

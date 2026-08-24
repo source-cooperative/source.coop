@@ -90,10 +90,14 @@ export function AccountFlagsForm({ session, account }: AccountFlagsFormProps) {
         name,
         description,
         type: "custom" as const,
-        customComponent: (
+        // Function form: the checkbox itself takes aria-describedby, so each
+        // flag's explanation is announced with it. As a plain node the ids had
+        // nowhere to land and the description sat unassociated.
+        customComponent: (controlProps) => (
           <Label.Root htmlFor={name}>
             <Flex align="center" gap="2">
               <Checkbox
+                {...controlProps}
                 name={name}
                 id={name}
                 checked={flagValues[name]}
