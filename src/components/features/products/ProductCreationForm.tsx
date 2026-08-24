@@ -33,9 +33,12 @@ const ALL_VISIBILITIES: ProductVisibility[] = [
 function allowedVisibilitiesFor(
   connection: DataConnection | undefined
 ): ProductVisibility[] {
-  return connection?.allowed_visibilities?.length
-    ? connection.allowed_visibilities
-    : ALL_VISIBILITIES;
+  // A connection that resolves but permits nothing is not the same as one that
+  // could not be resolved. The `?.length` check used to conflate them, so a
+  // connection with an empty allowed_visibilities offered all three options
+  // while createProduct/updateProduct rejected every one of them — the form
+  // promised a choice the server always refused.
+  return connection ? connection.allowed_visibilities : ALL_VISIBILITIES;
 }
 
 // Region is only present on S3/Azure connections, not GCP (keyless WIF).
@@ -99,10 +102,16 @@ export function ProductCreationForm({
   const validationState = useProductIdValidation(productId, accountId);
 
   // Connections available to the currently selected owner account: either
-  // unowned (Source-Coop-managed) or explicitly owned by that account.
+  // unowned (Source-Coop-managed) or explicitly owned by that account. A
+  // connection permitting no visibilities is excluded: createProduct rejects
+  // every visibility against it, so offering it would only produce a dead end.
+  // Edit mode is unaffected — the product's existing connection is passed in
+  // separately and stays resolvable whatever it permits.
   const connectionsForAccount = (forAccountId: string) =>
     dataConnections.filter(
-      (dc) => !dc.owner || dc.owner === forAccountId
+      (dc) =>
+        (!dc.owner || dc.owner === forAccountId) &&
+        dc.allowed_visibilities.length > 0
     );
 
   // Data connection selection. In edit mode the storage backend is fixed once
