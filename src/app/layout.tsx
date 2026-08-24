@@ -23,10 +23,6 @@ export default async function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={ibmPlexSans.variable} suppressHydrationWarning>
-        {/* ponytail: cross-origin hosts on the critical path. Both are discovered
-            late — the fonts only once globals.css parses — so the handshake
-            otherwise starts cold. crossOrigin on the font host only: fonts are
-            fetched in CORS mode, the Ory session request is credentialed. */}
         <link
           rel="preconnect"
           href="https://assets.radiant.earth"
