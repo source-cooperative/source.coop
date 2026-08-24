@@ -110,6 +110,23 @@ describe("service account planner", () => {
       "aws-actions/configure-aws-credentials@v4"
     );
     expect(yaml.lines.join("\n")).toContain("id-token: write");
+    // A Source-specific audience is what stops an AWS-bound token being
+    // replayed here, so it must never be omitted from the example.
+    expect(yaml.lines.join("\n")).toContain("audience: source-data-proxy");
+  });
+
+  it("configures endpoints by environment variable, not a per-command flag", () => {
+    for (const block of planChanges({
+      ...base,
+      signInMethods: [
+        { kind: "github", repository: "myorg/myrepo", ref: "refs/heads/main" },
+        { kind: "api_key", expiresInDays: 90 },
+      ],
+    }).workloadConfig) {
+      const script = block.lines.join("\n");
+      expect(script).toContain("AWS_ENDPOINT_URL_S3");
+      expect(script).not.toContain("--endpoint-url");
+    }
   });
 
   it("has the CLI write the token to stdout rather than pick a path", () => {
