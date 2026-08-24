@@ -307,11 +307,10 @@ export function ProductCreationForm({
           value,
           label: VISIBILITY_LABELS[value],
           description: VISIBILITY_DESCRIPTIONS[value],
-          // A disabled <option> cannot explain itself; a card can.
+          // The greyed-out card carries "unavailable" by itself, and the help
+          // text above already says the options follow the data connection.
+          // Naming the connection on each blocked card only repeated it.
           disabled: !permitted && value !== visibility,
-          disabledReason: `Not offered by ${
-            selectedConnection?.name ?? "this data connection"
-          }.`,
         };
       }),
       readOnly: connectionMissing,

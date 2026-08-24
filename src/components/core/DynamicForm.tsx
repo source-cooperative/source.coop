@@ -15,6 +15,14 @@ import { Field } from "./Field";
 import { FormActions } from "./FormActions";
 import { SectionHeader } from "./SectionHeader";
 
+/** The wiring Field hands a control so it announces its own label and help. */
+export interface ControlProps {
+  id: string;
+  "aria-describedby"?: string;
+  "aria-invalid"?: boolean;
+  "aria-labelledby"?: string;
+}
+
 /** Controls that render purely from a value prop, so they must be controlled. */
 export type ValueDrivenFieldType = "radio-cards" | "switch";
 
@@ -38,7 +46,15 @@ interface BaseFormField<T extends Record<string, any>> {
   placeholder?: string;
   isValid?: boolean | null;
   message?: React.ReactNode;
-  customComponent?: React.ReactNode; // Custom component for rendering
+  /**
+   * Renders a `custom` field. Prefer the FUNCTION form: it receives the same
+   * ids Field hands its render-prop children, and spreading them onto the real
+   * control is what associates the help text and errors with it. A plain
+   * ReactNode cannot receive them, so it gets wrapped in a group instead —
+   * workable, but weaker, since a description on a wrapper is not announced
+   * with the control inside it.
+   */
+  customComponent?: React.ReactNode | ((props: ControlProps) => React.ReactNode);
   options?: FormFieldOption[]; // Options for select and radio-cards fields
   /** Render the value in the code face — for IDs, emails and URLs. */
   mono?: boolean;
@@ -90,8 +106,6 @@ export interface FormFieldOption {
   /** Shown under the label. `radio-cards` only — a `select` has no room for it. */
   description?: React.ReactNode;
   disabled?: boolean;
-  /** Why the option can't be chosen. Rendered in place of the description. */
-  disabledReason?: React.ReactNode;
 }
 
 export interface FormState<T> {
@@ -280,22 +294,28 @@ export function DynamicForm<T extends Record<string, any>>({
     }
   }, [state.success, state.redirectTo, router]);
 
-  const renderControl = (
-    field: FormField<T>,
-    controlProps: {
-      id: string;
-      "aria-describedby"?: string;
-      "aria-invalid"?: boolean;
-    }
-  ) => {
+  const renderControl = (field: FormField<T>, controlProps: ControlProps) => {
     const name = String(field.name);
     const isDisabled = field.readOnly || disabled;
 
     if (field.type === "custom") {
-      // customComponent is a ReactNode, so it can never receive controlProps —
-      // which means a <label htmlFor> for it could never resolve. Wrap it so the
-      // label and description reach it as a named group instead.
-      return field.label ? (
+      // Given the function form, the caller spreads the ids onto the real
+      // control — the only way a description is genuinely announced with it,
+      // since aria-describedby on a wrapper does not reach the control inside.
+      if (typeof field.customComponent === "function") {
+        return field.customComponent(controlProps);
+      }
+
+      // A ReactNode cannot receive the ids, so wrap it. Wrapping whenever there
+      // is anything to convey — not only when a label exists — because an
+      // unlabelled-but-described field used to drop aria-describedby silently,
+      // which is the exact defect this component exists to prevent.
+      const hasWiring =
+        field.label ||
+        controlProps["aria-describedby"] ||
+        controlProps["aria-invalid"];
+
+      return hasWiring ? (
         <div role="group" {...controlProps}>
           {field.customComponent}
         </div>
@@ -369,18 +389,14 @@ export function DynamicForm<T extends Record<string, any>>({
                     <Text size="2" weight="medium">
                       {option.label}
                     </Text>
-                    {/* The description says what the option IS; the reason says
-                        why it can't be picked. Showing only the reason left a
-                        disabled option unexplained — you could no longer learn
-                        what "Unlisted" means from the card offering it. */}
+                    {/* A card says what the option is, and nothing more. The
+                        greyed-out treatment carries "unavailable" on its own,
+                        and the field's help text already names the dependency,
+                        so repeating a reason on every blocked card was noise —
+                        worse when the connection's name is long. */}
                     {option.description && (
                       <Text size="1" color="gray">
                         {option.description}
-                      </Text>
-                    )}
-                    {option.disabled && option.disabledReason && (
-                      <Text size="1" color="gray" weight="medium">
-                        {option.disabledReason}
                       </Text>
                     )}
                   </Flex>

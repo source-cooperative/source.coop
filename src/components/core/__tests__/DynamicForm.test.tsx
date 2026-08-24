@@ -96,6 +96,46 @@ describe("DynamicForm label wiring", () => {
     expect(screen.getByRole("group")).toHaveAccessibleName("Websites");
   });
 
+  it("hands a custom field's function form the ids to wire up itself", () => {
+    // The only way a description is genuinely announced with a custom control:
+    // aria-describedby on a wrapper does not reach the control inside it.
+    renderForm([
+      {
+        name: "flag",
+        type: "custom",
+        description: "Allows this account to create products.",
+        customComponent: (controlProps) => (
+          <label htmlFor="flag-box">
+            <input {...controlProps} id="flag-box" type="checkbox" name="flag" />
+            Create products
+          </label>
+        ),
+      },
+    ]);
+
+    const box = screen.getByLabelText("Create products");
+    const describedBy = box.getAttribute("aria-describedby") ?? "";
+    expect(describedBy).not.toEqual("");
+    expect(document.getElementById(describedBy.split(" ")[0])).toHaveTextContent(
+      "Allows this account to create products."
+    );
+  });
+
+  it("wraps an unlabelled custom field that still has a description", () => {
+    // Previously the wrapper was gated on `label`, so a described-but-unlabelled
+    // custom field dropped aria-describedby silently.
+    renderForm([
+      {
+        name: "flag",
+        type: "custom",
+        description: "Allows this account to create products.",
+        customComponent: <input name="flag" aria-label="Create products" />,
+      },
+    ]);
+
+    expect(screen.getByRole("group")).toHaveAttribute("aria-describedby");
+  });
+
   it("leaves an unlabelled custom field unwrapped", () => {
     renderForm([
       {
