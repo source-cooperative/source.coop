@@ -127,6 +127,61 @@ const monoStyle: React.CSSProperties = {
   fontFamily: "var(--code-font-family)",
 };
 
+/**
+ * The selection dot Radix's RadioCards leaves out.
+ *
+ * RadioCards conveys selection with the card border alone. That is a weak cue —
+ * it carries no shape, only weight, so it is easy to miss and it disappears in
+ * grayscale. This redraws the indicator from `<Radio variant="surface">` using
+ * Radix's own public tokens: same size (--space-4), same --accent-indicator fill
+ * with an --accent-contrast dot at 40%, same --gray-a3/--gray-a8 disabled
+ * treatment. Nothing here overrides a Radix class or reaches into its internals.
+ *
+ * It is decorative: RadioCards.Item is still the radio, so this is aria-hidden
+ * and never becomes a second control.
+ */
+function RadioDot({ checked, disabled }: { checked: boolean; disabled?: boolean }) {
+  return (
+    <span
+      aria-hidden
+      style={{
+        position: "relative",
+        display: "inline-block",
+        flexShrink: 0,
+        width: "var(--space-4)",
+        height: "var(--space-4)",
+        marginTop: "2px",
+        borderRadius: "100%",
+        backgroundColor: disabled
+          ? "var(--gray-a3)"
+          : checked
+            ? "var(--accent-indicator)"
+            : "var(--color-surface)",
+        boxShadow:
+          checked && !disabled
+            ? undefined
+            : `inset 0 0 0 1px var(--gray-a${disabled ? "6" : "7"})`,
+      }}
+    >
+      {checked && (
+        <span
+          style={{
+            position: "absolute",
+            inset: 0,
+            margin: "auto",
+            width: "40%",
+            height: "40%",
+            borderRadius: "100%",
+            backgroundColor: disabled
+              ? "var(--gray-a8)"
+              : "var(--accent-contrast)",
+          }}
+        />
+      )}
+    </span>
+  );
+}
+
 /** Runs of consecutive fields sharing a `section`, in declaration order. */
 function groupBySection<T extends Record<string, any>>(fields: FormField<T>[]) {
   const groups: Array<{ key: string; section?: string; fields: FormField<T>[] }> = [];
@@ -299,15 +354,30 @@ export function DynamicForm<T extends Record<string, any>>({
                 value={option.value}
                 disabled={option.disabled}
               >
-                <Flex direction="column" align="start" gap="1">
-                  <Text size="2" weight="medium">
-                    {option.label}
-                  </Text>
-                  {(option.disabled ? option.disabledReason : option.description) && (
-                    <Text size="1" color="gray">
-                      {option.disabled ? option.disabledReason : option.description}
+                <Flex align="start" gap="2">
+                  <RadioDot
+                    checked={value === option.value}
+                    disabled={option.disabled}
+                  />
+                  <Flex direction="column" align="start" gap="1">
+                    <Text size="2" weight="medium">
+                      {option.label}
                     </Text>
-                  )}
+                    {/* The description says what the option IS; the reason says
+                        why it can't be picked. Showing only the reason left a
+                        disabled option unexplained — you could no longer learn
+                        what "Unlisted" means from the card offering it. */}
+                    {option.description && (
+                      <Text size="1" color="gray">
+                        {option.description}
+                      </Text>
+                    )}
+                    {option.disabled && option.disabledReason && (
+                      <Text size="1" color="gray" weight="medium">
+                        {option.disabledReason}
+                      </Text>
+                    )}
+                  </Flex>
                 </Flex>
               </RadioCards.Item>
             ))}
