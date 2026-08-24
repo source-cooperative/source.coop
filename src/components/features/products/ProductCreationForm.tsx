@@ -323,9 +323,10 @@ export function ProductCreationForm({
             label: "Status",
             name: "disabled" as keyof Product,
             type: "switch",
-            section: "Status",
+            section: "Access",
             switchLabel: disabled ? "Deactivated" : "Active",
             invert: true,
+            dangerWhenOff: true,
             description:
               "Deactivating hides the product from source.coop and blocks the data.source.coop API. The data is kept, but only a Source Cooperative administrator can reactivate it.",
             controlled: true,

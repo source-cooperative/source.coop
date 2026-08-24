@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { Button } from "@radix-ui/themes";
+import { Button, Flex, Text } from "@radix-ui/themes";
 import { productsTable } from "@/lib/clients";
 import { DeleteDataConnectionButton } from "./DeleteDataConnectionButton";
 
@@ -18,7 +18,7 @@ export function DeleteConnectionControl({
     <Suspense
       fallback={
         <Button size="2" color="red" variant="soft" disabled>
-          Delete
+          Delete connection
         </Button>
       }
     >
@@ -29,10 +29,22 @@ export function DeleteConnectionControl({
 
 async function DeleteControlInner({ connectionId }: { connectionId: string }) {
   const products = await productsTable.listProductsByConnectionId(connectionId);
+
   return (
-    <DeleteDataConnectionButton
-      dataConnectionId={connectionId}
-      productsInUse={products.length}
-    />
+    <Flex direction="column" align="end" gap="2">
+      <DeleteDataConnectionButton
+        dataConnectionId={connectionId}
+        productsInUse={products.length}
+      />
+      {/* The count is resolved here, so the blocker is stated on the disabled
+          control rather than waiting to surprise someone inside the dialog. */}
+      {products.length > 0 && (
+        <Text size="1" color="red" align="right">
+          {products.length === 1
+            ? "1 product still uses it"
+            : `${products.length} products still use it`}
+        </Text>
+      )}
+    </Flex>
   );
 }

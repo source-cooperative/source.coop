@@ -68,6 +68,12 @@ interface BaseFormField<T extends Record<string, any>> {
   /** Label beside the control, for `switch`. */
   switchLabel?: string;
   /**
+   * `switch` only: draw the off state in red. For a switch whose off state
+   * takes something away rather than merely being the other setting, so the
+   * control reads as a warning without having to read the label.
+   */
+  dangerWhenOff?: boolean;
+  /**
    * `switch` only: the switch reads on when the value is "false". For flags
    * stored as the negative of what the user is being asked (`disabled`), so the
    * affirmative reading stays on the left.
@@ -413,6 +419,7 @@ export function DynamicForm<T extends Record<string, any>>({
     if (field.type === "switch") {
       const raw = field.value === "true";
       const checked = field.invert ? !raw : raw;
+      const danger = !!field.dangerWhenOff && !checked;
       return (
         <>
           <input type="hidden" name={name} value={String(raw)} />
@@ -420,13 +427,18 @@ export function DynamicForm<T extends Record<string, any>>({
             <Switch
               {...controlProps}
               size="2"
+              className={danger ? "switch-danger" : undefined}
               checked={checked}
               disabled={isDisabled}
               onCheckedChange={(next: boolean) =>
                 handleControlledChange(name, String(field.invert ? !next : next))
               }
             />
-            {field.switchLabel && <Text size="2">{field.switchLabel}</Text>}
+            {field.switchLabel && (
+              <Text size="2" color={danger ? "red" : undefined}>
+                {field.switchLabel}
+              </Text>
+            )}
           </Flex>
         </>
       );
