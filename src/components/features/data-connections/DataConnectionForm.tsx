@@ -295,7 +295,7 @@ export function DataConnectionForm({
 
         <Field
           label="Allowed Visibilities"
-          help="Product visibilities permitted to use this connection. (Not currently enforced.)"
+          help="Which visibilities a product on this connection may use. Checked when a product is created and whenever its visibility changes."
           errors={state.fieldErrors?.allowed_visibilities}
           group
         >
@@ -321,7 +321,7 @@ export function DataConnectionForm({
         {!ownerAccountId && (
           <Field
             label="Required Flag"
-            help="Account flag a user must have for their products to use this connection. Choose None for no restriction. (Not currently enforced.)"
+            help="Account flag an owner must hold before this connection can back their products. Choose None for no restriction."
             errors={state.fieldErrors?.required_flag}
           >
             {(props) => (
