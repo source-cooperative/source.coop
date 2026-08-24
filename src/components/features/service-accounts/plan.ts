@@ -205,10 +205,13 @@ export function planChanges(values: ServiceAccountFormValues): Plan {
     ? "arn:aws:iam::000000000000:role/full-access"
     : "arn:aws:iam::000000000000:role/read-only";
 
+  // Clients address products path-style: /{account}/{product}/{key}. The
+  // `account:product` form is the proxy registry's internal bucket name and
+  // never appears in a client's URL.
   const bucketExample =
     values.accessScope === "all"
-      ? `${values.ownerAccountId}:<product>`
-      : `${values.ownerAccountId}:${values.productGrants[0]?.product_id ?? "<product>"}`;
+      ? `${values.ownerAccountId}/<product>`
+      : `${values.ownerAccountId}/${values.productGrants[0]?.product_id ?? "<product>"}`;
 
   const workloadConfig = values.signInMethods.map((method) =>
     method.kind === "github"

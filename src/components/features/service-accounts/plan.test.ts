@@ -115,6 +115,12 @@ describe("service account planner", () => {
     expect(yaml.lines.join("\n")).toContain("audience: data.source.coop");
   });
 
+  it("addresses products path-style, not with the registry's internal name", () => {
+    const script = planChanges(base).workloadConfig[0].lines.join("\n");
+    expect(script).toContain("s3://noaa/buoys/");
+    expect(script).not.toContain("noaa:buoys");
+  });
+
   it("configures endpoints by environment variable, not a per-command flag", () => {
     for (const block of planChanges({
       ...base,

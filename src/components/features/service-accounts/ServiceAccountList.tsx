@@ -13,6 +13,7 @@ import {
   Flex,
   Grid,
   Heading,
+  Link,
   Table,
   Text,
 } from "@radix-ui/themes";
@@ -38,26 +39,141 @@ export type ServiceAccountRow = MockServiceAccount & {
   plan: Plan;
 };
 
+/** Small caps label in the app's code face — used for anything a machine reads. */
+function FieldLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <Text
+      size="1"
+      color="gray"
+      style={{
+        fontFamily: "var(--code-font-family)",
+        letterSpacing: "0.06em",
+        textTransform: "uppercase",
+      }}
+    >
+      {children}
+    </Text>
+  );
+}
+
+function Mono({
+  children,
+  color,
+  size = "2",
+}: {
+  children: React.ReactNode;
+  color?: "gray";
+  size?: "1" | "2";
+}) {
+  return (
+    <Text size={size} color={color} style={{ fontFamily: "var(--code-font-family)" }}>
+      {children}
+    </Text>
+  );
+}
+
 function Fact({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <Flex direction="column" gap="1">
-      <Text size="1" color="gray">
-        {label}
-      </Text>
+    <Flex direction="column" gap="2">
+      <FieldLabel>{label}</FieldLabel>
       {children}
     </Flex>
   );
 }
 
+/** Square status mark — a filled dot plus a small-caps word. Radix's soft
+ * Badge reads as a rounded pill, which fights the theme's `radius: none`. */
+function StatusMark({ disabled }: { disabled?: boolean }) {
+  return (
+    <Flex align="center" gap="2">
+      <Box
+        style={{
+          width: 6,
+          height: 6,
+          background: disabled ? "var(--gray-8)" : "var(--green-9)",
+        }}
+      />
+      <Text
+        size="1"
+        style={{
+          fontFamily: "var(--code-font-family)",
+          letterSpacing: "0.06em",
+          textTransform: "uppercase",
+          color: disabled ? "var(--gray-11)" : "var(--green-11)",
+        }}
+      >
+        {disabled ? "Disabled" : "Active"}
+      </Text>
+    </Flex>
+  );
+}
+
+function ServiceAccountIcon({ disabled }: { disabled?: boolean }) {
+  return (
+    <svg
+      width="17"
+      height="17"
+      viewBox="0 0 20 20"
+      fill="none"
+      stroke={disabled ? "var(--gray-9)" : "var(--gray-12)"}
+      strokeWidth="1.4"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      style={{ flexShrink: 0 }}
+    >
+      <path d="M10 2.5l6.5 3.5v8L10 17.5 3.5 14V6z" />
+      <path d="M3.5 6l6.5 3.5L16.5 6" />
+      <path d="M10 9.5v8" />
+    </svg>
+  );
+}
+
+/** Link-styled trigger for an in-page action. */
+function LinkButton({
+  children,
+  onClick,
+  muted,
+}: {
+  children: React.ReactNode;
+  onClick: () => void;
+  muted?: boolean;
+}) {
+  return (
+    <Link asChild size="2" color="gray" highContrast={!muted}>
+      <button
+        type="button"
+        onClick={onClick}
+        style={{
+          background: "none",
+          border: 0,
+          padding: 0,
+          font: "inherit",
+          cursor: "var(--cursor-link)",
+        }}
+      >
+        {children}
+      </button>
+    </Link>
+  );
+}
+
 function signInLines(entry: ServiceAccountRow): React.ReactNode[] {
+  const muted = entry.disabled ? "gray" : undefined;
   return entry.values.signInMethods.map((method, index) =>
     method.kind === "github" ? (
-      <Text size="2" key={index}>
-        GitHub — <Code size="1">{method.repository}</Code> @{" "}
-        <Code size="1">{method.ref}</Code>
-      </Text>
+      <Flex direction="column" key={index}>
+        <Text size="2" color={muted}>
+          GitHub
+        </Text>
+        <Mono size="1" color="gray">
+          {method.repository}
+        </Mono>
+        <Mono size="1" color="gray">
+          {method.ref}
+        </Mono>
+      </Flex>
     ) : (
-      <Text size="2" key={index}>
+      <Text size="2" color={muted} key={index}>
         API key —{" "}
         {method.expiresInDays === null
           ? "no expiry"
@@ -70,13 +186,23 @@ function signInLines(entry: ServiceAccountRow): React.ReactNode[] {
 function accessLines(entry: ServiceAccountRow): React.ReactNode[] {
   const { accessScope, allPermission, productGrants, ownerAccountId } =
     entry.values;
+  const muted = entry.disabled ? "gray" : undefined;
+  const permission = (value: "read" | "write") =>
+    value === "write" ? "read and write" : "read";
 
   if (accessScope === "all") {
     return [
-      <Text size="2" key="all">
-        Every product under <Code size="1">{ownerAccountId}</Code> —{" "}
-        {allPermission === "write" ? "read and write" : "read"}
-      </Text>,
+      <Flex align="baseline" gap="2" key="all" wrap="wrap">
+        <Text size="2" color={muted}>
+          Every product under
+        </Text>
+        <Mono size="1" color="gray">
+          {ownerAccountId}
+        </Mono>
+        <Text size="2" color="gray">
+          {permission(allPermission)}
+        </Text>
+      </Flex>,
     ];
   }
   if (productGrants.length === 0) {
@@ -87,10 +213,14 @@ function accessLines(entry: ServiceAccountRow): React.ReactNode[] {
     ];
   }
   return productGrants.map((grant) => (
-    <Text size="2" key={grant.product_id}>
-      <Code size="1">{grant.product_id}</Code> —{" "}
-      {grant.permission === "write" ? "read and write" : "read"}
-    </Text>
+    <Flex align="baseline" gap="2" key={grant.product_id} wrap="wrap">
+      <Mono size="2" color={muted}>
+        {grant.product_id}
+      </Mono>
+      <Text size="2" color="gray">
+        {permission(grant.permission)}
+      </Text>
+    </Flex>
   ));
 }
 
@@ -243,23 +373,74 @@ function ServiceAccountCard({ entry }: { entry: ServiceAccountRow }) {
   const [showUsage, setShowUsage] = useState(false);
 
   return (
-    <Card>
-      <Flex direction="column" gap="4">
-        <Flex justify="between" align="start" gap="3" wrap="wrap">
-          <Flex align="center" gap="2" wrap="wrap">
-            <Heading size="4">{entry.values.name}</Heading>
-            <Badge color={entry.disabled ? "gray" : "green"}>
-              {entry.disabled ? "Disabled" : "Active"}
-            </Badge>
-          </Flex>
+    <Card style={{ padding: 0, overflow: "hidden" }}>
+      {/* Identity band. Tinted so the name and its controls read as a unit
+          before the eye reaches the facts below. */}
+      <Flex
+        justify="between"
+        align="center"
+        gap="3"
+        wrap="wrap"
+        px="4"
+        py="3"
+        style={{
+          background: "var(--gray-2)",
+          borderBottom: "1px solid var(--gray-5)",
+        }}
+      >
+        <Flex align="center" gap="3">
+          <ServiceAccountIcon disabled={entry.disabled} />
+          <Heading size="4" color={entry.disabled ? "gray" : undefined}>
+            {entry.values.name}
+          </Heading>
+          <Box
+            style={{ width: 1, height: 15, background: "var(--gray-6)" }}
+          />
+          <StatusMark disabled={entry.disabled} />
+        </Flex>
+
+        <Flex align="center" gap="4">
+          <LinkButton onClick={() => setShowUsage(true)} muted={entry.disabled}>
+            Usage example
+          </LinkButton>
           <CardActions
             entry={entry}
             onResult={setResult}
             onShowMock={() => setShowMock(true)}
           />
         </Flex>
+      </Flex>
 
-        {result && (
+      <Grid columns={{ initial: "1", sm: "3" }} gap="5" px="4" py="5">
+        <Fact label="Signs in via">
+          <Flex direction="column" gap="2">
+            {signInLines(entry)}
+          </Flex>
+        </Fact>
+        <Fact label="Can reach">
+          <Flex direction="column" gap="1">
+            {accessLines(entry)}
+          </Flex>
+        </Fact>
+        <Fact label="Roles it may use">
+          <Flex gap="2" wrap="wrap">
+            {entry.values.allowedRoles.map((role) => (
+              <Badge
+                key={role}
+                variant="outline"
+                color="gray"
+                highContrast={role === "full_access" && !entry.disabled}
+                style={{ fontFamily: "var(--code-font-family)" }}
+              >
+                {ROLES[role].label.toLowerCase()}
+              </Badge>
+            ))}
+          </Flex>
+        </Fact>
+      </Grid>
+
+      {result && (
+        <Box px="4" pb="4">
           <MockDisclosure
             summary={`Design mock — nothing was ${
               result.action === "delete" ? "deleted" : "changed"
@@ -290,48 +471,22 @@ function ServiceAccountCard({ entry }: { entry: ServiceAccountRow }) {
               </Flex>
             </Flex>
           </MockDisclosure>
-        )}
-
-        <Grid columns={{ initial: "1", sm: "3" }} gap="4">
-          <Fact label="Signs in via">
-            <Flex direction="column" gap="1">
-              {signInLines(entry)}
-            </Flex>
-          </Fact>
-          <Fact label="Can reach">
-            <Flex direction="column" gap="1">
-              {accessLines(entry)}
-            </Flex>
-          </Fact>
-          <Fact label="Roles it may use">
-            <Flex gap="1" wrap="wrap">
-              {entry.values.allowedRoles.map((role) => (
-                <Badge
-                  key={role}
-                  color={role === "read_only" ? "blue" : "iris"}
-                  variant="soft"
-                >
-                  {ROLES[role].label}
-                </Badge>
-              ))}
-            </Flex>
-          </Fact>
-        </Grid>
-
-        <Box>
-          <Button variant="ghost" size="2" onClick={() => setShowUsage(true)}>
-            Usage example
-          </Button>
         </Box>
+      )}
 
-        <Flex gap="4" wrap="wrap">
-          <Text size="1" color="gray">
-            Last authenticated {entry.lastAuthenticated ?? "never"}
-          </Text>
-          <Text size="1" color="gray">
-            Created {entry.createdAt}
-          </Text>
-        </Flex>
+      <Flex
+        gap="4"
+        wrap="wrap"
+        px="4"
+        py="2"
+        style={{ borderTop: "1px solid var(--gray-4)" }}
+      >
+        <Mono size="1" color="gray">
+          last used {entry.lastAuthenticated ?? "never"}
+        </Mono>
+        <Mono size="1" color="gray">
+          created {entry.createdAt}
+        </Mono>
       </Flex>
 
       <Dialog.Root open={showUsage} onOpenChange={setShowUsage}>
