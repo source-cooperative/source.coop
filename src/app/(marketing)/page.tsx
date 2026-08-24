@@ -43,9 +43,6 @@ export default async function Landing() {
 
   return (
     <>
-      {/* ponytail: no texture preload — LiveGlobe is dynamic({ ssr: false }), so it
-          mounts after hydration anyway. Preloading pulled 6.5MB into the critical
-          window ahead of the render-blocking CSS that gates first paint. */}
       <Box className={styles.landing} px={{ sm: "6", lg: "9" }}>
         <Box className={styles.landingInner} mx="auto" maxWidth="1400px">
           <Navigation />
