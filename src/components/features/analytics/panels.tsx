@@ -198,11 +198,11 @@ export function UsersContent({ users }: { users: UsageUsers }) {
         <Stat
           label="Registered"
           help={HELP.registered}
-          value={numberFormat.format(users.registered)}
+          value={compactFormat.format(Math.round(users.registered)).toLowerCase()}
           divider
         />
         <Stat
-          label="Anon requests"
+          label="Anon downloads"
           help={HELP.anon}
           value={compactFormat.format(Math.round(users.anonRequests)).toLowerCase()}
           divider

@@ -255,7 +255,7 @@ export function AdminBreakdownChart({
           />
           <Stat
             label="Unique IPs"
-            help={HELP.uniqueIps}
+            help={HELP.uniqueIpsSampled}
             value={plain.format(totals.uniqueIps)}
             divider
           />
@@ -484,9 +484,9 @@ export function AdminBreakdownChart({
         ))}
       </Flex>
       <Text as="div" size="1" color="gray" mt="2">
-        Times are UTC. Values are estimates — Analytics Engine samples
-        high-volume traffic. Click a bar (or drag across several) to zoom in;
-        the browser back button zooms out.
+        Times are UTC. Values are estimates — high-volume traffic is measured
+        from a sample. Click a bar (or drag across several) to zoom in; the
+        browser back button zooms out.
       </Text>
     </Box>
   );
