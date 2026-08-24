@@ -160,7 +160,7 @@ export function LiveGlobe({
 
       // Add clouds
       if (showClouds) {
-        new TextureLoader().load("/img/clouds.png", (texture) => {
+        new TextureLoader().load("/img/clouds.webp", (texture) => {
           if (cancelled || !globe) return;
           clouds = new Mesh(
             new SphereGeometry(
@@ -169,7 +169,7 @@ export function LiveGlobe({
               75,
             ),
             new MeshPhongMaterial({
-              map: texture,
+              alphaMap: texture,
               transparent: true,
               opacity: 0.3,
             }),
@@ -533,7 +533,7 @@ export function LiveGlobe({
           width={width}
           height={height}
           backgroundColor="rgba(0,0,0,0)"
-          globeImageUrl="/img/earth-blue-marble.jpg"
+          globeImageUrl="/img/earth-blue-marble.webp"
           showAtmosphere={false}
           onGlobeReady={() => {
             globeReadyRef.current = true;
