@@ -1,6 +1,7 @@
 import {
   canManageDataConnection,
   canUseDataConnectionFor,
+  denyDataConnectionFor,
   listUsableDataConnections,
 } from "./data-connections";
 import { isAdmin, canManageAccountDataConnections } from "@/lib/api/authz";
@@ -159,6 +160,64 @@ describe("listUsableDataConnections (issue #461)", () => {
     expect(
       ids(await listUsableDataConnections(sessions["organization-owner-user"]))
     ).toEqual(["organization--byob"]);
+  });
+});
+
+// The single definition of which connections may back a product owned by a
+// given account, and why not when they may not. `createProduct` switches on the
+// reason to pick a field error. Uses the real `isAuthorized`.
+describe("denyDataConnectionFor", () => {
+  const user = sessions["regular-user"];
+
+  test("allows a system-level (unowned) connection", () => {
+    expect(
+      denyDataConnectionFor(user, connection({ owner: undefined }), "acme")
+    ).toBeNull();
+  });
+
+  test("allows a connection the account owns", () => {
+    expect(
+      denyDataConnectionFor(user, connection({ owner: "acme" }), "acme")
+    ).toBeNull();
+  });
+
+  test("reports wrong-account for a connection another account owns", () => {
+    expect(
+      denyDataConnectionFor(user, connection({ owner: "rival" }), "acme")
+    ).toBe("wrong-account");
+  });
+
+  test("allows a read-only connection", () => {
+    expect(
+      denyDataConnectionFor(
+        user,
+        connection({ owner: "acme", read_only: true }),
+        "acme"
+      )
+    ).toBeNull();
+  });
+
+  test("reports not-usable for a flag-gated connection the caller lacks the flag for", () => {
+    expect(
+      denyDataConnectionFor(
+        user,
+        connection({ required_flag: AccountFlags.CREATE_DATA_CONNECTIONS }),
+        "acme"
+      )
+    ).toBe("not-usable");
+  });
+
+  test("reports not-usable ahead of wrong-account when both apply", () => {
+    expect(
+      denyDataConnectionFor(
+        user,
+        connection({
+          owner: "rival",
+          required_flag: AccountFlags.CREATE_DATA_CONNECTIONS,
+        }),
+        "acme"
+      )
+    ).toBe("not-usable");
   });
 });
 
