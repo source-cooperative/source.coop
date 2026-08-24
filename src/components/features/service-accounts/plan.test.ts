@@ -112,7 +112,7 @@ describe("service account planner", () => {
     expect(yaml.lines.join("\n")).toContain("id-token: write");
     // A Source-specific audience is what stops an AWS-bound token being
     // replayed here, so it must never be omitted from the example.
-    expect(yaml.lines.join("\n")).toContain("audience: source-data-proxy");
+    expect(yaml.lines.join("\n")).toContain("audience: data.source.coop");
   });
 
   it("configures endpoints by environment variable, not a per-command flag", () => {
