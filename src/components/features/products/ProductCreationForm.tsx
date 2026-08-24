@@ -323,7 +323,7 @@ export function ProductCreationForm({
             label: "Status",
             name: "disabled" as keyof Product,
             type: "switch",
-            section: "Status",
+            section: "Access",
             switchLabel: disabled ? "Deactivated" : "Active",
             invert: true,
             dangerWhenOff: true,

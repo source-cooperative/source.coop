@@ -70,3 +70,60 @@ describe("DataConnectionsTable owner column", () => {
     expect(screen.getByText("ghost")).toBeInTheDocument();
   });
 });
+
+describe("DataConnectionsTable read-only and storage", () => {
+  it("marks a read-only connection on its row", () => {
+    renderWithTheme(
+      <DataConnectionsTable
+        connections={[conn({ read_only: true })]}
+        editHref={(id) => `/edit/${id}`}
+      />
+    );
+
+    expect(screen.getByText("Read only")).toBeInTheDocument();
+  });
+
+  it("says nothing at all about a writable connection", () => {
+    // Read-only is a deliberate configuration, not a fault. It used to render
+    // as a red "Yes", and every writable row carried a green "No" announcing
+    // that nothing had happened.
+    renderWithTheme(
+      <DataConnectionsTable
+        connections={[conn({ read_only: false })]}
+        editHref={(id) => `/edit/${id}`}
+      />
+    );
+
+    expect(screen.queryByText("Read only")).not.toBeInTheDocument();
+    expect(screen.queryByText("No")).not.toBeInTheDocument();
+    expect(screen.queryByText("Yes")).not.toBeInTheDocument();
+  });
+
+  it("folds provider and region into one storage cell", () => {
+    renderWithTheme(
+      <DataConnectionsTable
+        connections={[conn({})]}
+        editHref={(id) => `/edit/${id}`}
+      />
+    );
+
+    expect(screen.getByText("s3 · us-east-1")).toBeInTheDocument();
+  });
+
+  it("omits the region for a keyless provider that has none", () => {
+    renderWithTheme(
+      <DataConnectionsTable
+        connections={[
+          conn({
+            details: {
+              provider: DataProvider.GCS,
+            } as DataConnection["details"],
+          }),
+        ]}
+        editHref={(id) => `/edit/${id}`}
+      />
+    );
+
+    expect(screen.getByText("gcs")).toBeInTheDocument();
+  });
+});

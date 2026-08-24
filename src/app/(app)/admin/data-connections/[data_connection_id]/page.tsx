@@ -9,6 +9,7 @@ import {
 } from "@/components/features/data-connections";
 import { ConnectionUsage } from "@/components/features/data-connections/ConnectionUsage";
 import { toEditableDataConnection } from "@/components/features/data-connections/redact";
+import { DangerZone } from "@/components/core";
 
 export const metadata: Metadata = {
   title: "Admin — Edit data connection",
@@ -32,12 +33,7 @@ export default async function EditDataConnectionPage({
 
   return (
     <Flex direction="column" gap="4">
-      <Flex justify="between" align="center">
-        <Heading size="4">Edit Data Connection</Heading>
-        <DeleteConnectionControl
-          connectionId={dataConnection.data_connection_id}
-        />
-      </Flex>
+      <Heading size="4">Edit Data Connection</Heading>
       <DataConnectionForm
         mode="edit"
         dataConnection={toEditableDataConnection(dataConnection)}
@@ -52,6 +48,17 @@ export default async function EditDataConnectionPage({
       >
         <ConnectionUsage connectionId={dataConnection.data_connection_id} />
       </Suspense>
+
+      {/* Below the usage list, which is what answers "can I delete this?" */}
+      <DangerZone
+        title="Delete this connection"
+        description="Removes the connection record and its stored credentials. The bucket and its objects are not touched."
+        action={
+          <DeleteConnectionControl
+            connectionId={dataConnection.data_connection_id}
+          />
+        }
+      />
     </Flex>
   );
 }
