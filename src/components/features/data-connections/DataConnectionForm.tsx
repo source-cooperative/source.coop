@@ -1,7 +1,17 @@
 "use client";
 
 import React, { useState, useActionState, startTransition } from "react";
-import { Text, Flex, Checkbox, Code, Select, TextField } from "@radix-ui/themes";
+import {
+  Text,
+  Flex,
+  Box,
+  Button,
+  Checkbox,
+  Code,
+  Select,
+  TextField,
+} from "@radix-ui/themes";
+import { CheckIcon } from "@radix-ui/react-icons";
 import { CopyToClipboard } from "@/components/core/CopyToClipboard";
 import { useRouter } from "next/navigation";
 import {
@@ -83,6 +93,97 @@ const AUTH_TYPE_DESCRIPTIONS: Partial<
 
 // Radix Select has no empty-string item value; this stands in for "unset".
 const NONE = "__none__";
+
+/**
+ * A write-only credential: says whether one is stored, and reveals an input only
+ * when the user asks to change it.
+ *
+ * Rendering an empty password box in both states is what made an authenticated
+ * connection indistinguishable from one with no credential at all.
+ */
+function SecretField({
+  label,
+  help,
+  name,
+  stored,
+  required,
+  errors,
+  defaultValue,
+}: {
+  label: string;
+  help: React.ReactNode;
+  name: string;
+  stored: boolean;
+  required: boolean;
+  errors?: string[];
+  defaultValue: string;
+}) {
+  // Open when there is nothing stored, and after a failed submit re-seeds a
+  // typed value — closing then would discard what the user had entered.
+  const [replacing, setReplacing] = useState(!stored || defaultValue !== "");
+
+  if (replacing) {
+    return (
+      <Field label={label} help={help} errors={errors} required={required}>
+        {(props) => (
+          <Flex gap="2" align="center">
+            <TextField.Root
+              {...props}
+              type="password"
+              name={name}
+              autoComplete="new-password"
+              required={required}
+              defaultValue={defaultValue}
+              size="3"
+              style={{ flex: 1 }}
+            />
+            {stored && (
+              <Button
+                type="button"
+                size="2"
+                variant="soft"
+                color="gray"
+                onClick={() => setReplacing(false)}
+              >
+                Keep current
+              </Button>
+            )}
+          </Flex>
+        )}
+      </Field>
+    );
+  }
+
+  return (
+    <Field label={label} help={help} errors={errors} group>
+      <Flex
+        align="center"
+        justify="between"
+        gap="3"
+        p="3"
+        style={{
+          border: "1px solid var(--gray-6)",
+          backgroundColor: "var(--gray-2)",
+        }}
+      >
+        <Flex align="center" gap="2">
+          <CheckIcon color="var(--green-11)" />
+          <Text size="2" weight="medium">
+            Stored
+          </Text>
+        </Flex>
+        <Button
+          type="button"
+          size="2"
+          variant="soft"
+          onClick={() => setReplacing(true)}
+        >
+          Replace…
+        </Button>
+      </Flex>
+    </Field>
+  );
+}
 
 export function DataConnectionForm({
   dataConnection,
@@ -185,9 +286,28 @@ export function DataConnectionForm({
       ? auth.service_account
       : "";
 
-  // Secret fields are never pre-filled; on edit, blank means "keep current".
-  const withSecretHint = (base: string) =>
-    mode === "edit" ? `${base} Leave blank to keep the current value.` : base;
+  // Controlled so the worked example below updates as the template is typed.
+  const [prefixTemplate, setPrefixTemplate] = useState<string>(
+    // has()-check, not ||: preserve a user-cleared value across a failed submit
+    // instead of reverting to the stored value.
+    state.data.has("prefix_template")
+      ? (state.data.get("prefix_template") as string)
+      : (dataConnection?.prefix_template ?? "")
+  );
+
+  /** The template with a sample product substituted in, as the proxy would. */
+  const resolvedPrefixExample = prefixTemplate
+    .replaceAll("{{repository.account_id}}", "example-org")
+    .replaceAll("{{repository.repository_id}}", "rainfall");
+
+  // The redacted connection carries no secret, but the presence of an
+  // authentication type says one was saved — enough to tell "stored" from
+  // "not set" without sending anything sensitive to the browser.
+  const hasStoredSecret =
+    mode === "edit" &&
+    dataConnection?.authentication?.type === authType &&
+    (authType === DataConnectionAuthenticationType.S3AccessKey ||
+      authType === DataConnectionAuthenticationType.AzureSasToken);
 
   // Dispatch the action from onSubmit (in a transition) rather than via the
   // form's `action` prop. React auto-resets a form after an `action` submit,
@@ -255,23 +375,45 @@ export function DataConnectionForm({
 
         <Field
           label="Prefix Template"
-          help="Template for the object-key prefix each product receives within the bucket/container. {{repository.account_id}} and {{repository.repository_id}} are substituted when a product attaches this connection. Example: {{repository.account_id}}/{{repository.repository_id}}/"
+          help="Where each product's objects land inside the bucket or container. {{repository.account_id}} and {{repository.repository_id}} are substituted when a product attaches this connection."
           errors={state.fieldErrors?.prefix_template}
         >
           {(props) => (
-            <TextField.Root
-              {...props}
-              type="text"
-              name="prefix_template"
-              defaultValue={
-                // has()-check, not ||: preserve a user-cleared value across a
-                // failed submit instead of reverting to the stored value.
-                state.data.has("prefix_template")
-                  ? (state.data.get("prefix_template") as string)
-                  : (dataConnection?.prefix_template ?? "")
-              }
-              size="3"
-            />
+            <Flex direction="column" gap="2">
+              <TextField.Root
+                {...props}
+                type="text"
+                name="prefix_template"
+                value={prefixTemplate}
+                onChange={(event) => setPrefixTemplate(event.target.value)}
+                size="3"
+              />
+              {/* A worked example, rather than describing the substitution in
+                  prose and leaving the reader to run it in their head. */}
+              <Box
+                p="2"
+                style={{
+                  border: "1px solid var(--gray-6)",
+                  backgroundColor: "var(--gray-2)",
+                }}
+              >
+                <Text as="p" size="1" color="gray">
+                  A product at{" "}
+                  <Code size="1" variant="ghost">
+                    example-org/rainfall
+                  </Code>{" "}
+                  would be stored at
+                </Text>
+                <Code
+                  size="1"
+                  variant="ghost"
+                  color="gray"
+                  style={{ wordBreak: "break-all" }}
+                >
+                  {resolvedPrefixExample || "(connection root)"}
+                </Code>
+              </Box>
+            </Flex>
           )}
         </Field>
 
@@ -657,9 +799,11 @@ export function DataConnectionForm({
           <>
             <Field
               label="Access Key ID"
-              help={withSecretHint(
-                "AWS access key ID for static-credential access."
-              )}
+              help={
+                hasStoredSecret
+                  ? "AWS access key ID for static-credential access. Leave blank to keep the current one."
+                  : "AWS access key ID for static-credential access."
+              }
               errors={state.fieldErrors?.access_key_id}
             >
               {(props) => (
@@ -675,50 +819,30 @@ export function DataConnectionForm({
               )}
             </Field>
 
-            <Field
+            <SecretField
               label="Secret Access Key"
-              help={withSecretHint(
-                "AWS secret access key paired with the access key ID. Never shown after saving."
-              )}
+              help="Paired with the access key ID. Stored encrypted and never shown again."
+              name="secret_access_key"
+              stored={hasStoredSecret}
+              required={mode === "create"}
               errors={state.fieldErrors?.secret_access_key}
-            >
-              {(props) => (
-                <TextField.Root
-                  {...props}
-                  type="password"
-                  name="secret_access_key"
-                  autoComplete="new-password"
-                  required={mode === "create"}
-                  defaultValue={
-                    (state.data.get("secret_access_key") as string) || ""
-                  }
-                  size="3"
-                />
-              )}
-            </Field>
+              defaultValue={
+                (state.data.get("secret_access_key") as string) || ""
+              }
+            />
           </>
         )}
 
         {authType === DataConnectionAuthenticationType.AzureSasToken && (
-          <Field
+          <SecretField
             label="SAS Token"
-            help={withSecretHint(
-              "Azure shared access signature granting access to the container. Never shown after saving."
-            )}
+            help="Shared access signature granting access to the container. Stored encrypted and never shown again."
+            name="sas_token"
+            stored={hasStoredSecret}
+            required={mode === "create"}
             errors={state.fieldErrors?.sas_token}
-          >
-            {(props) => (
-              <TextField.Root
-                {...props}
-                type="password"
-                name="sas_token"
-                autoComplete="new-password"
-                required={mode === "create"}
-                defaultValue={(state.data.get("sas_token") as string) || ""}
-                size="3"
-              />
-            )}
-          </Field>
+            defaultValue={(state.data.get("sas_token") as string) || ""}
+          />
         )}
 
         {authType === DataConnectionAuthenticationType.S3WebIdentityRole && (
