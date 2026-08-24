@@ -402,3 +402,19 @@ export async function updateAccountFlags(
     };
   }
 }
+
+/**
+ * Type-ahead search over individual accounts, matching either the handle
+ * (`account_id`) or the display name. Returns only the public identity fields
+ * already shown on every profile page. Requires a session so it isn't an open
+ * directory-scraping endpoint.
+ */
+export async function searchAccounts(
+  query: string
+): Promise<Array<{ account_id: string; name: string }>> {
+  const session = await getPageSession();
+  if (!session?.identity_id) return [];
+  if (query.trim().length < 2) return [];
+
+  return accountsTable.searchIndividuals(query);
+}
