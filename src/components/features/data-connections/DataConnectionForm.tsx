@@ -348,6 +348,15 @@ export function DataConnectionForm({
   // The redacted connection carries no secret, but the presence of an
   // authentication type says one was saved — enough to tell "stored" from
   // "not set" without sending anything sensitive to the browser.
+  // Shown on edit so the form says which credential is configured; it was
+  // blank whether or not one existed, which is the same trap the secret fields
+  // had.
+  const storedAccessKeyId =
+    dataConnection?.authentication?.type ===
+    DataConnectionAuthenticationType.S3AccessKey
+      ? dataConnection.authentication.access_key_id
+      : "";
+
   const hasStoredSecret =
     mode === "edit" &&
     dataConnection?.authentication?.type === authType &&
@@ -799,11 +808,7 @@ export function DataConnectionForm({
               <>
                 <Field
                   label="Access Key ID"
-                  help={
-                    hasStoredSecret
-                      ? "AWS access key ID for static-credential access. Leave blank to keep the current one."
-                      : "AWS access key ID for static-credential access."
-                  }
+                  help="Identifies which credential is in use. Not a secret — it is the paired secret access key that is never shown."
                   errors={state.fieldErrors?.access_key_id}
                 >
                   {(props) => (
@@ -813,7 +818,10 @@ export function DataConnectionForm({
                       name="access_key_id"
                       autoComplete="off"
                       required={mode === "create"}
-                      defaultValue={(state.data.get("access_key_id") as string) || ""}
+                      defaultValue={
+                        (state.data.get("access_key_id") as string) ||
+                        storedAccessKeyId
+                      }
                       size="3"
                     />
                   )}
