@@ -188,11 +188,39 @@ export class S3StorageClient {
           VersionId: params.versionId,
         }),
       );
+
+      let size = response.ContentLength ?? 0;
+
+      // Some proxies omit Content-Length from HEAD responses. Fall back to a
+      // range GET to read the actual size from Content-Range.
+      if (!size) {
+        try {
+          const rangeResponse = await this.client.send(
+            new GetObjectCommand({
+              Bucket: params.account_id,
+              Key: keyFor(params),
+              VersionId: params.versionId,
+              Range: "bytes=0-0",
+            }),
+          );
+          // Content-Range format: "bytes 0-0/TOTAL_SIZE"
+          const match = rangeResponse.ContentRange?.match(/\/(\d+)$/);
+          if (match) {
+            size = parseInt(match[1], 10);
+          }
+          for await (const _ of rangeResponse.Body as Readable) {
+            // drain the 1-byte body to avoid connection leaks
+          }
+        } catch {
+          // range request failed; keep size as 0
+        }
+      }
+
       return {
         id: params.object_path,
         product_id: params.product_id,
         path: params.object_path,
-        size: response.ContentLength ?? 0,
+        size,
         mime_type: response.ContentType ?? "",
         type: "file",
         created_at:
