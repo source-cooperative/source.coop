@@ -32,16 +32,20 @@ jobs:
     environment:
       name: UI
       url: https://ui.source.coop
-    env:
-      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-      # The app's project id is VERCEL_PROJECT_ID; this is the Storybook project.
-      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_UI }}
     steps:
       - uses: actions/checkout@v4.2.2
       - uses: actions/setup-node@v4.4.0
         with:
           node-version: 22
-      - run: npm install -g vercel
+      # Installed before the credentials exist: a postinstall in the vercel
+      # package tree must not run with the deploy token in the environment.
+      # Pinned for the same reason — an unreviewed release should not land
+      # silently on a push to main.
+      - run: npm install -g vercel@59
       - name: Deploy Storybook to Vercel
-        run: vercel deploy --prod --yes --token=$VERCEL_TOKEN
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          # The app's project id is VERCEL_PROJECT_ID; this is Storybook's.
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_UI }}
+        run: vercel deploy --prod --yes --token="$VERCEL_TOKEN"
