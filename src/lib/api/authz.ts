@@ -571,6 +571,26 @@ export function canManageAccountDataConnections(
   return !!account.flags?.includes(AccountFlags.CREATE_DATA_CONNECTIONS);
 }
 
+/**
+ * Whether `session` may create a product under `account` specifically.
+ *
+ * Distinct from `isAuthorized(session, "*", Actions.CreateRepository)`, which
+ * asks "can this user create a product *somewhere*" (used to gate the
+ * /products/new route). This asks about one particular account, so UI that
+ * lists several accounts — the account switcher, the owner picker on the
+ * creation form — can show "New product" only where it would actually work.
+ */
+export function canCreateProductForAccount(
+  session: UserSession | null,
+  account: Account
+): boolean {
+  return isAuthorized(
+    session,
+    { account_id: account.account_id } as Product,
+    Actions.CreateRepository
+  );
+}
+
 function putAccountFlags(
   principal: UserSession | null,
   _account: Account

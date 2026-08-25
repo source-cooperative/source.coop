@@ -1,4 +1,8 @@
-import { isAuthorized, canManageAccountDataConnections } from "./authz";
+import {
+  isAuthorized,
+  canManageAccountDataConnections,
+  canCreateProductForAccount,
+} from "./authz";
 import {
   sessions,
   accounts,
@@ -3831,5 +3835,56 @@ describe("canManageAccountDataConnections", () => {
     expect(
       canManageAccountDataConnections(sessions["admin"], disabledOrg)
     ).toBe(true);
+  });
+});
+
+describe("canCreateProductForAccount", () => {
+  const org = accounts.find((a) => a.account_id === "organization")!;
+  const ownAccount = accounts.find(
+    (a) => a.account_id === "create-repositories-user"
+  )!;
+  const flaglessAccount = accounts.find(
+    (a) => a.account_id === "regular-user"
+  )!;
+
+  test("org owners/maintainers may create under their org", () => {
+    expect(
+      canCreateProductForAccount(sessions["organization-owner-user"], org)
+    ).toBe(true);
+    expect(
+      canCreateProductForAccount(sessions["organization-maintainer-user"], org)
+    ).toBe(true);
+  });
+
+  test("org members without an owner/maintainer role may not create under the org", () => {
+    expect(
+      canCreateProductForAccount(sessions["organization-read-data-user"], org)
+    ).toBe(false);
+    expect(
+      canCreateProductForAccount(sessions["organization-write-data-user"], org)
+    ).toBe(false);
+    expect(canCreateProductForAccount(sessions["regular-user"], org)).toBe(
+      false
+    );
+  });
+
+  test("individuals may create under their own account only with the flag", () => {
+    expect(
+      canCreateProductForAccount(
+        sessions["create-repositories-user"],
+        ownAccount
+      )
+    ).toBe(true);
+    expect(
+      canCreateProductForAccount(sessions["regular-user"], flaglessAccount)
+    ).toBe(false);
+  });
+
+  test("admins bypass the flag; disabled sessions are always denied", () => {
+    expect(canCreateProductForAccount(sessions["admin"], flaglessAccount)).toBe(
+      true
+    );
+    expect(canCreateProductForAccount(sessions["disabled"], org)).toBe(false);
+    expect(canCreateProductForAccount(sessions["anonymous"], org)).toBe(false);
   });
 });
