@@ -116,7 +116,6 @@ export function AccountFlagsForm({ session, account }: AccountFlagsFormProps) {
       }))}
       action={updateAccountFlags}
       disabled={disabled}
-      submitButtonText="Update"
       initialValues={initialValues}
       hiddenFields={{ account_id: account.account_id }}
     />

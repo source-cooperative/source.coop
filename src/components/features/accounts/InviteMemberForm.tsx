@@ -57,7 +57,7 @@ export function InviteMemberForm({
   return (
     <Dialog.Root open={open} onOpenChange={setOpen}>
       <Dialog.Trigger>
-        <Button size="2">
+        <Button size="2" highContrast>
           <PlusIcon width="16" height="16" />
           Invite Member
         </Button>
@@ -73,7 +73,7 @@ export function InviteMemberForm({
         <DynamicForm<InviteMemberFormData>
           fields={fields}
           action={inviteMember}
-          submitButtonText="Send Invitation"
+          submitButtonText="Send invitation"
           initialValues={initialValues}
           hiddenFields={{
             organization_id: product
