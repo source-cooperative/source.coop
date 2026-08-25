@@ -34,6 +34,11 @@ import {
   accountDataConnectionEditUrl,
 } from "@/lib/urls";
 import type { DataConnectionOption } from "./redact";
+import {
+  ConnectionRow,
+  ConnectionMarker,
+  ConnectionsEmpty,
+} from "./ConnectionRow";
 
 interface ProductMirrorsManagerProps {
   product: Product;
@@ -214,23 +219,11 @@ export function ProductMirrorsManager({
       )}
 
       {mirrors.length === 0 ? (
-        <Flex
-          direction="column"
-          align="center"
-          gap="2"
-          py="8"
-          style={{ userSelect: "none" }}
-        >
-          <Link1Icon width="48" height="48" color="var(--gray-8)" />
-          <Text size="4" weight="medium" color="gray">
-            No data connections
-          </Text>
-          <Text size="2" color="gray">
-            {canManageMirrors
-              ? "Add a data connection to this product."
-              : "No data connections have been configured for this product."}
-          </Text>
-        </Flex>
+        <ConnectionsEmpty>
+          {canManageMirrors
+            ? "Add a data connection to this product."
+            : "No data connections have been configured for this product."}
+        </ConnectionsEmpty>
       ) : (
         <Flex direction="column" gap="3">
           {mirrors.map(([key, mirror]) => {
@@ -258,18 +251,7 @@ export function ProductMirrorsManager({
                         {info?.name ?? mirror.connection_id}
                       </Text>
                       {mirror.is_primary && (
-                        <Text
-                          size="1"
-                          color="gray"
-                          style={{
-                            border: "1px solid var(--gray-7)",
-                            padding: "0 6px",
-                            textTransform: "uppercase",
-                            letterSpacing: "0.04em",
-                          }}
-                        >
-                          Primary
-                        </Text>
+                        <ConnectionMarker>Primary</ConnectionMarker>
                       )}
                     </Flex>
                     {info && (

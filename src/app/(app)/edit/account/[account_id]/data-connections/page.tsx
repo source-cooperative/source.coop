@@ -6,7 +6,7 @@ import { accountsTable, dataConnectionsTable } from "@/lib/clients";
 import { getPageSession } from "@/lib/api/utils";
 import { canManageAccountDataConnections } from "@/lib/api/authz";
 import { FormTitle } from "@/components/core/FormTitle";
-import { DataConnectionsTable } from "@/components/features/data-connections";
+import { DataConnectionsList } from "@/components/features/data-connections";
 import {
   accountDataConnectionCreateUrl,
   accountDataConnectionEditUrl,
@@ -54,7 +54,7 @@ export default async function AccountDataConnectionsPage({ params }: PageProps) 
         </Button>
       </Flex>
 
-      <DataConnectionsTable
+      <DataConnectionsList
         connections={connections}
         editHref={(id) => accountDataConnectionEditUrl(account_id, id)}
       />
