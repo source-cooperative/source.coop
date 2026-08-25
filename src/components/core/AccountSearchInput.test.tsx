@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { Theme } from "@radix-ui/themes";
+import { Dialog, Theme } from "@radix-ui/themes";
 import { AccountSearchInput } from "./AccountSearchInput";
 import { searchAccounts } from "@/lib/actions/account";
 
@@ -85,6 +85,33 @@ describe("AccountSearchInput", () => {
     });
     // "jane" only. Writing the handle into the input must not read as typing.
     expect(mockSearchAccounts).not.toHaveBeenCalledWith("jane-doe");
+  });
+
+  it("escapes the dialog it sits in rather than being clipped by it", async () => {
+    // The invite form is a Dialog, whose content is its own scroll box: a list
+    // positioned inside the field was cut off at the dialog's edge. It has to
+    // portal out -- and still be reachable, since a modal marks everything
+    // outside it aria-hidden.
+    const user = userEvent.setup();
+    render(
+      <Theme>
+        <Dialog.Root defaultOpen>
+          <Dialog.Content>
+            <Dialog.Title>Invite New Member</Dialog.Title>
+            <AccountSearchInput name="account_id" />
+          </Dialog.Content>
+        </Dialog.Root>
+      </Theme>
+    );
+
+    const input = screen.getByRole("combobox");
+    await user.type(input, "jane");
+
+    const options = await screen.findAllByRole("option");
+    expect(options[0].closest('[role="dialog"]')).toBeNull();
+
+    await user.click(screen.getByText("Janet Reyes"));
+    expect(input).toHaveValue("janet-r");
   });
 
   it("reports busy while the lookup is outstanding, and stops when it lands", async () => {

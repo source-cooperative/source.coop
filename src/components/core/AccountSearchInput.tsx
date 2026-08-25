@@ -1,7 +1,12 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
-import { Avatar, Box, Spinner, TextField } from "@radix-ui/themes";
+import { Avatar, Box, Spinner, TextField, Theme } from "@radix-ui/themes";
+// The primitive rather than `Popover` from @radix-ui/themes: that wrapper's
+// Anchor destructures `children` away and never renders them, so the field
+// inside it disappears. Same package Themes builds its own Popover on, and the
+// repo already depends on four other @radix-ui/react-* primitives directly.
+import * as PopoverPrimitive from "@radix-ui/react-popover";
 import { searchAccounts } from "@/lib/actions/account";
 import type { AccountSuggestion } from "@/lib/clients/database/accounts";
 import { AccountIdentity, accountCardSurface } from "./AccountIdentity";
@@ -119,91 +124,105 @@ export function AccountSearchInput({
   }
 
   return (
-    <Box position="relative">
-      <TextField.Root
-        {...controlProps}
-        type="text"
-        name={name}
-        size="3"
-        required={required}
-        placeholder={placeholder}
-        value={query}
-        onChange={(event) => setQuery(event.target.value)}
-        onKeyDown={onKeyDown}
-        onBlur={() => setOpen(false)}
-        autoComplete="off"
-        role="combobox"
-        aria-autocomplete="list"
-        // The spinner is decorative; this is what tells a screen reader the
-        // suggestions are still being fetched.
-        aria-busy={loading}
-        aria-expanded={open}
-        aria-controls={listId}
-        aria-activedescendant={
-          open && activeIndex >= 0 ? optionId(activeIndex) : undefined
-        }
-      >
-        {/* Always mounted so the text does not shift when the spinner appears. */}
-        <TextField.Slot side="right">
-          <Spinner loading={loading} />
-        </TextField.Slot>
-      </TextField.Root>
-
-      {open && (
-        <Box
-          id={listId}
-          role="listbox"
-          aria-label="Matching accounts"
-          position="absolute"
-          left="0"
-          right="0"
-          mt="1"
-          py="1"
-          style={{
-            ...accountCardSurface,
-            zIndex: 10,
-            maxHeight: "18rem",
-            overflowY: "auto",
-          }}
+    <PopoverPrimitive.Root open={open} onOpenChange={setOpen}>
+      <PopoverPrimitive.Anchor>
+        <TextField.Root
+          {...controlProps}
+          type="text"
+          name={name}
+          size="3"
+          required={required}
+          placeholder={placeholder}
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          onKeyDown={onKeyDown}
+          onBlur={() => setOpen(false)}
+          autoComplete="off"
+          role="combobox"
+          aria-autocomplete="list"
+          // The spinner is decorative; this is what tells a screen reader the
+          // suggestions are still being fetched.
+          aria-busy={loading}
+          aria-expanded={open}
+          aria-controls={listId}
+          aria-activedescendant={
+            open && activeIndex >= 0 ? optionId(activeIndex) : undefined
+          }
         >
-          {matches.map((match, index) => (
-            <Box
-              key={match.account_id}
-              id={optionId(index)}
-              role="option"
-              aria-selected={index === activeIndex}
-              px="3"
-              py="2"
-              // Pointer, not click: click lands after blur has already closed
-              // the list, so the selection would never register.
-              onMouseDown={(event) => {
-                event.preventDefault();
-                select(match);
-              }}
-              onMouseEnter={() => setActiveIndex(index)}
-              style={{
-                cursor: "pointer",
-                backgroundColor:
-                  index === activeIndex ? "var(--gray-4)" : undefined,
-              }}
-            >
-              <AccountIdentity
-                name={match.name}
-                accountId={match.account_id}
-                size="2"
-                avatar={
-                  <Avatar
-                    size="2"
-                    radius="full"
-                    src={match.profile_image}
-                    fallback={(match.name || match.account_id)[0].toUpperCase()}
-                  />
-                }
-              />
-            </Box>
-          ))}
-        </Box>
-      )}
-    </Box>
+          {/* Always mounted so the text does not shift when the spinner
+              appears. */}
+          <TextField.Slot side="right">
+            <Spinner loading={loading} />
+          </TextField.Slot>
+        </TextField.Root>
+      </PopoverPrimitive.Anchor>
+
+      {/* Portalled, which is the whole reason for the Popover: positioned
+          absolutely inside the field, the list was clipped by the scroll box of
+          any dialog the form sat in -- and the invite form is a dialog.
+          <Theme asChild> because a portal renders outside the theme's element,
+          so without it none of the CSS variables below resolve. */}
+      <PopoverPrimitive.Portal>
+        <Theme asChild>
+          <PopoverPrimitive.Content
+            id={listId}
+            role="listbox"
+            aria-label="Matching accounts"
+            side="bottom"
+            align="start"
+            sideOffset={4}
+            // Focus has to stay on the input: it is the combobox, and it is
+            // what carries aria-activedescendant. Radix would otherwise move
+            // focus here on open and back to the anchor on close.
+            onOpenAutoFocus={(event) => event.preventDefault()}
+            onCloseAutoFocus={(event) => event.preventDefault()}
+            style={{
+              ...accountCardSurface,
+              width: "var(--radix-popover-trigger-width)",
+              maxHeight: "18rem",
+              overflowY: "auto",
+              padding: "var(--space-1)",
+            }}
+          >
+        {matches.map((match, index) => (
+          <Box
+            key={match.account_id}
+            id={optionId(index)}
+            role="option"
+            aria-selected={index === activeIndex}
+            px="3"
+            py="2"
+            // Pointer, not click: click lands after blur has already closed
+            // the list, so the selection would never register.
+            onMouseDown={(event) => {
+              event.preventDefault();
+              select(match);
+            }}
+            onMouseEnter={() => setActiveIndex(index)}
+            style={{
+              cursor: "pointer",
+              backgroundColor:
+                index === activeIndex ? "var(--gray-4)" : undefined,
+            }}
+          >
+            <AccountIdentity
+              name={match.name}
+              accountId={match.account_id}
+              size="2"
+              avatar={
+                <Avatar
+                  size="2"
+                  radius="full"
+                  src={match.profile_image}
+                  fallback={(match.name || match.account_id)[0].toUpperCase()}
+                />
+              }
+            />
+          </Box>
+        ))}
+          </PopoverPrimitive.Content>
+        </Theme>
+      </PopoverPrimitive.Portal>
+    </PopoverPrimitive.Root>
   );
 }
