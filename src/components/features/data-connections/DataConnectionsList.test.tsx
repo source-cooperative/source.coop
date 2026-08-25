@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { Theme } from "@radix-ui/themes";
-import { DataConnectionsTable } from "./DataConnectionsTable";
+import { DataConnectionsList } from "./DataConnectionsList";
 import { Account, DataConnection, DataProvider } from "@/types";
 
 const conn = (over: Partial<DataConnection>): DataConnection =>
@@ -18,63 +18,67 @@ const acme = { account_id: "acme", name: "Acme Corp" } as Account;
 const renderWithTheme = (ui: React.ReactElement) =>
   render(<Theme>{ui}</Theme>);
 
-describe("DataConnectionsTable owner column", () => {
-  it("hides the Owner column when ownerAccounts is omitted", () => {
+describe("DataConnectionsList owner", () => {
+  it("says nothing about the owner outside the admin view", () => {
     renderWithTheme(
-      <DataConnectionsTable
+      <DataConnectionsList
         connections={[conn({ owner: "acme" })]}
         editHref={(id) => `/edit/${id}`}
       />
     );
 
-    expect(screen.queryByText("Owner")).not.toBeInTheDocument();
-    expect(screen.queryByText("System")).not.toBeInTheDocument();
+    // In an account's own list every connection has the same owner, so saying
+    // so on every row would be noise.
+    expect(screen.queryByText(/system/)).not.toBeInTheDocument();
+    expect(screen.queryByText("Acme Corp")).not.toBeInTheDocument();
   });
 
-  it("labels unowned connections as System", () => {
-    renderWithTheme(
-      <DataConnectionsTable
+  it("labels unowned connections as system", () => {
+    const { container } = renderWithTheme(
+      <DataConnectionsList
         connections={[conn({ data_connection_id: "sys", owner: undefined })]}
         editHref={(id) => `/edit/${id}`}
         ownerAccounts={{}}
       />
     );
 
-    expect(screen.getByText("Owner")).toBeInTheDocument();
-    expect(screen.getByText("System")).toBeInTheDocument();
+    // Quiet text on the identifier line, not a chip, so it is matched
+    // against the row rather than as a standalone element.
+    expect(container).toHaveTextContent("system");
   });
 
   it("shows the owning account's name when resolvable", () => {
     renderWithTheme(
-      <DataConnectionsTable
+      <DataConnectionsList
         connections={[conn({ owner: "acme" })]}
         editHref={(id) => `/edit/${id}`}
         ownerAccounts={{ acme }}
       />
     );
 
-    const link = screen.getByText("Acme Corp");
-    expect(link).toBeInTheDocument();
+    // By role, not by text: the name sits inside the link rather than being
+    // the link's only child, so matching text alone would return the span.
+    const link = screen.getByRole("link", { name: "Acme Corp" });
     expect(link).toHaveAttribute("href", "/acme");
   });
 
   it("falls back to the raw owner id for unresolvable accounts", () => {
-    renderWithTheme(
-      <DataConnectionsTable
+    const { container } = renderWithTheme(
+      <DataConnectionsList
         connections={[conn({ owner: "ghost" })]}
         editHref={(id) => `/edit/${id}`}
         ownerAccounts={{}}
       />
     );
 
-    expect(screen.getByText("ghost")).toBeInTheDocument();
+    expect(container).toHaveTextContent("ghost");
   });
 });
 
-describe("DataConnectionsTable read-only and storage", () => {
+describe("DataConnectionsList read-only and storage", () => {
   it("marks a read-only connection on its row", () => {
     renderWithTheme(
-      <DataConnectionsTable
+      <DataConnectionsList
         connections={[conn({ read_only: true })]}
         editHref={(id) => `/edit/${id}`}
       />
@@ -88,7 +92,7 @@ describe("DataConnectionsTable read-only and storage", () => {
     // as a red "Yes", and every writable row carried a green "No" announcing
     // that nothing had happened.
     renderWithTheme(
-      <DataConnectionsTable
+      <DataConnectionsList
         connections={[conn({ read_only: false })]}
         editHref={(id) => `/edit/${id}`}
       />
@@ -99,20 +103,21 @@ describe("DataConnectionsTable read-only and storage", () => {
     expect(screen.queryByText("Yes")).not.toBeInTheDocument();
   });
 
-  it("folds provider and region into one storage cell", () => {
+  it("folds provider and region into the row's meta line", () => {
     renderWithTheme(
-      <DataConnectionsTable
+      <DataConnectionsList
         connections={[conn({})]}
         editHref={(id) => `/edit/${id}`}
       />
     );
 
-    expect(screen.getByText("s3 · us-east-1")).toBeInTheDocument();
+    // The id and the storage summary share one mono line on the row.
+    expect(screen.getByText(/s3 · us-east-1/)).toBeInTheDocument();
   });
 
   it("omits the region for a keyless provider that has none", () => {
     renderWithTheme(
-      <DataConnectionsTable
+      <DataConnectionsList
         connections={[
           conn({
             details: {
@@ -124,6 +129,8 @@ describe("DataConnectionsTable read-only and storage", () => {
       />
     );
 
-    expect(screen.getByText("gcs")).toBeInTheDocument();
+    expect(screen.getByText(/gcs/)).toBeInTheDocument();
+    // Keyless, so there is no region to append.
+    expect(screen.queryByText(/gcs ·/)).not.toBeInTheDocument();
   });
 });
