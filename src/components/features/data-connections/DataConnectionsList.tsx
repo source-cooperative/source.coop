@@ -18,17 +18,26 @@ const PROVIDER_LABEL: Record<DataProvider, string> = {
 };
 
 /**
- * The identifiers under a connection's name: its id, backend and region.
+ * Where a connection points, in the order you would ask it: which backend,
+ * which bucket, which region.
  *
- * GCS federates without a key, so it has no region to show.
+ * Azure addresses a container inside a storage account, so it takes both to
+ * name what one bucket names elsewhere -- written the way the connection
+ * form's worked example writes it. GCS federates without a key, so it has no
+ * region to show.
+ *
+ * The connection id is deliberately gone: it is slugified from the name
+ * directly above it, so it restated what the row already said.
  */
 function metaFor(connection: DataConnection): string {
-  const provider = PROVIDER_LABEL[connection.details.provider];
-  const region =
-    "region" in connection.details ? connection.details.region : undefined;
-  return [connection.data_connection_id, provider, region]
-    .filter(Boolean)
-    .join(" · ");
+  const { details } = connection;
+  const provider = PROVIDER_LABEL[details.provider];
+  const bucket =
+    details.provider === DataProvider.Azure
+      ? `${details.account_name}/${details.container_name}`
+      : details.bucket;
+  const region = "region" in details ? details.region : undefined;
+  return [provider, bucket, region].filter(Boolean).join(" · ");
 }
 
 interface DataConnectionsListProps {

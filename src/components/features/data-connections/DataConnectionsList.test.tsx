@@ -7,7 +7,11 @@ const conn = (over: Partial<DataConnection>): DataConnection =>
   ({
     data_connection_id: "conn-1",
     name: "Conn 1",
-    details: { provider: DataProvider.S3, region: "us-east-1" },
+    details: {
+      provider: DataProvider.S3,
+      bucket: "rainfall-archive",
+      region: "us-east-1",
+    },
     read_only: false,
     allowed_visibilities: [],
     ...over,
@@ -43,8 +47,11 @@ describe("DataConnectionsList owner", () => {
     );
 
     // Quiet text on the identifier line, not a chip, so it is matched
-    // against the row rather than as a standalone element.
-    expect(container).toHaveTextContent("system");
+    // against the row rather than as a standalone element -- and it comes
+    // last, after backend, bucket and region.
+    expect(container).toHaveTextContent(
+      "s3 · rainfall-archive · us-east-1 · system"
+    );
   });
 
   it("shows the owning account's name when resolvable", () => {
@@ -103,7 +110,7 @@ describe("DataConnectionsList read-only and storage", () => {
     expect(screen.queryByText("Yes")).not.toBeInTheDocument();
   });
 
-  it("folds provider and region into the row's meta line", () => {
+  it("reads backend, then bucket, then region", () => {
     renderWithTheme(
       <DataConnectionsList
         connections={[conn({})]}
@@ -111,8 +118,47 @@ describe("DataConnectionsList read-only and storage", () => {
       />
     );
 
-    // The id and the storage summary share one mono line on the row.
-    expect(screen.getByText(/s3 · us-east-1/)).toBeInTheDocument();
+    // Order matters: it answers "which backend, which bucket, which region" in
+    // the order you would ask it.
+    expect(
+      screen.getByText("s3 · rainfall-archive · us-east-1")
+    ).toBeInTheDocument();
+  });
+
+  it("leaves the connection id off the line the name already implies", () => {
+    renderWithTheme(
+      <DataConnectionsList
+        connections={[conn({ data_connection_id: "conn-1" })]}
+        editHref={(id) => `/edit/${id}`}
+      />
+    );
+
+    // The id is slugified from the name shown directly above, so printing it
+    // spent a column restating the row.
+    expect(screen.queryByText(/conn-1/)).not.toBeInTheDocument();
+  });
+
+  it("names an Azure container by its storage account too", () => {
+    renderWithTheme(
+      <DataConnectionsList
+        connections={[
+          conn({
+            details: {
+              provider: DataProvider.Azure,
+              account_name: "opendatastore",
+              container_name: "rainfall",
+              region: "westeurope",
+            } as DataConnection["details"],
+          }),
+        ]}
+        editHref={(id) => `/edit/${id}`}
+      />
+    );
+
+    // A container name alone does not address anything on Azure.
+    expect(
+      screen.getByText("azure · opendatastore/rainfall · westeurope")
+    ).toBeInTheDocument();
   });
 
   it("omits the region for a keyless provider that has none", () => {
@@ -122,6 +168,7 @@ describe("DataConnectionsList read-only and storage", () => {
           conn({
             details: {
               provider: DataProvider.GCS,
+              bucket: "rainfall-archive",
             } as DataConnection["details"],
           }),
         ]}
@@ -129,8 +176,9 @@ describe("DataConnectionsList read-only and storage", () => {
       />
     );
 
-    expect(screen.getByText(/gcs/)).toBeInTheDocument();
-    // Keyless, so there is no region to append.
-    expect(screen.queryByText(/gcs ·/)).not.toBeInTheDocument();
+    // Keyless, so there is no region to append after the bucket.
+    expect(
+      screen.getByText("gcs · rainfall-archive")
+    ).toBeInTheDocument();
   });
 });
