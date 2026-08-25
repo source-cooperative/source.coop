@@ -388,7 +388,7 @@ export function DataConnectionForm({
             value={dataConnection.data_connection_id}
           />
         )}
-        <SectionHeader title="Identity" description="What this connection is called.">
+        <SectionHeader title="Identity">
           <Flex direction="column" gap="4">
             <Field
               label="Name"
@@ -429,7 +429,7 @@ export function DataConnectionForm({
           </Flex>
         </SectionHeader>
 
-        <SectionHeader title="Backend" description="Which storage it points at.">
+        <SectionHeader title="Backend">
           <Flex direction="column" gap="4">
             <Field
               label="Provider"
@@ -719,7 +719,7 @@ export function DataConnectionForm({
           </Flex>
         </SectionHeader>
 
-        <SectionHeader title="Key layout" description="Where each product's objects land inside it.">
+        <SectionHeader title="Key layout">
           <Flex direction="column" gap="4">
             <Field
               label="Prefix Template"
@@ -768,7 +768,7 @@ export function DataConnectionForm({
           </Flex>
         </SectionHeader>
 
-        <SectionHeader title="Authentication" description="How the data proxy authenticates to it.">
+        <SectionHeader title="Authentication">
           <Flex direction="column" gap="4">
             <Field
               label="Authentication Type"
@@ -998,7 +998,7 @@ export function DataConnectionForm({
           </Flex>
         </SectionHeader>
 
-        <SectionHeader title="Policy" description="What products may do with it.">
+        <SectionHeader title="Policy">
           <Flex direction="column" gap="4">
             <Field
               label="Read Only"
