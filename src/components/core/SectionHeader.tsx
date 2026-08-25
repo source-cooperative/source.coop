@@ -12,7 +12,9 @@ export function SectionHeader({
   rightButton,
 }: SectionHeaderProps) {
   return (
-    <Box>
+    // Space above the heading, so consecutive sections read as separate blocks
+    // rather than one continuous column of fields.
+    <Box mt="4">
       <Flex justify="between" align="center">
         <Text size="2" weight="bold">
           {title}

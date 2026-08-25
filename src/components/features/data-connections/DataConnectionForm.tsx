@@ -1057,26 +1057,23 @@ export function DataConnectionForm({
         <SectionHeader title="Policy">
           <Flex direction="column" gap="4">
             <Field
-              label="Read Only"
-              help="Prevents products from writing or modifying data through this connection — browse and download only. Required for unsigned (no-auth) connections."
+              label="Read only"
+              htmlFor="read-only-switch"
+              help="Products can browse and download but never write. Required for unsigned connections."
               errors={state.fieldErrors?.read_only}
-              group
-            >
-              {/* A setting being turned on, not a box being ticked. Radix's
-                  Switch posts the same "on" a Checkbox did, so the action is
-                  unchanged. */}
-              <Flex align="center" gap="2" asChild>
-                <label>
-                  <Switch
-                    name="read_only"
-                    size="2"
-                    checked={readOnly}
-                    onCheckedChange={(checked) => setReadOnly(checked === true)}
-                  />
-                  <Text size="2">Read-only</Text>
-                </label>
-              </Flex>
-            </Field>
+              aside={
+                <Switch
+                  id="read-only-switch"
+                  name="read_only"
+                  size="2"
+                  checked={readOnly}
+                  onCheckedChange={(checked) => setReadOnly(checked === true)}
+                  // The label row aligns on the text baseline, which a switch
+                  // does not have.
+                  style={{ alignSelf: "center" }}
+                />
+              }
+            />
 
             <Field
               label="Allowed Visibilities"
