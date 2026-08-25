@@ -10,6 +10,7 @@ import {
   Code,
   Select,
   TextField,
+  RadioCards,
 } from "@radix-ui/themes";
 import { CheckIcon } from "@radix-ui/react-icons";
 import { CopyToClipboard } from "@/components/core/CopyToClipboard";
@@ -22,7 +23,12 @@ import {
   ProductVisibility,
   AccountFlags,
 } from "@/types";
-import { Field, FormActions } from "@/components/core";
+import {
+  Field,
+  FormActions,
+  SectionHeader,
+  RadioDot,
+} from "@/components/core";
 import {
   createDataConnection,
   updateDataConnection,
@@ -39,10 +45,26 @@ interface DataConnectionFormProps {
 }
 
 // Storage providers limited to those with a `details` schema (S3, Azure, GCS).
-const providerOptions: Array<{ value: DataProvider; label: string }> = [
-  { value: DataProvider.S3, label: "AWS S3 / S3-compatible (R2, MinIO)" },
-  { value: DataProvider.Azure, label: "Azure Blob Storage" },
-  { value: DataProvider.GCS, label: "Google Cloud Storage" },
+const providerOptions: Array<{
+  value: DataProvider;
+  label: string;
+  description: string;
+}> = [
+  {
+    value: DataProvider.S3,
+    label: "AWS S3",
+    description: "Or an S3-compatible backend: Cloudflare R2, MinIO, Ceph.",
+  },
+  {
+    value: DataProvider.Azure,
+    label: "Azure Blob",
+    description: "A storage account and one of its containers.",
+  },
+  {
+    value: DataProvider.GCS,
+    label: "Google Cloud",
+    description: "Keyless: federated through Workload Identity.",
+  },
 ];
 
 const s3AuthTypes = [
@@ -327,665 +349,710 @@ export function DataConnectionForm({
         {ownerAccountId && (
           <input type="hidden" name="owner" value={ownerAccountId} />
         )}
-        <Field
-          label="Connection ID"
-          help={
-            ownerAccountId && mode === "create"
-              ? `Lowercase letters, numbers, and hyphens only. It will be stored as ${ownerAccountId}--<id>; cannot be changed after creation.`
-              : "Unique identifier used in URLs and as the storage key. Lowercase letters, numbers, and hyphens only; cannot be changed after creation."
-          }
-          errors={state.fieldErrors?.data_connection_id}
-        >
-          {(props) => (
-            <TextField.Root
-              {...props}
-              type="text"
-              name="data_connection_id"
-              required
-              placeholder="my-data-connection"
-              readOnly={mode === "edit"}
-              defaultValue={
-                (state.data.get("data_connection_id") as string) ||
-                dataConnection?.data_connection_id ||
-                ""
+        <SectionHeader title="Identity" description="What this connection is called.">
+          <Flex direction="column" gap="4">
+            <Field
+              label="Connection ID"
+              help={
+                ownerAccountId && mode === "create"
+                  ? `Lowercase letters, numbers, and hyphens only. It will be stored as ${ownerAccountId}--<id>; cannot be changed after creation.`
+                  : "Unique identifier used in URLs and as the storage key. Lowercase letters, numbers, and hyphens only; cannot be changed after creation."
               }
-              variant={mode === "edit" ? "soft" : "surface"}
-            />
-          )}
-        </Field>
-
-        <Field
-          label="Name"
-          help="Human-readable label shown in admin lists and the product mirror picker."
-          errors={state.fieldErrors?.name}
-        >
-          {(props) => (
-            <TextField.Root
-              {...props}
-              type="text"
-              name="name"
-              required
-              defaultValue={
-                (state.data.get("name") as string) || dataConnection?.name || ""
-              }
-              size="3"
-            />
-          )}
-        </Field>
-
-        <Field
-          label="Prefix Template"
-          help="Where each product's objects land inside the bucket or container. {{repository.account_id}} and {{repository.repository_id}} are substituted when a product attaches this connection."
-          errors={state.fieldErrors?.prefix_template}
-        >
-          {(props) => (
-            <Flex direction="column" gap="2">
-              <TextField.Root
-                {...props}
-                type="text"
-                name="prefix_template"
-                value={prefixTemplate}
-                onChange={(event) => setPrefixTemplate(event.target.value)}
-                size="3"
-              />
-              {/* A worked example, rather than describing the substitution in
-                  prose and leaving the reader to run it in their head. */}
-              <Box
-                p="2"
-                style={{
-                  border: "1px solid var(--gray-6)",
-                  backgroundColor: "var(--gray-2)",
-                }}
-              >
-                <Text as="p" size="1" color="gray">
-                  A product at{" "}
-                  <Code size="1" variant="ghost">
-                    example-org/rainfall
-                  </Code>{" "}
-                  would be stored at
-                </Text>
-                <Code
-                  size="1"
-                  variant="ghost"
-                  color="gray"
-                  style={{ wordBreak: "break-all" }}
-                >
-                  {resolvedPrefixExample || "(connection root)"}
-                </Code>
-              </Box>
-            </Flex>
-          )}
-        </Field>
-
-        <Field
-          label="Read Only"
-          help="Prevents products from writing or modifying data through this connection — browse and download only. Required for unsigned (no-auth) connections."
-          errors={state.fieldErrors?.read_only}
-          group
-        >
-          <Flex align="center" gap="2" asChild>
-            <label>
-              <Checkbox
-                name="read_only"
-                checked={readOnly}
-                onCheckedChange={(checked) => setReadOnly(checked === true)}
-              />
-              <Text size="2">Connection is read-only</Text>
-            </label>
-          </Flex>
-        </Field>
-
-        <Field
-          label="Allowed Visibilities"
-          help="Which visibilities a product on this connection may use. Checked when a product is created and whenever its visibility changes."
-          errors={state.fieldErrors?.allowed_visibilities}
-          group
-        >
-          <Flex direction="column" gap="2">
-            {Object.values(ProductVisibility).map((visibility) => (
-              <Flex align="center" gap="2" asChild key={visibility}>
-                <label>
-                  <Checkbox
-                    name={`visibility_${visibility}`}
-                    checked={visibilities.has(visibility)}
-                    onCheckedChange={(checked) =>
-                      toggleVisibility(visibility, checked === true)
-                    }
-                  />
-                  <Text size="2">{visibility}</Text>
-                </label>
-              </Flex>
-            ))}
-          </Flex>
-        </Field>
-
-        {/* Required Flag is a platform-only gate; hidden on owned connections. */}
-        {!ownerAccountId && (
-          <Field
-            label="Required Flag"
-            help="Account flag an owner must hold before this connection can back their products. Choose None for no restriction."
-            errors={state.fieldErrors?.required_flag}
-          >
-            {(props) => (
-              <>
-                {/* The Select is UI only; the hidden input carries "" for None,
-                    which Radix cannot express as an item value. */}
-                <input type="hidden" name="required_flag" value={requiredFlag} />
-                <Select.Root
-                  size="3"
-                  value={requiredFlag || NONE}
-                  onValueChange={(value) =>
-                    setRequiredFlag(value === NONE ? "" : value)
+              errors={state.fieldErrors?.data_connection_id}
+            >
+              {(props) => (
+                <TextField.Root
+                  {...props}
+                  type="text"
+                  name="data_connection_id"
+                  required
+                  placeholder="my-data-connection"
+                  readOnly={mode === "edit"}
+                  defaultValue={
+                    (state.data.get("data_connection_id") as string) ||
+                    dataConnection?.data_connection_id ||
+                    ""
                   }
-                >
-                  <Select.Trigger
+                  variant={mode === "edit" ? "soft" : "surface"}
+                />
+              )}
+            </Field>
+
+            <Field
+              label="Name"
+              help="Human-readable label shown in admin lists and the product mirror picker."
+              errors={state.fieldErrors?.name}
+            >
+              {(props) => (
+                <TextField.Root
+                  {...props}
+                  type="text"
+                  name="name"
+                  required
+                  defaultValue={
+                    (state.data.get("name") as string) || dataConnection?.name || ""
+                  }
+                  size="3"
+                />
+              )}
+            </Field>
+
+          </Flex>
+        </SectionHeader>
+
+        <SectionHeader title="Backend" description="Which storage it points at.">
+          <Flex direction="column" gap="4">
+            <Field
+              label="Provider"
+              help="Decides which connection and authentication fields apply below."
+              errors={state.fieldErrors?.provider}
+              group
+            >
+              {(props) => (
+                <>
+                  {/* RadioCards is not a form control, so the value posts via a
+                      hidden input, as it does elsewhere in this vocabulary. */}
+                  <input type="hidden" name="provider" value={provider} />
+                  <RadioCards.Root
                     {...props}
-                    style={{ width: "100%" }}
-                  />
-                  <Select.Content>
-                    <Select.Item value={NONE}>None</Select.Item>
-                    {Object.values(AccountFlags).map((flag) => (
-                      <Select.Item key={flag} value={flag}>
-                        {flag}
-                      </Select.Item>
+                    size="1"
+                    columns={{ initial: "1", sm: "3" }}
+                    value={provider}
+                    onValueChange={handleProviderChange}
+                  >
+                    {providerOptions.map((option) => (
+                      <RadioCards.Item
+                        key={option.value}
+                        value={option.value}
+                        // Radix centres item content on both axes; descriptions
+                        // differ in length, so anchor them to the start.
+                        style={{
+                          alignItems: "flex-start",
+                          justifyContent: "flex-start",
+                        }}
+                      >
+                        <Flex align="start" gap="2" width="100%">
+                          <RadioDot checked={provider === option.value} />
+                          <Flex direction="column" align="start" gap="1">
+                            <Text size="2" weight="medium">
+                              {option.label}
+                            </Text>
+                            <Text size="1" color="gray">
+                              {option.description}
+                            </Text>
+                          </Flex>
+                        </Flex>
+                      </RadioCards.Item>
                     ))}
-                  </Select.Content>
-                </Select.Root>
+                  </RadioCards.Root>
+                </>
+              )}
+            </Field>
+
+            {/* Provider-specific fields */}
+            {provider === DataProvider.S3 && (
+              <>
+                <Field
+                  label="Bucket"
+                  help="Name of the S3 bucket that stores the data."
+                  errors={state.fieldErrors?.bucket}
+                >
+                  {(props) => (
+                    <TextField.Root
+                      {...props}
+                      type="text"
+                      name="bucket"
+                      defaultValue={
+                        (state.data.get("bucket") as string) ||
+                        (dataConnection?.details.provider === DataProvider.S3
+                          ? dataConnection.details.bucket
+                          : "")
+                      }
+                      size="3"
+                    />
+                  )}
+                </Field>
+
+                <Field
+                  label="Base Prefix"
+                  help="Optional key prefix prepended to every object path in the bucket (a shared root folder). Leave blank for the bucket root."
+                  errors={state.fieldErrors?.base_prefix}
+                >
+                  {(props) => (
+                    <TextField.Root
+                      {...props}
+                      type="text"
+                      name="base_prefix"
+                      defaultValue={
+                        (state.data.get("base_prefix") as string) ||
+                        (dataConnection?.details.provider === DataProvider.S3
+                          ? dataConnection.details.base_prefix
+                          : "")
+                      }
+                      size="3"
+                    />
+                  )}
+                </Field>
+
+                <Field
+                  label="Region"
+                  help="AWS region the bucket is hosted in. Use “auto” for S3-compatible backends like Cloudflare R2."
+                  errors={state.fieldErrors?.region}
+                >
+                  {(props) => (
+                    <Select.Root
+                      name="region"
+                      size="3"
+                      value={s3Region || undefined}
+                      onValueChange={setS3Region}
+                    >
+                      <Select.Trigger
+                        {...props}
+                        placeholder="Select a region"
+                        style={{ width: "100%" }}
+                      />
+                      <Select.Content>
+                        {Object.values(S3Regions).map((region) => (
+                          <Select.Item key={region} value={region}>
+                            {region}
+                          </Select.Item>
+                        ))}
+                      </Select.Content>
+                    </Select.Root>
+                  )}
+                </Field>
+
+                <Field
+                  label="Endpoint"
+                  help="Custom S3-compatible endpoint for non-AWS backends (Cloudflare R2, MinIO, Ceph). Leave blank for AWS S3."
+                  errors={state.fieldErrors?.endpoint}
+                >
+                  {(props) => (
+                    <TextField.Root
+                      {...props}
+                      type="text"
+                      name="endpoint"
+                      placeholder="https://<account>.r2.cloudflarestorage.com"
+                      defaultValue={
+                        (state.data.get("endpoint") as string) ||
+                        (dataConnection?.details.provider === DataProvider.S3
+                          ? dataConnection.details.endpoint ?? ""
+                          : "")
+                      }
+                      size="3"
+                    />
+                  )}
+                </Field>
               </>
             )}
-          </Field>
-        )}
 
-        <Field
-          label="Provider"
-          help="Storage backend type. Determines the connection and authentication fields shown below."
-          errors={state.fieldErrors?.provider}
-        >
-          {(props) => (
-            <Select.Root
-              name="provider"
-              size="3"
-              value={provider}
-              onValueChange={handleProviderChange}
-            >
-              <Select.Trigger
-                {...props}
-                style={{ width: "100%" }}
-              />
-              <Select.Content>
-                {providerOptions.map((p) => (
-                  <Select.Item key={p.value} value={p.value}>
-                    {p.label}
-                  </Select.Item>
-                ))}
-              </Select.Content>
-            </Select.Root>
-          )}
-        </Field>
-
-        {/* Provider-specific fields */}
-        {provider === DataProvider.S3 && (
-          <>
-            <Field
-              label="Bucket"
-              help="Name of the S3 bucket that stores the data."
-              errors={state.fieldErrors?.bucket}
-            >
-              {(props) => (
-                <TextField.Root
-                  {...props}
-                  type="text"
-                  name="bucket"
-                  defaultValue={
-                    (state.data.get("bucket") as string) ||
-                    (dataConnection?.details.provider === DataProvider.S3
-                      ? dataConnection.details.bucket
-                      : "")
-                  }
-                  size="3"
-                />
-              )}
-            </Field>
-
-            <Field
-              label="Base Prefix"
-              help="Optional key prefix prepended to every object path in the bucket (a shared root folder). Leave blank for the bucket root."
-              errors={state.fieldErrors?.base_prefix}
-            >
-              {(props) => (
-                <TextField.Root
-                  {...props}
-                  type="text"
-                  name="base_prefix"
-                  defaultValue={
-                    (state.data.get("base_prefix") as string) ||
-                    (dataConnection?.details.provider === DataProvider.S3
-                      ? dataConnection.details.base_prefix
-                      : "")
-                  }
-                  size="3"
-                />
-              )}
-            </Field>
-
-            <Field
-              label="Region"
-              help="AWS region the bucket is hosted in. Use “auto” for S3-compatible backends like Cloudflare R2."
-              errors={state.fieldErrors?.region}
-            >
-              {(props) => (
-                <Select.Root
-                  name="region"
-                  size="3"
-                  value={s3Region || undefined}
-                  onValueChange={setS3Region}
+            {provider === DataProvider.GCS && (
+              <>
+                <Field
+                  label="Bucket"
+                  help="Name of the Google Cloud Storage bucket."
+                  errors={state.fieldErrors?.bucket}
                 >
-                  <Select.Trigger
-                    {...props}
-                    placeholder="Select a region"
-                    style={{ width: "100%" }}
-                  />
-                  <Select.Content>
-                    {Object.values(S3Regions).map((region) => (
-                      <Select.Item key={region} value={region}>
-                        {region}
-                      </Select.Item>
-                    ))}
-                  </Select.Content>
-                </Select.Root>
-              )}
-            </Field>
+                  {(props) => (
+                    <TextField.Root
+                      {...props}
+                      type="text"
+                      name="bucket"
+                      defaultValue={
+                        (state.data.get("bucket") as string) ||
+                        (dataConnection?.details.provider === DataProvider.GCS
+                          ? dataConnection.details.bucket
+                          : "")
+                      }
+                      size="3"
+                    />
+                  )}
+                </Field>
 
-            <Field
-              label="Endpoint"
-              help="Custom S3-compatible endpoint for non-AWS backends (Cloudflare R2, MinIO, Ceph). Leave blank for AWS S3."
-              errors={state.fieldErrors?.endpoint}
-            >
-              {(props) => (
-                <TextField.Root
-                  {...props}
-                  type="text"
-                  name="endpoint"
-                  placeholder="https://<account>.r2.cloudflarestorage.com"
-                  defaultValue={
-                    (state.data.get("endpoint") as string) ||
-                    (dataConnection?.details.provider === DataProvider.S3
-                      ? dataConnection.details.endpoint ?? ""
-                      : "")
-                  }
-                  size="3"
-                />
-              )}
-            </Field>
-          </>
-        )}
-
-        {provider === DataProvider.GCS && (
-          <>
-            <Field
-              label="Bucket"
-              help="Name of the Google Cloud Storage bucket."
-              errors={state.fieldErrors?.bucket}
-            >
-              {(props) => (
-                <TextField.Root
-                  {...props}
-                  type="text"
-                  name="bucket"
-                  defaultValue={
-                    (state.data.get("bucket") as string) ||
-                    (dataConnection?.details.provider === DataProvider.GCS
-                      ? dataConnection.details.bucket
-                      : "")
-                  }
-                  size="3"
-                />
-              )}
-            </Field>
-
-            <Field
-              label="Base Prefix"
-              help="Optional key prefix prepended to every object path in the bucket. Leave blank for the bucket root."
-              errors={state.fieldErrors?.base_prefix}
-            >
-              {(props) => (
-                <TextField.Root
-                  {...props}
-                  type="text"
-                  name="base_prefix"
-                  defaultValue={
-                    (state.data.get("base_prefix") as string) ||
-                    (dataConnection?.details.provider === DataProvider.GCS
-                      ? dataConnection.details.base_prefix
-                      : "")
-                  }
-                  size="3"
-                />
-              )}
-            </Field>
-          </>
-        )}
-
-        {provider === DataProvider.Azure && (
-          <>
-            <Field
-              label="Account Name"
-              help="Azure Storage account name."
-              errors={state.fieldErrors?.account_name}
-            >
-              {(props) => (
-                <TextField.Root
-                  {...props}
-                  type="text"
-                  name="account_name"
-                  defaultValue={
-                    (state.data.get("account_name") as string) ||
-                    (dataConnection?.details.provider === DataProvider.Azure
-                      ? dataConnection.details.account_name
-                      : "")
-                  }
-                  size="3"
-                />
-              )}
-            </Field>
-
-            <Field
-              label="Container Name"
-              help="Azure Blob Storage container name."
-              errors={state.fieldErrors?.container_name}
-            >
-              {(props) => (
-                <TextField.Root
-                  {...props}
-                  type="text"
-                  name="container_name"
-                  defaultValue={
-                    (state.data.get("container_name") as string) ||
-                    (dataConnection?.details.provider === DataProvider.Azure
-                      ? dataConnection.details.container_name
-                      : "")
-                  }
-                  size="3"
-                />
-              )}
-            </Field>
-
-            <Field
-              label="Base Prefix"
-              help="Optional key prefix prepended to every object path in the container. Leave blank for the container root."
-              errors={state.fieldErrors?.base_prefix}
-            >
-              {(props) => (
-                <TextField.Root
-                  {...props}
-                  type="text"
-                  name="base_prefix"
-                  defaultValue={
-                    (state.data.get("base_prefix") as string) ||
-                    (dataConnection?.details.provider === DataProvider.Azure
-                      ? dataConnection.details.base_prefix
-                      : "")
-                  }
-                  size="3"
-                />
-              )}
-            </Field>
-
-            <Field
-              label="Region"
-              help="Azure region the storage account is hosted in."
-              errors={state.fieldErrors?.region}
-            >
-              {(props) => (
-                <Select.Root
-                  name="region"
-                  size="3"
-                  value={azureRegion || undefined}
-                  onValueChange={setAzureRegion}
+                <Field
+                  label="Base Prefix"
+                  help="Optional key prefix prepended to every object path in the bucket. Leave blank for the bucket root."
+                  errors={state.fieldErrors?.base_prefix}
                 >
-                  <Select.Trigger
+                  {(props) => (
+                    <TextField.Root
+                      {...props}
+                      type="text"
+                      name="base_prefix"
+                      defaultValue={
+                        (state.data.get("base_prefix") as string) ||
+                        (dataConnection?.details.provider === DataProvider.GCS
+                          ? dataConnection.details.base_prefix
+                          : "")
+                      }
+                      size="3"
+                    />
+                  )}
+                </Field>
+              </>
+            )}
+
+            {provider === DataProvider.Azure && (
+              <>
+                <Field
+                  label="Account Name"
+                  help="Azure Storage account name."
+                  errors={state.fieldErrors?.account_name}
+                >
+                  {(props) => (
+                    <TextField.Root
+                      {...props}
+                      type="text"
+                      name="account_name"
+                      defaultValue={
+                        (state.data.get("account_name") as string) ||
+                        (dataConnection?.details.provider === DataProvider.Azure
+                          ? dataConnection.details.account_name
+                          : "")
+                      }
+                      size="3"
+                    />
+                  )}
+                </Field>
+
+                <Field
+                  label="Container Name"
+                  help="Azure Blob Storage container name."
+                  errors={state.fieldErrors?.container_name}
+                >
+                  {(props) => (
+                    <TextField.Root
+                      {...props}
+                      type="text"
+                      name="container_name"
+                      defaultValue={
+                        (state.data.get("container_name") as string) ||
+                        (dataConnection?.details.provider === DataProvider.Azure
+                          ? dataConnection.details.container_name
+                          : "")
+                      }
+                      size="3"
+                    />
+                  )}
+                </Field>
+
+                <Field
+                  label="Base Prefix"
+                  help="Optional key prefix prepended to every object path in the container. Leave blank for the container root."
+                  errors={state.fieldErrors?.base_prefix}
+                >
+                  {(props) => (
+                    <TextField.Root
+                      {...props}
+                      type="text"
+                      name="base_prefix"
+                      defaultValue={
+                        (state.data.get("base_prefix") as string) ||
+                        (dataConnection?.details.provider === DataProvider.Azure
+                          ? dataConnection.details.base_prefix
+                          : "")
+                      }
+                      size="3"
+                    />
+                  )}
+                </Field>
+
+                <Field
+                  label="Region"
+                  help="Azure region the storage account is hosted in."
+                  errors={state.fieldErrors?.region}
+                >
+                  {(props) => (
+                    <Select.Root
+                      name="region"
+                      size="3"
+                      value={azureRegion || undefined}
+                      onValueChange={setAzureRegion}
+                    >
+                      <Select.Trigger
+                        {...props}
+                        placeholder="Select a region"
+                        style={{ width: "100%" }}
+                      />
+                      <Select.Content>
+                        {Object.values(AzureRegions).map((region) => (
+                          <Select.Item key={region} value={region}>
+                            {region}
+                          </Select.Item>
+                        ))}
+                      </Select.Content>
+                    </Select.Root>
+                  )}
+                </Field>
+              </>
+            )}
+
+          </Flex>
+        </SectionHeader>
+
+        <SectionHeader title="Key layout" description="Where each product's objects land inside it.">
+          <Flex direction="column" gap="4">
+            <Field
+              label="Prefix Template"
+              help="Where each product's objects land inside the bucket or container. {{repository.account_id}} and {{repository.repository_id}} are substituted when a product attaches this connection."
+              errors={state.fieldErrors?.prefix_template}
+            >
+              {(props) => (
+                <Flex direction="column" gap="2">
+                  <TextField.Root
                     {...props}
-                    placeholder="Select a region"
-                    style={{ width: "100%" }}
+                    type="text"
+                    name="prefix_template"
+                    value={prefixTemplate}
+                    onChange={(event) => setPrefixTemplate(event.target.value)}
+                    size="3"
                   />
-                  <Select.Content>
-                    {Object.values(AzureRegions).map((region) => (
-                      <Select.Item key={region} value={region}>
-                        {region}
-                      </Select.Item>
-                    ))}
-                  </Select.Content>
-                </Select.Root>
-              )}
-            </Field>
-          </>
-        )}
-
-        <Field
-          label="Authentication Type"
-          help={
-            (authType && AUTH_TYPE_DESCRIPTIONS[authType as DataConnectionAuthenticationType]) ||
-            "How the data proxy authenticates to this backend when serving the product's data. Choose None for unsigned (public) access."
-          }
-          errors={state.fieldErrors?.auth_type}
-        >
-          {(props) => (
-            <>
-              <input type="hidden" name="auth_type" value={authType} />
-              <Select.Root
-                size="3"
-                value={authType || NONE}
-                onValueChange={(value) => setAuthType(value === NONE ? "" : value)}
-              >
-                <Select.Trigger
-                  {...props}
-                  style={{ width: "100%" }}
-                />
-                <Select.Content>
-                  <Select.Item value={NONE}>None (unsigned)</Select.Item>
-                  {authOptions.map((type) => (
-                    <Select.Item key={type} value={type}>
-                      {AUTH_TYPE_LABELS[type]}
-                    </Select.Item>
-                  ))}
-                </Select.Content>
-              </Select.Root>
-            </>
-          )}
-        </Field>
-
-        {/* Auth-specific fields */}
-        {authType === DataConnectionAuthenticationType.S3AccessKey && (
-          <>
-            <Field
-              label="Access Key ID"
-              help={
-                hasStoredSecret
-                  ? "AWS access key ID for static-credential access. Leave blank to keep the current one."
-                  : "AWS access key ID for static-credential access."
-              }
-              errors={state.fieldErrors?.access_key_id}
-            >
-              {(props) => (
-                <TextField.Root
-                  {...props}
-                  type="text"
-                  name="access_key_id"
-                  autoComplete="off"
-                  required={mode === "create"}
-                  defaultValue={(state.data.get("access_key_id") as string) || ""}
-                  size="3"
-                />
-              )}
-            </Field>
-
-            <SecretField
-              label="Secret Access Key"
-              help="Paired with the access key ID. Stored encrypted and never shown again."
-              name="secret_access_key"
-              stored={hasStoredSecret}
-              required={mode === "create"}
-              errors={state.fieldErrors?.secret_access_key}
-              defaultValue={
-                (state.data.get("secret_access_key") as string) || ""
-              }
-            />
-          </>
-        )}
-
-        {authType === DataConnectionAuthenticationType.AzureSasToken && (
-          <SecretField
-            label="SAS Token"
-            help="Shared access signature granting access to the container. Stored encrypted and never shown again."
-            name="sas_token"
-            stored={hasStoredSecret}
-            required={mode === "create"}
-            errors={state.fieldErrors?.sas_token}
-            defaultValue={(state.data.get("sas_token") as string) || ""}
-          />
-        )}
-
-        {authType === DataConnectionAuthenticationType.S3WebIdentityRole && (
-          <>
-            <Field
-              label="Role ARN"
-              help="IAM role the proxy assumes via AssumeRoleWithWebIdentity (keyless federation). This is an ARN, not a secret."
-              errors={state.fieldErrors?.role_arn}
-            >
-              {(props) => (
-                <TextField.Root
-                  {...props}
-                  type="text"
-                  name="role_arn"
-                  required
-                  placeholder="arn:aws:iam::123456789012:role/my-role"
-                  defaultValue={
-                    (state.data.get("role_arn") as string) || initialRoleArn
-                  }
-                  size="3"
-                />
-              )}
-            </Field>
-
-            {mode === "edit" && (
-              <Field
-                label="Trust-policy subject"
-                help={
-                  <>
-                    The proxy presents this OIDC subject when assuming the role.
-                    In the role&apos;s trust policy, add a{" "}
-                    <Text weight="medium">StringLike</Text> condition on{" "}
-                    <Text weight="medium">data.source.coop:sub</Text> matching
-                    it, alongside{" "}
-                    <Text weight="medium">
-                      data.source.coop:aud = sts.amazonaws.com
+                  {/* A worked example, rather than describing the substitution in
+                      prose and leaving the reader to run it in their head. */}
+                  <Box
+                    p="2"
+                    style={{
+                      border: "1px solid var(--gray-6)",
+                      backgroundColor: "var(--gray-2)",
+                    }}
+                  >
+                    <Text as="p" size="1" color="gray">
+                      A product at{" "}
+                      <Code size="1" variant="ghost">
+                        example-org/rainfall
+                      </Code>{" "}
+                      would be stored at
                     </Text>
-                    .
-                  </>
-                }
-                group
-              >
-                <Flex align="center" gap="2">
-                  <Code size="2" variant="soft">
-                    {subPattern}
-                  </Code>
-                  <CopyToClipboard text={subPattern} />
+                    <Code
+                      size="1"
+                      variant="ghost"
+                      color="gray"
+                      style={{ wordBreak: "break-all" }}
+                    >
+                      {resolvedPrefixExample || "(connection root)"}
+                    </Code>
+                  </Box>
                 </Flex>
+              )}
+            </Field>
+
+          </Flex>
+        </SectionHeader>
+
+        <SectionHeader title="Authentication" description="How the data proxy authenticates to it.">
+          <Flex direction="column" gap="4">
+            <Field
+              label="Authentication Type"
+              help={
+                (authType && AUTH_TYPE_DESCRIPTIONS[authType as DataConnectionAuthenticationType]) ||
+                "How the data proxy authenticates to this backend when serving the product's data. Choose None for unsigned (public) access."
+              }
+              errors={state.fieldErrors?.auth_type}
+            >
+              {(props) => (
+                <>
+                  <input type="hidden" name="auth_type" value={authType} />
+                  <Select.Root
+                    size="3"
+                    value={authType || NONE}
+                    onValueChange={(value) => setAuthType(value === NONE ? "" : value)}
+                  >
+                    <Select.Trigger
+                      {...props}
+                      style={{ width: "100%" }}
+                    />
+                    <Select.Content>
+                      <Select.Item value={NONE}>None (unsigned)</Select.Item>
+                      {authOptions.map((type) => (
+                        <Select.Item key={type} value={type}>
+                          {AUTH_TYPE_LABELS[type]}
+                        </Select.Item>
+                      ))}
+                    </Select.Content>
+                  </Select.Root>
+                </>
+              )}
+            </Field>
+
+            {/* Auth-specific fields */}
+            {authType === DataConnectionAuthenticationType.S3AccessKey && (
+              <>
+                <Field
+                  label="Access Key ID"
+                  help={
+                    hasStoredSecret
+                      ? "AWS access key ID for static-credential access. Leave blank to keep the current one."
+                      : "AWS access key ID for static-credential access."
+                  }
+                  errors={state.fieldErrors?.access_key_id}
+                >
+                  {(props) => (
+                    <TextField.Root
+                      {...props}
+                      type="text"
+                      name="access_key_id"
+                      autoComplete="off"
+                      required={mode === "create"}
+                      defaultValue={(state.data.get("access_key_id") as string) || ""}
+                      size="3"
+                    />
+                  )}
+                </Field>
+
+                <SecretField
+                  label="Secret Access Key"
+                  help="Paired with the access key ID. Stored encrypted and never shown again."
+                  name="secret_access_key"
+                  stored={hasStoredSecret}
+                  required={mode === "create"}
+                  errors={state.fieldErrors?.secret_access_key}
+                  defaultValue={
+                    (state.data.get("secret_access_key") as string) || ""
+                  }
+                />
+              </>
+            )}
+
+            {authType === DataConnectionAuthenticationType.AzureSasToken && (
+              <SecretField
+                label="SAS Token"
+                help="Shared access signature granting access to the container. Stored encrypted and never shown again."
+                name="sas_token"
+                stored={hasStoredSecret}
+                required={mode === "create"}
+                errors={state.fieldErrors?.sas_token}
+                defaultValue={(state.data.get("sas_token") as string) || ""}
+              />
+            )}
+
+            {authType === DataConnectionAuthenticationType.S3WebIdentityRole && (
+              <>
+                <Field
+                  label="Role ARN"
+                  help="IAM role the proxy assumes via AssumeRoleWithWebIdentity (keyless federation). This is an ARN, not a secret."
+                  errors={state.fieldErrors?.role_arn}
+                >
+                  {(props) => (
+                    <TextField.Root
+                      {...props}
+                      type="text"
+                      name="role_arn"
+                      required
+                      placeholder="arn:aws:iam::123456789012:role/my-role"
+                      defaultValue={
+                        (state.data.get("role_arn") as string) || initialRoleArn
+                      }
+                      size="3"
+                    />
+                  )}
+                </Field>
+
+                {mode === "edit" && (
+                  <Field
+                    label="Trust-policy subject"
+                    help={
+                      <>
+                        The proxy presents this OIDC subject when assuming the role.
+                        In the role&apos;s trust policy, add a{" "}
+                        <Text weight="medium">StringLike</Text> condition on{" "}
+                        <Text weight="medium">data.source.coop:sub</Text> matching
+                        it, alongside{" "}
+                        <Text weight="medium">
+                          data.source.coop:aud = sts.amazonaws.com
+                        </Text>
+                        .
+                      </>
+                    }
+                    group
+                  >
+                    <Flex align="center" gap="2">
+                      <Code size="2" variant="soft">
+                        {subPattern}
+                      </Code>
+                      <CopyToClipboard text={subPattern} />
+                    </Flex>
+                  </Field>
+                )}
+              </>
+            )}
+
+            {authType === DataConnectionAuthenticationType.AzureWorkloadIdentity && (
+              <>
+                <Field
+                  label="Tenant ID"
+                  help="Azure AD tenant (directory) ID used for workload-identity federation."
+                  errors={state.fieldErrors?.tenant_id}
+                >
+                  {(props) => (
+                    <TextField.Root
+                      {...props}
+                      type="text"
+                      name="tenant_id"
+                      required
+                      placeholder="00000000-0000-0000-0000-000000000000"
+                      defaultValue={
+                        (state.data.get("tenant_id") as string) || initialTenantId
+                      }
+                      size="3"
+                    />
+                  )}
+                </Field>
+
+                <Field
+                  label="Client ID"
+                  help="App registration (client) ID that holds the federated identity credential."
+                  errors={state.fieldErrors?.client_id}
+                >
+                  {(props) => (
+                    <TextField.Root
+                      {...props}
+                      type="text"
+                      name="client_id"
+                      required
+                      placeholder="00000000-0000-0000-0000-000000000000"
+                      defaultValue={
+                        (state.data.get("client_id") as string) || initialClientId
+                      }
+                      size="3"
+                    />
+                  )}
+                </Field>
+              </>
+            )}
+
+            {authType ===
+              DataConnectionAuthenticationType.GcpWorkloadIdentity && (
+              <>
+                <Field
+                  label="Workload Identity Provider"
+                  help="Full GCP Workload Identity provider resource. Not a secret."
+                  errors={state.fieldErrors?.workload_identity_provider}
+                >
+                  {(props) => (
+                    <TextField.Root
+                      {...props}
+                      type="text"
+                      name="workload_identity_provider"
+                      required
+                      placeholder="//iam.googleapis.com/projects/123/locations/global/workloadIdentityPools/pool/providers/provider"
+                      defaultValue={
+                        (state.data.get("workload_identity_provider") as string) ||
+                        initialWorkloadIdentityProvider
+                      }
+                      size="3"
+                    />
+                  )}
+                </Field>
+
+                <Field
+                  label="Service Account"
+                  help="Email of the GCP service account the proxy impersonates. Not a secret."
+                  errors={state.fieldErrors?.service_account}
+                >
+                  {(props) => (
+                    <TextField.Root
+                      {...props}
+                      type="text"
+                      name="service_account"
+                      required
+                      placeholder="sa@my-project.iam.gserviceaccount.com"
+                      defaultValue={
+                        (state.data.get("service_account") as string) ||
+                        initialServiceAccount
+                      }
+                      size="3"
+                    />
+                  )}
+                </Field>
+              </>
+            )}
+
+          </Flex>
+        </SectionHeader>
+
+        <SectionHeader title="Policy" description="What products may do with it.">
+          <Flex direction="column" gap="4">
+            <Field
+              label="Read Only"
+              help="Prevents products from writing or modifying data through this connection — browse and download only. Required for unsigned (no-auth) connections."
+              errors={state.fieldErrors?.read_only}
+              group
+            >
+              <Flex align="center" gap="2" asChild>
+                <label>
+                  <Checkbox
+                    name="read_only"
+                    checked={readOnly}
+                    onCheckedChange={(checked) => setReadOnly(checked === true)}
+                  />
+                  <Text size="2">Connection is read-only</Text>
+                </label>
+              </Flex>
+            </Field>
+
+            <Field
+              label="Allowed Visibilities"
+              help="Which visibilities a product on this connection may use. Checked when a product is created and whenever its visibility changes."
+              errors={state.fieldErrors?.allowed_visibilities}
+              group
+            >
+              <Flex direction="column" gap="2">
+                {Object.values(ProductVisibility).map((visibility) => (
+                  <Flex align="center" gap="2" asChild key={visibility}>
+                    <label>
+                      <Checkbox
+                        name={`visibility_${visibility}`}
+                        checked={visibilities.has(visibility)}
+                        onCheckedChange={(checked) =>
+                          toggleVisibility(visibility, checked === true)
+                        }
+                      />
+                      <Text size="2">{visibility}</Text>
+                    </label>
+                  </Flex>
+                ))}
+              </Flex>
+            </Field>
+
+            {/* Required Flag is a platform-only gate; hidden on owned connections. */}
+            {!ownerAccountId && (
+              <Field
+                label="Required Flag"
+                help="Account flag an owner must hold before this connection can back their products. Choose None for no restriction."
+                errors={state.fieldErrors?.required_flag}
+              >
+                {(props) => (
+                  <>
+                    {/* The Select is UI only; the hidden input carries "" for None,
+                        which Radix cannot express as an item value. */}
+                    <input type="hidden" name="required_flag" value={requiredFlag} />
+                    <Select.Root
+                      size="3"
+                      value={requiredFlag || NONE}
+                      onValueChange={(value) =>
+                        setRequiredFlag(value === NONE ? "" : value)
+                      }
+                    >
+                      <Select.Trigger
+                        {...props}
+                        style={{ width: "100%" }}
+                      />
+                      <Select.Content>
+                        <Select.Item value={NONE}>None</Select.Item>
+                        {Object.values(AccountFlags).map((flag) => (
+                          <Select.Item key={flag} value={flag}>
+                            {flag}
+                          </Select.Item>
+                        ))}
+                      </Select.Content>
+                    </Select.Root>
+                  </>
+                )}
               </Field>
             )}
-          </>
-        )}
 
-        {authType === DataConnectionAuthenticationType.AzureWorkloadIdentity && (
-          <>
-            <Field
-              label="Tenant ID"
-              help="Azure AD tenant (directory) ID used for workload-identity federation."
-              errors={state.fieldErrors?.tenant_id}
-            >
-              {(props) => (
-                <TextField.Root
-                  {...props}
-                  type="text"
-                  name="tenant_id"
-                  required
-                  placeholder="00000000-0000-0000-0000-000000000000"
-                  defaultValue={
-                    (state.data.get("tenant_id") as string) || initialTenantId
-                  }
-                  size="3"
-                />
-              )}
-            </Field>
-
-            <Field
-              label="Client ID"
-              help="App registration (client) ID that holds the federated identity credential."
-              errors={state.fieldErrors?.client_id}
-            >
-              {(props) => (
-                <TextField.Root
-                  {...props}
-                  type="text"
-                  name="client_id"
-                  required
-                  placeholder="00000000-0000-0000-0000-000000000000"
-                  defaultValue={
-                    (state.data.get("client_id") as string) || initialClientId
-                  }
-                  size="3"
-                />
-              )}
-            </Field>
-          </>
-        )}
-
-        {authType ===
-          DataConnectionAuthenticationType.GcpWorkloadIdentity && (
-          <>
-            <Field
-              label="Workload Identity Provider"
-              help="Full GCP Workload Identity provider resource. Not a secret."
-              errors={state.fieldErrors?.workload_identity_provider}
-            >
-              {(props) => (
-                <TextField.Root
-                  {...props}
-                  type="text"
-                  name="workload_identity_provider"
-                  required
-                  placeholder="//iam.googleapis.com/projects/123/locations/global/workloadIdentityPools/pool/providers/provider"
-                  defaultValue={
-                    (state.data.get("workload_identity_provider") as string) ||
-                    initialWorkloadIdentityProvider
-                  }
-                  size="3"
-                />
-              )}
-            </Field>
-
-            <Field
-              label="Service Account"
-              help="Email of the GCP service account the proxy impersonates. Not a secret."
-              errors={state.fieldErrors?.service_account}
-            >
-              {(props) => (
-                <TextField.Root
-                  {...props}
-                  type="text"
-                  name="service_account"
-                  required
-                  placeholder="sa@my-project.iam.gserviceaccount.com"
-                  defaultValue={
-                    (state.data.get("service_account") as string) ||
-                    initialServiceAccount
-                  }
-                  size="3"
-                />
-              )}
-            </Field>
-          </>
-        )}
+          </Flex>
+        </SectionHeader>
 
         <FormActions
           submitLabel={mode === "create" ? "Create Connection" : "Update Connection"}

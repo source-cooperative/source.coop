@@ -7,7 +7,7 @@ export { DangerZone } from "./DangerZone";
 export { Skeleton } from "./Skeleton";
 export { FormSkeleton } from "./FormSkeleton";
 export { FormTitle } from "./FormTitle";
-export { DynamicForm } from "./DynamicForm";
+export { DynamicForm, RadioDot } from "./DynamicForm";
 export type { FormField } from "./DynamicForm";
 export { SmallColumnContainer } from "./SmallColumnContainer";
 export { StatusPage, NotFoundPage, NotAuthorizedPage } from "./StatusPage";
