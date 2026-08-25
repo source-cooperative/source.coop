@@ -6,7 +6,8 @@ import {
   Flex,
   Box,
   Button,
-  Checkbox,
+  Switch,
+  CheckboxCards,
   Code,
   Select,
   TextField,
@@ -116,6 +117,19 @@ const AUTH_TYPE_DESCRIPTIONS: Partial<
 
 // Radix Select has no empty-string item value; this stands in for "unset".
 const NONE = "__none__";
+
+const VISIBILITY_LABELS: Record<ProductVisibility, string> = {
+  [ProductVisibility.Public]: "Public",
+  [ProductVisibility.Unlisted]: "Unlisted",
+  [ProductVisibility.Restricted]: "Restricted",
+};
+
+// Phrased from the connection's side: which products it will carry.
+const VISIBILITY_DESCRIPTIONS: Record<ProductVisibility, string> = {
+  [ProductVisibility.Public]: "Products anyone can find and download.",
+  [ProductVisibility.Unlisted]: "Products reachable by link only.",
+  [ProductVisibility.Restricted]: "Products limited to their members.",
+};
 
 /**
  * Fields that exist because of a choice made above them.
@@ -309,13 +323,6 @@ export function DataConnectionForm({
   const [visibilities, setVisibilities] = useState<Set<string>>(
     () => new Set(dataConnection?.allowed_visibilities ?? [])
   );
-  const toggleVisibility = (visibility: string, checked: boolean) =>
-    setVisibilities((prev) => {
-      const next = new Set(prev);
-      if (checked) next.add(visibility);
-      else next.delete(visibility);
-      return next;
-    });
 
   // Reset auth type when provider changes; auth options are provider-specific.
   const handleProviderChange = (value: string) => {
@@ -1011,14 +1018,18 @@ export function DataConnectionForm({
               errors={state.fieldErrors?.read_only}
               group
             >
+              {/* A setting being turned on, not a box being ticked. Radix's
+                  Switch posts the same "on" a Checkbox did, so the action is
+                  unchanged. */}
               <Flex align="center" gap="2" asChild>
                 <label>
-                  <Checkbox
+                  <Switch
                     name="read_only"
+                    size="2"
                     checked={readOnly}
                     onCheckedChange={(checked) => setReadOnly(checked === true)}
                   />
-                  <Text size="2">Connection is read-only</Text>
+                  <Text size="2">Read-only</Text>
                 </label>
               </Flex>
             </Field>
@@ -1029,22 +1040,49 @@ export function DataConnectionForm({
               errors={state.fieldErrors?.allowed_visibilities}
               group
             >
-              <Flex direction="column" gap="2">
-                {Object.values(ProductVisibility).map((visibility) => (
-                  <Flex align="center" gap="2" asChild key={visibility}>
-                    <label>
-                      <Checkbox
-                        name={`visibility_${visibility}`}
-                        checked={visibilities.has(visibility)}
-                        onCheckedChange={(checked) =>
-                          toggleVisibility(visibility, checked === true)
-                        }
-                      />
-                      <Text size="2">{visibility}</Text>
-                    </label>
-                  </Flex>
-                ))}
-              </Flex>
+              <>
+                {/* CheckboxCards is not a form control, so each selection posts
+                    through a hidden input — the same `visibility_<name>=on` the
+                    checkboxes sent. */}
+                {Object.values(ProductVisibility)
+                  .filter((visibility) => visibilities.has(visibility))
+                  .map((visibility) => (
+                    <input
+                      key={visibility}
+                      type="hidden"
+                      name={`visibility_${visibility}`}
+                      value="on"
+                    />
+                  ))}
+                <CheckboxCards.Root
+                  size="1"
+                  columns={{ initial: "1", sm: "3" }}
+                  value={[...visibilities]}
+                  onValueChange={(next) => setVisibilities(new Set(next))}
+                >
+                  {Object.values(ProductVisibility).map((visibility) => (
+                    <CheckboxCards.Item
+                      key={visibility}
+                      value={visibility}
+                      // Radix centres item content on both axes; the
+                      // descriptions differ in length, so anchor to the start.
+                      style={{
+                        alignItems: "flex-start",
+                        justifyContent: "flex-start",
+                      }}
+                    >
+                      <Flex direction="column" align="start" gap="1">
+                        <Text size="2" weight="medium">
+                          {VISIBILITY_LABELS[visibility]}
+                        </Text>
+                        <Text size="1" color="gray">
+                          {VISIBILITY_DESCRIPTIONS[visibility]}
+                        </Text>
+                      </Flex>
+                    </CheckboxCards.Item>
+                  ))}
+                </CheckboxCards.Root>
+              </>
             </Field>
 
             {/* Required Flag is a platform-only gate; hidden on owned connections. */}
