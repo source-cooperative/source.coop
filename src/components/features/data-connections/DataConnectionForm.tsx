@@ -351,6 +351,13 @@ export function DataConnectionForm({
       ? auth.service_account
       : "";
 
+  // Every provider's details carry a base_prefix; the `in` check is what
+  // narrows the discriminated union to reach it without naming a provider.
+  const storedBasePrefix =
+    dataConnection && "base_prefix" in dataConnection.details
+      ? dataConnection.details.base_prefix
+      : "";
+
   // Controlled so the derived id below tracks what is typed.
   const [name, setName] = useState<string>(
     (state.data.get("name") as string) || dataConnection?.name || ""
@@ -540,26 +547,6 @@ export function DataConnectionForm({
                   )}
                 </Field>
 
-                <Field
-                  label="Base Prefix"
-                  help="Optional key prefix prepended to every object path in the bucket (a shared root folder). Leave blank for the bucket root."
-                  errors={state.fieldErrors?.base_prefix}
-                >
-                  {(props) => (
-                    <TextField.Root
-                      {...props}
-                      type="text"
-                      name="base_prefix"
-                      defaultValue={
-                        (state.data.get("base_prefix") as string) ||
-                        (dataConnection?.details.provider === DataProvider.S3
-                          ? dataConnection.details.base_prefix
-                          : "")
-                      }
-                      size="3"
-                    />
-                  )}
-                </Field>
 
                 <Field
                   label="Region"
@@ -636,26 +623,6 @@ export function DataConnectionForm({
                   )}
                 </Field>
 
-                <Field
-                  label="Base Prefix"
-                  help="Optional key prefix prepended to every object path in the bucket. Leave blank for the bucket root."
-                  errors={state.fieldErrors?.base_prefix}
-                >
-                  {(props) => (
-                    <TextField.Root
-                      {...props}
-                      type="text"
-                      name="base_prefix"
-                      defaultValue={
-                        (state.data.get("base_prefix") as string) ||
-                        (dataConnection?.details.provider === DataProvider.GCS
-                          ? dataConnection.details.base_prefix
-                          : "")
-                      }
-                      size="3"
-                    />
-                  )}
-                </Field>
               </ConditionalGroup>
             )}
 
@@ -703,26 +670,6 @@ export function DataConnectionForm({
                   )}
                 </Field>
 
-                <Field
-                  label="Base Prefix"
-                  help="Optional key prefix prepended to every object path in the container. Leave blank for the container root."
-                  errors={state.fieldErrors?.base_prefix}
-                >
-                  {(props) => (
-                    <TextField.Root
-                      {...props}
-                      type="text"
-                      name="base_prefix"
-                      defaultValue={
-                        (state.data.get("base_prefix") as string) ||
-                        (dataConnection?.details.provider === DataProvider.Azure
-                          ? dataConnection.details.base_prefix
-                          : "")
-                      }
-                      size="3"
-                    />
-                  )}
-                </Field>
 
                 <Field
                   label="Region"
@@ -759,6 +706,24 @@ export function DataConnectionForm({
 
         <SectionHeader title="Key layout">
           <Flex direction="column" gap="4">
+            <Field
+              label="Base Prefix"
+              help="Optional shared root inside the bucket or container. Every product on this connection sits under it. Leave blank for the root."
+              errors={state.fieldErrors?.base_prefix}
+            >
+              {(props) => (
+                <TextField.Root
+                  {...props}
+                  type="text"
+                  name="base_prefix"
+                  defaultValue={
+                    (state.data.get("base_prefix") as string) || storedBasePrefix
+                  }
+                  size="3"
+                />
+              )}
+            </Field>
+
             <Field
               label="Prefix Template"
               help="Where each product's objects land inside the bucket or container. {{repository.account_id}} and {{repository.repository_id}} are substituted when a product attaches this connection."
