@@ -45,11 +45,13 @@ jobs:
       - name: Deploy Storybook to Vercel
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          # The same three repository secrets the app's deploys use. This job
-          # runs in the `UI` environment, which carries its own
-          # VERCEL_PROJECT_ID holding Storybook's project -- an environment
-          # secret wins over a repository secret of the same name, so only the
-          # project changes here.
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
+          # The same credentials the app's deploys use. This job runs in the
+          # `UI` environment, which carries its own VERCEL_PROJECT_ID holding
+          # Storybook's project -- an environment variable wins over a
+          # repository one of the same name, so only the project changes here.
+          # The ids are variables, not secrets: they are identifiers, not
+          # credentials, and masking them turns a log into `***` exactly when
+          # you need to read it.
+          VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
         run: vercel deploy --prod --yes --token="$VERCEL_TOKEN"
