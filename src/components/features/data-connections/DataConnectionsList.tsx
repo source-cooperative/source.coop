@@ -1,11 +1,11 @@
-import { Text, Flex } from "@radix-ui/themes";
+import { Text } from "@radix-ui/themes";
 import { ChevronRightIcon } from "@radix-ui/react-icons";
 import Link from "next/link";
 import { Account, DataConnection, DataProvider } from "@/types";
 import { AccountInfoHoverCard } from "@/components/core/AccountInfoHoverCard";
-import { MonoText } from "@/components/core/MonoText";
 import { accountUrl } from "@/lib/urls";
 import {
+  ConnectionList,
   ConnectionRow,
   ConnectionMarker,
   ConnectionsEmpty,
@@ -17,12 +17,18 @@ const PROVIDER_LABEL: Record<DataProvider, string> = {
   [DataProvider.GCS]: "gcs",
 };
 
-/** GCS federates without a key, so it has no region to show. */
-function storageSummary(connection: DataConnection): string {
+/**
+ * The identifiers under a connection's name: its id, backend and region.
+ *
+ * GCS federates without a key, so it has no region to show.
+ */
+function metaFor(connection: DataConnection): string {
   const provider = PROVIDER_LABEL[connection.details.provider];
   const region =
     "region" in connection.details ? connection.details.region : undefined;
-  return region ? `${provider} · ${region}` : provider;
+  return [connection.data_connection_id, provider, region]
+    .filter(Boolean)
+    .join(" · ");
 }
 
 interface DataConnectionsListProps {
@@ -37,7 +43,12 @@ interface DataConnectionsListProps {
   ownerAccounts?: Record<string, Account>;
 }
 
-/** Owner label: system when unowned, hover-carded account otherwise. */
+/**
+ * Who owns a connection, as quiet text on the identifier line.
+ *
+ * Not a chip: ownership is an attribute, and giving it the same outlined box as
+ * a state left four indistinguishable labels competing on every row.
+ */
 function OwnerLabel({
   owner,
   ownerAccounts,
@@ -46,17 +57,13 @@ function OwnerLabel({
   ownerAccounts: Record<string, Account>;
 }) {
   if (!owner) {
-    return <ConnectionMarker>System</ConnectionMarker>;
+    return <>system</>;
   }
 
   const account = ownerAccounts[owner];
   if (!account) {
     // Owner id with no loadable account (e.g. deleted). Show the raw id.
-    return (
-      <MonoText size="1" color="gray">
-        {owner}
-      </MonoText>
-    );
+    return <>{owner}</>;
   }
 
   return (
@@ -65,7 +72,7 @@ function OwnerLabel({
         href={accountUrl(account.account_id)}
         style={{ color: "var(--accent-11)" }}
       >
-        <Text size="1">{account.name}</Text>
+        {account.name}
       </Link>
     </AccountInfoHoverCard>
   );
@@ -74,9 +81,8 @@ function OwnerLabel({
 /**
  * The connections belonging to an account, or all of them in the admin view.
  *
- * Rendered with the same row as a product's connections. It was a table, which
- * made two lists of the same entity look like different kinds of thing — and a
- * table left nowhere to put a per-row action, so the name was the only way in.
+ * Shares its row with a product's connections, so two lists of the same thing
+ * do not look like different kinds of object.
  */
 export function DataConnectionsList({
   connections,
@@ -90,14 +96,14 @@ export function DataConnectionsList({
   }
 
   return (
-    <Flex direction="column" gap="3">
+    <ConnectionList>
       {connections.map((conn) => (
         <ConnectionRow
           key={conn.data_connection_id}
           title={
             <Link
               href={editHref(conn.data_connection_id)}
-              style={{ color: "var(--accent-11)" }}
+              style={{ color: "var(--accent-11)", textDecoration: "none" }}
             >
               <Text size="2" weight="medium">
                 {conn.name}
@@ -105,36 +111,34 @@ export function DataConnectionsList({
             </Link>
           }
           markers={
+            // The one state here worth marking. Read-only is deliberate, not a
+            // fault, so it is marked where true and unmentioned where false.
+            conn.read_only && <ConnectionMarker>Read only</ConnectionMarker>
+          }
+          meta={
             <>
-              {/* Read-only is a deliberate configuration, not a fault, so it is
-                  marked where true and unmentioned where false. */}
-              {conn.read_only && <ConnectionMarker>Read only</ConnectionMarker>}
+              {metaFor(conn)}
               {ownerAccounts && (
-                <OwnerLabel owner={conn.owner} ownerAccounts={ownerAccounts} />
+                <>
+                  {" · "}
+                  <OwnerLabel
+                    owner={conn.owner}
+                    ownerAccounts={ownerAccounts}
+                  />
+                </>
               )}
             </>
           }
-          meta={`${conn.data_connection_id} · ${storageSummary(conn)}`}
-          actions={
-            <Flex align="center" gap="3">
-              <Flex gap="1" wrap="wrap" justify="end">
-                {conn.allowed_visibilities.length === 0 ? (
-                  <Text size="1" color="gray">
-                    permits nothing
-                  </Text>
-                ) : (
-                  conn.allowed_visibilities.map((visibility) => (
-                    <ConnectionMarker key={visibility}>
-                      {visibility}
-                    </ConnectionMarker>
-                  ))
-                )}
-              </Flex>
-              <ChevronRightIcon color="var(--gray-9)" />
-            </Flex>
+          aside={
+            <Text size="1" color="gray">
+              {conn.allowed_visibilities.length === 0
+                ? "permits nothing"
+                : conn.allowed_visibilities.join(", ")}
+            </Text>
           }
+          actions={<ChevronRightIcon color="var(--gray-9)" />}
         />
       ))}
-    </Flex>
+    </ConnectionList>
   );
 }

@@ -29,12 +29,12 @@ describe("DataConnectionsList owner", () => {
 
     // In an account's own list every connection has the same owner, so saying
     // so on every row would be noise.
-    expect(screen.queryByText("System")).not.toBeInTheDocument();
+    expect(screen.queryByText(/system/)).not.toBeInTheDocument();
     expect(screen.queryByText("Acme Corp")).not.toBeInTheDocument();
   });
 
-  it("labels unowned connections as System", () => {
-    renderWithTheme(
+  it("labels unowned connections as system", () => {
+    const { container } = renderWithTheme(
       <DataConnectionsList
         connections={[conn({ data_connection_id: "sys", owner: undefined })]}
         editHref={(id) => `/edit/${id}`}
@@ -42,7 +42,9 @@ describe("DataConnectionsList owner", () => {
       />
     );
 
-    expect(screen.getByText("System")).toBeInTheDocument();
+    // Quiet text on the identifier line, not a chip, so it is matched
+    // against the row rather than as a standalone element.
+    expect(container).toHaveTextContent("system");
   });
 
   it("shows the owning account's name when resolvable", () => {
@@ -61,7 +63,7 @@ describe("DataConnectionsList owner", () => {
   });
 
   it("falls back to the raw owner id for unresolvable accounts", () => {
-    renderWithTheme(
+    const { container } = renderWithTheme(
       <DataConnectionsList
         connections={[conn({ owner: "ghost" })]}
         editHref={(id) => `/edit/${id}`}
@@ -69,7 +71,7 @@ describe("DataConnectionsList owner", () => {
       />
     );
 
-    expect(screen.getByText("ghost")).toBeInTheDocument();
+    expect(container).toHaveTextContent("ghost");
   });
 });
 

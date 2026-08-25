@@ -2,30 +2,14 @@ import { Box, Flex, Text } from "@radix-ui/themes";
 import { Link1Icon } from "@radix-ui/react-icons";
 
 /**
- * One data connection in a list.
+ * The container both connection lists sit in: one bordered box with hairline
+ * separators, rather than a card per connection.
  *
- * There are two lists of the same thing — an account's connections and the ones
- * backing a product — and they had drifted into a table and a set of cards.
- * Same entity, same shape: title and markers on the left, a mono line of
- * identifiers under it, actions on the right, and an optional footer for
- * anything editable.
+ * A card each looked fine with three rows and fell apart at thirty — an account
+ * can hold every regional Open Data connection, and a page of separately
+ * bordered boxes is mostly gaps.
  */
-export function ConnectionRow({
-  title,
-  markers,
-  meta,
-  actions,
-  footer,
-}: {
-  title: React.ReactNode;
-  /** Short state labels beside the title — "Primary", "Read only". */
-  markers?: React.ReactNode;
-  /** Identifiers, in the code face: ids, providers, buckets, regions. */
-  meta?: React.ReactNode;
-  actions?: React.ReactNode;
-  /** Tinted strip beneath, for a value that can be edited in place. */
-  footer?: React.ReactNode;
-}) {
+export function ConnectionList({ children }: { children: React.ReactNode }) {
   return (
     <Box
       style={{
@@ -33,7 +17,47 @@ export function ConnectionRow({
         backgroundColor: "var(--color-panel-solid)",
       }}
     >
-      <Flex justify="between" align="start" gap="3" p="4">
+      {children}
+    </Box>
+  );
+}
+
+/**
+ * One data connection in a list.
+ *
+ * Two lists render the same entity — an account's connections, and the ones
+ * backing a product — so they share a row: name and state on the first line,
+ * identifiers in the code face beneath, actions right, and an optional footer
+ * for anything editable in place.
+ */
+export function ConnectionRow({
+  title,
+  markers,
+  meta,
+  aside,
+  actions,
+  footer,
+}: {
+  title: React.ReactNode;
+  /** State worth reacting to, beside the name. Keep it to one thing. */
+  markers?: React.ReactNode;
+  /** Identifiers, in the code face: ids, providers, buckets, regions. */
+  meta?: React.ReactNode;
+  /** Secondary detail, right-aligned and quiet — never a control. */
+  aside?: React.ReactNode;
+  actions?: React.ReactNode;
+  /** Tinted strip beneath, for a value that can be edited in place. */
+  footer?: React.ReactNode;
+}) {
+  return (
+    <Box
+      style={{
+        borderTop: "1px solid var(--gray-5)",
+        // Collapses the first row's border into the container's own.
+        marginTop: "-1px",
+      }}
+    >
+      <Flex justify="between" align="center" gap="3" px="4" py="3">
         <Box minWidth="0">
           <Flex align="center" gap="2" wrap="wrap">
             {title}
@@ -43,7 +67,6 @@ export function ConnectionRow({
             <Text
               size="1"
               color="gray"
-              mt="1"
               style={{
                 fontFamily: "var(--code-font-family)",
                 display: "block",
@@ -54,13 +77,17 @@ export function ConnectionRow({
             </Text>
           )}
         </Box>
-        {actions && <Box flexShrink="0">{actions}</Box>}
+        <Flex align="center" gap="3" flexShrink="0">
+          {aside}
+          {actions}
+        </Flex>
       </Flex>
       {footer && (
         <Box
-          p="4"
+          px="4"
+          py="3"
           style={{
-            borderTop: "1px solid var(--gray-5)",
+            borderTop: "1px solid var(--gray-4)",
             backgroundColor: "var(--gray-2)",
           }}
         >
@@ -74,9 +101,12 @@ export function ConnectionRow({
 /**
  * A state label beside a connection's name.
  *
- * Outlined rather than filled, and never coloured: these mark deliberate
- * configuration — read-only, primary — not conditions to react to. Colour stays
- * available for things that are actually wrong.
+ * Outlined and uncoloured: this marks deliberate configuration — read-only,
+ * primary — not a condition to react to. Colour stays free for what is wrong.
+ *
+ * Deliberately the only chip on a row. Everything else that could have been one
+ * (ownership, permitted visibilities) is quiet text instead: four identical
+ * outlined boxes per row read as a wall, and nothing inside a wall stands out.
  */
 export function ConnectionMarker({ children }: { children: React.ReactNode }) {
   return (
@@ -85,7 +115,7 @@ export function ConnectionMarker({ children }: { children: React.ReactNode }) {
       color="gray"
       style={{
         border: "1px solid var(--gray-7)",
-        padding: "0 6px",
+        padding: "0 5px",
         textTransform: "uppercase",
         letterSpacing: "0.04em",
         whiteSpace: "nowrap",
