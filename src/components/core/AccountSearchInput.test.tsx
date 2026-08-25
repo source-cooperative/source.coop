@@ -87,6 +87,24 @@ describe("AccountSearchInput", () => {
     expect(mockSearchAccounts).not.toHaveBeenCalledWith("jane-doe");
   });
 
+  it("keeps searching after choosing the handle that was typed in full", async () => {
+    // Typing a handle out and then confirming it from the list writes back the
+    // value already in the input. Suppressing "the search for what was just
+    // chosen" must not outlive that non-event and swallow the next real edit.
+    const user = userEvent.setup();
+    renderInput();
+
+    const input = screen.getByRole("combobox");
+    await user.type(input, "jane-doe");
+    await user.click(await screen.findByText("Jane Doe"));
+
+    await user.type(input, "x");
+
+    await waitFor(() => {
+      expect(mockSearchAccounts).toHaveBeenCalledWith("jane-doex");
+    });
+  });
+
   it("escapes the dialog it sits in rather than being clipped by it", async () => {
     // The invite form is a Dialog, whose content is its own scroll box: a list
     // positioned inside the field was cut off at the dialog's edge. It has to

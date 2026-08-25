@@ -51,11 +51,16 @@ export function AccountSearchInput({
 
   // Choosing a suggestion writes the handle into the input, which would
   // otherwise read as typing and fire a fresh search for the thing just picked.
-  const skipNextSearch = useRef(false);
+  // It holds the chosen handle rather than a bare "skip the next one" flag:
+  // choosing a handle that was already typed out in full leaves the query
+  // untouched, so the effect never runs to clear a flag — which would then
+  // swallow the next genuine edit instead.
+  const justSelected = useRef<string | null>(null);
 
   useEffect(() => {
-    if (skipNextSearch.current) {
-      skipNextSearch.current = false;
+    const selected = justSelected.current;
+    justSelected.current = null;
+    if (selected === query) {
       setLoading(false);
       return;
     }
@@ -95,7 +100,7 @@ export function AccountSearchInput({
   }, [query]);
 
   function select(match: AccountSuggestion) {
-    skipNextSearch.current = true;
+    justSelected.current = match.account_id;
     setQuery(match.account_id);
     setOpen(false);
     setActiveIndex(-1);
