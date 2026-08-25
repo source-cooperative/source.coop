@@ -141,8 +141,12 @@ function SecretField({
   errors?: string[];
   defaultValue: string;
 }) {
-  // Open when there is nothing stored, and after a failed submit re-seeds a
-  // typed value — closing then would discard what the user had entered.
+  // Open when there is nothing stored to keep.
+  //
+  // The defaultValue clause only matters on a remount — switching auth type away
+  // and back after a failed submit, where state.data still holds what was typed.
+  // An ordinary failed submit does not remount this, so it simply keeps the
+  // state it already had; the initializer is not what preserves that.
   const [replacing, setReplacing] = useState(!stored || defaultValue !== "");
 
   if (replacing) {
