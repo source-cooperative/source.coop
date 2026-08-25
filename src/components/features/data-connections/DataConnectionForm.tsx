@@ -16,6 +16,7 @@ import { CheckIcon } from "@radix-ui/react-icons";
 import { CopyToClipboard } from "@/components/core/CopyToClipboard";
 import { useRouter } from "next/navigation";
 import {
+  slugifyToId,
   DataProvider,
   DataConnectionAuthenticationType,
   S3Regions,
@@ -308,6 +309,24 @@ export function DataConnectionForm({
       ? auth.service_account
       : "";
 
+  // Controlled so the derived id below tracks what is typed.
+  const [name, setName] = useState<string>(
+    (state.data.get("name") as string) || dataConnection?.name || ""
+  );
+
+  /**
+   * What the name will become. On edit the id is already fixed, so show the
+   * real one rather than what the current name would have produced.
+   */
+  const derivedId =
+    mode === "edit"
+      ? (dataConnection?.data_connection_id ?? "")
+      : (() => {
+          const slug = slugifyToId(name);
+          if (!slug) return "";
+          return ownerAccountId ? `${ownerAccountId}--${slug}` : slug;
+        })();
+
   // Controlled so the worked example below updates as the template is typed.
   const [prefixTemplate, setPrefixTemplate] = useState<string>(
     // has()-check, not ||: preserve a user-cleared value across a failed submit
@@ -349,38 +368,18 @@ export function DataConnectionForm({
         {ownerAccountId && (
           <input type="hidden" name="owner" value={ownerAccountId} />
         )}
+        {mode === "edit" && dataConnection && (
+          <input
+            type="hidden"
+            name="data_connection_id"
+            value={dataConnection.data_connection_id}
+          />
+        )}
         <SectionHeader title="Identity" description="What this connection is called.">
           <Flex direction="column" gap="4">
             <Field
-              label="Connection ID"
-              help={
-                ownerAccountId && mode === "create"
-                  ? `Lowercase letters, numbers, and hyphens only. It will be stored as ${ownerAccountId}--<id>; cannot be changed after creation.`
-                  : "Unique identifier used in URLs and as the storage key. Lowercase letters, numbers, and hyphens only; cannot be changed after creation."
-              }
-              errors={state.fieldErrors?.data_connection_id}
-            >
-              {(props) => (
-                <TextField.Root
-                  {...props}
-                  type="text"
-                  name="data_connection_id"
-                  required
-                  placeholder="my-data-connection"
-                  readOnly={mode === "edit"}
-                  defaultValue={
-                    (state.data.get("data_connection_id") as string) ||
-                    dataConnection?.data_connection_id ||
-                    ""
-                  }
-                  variant={mode === "edit" ? "soft" : "surface"}
-                />
-              )}
-            </Field>
-
-            <Field
               label="Name"
-              help="Human-readable label shown in admin lists and the product mirror picker."
+              help="Shown in admin lists and in each product's storage picker."
               errors={state.fieldErrors?.name}
             >
               {(props) => (
@@ -389,12 +388,29 @@ export function DataConnectionForm({
                   type="text"
                   name="name"
                   required
-                  defaultValue={
-                    (state.data.get("name") as string) || dataConnection?.name || ""
-                  }
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
                   size="3"
                 />
               )}
+            </Field>
+
+            {/* The id is derived, not asked for — but it is permanent and shows
+                up in URLs and as the storage key, so it is shown rather than
+                sprung on the user after saving. */}
+            <Field label="ID" group>
+              <Flex align="center" gap="2">
+                <Code size="2" variant="ghost" color="gray">
+                  {derivedId || "—"}
+                </Code>
+                <Text size="1" color="gray">
+                  {mode === "edit"
+                    ? "Permanent; renaming does not move it."
+                    : derivedId
+                      ? "Made from the name. Permanent once created."
+                      : "Add a few letters or numbers to the name."}
+                </Text>
+              </Flex>
             </Field>
 
           </Flex>
