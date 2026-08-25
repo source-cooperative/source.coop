@@ -46,6 +46,32 @@ describe("AccountsTable.searchIndividuals", () => {
     ]);
   });
 
+  it("carries the public profile image, and never an email", async () => {
+    // The picker draws the same account card the profile hover card does, which
+    // needs the avatar. Emails must not ride along: the Gravatar fallback used
+    // elsewhere would expose an address hash for every account a search matches.
+    const { table, send } = tableFor([
+      account({
+        account_id: "jane-doe",
+        name: "Jane Doe",
+        metadata_public: { profile_image: "https://example.test/jane.png" },
+        emails: [{ address: "jane@example.test", is_primary: true }],
+      } as Partial<Account>),
+    ]);
+
+    expect(await table.searchIndividuals("jane")).toEqual([
+      {
+        account_id: "jane-doe",
+        name: "Jane Doe",
+        profile_image: "https://example.test/jane.png",
+      },
+    ]);
+
+    const projection = send.mock.calls[0][0].input.ProjectionExpression;
+    expect(projection).toContain("metadata_public.profile_image");
+    expect(projection).not.toContain("emails");
+  });
+
   it("skips organizations and disabled accounts", async () => {
     const { table } = tableFor(ITEMS);
 

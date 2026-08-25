@@ -18,6 +18,16 @@ import {
 import { BaseTable } from "./base";
 import { LOGGER } from "@/lib/logging";
 
+/**
+ * What a type-ahead picker needs to introduce an account: enough to render the
+ * same identity block the profile hover card shows. Public fields only.
+ */
+export interface AccountSuggestion {
+  account_id: string;
+  name: string;
+  profile_image?: string;
+}
+
 export class AccountsTable extends BaseTable {
   model = "accounts";
 
@@ -147,7 +157,10 @@ export class AccountsTable extends BaseTable {
    */
   /**
    * Substring match over individual accounts' handles and display names, for
-   * type-ahead pickers. Returns only publicly visible identity fields.
+   * type-ahead pickers. Returns only publicly visible identity fields --
+   * `profile_image` comes from `metadata_public` and is what profile pages
+   * already render. Deliberately no email: the Gravatar fallback used elsewhere
+   * would leak an address hash for every account a search happens to match.
    *
    * ponytail: full table scan filtered app-side. DynamoDB has no
    * case-insensitive `contains()` and this table has no search index, so
@@ -159,11 +172,11 @@ export class AccountsTable extends BaseTable {
   async searchIndividuals(
     query: string,
     limit = 10
-  ): Promise<Array<{ account_id: string; name: string }>> {
+  ): Promise<AccountSuggestion[]> {
     const q = query.trim().toLowerCase();
     if (!q) return [];
 
-    const matches: Array<{ account_id: string; name: string }> = [];
+    const matches: AccountSuggestion[] = [];
     let lastEvaluatedKey: Record<string, any> | undefined = undefined;
 
     do {
@@ -172,7 +185,8 @@ export class AccountsTable extends BaseTable {
       const result: ScanCommandOutput = await this.cachedSend(
         new ScanCommand({
           TableName: this.table,
-          ProjectionExpression: "account_id, #name, #type, disabled",
+          ProjectionExpression:
+            "account_id, #name, #type, disabled, metadata_public.profile_image",
           ExpressionAttributeNames: { "#name": "name", "#type": "type" },
           ExclusiveStartKey: lastEvaluatedKey,
         })
@@ -183,7 +197,11 @@ export class AccountsTable extends BaseTable {
         const name = item.name ?? "";
         if (!item.account_id.includes(q) && !name.toLowerCase().includes(q))
           continue;
-        matches.push({ account_id: item.account_id, name });
+        matches.push({
+          account_id: item.account_id,
+          name,
+          profile_image: item.metadata_public?.profile_image,
+        });
         if (matches.length >= limit) return matches;
       }
 

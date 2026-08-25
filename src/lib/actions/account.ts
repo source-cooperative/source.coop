@@ -21,6 +21,7 @@ import {
 import { isAuthorized } from "../api/authz";
 import { getPageSession } from "../api/utils";
 import { accountsTable, membershipsTable } from "../clients";
+import type { AccountSuggestion } from "../clients/database/accounts";
 import { FormState } from "@/components/core/DynamicForm";
 import { revalidatePath } from "next/cache";
 import {
@@ -411,7 +412,7 @@ export async function updateAccountFlags(
  */
 export async function searchAccounts(
   query: string
-): Promise<Array<{ account_id: string; name: string }>> {
+): Promise<AccountSuggestion[]> {
   const session = await getPageSession();
   if (!session?.identity_id) return [];
   if (query.trim().length < 2) return [];
