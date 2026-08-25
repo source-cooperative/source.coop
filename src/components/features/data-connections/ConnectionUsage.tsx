@@ -35,7 +35,10 @@ export async function ConnectionUsage({
         </Text>
       ) : (
         // `surface` brings the outer border and panel fill with it, so this
-        // needs no container of its own.
+        // needs no container of its own. Text stays at Radix's default table
+        // size: the mockup's larger type ate most of the page for a handful of
+        // rows, and this is a reference table you glance at on the way to
+        // deciding something, not the content of the page.
         <Table.Root variant="surface" size="2">
           <Table.Header>
             {/* Radix leaves the header transparent in this variant; the tint is
@@ -64,12 +67,12 @@ export async function ConnectionUsage({
                         textDecoration: "none",
                       }}
                     >
-                      <Text size="3">{product.title || product.product_id}</Text>
+                      <Text size="2">{product.title || product.product_id}</Text>
                     </Link>
                     {/* Identifiers in the code face, exactly as a
                         <ConnectionRow>'s meta line renders them. */}
                     <Text
-                      size="2"
+                      size="1"
                       color="gray"
                       style={{
                         fontFamily: "var(--code-font-family)",
@@ -86,7 +89,7 @@ export async function ConnectionUsage({
                     {isPrimary ? (
                       <ConnectionMarker>Primary</ConnectionMarker>
                     ) : (
-                      <Text size="3" color="gray">
+                      <Text size="2" color="gray">
                         Mirror
                       </Text>
                     )}
@@ -98,7 +101,7 @@ export async function ConnectionUsage({
                     {product.disabled ? (
                       <ConnectionMarker>Deactivated</ConnectionMarker>
                     ) : (
-                      <Text size="3">Active</Text>
+                      <Text size="2">Active</Text>
                     )}
                   </Table.Cell>
                 </Table.Row>
