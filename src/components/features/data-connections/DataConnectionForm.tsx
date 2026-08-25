@@ -115,6 +115,30 @@ const AUTH_TYPE_DESCRIPTIONS: Partial<
     "Keyless: the proxy federates into a GCP service account via Workload Identity.",
 };
 
+/**
+ * Where a product's objects land: backend root, the connection's shared base
+ * prefix, then the resolved prefix template.
+ *
+ * Split and rejoined rather than concatenated — each segment may or may not
+ * carry a slash of its own, and a doubled or missing one in an object key is
+ * not cosmetic.
+ */
+export function exampleLocation(
+  backendRoot: string,
+  basePrefix: string,
+  resolvedTemplate: string
+): string {
+  const segments = [basePrefix, resolvedTemplate]
+    .flatMap((part) => part.split("/"))
+    .filter(Boolean);
+  // Nothing to append: the location is the backend root itself, and adding a
+  // separator to an empty tail would double the slash.
+  if (segments.length === 0) return `${backendRoot}/`;
+  // A template naming a folder keeps its trailing slash.
+  const trailingSlash = !resolvedTemplate || resolvedTemplate.endsWith("/");
+  return `${backendRoot}/${segments.join("/")}${trailingSlash ? "/" : ""}`;
+}
+
 // Radix Select has no empty-string item value; this stands in for "unset".
 const NONE = "__none__";
 
@@ -365,6 +389,31 @@ export function DataConnectionForm({
       ? dataConnection.details.base_prefix
       : "";
 
+  // Controlled, so the worked example reflects what is typed rather than what
+  // happens to be on the record. Only one provider's fields render at a time,
+  // so S3 and GCS share the bucket.
+  const [basePrefix, setBasePrefix] = useState<string>(
+    (state.data.get("base_prefix") as string) || storedBasePrefix
+  );
+  const [bucket, setBucket] = useState<string>(
+    (state.data.get("bucket") as string) ||
+      (dataConnection && "bucket" in dataConnection.details
+        ? dataConnection.details.bucket
+        : "")
+  );
+  const [accountName, setAccountName] = useState<string>(
+    (state.data.get("account_name") as string) ||
+      (dataConnection?.details.provider === DataProvider.Azure
+        ? dataConnection.details.account_name
+        : "")
+  );
+  const [containerName, setContainerName] = useState<string>(
+    (state.data.get("container_name") as string) ||
+      (dataConnection?.details.provider === DataProvider.Azure
+        ? dataConnection.details.container_name
+        : "")
+  );
+
   // Controlled so the derived id below tracks what is typed.
   const [name, setName] = useState<string>(
     (state.data.get("name") as string) || dataConnection?.name || ""
@@ -396,6 +445,18 @@ export function DataConnectionForm({
   const resolvedPrefixExample = prefixTemplate
     .replaceAll("{{repository.account_id}}", "example-org")
     .replaceAll("{{repository.repository_id}}", "rainfall");
+
+  /** Where the backend itself starts, in the scheme that provider uses. */
+  const backendRoot =
+    provider === DataProvider.Azure
+      ? `azure://${accountName || "<account>"}/${containerName || "<container>"}`
+      : `${provider === DataProvider.GCS ? "gs" : "s3"}://${bucket || "<bucket>"}`;
+
+  const resolvedLocation = exampleLocation(
+    backendRoot,
+    basePrefix,
+    resolvedPrefixExample
+  );
 
   // The redacted connection carries no secret, but the presence of an
   // authentication type says one was saved — enough to tell "stored" from
@@ -543,12 +604,8 @@ export function DataConnectionForm({
                       {...props}
                       type="text"
                       name="bucket"
-                      defaultValue={
-                        (state.data.get("bucket") as string) ||
-                        (dataConnection?.details.provider === DataProvider.S3
-                          ? dataConnection.details.bucket
-                          : "")
-                      }
+                      value={bucket}
+                      onChange={(event) => setBucket(event.target.value)}
                       size="3"
                     />
                   )}
@@ -619,12 +676,8 @@ export function DataConnectionForm({
                       {...props}
                       type="text"
                       name="bucket"
-                      defaultValue={
-                        (state.data.get("bucket") as string) ||
-                        (dataConnection?.details.provider === DataProvider.GCS
-                          ? dataConnection.details.bucket
-                          : "")
-                      }
+                      value={bucket}
+                      onChange={(event) => setBucket(event.target.value)}
                       size="3"
                     />
                   )}
@@ -645,12 +698,8 @@ export function DataConnectionForm({
                       {...props}
                       type="text"
                       name="account_name"
-                      defaultValue={
-                        (state.data.get("account_name") as string) ||
-                        (dataConnection?.details.provider === DataProvider.Azure
-                          ? dataConnection.details.account_name
-                          : "")
-                      }
+                      value={accountName}
+                      onChange={(event) => setAccountName(event.target.value)}
                       size="3"
                     />
                   )}
@@ -666,12 +715,8 @@ export function DataConnectionForm({
                       {...props}
                       type="text"
                       name="container_name"
-                      defaultValue={
-                        (state.data.get("container_name") as string) ||
-                        (dataConnection?.details.provider === DataProvider.Azure
-                          ? dataConnection.details.container_name
-                          : "")
-                      }
+                      value={containerName}
+                      onChange={(event) => setContainerName(event.target.value)}
                       size="3"
                     />
                   )}
@@ -723,9 +768,8 @@ export function DataConnectionForm({
                   {...props}
                   type="text"
                   name="base_prefix"
-                  defaultValue={
-                    (state.data.get("base_prefix") as string) || storedBasePrefix
-                  }
+                  value={basePrefix}
+                  onChange={(event) => setBasePrefix(event.target.value)}
                   size="3"
                 />
               )}
@@ -768,7 +812,7 @@ export function DataConnectionForm({
                       color="gray"
                       style={{ wordBreak: "break-all" }}
                     >
-                      {resolvedPrefixExample || "(connection root)"}
+                      {resolvedLocation}
                     </Code>
                   </Box>
                 </Flex>
