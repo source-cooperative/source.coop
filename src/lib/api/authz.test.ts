@@ -13,6 +13,8 @@ import {
   S3Regions,
   DataProvider,
   ProductVisibility,
+  UserSession,
+  Product,
 } from "@/types";
 import { AccountType } from "@/types/account";
 import { Account } from "@/types/account";
@@ -96,6 +98,59 @@ describe("Authorization Tests", () => {
     ).toBe(true);
     expect(isAuthorized(sessions["anonymous"], repo, action)).toBe(false);
     expect(isAuthorized(sessions["no-account"], repo, action)).toBe(false);
+  });
+
+  test("Action: repository:create — org owner without CREATE_REPOSITORIES flag can create under their org", () => {
+    // Bug: createRepository() checks AccountFlags.CREATE_REPOSITORIES before
+    // calling hasRole(), so an org owner whose personal account lacks the flag
+    // is incorrectly denied even though their org role grants them that right.
+    const session = {
+      identity_id: "dual-org-owner",
+      account: {
+        account_id: "dual-org-owner",
+        identity_id: "dual-org-owner",
+        flags: [],
+        disabled: false,
+        type: AccountType.INDIVIDUAL,
+      },
+      memberships: [
+        {
+          membership_id: "m1",
+          account_id: "dual-org-owner",
+          membership_account_id: "tge-labs",
+          role: "owners",
+          state: "member",
+          state_changed: "2024-01-01T00:00:00Z",
+        },
+        {
+          membership_id: "m2",
+          account_id: "dual-org-owner",
+          membership_account_id: "ftw",
+          role: "owners",
+          state: "member",
+          state_changed: "2024-01-01T00:00:00Z",
+        },
+      ],
+    } as unknown as UserSession;
+
+    const productUnderTgeLabs = {
+      account_id: "tge-labs",
+      product_id: "product-1",
+    } as unknown as Product;
+    const productUnderFtw = {
+      account_id: "ftw",
+      product_id: "product-2",
+    } as unknown as Product;
+
+    expect(
+      isAuthorized(session, productUnderTgeLabs, Actions.CreateRepository)
+    ).toBe(true);
+    expect(
+      isAuthorized(session, productUnderFtw, Actions.CreateRepository)
+    ).toBe(true);
+    expect(
+      isAuthorized(session, "*", Actions.CreateRepository)
+    ).toBe(true);
   });
 
   test("Action: repository:get", () => {

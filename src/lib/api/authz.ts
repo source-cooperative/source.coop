@@ -1095,7 +1095,37 @@ function createRepository(
     return true;
   }
 
-  // If the user does not have the create repositories flag, they are not authorized
+  // Org-wide owners and maintainers may create products under their org without
+  // needing CREATE_REPOSITORIES on their personal account — their role grants
+  // that right implicitly. We intentionally omit product_id here so that only
+  // org-wide memberships qualify; product-scoped memberships do not.
+  if (product !== "*" && principal.account.account_id !== product.account_id) {
+    if (
+      hasRole(
+        principal,
+        [MembershipRole.Owners, MembershipRole.Maintainers],
+        product.account_id
+      )
+    ) {
+      return true;
+    }
+  }
+
+  // For the wildcard check, also accept any active org-wide owner or maintainer.
+  if (product === "*") {
+    const hasOrgRole = principal?.memberships?.some(
+      (m) =>
+        m.state === MembershipState.Member &&
+        !m.repository_id &&
+        (m.role === MembershipRole.Owners ||
+          m.role === MembershipRole.Maintainers)
+    );
+    if (hasOrgRole) {
+      return true;
+    }
+  }
+
+  // For own-account creation without an org role, the flag is required.
   if (!principal?.account?.flags.includes(AccountFlags.CREATE_REPOSITORIES)) {
     return false;
   }
