@@ -118,6 +118,44 @@ const AUTH_TYPE_DESCRIPTIONS: Partial<
 const NONE = "__none__";
 
 /**
+ * Fields that exist because of a choice made above them.
+ *
+ * Provider and authentication method each swap out what follows. Without a rule
+ * tying those fields to the control that produced them, they read as part of
+ * the same flat list — and nothing suggests that choosing differently would
+ * replace them.
+ */
+function ConditionalGroup({
+  because,
+  children,
+}: {
+  because: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Box
+      pl="4"
+      style={{ borderLeft: "2px solid var(--gray-5)" }}
+    >
+      <Flex direction="column" gap="4">
+        <Text
+          size="1"
+          color="gray"
+          style={{
+            fontFamily: "var(--code-font-family)",
+            textTransform: "uppercase",
+            letterSpacing: "0.1em",
+          }}
+        >
+          Because {because}
+        </Text>
+        {children}
+      </Flex>
+    </Box>
+  );
+}
+
+/**
  * A write-only credential: says whether one is stored, and reveals an input only
  * when the user asks to change it.
  *
@@ -480,7 +518,7 @@ export function DataConnectionForm({
 
             {/* Provider-specific fields */}
             {provider === DataProvider.S3 && (
-              <>
+              <ConditionalGroup because="provider is AWS S3">
                 <Field
                   label="Bucket"
                   help="Name of the S3 bucket that stores the data."
@@ -572,11 +610,11 @@ export function DataConnectionForm({
                     />
                   )}
                 </Field>
-              </>
+              </ConditionalGroup>
             )}
 
             {provider === DataProvider.GCS && (
-              <>
+              <ConditionalGroup because="provider is Google Cloud">
                 <Field
                   label="Bucket"
                   help="Name of the Google Cloud Storage bucket."
@@ -618,11 +656,11 @@ export function DataConnectionForm({
                     />
                   )}
                 </Field>
-              </>
+              </ConditionalGroup>
             )}
 
             {provider === DataProvider.Azure && (
-              <>
+              <ConditionalGroup because="provider is Azure Blob">
                 <Field
                   label="Account Name"
                   help="Azure Storage account name."
@@ -713,7 +751,7 @@ export function DataConnectionForm({
                     </Select.Root>
                   )}
                 </Field>
-              </>
+              </ConditionalGroup>
             )}
 
           </Flex>
@@ -805,7 +843,7 @@ export function DataConnectionForm({
 
             {/* Auth-specific fields */}
             {authType === DataConnectionAuthenticationType.S3AccessKey && (
-              <>
+              <ConditionalGroup because="method is Access Key">
                 <Field
                   label="Access Key ID"
                   help="Identifies which credential is in use. Not a secret — it is the paired secret access key that is never shown."
@@ -838,23 +876,25 @@ export function DataConnectionForm({
                     (state.data.get("secret_access_key") as string) || ""
                   }
                 />
-              </>
+              </ConditionalGroup>
             )}
 
             {authType === DataConnectionAuthenticationType.AzureSasToken && (
-              <SecretField
+              <ConditionalGroup because="method is SAS Token">
+                <SecretField
                 label="SAS Token"
                 help="Shared access signature granting access to the container. Stored encrypted and never shown again."
                 name="sas_token"
                 stored={hasStoredSecret}
                 required={mode === "create"}
                 errors={state.fieldErrors?.sas_token}
-                defaultValue={(state.data.get("sas_token") as string) || ""}
-              />
+                  defaultValue={(state.data.get("sas_token") as string) || ""}
+                />
+              </ConditionalGroup>
             )}
 
             {authType === DataConnectionAuthenticationType.S3WebIdentityRole && (
-              <>
+              <ConditionalGroup because="method is Web Identity Role">
                 <Field
                   label="Role ARN"
                   help="IAM role the proxy assumes via AssumeRoleWithWebIdentity (keyless federation). This is an ARN, not a secret."
@@ -901,11 +941,11 @@ export function DataConnectionForm({
                     </Flex>
                   </Field>
                 )}
-              </>
+              </ConditionalGroup>
             )}
 
             {authType === DataConnectionAuthenticationType.AzureWorkloadIdentity && (
-              <>
+              <ConditionalGroup because="method is Workload Identity">
                 <Field
                   label="Tenant ID"
                   help="Azure AD tenant (directory) ID used for workload-identity federation."
@@ -945,12 +985,12 @@ export function DataConnectionForm({
                     />
                   )}
                 </Field>
-              </>
+              </ConditionalGroup>
             )}
 
             {authType ===
               DataConnectionAuthenticationType.GcpWorkloadIdentity && (
-              <>
+              <ConditionalGroup because="method is Workload Identity">
                 <Field
                   label="Workload Identity Provider"
                   help="Full GCP Workload Identity provider resource. Not a secret."
@@ -992,7 +1032,7 @@ export function DataConnectionForm({
                     />
                   )}
                 </Field>
-              </>
+              </ConditionalGroup>
             )}
 
           </Flex>
