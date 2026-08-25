@@ -1,5 +1,11 @@
 name: Deploy to Staging
 
+# Only CDK. The Vercel staging deploy comes from the Git integration: the
+# project's `staging` custom environment tracks `main`, so a push here
+# deploys to staging.source.coop on its own. That only works while `main` is
+# not the project's Production Branch -- a production branch always wins over
+# custom-environment branch tracking.
+
 on:
   push:
     branches:
@@ -35,22 +41,3 @@ jobs:
         env:
           STAGE: dev
 
-  deploy-vercel:
-    runs-on: ubuntu-latest
-    environment:
-      name: Staging
-      url: https://staging.source.coop
-    steps:
-      - uses: actions/checkout@v4.2.2
-      - uses: actions/setup-node@v4.4.0
-        with:
-          node-version: 22
-      # Installed before the credentials exist: a postinstall in the vercel
-      # package tree must not run with the deploy token in the environment.
-      - run: npm install -g vercel@59
-      - name: Deploy to Vercel
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-        run: vercel deploy --target=staging --token="$VERCEL_TOKEN"

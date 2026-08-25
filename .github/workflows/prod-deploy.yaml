@@ -52,4 +52,7 @@ jobs:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        # Explicit --prod because the project's Production Branch is not
+        # `main` (see staging-deploy.yaml): production is reached by
+        # publishing a release, never by pushing a branch.
         run: vercel deploy --prod --token="$VERCEL_TOKEN"
