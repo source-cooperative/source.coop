@@ -3,7 +3,8 @@
   "extends": [
     "eslint:recommended",
     "plugin:@typescript-eslint/recommended",
-    "next/core-web-vitals"
+    "next/core-web-vitals",
+    "plugin:storybook/recommended"
   ],
   "plugins": [
     "@typescript-eslint"
@@ -31,7 +32,8 @@
         "src/components/**/*.tsx"
       ],
       "excludedFiles": [
-        "**/__tests__/**"
+        "**/__tests__/**",
+        "**/*.stories.tsx"
       ],
       "rules": {
         "no-restricted-syntax": [

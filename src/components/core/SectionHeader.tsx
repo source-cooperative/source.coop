@@ -2,6 +2,8 @@ import { Text, Box, Separator, Flex } from "@radix-ui/themes";
 
 interface SectionHeaderProps {
   title: string;
+  /** One line on what the section is for, shown under the title. */
+  description?: React.ReactNode;
   /**
    * Carries the whole header, rule included. A grey rule under a red heading
    * reads as the section having stopped being dangerous halfway down.
@@ -13,6 +15,7 @@ interface SectionHeaderProps {
 
 export function SectionHeader({
   title,
+  description,
   color = "gray",
   children,
   rightButton,
@@ -31,6 +34,11 @@ export function SectionHeader({
         </Text>
         {rightButton}
       </Flex>
+      {description && (
+        <Text as="p" size="1" color="gray" mt="1">
+          {description}
+        </Text>
+      )}
       <Box my="3">
         <Separator size="4" color={color} />
       </Box>

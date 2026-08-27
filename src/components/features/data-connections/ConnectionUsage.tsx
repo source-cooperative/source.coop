@@ -67,9 +67,7 @@ export async function ConnectionUsage({
                         textDecoration: "none",
                       }}
                     >
-                      <Text size="2">
-                        {product.title || product.product_id}
-                      </Text>
+                      <Text size="2">{product.title || product.product_id}</Text>
                     </Link>
                     {/* Identifiers in the code face, exactly as a
                         <ConnectionRow>'s meta line renders them. */}
