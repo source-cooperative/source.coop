@@ -357,7 +357,11 @@ export function DataConnectionForm({
 
   return (
     <form onSubmit={handleSubmit}>
-      <Flex direction="column" gap="4">
+      {/* gap 6, not 4: this wrapper holds only whole sections, and they need to
+          read as separate blocks rather than one continuous column of fields.
+          Here rather than inside SectionHeader, which is also used as the sole
+          child of a Card elsewhere. */}
+      <Flex direction="column" gap="6">
         {ownerAccountId && (
           <input type="hidden" name="owner" value={ownerAccountId} />
         )}

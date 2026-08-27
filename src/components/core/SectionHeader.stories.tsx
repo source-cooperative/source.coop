@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { Button, Flex, Text, TextField } from "@radix-ui/themes";
+import { Button, Card, Flex, Text, TextField } from "@radix-ui/themes";
 import { SectionHeader } from "./SectionHeader";
 
 /**
@@ -66,13 +66,20 @@ export const Danger: Story = {
 };
 
 /**
- * The reason the component exists: consecutive sections have to read as
- * separate blocks rather than one continuous column of fields.
+ * Consecutive sections have to read as separate blocks rather than one
+ * continuous column of fields — and the space between them belongs to the
+ * caller, not to this component.
+ *
+ * SectionHeader carries no margin of its own precisely because it is also the
+ * sole child of a Card in several places (ProductMetaCard, UsageCard, the
+ * product layout's Contents), where a top margin would push the heading off the
+ * top of its card. A form stacking sections sets a wrapper gap instead, as
+ * here.
  */
 export const Consecutive: Story = {
   args: { title: "Identity" },
   render: () => (
-    <>
+    <Flex direction="column" gap="6">
       <SectionHeader title="Identity">
         <TextField.Root size="3" placeholder="Connection name" />
       </SectionHeader>
@@ -82,6 +89,23 @@ export const Consecutive: Story = {
       <SectionHeader title="Policy">
         <TextField.Root size="3" placeholder="Required flag" />
       </SectionHeader>
-    </>
+    </Flex>
+  ),
+};
+
+/**
+ * The other context: alone inside a Card, where the heading has to sit flush at
+ * the top. This is the case a margin on SectionHeader itself would break.
+ */
+export const InsideACard: Story = {
+  args: { title: "Details" },
+  render: () => (
+    <Card size={{ initial: "2", sm: "1" }}>
+      <SectionHeader title="Details">
+        <Text size="2" color="gray">
+          Nothing above the heading — the card edge is the boundary.
+        </Text>
+      </SectionHeader>
+    </Card>
   ),
 };
