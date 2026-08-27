@@ -21,8 +21,8 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 const individual = {
-  account_id: "giswqs",
-  name: "Qiusheng Wu",
+  account_id: "cholmes",
+  name: "Chris Holmes",
   type: "individual",
 } as unknown as Account;
 

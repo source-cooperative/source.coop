@@ -19,21 +19,21 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Generic: Story = {
-  args: { url: "https://cascadiaresearch.org" },
+  args: { url: "https://cholmes.org" },
 };
 
 export const KnownHosts: Story = {
-  args: { url: "https://github.com/giswqs" },
+  args: { url: "https://github.com/cholmes" },
   render: () => (
     <Flex direction="column" gap="2">
-      <WebsiteLink url="https://github.com/giswqs" />
-      <WebsiteLink url="https://www.linkedin.com/in/giswqs" />
-      <WebsiteLink url="https://wetlands.io" />
+      <WebsiteLink url="https://github.com/cholmes" />
+      <WebsiteLink url="https://www.linkedin.com/in/cholmes" />
+      <WebsiteLink url="https://cholmes.org" />
     </Flex>
   ),
 };
 
 /** A bare hostname is upgraded to https rather than treated as a relative path. */
 export const WithoutScheme: Story = {
-  args: { url: "wetlands.io" },
+  args: { url: "cholmes.org" },
 };

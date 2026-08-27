@@ -12,12 +12,13 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
-  args: { location: "Knoxville, Tennessee" },
+  args: { location: "San Francisco, California" },
 };
 
 /** Free text, so it can be as long as someone types. */
 export const Long: Story = {
   args: {
-    location: "Department of Geography and Sustainability, Knoxville, Tennessee",
+    location:
+      "Rural Municipality of Portage la Prairie, Manitoba, Canada",
   },
 };
