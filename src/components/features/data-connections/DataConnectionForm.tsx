@@ -5,7 +5,6 @@ import {
   Text,
   Flex,
   Box,
-  Button,
   Switch,
   CheckboxCards,
   Code,
@@ -13,7 +12,6 @@ import {
   TextField,
   RadioCards,
 } from "@radix-ui/themes";
-import { CheckIcon } from "@radix-ui/react-icons";
 import { CopyToClipboard } from "@/components/core/CopyToClipboard";
 import { useRouter } from "next/navigation";
 import {
@@ -26,10 +24,12 @@ import {
   AccountFlags,
 } from "@/types";
 import {
+  ConditionalGroup,
   Field,
   FormActions,
   SectionHeader,
   RadioDot,
+  SecretField,
 } from "@/components/core";
 import {
   createDataConnection,
@@ -154,139 +154,6 @@ const VISIBILITY_DESCRIPTIONS: Record<ProductVisibility, string> = {
   [ProductVisibility.Unlisted]: "Products reachable by link only.",
   [ProductVisibility.Restricted]: "Products limited to their members.",
 };
-
-/**
- * Fields that exist because of a choice made above them.
- *
- * Provider and authentication method each swap out what follows. Without a rule
- * tying those fields to the control that produced them, they read as part of
- * the same flat list — and nothing suggests that choosing differently would
- * replace them.
- */
-function ConditionalGroup({
-  because,
-  children,
-}: {
-  because: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <Box
-      pl="4"
-      style={{ borderLeft: "2px solid var(--gray-5)" }}
-    >
-      <Flex direction="column" gap="4">
-        <Text
-          size="1"
-          color="gray"
-          style={{
-            fontFamily: "var(--code-font-family)",
-            textTransform: "uppercase",
-            letterSpacing: "0.1em",
-          }}
-        >
-          Because {because}
-        </Text>
-        {children}
-      </Flex>
-    </Box>
-  );
-}
-
-/**
- * A write-only credential: says whether one is stored, and reveals an input only
- * when the user asks to change it.
- *
- * Rendering an empty password box in both states is what made an authenticated
- * connection indistinguishable from one with no credential at all.
- */
-function SecretField({
-  label,
-  help,
-  name,
-  stored,
-  required,
-  errors,
-  defaultValue,
-}: {
-  label: string;
-  help: React.ReactNode;
-  name: string;
-  stored: boolean;
-  required: boolean;
-  errors?: string[];
-  defaultValue: string;
-}) {
-  // Open when there is nothing stored to keep.
-  //
-  // The defaultValue clause only matters on a remount — switching auth type away
-  // and back after a failed submit, where state.data still holds what was typed.
-  // An ordinary failed submit does not remount this, so it simply keeps the
-  // state it already had; the initializer is not what preserves that.
-  const [replacing, setReplacing] = useState(!stored || defaultValue !== "");
-
-  if (replacing) {
-    return (
-      <Field label={label} help={help} errors={errors} required={required}>
-        {(props) => (
-          <Flex gap="2" align="center">
-            <TextField.Root
-              {...props}
-              type="password"
-              name={name}
-              autoComplete="new-password"
-              required={required}
-              defaultValue={defaultValue}
-              size="3"
-              style={{ flex: 1 }}
-            />
-            {stored && (
-              <Button
-                type="button"
-                size="2"
-                variant="soft"
-                color="gray"
-                onClick={() => setReplacing(false)}
-              >
-                Keep current
-              </Button>
-            )}
-          </Flex>
-        )}
-      </Field>
-    );
-  }
-
-  return (
-    <Field label={label} help={help} errors={errors} group>
-      <Flex
-        align="center"
-        justify="between"
-        gap="3"
-        p="3"
-        style={{
-          border: "1px solid var(--gray-6)",
-          backgroundColor: "var(--gray-2)",
-        }}
-      >
-        <Flex align="center" gap="2">
-          <CheckIcon color="var(--green-11)" />
-          <Text size="2" weight="medium">
-            Stored
-          </Text>
-        </Flex>
-        <Button
-          type="button"
-          size="2"
-          variant="soft"
-          onClick={() => setReplacing(true)}
-        >
-          Replace…
-        </Button>
-      </Flex>
-    </Field>
-  );
-}
 
 export function DataConnectionForm({
   dataConnection,

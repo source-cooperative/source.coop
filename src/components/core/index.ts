@@ -4,6 +4,8 @@ export { Field } from "./Field";
 export type { FieldProps } from "./Field";
 export { FormActions } from "./FormActions";
 export { DangerZone } from "./DangerZone";
+export { ConditionalGroup } from "./ConditionalGroup";
+export { SecretField } from "./SecretField";
 export { Skeleton } from "./Skeleton";
 export { FormSkeleton } from "./FormSkeleton";
 export { FormTitle } from "./FormTitle";
