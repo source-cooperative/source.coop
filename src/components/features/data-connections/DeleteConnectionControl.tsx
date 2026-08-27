@@ -6,9 +6,18 @@ import { DeleteDataConnectionButton } from "./DeleteDataConnectionButton";
 
 /**
  * Delete control with the dependent-product count loaded behind Suspense, so it
- * stays off the edit form's critical path. The scan is request-deduped with
- * <ConnectionUsage> and <DeleteConnectionNote>, so the repeat costs nothing.
- * Shared by the admin and account-scoped connection detail pages.
+ * stays off the edit form's critical path. Shared by the admin and
+ * account-scoped connection detail pages.
+ *
+ * Three components on this page ask the same question -- this,
+ * <DeleteConnectionNote> and <ConnectionUsage> -- and the answer is a full
+ * table scan. They cost one query between them, not three:
+ * `listProductsByConnectionId` pages through `BaseTable.cachedSend`, which
+ * routes reads through the request-scoped memoizer in
+ * `database/request-cache.ts`. That layer exists precisely because the AWS SDK
+ * does not use `fetch()`, so Next's own per-request dedup would not cover it.
+ * Pinned by "shares one scan across every caller in a request" in
+ * `products.test.ts`, which sees three scans if the memoizer is bypassed.
  */
 export function DeleteConnectionControl({
   connectionId,
