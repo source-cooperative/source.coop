@@ -21,9 +21,11 @@ export function SectionHeader({
   rightButton,
 }: SectionHeaderProps) {
   return (
-    // Space above the heading, so consecutive sections read as separate blocks
-    // rather than one continuous column of fields.
-    <Box mt="4">
+    // No margin of its own: this is the sole child of a Card in several places
+    // (ProductMetaCard, UsageCard, the product layout's Contents), where a top
+    // margin pushes the heading off the top of its card. A form stacking these
+    // spaces them with its own wrapper gap instead.
+    <Box>
       <Flex justify="between" align="center">
         <Text
           size="2"
