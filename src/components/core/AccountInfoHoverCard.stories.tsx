@@ -24,18 +24,18 @@ type Story = StoryObj<typeof meta>;
 // ProfileAvatar falls back to an initial instead of fetching Gravatar — which
 // also keeps the story offline.
 const account = {
-  account_id: "giswqs",
-  name: "Qiusheng Wu",
+  account_id: "cholmes",
+  name: "Chris Holmes",
   type: "individual",
   metadata_public: {
-    bio: "Associate Professor at the University of Tennessee",
+    bio: "Works on open geospatial data and cloud-native infrastructure.",
   },
 } as unknown as Account;
 
 export const Default: Story = {
   args: {
     account,
-    children: <Text size="2">Qiusheng Wu</Text>,
+    children: <Text size="2">Chris Holmes</Text>,
   },
 };
 
@@ -43,7 +43,7 @@ export const Default: Story = {
 export const WithoutBio: Story = {
   args: {
     account: { ...account, metadata_public: {} } as unknown as Account,
-    children: <Text size="2">Qiusheng Wu</Text>,
+    children: <Text size="2">Chris Holmes</Text>,
   },
 };
 
@@ -52,6 +52,6 @@ export const Disabled: Story = {
   args: {
     account,
     showHoverCard: false,
-    children: <Text size="2">Qiusheng Wu (no card on hover)</Text>,
+    children: <Text size="2">Chris Holmes (no card on hover)</Text>,
   },
 };

@@ -20,10 +20,12 @@ type Story = StoryObj<typeof meta>;
 
 // No email, so ProfileAvatar shows an initial rather than fetching Gravatar.
 const individual = {
-  account_id: "giswqs",
-  name: "Qiusheng Wu",
+  account_id: "cholmes",
+  name: "Chris Holmes",
   type: "individual",
-  metadata_public: { bio: "Associate Professor at the University of Tennessee" },
+  metadata_public: {
+    bio: "Works on open geospatial data and cloud-native infrastructure.",
+  },
 } as unknown as Account;
 
 const organization = {

@@ -27,9 +27,9 @@ const initial = (name: string) => (
 
 export const Default: Story = {
   args: {
-    name: "Qiusheng Wu",
-    accountId: "giswqs",
-    avatar: initial("Qiusheng Wu"),
+    name: "Chris Holmes",
+    accountId: "cholmes",
+    avatar: initial("Chris Holmes"),
   },
 };
 

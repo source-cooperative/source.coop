@@ -25,10 +25,10 @@ export const Default: Story = {
 
 /** Beside prose, which is the point: it should read as a different kind of thing. */
 export const AgainstProse: Story = {
-  args: { children: "@giswqs" },
+  args: { children: "@cholmes" },
   render: (args) => (
     <Flex direction="column" gap="2">
-      <Text size="2">Qiusheng Wu</Text>
+      <Text size="2">Chris Holmes</Text>
       <MonoText {...args} size="1" color="gray" />
     </Flex>
   ),
