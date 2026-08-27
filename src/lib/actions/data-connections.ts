@@ -11,8 +11,7 @@ import {
   ProductVisibility,
   UserSession,
   MIN_ID_LENGTH,
-  MAX_ID_LENGTH,
-  ID_REGEX,
+  slugifyToId,
 } from "@/types";
 import { isAuthorized, canManageAccountDataConnections } from "../api/authz";
 import { getPageSession } from "../api/utils";
@@ -73,56 +72,38 @@ export async function createDataConnection(
     };
   }
 
-  // Account-scoped create: the page posts the owning account as `owner`. The
-  // submitted ID is just a slug; namespace it as `${owner}-${slug}` so two
-  // accounts can't collide and an account can't probe another's connection IDs.
-  // Lowercase to match the schema's `.toLowerCase()` on `data_connection_id`;
-  // otherwise an admin-supplied `owner` of "ACME" stores a connection that the
-  // "acme" account's list (filtered on `conn.owner === account_id`) never sees.
+  // The id is derived from the name rather than asked for. It is permanent and
+  // used in URLs and as the storage key, so a typo in a separate field was a
+  // trap; the name it almost always echoed is editable, and this is the only
+  // place the two can drift.
+  const slug = slugifyToId((formData.get("name") as string) || "");
+  if (!slug) {
+    return {
+      fieldErrors: {
+        name: [
+          `Name needs at least ${MIN_ID_LENGTH} letters or numbers, so an ID can be made from it.`,
+        ],
+      },
+      data: formData,
+      message: "Invalid connection name",
+      success: false,
+    };
+  }
+
+  // Account-scoped create: the page posts the owning account as `owner`.
+  // Namespace the slug as `${owner}--${slug}` so two accounts can't collide and
+  // an account can't probe another's connection IDs. Lowercase to match the
+  // schema's `.toLowerCase()` on `data_connection_id`; otherwise an
+  // admin-supplied `owner` of "ACME" stores a connection that the "acme"
+  // account's list (filtered on `conn.owner === account_id`) never sees.
+  //
+  // `--` delimiter: slugifyToId collapses runs of separators, so neither half
+  // contains `--` and the only one is this separator — making the composed id
+  // unambiguous across accounts (a single `-` would not be, since both halves
+  // may themselves contain hyphens).
   const owner =
     ((formData.get("owner") as string) || "").trim().toLowerCase() || undefined;
-  if (owner) {
-    const slug = ((formData.get("data_connection_id") as string) || "")
-      .trim()
-      .toLowerCase();
-    if (
-      slug.length < MIN_ID_LENGTH ||
-      slug.length > MAX_ID_LENGTH ||
-      !ID_REGEX.test(slug)
-    ) {
-      return {
-        fieldErrors: {
-          data_connection_id: [
-            `ID must be ${MIN_ID_LENGTH}–${MAX_ID_LENGTH} lowercase letters, numbers, or hyphens.`,
-          ],
-        },
-        data: formData,
-        message: "Invalid connection ID",
-        success: false,
-      };
-    }
-    // `--` delimiter: ID_REGEX forbids consecutive hyphens inside an account_id
-    // or slug, so the only `--` is this separator — `${owner}--${slug}` is
-    // therefore unambiguous and collision-free across accounts (a single `-`
-    // would not be, since both halves may themselves contain hyphens).
-    formData.set("data_connection_id", `${owner}--${slug}`);
-  } else {
-    // Unowned (admin) ids may not contain `--`: that sequence is reserved for
-    // the namespacing delimiter, so an admin id like `acme--x` would shadow
-    // account `acme`'s slug `x` (DATA_CONNECTION_ID_REGEX permits `--` only so
-    // the composed namespaced id above validates).
-    const rawId = ((formData.get("data_connection_id") as string) || "").trim();
-    if (rawId.includes("--")) {
-      return {
-        fieldErrors: {
-          data_connection_id: ["ID may not contain consecutive hyphens (--)."],
-        },
-        data: formData,
-        message: "Invalid connection ID",
-        success: false,
-      };
-    }
-  }
+  formData.set("data_connection_id", owner ? `${owner}--${slug}` : slug);
 
   try {
     const dataConnection = buildDataConnectionFromForm(formData);
@@ -156,14 +137,16 @@ export async function createDataConnection(
       validated.data.data_connection_id
     );
     if (existing) {
+      // The id is no longer something the user can edit their way out of, so
+      // the collision is reported against the name that produced it.
       return {
         fieldErrors: {
-          data_connection_id: [
-            "A data connection with this ID already exists",
+          name: [
+            `That name is already taken — it would produce the ID "${validated.data.data_connection_id}".`,
           ],
         },
         data: formData,
-        message: "Data connection ID already exists",
+        message: "A data connection with that name already exists",
         success: false,
       };
     }
@@ -179,12 +162,12 @@ export async function createDataConnection(
       ) {
         return {
           fieldErrors: {
-            data_connection_id: [
-              "A data connection with this ID already exists",
+            name: [
+              `That name is already taken — it would produce the ID "${validated.data.data_connection_id}".`,
             ],
           },
           data: formData,
-          message: "Data connection ID already exists",
+          message: "A data connection with that name already exists",
           success: false,
         };
       }

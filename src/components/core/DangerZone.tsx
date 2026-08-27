@@ -25,6 +25,9 @@ export function DangerZone({
   note,
 }: DangerZoneProps) {
   return (
+    // Its own top margin, now that SectionHeader carries none: this sits at the
+    // end of a page rather than inside a form's wrapper, so nothing else is
+    // separating it from what comes before.
     <Box mt="6">
       <SectionHeader title="Danger zone" color="red">
         <Flex
