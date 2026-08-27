@@ -8,6 +8,7 @@ import { canManageAccountDataConnections } from "@/lib/api/authz";
 import {
   DataConnectionForm,
   DeleteConnectionControl,
+  DeleteConnectionNote,
 } from "@/components/features/data-connections";
 import { ConnectionUsage } from "@/components/features/data-connections/ConnectionUsage";
 import { toEditableDataConnection } from "@/components/features/data-connections/redact";
@@ -69,6 +70,11 @@ export default async function AccountEditDataConnectionPage({
         description="Removes the connection record and its stored credentials. The bucket and its objects are not touched."
         action={
           <DeleteConnectionControl
+            connectionId={dataConnection.data_connection_id}
+          />
+        }
+        note={
+          <DeleteConnectionNote
             connectionId={dataConnection.data_connection_id}
           />
         }

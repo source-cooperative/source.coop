@@ -15,7 +15,6 @@ import {
   AlertDialog,
 } from "@radix-ui/themes";
 import {
-  Link1Icon,
   InfoCircledIcon,
   DotsHorizontalIcon,
 } from "@radix-ui/react-icons";
@@ -34,6 +33,12 @@ import {
   accountDataConnectionEditUrl,
 } from "@/lib/urls";
 import type { DataConnectionOption } from "./redact";
+import {
+  ConnectionList,
+  ConnectionRow,
+  ConnectionMarker,
+  ConnectionsEmpty,
+} from "./ConnectionRow";
 
 interface ProductMirrorsManagerProps {
   product: Product;
@@ -214,25 +219,13 @@ export function ProductMirrorsManager({
       )}
 
       {mirrors.length === 0 ? (
-        <Flex
-          direction="column"
-          align="center"
-          gap="2"
-          py="8"
-          style={{ userSelect: "none" }}
-        >
-          <Link1Icon width="48" height="48" color="var(--gray-8)" />
-          <Text size="4" weight="medium" color="gray">
-            No data connections
-          </Text>
-          <Text size="2" color="gray">
-            {canManageMirrors
-              ? "Add a data connection to this product."
-              : "No data connections have been configured for this product."}
-          </Text>
-        </Flex>
+        <ConnectionsEmpty>
+          {canManageMirrors
+            ? "Add a data connection to this product."
+            : "No data connections have been configured for this product."}
+        </ConnectionsEmpty>
       ) : (
-        <Flex direction="column" gap="3">
+        <ConnectionList>
           {mirrors.map(([key, mirror]) => {
             const info = connectionInfo[mirror.connection_id];
             const canEditPrefix = editablePrefixConnections.has(
@@ -242,54 +235,27 @@ export function ProductMirrorsManager({
               isAdmin || ownedConnections.has(mirror.connection_id);
 
             return (
-              <Box
+              // Actions: one affordance rather than three same-weight buttons,
+              // so the destructive one stops competing with the routine ones.
+              // Footer: the prefix, editable only for users who manage both the
+              // owning account and the connection; the server action re-checks.
+              <ConnectionRow
                 key={key}
-                style={{
-                  border: "1px solid var(--gray-6)",
-                  backgroundColor: "var(--color-panel-solid)",
-                }}
-              >
-                <Flex justify="between" align="start" gap="3" p="4">
-                  <Box minWidth="0">
-                    <Flex align="center" gap="2">
-                      <Text size="2" weight="medium">
-                        {/* Fall back to the id when the connection no longer
-                            loads (e.g. deleted). */}
-                        {info?.name ?? mirror.connection_id}
-                      </Text>
-                      {mirror.is_primary && (
-                        <Text
-                          size="1"
-                          color="gray"
-                          style={{
-                            border: "1px solid var(--gray-7)",
-                            padding: "0 6px",
-                            textTransform: "uppercase",
-                            letterSpacing: "0.04em",
-                          }}
-                        >
-                          Primary
-                        </Text>
-                      )}
-                    </Flex>
-                    {info && (
-                      <Text
-                        size="1"
-                        color="gray"
-                        mt="1"
-                        style={{
-                          fontFamily: "var(--code-font-family)",
-                          display: "block",
-                        }}
-                      >
-                        {info.provider} · {info.bucket}
-                      </Text>
-                    )}
-                  </Box>
-
-                  {/* One affordance rather than three same-weight buttons, so
-                      the destructive one stops competing with the routine ones. */}
-                  {(canManageMirrors || canOpenConnection) && (
+                title={
+                  <Text size="2" weight="medium">
+                    {/* Fall back to the id when the connection no longer
+                        loads (e.g. deleted). */}
+                    {info?.name ?? mirror.connection_id}
+                  </Text>
+                }
+                markers={
+                  mirror.is_primary && (
+                    <ConnectionMarker>Primary</ConnectionMarker>
+                  )
+                }
+                meta={info && `${info.provider} · ${info.bucket}`}
+                actions={
+                  (canManageMirrors || canOpenConnection) && (
                     <DropdownMenu.Root>
                       <DropdownMenu.Trigger>
                         <IconButton
@@ -348,20 +314,11 @@ export function ProductMirrorsManager({
                         )}
                       </DropdownMenu.Content>
                     </DropdownMenu.Root>
-                  )}
-                </Flex>
-
-                {/* Prefix is editable only for users who can manage both the
-                    owning account and this connection; the server action
-                    re-checks. Others see it read-only. */}
-                <Box
-                  p="4"
-                  style={{
-                    borderTop: "1px solid var(--gray-5)",
-                    backgroundColor: "var(--gray-2)",
-                  }}
-                >
-                  {canEditPrefix ? (
+                  )
+                }
+                footer={
+                  <>
+                    {canEditPrefix ? (
                     <Form action={prefixAction}>
                       <input
                         type="hidden"
@@ -413,12 +370,13 @@ export function ProductMirrorsManager({
                     </Field>
                   )}
 
-                  {rowMessage(key) && <Box mt="2">{rowMessage(key)}</Box>}
-                </Box>
-              </Box>
+                    {rowMessage(key) && <Box mt="2">{rowMessage(key)}</Box>}
+                  </>
+                }
+              />
             );
           })}
-        </Flex>
+        </ConnectionList>
       )}
 
       {canManageMirrors && (
