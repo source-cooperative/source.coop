@@ -395,19 +395,20 @@ export function DataConnectionForm({
             {/* The id is derived, not asked for — but it is permanent and shows
                 up in URLs and as the storage key, so it is shown rather than
                 sprung on the user after saving. */}
-            <Field label="ID" group>
-              <Flex align="center" gap="2">
-                <Code size="2" variant="ghost" color="gray">
-                  {derivedId || "—"}
-                </Code>
-                <Text size="1" color="gray">
-                  {mode === "edit"
-                    ? "Permanent; renaming does not move it."
-                    : derivedId
-                      ? "Made from the name. Permanent once created."
-                      : "Add a few letters or numbers to the name."}
-                </Text>
-              </Flex>
+            <Field
+              label="ID"
+              help={
+                mode === "edit"
+                  ? "Permanent; renaming does not move it."
+                  : derivedId
+                    ? "Made from the name. Permanent once created."
+                    : "Add a few letters or numbers to the name."
+              }
+              group
+            >
+              <Code size="2" variant="ghost" color="gray">
+                {derivedId || "—"}
+              </Code>
             </Field>
 
           </Flex>
