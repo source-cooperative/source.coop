@@ -43,6 +43,9 @@ const dataConnections = [
   {
     data_connection_id: "cascadia-archive",
     name: "Cascadia Archive",
+    // Owned: only Cascadia Research's products may use it, so it drops out of
+    // the picker when the owner switches to an individual.
+    owner: "cascadia-research",
     read_only: false,
     allowed_visibilities: [ProductVisibility.Public, ProductVisibility.Unlisted],
     details: {
@@ -66,7 +69,10 @@ const dataConnections = [
   },
 ] as unknown as DataConnection[];
 
-/** One possible owner, so there is no owner decision to make. */
+/**
+ * One possible owner, so there is no owner decision to make — and only the
+ * unowned shared connection is on offer.
+ */
 export const Create: Story = {
   args: {
     potentialOwnerAccounts: [individual],
@@ -74,7 +80,11 @@ export const Create: Story = {
   },
 };
 
-/** Several owners: the choice appears, and the preselection comes from ?owner=. */
+/**
+ * Several owners: the choice appears, and the preselection comes from ?owner=.
+ * Switching the owner to Chris Holmes drops Cascadia Archive from the storage
+ * picker, since Cascadia Research owns it.
+ */
 export const ChoosingAnOwner: Story = {
   args: {
     potentialOwnerAccounts: [individual, organization],
