@@ -1,5 +1,8 @@
+import { useState } from "react";
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
+import { Flex } from "@radix-ui/themes";
 import { DirectoryList } from "./DirectoryList";
+import { BreadcrumbNav } from "@/components/display/BreadcrumbNav";
 import {
   S3CredentialsProvider,
   UploadProvider,
@@ -134,4 +137,81 @@ export const Virtualized: Story = {
       )
     ),
   },
+};
+
+// A whole product's objects, flat, the way the listing API returns them.
+// Directories carry a trailing slash; `childrenOf` slices one level out.
+const tree: ProductObject[] = [
+  object("recordings/", 0, "directory"),
+  object("recordings/2019/", 0, "directory"),
+  object("recordings/2019/site-a-20190712-0800.flac", 122_880_000),
+  object("recordings/2019/site-a-20190712-0900.flac", 121_453_312),
+  object("recordings/2020/", 0, "directory"),
+  object("recordings/2020/site-b-20200103-1100.flac", 98_566_144),
+  object("derived/", 0, "directory"),
+  object("derived/spectrograms/", 0, "directory"),
+  object("derived/spectrograms/site-a-20190712.png", 2_204_160),
+  object("derived/detections.parquet", 8_412_672),
+  object("README.md", 2_140),
+  object("catalog.parquet", 48_204_112),
+];
+
+/** One level of `tree`, given a prefix — what the server returns per path. */
+function childrenOf(objects: ProductObject[], prefix: string): ProductObject[] {
+  return objects.filter((o) => {
+    if (!o.path.startsWith(prefix) || o.path === prefix) return false;
+    const rest = o.path.slice(prefix.length).replace(/\/$/, "");
+    return !rest.includes("/");
+  });
+}
+
+/**
+ * Browsing, wired up.
+ *
+ * In the app a directory is a `<Link>` and the server re-fetches the listing
+ * for the new URL. Storybook has no server and a mocked router, so clicks go
+ * nowhere. This holds the prefix in state and intercepts clicks on links into
+ * this product, which is a stand-in for the routing rather than the routing
+ * itself — but it makes the thing you actually want to check, moving up and
+ * down a tree with the breadcrumb keeping pace, reviewable here.
+ */
+function BrowsableTree({ product }: { product: Product }) {
+  const [prefix, setPrefix] = useState("");
+  const base = `/${product.account_id}/${product.product_id}`;
+  const segments = prefix ? prefix.replace(/\/$/, "").split("/") : [];
+
+  return (
+    <Flex
+      direction="column"
+      gap="3"
+      onClickCapture={(event) => {
+        const link = (event.target as HTMLElement).closest("a");
+        const href = link?.getAttribute("href");
+        if (!href || !href.startsWith(base)) return;
+        // A row's href carries the object path verbatim, so a directory
+        // already ends in "/", while a breadcrumb's does not. Normalise before
+        // comparing, or every directory click looks like an unknown path.
+        const next = href
+          .slice(base.length)
+          .replace(/^\//, "")
+          .replace(/\/$/, "");
+        // Files have no listing to show, so only directories move the prefix.
+        if (next && !tree.some((o) => o.path === `${next}/`)) return;
+        event.preventDefault();
+        setPrefix(next ? `${next}/` : "");
+      }}
+    >
+      <BreadcrumbNav path={segments} baseUrl={base} />
+      <DirectoryList
+        product={product}
+        objects={childrenOf(tree, prefix)}
+        prefix={prefix}
+      />
+    </Flex>
+  );
+}
+
+export const Browsable: Story = {
+  args: { product, objects: [], prefix: "" },
+  render: (args) => <BrowsableTree product={args.product} />,
 };
