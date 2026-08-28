@@ -18,7 +18,7 @@ import { Field } from "./Field";
  * input, a select, a checkbox group or a dropzone.
  */
 const meta = {
-  title: "Core/Forms/Field",
+  title: "Components/Forms/Field",
   component: Field,
   parameters: { layout: "padded" },
 } satisfies Meta<typeof Field>;

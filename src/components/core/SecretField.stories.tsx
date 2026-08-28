@@ -17,7 +17,7 @@ import { SecretField } from "./SecretField";
  * from the presence of a credential, never from its value.
  */
 const meta = {
-  title: "Core/Forms/SecretField",
+  title: "Components/Forms/SecretField",
   component: SecretField,
   parameters: { layout: "padded" },
   args: {

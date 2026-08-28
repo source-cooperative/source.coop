@@ -9,7 +9,7 @@ import { SmallColumnContainer } from "./SmallColumnContainer";
  * it do anything — the cap is what it is for.
  */
 const meta = {
-  title: "Core/Layout/SmallColumnContainer",
+  title: "Components/Layout/SmallColumnContainer",
   component: SmallColumnContainer,
   parameters: { layout: "fullscreen" },
 } satisfies Meta<typeof SmallColumnContainer>;

@@ -18,7 +18,7 @@ import { RadioDot } from "./DynamicForm";
  * `aria-hidden` and never becomes a second control.
  */
 const meta = {
-  title: "Core/Forms/RadioDot",
+  title: "Components/Forms/RadioDot",
   component: RadioDot,
   parameters: { layout: "padded" },
 } satisfies Meta<typeof RadioDot>;

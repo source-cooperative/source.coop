@@ -12,7 +12,7 @@ import { Field } from "./Field";
  * which is what the connection form looked like before.
  */
 const meta = {
-  title: "Core/Forms/ConditionalGroup",
+  title: "Components/Forms/ConditionalGroup",
   component: ConditionalGroup,
   parameters: { layout: "padded" },
 } satisfies Meta<typeof ConditionalGroup>;

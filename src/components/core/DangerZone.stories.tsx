@@ -11,7 +11,7 @@ import { DangerZone } from "./DangerZone";
  * happen to be allowed to delete, so this is the practical way to review it.
  */
 const meta = {
-  title: "Core/Layout/DangerZone",
+  title: "Components/Layout/DangerZone",
   component: DangerZone,
   parameters: { layout: "padded" },
 } satisfies Meta<typeof DangerZone>;

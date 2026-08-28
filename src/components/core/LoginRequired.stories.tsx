@@ -9,7 +9,7 @@ import { LoginRequired } from "./LoginRequired";
  * component so every gated page shows the same thing.
  */
 const meta = {
-  title: "Core/Feedback/LoginRequired",
+  title: "Components/Feedback/LoginRequired",
   component: LoginRequired,
   parameters: { layout: "padded" },
 } satisfies Meta<typeof LoginRequired>;

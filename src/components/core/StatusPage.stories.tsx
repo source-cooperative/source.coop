@@ -9,7 +9,7 @@ import { StatusPage } from "./StatusPage";
  * default centres in 60vh, which in a story frame is mostly empty space.
  */
 const meta = {
-  title: "Core/Feedback/StatusPage",
+  title: "Components/Feedback/StatusPage",
   component: StatusPage,
   parameters: { layout: "padded" },
   args: { minHeight: "auto" },

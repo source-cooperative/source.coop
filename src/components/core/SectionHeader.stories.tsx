@@ -11,7 +11,7 @@ import { SectionHeader } from "./SectionHeader";
  * down. Compare Default with Danger.
  */
 const meta = {
-  title: "Core/Layout/SectionHeader",
+  title: "Components/Layout/SectionHeader",
   component: SectionHeader,
   parameters: { layout: "padded" },
 } satisfies Meta<typeof SectionHeader>;

@@ -11,7 +11,7 @@ import { MonoText } from "./MonoText";
  * story is also the check that the webfont actually loaded.
  */
 const meta = {
-  title: "Core/Typography/MonoText",
+  title: "Components/Typography/MonoText",
   component: MonoText,
   parameters: { layout: "padded" },
 } satisfies Meta<typeof MonoText>;

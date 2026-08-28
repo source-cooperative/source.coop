@@ -7,7 +7,7 @@ import { FormSkeleton } from "./FormSkeleton";
  * visible jump on load.
  */
 const meta = {
-  title: "Core/Forms/FormSkeleton",
+  title: "Components/Forms/FormSkeleton",
   component: FormSkeleton,
   parameters: { layout: "padded" },
 } satisfies Meta<typeof FormSkeleton>;
