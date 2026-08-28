@@ -17,7 +17,7 @@ import {
  * story can settle and a screenshot of one page cannot.
  */
 const meta = {
-  title: "Data connections/ConnectionRow",
+  title: "Features/Data connections/ConnectionRow",
   component: ConnectionRow,
   parameters: { layout: "padded" },
 } satisfies Meta<typeof ConnectionRow>;

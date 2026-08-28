@@ -10,7 +10,7 @@ import type { Account } from "@/types";
  * Hover either to see it.
  */
 const meta = {
-  title: "Accounts/AccountLinks",
+  title: "Components/Accounts/AccountLinks",
   component: AvatarLinkCompact,
   parameters: { layout: "padded" },
 } satisfies Meta<typeof AvatarLinkCompact>;

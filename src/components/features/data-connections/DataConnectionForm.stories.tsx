@@ -23,7 +23,7 @@ import {
  * credential looks like next to one that was never set.
  */
 const meta = {
-  title: "Data connections/DataConnectionForm",
+  title: "Features/Data connections/DataConnectionForm",
   component: DataConnectionForm,
   parameters: { layout: "padded" },
 } satisfies Meta<typeof DataConnectionForm>;

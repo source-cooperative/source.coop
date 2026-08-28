@@ -8,7 +8,7 @@ import { ProductsSkeleton } from "./ProductsSkeleton";
  * what replaces it produces a visible jump the moment data arrives.
  */
 const meta = {
-  title: "Products/ProductsSkeleton",
+  title: "Features/Products/ProductsSkeleton",
   component: ProductsSkeleton,
   parameters: { layout: "padded" },
 } satisfies Meta<typeof ProductsSkeleton>;

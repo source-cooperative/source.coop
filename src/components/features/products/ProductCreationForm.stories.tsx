@@ -19,7 +19,7 @@ import {
  * nothing.
  */
 const meta = {
-  title: "Products/ProductCreationForm",
+  title: "Features/Products/ProductCreationForm",
   component: ProductCreationForm,
   parameters: { layout: "padded" },
 } satisfies Meta<typeof ProductCreationForm>;
@@ -43,6 +43,9 @@ const dataConnections = [
   {
     data_connection_id: "miskatonic-archive",
     name: "Miskatonic Archive",
+    // Owned: only Miskatonic University's products may use it, so it drops out
+    // of the picker when the owner switches to an individual.
+    owner: "miskatonic",
     read_only: false,
     allowed_visibilities: [ProductVisibility.Public, ProductVisibility.Unlisted],
     details: {
@@ -66,7 +69,10 @@ const dataConnections = [
   },
 ] as unknown as DataConnection[];
 
-/** One possible owner, so there is no owner decision to make. */
+/**
+ * One possible owner, so there is no owner decision to make — and only the
+ * unowned shared connection is on offer.
+ */
 export const Create: Story = {
   args: {
     potentialOwnerAccounts: [individual],
@@ -74,7 +80,11 @@ export const Create: Story = {
   },
 };
 
-/** Several owners: the choice appears, and the preselection comes from ?owner=. */
+/**
+ * Several owners: the choice appears, and the preselection comes from ?owner=.
+ * Switching the owner to Alice Coltrane drops Miskatonic Archive from the storage
+ * picker, since Miskatonic University owns it.
+ */
 export const ChoosingAnOwner: Story = {
   args: {
     potentialOwnerAccounts: [individual, organization],
