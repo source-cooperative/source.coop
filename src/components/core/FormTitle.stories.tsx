@@ -3,7 +3,7 @@ import { FormTitle } from "./FormTitle";
 
 /** The heading a form page opens with. */
 const meta = {
-  title: "Forms/FormTitle",
+  title: "Core/Forms/FormTitle",
   component: FormTitle,
   parameters: { layout: "padded" },
 } satisfies Meta<typeof FormTitle>;

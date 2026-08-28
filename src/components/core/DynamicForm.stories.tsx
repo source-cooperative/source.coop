@@ -21,7 +21,7 @@ const withErrors =
   });
 
 const meta = {
-  title: "Forms/DynamicForm",
+  title: "Core/Forms/DynamicForm",
   component: DynamicForm<Demo>,
   parameters: { layout: "padded" },
 } satisfies Meta<typeof DynamicForm<Demo>>;

@@ -10,7 +10,7 @@ import { FormActions } from "./FormActions";
  * which in a dialog reads as two competing footers.
  */
 const meta = {
-  title: "Forms/FormActions",
+  title: "Core/Forms/FormActions",
   component: FormActions,
   parameters: { layout: "padded" },
 } satisfies Meta<typeof FormActions>;

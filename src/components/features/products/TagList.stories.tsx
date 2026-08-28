@@ -3,7 +3,7 @@ import { TagList } from "./TagList";
 
 /** A product's tags, each linking to the filtered product list. */
 const meta = {
-  title: "Products/TagList",
+  title: "Features/Products/TagList",
   component: TagList,
   parameters: { layout: "padded" },
 } satisfies Meta<typeof TagList>;

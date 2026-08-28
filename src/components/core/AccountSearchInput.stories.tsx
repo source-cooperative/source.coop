@@ -16,7 +16,7 @@ import { AccountSearchInput } from "./AccountSearchInput";
  * what stops it being clipped inside the invite dialog.
  */
 const meta = {
-  title: "Forms/AccountSearchInput",
+  title: "Core/Forms/AccountSearchInput",
   component: AccountSearchInput,
   parameters: { layout: "padded" },
   args: { name: "account_id" },

@@ -10,7 +10,7 @@ import type { Account } from "@/types";
  * `updateAccountProfile` is an `fn()` stub, so saving does nothing.
  */
 const meta = {
-  title: "Profiles/EditProfileForm",
+  title: "Features/Profiles/EditProfileForm",
   component: EditProfileForm,
   parameters: { layout: "padded" },
 } satisfies Meta<typeof EditProfileForm>;

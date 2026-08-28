@@ -3,7 +3,7 @@ import { ProfileLocation } from "./ProfileLocation";
 
 /** Where an account says it is, with a globe beside it. */
 const meta = {
-  title: "Profiles/ProfileLocation",
+  title: "Features/Profiles/ProfileLocation",
   component: ProfileLocation,
   parameters: { layout: "padded" },
 } satisfies Meta<typeof ProfileLocation>;

@@ -11,7 +11,7 @@ import type { Account } from "@/types";
  * screenshot of the closed state shows nothing.
  */
 const meta = {
-  title: "Accounts/AccountInfoHoverCard",
+  title: "Core/Accounts/AccountInfoHoverCard",
   component: AccountInfoHoverCard,
   parameters: { layout: "padded" },
 } satisfies Meta<typeof AccountInfoHoverCard>;

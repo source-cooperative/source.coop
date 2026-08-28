@@ -10,7 +10,7 @@ import { WebsiteLink } from "./WebsiteLink";
  * way to check the matching works.
  */
 const meta = {
-  title: "Profiles/WebsiteLink",
+  title: "Features/Profiles/WebsiteLink",
   component: WebsiteLink,
   parameters: { layout: "padded" },
 } satisfies Meta<typeof WebsiteLink>;

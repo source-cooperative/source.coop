@@ -11,7 +11,7 @@ import { DataProvider } from "@/types";
  * it is slugified from the name directly above it.
  */
 const meta = {
-  title: "Data connections/DataConnectionsList",
+  title: "Features/Data connections/DataConnectionsList",
   component: DataConnectionsList,
   parameters: { layout: "padded" },
   args: { editHref: (id: string) => `/admin/data-connections/${id}` },

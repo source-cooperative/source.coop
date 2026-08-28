@@ -16,7 +16,7 @@ import type { Account, Product } from "@/types";
  * the dialog rather than being clipped by it.
  */
 const meta = {
-  title: "Accounts/InviteMemberForm",
+  title: "Features/Accounts/InviteMemberForm",
   component: InviteMemberForm,
   parameters: { layout: "padded" },
 } satisfies Meta<typeof InviteMemberForm>;

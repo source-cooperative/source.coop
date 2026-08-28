@@ -10,7 +10,7 @@ import { LoginButton } from "./LoginButton";
  * Storybook URL rather than the app.
  */
 const meta = {
-  title: "Controls/LoginButton",
+  title: "Core/Controls/LoginButton",
   component: LoginButton,
   parameters: { layout: "padded" },
 } satisfies Meta<typeof LoginButton>;

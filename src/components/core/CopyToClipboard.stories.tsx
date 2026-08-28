@@ -11,7 +11,7 @@ import { MonoText } from "./MonoText";
  * behaviour, and it is invisible in a screenshot.
  */
 const meta = {
-  title: "Controls/CopyToClipboard",
+  title: "Core/Controls/CopyToClipboard",
   component: CopyToClipboard,
   parameters: { layout: "padded" },
 } satisfies Meta<typeof CopyToClipboard>;
