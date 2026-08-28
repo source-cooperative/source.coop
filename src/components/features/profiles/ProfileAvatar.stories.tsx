@@ -21,14 +21,14 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 const individual = {
-  account_id: "cholmes",
-  name: "Chris Holmes",
+  account_id: "acoltrane",
+  name: "Alice Coltrane",
   type: "individual",
 } as unknown as Account;
 
 const organization = {
-  account_id: "cascadia-research",
-  name: "Cascadia Research",
+  account_id: "miskatonic",
+  name: "Miskatonic University",
   type: "organization",
 } as unknown as Account;
 

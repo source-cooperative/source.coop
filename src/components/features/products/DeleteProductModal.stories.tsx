@@ -16,8 +16,8 @@ const meta = {
   component: DeleteProductModal,
   parameters: { layout: "padded" },
   args: {
-    accountId: "cascadia-research",
-    productId: "humpback-acoustics",
+    accountId: "miskatonic",
+    productId: "abyssal-acoustics",
   },
 } satisfies Meta<typeof DeleteProductModal>;
 

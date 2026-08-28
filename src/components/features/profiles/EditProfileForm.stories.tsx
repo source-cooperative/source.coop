@@ -19,25 +19,25 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 const individual = {
-  account_id: "cholmes",
-  name: "Chris Holmes",
+  account_id: "acoltrane",
+  name: "Alice Coltrane",
   type: "individual",
   emails: [{ address: "chris@example.test", is_primary: true, verified: true }],
   metadata_public: {
-    bio: "Works on open geospatial data and cloud-native infrastructure.",
+    bio: "Works on open ocean-acoustics data and cloud-native infrastructure.",
     orcid: "0000-0002-1825-0097",
-    websites: ["https://cholmes.org"],
+    websites: ["https://acoltrane.org"],
   },
 } as unknown as Account;
 
 const organization = {
-  account_id: "cascadia-research",
-  name: "Cascadia Research",
+  account_id: "miskatonic",
+  name: "Miskatonic University",
   type: "organization",
   metadata_public: {
-    bio: "Marine mammal research collective.",
-    ror_id: "https://ror.org/05gq02987",
-    websites: ["https://cascadiaresearch.org"],
+    bio: "Deep-ocean acoustics and abyssal survey data.",
+    ror_id: "https://ror.org/04t0dxa17",
+    websites: ["https://miskatonic.edu"],
   },
 } as unknown as Account;
 

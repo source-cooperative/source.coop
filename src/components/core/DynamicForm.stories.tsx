@@ -73,8 +73,8 @@ export const Sections: Story = {
     action: noop,
     submitButtonText: "Save changes",
     initialValues: {
-      name: "Cascadia Research",
-      email: "ops@cascadia-research.org",
+      name: "Miskatonic University",
+      email: "ops@miskatonic.edu",
       description:
         "Long-term marine mammal monitoring across the Salish Sea and outer coast.",
     },

@@ -37,6 +37,6 @@ export const BackendUnreachable: Story = {
 export const WithMaintainerDetails: Story = {
   args: {
     details:
-      "AccessDenied: User: arn:aws:sts::000000000000:assumed-role/source-proxy/session is not authorized to perform: s3:GetObject on resource: arn:aws:s3:::cascadia-archive/humpback-acoustics/manifest.json",
+      "AccessDenied: User: arn:aws:sts::000000000000:assumed-role/source-proxy/session is not authorized to perform: s3:GetObject on resource: arn:aws:s3:::miskatonic-archive/abyssal-acoustics/manifest.json",
   },
 };

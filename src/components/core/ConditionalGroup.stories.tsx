@@ -27,7 +27,7 @@ export const Default: Story = {
       <>
         <Field label="Bucket" required>
           {(props) => (
-            <TextField.Root {...props} size="3" defaultValue="cascadia-archive" />
+            <TextField.Root {...props} size="3" defaultValue="miskatonic-archive" />
           )}
         </Field>
         <Field label="Region">
@@ -87,7 +87,7 @@ export const OneField: Story = {
     children: (
       <Field label="Bucket" required>
         {(props) => (
-          <TextField.Root {...props} size="3" defaultValue="rle-files" />
+          <TextField.Root {...props} size="3" defaultValue="black-mesa-files" />
         )}
       </Field>
     ),

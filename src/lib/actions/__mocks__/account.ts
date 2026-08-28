@@ -27,8 +27,8 @@ export const searchAccounts: typeof Real.searchAccounts = fn(
     query.trim().length < 2
       ? []
       : [
-          { account_id: "cholmes", name: "Chris Holmes" },
-          { account_id: "cascadia-research", name: "Cascadia Research" },
+          { account_id: "acoltrane", name: "Alice Coltrane" },
+          { account_id: "miskatonic", name: "Miskatonic University" },
         ]
 ).mockName("searchAccounts");
 
