@@ -35,6 +35,9 @@ sb.mock("../src/lib/actions/data-connections.ts");
 // AccountSearchInput -- so this is needed by stories that never mention an
 // account, including the connection form.
 sb.mock("../src/lib/actions/account.ts");
+sb.mock("../src/lib/actions/product-mirrors.ts");
+sb.mock("../src/lib/actions/products.ts");
+sb.mock("../src/lib/actions/memberships.ts");
 
 // Mirrors src/styles/theme.tsx. Without it every Radix control renders
 // unstyled, and a story would tell you nothing about how the app looks.

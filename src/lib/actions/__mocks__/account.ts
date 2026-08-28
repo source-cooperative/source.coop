@@ -1,4 +1,5 @@
 import { fn } from "storybook/test";
+import type * as Real from "../account";
 import type { FormState } from "@/components/core/DynamicForm";
 import type { AccountSuggestion } from "@/lib/clients/database/accounts";
 
@@ -21,7 +22,7 @@ const idle = (): FormState<Record<string, unknown>> => ({
   success: false,
 });
 
-export const searchAccounts = fn(
+export const searchAccounts: typeof Real.searchAccounts = fn(
   async (query: string): Promise<AccountSuggestion[]> =>
     query.trim().length < 2
       ? []
@@ -31,10 +32,10 @@ export const searchAccounts = fn(
         ]
 ).mockName("searchAccounts");
 
-export const createAccount = fn(async () => idle()).mockName("createAccount");
-export const updateAccountProfile = fn(async () => idle()).mockName(
+export const createAccount: typeof Real.createAccount = fn(async () => idle()).mockName("createAccount");
+export const updateAccountProfile: typeof Real.updateAccountProfile = fn(async () => idle()).mockName(
   "updateAccountProfile"
 );
-export const updateAccountFlags = fn(async () => idle()).mockName(
+export const updateAccountFlags: typeof Real.updateAccountFlags = fn(async () => idle()).mockName(
   "updateAccountFlags"
 );

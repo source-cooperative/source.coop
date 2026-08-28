@@ -1,4 +1,5 @@
 import { fn } from "storybook/test";
+import type * as Real from "../data-connections";
 import type { FormState } from "@/components/core/DynamicForm";
 
 /**
@@ -14,8 +15,10 @@ import type { FormState } from "@/components/core/DynamicForm";
  * it renders a single field. This is the whole reason DataConnectionForm had no
  * story.
  *
- * Actions are `fn()` rather than plain functions so a story can assert on the
- * submitted FormData, or drive a failure with `.mockResolvedValue()`.
+ * Each export is annotated `typeof Real.x`. That import is type-only, so it is
+ * erased and never reaches the browser -- but it means a signature change on
+ * the real action breaks `tsc` here instead of leaving a story quietly
+ * rendering something that can no longer happen.
  */
 const idle = (): FormState<Record<string, unknown>> => ({
   fieldErrors: {},
@@ -24,10 +27,14 @@ const idle = (): FormState<Record<string, unknown>> => ({
   success: false,
 });
 
-export const createDataConnection = fn(async () => idle()).mockName(
-  "createDataConnection"
-);
+export const createDataConnection: typeof Real.createDataConnection = fn(
+  async () => idle()
+).mockName("createDataConnection");
 
-export const updateDataConnection = fn(async () => idle()).mockName(
-  "updateDataConnection"
-);
+export const updateDataConnection: typeof Real.updateDataConnection = fn(
+  async () => idle()
+).mockName("updateDataConnection");
+
+export const deleteDataConnection: typeof Real.deleteDataConnection = fn(
+  async () => idle()
+).mockName("deleteDataConnection");
