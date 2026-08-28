@@ -652,42 +652,45 @@ export function DataConnectionForm({
               errors={state.fieldErrors?.prefix_template}
             >
               {(props) => (
-                <Flex direction="column" gap="2">
-                  <TextField.Root
-                    {...props}
-                    type="text"
-                    name="prefix_template"
-                    value={prefixTemplate}
-                    onChange={(event) => setPrefixTemplate(event.target.value)}
-                    size="3"
-                  />
-                  {/* A worked example, rather than describing the substitution in
-                      prose and leaving the reader to run it in their head. */}
-                  <Box
-                    p="2"
-                    style={{
-                      border: "1px solid var(--gray-6)",
-                      backgroundColor: "var(--gray-2)",
-                    }}
-                  >
-                    <Text as="p" size="1" color="gray">
-                      A product at{" "}
-                      <Code size="1" variant="ghost">
-                        example-org/rainfall
-                      </Code>{" "}
-                      would be stored at
-                    </Text>
-                    <Code
-                      size="1"
-                      variant="ghost"
-                      color="gray"
-                      style={{ wordBreak: "break-all" }}
-                    >
-                      {resolvedLocation}
-                    </Code>
-                  </Box>
-                </Flex>
+                <TextField.Root
+                  {...props}
+                  type="text"
+                  name="prefix_template"
+                  value={prefixTemplate}
+                  onChange={(event) => setPrefixTemplate(event.target.value)}
+                  size="3"
+                />
               )}
+            </Field>
+
+            {/* A worked example, rather than describing the substitution in
+                prose and leaving the reader to run it in their head. */}
+            <Field
+              group
+              label="Example Prefix"
+              help={
+                <>
+                  A product at{" "}
+                  <Code size="1" variant="ghost">
+                    example-org/rainfall
+                  </Code>{" "}
+                  would be stored at
+                </>
+              }
+            >
+              <Box
+                p="2"
+                style={{
+                  border: "1px solid var(--gray-6)",
+                  backgroundColor: "var(--gray-2)",
+                  borderRadius: "var(--radius-2)",
+                  overflowX: "auto",
+                  fontSize: "var(--font-size-1)",
+                }}
+                asChild
+              >
+                <pre>{resolvedLocation}</pre>
+              </Box>
             </Field>
 
           </Flex>
