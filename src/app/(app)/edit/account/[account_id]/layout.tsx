@@ -17,12 +17,14 @@ import {
   ImageIcon,
   Link1Icon,
   ExternalLinkIcon,
+  CubeIcon,
 } from "@radix-ui/react-icons";
 import {
   editAccountProfileUrl,
   editAccountProfilePictureUrl,
   editAccountPermissionsUrl,
   editAccountMembershipsUrl,
+  editAccountServiceAccountsUrl,
   accountDataConnectionsUrl,
   accountUrl,
   orySettingsUrl,
@@ -121,6 +123,17 @@ export default async function AccountLayout({
         accountToEdit,
         Actions.GetAccountFlags,
       ),
+    },
+    // Design mock for #491 — shown for individuals and organizations alike,
+    // since either can own a service account.
+    {
+      id: "service-accounts",
+      label: "Service Accounts",
+      href: editAccountServiceAccountsUrl(account_id),
+      icon: <CubeIcon width="16" height="16" />,
+      // Only offered to someone who could actually create one — mirrors #491's
+      // "the creator must hold a qualifying role on the owner account".
+      condition: canEditAccount,
     },
     ...(accountToEdit.type === "organization"
       ? [
