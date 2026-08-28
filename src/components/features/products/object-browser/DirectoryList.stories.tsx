@@ -68,77 +68,6 @@ const object = (
     checksum: "d41d8cd98f00b204e9800998ecf8427e",
   }) as ProductObject;
 
-/** Directories and files at the root of a product. */
-export const Default: Story = {
-  args: {
-    product,
-    prefix: "",
-    objects: [
-      object("recordings/", 0, "directory"),
-      object("derived/", 0, "directory"),
-      object("README.md", 2_140),
-      object("manifest.json", 18_902),
-      object("catalog.parquet", 48_204_112),
-    ],
-  },
-};
-
-/** Nested one level down. */
-export const InADirectory: Story = {
-  args: {
-    product,
-    prefix: "recordings/",
-    objects: [
-      object("recordings/2019/", 0, "directory"),
-      object("recordings/2020/", 0, "directory"),
-      object("recordings/site-a-20190712-0800.flac", 122_880_000),
-      object("recordings/site-a-20190712-0900.flac", 121_453_312),
-    ],
-  },
-};
-
-/** An empty prefix, rather than a product with nothing in it. */
-export const Empty: Story = {
-  args: { product, objects: [], prefix: "recordings/2021/" },
-};
-
-/**
- * A name long enough to need truncating, beside a one-byte file and a
- * four-terabyte one — what the name and size columns have to survive together.
- */
-export const AwkwardNames: Story = {
-  args: {
-    product,
-    prefix: "",
-    objects: [
-      object(
-        "site-a-hydrophone-array-continuous-passive-acoustic-monitoring-20190712T080000Z-to-20190712T090000Z.flac",
-        122_880_000
-      ),
-      object("a.txt", 1),
-      object("full-archive.tar", 4_398_046_511_104),
-    ],
-  },
-};
-
-/**
- * Past MAX_VISIBLE_ITEMS, so the virtualizer takes over. Worth scrolling: rows
- * are a fixed height and an uploading row is taller, which is where windowed
- * lists usually go wrong.
- */
-export const Virtualized: Story = {
-  args: {
-    product,
-    prefix: "recordings/",
-    objects: Array.from({ length: 250 }, (_, i) =>
-      object(
-        `recordings/site-a-${String(i).padStart(4, "0")}.flac`,
-        60_000_000 + i * 1_024
-      )
-    ),
-  },
-};
-
 // A whole product's objects, flat, the way the listing API returns them.
 // Directories carry a trailing slash; `childrenOf` slices one level out.
 const tree: ProductObject[] = [
@@ -166,7 +95,8 @@ function childrenOf(objects: ProductObject[], prefix: string): ProductObject[] {
 }
 
 /**
- * Browsing, wired up.
+ * The default, because a listing you cannot move around in is half the
+ * component.
  *
  * In the app a directory is a `<Link>` and the server re-fetches the listing
  * for the new URL. Storybook has no server and a mocked router, so clicks go
@@ -211,7 +141,50 @@ function BrowsableTree({ product }: { product: Product }) {
   );
 }
 
-export const Browsable: Story = {
+export const Default: Story = {
   args: { product, objects: [], prefix: "" },
   render: (args) => <BrowsableTree product={args.product} />,
 };
+
+/** An empty prefix, rather than a product with nothing in it. */
+export const Empty: Story = {
+  args: { product, objects: [], prefix: "recordings/2021/" },
+};
+
+/**
+ * A name long enough to need truncating, beside a one-byte file and a
+ * four-terabyte one — what the name and size columns have to survive together.
+ */
+export const AwkwardNames: Story = {
+  args: {
+    product,
+    prefix: "",
+    objects: [
+      object(
+        "site-a-hydrophone-array-continuous-passive-acoustic-monitoring-20190712T080000Z-to-20190712T090000Z.flac",
+        122_880_000
+      ),
+      object("a.txt", 1),
+      object("full-archive.tar", 4_398_046_511_104),
+    ],
+  },
+};
+
+/**
+ * Past MAX_VISIBLE_ITEMS, so the virtualizer takes over. Worth scrolling: rows
+ * are a fixed height and an uploading row is taller, which is where windowed
+ * lists usually go wrong.
+ */
+export const Virtualized: Story = {
+  args: {
+    product,
+    prefix: "recordings/",
+    objects: Array.from({ length: 250 }, (_, i) =>
+      object(
+        `recordings/site-a-${String(i).padStart(4, "0")}.flac`,
+        60_000_000 + i * 1_024
+      )
+    ),
+  },
+};
+
