@@ -57,30 +57,49 @@ export function ConnectionRow({
         marginTop: "-1px",
       }}
     >
-      <Flex justify="between" align="center" gap="3" px="4" py="3">
-        <Box minWidth="0">
-          <Flex align="center" gap="2" wrap="wrap">
-            {title}
-            {markers}
-          </Flex>
-          {meta && (
-            <Text
-              size="1"
-              color="gray"
-              style={{
-                fontFamily: "var(--code-font-family)",
-                display: "block",
-                wordBreak: "break-all",
-              }}
-            >
-              {meta}
-            </Text>
-          )}
-        </Box>
-        <Flex align="center" gap="3" flexShrink="0">
-          {aside}
-          {actions}
+      <Flex align="start" gap="3" px="4" py="3">
+        {/* The aside wraps below the name when the two no longer fit side by
+            side; actions stay on the name's line, since a control that moves
+            around is harder to hit than a label that does. */}
+        <Flex
+          justify="between"
+          align="center"
+          gap="3"
+          wrap="wrap"
+          flexGrow="1"
+          minWidth="0"
+        >
+          {/* A floor on the name column, so a narrow screen wraps the aside
+              rather than squeezing the name to a word per line. `min()` keeps
+              the floor from overflowing a container narrower than it is. */}
+          <Box flexGrow="1" style={{ minWidth: "min(13rem, 100%)" }}>
+            <Flex align="center" gap="2" wrap="wrap">
+              {title}
+              {markers}
+            </Flex>
+            {meta && (
+              <Text
+                size="1"
+                color="gray"
+                style={{
+                  fontFamily: "var(--code-font-family)",
+                  display: "block",
+                  wordBreak: "break-all",
+                }}
+              >
+                {meta}
+              </Text>
+            )}
+          </Box>
+          {aside && <Box ml="auto">{aside}</Box>}
         </Flex>
+        {actions && (
+          // Pinned to the name's line rather than the row's centre, so a row
+          // that has wrapped does not leave its control floating mid-height.
+          <Flex align="center" flexShrink="0" style={{ minHeight: "1.5rem" }}>
+            {actions}
+          </Flex>
+        )}
       </Flex>
       {footer && (
         <Box
