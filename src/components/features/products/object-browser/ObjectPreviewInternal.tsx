@@ -1,4 +1,4 @@
-import { LOGGER } from "@/lib";
+import { LOGGER } from "@/lib/logging";
 import { getStorageClient } from "@/lib/clients/storage";
 import { MarkdownViewer } from "@/components/features/markdown/MarkdownViewer";
 import { TextViewer } from "@/components/features/text/TextViewer";
