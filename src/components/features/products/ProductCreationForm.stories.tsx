@@ -28,29 +28,29 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 const individual = {
-  account_id: "cholmes",
-  name: "Chris Holmes",
+  account_id: "acoltrane",
+  name: "Alice Coltrane",
   type: "individual",
 } as unknown as Account;
 
 const organization = {
-  account_id: "cascadia-research",
-  name: "Cascadia Research",
+  account_id: "miskatonic",
+  name: "Miskatonic University",
   type: "organization",
 } as unknown as Account;
 
 const dataConnections = [
   {
-    data_connection_id: "cascadia-archive",
-    name: "Cascadia Archive",
-    // Owned: only Cascadia Research's products may use it, so it drops out of
-    // the picker when the owner switches to an individual.
-    owner: "cascadia-research",
+    data_connection_id: "miskatonic-archive",
+    name: "Miskatonic Archive",
+    // Owned: only Miskatonic University's products may use it, so it drops out
+    // of the picker when the owner switches to an individual.
+    owner: "miskatonic",
     read_only: false,
     allowed_visibilities: [ProductVisibility.Public, ProductVisibility.Unlisted],
     details: {
       provider: DataProvider.S3,
-      bucket: "cascadia-archive",
+      bucket: "miskatonic-archive",
       base_prefix: "",
       region: "us-west-2",
     },
@@ -82,14 +82,14 @@ export const Create: Story = {
 
 /**
  * Several owners: the choice appears, and the preselection comes from ?owner=.
- * Switching the owner to Chris Holmes drops Cascadia Archive from the storage
- * picker, since Cascadia Research owns it.
+ * Switching the owner to Alice Coltrane drops Miskatonic Archive from the storage
+ * picker, since Miskatonic University owns it.
  */
 export const ChoosingAnOwner: Story = {
   args: {
     potentialOwnerAccounts: [individual, organization],
     dataConnections,
-    defaultOwnerId: "cascadia-research",
+    defaultOwnerId: "miskatonic",
   },
 };
 
@@ -107,17 +107,17 @@ export const Edit: Story = {
     potentialOwnerAccounts: [organization],
     dataConnections,
     product: {
-      account_id: "cascadia-research",
-      product_id: "humpback-acoustics",
-      title: "Humpback Acoustics",
-      description: "Passive acoustic monitoring of humpback whales.",
+      account_id: "miskatonic",
+      product_id: "abyssal-acoustics",
+      title: "Abyssal Acoustics",
+      description: "Passive acoustic monitoring of deep-ocean soundscapes.",
       visibility: ProductVisibility.Public,
       disabled: false,
       metadata: {
         tags: ["acoustics", "cetaceans"],
         primary_mirror: "archive",
         mirrors: {
-          archive: { connection_id: "cascadia-archive", prefix: "" },
+          archive: { connection_id: "miskatonic-archive", prefix: "" },
         },
       },
     } as unknown as Product,

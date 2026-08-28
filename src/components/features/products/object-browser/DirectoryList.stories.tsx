@@ -46,9 +46,9 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 const product = {
-  account_id: "cascadia-research",
-  product_id: "humpback-acoustics",
-  title: "Humpback Acoustics",
+  account_id: "miskatonic",
+  product_id: "abyssal-acoustics",
+  title: "Abyssal Acoustics",
   metadata: { tags: [], primary_mirror: "archive", mirrors: {} },
 } as unknown as Product;
 
@@ -59,7 +59,7 @@ const object = (
 ): ProductObject =>
   ({
     id: path,
-    product_id: "humpback-acoustics",
+    product_id: "abyssal-acoustics",
     path,
     size,
     type,

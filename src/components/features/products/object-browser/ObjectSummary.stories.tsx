@@ -31,12 +31,12 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 const product = {
-  account_id: "cascadia-research",
-  product_id: "humpback-acoustics",
-  title: "Humpback Acoustics",
+  account_id: "miskatonic",
+  product_id: "abyssal-acoustics",
+  title: "Abyssal Acoustics",
   account: {
-    account_id: "cascadia-research",
-    name: "Cascadia Research",
+    account_id: "miskatonic",
+    name: "Miskatonic University",
     type: "organization",
   },
   metadata: { tags: [], primary_mirror: "archive", mirrors: {} },
@@ -44,7 +44,7 @@ const product = {
 
 const objectInfo = {
   id: "recordings/2019/site-a-20190712-0800.flac",
-  product_id: "humpback-acoustics",
+  product_id: "abyssal-acoustics",
   path: "recordings/2019/site-a-20190712-0800.flac",
   size: 122_880_000,
   type: "file",
@@ -55,13 +55,13 @@ const objectInfo = {
 } as ProductObject;
 
 const s3Connection = {
-  primaryMirror: { connection_id: "cascadia-archive", prefix: "humpback/", is_primary: true },
+  primaryMirror: { connection_id: "miskatonic-archive", prefix: "abyssal/", is_primary: true },
   dataConnection: {
-    data_connection_id: "cascadia-archive",
-    name: "Cascadia Archive",
+    data_connection_id: "miskatonic-archive",
+    name: "Miskatonic Archive",
     details: {
       provider: DataProvider.S3,
-      bucket: "cascadia-archive",
+      bucket: "miskatonic-archive",
       base_prefix: "",
       region: "us-west-2",
     },
@@ -90,7 +90,7 @@ export const OnAzure: Story = {
     product,
     objectInfo,
     connectionDetails: {
-      primaryMirror: { connection_id: "azure-open-data", prefix: "humpback/", is_primary: true },
+      primaryMirror: { connection_id: "azure-open-data", prefix: "abyssal/", is_primary: true },
       dataConnection: {
         data_connection_id: "azure-open-data",
         name: "[PROD] Azure Open Data (West Europe)",
@@ -113,13 +113,13 @@ export const OnGoogleCloud: Story = {
     product,
     objectInfo,
     connectionDetails: {
-      primaryMirror: { connection_id: "rle-files", prefix: "", is_primary: true },
+      primaryMirror: { connection_id: "black-mesa-files", prefix: "", is_primary: true },
       dataConnection: {
-        data_connection_id: "rle-files",
-        name: "RLE Assessment Files",
+        data_connection_id: "black-mesa-files",
+        name: "Black Mesa Survey Files",
         details: {
           provider: DataProvider.GCS,
-          bucket: "rle-files",
+          bucket: "black-mesa-files",
           base_prefix: "",
         },
       } as unknown as DataConnection,

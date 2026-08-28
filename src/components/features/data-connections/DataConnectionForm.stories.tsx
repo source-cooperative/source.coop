@@ -34,14 +34,14 @@ type Story = StoryObj<typeof meta>;
 // Cast at the boundary: the form reads a handful of fields, and a valid
 // DataConnection here would be pages of scaffolding.
 const s3Connection = {
-  data_connection_id: "cascadia-research--cascadia-archive",
-  name: "Cascadia Archive",
+  data_connection_id: "miskatonic--miskatonic-archive",
+  name: "Miskatonic Archive",
   read_only: false,
   allowed_visibilities: [ProductVisibility.Public, ProductVisibility.Unlisted],
   prefix_template: "{{repository.account_id}}/{{repository.repository_id}}/",
   details: {
     provider: DataProvider.S3,
-    bucket: "cascadia-archive",
+    bucket: "miskatonic-archive",
     base_prefix: "",
     region: "us-west-2",
   },
@@ -74,10 +74,10 @@ export const GoogleCloud: Story = {
     mode: "edit",
     dataConnection: {
       ...s3Connection,
-      name: "RLE Assessment Files",
+      name: "Black Mesa Survey Files",
       details: {
         provider: DataProvider.GCS,
-        bucket: "rle-files",
+        bucket: "black-mesa-files",
         base_prefix: "",
       },
       authentication: {
@@ -121,7 +121,7 @@ export const Azure: Story = {
 export const AccountOwned: Story = {
   args: {
     mode: "edit",
-    ownerAccountId: "cascadia-research",
+    ownerAccountId: "miskatonic",
     dataConnection: s3Connection,
   },
 };

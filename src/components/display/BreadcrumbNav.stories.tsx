@@ -16,7 +16,7 @@ const meta = {
   title: "Features/Object browser/BreadcrumbNav",
   component: BreadcrumbNav,
   parameters: { layout: "padded" },
-  args: { baseUrl: "/cascadia-research/humpback-acoustics" },
+  args: { baseUrl: "/miskatonic/abyssal-acoustics" },
 } satisfies Meta<typeof BreadcrumbNav>;
 
 export default meta;

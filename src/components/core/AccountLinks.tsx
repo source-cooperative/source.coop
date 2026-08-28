@@ -27,12 +27,12 @@ export function AvatarLinkCompact({
   link?: boolean;
 }) {
   const content = (
-    <>
-      <ProfileAvatar account={props.account} size={size} />
-      <Text size="2" ml="2">
-        {props.account.name}
-      </Text>
-    </>
+    <Flex gap="2" align="center" asChild>
+      <span>
+        <ProfileAvatar account={props.account} size={size} />
+        <Text size="2">{props.account.name}</Text>
+      </span>
+    </Flex>
   );
 
   return (

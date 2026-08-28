@@ -6,7 +6,7 @@ const meta = {
   title: "Components/Controls/LinkAway",
   component: LinkAway,
   parameters: { layout: "padded" },
-  args: { href: "/cascadia-research" },
+  args: { href: "/miskatonic" },
 } satisfies Meta<typeof LinkAway>;
 
 export default meta;

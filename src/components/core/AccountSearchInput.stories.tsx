@@ -35,5 +35,5 @@ export const Required: Story = {
 
 /** Editing an existing value rather than starting empty. */
 export const Prefilled: Story = {
-  args: { defaultValue: "cholmes" },
+  args: { defaultValue: "acoltrane" },
 };
