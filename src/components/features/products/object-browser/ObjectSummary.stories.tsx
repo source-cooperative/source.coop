@@ -22,7 +22,7 @@ import {
  * fails. The button and its states are what this shows, not a passing check.
  */
 const meta = {
-  title: "Object browser/ObjectSummary",
+  title: "Features/Object browser/ObjectSummary",
   component: ObjectSummary,
   parameters: { layout: "padded" },
 } satisfies Meta<typeof ObjectSummary>;

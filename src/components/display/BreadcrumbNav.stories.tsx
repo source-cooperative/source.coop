@@ -13,7 +13,7 @@ import { BreadcrumbNav } from "./BreadcrumbNav";
  * the case a real product rarely gives you on demand.
  */
 const meta = {
-  title: "Object browser/BreadcrumbNav",
+  title: "Features/Object browser/BreadcrumbNav",
   component: BreadcrumbNav,
   parameters: { layout: "padded" },
   args: { baseUrl: "/cascadia-research/humpback-acoustics" },

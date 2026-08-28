@@ -13,7 +13,7 @@ import { AccountIdentity, accountCardSurface } from "./AccountIdentity";
  * fall back to Gravatar, a search result has only public fields.
  */
 const meta = {
-  title: "Accounts/AccountIdentity",
+  title: "Components/Accounts/AccountIdentity",
   component: AccountIdentity,
   parameters: { layout: "padded" },
 } satisfies Meta<typeof AccountIdentity>;

@@ -23,7 +23,7 @@ import type { Account } from "@/types";
  * the product.
  */
 const meta = {
-  title: "Memberships/InviteMemberForm",
+  title: "Features/Memberships/InviteMemberForm",
   component: InviteMemberForm,
   parameters: { layout: "padded" },
 } satisfies Meta<typeof InviteMemberForm>;
