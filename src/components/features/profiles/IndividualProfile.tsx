@@ -112,7 +112,7 @@ export function IndividualProfile({
           <Heading size="4" mb="2">
             Organizations
           </Heading>
-          <Grid columns="3" gap="4">
+          <Grid columns={{ initial: "1", xs: "2", sm: "3" }} gap="4">
             {organizations.map((org) => (
               <AvatarLinkCompact account={org} key={org.account_id} />
             ))}
