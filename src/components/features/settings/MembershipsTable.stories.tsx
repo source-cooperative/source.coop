@@ -37,7 +37,7 @@ const membership = (
   ({
     membership_id: `m-${account_id}`,
     account_id,
-    membership_account_id: "cascadia-research",
+    membership_account_id: "miskatonic",
     role,
     state,
     state_changed: "2026-03-12T00:00:00Z",
@@ -46,19 +46,19 @@ const membership = (
 // Supplied revoked-first on purpose; the component is what should reorder it.
 const memberships = [
   membership("bilbo", MembershipRole.ReadData, MembershipState.Revoked),
-  membership("cholmes", MembershipRole.Owners, MembershipState.Member),
+  membership("acoltrane", MembershipRole.Owners, MembershipState.Member),
   membership("newcomer", MembershipRole.WriteData, MembershipState.Invited),
 ];
 
 const memberAccountsMap = new Map([
-  ["cholmes", account("cholmes", "Chris Holmes")],
-  ["newcomer", account("newcomer", "Sam Rivera")],
+  ["acoltrane", account("acoltrane", "Alice Coltrane")],
+  ["newcomer", account("newcomer", "Sam Rivers")],
   ["bilbo", account("bilbo", "Bilbo Baggins")],
 ]);
 
 const userSession = {
   identity_id: "identity-1",
-  account: account("cholmes", "Chris Holmes"),
+  account: account("acoltrane", "Alice Coltrane"),
 } as unknown as UserSession;
 
 const base = {

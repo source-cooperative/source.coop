@@ -27,9 +27,9 @@ const initial = (name: string) => (
 
 export const Default: Story = {
   args: {
-    name: "Chris Holmes",
-    accountId: "cholmes",
-    avatar: initial("Chris Holmes"),
+    name: "Alice Coltrane",
+    accountId: "acoltrane",
+    avatar: initial("Alice Coltrane"),
   },
 };
 
@@ -51,8 +51,8 @@ export const OnCardSurface: Story = {
 /** A long display name must not push the handle out of the row. */
 export const LongName: Story = {
   args: {
-    name: "The Cascadia Marine Acoustics Research Collective",
-    accountId: "cascadia-research",
-    avatar: initial("The Cascadia"),
+    name: "The Miskatonic University Institute of Oceanography",
+    accountId: "miskatonic",
+    avatar: initial("The Miskatonic"),
   },
 };

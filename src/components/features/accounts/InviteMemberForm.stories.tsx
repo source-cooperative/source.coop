@@ -25,15 +25,15 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 const organization = {
-  account_id: "cascadia-research",
-  name: "Cascadia Research",
+  account_id: "miskatonic",
+  name: "Miskatonic University",
   type: "organization",
 } as unknown as Account;
 
 const product = {
-  account_id: "cascadia-research",
-  product_id: "humpback-acoustics",
-  title: "Humpback Acoustics",
+  account_id: "miskatonic",
+  product_id: "abyssal-acoustics",
+  title: "Abyssal Acoustics",
 } as unknown as Product;
 
 export const ToAnOrganization: Story = {

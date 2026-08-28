@@ -27,29 +27,29 @@ type Story = StoryObj<typeof meta>;
 
 // Cast at the boundary: the manager reads the mirror map and a couple of ids.
 const product = {
-  account_id: "cascadia-research",
-  product_id: "humpback-acoustics",
-  title: "Humpback Acoustics",
+  account_id: "miskatonic",
+  product_id: "abyssal-acoustics",
+  title: "Abyssal Acoustics",
   metadata: {
     tags: [],
     primary_mirror: "archive",
     mirrors: {
       archive: {
-        connection_id: "cascadia-archive",
-        prefix: "humpback-acoustics/",
+        connection_id: "miskatonic-archive",
+        prefix: "abyssal-acoustics/",
       },
       opendata: {
         connection_id: "aws-opendata-us-west-2",
-        prefix: "cascadia-research/humpback-acoustics/",
+        prefix: "miskatonic/abyssal-acoustics/",
       },
     },
   },
 } as unknown as Product;
 
 const connectionInfo = {
-  "cascadia-archive": {
-    name: "Cascadia Archive",
-    bucket: "cascadia-archive",
+  "miskatonic-archive": {
+    name: "Miskatonic Archive",
+    bucket: "miskatonic-archive",
     provider: "s3",
   },
   "aws-opendata-us-west-2": {
@@ -61,10 +61,10 @@ const connectionInfo = {
 
 const availableConnections = [
   {
-    data_connection_id: "rle-files",
-    name: "RLE Assessment Files",
+    data_connection_id: "black-mesa-files",
+    name: "Black Mesa Survey Files",
     provider: "gcs",
-    bucket: "rle-files",
+    bucket: "black-mesa-files",
     read_only: true,
   },
 ] as unknown as React.ComponentProps<
@@ -77,8 +77,8 @@ const base = {
   connectionInfo,
   canManageMirrors: true,
   isAdmin: false,
-  ownedConnectionIds: ["cascadia-archive"],
-  editablePrefixConnectionIds: ["cascadia-archive"],
+  ownedConnectionIds: ["miskatonic-archive"],
+  editablePrefixConnectionIds: ["miskatonic-archive"],
 };
 
 /** Two mirrors, one of them primary, with the prefix editable on the owned one. */

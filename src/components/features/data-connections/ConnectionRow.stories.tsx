@@ -101,9 +101,9 @@ export const AList: Story = {
         actions={<ChevronRightIcon color="var(--gray-9)" />}
       />
       <ConnectionRow
-        title={title("RLE Assessment Files")}
+        title={title("Black Mesa Survey Files")}
         markers={<ConnectionMarker>Read only</ConnectionMarker>}
-        meta="gcs · rle-files · Tyler Erickson"
+        meta="gcs · black-mesa-files · Charles Mingus"
         aside={
           <Text size="1" color="gray">
             public, unlisted
@@ -112,8 +112,8 @@ export const AList: Story = {
         actions={<ChevronRightIcon color="var(--gray-9)" />}
       />
       <ConnectionRow
-        title={title("Cascadia Archive")}
-        meta="s3 · cascadia-archive · us-west-2 · Cascadia Research"
+        title={title("Miskatonic Archive")}
+        meta="s3 · miskatonic-archive · us-west-2 · Miskatonic University"
         aside={
           <Text size="1" color="gray">
             permits nothing
