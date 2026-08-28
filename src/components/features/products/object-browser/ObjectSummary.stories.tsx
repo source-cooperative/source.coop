@@ -75,6 +75,8 @@ export const Default: Story = {
 
 /** On S3, so the Cloud URI is an `s3://` address under the mirror's prefix. */
 export const OnS3: Story = {
+  // Storybook title-cases the export name, which turns OnS3 into "On S 3".
+  name: "On S3",
   args: { product, objectInfo, connectionDetails: s3Connection },
 };
 
@@ -83,6 +85,7 @@ export const OnS3: Story = {
  * and container — a different shape, not a different scheme prefix.
  */
 export const OnAzure: Story = {
+  name: "On Azure",
   args: {
     product,
     objectInfo,
@@ -105,6 +108,7 @@ export const OnAzure: Story = {
 
 /** GCS resolves no Cloud URI, so that row is absent rather than blank. */
 export const OnGoogleCloud: Story = {
+  name: "On Google Cloud",
   args: {
     product,
     objectInfo,
