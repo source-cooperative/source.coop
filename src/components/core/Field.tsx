@@ -24,7 +24,12 @@ export interface FieldProps {
    * Field directly, or the count will not move as the user types.
    */
   counter?: { value: number; max: number };
-  /** Rendered on the label row, opposite the label (e.g. "Managed elsewhere"). */
+  /**
+   * Rendered on the label row, opposite the label — a note like "Managed
+   * elsewhere", or a control small enough to sit inline, such as a switch.
+   * A field whose control lives here has no children; pass `htmlFor` and set
+   * that id on the control so the label still points at it.
+   */
   aside?: React.ReactNode;
   /**
    * For a set of controls rather than one — a checkbox group, radio cards, or a
@@ -38,7 +43,7 @@ export interface FieldProps {
    * text and errors with it. A plain element is only correct alongside `group`,
    * or when you pass `htmlFor` and set that id on the control yourself.
    */
-  children:
+  children?:
     | React.ReactNode
     | ((props: {
         id: string;

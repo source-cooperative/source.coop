@@ -4,7 +4,11 @@ import { AccountInfoHoverCard } from "./AccountInfoHoverCard";
 import { accountUrl } from "@/lib/urls";
 import { Account } from "@/types";
 import Link from "next/link";
-import { ProfileAvatar } from "../features/profiles";
+// Deep import, not the `../features/profiles` barrel: that barrel also
+// re-exports EditProfileForm and OrganizationMembers, which reach server-only
+// modules. Pulling the whole barrel in for one avatar drags those into any
+// browser bundle that renders an account name.
+import { ProfileAvatar } from "../features/profiles/ProfileAvatar";
 
 interface AccountDisplayProps {
   account: Account;

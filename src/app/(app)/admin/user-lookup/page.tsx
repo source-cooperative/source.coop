@@ -13,7 +13,7 @@ export default function AdminUserLookupPage() {
     <Box>
       <FormTitle
         title="User lookup"
-        description="Find a user by email and open their profile."
+        description="Find a user by username, name, or email and open their profile."
       />
       <AdminUserLookupForm />
     </Box>

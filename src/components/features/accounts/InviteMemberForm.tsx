@@ -3,7 +3,11 @@
 import { useState } from "react";
 import { Account, MembershipRole, Product } from "@/types";
 import { Flex, Button, Dialog } from "@radix-ui/themes";
-import { DynamicForm, FormField } from "@/components/core";
+import {
+  AccountSearchInput,
+  DynamicForm,
+  FormField,
+} from "@/components/core";
 import { inviteMember } from "@/lib/actions/memberships";
 import { PlusIcon } from "@radix-ui/react-icons";
 
@@ -26,12 +30,19 @@ export function InviteMemberForm({
 
   const fields: FormField<InviteMemberFormData>[] = [
     {
-      label: "Account ID",
+      label: "User",
       name: "account_id",
-      type: "text",
+      type: "custom",
       required: true,
-      placeholder: "user-account-id",
-      description: "The account ID of the user to invite",
+      description: "Search by username or name, or type an account ID",
+      customComponent: (controlProps) => (
+        <AccountSearchInput
+          {...controlProps}
+          name="account_id"
+          required
+          placeholder="username or name"
+        />
+      ),
     },
     {
       label: "Role",
