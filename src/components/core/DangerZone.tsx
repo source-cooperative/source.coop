@@ -31,7 +31,10 @@ export function DangerZone({
     <Box mt="6">
       <SectionHeader title="Danger zone" color="red">
         <Flex
-          align="start"
+          // Stacked on a narrow screen: the action is unshrinkable, so a row
+          // pushes it out through the box's right edge.
+          direction={{ initial: "column", sm: "row" }}
+          align={{ initial: "stretch", sm: "start" }}
           justify="between"
           gap="5"
           p="4"
