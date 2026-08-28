@@ -671,11 +671,11 @@ export function DataConnectionForm({
               label="Example Prefix"
               help={
                 <>
-                  A product at{" "}
+                  Where a product at{" "}
                   <Code size="1" variant="ghost">
                     example-org/rainfall
                   </Code>{" "}
-                  would be stored at
+                  would be stored.
                 </>
               }
             >
