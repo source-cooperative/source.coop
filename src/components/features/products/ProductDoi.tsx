@@ -5,11 +5,8 @@ interface ProductDoiProps {
   doi: string;
 }
 
-/**
- * A DOI is one long unbreakable token, so on a phone it pushed this row wider
- * than the viewport. `truncate` clips it to the row instead; the full value
- * stays reachable through the title and the copy button.
- */
+// A DOI is one unbreakable token: without `truncate` it pushes the row past a
+// phone's viewport. The full value stays in the title and the copy button.
 export function ProductDoi({ doi }: ProductDoiProps) {
   return (
     <Text size="2" color="gray">
