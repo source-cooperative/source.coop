@@ -15,25 +15,21 @@ export const Default: Story = {
   args: { doi: "https://doi.org/10.34911/rdnt.gcydkj" },
 };
 
-/**
- * The bug this component exists for: at phone width the DOI used to push the
- * row past the viewport. It should now end in an ellipsis, with the copy
- * button still on screen.
- */
-export const Narrow: Story = {
-  args: Default.args,
-  decorators: [
-    (Story) => (
-      <div style={{ width: 320, outline: "1px dashed var(--gray-6)" }}>
-        <Story />
-      </div>
-    ),
-  ],
+// The bug this component exists for: a DOI is one unbreakable token, so at
+// phone width it used to push the row past the viewport. Pinning the viewport
+// rather than wrapping the story in a fixed-width box -- a box exactly as wide
+// as the frame has no page padding to absorb the copy button, which reads as an
+// overflow the real page never has.
+const mobile = {
+  globals: { viewport: { value: "mobile1", isRotated: false } },
 };
+
+/** At phone width the DOI should end in an ellipsis, copy button still on screen. */
+export const Narrow: Story = { ...mobile, args: Default.args };
 
 /** Registered DOIs run much longer than the common case. */
 export const LongDoi: Story = {
-  ...Narrow,
+  ...mobile,
   args: {
     doi: "https://doi.org/10.5061/dryad.salish-sea-hydrophone-timeseries.2026.v3",
   },

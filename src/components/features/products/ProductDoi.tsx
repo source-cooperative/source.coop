@@ -14,7 +14,7 @@ export function ProductDoi({ doi }: ProductDoiProps) {
   return (
     <Text size="2" color="gray">
       <Flex align="center" gap="2" my="4">
-        <strong>DOI:</strong>{" "}
+        <strong>DOI:</strong>
         <Code truncate title={doi}>
           {doi}
         </Code>
