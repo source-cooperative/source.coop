@@ -49,6 +49,12 @@ const themeProps = {
 } as const;
 
 const preview: Preview = {
+  // addon-docs was already installed, but nothing generated a docs page, so the
+  // source viewer it provides had nowhere to appear -- a component's stories
+  // showed the rendered result and never the JSX behind it. This gives every
+  // component a Docs page: the JSDoc above `meta`, a props table from the TS
+  // types, and each story with its code.
+  tags: ["autodocs"],
   parameters: {
     // DynamicForm calls useRouter from next/navigation; without this the app
     // router mock is never mounted and the story throws
@@ -81,8 +87,16 @@ const preview: Preview = {
   decorators: [
     (Story, context) => {
       const appearance = context.globals.appearance as "light" | "dark";
+      // .radix-themes is min-height:100vh. A story view is one story to a
+      // frame, so that is what we want there -- but a docs page stacks every
+      // story, and each block would be a full screen of mostly whitespace.
+      const fillsFrame = context.viewMode !== "docs";
       return (
-        <Theme {...themeProps} appearance={appearance}>
+        <Theme
+          {...themeProps}
+          appearance={appearance}
+          style={fillsFrame ? undefined : { minHeight: 0 }}
+        >
           <div style={{ padding: 24, maxWidth: 720 }}>
             <Story />
           </div>
