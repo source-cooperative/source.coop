@@ -13,9 +13,17 @@ Every UI change lands in Storybook in the same PR: a new component gets a
 stories removed. A state that can only be reached by clicking through the running
 app is a state nobody reviews.
 
-Async server components can't be storied — they read the session. Extract the
-presentational part and story that; `ProductDoi` beside `ProductSummaryCard` is
-the pattern.
+Stories render in a browser bundle, so a component that fetches its own data
+can't have one. `ProductSummaryCard` is an `async` server component whose first
+act is `await getPageSession()` — cookies and a DynamoDB lookup, neither of which
+exists in the browser — so no prop you pass can make it render.
+
+Split such a component in two: the server half keeps the `async`, the session and
+the permission checks, and passes plain values down; the presentational half is
+an ordinary function of its props, knows nothing about sessions, and is the half
+that gets a story. `ProductDoi` is that half of `ProductSummaryCard` — the card
+calls `<ProductDoi doi={...} />`, and the story renders `ProductDoi` with any DOI
+it likes.
 
 A component that imports a server action needs `sb.mock()` in
 `.storybook/preview.tsx`, or its story fails with `__filename is not defined`.
@@ -37,8 +45,9 @@ https://source-coop-ui-git-<branch-name-with-dashes>-radiantearth.vercel.app/?pa
 ```
 
 Link the specific stories rather than the root, and include a screenshot of
-anything visual. The deploy sits behind Vercel SSO, so for a reviewer without
-access the screenshot is the only thing they can see.
+anything visual — it shows the change in the review itself, and it outlives the
+branch deployment, which goes away with the branch. (Branch deployments ask for a
+Vercel login; ui.source.coop is public.)
 
 The title and description describe the branch as it stands, not as it stood when
 the PR was opened. After pushing to a branch with an open PR, re-read both: if

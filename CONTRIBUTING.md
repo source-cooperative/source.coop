@@ -13,7 +13,7 @@
    `feat`, `fix`, `docs`, `test`, `ci`, `refactor`, `perf`, `chore`, `revert`
 
 4. **Preview deployments.** Vercel automatically creates preview deployments for PRs from regular contributors. Outside contributions require approval from a regular contributor before a preview is deployed.
-5. **Describe UI changes.** A PR that changes the UI links the stories it affects on that branch's Storybook deployment and includes a screenshot of anything visual. The deployment is behind Vercel SSO, so the screenshot is all a reviewer without access can see.
+5. **Describe UI changes.** A PR that changes the UI links the stories it affects on that branch's Storybook deployment and includes a screenshot of anything visual — the screenshot shows the change in the review itself, and outlives the branch deployment.
 6. **Keep the PR current.** The title and description describe the branch as it stands. When a push changes the approach, update them — a stale description is read as the spec, and sends a reviewer looking for code that isn't there.
 7. **Get review and merge** into `main`.
 
