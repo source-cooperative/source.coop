@@ -11,40 +11,50 @@ const PER_TICK = 6;
 /**
  * Sample traffic. The colo codes are real Cloudflare datacenters, because
  * LiveGlobe looks each one up in `locations.json` to place its dot; the
- * accounts and request counts are invented. One deliberately long product name
- * keeps the popup's truncation visible.
+ * accounts and request counts are invented.
+ *
+ * The counts are deliberately small. A dot is sized
+ * `8 * (1 + min(2, log10(1 + n) / 2))` px, so it caps out at 24px by n = 9999,
+ * and anything in the thousands renders as a near-maximum blob — several times
+ * the area of a real one, and all within a few px of each other however the
+ * counts differ. Keeping the spread to 1..160 puts them on the part of the
+ * curve where the size difference is legible, with a typical dot close to what
+ * production draws.
+ *
+ * One deliberately long product name keeps the popup's truncation visible, and
+ * the quietest datacenters exercise its singular "1 request".
  */
 const FEED: { colo: string; n: number; p: [string, number][] }[] = [
   {
     colo: "EWR",
-    n: 4820,
+    n: 160,
     p: [
-      ["demo-org/global-land-cover", 2140],
-      ["demo-lab/coastal-bathymetry", 980],
+      ["demo-org/global-land-cover", 96],
+      ["demo-lab/coastal-bathymetry", 41],
     ],
   },
-  { colo: "LHR", n: 3110, p: [["demo-org/global-land-cover", 1870]] },
+  { colo: "LAX", n: 80, p: [["demo-org/global-land-cover", 52]] },
   {
     colo: "FRA",
-    n: 2740,
+    n: 42,
     p: [
-      ["demo-lab/annual-surface-water-extent-mosaics-2024", 1520],
-      ["demo-org/elevation-tiles", 640],
+      ["demo-lab/annual-surface-water-extent-mosaics-2024", 24],
+      ["demo-org/elevation-tiles", 11],
     ],
   },
-  { colo: "NRT", n: 1980, p: [["demo-lab/coastal-bathymetry", 1120]] },
-  { colo: "SIN", n: 1640, p: [["demo-org/elevation-tiles", 910]] },
-  { colo: "GRU", n: 1290, p: [["demo-org/global-land-cover", 720]] },
-  { colo: "JNB", n: 880, p: [["demo-lab/coastal-bathymetry", 410]] },
-  { colo: "SYD", n: 760, p: [["demo-org/elevation-tiles", 380]] },
-  { colo: "LAX", n: 3460, p: [["demo-org/global-land-cover", 2010]] },
-  { colo: "ORD", n: 2210, p: [["demo-lab/coastal-bathymetry", 1180]] },
-  { colo: "AMS", n: 1870, p: [["demo-org/elevation-tiles", 990]] },
-  { colo: "CPT", n: 540, p: [["demo-lab/coastal-bathymetry", 260]] },
-  { colo: "BOM", n: 1420, p: [["demo-org/global-land-cover", 830]] },
-  { colo: "SCL", n: 470, p: [["demo-org/elevation-tiles", 210]] },
-  { colo: "YYZ", n: 1650, p: [["demo-lab/coastal-bathymetry", 900]] },
-  { colo: "MAD", n: 1130, p: [["demo-org/global-land-cover", 610]] },
+  { colo: "LHR", n: 26, p: [["demo-org/global-land-cover", 15]] },
+  { colo: "ORD", n: 16, p: [["demo-lab/coastal-bathymetry", 9]] },
+  { colo: "AMS", n: 10, p: [["demo-org/elevation-tiles", 6]] },
+  { colo: "NRT", n: 7, p: [["demo-lab/coastal-bathymetry", 4]] },
+  { colo: "SIN", n: 5, p: [["demo-org/elevation-tiles", 3]] },
+  { colo: "YYZ", n: 4, p: [["demo-lab/coastal-bathymetry", 2]] },
+  { colo: "BOM", n: 3, p: [["demo-org/global-land-cover", 2]] },
+  { colo: "GRU", n: 3, p: [["demo-org/global-land-cover", 2]] },
+  { colo: "MAD", n: 2, p: [["demo-org/global-land-cover", 1]] },
+  { colo: "SYD", n: 2, p: [["demo-org/elevation-tiles", 1]] },
+  { colo: "JNB", n: 1, p: [["demo-lab/coastal-bathymetry", 1]] },
+  { colo: "CPT", n: 1, p: [["demo-lab/coastal-bathymetry", 1]] },
+  { colo: "SCL", n: 1, p: [["demo-org/elevation-tiles", 1]] },
 ];
 
 /**
