@@ -160,7 +160,13 @@ const monoStyle: React.CSSProperties = {
  * It is decorative: RadioCards.Item is still the radio, so this is aria-hidden
  * and never becomes a second control.
  */
-function RadioDot({ checked, disabled }: { checked: boolean; disabled?: boolean }) {
+export function RadioDot({
+  checked,
+  disabled,
+}: {
+  checked: boolean;
+  disabled?: boolean;
+}) {
   return (
     <span
       aria-hidden

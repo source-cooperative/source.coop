@@ -9,18 +9,25 @@ interface WebsiteLinkProps {
   url: string;
 }
 
+// Icons are flex children; without this a long URL squeezes them to nothing.
+const iconProps = {
+  width: "16",
+  height: "16",
+  style: { flexShrink: 0 },
+} as const;
+
 function getIcon(url: string) {
   const hostname = new URL(url).hostname.toLowerCase();
 
   if (hostname.includes("github.com")) {
-    return <GitHubLogoIcon width="16" height="16" />;
+    return <GitHubLogoIcon {...iconProps} />;
   }
 
   if (hostname.includes("linkedin.com")) {
-    return <LinkedInLogoIcon width="16" height="16" />;
+    return <LinkedInLogoIcon {...iconProps} />;
   }
 
-  return <Link2Icon width="16" height="16" />;
+  return <Link2Icon {...iconProps} />;
 }
 
 export function WebsiteLink({ url }: WebsiteLinkProps) {
@@ -33,6 +40,7 @@ export function WebsiteLink({ url }: WebsiteLinkProps) {
         target="_blank"
         rel="noopener noreferrer"
         underline="always"
+        style={{ wordBreak: "break-all", minWidth: 0 }}
       >
         {url}
       </Link>

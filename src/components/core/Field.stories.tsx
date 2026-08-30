@@ -18,7 +18,7 @@ import { Field } from "./Field";
  * input, a select, a checkbox group or a dropzone.
  */
 const meta = {
-  title: "Forms/Field",
+  title: "Components/Forms/Field",
   component: Field,
   parameters: { layout: "padded" },
 } satisfies Meta<typeof Field>;
@@ -32,7 +32,7 @@ export const Anatomy: Story = {
     required: true,
     help: "Name of the S3 bucket that stores the data.",
     children: (props) => (
-      <TextField.Root {...props} size="3" placeholder="cascadia-archive" />
+      <TextField.Root {...props} size="3" placeholder="miskatonic-archive" />
     ),
   },
 };
@@ -61,7 +61,7 @@ export const ReadOnly: Story = {
         {...props}
         size="3"
         disabled
-        defaultValue="ops@cascadia-research.org"
+        defaultValue="ops@miskatonic.edu"
         style={{ fontFamily: "var(--code-font-family)" }}
       />
     ),
@@ -203,6 +203,32 @@ export const AsRadioCards: Story = {
           </RadioCards.Item>
         ))}
       </RadioCards.Root>
+    ),
+  },
+};
+
+/**
+ * A control small enough to sit on the label row lives in `aside`, and the
+ * field has no children at all. Pass `htmlFor` and set that id on the control,
+ * or the label points at nothing.
+ *
+ * This is the read-only toggle on the connection form. Compare AsSwitch below,
+ * which is the other shape: a switch that needs a caption beside it, so it goes
+ * in the body as a `group` instead.
+ */
+export const WithInlineSwitch: Story = {
+  args: {
+    label: "Read only",
+    htmlFor: "read-only-switch",
+    help: "Products can browse and download but never write. Required for unsigned connections.",
+    aside: (
+      <Switch
+        id="read-only-switch"
+        size="2"
+        defaultChecked
+        // The label row aligns on the text baseline, which a switch does not have.
+        style={{ alignSelf: "center" }}
+      />
     ),
   },
 };

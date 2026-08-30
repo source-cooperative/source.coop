@@ -68,25 +68,51 @@ export function MonoLabel({
   return help ? <Tooltip content={help}>{label}</Tooltip> : label;
 }
 
+/**
+ * Row of Stats. An auto-fitting grid rather than a flex row: the values are
+ * nowrap, so a flex row cannot shrink below their combined width and instead
+ * overflows a narrow card. Here the metrics reflow onto further rows.
+ *
+ * Every Stat carries its own left divider and the grid is pulled left by one
+ * divider plus its padding, so the leading column of each row is clipped back
+ * to flush — no stat needs to know whether it starts a row.
+ *
+ * That clip is also why the minimum track is as wide as it is: it would hide
+ * a value that outgrew its column just as quietly as it hides the divider,
+ * and 120px holds the widest of these a product realistically reports — a
+ * ten-character downloads count.
+ */
+export function StatRow({
+  children,
+  ...props
+}: React.ComponentProps<typeof Box>) {
+  return (
+    <Box {...props} style={{ overflow: "hidden", ...props.style }}>
+      <Box
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))",
+          rowGap: "var(--space-3)",
+          marginLeft: -13,
+        }}
+      >
+        {children}
+      </Box>
+    </Box>
+  );
+}
+
 export function Stat({
   label,
   help,
   value,
-  divider,
 }: {
   label: string;
   help: string;
   value: string;
-  divider?: boolean;
 }) {
   return (
-    <Box
-      pl={divider ? "3" : "0"}
-      style={{
-        flexGrow: 1,
-        ...(divider && { borderLeft: "1px solid var(--gray-4)" }),
-      }}
-    >
+    <Box pl="3" style={{ borderLeft: "1px solid var(--gray-4)" }}>
       <MonoLabel help={help}>{label}</MonoLabel>
       <Text
         as="div"
@@ -189,7 +215,7 @@ export function DownloadsChart({
 export function UsersContent({ users }: { users: UsageUsers }) {
   return (
     <>
-      <Flex mt="3" pb="3" style={{ borderBottom: "1px solid var(--gray-4)" }}>
+      <StatRow mt="3" pb="3" style={{ borderBottom: "1px solid var(--gray-4)" }}>
         <Stat
           label="Unique IPs"
           help={HELP.uniqueIps}
@@ -199,15 +225,13 @@ export function UsersContent({ users }: { users: UsageUsers }) {
           label="Registered"
           help={HELP.registered}
           value={compactFormat.format(Math.round(users.registered)).toLowerCase()}
-          divider
         />
         <Stat
           label="Anon downloads"
           help={HELP.anon}
           value={compactFormat.format(Math.round(users.anonRequests)).toLowerCase()}
-          divider
         />
-      </Flex>
+      </StatRow>
 
       <Box mt="3">
         <MonoLabel help={HELP.distribution}>IPs by download count</MonoLabel>

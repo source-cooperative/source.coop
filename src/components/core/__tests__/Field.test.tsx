@@ -134,6 +134,22 @@ describe("Field", () => {
     );
   });
 
+  it("labels a control that sits inline in aside, with no children", () => {
+    // A switch is small enough to share the label row, so the field has no
+    // children at all — the label has to reach it through htmlFor instead.
+    renderInTheme(
+      <Field
+        label="Read only"
+        htmlFor="ro"
+        help="Browse and download only."
+        aside={<input id="ro" type="checkbox" name="read_only" />}
+      />
+    );
+
+    const control = screen.getByLabelText("Read only");
+    expect(control).toHaveAttribute("id", "ro");
+  });
+
   it("renders a counter against the enforced maximum", () => {
     renderInTheme(
       <Field label="Bio" counter={{ value: 74, max: 1024 }}>

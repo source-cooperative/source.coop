@@ -21,7 +21,7 @@ const withErrors =
   });
 
 const meta = {
-  title: "Forms/DynamicForm",
+  title: "Components/Forms/DynamicForm",
   component: DynamicForm<Demo>,
   parameters: { layout: "padded" },
 } satisfies Meta<typeof DynamicForm<Demo>>;
@@ -73,8 +73,8 @@ export const Sections: Story = {
     action: noop,
     submitButtonText: "Save changes",
     initialValues: {
-      name: "Cascadia Research",
-      email: "ops@cascadia-research.org",
+      name: "Miskatonic University",
+      email: "ops@miskatonic.edu",
       description:
         "Long-term marine mammal monitoring across the Salish Sea and outer coast.",
     },
