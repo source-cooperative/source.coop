@@ -147,3 +147,17 @@ const week = makeDays(7, (i) => 210 + wobble(i, 3) * 140);
 export const ShortWindow: Story = {
   args: { days: week, totals: totalsOf(week, 19) },
 };
+
+/**
+ * The card at phone width, where the stats row has to give up its single
+ * line. The metrics reflow onto a second row rather than running off the side
+ * of the card, and the hairline dividers still fall only between neighbours —
+ * never down the left edge of a row.
+ *
+ * Worth reading next to `HighVolume`, whose numbers these are: the widest
+ * value in the row is what decides how many metrics fit across.
+ */
+export const Mobile: Story = {
+  args: HighVolume.args,
+  globals: { viewport: { value: "mobile1", isRotated: false } },
+};

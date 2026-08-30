@@ -187,3 +187,14 @@ const week = makeDays(7, (i) => 210 + wobble(i, 3) * 140);
 export const SevenDayWindow: Story = {
   args: { ...base, days: week, totals: totalsOf(week, 19) },
 };
+
+/**
+ * The page at phone width. Four metrics do not fit across a phone, so the
+ * stats row becomes two rows of two rather than a single row that cannot
+ * shrink and pushes COUNTRIES off the side. The chart and the country ranking
+ * stack here as well.
+ */
+export const Mobile: Story = {
+  args: base,
+  globals: { viewport: { value: "mobile1", isRotated: false } },
+};
