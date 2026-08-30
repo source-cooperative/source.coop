@@ -12,6 +12,7 @@ import {
   MeshPhongMaterial,
   Object3D,
   SphereGeometry,
+  Texture,
   TextureLoader,
   Vector2,
   Vector3,
@@ -59,6 +60,23 @@ const MAX_DOT_SCALE = 3; // busiest-datacenter dot grows up to 3x the base size
 
 // Monotonic ID counter — shared across instances, but always unique
 let nextPointId = 0;
+
+// The clouds texture, requested as soon as this module evaluates.
+//
+// three-globe only fires onGlobeReady once its own globeImageUrl texture has
+// finished loading, so anything that waits on the globe — including this
+// component's scene-setup effect — queues the clouds behind a completed
+// download instead of alongside it. Even a mount effect here is too late:
+// React runs the <Globe> child's effect, and three-globe's synchronous scene
+// build, before any effect of ours. Module scope is the one point that beats
+// both, and this module is only ever imported to render the globe.
+//
+// Never disposed: it outlives any single mount so a remount reuses it.
+const cloudsTexture = new Promise<Texture>((resolve) => {
+  new TextureLoader().load("/img/clouds.webp", resolve, undefined, () => {
+    // Leave the promise pending — same as before: no texture, no clouds.
+  });
+});
 
 // Cheap structural compare for the top-products list (≤5 entries) so the
 // selected popup only re-renders when its contents actually change.
@@ -160,7 +178,7 @@ export function LiveGlobe({
 
       // Add clouds
       if (showClouds) {
-        new TextureLoader().load("/img/clouds.webp", (texture) => {
+        cloudsTexture.then((texture) => {
           if (cancelled || !globe) return;
           clouds = new Mesh(
             new SphereGeometry(
@@ -430,9 +448,7 @@ export function LiveGlobe({
         ditherPassRef.current = null;
         if (clouds) {
           globe?.scene().remove(clouds);
-          const mat = clouds.material as MeshPhongMaterial;
-          mat.map?.dispose();
-          mat.dispose();
+          (clouds.material as MeshPhongMaterial).dispose();
           clouds.geometry.dispose();
         }
         // Clear overlay DOM
