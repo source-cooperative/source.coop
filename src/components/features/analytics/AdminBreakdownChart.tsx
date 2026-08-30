@@ -26,7 +26,7 @@ import {
   YAxis,
 } from "recharts";
 import { formatBytes } from "@/lib/format";
-import { parseActiveIndex, Stat } from "./panels";
+import { parseActiveIndex, Stat, StatRow } from "./panels";
 import { HELP, mono } from "./style";
 import { seriesColor } from "./palette";
 
@@ -235,7 +235,7 @@ export function AdminBreakdownChart({
         wrap="wrap"
         style={{ borderBottom: "1px solid var(--gray-4)" }}
       >
-        <Flex style={{ flexGrow: 1 }}>
+        <StatRow style={{ flexGrow: 1 }}>
           <Stat
             label="Requests"
             help={HELP.requests}
@@ -245,27 +245,23 @@ export function AdminBreakdownChart({
             label="Data served"
             help={HELP.served}
             value={formatBytes(totals.bytes, 1)}
-            divider
           />
           <Stat
             label="Avg bandwidth"
             help={HELP.bandwidth}
             value={byteRate(totals.bytes / elapsedSeconds)}
-            divider
           />
           <Stat
             label="Unique IPs"
             help={HELP.uniqueIpsSampled}
             value={plain.format(totals.uniqueIps)}
-            divider
           />
           <Stat
             label="Countries"
             help={HELP.countries}
             value={plain.format(totals.countries)}
-            divider
           />
-        </Flex>
+        </StatRow>
         <Flex gap="2" align="center">
           <SegmentedControl.Root
             size="1"
