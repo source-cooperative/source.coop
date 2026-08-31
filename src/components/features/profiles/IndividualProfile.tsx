@@ -72,7 +72,7 @@ export function IndividualProfile({
       </Box>
 
       <Box mb="6">
-        <Grid columns="3" gap="4">
+        <Grid columns={{ initial: "1", xs: "2", sm: "3" }} gap="4">
           {account.metadata_public.domains &&
             account.metadata_public.domains.length > 0 && (
               <Box>

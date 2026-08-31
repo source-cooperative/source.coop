@@ -4,6 +4,7 @@ import {
   GitHubLogoIcon,
   LinkedInLogoIcon,
 } from "@radix-ui/react-icons";
+import { formatUrl } from "@/lib/format";
 
 interface WebsiteLinkProps {
   url: string;
@@ -31,18 +32,25 @@ function getIcon(url: string) {
 }
 
 export function WebsiteLink({ url }: WebsiteLinkProps) {
-  url = url.startsWith("http") ? url : `https://${url}`;
+  const href = url.startsWith("http") ? url : `https://${url}`;
   return (
     <Flex gap="2" align="center">
-      {getIcon(url)}
+      {getIcon(href)}
       <Link
-        href={url}
+        href={href}
         target="_blank"
         rel="noopener noreferrer"
         underline="always"
-        style={{ wordBreak: "break-all", minWidth: 0 }}
+        title={href}
+        // formatUrl's budget guesses at the column width; truncate is the
+        // backstop when the guess is generous. It only bites because the link
+        // is a direct flex child: Radix resets the <a> to display:inline, where
+        // overflow does not apply, and flex blockifies it. Don't wrap it in a
+        // Box without reproducing a minWidth:0 chain.
+        truncate
+        style={{ minWidth: 0 }}
       >
-        {url}
+        {formatUrl(href)}
       </Link>
     </Flex>
   );
