@@ -203,14 +203,15 @@ export class S3StorageClient {
               Range: "bytes=0-0",
             }),
           );
-          // Content-Range format: "bytes 0-0/TOTAL_SIZE"
+          // Content-Range format: "bytes 0-0/TOTAL_SIZE". That header is all
+          // we need, so destroy the body instead of reading it — a proxy that
+          // ignores Range and returns the full object shouldn't be downloaded
+          // just to size it.
           const match = rangeResponse.ContentRange?.match(/\/(\d+)$/);
           if (match) {
             size = parseInt(match[1], 10);
           }
-          for await (const _ of rangeResponse.Body as Readable) {
-            // drain the 1-byte body to avoid connection leaks
-          }
+          (rangeResponse.Body as Readable | undefined)?.destroy();
         } catch {
           // range request failed; keep size as 0
         }
