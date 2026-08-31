@@ -7,7 +7,7 @@ import { Skeleton } from "./Skeleton";
  * this story is also the check that the animation survives a theme change.
  */
 const meta = {
-  title: "Feedback/Skeleton",
+  title: "Components/Feedback/Skeleton",
   component: Skeleton,
   parameters: { layout: "padded" },
 } satisfies Meta<typeof Skeleton>;

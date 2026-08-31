@@ -11,7 +11,7 @@ import { MonoText } from "./MonoText";
  * story is also the check that the webfont actually loaded.
  */
 const meta = {
-  title: "Typography/MonoText",
+  title: "Components/Typography/MonoText",
   component: MonoText,
   parameters: { layout: "padded" },
 } satisfies Meta<typeof MonoText>;
@@ -20,22 +20,22 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
-  args: { children: "cascadia-research/humpback-acoustics" },
+  args: { children: "miskatonic/abyssal-acoustics" },
 };
 
 /** Beside prose, which is the point: it should read as a different kind of thing. */
 export const AgainstProse: Story = {
-  args: { children: "@cholmes" },
+  args: { children: "@acoltrane" },
   render: (args) => (
     <Flex direction="column" gap="2">
-      <Text size="2">Chris Holmes</Text>
+      <Text size="2">Alice Coltrane</Text>
       <MonoText {...args} size="1" color="gray" />
     </Flex>
   ),
 };
 
 export const Sizes: Story = {
-  args: { children: "s3://cascadia-archive" },
+  args: { children: "s3://miskatonic-archive" },
   render: (args) => (
     <Flex direction="column" gap="2">
       <MonoText {...args} size="1" />

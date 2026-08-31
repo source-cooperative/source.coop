@@ -18,7 +18,7 @@ import { Field } from "./Field";
  * input, a select, a checkbox group or a dropzone.
  */
 const meta = {
-  title: "Forms/Field",
+  title: "Components/Forms/Field",
   component: Field,
   parameters: { layout: "padded" },
 } satisfies Meta<typeof Field>;
@@ -32,7 +32,7 @@ export const Anatomy: Story = {
     required: true,
     help: "Name of the S3 bucket that stores the data.",
     children: (props) => (
-      <TextField.Root {...props} size="3" placeholder="cascadia-archive" />
+      <TextField.Root {...props} size="3" placeholder="miskatonic-archive" />
     ),
   },
 };
@@ -61,7 +61,7 @@ export const ReadOnly: Story = {
         {...props}
         size="3"
         disabled
-        defaultValue="ops@cascadia-research.org"
+        defaultValue="ops@miskatonic.edu"
         style={{ fontFamily: "var(--code-font-family)" }}
       />
     ),

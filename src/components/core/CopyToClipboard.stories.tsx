@@ -11,7 +11,7 @@ import { MonoText } from "./MonoText";
  * behaviour, and it is invisible in a screenshot.
  */
 const meta = {
-  title: "Controls/CopyToClipboard",
+  title: "Components/Controls/CopyToClipboard",
   component: CopyToClipboard,
   parameters: { layout: "padded" },
 } satisfies Meta<typeof CopyToClipboard>;
@@ -20,7 +20,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
-  args: { text: "s3://cascadia-archive/humpback-acoustics" },
+  args: { text: "s3://miskatonic-archive/abyssal-acoustics" },
 };
 
 /** Where it actually appears: at the end of a value worth copying. */

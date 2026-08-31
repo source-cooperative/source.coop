@@ -3,10 +3,10 @@ import { LinkAway } from "./LinkAway";
 
 /** Small "there is more over here" link, with a chevron pointing out of the block. */
 const meta = {
-  title: "Controls/LinkAway",
+  title: "Components/Controls/LinkAway",
   component: LinkAway,
   parameters: { layout: "padded" },
-  args: { href: "/cascadia-research" },
+  args: { href: "/miskatonic" },
 } satisfies Meta<typeof LinkAway>;
 
 export default meta;

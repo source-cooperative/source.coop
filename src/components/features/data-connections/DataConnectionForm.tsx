@@ -628,82 +628,19 @@ export function DataConnectionForm({
           </Flex>
         </SectionHeader>
 
-        <SectionHeader title="Key layout">
-          <Flex direction="column" gap="4">
-            <Field
-              label="Base Prefix"
-              help="Optional shared root inside the bucket or container. Every product on this connection sits under it. Leave blank for the root."
-              errors={state.fieldErrors?.base_prefix}
-            >
-              {(props) => (
-                <TextField.Root
-                  {...props}
-                  type="text"
-                  name="base_prefix"
-                  value={basePrefix}
-                  onChange={(event) => setBasePrefix(event.target.value)}
-                  size="3"
-                />
-              )}
-            </Field>
-
-            <Field
-              label="Prefix Template"
-              help="Where each product's objects land inside the bucket or container. {{repository.account_id}} and {{repository.repository_id}} are substituted when a product attaches this connection."
-              errors={state.fieldErrors?.prefix_template}
-            >
-              {(props) => (
-                <TextField.Root
-                  {...props}
-                  type="text"
-                  name="prefix_template"
-                  value={prefixTemplate}
-                  onChange={(event) => setPrefixTemplate(event.target.value)}
-                  size="3"
-                />
-              )}
-            </Field>
-
-            {/* A worked example, rather than describing the substitution in
-                prose and leaving the reader to run it in their head. */}
-            <Field
-              group
-              label="Example Prefix"
-              help={
-                <>
-                  Where a product at{" "}
-                  <Code size="1" variant="ghost">
-                    example-org/rainfall
-                  </Code>{" "}
-                  would be stored.
-                </>
-              }
-            >
-              <Box
-                p="2"
-                style={{
-                  border: "1px solid var(--gray-6)",
-                  backgroundColor: "var(--gray-2)",
-                  borderRadius: "var(--radius-2)",
-                  overflowX: "auto",
-                  fontSize: "var(--font-size-1)",
-                }}
-                asChild
-              >
-                <pre>{resolvedLocation}</pre>
-              </Box>
-            </Field>
-
-          </Flex>
-        </SectionHeader>
-
         <SectionHeader title="Authentication">
           <Flex direction="column" gap="4">
             <Field
               label="Authentication Type"
               help={
-                (authType && AUTH_TYPE_DESCRIPTIONS[authType as DataConnectionAuthenticationType]) ||
-                "How the data proxy authenticates to this backend when serving the product's data. Choose None for unsigned (public) access."
+                <>
+                  The methods offered depend on the backend selected above.{" "}
+                  {(authType &&
+                    AUTH_TYPE_DESCRIPTIONS[
+                      authType as DataConnectionAuthenticationType
+                    ]) ||
+                    "How the data proxy authenticates to this backend when serving the product's data. Choose None for unsigned (public) access."}
+                </>
               }
               errors={state.fieldErrors?.auth_type}
             >
@@ -925,6 +862,75 @@ export function DataConnectionForm({
                 </Field>
               </ConditionalGroup>
             )}
+
+          </Flex>
+        </SectionHeader>
+
+        <SectionHeader title="Key layout">
+          <Flex direction="column" gap="4">
+            <Field
+              label="Base Prefix"
+              help="Optional shared root inside the bucket or container. Every product on this connection sits under it. Leave blank for the root."
+              errors={state.fieldErrors?.base_prefix}
+            >
+              {(props) => (
+                <TextField.Root
+                  {...props}
+                  type="text"
+                  name="base_prefix"
+                  value={basePrefix}
+                  onChange={(event) => setBasePrefix(event.target.value)}
+                  size="3"
+                />
+              )}
+            </Field>
+
+            <Field
+              label="Prefix Template"
+              help="Where each product's objects land inside the bucket or container. {{repository.account_id}} and {{repository.repository_id}} are substituted when a product attaches this connection."
+              errors={state.fieldErrors?.prefix_template}
+            >
+              {(props) => (
+                <TextField.Root
+                  {...props}
+                  type="text"
+                  name="prefix_template"
+                  value={prefixTemplate}
+                  onChange={(event) => setPrefixTemplate(event.target.value)}
+                  size="3"
+                />
+              )}
+            </Field>
+
+            {/* A worked example, rather than describing the substitution in
+                prose and leaving the reader to run it in their head. */}
+            <Field
+              group
+              label="Example Prefix"
+              help={
+                <>
+                  Where a product at{" "}
+                  <Code size="1" variant="ghost">
+                    example-org/rainfall
+                  </Code>{" "}
+                  would be stored.
+                </>
+              }
+            >
+              <Box
+                p="2"
+                style={{
+                  border: "1px solid var(--gray-6)",
+                  backgroundColor: "var(--gray-2)",
+                  borderRadius: "var(--radius-2)",
+                  overflowX: "auto",
+                  fontSize: "var(--font-size-1)",
+                }}
+                asChild
+              >
+                <pre>{resolvedLocation}</pre>
+              </Box>
+            </Field>
 
           </Flex>
         </SectionHeader>

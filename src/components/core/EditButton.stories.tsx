@@ -5,10 +5,10 @@ import { EditButton } from "./EditButton";
 
 /** Gear icon linking to an edit page. Ghost by default, so it sits quietly beside a heading. */
 const meta = {
-  title: "Controls/EditButton",
+  title: "Components/Controls/EditButton",
   component: EditButton,
   parameters: { layout: "padded" },
-  args: { href: "/edit/account/cascadia-research" },
+  args: { href: "/edit/account/miskatonic" },
 } satisfies Meta<typeof EditButton>;
 
 export default meta;
@@ -36,7 +36,7 @@ export const BesideAHeading: Story = {
   render: (args) => (
     <Flex align="center" gap="2">
       <Text size="4" weight="bold">
-        Cascadia Research
+        Miskatonic University
       </Text>
       <EditButton {...args} />
     </Flex>

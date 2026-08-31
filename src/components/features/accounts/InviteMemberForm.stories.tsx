@@ -23,7 +23,7 @@ import type { Account } from "@/types";
  * the product.
  */
 const meta = {
-  title: "Memberships/InviteMemberForm",
+  title: "Features/Memberships/InviteMemberForm",
   component: InviteMemberForm,
   parameters: { layout: "padded" },
 } satisfies Meta<typeof InviteMemberForm>;
@@ -32,8 +32,8 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 const organization = {
-  account_id: "cascadia-research",
-  name: "Cascadia Research",
+  account_id: "miskatonic",
+  name: "Miskatonic University",
   type: "organization",
 } as unknown as Account;
 

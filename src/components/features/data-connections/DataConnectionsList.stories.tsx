@@ -11,7 +11,7 @@ import { DataProvider } from "@/types";
  * it is slugified from the name directly above it.
  */
 const meta = {
-  title: "Data connections/DataConnectionsList",
+  title: "Features/Data connections/DataConnectionsList",
   component: DataConnectionsList,
   parameters: { layout: "padded" },
   args: { editHref: (id: string) => `/admin/data-connections/${id}` },
@@ -49,24 +49,24 @@ const connections = [
     allowed_visibilities: ["public"],
   },
   {
-    data_connection_id: "rle-files",
-    name: "RLE Assessment Files",
-    owner: "tyler",
+    data_connection_id: "black-mesa-files",
+    name: "Black Mesa Survey Files",
+    owner: "mingus",
     details: {
       provider: DataProvider.GCS,
-      bucket: "rle-files",
+      bucket: "black-mesa-files",
       base_prefix: "",
     },
     read_only: true,
     allowed_visibilities: ["public", "unlisted"],
   },
   {
-    data_connection_id: "cascadia-archive",
-    name: "Cascadia Archive",
-    owner: "cascadia-research",
+    data_connection_id: "miskatonic-archive",
+    name: "Miskatonic Archive",
+    owner: "miskatonic",
     details: {
       provider: DataProvider.S3,
-      bucket: "cascadia-archive",
+      bucket: "miskatonic-archive",
       base_prefix: "",
       region: "us-west-2",
     },
@@ -77,14 +77,14 @@ const connections = [
 ] as unknown as DataConnection[];
 
 const ownerAccounts = {
-  tyler: {
-    account_id: "tyler",
-    name: "Tyler Erickson",
+  mingus: {
+    account_id: "mingus",
+    name: "Charles Mingus",
     type: "individual",
   },
-  "cascadia-research": {
-    account_id: "cascadia-research",
-    name: "Cascadia Research",
+  miskatonic: {
+    account_id: "miskatonic",
+    name: "Miskatonic University",
     type: "organization",
   },
 } as unknown as Record<string, Account>;

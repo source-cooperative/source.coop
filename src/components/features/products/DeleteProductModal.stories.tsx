@@ -12,12 +12,12 @@ import { DeleteProductModal } from "./DeleteProductModal";
  * `deleteProduct` is an `fn()` stub here, so confirming does nothing.
  */
 const meta = {
-  title: "Products/DeleteProductModal",
+  title: "Features/Products/DeleteProductModal",
   component: DeleteProductModal,
   parameters: { layout: "padded" },
   args: {
-    accountId: "cascadia-research",
-    productId: "humpback-acoustics",
+    accountId: "miskatonic",
+    productId: "abyssal-acoustics",
   },
 } satisfies Meta<typeof DeleteProductModal>;
 

@@ -11,7 +11,7 @@ import type { Account } from "@/types";
  * screenshot of the closed state shows nothing.
  */
 const meta = {
-  title: "Accounts/AccountInfoHoverCard",
+  title: "Components/Accounts/AccountInfoHoverCard",
   component: AccountInfoHoverCard,
   parameters: { layout: "padded" },
 } satisfies Meta<typeof AccountInfoHoverCard>;
@@ -24,18 +24,18 @@ type Story = StoryObj<typeof meta>;
 // ProfileAvatar falls back to an initial instead of fetching Gravatar — which
 // also keeps the story offline.
 const account = {
-  account_id: "cholmes",
-  name: "Chris Holmes",
+  account_id: "acoltrane",
+  name: "Alice Coltrane",
   type: "individual",
   metadata_public: {
-    bio: "Works on open geospatial data and cloud-native infrastructure.",
+    bio: "Works on open ocean-acoustics data and cloud-native infrastructure.",
   },
 } as unknown as Account;
 
 export const Default: Story = {
   args: {
     account,
-    children: <Text size="2">Chris Holmes</Text>,
+    children: <Text size="2">Alice Coltrane</Text>,
   },
 };
 
@@ -43,7 +43,7 @@ export const Default: Story = {
 export const WithoutBio: Story = {
   args: {
     account: { ...account, metadata_public: {} } as unknown as Account,
-    children: <Text size="2">Chris Holmes</Text>,
+    children: <Text size="2">Alice Coltrane</Text>,
   },
 };
 
@@ -52,6 +52,6 @@ export const Disabled: Story = {
   args: {
     account,
     showHoverCard: false,
-    children: <Text size="2">Chris Holmes (no card on hover)</Text>,
+    children: <Text size="2">Alice Coltrane (no card on hover)</Text>,
   },
 };

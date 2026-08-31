@@ -12,7 +12,7 @@ import { Field } from "./Field";
  * which is what the connection form looked like before.
  */
 const meta = {
-  title: "Forms/ConditionalGroup",
+  title: "Components/Forms/ConditionalGroup",
   component: ConditionalGroup,
   parameters: { layout: "padded" },
 } satisfies Meta<typeof ConditionalGroup>;
@@ -27,7 +27,7 @@ export const Default: Story = {
       <>
         <Field label="Bucket" required>
           {(props) => (
-            <TextField.Root {...props} size="3" defaultValue="cascadia-archive" />
+            <TextField.Root {...props} size="3" defaultValue="miskatonic-archive" />
           )}
         </Field>
         <Field label="Region">
@@ -87,7 +87,7 @@ export const OneField: Story = {
     children: (
       <Field label="Bucket" required>
         {(props) => (
-          <TextField.Root {...props} size="3" defaultValue="rle-files" />
+          <TextField.Root {...props} size="3" defaultValue="black-mesa-files" />
         )}
       </Field>
     ),

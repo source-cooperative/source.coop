@@ -1,5 +1,34 @@
 # Changelog
 
+## [1.6.0](https://github.com/source-cooperative/source.coop/compare/v1.5.1...v1.6.0) (2026-08-30)
+
+
+### Features
+
+* **accounts:** type-ahead user search in invite and admin lookup ([#503](https://github.com/source-cooperative/source.coop/issues/503)) ([1507551](https://github.com/source-cooperative/source.coop/commit/15075516fc2a4ededfa6d7368b5d4736955057f5))
+* **data-connections:** rework the cards, the list, and where delete lives ([#499](https://github.com/source-cooperative/source.coop/issues/499)) ([787ba58](https://github.com/source-cooperative/source.coop/commit/787ba5881edc74d1366bf7d0ea946bb1e88706ae))
+* **products:** show a deactivated product's switch in red ([#502](https://github.com/source-cooperative/source.coop/issues/502)) ([e28ce06](https://github.com/source-cooperative/source.coop/commit/e28ce066adc126b75d095dce42aa553d9bdb81f5))
+
+
+### Bug Fixes
+
+* **analytics:** let the metrics row reflow instead of running off a phone ([#538](https://github.com/source-cooperative/source.coop/issues/538)) ([0557e10](https://github.com/source-cooperative/source.coop/commit/0557e10722ccf7082b8262adbcc6cc308b4832ce))
+* **analytics:** stop unique IPs shrinking as the window widens ([#493](https://github.com/source-cooperative/source.coop/issues/493)) ([fa61dcb](https://github.com/source-cooperative/source.coop/commit/fa61dcbe9403162d93274d1ec5188c298fe803e0))
+* **breadcrumbs:** keep segments on one baseline when they wrap ([#529](https://github.com/source-cooperative/source.coop/issues/529)) ([92e4c31](https://github.com/source-cooperative/source.coop/commit/92e4c31dd50a61a3a56b3b4644498dc67fe1f928))
+* **data-connections:** give the prefix preview a label of its own ([#519](https://github.com/source-cooperative/source.coop/issues/519)) ([291caa0](https://github.com/source-cooperative/source.coop/commit/291caa0d85081c93b20aa85d64919dbf65e88e8c))
+* **data-connections:** put the ID note between the label and the value ([#518](https://github.com/source-cooperative/source.coop/issues/518)) ([12e23c8](https://github.com/source-cooperative/source.coop/commit/12e23c86f6a591c168fe67e1f0d230fff9860776))
+* **profiles:** keep website link icons from collapsing on narrow screens ([#528](https://github.com/source-cooperative/source.coop/issues/528)) ([1cf35fe](https://github.com/source-cooperative/source.coop/commit/1cf35fede56cc86629338f999e562e79d1067e7e))
+* **profiles:** let the organization list reflow on mobile ([#530](https://github.com/source-cooperative/source.coop/issues/530)) ([9a821f6](https://github.com/source-cooperative/source.coop/commit/9a821f6f113896c78ed858ab6a2ccbd6519c858a))
+
+
+### Performance Improvements
+
+* **a11y:** add main landmarks, drop bogus listbox roles, size footer tap targets ([#478](https://github.com/source-cooperative/source.coop/issues/478)) ([5b920f0](https://github.com/source-cooperative/source.coop/commit/5b920f0579e5d03b7ab7edb287da2c76c61aa11a))
+* drop globe texture preload hints from landing page ([#472](https://github.com/source-cooperative/source.coop/issues/472)) ([83c8c79](https://github.com/source-cooperative/source.coop/commit/83c8c79621c5266c30bccf854402e5b28fbf8543))
+* **globe:** load the clouds texture in parallel with the globe texture ([#537](https://github.com/source-cooperative/source.coop/issues/537)) ([6de7693](https://github.com/source-cooperative/source.coop/commit/6de76937fbbe325a809adb2a444c1f47a3c25483))
+* keep globe textures at full resolution, switch to WebP ([#473](https://github.com/source-cooperative/source.coop/issues/473)) ([e9676f2](https://github.com/source-cooperative/source.coop/commit/e9676f27e9a9b53fdece284f9fcda5b2cc93ac25))
+* preconnect to cross-origin hosts on the critical path ([#474](https://github.com/source-cooperative/source.coop/issues/474)) ([6cdd9d2](https://github.com/source-cooperative/source.coop/commit/6cdd9d218b4f0469bd645e2a074d987e27933d6c))
+
 ## [1.5.1](https://github.com/source-cooperative/source.coop/compare/v1.5.0...v1.5.1) (2026-08-21)
 
 

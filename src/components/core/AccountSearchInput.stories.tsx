@@ -16,7 +16,7 @@ import { AccountSearchInput } from "./AccountSearchInput";
  * what stops it being clipped inside the invite dialog.
  */
 const meta = {
-  title: "Forms/AccountSearchInput",
+  title: "Components/Forms/AccountSearchInput",
   component: AccountSearchInput,
   parameters: { layout: "padded" },
   args: { name: "account_id" },
@@ -35,5 +35,5 @@ export const Required: Story = {
 
 /** Editing an existing value rather than starting empty. */
 export const Prefilled: Story = {
-  args: { defaultValue: "cholmes" },
+  args: { defaultValue: "acoltrane" },
 };

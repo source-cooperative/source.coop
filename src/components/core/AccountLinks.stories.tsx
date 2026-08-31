@@ -10,7 +10,7 @@ import type { Account } from "@/types";
  * Hover either to see it.
  */
 const meta = {
-  title: "Accounts/AccountLinks",
+  title: "Components/Accounts/AccountLinks",
   component: AvatarLinkCompact,
   parameters: { layout: "padded" },
 } satisfies Meta<typeof AvatarLinkCompact>;
@@ -20,19 +20,19 @@ type Story = StoryObj<typeof meta>;
 
 // No email, so ProfileAvatar shows an initial rather than fetching Gravatar.
 const individual = {
-  account_id: "cholmes",
-  name: "Chris Holmes",
+  account_id: "acoltrane",
+  name: "Alice Coltrane",
   type: "individual",
   metadata_public: {
-    bio: "Works on open geospatial data and cloud-native infrastructure.",
+    bio: "Works on open ocean-acoustics data and cloud-native infrastructure.",
   },
 } as unknown as Account;
 
 const organization = {
-  account_id: "cascadia-research",
-  name: "Cascadia Research",
+  account_id: "miskatonic",
+  name: "Miskatonic University",
   type: "organization",
-  metadata_public: { bio: "Marine mammal research collective." },
+  metadata_public: { bio: "Deep-ocean acoustics and abyssal survey data." },
 } as unknown as Account;
 
 export const Compact: Story = {
