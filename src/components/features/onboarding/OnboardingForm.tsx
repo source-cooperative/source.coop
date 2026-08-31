@@ -59,7 +59,7 @@ export function OnboardingForm({ identityId }: { identityId: string }) {
       <DynamicForm<OnboardingFormData>
         fields={fields}
         action={createAccount}
-        submitButtonText="Complete Profile"
+        submitButtonText="Complete profile"
         hiddenFields={{
           type: AccountType.INDIVIDUAL,
           identity_id: identityId,

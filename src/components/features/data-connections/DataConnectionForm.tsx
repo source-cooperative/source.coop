@@ -1048,7 +1048,7 @@ export function DataConnectionForm({
         </SectionHeader>
 
         <FormActions
-          submitLabel={mode === "create" ? "Create Connection" : "Update Connection"}
+          submitLabel={mode === "create" ? "Create" : "Save"}
           pending={pending}
           message={state?.message}
           success={state.success}
