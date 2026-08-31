@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.6.1](https://github.com/source-cooperative/source.coop/compare/v1.6.0...v1.6.1) (2026-08-31)
+
+
+### Bug Fixes
+
+* **data-connections:** let a connection row wrap instead of collapsing on mobile ([#532](https://github.com/source-cooperative/source.coop/issues/532)) ([03b8747](https://github.com/source-cooperative/source.coop/commit/03b8747e21ba64fa60e12c5a5c77ca5e37f2dd1d))
+* **profiles:** truncate long website links instead of wrapping them ([#531](https://github.com/source-cooperative/source.coop/issues/531)) ([5df79d5](https://github.com/source-cooperative/source.coop/commit/5df79d54e9bfff7411d9c42e22542b515e86db07))
+
 ## [1.6.0](https://github.com/source-cooperative/source.coop/compare/v1.5.1...v1.6.0) (2026-08-30)
 
 
