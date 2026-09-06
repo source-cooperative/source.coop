@@ -17,6 +17,23 @@ on:
 jobs:
   review:
     uses: source-cooperative/.github/.github/workflows/claude-pr-review.yml@main
+    with:
+      # The shared prompt hunts bugs and says to skip nits, so the "Docs and
+      # ADRs" section of CLAUDE.md would never be enforced on its own even
+      # though the reviewer has it in context. This is what makes it checked.
+      extra_instructions: |
+        Also check the documentation requirement in CLAUDE.md's "Docs and ADRs"
+        section. Read the PR description with `gh pr view`. When the diff
+        changes a user-facing flow documented at docs.source.coop (creating an
+        account or a product, data upload, bring-your-own-bucket, the data
+        proxy) or moves a decision recorded in data.source.coop's `adrs/`
+        (authorization, STS credentials, API keys, outbound federation), the
+        description has to name the affected doc or ADR — linking the PR that
+        updates it, or saying why it still holds. A description that is silent
+        on a change of that shape is itself the finding, since silence reads
+        the same whether the docs were checked or forgotten. Report these in a
+        final **Docs** section, advisory and never blocking, omitted when the
+        diff touches neither.
     # Granted here because a called workflow can only maintain or reduce the
     # caller's token permissions, never elevate them.
     permissions:
