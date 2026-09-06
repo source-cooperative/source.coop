@@ -35,6 +35,31 @@ the real layout has, so it invents overflow the page doesn't have.
 The JSDoc above `meta`, and above each story export, is published prose on
 ui.source.coop — not a code comment. Write it for a reader.
 
+## Docs and ADRs
+
+Two repositories outside this one hold prose that a change here can quietly
+invalidate. Check both while the change is still in your head — whoever finds a
+stale page a month from now has no idea which PR made it stale.
+
+[docs.source.coop](https://github.com/source-cooperative/docs.source.coop) is the
+user-facing documentation. A change to a flow a user walks through — creating an
+account or a product, uploading data, bringing your own bucket — dates the page
+in `docs/using-source/` that describes it, and a change to how the platform is
+put together dates `docs/about-source/`.
+
+[data.source.coop](https://github.com/source-cooperative/data.source.coop) is the
+data proxy, and its `adrs/` directory records the decisions this app shares with
+it: authorization, STS credentials, API keys, outbound federation. An ADR records
+a decision, not the code that implements it, so a change that merely implements
+one leaves it alone. A change that moves the decision needs a new ADR, or an
+amendment to the one it supersedes, in that repository.
+
+The PR description says which way it went: name the doc or ADR the change
+affects and link the PR carrying that update, or name the ones you checked and
+say why they still hold. "Checked the data-proxy ADRs; 005 still describes the
+model" is worth writing, because silence reads the same whether the docs were
+checked or forgotten.
+
 ## Pull requests
 
 A PR that touches the UI links the stories it affects, on that branch's Storybook
