@@ -80,20 +80,31 @@ export function canUseDataConnectionFor(
 }
 
 /**
- * List the data connections a user is permitted to use when creating a product.
+ * List the data connections a user is permitted to use when creating a product
+ * under one of `ownerAccountIds` (the accounts they may create products for).
  *
- * A connection is usable when the session is authorized both to read it
- * (`GetDataConnection`) and to create products against it (`UseDataConnection`).
+ * A connection is usable when it is available to one of those accounts —
+ * system-level (unowned) or owned by it — and the session is authorized both to
+ * read it (`GetDataConnection`) and to create products against it
+ * (`UseDataConnection`).
+ *
+ * The owner filter belongs here rather than at the call site: an owned
+ * connection carries its account's bucket names and prefixes, so filtering it
+ * out in the browser would still have shipped it there.
+ *
  * The returned objects are unsanitized (credentials intact); callers that hand
  * these to the client must strip `authentication` first.
  */
 export async function listUsableDataConnections(
-  session: UserSession | null
+  session: UserSession | null,
+  ownerAccountIds: string[]
 ): Promise<DataConnection[]> {
+  const usableBy = new Set(ownerAccountIds);
   const dataConnections = await dataConnectionsTable.listAll();
 
   return dataConnections.filter(
     (dataConnection) =>
+      (!dataConnection.owner || usableBy.has(dataConnection.owner)) &&
       isAuthorized(session, dataConnection, Actions.UseDataConnection) &&
       isAuthorized(session, dataConnection, Actions.GetDataConnection)
   );
