@@ -1,6 +1,6 @@
 import { ProductCreationForm } from "@/components/features/products/ProductCreationForm";
 import { accountsTable, getPageSession, membershipsTable } from "@/lib";
-import { isAuthorized } from "@/lib/api/authz";
+import { canCreateProductForAccount, isAuthorized } from "@/lib/api/authz";
 import { listUsableDataConnections } from "@/lib/data-connections";
 import { Actions, DataConnectionObjectSchema, MembershipState } from "@/types";
 import { Heading, Text } from "@radix-ui/themes";
@@ -42,7 +42,7 @@ export default async function NewProductPage({
   const memberships = await membershipsTable.listByUser(
     session.account.account_id
   );
-  const potentialOwnerAccounts = [
+  const candidateOwnerAccounts = [
     session.account,
     ...(await accountsTable.fetchManyByIds(
       memberships
@@ -50,6 +50,12 @@ export default async function NewProductPage({
         .map((membership) => membership.membership_account_id)
     )),
   ];
+  // Only accounts the user can actually create a product under (self with the
+  // flag, or an org they own/maintain) — a read/write-data membership doesn't
+  // qualify, even though it makes the account "potential" above.
+  const potentialOwnerAccounts = candidateOwnerAccounts.filter((account) =>
+    canCreateProductForAccount(session, account)
+  );
 
   // Strip credentials before handing connections to the client component.
   const dataConnections = (await listUsableDataConnections(session)).map(
