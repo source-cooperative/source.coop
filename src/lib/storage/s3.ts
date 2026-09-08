@@ -188,11 +188,40 @@ export class S3StorageClient {
           VersionId: params.versionId,
         }),
       );
+
+      let size = response.ContentLength ?? 0;
+
+      // Some proxies omit Content-Length from HEAD responses. Fall back to a
+      // range GET to read the actual size from Content-Range.
+      if (!size) {
+        try {
+          const rangeResponse = await this.client.send(
+            new GetObjectCommand({
+              Bucket: params.account_id,
+              Key: keyFor(params),
+              VersionId: params.versionId,
+              Range: "bytes=0-0",
+            }),
+          );
+          // Content-Range format: "bytes 0-0/TOTAL_SIZE". That header is all
+          // we need, so destroy the body instead of reading it — a proxy that
+          // ignores Range and returns the full object shouldn't be downloaded
+          // just to size it.
+          const match = rangeResponse.ContentRange?.match(/\/(\d+)$/);
+          if (match) {
+            size = parseInt(match[1], 10);
+          }
+          (rangeResponse.Body as Readable | undefined)?.destroy();
+        } catch {
+          // range request failed; keep size as 0
+        }
+      }
+
       return {
         id: params.object_path,
         product_id: params.product_id,
         path: params.object_path,
-        size: response.ContentLength ?? 0,
+        size,
         mime_type: response.ContentType ?? "",
         type: "file",
         created_at:
