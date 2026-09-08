@@ -230,7 +230,7 @@ export function DynamicForm<T extends Record<string, any>>({
   fields,
   action,
   disabled,
-  submitButtonText = "Submit",
+  submitButtonText = "Save",
   hiddenFields = {},
   className,
   initialValues,

@@ -341,7 +341,7 @@ export function ProductCreationForm({
     <DynamicForm
       fields={fields}
       action={isEditMode ? updateProduct : createProduct}
-      submitButtonText={isEditMode ? "Update Product" : "Create Product"}
+      submitButtonText={isEditMode ? "Save" : "Create"}
       hiddenFields={
         isEditMode
           ? {

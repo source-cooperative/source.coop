@@ -1,7 +1,11 @@
 import { Button, Flex, Text } from "@radix-ui/themes";
 
 interface FormActionsProps {
-  submitLabel: string;
+  /**
+   * Defaults to "Save". Give it something else only when the form does not
+   * save — sending an invitation, running a lookup — or when it creates.
+   */
+  submitLabel?: string;
   pending?: boolean;
   disabled?: boolean;
   /**
@@ -18,7 +22,7 @@ interface FormActionsProps {
 
 /** The single action row a form ends with. */
 export function FormActions({
-  submitLabel,
+  submitLabel = "Save",
   pending,
   disabled,
   secondary,
@@ -34,7 +38,18 @@ export function FormActions({
           </Text>
         )}
         {secondary}
-        <Button size="3" type="submit" disabled={disabled || pending} loading={pending}>
+        {/* highContrast, because the theme's accent is gray: a solid button
+            fills with --accent-9 (#8d8d8d), which is 3.31:1 against its white
+            label and fails WCAG AA for text. highContrast fills with
+            --accent-12 instead — near-black, and Radix's own answer rather than
+            an override of its internals. */}
+        <Button
+          size="3"
+          type="submit"
+          highContrast
+          disabled={disabled || pending}
+          loading={pending}
+        >
           {submitLabel}
         </Button>
       </Flex>

@@ -47,7 +47,7 @@ export default async function AccountDataConnectionsPage({ params }: PageProps) 
             description="Manage this account's connections to external storage."
           />
         </Box>
-        <Button asChild size="2">
+        <Button asChild size="2" highContrast>
           <Link href={accountDataConnectionCreateUrl(account_id)}>
             New Connection
           </Link>
