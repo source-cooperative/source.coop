@@ -23,6 +23,24 @@ Merging to `main` automatically deploys to [staging.source.coop](https://staging
 
 Production deploys to [source.coop](https://source.coop) trigger when a [GitHub Release](https://github.com/source-cooperative/source.coop/releases) is published. [release-please](https://github.com/googleapis/release-please) automatically maintains a release PR — merging it creates the GitHub Release and triggers the production deploy.
 
+### Skipped builds
+
+Two Vercel projects build from this repo — the app and the Storybook — so every
+push builds both, including the pushes that cannot change one of them. A
+story-only push rebuilt the whole app until `scripts/vercel-ignore-build.sh`
+became the Ignored Build Step for both, via `ignoreCommand` in `vercel.json`.
+
+That one command serves both projects, so each names itself with a
+`VERCEL_IGNORE_SCOPE` environment variable in its Vercel project settings —
+`app` on one, `storybook` on the other. Neither value is a default: a project
+without one builds every push, as it did before, because a wasted build costs
+minutes and a wrongly skipped one leaves a stale preview on the PR under review.
+
+The script skips only what it can prove is unnecessary — it compares against the
+project's last deployed commit, and builds whenever that is unavailable or a
+changed path is one it does not recognise. `bash scripts/vercel-ignore-build.sh
+--self-test` covers the routing rules.
+
 ## Local Development
 
 See the [README](README.md) for setup instructions (prerequisites, database, environment variables).

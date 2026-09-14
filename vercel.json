@@ -3,5 +3,6 @@
     "deploymentEnabled": {
       "main": false
     }
-  }
+  },
+  "ignoreCommand": "bash scripts/vercel-ignore-build.sh"
 }
