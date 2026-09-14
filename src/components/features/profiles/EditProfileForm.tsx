@@ -95,7 +95,7 @@ export function EditProfileForm({
       label: "Email",
       name: "email",
       type: "email",
-      readOnly: true,
+      readOnly: initialAccount.type === "individual",
       section: "Identity",
       mono: true,
       placeholder: "you@example.com",

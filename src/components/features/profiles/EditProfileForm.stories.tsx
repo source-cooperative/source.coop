@@ -5,7 +5,8 @@ import type { Account } from "@/types";
 /**
  * The account profile form, for an individual and for an organization — the
  * fields differ, which is most of what this story is for (ORCID for a person,
- * ROR for an institution).
+ * ROR for an institution, and an email an organization can edit but a person
+ * cannot, theirs being their sign-in address).
  *
  * `updateAccountProfile` is an `fn()` stub, so saving does nothing.
  */
@@ -34,6 +35,9 @@ const organization = {
   account_id: "miskatonic",
   name: "Miskatonic University",
   type: "organization",
+  emails: [
+    { address: "data@miskatonic.edu", is_primary: true, verified: false },
+  ],
   metadata_public: {
     bio: "Deep-ocean acoustics and abyssal survey data.",
     ror_id: "https://ror.org/04t0dxa17",

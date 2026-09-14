@@ -17,6 +17,7 @@ import {
   OrganizationalAccount,
   AccountFlags,
   AccountFlagsSchema,
+  AccountEmailSchema,
 } from "@/types";
 import { isAuthorized } from "../api/authz";
 import { getPageSession } from "../api/utils";
@@ -255,10 +256,43 @@ export async function updateAccountProfile(
         };
       });
 
+    // For organizations, process the contact email. An individual's email is
+    // their sign-in address, owned by the identity provider, so the field is
+    // read-only for them and anything submitted under it is ignored.
+    let updatedEmails = currentAccount.emails;
+    if (currentAccount.type === AccountType.ORGANIZATION) {
+      const email = ((formData.get("email") as string) || "").trim();
+      const currentPrimary = currentAccount.emails?.find((e) => e.is_primary);
+      if (!email) {
+        updatedEmails = [];
+      } else if (email !== currentPrimary?.address) {
+        // Only a changed address is rewritten: the form seeds the field with
+        // the current email, so every save resubmits it, and rebuilding the
+        // record each time would throw away the address's verified state.
+        if (!AccountEmailSchema.shape.address.safeParse(email).success) {
+          return {
+            fieldErrors: { email: ["Invalid email address"] },
+            data: formData,
+            message: "Invalid form data",
+            success: false,
+          };
+        }
+        updatedEmails = [
+          {
+            address: email,
+            verified: false,
+            is_primary: true,
+            added_at: new Date().toISOString(),
+          },
+        ];
+      }
+    }
+
     // Build update data
     const updateData = {
       ...currentAccount,
       name,
+      emails: updatedEmails,
       metadata_public: {
         ...currentAccount.metadata_public,
         bio: description || undefined,
