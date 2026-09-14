@@ -19,7 +19,8 @@ import {
   ExclamationTriangleIcon,
 } from "@radix-ui/react-icons";
 import { useUploadManager } from "@/components/features/uploader/UploadProvider";
-import { productUrl, formatBytes } from "@/lib";
+import { productUrl } from "@/lib/urls";
+import { formatBytes } from "@/lib/format";
 
 export function UploadsSubmenu() {
   const { uploads, cancelUpload, retryUpload } = useUploadManager();

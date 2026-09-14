@@ -10,7 +10,6 @@
     "metadata": {
       "mirrors": {
         "primary-data-connection": {
-          "storage_type": "s3",
           "connection_id": "primary-data-connection",
           "prefix": "create-repositories-user/regular-user-repo-id/",
           "is_primary": true
@@ -35,7 +34,6 @@
     "metadata": {
       "mirrors": {
         "primary-data-connection": {
-          "storage_type": "s3",
           "connection_id": "primary-data-connection",
           "prefix": "organization/org-repo-id/",
           "is_primary": true
@@ -59,7 +57,6 @@
     "metadata": {
       "mirrors": {
         "primary-data-connection": {
-          "storage_type": "s3",
           "connection_id": "primary-data-connection",
           "prefix": "organization/disabled-org-repo-id/",
           "is_primary": true
@@ -83,7 +80,6 @@
     "metadata": {
       "mirrors": {
         "primary-data-connection": {
-          "storage_type": "s3",
           "connection_id": "primary-data-connection",
           "prefix": "organization/unlisted-org-repo-id/",
           "is_primary": true
@@ -107,7 +103,6 @@
     "metadata": {
       "mirrors": {
         "primary-data-connection": {
-          "storage_type": "s3",
           "connection_id": "primary-data-connection",
           "prefix": "organization/featured-org-repo-id/",
           "is_primary": true
@@ -131,7 +126,6 @@
     "metadata": {
       "mirrors": {
         "primary-data-connection": {
-          "storage_type": "s3",
           "connection_id": "primary-data-connection",
           "prefix": "organization/private-org-repo-id/",
           "is_primary": true
@@ -155,7 +149,6 @@
     "metadata": {
       "mirrors": {
         "primary-data-connection": {
-          "storage_type": "s3",
           "connection_id": "primary-data-connection",
           "prefix": "cholmes/overture/",
           "is_primary": true

@@ -1,21 +1,28 @@
 "use client";
 
-import { DynamicForm, FormField } from "@/components/core";
-import { lookupUserByEmail } from "@/lib/actions/admin";
+import { AccountSearchInput, DynamicForm, FormField } from "@/components/core";
+import { lookupUser } from "@/lib/actions/admin";
 
 type LookupFormData = {
-  email: string;
+  query: string;
 };
 
 const fields: FormField<LookupFormData>[] = [
   {
-    label: "Email",
-    name: "email",
-    type: "email",
+    label: "User",
+    name: "query",
+    type: "custom",
     required: true,
-    placeholder: "user@example.com",
     description:
-      "Looks up the email in Ory and, if found, opens that user's profile.",
+      "Search by username or name, or enter an email address to look it up in Ory. Opens that user's profile.",
+    customComponent: (controlProps) => (
+      <AccountSearchInput
+        {...controlProps}
+        name="query"
+        required
+        placeholder="username, name, or user@example.com"
+      />
+    ),
   },
 ];
 
@@ -23,7 +30,7 @@ export function AdminUserLookupForm() {
   return (
     <DynamicForm<LookupFormData>
       fields={fields}
-      action={lookupUserByEmail}
+      action={lookupUser}
       submitButtonText="Look up user"
     />
   );

@@ -29,6 +29,33 @@ export const ID_REGEX = /^[a-z0-9](?:(?!--)[a-z0-9-])*[a-z0-9]$/;
 // is the separator.
 export const DATA_CONNECTION_ID_REGEX = /^[a-z0-9][a-z0-9-]*[a-z0-9]$/;
 
+/**
+ * The id a name would produce: lowercase, runs of anything else collapsed to a
+ * single hyphen, trimmed to MAX_ID_LENGTH.
+ *
+ * Lives beside the rules it has to satisfy. Collapsing runs is what guarantees
+ * no `--` (reserved as the `${account_id}--${slug}` delimiter), and trimming
+ * both ends is what guarantees the leading/trailing alphanumeric ID_REGEX
+ * demands — including after truncation, which can otherwise land on a hyphen.
+ *
+ * Returns "" when a name has fewer than MIN_ID_LENGTH usable characters; the
+ * caller decides what to say about that.
+ */
+export function slugifyToId(name: string): string {
+  const slug = name
+    .normalize("NFKD")
+    // Strip the combining marks NFKD split off, so "Ärchive" becomes "archive"
+    // rather than "-rchive".
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, MAX_ID_LENGTH)
+    .replace(/-+$/, "");
+
+  return slug.length >= MIN_ID_LENGTH ? slug : "";
+}
+
 // Common enums
 export enum AccountFlags {
   ADMIN = "admin",

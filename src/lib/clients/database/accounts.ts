@@ -1,5 +1,7 @@
 import {
   QueryCommand,
+  ScanCommand,
+  type ScanCommandOutput,
   UpdateCommand,
   DeleteCommand,
   PutCommand,
@@ -15,6 +17,16 @@ import {
 
 import { BaseTable } from "./base";
 import { LOGGER } from "@/lib/logging";
+
+/**
+ * What a type-ahead picker needs to introduce an account: enough to render the
+ * same identity block the profile hover card shows. Public fields only.
+ */
+export interface AccountSuggestion {
+  account_id: string;
+  name: string;
+  profile_image?: string;
+}
 
 export class AccountsTable extends BaseTable {
   model = "accounts";
@@ -130,13 +142,90 @@ export class AccountsTable extends BaseTable {
     }
   }
 
+  /**
+   * Creates an account, failing if `account_id` is already taken.
+   *
+   * `account_id` is the table's partition key, so an unconditioned `PutCommand`
+   * would *replace* an existing row rather than fail. `account_id` is chosen by
+   * the caller at signup and never checked for availability beforehand, so the
+   * conditional write is what keeps one account from being written over another
+   * -- including one bound to a different `identity_id`.
+   *
+   * Throws `ConditionalCheckFailedException` when the id is taken; callers that
+   * accept a user-supplied id should catch it and report the collision rather
+   * than surfacing a server error.
+   */
+  /**
+   * Substring match over individual accounts' handles and display names, for
+   * type-ahead pickers. Returns only publicly visible identity fields --
+   * `profile_image` comes from `metadata_public` and is what profile pages
+   * already render. Deliberately no email: the Gravatar fallback used elsewhere
+   * would leak an address hash for every account a search happens to match.
+   *
+   * ponytail: full table scan filtered app-side. DynamoDB has no
+   * case-insensitive `contains()` and this table has no search index, so
+   * matching on `name` any other way means denormalizing a lowercased
+   * `search_text` field (as `products` does) and backfilling it. Fine at the
+   * current account count; do that — or move to a search service — if the
+   * scans start to hurt.
+   */
+  async searchIndividuals(
+    query: string,
+    limit = 10
+  ): Promise<AccountSuggestion[]> {
+    const q = query.trim().toLowerCase();
+    if (!q) return [];
+
+    const matches: AccountSuggestion[] = [];
+    let lastEvaluatedKey: Record<string, any> | undefined = undefined;
+
+    do {
+      // Annotated because the paging assignment below otherwise makes the
+      // inferred type of `result` depend on itself.
+      const result: ScanCommandOutput = await this.cachedSend(
+        new ScanCommand({
+          TableName: this.table,
+          ProjectionExpression:
+            "account_id, #name, #type, disabled, metadata_public.profile_image",
+          ExpressionAttributeNames: { "#name": "name", "#type": "type" },
+          ExclusiveStartKey: lastEvaluatedKey,
+        })
+      );
+
+      for (const item of (result.Items ?? []) as Account[]) {
+        if (item.type !== AccountType.INDIVIDUAL || item.disabled) continue;
+        const name = item.name ?? "";
+        if (!item.account_id.includes(q) && !name.toLowerCase().includes(q))
+          continue;
+        matches.push({
+          account_id: item.account_id,
+          name,
+          profile_image: item.metadata_public?.profile_image,
+        });
+        if (matches.length >= limit) return matches;
+      }
+
+      lastEvaluatedKey = result.LastEvaluatedKey;
+    } while (lastEvaluatedKey);
+
+    return matches;
+  }
+
   async create(account: Account): Promise<Account> {
-    await this.client.send(
-      new PutCommand({
-        TableName: this.table,
-        Item: account,
-      })
-    );
+    try {
+      await this.client.send(
+        new PutCommand({
+          TableName: this.table,
+          Item: account,
+          ConditionExpression: "attribute_not_exists(account_id)",
+        })
+      );
+    } catch (error) {
+      if ((error as { name?: string })?.name !== "ConditionalCheckFailedException") {
+        this.logError("create", error, { account_id: account.account_id });
+      }
+      throw error;
+    }
 
     return account;
   }

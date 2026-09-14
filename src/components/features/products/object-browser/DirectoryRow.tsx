@@ -21,7 +21,7 @@ import {
 } from "@radix-ui/react-icons";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { MonoText } from "@/components/core";
+import { MonoText } from "@/components/core/MonoText";
 import type { FileNode } from "./utils";
 import type { Product } from "@/types";
 import { formatBytes } from "@/lib/format";

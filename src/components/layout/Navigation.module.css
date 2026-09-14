@@ -105,3 +105,12 @@
   border-radius: 50%;
   background: var(--red-9);
 } 
+/* Product links sit a step lighter (gray-11) to offset their medium weight,
+   but revert to the highlighted item's contrast color so they stay legible on
+   the solid hover/keyboard-highlight background. */
+.productName {
+  color: var(--gray-11);
+}
+:global(.rt-BaseMenuItem):where([data-highlighted], :hover) .productName {
+  color: inherit;
+}

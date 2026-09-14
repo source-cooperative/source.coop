@@ -112,7 +112,7 @@ export function AccountDropdown({
             label={
               <Flex align="center" gap="2">
                 <ProfileAvatar account={account} size="1" />
-                <span style={entityNameStyle}>{account.name}</span>
+                <Text style={entityNameStyle}>{account.name}</Text>
                 {isSelf && (
                   <Text size="1" color="gray">
                     you
@@ -132,7 +132,13 @@ export function AccountDropdown({
                 ? products.slice(0, 20).map((product) => ({
                     href: productUrl(account.account_id, product.product_id),
                     children: (
-                      <span style={entityNameStyle}>{product.title}</span>
+                      <Text
+                        className={styles.productName}
+                        style={entityNameStyle}
+                        weight="medium"
+                      >
+                        {product.title}
+                      </Text>
                     ),
                   }))
                 : [
@@ -205,7 +211,7 @@ export function AccountDropdown({
               ? pendingInvitations.slice(0, 20).map((invitation) => ({
                   href: invitation.href,
                   children: (
-                    <span style={entityNameStyle}>{invitation.label}</span>
+                    <Text style={entityNameStyle}>{invitation.label}</Text>
                   ),
                 }))
               : [

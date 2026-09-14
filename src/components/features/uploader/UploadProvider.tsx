@@ -10,7 +10,7 @@ import {
   useRef,
 } from "react";
 import { S3UploadService } from "@/lib/services/s3-upload";
-import { getTemporaryCredentials } from "@/lib";
+import { getTemporaryCredentials } from "@/lib/actions/credentials";
 import { useS3Credentials } from "./CredentialsProvider";
 import type { CredentialsScope } from "./CredentialsProvider";
 import { useBeforeUnload } from "@/hooks/useBeforeUnload";

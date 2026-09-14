@@ -3311,14 +3311,14 @@ describe("Authorization Tests", () => {
       true
     );
 
-    // Test with read_only set to true
+    // read_only does not gate use; see #482.
     dataConnection.read_only = true;
     expect(isAuthorized(sessions["admin"], dataConnection, action)).toBe(true);
     expect(
       isAuthorized(sessions["organization-owner-user"], dataConnection, action)
-    ).toBe(false);
+    ).toBe(true);
     expect(isAuthorized(sessions["regular-user"], dataConnection, action)).toBe(
-      false
+      true
     );
 
     // Test with required_flag

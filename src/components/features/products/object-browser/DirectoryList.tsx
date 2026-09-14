@@ -4,7 +4,7 @@ import { Box, Text } from "@radix-ui/themes";
 import { ChevronDownIcon } from "@radix-ui/react-icons";
 import { useRef, useState, useEffect } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { MonoText } from "@/components/core";
+import { MonoText } from "@/components/core/MonoText";
 import { asFileNodes, mergeUploadsWithFiles } from "./utils";
 import type { Product, ProductObject } from "@/types";
 import styles from "./ObjectBrowser.module.css";

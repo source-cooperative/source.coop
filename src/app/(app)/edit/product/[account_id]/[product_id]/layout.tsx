@@ -56,8 +56,8 @@ export default async function ProductLayout({
   let { products: manageableProducts } = await productsTable.listByAccount(
     account_id
   );
-  manageableProducts = manageableProducts.filter((p) =>
-    isAuthorized(session, p, Actions.PutRepository)
+  manageableProducts = manageableProducts.filter(
+    (p) => !p.disabled && isAuthorized(session, p, Actions.PutRepository)
   );
 
   const canEditProduct = isAuthorized(session, product, Actions.PutRepository);

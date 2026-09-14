@@ -142,3 +142,11 @@ a.rt-BaseMenuItem,
 .animate-spin {
   animation: spin 1s linear infinite;
 }
+
+/* A switch whose off state takes something away reads red, not merely grey.
+   Radix paints the track on ::before; the [data-state] selector outspecifies
+   its :where()-wrapped variant rule. */
+.switch-danger[data-state="unchecked"]::before {
+  background-color: var(--red-a5);
+  box-shadow: inset 0 0 0 1px var(--red-a7);
+}

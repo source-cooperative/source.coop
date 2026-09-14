@@ -17,19 +17,21 @@ export default function AppLayout({ children }: AppLayoutProps) {
         <StepUpGuard />
       </Suspense>
       <Navigation />
-      <Box flexGrow="1" m="2">
-        <Container size="4" py="4">
-          {/*
-           * Reconciles the user's email-verification state with Ory on every
-           * authenticated page load (sync + reminder/confirmation banner).
-           * Wrapped in Suspense so its session/DB read streams in without
-           * blocking the page content below.
-           */}
-          <Suspense fallback={null}>
-            <VerificationBanner />
-          </Suspense>
-          {children}
-        </Container>
+      <Box flexGrow="1" m="2" asChild>
+        <main>
+          <Container size="4" py="4">
+            {/*
+             * Reconciles the user's email-verification state with Ory on every
+             * authenticated page load (sync + reminder/confirmation banner).
+             * Wrapped in Suspense so its session/DB read streams in without
+             * blocking the page content below.
+             */}
+            <Suspense fallback={null}>
+              <VerificationBanner />
+            </Suspense>
+            {children}
+          </Container>
+        </main>
       </Box>
       <Footer />
     </Flex>

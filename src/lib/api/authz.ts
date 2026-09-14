@@ -452,10 +452,10 @@ function disableDataConnection(
 }
 
 // Models what the *connection* permits, not whether the caller is
-// authenticated. A connection that is not read-only and carries no
-// required_flag is usable by anyone — including an anonymous principal — so
-// callers (e.g. createProduct, listUsableDataConnections) must apply their own
-// auth guard before relying on this result.
+// authenticated. A connection carrying no required_flag is usable by anyone —
+// including an anonymous principal — so callers (e.g. createProduct,
+// listUsableDataConnections) must apply their own auth guard before relying on
+// this result.
 function useDataConnection(
   principal: UserSession | null,
   dataConnection: DataConnection
@@ -466,10 +466,6 @@ function useDataConnection(
 
   if (isAdmin(principal)) {
     return true;
-  }
-
-  if (dataConnection.read_only) {
-    return false;
   }
 
   if (dataConnection.required_flag) {
@@ -513,6 +509,41 @@ function deleteDataConnection(
 }
 
 /**
+ * Whether `session` administers `account` itself: the account's own user, an
+ * owner/maintainer of the organization, or an admin.
+ *
+ * Distinct from product-level authorization (`Actions.PutRepository`), which a
+ * product-scoped membership also satisfies. Account-level resources surfaced on
+ * a product — notably which data connections it may mirror to, whose bucket
+ * names and roles are the *account's* business — must be gated on this, so a
+ * maintainer of one product can't enumerate the owning org's connections.
+ */
+export function canManageAccount(
+  session: UserSession | null,
+  account: Account
+): boolean {
+  if (session?.account?.disabled) {
+    return false;
+  }
+
+  if (isAdmin(session)) {
+    return true;
+  }
+
+  if (account.disabled) {
+    return false;
+  }
+
+  // hasRole treats the principal's own account as a match, so this also covers
+  // an individual account managing itself.
+  return hasRole(
+    session,
+    [MembershipRole.Owners, MembershipRole.Maintainers],
+    account.account_id
+  );
+}
+
+/**
  * Whether `session` may create/manage data connections *owned by* `account`.
  *
  * The per-action authz functions above only ever see a connection's `owner`
@@ -527,29 +558,17 @@ export function canManageAccountDataConnections(
   session: UserSession | null,
   account: Account
 ): boolean {
-  if (session?.account?.disabled) {
+  // canManageAccount already denies a disabled session or owner account.
+  if (!canManageAccount(session, account)) {
     return false;
   }
 
+  // Admins bypass the platform-granted flag.
   if (isAdmin(session)) {
     return true;
   }
 
-  // A disabled owner account can't have its connections managed by its members
-  // (admins, handled above, still can). Mirrors getAccountFlags/putAccountProfile.
-  if (account.disabled) {
-    return false;
-  }
-
-  if (!account.flags?.includes(AccountFlags.CREATE_DATA_CONNECTIONS)) {
-    return false;
-  }
-
-  return hasRole(
-    session,
-    [MembershipRole.Owners, MembershipRole.Maintainers],
-    account.account_id
-  );
+  return !!account.flags?.includes(AccountFlags.CREATE_DATA_CONNECTIONS);
 }
 
 function putAccountFlags(

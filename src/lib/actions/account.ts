@@ -2,6 +2,7 @@
 
 import { LOGGER } from "@/lib/logging";
 import {
+  Account,
   AccountCreationRequestSchema,
   Actions,
   AccountCreationRequest,
@@ -20,6 +21,7 @@ import {
 import { isAuthorized } from "../api/authz";
 import { getPageSession } from "../api/utils";
 import { accountsTable, membershipsTable } from "../clients";
+import type { AccountSuggestion } from "../clients/database/accounts";
 import { FormState } from "@/components/core/DynamicForm";
 import { revalidatePath } from "next/cache";
 import {
@@ -104,8 +106,31 @@ export async function createAccount(
     };
   }
 
-  // Create account
-  const account = await accountsTable.create(newAccount);
+  // Create account. `account_id` is caller-supplied and never checked for
+  // availability beforehand, so the conditional write in `create` is what stops
+  // one account being written over another. A collision is an ordinary signup
+  // outcome, not only an attack, so report it on the field rather than letting
+  // it surface as a server error.
+  let account: Account;
+  try {
+    account = await accountsTable.create(newAccount);
+  } catch (error) {
+    if ((error as { name?: string })?.name === "ConditionalCheckFailedException") {
+      LOGGER.warn("Account creation rejected: account_id already taken", {
+        operation: "createAccount",
+        context: "account creation",
+        metadata: { account_id: newAccount.account_id },
+      });
+      return {
+        fieldErrors: { account_id: ["That account ID is already taken."] },
+        data: formData,
+        message: "That account ID is already taken",
+        success: false,
+      };
+    }
+    throw error;
+  }
+
   LOGGER.info("Successfully created account", {
     operation: "createAccount",
     context: "account creation",
@@ -407,4 +432,20 @@ export async function updateAccountFlags(
       success: false,
     };
   }
+}
+
+/**
+ * Type-ahead search over individual accounts, matching either the handle
+ * (`account_id`) or the display name. Returns only the public identity fields
+ * already shown on every profile page. Requires a session so it isn't an open
+ * directory-scraping endpoint.
+ */
+export async function searchAccounts(
+  query: string
+): Promise<AccountSuggestion[]> {
+  const session = await getPageSession();
+  if (!session?.identity_id) return [];
+  if (query.trim().length < 2) return [];
+
+  return accountsTable.searchIndividuals(query);
 }

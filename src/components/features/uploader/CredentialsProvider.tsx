@@ -1,6 +1,10 @@
 "use client";
 
-import { LOGGER, TemporaryCredentials, getTemporaryCredentials } from "@/lib";
+import { LOGGER } from "@/lib/logging";
+import {
+  type TemporaryCredentials,
+  getTemporaryCredentials,
+} from "@/lib/actions/credentials";
 import {
   createContext,
   useContext,

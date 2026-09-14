@@ -8,18 +8,26 @@
  * we need to use a parent route-group to handle these cases.
  */
 
+import { Suspense } from "react";
 import { BreadcrumbNav } from "@/components/display/BreadcrumbNav";
 import { FetchCredentialsButton } from "@/components/features/uploader/FetchCredentialsButton";
 import { PendingInvitationBanner } from "@/components/features/memberships/PendingInvitationBanner";
-import { ProductHeader } from "@/components/features/products/ProductHeader";
+import { ProductSummaryCard } from "@/components/features/products/ProductSummaryCard";
+import { ProductMetaCard } from "@/components/features/products/ProductMetaCard";
+import {
+  ProductTabs,
+  UsageCard,
+  UsageCardSkeleton,
+} from "@/components/features/analytics";
+import { isAnalyticsConfigured } from "@/lib/clients/analytics";
 import { SectionHeader } from "@/components/core/SectionHeader";
 import { Dropzone } from "@/components/features/uploader/Dropzone";
 import { getPageSession } from "@/lib";
 import { isAuthorized } from "@/lib/api/authz";
-import { dataConnectionsTable, productsTable } from "@/lib/clients/database";
+import { dataConnectionsTable } from "@/lib/clients/database";
 import { productUrl } from "@/lib/urls";
 import { Actions } from "@/types/shared";
-import { Box, Callout, Card, Flex } from "@radix-ui/themes";
+import { Box, Callout, Card, Flex, Grid } from "@radix-ui/themes";
 import { ExclamationTriangleIcon } from "@radix-ui/react-icons";
 import { getPendingInvitation } from "@/lib/actions/memberships";
 import { ProductSchemaMetadata } from "@/components/features/products/ProductSchemaMetadata";
@@ -28,6 +36,7 @@ import { getAuthorizedProduct } from "./data";
 interface ProductLayoutProps {
   children: React.ReactNode;
   readme: React.ReactNode;
+  preview: React.ReactNode;
   params: Promise<{ account_id: string; product_id: string; path?: string[] }>;
 }
 
@@ -35,6 +44,7 @@ export default async function ProductLayout({
   params,
   children,
   readme,
+  preview,
 }: ProductLayoutProps) {
   // Fetch + authorize in one place. Throws a 404 for missing products or
   // unauthorized viewers. The session is also needed below for the write check.
@@ -53,6 +63,14 @@ export default async function ProductLayout({
     !!dataConnection &&
     !dataConnection.read_only &&
     isAuthorized(session, product, Actions.WriteRepositoryData);
+
+  // Same gate as the Edit button and the /-/analytics route: the analytics
+  // tab and "view all" link only exist for people who run the product.
+  const canViewAnalytics = isAuthorized(
+    session,
+    product,
+    Actions.PutRepository,
+  );
 
   // Check for pending invitation
   const pendingInvitation = await getPendingInvitation(account_id, product_id);
@@ -85,43 +103,83 @@ export default async function ProductLayout({
         />
       )}
 
-      <Box mt="4">
-        <ProductHeader product={product} />
-      </Box>
-      <Box mt="4">
-        <Dropzone product={product} prefix={prefix}>
-          <Card>
-            <SectionHeader
-              title="Contents"
-              rightButton={
-                canWriteData && (
-                  <FetchCredentialsButton
-                    scope={{ accountId: account_id, productId: product_id }}
-                    prefix={prefix}
-                  />
-                )
-              }
-            >
-              <Box
-                pb="3"
-                mb="3"
-                style={{
-                  borderBottom: "1px solid var(--gray-5)",
-                }}
-              >
-                <Flex direction="row" gap="2" align="center" justify="between">
-                  <BreadcrumbNav
-                    path={path?.map((p) => decodeURIComponent(p)) || []}
-                    baseUrl={productUrl(account_id, product_id)}
-                  />
-                </Flex>
-              </Box>
-            </SectionHeader>
-            {children}
-          </Card>
-        </Dropzone>
-      </Box>
+      {/* Tab strip only at the product root, for people who can manage it */}
+      {canViewAnalytics && !prefix && (
+        <Box mt="4">
+          <ProductTabs
+            accountId={account_id}
+            productId={product_id}
+            active="product"
+          />
+        </Box>
+      )}
 
+      {/* Two columns: summary + contents (+ readme) on the left; details
+          and analytics stacked on the right. */}
+      <Grid mt="4" columns={{ initial: "1", md: "3" }} gap={{ initial: "4", md: "6" }}>
+        <Flex
+          direction="column"
+          gap="4"
+          className="product-summary"
+          style={{ gridColumn: "span 2" }}
+        >
+          {/* Mobile edge padding applies to the summary text only — cards
+              stay full-bleed like they were before the two-column rework */}
+          <Box px={{ initial: "4", md: "0" }}>
+            <ProductSummaryCard product={product} />
+          </Box>
+          <Dropzone product={product} prefix={prefix}>
+            <Card>
+              <SectionHeader
+                title="Contents"
+                rightButton={
+                  canWriteData && (
+                    <FetchCredentialsButton
+                      scope={{ accountId: account_id, productId: product_id }}
+                      prefix={prefix}
+                    />
+                  )
+                }
+              >
+                <Box
+                  pb="3"
+                  mb="3"
+                  style={{
+                    borderBottom: "1px solid var(--gray-5)",
+                  }}
+                >
+                  <Flex direction="row" gap="2" align="center" justify="between">
+                    <BreadcrumbNav
+                      path={path?.map((p) => decodeURIComponent(p)) || []}
+                      baseUrl={productUrl(account_id, product_id)}
+                    />
+                  </Flex>
+                </Box>
+              </SectionHeader>
+              {children}
+            </Card>
+          </Dropzone>
+        </Flex>
+
+        <Flex width="100%" className="product-meta" direction="column" gap="4">
+          <ProductMetaCard product={product} />
+          {/* Public downloads summary, the same for every viewer (managers
+              reach /-/analytics via the ANALYTICS tab). Streams in after
+              the page shell; hidden when analytics is off. The skeleton
+              reserves the card's space so warm-cache data fills in instead
+              of reflowing the column. */}
+          <Suspense
+            fallback={isAnalyticsConfigured() ? <UsageCardSkeleton /> : null}
+          >
+            <UsageCard accountId={account_id} productId={product_id} />
+          </Suspense>
+        </Flex>
+      </Grid>
+
+      {/* Full-width rows below both columns: the object preview (file
+          views) and the README/viewer. Each slot renders its own Card with
+          mt, or null when it doesn't apply. */}
+      {preview}
       {readme}
     </>
   );

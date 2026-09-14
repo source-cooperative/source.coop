@@ -8,8 +8,10 @@ import type {
 } from "@/types";
 import { DateText } from "@/components/display";
 import { ChecksumVerifier } from "../ChecksumVerifier";
-import { MonoText, CopyToClipboard } from "@/components/core";
-import { fileSourceUrl, formatBytes } from "@/lib";
+import { MonoText } from "@/components/core/MonoText";
+import { CopyToClipboard } from "@/components/core/CopyToClipboard";
+import { fileSourceUrl } from "@/lib/urls";
+import { formatBytes } from "@/lib/format";
 
 interface ObjectSummaryProps {
   product: Product;
@@ -28,7 +30,7 @@ export function ObjectSummary({
   const details = connectionDetails?.dataConnection.details;
   const prefix = connectionDetails?.primaryMirror.prefix;
   const cloudUri =
-    details?.provider === "az"
+    details?.provider === "azure"
       ? `https://${details.account_name}.blob.core.windows.net/${details.container_name}/${prefix}${objectInfo.path}`
       : details?.provider === "s3"
       ? `s3://${details.bucket}/${prefix}${objectInfo.path}`

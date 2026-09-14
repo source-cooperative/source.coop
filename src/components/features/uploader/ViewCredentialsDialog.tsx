@@ -1,6 +1,6 @@
 "use client";
 
-import { TemporaryCredentials } from "@/lib";
+import type { TemporaryCredentials } from "@/lib/actions/credentials";
 import {
   Dialog,
   Button,
@@ -17,7 +17,7 @@ import {
 } from "@radix-ui/themes";
 import { CopyIcon, CheckIcon, InfoCircledIcon } from "@radix-ui/react-icons";
 import React, { useState } from "react";
-import { MonoText } from "@/components/core";
+import { MonoText } from "@/components/core/MonoText";
 
 interface ViewCredentialsDialogProps {
   credentials: TemporaryCredentials;
