@@ -13,13 +13,14 @@ const customJestConfig = {
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/src/$1",
     "^sinon$": "sinon/pkg/sinon.js",
+    "^sb-original/image-context$": "<rootDir>/__mocks__/sb-original-image-context.ts",
   },
   testMatch: ["**/*.test.ts?(x)", "**/__tests__/**/*.ts?(x)"],
   transform: {
     "^.+\\.(js|jsx|ts|tsx|mjs)$": ["babel-jest", { presets: ["next/babel"] }],
   },
   transformIgnorePatterns: [
-    "/node_modules/(?!(react-markdown|bright|vfile|vfile-message|unist-.*|unified|bail|is-plain-obj|trough|remark-.*|mdast-util-.*|micromark.*|decode-named-character-reference|character-entities|property-information|hast-util-whitespace|space-separated-tokens|comma-separated-tokens|pretty-bytes|aws-sdk-client-mock|sinon|jose)/)",
+    "/node_modules/(?!(@storybook/[^/]+|storybook|react-markdown|bright|vfile|vfile-message|unist-.*|unified|bail|is-plain-obj|trough|remark-.*|mdast-util-.*|micromark.*|decode-named-character-reference|character-entities|property-information|hast-util-whitespace|space-separated-tokens|comma-separated-tokens|pretty-bytes|aws-sdk-client-mock|sinon|jose)/)",
   ],
   collectCoverageFrom: [
     "src/**/*.{js,jsx,ts,tsx}",
@@ -37,5 +38,18 @@ const customJestConfig = {
   },
 };
 
-// createJestConfig is exported this way to ensure that next/jest can load the Next.js config which is async
-module.exports = createJestConfig(customJestConfig);
+// createJestConfig is exported this way to ensure that next/jest can load the Next.js config which is async.
+// Resolved rather than exported directly because next/jest prepends its own
+// node_modules ignore, and transformIgnorePatterns are OR'd: its pattern ignores
+// everything under node_modules whatever our allowlist says, so an ESM-only
+// dependency (@storybook/nextjs-vite, reached by the story smoke test) never
+// gets transformed. Ours is the list that governs; the CSS-module pattern is
+// next/jest's and has to survive.
+module.exports = async () => {
+  const config = await createJestConfig(customJestConfig)();
+  config.transformIgnorePatterns = [
+    ...customJestConfig.transformIgnorePatterns,
+    "^.+\\.module\\.(css|sass|scss)$",
+  ];
+  return config;
+};
