@@ -11,7 +11,7 @@ import {
 } from "@/lib";
 import { DropdownSection, DropdownSubmenu } from "./DropdownSection";
 import { logout } from "./logout";
-import { isAdmin, isAuthorized } from "@/lib/api/authz";
+import { canCreateProductForAccount, isAdmin, isAuthorized } from "@/lib/api/authz";
 import { ADMIN_TOOLS } from "@/components/features/admin/tools";
 import { Account, Actions, UserSession } from "@/types";
 import { ProfileAvatar } from "@/components/features/profiles/ProfileAvatar";
@@ -67,7 +67,6 @@ export function AccountDropdown({
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const hasInvitations = pendingInvitations.length > 0;
-  const canCreateProduct = isAuthorized(session, "*", Actions.CreateRepository);
   const canCreateOrg = isAuthorized(session, "*", Actions.CreateAccount);
 
   return (
@@ -106,69 +105,72 @@ export function AccountDropdown({
       <DropdownMenu.Content>
         {/* One submenu per account (you + your orgs): an avatar-labelled trigger
             linking to the account page, then that account's products. */}
-        {accounts.map(({ account, isSelf, products }) => (
-          <DropdownSubmenu
-            key={account.account_id}
-            label={
-              <Flex align="center" gap="2">
-                <ProfileAvatar account={account} size="1" />
-                <Text style={entityNameStyle}>{account.name}</Text>
-                {isSelf && (
-                  <Text size="1" color="gray">
-                    you
-                  </Text>
-                )}
-              </Flex>
-            }
-            items={[
-              {
-                href: accountUrl(account.account_id),
-                children: isSelf ? "View profile" : "View organization",
-              },
-            ]}
-            actionsLabel="Products"
-            actions={[
-              ...(products.length > 0
-                ? products.slice(0, 20).map((product) => ({
-                    href: productUrl(account.account_id, product.product_id),
-                    children: (
-                      <Text
-                        className={styles.productName}
-                        style={entityNameStyle}
-                        weight="medium"
-                      >
-                        {product.title}
-                      </Text>
-                    ),
-                  }))
-                : [
-                    {
-                      children: "No products yet",
-                      color: "gray" as const,
-                      disabled: true,
-                    },
-                  ]),
-              // Create a product for this account, at the bottom of its list,
-              // set off from the products above by a divider.
-              {
-                separator: true,
-                href: canCreateProduct
-                  ? newProductUrl(account.account_id)
-                  : undefined,
-                disabled: !canCreateProduct,
-                tooltip: canCreateProduct
-                  ? undefined
-                  : "You don't have permission to create products",
-                children: (
-                  <>
-                    <PlusIcon />
-                    New product
-                  </>
-                ),
-              },
-            ]}
-          />
-        ))}
+        {accounts.map(({ account, isSelf, products }) => {
+          const canCreateProduct = canCreateProductForAccount(session, account);
+          return (
+            <DropdownSubmenu
+              key={account.account_id}
+              label={
+                <Flex align="center" gap="2">
+                  <ProfileAvatar account={account} size="1" />
+                  <Text style={entityNameStyle}>{account.name}</Text>
+                  {isSelf && (
+                    <Text size="1" color="gray">
+                      you
+                    </Text>
+                  )}
+                </Flex>
+              }
+              items={[
+                {
+                  href: accountUrl(account.account_id),
+                  children: isSelf ? "View profile" : "View organization",
+                },
+              ]}
+              actionsLabel="Products"
+              actions={[
+                ...(products.length > 0
+                  ? products.slice(0, 20).map((product) => ({
+                      href: productUrl(account.account_id, product.product_id),
+                      children: (
+                        <Text
+                          className={styles.productName}
+                          style={entityNameStyle}
+                          weight="medium"
+                        >
+                          {product.title}
+                        </Text>
+                      ),
+                    }))
+                  : [
+                      {
+                        children: "No products yet",
+                        color: "gray" as const,
+                        disabled: true,
+                      },
+                    ]),
+                // Create a product for this account, at the bottom of its list,
+                // set off from the products above by a divider.
+                {
+                  separator: true,
+                  href: canCreateProduct
+                    ? newProductUrl(account.account_id)
+                    : undefined,
+                  disabled: !canCreateProduct,
+                  tooltip: canCreateProduct
+                    ? undefined
+                    : "You don't have permission to create products",
+                  children: (
+                    <>
+                      <PlusIcon />
+                      New product
+                    </>
+                  ),
+                },
+              ]}
+            />
+          );
+        })}
 
         <DropdownMenu.Separator />
         {/* New organization, under the list of accounts you belong to.
