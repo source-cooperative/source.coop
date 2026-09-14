@@ -82,10 +82,12 @@ reviewer looking for code that isn't there. Two parts rot first — a Testing
 section asserts checks that may predate the current commits, and a title has to
 keep earning its Conventional Commits type once the work changes shape.
 
-Write PR and issue bodies as unwrapped paragraphs — one long line per paragraph,
-no hard line breaks. GitHub wraps them to the reader's window; hard breaks
-inserted at some other window's width wrap twice and read ragged. (This file and
-the rest of the repo's Markdown still wrap at 80.)
+Write PR bodies, issue bodies and commit message bodies as unwrapped paragraphs
+— one long line per paragraph, no hard line breaks. GitHub wraps them to the
+reader's window; hard breaks inserted at some other window's width wrap twice and
+read ragged. The commit subject line is the exception and stays short, because
+nothing wraps it. (This file and the rest of the repo's Markdown still wrap at
+80.)
 
 ## Comments
 
