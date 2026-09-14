@@ -149,6 +149,80 @@ describe("S3StorageClient", () => {
     });
   });
 
+  test("getObjectInfo falls back to a range GET when HEAD omits Content-Length", async () => {
+    mockSend
+      .mockResolvedValueOnce({
+        // HEAD: no ContentLength (proxy stripped it)
+        ContentType: "text/html",
+        ETag: '"abc"',
+        LastModified: new Date("2026-04-10"),
+        Metadata: {},
+      })
+      .mockResolvedValueOnce({
+        // Range GET: Content-Range tells us the real size
+        ContentRange: "bytes 0-0/5032",
+        Body: Readable.from([Buffer.from("x")]),
+      });
+    const client = new S3StorageClient({ endpoint: "https://data.source.coop" });
+    const result = await client.getObjectInfo({
+      account_id: "acct",
+      product_id: "prod",
+      object_path: "dir/index.html",
+    });
+
+    const calls = mockSend.mock.calls.map((c) => c[0]);
+    expect(calls[0]).toBeInstanceOf(HeadObjectCommand);
+    expect(calls[1]).toBeInstanceOf(GetObjectCommand);
+    expect(calls[1].input).toMatchObject({
+      Bucket: "acct",
+      Key: "prod/dir/index.html",
+      Range: "bytes=0-0",
+    });
+    expect(result?.size).toBe(5032);
+  });
+
+  test("getObjectInfo falls back to a range GET when ContentLength is 0", async () => {
+    mockSend
+      .mockResolvedValueOnce({
+        ContentLength: 0,
+        ContentType: "text/html",
+        ETag: '"abc"',
+        LastModified: new Date("2026-04-10"),
+        Metadata: {},
+      })
+      .mockResolvedValueOnce({
+        ContentRange: "bytes 0-0/5032",
+        Body: Readable.from([Buffer.from("x")]),
+      });
+    const client = new S3StorageClient({ endpoint: "https://data.source.coop" });
+    const result = await client.getObjectInfo({
+      account_id: "acct",
+      product_id: "prod",
+      object_path: "dir/index.html",
+    });
+
+    expect(result?.size).toBe(5032);
+  });
+
+  test("getObjectInfo keeps size as 0 when range GET also fails", async () => {
+    mockSend
+      .mockResolvedValueOnce({
+        ContentType: "text/html",
+        ETag: '"abc"',
+        LastModified: new Date("2026-04-10"),
+        Metadata: {},
+      })
+      .mockRejectedValueOnce(new Error("range not supported"));
+    const client = new S3StorageClient({ endpoint: "https://data.source.coop" });
+    const result = await client.getObjectInfo({
+      account_id: "acct",
+      product_id: "prod",
+      object_path: "dir/index.html",
+    });
+
+    expect(result?.size).toBe(0);
+  });
+
   test("getObjectInfo returns null on a NotFound S3ServiceException", async () => {
     const actual = jest.requireActual("@aws-sdk/client-s3");
     const notFound = new actual.S3ServiceException({
