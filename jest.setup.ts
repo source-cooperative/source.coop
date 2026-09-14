@@ -40,8 +40,15 @@ jest.mock("@/lib/config", () => ({
       stage: "test",
     },
     auth: {
-      api: { backendUrl: "http://localhost:4000" },
+      api: {
+        backendUrl: "http://localhost:4000",
+        frontendUrl: "http://localhost:4000",
+      },
       accessToken: "test-token",
+      routes: {
+        login: "http://localhost:4000/self-service/login/browser",
+        logout: "http://localhost:4000/self-service/logout/browser",
+      },
     },
     // 32 zero bytes, base64 — a valid key for the encrypted-cookie helpers.
     proxyCredentialsCookieKey: Buffer.alloc(32).toString("base64"),
