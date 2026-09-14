@@ -57,10 +57,9 @@ export function ConnectionRow({
         marginTop: "-1px",
       }}
     >
-      <Flex align="start" gap="3" px="4" py="3">
+      <Flex align="center" gap="3" px="4" py="3">
         {/* The aside wraps below the name when the two no longer fit side by
-            side; actions stay on the name's line, since a control that moves
-            around is harder to hit than a label that does. */}
+            side. */}
         <Flex
           justify="between"
           align="center"
@@ -94,9 +93,7 @@ export function ConnectionRow({
           {aside && <Box ml="auto">{aside}</Box>}
         </Flex>
         {actions && (
-          // Pinned to the name's line rather than the row's centre, so a row
-          // that has wrapped does not leave its control floating mid-height.
-          <Flex align="center" flexShrink="0" style={{ minHeight: "1.5rem" }}>
+          <Flex align="center" flexShrink="0">
             {actions}
           </Flex>
         )}
