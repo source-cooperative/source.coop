@@ -33,7 +33,7 @@ export default async function DataConnectionsPage() {
     <Flex direction="column" gap="4">
       <Flex justify="between" align="center">
         <Heading size="4">Data Connections</Heading>
-        <Button asChild size="2">
+        <Button asChild size="2" highContrast>
           <Link href={adminDataConnectionCreateUrl()}>New Connection</Link>
         </Button>
       </Flex>
