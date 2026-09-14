@@ -2,8 +2,10 @@ name: Deploy Storybook
 
 # Storybook is published at ui.source.coop as a second Vercel project on this
 # same repo. vercel.json disables git deploys for `main` only, so:
-#   - every other branch still auto-deploys as a Vercel preview (PR previews are
-#     free, no workflow needed)
+#   - every other branch still auto-deploys as a Vercel preview, so those need no
+#     workflow — but they are not free: each one spends Build CPU minutes on this
+#     project as well as the app's, which is why scripts/vercel-ignore-build.sh
+#     gates both (see CONTRIBUTING.md, "Skipped builds")
 #   - `main` needs this workflow, exactly as staging-deploy.yaml does for the app
 #
 # The build itself is defined in the Vercel project (Build Command
