@@ -74,7 +74,7 @@ Run tests with `npm test`.
 
 ### UI
 
-[Radix UI](https://www.radix-ui.com/) is the component library. Components are organized into `src/components/core/` (reusable primitives), `src/components/layout/` (page structure), and `src/components/features/` (domain-specific). Forms use `src/components/core/DynamicForm.tsx` with Next.js server actions.
+[Radix UI](https://www.radix-ui.com/) is the component library. Components are organized into `src/components/core/` (reusable primitives), `src/components/display/` (formatting), `src/components/layout/` (page structure), and `src/components/features/` (domain-specific). Forms use `src/components/core/DynamicForm.tsx` with Next.js server actions.
 
 ### Storybook
 

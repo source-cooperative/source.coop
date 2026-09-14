@@ -3,6 +3,20 @@
 Conventions that aren't visible from the code itself. See
 [CONTRIBUTING.md](CONTRIBUTING.md) for architecture and the PR process.
 
+## Local services and checks
+
+`npm run type-check` is the quick way to validate a change — it checks types
+without the dev server's interference, and it is the one to reach for rather
+than `npm run build`, which is for shipping or for debugging the build itself.
+`npm run type-check:watch` leaves it running.
+
+The dev server, DynamoDB and the Ory tunnel belong to whoever is at the
+keyboard, and are usually already up. Don't start or restart them, and don't run
+`npm run init-local` — it reseeds the local database, and the fixtures it lays
+down are not the state someone may be in the middle of debugging. When a local
+lookup comes back empty, the cause is in the code far more often than in the
+data.
+
 ## Storybook
 
 Stories are published at [ui.source.coop](https://ui.source.coop). Run it locally
