@@ -35,7 +35,7 @@ export const AccountTypeSchema = z
   .openapi("AccountType");
 
 // Email interface for managing multiple emails per account
-const AccountEmailSchema = z
+export const AccountEmailSchema = z
   .object({
     address: z.string().email(),
     verified: z.boolean(),
