@@ -314,7 +314,7 @@ function timeFilters(days: UsageWindow, chunk?: number): string[] {
 function usageFrom(
   accountId: string,
   productId: string,
-  objectPath: string | undefined,
+  path: string | undefined,
   days: UsageWindow,
   chunk?: number,
 ): string {
@@ -324,26 +324,37 @@ function usageFrom(
     `blob1 = ${sqlQuote(accountId)}`,
     `blob2 = ${sqlQuote(productId)}`,
   ];
-  if (objectPath !== undefined) {
-    filters.push(`blob3 = ${sqlQuote(truncateToByteLimit(objectPath, 256))}`);
-  }
+  if (path) filters.push(pathFilter(path));
   return `FROM ${CONFIG.analytics.dataset} WHERE ${filters.join(" AND ")}`;
 }
 
 /**
- * Recent usage (USAGE_DAYS) for a product, or a single object when `objectPath` is given.
+ * Match one object or everything beneath a directory, without knowing which
+ * the path is: `docs` covers the object `docs` and `docs/a.tif`, but not the
+ * sibling `docsets.tif` a bare `LIKE 'docs%'` would sweep in. LIKE is in the
+ * AE pattern-matching operators; wildcards in the value are escaped.
+ */
+function pathFilter(path: string): string {
+  const prefix = truncateToByteLimit(path.replace(/\/+$/, ""), 256);
+  const escaped = prefix.replace(/[\\%_]/g, (m) => `\\${m}`);
+  return `(blob3 = ${sqlQuote(prefix)} OR blob3 LIKE ${sqlQuote(`${escaped}/%`)})`;
+}
+
+/**
+ * Recent usage (USAGE_DAYS) for a product, or for one path within it —
+ * an object, or a directory and everything under it.
  * Returns null when analytics is unconfigured or the query fails — callers
  * render nothing rather than breaking the page.
  */
 export async function getUsage(
   accountId: string,
   productId: string,
-  objectPath?: string,
+  path?: string,
   days: UsageWindow = USAGE_DAYS,
 ): Promise<Usage | null> {
   if (!isAnalyticsConfigured()) return null;
 
-  const from = usageFrom(accountId, productId, objectPath, days);
+  const from = usageFrom(accountId, productId, path, days);
 
   try {
     const [seriesRows, windowRows, ipChunks] = await Promise.all([
@@ -363,7 +374,7 @@ export async function getUsage(
       Promise.all(
         Array.from({ length: chunkCount(days) }, (_, chunk) =>
           usageQuery(
-            `SELECT blob8 AS ip, SUM(_sample_interval) AS requests ${usageFrom(accountId, productId, objectPath, days, chunk)} AND blob8 != '' GROUP BY ip`,
+            `SELECT blob8 AS ip, SUM(_sample_interval) AS requests ${usageFrom(accountId, productId, path, days, chunk)} AND blob8 != '' GROUP BY ip`,
           ),
         ),
       ),
@@ -433,7 +444,7 @@ export async function getUsage(
     LOGGER.warn("Analytics usage query failed", {
       operation: "getUsage",
       context: "analytics engine",
-      metadata: { accountId, productId, objectPath, error: String(error) },
+      metadata: { accountId, productId, path, error: String(error) },
     });
     return null;
   }

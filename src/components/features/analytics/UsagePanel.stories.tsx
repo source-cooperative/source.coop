@@ -20,6 +20,10 @@ import { UsagePanel } from "./UsagePanel";
  * have to find such a product to see it: one with no downloads at all, one
  * that got linked from somewhere big on a single day, one serving petabytes.
  * Hovering a bar swaps the stats row to that day — that part is live here.
+ *
+ * The card follows the viewer into the product, so most states also have a
+ * scoped form: given a path, the numbers cover that path and everything
+ * under it, and the path is named above them.
  */
 const meta = {
   component: UsagePanel,
@@ -146,6 +150,29 @@ const week = makeDays(7, (i) => 210 + wobble(i, 3) * 140);
  */
 export const ShortWindow: Story = {
   args: { days: week, totals: totalsOf(week, 19) },
+};
+
+/**
+ * Inside a directory of the product, where the numbers cover that directory
+ * and everything under it rather than the whole product. Without the path
+ * named above them, this card and `Default` are the same three numbers over
+ * the same chart, and a reader has no way to tell which traffic they are
+ * looking at.
+ */
+export const ScopedToPrefix: Story = {
+  args: { ...Default.args, prefix: "sentinel-2/2026/08" },
+};
+
+/**
+ * A path deep enough to outrun the card. It truncates to one line — the full
+ * path stays in the title attribute — because a wrapped path would push the
+ * chart down every time someone navigated somewhere deep.
+ */
+export const ScopedToLongPrefix: Story = {
+  args: {
+    ...Default.args,
+    prefix: "sentinel-2/2026/08/31/T31UDQ/measurements/reflectance-b04.tif",
+  },
 };
 
 /**

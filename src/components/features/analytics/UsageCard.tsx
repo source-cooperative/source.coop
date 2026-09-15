@@ -8,17 +8,25 @@ import { UsagePanel } from "./UsagePanel";
 interface UsageCardProps {
   accountId: string;
   productId: string;
+  /** Path within the product to scope the numbers to; "" is the whole product */
+  prefix?: string;
 }
 
 /**
  * Server component: fetches recent usage and renders the analytics card —
  * the same downloads summary for every viewer (the full analytics page is
- * reached via the manager-only ANALYTICS tab). Renders nothing when
- * analytics is unconfigured or the query fails, so the page never depends
- * on the analytics backend. Render inside <Suspense>.
+ * reached via the manager-only ANALYTICS tab). Follows the viewer into the
+ * product: given a `prefix`, the numbers cover that path and everything
+ * under it. Renders nothing when analytics is unconfigured or the query
+ * fails, so the page never depends on the analytics backend. Render inside
+ * <Suspense>.
  */
-export async function UsageCard({ accountId, productId }: UsageCardProps) {
-  const usage = await getUsage(accountId, productId);
+export async function UsageCard({
+  accountId,
+  productId,
+  prefix,
+}: UsageCardProps) {
+  const usage = await getUsage(accountId, productId, prefix);
   if (!usage) return null;
 
   return (
@@ -32,7 +40,7 @@ export async function UsageCard({ accountId, productId }: UsageCardProps) {
           <MonoLabel help={HELP.window}>{usage.days.length} days</MonoLabel>
         }
       >
-        <UsagePanel days={usage.days} totals={usage.totals} />
+        <UsagePanel days={usage.days} totals={usage.totals} prefix={prefix} />
       </SectionHeader>
     </Card>
   );

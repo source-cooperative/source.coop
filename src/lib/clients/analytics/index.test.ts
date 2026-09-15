@@ -139,12 +139,29 @@ describe("getUsage", () => {
     expect(sql).toContain("blob1 = 'a\\'; DROP--'");
     expect(sql).toContain("blob2 = 'pr\\\\od'");
     expect(sql).toContain("blob3 = 'dir/we\\'ird.txt'");
+    expect(sql).toContain("blob3 LIKE 'dir/we\\'ird.txt/%'");
   });
 
-  it("truncates the object path filter to 256 bytes like the data proxy", async () => {
+  it("truncates the path filter to 256 bytes like the data proxy", async () => {
     // 300 two-byte chars: proxy stores the first 256 bytes = 128 chars.
     await getUsage("acct", "prod", "é".repeat(300));
     expect(sentSql()[0]).toContain(`blob3 = '${"é".repeat(128)}'`);
+  });
+
+  it("scopes to a path and everything under it, not to name-alike siblings", async () => {
+    await getUsage("acct", "prod", "docs/");
+
+    // A trailing slash from the URL must not leak into the pattern, and a
+    // bare LIKE 'docs%' would sweep in the sibling object docsets.tif.
+    expect(sentSql()[0]).toContain("(blob3 = 'docs' OR blob3 LIKE 'docs/%')");
+  });
+
+  it("escapes LIKE wildcards in the path", async () => {
+    await getUsage("acct", "prod", "100%_raw");
+
+    // Backslash-escaped in the SQL literal, so AE reads literal % and _
+    // rather than wildcards.
+    expect(sentSql()[0]).toContain("blob3 LIKE '100\\\\%\\\\_raw/%'");
   });
 
   it("zero-fills the day grid, coerces strings, and buckets user frequency", async () => {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Flex } from "@radix-ui/themes";
+import { Code, Flex, Text, Tooltip } from "@radix-ui/themes";
 import type { UsagePoint, UsageTotals } from "@/lib/clients/analytics";
 import { formatBytes } from "@/lib/format";
 import {
@@ -19,6 +19,8 @@ export { parseActiveIndex } from "./panels";
 interface UsagePanelProps {
   days: UsagePoint[];
   totals: UsageTotals;
+  /** Path the numbers cover; omitted/empty means the whole product */
+  prefix?: string;
 }
 
 /**
@@ -26,13 +28,34 @@ interface UsagePanelProps {
  * data served, countries) over a daily downloads bar chart — hovering a bar
  * shows that day's numbers. Users/audience detail lives on the full
  * analytics page, not in the card.
+ *
+ * With a `prefix`, the numbers cover that path rather than the whole
+ * product, and the path is named above them — the same figures under two
+ * different scopes are otherwise indistinguishable.
  */
-export function UsagePanel({ days, totals }: UsagePanelProps) {
+export function UsagePanel({ days, totals, prefix }: UsagePanelProps) {
   const [hovered, setHovered] = useState<number | null>(null);
   const shown = hovered === null ? totals : days[hovered];
 
   return (
     <>
+      {prefix && (
+        <Tooltip content="These numbers cover this path and everything under it.">
+          {/* A path is one unbreakable token, so a deep one truncates to the
+              line, with the full value in the title, as a DOI does. The
+              truncation lives on the block Text: on the inline Code it would
+              have no width to work against, and the path would simply run
+              off the side of the card. No trailing slash is added — the card
+              stays mounted on object pages, so the path is as often a file
+              as a directory. */}
+          <Text as="div" size="1" mt="2" truncate title={prefix}>
+            <Code color="gray" variant="ghost">
+              {prefix}
+            </Code>
+          </Text>
+        </Tooltip>
+      )}
+
       <StatRow mt="3" pb="3" style={{ borderBottom: "1px solid var(--gray-4)" }}>
         <Stat
           label="Downloads"
