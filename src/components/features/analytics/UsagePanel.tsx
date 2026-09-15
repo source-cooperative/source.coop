@@ -36,21 +36,22 @@ interface UsagePanelProps {
 export function UsagePanel({ days, totals, prefix }: UsagePanelProps) {
   const [hovered, setHovered] = useState<number | null>(null);
   const shown = hovered === null ? totals : days[hovered];
+  // One trailing slash, however the URL spelled the path: `docs/` reads as
+  // everything under docs, where a bare `docs` reads as one object.
+  const scope = prefix && `${prefix.replace(/\/+$/, "")}/`;
 
   return (
     <>
-      {prefix && (
+      {scope && (
         <Tooltip content="These numbers cover this path and everything under it.">
           {/* A path is one unbreakable token, so a deep one truncates to the
               line, with the full value in the title, as a DOI does. The
               truncation lives on the block Text: on the inline Code it would
               have no width to work against, and the path would simply run
-              off the side of the card. No trailing slash is added — the card
-              stays mounted on object pages, so the path is as often a file
-              as a directory. */}
-          <Text as="div" size="1" mt="2" truncate title={prefix}>
+              off the side of the card. */}
+          <Text as="div" size="1" mt="2" truncate title={scope}>
             <Code color="gray" variant="ghost">
-              {prefix}
+              {scope}
             </Code>
           </Text>
         </Tooltip>

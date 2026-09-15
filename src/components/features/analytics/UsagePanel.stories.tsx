@@ -21,9 +21,10 @@ import { UsagePanel } from "./UsagePanel";
  * that got linked from somewhere big on a single day, one serving petabytes.
  * Hovering a bar swaps the stats row to that day — that part is live here.
  *
- * The card follows the viewer into the product, so most states also have a
- * scoped form: given a path, the numbers cover that path and everything
- * under it, and the path is named above them.
+ * The card follows the viewer into the product, so there are scoped states
+ * too: given a path, the numbers cover that path and everything under it,
+ * and the path is named above them, slash-terminated so it reads as a
+ * prefix rather than as one object.
  */
 const meta = {
   component: UsagePanel,
@@ -158,6 +159,10 @@ export const ShortWindow: Story = {
  * named above them, this card and `Default` are the same three numbers over
  * the same chart, and a reader has no way to tell which traffic they are
  * looking at.
+ *
+ * The path is shown with a trailing slash however the URL spelled it — the
+ * arg here carries none — because `sentinel-2/2026/08` alone reads as one
+ * object rather than as everything beneath a directory.
  */
 export const ScopedToPrefix: Story = {
   args: { ...Default.args, prefix: "sentinel-2/2026/08" },
@@ -171,7 +176,7 @@ export const ScopedToPrefix: Story = {
 export const ScopedToLongPrefix: Story = {
   args: {
     ...Default.args,
-    prefix: "sentinel-2/2026/08/31/T31UDQ/measurements/reflectance-b04.tif",
+    prefix: "sentinel-2/2026/08/31/T31UDQ/measurements/reflectance/tiled",
   },
 };
 
