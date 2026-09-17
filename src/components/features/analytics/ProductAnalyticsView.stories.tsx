@@ -127,6 +127,15 @@ export const BreakdownsUnavailable: Story = {
 };
 
 /**
+ * The audience query failed while the day series succeeded — `getUsageUsers`
+ * is a separate fetch from `getUsage`, so either can come back `null` alone.
+ * The USERS tab says so in a line; the DOWNLOADS tab is untouched.
+ */
+export const UsersUnavailable: Story = {
+  args: { ...base, users: null },
+};
+
+/**
  * Downloads happened, but none of them resolved to a file — the country
  * ranking is populated and the table is not. The two panels come from one
  * query but render independently, so it is worth knowing the layout holds.

@@ -52,6 +52,10 @@ export default async function ProductLayout({
   const product = await getAuthorizedProduct(account_id, product_id);
   const session = await getPageSession();
   const prefix = path ? path.join("/") : "";
+  // The analytics dataset stores the decoded object key (the data proxy
+  // decodes the path before logging it), so the card's scope is the decoded
+  // path — the same one the directory listing lists.
+  const analyticsPath = path?.map((p) => decodeURIComponent(p)).join("/") ?? "";
 
   // Hide data-editing controls when the backing data connection is read-only
   const primaryMirror =
@@ -164,14 +168,19 @@ export default async function ProductLayout({
         <Flex width="100%" className="product-meta" direction="column" gap="4">
           <ProductMetaCard product={product} />
           {/* Public downloads summary, the same for every viewer (managers
-              reach /-/analytics via the ANALYTICS tab). Streams in after
+              reach /-/analytics via the ANALYTICS tab), scoped to wherever
+              the viewer is in the product. Streams in after
               the page shell; hidden when analytics is off. The skeleton
               reserves the card's space so warm-cache data fills in instead
               of reflowing the column. */}
           <Suspense
             fallback={isAnalyticsConfigured() ? <UsageCardSkeleton /> : null}
           >
-            <UsageCard accountId={account_id} productId={product_id} />
+            <UsageCard
+              accountId={account_id}
+              productId={product_id}
+              prefix={analyticsPath}
+            />
           </Suspense>
         </Flex>
       </Grid>

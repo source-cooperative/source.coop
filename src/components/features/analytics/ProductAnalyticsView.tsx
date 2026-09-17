@@ -28,7 +28,8 @@ interface ProductAnalyticsViewProps {
   productId: string;
   days: UsagePoint[];
   totals: UsageTotals;
-  users: UsageUsers;
+  /** null when the audience query failed — the rest of the page still stands */
+  users: UsageUsers | null;
   breakdowns: ProductBreakdowns | null;
 }
 
@@ -222,7 +223,13 @@ export function ProductAnalyticsView({
       </Tabs.Content>
 
       <Tabs.Content value="users">
-        <UsersContent users={users} />
+        {users ? (
+          <UsersContent users={users} />
+        ) : (
+          <Text size="2" color="gray">
+            Audience data is unavailable right now. Try again in a few minutes.
+          </Text>
+        )}
       </Tabs.Content>
     </Tabs.Root>
   );

@@ -87,7 +87,6 @@ export interface Usage {
   /** One point per UTC day, oldest first, zero-filled — always USAGE_DAYS long */
   days: UsagePoint[];
   totals: UsageTotals;
-  users: UsageUsers;
 }
 
 const DAY_MS = 86_400_000;
@@ -223,7 +222,34 @@ function parseDateTime(v: unknown): string {
 
 type Row = Record<string, unknown>;
 
+/**
+ * When the SQL API last rate-limited us, plus its cooldown.
+ *
+ * Analytics Engine documents no query rate limit — its limits page covers
+ * writes and retention only — but these queries go to api.cloudflare.com,
+ * and the API does 429 us in practice. Whatever the applicable budget is,
+ * failures aren't cached (unstable_cache stores results, not throws), so
+ * without a cooldown every render of every page keeps calling an API that is
+ * already refusing, which at best wastes the recovery window and at worst
+ * holds a limiter open. So once we see a 429, stop asking for a while.
+ *
+ * ponytail: per server instance, not shared — enough to stop one instance
+ * from hammering; a fleet-wide breaker would need a store this module has no
+ * reason to reach for.
+ */
+let rateLimitedUntil = 0;
+/** What the 429 that opened the current cooldown said, for the log line. */
+let rateLimitReason = "";
+
 async function runQuery(sql: string): Promise<Row[]> {
+  const cooldownLeft = rateLimitedUntil - Date.now();
+  if (cooldownLeft > 0) {
+    // Name the 429 that caused this and when it lifts: a cooldown line on its
+    // own says only that we are waiting, which is the question, not the answer.
+    throw new Error(
+      `Analytics Engine rate limited (${rateLimitReason}); ${Math.ceil(cooldownLeft / 1000)}s of cooldown left`,
+    );
+  }
   const { accountId, apiToken } = CONFIG.analytics;
   // withTimeout: a hung Analytics Engine API must not hold the page's
   // Suspense boundary (and the serverless invocation) open indefinitely.
@@ -243,6 +269,18 @@ async function runQuery(sql: string): Promise<Row[]> {
     "Analytics Engine query timed out",
   );
   if (!res.ok) {
+    if (res.status === 429) {
+      // Retry-After when the API sends one; a minute is the fallback, short
+      // enough that a one-off 429 doesn't blank the card for the full block.
+      const header = res.headers.get("retry-after");
+      const retryAfter = Number(header) || 60;
+      rateLimitedUntil = Date.now() + retryAfter * 1000;
+      rateLimitReason = `429 at ${new Date().toISOString()}, retry-after=${header ?? "unset"}`;
+      // The body of a 429 is empty, so the headers are the only evidence of
+      // which limiter we hit and for how long — log them or the next
+      // occurrence is as much of a guess as this one was.
+      throw new Error(`Analytics Engine query rate limited (${rateLimitReason})`);
+    }
     throw new Error(
       `Analytics Engine query failed (${res.status}): ${(await res.text()).slice(0, 500)}`,
     );
@@ -314,7 +352,7 @@ function timeFilters(days: UsageWindow, chunk?: number): string[] {
 function usageFrom(
   accountId: string,
   productId: string,
-  objectPath: string | undefined,
+  path: string | undefined,
   days: UsageWindow,
   chunk?: number,
 ): string {
@@ -324,49 +362,45 @@ function usageFrom(
     `blob1 = ${sqlQuote(accountId)}`,
     `blob2 = ${sqlQuote(productId)}`,
   ];
-  if (objectPath !== undefined) {
-    filters.push(`blob3 = ${sqlQuote(truncateToByteLimit(objectPath, 256))}`);
-  }
+  if (path) filters.push(pathFilter(path));
   return `FROM ${CONFIG.analytics.dataset} WHERE ${filters.join(" AND ")}`;
 }
 
 /**
- * Recent usage (USAGE_DAYS) for a product, or a single object when `objectPath` is given.
+ * Match one object or everything beneath a directory, without knowing which
+ * the path is: `docs` covers the object `docs` and `docs/a.tif`, but not the
+ * sibling `docsets.tif` a bare `LIKE 'docs%'` would sweep in. LIKE is in the
+ * AE pattern-matching operators; wildcards in the value are escaped.
+ */
+function pathFilter(path: string): string {
+  const prefix = truncateToByteLimit(path.replace(/\/+$/, ""), 256);
+  const escaped = prefix.replace(/[\\%_]/g, (m) => `\\${m}`);
+  return `(blob3 = ${sqlQuote(prefix)} OR blob3 LIKE ${sqlQuote(`${escaped}/%`)})`;
+}
+
+/**
+ * Recent usage (USAGE_DAYS) for a product, or for one path within it —
+ * an object, or a directory and everything under it.
  * Returns null when analytics is unconfigured or the query fails — callers
  * render nothing rather than breaking the page.
  */
 export async function getUsage(
   accountId: string,
   productId: string,
-  objectPath?: string,
+  path?: string,
   days: UsageWindow = USAGE_DAYS,
 ): Promise<Usage | null> {
   if (!isAnalyticsConfigured()) return null;
 
-  const from = usageFrom(accountId, productId, objectPath, days);
+  const from = usageFrom(accountId, productId, path, days);
 
   try {
-    const [seriesRows, windowRows, ipChunks] = await Promise.all([
+    const [seriesRows, windowRows] = await Promise.all([
       usageQuery(
         `SELECT toStartOfDay(timestamp) AS day, ${USAGE_AGGREGATES} ${from} GROUP BY day ORDER BY day`,
       ),
       // Separate query: window-wide DISTINCT can't be summed from days.
-      usageQuery(
-        `SELECT COUNT(DISTINCT blob6) AS countries, sumIf(_sample_interval, blob5 = '') AS anon_requests, sumIf(_sample_interval, blob5 != '') AS registered_requests ${from}`,
-      ),
-      // Sample-weighted request count per unique client IP hash, for the
-      // unique-IP headline and the download-frequency histogram (blob8 is
-      // empty when the IP is unknown). Sliced into weeks and unioned below:
-      // Analytics Engine samples a whole-window GROUP BY hard enough that it
-      // returns FEWER distinct IPs for a wider window, and distinct counts —
-      // unlike the sample-weighted SUMs — cannot be corrected after the fact.
-      Promise.all(
-        Array.from({ length: chunkCount(days) }, (_, chunk) =>
-          usageQuery(
-            `SELECT blob8 AS ip, SUM(_sample_interval) AS requests ${usageFrom(accountId, productId, objectPath, days, chunk)} AND blob8 != '' GROUP BY ip`,
-          ),
-        ),
-      ),
+      usageQuery(`SELECT COUNT(DISTINCT blob6) AS countries ${from}`),
     ]);
 
     const byDay = new Map(
@@ -383,9 +417,9 @@ export async function getUsage(
 
     // Additive totals come from the grid days, so bars and headline always
     // agree; the extra (off-grid) partial day the SQL window touches is
-    // dropped with them. The uniques (`countries` here, the users counts
-    // below) can't be re-summed from days, so they keep that sliver —
-    // they're estimates over a marginally wider span.
+    // dropped with them. `countries` is a distinct count and can't be
+    // re-summed from days, so it keeps that sliver — an estimate over a
+    // marginally wider span.
     const totals = points.reduce(
       (acc, day) => ({
         bytes: acc.bytes + day.bytes,
@@ -394,6 +428,58 @@ export async function getUsage(
       }),
       { bytes: 0, requests: 0, countries: num(windowRows[0]?.countries) },
     );
+
+    return { days: points, totals };
+  } catch (error) {
+    LOGGER.warn("Analytics usage query failed", {
+      operation: "getUsage",
+      context: "analytics engine",
+      metadata: { accountId, productId, path, error: String(error) },
+    });
+    return null;
+  }
+}
+
+/**
+ * Audience stats for the product analytics page: who downloaded, how often,
+ * signed in or not.
+ *
+ * Separate from getUsage because it costs one query per CHUNK_DAYS slice —
+ * five for a 28-day window against getUsage's two — and nothing on the
+ * product page shows any of it. The card renders on every directory a
+ * visitor opens, and each prefix is its own cache key, so bundling these in
+ * spends the SQL API's rate limit (whatever it is — undocumented, but it
+ * 429s) on numbers only the manager-only page reads. Product-wide only: the
+ * page has no prefix control.
+ */
+export async function getUsageUsers(
+  accountId: string,
+  productId: string,
+  days: UsageWindow = USAGE_DAYS,
+): Promise<UsageUsers | null> {
+  if (!isAnalyticsConfigured()) return null;
+
+  const from = usageFrom(accountId, productId, undefined, days);
+
+  try {
+    const [windowRows, ipChunks] = await Promise.all([
+      usageQuery(
+        `SELECT sumIf(_sample_interval, blob5 = '') AS anon_requests, sumIf(_sample_interval, blob5 != '') AS registered_requests ${from}`,
+      ),
+      // Sample-weighted request count per unique client IP hash, for the
+      // unique-IP headline and the download-frequency histogram (blob8 is
+      // empty when the IP is unknown). Sliced into weeks and unioned below:
+      // Analytics Engine samples a whole-window GROUP BY hard enough that it
+      // returns FEWER distinct IPs for a wider window, and distinct counts —
+      // unlike the sample-weighted SUMs — cannot be corrected after the fact.
+      Promise.all(
+        Array.from({ length: chunkCount(days) }, (_, chunk) =>
+          usageQuery(
+            `SELECT blob8 AS ip, SUM(_sample_interval) AS requests ${usageFrom(accountId, productId, undefined, days, chunk)} AND blob8 != '' GROUP BY ip`,
+          ),
+        ),
+      ),
+    ]);
 
     // Union the slices: an IP active in several weeks is one IP, with its
     // requests summed. The hashes are stable, so this is a real distinct
@@ -419,21 +505,17 @@ export async function getUsage(
     }
 
     return {
-      days: points,
-      totals,
-      users: {
-        // Same population as the histogram, so headline and bars agree.
-        uniqueIps: requestsByIp.size,
-        registered: num(windowRows[0]?.registered_requests),
-        anonRequests: num(windowRows[0]?.anon_requests),
-        distribution,
-      },
+      // Same population as the histogram, so headline and bars agree.
+      uniqueIps: requestsByIp.size,
+      registered: num(windowRows[0]?.registered_requests),
+      anonRequests: num(windowRows[0]?.anon_requests),
+      distribution,
     };
   } catch (error) {
-    LOGGER.warn("Analytics usage query failed", {
-      operation: "getUsage",
+    LOGGER.warn("Analytics users query failed", {
+      operation: "getUsageUsers",
       context: "analytics engine",
-      metadata: { accountId, productId, objectPath, error: String(error) },
+      metadata: { accountId, productId, days, error: String(error) },
     });
     return null;
   }

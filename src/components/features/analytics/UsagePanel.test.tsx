@@ -35,6 +35,22 @@ it("shows window downloads, data served, and countries", () => {
   expect(screen.getByText("30-day downloads")).toBeInTheDocument();
 });
 
+it("names the scope as a prefix, whatever the URL's trailing slash", () => {
+  // `docs/2026` reads as one object; the slash is what makes it a prefix.
+  for (const prefix of ["docs/2026", "docs/2026/"]) {
+    const { unmount } = renderPanel(
+      <UsagePanel days={days} totals={totals} prefix={prefix} />,
+    );
+    expect(screen.getByText("docs/2026/")).toBeInTheDocument();
+    unmount();
+  }
+});
+
+it("names no scope on the product root", () => {
+  renderPanel(<UsagePanel days={days} totals={totals} prefix="" />);
+  expect(screen.queryByText("/")).toBeNull();
+});
+
 it("renders no tab selector or users content in the card", () => {
   renderPanel(<UsagePanel days={days} totals={totals} />);
   expect(screen.queryByRole("tab")).toBeNull();
