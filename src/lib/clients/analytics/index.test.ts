@@ -5,6 +5,7 @@
  */
 import {
   getUsage,
+  getUsageUsers,
   getAdminBreakdown,
   getProductBreakdowns,
   USAGE_DAYS,
@@ -66,17 +67,19 @@ describe("getUsage", () => {
   it("queries with sampling weights and served-bytes filters", async () => {
     await getUsage("acct", "prod");
 
-    const [seriesSql, windowSql, ...ipSqls] = sentSql();
+    // Two queries, whatever the window: the card renders on every directory a
+    // visitor opens, and each prefix is its own cache key, so the per-IP
+    // slices (five more queries) live in getUsageUsers instead.
+    const [seriesSql, windowSql] = sentSql();
+    expect(sentSql()).toHaveLength(2);
     for (const sql of sentSql()) {
       // Float literals: AE 422s on Double-vs-Integer comparisons.
       expect(sql).toContain("blob4 = 'GET' AND double2 IN (200.0, 206.0)");
       expect(sql).toContain("blob1 = 'acct'");
       expect(sql).toContain("blob2 = 'prod'");
       expect(sql).toContain("FROM test_dataset");
-    }
-    // Day-aligned window: today (partial) + USAGE_DAYS-1 full UTC days,
-    // identical for series and totals.
-    for (const sql of [seriesSql, windowSql]) {
+      // Day-aligned window: today (partial) + USAGE_DAYS-1 full UTC days,
+      // identical for series and totals.
       expect(sql).toContain(
         `timestamp >= toStartOfDay(NOW() - INTERVAL '${USAGE_DAYS - 1}' DAY)`,
       );
@@ -85,19 +88,8 @@ describe("getUsage", () => {
     expect(seriesSql).toContain("SUM(_sample_interval * double1) AS bytes");
     expect(seriesSql).toContain("SUM(_sample_interval) AS requests");
     expect(windowSql).toContain("COUNT(DISTINCT blob6) AS countries");
-    expect(windowSql).toContain("sumIf(_sample_interval, blob5 = '') AS anon_requests");
-    // Registered usage is a sample-weighted sum, not COUNT(DISTINCT blob5):
-    // distinct counts see only the rows that survived sampling, so they
-    // shrink as the scan widens.
-    expect(windowSql).toContain(
-      "sumIf(_sample_interval, blob5 != '') AS registered_requests",
-    );
     expect(windowSql).not.toContain("GROUP BY");
-    expect(sentSql().join(" ")).not.toContain("COUNT(DISTINCT blob5)");
-    for (const sql of ipSqls) {
-      expect(sql).toContain("blob8 != ''");
-      expect(sql).toContain("GROUP BY ip");
-    }
+    expect(sentSql().join(" ")).not.toContain("blob8");
 
     const [, options] = fetchMock.mock.calls[0];
     expect(options.headers.Authorization).toBe("Bearer cf-token");
@@ -106,10 +98,10 @@ describe("getUsage", () => {
   it.each(USAGE_WINDOWS)(
     "tiles the %id window with week-wide per-IP slices, no gap or overlap",
     async (days) => {
-      await getUsage("acct", "prod", undefined, days);
+      await getUsageUsers("acct", "prod", days);
 
-      // Series + window query, then one slice query per week.
-      const ipSqls = sentSql().slice(2);
+      // The signed-in/anonymous split, then one slice query per week.
+      const ipSqls = sentSql().slice(1);
       expect(ipSqls).toHaveLength(days / 7);
 
       const bound = (sql: string, op: string) =>
@@ -164,7 +156,7 @@ describe("getUsage", () => {
     expect(sentSql()[0]).toContain("blob3 LIKE '100\\\\%\\\\_raw/%'");
   });
 
-  it("zero-fills the day grid, coerces strings, and buckets user frequency", async () => {
+  it("zero-fills the day grid and coerces strings", async () => {
     fetchMock
       .mockResolvedValueOnce(
         jsonResponse([
@@ -172,10 +164,23 @@ describe("getUsage", () => {
           { day: todayUtc(), bytes: 1024, requests: "7", countries: 2 },
         ]),
       )
+      .mockResolvedValueOnce(jsonResponse([{ countries: 2 }]));
+
+    const usage = await getUsage("acct", "prod");
+
+    expect(usage).not.toBeNull();
+    expect(usage!.days).toHaveLength(USAGE_DAYS);
+    const today = usage!.days[USAGE_DAYS - 1];
+    expect(today).toMatchObject({ bytes: 1024, requests: 7, countries: 2 });
+    // Every earlier day is zero-filled
+    expect(usage!.days[0]).toMatchObject({ bytes: 0, requests: 0 });
+    expect(usage!.totals).toEqual({ bytes: 1024, requests: 7, countries: 2 });
+  });
+
+  it("buckets user frequency across the window's slices", async () => {
+    fetchMock
       .mockResolvedValueOnce(
-        jsonResponse([
-          { countries: 2, anon_requests: "5", registered_requests: "2" },
-        ]),
+        jsonResponse([{ anon_requests: "5", registered_requests: "2" }]),
       )
       // One response per week-wide slice of the window.
       .mockResolvedValueOnce(
@@ -198,18 +203,11 @@ describe("getUsage", () => {
       .mockResolvedValueOnce(jsonResponse([]))
       .mockResolvedValueOnce(jsonResponse([]));
 
-    const usage = await getUsage("acct", "prod");
+    const users = await getUsageUsers("acct", "prod");
 
-    expect(usage).not.toBeNull();
-    expect(usage!.days).toHaveLength(USAGE_DAYS);
-    const today = usage!.days[USAGE_DAYS - 1];
-    expect(today).toMatchObject({ bytes: 1024, requests: 7, countries: 2 });
-    // Every earlier day is zero-filled
-    expect(usage!.days[0]).toMatchObject({ bytes: 0, requests: 0 });
-    expect(usage!.totals).toEqual({ bytes: 1024, requests: 7, countries: 2 });
     // Quasi-log bins: the 0.4 sampled fraction floors into "1"; h1 sums to
     // 1+1=2 across slices; 3 and 5 → "3–5", 7 → "6–10", 25 → "11–25".
-    expect(usage!.users).toEqual({
+    expect(users).toEqual({
       uniqueIps: 6,
       registered: 2,
       anonRequests: 5,
@@ -226,6 +224,19 @@ describe("getUsage", () => {
         { label: "1K+", ips: 0 },
       ],
     });
+  });
+
+  it("counts signed-in downloads by sample weight, not distinct users", async () => {
+    // Distinct counts see only the rows that survived sampling, so they
+    // shrink as the scan widens; a sample-weighted sum does not.
+    await getUsageUsers("acct", "prod");
+    expect(sentSql()[0]).toContain(
+      "sumIf(_sample_interval, blob5 = '') AS anon_requests",
+    );
+    expect(sentSql()[0]).toContain(
+      "sumIf(_sample_interval, blob5 != '') AS registered_requests",
+    );
+    expect(sentSql().join(" ")).not.toContain("COUNT(DISTINCT blob5)");
   });
 
   it("applies the requested window to the queries and the grid", async () => {
@@ -252,6 +263,38 @@ describe("getUsage", () => {
       text: async () => "boom",
     });
     expect(await getUsage("acct", "prod")).toBeNull();
+  });
+
+  it("stops calling the API for the cooldown after a 429", async () => {
+    // Exceeding the account's budget blocks every call made with the token
+    // for five minutes, so re-asking through it only extends the block. The
+    // cooldown lives in module state, so this runs against its own copy of
+    // the module rather than leaving every later test rate limited.
+    await jest.isolateModulesAsync(async () => {
+      const { getUsage: limitedGetUsage } = await import("./index");
+      fetchMock.mockResolvedValue({
+        ok: false,
+        status: 429,
+        headers: { get: () => "120" },
+        text: async () => "",
+      });
+      expect(await limitedGetUsage("acct", "prod")).toBeNull();
+      const callsWhileFailing = fetchMock.mock.calls.length;
+
+      // A different product, so nothing here is served from a query cache.
+      expect(await limitedGetUsage("acct", "other-prod")).toBeNull();
+      expect(fetchMock.mock.calls).toHaveLength(callsWhileFailing);
+
+      // Once Retry-After has passed, queries resume.
+      jest.spyOn(Date, "now").mockReturnValue(Date.now() + 121_000);
+      try {
+        fetchMock.mockResolvedValue(jsonResponse([]));
+        expect(await limitedGetUsage("acct", "third-prod")).not.toBeNull();
+        expect(fetchMock.mock.calls.length).toBeGreaterThan(callsWhileFailing);
+      } finally {
+        (Date.now as jest.Mock).mockRestore();
+      }
+    });
   });
 });
 

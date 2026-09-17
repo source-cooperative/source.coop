@@ -87,7 +87,6 @@ export interface Usage {
   /** One point per UTC day, oldest first, zero-filled — always USAGE_DAYS long */
   days: UsagePoint[];
   totals: UsageTotals;
-  users: UsageUsers;
 }
 
 const DAY_MS = 86_400_000;
@@ -223,7 +222,25 @@ function parseDateTime(v: unknown): string {
 
 type Row = Record<string, unknown>;
 
+/**
+ * When the Cloudflare API last rate-limited us, plus its cooldown. Exceeding
+ * the account's budget (1,200 requests per five minutes) blocks every call
+ * made with the token for the next five minutes — the admin explorer's and
+ * this card's alike — so once we see a 429 the useful thing to do is stop
+ * asking rather than spend the recovery re-triggering it. Failures aren't
+ * cached (unstable_cache stores results, not throws), so without this every
+ * render of every page would keep hitting the API while it is blocked.
+ *
+ * ponytail: per server instance, not shared — enough to stop one instance
+ * from hammering; a fleet-wide breaker would need a store this module has no
+ * reason to reach for.
+ */
+let rateLimitedUntil = 0;
+
 async function runQuery(sql: string): Promise<Row[]> {
+  if (Date.now() < rateLimitedUntil) {
+    throw new Error("Analytics Engine rate limited; waiting out the cooldown");
+  }
   const { accountId, apiToken } = CONFIG.analytics;
   // withTimeout: a hung Analytics Engine API must not hold the page's
   // Suspense boundary (and the serverless invocation) open indefinitely.
@@ -243,6 +260,12 @@ async function runQuery(sql: string): Promise<Row[]> {
     "Analytics Engine query timed out",
   );
   if (!res.ok) {
+    if (res.status === 429) {
+      // Retry-After when the API sends one; a minute is the fallback, short
+      // enough that a one-off 429 doesn't blank the card for the full block.
+      const retryAfter = Number(res.headers.get("retry-after")) || 60;
+      rateLimitedUntil = Date.now() + retryAfter * 1000;
+    }
     throw new Error(
       `Analytics Engine query failed (${res.status}): ${(await res.text()).slice(0, 500)}`,
     );
@@ -357,27 +380,12 @@ export async function getUsage(
   const from = usageFrom(accountId, productId, path, days);
 
   try {
-    const [seriesRows, windowRows, ipChunks] = await Promise.all([
+    const [seriesRows, windowRows] = await Promise.all([
       usageQuery(
         `SELECT toStartOfDay(timestamp) AS day, ${USAGE_AGGREGATES} ${from} GROUP BY day ORDER BY day`,
       ),
       // Separate query: window-wide DISTINCT can't be summed from days.
-      usageQuery(
-        `SELECT COUNT(DISTINCT blob6) AS countries, sumIf(_sample_interval, blob5 = '') AS anon_requests, sumIf(_sample_interval, blob5 != '') AS registered_requests ${from}`,
-      ),
-      // Sample-weighted request count per unique client IP hash, for the
-      // unique-IP headline and the download-frequency histogram (blob8 is
-      // empty when the IP is unknown). Sliced into weeks and unioned below:
-      // Analytics Engine samples a whole-window GROUP BY hard enough that it
-      // returns FEWER distinct IPs for a wider window, and distinct counts —
-      // unlike the sample-weighted SUMs — cannot be corrected after the fact.
-      Promise.all(
-        Array.from({ length: chunkCount(days) }, (_, chunk) =>
-          usageQuery(
-            `SELECT blob8 AS ip, SUM(_sample_interval) AS requests ${usageFrom(accountId, productId, path, days, chunk)} AND blob8 != '' GROUP BY ip`,
-          ),
-        ),
-      ),
+      usageQuery(`SELECT COUNT(DISTINCT blob6) AS countries ${from}`),
     ]);
 
     const byDay = new Map(
@@ -394,9 +402,9 @@ export async function getUsage(
 
     // Additive totals come from the grid days, so bars and headline always
     // agree; the extra (off-grid) partial day the SQL window touches is
-    // dropped with them. The uniques (`countries` here, the users counts
-    // below) can't be re-summed from days, so they keep that sliver —
-    // they're estimates over a marginally wider span.
+    // dropped with them. `countries` is a distinct count and can't be
+    // re-summed from days, so it keeps that sliver — an estimate over a
+    // marginally wider span.
     const totals = points.reduce(
       (acc, day) => ({
         bytes: acc.bytes + day.bytes,
@@ -405,6 +413,58 @@ export async function getUsage(
       }),
       { bytes: 0, requests: 0, countries: num(windowRows[0]?.countries) },
     );
+
+    return { days: points, totals };
+  } catch (error) {
+    LOGGER.warn("Analytics usage query failed", {
+      operation: "getUsage",
+      context: "analytics engine",
+      metadata: { accountId, productId, path, error: String(error) },
+    });
+    return null;
+  }
+}
+
+/**
+ * Audience stats for the product analytics page: who downloaded, how often,
+ * signed in or not.
+ *
+ * Separate from getUsage because it costs one query per CHUNK_DAYS slice —
+ * five for a 28-day window against getUsage's two — and nothing on the
+ * product page shows any of it. The card renders on every directory a
+ * visitor opens, and each prefix is its own cache key, so bundling these in
+ * would spend the account's whole Cloudflare API budget (1,200 requests per
+ * five minutes, after which every call 429s) on numbers only the manager-only
+ * page reads. Product-wide only: the page has no prefix control.
+ */
+export async function getUsageUsers(
+  accountId: string,
+  productId: string,
+  days: UsageWindow = USAGE_DAYS,
+): Promise<UsageUsers | null> {
+  if (!isAnalyticsConfigured()) return null;
+
+  const from = usageFrom(accountId, productId, undefined, days);
+
+  try {
+    const [windowRows, ipChunks] = await Promise.all([
+      usageQuery(
+        `SELECT sumIf(_sample_interval, blob5 = '') AS anon_requests, sumIf(_sample_interval, blob5 != '') AS registered_requests ${from}`,
+      ),
+      // Sample-weighted request count per unique client IP hash, for the
+      // unique-IP headline and the download-frequency histogram (blob8 is
+      // empty when the IP is unknown). Sliced into weeks and unioned below:
+      // Analytics Engine samples a whole-window GROUP BY hard enough that it
+      // returns FEWER distinct IPs for a wider window, and distinct counts —
+      // unlike the sample-weighted SUMs — cannot be corrected after the fact.
+      Promise.all(
+        Array.from({ length: chunkCount(days) }, (_, chunk) =>
+          usageQuery(
+            `SELECT blob8 AS ip, SUM(_sample_interval) AS requests ${usageFrom(accountId, productId, undefined, days, chunk)} AND blob8 != '' GROUP BY ip`,
+          ),
+        ),
+      ),
+    ]);
 
     // Union the slices: an IP active in several weeks is one IP, with its
     // requests summed. The hashes are stable, so this is a real distinct
@@ -430,21 +490,17 @@ export async function getUsage(
     }
 
     return {
-      days: points,
-      totals,
-      users: {
-        // Same population as the histogram, so headline and bars agree.
-        uniqueIps: requestsByIp.size,
-        registered: num(windowRows[0]?.registered_requests),
-        anonRequests: num(windowRows[0]?.anon_requests),
-        distribution,
-      },
+      // Same population as the histogram, so headline and bars agree.
+      uniqueIps: requestsByIp.size,
+      registered: num(windowRows[0]?.registered_requests),
+      anonRequests: num(windowRows[0]?.anon_requests),
+      distribution,
     };
   } catch (error) {
-    LOGGER.warn("Analytics usage query failed", {
-      operation: "getUsage",
+    LOGGER.warn("Analytics users query failed", {
+      operation: "getUsageUsers",
       context: "analytics engine",
-      metadata: { accountId, productId, path, error: String(error) },
+      metadata: { accountId, productId, days, error: String(error) },
     });
     return null;
   }

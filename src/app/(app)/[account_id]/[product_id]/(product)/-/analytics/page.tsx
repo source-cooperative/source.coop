@@ -20,6 +20,7 @@ import {
   USAGE_WINDOWS,
   getProductBreakdowns,
   getUsage,
+  getUsageUsers,
   type UsageWindow,
 } from "@/lib/clients/analytics";
 import {
@@ -72,8 +73,12 @@ export default async function ProductAnalyticsPage({
   }
 
   const windowDays = parseWindow((await searchParams).window);
-  const [usage, breakdowns] = await Promise.all([
+  // The audience stats come separately from the headline ones: they are the
+  // expensive half of the window (one query per weekly slice) and only this
+  // page shows them, so the product page's card never pays for them.
+  const [usage, users, breakdowns] = await Promise.all([
     getUsage(account_id, product_id, undefined, windowDays),
+    getUsageUsers(account_id, product_id, windowDays),
     getProductBreakdowns(account_id, product_id, windowDays),
   ]);
 
@@ -131,7 +136,7 @@ export default async function ProductAnalyticsPage({
               productId={product_id}
               days={usage.days}
               totals={usage.totals}
-              users={usage.users}
+              users={users}
               breakdowns={breakdowns}
             />
           ) : (
