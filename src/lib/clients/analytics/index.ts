@@ -223,13 +223,15 @@ function parseDateTime(v: unknown): string {
 type Row = Record<string, unknown>;
 
 /**
- * When the Cloudflare API last rate-limited us, plus its cooldown. Exceeding
- * the account's budget (1,200 requests per five minutes) blocks every call
- * made with the token for the next five minutes — the admin explorer's and
- * this card's alike — so once we see a 429 the useful thing to do is stop
- * asking rather than spend the recovery re-triggering it. Failures aren't
- * cached (unstable_cache stores results, not throws), so without this every
- * render of every page would keep hitting the API while it is blocked.
+ * When the SQL API last rate-limited us, plus its cooldown.
+ *
+ * Analytics Engine documents no query rate limit — its limits page covers
+ * writes and retention only — but these queries go to api.cloudflare.com,
+ * and the API does 429 us in practice. Whatever the applicable budget is,
+ * failures aren't cached (unstable_cache stores results, not throws), so
+ * without a cooldown every render of every page keeps calling an API that is
+ * already refusing, which at best wastes the recovery window and at worst
+ * holds a limiter open. So once we see a 429, stop asking for a while.
  *
  * ponytail: per server instance, not shared — enough to stop one instance
  * from hammering; a fleet-wide breaker would need a store this module has no
@@ -265,6 +267,12 @@ async function runQuery(sql: string): Promise<Row[]> {
       // enough that a one-off 429 doesn't blank the card for the full block.
       const retryAfter = Number(res.headers.get("retry-after")) || 60;
       rateLimitedUntil = Date.now() + retryAfter * 1000;
+      // The body of a 429 is empty, so the headers are the only evidence of
+      // which limiter we hit and for how long — log them or the next
+      // occurrence is as much of a guess as this one was.
+      throw new Error(
+        `Analytics Engine query rate limited (429), retry-after=${res.headers.get("retry-after") ?? "unset"}`,
+      );
     }
     throw new Error(
       `Analytics Engine query failed (${res.status}): ${(await res.text()).slice(0, 500)}`,
@@ -433,9 +441,9 @@ export async function getUsage(
  * five for a 28-day window against getUsage's two — and nothing on the
  * product page shows any of it. The card renders on every directory a
  * visitor opens, and each prefix is its own cache key, so bundling these in
- * would spend the account's whole Cloudflare API budget (1,200 requests per
- * five minutes, after which every call 429s) on numbers only the manager-only
- * page reads. Product-wide only: the page has no prefix control.
+ * spends the SQL API's rate limit (whatever it is — undocumented, but it
+ * 429s) on numbers only the manager-only page reads. Product-wide only: the
+ * page has no prefix control.
  */
 export async function getUsageUsers(
   accountId: string,
