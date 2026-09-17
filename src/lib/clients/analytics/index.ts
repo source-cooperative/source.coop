@@ -238,10 +238,17 @@ type Row = Record<string, unknown>;
  * reason to reach for.
  */
 let rateLimitedUntil = 0;
+/** What the 429 that opened the current cooldown said, for the log line. */
+let rateLimitReason = "";
 
 async function runQuery(sql: string): Promise<Row[]> {
-  if (Date.now() < rateLimitedUntil) {
-    throw new Error("Analytics Engine rate limited; waiting out the cooldown");
+  const cooldownLeft = rateLimitedUntil - Date.now();
+  if (cooldownLeft > 0) {
+    // Name the 429 that caused this and when it lifts: a cooldown line on its
+    // own says only that we are waiting, which is the question, not the answer.
+    throw new Error(
+      `Analytics Engine rate limited (${rateLimitReason}); ${Math.ceil(cooldownLeft / 1000)}s of cooldown left`,
+    );
   }
   const { accountId, apiToken } = CONFIG.analytics;
   // withTimeout: a hung Analytics Engine API must not hold the page's
@@ -265,14 +272,14 @@ async function runQuery(sql: string): Promise<Row[]> {
     if (res.status === 429) {
       // Retry-After when the API sends one; a minute is the fallback, short
       // enough that a one-off 429 doesn't blank the card for the full block.
-      const retryAfter = Number(res.headers.get("retry-after")) || 60;
+      const header = res.headers.get("retry-after");
+      const retryAfter = Number(header) || 60;
       rateLimitedUntil = Date.now() + retryAfter * 1000;
+      rateLimitReason = `429 at ${new Date().toISOString()}, retry-after=${header ?? "unset"}`;
       // The body of a 429 is empty, so the headers are the only evidence of
       // which limiter we hit and for how long — log them or the next
       // occurrence is as much of a guess as this one was.
-      throw new Error(
-        `Analytics Engine query rate limited (429), retry-after=${res.headers.get("retry-after") ?? "unset"}`,
-      );
+      throw new Error(`Analytics Engine query rate limited (${rateLimitReason})`);
     }
     throw new Error(
       `Analytics Engine query failed (${res.status}): ${(await res.text()).slice(0, 500)}`,
