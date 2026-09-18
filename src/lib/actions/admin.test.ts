@@ -7,6 +7,7 @@ jest.mock("../clients", () => ({
   accountsTable: {
     fetchByOryId: jest.fn(),
     fetchById: jest.fn(),
+    searchIndividuals: jest.fn(),
   },
 }));
 
@@ -118,12 +119,43 @@ describe("lookupUser", () => {
     expect(mockGetOryIdentityIdByEmail).not.toHaveBeenCalled();
   });
 
-  test("reports when no account matches the handle", async () => {
+  test("reports when no account matches the handle or name", async () => {
     mockAccountsTable.fetchById.mockResolvedValue(null);
+    mockAccountsTable.searchIndividuals.mockResolvedValue([]);
 
     const result = await lookupUser({}, formDataFor("nobody"));
 
     expect(result.success).toBe(false);
     expect(result.message).toContain("No account found");
+  });
+
+  test("redirects when a name search returns exactly one match", async () => {
+    mockAccountsTable.fetchById
+      .mockResolvedValueOnce(null)  // exact handle lookup misses
+      .mockResolvedValueOnce({      // follow-up lookup by suggestion's account_id
+        account_id: "janedoe",
+      } as Awaited<ReturnType<typeof accountsTable.fetchById>>);
+    mockAccountsTable.searchIndividuals.mockResolvedValue([
+      { account_id: "janedoe", name: "Jane Doe" },
+    ]);
+
+    const result = await lookupUser({}, formDataFor("Jane Doe"));
+
+    expect(result.success).toBe(true);
+    expect(result.redirectTo).toBe("/janedoe");
+  });
+
+  test("reports when a name search returns multiple matches", async () => {
+    mockAccountsTable.fetchById.mockResolvedValue(null);
+    mockAccountsTable.searchIndividuals.mockResolvedValue([
+      { account_id: "jane1", name: "Jane Smith" },
+      { account_id: "jane2", name: "Jane Jones" },
+    ]);
+
+    const result = await lookupUser({}, formDataFor("jane"));
+
+    expect(result.success).toBe(false);
+    expect(result.message).toContain("Multiple accounts match");
+    expect(result.message).toContain("dropdown");
   });
 });
