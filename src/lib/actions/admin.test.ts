@@ -130,11 +130,7 @@ describe("lookupUser", () => {
   });
 
   test("redirects when a name search returns exactly one match", async () => {
-    mockAccountsTable.fetchById
-      .mockResolvedValueOnce(null)  // exact handle lookup misses
-      .mockResolvedValueOnce({      // follow-up lookup by suggestion's account_id
-        account_id: "janedoe",
-      } as Awaited<ReturnType<typeof accountsTable.fetchById>>);
+    mockAccountsTable.fetchById.mockResolvedValue(null); // exact handle lookup misses
     mockAccountsTable.searchIndividuals.mockResolvedValue([
       { account_id: "janedoe", name: "Jane Doe" },
     ]);
@@ -143,6 +139,8 @@ describe("lookupUser", () => {
 
     expect(result.success).toBe(true);
     expect(result.redirectTo).toBe("/janedoe");
+    // The scan already confirmed the account; no need to fetch it again.
+    expect(mockAccountsTable.fetchById).toHaveBeenCalledTimes(1);
   });
 
   test("reports when a name search returns multiple matches", async () => {

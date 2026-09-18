@@ -7,7 +7,6 @@ import { getOryIdentityIdByEmail, getPageSession } from "../api/utils";
 import { accountsTable } from "../clients";
 import { FormState } from "@/components/core/DynamicForm";
 import { accountUrl } from "@/lib/urls";
-import type { Account } from "@/types";
 
 const LookupSchema = z.object({
   query: z.string().trim().min(1, "Enter a name, username, or email address"),
@@ -43,7 +42,7 @@ export async function lookupUser(
   }
 
   const { query } = parsed.data;
-  let account: Account | null;
+  let accountId: string;
 
   if (query.includes("@")) {
     const identityId = await getOryIdentityIdByEmail(query);
@@ -51,7 +50,7 @@ export async function lookupUser(
       return failure(formData, `No user found in Ory for ${query}`);
     }
 
-    account = await accountsTable.fetchByOryId(identityId);
+    const account = await accountsTable.fetchByOryId(identityId);
     if (!account) {
       // The identity exists in Ory but has no corresponding source.coop profile.
       return failure(
@@ -59,9 +58,12 @@ export async function lookupUser(
         `${query} exists in Ory but has no source.coop profile`
       );
     }
+    accountId = account.account_id;
   } else {
-    account = await accountsTable.fetchById(query.toLowerCase());
-    if (!account) {
+    const account = await accountsTable.fetchById(query.toLowerCase());
+    if (account) {
+      accountId = account.account_id;
+    } else {
       const suggestions = await accountsTable.searchIndividuals(query);
       if (suggestions.length > 1) {
         return failure(
@@ -69,12 +71,10 @@ export async function lookupUser(
           `Multiple accounts match "${query}" — select one from the dropdown`
         );
       }
-      if (suggestions.length === 1) {
-        account = await accountsTable.fetchById(suggestions[0].account_id);
-      }
-      if (!account) {
+      if (suggestions.length === 0) {
         return failure(formData, `No account found for ${query}`);
       }
+      accountId = suggestions[0].account_id;
     }
   }
 
@@ -82,7 +82,7 @@ export async function lookupUser(
     operation: "lookupUser",
     context: "admin",
     metadata: {
-      account_id: account.account_id,
+      account_id: accountId,
       looked_up_by: session?.account?.account_id,
     },
   });
@@ -94,7 +94,7 @@ export async function lookupUser(
     data: formData,
     message: "",
     success: true,
-    redirectTo: accountUrl(account.account_id),
+    redirectTo: accountUrl(accountId),
   };
 }
 

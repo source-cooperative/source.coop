@@ -57,7 +57,7 @@ export function AccountSearchInput({
   // choosing a handle that was already typed out in full leaves the query
   // untouched, so the effect never runs to clear a flag — which would then
   // swallow the next genuine edit instead.
-  const justSelected = useRef<string | null>(null);
+  const justSelected = useRef<string | null>(defaultValue || null);
 
   useEffect(() => {
     const selected = justSelected.current;
