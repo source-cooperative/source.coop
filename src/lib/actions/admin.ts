@@ -10,7 +10,7 @@ import { accountUrl } from "@/lib/urls";
 import type { Account } from "@/types";
 
 const LookupSchema = z.object({
-  query: z.string().trim().min(1, "Enter an email address or username"),
+  query: z.string().trim().min(1, "Enter a name, username, or email address"),
 });
 
 /**
@@ -62,7 +62,19 @@ export async function lookupUser(
   } else {
     account = await accountsTable.fetchById(query.toLowerCase());
     if (!account) {
-      return failure(formData, `No account found for ${query}`);
+      const suggestions = await accountsTable.searchIndividuals(query);
+      if (suggestions.length > 1) {
+        return failure(
+          formData,
+          `Multiple accounts match "${query}" — select one from the dropdown`
+        );
+      }
+      if (suggestions.length === 1) {
+        account = await accountsTable.fetchById(suggestions[0].account_id);
+      }
+      if (!account) {
+        return failure(formData, `No account found for ${query}`);
+      }
     }
   }
 

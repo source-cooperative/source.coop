@@ -87,6 +87,21 @@ describe("AccountSearchInput", () => {
     expect(mockSearchAccounts).not.toHaveBeenCalledWith("jane-doe");
   });
 
+  it("calls onSelect with the account_id when a match is chosen", async () => {
+    const onSelect = jest.fn();
+    const user = userEvent.setup();
+    render(
+      <Theme>
+        <AccountSearchInput name="account_id" onSelect={onSelect} />
+      </Theme>
+    );
+
+    await user.type(screen.getByRole("combobox"), "jane");
+    await user.click(await screen.findByText("Janet Reyes"));
+
+    expect(onSelect).toHaveBeenCalledWith("janet-r");
+  });
+
   it("keeps searching after choosing the handle that was typed in full", async () => {
     // Typing a handle out and then confirming it from the list writes back the
     // value already in the input. Suppressing "the search for what was just
