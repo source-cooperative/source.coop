@@ -92,7 +92,7 @@ export async function PUT(
         { status: StatusCodes.BAD_REQUEST }
       );
     }
-    if (!["owners", "maintainers", "members"].includes(role)) {
+    if (!Object.values(MembershipRole).includes(role)) {
       return NextResponse.json(
         { error: `Invalid role: ${role}` },
         { status: StatusCodes.BAD_REQUEST }
