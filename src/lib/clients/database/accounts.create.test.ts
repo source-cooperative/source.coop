@@ -3,6 +3,7 @@ import { IdentityBindingsTable } from "./identity-bindings";
 import { createMemoizedRead } from "./request-cache";
 import { fakeReactCache } from "./__test-helpers__/fake-react-cache";
 import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
+import { ResourceNotFoundException } from "@aws-sdk/client-dynamodb";
 import { AccountType, type Account } from "@/types";
 
 jest.mock("@/lib/config", () => ({
@@ -171,9 +172,27 @@ describe("AccountsTable.create", () => {
 
     const second = makeAccount({ account_id: "second", name: "Second" });
 
+    // ...and the caller learns which conflict this was, not "account_id taken".
     await expect(table.create(second)).rejects.toThrow(
-      expect.objectContaining({ name: "ConditionalCheckFailedException" })
+      expect.objectContaining({ name: "IdentityAlreadyBoundError" })
     );
     expect(store.has("second")).toBe(false);
+  });
+
+  it("still creates the account when the bindings table does not exist yet", async () => {
+    // The app may deploy before the table does; signups must not fail in the
+    // window. The identity_id fallback resolves the account until the backfill.
+    const { store, client } = fakeDynamo();
+    const send = jest.fn(async () => {
+      throw new ResourceNotFoundException({ message: "no table", $metadata: {} });
+    });
+    const bindings = new IdentityBindingsTable({
+      client: { send } as unknown as DynamoDBDocumentClient,
+      memoizedRead: createMemoizedRead(fakeReactCache),
+    });
+    const table = new AccountsTable({ client, bindings });
+
+    await expect(table.create(makeAccount())).resolves.toBeDefined();
+    expect(store.has("victim")).toBe(true);
   });
 });

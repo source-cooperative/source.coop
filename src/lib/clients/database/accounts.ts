@@ -260,7 +260,8 @@ export class AccountsTable extends BaseTable {
 
     // An individual is reachable by its Ory identity, so it is bound in the
     // same breath. If that identity is already bound elsewhere, the account
-    // row must not survive without a binding of its own.
+    // row must not survive without a binding of its own; the
+    // IdentityAlreadyBoundError propagates for the caller to name.
     if (isIndividualAccount(account)) {
       try {
         await this.bindings.create({

@@ -6,8 +6,17 @@ import {
 } from "@aws-sdk/lib-dynamodb";
 import { ResourceNotFoundException } from "@aws-sdk/client-dynamodb";
 import { CONFIG } from "@/lib/config";
+import { LOGGER } from "@/lib/logging";
 import type { IdentityBinding } from "@/types";
 import { BaseTable } from "./base";
+
+/** The (issuer, subject) pair already resolves to an account. */
+export class IdentityAlreadyBoundError extends Error {
+  constructor(issuer: string, subject: string) {
+    super(`Identity already bound: ${issuer} ${subject}`);
+    this.name = "IdentityAlreadyBoundError";
+  }
+}
 
 /** The issuer every Ory identity is bound under: this environment's Ory project. */
 export function oryIssuer(): string {
@@ -48,17 +57,34 @@ export class IdentityBindingsTable extends BaseTable {
   }
 
   /**
-   * Binds the pair, or throws `ConditionalCheckFailedException` if it is
-   * already bound — to this account or any other.
+   * Binds the pair, or throws `IdentityAlreadyBoundError` if it is already
+   * bound — to this account or any other.
    */
   async create(binding: IdentityBinding): Promise<IdentityBinding> {
-    await this.client.send(
-      new PutCommand({
-        TableName: this.table,
-        Item: binding,
-        ConditionExpression: "attribute_not_exists(issuer)",
-      })
-    );
+    try {
+      await this.client.send(
+        new PutCommand({
+          TableName: this.table,
+          Item: binding,
+          ConditionExpression: "attribute_not_exists(issuer)",
+        })
+      );
+    } catch (error) {
+      if ((error as { name?: string })?.name === "ConditionalCheckFailedException") {
+        throw new IdentityAlreadyBoundError(binding.issuer, binding.subject);
+      }
+      // The app may deploy before the table does. The identity_id fallback
+      // still resolves the account, and the backfill writes this binding later.
+      if (error instanceof ResourceNotFoundException) {
+        LOGGER.warn("Identity binding not written: table does not exist yet", {
+          operation: "IdentityBindingsTable.create",
+          metadata: { account_id: binding.account_id },
+        });
+        return binding;
+      }
+      this.logError("create", error, { account_id: binding.account_id });
+      throw error;
+    }
     return binding;
   }
 

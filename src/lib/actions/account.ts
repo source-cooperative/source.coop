@@ -131,6 +131,19 @@ export async function createAccount(
   try {
     account = await accountsTable.create(newAccount);
   } catch (error) {
+    if ((error as { name?: string })?.name === "IdentityAlreadyBoundError") {
+      LOGGER.warn("Account creation rejected: identity already has an account", {
+        operation: "createAccount",
+        context: "account creation",
+        metadata: { identity_id: session.identity_id },
+      });
+      return {
+        fieldErrors: {},
+        data: formData,
+        message: "This sign-in already has an account",
+        success: false,
+      };
+    }
     if ((error as { name?: string })?.name === "ConditionalCheckFailedException") {
       LOGGER.warn("Account creation rejected: account_id already taken", {
         operation: "createAccount",

@@ -1,6 +1,6 @@
 import { type DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 import { ResourceNotFoundException } from "@aws-sdk/client-dynamodb";
-import { IdentityBindingsTable } from "./identity-bindings";
+import { IdentityAlreadyBoundError, IdentityBindingsTable } from "./identity-bindings";
 import { createMemoizedRead } from "./request-cache";
 import { fakeReactCache } from "./__test-helpers__/fake-react-cache";
 
@@ -34,6 +34,15 @@ describe("IdentityBindingsTable", () => {
     expect(input.TableName).toBe("sc-test-identity-bindings");
     expect(input.Item).toEqual(binding);
     expect(input.ConditionExpression).toBe("attribute_not_exists(issuer)");
+  });
+
+  it("names a conflict on the pair for what it is", async () => {
+    const send = jest.fn(async () => {
+      const error = new Error("The conditional request failed") as Error & { name: string };
+      error.name = "ConditionalCheckFailedException";
+      throw error;
+    });
+    await expect(tableWith(send).create(binding)).rejects.toBeInstanceOf(IdentityAlreadyBoundError);
   });
 
   it("resolves by the (issuer, subject) key", async () => {
