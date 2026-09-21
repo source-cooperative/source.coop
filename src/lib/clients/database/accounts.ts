@@ -362,6 +362,10 @@ export class AccountsTable extends BaseTable {
   }
 
   async delete(Key: { account_id: string; type: AccountType }): Promise<void> {
+    // An orphaned binding would keep the identity from ever binding again.
+    for (const binding of await this.bindings.listByAccount(Key.account_id)) {
+      await this.bindings.delete(binding.issuer, binding.subject);
+    }
     await this.client.send(
       new DeleteCommand({
         TableName: this.table,

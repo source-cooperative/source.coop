@@ -27,7 +27,8 @@ const unbacked = account({ account_id: "old-timer", identity_id: "ory-old" });
 /** Answers the key query and the identity_id index query from `items`. */
 function fakeAccounts(items: Account[]) {
   const send = jest.fn(async (command: { input: Record<string, unknown> }) => {
-    const values = command.input.ExpressionAttributeValues as Record<string, string>;
+    const values = command.input.ExpressionAttributeValues as Record<string, string> | undefined;
+    if (!values) return {}; // a Delete of the row itself
     if (values[":account_id"] !== undefined) {
       return { Items: items.filter((a) => a.account_id === values[":account_id"]) };
     }
@@ -36,12 +37,18 @@ function fakeAccounts(items: Account[]) {
   return { send, client: { send } as unknown as DynamoDBDocumentClient };
 }
 
+/** Answers Get by key, Query on the account_id index, and Delete, over `bindings`. */
 function fakeBindings(bindings: IdentityBinding[]) {
   const send = jest.fn(async (command: { input: Record<string, unknown> }) => {
-    const key = command.input.Key as { issuer: string; subject: string };
-    return {
-      Item: bindings.find((b) => b.issuer === key.issuer && b.subject === key.subject),
-    };
+    const key = command.input.Key as { issuer: string; subject: string } | undefined;
+    const at = (b: IdentityBinding) => b.issuer === key?.issuer && b.subject === key?.subject;
+    if (key && command.constructor.name === "DeleteCommand") {
+      bindings.splice(bindings.findIndex(at), 1);
+      return {};
+    }
+    if (key) return { Item: bindings.find(at) };
+    const values = command.input.ExpressionAttributeValues as Record<string, string>;
+    return { Items: bindings.filter((b) => b.account_id === values[":account_id"]) };
   });
   return new IdentityBindingsTable({
     client: { send } as unknown as DynamoDBDocumentClient,
@@ -98,6 +105,16 @@ describe("AccountsTable identity resolution", () => {
     // ...and a non-individual bound under Ory is not an Ory account either.
     const { table: odd } = tableFor([acme], [bound("ory-acme", "acme")]);
     expect(await odd.fetchByOryId("ory-acme")).toBeNull();
+  });
+
+  it("removes an account's bindings when the account is deleted", async () => {
+    // Otherwise the orphaned pair would keep that identity from ever binding again.
+    const bindings = [bound("ory-jane", "jane-doe"), bound("ci", "jane-doe", "https://ci.example")];
+    const { table } = tableFor([jane], bindings);
+
+    await table.delete({ account_id: "jane-doe", type: AccountType.INDIVIDUAL });
+
+    expect(bindings).toEqual([]);
   });
 
   it("tells issuers apart", async () => {
