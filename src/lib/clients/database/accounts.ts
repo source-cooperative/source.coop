@@ -17,6 +17,11 @@ import {
 } from "@/types";
 
 import { BaseTable } from "./base";
+import {
+  IdentityBindingsTable,
+  identityBindingsTable,
+  oryIssuer,
+} from "./identity-bindings";
 import { LOGGER } from "@/lib/logging";
 
 /**
@@ -31,6 +36,17 @@ export interface AccountSuggestion {
 
 export class AccountsTable extends BaseTable {
   model = "accounts";
+  private readonly bindings: IdentityBindingsTable;
+
+  constructor({
+    bindings,
+    ...base
+  }: {
+    bindings?: IdentityBindingsTable;
+  } & ConstructorParameters<typeof BaseTable>[0] = {}) {
+    super(base);
+    this.bindings = bindings ?? identityBindingsTable;
+  }
 
   async fetchById(account_id: string): Promise<Account | null> {
     try {
@@ -105,13 +121,27 @@ export class AccountsTable extends BaseTable {
     return accountBatches;
   }
 
+  /** The account `subject` resolves to, as named by `issuer`. Any type. */
+  async fetchByIdentity(
+    issuer: string,
+    subject: string
+  ): Promise<Account | null> {
+    const binding = await this.bindings.resolve(issuer, subject);
+    return binding ? this.fetchById(binding.account_id) : null;
+  }
+
+  /**
+   * The individual an Ory identity resolves to. Ory identities are bound under
+   * this environment's Ory issuer. While the backfill lands (#543), an account
+   * with no binding yet is still found through the `identity_id` index, and
+   * that fallback is logged so the unbacked accounts are countable. Remove the
+   * fallback, and the index with it, once the backfill is verified.
+   */
   async fetchByOryId(identity_id: string): Promise<IndividualAccount | null> {
+    const bound = await this.fetchByIdentity(oryIssuer(), identity_id);
+    if (bound) return isIndividualAccount(bound) ? bound : null;
+
     try {
-      LOGGER.debug(`Trying to fetch account by Ory ID`, {
-        operation: "AccountsTable.fetchByOryId",
-        context: "database operation",
-        metadata: { identity_id },
-      });
       const result = await this.cachedSend(
         new QueryCommand({
           TableName: this.table,
@@ -129,10 +159,10 @@ export class AccountsTable extends BaseTable {
 
       if (!account) return null;
 
-      LOGGER.debug(`Found account by Ory ID`, {
+      LOGGER.warn("Account resolved through the identity_id index, not a binding", {
         operation: "AccountsTable.fetchByOryId",
         context: "database operation",
-        metadata: { identity_id, account },
+        metadata: { identity_id, account_id: account.account_id },
       });
       return account as IndividualAccount;
     } catch (error) {
@@ -226,6 +256,28 @@ export class AccountsTable extends BaseTable {
         this.logError("create", error, { account_id: account.account_id });
       }
       throw error;
+    }
+
+    // An individual is reachable by its Ory identity, so it is bound in the
+    // same breath. If that identity is already bound elsewhere, the account
+    // row must not survive without a binding of its own.
+    if (isIndividualAccount(account)) {
+      try {
+        await this.bindings.create({
+          issuer: oryIssuer(),
+          subject: account.identity_id,
+          account_id: account.account_id,
+          created_at: account.created_at,
+        });
+      } catch (error) {
+        await this.client.send(
+          new DeleteCommand({
+            TableName: this.table,
+            Key: { account_id: account.account_id },
+          })
+        );
+        throw error;
+      }
     }
 
     return account;

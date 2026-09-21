@@ -26,6 +26,7 @@ export class DatabaseConstruct extends Construct {
   public readonly dataConnectionsTable: dynamodb.Table;
   public readonly apiKeysTable: dynamodb.Table;
   public readonly membershipsTable: dynamodb.Table;
+  public readonly identityBindingsTable: dynamodb.Table;
 
   constructor(
     scope: Construct,
@@ -55,6 +56,23 @@ export class DatabaseConstruct extends Construct {
           // fetch the service accounts owned by an account
           name: "owner_account_id",
           partitionKey: "owner_account_id",
+        },
+      ],
+      removalPolicy,
+    });
+
+    this.identityBindingsTable = this.createTable({
+      name: "identity-bindings",
+      stage,
+      // (issuer, subject) is the key, so a subject binds to one account per
+      // issuer and nothing more.
+      partitionKey: "issuer",
+      sortKey: "subject",
+      indexes: [
+        {
+          // fetch the bindings of an account
+          name: "account_id",
+          partitionKey: "account_id",
         },
       ],
       removalPolicy,

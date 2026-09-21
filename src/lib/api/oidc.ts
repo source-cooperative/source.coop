@@ -147,9 +147,8 @@ export async function authenticateWithOidcToken(
 
   // The token subject is the caller's Ory identity id (the data proxy signs
   // tokens with the authenticated principal's Ory id as `sub`), so resolve the
-  // account via the identity_id index — NOT fetchById, which keys on the
-  // human-readable account_id. Only individual accounts have an Ory identity;
-  // org accounts are never the subject of a proxy-issued token.
+  // account through its identity binding under the Ory issuer — NOT fetchById,
+  // which keys on the human-readable account_id.
   const account = await accountsTable.fetchByOryId(oryId);
   if (!account) {
     // Verified token, but no account is indexed under this Ory id. This is the

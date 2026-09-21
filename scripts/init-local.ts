@@ -15,6 +15,7 @@ import {
 
 // Import mock data
 import { accounts, apiKeys, memberships, products, dataConnections } from "../src/lib/api/utils.mock";
+import { AccountType } from "../src/types";
 
 const DYNAMODB_ENDPOINT =
   process.env.DYNAMODB_ENDPOINT || "http://localhost:8000";
@@ -49,7 +50,8 @@ async function tablesExist() {
     tables.TableNames?.includes(getTableName("products")) &&
     tables.TableNames?.includes(getTableName("api-keys")) &&
     tables.TableNames?.includes(getTableName("data-connections")) &&
-    tables.TableNames?.includes(getTableName("memberships"))
+    tables.TableNames?.includes(getTableName("memberships")) &&
+    tables.TableNames?.includes(getTableName("identity-bindings"))
   );
 }
 
@@ -77,6 +79,7 @@ async function createTables() {
   await deleteTable(getTableName("api-keys"));
   await deleteTable(getTableName("data-connections"));
   await deleteTable(getTableName("memberships"));
+  await deleteTable(getTableName("identity-bindings"));
 
   // Wait for tables to be fully deleted
   await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -140,6 +143,45 @@ async function createTables() {
     console.log(`✓ Created ${getTableName("accounts")} table`);
   } catch (e) {
     console.error(`✗ Error creating ${getTableName("accounts")} table:`, e);
+    throw e;
+  }
+
+  // Create identity-bindings table
+  try {
+    await client.send(
+      new CreateTableCommand({
+        TableName: getTableName("identity-bindings"),
+        AttributeDefinitions: [
+          { AttributeName: "issuer", AttributeType: "S" },
+          { AttributeName: "subject", AttributeType: "S" },
+          { AttributeName: "account_id", AttributeType: "S" },
+        ],
+        KeySchema: [
+          { AttributeName: "issuer", KeyType: "HASH" },
+          { AttributeName: "subject", KeyType: "RANGE" },
+        ],
+        GlobalSecondaryIndexes: [
+          {
+            IndexName: "account_id",
+            KeySchema: [{ AttributeName: "account_id", KeyType: "HASH" }],
+            Projection: {
+              ProjectionType: "ALL",
+            },
+            ProvisionedThroughput: {
+              ReadCapacityUnits: 5,
+              WriteCapacityUnits: 5,
+            },
+          },
+        ],
+        ProvisionedThroughput: {
+          ReadCapacityUnits: 5,
+          WriteCapacityUnits: 5,
+        },
+      })
+    );
+    console.log(`✓ Created ${getTableName("identity-bindings")} table`);
+  } catch (e) {
+    console.error(`✗ Error creating ${getTableName("identity-bindings")} table:`, e);
     throw e;
   }
 
@@ -355,6 +397,40 @@ async function loadFixtureData() {
     console.log(
       `Account insertion complete! Processed ${processedAccounts} accounts.`
     );
+
+    // Every individual is reachable by its Ory identity under this
+    // environment's Ory issuer — the same binding the app writes at signup.
+    const issuer = process.env.NEXT_PUBLIC_ORY_SDK_URL || "http://localhost:4000";
+    const bindings = accounts.flatMap((account) =>
+      account.type === AccountType.INDIVIDUAL
+        ? [
+            {
+              issuer,
+              subject: account.identity_id,
+              account_id: account.account_id,
+              created_at: account.created_at,
+            },
+          ]
+        : []
+    );
+    console.log(
+      `Inserting ${bindings.length} identity bindings into ${getTableName(
+        "identity-bindings"
+      )} table...`
+    );
+    for (const binding of bindings) {
+      try {
+        await docClient.send(
+          new PutCommand({
+            TableName: getTableName("identity-bindings"),
+            Item: binding,
+          })
+        );
+      } catch (error) {
+        console.error(`Error inserting binding for ${binding.account_id}:`, error);
+      }
+    }
+    console.log(`Identity binding insertion complete!`);
 
     // Insert API keys into DynamoDB
     console.log(
