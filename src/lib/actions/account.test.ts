@@ -1,13 +1,14 @@
-import { updateAccountProfile } from "./account";
+import { searchAccounts, updateAccountProfile } from "./account";
 import { accountsTable } from "../clients";
 import { getPageSession } from "../api/utils";
 import { isAuthorized } from "../api/authz";
-import { Account, AccountType, UserSession } from "@/types";
+import { Account, AccountType, Actions, UserSession } from "@/types";
 
 jest.mock("../clients", () => ({
   accountsTable: {
     fetchById: jest.fn(),
     update: jest.fn(),
+    searchMemberCandidates: jest.fn(),
   },
 }));
 
@@ -142,5 +143,35 @@ describe("updateAccountProfile contact email", () => {
 
     expect(result.success).toBe(true);
     expect(updatedEmails()).toEqual(emails);
+  });
+});
+
+describe("searchAccounts", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockGetPageSession.mockResolvedValue({ identity_id: "an-identity" } as UserSession);
+    mockAccountsTable.searchMemberCandidates.mockResolvedValue([]);
+  });
+
+  it("offers an account's service accounts only to someone who may invite to it", async () => {
+    mockIsAuthorized.mockReturnValue(true);
+    await searchAccounts("bo", "acme");
+    expect(mockAccountsTable.searchMemberCandidates).toHaveBeenLastCalledWith("bo", "acme");
+    expect(mockIsAuthorized).toHaveBeenCalledWith(
+      expect.anything(),
+      { membership_account_id: "acme" },
+      Actions.InviteMembership
+    );
+
+    // Anyone else gets an ordinary search of people, not a listing of acme's bots.
+    mockIsAuthorized.mockReturnValue(false);
+    await searchAccounts("bo", "acme");
+    expect(mockAccountsTable.searchMemberCandidates).toHaveBeenLastCalledWith("bo", undefined);
+  });
+
+  it("never consults authorization for a plain search", async () => {
+    await searchAccounts("bo");
+    expect(mockIsAuthorized).not.toHaveBeenCalled();
+    expect(mockAccountsTable.searchMemberCandidates).toHaveBeenLastCalledWith("bo", undefined);
   });
 });

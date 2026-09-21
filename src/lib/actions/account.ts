@@ -481,5 +481,17 @@ export async function searchAccounts(
   if (!session?.identity_id) return [];
   if (query.trim().length < 2) return [];
 
-  return accountsTable.searchMemberCandidates(query, memberOf);
+  // An account's service accounts are visible only to whoever may grant them
+  // access; to anyone else this is an ordinary search of people.
+  const mayInvite =
+    memberOf !== undefined &&
+    isAuthorized(
+      session,
+      { membership_account_id: memberOf },
+      Actions.InviteMembership
+    );
+  return accountsTable.searchMemberCandidates(
+    query,
+    mayInvite ? memberOf : undefined
+  );
 }
