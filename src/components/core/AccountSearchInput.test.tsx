@@ -35,7 +35,7 @@ describe("AccountSearchInput", () => {
     await user.type(screen.getByRole("combobox"), "jane");
 
     await waitFor(() => {
-      expect(mockSearchAccounts).toHaveBeenCalledWith("jane");
+      expect(mockSearchAccounts).toHaveBeenCalledWith("jane", undefined);
     });
 
     const options = await screen.findAllByRole("option");
@@ -101,7 +101,7 @@ describe("AccountSearchInput", () => {
     await user.type(input, "x");
 
     await waitFor(() => {
-      expect(mockSearchAccounts).toHaveBeenCalledWith("jane-doex");
+      expect(mockSearchAccounts).toHaveBeenCalledWith("jane-doex", undefined);
     });
   });
 

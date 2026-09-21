@@ -13,7 +13,9 @@ import type { AccountSuggestion } from "@/lib/clients/database/accounts";
  * actions were mocked.
  *
  * `searchAccounts` returns a fixed pair so the picker's suggestion list has
- * something to draw — the one thing a live Storybook could never show.
+ * something to draw — the one thing a live Storybook could never show — plus
+ * a service account when the search is scoped to `miskatonic`, the way the
+ * invite form scopes it to the organization being managed.
  */
 const idle = (): FormState<Record<string, unknown>> => ({
   fieldErrors: {},
@@ -23,12 +25,15 @@ const idle = (): FormState<Record<string, unknown>> => ({
 });
 
 export const searchAccounts: typeof Real.searchAccounts = fn(
-  async (query: string): Promise<AccountSuggestion[]> =>
+  async (query: string, memberOf?: string): Promise<AccountSuggestion[]> =>
     query.trim().length < 2
       ? []
       : [
           { account_id: "acoltrane", name: "Alice Coltrane" },
           { account_id: "miskatonic", name: "Miskatonic University" },
+          ...(memberOf === "miskatonic"
+            ? [{ account_id: "miskatonic-bot", name: "Miskatonic Bot" }]
+            : []),
         ]
 ).mockName("searchAccounts");
 

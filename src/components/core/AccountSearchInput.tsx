@@ -21,6 +21,8 @@ interface AccountSearchInputProps extends Partial<ControlProps> {
   required?: boolean;
   placeholder?: string;
   defaultValue?: string;
+  /** Also offer the service accounts this account owns. */
+  memberOf?: string;
 }
 
 /**
@@ -38,6 +40,7 @@ export function AccountSearchInput({
   required,
   placeholder,
   defaultValue = "",
+  memberOf,
   ...controlProps
 }: AccountSearchInputProps) {
   const listId = useId();
@@ -78,7 +81,7 @@ export function AccountSearchInput({
 
     let cancelled = false;
     const timer = setTimeout(() => {
-      searchAccounts(query)
+      searchAccounts(query, memberOf)
         .then((results) => {
           if (cancelled) return;
           setMatches(results);
@@ -97,7 +100,7 @@ export function AccountSearchInput({
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [query]);
+  }, [query, memberOf]);
 
   function select(match: AccountSuggestion) {
     justSelected.current = match.account_id;
