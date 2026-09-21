@@ -138,12 +138,6 @@ export async function PUT(
         { status: StatusCodes.BAD_REQUEST }
       );
     }
-    if (!accountToUpdate) {
-      return NextResponse.json(
-        { error: `Account ${account_id} not found` },
-        { status: StatusCodes.NOT_FOUND }
-      );
-    }
     accountToUpdate.flags = flagsRequest;
     const updatedAccount = await accountsTable.update(accountToUpdate);
     return NextResponse.json(updatedAccount.flags, { status: StatusCodes.OK });
