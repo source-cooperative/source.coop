@@ -21,6 +21,7 @@ interface AccountSearchInputProps extends Partial<ControlProps> {
   required?: boolean;
   placeholder?: string;
   defaultValue?: string;
+  onSelect?: (accountId: string) => void;
 }
 
 /**
@@ -38,6 +39,7 @@ export function AccountSearchInput({
   required,
   placeholder,
   defaultValue = "",
+  onSelect,
   ...controlProps
 }: AccountSearchInputProps) {
   const listId = useId();
@@ -55,7 +57,7 @@ export function AccountSearchInput({
   // choosing a handle that was already typed out in full leaves the query
   // untouched, so the effect never runs to clear a flag — which would then
   // swallow the next genuine edit instead.
-  const justSelected = useRef<string | null>(null);
+  const justSelected = useRef<string | null>(defaultValue || null);
 
   useEffect(() => {
     const selected = justSelected.current;
@@ -104,6 +106,7 @@ export function AccountSearchInput({
     setQuery(match.account_id);
     setOpen(false);
     setActiveIndex(-1);
+    onSelect?.(match.account_id);
   }
 
   function onKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
