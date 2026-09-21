@@ -334,6 +334,18 @@
     "metadata_private": {}
   },
   {
+    "account_id": "organization-bot",
+    "type": "service",
+    "name": "Organization Bot",
+    "owner_account_id": "organization",
+    "created_at": "2020-01-01T00:00:00Z",
+    "updated_at": "2020-01-01T00:00:00Z",
+    "disabled": false,
+    "flags": [],
+    "metadata_public": {},
+    "metadata_private": {}
+  },
+  {
     "account_id": "cholmes",
     "type": "individual",
     "name": "Chris Holmes",

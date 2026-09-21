@@ -12,6 +12,7 @@
 
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { AccountType } from "@/types";
 import { OrganizationProfilePage } from "@/app/(app)/[account_id]/OrganizationProfilePage";
 import { accountsTable, isOrganizationalAccount } from "@/lib/clients/database";
 import { IndividualProfilePage } from "./IndividualProfilePage";
@@ -31,7 +32,7 @@ export async function generateMetadata({
 }: PageProps): Promise<Metadata> {
   const { account_id } = await params;
   const account = await accountsTable.fetchById(account_id);
-  if (!account) {
+  if (!account || account.type === AccountType.SERVICE) {
     return generateNotFoundMetadata();
   }
   return generateAccountMetadata({ account });
@@ -42,7 +43,8 @@ export default async function AccountPage({ params, searchParams }: PageProps) {
   const showWelcome = Object.hasOwn(await searchParams, "welcome");
 
   const account = await accountsTable.fetchById(account_id);
-  if (!account) {
+  // A service account has no public profile.
+  if (!account || account.type === AccountType.SERVICE) {
     notFound();
   }
 

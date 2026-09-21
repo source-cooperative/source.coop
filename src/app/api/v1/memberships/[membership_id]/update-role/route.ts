@@ -42,11 +42,19 @@
  *         description: Internal server error
  */
 import { NextRequest, NextResponse } from "next/server";
-import { Actions, MembershipState } from "@/types";
+import {
+  Actions,
+  MembershipState,
+  MembershipRole,
+} from "@/types";
 import { StatusCodes } from "http-status-codes";
 import { getApiSession } from "@/lib/api/utils";
-import { membershipsTable } from "@/lib/clients/database";
+import {
+  membershipsTable,
+  accountsTable,
+} from "@/lib/clients/database";
 import { isAuthorized } from "@/lib/api/authz";
+import { serviceAccountGrantProblem } from "@/lib/accounts/service-accounts";
 
 export async function PUT(
   request: NextRequest,
@@ -72,6 +80,15 @@ export async function PUT(
     if (membership.state !== MembershipState.Member) {
       return NextResponse.json(
         { error: `Membership with ID ${membership_id} is not active` },
+        { status: StatusCodes.BAD_REQUEST }
+      );
+    }
+    const member = await accountsTable.fetchById(membership.account_id);
+    const grantProblem =
+      member && serviceAccountGrantProblem(member, membership, role as MembershipRole);
+    if (grantProblem) {
+      return NextResponse.json(
+        { error: grantProblem },
         { status: StatusCodes.BAD_REQUEST }
       );
     }

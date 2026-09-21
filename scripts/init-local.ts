@@ -90,6 +90,7 @@ async function createTables() {
           { AttributeName: "account_id", AttributeType: "S" },
           { AttributeName: "type", AttributeType: "S" },
           { AttributeName: "identity_id", AttributeType: "S" },
+          { AttributeName: "owner_account_id", AttributeType: "S" },
         ],
         KeySchema: [{ AttributeName: "account_id", KeyType: "HASH" }],
         GlobalSecondaryIndexes: [
@@ -110,6 +111,17 @@ async function createTables() {
           {
             IndexName: "identity_id",
             KeySchema: [{ AttributeName: "identity_id", KeyType: "HASH" }],
+            Projection: {
+              ProjectionType: "ALL",
+            },
+            ProvisionedThroughput: {
+              ReadCapacityUnits: 5,
+              WriteCapacityUnits: 5,
+            },
+          },
+          {
+            IndexName: "owner_account_id",
+            KeySchema: [{ AttributeName: "owner_account_id", KeyType: "HASH" }],
             Projection: {
               ProjectionType: "ALL",
             },

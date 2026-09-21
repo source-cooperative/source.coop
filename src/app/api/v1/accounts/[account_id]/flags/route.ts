@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { AccountFlagsSchema, Actions } from "@/types";
+import {
+  AccountFlagsSchema,
+  Actions,
+  AccountType,
+  AccountFlags,
+} from "@/types";
 import { StatusCodes } from "http-status-codes";
 import { isAuthorized } from "@/lib/api/authz";
 import { getApiSession } from "@/lib/api/utils";
@@ -124,6 +129,15 @@ export async function PUT(
       );
     }
     const flagsRequest = AccountFlagsSchema.parse(await request.json());
+    if (
+      accountToUpdate.type === AccountType.SERVICE &&
+      flagsRequest.includes(AccountFlags.ADMIN)
+    ) {
+      return NextResponse.json(
+        { error: "A service account cannot hold the admin flag" },
+        { status: StatusCodes.BAD_REQUEST }
+      );
+    }
     if (!accountToUpdate) {
       return NextResponse.json(
         { error: `Account ${account_id} not found` },

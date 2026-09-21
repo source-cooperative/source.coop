@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import { serviceAccountGrantProblem } from "@/lib/accounts/service-accounts";
 import {
   Actions,
   Membership,
   MembershipInvitation,
   MembershipInvitationSchema,
   MembershipState,
+  AccountType,
 } from "@/types";
 import { StatusCodes } from "http-status-codes";
 import { isAuthorized } from "@/lib/api/authz";
@@ -92,12 +94,39 @@ export async function POST(
         { status: StatusCodes.NOT_FOUND }
       );
     }
+    if (invitedAccount.type === AccountType.ORGANIZATION) {
+      return NextResponse.json(
+        {
+          error: `Invited account with ID ${membershipInvitation.account_id} is an organization`,
+        },
+        { status: StatusCodes.BAD_REQUEST }
+      );
+    }
+    const grantProblem = serviceAccountGrantProblem(
+      invitedAccount,
+      {
+        membership_account_id: product.account_id,
+        repository_id: product.product_id,
+      },
+      membershipInvitation.role
+    );
+    if (grantProblem) {
+      return NextResponse.json(
+        { error: grantProblem },
+        { status: StatusCodes.BAD_REQUEST }
+      );
+    }
     const membership: Membership = {
       ...membershipInvitation,
       membership_id: randomUUID(),
       membership_account_id: product.account_id,
       repository_id: product.product_id,
-      state: MembershipState.Invited,
+      // Its owner grants a service account access directly — nobody is at
+      // the keyboard to accept an invitation.
+      state:
+        invitedAccount.type === AccountType.SERVICE
+          ? MembershipState.Member
+          : MembershipState.Invited,
       state_changed: new Date().toISOString(),
     };
     if (!isAuthorized(session, membership, Actions.InviteMembership)) {
