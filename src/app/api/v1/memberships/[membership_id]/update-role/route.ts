@@ -23,7 +23,7 @@
  *             properties:
  *               role:
  *                 type: string
- *                 enum: [owners, maintainers, members]
+ *                 enum: [owners, maintainers, read_data, write_data]
  *                 description: The new role for the membership
  *     responses:
  *       200:
