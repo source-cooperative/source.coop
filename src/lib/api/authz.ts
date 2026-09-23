@@ -534,8 +534,8 @@ export function canManageAccount(
     return false;
   }
 
-  // hasRole treats the principal's own account as a match, so this also covers
-  // an individual account managing itself.
+  // hasRole treats a person's own account as a match, so this also covers an
+  // individual managing their own account.
   return hasRole(
     session,
     [MembershipRole.Owners, MembershipRole.Maintainers],
@@ -670,8 +670,8 @@ function putAccountProfile(
     return false;
   }
 
-  // If the user is the account owner, they are authorized
-  if (principal?.account?.account_id === account.account_id) {
+  // A person may edit their own profile
+  if (isSelf(principal, account.account_id)) {
     return true;
   }
 
@@ -1597,14 +1597,27 @@ function inviteMembership(
   );
 }
 
+/**
+ * Whether `principal` is `account_id` acting on itself. Only a person gets
+ * this. A machine principal has an account id of its own too, but must never
+ * hold the owner's rights over itself — that is how it would grant itself
+ * memberships or rewrite its own profile.
+ */
+function isSelf(principal: UserSession | null, account_id: string): boolean {
+  return (
+    principal?.account?.account_id === account_id &&
+    principal.account.type === AccountType.INDIVIDUAL
+  );
+}
+
 function hasRole(
   principal: UserSession | null,
   roles: MembershipRole[],
   account_id: string,
   repository_id?: string
 ): boolean {
-  // If the user is the owner of the account, they are authorized
-  if (principal?.account?.account_id === account_id) {
+  // A person is authorized on their own account
+  if (isSelf(principal, account_id)) {
     return true;
   }
 

@@ -1,5 +1,6 @@
 import {
   isAuthorized,
+  canManageAccount,
   canManageAccountDataConnections,
   canCreateProductForAccount,
 } from "./authz";
@@ -3886,5 +3887,42 @@ describe("canCreateProductForAccount", () => {
     );
     expect(canCreateProductForAccount(sessions["disabled"], org)).toBe(false);
     expect(canCreateProductForAccount(sessions["anonymous"], org)).toBe(false);
+  });
+});
+
+describe("self-authorization is for people only", () => {
+  const org = accounts.find((a) => a.account_id === "organization")!;
+  const person = accounts.find((a) => a.account_id === "regular-user")!;
+  // A membership on the organization, for the invite / role-update checks.
+  const orgMembership = memberships.find(
+    (m) =>
+      m.account_id === "regular-user" &&
+      m.membership_account_id === "organization"
+  )!;
+  // A principal that is not a person. Stands in for a service account until
+  // AccountType.SERVICE exists; the shortcut must not apply to it either way.
+  const machine: UserSession = {
+    identity_id: null,
+    account: org,
+    memberships: [],
+  };
+
+  test("a person still manages their own account", () => {
+    expect(canManageAccount(sessions["regular-user"], person)).toBe(true);
+    expect(
+      isAuthorized(sessions["regular-user"], person, Actions.PutAccountProfile)
+    ).toBe(true);
+  });
+
+  test("a non-person principal holds no rights over itself", () => {
+    expect(canManageAccount(machine, org)).toBe(false);
+    expect(isAuthorized(machine, org, Actions.PutAccountProfile)).toBe(false);
+    expect(isAuthorized(machine, org, Actions.PutAccountFlags)).toBe(false);
+    expect(
+      isAuthorized(machine, orgMembership, Actions.InviteMembership)
+    ).toBe(false);
+    expect(
+      isAuthorized(machine, orgMembership, Actions.UpdateMembershipRole)
+    ).toBe(false);
   });
 });
