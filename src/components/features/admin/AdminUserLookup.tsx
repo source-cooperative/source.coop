@@ -23,47 +23,47 @@ interface AdminUserLookupProps {
 export function AdminUserLookup({ query, search }: AdminUserLookupProps) {
   return (
     <Box>
-      <AdminUserSearchField query={query} />
-
-      {search && (
-        <Box mt="4">
-          <Text as="p" size="2" color="gray" mb="2">
-            {describe(search, query)}
-          </Text>
-          <Flex direction="column" gap="2">
-            {search.results.map((user) => (
-              <Link
-                key={user.account_id}
-                href={accountUrl(user.account_id)}
-                style={{ textDecoration: "none", color: "inherit" }}
-              >
-                <Flex
-                  align="center"
-                  justify="between"
-                  p="3"
-                  style={accountCardSurface}
+      <AdminUserSearchField query={query}>
+        {search && (
+          <Box mt="4">
+            <Text as="p" size="2" color="gray" mb="2">
+              {describe(search, query)}
+            </Text>
+            <Flex direction="column" gap="2">
+              {search.results.map((user) => (
+                <Link
+                  key={user.account_id}
+                  href={accountUrl(user.account_id)}
+                  style={{ textDecoration: "none", color: "inherit" }}
                 >
-                  <AccountIdentity
-                    name={user.name || user.account_id}
-                    accountId={user.account_id}
-                    size="2"
-                    avatar={
-                      <Avatar
-                        size="2"
-                        radius="full"
-                        src={user.profile_image}
-                        fallback={(user.name ||
-                          user.account_id)[0].toUpperCase()}
-                      />
-                    }
-                  />
-                  {user.disabled && <Badge color="red">Disabled</Badge>}
-                </Flex>
-              </Link>
-            ))}
-          </Flex>
-        </Box>
-      )}
+                  <Flex
+                    align="center"
+                    justify="between"
+                    p="3"
+                    style={accountCardSurface}
+                  >
+                    <AccountIdentity
+                      name={user.name || user.account_id}
+                      accountId={user.account_id}
+                      size="2"
+                      avatar={
+                        <Avatar
+                          size="2"
+                          radius="full"
+                          src={user.profile_image}
+                          fallback={(user.name ||
+                            user.account_id)[0].toUpperCase()}
+                        />
+                      }
+                    />
+                    {user.disabled && <Badge color="red">Disabled</Badge>}
+                  </Flex>
+                </Link>
+              ))}
+            </Flex>
+          </Box>
+        )}
+      </AdminUserSearchField>
     </Box>
   );
 }

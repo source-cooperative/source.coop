@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
+import { userEvent, within } from "storybook/test";
 import { AccountType } from "@/types";
 import { AdminUserLookup } from "./AdminUserLookup";
 
@@ -50,6 +51,21 @@ export const DatabaseMatches: Story = {
         },
       ],
     },
+  },
+};
+
+/**
+ * A search in flight. From the first keystroke that differs from the URL until
+ * the page for the new query renders, the field shows a spinner and the
+ * results below are dimmed, so the old answer is not mistaken for the new one.
+ */
+export const Searching: Story = {
+  args: DatabaseMatches.args,
+  play: async ({ canvasElement }) => {
+    await userEvent.type(
+      within(canvasElement).getByLabelText("Search users"),
+      "e",
+    );
   },
 };
 
