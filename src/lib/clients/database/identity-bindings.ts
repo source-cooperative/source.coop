@@ -4,7 +4,7 @@ import {
   PutCommand,
   QueryCommand,
 } from "@aws-sdk/lib-dynamodb";
-import type { IdentityBinding } from "@/types";
+import { IdentityBindingSchema, type IdentityBinding } from "@/types";
 import { BaseTable } from "./base";
 
 /** The (issuer, subject) pair already resolves to an account. */
@@ -12,17 +12,6 @@ export class IdentityAlreadyBoundError extends Error {
   constructor(issuer: string, subject: string) {
     super(`Identity already bound: ${issuer} ${subject}`);
     this.name = "IdentityAlreadyBoundError";
-  }
-}
-
-/**
- * Both halves of the key must be real. An issuer read from unset config would
- * be `""`, and every binding written under it would share one partition and
- * answer for each other.
- */
-function requireKey(issuer: string, subject: string): void {
-  if (!issuer || !subject) {
-    throw new Error("An identity binding needs both an issuer and a subject");
   }
 }
 
@@ -42,7 +31,6 @@ export class IdentityBindingsTable extends BaseTable {
     issuer: string,
     subject: string
   ): Promise<IdentityBinding | null> {
-    requireKey(issuer, subject);
     try {
       const result = await this.cachedSend(
         new GetCommand({ TableName: this.table, Key: { issuer, subject } })
@@ -54,40 +42,51 @@ export class IdentityBindingsTable extends BaseTable {
     }
   }
 
-  async listByAccount(account_id: string): Promise<IdentityBinding[]> {
-    const result = await this.cachedSend(
-      new QueryCommand({
-        TableName: this.table,
-        IndexName: "account_id",
-        KeyConditionExpression: "account_id = :account_id",
-        ExpressionAttributeValues: { ":account_id": account_id },
-      })
-    );
+  /**
+   * An account's bindings. A destructive caller passes `bypassCache` so it
+   * acts on what the table holds now, not on a read memoized earlier in the
+   * request that may predate a binding.
+   */
+  async listByAccount(
+    account_id: string,
+    bypassCache = false
+  ): Promise<IdentityBinding[]> {
+    const command = new QueryCommand({
+      TableName: this.table,
+      IndexName: "account_id",
+      KeyConditionExpression: "account_id = :account_id",
+      ExpressionAttributeValues: { ":account_id": account_id },
+    });
+    const result = bypassCache
+      ? await this.client.send(command)
+      : await this.cachedSend(command);
     return (result.Items ?? []) as IdentityBinding[];
   }
 
   /**
    * Binds the pair, or throws `IdentityAlreadyBoundError` if it is already
-   * bound — to this account or any other.
+   * bound — to this account or any other. The row is validated first: an
+   * issuer read from unset config would be `""`, and every binding written
+   * under it would share one partition.
    */
   async create(binding: IdentityBinding): Promise<IdentityBinding> {
-    requireKey(binding.issuer, binding.subject);
+    const row = IdentityBindingSchema.parse(binding);
     try {
       await this.client.send(
         new PutCommand({
           TableName: this.table,
-          Item: binding,
+          Item: row,
           ConditionExpression: "attribute_not_exists(issuer)",
         })
       );
     } catch (error) {
       if ((error as { name?: string })?.name === "ConditionalCheckFailedException") {
-        throw new IdentityAlreadyBoundError(binding.issuer, binding.subject);
+        throw new IdentityAlreadyBoundError(row.issuer, row.subject);
       }
-      this.logError("create", error, { account_id: binding.account_id });
+      this.logError("create", error, { account_id: row.account_id });
       throw error;
     }
-    return binding;
+    return row;
   }
 
   async delete(issuer: string, subject: string): Promise<void> {

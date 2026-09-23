@@ -19,11 +19,11 @@ const jane = account({ account_id: "jane-doe", identity_id: "ory-jane" });
 const acme = account({ account_id: "acme", type: AccountType.ORGANIZATION });
 const bot = account({ account_id: "acme-bot", type: AccountType.SERVICE });
 
-/** Answers the key query and the identity_id index query from `items`. */
+/** Answers the key query and the identity_id index query from `items`; records writes. */
 function fakeAccounts(items: Account[]) {
   const send = jest.fn(async (command: { input: Record<string, unknown> }) => {
     const values = command.input.ExpressionAttributeValues as Record<string, string> | undefined;
-    if (!values) return {}; // a Delete of the row itself
+    if (!values) return {}; // a write
     if (values[":account_id"] !== undefined) {
       return { Items: items.filter((a) => a.account_id === values[":account_id"]) };
     }
@@ -32,16 +32,11 @@ function fakeAccounts(items: Account[]) {
   return { send, client: { send } as unknown as DynamoDBDocumentClient };
 }
 
-/** Answers Get by key, Query on the account_id index, and Delete, over `bindings`. */
+/** Answers Get by key and Query on the account_id index over `bindings`. */
 function fakeBindings(bindings: IdentityBinding[]) {
   const send = jest.fn(async (command: { input: Record<string, unknown> }) => {
     const key = command.input.Key as { issuer: string; subject: string } | undefined;
-    const at = (b: IdentityBinding) => b.issuer === key?.issuer && b.subject === key?.subject;
-    if (key && command.constructor.name === "DeleteCommand") {
-      bindings.splice(bindings.findIndex(at), 1);
-      return {};
-    }
-    if (key) return { Item: bindings.find(at) };
+    if (key) return { Item: bindings.find((b) => b.issuer === key.issuer && b.subject === key.subject) };
     const values = command.input.ExpressionAttributeValues as Record<string, string>;
     return { Items: bindings.filter((b) => b.account_id === values[":account_id"]) };
   });
@@ -93,14 +88,23 @@ describe("AccountsTable identity resolution", () => {
     expect(await table.fetchByIdentity(CI, "unknown")).toBeNull();
   });
 
-  it("removes an account's bindings when the account is deleted", async () => {
-    // Otherwise the orphaned pair would keep that subject from ever binding again.
+  it("removes an account and its bindings in one transaction, keyed as the tables are", async () => {
+    // Otherwise an orphaned pair would keep that subject from ever binding
+    // again — and a half-done cascade would leave an account some of whose
+    // sign-in paths are gone.
     const bindings = [bound(PROXY, "acme-bot", "acme-bot"), bound(CI, "ci", "acme-bot")];
-    const { table } = tableFor([bot], bindings);
+    const { table, send, bindingsSend } = tableFor([bot], bindings);
 
-    await table.delete({ account_id: "acme-bot", type: AccountType.SERVICE });
+    await table.delete("acme-bot");
 
-    expect(bindings).toEqual([]);
+    // The list is read fresh, not from the request cache.
+    expect(bindingsSend.mock.calls[0][0].constructor.name).toBe("QueryCommand");
+    const write = send.mock.calls.find((c) => c[0].constructor.name === "TransactWriteCommand")!;
+    expect(write[0].input.TransactItems).toEqual([
+      { Delete: { TableName: "sc-test-identity-bindings", Key: { issuer: PROXY, subject: "acme-bot" } } },
+      { Delete: { TableName: "sc-test-identity-bindings", Key: { issuer: CI, subject: "ci" } } },
+      { Delete: { TableName: "sc-test-accounts", Key: { account_id: "acme-bot" } } },
+    ]);
   });
 
   it("tells issuers apart", async () => {

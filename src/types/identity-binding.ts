@@ -10,9 +10,9 @@ extendZodWithOpenApi(z);
  */
 export const IdentityBindingSchema = z
   .object({
-    issuer: z.string().min(1).openapi({ example: "https://auth.source.coop" }),
-    subject: z.string().min(1).openapi({ example: "identity-id" }),
-    account_id: z.string().openapi({ example: "account-id" }),
+    issuer: z.string().min(1).openapi({ example: "https://token.actions.githubusercontent.com" }),
+    subject: z.string().min(1).openapi({ example: "repo:acme/data:ref:refs/heads/main" }),
+    account_id: z.string().min(1).openapi({ example: "acme-nightly-sync" }),
     created_at: z.string().datetime(),
   })
   .openapi("IdentityBinding");

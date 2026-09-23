@@ -4,7 +4,7 @@ import {
   ScanCommand,
   type ScanCommandOutput,
   UpdateCommand,
-  DeleteCommand,
+  TransactWriteCommand,
   PutCommand,
   BatchGetCommand,
 } from "@aws-sdk/lib-dynamodb";
@@ -344,15 +344,26 @@ export class AccountsTable extends BaseTable {
     ) as ServiceAccount[];
   }
 
-  async delete(Key: { account_id: string; type: AccountType }): Promise<void> {
-    // An orphaned binding would keep the identity from ever binding again.
-    for (const binding of await this.bindings.listByAccount(Key.account_id)) {
-      await this.bindings.delete(binding.issuer, binding.subject);
-    }
+  /**
+   * Removes the account and its bindings together. An orphaned binding would
+   * keep its subject from ever binding again, and a cascade that stopped
+   * half-way would leave an account some of whose sign-in paths are gone, so
+   * the deletes are one transaction. The bindings are read fresh: a memoized
+   * list from earlier in the request could predate one of them.
+   */
+  async delete(account_id: string): Promise<void> {
+    const bindings = await this.bindings.listByAccount(account_id, true);
     await this.client.send(
-      new DeleteCommand({
-        TableName: this.table,
-        Key,
+      new TransactWriteCommand({
+        TransactItems: [
+          ...bindings.map((b) => ({
+            Delete: {
+              TableName: this.bindings.table,
+              Key: { issuer: b.issuer, subject: b.subject },
+            },
+          })),
+          { Delete: { TableName: this.table, Key: { account_id } } },
+        ],
       })
     );
   }

@@ -56,14 +56,28 @@ describe("IdentityBindingsTable", () => {
     expect(await tableWith(jest.fn(async () => ({}))).resolve("x", "y")).toBeNull();
   });
 
-  it("refuses an empty issuer or subject, before touching the table", async () => {
+  it("refuses a malformed row before touching the table", async () => {
     // An issuer read from unset config is "", and every binding written under
-    // it would share one partition.
+    // it would share one partition; an empty account_id cannot be indexed.
     const send = jest.fn(async () => ({}));
     const table = tableWith(send);
-    await expect(table.resolve("", "subject")).rejects.toThrow(/issuer and a subject/);
-    await expect(table.create({ ...binding, issuer: "" })).rejects.toThrow(/issuer and a subject/);
-    await expect(table.create({ ...binding, subject: "" })).rejects.toThrow(/issuer and a subject/);
+    await expect(table.create({ ...binding, issuer: "" })).rejects.toThrow();
+    await expect(table.create({ ...binding, subject: "" })).rejects.toThrow();
+    await expect(table.create({ ...binding, account_id: "" })).rejects.toThrow();
+    await expect(table.create({ ...binding, created_at: "yesterday" })).rejects.toThrow();
     expect(send).not.toHaveBeenCalled();
+  });
+
+  it("lists an account's bindings from the request cache unless told not to", async () => {
+    const send = jest.fn(async () => ({ Items: [binding] }));
+    const table = tableWith(send);
+
+    expect(await table.listByAccount("o-bot")).toEqual([binding]);
+    expect(await table.listByAccount("o-bot")).toEqual([binding]);
+    expect(send).toHaveBeenCalledTimes(1);
+
+    // A destructive caller reads what the table holds now.
+    expect(await table.listByAccount("o-bot", true)).toEqual([binding]);
+    expect(send).toHaveBeenCalledTimes(2);
   });
 });
