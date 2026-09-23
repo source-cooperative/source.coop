@@ -12,7 +12,8 @@ import {
  * One service account's page, reached from its row in the owner's list and
  * where creating one lands. It shows the workflows the account trusts, each
  * with an "Example usage" modal holding the step the workflow adds, and a
- * dialog to trust another; the products it reaches, each with Read / Read
+ * dialog to trust another; its API keys, marked once revoked or expired,
+ * each revocable, with a dialog to issue one; the products it reaches, each with Read / Read
  * and write and an X, and "Grant a product", which adds a row to choose a
  * product and its access, saved with its check — the create form's list; and,
  * set apart in a danger zone, disabling and deleting it.
@@ -79,6 +80,26 @@ const summary: ServiceAccountSummary = {
     grant("climate-data", MembershipRole.WriteData),
     grant("reference-data", MembershipRole.ReadData),
   ],
+  keys: [
+    {
+      jti: "k1",
+      account_id: "nightly-sync",
+      label: "HPC cron job",
+      created_at: "2026-03-12T00:00:00Z",
+      created_by: "acoltrane",
+      expires_at: "2027-03-12T00:00:00Z",
+      last_used_at: "2026-03-20T00:00:00Z",
+    },
+    {
+      jti: "k2",
+      account_id: "nightly-sync",
+      label: "Old laptop",
+      created_at: "2025-03-12T00:00:00Z",
+      created_by: "acoltrane",
+      expires_at: null,
+      revoked_at: "2026-01-01T00:00:00Z",
+    },
+  ],
 };
 
 export const Default: Story = { args: { summary } };
@@ -90,5 +111,5 @@ export const Disabled: Story = {
 
 /** Just created with nothing named: it cannot sign in and reaches nothing. */
 export const Empty: Story = {
-  args: { summary: { account, trusts: [], grants: [] } },
+  args: { summary: { account, trusts: [], grants: [], keys: [] } },
 };
