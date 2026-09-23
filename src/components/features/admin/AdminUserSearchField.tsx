@@ -1,6 +1,12 @@
 "use client";
 
-import { useEffect, useState, useTransition, type ReactNode } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  useTransition,
+  type ReactNode,
+} from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Box, Spinner, TextField } from "@radix-ui/themes";
 import { MagnifyingGlassIcon } from "@radix-ui/react-icons";
@@ -33,15 +39,29 @@ export function AdminUserSearchField({
   const [isPending, startTransition] = useTransition();
   const debounced = useDebounce(value.trim(), 400);
   const searching = isPending || value.trim() !== query;
+  // The query this component last saw in the URL, whether it put it there or
+  // not. Keeps the two effects below from feeding each other.
+  const urlQuery = useRef(query);
 
+  // The URL changed under us (back/forward, or a link opened into a mounted
+  // page): follow it, rather than pushing the stale field value back over it.
   useEffect(() => {
-    if (debounced === query) return;
+    if (query === urlQuery.current) return;
+    urlQuery.current = query;
+    setValue(query);
+  }, [query]);
+
+  // A local edit settled: push it into the URL. Keyed only off `debounced`, so
+  // an external URL change resynced above cannot re-fire it.
+  useEffect(() => {
+    if (debounced === urlQuery.current) return;
+    urlQuery.current = debounced;
     startTransition(() => {
       router.replace(
         debounced ? `${pathname}?q=${encodeURIComponent(debounced)}` : pathname,
       );
     });
-  }, [debounced, query, pathname, router]);
+  }, [debounced, pathname, router]);
 
   return (
     <>
