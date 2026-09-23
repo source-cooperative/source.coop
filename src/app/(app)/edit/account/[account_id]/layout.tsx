@@ -5,7 +5,11 @@ import {
   SettingsHeader,
 } from "@/components/features/settings";
 import { getPageSession } from "@/lib/api/utils";
-import { isAuthorized, canManageAccountDataConnections } from "@/lib/api/authz";
+import {
+  isAuthorized,
+  canManageAccount,
+  canManageAccountDataConnections,
+} from "@/lib/api/authz";
 import { Actions } from "@/types";
 import { accountsTable } from "@/lib/clients/database";
 import { notFound } from "next/navigation";
@@ -17,12 +21,14 @@ import {
   ImageIcon,
   Link1Icon,
   ExternalLinkIcon,
+  CubeIcon,
 } from "@radix-ui/react-icons";
 import {
   editAccountProfileUrl,
   editAccountProfilePictureUrl,
   editAccountPermissionsUrl,
   editAccountMembershipsUrl,
+  editAccountServiceAccountsUrl,
   accountDataConnectionsUrl,
   accountUrl,
   orySettingsUrl,
@@ -121,6 +127,14 @@ export default async function AccountLayout({
         accountToEdit,
         Actions.GetAccountFlags,
       ),
+    },
+    // Individuals and organizations alike can own service accounts.
+    {
+      id: "service-accounts",
+      label: "Service Accounts",
+      href: editAccountServiceAccountsUrl(account_id),
+      icon: <CubeIcon width="16" height="16" />,
+      condition: canManageAccount(userSession, accountToEdit),
     },
     ...(accountToEdit.type === "organization"
       ? [

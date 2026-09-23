@@ -24,3 +24,15 @@ export const AccountTrustSchema = z
 
 export type AccountTrust = z.infer<typeof AccountTrustSchema>;
 
+
+/** The issuer of GitHub Actions' ambient OIDC tokens. */
+export const GITHUB_ACTIONS_ISSUER = "https://token.actions.githubusercontent.com";
+
+/**
+ * A GitHub Actions subject pinned to one repository and one ref or one
+ * environment: `repo:{owner}/{repo}:ref:{ref}` or
+ * `repo:{owner}/{repo}:environment:{name}`. Nothing organization-wide. A ref
+ * has no whitespace, by git's rules; an environment name may.
+ */
+export const GITHUB_ACTIONS_SUBJECT_REGEX =
+  /^repo:[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+:(ref:refs\/[^\s:]+|environment:[^:]+)$/;

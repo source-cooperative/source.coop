@@ -2,6 +2,7 @@ import {
   isAdmin,
   isAuthorized,
   canManageAccount,
+  canManageServiceAccount,
   canManageAccountDataConnections,
   canCreateProductForAccount,
 } from "./authz";
@@ -3970,6 +3971,19 @@ describe("service accounts", () => {
     // A person may create one under their own account.
     const ownBot = { ...bot, owner_account_id: "regular-user" };
     expect(isAuthorized(sessions["regular-user"], ownBot, Actions.CreateAccount)).toBe(true);
+  });
+
+  test("are managed by whoever manages their owner, and by no one else", () => {
+    expect(canManageServiceAccount(sessions["organization-owner-user"], bot)).toBe(true);
+    expect(canManageServiceAccount(sessions["organization-maintainer-user"], bot)).toBe(true);
+    expect(canManageServiceAccount(sessions["admin"], bot)).toBe(true);
+    expect(canManageServiceAccount(sessions["organization-read-data-user"], bot)).toBe(false);
+    expect(canManageServiceAccount(sessions["regular-user"], bot)).toBe(false);
+    expect(canManageServiceAccount(botSession, bot)).toBe(false);
+    // Only for service accounts: an organization's owner does not "manage" it
+    // this way, and neither does an admin.
+    expect(canManageServiceAccount(sessions["organization-owner-user"], org)).toBe(false);
+    expect(canManageServiceAccount(sessions["admin"], org)).toBe(false);
   });
 
   test("hold no rights over themselves", () => {

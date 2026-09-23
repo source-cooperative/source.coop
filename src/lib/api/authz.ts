@@ -545,6 +545,32 @@ export function canManageAccount(
 }
 
 /**
+ * Whether `session` may manage `account` as a service account — its
+ * integrations, memberships and lifecycle. That is whoever manages its owner:
+ * the owner's owners and maintainers, or an individual owner themselves, or
+ * an admin. False for anything that is not a service account, whoever asks.
+ * A disabled service account is still managed this way, so
+ * it can be re-enabled or deleted; what may not happen to it while disabled
+ * (a new trust, a new key) is refused where that thing is attached.
+ */
+export function canManageServiceAccount(
+  session: UserSession | null,
+  account: Account
+): boolean {
+  if (!isServiceAccount(account) || session?.account?.disabled) {
+    return false;
+  }
+  if (isAdmin(session)) {
+    return true;
+  }
+  return hasRole(
+    session,
+    [MembershipRole.Owners, MembershipRole.Maintainers],
+    account.owner_account_id
+  );
+}
+
+/**
  * Whether `session` may create/manage data connections *owned by* `account`.
  *
  * The per-action authz functions above only ever see a connection's `owner`

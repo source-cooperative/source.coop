@@ -1,6 +1,19 @@
-import { GetCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
-import type { AccountTrust } from "@/types";
+import {
+  DeleteCommand,
+  GetCommand,
+  PutCommand,
+  QueryCommand,
+} from "@aws-sdk/lib-dynamodb";
+import { AccountTrustSchema, type AccountTrust } from "@/types";
 import { BaseTable } from "./base";
+
+/** The account already trusts this subject from this issuer. */
+export class AlreadyTrustedError extends Error {
+  constructor(account_id: string, issuer: string, subject: string) {
+    super(`${account_id} already trusts ${issuer} ${subject}`);
+    this.name = "AlreadyTrustedError";
+  }
+}
 
 /**
  * The sort key: an issuer and a subject as one string. An issuer is a URL and
@@ -57,6 +70,36 @@ export class AccountTrustsTable extends BaseTable {
       ExclusiveStartKey = result.LastEvaluatedKey;
     } while (ExclusiveStartKey);
     return trusts;
+  }
+
+  /** Adds a trust, or throws `AlreadyTrustedError` if the account has it. */
+  async create(trust: AccountTrust): Promise<AccountTrust> {
+    const row = AccountTrustSchema.parse(trust);
+    try {
+      await this.client.send(
+        new PutCommand({
+          TableName: this.table,
+          Item: { ...row, identity: identityKey(row.issuer, row.subject) },
+          ConditionExpression: "attribute_not_exists(identity)",
+        })
+      );
+    } catch (error) {
+      if ((error as { name?: string })?.name === "ConditionalCheckFailedException") {
+        throw new AlreadyTrustedError(row.account_id, row.issuer, row.subject);
+      }
+      this.logError("create", error, { account_id: row.account_id });
+      throw error;
+    }
+    return row;
+  }
+
+  async delete(account_id: string, issuer: string, subject: string): Promise<void> {
+    await this.client.send(
+      new DeleteCommand({
+        TableName: this.table,
+        Key: { account_id, identity: identityKey(issuer, subject) },
+      })
+    );
   }
 }
 
