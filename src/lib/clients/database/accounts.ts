@@ -26,6 +26,8 @@ import { LOGGER } from "@/lib/logging";
 export interface AccountSuggestion {
   account_id: string;
   name: string;
+  /** So a picker can say which of its suggestions are machines. */
+  type: AccountType;
   profile_image?: string;
 }
 
@@ -208,6 +210,7 @@ export class AccountsTable extends BaseTable {
         matches.push({
           account_id: item.account_id,
           name,
+          type: item.type,
           profile_image: item.metadata_public?.profile_image,
         });
         if (matches.length >= limit) return matches;

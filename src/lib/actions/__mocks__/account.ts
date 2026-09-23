@@ -2,6 +2,7 @@ import { fn } from "storybook/test";
 import type * as Real from "../account";
 import type { FormState } from "@/components/core/DynamicForm";
 import type { AccountSuggestion } from "@/lib/clients/database/accounts";
+import { AccountType } from "@/types";
 
 /**
  * Storybook stand-in for the account server actions.
@@ -29,10 +30,10 @@ export const searchAccounts: typeof Real.searchAccounts = fn(
     query.trim().length < 2
       ? []
       : [
-          { account_id: "acoltrane", name: "Alice Coltrane" },
-          { account_id: "miskatonic", name: "Miskatonic University" },
+          { account_id: "acoltrane", name: "Alice Coltrane", type: AccountType.INDIVIDUAL },
+          { account_id: "miskatonic", name: "Miskatonic University", type: AccountType.ORGANIZATION },
           ...(memberOf === "miskatonic"
-            ? [{ account_id: "miskatonic-bot", name: "Miskatonic Bot" }]
+            ? [{ account_id: "miskatonic-bot", name: "Miskatonic Bot", type: AccountType.SERVICE }]
             : []),
         ]
 ).mockName("searchAccounts");

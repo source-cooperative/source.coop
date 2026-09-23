@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
-import { Avatar, Box, Spinner, TextField, Theme } from "@radix-ui/themes";
+import { Avatar, Badge, Box, Flex, Spinner, TextField, Theme } from "@radix-ui/themes";
 // The primitive rather than `Popover` from @radix-ui/themes: that wrapper's
 // Anchor destructures `children` away and never renders them, so the field
 // inside it disappears. Same package Themes builds its own Popover on, and the
@@ -9,6 +9,7 @@ import { Avatar, Box, Spinner, TextField, Theme } from "@radix-ui/themes";
 import * as PopoverPrimitive from "@radix-ui/react-popover";
 import { searchAccounts } from "@/lib/actions/account";
 import type { AccountSuggestion } from "@/lib/clients/database/accounts";
+import { AccountType } from "@/types";
 import { AccountIdentity, accountCardSurface } from "./AccountIdentity";
 import type { ControlProps } from "./DynamicForm";
 
@@ -213,19 +214,28 @@ export function AccountSearchInput({
                 index === activeIndex ? "var(--gray-4)" : undefined,
             }}
           >
-            <AccountIdentity
-              name={match.name}
-              accountId={match.account_id}
-              size="2"
-              avatar={
-                <Avatar
-                  size="2"
-                  radius="full"
-                  src={match.profile_image}
-                  fallback={(match.name || match.account_id)[0].toUpperCase()}
-                />
-              }
-            />
+            <Flex align="center" justify="between" gap="2">
+              <AccountIdentity
+                name={match.name}
+                accountId={match.account_id}
+                size="2"
+                avatar={
+                  <Avatar
+                    size="2"
+                    radius="full"
+                    src={match.profile_image}
+                    fallback={(match.name || match.account_id)[0].toUpperCase()}
+                  />
+                }
+              />
+              {/* The same badge the memberships table gives a machine, so a
+                  bot reads as one before it is picked, not only after. */}
+              {match.type === AccountType.SERVICE && (
+                <Badge size="1" color="gray" variant="outline">
+                  Service account
+                </Badge>
+              )}
+            </Flex>
           </Box>
         ))}
           </PopoverPrimitive.Content>

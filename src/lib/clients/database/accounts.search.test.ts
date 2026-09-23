@@ -19,8 +19,8 @@ const account = (fields: Partial<Account>): Account =>
   }) as Account;
 
 const ITEMS = [
-  account({ account_id: "jane-doe", name: "Jane Doe" }),
-  account({ account_id: "jsmith", name: "John Smith" }),
+  account({ account_id: "jane-doe", name: "Jane Doe", type: AccountType.INDIVIDUAL }),
+  account({ account_id: "jsmith", name: "John Smith", type: AccountType.INDIVIDUAL }),
   account({ account_id: "acme", name: "Jane's Lab", type: AccountType.ORGANIZATION }),
   account({ account_id: "janitor", name: "Jan Retired", disabled: true }),
   account({
@@ -45,10 +45,10 @@ describe("AccountsTable.searchMemberCandidates", () => {
     const { table } = tableFor(ITEMS);
 
     expect(await table.searchMemberCandidates("JANE")).toEqual([
-      { account_id: "jane-doe", name: "Jane Doe" },
+      { account_id: "jane-doe", name: "Jane Doe", type: AccountType.INDIVIDUAL },
     ]);
     expect(await table.searchMemberCandidates("smith")).toEqual([
-      { account_id: "jsmith", name: "John Smith" },
+      { account_id: "jsmith", name: "John Smith", type: AccountType.INDIVIDUAL },
     ]);
   });
 
@@ -69,6 +69,7 @@ describe("AccountsTable.searchMemberCandidates", () => {
       {
         account_id: "jane-doe",
         name: "Jane Doe",
+        type: AccountType.INDIVIDUAL,
         profile_image: "https://example.test/jane.png",
       },
     ]);
@@ -83,7 +84,7 @@ describe("AccountsTable.searchMemberCandidates", () => {
 
     // "jan" is a substring of the org's name and the disabled account's handle.
     expect(await table.searchMemberCandidates("jan")).toEqual([
-      { account_id: "jane-doe", name: "Jane Doe" },
+      { account_id: "jane-doe", name: "Jane Doe", type: AccountType.INDIVIDUAL },
     ]);
   });
 
@@ -91,7 +92,7 @@ describe("AccountsTable.searchMemberCandidates", () => {
     const { table } = tableFor(ITEMS);
 
     expect(await table.searchMemberCandidates("acme", "acme")).toEqual([
-      { account_id: "acme-bot", name: "Acme Bot" },
+      { account_id: "acme-bot", name: "Acme Bot", type: AccountType.SERVICE },
     ]);
     expect(await table.searchMemberCandidates("acme")).toEqual([]);
     expect(await table.searchMemberCandidates("acme", "someone-else")).toEqual([]);
@@ -109,7 +110,7 @@ describe("AccountsTable.searchMemberCandidates", () => {
     const { table, send } = tableFor(ITEMS, { LastEvaluatedKey: { account_id: "x" } });
 
     expect(await table.searchMemberCandidates("j", undefined, 1)).toEqual([
-      { account_id: "jane-doe", name: "Jane Doe" },
+      { account_id: "jane-doe", name: "Jane Doe", type: AccountType.INDIVIDUAL },
     ]);
     expect(send).toHaveBeenCalledTimes(1);
   });
