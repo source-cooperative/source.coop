@@ -19,10 +19,16 @@ const account = (fields: Partial<Account>): Account =>
   }) as Account;
 
 const ITEMS = [
-  account({ account_id: "jane-doe", name: "Jane Doe" }),
-  account({ account_id: "jsmith", name: "John Smith" }),
+  account({ account_id: "jane-doe", name: "Jane Doe", type: AccountType.INDIVIDUAL }),
+  account({ account_id: "jsmith", name: "John Smith", type: AccountType.INDIVIDUAL }),
   account({ account_id: "acme", name: "Jane's Lab", type: AccountType.ORGANIZATION }),
   account({ account_id: "janitor", name: "Jan Retired", disabled: true }),
+  account({
+    account_id: "acme-bot",
+    name: "Acme Bot",
+    type: AccountType.SERVICE,
+    owner_account_id: "acme",
+  } as Partial<Account>),
 ];
 
 function tableFor(items: Account[], extra: Record<string, any> = {}) {
@@ -34,15 +40,15 @@ function tableFor(items: Account[], extra: Record<string, any> = {}) {
   return { table, send };
 }
 
-describe("AccountsTable.searchIndividuals", () => {
+describe("AccountsTable.searchMemberCandidates", () => {
   it("matches the handle or the display name, case-insensitively", async () => {
     const { table } = tableFor(ITEMS);
 
-    expect(await table.searchIndividuals("JANE")).toEqual([
-      { account_id: "jane-doe", name: "Jane Doe" },
+    expect(await table.searchMemberCandidates("JANE")).toEqual([
+      { account_id: "jane-doe", name: "Jane Doe", type: AccountType.INDIVIDUAL },
     ]);
-    expect(await table.searchIndividuals("smith")).toEqual([
-      { account_id: "jsmith", name: "John Smith" },
+    expect(await table.searchMemberCandidates("smith")).toEqual([
+      { account_id: "jsmith", name: "John Smith", type: AccountType.INDIVIDUAL },
     ]);
   });
 
@@ -59,10 +65,11 @@ describe("AccountsTable.searchIndividuals", () => {
       } as Partial<Account>),
     ]);
 
-    expect(await table.searchIndividuals("jane")).toEqual([
+    expect(await table.searchMemberCandidates("jane")).toEqual([
       {
         account_id: "jane-doe",
         name: "Jane Doe",
+        type: AccountType.INDIVIDUAL,
         profile_image: "https://example.test/jane.png",
       },
     ]);
@@ -76,15 +83,25 @@ describe("AccountsTable.searchIndividuals", () => {
     const { table } = tableFor(ITEMS);
 
     // "jan" is a substring of the org's name and the disabled account's handle.
-    expect(await table.searchIndividuals("jan")).toEqual([
-      { account_id: "jane-doe", name: "Jane Doe" },
+    expect(await table.searchMemberCandidates("jan")).toEqual([
+      { account_id: "jane-doe", name: "Jane Doe", type: AccountType.INDIVIDUAL },
     ]);
+  });
+
+  it("offers the service accounts owned by memberOf, and no others", async () => {
+    const { table } = tableFor(ITEMS);
+
+    expect(await table.searchMemberCandidates("acme", "acme")).toEqual([
+      { account_id: "acme-bot", name: "Acme Bot", type: AccountType.SERVICE },
+    ]);
+    expect(await table.searchMemberCandidates("acme")).toEqual([]);
+    expect(await table.searchMemberCandidates("acme", "someone-else")).toEqual([]);
   });
 
   it("returns nothing for an empty query without hitting DynamoDB", async () => {
     const { table, send } = tableFor(ITEMS);
 
-    expect(await table.searchIndividuals("  ")).toEqual([]);
+    expect(await table.searchMemberCandidates("  ")).toEqual([]);
     expect(send).not.toHaveBeenCalled();
   });
 
@@ -92,8 +109,8 @@ describe("AccountsTable.searchIndividuals", () => {
     // LastEvaluatedKey would otherwise drive a second page.
     const { table, send } = tableFor(ITEMS, { LastEvaluatedKey: { account_id: "x" } });
 
-    expect(await table.searchIndividuals("j", 1)).toEqual([
-      { account_id: "jane-doe", name: "Jane Doe" },
+    expect(await table.searchMemberCandidates("j", undefined, 1)).toEqual([
+      { account_id: "jane-doe", name: "Jane Doe", type: AccountType.INDIVIDUAL },
     ]);
     expect(send).toHaveBeenCalledTimes(1);
   });

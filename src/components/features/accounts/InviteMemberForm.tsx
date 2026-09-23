@@ -30,17 +30,19 @@ export function InviteMemberForm({
 
   const fields: FormField<InviteMemberFormData>[] = [
     {
-      label: "User",
+      label: "Account",
       name: "account_id",
       type: "custom",
       required: true,
-      description: "Search by username or name, or type an account ID",
+      description:
+        "Search by username or name, or type an account ID. The organization's service accounts are offered too.",
       customComponent: (controlProps) => (
         <AccountSearchInput
           {...controlProps}
           name="account_id"
           required
           placeholder="username or name"
+          memberOf={organization.account_id}
         />
       ),
     },

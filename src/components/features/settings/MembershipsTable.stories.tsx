@@ -26,8 +26,8 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-const account = (account_id: string, name: string) =>
-  ({ account_id, name, type: "individual" }) as unknown as Account;
+const account = (account_id: string, name: string, type = "individual") =>
+  ({ account_id, name, type }) as unknown as Account;
 
 const membership = (
   account_id: string,
@@ -80,4 +80,25 @@ export const NotEditable: Story = {
 
 export const Empty: Story = {
   args: { ...base, memberships: [], editable: true },
+};
+
+/**
+ * A service account among the members. It is badged, and its name is not a
+ * link — a machine has no profile page to land on. It can only ever be a
+ * reader or a writer, so it sorts below the people who own and maintain.
+ */
+export const WithServiceAccount: Story = {
+  args: {
+    ...base,
+    editable: true,
+    memberships: [
+      membership("acoltrane", MembershipRole.Owners, MembershipState.Member),
+      membership("nightly-sync", MembershipRole.WriteData, MembershipState.Member),
+      membership("newcomer", MembershipRole.ReadData, MembershipState.Invited),
+    ],
+    memberAccountsMap: new Map([
+      ...memberAccountsMap,
+      ["nightly-sync", account("nightly-sync", "Nightly Sync", "service")],
+    ]),
+  },
 };

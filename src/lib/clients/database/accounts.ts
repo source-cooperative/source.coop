@@ -26,6 +26,8 @@ import { LOGGER } from "@/lib/logging";
 export interface AccountSuggestion {
   account_id: string;
   name: string;
+  /** So a picker can say which of its suggestions are machines. */
+  type: AccountType;
   profile_image?: string;
 }
 
@@ -157,7 +159,8 @@ export class AccountsTable extends BaseTable {
    * than surfacing a server error.
    */
   /**
-   * Substring match over individual accounts' handles and display names, for
+   * Substring match over the accounts that can be made a member: individuals,
+   * plus the service accounts owned by `memberOf` when it is given. For
    * type-ahead pickers. Returns only publicly visible identity fields --
    * `profile_image` comes from `metadata_public` and is what profile pages
    * already render. Deliberately no email: the Gravatar fallback used elsewhere
@@ -170,8 +173,9 @@ export class AccountsTable extends BaseTable {
    * current account count; do that — or move to a search service — if the
    * scans start to hurt.
    */
-  async searchIndividuals(
+  async searchMemberCandidates(
     query: string,
+    memberOf?: string,
     limit = 10
   ): Promise<AccountSuggestion[]> {
     const q = query.trim().toLowerCase();
@@ -187,20 +191,26 @@ export class AccountsTable extends BaseTable {
         new ScanCommand({
           TableName: this.table,
           ProjectionExpression:
-            "account_id, #name, #type, disabled, metadata_public.profile_image",
+            "account_id, #name, #type, disabled, owner_account_id, metadata_public.profile_image",
           ExpressionAttributeNames: { "#name": "name", "#type": "type" },
           ExclusiveStartKey: lastEvaluatedKey,
         })
       );
 
       for (const item of (result.Items ?? []) as Account[]) {
-        if (item.type !== AccountType.INDIVIDUAL || item.disabled) continue;
+        const eligible =
+          isIndividualAccount(item) ||
+          (isServiceAccount(item) &&
+            memberOf !== undefined &&
+            item.owner_account_id === memberOf);
+        if (!eligible || item.disabled) continue;
         const name = item.name ?? "";
         if (!item.account_id.includes(q) && !name.toLowerCase().includes(q))
           continue;
         matches.push({
           account_id: item.account_id,
           name,
+          type: item.type,
           profile_image: item.metadata_public?.profile_image,
         });
         if (matches.length >= limit) return matches;
