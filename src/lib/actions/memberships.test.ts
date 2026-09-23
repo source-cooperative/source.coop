@@ -1,12 +1,13 @@
 import {
+  inviteMember,
   acceptInvitation,
   rejectInvitation,
   getPendingInvitation,
 } from "./memberships";
-import { membershipsTable } from "../clients";
+import { accountsTable, membershipsTable } from "../clients";
 import { getPageSession } from "../api/utils";
 import { isAuthorized } from "../api/authz";
-import { Membership, MembershipRole, MembershipState, Actions, AccountType, UserSession } from "@/types";
+import { Account, Membership, MembershipRole, MembershipState, Actions, AccountType, UserSession } from "@/types";
 import { revalidatePath } from "next/cache";
 
 // Mock dependencies
@@ -15,6 +16,11 @@ jest.mock("../clients", () => ({
     fetchById: jest.fn(),
     update: jest.fn(),
     listByUser: jest.fn(),
+    listByAccount: jest.fn(),
+    create: jest.fn(),
+  },
+  accountsTable: {
+    fetchById: jest.fn(),
   },
 }));
 
@@ -367,5 +373,108 @@ describe("Membership Invitation Actions", () => {
 
       expect(result).toBeNull();
     });
+  });
+});
+
+describe("inviteMember", () => {
+  const mockAccountsTable = accountsTable as jest.Mocked<typeof accountsTable>;
+  const session: UserSession = { identity_id: "an-identity" };
+  const account = (overrides: Partial<Account>): Account =>
+    ({
+      account_id: "x",
+      name: "X",
+      type: AccountType.INDIVIDUAL,
+      disabled: false,
+      created_at: "2024-01-01T00:00:00.000Z",
+      updated_at: "2024-01-01T00:00:00.000Z",
+      flags: [],
+      metadata_public: {},
+      ...overrides,
+    }) as Account;
+  const org = account({ account_id: "org-account-id", type: AccountType.ORGANIZATION });
+  const otherOrg = account({ account_id: "other-org", type: AccountType.ORGANIZATION });
+  const person = account({ account_id: "a-person" });
+  const bot = account({
+    account_id: "org-bot",
+    type: AccountType.SERVICE,
+    owner_account_id: "org-account-id",
+  } as Partial<Account>);
+
+  const invite = (fields: Record<string, string>) => {
+    const formData = new FormData();
+    for (const [key, value] of Object.entries(fields)) formData.set(key, value);
+    return inviteMember(null, formData);
+  };
+  const created = () => mockMembershipsTable.create.mock.calls[0]?.[0];
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockGetPageSession.mockResolvedValue(session);
+    mockIsAuthorized.mockReturnValue(true);
+    mockAccountsTable.fetchById.mockImplementation(
+      async (id) => [org, otherOrg, person, bot].find((a) => a.account_id === id) ?? null
+    );
+    mockMembershipsTable.listByAccount.mockResolvedValue([]);
+    mockMembershipsTable.create.mockImplementation(async (m) => m);
+  });
+
+  it("grants a service account read_data on its owner's product, directly as a member", async () => {
+    const result = await invite({
+      organization_id: "org-account-id",
+      product_id: "a-product",
+      account_id: "org-bot",
+      role: MembershipRole.ReadData,
+    });
+    expect(result.success).toBe(true);
+    expect(created()).toMatchObject({
+      account_id: "org-bot",
+      repository_id: "a-product",
+      role: MembershipRole.ReadData,
+      state: MembershipState.Member,
+    });
+  });
+
+  it("refuses to make a service account an owner or maintainer", async () => {
+    const result = await invite({
+      organization_id: "org-account-id",
+      product_id: "a-product",
+      account_id: "org-bot",
+      role: MembershipRole.Owners,
+    });
+    expect(result.success).toBe(false);
+    expect(mockMembershipsTable.create).not.toHaveBeenCalled();
+  });
+
+  it("refuses a service account a product its owner does not hold, or a whole organization", async () => {
+    const elsewhere = await invite({
+      organization_id: "other-org",
+      product_id: "a-product",
+      account_id: "org-bot",
+      role: MembershipRole.ReadData,
+    });
+    const orgWide = await invite({
+      organization_id: "org-account-id",
+      account_id: "org-bot",
+      role: MembershipRole.ReadData,
+    });
+    expect(elsewhere.success).toBe(false);
+    expect(orgWide.success).toBe(false);
+    expect(mockMembershipsTable.create).not.toHaveBeenCalled();
+  });
+
+  it("refuses an organization as the invitee, and still invites a person", async () => {
+    const orgInvite = await invite({
+      organization_id: "org-account-id",
+      account_id: "other-org",
+      role: MembershipRole.ReadData,
+    });
+    expect(orgInvite.success).toBe(false);
+    const personInvite = await invite({
+      organization_id: "org-account-id",
+      account_id: "a-person",
+      role: MembershipRole.ReadData,
+    });
+    expect(personInvite.success).toBe(true);
+    expect(created()).toMatchObject({ account_id: "a-person", state: MembershipState.Invited });
   });
 });

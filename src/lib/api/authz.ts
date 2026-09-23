@@ -39,6 +39,7 @@ import {
   Actions,
   APIKey,
   DataConnection,
+  isServiceAccount,
   Membership,
   MembershipRole,
   MembershipState,
@@ -675,6 +676,15 @@ function putAccountProfile(
     return true;
   }
 
+  // A service account's profile is managed by whoever manages its owner
+  if (isServiceAccount(account)) {
+    return hasRole(
+      principal,
+      [MembershipRole.Owners, MembershipRole.Maintainers],
+      account.owner_account_id
+    );
+  }
+
   // If the account is not an organization, no one is authorized
   if (account.type !== AccountType.ORGANIZATION) {
     return false;
@@ -953,6 +963,12 @@ function getAccountProfile(
   principal: UserSession | null,
   account: Account
 ): boolean {
+  // A service account has no profile: its page is not found for everyone,
+  // and whoever manages it reads it from its owner's settings instead.
+  if (isServiceAccount(account)) {
+    return false;
+  }
+
   // If the user is disabled, they are not authorized
   if (principal?.account?.disabled) {
     return false;
@@ -1029,6 +1045,15 @@ function disableAccount(
 
   if (account.type === AccountType.ORGANIZATION) {
     return hasRole(principal, [MembershipRole.Owners], account.account_id);
+  }
+
+  // A service account is disabled by whoever manages its owner
+  if (isServiceAccount(account)) {
+    return hasRole(
+      principal,
+      [MembershipRole.Owners, MembershipRole.Maintainers],
+      account.owner_account_id
+    );
   }
 
   return false;
@@ -1115,6 +1140,11 @@ function createRepository(
     return true;
   }
 
+  // Service accounts hold memberships; they do not own products.
+  if (isServiceAccount(principal.account)) {
+    return false;
+  }
+
   // Org-wide owners and maintainers may create products under their org without
   // needing CREATE_REPOSITORIES on their personal account — their role grants
   // that right implicitly. We intentionally omit product_id here so that only
@@ -1177,6 +1207,11 @@ function createAccount(
     return false;
   }
 
+  // A service account creates nothing
+  if (principal?.account && isServiceAccount(principal.account)) {
+    return false;
+  }
+
   // If the user is an admin, they are authorized
   if (isAdmin(principal)) {
     return true;
@@ -1218,11 +1253,14 @@ function createAccount(
     return false;
   }
 
-  // Let admins create service accounts
-  // NOTE: Service accounts are not supported yet
-  // if (account.type === AccountType.SERVICE) {
-  //   return isAdmin(principal);
-  // }
+  // A service account is created by whoever manages its owner
+  if (isServiceAccount(account)) {
+    return hasRole(
+      principal,
+      [MembershipRole.Owners, MembershipRole.Maintainers],
+      account.owner_account_id
+    );
+  }
 
   return false;
 }
@@ -1665,6 +1703,10 @@ function hasRole(
  * @returns A boolean indicating whether the user is an admin.
  */
 export function isAdmin(session?: UserSession | null): boolean {
+  // A service account never acts as admin, whatever its flags say.
+  if (session?.account && isServiceAccount(session.account)) {
+    return false;
+  }
   if (session?.account?.flags) {
     return session?.account?.flags.includes(AccountFlags.ADMIN);
   } else {

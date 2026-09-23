@@ -25,7 +25,7 @@ extendZodWithOpenApi(z);
 export enum AccountType {
   INDIVIDUAL = "individual",
   ORGANIZATION = "organization",
-  // SERVICE = "service",  // TODO: Enable when we support services
+  SERVICE = "service",
 }
 
 export const AccountTypeSchema = z
@@ -147,10 +147,23 @@ export const OrganizationalAccountSchema = BaseAccountSchema.extend({
 
 export type OrganizationalAccount = z.infer<typeof OrganizationalAccountSchema>;
 
+// Service account schema. A machine principal owned by another account: it
+// has no Ory identity (it authenticates through identity bindings) and no
+// profile beyond the shared fields.
+export const ServiceAccountSchema = BaseAccountSchema.extend({
+  type: z.literal(AccountType.SERVICE),
+  identity_id: z.undefined(),
+  owner_account_id: z.string().openapi({ example: "owner-account-id" }),
+  metadata_public: BaseAccountProfileSchema,
+}).openapi("ServiceAccount");
+
+export type ServiceAccount = z.infer<typeof ServiceAccountSchema>;
+
 export const AccountSchema = z
   .discriminatedUnion("type", [
     IndividualAccountSchema,
     OrganizationalAccountSchema,
+    ServiceAccountSchema,
   ])
   .openapi("Account");
 
@@ -221,3 +234,22 @@ export const OrganizationCreationRequestSchema =
 export type OrganizationCreationRequest = z.infer<
   typeof OrganizationCreationRequestSchema
 >;
+
+export const ServiceAccountCreationRequestSchema =
+  AccountCreationRequestSchema.extend({
+    owner_account_id: z.string(),
+  });
+
+export type ServiceAccountCreationRequest = z.infer<
+  typeof ServiceAccountCreationRequestSchema
+>;
+
+// Type guards
+export const isIndividualAccount = (acc: Account): acc is IndividualAccount =>
+  acc.type === AccountType.INDIVIDUAL;
+
+export const isOrganizationalAccount = (acc: Account): acc is OrganizationalAccount =>
+  acc.type === AccountType.ORGANIZATION;
+
+export const isServiceAccount = (acc: Account): acc is ServiceAccount =>
+  acc.type === AccountType.SERVICE;

@@ -9,8 +9,10 @@ import {
   MembershipRole,
   MembershipState,
   AccountType,
+  isServiceAccount,
 } from "@/types";
 import { isAuthorized } from "../api/authz";
+import { serviceAccountGrantProblem } from "@/lib/accounts/service-accounts";
 import { getPageSession } from "../api/utils";
 import { accountsTable, membershipsTable } from "../clients";
 import { FormState } from "@/components/core/DynamicForm";
@@ -76,11 +78,25 @@ export async function inviteMember(
       };
     }
 
-    if (invitedAccount.type !== AccountType.INDIVIDUAL) {
+    if (invitedAccount.type === AccountType.ORGANIZATION) {
       return {
         fieldErrors: {},
         data: formData,
-        message: "Can only invite individual accounts",
+        message: "Organizations cannot be members",
+        success: false,
+      };
+    }
+
+    const grantProblem = serviceAccountGrantProblem(
+      invitedAccount,
+      { membership_account_id: organizationId, repository_id: productId },
+      role
+    );
+    if (grantProblem) {
+      return {
+        fieldErrors: {},
+        data: formData,
+        message: grantProblem,
         success: false,
       };
     }
@@ -101,7 +117,12 @@ export async function inviteMember(
       membership_id: randomUUID(),
       membership_account_id: organizationId,
       repository_id: productId,
-      state: MembershipState.Invited,
+      // Its owner grants a service account access directly — nobody is at
+      // the keyboard to accept an invitation.
+      state:
+        isServiceAccount(invitedAccount)
+          ? MembershipState.Member
+          : MembershipState.Invited,
       state_changed: new Date().toISOString(),
     };
 

@@ -51,6 +51,11 @@ export class DatabaseConstruct extends Construct {
           name: "identity_id",
           partitionKey: "identity_id",
         },
+        {
+          // fetch the service accounts owned by an account
+          name: "owner_account_id",
+          partitionKey: "owner_account_id",
+        },
       ],
       removalPolicy,
     });

@@ -11,6 +11,7 @@ import {
   MembershipRole,
   MembershipState,
   AccountType,
+  isServiceAccount,
   OrganizationCreationRequestSchema,
   OrganizationCreationRequest,
   IndividualAccount,
@@ -18,6 +19,9 @@ import {
   AccountFlags,
   AccountFlagsSchema,
   AccountEmailSchema,
+  ServiceAccount,
+  ServiceAccountCreationRequestSchema,
+  ServiceAccountCreationRequest,
 } from "@/types";
 import { isAuthorized } from "../api/authz";
 import { getPageSession } from "../api/utils";
@@ -54,10 +58,13 @@ export async function createAccount(
   }
 
   // Extract data from FormData
+  const type = formData.get("type");
   const schema =
-    formData.get("type") === AccountType.ORGANIZATION
+    type === AccountType.ORGANIZATION
       ? OrganizationCreationRequestSchema
-      : AccountCreationRequestSchema;
+      : type === AccountType.SERVICE
+        ? ServiceAccountCreationRequestSchema
+        : AccountCreationRequestSchema;
   const validatedFields = schema.safeParse(Object.fromEntries(formData));
 
   if (!validatedFields.success) {
@@ -80,18 +87,26 @@ export async function createAccount(
     metadata_public: {},
     metadata_private: {},
   };
-  const newAccount =
+  const newAccount: Account =
     validatedFields.data.type === AccountType.INDIVIDUAL
       ? ({
           ...baseAccount,
           identity_id: session?.identity_id,
           flags: DEFAULT_INDIVIDUAL_FLAGS,
         } as IndividualAccount)
-      : ({
-          ...baseAccount,
-          identity_id: undefined,
-          flags: DEFAULT_ORGANIZATION_FLAGS,
-        } as OrganizationalAccount);
+      : validatedFields.data.type === AccountType.SERVICE
+        ? ({
+            ...baseAccount,
+            identity_id: undefined,
+            owner_account_id: (validatedFields.data as ServiceAccountCreationRequest)
+              .owner_account_id,
+            flags: [],
+          } as ServiceAccount)
+        : ({
+            ...baseAccount,
+            identity_id: undefined,
+            flags: DEFAULT_ORGANIZATION_FLAGS,
+          } as OrganizationalAccount);
 
   // Check authorization
   if (!isAuthorized(session, newAccount, Actions.CreateAccount)) {
@@ -161,7 +176,9 @@ export async function createAccount(
     redirectTo:
       account.type === AccountType.INDIVIDUAL
         ? accountUrl(account.account_id, "welcome=true")
-        : accountUrl(account.account_id),
+        : isServiceAccount(account)
+          ? accountUrl(account.owner_account_id)
+          : accountUrl(account.account_id),
   };
 }
 
@@ -399,6 +416,17 @@ export async function updateAccountFlags(
 
     // Validate flags
     const validatedFlags = AccountFlagsSchema.parse(flags);
+    if (
+      isServiceAccount(currentAccount) &&
+      validatedFlags.includes(AccountFlags.ADMIN)
+    ) {
+      return {
+        fieldErrors: {},
+        data: formData,
+        message: "A service account cannot hold the admin flag",
+        success: false,
+      };
+    }
 
     // Update the account
     await accountsTable.update({

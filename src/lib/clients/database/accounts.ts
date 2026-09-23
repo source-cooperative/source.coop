@@ -1,3 +1,4 @@
+import { isIndividualAccount, isOrganizationalAccount, isServiceAccount } from "@/types";
 import {
   QueryCommand,
   ScanCommand,
@@ -12,7 +13,7 @@ import {
   type Account,
   AccountType,
   type IndividualAccount,
-  type OrganizationalAccount,
+  type ServiceAccount,
 } from "@/types";
 
 import { BaseTable } from "./base";
@@ -293,6 +294,21 @@ export class AccountsTable extends BaseTable {
     return result.Attributes as Account;
   }
 
+  /** The service accounts owned by `owner_account_id`. */
+  async listByOwner(owner_account_id: string): Promise<ServiceAccount[]> {
+    const result = await this.cachedSend(
+      new QueryCommand({
+        TableName: this.table,
+        IndexName: "owner_account_id",
+        KeyConditionExpression: "owner_account_id = :owner_account_id",
+        ExpressionAttributeValues: { ":owner_account_id": owner_account_id },
+      })
+    );
+    return (result.Items ?? []).filter((item) =>
+      isServiceAccount(item as Account)
+    ) as ServiceAccount[];
+  }
+
   async delete(Key: { account_id: string; type: AccountType }): Promise<void> {
     await this.client.send(
       new DeleteCommand({
@@ -303,13 +319,7 @@ export class AccountsTable extends BaseTable {
   }
 }
 
-// Type guards
-export const isIndividualAccount = (acc: Account): acc is IndividualAccount =>
-  acc.type === AccountType.INDIVIDUAL;
-
-export const isOrganizationalAccount = (
-  acc: Account
-): acc is OrganizationalAccount => acc.type === AccountType.ORGANIZATION;
+export { isIndividualAccount, isOrganizationalAccount, isServiceAccount };
 
 // Export a singleton instance
 export const accountsTable = new AccountsTable({});

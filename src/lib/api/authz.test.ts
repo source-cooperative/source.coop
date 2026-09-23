@@ -1,4 +1,5 @@
 import {
+  isAdmin,
   isAuthorized,
   canManageAccount,
   canManageAccountDataConnections,
@@ -3924,5 +3925,70 @@ describe("self-authorization is for people only", () => {
     expect(
       isAuthorized(machine, orgMembership, Actions.UpdateMembershipRole)
     ).toBe(false);
+  });
+});
+
+describe("service accounts", () => {
+  const org = accounts.find((a) => a.account_id === "organization")!;
+  const bot = accounts.find((a) => a.account_id === "organization-bot")!;
+  const botSession = sessions["organization-bot"]!;
+  const orgRepo = mappedProducts["organization"]["org-repo-id"];
+  const otherOrgRepo = mappedProducts["organization"]["unlisted-org-repo-id"];
+
+  test("never act as admin, whatever their flags say", () => {
+    const flagged = { ...botSession, account: { ...bot, flags: [AccountFlags.ADMIN] } };
+    expect(isAdmin(flagged)).toBe(false);
+    expect(isAuthorized(flagged, org, Actions.PutAccountFlags)).toBe(false);
+  });
+
+  test("create neither products nor accounts, even when flagged to", () => {
+    const flagged = {
+      ...botSession,
+      account: {
+        ...bot,
+        flags: [AccountFlags.CREATE_REPOSITORIES, AccountFlags.CREATE_ORGANIZATIONS],
+      },
+    };
+    expect(isAuthorized(flagged, "*", Actions.CreateRepository)).toBe(false);
+    expect(isAuthorized(flagged, orgRepo, Actions.CreateRepository)).toBe(false);
+    expect(isAuthorized(flagged, "*", Actions.CreateAccount)).toBe(false);
+    expect(isAuthorized(flagged, org, Actions.CreateAccount)).toBe(false);
+  });
+
+  test("are created, edited and disabled by whoever manages their owner", () => {
+    const owner = sessions["organization-owner-user"];
+    const maintainer = sessions["organization-maintainer-user"];
+    const reader = sessions["organization-read-data-user"];
+    expect(isAuthorized(owner, bot, Actions.CreateAccount)).toBe(true);
+    expect(isAuthorized(maintainer, bot, Actions.CreateAccount)).toBe(true);
+    expect(isAuthorized(reader, bot, Actions.CreateAccount)).toBe(false);
+    expect(isAuthorized(sessions["regular-user"], bot, Actions.CreateAccount)).toBe(false);
+    expect(isAuthorized(owner, bot, Actions.PutAccountProfile)).toBe(true);
+    expect(isAuthorized(reader, bot, Actions.PutAccountProfile)).toBe(false);
+    expect(isAuthorized(maintainer, bot, Actions.DisableAccount)).toBe(true);
+    expect(isAuthorized(reader, bot, Actions.DisableAccount)).toBe(false);
+    // A person may create one under their own account.
+    const ownBot = { ...bot, owner_account_id: "regular-user" };
+    expect(isAuthorized(sessions["regular-user"], ownBot, Actions.CreateAccount)).toBe(true);
+  });
+
+  test("hold no rights over themselves", () => {
+    expect(canManageAccount(botSession, bot)).toBe(false);
+    expect(isAuthorized(botSession, bot, Actions.PutAccountProfile)).toBe(false);
+    expect(isAuthorized(botSession, bot, Actions.DisableAccount)).toBe(false);
+  });
+
+  test("have no profile for anyone to read, admins included", () => {
+    expect(isAuthorized(sessions["admin"], bot, Actions.GetAccountProfile)).toBe(false);
+    expect(isAuthorized(sessions["organization-owner-user"], bot, Actions.GetAccountProfile)).toBe(false);
+    expect(isAuthorized(botSession, bot, Actions.GetAccountProfile)).toBe(false);
+    expect(isAuthorized(null, bot, Actions.GetAccountProfile)).toBe(false);
+    // Its owner's profile is as public as ever.
+    expect(isAuthorized(null, org, Actions.GetAccountProfile)).toBe(true);
+  });
+
+  test("act only on the products they are granted", () => {
+    expect(isAuthorized(botSession, orgRepo, Actions.WriteRepositoryData)).toBe(true);
+    expect(isAuthorized(botSession, otherOrgRepo, Actions.WriteRepositoryData)).toBe(false);
   });
 });
