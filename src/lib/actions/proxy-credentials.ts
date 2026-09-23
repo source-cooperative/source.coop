@@ -96,7 +96,7 @@ export async function getProxyCredentials(
  * If the OAuth2 client has skip_consent enabled (recommended), the consent
  * step is skipped and the flow completes in 4 HTTP calls instead of 6.
  */
-async function getOryIdToken(identityId: string): Promise<string> {
+export async function getOryIdToken(identityId: string): Promise<string> {
   const {
     api: { backendUrl },
     accessToken: adminApiKey,

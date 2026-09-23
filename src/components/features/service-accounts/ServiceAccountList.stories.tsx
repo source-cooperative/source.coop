@@ -11,8 +11,9 @@ import {
 /**
  * An owner's service accounts, one row each, in the same bordered list the
  * data connections use: the name linking to the account's own page, its id,
- * a marker when it is disabled, and how many workflows it trusts and products
- * it reaches. The controls live on that page, `ServiceAccountDetail`.
+ * a marker when it is disabled, how it signs in — trusted workflows and
+ * live API keys — and how many products it reaches. The controls live on
+ * that page, `ServiceAccountDetail`.
  */
 const meta = {
   title: "Features/Service accounts/ServiceAccountList",
@@ -60,6 +61,26 @@ const summary = (
       state_changed: "2026-03-12T00:00:00Z",
     },
   ],
+  keys: [
+    {
+      jti: `k1-${account_id}`,
+      account_id,
+      label: "HPC cron job",
+      created_at: "2026-03-12T00:00:00Z",
+      created_by: "acoltrane",
+      expires_at: "2027-03-12T00:00:00Z",
+      last_used_at: "2026-03-20T00:00:00Z",
+    },
+    {
+      jti: `k2-${account_id}`,
+      account_id,
+      label: "Old laptop",
+      created_at: "2025-03-12T00:00:00Z",
+      created_by: "acoltrane",
+      expires_at: null,
+      revoked_at: "2026-01-01T00:00:00Z",
+    },
+  ],
   ...overrides,
 });
 
@@ -70,6 +91,7 @@ export const Default: Story = {
       summary("miskatonic--archive-mirror", "Archive Mirror", {
         trusts: [],
         grants: [],
+        keys: [],
       }),
     ],
   },

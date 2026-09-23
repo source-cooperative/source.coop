@@ -27,6 +27,7 @@ export class DatabaseConstruct extends Construct {
   public readonly apiKeysTable: dynamodb.Table;
   public readonly membershipsTable: dynamodb.Table;
   public readonly accountTrustsTable: dynamodb.Table;
+  public readonly serviceAccountKeysTable: dynamodb.Table;
 
   constructor(
     scope: Construct,
@@ -70,6 +71,21 @@ export class DatabaseConstruct extends Construct {
       // `${issuer} ${subject}`.
       partitionKey: "account_id",
       sortKey: "identity",
+      removalPolicy,
+    });
+
+    this.serviceAccountKeysTable = this.createTable({
+      name: "service-account-keys",
+      stage,
+      // The key's jti; the key itself is never stored.
+      partitionKey: "jti",
+      indexes: [
+        {
+          // fetch the keys of a service account
+          name: "account_id",
+          partitionKey: "account_id",
+        },
+      ],
       removalPolicy,
     });
 
