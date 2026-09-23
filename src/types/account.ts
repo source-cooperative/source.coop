@@ -243,3 +243,13 @@ export const ServiceAccountCreationRequestSchema =
 export type ServiceAccountCreationRequest = z.infer<
   typeof ServiceAccountCreationRequestSchema
 >;
+
+// Type guards
+export const isIndividualAccount = (acc: Account): acc is IndividualAccount =>
+  acc.type === AccountType.INDIVIDUAL;
+
+export const isOrganizationalAccount = (acc: Account): acc is OrganizationalAccount =>
+  acc.type === AccountType.ORGANIZATION;
+
+export const isServiceAccount = (acc: Account): acc is ServiceAccount =>
+  acc.type === AccountType.SERVICE;

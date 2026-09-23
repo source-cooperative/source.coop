@@ -7,6 +7,7 @@ import {
   MembershipInvitationSchema,
   MembershipState,
   AccountType,
+  isServiceAccount,
 } from "@/types";
 import { StatusCodes } from "http-status-codes";
 import { isAuthorized } from "@/lib/api/authz";
@@ -124,7 +125,7 @@ export async function POST(
       // Its owner grants a service account access directly — nobody is at
       // the keyboard to accept an invitation.
       state:
-        invitedAccount.type === AccountType.SERVICE
+        isServiceAccount(invitedAccount)
           ? MembershipState.Member
           : MembershipState.Invited,
       state_changed: new Date().toISOString(),

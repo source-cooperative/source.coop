@@ -39,6 +39,7 @@ import {
   Actions,
   APIKey,
   DataConnection,
+  isServiceAccount,
   Membership,
   MembershipRole,
   MembershipState,
@@ -676,7 +677,7 @@ function putAccountProfile(
   }
 
   // A service account's profile is managed by whoever manages its owner
-  if (account.type === AccountType.SERVICE) {
+  if (isServiceAccount(account)) {
     return hasRole(
       principal,
       [MembershipRole.Owners, MembershipRole.Maintainers],
@@ -964,7 +965,7 @@ function getAccountProfile(
 ): boolean {
   // A service account has no profile: its page is not found for everyone,
   // and whoever manages it reads it from its owner's settings instead.
-  if (account.type === AccountType.SERVICE) {
+  if (isServiceAccount(account)) {
     return false;
   }
 
@@ -1047,7 +1048,7 @@ function disableAccount(
   }
 
   // A service account is disabled by whoever manages its owner
-  if (account.type === AccountType.SERVICE) {
+  if (isServiceAccount(account)) {
     return hasRole(
       principal,
       [MembershipRole.Owners, MembershipRole.Maintainers],
@@ -1140,7 +1141,7 @@ function createRepository(
   }
 
   // Service accounts hold memberships; they do not own products.
-  if (principal.account.type === AccountType.SERVICE) {
+  if (isServiceAccount(principal.account)) {
     return false;
   }
 
@@ -1207,7 +1208,7 @@ function createAccount(
   }
 
   // A service account creates nothing
-  if (principal?.account?.type === AccountType.SERVICE) {
+  if (principal?.account && isServiceAccount(principal.account)) {
     return false;
   }
 
@@ -1253,7 +1254,7 @@ function createAccount(
   }
 
   // A service account is created by whoever manages its owner
-  if (account.type === AccountType.SERVICE) {
+  if (isServiceAccount(account)) {
     return hasRole(
       principal,
       [MembershipRole.Owners, MembershipRole.Maintainers],
@@ -1703,7 +1704,7 @@ function hasRole(
  */
 export function isAdmin(session?: UserSession | null): boolean {
   // A service account never acts as admin, whatever its flags say.
-  if (session?.account?.type === AccountType.SERVICE) {
+  if (session?.account && isServiceAccount(session.account)) {
     return false;
   }
   if (session?.account?.flags) {

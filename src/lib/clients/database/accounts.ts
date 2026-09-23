@@ -1,3 +1,4 @@
+import { isIndividualAccount, isOrganizationalAccount, isServiceAccount } from "@/types";
 import {
   QueryCommand,
   ScanCommand,
@@ -12,7 +13,6 @@ import {
   type Account,
   AccountType,
   type IndividualAccount,
-  type OrganizationalAccount,
   type ServiceAccount,
 } from "@/types";
 
@@ -319,16 +319,7 @@ export class AccountsTable extends BaseTable {
   }
 }
 
-// Type guards
-export const isIndividualAccount = (acc: Account): acc is IndividualAccount =>
-  acc.type === AccountType.INDIVIDUAL;
-
-export const isOrganizationalAccount = (
-  acc: Account
-): acc is OrganizationalAccount => acc.type === AccountType.ORGANIZATION;
-
-export const isServiceAccount = (acc: Account): acc is ServiceAccount =>
-  acc.type === AccountType.SERVICE;
+export { isIndividualAccount, isOrganizationalAccount, isServiceAccount };
 
 // Export a singleton instance
 export const accountsTable = new AccountsTable({});

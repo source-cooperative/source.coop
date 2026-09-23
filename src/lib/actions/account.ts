@@ -11,6 +11,7 @@ import {
   MembershipRole,
   MembershipState,
   AccountType,
+  isServiceAccount,
   OrganizationCreationRequestSchema,
   OrganizationCreationRequest,
   IndividualAccount,
@@ -175,7 +176,7 @@ export async function createAccount(
     redirectTo:
       account.type === AccountType.INDIVIDUAL
         ? accountUrl(account.account_id, "welcome=true")
-        : account.type === AccountType.SERVICE
+        : isServiceAccount(account)
           ? accountUrl(account.owner_account_id)
           : accountUrl(account.account_id),
   };
@@ -416,7 +417,7 @@ export async function updateAccountFlags(
     // Validate flags
     const validatedFlags = AccountFlagsSchema.parse(flags);
     if (
-      currentAccount.type === AccountType.SERVICE &&
+      isServiceAccount(currentAccount) &&
       validatedFlags.includes(AccountFlags.ADMIN)
     ) {
       return {

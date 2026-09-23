@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   AccountFlagsSchema,
   Actions,
-  AccountType,
+  isServiceAccount,
   AccountFlags,
 } from "@/types";
 import { StatusCodes } from "http-status-codes";
@@ -130,7 +130,7 @@ export async function PUT(
     }
     const flagsRequest = AccountFlagsSchema.parse(await request.json());
     if (
-      accountToUpdate.type === AccountType.SERVICE &&
+      isServiceAccount(accountToUpdate) &&
       flagsRequest.includes(AccountFlags.ADMIN)
     ) {
       return NextResponse.json(

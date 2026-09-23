@@ -9,6 +9,7 @@ import {
   MembershipRole,
   MembershipState,
   AccountType,
+  isServiceAccount,
 } from "@/types";
 import { isAuthorized } from "../api/authz";
 import { serviceAccountGrantProblem } from "@/lib/accounts/service-accounts";
@@ -119,7 +120,7 @@ export async function inviteMember(
       // Its owner grants a service account access directly — nobody is at
       // the keyboard to accept an invitation.
       state:
-        invitedAccount.type === AccountType.SERVICE
+        isServiceAccount(invitedAccount)
           ? MembershipState.Member
           : MembershipState.Invited,
       state_changed: new Date().toISOString(),

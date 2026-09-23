@@ -7,7 +7,7 @@ import {
   MembershipInvitationSchema,
   MembershipState,
 } from "@/types";
-import { AccountType } from "@/types/account";
+import { AccountType, isServiceAccount } from "@/types/account";
 import { StatusCodes } from "http-status-codes";
 import { accountsTable, membershipsTable } from "@/lib/clients/database";
 import { isAuthorized } from "@/lib/api/authz";
@@ -82,7 +82,7 @@ export async function POST(
         { status: StatusCodes.NOT_FOUND }
       );
     }
-    if (account.type === AccountType.SERVICE) {
+    if (isServiceAccount(account)) {
       return NextResponse.json(
         { error: "Service accounts cannot have members" },
         { status: StatusCodes.BAD_REQUEST }

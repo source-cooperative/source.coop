@@ -1,4 +1,4 @@
-import { Account, AccountType, MembershipRole } from "@/types";
+import { Account, isServiceAccount, MembershipRole } from "@/types";
 
 const SERVICE_ACCOUNT_ROLES = [MembershipRole.ReadData, MembershipRole.WriteData];
 
@@ -12,7 +12,7 @@ export function serviceAccountGrantProblem(
   target: { membership_account_id: string; repository_id?: string },
   role: MembershipRole
 ): string | null {
-  if (account.type !== AccountType.SERVICE) {
+  if (!isServiceAccount(account)) {
     return null;
   }
   if (!SERVICE_ACCOUNT_ROLES.includes(role)) {

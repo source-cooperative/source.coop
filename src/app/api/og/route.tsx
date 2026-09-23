@@ -4,7 +4,7 @@ import { getBaseUrl } from "@/lib/baseUrl";
 import { OpenGraphImage } from "@/components/og/OpenGraphImage";
 import { OGAvatar } from "@/components/og/OGAvatar";
 import { accountsTable, productsTable } from "@/lib/clients/database";
-import { AccountType } from "@/types/account";
+import { AccountType, isServiceAccount } from "@/types/account";
 
 /**
  * OpenGraph Image Generator
@@ -83,7 +83,7 @@ async function generateAccountImage(accountId: string, host: string) {
   const account = await accountsTable.fetchById(accountId);
 
   // A service account has no page for this image to preview.
-  if (!account || account.type === AccountType.SERVICE) {
+  if (!account || isServiceAccount(account)) {
     return OpenGraphImage({
       title: "Account Not Found",
       host,
