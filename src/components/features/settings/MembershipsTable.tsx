@@ -5,7 +5,7 @@ import { PersonIcon } from "@radix-ui/react-icons";
 import {
   Membership,
   Account,
-  AccountType,
+  isServiceAccount,
   MembershipRole,
   MembershipState,
   Actions,
@@ -119,7 +119,7 @@ export function MembershipsTable({
             return (
               <Table.Row key={membership.membership_id}>
                 <Table.Cell>
-                  {memberAccount?.type === AccountType.SERVICE ? (
+                  {memberAccount && isServiceAccount(memberAccount) ? (
                     // Badged, and not a link: a machine has no profile page.
                     <Flex gap="2" align="center">
                       <AvatarLinkCompact

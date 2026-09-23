@@ -197,8 +197,8 @@ export class AccountsTable extends BaseTable {
 
       for (const item of (result.Items ?? []) as Account[]) {
         const eligible =
-          item.type === AccountType.INDIVIDUAL ||
-          (item.type === AccountType.SERVICE &&
+          isIndividualAccount(item) ||
+          (isServiceAccount(item) &&
             memberOf !== undefined &&
             item.owner_account_id === memberOf);
         if (!eligible || item.disabled) continue;
