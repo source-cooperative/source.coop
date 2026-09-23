@@ -3,15 +3,10 @@ import { AccountsTable } from "./accounts";
 import { IdentityBindingsTable } from "./identity-bindings";
 import { createMemoizedRead } from "./request-cache";
 import { fakeReactCache } from "./__test-helpers__/fake-react-cache";
-import { LOGGER } from "@/lib/logging";
 import { AccountType, type Account, type IdentityBinding } from "@/types";
 
 jest.mock("@/lib/config", () => ({
-  CONFIG: {
-    environment: { stage: "test" },
-    database: {},
-    auth: { api: { backendUrl: "http://ory.test" } },
-  },
+  CONFIG: { environment: { stage: "test" }, database: {} },
 }));
 jest.mock("@/lib/logging", () => ({
   LOGGER: { error: jest.fn(), warn: jest.fn(), debug: jest.fn(), info: jest.fn() },
@@ -22,7 +17,7 @@ const account = (fields: Partial<Account>): Account =>
 
 const jane = account({ account_id: "jane-doe", identity_id: "ory-jane" });
 const acme = account({ account_id: "acme", type: AccountType.ORGANIZATION });
-const unbacked = account({ account_id: "old-timer", identity_id: "ory-old" });
+const bot = account({ account_id: "acme-bot", type: AccountType.SERVICE });
 
 /** Answers the key query and the identity_id index query from `items`. */
 function fakeAccounts(items: Account[]) {
@@ -50,79 +45,70 @@ function fakeBindings(bindings: IdentityBinding[]) {
     const values = command.input.ExpressionAttributeValues as Record<string, string>;
     return { Items: bindings.filter((b) => b.account_id === values[":account_id"]) };
   });
-  return new IdentityBindingsTable({
+  const table = new IdentityBindingsTable({
     client: { send } as unknown as DynamoDBDocumentClient,
     memoizedRead: createMemoizedRead(fakeReactCache),
   });
+  return { table, send };
 }
 
 function tableFor(items: Account[], bindings: IdentityBinding[]) {
   const accounts = fakeAccounts(items);
+  const bound = fakeBindings(bindings);
   const table = new AccountsTable({
     client: accounts.client,
     memoizedRead: createMemoizedRead(fakeReactCache),
-    bindings: fakeBindings(bindings),
+    bindings: bound.table,
   });
-  return { table, send: accounts.send };
+  return { table, send: accounts.send, bindingsSend: bound.send };
 }
 
-const bound = (subject: string, account_id: string, issuer = "http://ory.test") =>
+const CI = "https://ci.example";
+const PROXY = "https://data.example";
+
+const bound = (issuer: string, subject: string, account_id: string) =>
   ({ issuer, subject, account_id, created_at: "2024-01-01T00:00:00Z" }) as IdentityBinding;
 
 describe("AccountsTable identity resolution", () => {
   beforeEach(() => jest.clearAllMocks());
 
-  it("resolves an Ory identity through its binding, without touching the index", async () => {
-    const { table, send } = tableFor([jane, unbacked], [bound("ory-jane", "jane-doe")]);
+  it("resolves an Ory identity through the identity_id index, never the bindings table", async () => {
+    // Ory identities are not bindings: a person's identity_id is on the row,
+    // and the session, the email lookup and the proxy credentials read it there.
+    const { table, bindingsSend } = tableFor([jane], [bound(PROXY, "ory-jane", "acme-bot")]);
 
     expect(await table.fetchByOryId("ory-jane")).toEqual(jane);
-    expect(send.mock.calls.map((c) => c[0].input.IndexName)).toEqual([undefined]);
-    expect(LOGGER.warn).not.toHaveBeenCalled();
-  });
-
-  it("falls back to the identity_id index for an account with no binding yet, and says so", async () => {
-    const { table } = tableFor([jane, unbacked], [bound("ory-jane", "jane-doe")]);
-
-    expect(await table.fetchByOryId("ory-old")).toEqual(unbacked);
-    expect(LOGGER.warn).toHaveBeenCalledWith(
-      expect.stringContaining("identity_id index"),
-      expect.objectContaining({ metadata: { identity_id: "ory-old", account_id: "old-timer" } })
-    );
-  });
-
-  it("returns nothing for an unknown identity", async () => {
-    const { table } = tableFor([jane], [bound("ory-jane", "jane-doe")]);
     expect(await table.fetchByOryId("ory-nobody")).toBeNull();
+    expect(bindingsSend).not.toHaveBeenCalled();
   });
 
-  it("keeps fetchByOryId to individuals, while fetchByIdentity resolves any account type", async () => {
-    const bindings = [bound("ci-subject", "acme", "https://ci.example")];
-    const { table } = tableFor([acme], bindings);
+  it("resolves any account type through a binding, while fetchByOryId stays individual-only", async () => {
+    const bindings = [bound(CI, "ci-subject", "acme"), bound(PROXY, "acme-bot", "acme-bot")];
+    const { table } = tableFor([acme, bot], bindings);
 
-    expect(await table.fetchByIdentity("https://ci.example", "ci-subject")).toEqual(acme);
-    // The same pair under the Ory issuer is not bound...
+    expect(await table.fetchByIdentity(CI, "ci-subject")).toEqual(acme);
+    expect(await table.fetchByIdentity(PROXY, "acme-bot")).toEqual(bot);
+    // A bound subject is not an Ory identity; nothing on the row carries it.
     expect(await table.fetchByOryId("ci-subject")).toBeNull();
-    // ...and a non-individual bound under Ory is not an Ory account either.
-    const { table: odd } = tableFor([acme], [bound("ory-acme", "acme")]);
-    expect(await odd.fetchByOryId("ory-acme")).toBeNull();
+    expect(await table.fetchByIdentity(CI, "unknown")).toBeNull();
   });
 
   it("removes an account's bindings when the account is deleted", async () => {
-    // Otherwise the orphaned pair would keep that identity from ever binding again.
-    const bindings = [bound("ory-jane", "jane-doe"), bound("ci", "jane-doe", "https://ci.example")];
-    const { table } = tableFor([jane], bindings);
+    // Otherwise the orphaned pair would keep that subject from ever binding again.
+    const bindings = [bound(PROXY, "acme-bot", "acme-bot"), bound(CI, "ci", "acme-bot")];
+    const { table } = tableFor([bot], bindings);
 
-    await table.delete({ account_id: "jane-doe", type: AccountType.INDIVIDUAL });
+    await table.delete({ account_id: "acme-bot", type: AccountType.SERVICE });
 
     expect(bindings).toEqual([]);
   });
 
   it("tells issuers apart", async () => {
     const { table } = tableFor(
-      [jane, acme],
-      [bound("shared", "jane-doe"), bound("shared", "acme", "https://ci.example")]
+      [acme, bot],
+      [bound(CI, "shared", "acme"), bound(PROXY, "shared", "acme-bot")]
     );
-    expect(await table.fetchByIdentity("http://ory.test", "shared")).toEqual(jane);
-    expect(await table.fetchByIdentity("https://ci.example", "shared")).toEqual(acme);
+    expect(await table.fetchByIdentity(CI, "shared")).toEqual(acme);
+    expect(await table.fetchByIdentity(PROXY, "shared")).toEqual(bot);
   });
 });

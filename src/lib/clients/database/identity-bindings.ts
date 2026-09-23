@@ -4,9 +4,6 @@ import {
   PutCommand,
   QueryCommand,
 } from "@aws-sdk/lib-dynamodb";
-import { ResourceNotFoundException } from "@aws-sdk/client-dynamodb";
-import { CONFIG } from "@/lib/config";
-import { LOGGER } from "@/lib/logging";
 import type { IdentityBinding } from "@/types";
 import { BaseTable } from "./base";
 
@@ -18,11 +15,24 @@ export class IdentityAlreadyBoundError extends Error {
   }
 }
 
-/** The issuer every Ory identity is bound under: this environment's Ory project. */
-export function oryIssuer(): string {
-  return CONFIG.auth.api.backendUrl ?? "";
+/**
+ * Both halves of the key must be real. An issuer read from unset config would
+ * be `""`, and every binding written under it would share one partition and
+ * answer for each other.
+ */
+function requireKey(issuer: string, subject: string): void {
+  if (!issuer || !subject) {
+    throw new Error("An identity binding needs both an issuer and a subject");
+  }
 }
 
+/**
+ * Identities the platform does not own — a service account's subject under the
+ * data proxy's issuer, a GitHub Actions workflow — resolved to the account they
+ * belong to. An individual's Ory identity is not one of them: it stays on the
+ * account row as `identity_id`, where the session, the email lookup and the
+ * proxy credentials already read it.
+ */
 export class IdentityBindingsTable extends BaseTable {
   model = "identity-bindings";
 
@@ -31,14 +41,13 @@ export class IdentityBindingsTable extends BaseTable {
     issuer: string,
     subject: string
   ): Promise<IdentityBinding | null> {
+    requireKey(issuer, subject);
     try {
       const result = await this.cachedSend(
         new GetCommand({ TableName: this.table, Key: { issuer, subject } })
       );
       return (result.Item as IdentityBinding | undefined) ?? null;
     } catch (error) {
-      // The app may deploy before the table does; until then nothing is bound.
-      if (error instanceof ResourceNotFoundException) return null;
       this.logError("resolve", error, { issuer, subject });
       throw error;
     }
@@ -61,6 +70,7 @@ export class IdentityBindingsTable extends BaseTable {
    * bound — to this account or any other.
    */
   async create(binding: IdentityBinding): Promise<IdentityBinding> {
+    requireKey(binding.issuer, binding.subject);
     try {
       await this.client.send(
         new PutCommand({
@@ -72,15 +82,6 @@ export class IdentityBindingsTable extends BaseTable {
     } catch (error) {
       if ((error as { name?: string })?.name === "ConditionalCheckFailedException") {
         throw new IdentityAlreadyBoundError(binding.issuer, binding.subject);
-      }
-      // The app may deploy before the table does. The identity_id fallback
-      // still resolves the account, and the backfill writes this binding later.
-      if (error instanceof ResourceNotFoundException) {
-        LOGGER.warn("Identity binding not written: table does not exist yet", {
-          operation: "IdentityBindingsTable.create",
-          metadata: { account_id: binding.account_id },
-        });
-        return binding;
       }
       this.logError("create", error, { account_id: binding.account_id });
       throw error;

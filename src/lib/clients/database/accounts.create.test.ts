@@ -1,16 +1,11 @@
 import { AccountsTable } from "./accounts";
-import { IdentityBindingsTable } from "./identity-bindings";
-import { createMemoizedRead } from "./request-cache";
-import { fakeReactCache } from "./__test-helpers__/fake-react-cache";
 import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
-import { ResourceNotFoundException } from "@aws-sdk/client-dynamodb";
 import { AccountType, type Account } from "@/types";
 
 jest.mock("@/lib/config", () => ({
   CONFIG: {
     environment: { stage: "test" },
     database: {},
-    auth: { api: { backendUrl: "http://ory.test" } },
   },
 }));
 
@@ -59,11 +54,7 @@ function fakeDynamo(seed: Account[] = []) {
 
   const send = jest.fn(async (command: { input: Record<string, unknown> }) => {
     const item = command.input.Item as Account | undefined;
-    if (!item) {
-      const key = command.input.Key as { account_id: string } | undefined;
-      if (key) store.delete(key.account_id);
-      return {};
-    }
+    if (!item) return {};
 
     const condition = command.input.ConditionExpression as string | undefined;
     const guardsExistence =
@@ -88,38 +79,12 @@ function fakeDynamo(seed: Account[] = []) {
   };
 }
 
-/**
- * A bindings table whose store keys on the (issuer, subject) pair and honours
- * `attribute_not_exists(issuer)` the way the real table does.
- */
-function fakeBindings(seed: Array<{ issuer: string; subject: string }> = []) {
-  const store = new Set(seed.map((b) => `${b.issuer}\u0000${b.subject}`));
-  const send = jest.fn(async (command: { input: Record<string, unknown> }) => {
-    const item = command.input.Item as { issuer: string; subject: string };
-    const key = `${item.issuer}\u0000${item.subject}`;
-    if (store.has(key)) {
-      const error = new Error("The conditional request failed") as Error & {
-        name: string;
-      };
-      error.name = "ConditionalCheckFailedException";
-      throw error;
-    }
-    store.add(key);
-    return {};
-  });
-  const table = new IdentityBindingsTable({
-    client: { send } as unknown as DynamoDBDocumentClient,
-    memoizedRead: createMemoizedRead(fakeReactCache),
-  });
-  return { store, table };
-}
-
 describe("AccountsTable.create", () => {
   it("refuses to overwrite an account that already exists", async () => {
     // The victim already holds `victim`, bound to their Ory identity.
     const victim = makeAccount();
     const { store, client } = fakeDynamo([victim]);
-    const table = new AccountsTable({ client, bindings: fakeBindings().table });
+    const table = new AccountsTable({ client });
 
     // An attacker who has registered an Ory identity but not yet created an
     // account submits the create form naming the victim's account_id. This is
@@ -144,8 +109,7 @@ describe("AccountsTable.create", () => {
 
   it("still creates an account when the id is unused", async () => {
     const { store, client } = fakeDynamo([makeAccount()]);
-    const bindings = fakeBindings();
-    const table = new AccountsTable({ client, bindings: bindings.table });
+    const table = new AccountsTable({ client });
 
     const newcomer = makeAccount({
       account_id: "newcomer",
@@ -156,43 +120,5 @@ describe("AccountsTable.create", () => {
     await expect(table.create(newcomer)).resolves.toEqual(newcomer);
     expect(store.get("newcomer")?.identity_id).toBe("ory-identity-newcomer");
     expect(store.size).toBe(2);
-    // ...and binds the Ory identity under this environment's issuer.
-    expect(bindings.store.has("http://ory.test\u0000ory-identity-newcomer")).toBe(true);
-  });
-
-  it("does not leave an account behind when its identity is already bound", async () => {
-    // The identity already resolves to some other account. A second account for
-    // it must not be created half-way: the row is written, the binding fails,
-    // and the row is removed again.
-    const { store, client } = fakeDynamo([makeAccount()]);
-    const bindings = fakeBindings([
-      { issuer: "http://ory.test", subject: "ory-identity-victim" },
-    ]);
-    const table = new AccountsTable({ client, bindings: bindings.table });
-
-    const second = makeAccount({ account_id: "second", name: "Second" });
-
-    // ...and the caller learns which conflict this was, not "account_id taken".
-    await expect(table.create(second)).rejects.toThrow(
-      expect.objectContaining({ name: "IdentityAlreadyBoundError" })
-    );
-    expect(store.has("second")).toBe(false);
-  });
-
-  it("still creates the account when the bindings table does not exist yet", async () => {
-    // The app may deploy before the table does; signups must not fail in the
-    // window. The identity_id fallback resolves the account until the backfill.
-    const { store, client } = fakeDynamo();
-    const send = jest.fn(async () => {
-      throw new ResourceNotFoundException({ message: "no table", $metadata: {} });
-    });
-    const bindings = new IdentityBindingsTable({
-      client: { send } as unknown as DynamoDBDocumentClient,
-      memoizedRead: createMemoizedRead(fakeReactCache),
-    });
-    const table = new AccountsTable({ client, bindings });
-
-    await expect(table.create(makeAccount())).resolves.toBeDefined();
-    expect(store.has("victim")).toBe(true);
   });
 });

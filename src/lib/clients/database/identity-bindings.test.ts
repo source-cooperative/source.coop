@@ -1,5 +1,4 @@
 import { type DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
-import { ResourceNotFoundException } from "@aws-sdk/client-dynamodb";
 import { IdentityAlreadyBoundError, IdentityBindingsTable } from "./identity-bindings";
 import { createMemoizedRead } from "./request-cache";
 import { fakeReactCache } from "./__test-helpers__/fake-react-cache";
@@ -57,11 +56,14 @@ describe("IdentityBindingsTable", () => {
     expect(await tableWith(jest.fn(async () => ({}))).resolve("x", "y")).toBeNull();
   });
 
-  it("treats a table that does not exist yet as holding no bindings", async () => {
-    // The app may deploy before the table does; nothing is bound until then.
-    const send = jest.fn(async () => {
-      throw new ResourceNotFoundException({ message: "no table", $metadata: {} });
-    });
-    expect(await tableWith(send).resolve("x", "y")).toBeNull();
+  it("refuses an empty issuer or subject, before touching the table", async () => {
+    // An issuer read from unset config is "", and every binding written under
+    // it would share one partition.
+    const send = jest.fn(async () => ({}));
+    const table = tableWith(send);
+    await expect(table.resolve("", "subject")).rejects.toThrow(/issuer and a subject/);
+    await expect(table.create({ ...binding, issuer: "" })).rejects.toThrow(/issuer and a subject/);
+    await expect(table.create({ ...binding, subject: "" })).rejects.toThrow(/issuer and a subject/);
+    expect(send).not.toHaveBeenCalled();
   });
 });
