@@ -1,6 +1,6 @@
 export * from "./shared";
 export * from "./account";
-export * from "./identity-binding";
+export * from "./account-trust";
 export * from "./api-key";
 export * from "./data-connection";
 export * from "./membership";

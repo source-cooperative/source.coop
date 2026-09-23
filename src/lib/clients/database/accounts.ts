@@ -17,7 +17,7 @@ import {
 } from "@/types";
 
 import { BaseTable } from "./base";
-import { IdentityBindingsTable, identityBindingsTable } from "./identity-bindings";
+import { AccountTrustsTable, accountTrustsTable, identityKey } from "./account-trusts";
 import { LOGGER } from "@/lib/logging";
 
 /**
@@ -34,16 +34,16 @@ export interface AccountSuggestion {
 
 export class AccountsTable extends BaseTable {
   model = "accounts";
-  private readonly bindings: IdentityBindingsTable;
+  private readonly trusts: AccountTrustsTable;
 
   constructor({
-    bindings,
+    trusts,
     ...base
   }: {
-    bindings?: IdentityBindingsTable;
+    trusts?: AccountTrustsTable;
   } & ConstructorParameters<typeof BaseTable>[0] = {}) {
     super(base);
-    this.bindings = bindings ?? identityBindingsTable;
+    this.trusts = trusts ?? accountTrustsTable;
   }
 
   async fetchById(account_id: string): Promise<Account | null> {
@@ -117,19 +117,6 @@ export class AccountsTable extends BaseTable {
     }
 
     return accountBatches;
-  }
-
-  /**
-   * The account `subject` resolves to, as named by `issuer` — for identities
-   * the platform does not own. An Ory identity is `fetchByOryId`'s to resolve,
-   * from the row itself.
-   */
-  async fetchByIdentity(
-    issuer: string,
-    subject: string
-  ): Promise<Account | null> {
-    const binding = await this.bindings.resolve(issuer, subject);
-    return binding ? this.fetchById(binding.account_id) : null;
   }
 
   async fetchByOryId(identity_id: string): Promise<IndividualAccount | null> {
@@ -345,27 +332,30 @@ export class AccountsTable extends BaseTable {
   }
 
   /**
-   * Removes the account and its bindings together. An orphaned binding would
-   * keep its subject from ever binding again, and a cascade that stopped
-   * half-way would leave an account some of whose sign-in paths are gone, so
-   * the deletes are one transaction. The bindings are read fresh: a memoized
-   * list from earlier in the request could predate one of them.
+   * Removes the account and its trusts together. A trust that outlived its
+   * account would be a dangling grant, so the row goes in the same transaction
+   * as its trusts — the last one, when there are more than a transaction
+   * holds, so a failure part-way leaves an account with fewer trusts and never
+   * trusts without an account. The trusts are read fresh: a memoized list from
+   * earlier in the request could predate one of them.
    */
   async delete(account_id: string): Promise<void> {
-    const bindings = await this.bindings.listByAccount(account_id, true);
-    await this.client.send(
-      new TransactWriteCommand({
-        TransactItems: [
-          ...bindings.map((b) => ({
-            Delete: {
-              TableName: this.bindings.table,
-              Key: { issuer: b.issuer, subject: b.subject },
-            },
-          })),
-          { Delete: { TableName: this.table, Key: { account_id } } },
-        ],
-      })
-    );
+    const trusts = await this.trusts.listByAccount(account_id, true);
+    const deletes = [
+      ...trusts.map((t) => ({
+        Delete: {
+          TableName: this.trusts.table,
+          Key: { account_id, identity: identityKey(t.issuer, t.subject) },
+        },
+      })),
+      { Delete: { TableName: this.table, Key: { account_id } } },
+    ];
+    const TRANSACTION_ITEMS = 100; // DynamoDB's ceiling per TransactWriteItems
+    for (let i = 0; i < deletes.length; i += TRANSACTION_ITEMS) {
+      await this.client.send(
+        new TransactWriteCommand({ TransactItems: deletes.slice(i, i + TRANSACTION_ITEMS) })
+      );
+    }
   }
 }
 

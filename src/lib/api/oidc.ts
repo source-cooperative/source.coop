@@ -7,7 +7,7 @@ import {
 import { CONFIG } from "@/lib/config";
 import { accountsTable, membershipsTable } from "@/lib/clients/database";
 import { isAuthorized } from "@/lib/api/authz";
-import { Actions, UserSession } from "@/types";
+import { Actions, isServiceAccount, UserSession } from "@/types";
 import { LOGGER } from "../logging";
 
 let jwks: ReturnType<typeof createRemoteJWKSet> | null = null;
@@ -47,6 +47,15 @@ function getJwks() {
     jwks = createRemoteJWKSet(jwksUrl);
   }
   return jwks;
+}
+
+/**
+ * The service account `account_id` names, or null. Only a service account
+ * answers by id: a person's or organization's handle is never a subject.
+ */
+async function serviceAccountById(account_id: string) {
+  const account = await accountsTable.fetchById(account_id);
+  return account && isServiceAccount(account) ? account : null;
 }
 
 /**
@@ -145,12 +154,24 @@ export async function authenticateWithOidcToken(
     return null;
   }
 
-  // The token subject is the caller's Ory identity id (the data proxy signs
-  // tokens with the authenticated principal's Ory id as `sub`), so resolve the
-  // account via the identity_id index — NOT fetchById, which keys on the
-  // human-readable account_id. Only individual accounts have an Ory identity;
-  // org accounts are never the subject of a proxy-issued token.
-  const account = await accountsTable.fetchByOryId(oryId);
+  // The token subject is whatever the data proxy authenticated: a person's Ory
+  // identity id, or a service account's own id — for an API key it signed
+  // (ADR-013), or a workload the account trusts (ADR-014), which names the
+  // account it wants when it exchanges its token. The two namespaces are read
+  // together; should a subject ever name both a person and a service account,
+  // it is ambiguous and neither is trusted.
+  const [person, service] = await Promise.all([
+    accountsTable.fetchByOryId(oryId),
+    serviceAccountById(oryId),
+  ]);
+  if (person && service) {
+    LOGGER.warn("OIDC token subject names both a person and a service account", {
+      operation: "authenticateWithOidcToken",
+      metadata: { sub: oryId, person: person.account_id, service: service.account_id },
+    });
+    return null;
+  }
+  const account = person ?? service;
   if (!account) {
     // Verified token, but no account is indexed under this Ory id. This is the
     // silent 401 path: the token is valid but the subject doesn't map to an
@@ -169,7 +190,8 @@ export async function authenticateWithOidcToken(
     return null;
   }
 
-  const identity_id = account.identity_id;
+  // A service account has no Ory identity; the session says so with null.
+  const identity_id = account.identity_id ?? null;
 
   const memberships = await membershipsTable.listByUser(account.account_id);
   const filteredMemberships = memberships.filter((membership) =>

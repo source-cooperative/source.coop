@@ -148,7 +148,8 @@ export const OrganizationalAccountSchema = BaseAccountSchema.extend({
 export type OrganizationalAccount = z.infer<typeof OrganizationalAccountSchema>;
 
 // Service account schema. A machine principal owned by another account: it
-// has no Ory identity (it authenticates through identity bindings) and no
+// has no Ory identity (it authenticates as a subject it trusts, or with an
+// API key) and no
 // profile beyond the shared fields.
 export const ServiceAccountSchema = BaseAccountSchema.extend({
   type: z.literal(AccountType.SERVICE),
