@@ -49,7 +49,8 @@ async function tablesExist() {
     tables.TableNames?.includes(getTableName("products")) &&
     tables.TableNames?.includes(getTableName("api-keys")) &&
     tables.TableNames?.includes(getTableName("data-connections")) &&
-    tables.TableNames?.includes(getTableName("memberships"))
+    tables.TableNames?.includes(getTableName("memberships")) &&
+    tables.TableNames?.includes(getTableName("identity-bindings"))
   );
 }
 
@@ -77,6 +78,7 @@ async function createTables() {
   await deleteTable(getTableName("api-keys"));
   await deleteTable(getTableName("data-connections"));
   await deleteTable(getTableName("memberships"));
+  await deleteTable(getTableName("identity-bindings"));
 
   // Wait for tables to be fully deleted
   await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -140,6 +142,45 @@ async function createTables() {
     console.log(`✓ Created ${getTableName("accounts")} table`);
   } catch (e) {
     console.error(`✗ Error creating ${getTableName("accounts")} table:`, e);
+    throw e;
+  }
+
+  // Create identity-bindings table
+  try {
+    await client.send(
+      new CreateTableCommand({
+        TableName: getTableName("identity-bindings"),
+        AttributeDefinitions: [
+          { AttributeName: "issuer", AttributeType: "S" },
+          { AttributeName: "subject", AttributeType: "S" },
+          { AttributeName: "account_id", AttributeType: "S" },
+        ],
+        KeySchema: [
+          { AttributeName: "issuer", KeyType: "HASH" },
+          { AttributeName: "subject", KeyType: "RANGE" },
+        ],
+        GlobalSecondaryIndexes: [
+          {
+            IndexName: "account_id",
+            KeySchema: [{ AttributeName: "account_id", KeyType: "HASH" }],
+            Projection: {
+              ProjectionType: "ALL",
+            },
+            ProvisionedThroughput: {
+              ReadCapacityUnits: 5,
+              WriteCapacityUnits: 5,
+            },
+          },
+        ],
+        ProvisionedThroughput: {
+          ReadCapacityUnits: 5,
+          WriteCapacityUnits: 5,
+        },
+      })
+    );
+    console.log(`✓ Created ${getTableName("identity-bindings")} table`);
+  } catch (e) {
+    console.error(`✗ Error creating ${getTableName("identity-bindings")} table:`, e);
     throw e;
   }
 
