@@ -962,6 +962,12 @@ function getAccountProfile(
   principal: UserSession | null,
   account: Account
 ): boolean {
+  // A service account has no profile: its page is not found for everyone,
+  // and whoever manages it reads it from its owner's settings instead.
+  if (account.type === AccountType.SERVICE) {
+    return false;
+  }
+
   // If the user is disabled, they are not authorized
   if (principal?.account?.disabled) {
     return false;

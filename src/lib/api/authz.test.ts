@@ -3978,6 +3978,15 @@ describe("service accounts", () => {
     expect(isAuthorized(botSession, bot, Actions.DisableAccount)).toBe(false);
   });
 
+  test("have no profile for anyone to read, admins included", () => {
+    expect(isAuthorized(sessions["admin"], bot, Actions.GetAccountProfile)).toBe(false);
+    expect(isAuthorized(sessions["organization-owner-user"], bot, Actions.GetAccountProfile)).toBe(false);
+    expect(isAuthorized(botSession, bot, Actions.GetAccountProfile)).toBe(false);
+    expect(isAuthorized(null, bot, Actions.GetAccountProfile)).toBe(false);
+    // Its owner's profile is as public as ever.
+    expect(isAuthorized(null, org, Actions.GetAccountProfile)).toBe(true);
+  });
+
   test("act only on the products they are granted", () => {
     expect(isAuthorized(botSession, orgRepo, Actions.WriteRepositoryData)).toBe(true);
     expect(isAuthorized(botSession, otherOrgRepo, Actions.WriteRepositoryData)).toBe(false);

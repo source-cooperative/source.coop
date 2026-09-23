@@ -82,7 +82,8 @@ export async function GET(req: NextRequest) {
 async function generateAccountImage(accountId: string, host: string) {
   const account = await accountsTable.fetchById(accountId);
 
-  if (!account) {
+  // A service account has no page for this image to preview.
+  if (!account || account.type === AccountType.SERVICE) {
     return OpenGraphImage({
       title: "Account Not Found",
       host,
