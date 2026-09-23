@@ -37,3 +37,13 @@ export const Required: Story = {
 export const Prefilled: Story = {
   args: { defaultValue: "acoltrane" },
 };
+
+/**
+ * Scoped to an account, so the service accounts it owns are offered too, each
+ * badged "Service account" so a machine reads as one before it is picked. The
+ * mock returns one for `miskatonic`; type `mis` to see it listed with the
+ * people.
+ */
+export const OfferingServiceAccounts: Story = {
+  args: { placeholder: "Search by username or name", memberOf: "miskatonic" },
+};
