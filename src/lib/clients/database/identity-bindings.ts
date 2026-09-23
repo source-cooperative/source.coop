@@ -27,11 +27,12 @@ function requireKey(issuer: string, subject: string): void {
 }
 
 /**
- * Identities the platform does not own — a service account's subject under the
- * data proxy's issuer, a GitHub Actions workflow — resolved to the account they
+ * Subjects the platform cannot derive from an account — a GitHub Actions
+ * workflow, whatever platform IdP comes next — resolved to the account they
  * belong to. An individual's Ory identity is not one of them: it stays on the
  * account row as `identity_id`, where the session, the email lookup and the
- * proxy credentials already read it.
+ * proxy credentials already read it. Nor is an API key's subject, which is the
+ * service account's own id and resolves by id.
  */
 export class IdentityBindingsTable extends BaseTable {
   model = "identity-bindings";
