@@ -9,6 +9,7 @@ import {
   accountsTable,
   accountTrustsTable,
   membershipsTable,
+  serviceAccountKeysTable,
 } from "@/lib/clients/database";
 import { getPageSession } from "@/lib/api/utils";
 import { canManageAccount } from "@/lib/api/authz";
@@ -37,6 +38,7 @@ export default async function ServiceAccountsPage({ params }: PageProps) {
       grants: (await membershipsTable.listByUser(account.account_id)).filter(
         (m) => m.state === MembershipState.Member
       ),
+      keys: await serviceAccountKeysTable.listByAccount(account.account_id),
     }))
   );
 
