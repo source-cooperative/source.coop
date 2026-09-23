@@ -1,9 +1,12 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { Theme } from "@radix-ui/themes";
 
-const replace = jest.fn();
+const mockReplace = jest.fn();
+// One router object for the whole suite: the component keys an effect on it,
+// so a fresh object per render would re-fire that effect forever.
+const mockRouter = { replace: mockReplace };
 jest.mock("next/navigation", () => ({
-  useRouter: () => ({ replace }),
+  useRouter: () => mockRouter,
   usePathname: () => "/admin/user-lookup",
 }));
 
@@ -29,8 +32,8 @@ test("a settled edit lands in the URL once", () => {
   });
   act(() => jest.advanceTimersByTime(400));
 
-  expect(replace).toHaveBeenCalledTimes(1);
-  expect(replace).toHaveBeenCalledWith("/admin/user-lookup?q=nissim");
+  expect(mockReplace).toHaveBeenCalledTimes(1);
+  expect(mockReplace).toHaveBeenCalledWith("/admin/user-lookup?q=nissim");
 });
 
 test("clearing the field drops the param", () => {
@@ -40,7 +43,7 @@ test("clearing the field drops the param", () => {
   });
   act(() => jest.advanceTimersByTime(400));
 
-  expect(replace).toHaveBeenCalledWith("/admin/user-lookup");
+  expect(mockReplace).toHaveBeenCalledWith("/admin/user-lookup");
 });
 
 test("a URL change from outside resyncs the field instead of being overwritten", () => {
@@ -51,9 +54,16 @@ test("a URL change from outside resyncs the field instead of being overwritten",
     target: { value: "nissim" },
   });
   act(() => jest.advanceTimersByTime(400));
-  expect(replace).toHaveBeenLastCalledWith("/admin/user-lookup?q=nissim");
-  replace.mockClear();
+  expect(mockReplace).toHaveBeenLastCalledWith("/admin/user-lookup?q=nissim");
+  mockReplace.mockClear();
 
+  // The page re-renders for the URL the field just set, then for the one Back
+  // restores.
+  rerender(
+    <Theme>
+      <AdminUserSearchField query="nissim" />
+    </Theme>,
+  );
   rerender(
     <Theme>
       <AdminUserSearchField query="jane" />
@@ -62,5 +72,5 @@ test("a URL change from outside resyncs the field instead of being overwritten",
   act(() => jest.advanceTimersByTime(400));
 
   expect(screen.getByLabelText("Search users")).toHaveValue("jane");
-  expect(replace).not.toHaveBeenCalled();
+  expect(mockReplace).not.toHaveBeenCalled();
 });
