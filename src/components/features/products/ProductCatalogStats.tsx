@@ -16,7 +16,7 @@ function Share({ value, total }: { value?: number; total?: number }) {
   if (value === undefined || total === undefined || total <= 0) return null;
   return (
     <Text as="span" size="1" color="gray" title="Share of whole-product total">
-      {((value / total) * 100).toLocaleString("en-US", { maximumFractionDigits: 1 })}%
+      ({((value / total) * 100).toLocaleString("en-US", { maximumFractionDigits: 1 })}%)
     </Text>
   );
 }
@@ -45,7 +45,7 @@ export function ProductCatalogStats({ entry }: { entry?: CatalogEntry }) {
       <Table.Root size="1" className={styles.table}>
         <Table.Header>
           <Table.Row>
-            <Table.ColumnHeaderCell>File Extension</Table.ColumnHeaderCell>
+            <Table.ColumnHeaderCell>Extension</Table.ColumnHeaderCell>
             <Table.ColumnHeaderCell justify="end">Files</Table.ColumnHeaderCell>
             <Table.ColumnHeaderCell aria-label="Percentage of all files" />
             <Table.ColumnHeaderCell justify="end">Bytes</Table.ColumnHeaderCell>
