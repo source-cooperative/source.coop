@@ -80,7 +80,9 @@ export class AccountTrustsTable extends BaseTable {
         new PutCommand({
           TableName: this.table,
           Item: { ...row, identity: identityKey(row.issuer, row.subject) },
-          ConditionExpression: "attribute_not_exists(identity)",
+          // `identity` is a DynamoDB reserved word, so it is named by placeholder.
+          ConditionExpression: "attribute_not_exists(#identity)",
+          ExpressionAttributeNames: { "#identity": "identity" },
         })
       );
     } catch (error) {

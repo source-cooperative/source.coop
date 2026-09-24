@@ -34,7 +34,9 @@ describe("AccountTrustsTable", () => {
     const input = send.mock.calls[0][0].input;
     expect(input.TableName).toBe("sc-test-account-trusts");
     expect(input.Item).toEqual({ ...trust, identity: KEY.identity });
-    expect(input.ConditionExpression).toBe("attribute_not_exists(identity)");
+    // A bare `identity` is a reserved word, which DynamoDB rejects outright.
+    expect(input.ConditionExpression).toBe("attribute_not_exists(#identity)");
+    expect(input.ExpressionAttributeNames).toEqual({ "#identity": "identity" });
   });
 
   it("names a repeat for what it is", async () => {
