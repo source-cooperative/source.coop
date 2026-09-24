@@ -1,0 +1,19 @@
+.card {
+  padding: var(--space-2);
+}
+
+.table table {
+  font-size: var(--font-size-1);
+  line-height: var(--line-height-1);
+  font-variant-numeric: tabular-nums;
+}
+
+.table th,
+.table td {
+  height: auto;
+  padding: var(--space-1);
+}
+
+.table td {
+  white-space: nowrap;
+}
