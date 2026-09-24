@@ -1,4 +1,6 @@
 .card {
+  width: 22rem;
+  max-width: 100%;
   padding: var(--space-2);
 }
 
