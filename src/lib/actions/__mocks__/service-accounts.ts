@@ -1,5 +1,6 @@
 import { fn } from "storybook/test";
 import type * as Real from "../service-accounts";
+import { githubWorkflowStep } from "@/lib/services/github-workflow";
 import type {
   ServiceAccountActionState,
   ServiceAccountFormState,
@@ -17,19 +18,7 @@ import type {
  */
 const idle = (): ServiceAccountActionState => ({ message: "", success: false });
 
-const STEP = [
-  "# In the job, with permissions: { id-token: write }",
-  "env:",
-  "  AWS_ENDPOINT_URL_S3: https://data.source.coop",
-  "steps:",
-  "  - name: Sign in to Source Cooperative as nightly-sync",
-  "    uses: aws-actions/configure-aws-credentials@v6",
-  "    with:",
-  "      role-to-assume: arn:aws:iam::nightly-sync:role/FullAccess",
-  "      audience: https://data.source.coop",
-  "      sts-endpoint: https://data.source.coop/.sts",
-  "      aws-region: us-west-2",
-].join("\n");
+const STEP = githubWorkflowStep("https://data.source.coop", "nightly-sync");
 
 export const createServiceAccount: typeof Real.createServiceAccount = fn(
   async (_prev, formData): Promise<ServiceAccountFormState> => ({

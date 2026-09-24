@@ -18,12 +18,6 @@ import { WorkflowSnippet } from "./WorkflowSnippet";
  * the form is submitted, the way a role's trust policy is edited.
  */
 export function AddGithubTrustDialog({ accountId }: { accountId: string }) {
-  const [state, formAction, pending] = useActionState(
-    addGithubTrust,
-    IDLE_SERVICE_ACCOUNT_ACTION_STATE
-  );
-  const [workflow, setWorkflow] = useState(NEW_GITHUB_WORKFLOW);
-
   return (
     <Dialog.Root>
       <Dialog.Trigger>
@@ -33,7 +27,24 @@ export function AddGithubTrustDialog({ accountId }: { accountId: string }) {
       </Dialog.Trigger>
       <Dialog.Content style={{ maxWidth: 560 }}>
         <Dialog.Title>Trust a GitHub workflow</Dialog.Title>
-        {state.added ? (
+        {/* The content unmounts when the dialog closes, so the form and its
+            result live in here and start over on every open. */}
+        <TrustForm accountId={accountId} />
+      </Dialog.Content>
+    </Dialog.Root>
+  );
+}
+
+function TrustForm({ accountId }: { accountId: string }) {
+  const [state, formAction, pending] = useActionState(
+    addGithubTrust,
+    IDLE_SERVICE_ACCOUNT_ACTION_STATE
+  );
+  const [workflow, setWorkflow] = useState(NEW_GITHUB_WORKFLOW);
+
+  return (
+    <>
+      {state.added ? (
           <Flex direction="column" gap="3">
             <WorkflowSnippet subject={state.added.subject} step={state.added.workflow_step} />
             <Flex justify="end">
@@ -70,7 +81,6 @@ export function AddGithubTrustDialog({ accountId }: { accountId: string }) {
             </Flex>
           </form>
         )}
-      </Dialog.Content>
-    </Dialog.Root>
+    </>
   );
 }

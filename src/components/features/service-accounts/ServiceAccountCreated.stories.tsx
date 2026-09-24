@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { ServiceAccountCreated } from "./ServiceAccountCreated";
+import { githubWorkflowStep } from "@/lib/services/github-workflow";
 
 /**
  * The moment after creation. The account, its grants and the workflows it
@@ -14,19 +15,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-const step = [
-  "# In the job, with permissions: { id-token: write }",
-  "env:",
-  "  AWS_ENDPOINT_URL_S3: https://data.source.coop",
-  "steps:",
-  "  - name: Sign in to Source Cooperative as nightly-sync",
-  "    uses: aws-actions/configure-aws-credentials@v6",
-  "    with:",
-  "      role-to-assume: arn:aws:iam::nightly-sync:role/FullAccess",
-  "      audience: https://data.source.coop",
-  "      sts-endpoint: https://data.source.coop/.sts",
-  "      aws-region: us-west-2",
-].join("\n");
+const step = githubWorkflowStep("https://data.source.coop", "nightly-sync");
 
 export const WithWorkflows: Story = {
   args: {

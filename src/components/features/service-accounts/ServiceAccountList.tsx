@@ -34,7 +34,7 @@ function ServiceAccountCard({ summary }: { summary: ServiceAccountSummary }) {
   const { account, trusts, grants } = summary;
   const [removeState, removeAction, removing] = useActionState(removeTrust, IDLE);
   const [toggleState, toggleAction, toggling] = useActionState(setServiceAccountDisabled, IDLE);
-  const [, deleteAction, deleting] = useActionState(deleteServiceAccount, IDLE);
+  const [deleteState, deleteAction, deleting] = useActionState(deleteServiceAccount, IDLE);
   const message = removeState.message || toggleState.message;
 
   return (
@@ -123,19 +123,26 @@ function ServiceAccountCard({ summary }: { summary: ServiceAccountSummary }) {
               </AlertDialog.Description>
               <Flex justify="end" gap="3" mt="4">
                 <AlertDialog.Cancel>
-                  <Button variant="soft" color="gray">
+                  <Button variant="soft" color="gray" disabled={deleting}>
                     Cancel
                   </Button>
                 </AlertDialog.Cancel>
                 <form action={deleteAction}>
                   <input type="hidden" name="account_id" value={account.account_id} />
-                  <AlertDialog.Action>
-                    <Button type="submit" color="red">
-                      Delete
-                    </Button>
-                  </AlertDialog.Action>
+                  {/* Not AlertDialog.Action: that closes the dialog on click,
+                      before the action is dispatched. The dialog leaves with
+                      the card once the account is gone, and stays to say why
+                      when it is not. */}
+                  <Button type="submit" color="red" disabled={deleting} loading={deleting}>
+                    Delete
+                  </Button>
                 </form>
               </Flex>
+              {deleteState.message && (
+                <Text as="p" size="1" color="red" mt="3">
+                  {deleteState.message}
+                </Text>
+              )}
             </AlertDialog.Content>
           </AlertDialog.Root>
         </Flex>
