@@ -19,5 +19,5 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
-  args: { accountId: "nightly-sync" },
+  args: { accountId: "miskatonic--nightly-sync" },
 };
