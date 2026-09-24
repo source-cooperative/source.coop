@@ -155,7 +155,7 @@ export function ServiceAccountForm({ ownerAccountId, products }: ServiceAccountF
 
         <SectionHeader
           title="What it can reach"
-          description={`Products ${ownerAccountId} owns. Each grant is an ordinary membership, revoked the same way as a person's.`}
+          description={`Products ${ownerAccountId} owns that it may read or write. Each grant is an ordinary membership, revoked the same way as a person's.`}
         >
           {Object.entries(grants).map(([product_id, role]) => (
             <input key={product_id} type="hidden" name={`grant:${product_id}`} value={role} />

@@ -1,8 +1,17 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
-import { Flex, IconButton, SegmentedControl, Text, Tooltip } from "@radix-ui/themes";
-import { Cross2Icon, ExternalLinkIcon } from "@radix-ui/react-icons";
+import {
+  Button,
+  Flex,
+  IconButton,
+  SegmentedControl,
+  Select,
+  Text,
+  Tooltip,
+} from "@radix-ui/themes";
+import { Cross2Icon, ExternalLinkIcon, PlusIcon } from "@radix-ui/react-icons";
 import {
   ConnectionList,
   ConnectionRow,
@@ -10,105 +19,200 @@ import {
 import { productUrl } from "@/lib/urls";
 import { MembershipRole, type Product } from "@/types";
 
-/** The control's value for a product the account does not reach. */
-export const NO_ACCESS = "none";
 export type ProductAccess = MembershipRole.ReadData | MembershipRole.WriteData;
 
+function AccessControl({
+  label,
+  value,
+  onChange,
+  disabled,
+}: {
+  label: string;
+  value: ProductAccess;
+  onChange: (next: ProductAccess) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <SegmentedControl.Root
+      size="1"
+      aria-label={label}
+      value={value}
+      disabled={disabled}
+      onValueChange={(next) => onChange(next as ProductAccess)}
+    >
+      <SegmentedControl.Item value={MembershipRole.ReadData}>Read</SegmentedControl.Item>
+      <SegmentedControl.Item value={MembershipRole.WriteData}>Read and write</SegmentedControl.Item>
+    </SegmentedControl.Root>
+  );
+}
+
+/** The row "Grant a product" opens: which product, how much, and Grant. */
+function GrantRow({
+  available,
+  onGrant,
+  onCancel,
+  disabled,
+}: {
+  available: Pick<Product, "product_id" | "title">[];
+  onGrant: (product_id: string, access: ProductAccess) => void;
+  onCancel: () => void;
+  disabled?: boolean;
+}) {
+  const [product_id, setProductId] = useState<string>();
+  const [access, setAccess] = useState<ProductAccess>(MembershipRole.ReadData);
+  return (
+    <ConnectionRow
+      title={
+        <Select.Root value={product_id} onValueChange={setProductId}>
+          <Select.Trigger placeholder="Choose a product" aria-label="Product to grant" />
+          <Select.Content position="popper">
+            {available.map((p) => (
+              <Select.Item key={p.product_id} value={p.product_id}>
+                {p.title}
+              </Select.Item>
+            ))}
+          </Select.Content>
+        </Select.Root>
+      }
+      actions={
+        <Flex align="center" gap="3">
+          <AccessControl label="Access to grant" value={access} onChange={setAccess} />
+          {/* highContrast, as FormActions' submit is: a solid button in this
+              theme's grey accent fails contrast for its label. */}
+          <Button
+            type="button"
+            size="1"
+            highContrast
+            disabled={!product_id || disabled}
+            onClick={() => product_id && onGrant(product_id, access)}
+          >
+            Grant
+          </Button>
+          <Tooltip content="Cancel">
+            <IconButton
+              type="button"
+              size="1"
+              variant="ghost"
+              color="gray"
+              aria-label="Cancel granting a product"
+              onClick={onCancel}
+            >
+              <Cross2Icon />
+            </IconButton>
+          </Tooltip>
+        </Flex>
+      }
+    />
+  );
+}
+
 /**
- * Products of an owner, each with how much of it a service account may reach.
- * Each title opens the product in a new tab, to check what it holds. What a
- * change does is the caller's: the create form holds it until submit, the
- * account's page saves it at once.
+ * The products of an owner a service account reaches, each with Read or Read
+ * and write and an X to remove it, and "Grant a product" to add another: a row
+ * with the owner's other products, the access to give, and Grant. Each title
+ * opens the product in a new tab, to check what it holds.
  *
- * Without `onRemove`, every product is offered with None / Read / Read and
- * write — the create form, choosing from all of them. With it, the rows are
- * the ones the account reaches, each with Read / Read and write and an X.
+ * What a change does is the caller's. The create form holds them until it is
+ * submitted; the account's page saves each as it is made.
  */
 export function ProductAccessList({
   ownerAccountId,
   products,
   access,
   onChange,
-  onRemove,
   disabled,
-  empty,
-  children,
 }: {
   ownerAccountId: string;
+  /** Every product the owner has; those in `access` are listed. */
   products: Pick<Product, "product_id" | "title">[];
-  /** Access per product id; a product missing here has none. */
   access: Record<string, ProductAccess>;
+  /** A grant made or changed, or removed (`null`). */
   onChange: (product_id: string, access: ProductAccess | null) => void;
-  onRemove?: (product_id: string) => void;
   disabled?: boolean;
-  /** Shown in place of the list when there are no rows. */
-  empty?: React.ReactNode;
-  /** Further rows at the end of the list — the account page's draft row. */
-  children?: React.ReactNode;
 }) {
-  if (products.length === 0 && !children) {
+  const [granting, setGranting] = useState(false);
+  const reached = products.filter((p) => access[p.product_id]);
+  const available = products.filter((p) => !access[p.product_id]);
+
+  if (products.length === 0) {
     return (
       <Text size="2" color="gray">
-        {empty ?? `${ownerAccountId} has no products yet.`}
+        {ownerAccountId} has no products yet.
       </Text>
     );
   }
   return (
-    <ConnectionList>
-      {products.map(({ product_id, title }) => (
-        <ConnectionRow
-          key={product_id}
-          title={
-            <Link
-              href={productUrl(ownerAccountId, product_id)}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ color: "var(--accent-11)", textDecoration: "none" }}
-            >
-              <Flex align="center" gap="1">
-                <Text size="2" weight="medium">
-                  {title}
-                </Text>
-                <ExternalLinkIcon width="12" height="12" aria-label="opens in a new tab" />
-              </Flex>
-            </Link>
-          }
-          meta={`${ownerAccountId}/${product_id}`}
-          actions={
-            <Flex align="center" gap="3">
-              <SegmentedControl.Root
-                size="1"
-                aria-label={`Access to ${product_id}`}
-                value={access[product_id] ?? NO_ACCESS}
-                disabled={disabled}
-                onValueChange={(next) =>
-                  onChange(product_id, next === NO_ACCESS ? null : (next as ProductAccess))
-                }
-              >
-                {!onRemove && <SegmentedControl.Item value={NO_ACCESS}>None</SegmentedControl.Item>}
-                <SegmentedControl.Item value={MembershipRole.ReadData}>Read</SegmentedControl.Item>
-                <SegmentedControl.Item value={MembershipRole.WriteData}>Read and write</SegmentedControl.Item>
-              </SegmentedControl.Root>
-              {onRemove && (
-                <Tooltip content="Remove">
-                  <IconButton
-                    type="button"
-                    size="1"
-                    variant="ghost"
-                    color="red"
+    <Flex direction="column" gap="3">
+      {reached.length === 0 && !granting ? (
+        <Text size="2" color="gray">
+          Nothing yet. Grant a product to let it read or write data.
+        </Text>
+      ) : (
+        <ConnectionList>
+          {reached.map(({ product_id, title }) => (
+            <ConnectionRow
+              key={product_id}
+              title={
+                <Link
+                  href={productUrl(ownerAccountId, product_id)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ color: "var(--accent-11)", textDecoration: "none" }}
+                >
+                  <Flex align="center" gap="1">
+                    <Text size="2" weight="medium">
+                      {title}
+                    </Text>
+                    <ExternalLinkIcon width="12" height="12" aria-label="opens in a new tab" />
+                  </Flex>
+                </Link>
+              }
+              meta={`${ownerAccountId}/${product_id}`}
+              actions={
+                <Flex align="center" gap="3">
+                  <AccessControl
+                    label={`Access to ${product_id}`}
+                    value={access[product_id]}
+                    onChange={(next) => onChange(product_id, next)}
                     disabled={disabled}
-                    aria-label={`Remove access to ${product_id}`}
-                    onClick={() => onRemove(product_id)}
-                  >
-                    <Cross2Icon />
-                  </IconButton>
-                </Tooltip>
-              )}
-            </Flex>
-          }
-        />
-      ))}
-      {children}
-    </ConnectionList>
+                  />
+                  <Tooltip content="Remove">
+                    <IconButton
+                      type="button"
+                      size="1"
+                      variant="ghost"
+                      color="red"
+                      disabled={disabled}
+                      aria-label={`Remove access to ${product_id}`}
+                      onClick={() => onChange(product_id, null)}
+                    >
+                      <Cross2Icon />
+                    </IconButton>
+                  </Tooltip>
+                </Flex>
+              }
+            />
+          ))}
+          {granting && (
+            <GrantRow
+              available={available}
+              disabled={disabled}
+              onCancel={() => setGranting(false)}
+              onGrant={(product_id, next) => {
+                setGranting(false);
+                onChange(product_id, next);
+              }}
+            />
+          )}
+        </ConnectionList>
+      )}
+      {!granting && available.length > 0 && (
+        <Flex>
+          <Button type="button" variant="soft" onClick={() => setGranting(true)}>
+            <PlusIcon /> Grant a product
+          </Button>
+        </Flex>
+      )}
+    </Flex>
   );
 }
