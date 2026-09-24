@@ -33,6 +33,7 @@ export const WithCatalog: Story = {
       total_bytes: 12345678900,
       object_count: 12500,
       exts: { tif: 10000, parquet: 2000, json: 400, csv: 100 },
+      ext_bytes: { tif: 10000000000, parquet: 2000000000, json: 300000000, csv: 45678900 },
     },
   },
 };
@@ -49,6 +50,9 @@ export const LongDescription: Story = {
 };
 
 export const WithoutCatalog: Story = {};
+export const WithoutStatistics: Story = {
+  args: { catalogEntry: { account_id: "example", product_id: "land-cover" } },
+};
 export const Mobile: Story = {
   ...WithCatalog,
   globals: { viewport: { value: "mobile1", isRotated: false } },

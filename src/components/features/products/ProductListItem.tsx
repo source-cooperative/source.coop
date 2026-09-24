@@ -3,7 +3,7 @@
 import Link from "next/link";
 import type { Product } from "@/types";
 import type { CatalogEntry } from "@/types/catalog";
-import { ProductCatalogStats } from "./ProductCatalogStats";
+import { hasCatalogStats, ProductCatalogStats } from "./ProductCatalogStats";
 import { DateText } from "@/components/display";
 import { Box, Text, Badge, Heading } from "@radix-ui/themes";
 import { TagList } from "./TagList";
@@ -30,6 +30,7 @@ export function ProductListItem({
 }: ProductListItemProps) {
   const visibility =
     VISIBILITY_CONFIG[product.visibility] || VISIBILITY_CONFIG.restricted;
+  const showCatalog = hasCatalogStats(catalogEntry);
 
   return (
     <Box
@@ -37,7 +38,7 @@ export function ProductListItem({
       data-selected={isSelected}
       aria-current={isSelected ? "page" : undefined}
     >
-      <article className={catalogEntry ? styles.splitCard : undefined}>
+      <article className={showCatalog ? styles.splitCard : undefined}>
         <div className={styles.productDetails}>
           <Link href={productUrl(product.account_id, product.product_id)}>
             <Heading size="5" weight="bold" color="gray" mb="2">
@@ -84,7 +85,7 @@ export function ProductListItem({
               <TagList tags={product.metadata.tags} />
             )}
         </div>
-        {catalogEntry && (
+        {showCatalog && (
           <div className={styles.catalogSummary}>
             <ProductCatalogStats entry={catalogEntry} />
           </div>
