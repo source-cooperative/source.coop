@@ -3,6 +3,7 @@ import { z } from "zod";
 const count = z.number().int().nonnegative().finite();
 
 export const CatalogEntrySchema = z.object({
+  id: z.string().optional(),
   account_id: z.string().min(1),
   product_id: z.string().min(1),
   total_bytes: count.optional().catch(undefined),

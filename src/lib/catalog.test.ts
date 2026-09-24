@@ -21,6 +21,16 @@ it("omits invalid statistics and preserves zero values", () => {
   expect(catalog.get("org/data")).toEqual({ account_id: "org", product_id: "data", object_count: 0 });
 });
 
+it("does not substitute child dataset statistics for whole-product totals", () => {
+  const child = { ...entry, id: "org/data/child", object_count: 1 };
+  const parent = { ...entry, id: "org/data" };
+  expect(parseCatalog(JSON.stringify(child)).size).toBe(0);
+  for (const records of [[parent, child], [child, parent]]) {
+    expect(parseCatalog(records.map((record) => JSON.stringify(record)).join("\n")))
+      .toEqual(new Map([["org/data", parent]]));
+  }
+});
+
 it("shares successful requests and retries after HTTP failures", async () => {
   const originalFetch = global.fetch;
   const fetchMock = jest.fn()

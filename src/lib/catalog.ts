@@ -11,7 +11,9 @@ export function parseCatalog(text: string): Map<string, CatalogEntry> {
       const result = CatalogEntrySchema.safeParse(JSON.parse(line));
       if (result.success) {
         const entry = result.data;
-        entries.set(`${entry.account_id}/${entry.product_id}`, entry);
+        const productKey = `${entry.account_id}/${entry.product_id}`;
+        if (entry.id !== undefined && entry.id !== productKey) continue;
+        entries.set(productKey, entry);
       }
     } catch {
       continue;
