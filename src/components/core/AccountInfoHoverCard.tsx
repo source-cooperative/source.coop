@@ -44,16 +44,12 @@ export function AccountInfoHoverCard({
             avatar={<ProfileAvatar account={account} size="2" />}
           />
 
-          {/* The badge the picker and the memberships table give a machine,
-              and whose it is, since a service account acts for its owner. */}
+          {/* The badge the picker and the memberships table give a machine. */}
           {isServiceAccount(account) && (
-            <Flex align="center" gap="2" wrap="wrap">
+            <Flex>
               <Badge size="1" color="gray" variant="outline">
                 Service account
               </Badge>
-              <Text size="1" color="gray">
-                owned by @{account.owner_account_id}
-              </Text>
             </Flex>
           )}
 

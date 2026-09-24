@@ -6,7 +6,7 @@ import type { Account } from "@/types";
 /**
  * The card that introduces an account on hover, wherever a name appears in
  * passing — a product's owner, a connection's owner, a member list. A service
- * account is marked as one, with the account that owns it.
+ * account is marked as one.
  *
  * **Hover the name to open it.** The card is the whole component, so a
  * screenshot of the closed state shows nothing.
@@ -49,8 +49,8 @@ export const WithoutBio: Story = {
 };
 
 /**
- * A service account: marked as one with the badge it carries in the account
- * picker and the memberships table, and named with the account that owns it.
+ * A service account, marked with the badge it carries in the account picker
+ * and the memberships table.
  */
 export const ServiceAccount: Story = {
   args: {
