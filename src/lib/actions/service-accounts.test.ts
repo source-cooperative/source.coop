@@ -12,6 +12,7 @@ import {
   productsTable,
 } from "../clients";
 import { getPageSession } from "../api/utils";
+import { redirect } from "next/navigation";
 import { canManageAccount } from "../api/authz";
 import { managedServiceAccount } from "@/lib/accounts/service-accounts";
 import { AlreadyTrustedError } from "../clients/database/account-trusts";
@@ -35,6 +36,7 @@ jest.mock("../api/utils", () => ({ getPageSession: jest.fn() }));
 jest.mock("../api/authz", () => ({ canManageAccount: jest.fn() }));
 jest.mock("@/lib/accounts/service-accounts", () => ({ managedServiceAccount: jest.fn() }));
 jest.mock("next/cache", () => ({ revalidatePath: jest.fn() }));
+jest.mock("next/navigation", () => ({ redirect: jest.fn() }));
 
 const mocks = {
   accounts: accountsTable as jest.Mocked<typeof accountsTable>,
@@ -158,6 +160,8 @@ describe("createServiceAccount", () => {
     const taken = await createServiceAccount(IDLE_FORM, form(base));
     expect(taken.success).toBe(false);
     expect(taken.fieldErrors.account_id).toBeDefined();
+    // "create" is the create page's path segment.
+    expect((await createServiceAccount(IDLE_FORM, form({ ...base, account_id: "create" }))).fieldErrors.account_id).toBeDefined();
   });
 });
 
@@ -166,12 +170,13 @@ describe("lifecycle", () => {
     mocks.managed.mockResolvedValue(bot as never);
   });
 
-  it("deletes grants, then the account (whose trusts go with it)", async () => {
+  it("deletes grants, then the account (whose trusts go with it), and returns to the list", async () => {
     mocks.memberships.listByUser.mockResolvedValue([
       { membership_id: "m1" } as never,
       { membership_id: "m2" } as never,
     ]);
-    expect((await deleteServiceAccount(IDLE, form({ account_id: "nightly-sync" }))).success).toBe(true);
+    await deleteServiceAccount(IDLE, form({ account_id: "nightly-sync" }));
+    expect(redirect).toHaveBeenCalledWith("/edit/account/acme/service-accounts");
     expect(mocks.memberships.delete).toHaveBeenCalledTimes(2);
     expect(mocks.accounts.delete).toHaveBeenCalledWith("nightly-sync");
   });

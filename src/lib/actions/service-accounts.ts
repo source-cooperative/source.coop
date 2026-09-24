@@ -27,7 +27,8 @@ import {
 } from "../clients";
 import { AlreadyTrustedError } from "../clients/database/account-trusts";
 import { githubWorkflowStep } from "@/lib/services/github-workflow";
-import { editAccountServiceAccountsUrl } from "@/lib/urls";
+import { redirect } from "next/navigation";
+import { editAccountServiceAccountsUrl, editServiceAccountUrl } from "@/lib/urls";
 import { randomUUID } from "crypto";
 
 const fail = (message: string, fieldErrors = {}): ServiceAccountFormState => ({
@@ -39,6 +40,12 @@ const outcome = (message: string, success: boolean): ServiceAccountActionState =
   message,
   success,
 });
+
+/** The owner's list and the account's own page both show what changed. */
+function revalidate(account: ServiceAccount) {
+  revalidatePath(editAccountServiceAccountsUrl(account.owner_account_id));
+  revalidatePath(editServiceAccountUrl(account.owner_account_id, account.account_id));
+}
 
 /** Trusts a GitHub workflow, and hands back the step it adds to act as the account. */
 async function trustGithub(
@@ -82,6 +89,10 @@ export async function createServiceAccount(
     return fail("Check the highlighted fields", parsed.error.flatten().fieldErrors);
   }
   const { account_id, name, owner_account_id } = parsed.data;
+  // The create page's own path segment; an account by that id would have no page.
+  if (account_id === "create") {
+    return fail("That account ID is reserved", { account_id: ["That account ID is reserved."] });
+  }
 
   // The owner is settled before any of its products are read, so the product
   // checks below cannot be used to probe another account's products.
@@ -194,7 +205,7 @@ export async function addGithubTrust(
     if (error instanceof AlreadyTrustedError) return outcome("Already trusted", false);
     throw error;
   }
-  revalidatePath(editAccountServiceAccountsUrl(account.owner_account_id));
+  revalidate(account);
   return { ...outcome("", true), added };
 }
 
@@ -212,7 +223,7 @@ export async function removeTrust(
   if (!issuer || !subject) return outcome("No such trust on this account", false);
   // Keyed by the account, so this can only ever touch its own trusts.
   await accountTrustsTable.delete(account.account_id, issuer, subject);
-  revalidatePath(editAccountServiceAccountsUrl(account.owner_account_id));
+  revalidate(account);
   return outcome("Trust removed", true);
 }
 
@@ -227,7 +238,7 @@ export async function setServiceAccountDisabled(
   if (!account) return outcome("You do not manage that service account", false);
   const disabled = formData.get("disabled") === "true";
   await accountsTable.update({ ...account, disabled, updated_at: new Date().toISOString() });
-  revalidatePath(editAccountServiceAccountsUrl(account.owner_account_id));
+  revalidate(account);
   return outcome(disabled ? "Service account disabled" : "Service account enabled", true);
 }
 
@@ -251,5 +262,6 @@ export async function deleteServiceAccount(
     metadata: { account_id: account.account_id, owner_account_id: account.owner_account_id },
   });
   revalidatePath(editAccountServiceAccountsUrl(account.owner_account_id));
-  return outcome("Service account deleted", true);
+  // Its own page is gone; the list is where the user goes next.
+  redirect(editAccountServiceAccountsUrl(account.owner_account_id));
 }

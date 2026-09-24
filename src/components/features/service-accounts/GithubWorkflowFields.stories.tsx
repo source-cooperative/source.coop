@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { fn } from "storybook/test";
-import { Button } from "@radix-ui/themes";
+import { IconButton } from "@radix-ui/themes";
 import { TrashIcon } from "@radix-ui/react-icons";
 import { GithubWorkflowFields, NEW_GITHUB_WORKFLOW } from "./GithubWorkflowFields";
 
@@ -47,9 +47,9 @@ export const ImmutableRepositoryWithRemove: Story = {
       value: "production",
     },
     trailing: (
-      <Button type="button" variant="ghost" color="red">
-        <TrashIcon /> Remove
-      </Button>
+      <IconButton type="button" variant="soft" color="red" aria-label="Remove workflow">
+        <TrashIcon />
+      </IconButton>
     ),
   },
 };

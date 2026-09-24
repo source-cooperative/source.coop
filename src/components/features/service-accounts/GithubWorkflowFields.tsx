@@ -1,6 +1,6 @@
 "use client";
 
-import { Box, Code, Flex, Select, Text, TextField } from "@radix-ui/themes";
+import { Box, Code, Flex, SegmentedControl, Text, TextField } from "@radix-ui/themes";
 import { Field } from "@/components/core";
 
 export interface GithubWorkflow {
@@ -21,7 +21,7 @@ export const githubSubject = (w: GithubWorkflow) =>
 
 /**
  * Names one workflow: a repository, pinned to a ref or an environment. Shows
- * the exact subject that will be bound, since that string — not the fields —
+ * the exact subject that will be trusted, since that string — not the fields —
  * is what the token has to match.
  */
 export function GithubWorkflowFields({
@@ -34,14 +34,24 @@ export function GithubWorkflowFields({
   id: string;
   workflow: GithubWorkflow;
   onChange: (next: GithubWorkflow) => void;
-  /** Rendered after the fields, on the same row — a Remove button, say. */
+  /** Rendered at the end of the repository row — a Remove button, say. */
   trailing?: React.ReactNode;
 }) {
   return (
     <Flex direction="column" gap="3">
-      <Flex gap="3" wrap="wrap" align="end">
-        <Box style={{ flex: "1 1 220px" }}>
-          <Field label="Repository" htmlFor={`${id}-repo`} required>
+      <Flex gap="3" align="end">
+        <Box flexGrow="1">
+          <Field
+            label="Repository"
+            htmlFor={`${id}-repo`}
+            required
+            help={
+              <>
+                <Code size="1">owner/repo</Code>, or <Code size="1">owner@123/repo@456</Code>{" "}
+                if its tokens carry immutable subjects
+              </>
+            }
+          >
             <TextField.Root
               id={`${id}-repo`}
               size="2"
@@ -51,9 +61,13 @@ export function GithubWorkflowFields({
             />
           </Field>
         </Box>
-        <Box style={{ flex: "0 0 150px" }}>
-          <Field label="Pinned to" htmlFor={`${id}-kind`}>
-            <Select.Root
+        {trailing}
+      </Flex>
+      <Flex gap="3" align="end" wrap="wrap">
+        <Field label="Pinned to" htmlFor={`${id}-kind`} group>
+          {(props) => (
+            <SegmentedControl.Root
+              aria-labelledby={props["aria-labelledby"]}
               value={workflow.kind}
               onValueChange={(kind) =>
                 onChange({
@@ -63,15 +77,12 @@ export function GithubWorkflowFields({
                 })
               }
             >
-              <Select.Trigger id={`${id}-kind`} />
-              <Select.Content>
-                <Select.Item value="ref">A ref</Select.Item>
-                <Select.Item value="environment">An environment</Select.Item>
-              </Select.Content>
-            </Select.Root>
-          </Field>
-        </Box>
-        <Box style={{ flex: "1 1 200px" }}>
+              <SegmentedControl.Item value="ref">Ref</SegmentedControl.Item>
+              <SegmentedControl.Item value="environment">Environment</SegmentedControl.Item>
+            </SegmentedControl.Root>
+          )}
+        </Field>
+        <Box flexGrow="1" style={{ minWidth: "min(12rem, 100%)" }}>
           <Field
             label={workflow.kind === "ref" ? "Ref" : "Environment"}
             htmlFor={`${id}-value`}
@@ -86,13 +97,9 @@ export function GithubWorkflowFields({
             />
           </Field>
         </Box>
-        {trailing}
       </Flex>
-      <Text size="1" color="gray">
-        Trusts <Code>{githubSubject(workflow)}</Code>. Name the repository the way
-        its tokens do: <Code>owner/repo</Code>, or <Code>owner@123/repo@456</Code>{" "}
-        for a repository created after July 2026 or opted in to immutable subjects
-        — its Actions settings show the exact prefix.
+      <Text size="1" color="gray" style={{ wordBreak: "break-all" }}>
+        Trusts <Code size="1">{githubSubject(workflow)}</Code>
       </Text>
     </Flex>
   );

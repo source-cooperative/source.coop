@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Button, Callout, Card, Code, Flex, Heading, Text } from "@radix-ui/themes";
 import { InfoCircledIcon } from "@radix-ui/react-icons";
-import { editAccountServiceAccountsUrl } from "@/lib/urls";
+import { editAccountServiceAccountsUrl, editServiceAccountUrl } from "@/lib/urls";
 import type { ServiceAccountFormState } from "@/types";
 import { WorkflowSnippet } from "./WorkflowSnippet";
 
@@ -41,13 +41,18 @@ export function ServiceAccountCreated({
             <InfoCircledIcon />
           </Callout.Icon>
           <Callout.Text>
-            No way to sign in yet. Trust a GitHub workflow from the service
-            accounts list when you are ready.
+            No way to sign in yet. Trust a GitHub workflow from its page when
+            you are ready.
           </Callout.Text>
         </Callout.Root>
       )}
-      <Flex>
-        <Button asChild variant="soft">
+      <Flex gap="3">
+        <Button asChild highContrast>
+          <Link href={editServiceAccountUrl(ownerAccountId, created.account_id)}>
+            Open {created.name}
+          </Link>
+        </Button>
+        <Button asChild variant="soft" color="gray">
           <Link href={editAccountServiceAccountsUrl(ownerAccountId)}>Back to service accounts</Link>
         </Button>
       </Flex>

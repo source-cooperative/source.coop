@@ -9,12 +9,10 @@ import {
 } from "@/types";
 
 /**
- * An owner's service accounts. Each card says who the account is, which
- * workflows it trusts to act as it, what it can reach, and carries the
- * controls: trust another workflow, remove a trust, disable, delete.
- *
- * The lifecycle actions are mocked in `.storybook/preview.tsx`; "Trust a
- * GitHub workflow" opens the dialog and its submit shows the workflow step.
+ * An owner's service accounts, one row each, in the same bordered list the
+ * data connections use: the name linking to the account's own page, its id,
+ * a marker when it is disabled, and how many workflows it trusts and products
+ * it reaches. The controls live on that page, `ServiceAccountDetail`.
  */
 const meta = {
   title: "Features/Service accounts/ServiceAccountList",
@@ -77,7 +75,7 @@ export const Default: Story = {
   },
 };
 
-/** A disabled account keeps its trusts and grants; only sign-in stops. */
+/** A disabled account is marked on its row; its trusts and grants are kept. */
 export const Disabled: Story = {
   args: {
     summaries: [
