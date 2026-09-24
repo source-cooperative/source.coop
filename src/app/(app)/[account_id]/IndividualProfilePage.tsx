@@ -25,9 +25,10 @@ export async function IndividualProfilePage({
     1000
   );
 
-  // Filter products based on authentication status
+  // ListRepository, not GetRepository: an unlisted product is readable by
+  // anyone with the link but listed only for the account and its members.
   products = products.filter((product) =>
-    isAuthorized(session, product, Actions.GetRepository)
+    isAuthorized(session, product, Actions.ListRepository)
   );
 
   const memberships = (
