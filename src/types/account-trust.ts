@@ -13,7 +13,7 @@ extendZodWithOpenApi(z);
  */
 export const AccountTrustSchema = z
   .object({
-    account_id: z.string().min(1).openapi({ example: "acme-nightly-sync" }),
+    account_id: z.string().min(1).openapi({ example: "acme--nightly-sync" }),
     issuer: z.string().min(1).openapi({ example: "https://token.actions.githubusercontent.com" }),
     subject: z.string().min(1).openapi({ example: "repo:acme/data:ref:refs/heads/main" }),
     created_at: z.string().datetime(),
