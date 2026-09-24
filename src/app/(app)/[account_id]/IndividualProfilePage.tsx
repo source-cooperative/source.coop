@@ -19,7 +19,6 @@ export async function IndividualProfilePage({
   showWelcome,
 }: IndividualProfilePageProps) {
   const session = await getPageSession();
-  const isOwner = session?.account?.account_id === account.account_id;
 
   let { products } = await productsTable.listByAccount(
     account.account_id,
@@ -30,12 +29,6 @@ export async function IndividualProfilePage({
   products = products.filter((product) =>
     isAuthorized(session, product, Actions.GetRepository)
   );
-
-  // Unlisted products are readable by anyone with the link, but shouldn't
-  // appear in a profile's public product list for anyone but the owner.
-  if (!isOwner) {
-    products = products.filter((product) => product.visibility === "public");
-  }
 
   const memberships = (
     await membershipsTable.listByUser(account.account_id)
@@ -52,7 +45,7 @@ export async function IndividualProfilePage({
   return (
     <IndividualProfile
       account={account as IndividualAccount}
-      isOwner={isOwner}
+      isOwner={session?.account?.account_id === account.account_id}
       ownedProducts={products}
       contributedProducts={[]}
       organizations={organizations}
