@@ -9,6 +9,7 @@ export const CatalogEntrySchema = z.object({
   total_bytes: count.optional().catch(undefined),
   object_count: count.optional().catch(undefined),
   exts: z.record(count).optional().catch(undefined),
+  ext_bytes: z.record(count).optional().catch(undefined),
 });
 
 export type CatalogEntry = z.infer<typeof CatalogEntrySchema>;

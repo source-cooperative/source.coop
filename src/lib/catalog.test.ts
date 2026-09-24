@@ -34,6 +34,16 @@ it("omits the whole extension map if any count is invalid", () => {
   });
 });
 
+it("retains per-extension byte totals, including zero and extensionless files", () => {
+  const record = { ...entry, ext_bytes: { tif: 1024, "": 50, csv: 0 } };
+  expect(parseCatalog(JSON.stringify(record)).get("org/data")).toEqual(record);
+});
+
+it("omits invalid per-extension byte totals without dropping file counts", () => {
+  const record = { ...entry, ext_bytes: { tif: -1 } };
+  expect(parseCatalog(JSON.stringify(record)).get("org/data")).toEqual(entry);
+});
+
 it("uses the last valid whole-product record for duplicate product keys", () => {
   const replacement = { ...entry, object_count: 3 };
   const catalog = parseCatalog([
