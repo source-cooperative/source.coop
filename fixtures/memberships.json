@@ -94,7 +94,7 @@
   },
   {
     "membership_id": "c7f5a1d2-3b4e-4f60-9a8b-1c2d3e4f5a6b",
-    "account_id": "organization-bot",
+    "account_id": "organization--bot",
     "membership_account_id": "organization",
     "repository_id": "org-repo-id",
     "role": "write_data",
