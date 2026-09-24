@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useCatalog } from "@/hooks/useCatalog";
 import { Box, Text } from "@radix-ui/themes";
 import type { Product } from "@/types";
 import { ProductListItem } from "./ProductListItem";
@@ -20,6 +21,7 @@ export interface PaginationProps {
 interface ProductsListProps {
   products: Product[];
   grid?: boolean;
+  showCatalog?: boolean;
   pagination?: PaginationProps;
 }
 
@@ -27,8 +29,10 @@ export function ProductsList({
   products,
   grid = false,
   pagination,
+  showCatalog = false,
 }: ProductsListProps) {
   const [showHelp, setShowHelp] = useState(false);
+  const catalog = useCatalog(showCatalog && products.length > 0);
 
   const { selectedIndex } = useProductListKeyboardShortcuts({
     products,
@@ -61,6 +65,9 @@ export function ProductsList({
             >
               <ProductListItem
                 product={product}
+                catalogEntry={catalog?.get(
+                  `${product.account_id}/${product.product_id}`
+                )}
                 isSelected={index === selectedIndex}
               />
             </li>
