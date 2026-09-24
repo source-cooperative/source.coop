@@ -12,9 +12,9 @@ import {
  * One service account's page, reached from its row in the owner's list and
  * where creating one lands. It shows the workflows the account trusts, each
  * with an "Example usage" modal holding the step the workflow adds, and a
- * dialog to trust another; every product its owner has, each with how much
- * of it the account reaches, saved as it is changed; and, set apart in a
- * danger zone, disabling and deleting it.
+ * dialog to trust another; the products it reaches, each with Read / Read
+ * and write and an X, and "Grant a product", which adds a row with a product
+ * dropdown; and, set apart in a danger zone, disabling and deleting it.
  *
  * The actions are mocked in `.storybook/preview.tsx`. An access change shows
  * at once and the controls wait while it saves; the mock saves nothing, so

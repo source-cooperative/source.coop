@@ -9,9 +9,11 @@ import { ProductAccessList, type ProductAccess } from "./ProductAccessList";
  * read, or read and write, one row per product. Each title opens the product
  * in a new tab, so a manager can check what it holds before granting it.
  *
- * The create form and the account's page both use it. The form holds the
- * choices until it is submitted; the page saves each one as it is made. The
- * stories hold them in state, so the controls can be clicked.
+ * The create form lists every product with None / Read / Read and write and
+ * holds the choices until it is submitted. The account's page lists only the
+ * products the account reaches, each with Read / Read and write and an X, and
+ * saves each change as it is made. The stories hold the choices in state, so
+ * the controls can be clicked.
  */
 const meta = {
   title: "Features/Service accounts/ProductAccessList",
@@ -69,4 +71,19 @@ export const Saving: Story = {
 /** An owner with no products has nothing to grant. */
 export const NoProducts: Story = {
   args: { products: [] },
+};
+
+/**
+ * As the account's page shows it: only the products the account reaches,
+ * each with Read / Read and write and an X to remove it.
+ */
+export const Granted: Story = {
+  args: {
+    products: [
+      { product_id: "climate-data", title: "Climate Data" },
+      { product_id: "reference-data", title: "Reference Data" },
+    ],
+    access: SomeGranted.args?.access,
+    onRemove: fn(),
+  },
 };

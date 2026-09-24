@@ -1,6 +1,6 @@
 "use client";
 
-import React, { startTransition, useActionState, useOptimistic } from "react";
+import React, { startTransition, useActionState, useOptimistic, useState } from "react";
 import {
   AlertDialog,
   Button,
@@ -9,10 +9,11 @@ import {
   Flex,
   Heading,
   IconButton,
+  Select,
   Text,
   Tooltip,
 } from "@radix-ui/themes";
-import { Cross2Icon } from "@radix-ui/react-icons";
+import { Cross2Icon, PlusIcon } from "@radix-ui/react-icons";
 import { SectionHeader } from "@/components/core";
 import {
   ConnectionList,
@@ -29,6 +30,7 @@ import { githubWorkflowStep } from "@/lib/services/github-workflow";
 import {
   GITHUB_ACTIONS_ISSUER,
   IDLE_SERVICE_ACCOUNT_ACTION_STATE as IDLE,
+  MembershipRole,
   type Product,
   type ServiceAccountActionState,
   type ServiceAccountSummary,
@@ -74,9 +76,9 @@ function ExampleUsage({ subject, step }: { subject: string; step: string }) {
 
 /**
  * One service account, and every control over it: the workflows it trusts,
- * each with its example usage; how much of each of its owner's products it
- * reaches, saved as it is changed; and — set apart — disabling and deleting
- * it.
+ * each with its example usage; the products it reaches, each changed or
+ * removed as it stands and another granted from a new row, saved as it is
+ * changed; and — set apart — disabling and deleting it.
  */
 export function ServiceAccountDetail({
   summary,
@@ -100,6 +102,10 @@ export function ServiceAccountDetail({
       return next ? { ...rest, [product_id]: next } : rest;
     }
   );
+  // A row with a product dropdown, added by "Grant a product"; picking one
+  // grants it to read, and the row becomes an ordinary one.
+  const [drafting, setDrafting] = useState(false);
+  const unreached = products.filter((p) => !access[p.product_id]);
   const setAccess = (product_id: string, next: ProductAccess | null) => {
     const data = new FormData();
     data.set("account_id", account.account_id);
@@ -183,15 +189,65 @@ export function ServiceAccountDetail({
 
       <SectionHeader
         title="Can reach"
-        description={`Products ${account.owner_account_id} owns, each opened in a new tab to check what it holds. A change is saved at once, and takes effect on its next sign-in.`}
+        description="The products it can read or write, each opened in a new tab to check what it holds. A change is saved at once, and takes effect on its next sign-in."
+        rightButton={
+          unreached.length > 0 && !drafting ? (
+            <Button size="1" variant="soft" onClick={() => setDrafting(true)}>
+              <PlusIcon /> Grant a product
+            </Button>
+          ) : undefined
+        }
       >
         <ProductAccessList
           ownerAccountId={account.owner_account_id}
-          products={products}
+          products={products.filter((p) => access[p.product_id])}
           access={access}
           onChange={setAccess}
+          onRemove={(product_id) => setAccess(product_id, null)}
           disabled={savingAccess}
-        />
+          empty={
+            products.length === 0
+              ? `${account.owner_account_id} has no products yet.`
+              : "Nothing yet. Grant a product to let it read or write data."
+          }
+        >
+          {drafting && (
+            <ConnectionRow
+              title={
+                <Select.Root
+                  onValueChange={(product_id) => {
+                    setDrafting(false);
+                    setAccess(product_id, MembershipRole.ReadData);
+                  }}
+                >
+                  <Select.Trigger placeholder="Choose a product" aria-label="Product to grant" />
+                  <Select.Content position="popper">
+                    {unreached.map(({ product_id, title }) => (
+                      <Select.Item key={product_id} value={product_id}>
+                        {title}
+                      </Select.Item>
+                    ))}
+                  </Select.Content>
+                </Select.Root>
+              }
+              meta="Granted to read; change it once it is added."
+              actions={
+                <Tooltip content="Cancel">
+                  <IconButton
+                    type="button"
+                    size="1"
+                    variant="ghost"
+                    color="gray"
+                    aria-label="Cancel granting a product"
+                    onClick={() => setDrafting(false)}
+                  >
+                    <Cross2Icon />
+                  </IconButton>
+                </Tooltip>
+              }
+            />
+          )}
+        </ProductAccessList>
         {!accessState.success && <Status state={accessState} />}
       </SectionHeader>
 
