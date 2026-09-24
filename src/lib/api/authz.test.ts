@@ -5,6 +5,7 @@ import {
   canManageServiceAccount,
   canManageAccountDataConnections,
   canCreateProductForAccount,
+  canListOnProfile,
 } from "./authz";
 import {
   sessions,
@@ -4011,5 +4012,23 @@ describe("service accounts", () => {
   test("act only on the products they are granted", () => {
     expect(isAuthorized(botSession, orgRepo, Actions.WriteRepositoryData)).toBe(true);
     expect(isAuthorized(botSession, otherOrgRepo, Actions.WriteRepositoryData)).toBe(false);
+  });
+});
+
+describe("canListOnProfile", () => {
+  const unlisted = mappedProducts["organization"]["unlisted-org-repo-id"];
+  const disabled = mappedProducts["organization"]["disabled-org-repo-id"];
+
+  test("lists unlisted products only for the account's members", () => {
+    expect(canListOnProfile(sessions["organization-read-data-user"], unlisted)).toBe(true);
+    expect(canListOnProfile(sessions["regular-user"], unlisted)).toBe(false);
+    expect(canListOnProfile(sessions["anonymous"], unlisted)).toBe(false);
+  });
+
+  test("lists deactivated products for the owners and maintainers who can open them", () => {
+    expect(canListOnProfile(sessions["organization-owner-user"], disabled)).toBe(true);
+    expect(canListOnProfile(sessions["organization-maintainer-user"], disabled)).toBe(true);
+    expect(canListOnProfile(sessions["organization-read-data-user"], disabled)).toBe(false);
+    expect(canListOnProfile(sessions["anonymous"], disabled)).toBe(false);
   });
 });
