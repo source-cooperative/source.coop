@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.6.1](https://github.com/source-cooperative/source.coop/compare/v1.6.0...v1.6.1) (2026-09-24)
+
+
+### Bug Fixes
+
+* **authz:** allow org owners to create products without CREATE_REPOSITORIES flag ([#508](https://github.com/source-cooperative/source.coop/issues/508)) ([b77a514](https://github.com/source-cooperative/source.coop/commit/b77a514b1a68cc4c642e33b50d84379b16c88014))
+* **authz:** limit the self-authorization shortcut to individual accounts ([#562](https://github.com/source-cooperative/source.coop/issues/562)) ([4482c04](https://github.com/source-cooperative/source.coop/commit/4482c04bdf5c0579807f3e38dcf2afabadeec7ea))
+* **data-connections:** let a connection row wrap instead of collapsing on mobile ([#532](https://github.com/source-cooperative/source.coop/issues/532)) ([03b8747](https://github.com/source-cooperative/source.coop/commit/03b8747e21ba64fa60e12c5a5c77ca5e37f2dd1d))
+* keep unlisted products out of search engines and profile listings ([#574](https://github.com/source-cooperative/source.coop/issues/574)) ([ab5bd08](https://github.com/source-cooperative/source.coop/commit/ab5bd08de4edbbe201d02696e97a5c380921f9b5))
+* make organization contact email editable ([#293](https://github.com/source-cooperative/source.coop/issues/293)) ([a14311e](https://github.com/source-cooperative/source.coop/commit/a14311eab6f8e2e9e953bbfb712f4b246bec74d3))
+* **products:** truncate a product's DOI instead of overflowing the row ([#533](https://github.com/source-cooperative/source.coop/issues/533)) ([4f1fab8](https://github.com/source-cooperative/source.coop/commit/4f1fab87630eba0c673fc0fa0853d7e4fcc0b028))
+* **profiles:** truncate long website links instead of wrapping them ([#531](https://github.com/source-cooperative/source.coop/issues/531)) ([5df79d5](https://github.com/source-cooperative/source.coop/commit/5df79d54e9bfff7411d9c42e22542b515e86db07))
+
 ## [1.6.0](https://github.com/source-cooperative/source.coop/compare/v1.5.1...v1.6.0) (2026-08-30)
 
 
