@@ -1,6 +1,6 @@
 export * from "./accounts";
 export * from "./api-keys";
 export * from "./data-connections";
-export * from "./identity-bindings";
+export * from "./account-trusts";
 export * from "./memberships";
 export * from "./products";

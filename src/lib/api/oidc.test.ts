@@ -63,6 +63,7 @@ jest.mock("@/lib/config", () => ({
 jest.mock("@/lib/clients/database", () => ({
   accountsTable: {
     fetchByOryId: jest.fn(),
+    fetchById: jest.fn(),
   },
   membershipsTable: {
     listByUser: jest.fn(),
@@ -261,5 +262,58 @@ describe("authenticateWithOidcToken", () => {
 
     // Restore
     CONFIG.storage.endpoint = originalEndpoint;
+  });
+
+  test("resolves a service account's own id as its subject, after trying Ory", async () => {
+    (accountsTable.fetchByOryId as jest.Mock).mockResolvedValue(null);
+    (accountsTable.fetchById as jest.Mock).mockResolvedValue({
+      account_id: "nightly-sync",
+      type: "service",
+      owner_account_id: "acme",
+      disabled: false,
+      flags: [],
+    });
+    (membershipsTable.listByUser as jest.Mock).mockResolvedValue([]);
+
+    const token = await createToken({ sub: "nightly-sync" });
+    const session = await authenticateWithOidcToken(`Bearer ${token}`, AUDIENCE);
+
+    expect(session?.account?.account_id).toBe("nightly-sync");
+    expect(session?.identity_id).toBeNull();
+    expect(accountsTable.fetchById).toHaveBeenCalledWith("nightly-sync");
+  });
+
+  test("refuses a subject that names both a person and a service account", async () => {
+    (accountsTable.fetchByOryId as jest.Mock).mockResolvedValue({
+      account_id: "alice",
+      type: "individual",
+      identity_id: "ambiguous",
+      disabled: false,
+      flags: [],
+    });
+    (accountsTable.fetchById as jest.Mock).mockResolvedValue({
+      account_id: "ambiguous",
+      type: "service",
+      owner_account_id: "acme",
+      disabled: false,
+      flags: [],
+    });
+
+    const token = await createToken({ sub: "ambiguous" });
+    expect(await authenticateWithOidcToken(`Bearer ${token}`, AUDIENCE)).toBeNull();
+  });
+
+  test("never resolves a person's or organization's handle as a subject", async () => {
+    (accountsTable.fetchByOryId as jest.Mock).mockResolvedValue(null);
+    (accountsTable.fetchById as jest.Mock).mockResolvedValue({
+      account_id: "alice",
+      type: "individual",
+      identity_id: "ory-alice",
+      disabled: false,
+      flags: [],
+    });
+
+    const token = await createToken({ sub: "alice" });
+    expect(await authenticateWithOidcToken(`Bearer ${token}`, AUDIENCE)).toBeNull();
   });
 });
