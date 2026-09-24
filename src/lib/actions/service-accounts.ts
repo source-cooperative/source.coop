@@ -245,86 +245,57 @@ export async function deleteServiceAccount(
   redirect(editAccountServiceAccountsUrl(account.owner_account_id));
 }
 
-/** One of this service account's live grants, or null for anything else. */
-async function ownGrant(account: ServiceAccount, membership_id: string) {
-  const grant = await membershipsTable.fetchById(membership_id);
-  return grant?.account_id === account.account_id && grant.state === MembershipState.Member
-    ? grant
-    : null;
-}
-
 const managedFrom = async (formData: FormData) =>
   managedServiceAccount(await getPageSession(), String(formData.get("account_id") ?? ""));
 
 /**
- * Grants the service account one of its owner's products. Its owner grants it
- * directly, as at creation: nobody is at the keyboard to accept an invitation.
+ * Sets how much of one of its owner's products the service account reaches:
+ * `none` revokes its grant, the way a person's membership is revoked; read or
+ * write grants it — directly, as at creation, since nobody is at the keyboard
+ * to accept an invitation — or changes the grant it has.
  */
-export async function grantProduct(
+export async function setProductAccess(
   _prev: ServiceAccountActionState,
   formData: FormData
 ): Promise<ServiceAccountActionState> {
   const account = await managedFrom(formData);
   if (!account) return outcome("You do not manage that service account", false);
   const repository_id = String(formData.get("product_id") ?? "");
-  const role = formData.get("role") as MembershipRole;
-  const problem = serviceAccountGrantProblem(
-    account,
-    { membership_account_id: account.owner_account_id, repository_id },
-    role
+  const access = String(formData.get("access") ?? "");
+  const held = (await membershipsTable.listByUser(account.account_id)).find(
+    (m) => m.repository_id === repository_id && m.state === MembershipState.Member
   );
-  if (problem) return outcome(problem, false);
-  if (!(await productsTable.fetchById(account.owner_account_id, repository_id))) {
-    return outcome(`${account.owner_account_id} has no product ${repository_id}`, false);
-  }
-  const held = await membershipsTable.listByUser(account.account_id);
-  if (held.some((m) => m.repository_id === repository_id && m.state === MembershipState.Member)) {
-    return outcome(`It can already reach ${repository_id}`, false);
-  }
-  await membershipsTable.create({
-    membership_id: randomUUID(),
-    account_id: account.account_id,
-    membership_account_id: account.owner_account_id,
-    repository_id,
-    role,
-    state: MembershipState.Member,
-    state_changed: new Date().toISOString(),
-  });
-  revalidate(account);
-  return outcome(`Granted ${repository_id}`, true);
-}
+  const now = new Date().toISOString();
 
-/** Changes a grant between read and read-and-write. */
-export async function setGrantRole(
-  _prev: ServiceAccountActionState,
-  formData: FormData
-): Promise<ServiceAccountActionState> {
-  const account = await managedFrom(formData);
-  if (!account) return outcome("You do not manage that service account", false);
-  const grant = await ownGrant(account, String(formData.get("membership_id") ?? ""));
-  if (!grant) return outcome("No such grant on this account", false);
-  const role = formData.get("role") as MembershipRole;
-  const problem = serviceAccountGrantProblem(account, grant, role);
-  if (problem) return outcome(problem, false);
-  await membershipsTable.update({ ...grant, role, state_changed: new Date().toISOString() });
+  if (access === "none") {
+    if (held) {
+      await membershipsTable.update({ ...held, state: MembershipState.Revoked, state_changed: now });
+    }
+  } else {
+    const role = access as MembershipRole;
+    const problem = serviceAccountGrantProblem(
+      account,
+      { membership_account_id: account.owner_account_id, repository_id },
+      role
+    );
+    if (problem) return outcome(problem, false);
+    if (held) {
+      await membershipsTable.update({ ...held, role, state_changed: now });
+    } else {
+      if (!(await productsTable.fetchById(account.owner_account_id, repository_id))) {
+        return outcome(`${account.owner_account_id} has no product ${repository_id}`, false);
+      }
+      await membershipsTable.create({
+        membership_id: randomUUID(),
+        account_id: account.account_id,
+        membership_account_id: account.owner_account_id,
+        repository_id,
+        role,
+        state: MembershipState.Member,
+        state_changed: now,
+      });
+    }
+  }
   revalidate(account);
-  return outcome(`${grant.repository_id} updated`, true);
-}
-
-/** Revokes a grant, the way a person's membership is revoked. */
-export async function revokeGrant(
-  _prev: ServiceAccountActionState,
-  formData: FormData
-): Promise<ServiceAccountActionState> {
-  const account = await managedFrom(formData);
-  if (!account) return outcome("You do not manage that service account", false);
-  const grant = await ownGrant(account, String(formData.get("membership_id") ?? ""));
-  if (!grant) return outcome("No such grant on this account", false);
-  await membershipsTable.update({
-    ...grant,
-    state: MembershipState.Revoked,
-    state_changed: new Date().toISOString(),
-  });
-  revalidate(account);
-  return outcome(`${grant.repository_id} revoked`, true);
+  return outcome("", true);
 }

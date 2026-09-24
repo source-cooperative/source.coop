@@ -1,7 +1,6 @@
 "use client";
 
-import React, { startTransition, useActionState } from "react";
-import Link from "next/link";
+import React, { startTransition, useActionState, useOptimistic } from "react";
 import {
   AlertDialog,
   Button,
@@ -9,11 +8,8 @@ import {
   Dialog,
   Flex,
   Heading,
-  SegmentedControl,
-  Select,
   Text,
 } from "@radix-ui/themes";
-import { ExternalLinkIcon } from "@radix-ui/react-icons";
 import { SectionHeader } from "@/components/core";
 import {
   ConnectionList,
@@ -22,24 +18,20 @@ import {
 } from "@/components/features/data-connections/ConnectionRow";
 import {
   deleteServiceAccount,
-  grantProduct,
   removeTrust,
-  revokeGrant,
-  setGrantRole,
+  setProductAccess,
   setServiceAccountDisabled,
 } from "@/lib/actions/service-accounts";
 import { githubWorkflowStep } from "@/lib/services/github-workflow";
-import { productUrl } from "@/lib/urls";
 import {
   GITHUB_ACTIONS_ISSUER,
   IDLE_SERVICE_ACCOUNT_ACTION_STATE as IDLE,
-  MembershipRole,
-  type Membership,
   type Product,
   type ServiceAccountActionState,
   type ServiceAccountSummary,
 } from "@/types";
 import { AddGithubTrustDialog } from "./AddGithubTrustDialog";
+import { NO_ACCESS, ProductAccessList, type ProductAccess } from "./ProductAccessList";
 import { WorkflowSnippet } from "./WorkflowSnippet";
 
 const issuerLabel = (issuer: string) =>
@@ -77,126 +69,11 @@ function ExampleUsage({ subject, step }: { subject: string; step: string }) {
   );
 }
 
-const ROLE_LABEL: Partial<Record<MembershipRole, string>> = {
-  [MembershipRole.ReadData]: "Read",
-  [MembershipRole.WriteData]: "Read and write",
-};
-
-/** One product the account reaches: open it, change the access, revoke it. */
-function GrantRow({
-  accountId,
-  grant,
-  title,
-}: {
-  accountId: string;
-  grant: Membership;
-  title?: string;
-}) {
-  const [roleState, roleAction, saving] = useActionState(setGrantRole, IDLE);
-  const [revokeState, revokeAction, revoking] = useActionState(revokeGrant, IDLE);
-  const product_id = grant.repository_id ?? "";
-  const setRole = (role: string) => {
-    const data = new FormData();
-    data.set("account_id", accountId);
-    data.set("membership_id", grant.membership_id);
-    data.set("role", role);
-    startTransition(() => roleAction(data));
-  };
-  const failure = [roleState, revokeState].find((s) => !s.success && s.message);
-
-  return (
-    <ConnectionRow
-      title={
-        <Link
-          href={productUrl(grant.membership_account_id, product_id)}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{ color: "var(--accent-11)", textDecoration: "none" }}
-        >
-          <Flex align="center" gap="1">
-            <Text size="2" weight="medium">
-              {title ?? product_id}
-            </Text>
-            <ExternalLinkIcon width="12" height="12" aria-label="opens in a new tab" />
-          </Flex>
-        </Link>
-      }
-      meta={`${grant.membership_account_id}/${product_id}`}
-      aside={failure && <Text size="1" color="red">{failure.message}</Text>}
-      actions={
-        <Flex align="center" gap="3">
-          <SegmentedControl.Root
-            size="1"
-            aria-label={`Access to ${product_id}`}
-            value={grant.role}
-            onValueChange={setRole}
-            disabled={saving}
-          >
-            {Object.entries(ROLE_LABEL).map(([role, label]) => (
-              <SegmentedControl.Item key={role} value={role}>
-                {label}
-              </SegmentedControl.Item>
-            ))}
-          </SegmentedControl.Root>
-          <form action={revokeAction}>
-            <input type="hidden" name="account_id" value={accountId} />
-            <input type="hidden" name="membership_id" value={grant.membership_id} />
-            <Button type="submit" size="1" variant="ghost" color="red" disabled={revoking}>
-              Remove
-            </Button>
-          </form>
-        </Flex>
-      }
-    />
-  );
-}
-
-/** Grants one more of the owner's products. */
-function GrantForm({
-  accountId,
-  available,
-}: {
-  accountId: string;
-  available: Pick<Product, "product_id" | "title">[];
-}) {
-  const [state, action, pending] = useActionState(grantProduct, IDLE);
-  return (
-    <form action={action}>
-      <input type="hidden" name="account_id" value={accountId} />
-      <Flex align="center" gap="3" wrap="wrap" mt="3">
-        <Select.Root name="product_id" required>
-          <Select.Trigger placeholder="Choose a product" aria-label="Product to grant" />
-          <Select.Content>
-            {available.map((p) => (
-              <Select.Item key={p.product_id} value={p.product_id}>
-                {p.title}
-              </Select.Item>
-            ))}
-          </Select.Content>
-        </Select.Root>
-        <Select.Root name="role" defaultValue={MembershipRole.ReadData}>
-          <Select.Trigger aria-label="Access" />
-          <Select.Content>
-            {Object.entries(ROLE_LABEL).map(([role, label]) => (
-              <Select.Item key={role} value={role}>
-                {label}
-              </Select.Item>
-            ))}
-          </Select.Content>
-        </Select.Root>
-        <Button type="submit" variant="soft" disabled={pending} loading={pending}>
-          Grant
-        </Button>
-      </Flex>
-      {!state.success && <Status state={state} />}
-    </form>
-  );
-}
-
 /**
  * One service account, and every control over it: the workflows it trusts,
- * each with its example usage; the products it reaches, each opened, changed
- * or revoked in place; and — set apart — disabling and deleting it.
+ * each with its example usage; how much of each of its owner's products it
+ * reaches, saved as it is changed; and — set apart — disabling and deleting
+ * it.
  */
 export function ServiceAccountDetail({
   summary,
@@ -204,16 +81,32 @@ export function ServiceAccountDetail({
   proxyOrigin,
 }: {
   summary: ServiceAccountSummary;
-  /** The owner's products: what may be granted, and their titles. */
+  /** The owner's products, each of which it may reach. */
   products: Pick<Product, "product_id" | "title">[];
   /** The data proxy a workflow signs in to; without it, no example is shown. */
   proxyOrigin?: string;
 }) {
   const { account, trusts, grants } = summary;
-  const titles = new Map(products.map((p) => [p.product_id, p.title]));
-  const available = products.filter(
-    (p) => !grants.some((g) => g.repository_id === p.product_id)
+  const [accessState, accessAction, savingAccess] = useActionState(setProductAccess, IDLE);
+  // Shown as chosen at once; the page's revalidation then confirms it, or the
+  // failure below explains why it went back.
+  const [access, chooseAccess] = useOptimistic(
+    Object.fromEntries(grants.map((g) => [g.repository_id ?? "", g.role as ProductAccess])),
+    (current, [product_id, next]: [string, ProductAccess | null]) => {
+      const { [product_id]: _dropped, ...rest } = current;
+      return next ? { ...rest, [product_id]: next } : rest;
+    }
   );
+  const setAccess = (product_id: string, next: ProductAccess | null) => {
+    const data = new FormData();
+    data.set("account_id", account.account_id);
+    data.set("product_id", product_id);
+    data.set("access", next ?? NO_ACCESS);
+    startTransition(() => {
+      chooseAccess([product_id, next]);
+      accessAction(data);
+    });
+  };
   const [removeState, removeAction, removing] = useActionState(removeTrust, IDLE);
   const [toggleState, toggleAction, toggling] = useActionState(setServiceAccountDisabled, IDLE);
   const [deleteState, deleteAction, deleting] = useActionState(deleteServiceAccount, IDLE);
@@ -277,33 +170,16 @@ export function ServiceAccountDetail({
 
       <SectionHeader
         title="Can reach"
-        description={`Products ${account.owner_account_id} owns, each opened in a new tab to check what it holds. Access changes take effect on its next sign-in.`}
+        description={`Products ${account.owner_account_id} owns, each opened in a new tab to check what it holds. A change is saved at once, and takes effect on its next sign-in.`}
       >
-        {grants.length === 0 ? (
-          <Text size="2" color="gray">
-            No products yet.
-          </Text>
-        ) : (
-          <ConnectionList>
-            {grants.map((grant) => (
-              <GrantRow
-                key={grant.membership_id}
-                accountId={account.account_id}
-                grant={grant}
-                title={titles.get(grant.repository_id ?? "")}
-              />
-            ))}
-          </ConnectionList>
-        )}
-        {available.length > 0 ? (
-          <GrantForm accountId={account.account_id} available={available} />
-        ) : (
-          <Text as="p" size="1" color="gray" mt="3">
-            {products.length === 0
-              ? `${account.owner_account_id} has no products yet.`
-              : `It reaches every product ${account.owner_account_id} owns.`}
-          </Text>
-        )}
+        <ProductAccessList
+          ownerAccountId={account.owner_account_id}
+          products={products}
+          access={access}
+          onChange={setAccess}
+          disabled={savingAccess}
+        />
+        {!accessState.success && <Status state={accessState} />}
       </SectionHeader>
 
       <SectionHeader title="Danger zone" color="red">

@@ -1,8 +1,6 @@
 import {
   addGithubTrust,
-  grantProduct,
-  revokeGrant,
-  setGrantRole,
+  setProductAccess,
   createServiceAccount,
   deleteServiceAccount,
   removeTrust,
@@ -225,7 +223,7 @@ describe("lifecycle", () => {
   });
 });
 
-describe("grants from the account's page", () => {
+describe("setProductAccess", () => {
   const grant = {
     membership_id: "m1",
     account_id: "acme--nightly-sync",
@@ -235,15 +233,15 @@ describe("grants from the account's page", () => {
     state: MembershipState.Member,
     state_changed: "2026-01-01T00:00:00.000Z",
   };
+  const set = (product_id: string, access: string) =>
+    setProductAccess(IDLE, form({ account_id: "acme--nightly-sync", product_id, access }));
   beforeEach(() => {
     mocks.managed.mockResolvedValue(bot as never);
-    mocks.memberships.listByUser.mockResolvedValue([]);
-    mocks.memberships.fetchById.mockResolvedValue(grant as never);
+    mocks.memberships.listByUser.mockResolvedValue([grant as never]);
   });
 
-  it("grants one of the owner's products as a member, and only once", async () => {
-    const ok = await grantProduct(IDLE, form({ account_id: "acme--nightly-sync", product_id: "reference-data", role: MembershipRole.WriteData }));
-    expect(ok.success).toBe(true);
+  it("grants a product it does not reach, as a member of the owner", async () => {
+    expect((await set("reference-data", MembershipRole.WriteData)).success).toBe(true);
     expect(mocks.memberships.create).toHaveBeenCalledWith(
       expect.objectContaining({
         account_id: "acme--nightly-sync",
@@ -253,30 +251,37 @@ describe("grants from the account's page", () => {
         state: MembershipState.Member,
       })
     );
-    mocks.memberships.listByUser.mockResolvedValue([grant as never]);
-    expect((await grantProduct(IDLE, form({ account_id: "acme--nightly-sync", product_id: "climate-data", role: MembershipRole.ReadData }))).success).toBe(false);
+  });
+
+  it("changes the grant it has rather than adding another, and revokes it on none", async () => {
+    expect((await set("climate-data", MembershipRole.WriteData)).success).toBe(true);
+    expect(mocks.memberships.create).not.toHaveBeenCalled();
+    expect(mocks.memberships.update).toHaveBeenLastCalledWith(
+      expect.objectContaining({ membership_id: "m1", role: MembershipRole.WriteData })
+    );
+    expect((await set("climate-data", "none")).success).toBe(true);
+    expect(mocks.memberships.update).toHaveBeenLastCalledWith(
+      expect.objectContaining({ membership_id: "m1", state: MembershipState.Revoked })
+    );
+    // None on a product it does not reach is already so.
+    mocks.memberships.update.mockClear();
+    expect((await set("reference-data", "none")).success).toBe(true);
+    expect(mocks.memberships.update).not.toHaveBeenCalled();
   });
 
   it("refuses a product the owner lacks, a role beyond read or write, and someone who does not manage it", async () => {
-    expect((await grantProduct(IDLE, form({ account_id: "acme--nightly-sync", product_id: "not-ours", role: MembershipRole.ReadData }))).success).toBe(false);
-    expect((await grantProduct(IDLE, form({ account_id: "acme--nightly-sync", product_id: "climate-data", role: MembershipRole.Owners }))).success).toBe(false);
+    expect((await set("not-ours", MembershipRole.ReadData)).success).toBe(false);
+    expect((await set("reference-data", MembershipRole.Owners)).success).toBe(false);
+    expect((await set("climate-data", MembershipRole.Maintainers)).success).toBe(false);
     mocks.managed.mockResolvedValue(null);
-    expect((await grantProduct(IDLE, form({ account_id: "acme--nightly-sync", product_id: "climate-data", role: MembershipRole.ReadData }))).success).toBe(false);
+    expect((await set("reference-data", MembershipRole.ReadData)).success).toBe(false);
     expect(mocks.memberships.create).not.toHaveBeenCalled();
+    expect(mocks.memberships.update).not.toHaveBeenCalled();
   });
 
-  it("changes a grant's access and revokes it, but only its own grants", async () => {
-    expect((await setGrantRole(IDLE, form({ account_id: "acme--nightly-sync", membership_id: "m1", role: MembershipRole.WriteData }))).success).toBe(true);
-    expect(mocks.memberships.update).toHaveBeenLastCalledWith(expect.objectContaining({ membership_id: "m1", role: MembershipRole.WriteData }));
-    expect((await setGrantRole(IDLE, form({ account_id: "acme--nightly-sync", membership_id: "m1", role: MembershipRole.Maintainers }))).success).toBe(false);
-
-    expect((await revokeGrant(IDLE, form({ account_id: "acme--nightly-sync", membership_id: "m1" }))).success).toBe(true);
-    expect(mocks.memberships.update).toHaveBeenLastCalledWith(expect.objectContaining({ membership_id: "m1", state: MembershipState.Revoked }));
-
-    mocks.memberships.update.mockClear();
-    mocks.memberships.fetchById.mockResolvedValue({ ...grant, account_id: "someone-else" } as never);
-    expect((await setGrantRole(IDLE, form({ account_id: "acme--nightly-sync", membership_id: "m1", role: MembershipRole.WriteData }))).success).toBe(false);
-    expect((await revokeGrant(IDLE, form({ account_id: "acme--nightly-sync", membership_id: "m1" }))).success).toBe(false);
-    expect(mocks.memberships.update).not.toHaveBeenCalled();
+  it("only ever touches the account's own grants", async () => {
+    // Its grants are listed by its own id, so another account's never appear.
+    await set("climate-data", "none");
+    expect(mocks.memberships.listByUser).toHaveBeenCalledWith("acme--nightly-sync");
   });
 });

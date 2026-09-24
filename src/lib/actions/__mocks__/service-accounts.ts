@@ -33,6 +33,11 @@ export const setServiceAccountDisabled: typeof Real.setServiceAccountDisabled = 
 export const deleteServiceAccount: typeof Real.deleteServiceAccount = fn(async () => idle()).mockName(
   "deleteServiceAccount"
 );
-export const grantProduct: typeof Real.grantProduct = fn(async () => idle()).mockName("grantProduct");
-export const setGrantRole: typeof Real.setGrantRole = fn(async () => idle()).mockName("setGrantRole");
-export const revokeGrant: typeof Real.revokeGrant = fn(async () => idle()).mockName("revokeGrant");
+// Takes a moment, as a real save does, so the choice shows while it is in
+// flight. Nothing is saved and no page revalidates, so it then springs back.
+export const setProductAccess: typeof Real.setProductAccess = fn(
+  async (): Promise<ServiceAccountActionState> => {
+    await new Promise((resolve) => setTimeout(resolve, 800));
+    return { message: "", success: true };
+  }
+).mockName("setProductAccess");

@@ -7,23 +7,17 @@ import {
   Code,
   Flex,
   IconButton,
-  SegmentedControl,
-  Text,
   TextField,
 } from "@radix-ui/themes";
 import { PlusIcon, TrashIcon } from "@radix-ui/react-icons";
 import { Field, FormActions, SectionHeader } from "@/components/core";
-import {
-  ConnectionList,
-  ConnectionRow,
-} from "@/components/features/data-connections/ConnectionRow";
 import { createServiceAccount } from "@/lib/actions/service-accounts";
 import {
   IDLE_SERVICE_ACCOUNT_FORM_STATE,
-  MembershipRole,
   slugifyToId,
   type Product,
 } from "@/types";
+import { ProductAccessList, type ProductAccess } from "./ProductAccessList";
 import {
   GithubWorkflowFields,
   NEW_GITHUB_WORKFLOW,
@@ -35,8 +29,6 @@ interface ServiceAccountFormProps {
   ownerAccountId: string;
   products: Pick<Product, "product_id" | "title">[];
 }
-
-const NO_ACCESS = "none";
 
 /**
  * Creates a service account: who it is, how software signs in as it, and
@@ -52,7 +44,7 @@ export function ServiceAccountForm({ ownerAccountId, products }: ServiceAccountF
   const [localId, setLocalId] = useState("");
   const [editingId, setEditingId] = useState(false);
   const [workflows, setWorkflows] = useState<GithubWorkflow[]>([]);
-  const [grants, setGrants] = useState<Record<string, MembershipRole>>({});
+  const [grants, setGrants] = useState<Record<string, ProductAccess>>({});
 
   // A rejected id opens the field, so the error sits beside something to fix.
   const showIdField = editingId || !!state.fieldErrors.local_id;
@@ -165,48 +157,20 @@ export function ServiceAccountForm({ ownerAccountId, products }: ServiceAccountF
           title="What it can reach"
           description={`Products ${ownerAccountId} owns. Each grant is an ordinary membership, revoked the same way as a person's.`}
         >
-          {products.length === 0 ? (
-            <Text size="2" color="gray">
-              {ownerAccountId} has no products yet.
-            </Text>
-          ) : (
-            <ConnectionList>
-              {products.map(({ product_id, title }) => {
-                const role = grants[product_id];
-                return (
-                  <ConnectionRow
-                    key={product_id}
-                    title={<Text size="2" weight="medium">{title}</Text>}
-                    meta={product_id}
-                    actions={
-                      <>
-                        {role && <input type="hidden" name={`grant:${product_id}`} value={role} />}
-                        <SegmentedControl.Root
-                          size="1"
-                          aria-label={`Access to ${product_id}`}
-                          value={role ?? NO_ACCESS}
-                          onValueChange={(next) =>
-                            setGrants((all) => {
-                              const { [product_id]: _, ...rest } = all;
-                              return next === NO_ACCESS
-                                ? rest
-                                : { ...rest, [product_id]: next as MembershipRole };
-                            })
-                          }
-                        >
-                          <SegmentedControl.Item value={NO_ACCESS}>None</SegmentedControl.Item>
-                          <SegmentedControl.Item value={MembershipRole.ReadData}>Read</SegmentedControl.Item>
-                          <SegmentedControl.Item value={MembershipRole.WriteData}>
-                            Read and write
-                          </SegmentedControl.Item>
-                        </SegmentedControl.Root>
-                      </>
-                    }
-                  />
-                );
-              })}
-            </ConnectionList>
-          )}
+          {Object.entries(grants).map(([product_id, role]) => (
+            <input key={product_id} type="hidden" name={`grant:${product_id}`} value={role} />
+          ))}
+          <ProductAccessList
+            ownerAccountId={ownerAccountId}
+            products={products}
+            access={grants}
+            onChange={(product_id, access) =>
+              setGrants((all) => {
+                const { [product_id]: _dropped, ...rest } = all;
+                return access ? { ...rest, [product_id]: access } : rest;
+              })
+            }
+          />
         </SectionHeader>
 
         <FormActions
