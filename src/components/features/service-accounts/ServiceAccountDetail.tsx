@@ -3,6 +3,7 @@
 import React, { useActionState } from "react";
 import Link from "next/link";
 import { AlertDialog, Button, Code, Flex, Heading, Text } from "@radix-ui/themes";
+import { ExternalLinkIcon } from "@radix-ui/react-icons";
 import { SectionHeader } from "@/components/core";
 import {
   ConnectionList,
@@ -14,7 +15,7 @@ import {
   removeTrust,
   setServiceAccountDisabled,
 } from "@/lib/actions/service-accounts";
-import { editProductMembershipsUrl } from "@/lib/urls";
+import { editProductMembershipsUrl, productUrl } from "@/lib/urls";
 import {
   GITHUB_ACTIONS_ISSUER,
   IDLE_SERVICE_ACCOUNT_ACTION_STATE as IDLE,
@@ -96,7 +97,7 @@ export function ServiceAccountDetail({ summary }: { summary: ServiceAccountSumma
 
       <SectionHeader
         title="Can reach"
-        description="Granted and revoked from each product's memberships page."
+        description="Each product opens in a new tab, to check what it holds. Grants are changed on the product's memberships page."
       >
         {grants.length === 0 ? (
           <Text size="2" color="gray">
@@ -109,18 +110,33 @@ export function ServiceAccountDetail({ summary }: { summary: ServiceAccountSumma
                 key={grant.membership_id}
                 title={
                   <Link
-                    href={editProductMembershipsUrl(account.owner_account_id, grant.repository_id ?? "")}
+                    href={productUrl(account.owner_account_id, grant.repository_id ?? "")}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     style={{ color: "var(--accent-11)", textDecoration: "none" }}
                   >
-                    <Text size="2" weight="medium">
-                      {grant.repository_id}
-                    </Text>
+                    <Flex align="center" gap="1">
+                      <Text size="2" weight="medium">
+                        {grant.repository_id}
+                      </Text>
+                      <ExternalLinkIcon width="12" height="12" aria-label="opens in a new tab" />
+                    </Flex>
                   </Link>
                 }
+                meta={`${account.owner_account_id}/${grant.repository_id}`}
                 aside={
                   <Text size="1" color="gray">
                     {grant.role === MembershipRole.WriteData ? "read and write" : "read"}
                   </Text>
+                }
+                actions={
+                  <Button asChild size="1" variant="ghost">
+                    <Link
+                      href={editProductMembershipsUrl(account.owner_account_id, grant.repository_id ?? "")}
+                    >
+                      Manage
+                    </Link>
+                  </Button>
                 }
               />
             ))}

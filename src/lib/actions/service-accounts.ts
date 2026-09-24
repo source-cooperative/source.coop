@@ -10,6 +10,7 @@ import {
   MembershipRole,
   MembershipState,
   ServiceAccountCreationRequestSchema,
+  serviceAccountId,
   isServiceAccount,
   type GithubWorkflowUsage,
   type ServiceAccount,
@@ -80,19 +81,15 @@ export async function createServiceAccount(
   if (!session?.identity_id || !session.account) return fail("Unauthenticated");
 
   const parsed = ServiceAccountCreationRequestSchema.safeParse({
-    account_id: formData.get("account_id"),
+    local_id: formData.get("local_id"),
     name: formData.get("name"),
-    type: AccountType.SERVICE,
     owner_account_id: formData.get("owner_account_id"),
   });
   if (!parsed.success) {
     return fail("Check the highlighted fields", parsed.error.flatten().fieldErrors);
   }
-  const { account_id, name, owner_account_id } = parsed.data;
-  // The create page's own path segment; an account by that id would have no page.
-  if (account_id === "create") {
-    return fail("That account ID is reserved", { account_id: ["That account ID is reserved."] });
-  }
+  const { local_id, name, owner_account_id } = parsed.data;
+  const account_id = serviceAccountId(owner_account_id, local_id);
 
   // The owner is settled before any of its products are read, so the product
   // checks below cannot be used to probe another account's products.
@@ -144,7 +141,7 @@ export async function createServiceAccount(
   } catch (error) {
     if ((error as { name?: string })?.name === "ConditionalCheckFailedException") {
       return fail("That account ID is already taken", {
-        account_id: ["That account ID is already taken."],
+        local_id: [`${owner_account_id} already has a service account called ${local_id}.`],
       });
     }
     throw error;

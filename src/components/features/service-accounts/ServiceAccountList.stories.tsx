@@ -66,8 +66,8 @@ const summary = (
 export const Default: Story = {
   args: {
     summaries: [
-      summary("nightly-sync", "Nightly Sync"),
-      summary("archive-mirror", "Archive Mirror", {
+      summary("miskatonic--nightly-sync", "Nightly Sync"),
+      summary("miskatonic--archive-mirror", "Archive Mirror", {
         trusts: [],
         grants: [],
       }),
@@ -80,8 +80,8 @@ export const Disabled: Story = {
   args: {
     summaries: [
       {
-        ...summary("nightly-sync", "Nightly Sync"),
-        account: { ...summary("nightly-sync", "Nightly Sync").account, disabled: true },
+        ...summary("miskatonic--nightly-sync", "Nightly Sync"),
+        account: { ...summary("miskatonic--nightly-sync", "Nightly Sync").account, disabled: true },
       },
     ],
   },

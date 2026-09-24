@@ -21,7 +21,7 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {
   args: {
     subject: "repo:miskatonic/climate-data:ref:refs/heads/main",
-    step: githubWorkflowStep("https://data.source.coop", "nightly-sync"),
+    step: githubWorkflowStep("https://data.source.coop", "miskatonic--nightly-sync"),
   },
 };
 
@@ -32,6 +32,6 @@ export const Default: Story = {
 export const ImmutableSubject: Story = {
   args: {
     subject: "repo:miskatonic@8123456/climate-data@9456789:environment:production",
-    step: githubWorkflowStep("https://data.source.coop", "archive-mirror"),
+    step: githubWorkflowStep("https://data.source.coop", "miskatonic--archive-mirror"),
   },
 };

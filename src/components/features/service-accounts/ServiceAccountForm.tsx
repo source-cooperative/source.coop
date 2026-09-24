@@ -51,7 +51,7 @@ export function ServiceAccountForm({ ownerAccountId, products }: ServiceAccountF
     IDLE_SERVICE_ACCOUNT_FORM_STATE
   );
   const [name, setName] = useState("");
-  const [accountId, setAccountId] = useState("");
+  const [localId, setLocalId] = useState("");
   const [editingId, setEditingId] = useState(false);
   const [workflows, setWorkflows] = useState<GithubWorkflow[]>([]);
   const [grants, setGrants] = useState<Record<string, MembershipRole>>({});
@@ -61,7 +61,8 @@ export function ServiceAccountForm({ ownerAccountId, products }: ServiceAccountF
   }
 
   // A rejected id opens the field, so the error sits beside something to fix.
-  const showIdField = editingId || !!state.fieldErrors.account_id;
+  const showIdField = editingId || !!state.fieldErrors.local_id;
+  const prefix = `${ownerAccountId}--`;
 
   return (
     <form action={formAction}>
@@ -81,35 +82,40 @@ export function ServiceAccountForm({ ownerAccountId, products }: ServiceAccountF
                 value={name}
                 onChange={(e) => {
                   setName(e.target.value);
-                  if (!showIdField) setAccountId(slugifyToId(e.target.value));
+                  if (!showIdField) setLocalId(slugifyToId(e.target.value));
                 }}
               />
             </Field>
-            {/* Made from the name, the way a data connection's id is, and shown
-                rather than asked for; editable for the rare handle that should
-                differ. */}
+            {/* The owner's id, then the account's own, made from the name the
+                way a data connection's id is: unique per owner, so every
+                owner can have its own "nightly-sync". Shown rather than asked
+                for; the part after the owner is editable. */}
             {showIdField ? (
               <Field
                 label="Account ID"
                 htmlFor="sa-id"
                 required
                 help="The handle software signs in as. Lowercase letters, numbers and single hyphens."
-                errors={state.fieldErrors.account_id}
+                errors={state.fieldErrors.local_id}
               >
                 <TextField.Root
                   id="sa-id"
-                  name="account_id"
+                  name="local_id"
                   size="3"
-                  value={accountId}
-                  onChange={(e) => setAccountId(e.target.value)}
-                />
+                  value={localId}
+                  onChange={(e) => setLocalId(e.target.value)}
+                >
+                  <TextField.Slot style={{ fontFamily: "var(--code-font-family)" }}>
+                    {prefix}
+                  </TextField.Slot>
+                </TextField.Root>
               </Field>
             ) : (
               <Field label="Account ID" help="Made from the name. Permanent once created." group>
                 <Flex align="center" gap="3">
-                  <input type="hidden" name="account_id" value={accountId} />
+                  <input type="hidden" name="local_id" value={localId} />
                   <Code size="2" variant="ghost" color="gray">
-                    {accountId || "—"}
+                    {localId ? prefix + localId : "—"}
                   </Code>
                   <Button type="button" size="1" variant="ghost" onClick={() => setEditingId(true)}>
                     Edit

@@ -51,7 +51,7 @@ const mocks = {
 const IDLE_FORM: ServiceAccountFormState = { fieldErrors: {}, message: "", success: false };
 const IDLE: ServiceAccountActionState = { message: "", success: false };
 const bot = {
-  account_id: "nightly-sync",
+  account_id: "acme--nightly-sync",
   type: AccountType.SERVICE,
   owner_account_id: "acme",
   name: "Nightly Sync",
@@ -84,7 +84,7 @@ beforeEach(() => {
 });
 
 describe("createServiceAccount", () => {
-  const base = { owner_account_id: "acme", name: "Nightly Sync", account_id: "nightly-sync" };
+  const base = { owner_account_id: "acme", name: "Nightly Sync", local_id: "nightly-sync" };
 
   it("creates the account, grants the products as a member, and trusts each workflow — once each", async () => {
     const data = form({
@@ -99,12 +99,12 @@ describe("createServiceAccount", () => {
     const result = await createServiceAccount(IDLE_FORM, data);
     expect(result.success).toBe(true);
     expect(mocks.accounts.create).toHaveBeenCalledWith(
-      expect.objectContaining({ account_id: "nightly-sync", type: AccountType.SERVICE, owner_account_id: "acme" })
+      expect.objectContaining({ account_id: "acme--nightly-sync", type: AccountType.SERVICE, owner_account_id: "acme" })
     );
     expect(mocks.memberships.create).toHaveBeenCalledTimes(2);
     expect(mocks.memberships.create).toHaveBeenCalledWith(
       expect.objectContaining({
-        account_id: "nightly-sync",
+        account_id: "acme--nightly-sync",
         membership_account_id: "acme",
         repository_id: "climate-data",
         role: MembershipRole.WriteData,
@@ -114,7 +114,7 @@ describe("createServiceAccount", () => {
     expect(mocks.trusts.create).toHaveBeenCalledTimes(2);
     expect(mocks.trusts.create).toHaveBeenCalledWith(
       expect.objectContaining({
-        account_id: "nightly-sync",
+        account_id: "acme--nightly-sync",
         issuer: "https://token.actions.githubusercontent.com",
         subject: "repo:acme/data:ref:refs/heads/main",
         created_by: "acme-owner",
@@ -125,11 +125,12 @@ describe("createServiceAccount", () => {
       "repo:acme/data:environment:prod",
     ]);
     // The step names the account in the role ARN; nothing in it expires.
-    expect(result.created?.trusts[0].workflow_step).toContain("arn:aws:iam::nightly-sync:role/FullAccess");
+    expect(result.created?.trusts[0].workflow_step).toContain("arn:aws:iam::acme--nightly-sync:role/FullAccess");
   });
 
-  it("refuses an unpinned workflow, a product the owner does not have, and a bad role — before writing anything", async () => {
+  it("refuses an unpinned workflow, a product the owner does not have, a bad role, and a short id with its own `--` — before writing anything", async () => {
     for (const fields of [
+      { ...base, local_id: "nightly--sync" },
       { ...base, github_subject: "repo:acme/*" },
       { ...base, "grant:not-ours": MembershipRole.ReadData },
       { ...base, "grant:climate-data": MembershipRole.Owners },
@@ -152,16 +153,14 @@ describe("createServiceAccount", () => {
     mocks.canManageAccount.mockReturnValue(true);
     expect((await createServiceAccount(IDLE_FORM, form({ ...base, owner_account_id: "nobody" }))).success).toBe(false);
     mocks.accounts.fetchById.mockResolvedValue(bot);
-    expect((await createServiceAccount(IDLE_FORM, form({ ...base, owner_account_id: "nightly-sync" }))).message).toMatch(/cannot own/);
+    expect((await createServiceAccount(IDLE_FORM, form({ ...base, owner_account_id: "acme--nightly-sync" }))).message).toMatch(/cannot own/);
     expect(mocks.accounts.create).not.toHaveBeenCalled();
 
     mocks.accounts.fetchById.mockResolvedValue(org);
     mocks.accounts.create.mockRejectedValue(Object.assign(new Error("x"), { name: "ConditionalCheckFailedException" }));
     const taken = await createServiceAccount(IDLE_FORM, form(base));
     expect(taken.success).toBe(false);
-    expect(taken.fieldErrors.account_id).toBeDefined();
-    // "create" is the create page's path segment.
-    expect((await createServiceAccount(IDLE_FORM, form({ ...base, account_id: "create" }))).fieldErrors.account_id).toBeDefined();
+    expect(taken.fieldErrors.local_id).toBeDefined();
   });
 });
 
@@ -175,46 +174,46 @@ describe("lifecycle", () => {
       { membership_id: "m1" } as never,
       { membership_id: "m2" } as never,
     ]);
-    await deleteServiceAccount(IDLE, form({ account_id: "nightly-sync" }));
+    await deleteServiceAccount(IDLE, form({ account_id: "acme--nightly-sync" }));
     expect(redirect).toHaveBeenCalledWith("/edit/account/acme/service-accounts");
     expect(mocks.memberships.delete).toHaveBeenCalledTimes(2);
-    expect(mocks.accounts.delete).toHaveBeenCalledWith("nightly-sync");
+    expect(mocks.accounts.delete).toHaveBeenCalledWith("acme--nightly-sync");
   });
 
   it("disables and enables", async () => {
-    await setServiceAccountDisabled(IDLE, form({ account_id: "nightly-sync", disabled: "true" }));
+    await setServiceAccountDisabled(IDLE, form({ account_id: "acme--nightly-sync", disabled: "true" }));
     expect(mocks.accounts.update).toHaveBeenCalledWith(expect.objectContaining({ disabled: true }));
   });
 
   it("removes a trust by the account's own key, so no other account's can be touched", async () => {
-    expect((await removeTrust(IDLE, form({ account_id: "nightly-sync", issuer: "i", subject: "s" }))).success).toBe(true);
-    expect(mocks.trusts.delete).toHaveBeenCalledWith("nightly-sync", "i", "s");
+    expect((await removeTrust(IDLE, form({ account_id: "acme--nightly-sync", issuer: "i", subject: "s" }))).success).toBe(true);
+    expect(mocks.trusts.delete).toHaveBeenCalledWith("acme--nightly-sync", "i", "s");
   });
 
   it("trusts one more workflow, refusing an unpinned subject, a repeat, and a disabled account", async () => {
-    const ok = await addGithubTrust(IDLE, form({ account_id: "nightly-sync", subject: "repo:acme/data:ref:refs/heads/main" }));
+    const ok = await addGithubTrust(IDLE, form({ account_id: "acme--nightly-sync", subject: "repo:acme/data:ref:refs/heads/main" }));
     expect(ok.success).toBe(true);
-    expect(ok.added?.workflow_step).toContain("arn:aws:iam::nightly-sync:role/FullAccess");
-    expect((await addGithubTrust(IDLE, form({ account_id: "nightly-sync", subject: "repo:acme/*" }))).success).toBe(false);
+    expect(ok.added?.workflow_step).toContain("arn:aws:iam::acme--nightly-sync:role/FullAccess");
+    expect((await addGithubTrust(IDLE, form({ account_id: "acme--nightly-sync", subject: "repo:acme/*" }))).success).toBe(false);
     // GitHub's immutable form carries ids on both owner and repository; a mix is not a form GitHub mints.
-    expect((await addGithubTrust(IDLE, form({ account_id: "nightly-sync", subject: "repo:acme@123456/data@456789:ref:refs/heads/main" }))).success).toBe(true);
-    expect((await addGithubTrust(IDLE, form({ account_id: "nightly-sync", subject: "repo:acme@123456/data:ref:refs/heads/main" }))).success).toBe(false);
-    expect((await addGithubTrust(IDLE, form({ account_id: "nightly-sync", subject: "repo:acme/data@456789:ref:refs/heads/main" }))).success).toBe(false);
+    expect((await addGithubTrust(IDLE, form({ account_id: "acme--nightly-sync", subject: "repo:acme@123456/data@456789:ref:refs/heads/main" }))).success).toBe(true);
+    expect((await addGithubTrust(IDLE, form({ account_id: "acme--nightly-sync", subject: "repo:acme@123456/data:ref:refs/heads/main" }))).success).toBe(false);
+    expect((await addGithubTrust(IDLE, form({ account_id: "acme--nightly-sync", subject: "repo:acme/data@456789:ref:refs/heads/main" }))).success).toBe(false);
     // An environment name may contain a space; a ref may not.
-    expect((await addGithubTrust(IDLE, form({ account_id: "nightly-sync", subject: "repo:acme/data:environment:Production Approval" }))).success).toBe(true);
-    expect((await addGithubTrust(IDLE, form({ account_id: "nightly-sync", subject: "repo:acme/data:ref:refs/heads/my branch" }))).success).toBe(false);
+    expect((await addGithubTrust(IDLE, form({ account_id: "acme--nightly-sync", subject: "repo:acme/data:environment:Production Approval" }))).success).toBe(true);
+    expect((await addGithubTrust(IDLE, form({ account_id: "acme--nightly-sync", subject: "repo:acme/data:ref:refs/heads/my branch" }))).success).toBe(false);
 
-    mocks.trusts.create.mockRejectedValueOnce(new AlreadyTrustedError("nightly-sync", "i", "s"));
-    expect((await addGithubTrust(IDLE, form({ account_id: "nightly-sync", subject: "repo:acme/data:ref:refs/heads/main" }))).message).toMatch(/Already trusted/);
+    mocks.trusts.create.mockRejectedValueOnce(new AlreadyTrustedError("acme--nightly-sync", "i", "s"));
+    expect((await addGithubTrust(IDLE, form({ account_id: "acme--nightly-sync", subject: "repo:acme/data:ref:refs/heads/main" }))).message).toMatch(/Already trusted/);
 
     mocks.managed.mockResolvedValue({ ...bot, disabled: true } as never);
-    expect((await addGithubTrust(IDLE, form({ account_id: "nightly-sync", subject: "repo:acme/data:ref:refs/heads/main" }))).message).toMatch(/disabled/);
+    expect((await addGithubTrust(IDLE, form({ account_id: "acme--nightly-sync", subject: "repo:acme/data:ref:refs/heads/main" }))).message).toMatch(/disabled/);
   });
 
   it("refuses whatever managedServiceAccount does not hand back", async () => {
     mocks.managed.mockResolvedValue(null);
-    expect((await deleteServiceAccount(IDLE, form({ account_id: "nightly-sync" }))).success).toBe(false);
-    expect((await addGithubTrust(IDLE, form({ account_id: "nightly-sync", subject: "repo:acme/data:ref:refs/heads/main" }))).success).toBe(false);
+    expect((await deleteServiceAccount(IDLE, form({ account_id: "acme--nightly-sync" }))).success).toBe(false);
+    expect((await addGithubTrust(IDLE, form({ account_id: "acme--nightly-sync", subject: "repo:acme/data:ref:refs/heads/main" }))).success).toBe(false);
     expect(mocks.accounts.delete).not.toHaveBeenCalled();
     expect(mocks.trusts.create).not.toHaveBeenCalled();
   });

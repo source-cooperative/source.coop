@@ -18,7 +18,7 @@ import type {
  */
 const idle = (): ServiceAccountActionState => ({ message: "", success: false });
 
-const STEP = githubWorkflowStep("https://data.source.coop", "nightly-sync");
+const STEP = githubWorkflowStep("https://data.source.coop", "miskatonic--nightly-sync");
 
 export const createServiceAccount: typeof Real.createServiceAccount = fn(
   async (_prev, formData): Promise<ServiceAccountFormState> => ({
@@ -26,7 +26,7 @@ export const createServiceAccount: typeof Real.createServiceAccount = fn(
     message: "",
     success: true,
     created: {
-      account_id: String(formData.get("account_id") || "nightly-sync"),
+      account_id: `${formData.get("owner_account_id") || "miskatonic"}--${formData.get("local_id") || "nightly-sync"}`,
       name: String(formData.get("name") || "Nightly Sync"),
       trusts: formData.getAll("github_subject").map((subject: FormDataEntryValue) => ({
         subject: String(subject),

@@ -19,9 +19,6 @@ import {
   AccountFlags,
   AccountFlagsSchema,
   AccountEmailSchema,
-  ServiceAccount,
-  ServiceAccountCreationRequestSchema,
-  ServiceAccountCreationRequest,
 } from "@/types";
 import { isAuthorized } from "../api/authz";
 import { getPageSession } from "../api/utils";
@@ -59,12 +56,15 @@ export async function createAccount(
 
   // Extract data from FormData
   const type = formData.get("type");
+  // Service accounts have their own action, createServiceAccount, which
+  // settles the owner and composes the id.
+  if (type === AccountType.SERVICE) {
+    return { fieldErrors: {}, data: formData, message: "Invalid form data", success: false };
+  }
   const schema =
     type === AccountType.ORGANIZATION
       ? OrganizationCreationRequestSchema
-      : type === AccountType.SERVICE
-        ? ServiceAccountCreationRequestSchema
-        : AccountCreationRequestSchema;
+      : AccountCreationRequestSchema;
   const validatedFields = schema.safeParse(Object.fromEntries(formData));
 
   if (!validatedFields.success) {
@@ -94,19 +94,11 @@ export async function createAccount(
           identity_id: session?.identity_id,
           flags: DEFAULT_INDIVIDUAL_FLAGS,
         } as IndividualAccount)
-      : validatedFields.data.type === AccountType.SERVICE
-        ? ({
-            ...baseAccount,
-            identity_id: undefined,
-            owner_account_id: (validatedFields.data as ServiceAccountCreationRequest)
-              .owner_account_id,
-            flags: [],
-          } as ServiceAccount)
-        : ({
-            ...baseAccount,
-            identity_id: undefined,
-            flags: DEFAULT_ORGANIZATION_FLAGS,
-          } as OrganizationalAccount);
+      : ({
+          ...baseAccount,
+          identity_id: undefined,
+          flags: DEFAULT_ORGANIZATION_FLAGS,
+        } as OrganizationalAccount);
 
   // Check authorization
   if (!isAuthorized(session, newAccount, Actions.CreateAccount)) {

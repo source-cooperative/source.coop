@@ -3931,8 +3931,8 @@ describe("self-authorization is for people only", () => {
 
 describe("service accounts", () => {
   const org = accounts.find((a) => a.account_id === "organization")!;
-  const bot = accounts.find((a) => a.account_id === "organization-bot")!;
-  const botSession = sessions["organization-bot"]!;
+  const bot = accounts.find((a) => a.account_id === "organization--bot")!;
+  const botSession = sessions["organization--bot"]!;
   const orgRepo = mappedProducts["organization"]["org-repo-id"];
   const otherOrgRepo = mappedProducts["organization"]["unlisted-org-repo-id"];
 

@@ -28,7 +28,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 const account = {
-  account_id: "nightly-sync",
+  account_id: "miskatonic--nightly-sync",
   name: "Nightly Sync",
   type: AccountType.SERVICE,
   owner_account_id: "miskatonic",
@@ -41,7 +41,7 @@ const account = {
 } as ServiceAccountSummary["account"];
 
 const trust = (subject: string) => ({
-  account_id: "nightly-sync",
+  account_id: "miskatonic--nightly-sync",
   issuer: GITHUB_ACTIONS_ISSUER,
   subject,
   created_at: "2026-03-12T00:00:00Z",
@@ -50,7 +50,7 @@ const trust = (subject: string) => ({
 
 const grant = (repository_id: string, role: MembershipRole) => ({
   membership_id: `m-${repository_id}`,
-  account_id: "nightly-sync",
+  account_id: "miskatonic--nightly-sync",
   membership_account_id: "miskatonic",
   repository_id,
   role,

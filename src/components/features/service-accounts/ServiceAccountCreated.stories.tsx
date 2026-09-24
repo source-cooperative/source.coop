@@ -15,13 +15,13 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-const step = githubWorkflowStep("https://data.source.coop", "nightly-sync");
+const step = githubWorkflowStep("https://data.source.coop", "miskatonic--nightly-sync");
 
 export const WithWorkflows: Story = {
   args: {
     ownerAccountId: "miskatonic",
     created: {
-      account_id: "nightly-sync",
+      account_id: "miskatonic--nightly-sync",
       name: "Nightly Sync",
       trusts: [{ subject: "repo:miskatonic/climate-data:ref:refs/heads/main", workflow_step: step }],
     },
@@ -32,6 +32,6 @@ export const WithWorkflows: Story = {
 export const NoWorkflows: Story = {
   args: {
     ownerAccountId: "miskatonic",
-    created: { account_id: "nightly-sync", name: "Nightly Sync", trusts: [] },
+    created: { account_id: "miskatonic--nightly-sync", name: "Nightly Sync", trusts: [] },
   },
 };
