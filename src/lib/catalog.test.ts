@@ -1,0 +1,44 @@
+import { parseCatalog } from "./catalog";
+
+const entry = { account_id: "org", product_id: "data", total_bytes: 1024, object_count: 2, exts: { tif: 2 } };
+
+it("indexes products by account and product, ignoring unrelated catalog fields", () => {
+  const catalog = parseCatalog([
+    JSON.stringify({ ...entry, description: "Not retained" }),
+    JSON.stringify({ ...entry, account_id: "other" }),
+  ].join("\r\n"));
+  expect(catalog.size).toBe(2);
+  expect(catalog.get("org/data")).toEqual(entry);
+  expect(catalog.get("missing/data")).toBeUndefined();
+});
+
+it("skips malformed lines and invalid identities without losing valid entries", () => {
+  expect(parseCatalog(`\nnull\n{bad json\n{}\n${JSON.stringify(entry)}\n`).size).toBe(1);
+});
+
+it("omits invalid statistics and preserves zero values", () => {
+  const catalog = parseCatalog(JSON.stringify({ ...entry, total_bytes: -1, object_count: 0, exts: [] }));
+  expect(catalog.get("org/data")).toEqual({ account_id: "org", product_id: "data", object_count: 0 });
+});
+
+it("shares successful requests and retries after HTTP failures", async () => {
+  const originalFetch = global.fetch;
+  const fetchMock = jest.fn()
+    .mockResolvedValueOnce({ ok: false, status: 503 })
+    .mockResolvedValueOnce({ ok: true, text: async () => JSON.stringify(entry) });
+  global.fetch = fetchMock;
+  try {
+    const { loadCatalog, CATALOG_URL } = await import("./catalog");
+    const failed = loadCatalog();
+    expect(loadCatalog()).toBe(failed);
+    await expect(failed).rejects.toThrow("503");
+    const successful = loadCatalog();
+    expect(loadCatalog()).toBe(successful);
+    expect((await successful).get("org/data")).toEqual(entry);
+    await loadCatalog();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock).toHaveBeenCalledWith(CATALOG_URL);
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
