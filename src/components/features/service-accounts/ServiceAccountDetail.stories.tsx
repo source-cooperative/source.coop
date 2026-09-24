@@ -14,7 +14,7 @@ import {
  * with an "Example usage" modal holding the step the workflow adds, and a
  * dialog to trust another; the products it reaches, each with Read / Read
  * and write and an X, and "Grant a product", which adds a row to choose a
- * product and its access, saved with Grant — the create form's list; and,
+ * product and its access, saved with its check — the create form's list; and,
  * set apart in a danger zone, disabling and deleting it.
  *
  * The actions are mocked in `.storybook/preview.tsx`. An access change shows

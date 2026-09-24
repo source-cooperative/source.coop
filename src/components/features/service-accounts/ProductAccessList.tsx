@@ -11,7 +11,7 @@ import {
   Text,
   Tooltip,
 } from "@radix-ui/themes";
-import { Cross2Icon, ExternalLinkIcon, PlusIcon } from "@radix-ui/react-icons";
+import { CheckIcon, Cross2Icon, ExternalLinkIcon, PlusIcon } from "@radix-ui/react-icons";
 import {
   ConnectionList,
   ConnectionRow,
@@ -46,7 +46,7 @@ function AccessControl({
   );
 }
 
-/** The row "Grant a product" opens: which product, how much, and Grant. */
+/** The row "Grant a product" opens: which product, how much, a check to grant it and an X to cancel. */
 function GrantRow({
   available,
   onGrant,
@@ -77,17 +77,19 @@ function GrantRow({
       actions={
         <Flex align="center" gap="3">
           <AccessControl label="Access to grant" value={access} onChange={setAccess} />
-          {/* highContrast, as FormActions' submit is: a solid button in this
-              theme's grey accent fails contrast for its label. */}
-          <Button
-            type="button"
-            size="1"
-            highContrast
-            disabled={!product_id || disabled}
-            onClick={() => product_id && onGrant(product_id, access)}
-          >
-            Grant
-          </Button>
+          <Tooltip content="Grant">
+            <IconButton
+              type="button"
+              size="1"
+              variant="ghost"
+              color="green"
+              disabled={!product_id || disabled}
+              aria-label="Grant"
+              onClick={() => product_id && onGrant(product_id, access)}
+            >
+              <CheckIcon />
+            </IconButton>
+          </Tooltip>
           <Tooltip content="Cancel">
             <IconButton
               type="button"
@@ -109,7 +111,8 @@ function GrantRow({
 /**
  * The products of an owner a service account reaches, each with Read or Read
  * and write and an X to remove it, and "Grant a product" to add another: a row
- * with the owner's other products, the access to give, and Grant. Each title
+ * with the owner's other products, the access to give, and a check to grant
+ * it. Each title
  * opens the product in a new tab, to check what it holds.
  *
  * What a change does is the caller's. The create form holds them until it is
