@@ -104,10 +104,10 @@ export function ServiceAccountForm({ ownerAccountId, products }: ServiceAccountF
                   size="3"
                   value={localId}
                   onChange={(e) => setLocalId(e.target.value)}
+                  // One face, and no gap after the owner: it reads as one id.
+                  style={{ fontFamily: "var(--code-font-family)" }}
                 >
-                  <TextField.Slot style={{ fontFamily: "var(--code-font-family)" }}>
-                    {prefix}
-                  </TextField.Slot>
+                  <TextField.Slot pr="0">{prefix}</TextField.Slot>
                 </TextField.Root>
               </Field>
             ) : (
