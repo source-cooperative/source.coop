@@ -12,7 +12,8 @@ import {
   productsTable,
 } from "../clients";
 import { getPageSession } from "../api/utils";
-import { canManageServiceAccount, isAuthorized } from "../api/authz";
+import { canManageAccount } from "../api/authz";
+import { managedServiceAccount } from "@/lib/accounts/service-accounts";
 import { AlreadyTrustedError } from "../clients/database/account-trusts";
 import {
   AccountType,
@@ -31,7 +32,8 @@ jest.mock("../clients", () => ({
   accountTrustsTable: { create: jest.fn(), delete: jest.fn() },
 }));
 jest.mock("../api/utils", () => ({ getPageSession: jest.fn() }));
-jest.mock("../api/authz", () => ({ isAuthorized: jest.fn(), canManageServiceAccount: jest.fn() }));
+jest.mock("../api/authz", () => ({ canManageAccount: jest.fn() }));
+jest.mock("@/lib/accounts/service-accounts", () => ({ managedServiceAccount: jest.fn() }));
 jest.mock("next/cache", () => ({ revalidatePath: jest.fn() }));
 
 const mocks = {
@@ -40,8 +42,8 @@ const mocks = {
   products: productsTable as jest.Mocked<typeof productsTable>,
   trusts: accountTrustsTable as jest.Mocked<typeof accountTrustsTable>,
   session: getPageSession as jest.MockedFunction<typeof getPageSession>,
-  isAuthorized: isAuthorized as jest.MockedFunction<typeof isAuthorized>,
-  canManage: canManageServiceAccount as jest.MockedFunction<typeof canManageServiceAccount>,
+  canManageAccount: canManageAccount as jest.MockedFunction<typeof canManageAccount>,
+  managed: managedServiceAccount as jest.MockedFunction<typeof managedServiceAccount>,
 };
 
 const IDLE_FORM: ServiceAccountFormState = { fieldErrors: {}, message: "", success: false };
@@ -57,6 +59,7 @@ const bot = {
   updated_at: "2026-01-01T00:00:00.000Z",
   metadata_public: {},
 } as unknown as Account;
+const org = { account_id: "acme", type: AccountType.ORGANIZATION, disabled: false } as unknown as Account;
 
 const form = (fields: Record<string, string | string[]>) => {
   const data = new FormData();
@@ -70,8 +73,8 @@ beforeEach(() => {
   jest.clearAllMocks();
   mocks.session.mockResolvedValue({ identity_id: "an-identity", account: { account_id: "acme-owner" } } as UserSession);
   mocks.trusts.create.mockImplementation(async (t) => t);
-  mocks.isAuthorized.mockReturnValue(true);
-  mocks.canManage.mockReturnValue(true);
+  mocks.canManageAccount.mockReturnValue(true);
+  mocks.accounts.fetchById.mockImplementation(async (id) => (id === "acme" ? org : null));
   mocks.accounts.create.mockImplementation(async (a) => a);
   mocks.products.fetchById.mockImplementation(async (owner, id) =>
     owner === "acme" && ["climate-data", "reference-data"].includes(id) ? ({ product_id: id } as never) : null
@@ -81,16 +84,17 @@ beforeEach(() => {
 describe("createServiceAccount", () => {
   const base = { owner_account_id: "acme", name: "Nightly Sync", account_id: "nightly-sync" };
 
-  it("creates the account, grants the products as a member, and trusts each workflow", async () => {
-    const result = await createServiceAccount(
-      IDLE_FORM,
-      form({
-        ...base,
-        github_subject: ["repo:acme/data:ref:refs/heads/main", "repo:acme/data:environment:prod"],
-        "grant:climate-data": MembershipRole.WriteData,
-        "grant:reference-data": MembershipRole.ReadData,
-      })
-    );
+  it("creates the account, grants the products as a member, and trusts each workflow — once each", async () => {
+    const data = form({
+      ...base,
+      github_subject: ["repo:acme/data:ref:refs/heads/main", "repo:acme/data:environment:prod"],
+      "grant:climate-data": MembershipRole.WriteData,
+      "grant:reference-data": MembershipRole.ReadData,
+    });
+    // A workflow card or a grant field left in twice is one trust, one membership.
+    data.append("github_subject", "repo:acme/data:ref:refs/heads/main");
+    data.append("grant:climate-data", MembershipRole.WriteData);
+    const result = await createServiceAccount(IDLE_FORM, data);
     expect(result.success).toBe(true);
     expect(mocks.accounts.create).toHaveBeenCalledWith(
       expect.objectContaining({ account_id: "nightly-sync", type: AccountType.SERVICE, owner_account_id: "acme" })
@@ -133,8 +137,8 @@ describe("createServiceAccount", () => {
     expect(mocks.accounts.create).not.toHaveBeenCalled();
   });
 
-  it("refuses someone who does not manage the owner, and reports a taken id on the field", async () => {
-    mocks.isAuthorized.mockReturnValue(false);
+  it("refuses someone who does not manage the owner, an owner that is missing or a service account, and reports a taken id on the field", async () => {
+    mocks.canManageAccount.mockReturnValue(false);
     const denied = await createServiceAccount(
       IDLE_FORM,
       form({ ...base, "grant:climate-data": MembershipRole.ReadData })
@@ -143,7 +147,13 @@ describe("createServiceAccount", () => {
     // ...and learns nothing about the owner's products on the way out.
     expect(mocks.products.fetchById).not.toHaveBeenCalled();
 
-    mocks.isAuthorized.mockReturnValue(true);
+    mocks.canManageAccount.mockReturnValue(true);
+    expect((await createServiceAccount(IDLE_FORM, form({ ...base, owner_account_id: "nobody" }))).success).toBe(false);
+    mocks.accounts.fetchById.mockResolvedValue(bot);
+    expect((await createServiceAccount(IDLE_FORM, form({ ...base, owner_account_id: "nightly-sync" }))).message).toMatch(/cannot own/);
+    expect(mocks.accounts.create).not.toHaveBeenCalled();
+
+    mocks.accounts.fetchById.mockResolvedValue(org);
     mocks.accounts.create.mockRejectedValue(Object.assign(new Error("x"), { name: "ConditionalCheckFailedException" }));
     const taken = await createServiceAccount(IDLE_FORM, form(base));
     expect(taken.success).toBe(false);
@@ -153,7 +163,7 @@ describe("createServiceAccount", () => {
 
 describe("lifecycle", () => {
   beforeEach(() => {
-    mocks.accounts.fetchById.mockResolvedValue(bot);
+    mocks.managed.mockResolvedValue(bot as never);
   });
 
   it("deletes grants, then the account (whose trusts go with it)", async () => {
@@ -192,16 +202,15 @@ describe("lifecycle", () => {
     mocks.trusts.create.mockRejectedValueOnce(new AlreadyTrustedError("nightly-sync", "i", "s"));
     expect((await addGithubTrust(IDLE, form({ account_id: "nightly-sync", subject: "repo:acme/data:ref:refs/heads/main" }))).message).toMatch(/Already trusted/);
 
-    mocks.accounts.fetchById.mockResolvedValue({ ...bot, disabled: true } as Account);
+    mocks.managed.mockResolvedValue({ ...bot, disabled: true } as never);
     expect((await addGithubTrust(IDLE, form({ account_id: "nightly-sync", subject: "repo:acme/data:ref:refs/heads/main" }))).message).toMatch(/disabled/);
   });
 
-  it("refuses anyone who does not manage the account, and non-service accounts", async () => {
-    mocks.canManage.mockReturnValue(false);
+  it("refuses whatever managedServiceAccount does not hand back", async () => {
+    mocks.managed.mockResolvedValue(null);
     expect((await deleteServiceAccount(IDLE, form({ account_id: "nightly-sync" }))).success).toBe(false);
-    mocks.canManage.mockReturnValue(true);
-    mocks.accounts.fetchById.mockResolvedValue({ ...bot, type: AccountType.INDIVIDUAL } as Account);
-    expect((await deleteServiceAccount(IDLE, form({ account_id: "nightly-sync" }))).success).toBe(false);
+    expect((await addGithubTrust(IDLE, form({ account_id: "nightly-sync", subject: "repo:acme/data:ref:refs/heads/main" }))).success).toBe(false);
     expect(mocks.accounts.delete).not.toHaveBeenCalled();
+    expect(mocks.trusts.create).not.toHaveBeenCalled();
   });
 });

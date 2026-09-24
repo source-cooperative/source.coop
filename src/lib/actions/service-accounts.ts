@@ -4,19 +4,20 @@ import { revalidatePath } from "next/cache";
 import { LOGGER } from "@/lib/logging";
 import { CONFIG } from "@/lib/config";
 import {
-  Actions,
   AccountType,
   GITHUB_ACTIONS_ISSUER,
   GITHUB_ACTIONS_SUBJECT_REGEX,
   MembershipRole,
   MembershipState,
   ServiceAccountCreationRequestSchema,
+  isServiceAccount,
   type GithubWorkflowUsage,
   type ServiceAccount,
   type ServiceAccountActionState,
   type ServiceAccountFormState,
 } from "@/types";
-import { isAuthorized, canManageServiceAccount } from "../api/authz";
+import { canManageAccount } from "../api/authz";
+import { managedServiceAccount } from "@/lib/accounts/service-accounts";
 import { getPageSession } from "../api/utils";
 import {
   accountTrustsTable,
@@ -45,6 +46,10 @@ async function trustGithub(
   subject: string,
   created_by: string
 ): Promise<GithubWorkflowUsage> {
+  // Checked before the write: a trust whose step cannot be handed back is one
+  // the user has no way to use.
+  const proxy = CONFIG.storage.endpoint;
+  if (!proxy) throw new Error("NEXT_PUBLIC_S3_ENDPOINT is unset; no data proxy to sign in to");
   await accountTrustsTable.create({
     account_id,
     issuer: GITHUB_ACTIONS_ISSUER,
@@ -52,10 +57,7 @@ async function trustGithub(
     created_at: new Date().toISOString(),
     created_by,
   });
-  return {
-    subject,
-    workflow_step: githubWorkflowStep(CONFIG.storage.endpoint ?? "", account_id),
-  };
+  return { subject, workflow_step: githubWorkflowStep(proxy, account_id) };
 }
 
 /**
@@ -81,6 +83,16 @@ export async function createServiceAccount(
   }
   const { account_id, name, owner_account_id } = parsed.data;
 
+  // The owner is settled before any of its products are read, so the product
+  // checks below cannot be used to probe another account's products.
+  const owner = await accountsTable.fetchById(owner_account_id);
+  if (!owner || !canManageAccount(session, owner)) {
+    return fail("You do not manage that account");
+  }
+  if (isServiceAccount(owner)) {
+    return fail("A service account cannot own another");
+  }
+
   const now = new Date().toISOString();
   const account: ServiceAccount = {
     account_id,
@@ -95,23 +107,18 @@ export async function createServiceAccount(
     metadata_public: {},
     metadata_private: {},
   };
-  // Authorized before any read on the owner the caller named, so that the
-  // product checks below cannot be used to probe another account's products.
-  if (!isAuthorized(session, account, Actions.CreateAccount)) {
-    return fail("You do not manage that account");
-  }
 
-  const subjects = formData.getAll("github_subject").map(String).filter(Boolean);
+  const subjects = [...new Set(formData.getAll("github_subject").map(String).filter(Boolean))];
   const badSubject = subjects.find((s) => !GITHUB_ACTIONS_SUBJECT_REGEX.test(s));
   if (badSubject) {
     return fail(`${badSubject} does not name one repository and one ref or environment`);
   }
 
   const grants: { product_id: string; role: MembershipRole }[] = [];
-  for (const [key, value] of formData.entries()) {
+  for (const key of new Set(formData.keys())) {
     if (!key.startsWith("grant:")) continue;
     const product_id = key.slice("grant:".length);
-    const role = value as MembershipRole;
+    const role = formData.get(key) as MembershipRole;
     if (![MembershipRole.ReadData, MembershipRole.WriteData].includes(role)) {
       return fail(`${product_id}: access must be read or write`);
     }
@@ -164,22 +171,13 @@ export async function createServiceAccount(
   };
 }
 
-async function managed(account_id: string) {
-  const session = await getPageSession();
-  const account = await accountsTable.fetchById(account_id);
-  if (!session?.identity_id || !account) return null;
-  if (account.type !== AccountType.SERVICE) return null;
-  if (!canManageServiceAccount(session, account)) return null;
-  return account;
-}
-
 /** Trusts one more GitHub workflow on an existing service account. */
 export async function addGithubTrust(
   _prev: ServiceAccountActionState,
   formData: FormData
 ): Promise<ServiceAccountActionState> {
   const session = await getPageSession();
-  const account = await managed(String(formData.get("account_id") ?? ""));
+  const account = await managedServiceAccount(session, String(formData.get("account_id") ?? ""));
   if (!account || !session?.account) {
     return outcome("You do not manage that service account", false);
   }
@@ -204,7 +202,10 @@ export async function removeTrust(
   _prev: ServiceAccountActionState,
   formData: FormData
 ): Promise<ServiceAccountActionState> {
-  const account = await managed(String(formData.get("account_id") ?? ""));
+  const account = await managedServiceAccount(
+    await getPageSession(),
+    String(formData.get("account_id") ?? "")
+  );
   if (!account) return outcome("You do not manage that service account", false);
   const issuer = String(formData.get("issuer") ?? "");
   const subject = String(formData.get("subject") ?? "");
@@ -219,7 +220,10 @@ export async function setServiceAccountDisabled(
   _prev: ServiceAccountActionState,
   formData: FormData
 ): Promise<ServiceAccountActionState> {
-  const account = await managed(String(formData.get("account_id") ?? ""));
+  const account = await managedServiceAccount(
+    await getPageSession(),
+    String(formData.get("account_id") ?? "")
+  );
   if (!account) return outcome("You do not manage that service account", false);
   const disabled = formData.get("disabled") === "true";
   await accountsTable.update({ ...account, disabled, updated_at: new Date().toISOString() });
@@ -232,7 +236,10 @@ export async function deleteServiceAccount(
   _prev: ServiceAccountActionState,
   formData: FormData
 ): Promise<ServiceAccountActionState> {
-  const account = await managed(String(formData.get("account_id") ?? ""));
+  const account = await managedServiceAccount(
+    await getPageSession(),
+    String(formData.get("account_id") ?? "")
+  );
   if (!account) return outcome("You do not manage that service account", false);
   for (const membership of await membershipsTable.listByUser(account.account_id)) {
     await membershipsTable.delete(membership.membership_id);

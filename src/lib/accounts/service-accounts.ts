@@ -1,4 +1,12 @@
-import { Account, isServiceAccount, MembershipRole } from "@/types";
+import {
+  Account,
+  isServiceAccount,
+  MembershipRole,
+  type ServiceAccount,
+  type UserSession,
+} from "@/types";
+import { canManageServiceAccount } from "@/lib/api/authz";
+import { accountsTable } from "@/lib/clients";
 
 const SERVICE_ACCOUNT_ROLES = [MembershipRole.ReadData, MembershipRole.WriteData];
 
@@ -25,4 +33,22 @@ export function serviceAccountGrantProblem(
     return "A service account can only be granted access to products owned by its owner";
   }
   return null;
+}
+
+/**
+ * The service account `account_id` names, if `session` may manage it —
+ * otherwise null, whether it is missing, not a service account, someone
+ * else's, or owned by an account that has been disabled. One answer for every
+ * action that changes a service account.
+ */
+export async function managedServiceAccount(
+  session: UserSession | null,
+  account_id: string
+): Promise<ServiceAccount | null> {
+  if (!session?.account) return null;
+  const account = await accountsTable.fetchById(account_id);
+  if (!account || !isServiceAccount(account)) return null;
+  const owner = await accountsTable.fetchById(account.owner_account_id);
+  if (!owner || !canManageServiceAccount(session, account, owner)) return null;
+  return account;
 }

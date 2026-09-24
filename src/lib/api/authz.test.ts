@@ -3974,16 +3974,23 @@ describe("service accounts", () => {
   });
 
   test("are managed by whoever manages their owner, and by no one else", () => {
-    expect(canManageServiceAccount(sessions["organization-owner-user"], bot)).toBe(true);
-    expect(canManageServiceAccount(sessions["organization-maintainer-user"], bot)).toBe(true);
-    expect(canManageServiceAccount(sessions["admin"], bot)).toBe(true);
-    expect(canManageServiceAccount(sessions["organization-read-data-user"], bot)).toBe(false);
-    expect(canManageServiceAccount(sessions["regular-user"], bot)).toBe(false);
-    expect(canManageServiceAccount(botSession, bot)).toBe(false);
+    expect(canManageServiceAccount(sessions["organization-owner-user"], bot, org)).toBe(true);
+    expect(canManageServiceAccount(sessions["organization-maintainer-user"], bot, org)).toBe(true);
+    expect(canManageServiceAccount(sessions["admin"], bot, org)).toBe(true);
+    expect(canManageServiceAccount(sessions["organization-read-data-user"], bot, org)).toBe(false);
+    expect(canManageServiceAccount(sessions["regular-user"], bot, org)).toBe(false);
+    expect(canManageServiceAccount(botSession, bot, org)).toBe(false);
     // Only for service accounts: an organization's owner does not "manage" it
     // this way, and neither does an admin.
-    expect(canManageServiceAccount(sessions["organization-owner-user"], org)).toBe(false);
-    expect(canManageServiceAccount(sessions["admin"], org)).toBe(false);
+    expect(canManageServiceAccount(sessions["organization-owner-user"], org, org)).toBe(false);
+    expect(canManageServiceAccount(sessions["admin"], org, org)).toBe(false);
+    // Only through its own owner: managing some other account is not managing it.
+    const person = accounts.find((a) => a.account_id === "regular-user")!;
+    expect(canManageServiceAccount(sessions["regular-user"], bot, person)).toBe(false);
+    // A disabled owner takes its service accounts out of reach, admins aside.
+    const frozen = { ...org, disabled: true };
+    expect(canManageServiceAccount(sessions["organization-owner-user"], bot, frozen)).toBe(false);
+    expect(canManageServiceAccount(sessions["admin"], bot, frozen)).toBe(true);
   });
 
   test("hold no rights over themselves", () => {
