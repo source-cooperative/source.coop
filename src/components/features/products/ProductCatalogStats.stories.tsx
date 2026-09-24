@@ -23,6 +23,12 @@ export const Default: Story = {
 };
 
 export const Missing: Story = {};
+export const WithoutStatistics: Story = {
+  args: {
+    entry: { account_id: "example", product_id: "land-cover" },
+    px: { initial: "4", md: "0" },
+  },
+};
 export const Mobile: Story = {
   ...Default,
   globals: { viewport: { value: "mobile1", isRotated: false } },

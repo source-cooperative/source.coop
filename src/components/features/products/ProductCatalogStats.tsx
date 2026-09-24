@@ -1,8 +1,11 @@
-import { Flex, Text } from "@radix-ui/themes";
+import { Flex, Text, type FlexProps } from "@radix-ui/themes";
 import { formatBytes } from "@/lib/format";
 import type { CatalogEntry } from "@/types/catalog";
 
-export function ProductCatalogStats({ entry }: { entry?: CatalogEntry }) {
+export function ProductCatalogStats({
+  entry,
+  px,
+}: { entry?: CatalogEntry } & Pick<FlexProps, "px">) {
   if (!entry) return null;
   const formats = Object.entries(entry.exts ?? {})
     .filter(([extension, count]) => extension && count > 0)
@@ -17,7 +20,7 @@ export function ProductCatalogStats({ entry }: { entry?: CatalogEntry }) {
   }
 
   return (
-    <Flex gap="3" wrap="wrap" mb="3" aria-label="Catalog statistics">
+    <Flex gap="3" wrap="wrap" mb="3" px={px} aria-label="Catalog statistics">
       {entry.total_bytes !== undefined && (
         <Text size="2" color="gray">
           {formatBytes(entry.total_bytes)}

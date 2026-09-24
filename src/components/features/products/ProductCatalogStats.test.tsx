@@ -10,6 +10,20 @@ it("renders nothing for missing or absent statistics", () => {
   expect(container).toBeEmptyDOMElement();
 });
 
+it("does not render a padding wrapper when there are no displayable statistics", () => {
+  const { container, rerender } = render(
+    <ProductCatalogStats entry={identity} px={{ initial: "4", md: "0" }} />
+  );
+  expect(container).toBeEmptyDOMElement();
+  rerender(
+    <ProductCatalogStats
+      entry={{ ...identity, exts: { "": 5, tif: 0 } }}
+      px={{ initial: "4", md: "0" }}
+    />
+  );
+  expect(container).toBeEmptyDOMElement();
+});
+
 it("shows size, object count, and the most common extensions", () => {
   render(<ProductCatalogStats entry={{ ...identity, total_bytes: 1024, object_count: 1234, exts: { csv: 1, tif: 900, parquet: 300, json: 33, empty: 0 } }} />);
   expect(screen.getByText("1 KB")).toBeInTheDocument();
