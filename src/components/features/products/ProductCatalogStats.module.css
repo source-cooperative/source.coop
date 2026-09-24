@@ -21,11 +21,12 @@
 
 .table .share {
   width: 1%;
-  padding-left: 0;
+  padding-left: var(--space-1);
 }
 
 .table tr > :first-child {
-  min-width: 4.5rem;
+  width: 1%;
+  white-space: nowrap;
 }
 
 .table thead th:first-child {
