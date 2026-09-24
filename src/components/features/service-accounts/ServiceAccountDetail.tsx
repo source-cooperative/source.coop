@@ -8,8 +8,11 @@ import {
   Dialog,
   Flex,
   Heading,
+  IconButton,
   Text,
+  Tooltip,
 } from "@radix-ui/themes";
+import { Cross2Icon } from "@radix-ui/react-icons";
 import { SectionHeader } from "@/components/core";
 import {
   ConnectionList,
@@ -151,13 +154,23 @@ export function ServiceAccountDetail({
                         step={githubWorkflowStep(proxyOrigin, account.account_id)}
                       />
                     )}
-                    <form action={removeAction}>
+                    {/* A flex box, so the icon centres on the row like the link beside it. */}
+                    <form action={removeAction} style={{ display: "flex" }}>
                       <input type="hidden" name="account_id" value={account.account_id} />
                       <input type="hidden" name="issuer" value={trust.issuer} />
                       <input type="hidden" name="subject" value={trust.subject} />
-                      <Button type="submit" size="1" variant="ghost" color="red" disabled={removing}>
-                        Remove
-                      </Button>
+                      <Tooltip content="Remove">
+                        <IconButton
+                          type="submit"
+                          size="1"
+                          variant="ghost"
+                          color="red"
+                          disabled={removing}
+                          aria-label={`Remove trust in ${trust.subject}`}
+                        >
+                          <Cross2Icon />
+                        </IconButton>
+                      </Tooltip>
                     </form>
                   </Flex>
                 }
