@@ -33,6 +33,13 @@ export const GITHUB_ACTIONS_ISSUER = "https://token.actions.githubusercontent.co
  * environment: `repo:{owner}/{repo}:ref:{ref}` or
  * `repo:{owner}/{repo}:environment:{name}`. Nothing organization-wide. A ref
  * has no whitespace, by git's rules; an environment name may.
+ *
+ * The repository is named either the mutable way, `octocat/my-repo`, or the
+ * immutable way GitHub mints for repositories created after July 2026 and
+ * for any that opted in, `octocat@123456/my-repo@456789` — each name followed
+ * by its permanent id, so a recycled name cannot inherit a trust. A token
+ * carries one form or the other, never a mix, and a trust must match the form
+ * the repository's tokens carry.
  */
 export const GITHUB_ACTIONS_SUBJECT_REGEX =
-  /^repo:[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+:(ref:refs\/[^\s:]+|environment:[^:]+)$/;
+  /^repo:(?:[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+|[A-Za-z0-9_.-]+@\d+\/[A-Za-z0-9_.-]+@\d+):(?:ref:refs\/[^\s:]+|environment:[^:]+)$/;

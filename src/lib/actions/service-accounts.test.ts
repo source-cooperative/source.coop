@@ -181,6 +181,10 @@ describe("lifecycle", () => {
     expect(ok.success).toBe(true);
     expect(ok.added?.workflow_step).toContain("arn:aws:iam::nightly-sync:role/FullAccess");
     expect((await addGithubTrust(IDLE, form({ account_id: "nightly-sync", subject: "repo:acme/*" }))).success).toBe(false);
+    // GitHub's immutable form carries ids on both owner and repository; a mix is not a form GitHub mints.
+    expect((await addGithubTrust(IDLE, form({ account_id: "nightly-sync", subject: "repo:acme@123456/data@456789:ref:refs/heads/main" }))).success).toBe(true);
+    expect((await addGithubTrust(IDLE, form({ account_id: "nightly-sync", subject: "repo:acme@123456/data:ref:refs/heads/main" }))).success).toBe(false);
+    expect((await addGithubTrust(IDLE, form({ account_id: "nightly-sync", subject: "repo:acme/data@456789:ref:refs/heads/main" }))).success).toBe(false);
     // An environment name may contain a space; a ref may not.
     expect((await addGithubTrust(IDLE, form({ account_id: "nightly-sync", subject: "repo:acme/data:environment:Production Approval" }))).success).toBe(true);
     expect((await addGithubTrust(IDLE, form({ account_id: "nightly-sync", subject: "repo:acme/data:ref:refs/heads/my branch" }))).success).toBe(false);

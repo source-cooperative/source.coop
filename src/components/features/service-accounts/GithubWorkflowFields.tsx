@@ -89,7 +89,10 @@ export function GithubWorkflowFields({
         {trailing}
       </Flex>
       <Text size="1" color="gray">
-        Binds <Code>{githubSubject(workflow)}</Code>
+        Trusts <Code>{githubSubject(workflow)}</Code>. Name the repository the way
+        its tokens do: <Code>owner/repo</Code>, or <Code>owner@123/repo@456</Code>{" "}
+        for a repository created after July 2026 or opted in to immutable subjects
+        — its Actions settings show the exact prefix.
       </Text>
     </Flex>
   );
