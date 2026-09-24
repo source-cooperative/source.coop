@@ -6,7 +6,11 @@ import {
 } from "@/lib/clients/database";
 import { type IndividualAccount, Actions } from "@/types";
 import { getPageSession } from "@/lib/api/utils";
-import { canCreateProductForAccount, isAuthorized } from "@/lib/api/authz";
+import {
+  canCreateProductForAccount,
+  canListOnProfile,
+  isAuthorized,
+} from "@/lib/api/authz";
 import { IndividualProfile } from "@/components/features/profiles/IndividualProfile";
 
 interface IndividualProfilePageProps {
@@ -25,11 +29,7 @@ export async function IndividualProfilePage({
     1000
   );
 
-  // ListRepository, not GetRepository: an unlisted product is readable by
-  // anyone with the link but listed only for the account and its members.
-  products = products.filter((product) =>
-    isAuthorized(session, product, Actions.ListRepository)
-  );
+  products = products.filter((product) => canListOnProfile(session, product));
 
   const memberships = (
     await membershipsTable.listByUser(account.account_id)
