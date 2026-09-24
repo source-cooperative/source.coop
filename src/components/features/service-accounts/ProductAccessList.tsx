@@ -48,11 +48,13 @@ function AccessControl({
 
 /** The row "Grant a product" opens: which product, how much, a check to grant it and an X to cancel. */
 function GrantRow({
+  ownerAccountId,
   available,
   onGrant,
   onCancel,
   disabled,
 }: {
+  ownerAccountId: string;
   available: Pick<Product, "product_id" | "title">[];
   onGrant: (product_id: string, access: ProductAccess) => void;
   onCancel: () => void;
@@ -64,11 +66,29 @@ function GrantRow({
     <ConnectionRow
       title={
         <Select.Root value={product_id} onValueChange={setProductId}>
-          <Select.Trigger placeholder="Choose a product" aria-label="Product to grant" />
+          {/* The chosen title alone: the options' second line would make the
+              closed dropdown two lines tall. Never undefined, even before a
+              choice: Radix copies the chosen option into an empty trigger,
+              and switching between that and these children breaks the DOM. */}
+          <Select.Trigger placeholder="Choose a product" aria-label="Product to grant">
+            {available.find((p) => p.product_id === product_id)?.title ?? ""}
+          </Select.Trigger>
           <Select.Content position="popper">
             {available.map((p) => (
-              <Select.Item key={p.product_id} value={p.product_id}>
-                {p.title}
+              // Two lines, so the item grows past the one-line height Radix gives
+              // it; the path dims the item's own colour rather than taking a
+              // grey that would vanish on the highlighted item.
+              <Select.Item
+                key={p.product_id}
+                value={p.product_id}
+                style={{ height: "auto", paddingBlock: "var(--space-1)" }}
+              >
+                <Flex direction="column">
+                  <Text size="2">{p.title}</Text>
+                  <Text size="1" style={{ fontFamily: "var(--code-font-family)", opacity: 0.7 }}>
+                    {ownerAccountId}/{p.product_id}
+                  </Text>
+                </Flex>
               </Select.Item>
             ))}
           </Select.Content>
@@ -198,6 +218,7 @@ export function ProductAccessList({
           ))}
           {granting && (
             <GrantRow
+              ownerAccountId={ownerAccountId}
               available={available}
               disabled={disabled}
               onCancel={() => setGranting(false)}
