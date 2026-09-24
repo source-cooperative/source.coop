@@ -13,11 +13,7 @@ const meta = {
         <Heading size="6">Global land cover</Heading>
         <Text as="p" color="gray">Annual land cover observations for research and analysis.</Text>
       </Box>
-      {args.entry && (
-        <Box px={{ initial: "4", md: "0" }}>
-          <ProductCatalogStats {...args} />
-        </Box>
-      )}
+      <ProductCatalogStats {...args} px={{ initial: "4", md: "0" }} />
       <Card>
         <SectionHeader title="Contents" />
         <Text as="p">land-cover.tif</Text>
@@ -44,6 +40,9 @@ export const AboveContents: Story = {
 };
 
 export const Missing: Story = {};
+export const WithoutStatistics: Story = {
+  args: { entry: { account_id: "example", product_id: "land-cover" } },
+};
 export const Mobile: Story = {
   ...AboveContents,
   globals: { viewport: { value: "mobile1", isRotated: false } },

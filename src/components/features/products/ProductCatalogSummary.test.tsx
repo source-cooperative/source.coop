@@ -28,6 +28,18 @@ it("renders nothing while loading, on failure, or without a matching entry", () 
   expect(container).toBeEmptyDOMElement();
 });
 
+it.each([
+  {},
+  { exts: {} },
+  { exts: { "": 5, tif: 0 } },
+])("leaves no wrapper for a matched entry with no displayable statistics: %j", (statistics) => {
+  catalogHook.mockReturnValue(new Map([
+    ["org/data", { account_id: "org", product_id: "data", ...statistics }],
+  ]));
+  const { container } = render(<ProductCatalogSummary accountId="org" productId="data" />);
+  expect(container).toBeEmptyDOMElement();
+});
+
 it("updates the lookup when navigating between products", () => {
   catalogHook.mockReturnValue(new Map([
     ["org/data", { account_id: "org", product_id: "data", object_count: 2 }],
