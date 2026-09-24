@@ -12,7 +12,7 @@ jest.mock("@/lib/api/authz", () => ({ isAdmin: jest.fn() }));
 
 const { POST } = require("./route");
 
-const key = { jti: "j1", account_id: "nightly-sync", label: "HPC", expires_at: null };
+const key = { jti: "j1", account_id: "acme--nightly-sync", label: "HPC", expires_at: null };
 const params = { params: { jti: "j1" } };
 const req = () => new NextRequest("http://localhost/api/v1/service-account-keys/j1/exchanges", { method: "POST" });
 
@@ -20,14 +20,14 @@ describe("POST /api/v1/service-account-keys/[jti]/exchanges", () => {
   beforeEach(() => {
     jest.resetAllMocks();
     (serviceAccountKeysTable.fetchByJti as jest.Mock).mockResolvedValue(key);
-    (getApiSession as jest.Mock).mockResolvedValue({ account: { account_id: "nightly-sync" } });
+    (getApiSession as jest.Mock).mockResolvedValue({ account: { account_id: "acme--nightly-sync" } });
     (isAdmin as jest.Mock).mockReturnValue(false);
   });
 
   test("answers active for a live key, as the account it belongs to, and records the use", async () => {
     const res = await POST(req(), params);
     expect(res.status).toBe(200);
-    await expect(res.json()).resolves.toMatchObject({ account_id: "nightly-sync", active: true });
+    await expect(res.json()).resolves.toMatchObject({ account_id: "acme--nightly-sync", active: true });
     expect(serviceAccountKeysTable.set).toHaveBeenCalledWith("j1", "last_used_at", expect.any(String));
   });
 

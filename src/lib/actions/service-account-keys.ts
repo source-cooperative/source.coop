@@ -9,7 +9,7 @@ import {
   type ServiceAccountKey,
 } from "@/types";
 import { getPageSession } from "../api/utils";
-import { accountsTable, serviceAccountKeysTable } from "../clients";
+import { serviceAccountKeysTable } from "../clients";
 import { managedServiceAccount } from "@/lib/accounts/service-accounts";
 import { mintApiKey } from "@/lib/services/proxy-keys";
 import { editAccountServiceAccountsUrl, editServiceAccountUrl } from "@/lib/urls";
@@ -58,13 +58,6 @@ export async function issueApiKey(
   });
   if (!parsed.success) return outcome("Give the key a label of up to 64 characters", false);
   const record: ServiceAccountKey = parsed.data;
-
-  // The proxy forwards a bare subject and the resolver tries Ory first, so a
-  // service account whose id is also a person's Ory identity id would resolve
-  // to that person. Such an account gets no key.
-  if (await accountsTable.fetchByOryId(account.account_id)) {
-    return outcome("That account id is also a sign-in identity, so it cannot hold keys", false);
-  }
 
   await serviceAccountKeysTable.create(record);
   let key: string;
