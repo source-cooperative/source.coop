@@ -16,7 +16,7 @@ function Share({ value, total }: { value?: number; total?: number }) {
   if (value === undefined || total === undefined || total <= 0) return null;
   return (
     <Text as="span" size="1" color="gray" title="Share of whole-product total">
-      {" "}({((value / total) * 100).toLocaleString("en-US", { maximumFractionDigits: 1 })}%)
+      {((value / total) * 100).toLocaleString("en-US", { maximumFractionDigits: 1 })}%
     </Text>
   );
 }
@@ -45,9 +45,11 @@ export function ProductCatalogStats({ entry }: { entry?: CatalogEntry }) {
       <Table.Root size="1" className={styles.table}>
         <Table.Header>
           <Table.Row>
-            <Table.ColumnHeaderCell>Ext</Table.ColumnHeaderCell>
+            <Table.ColumnHeaderCell>File Extension</Table.ColumnHeaderCell>
             <Table.ColumnHeaderCell justify="end">Files</Table.ColumnHeaderCell>
+            <Table.ColumnHeaderCell aria-label="Percentage of all files" />
             <Table.ColumnHeaderCell justify="end">Bytes</Table.ColumnHeaderCell>
+            <Table.ColumnHeaderCell aria-label="Percentage of total bytes" />
           </Table.Row>
         </Table.Header>
         <Table.Body>
@@ -58,10 +60,14 @@ export function ProductCatalogStats({ entry }: { entry?: CatalogEntry }) {
               </Table.RowHeaderCell>
               <Table.Cell justify="end">
                 {files(entry.exts?.[extension])}
+              </Table.Cell>
+              <Table.Cell className={styles.share}>
                 <Share value={entry.exts?.[extension]} total={entry.object_count} />
               </Table.Cell>
               <Table.Cell justify="end" title={exactBytes(entry.ext_bytes?.[extension])}>
                 {bytes(entry.ext_bytes?.[extension])}
+              </Table.Cell>
+              <Table.Cell className={styles.share}>
                 <Share value={entry.ext_bytes?.[extension]} total={entry.total_bytes} />
               </Table.Cell>
             </Table.Row>
@@ -73,9 +79,11 @@ export function ProductCatalogStats({ entry }: { entry?: CatalogEntry }) {
             <Table.Cell justify="end">
               {files(entry.object_count)}
             </Table.Cell>
+            <Table.Cell className={styles.share} />
             <Table.Cell justify="end" title={exactBytes(entry.total_bytes)}>
               {bytes(entry.total_bytes)}
             </Table.Cell>
+            <Table.Cell className={styles.share} />
           </Table.Row>
         </tfoot>
       </Table.Root>

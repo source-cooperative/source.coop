@@ -11,9 +11,34 @@
 .table th,
 .table td {
   height: auto;
-  padding: var(--space-1);
+  padding: var(--space-1) calc(var(--space-1) / 2);
+  box-shadow: none;
 }
 
 .table td {
   white-space: nowrap;
+}
+
+.table .share {
+  width: 1%;
+  padding-left: 0;
+}
+
+.table tr > :first-child {
+  min-width: 4.5rem;
+}
+
+.table thead th:first-child {
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+.table tbody tr:nth-child(even) > * {
+  background-color: var(--gray-a3);
+}
+
+.table thead th,
+.table tfoot th,
+.table tfoot td {
+  background-color: var(--blue-3);
 }

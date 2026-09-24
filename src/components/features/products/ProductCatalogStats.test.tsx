@@ -25,13 +25,16 @@ it("shows the top three lowercase extensions with whole-product totals and perce
   expect(rows.slice(1).map((row) => within(row).getByRole("rowheader").textContent))
     .toEqual(["tif", "parquet", "json", "Total"]);
   expect(within(rows[1]).getAllByRole("cell").map((cell) => cell.textContent))
-    .toEqual(["50 (50%)", "4 KB (40%)"]);
+    .toEqual(["50", "50%", "4 KB", "40%"]);
   expect(within(rows[4]).getAllByRole("cell").map((cell) => cell.textContent))
-    .toEqual(["100", "10 KB"]);
+    .toEqual(["100", "", "10 KB", ""]);
+  expect(screen.getByRole("columnheader", { name: "File Extension" })).toBeInTheDocument();
+  expect(within(rows[0]).getAllByRole("columnheader").map((cell) => cell.textContent))
+    .toEqual(["File Extension", "Files", "", "Bytes", ""]);
   expect(screen.getByText("4 KB").closest("td")).toHaveAttribute("title", "4,096 bytes");
   expect(screen.queryByText("csv")).not.toBeInTheDocument();
   expect(screen.queryByText("Percentages use whole-product totals.")).not.toBeInTheDocument();
-  expect(screen.getByText("(40%)").tagName).toBe("SPAN");
+  expect(screen.getByText("40%").tagName).toBe("SPAN");
 });
 
 it("uses an alphabetical tie-break for equal file counts", () => {
@@ -45,15 +48,15 @@ it("shows missing values as unknown without deriving totals from partial extensi
   const tif = screen.getByRole("rowheader", { name: "tif" }).closest("tr")!;
   const csv = screen.getByRole("rowheader", { name: "csv" }).closest("tr")!;
   const total = screen.getByRole("rowheader", { name: "Total" }).closest("tr")!;
-  expect(within(tif).getAllByRole("cell").map((cell) => cell.textContent)).toEqual(["2", "—"]);
-  expect(within(csv).getAllByRole("cell").map((cell) => cell.textContent)).toEqual(["—", "1 KB"]);
-  expect(within(total).getAllByRole("cell").map((cell) => cell.textContent)).toEqual(["—", "—"]);
+  expect(within(tif).getAllByRole("cell").map((cell) => cell.textContent)).toEqual(["2", "", "—", ""]);
+  expect(within(csv).getAllByRole("cell").map((cell) => cell.textContent)).toEqual(["—", "", "1 KB", ""]);
+  expect(within(total).getAllByRole("cell").map((cell) => cell.textContent)).toEqual(["—", "", "—", ""]);
 });
 
 it("includes extensionless files", () => {
   render(<ProductCatalogStats entry={{ ...identity, object_count: 4, total_bytes: 1024, exts: { "": 2 }, ext_bytes: { "": 512 } }} />);
   expect(screen.getByRole("rowheader", { name: "No extension" })).toBeInTheDocument();
-  expect(screen.getAllByText("(50%)")).toHaveLength(2);
+  expect(screen.getAllByText("50%")).toHaveLength(2);
 });
 
 it("preserves zero totals without dividing by zero", () => {
@@ -65,5 +68,5 @@ it("preserves zero totals without dividing by zero", () => {
 
 it("rounds percentage shares to one decimal place", () => {
   render(<ProductCatalogStats entry={{ ...identity, object_count: 3, exts: { tif: 1 } }} />);
-  expect(screen.getByText("(33.3%)")).toBeInTheDocument();
+  expect(screen.getByText("33.3%")).toBeInTheDocument();
 });
