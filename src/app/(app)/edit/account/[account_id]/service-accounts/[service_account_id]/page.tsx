@@ -4,7 +4,12 @@ import { notFound } from "next/navigation";
 import { Box, Button } from "@radix-ui/themes";
 import { ArrowLeftIcon } from "@radix-ui/react-icons";
 import { ServiceAccountDetail } from "@/components/features/service-accounts";
-import { accountTrustsTable, membershipsTable } from "@/lib/clients/database";
+import {
+  accountTrustsTable,
+  membershipsTable,
+  productsTable,
+} from "@/lib/clients/database";
+import { CONFIG } from "@/lib/config";
 import { getPageSession } from "@/lib/api/utils";
 import { managedServiceAccount } from "@/lib/accounts/service-accounts";
 import { editAccountServiceAccountsUrl } from "@/lib/urls";
@@ -22,9 +27,10 @@ export default async function ServiceAccountPage({ params }: PageProps) {
   // Reached only under its own owner, so the settings around it are that owner's.
   if (!account || account.owner_account_id !== account_id) notFound();
 
-  const [trusts, memberships] = await Promise.all([
+  const [trusts, memberships, products] = await Promise.all([
     accountTrustsTable.listByAccount(account.account_id),
     membershipsTable.listByUser(account.account_id),
+    productsTable.listByAccountAll(account_id),
   ]);
 
   return (
@@ -40,6 +46,8 @@ export default async function ServiceAccountPage({ params }: PageProps) {
           trusts,
           grants: memberships.filter((m) => m.state === MembershipState.Member),
         }}
+        products={products.map(({ product_id, title }) => ({ product_id, title }))}
+        proxyOrigin={CONFIG.storage.endpoint}
       />
     </Box>
   );

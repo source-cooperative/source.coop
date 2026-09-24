@@ -9,19 +9,28 @@ import {
 } from "@/types";
 
 /**
- * One service account's page, reached from its row in the owner's list. It
- * shows the workflows the account trusts, each removable, with a dialog to
- * trust another; the products it reaches, linking to where each grant is
- * managed; and, set apart in a danger zone, disabling and deleting it.
+ * One service account's page, reached from its row in the owner's list and
+ * where creating one lands. It shows the workflows the account trusts, each
+ * with an "Example usage" modal holding the step the workflow adds, and a
+ * dialog to trust another; the products it reaches, each opening the
+ * product in a new tab, with its access changed or revoked in place and a
+ * form to grant another of the owner's products; and, set apart in a danger
+ * zone, disabling and deleting it.
  *
- * The actions are mocked in `.storybook/preview.tsx`. "Trust a GitHub
- * workflow" opens the dialog and its submit shows the workflow step; Delete
- * asks first.
+ * The actions are mocked in `.storybook/preview.tsx`.
  */
 const meta = {
   title: "Features/Service accounts/ServiceAccountDetail",
   component: ServiceAccountDetail,
   parameters: { layout: "padded" },
+  args: {
+    proxyOrigin: "https://data.source.coop",
+    products: [
+      { product_id: "climate-data", title: "Climate Data" },
+      { product_id: "reference-data", title: "Reference Data" },
+      { product_id: "field-notes", title: "Field Notes" },
+    ],
+  },
 } satisfies Meta<typeof ServiceAccountDetail>;
 
 export default meta;
@@ -80,4 +89,15 @@ export const Disabled: Story = {
 /** Just created with nothing named: it cannot sign in and reaches nothing. */
 export const Empty: Story = {
   args: { summary: { account, trusts: [], grants: [] } },
+};
+
+/** Every product the owner has is granted, so there is nothing left to add. */
+export const EverythingGranted: Story = {
+  args: {
+    summary,
+    products: [
+      { product_id: "climate-data", title: "Climate Data" },
+      { product_id: "reference-data", title: "Reference Data" },
+    ],
+  },
 };

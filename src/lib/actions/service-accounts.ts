@@ -2,7 +2,6 @@
 
 import { revalidatePath } from "next/cache";
 import { LOGGER } from "@/lib/logging";
-import { CONFIG } from "@/lib/config";
 import {
   AccountType,
   GITHUB_ACTIONS_ISSUER,
@@ -12,13 +11,15 @@ import {
   ServiceAccountCreationRequestSchema,
   serviceAccountId,
   isServiceAccount,
-  type GithubWorkflowUsage,
   type ServiceAccount,
   type ServiceAccountActionState,
   type ServiceAccountFormState,
 } from "@/types";
 import { canManageAccount } from "../api/authz";
-import { managedServiceAccount } from "@/lib/accounts/service-accounts";
+import {
+  managedServiceAccount,
+  serviceAccountGrantProblem,
+} from "@/lib/accounts/service-accounts";
 import { getPageSession } from "../api/utils";
 import {
   accountTrustsTable,
@@ -27,7 +28,6 @@ import {
   productsTable,
 } from "../clients";
 import { AlreadyTrustedError } from "../clients/database/account-trusts";
-import { githubWorkflowStep } from "@/lib/services/github-workflow";
 import { redirect } from "next/navigation";
 import { editAccountServiceAccountsUrl, editServiceAccountUrl } from "@/lib/urls";
 import { randomUUID } from "crypto";
@@ -48,30 +48,19 @@ function revalidate(account: ServiceAccount) {
   revalidatePath(editServiceAccountUrl(account.owner_account_id, account.account_id));
 }
 
-/** Trusts a GitHub workflow, and hands back the step it adds to act as the account. */
-async function trustGithub(
-  account_id: string,
-  subject: string,
-  created_by: string
-): Promise<GithubWorkflowUsage> {
-  // Checked before the write: a trust whose step cannot be handed back is one
-  // the user has no way to use.
-  const proxy = CONFIG.storage.endpoint;
-  if (!proxy) throw new Error("NEXT_PUBLIC_S3_ENDPOINT is unset; no data proxy to sign in to");
-  await accountTrustsTable.create({
+const trustGithub = (account_id: string, subject: string, created_by: string) =>
+  accountTrustsTable.create({
     account_id,
     issuer: GITHUB_ACTIONS_ISSUER,
     subject,
     created_at: new Date().toISOString(),
     created_by,
   });
-  return { subject, workflow_step: githubWorkflowStep(proxy, account_id) };
-}
 
 /**
- * Creates a service account under an owner, grants it the chosen products, and
- * trusts each GitHub workflow named — each gets back the step it adds to act
- * as the account.
+ * Creates a service account under an owner, grants it the chosen products,
+ * trusts each GitHub workflow named, and goes to the account's page, where
+ * each workflow's example usage is a click away.
  */
 export async function createServiceAccount(
   _prev: ServiceAccountFormState,
@@ -161,22 +150,16 @@ export async function createServiceAccount(
     });
   }
 
-  const trusts: GithubWorkflowUsage[] = [];
   for (const subject of subjects) {
-    trusts.push(await trustGithub(account_id, subject, session.account.account_id));
+    await trustGithub(account_id, subject, session.account.account_id);
   }
 
   LOGGER.info("Created service account", {
     operation: "createServiceAccount",
-    metadata: { account_id, owner_account_id, grants: grants.length, trusts: trusts.length },
+    metadata: { account_id, owner_account_id, grants: grants.length, trusts: subjects.length },
   });
   revalidatePath(editAccountServiceAccountsUrl(owner_account_id));
-  return {
-    fieldErrors: {},
-    message: "",
-    success: true,
-    created: { account_id, name, trusts },
-  };
+  redirect(editServiceAccountUrl(owner_account_id, account_id));
 }
 
 /** Trusts one more GitHub workflow on an existing service account. */
@@ -195,15 +178,14 @@ export async function addGithubTrust(
   if (!GITHUB_ACTIONS_SUBJECT_REGEX.test(subject)) {
     return outcome("Name one repository and one ref or environment", false);
   }
-  let added: GithubWorkflowUsage;
   try {
-    added = await trustGithub(account.account_id, subject, session.account.account_id);
+    await trustGithub(account.account_id, subject, session.account.account_id);
   } catch (error) {
     if (error instanceof AlreadyTrustedError) return outcome("Already trusted", false);
     throw error;
   }
   revalidate(account);
-  return { ...outcome("", true), added };
+  return outcome("Trusted", true);
 }
 
 export async function removeTrust(
@@ -261,4 +243,88 @@ export async function deleteServiceAccount(
   revalidatePath(editAccountServiceAccountsUrl(account.owner_account_id));
   // Its own page is gone; the list is where the user goes next.
   redirect(editAccountServiceAccountsUrl(account.owner_account_id));
+}
+
+/** One of this service account's live grants, or null for anything else. */
+async function ownGrant(account: ServiceAccount, membership_id: string) {
+  const grant = await membershipsTable.fetchById(membership_id);
+  return grant?.account_id === account.account_id && grant.state === MembershipState.Member
+    ? grant
+    : null;
+}
+
+const managedFrom = async (formData: FormData) =>
+  managedServiceAccount(await getPageSession(), String(formData.get("account_id") ?? ""));
+
+/**
+ * Grants the service account one of its owner's products. Its owner grants it
+ * directly, as at creation: nobody is at the keyboard to accept an invitation.
+ */
+export async function grantProduct(
+  _prev: ServiceAccountActionState,
+  formData: FormData
+): Promise<ServiceAccountActionState> {
+  const account = await managedFrom(formData);
+  if (!account) return outcome("You do not manage that service account", false);
+  const repository_id = String(formData.get("product_id") ?? "");
+  const role = formData.get("role") as MembershipRole;
+  const problem = serviceAccountGrantProblem(
+    account,
+    { membership_account_id: account.owner_account_id, repository_id },
+    role
+  );
+  if (problem) return outcome(problem, false);
+  if (!(await productsTable.fetchById(account.owner_account_id, repository_id))) {
+    return outcome(`${account.owner_account_id} has no product ${repository_id}`, false);
+  }
+  const held = await membershipsTable.listByUser(account.account_id);
+  if (held.some((m) => m.repository_id === repository_id && m.state === MembershipState.Member)) {
+    return outcome(`It can already reach ${repository_id}`, false);
+  }
+  await membershipsTable.create({
+    membership_id: randomUUID(),
+    account_id: account.account_id,
+    membership_account_id: account.owner_account_id,
+    repository_id,
+    role,
+    state: MembershipState.Member,
+    state_changed: new Date().toISOString(),
+  });
+  revalidate(account);
+  return outcome(`Granted ${repository_id}`, true);
+}
+
+/** Changes a grant between read and read-and-write. */
+export async function setGrantRole(
+  _prev: ServiceAccountActionState,
+  formData: FormData
+): Promise<ServiceAccountActionState> {
+  const account = await managedFrom(formData);
+  if (!account) return outcome("You do not manage that service account", false);
+  const grant = await ownGrant(account, String(formData.get("membership_id") ?? ""));
+  if (!grant) return outcome("No such grant on this account", false);
+  const role = formData.get("role") as MembershipRole;
+  const problem = serviceAccountGrantProblem(account, grant, role);
+  if (problem) return outcome(problem, false);
+  await membershipsTable.update({ ...grant, role, state_changed: new Date().toISOString() });
+  revalidate(account);
+  return outcome(`${grant.repository_id} updated`, true);
+}
+
+/** Revokes a grant, the way a person's membership is revoked. */
+export async function revokeGrant(
+  _prev: ServiceAccountActionState,
+  formData: FormData
+): Promise<ServiceAccountActionState> {
+  const account = await managedFrom(formData);
+  if (!account) return outcome("You do not manage that service account", false);
+  const grant = await ownGrant(account, String(formData.get("membership_id") ?? ""));
+  if (!grant) return outcome("No such grant on this account", false);
+  await membershipsTable.update({
+    ...grant,
+    state: MembershipState.Revoked,
+    state_changed: new Date().toISOString(),
+  });
+  revalidate(account);
+  return outcome(`${grant.repository_id} revoked`, true);
 }

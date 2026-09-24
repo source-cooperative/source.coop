@@ -24,7 +24,6 @@ import {
   slugifyToId,
   type Product,
 } from "@/types";
-import { ServiceAccountCreated } from "./ServiceAccountCreated";
 import {
   GithubWorkflowFields,
   NEW_GITHUB_WORKFLOW,
@@ -41,9 +40,8 @@ const NO_ACCESS = "none";
 
 /**
  * Creates a service account: who it is, how software signs in as it, and
- * what it may reach. Sign-in and reach are both optional at creation — each
- * can be added from the account's page later — but a workflow named here gets
- * its workflow step the moment the account exists.
+ * what it may reach. Sign-in and reach are both optional at creation, and
+ * both can be changed on the account's page, where submitting lands.
  */
 export function ServiceAccountForm({ ownerAccountId, products }: ServiceAccountFormProps) {
   const [state, formAction, pending] = useActionState(
@@ -55,10 +53,6 @@ export function ServiceAccountForm({ ownerAccountId, products }: ServiceAccountF
   const [editingId, setEditingId] = useState(false);
   const [workflows, setWorkflows] = useState<GithubWorkflow[]>([]);
   const [grants, setGrants] = useState<Record<string, MembershipRole>>({});
-
-  if (state.success && state.created) {
-    return <ServiceAccountCreated created={state.created} ownerAccountId={ownerAccountId} />;
-  }
 
   // A rejected id opens the field, so the error sits beside something to fix.
   const showIdField = editingId || !!state.fieldErrors.local_id;

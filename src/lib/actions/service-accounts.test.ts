@@ -1,5 +1,8 @@
 import {
   addGithubTrust,
+  grantProduct,
+  revokeGrant,
+  setGrantRole,
   createServiceAccount,
   deleteServiceAccount,
   removeTrust,
@@ -28,13 +31,23 @@ import {
 
 jest.mock("../clients", () => ({
   accountsTable: { fetchById: jest.fn(), create: jest.fn(), update: jest.fn(), delete: jest.fn() },
-  membershipsTable: { create: jest.fn(), listByUser: jest.fn(), delete: jest.fn() },
+  membershipsTable: {
+    create: jest.fn(),
+    listByUser: jest.fn(),
+    delete: jest.fn(),
+    fetchById: jest.fn(),
+    update: jest.fn(),
+  },
   productsTable: { fetchById: jest.fn() },
   accountTrustsTable: { create: jest.fn(), delete: jest.fn() },
 }));
 jest.mock("../api/utils", () => ({ getPageSession: jest.fn() }));
 jest.mock("../api/authz", () => ({ canManageAccount: jest.fn() }));
-jest.mock("@/lib/accounts/service-accounts", () => ({ managedServiceAccount: jest.fn() }));
+jest.mock("@/lib/accounts/service-accounts", () => ({
+  managedServiceAccount: jest.fn(),
+  serviceAccountGrantProblem: jest.requireActual("@/lib/accounts/service-accounts")
+    .serviceAccountGrantProblem,
+}));
 jest.mock("next/cache", () => ({ revalidatePath: jest.fn() }));
 jest.mock("next/navigation", () => ({ redirect: jest.fn() }));
 
@@ -86,7 +99,7 @@ beforeEach(() => {
 describe("createServiceAccount", () => {
   const base = { owner_account_id: "acme", name: "Nightly Sync", local_id: "nightly-sync" };
 
-  it("creates the account, grants the products as a member, and trusts each workflow — once each", async () => {
+  it("creates the account, grants the products as a member, trusts each workflow — once each — and goes to its page", async () => {
     const data = form({
       ...base,
       github_subject: ["repo:acme/data:ref:refs/heads/main", "repo:acme/data:environment:prod"],
@@ -96,8 +109,8 @@ describe("createServiceAccount", () => {
     // A workflow card or a grant field left in twice is one trust, one membership.
     data.append("github_subject", "repo:acme/data:ref:refs/heads/main");
     data.append("grant:climate-data", MembershipRole.WriteData);
-    const result = await createServiceAccount(IDLE_FORM, data);
-    expect(result.success).toBe(true);
+    await createServiceAccount(IDLE_FORM, data);
+    expect(redirect).toHaveBeenCalledWith("/edit/account/acme/service-accounts/acme--nightly-sync");
     expect(mocks.accounts.create).toHaveBeenCalledWith(
       expect.objectContaining({ account_id: "acme--nightly-sync", type: AccountType.SERVICE, owner_account_id: "acme" })
     );
@@ -120,12 +133,6 @@ describe("createServiceAccount", () => {
         created_by: "acme-owner",
       })
     );
-    expect(result.created?.trusts.map((t) => t.subject)).toEqual([
-      "repo:acme/data:ref:refs/heads/main",
-      "repo:acme/data:environment:prod",
-    ]);
-    // The step names the account in the role ARN; nothing in it expires.
-    expect(result.created?.trusts[0].workflow_step).toContain("arn:aws:iam::acme--nightly-sync:role/FullAccess");
   });
 
   it("refuses an unpinned workflow, a product the owner does not have, a bad role, and a short id with its own `--` — before writing anything", async () => {
@@ -193,7 +200,6 @@ describe("lifecycle", () => {
   it("trusts one more workflow, refusing an unpinned subject, a repeat, and a disabled account", async () => {
     const ok = await addGithubTrust(IDLE, form({ account_id: "acme--nightly-sync", subject: "repo:acme/data:ref:refs/heads/main" }));
     expect(ok.success).toBe(true);
-    expect(ok.added?.workflow_step).toContain("arn:aws:iam::acme--nightly-sync:role/FullAccess");
     expect((await addGithubTrust(IDLE, form({ account_id: "acme--nightly-sync", subject: "repo:acme/*" }))).success).toBe(false);
     // GitHub's immutable form carries ids on both owner and repository; a mix is not a form GitHub mints.
     expect((await addGithubTrust(IDLE, form({ account_id: "acme--nightly-sync", subject: "repo:acme@123456/data@456789:ref:refs/heads/main" }))).success).toBe(true);
@@ -216,5 +222,61 @@ describe("lifecycle", () => {
     expect((await addGithubTrust(IDLE, form({ account_id: "acme--nightly-sync", subject: "repo:acme/data:ref:refs/heads/main" }))).success).toBe(false);
     expect(mocks.accounts.delete).not.toHaveBeenCalled();
     expect(mocks.trusts.create).not.toHaveBeenCalled();
+  });
+});
+
+describe("grants from the account's page", () => {
+  const grant = {
+    membership_id: "m1",
+    account_id: "acme--nightly-sync",
+    membership_account_id: "acme",
+    repository_id: "climate-data",
+    role: MembershipRole.ReadData,
+    state: MembershipState.Member,
+    state_changed: "2026-01-01T00:00:00.000Z",
+  };
+  beforeEach(() => {
+    mocks.managed.mockResolvedValue(bot as never);
+    mocks.memberships.listByUser.mockResolvedValue([]);
+    mocks.memberships.fetchById.mockResolvedValue(grant as never);
+  });
+
+  it("grants one of the owner's products as a member, and only once", async () => {
+    const ok = await grantProduct(IDLE, form({ account_id: "acme--nightly-sync", product_id: "reference-data", role: MembershipRole.WriteData }));
+    expect(ok.success).toBe(true);
+    expect(mocks.memberships.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        account_id: "acme--nightly-sync",
+        membership_account_id: "acme",
+        repository_id: "reference-data",
+        role: MembershipRole.WriteData,
+        state: MembershipState.Member,
+      })
+    );
+    mocks.memberships.listByUser.mockResolvedValue([grant as never]);
+    expect((await grantProduct(IDLE, form({ account_id: "acme--nightly-sync", product_id: "climate-data", role: MembershipRole.ReadData }))).success).toBe(false);
+  });
+
+  it("refuses a product the owner lacks, a role beyond read or write, and someone who does not manage it", async () => {
+    expect((await grantProduct(IDLE, form({ account_id: "acme--nightly-sync", product_id: "not-ours", role: MembershipRole.ReadData }))).success).toBe(false);
+    expect((await grantProduct(IDLE, form({ account_id: "acme--nightly-sync", product_id: "climate-data", role: MembershipRole.Owners }))).success).toBe(false);
+    mocks.managed.mockResolvedValue(null);
+    expect((await grantProduct(IDLE, form({ account_id: "acme--nightly-sync", product_id: "climate-data", role: MembershipRole.ReadData }))).success).toBe(false);
+    expect(mocks.memberships.create).not.toHaveBeenCalled();
+  });
+
+  it("changes a grant's access and revokes it, but only its own grants", async () => {
+    expect((await setGrantRole(IDLE, form({ account_id: "acme--nightly-sync", membership_id: "m1", role: MembershipRole.WriteData }))).success).toBe(true);
+    expect(mocks.memberships.update).toHaveBeenLastCalledWith(expect.objectContaining({ membership_id: "m1", role: MembershipRole.WriteData }));
+    expect((await setGrantRole(IDLE, form({ account_id: "acme--nightly-sync", membership_id: "m1", role: MembershipRole.Maintainers }))).success).toBe(false);
+
+    expect((await revokeGrant(IDLE, form({ account_id: "acme--nightly-sync", membership_id: "m1" }))).success).toBe(true);
+    expect(mocks.memberships.update).toHaveBeenLastCalledWith(expect.objectContaining({ membership_id: "m1", state: MembershipState.Revoked }));
+
+    mocks.memberships.update.mockClear();
+    mocks.memberships.fetchById.mockResolvedValue({ ...grant, account_id: "someone-else" } as never);
+    expect((await setGrantRole(IDLE, form({ account_id: "acme--nightly-sync", membership_id: "m1", role: MembershipRole.WriteData }))).success).toBe(false);
+    expect((await revokeGrant(IDLE, form({ account_id: "acme--nightly-sync", membership_id: "m1" }))).success).toBe(false);
+    expect(mocks.memberships.update).not.toHaveBeenCalled();
   });
 });

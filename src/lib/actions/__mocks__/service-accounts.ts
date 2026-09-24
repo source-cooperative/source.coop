@@ -1,6 +1,5 @@
 import { fn } from "storybook/test";
 import type * as Real from "../service-accounts";
-import { githubWorkflowStep } from "@/lib/services/github-workflow";
 import type {
   ServiceAccountActionState,
   ServiceAccountFormState,
@@ -12,39 +11,19 @@ import type {
  * and brings the AWS SDK with it, so nothing that imports it can render in a
  * browser bundle without this.
  *
- * `createServiceAccount` resolves to a created account trusting each workflow
- * named, so the post-create view is reachable by submitting the form. The
- * lifecycle actions resolve to an idle state.
+ * The real `createServiceAccount` ends in a redirect to the new account's
+ * page, which Storybook cannot follow, so this one resolves as though it
+ * succeeded. `addGithubTrust` succeeds, so its dialog closes as it does in the
+ * app. The rest resolve to an idle state.
  */
 const idle = (): ServiceAccountActionState => ({ message: "", success: false });
 
-const STEP = githubWorkflowStep("https://data.source.coop", "miskatonic--nightly-sync");
-
 export const createServiceAccount: typeof Real.createServiceAccount = fn(
-  async (_prev, formData): Promise<ServiceAccountFormState> => ({
-    fieldErrors: {},
-    message: "",
-    success: true,
-    created: {
-      account_id: `${formData.get("owner_account_id") || "miskatonic"}--${formData.get("local_id") || "nightly-sync"}`,
-      name: String(formData.get("name") || "Nightly Sync"),
-      trusts: formData.getAll("github_subject").map((subject: FormDataEntryValue) => ({
-        subject: String(subject),
-        workflow_step: STEP,
-      })),
-    },
-  })
+  async (): Promise<ServiceAccountFormState> => ({ fieldErrors: {}, message: "", success: true })
 ).mockName("createServiceAccount");
 
 export const addGithubTrust: typeof Real.addGithubTrust = fn(
-  async (_prev, formData): Promise<ServiceAccountActionState> => ({
-    message: "",
-    success: true,
-    added: {
-      subject: String(formData.get("subject") || "repo:miskatonic/archive:ref:refs/heads/main"),
-      workflow_step: STEP,
-    },
-  })
+  async (): Promise<ServiceAccountActionState> => ({ message: "Trusted", success: true })
 ).mockName("addGithubTrust");
 
 export const removeTrust: typeof Real.removeTrust = fn(async () => idle()).mockName("removeTrust");
@@ -54,3 +33,6 @@ export const setServiceAccountDisabled: typeof Real.setServiceAccountDisabled = 
 export const deleteServiceAccount: typeof Real.deleteServiceAccount = fn(async () => idle()).mockName(
   "deleteServiceAccount"
 );
+export const grantProduct: typeof Real.grantProduct = fn(async () => idle()).mockName("grantProduct");
+export const setGrantRole: typeof Real.setGrantRole = fn(async () => idle()).mockName("setGrantRole");
+export const revokeGrant: typeof Real.revokeGrant = fn(async () => idle()).mockName("revokeGrant");

@@ -10,9 +10,10 @@ import { ServiceAccountForm } from "./ServiceAccountForm";
  * exact subject it binds is shown beneath it as you type. Products come from
  * the owner; each ticked one gets a read or read-and-write choice.
  *
- * `createServiceAccount` is mocked in `.storybook/preview.tsx` and resolves as
- * though the account were created, so **submitting shows the post-create view**
- * with a workflow step per workflow named.
+ * Submitting goes to the new account's page, where each workflow's example
+ * usage is a click away. Storybook cannot follow that redirect, so
+ * `createServiceAccount` is mocked in `.storybook/preview.tsx` to resolve
+ * without it.
  */
 const meta = {
   title: "Features/Service accounts/ServiceAccountForm",
