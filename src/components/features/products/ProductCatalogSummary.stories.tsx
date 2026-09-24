@@ -13,7 +13,7 @@ const meta = {
         <Heading size="6">Global land cover</Heading>
         <Text as="p" color="gray">Annual land cover observations for research and analysis.</Text>
       </Box>
-      <ProductCatalogStats {...args} px={{ initial: "4", md: "0" }} />
+      <ProductCatalogStats {...args} />
       <Card>
         <SectionHeader title="Contents" />
         <Text as="p">land-cover.tif</Text>
@@ -35,6 +35,7 @@ export const AboveContents: Story = {
       total_bytes: 12345678900,
       object_count: 12500,
       exts: { tif: 10000, parquet: 2000, json: 400, csv: 100 },
+      ext_bytes: { tif: 10000000000, parquet: 2000000000, json: 300000000, csv: 45678900 },
     },
   },
 };

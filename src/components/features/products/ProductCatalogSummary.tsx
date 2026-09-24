@@ -14,7 +14,6 @@ export function ProductCatalogSummary({
   return (
     <ProductCatalogStats
       entry={catalog?.get(`${accountId}/${productId}`)}
-      px={{ initial: "4", md: "0" }}
     />
   );
 }

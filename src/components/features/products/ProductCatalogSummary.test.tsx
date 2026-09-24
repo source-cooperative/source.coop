@@ -15,9 +15,9 @@ it("renders the current product's statistics without including other products", 
   render(<ProductCatalogSummary accountId="org" productId="data" />);
   expect(catalogHook).toHaveBeenCalledWith(true);
   expect(screen.getByText("1 KB")).toBeInTheDocument();
-  expect(screen.getByText("2 objects")).toBeInTheDocument();
-  expect(screen.getByText("TIF")).toBeInTheDocument();
-  expect(screen.queryByText("99 objects")).not.toBeInTheDocument();
+  expect(screen.getAllByText("2")).toHaveLength(2);
+  expect(screen.getByRole("rowheader", { name: "tif" })).toBeInTheDocument();
+  expect(screen.queryByText("99")).not.toBeInTheDocument();
 });
 
 it("renders nothing while loading, on failure, or without a matching entry", () => {
@@ -31,7 +31,7 @@ it("renders nothing while loading, on failure, or without a matching entry", () 
 it.each([
   {},
   { exts: {} },
-  { exts: { "": 5, tif: 0 } },
+  { exts: { "": 0, tif: 0 } },
 ])("leaves no wrapper for a matched entry with no displayable statistics: %j", (statistics) => {
   catalogHook.mockReturnValue(new Map([
     ["org/data", { account_id: "org", product_id: "data", ...statistics }],
@@ -46,8 +46,8 @@ it("updates the lookup when navigating between products", () => {
     ["org/next", { account_id: "org", product_id: "next", object_count: 3 }],
   ]));
   const { rerender } = render(<ProductCatalogSummary accountId="org" productId="data" />);
-  expect(screen.getByText("2 objects")).toBeInTheDocument();
+  expect(screen.getByText("2")).toBeInTheDocument();
   rerender(<ProductCatalogSummary accountId="org" productId="next" />);
-  expect(screen.getByText("3 objects")).toBeInTheDocument();
-  expect(screen.queryByText("2 objects")).not.toBeInTheDocument();
+  expect(screen.getByText("3")).toBeInTheDocument();
+  expect(screen.queryByText("2")).not.toBeInTheDocument();
 });
