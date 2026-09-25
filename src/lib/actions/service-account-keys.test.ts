@@ -1,21 +1,19 @@
+import { createHash } from "crypto";
 import { issueApiKey, revokeApiKey, setApiKeyExpiry } from "./service-account-keys";
 import { serviceAccountKeysTable } from "../clients";
 import { getPageSession } from "../api/utils";
 import { managedServiceAccount } from "@/lib/accounts/service-accounts";
-import { mintApiKey } from "@/lib/services/proxy-keys";
-import { AccountType, type Account, type ApiKeyActionState, type UserSession } from "@/types";
+import { API_KEY_PATTERN, AccountType, type Account, type ApiKeyActionState, type UserSession } from "@/types";
 
 jest.mock("../clients", () => ({
-  serviceAccountKeysTable: { create: jest.fn(), delete: jest.fn(), fetchByJti: jest.fn(), set: jest.fn() },
+  serviceAccountKeysTable: { create: jest.fn(), listByAccount: jest.fn(), set: jest.fn() },
 }));
 jest.mock("../api/utils", () => ({ getPageSession: jest.fn() }));
 jest.mock("@/lib/accounts/service-accounts", () => ({ managedServiceAccount: jest.fn() }));
-jest.mock("@/lib/services/proxy-keys", () => ({ mintApiKey: jest.fn() }));
 jest.mock("next/cache", () => ({ revalidatePath: jest.fn() }));
 
 const keys = serviceAccountKeysTable as jest.Mocked<typeof serviceAccountKeysTable>;
 const managed = managedServiceAccount as jest.MockedFunction<typeof managedServiceAccount>;
-const mint = mintApiKey as jest.MockedFunction<typeof mintApiKey>;
 
 const IDLE: ApiKeyActionState = { message: "", success: false };
 const bot = {
@@ -32,37 +30,40 @@ const form = (fields: Record<string, string>) => {
   for (const [k, v] of Object.entries(fields)) data.set(k, v);
   return data;
 };
+const sha256 = (s: string) => createHash("sha256").update(s).digest("hex");
 
 beforeEach(() => {
   jest.clearAllMocks();
   (getPageSession as jest.Mock).mockResolvedValue(session);
   managed.mockResolvedValue(bot as never);
   keys.create.mockImplementation(async (k) => k);
-  mint.mockResolvedValue("sck_eyJ.signed.key");
 });
 
 describe("issueApiKey", () => {
-  it("records the key, has the proxy sign it, and returns it once", async () => {
+  it("stores only the key's hash and returns the key once", async () => {
     const result = await issueApiKey(IDLE, form({ account_id: "acme--nightly-sync", label: "HPC", expires_in_days: "90" }));
     expect(result.success).toBe(true);
-    expect(result.issued?.key).toBe("sck_eyJ.signed.key");
-    const record = keys.create.mock.calls[0][0];
-    expect(record).toMatchObject({ account_id: "acme--nightly-sync", label: "HPC", created_by: "alice" });
-    expect(record.expires_at).not.toBeNull();
-    expect(mint).toHaveBeenCalledWith("ory-alice", { account_id: "acme--nightly-sync", jti: record.jti, expires_at: record.expires_at });
+    const key = result.issued!.key;
+    expect(key).toMatch(API_KEY_PATTERN);
+    const stored = keys.create.mock.calls[0][0];
+    expect(stored).toMatchObject({ key_hash: sha256(key), account_id: "acme--nightly-sync", label: "HPC", created_by: "alice" });
+    expect(stored.expires_at).not.toBeNull();
+    expect(JSON.stringify(stored)).not.toContain(key);
+    // The record handed back is the public one: no hash, and the same handle.
+    expect(result.issued!.record).not.toHaveProperty("key_hash");
+    expect(result.issued!.record.key_id).toBe(stored.key_id);
+  });
+
+  it("issues a different key every time", async () => {
+    const a = await issueApiKey(IDLE, form({ account_id: "acme--nightly-sync", label: "a" }));
+    const b = await issueApiKey(IDLE, form({ account_id: "acme--nightly-sync", label: "b" }));
+    expect(a.issued!.key).not.toBe(b.issued!.key);
   });
 
   it("issues a key with no expiry when asked", async () => {
     const result = await issueApiKey(IDLE, form({ account_id: "acme--nightly-sync", label: "forever", expires_in_days: "" }));
     expect(result.success).toBe(true);
     expect(keys.create.mock.calls[0][0].expires_at).toBeNull();
-  });
-
-  it("removes the record when the proxy will not sign, so no row looks like a live key", async () => {
-    mint.mockRejectedValue(new Error("502"));
-    const result = await issueApiKey(IDLE, form({ account_id: "acme--nightly-sync", label: "HPC" }));
-    expect(result.success).toBe(false);
-    expect(keys.delete).toHaveBeenCalledWith(keys.create.mock.calls[0][0].jti);
   });
 
   it("refuses a disabled service account, even to its manager", async () => {
@@ -79,27 +80,27 @@ describe("issueApiKey", () => {
     expect((await issueApiKey(IDLE, form({ account_id: "acme--nightly-sync", label: "" }))).success).toBe(false);
     expect((await issueApiKey(IDLE, form({ account_id: "acme--nightly-sync", label: "x", expires_in_days: "0" }))).success).toBe(false);
     expect(keys.create).not.toHaveBeenCalled();
-    expect(mint).not.toHaveBeenCalled();
   });
 });
 
 describe("revokeApiKey and setApiKeyExpiry", () => {
-  const record = { jti: "j1", account_id: "acme--nightly-sync", label: "HPC", expires_at: null } as never;
+  const record = { key_hash: "h1", key_id: "k1", account_id: "acme--nightly-sync", label: "HPC", expires_at: null } as never;
 
   it("revokes only a key on a service account the caller manages", async () => {
-    keys.fetchByJti.mockResolvedValue(record);
-    expect((await revokeApiKey(IDLE, form({ account_id: "acme--nightly-sync", jti: "j1" }))).success).toBe(true);
-    expect(keys.set).toHaveBeenCalledWith("j1", "revoked_at", expect.any(String));
+    keys.listByAccount.mockResolvedValue([record]);
+    expect((await revokeApiKey(IDLE, form({ account_id: "acme--nightly-sync", key_id: "k1" }))).success).toBe(true);
+    expect(keys.set).toHaveBeenCalledWith("h1", "revoked_at", expect.any(String));
 
-    keys.fetchByJti.mockResolvedValue({ ...(record as object), account_id: "other" } as never);
-    expect((await revokeApiKey(IDLE, form({ account_id: "acme--nightly-sync", jti: "j1" }))).success).toBe(false);
+    // A key the account does not hold is not found, whatever id is given.
+    keys.listByAccount.mockResolvedValue([]);
+    expect((await revokeApiKey(IDLE, form({ account_id: "acme--nightly-sync", key_id: "k1" }))).success).toBe(false);
   });
 
   it("changes expiry after issuance, including to never", async () => {
-    keys.fetchByJti.mockResolvedValue(record);
-    await setApiKeyExpiry(IDLE, form({ account_id: "acme--nightly-sync", jti: "j1", expires_in_days: "30" }));
-    expect(keys.set).toHaveBeenCalledWith("j1", "expires_at", expect.any(String));
-    await setApiKeyExpiry(IDLE, form({ account_id: "acme--nightly-sync", jti: "j1", expires_in_days: "" }));
-    expect(keys.set).toHaveBeenLastCalledWith("j1", "expires_at", null);
+    keys.listByAccount.mockResolvedValue([record]);
+    await setApiKeyExpiry(IDLE, form({ account_id: "acme--nightly-sync", key_id: "k1", expires_in_days: "30" }));
+    expect(keys.set).toHaveBeenCalledWith("h1", "expires_at", expect.any(String));
+    await setApiKeyExpiry(IDLE, form({ account_id: "acme--nightly-sync", key_id: "k1", expires_in_days: "" }));
+    expect(keys.set).toHaveBeenLastCalledWith("h1", "expires_at", null);
   });
 });

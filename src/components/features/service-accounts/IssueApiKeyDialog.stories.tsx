@@ -3,11 +3,13 @@ import { IssueApiKeyDialog } from "./IssueApiKeyDialog";
 
 /**
  * Issuing an API key: a label and an expiry, then the key — shown once, with
- * the copy affordance and the warning that says so.
+ * the copy affordance, the warning that says so, and the variables that point
+ * any AWS SDK or the AWS CLI at it.
  *
- * `issueApiKey` is mocked in `.storybook/preview.tsx` and resolves as though
- * the proxy had signed a key, so **submitting the form shows the show-once
- * view**. Open the dialog, give it a label, and issue.
+ * `issueApiKey` is mocked in `.storybook/preview.tsx` and resolves with a key
+ * of the real shape, `sck_` and 43 characters of nothing secret, so
+ * **submitting the form shows the show-once view**. Open the dialog, give it
+ * a label, and issue.
  */
 const meta = {
   title: "Features/Service accounts/IssueApiKeyDialog",
@@ -19,5 +21,5 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
-  args: { accountId: "miskatonic--nightly-sync" },
+  args: { accountId: "miskatonic--nightly-sync", proxyOrigin: "https://data.source.coop" },
 };

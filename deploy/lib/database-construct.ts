@@ -77,8 +77,9 @@ export class DatabaseConstruct extends Construct {
     this.serviceAccountKeysTable = this.createTable({
       name: "service-account-keys",
       stage,
-      // The key's jti; the key itself is never stored.
-      partitionKey: "jti",
+      // SHA-256 of the key, which the proxy presents to look it up; the key
+      // itself is never stored.
+      partitionKey: "key_hash",
       indexes: [
         {
           // fetch the keys of a service account
