@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createHash, randomBytes, randomUUID } from "crypto";
+import { randomBytes, randomUUID } from "crypto";
 import { LOGGER } from "@/lib/logging";
 import {
   API_KEY_PREFIX,
@@ -12,6 +12,7 @@ import {
 } from "@/types";
 import { getPageSession } from "../api/utils";
 import { serviceAccountKeysTable } from "../clients";
+import { hashApiKey } from "@/lib/accounts/service-account-keys";
 import { managedServiceAccount } from "@/lib/accounts/service-accounts";
 import { editAccountServiceAccountsUrl, editServiceAccountUrl } from "@/lib/urls";
 
@@ -28,9 +29,6 @@ function expiryFrom(formData: FormData): string | null | undefined {
   if (!Number.isInteger(days) || days < 1 || days > 3650) return undefined;
   return new Date(Date.now() + days * 86_400_000).toISOString();
 }
-
-/** Hex SHA-256 of a key: what the record holds, and what the proxy presents. */
-const hashApiKey = (key: string) => createHash("sha256").update(key).digest("hex");
 
 /**
  * Issues an API key: an opaque secret (ADR-013) whose hash is the record's
