@@ -60,9 +60,10 @@ export function IssueApiKeyDialog({ accountId }: { accountId: string }) {
               <CopyToClipboard text={state.issued.key} />
             </Flex>
             <Text size="1" color="gray">
-              Put it in <Code size="1">AWS_WEB_IDENTITY_TOKEN_FILE</Code> and point
-              the SDK at the data proxy&apos;s STS endpoint. Revoke it here if it
-              leaks; only a hash of nothing is kept — the key itself is not stored.
+              Save it to a file, point <Code size="1">AWS_WEB_IDENTITY_TOKEN_FILE</Code>{" "}
+              at that file, and set <Code size="1">AWS_ROLE_ARN</Code> and the data
+              proxy&apos;s STS endpoint; a stock AWS SDK does the rest. Revoke it here
+              if it leaks. Only its hash is stored — the key itself is not.
             </Text>
             <Flex justify="end">
               <Dialog.Close>

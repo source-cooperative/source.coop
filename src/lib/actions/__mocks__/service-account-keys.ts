@@ -4,8 +4,9 @@ import type { ApiKeyActionState } from "@/types";
 
 /**
  * Storybook stand-in for the API-key server actions, redirected to by
- * `sb.mock()` in `.storybook/preview.tsx`. `issueApiKey` resolves as though a
- * key were signed, so the show-once view is reachable by submitting the dialog.
+ * `sb.mock()` in `.storybook/preview.tsx`. `issueApiKey` resolves with a key
+ * of the real shape, so the show-once view is reachable by submitting the
+ * dialog.
  */
 const idle = (): ApiKeyActionState => ({ message: "", success: false });
 
@@ -14,9 +15,9 @@ export const issueApiKey: typeof Real.issueApiKey = fn(
     message: "",
     success: true,
     issued: {
-      key: "sck_eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6ImsxIn0.eyJpc3MiOiJodHRwczovL2RhdGEuc291cmNlLmNvb3AiLCJzdWIiOiJuaWdodGx5LXN5bmMiLCJqdGkiOiIxIiwidHlwZSI6ImFwaV9rZXkifQ.signature",
+      key: "sck_storyFixtureNotARealKey0123456789abcdefghij",
       record: {
-        jti: "6f1c2a3b-4d5e-4f60-8a9b-0c1d2e3f4a5b",
+        key_id: "6f1c2a3b-4d5e-4f60-8a9b-0c1d2e3f4a5b",
         account_id: "nightly-sync",
         label: String(formData.get("label") || "CI"),
         created_at: "2026-03-12T00:00:00Z",

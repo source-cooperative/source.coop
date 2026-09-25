@@ -178,10 +178,10 @@ async function createTables() {
       new CreateTableCommand({
         TableName: getTableName("service-account-keys"),
         AttributeDefinitions: [
-          { AttributeName: "jti", AttributeType: "S" },
+          { AttributeName: "key_hash", AttributeType: "S" },
           { AttributeName: "account_id", AttributeType: "S" },
         ],
-        KeySchema: [{ AttributeName: "jti", KeyType: "HASH" }],
+        KeySchema: [{ AttributeName: "key_hash", KeyType: "HASH" }],
         GlobalSecondaryIndexes: [
           {
             IndexName: "account_id",
