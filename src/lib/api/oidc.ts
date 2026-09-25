@@ -80,13 +80,13 @@ export async function verifyProxyAssertion(
     // (e.g. legacy clients still sending an API key), not an anomaly — log at
     // debug so it doesn't flood warn-level logs on every such request.
     LOGGER.debug("No Bearer token for OIDC authentication, skipping", {
-      operation: "authenticateWithOidcToken",
+      operation: "verifyProxyAssertion",
     });
     return null;
   }
 
   LOGGER.debug("Authenticating with OIDC token", {
-    operation: "authenticateWithOidcToken",
+    operation: "verifyProxyAssertion",
     metadata: { audience },
   });
   const token = authorization.slice(7);
@@ -132,7 +132,7 @@ export async function verifyProxyAssertion(
       // Leave the failure marker.
     }
     const logPayload = {
-      operation: "authenticateWithOidcToken",
+      operation: "verifyProxyAssertion",
       metadata: {
         error_name: e?.name,
         error_code: e?.code,
