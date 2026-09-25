@@ -11,6 +11,7 @@ jest.mock("@/lib/clients", () => ({
 // Throwaway P-256 pairs standing in for GitHub's signing keys.
 const github = generateKeyPairSync("ec", { namedCurve: "P-256" });
 const rotated = generateKeyPairSync("ec", { namedCurve: "P-256" });
+const later = generateKeyPairSync("ec", { namedCurve: "P-256" });
 const published = (...keys: [string, KeyObject][]) =>
   Response.json({
     public_keys: keys.map(([key_identifier, key]) => ({
@@ -19,6 +20,9 @@ const published = (...keys: [string, KeyObject][]) =>
       is_current: true,
     })),
   });
+
+const TEN_MINUTES = 10 * 60_000;
+let now = Date.now();
 
 const LIVE = `sck_${"L".repeat(43)}`;
 const UNKNOWN = `sck_${"U".repeat(43)}`;
@@ -47,6 +51,9 @@ const req = (body: string, { id = "k1", key = github.privateKey, signed = body }
 describe("POST /api/v1/secret-scanning/github", () => {
   beforeEach(() => {
     jest.resetAllMocks();
+    // The route keeps GitHub's keys between requests; each test starts past its refetch throttle.
+    now += TEN_MINUTES;
+    jest.spyOn(Date, "now").mockImplementation(() => now);
     jest.spyOn(global, "fetch").mockImplementation(async () => published(["k1", github.publicKey]));
     (serviceAccountKeysTable.fetchByHash as jest.Mock).mockImplementation(async (hash: string) =>
       hash === sha256(LIVE) ? { key_hash: hash, key_id: "key-1", account_id: "acme--nightly-sync" } : null
@@ -89,16 +96,38 @@ describe("POST /api/v1/secret-scanning/github", () => {
     expect((await POST(req(JSON.stringify({ token: LIVE })))).status).toBe(400);
   });
 
-  test("keeps GitHub's keys, fetching them again only for an identifier it has not seen", async () => {
+  test("keeps GitHub's keys, fetching them again for an unseen identifier at most every ten minutes", async () => {
     await POST(req(report()));
-    (global.fetch as jest.Mock).mockClear();
-    (global.fetch as jest.Mock).mockImplementation(async () =>
-      published(["k1", github.publicKey], ["k2", rotated.publicKey])
-    );
+    now += TEN_MINUTES;
+    const fetched = (global.fetch as jest.Mock).mockClear();
+    fetched.mockImplementation(async () => published(["k1", github.publicKey], ["k2", rotated.publicKey]));
     expect((await POST(req(report()))).status).toBe(200);
-    expect(global.fetch).not.toHaveBeenCalled();
+    expect(fetched).not.toHaveBeenCalled();
     expect((await POST(req(report(), { id: "k2", key: rotated.privateKey }))).status).toBe(200);
-    expect(global.fetch).toHaveBeenCalledTimes(1);
+    expect(fetched).toHaveBeenCalledTimes(1);
+    // Anyone can name an unseen identifier: within ten minutes of the last fetch, it spends none.
+    expect((await POST(req(report(LIVE), { id: "forged" }))).status).toBe(401);
+    expect(fetched).toHaveBeenCalledTimes(1);
+    expect(serviceAccountKeysTable.fetchByHash).not.toHaveBeenCalled();
+    now += TEN_MINUTES;
+    fetched.mockImplementation(async () => published(["k2", rotated.publicKey], ["k3", later.publicKey]));
+    expect((await POST(req(report(), { id: "k3", key: later.privateKey }))).status).toBe(200);
+    expect(fetched).toHaveBeenCalledTimes(2);
+  });
+
+  test("is 401, not 500, when the signature cannot be checked, and revokes nothing", async () => {
+    const fetched = (global.fetch as jest.Mock).mockRejectedValue(new TypeError("fetch failed"));
+    expect((await POST(req(report(LIVE), { id: "k-new" }))).status).toBe(401);
+    // A failed fetch counts against the throttle as well.
+    expect((await POST(req(report(LIVE), { id: "k-new" }))).status).toBe(401);
+    expect(fetched).toHaveBeenCalledTimes(1);
+    now += TEN_MINUTES;
+    fetched.mockImplementation(async () =>
+      Response.json({ public_keys: [{ key_identifier: "k-new", key: "not a key", is_current: true }] })
+    );
+    expect((await POST(req(report(LIVE), { id: "k-new" }))).status).toBe(401);
+    expect(fetched).toHaveBeenCalledTimes(2);
+    expect(serviceAccountKeysTable.fetchByHash).not.toHaveBeenCalled();
   });
 
   test("accepts the signed sample request from GitHub's documentation", async () => {
