@@ -124,7 +124,6 @@ export enum Actions {
   PutAccountProfile = "account:profile:put",
 
   GetAPIKey = "api_key:get",
-  CreateAPIKey = "api_key:create",
   RevokeAPIKey = "api_key:revoke",
 
   GetMembership = "membership:get",

@@ -3,6 +3,7 @@ import { Actions } from "@/types";
 import { StatusCodes } from "http-status-codes";
 import { isAuthorized } from "@/lib/api/authz";
 import { getApiSession } from "@/lib/api/utils";
+import { LEGACY_API_KEY_DEPRECATION } from "@/lib/api/legacy-api-keys";
 import { apiKeysTable } from "@/lib/clients/database/api-keys";
 
 /**
@@ -11,7 +12,8 @@ import { apiKeysTable } from "@/lib/clients/database/api-keys";
  *   delete:
  *     tags: [API Keys]
  *     summary: Delete API key
- *     description: Deletes an existing API key.
+ *     deprecated: true
+ *     description: Deletes a legacy API key, secret and all. Legacy API keys grant no access; this route serves until the sunset date so their owners can delete them. The response carries `Deprecation` and `Sunset` headers.
  *     parameters:
  *       - in: path
  *         name: access_key_id
@@ -49,10 +51,10 @@ export async function DELETE(
         { status: StatusCodes.UNAUTHORIZED }
       );
     }
-    // Note: Actual deletion logic would be implemented here
+    await apiKeysTable.delete(apiKey.access_key_id);
     return NextResponse.json(
       { message: "API key deleted successfully" },
-      { status: StatusCodes.OK }
+      { status: StatusCodes.OK, headers: LEGACY_API_KEY_DEPRECATION }
     );
   } catch (err: any) {
     return NextResponse.json(
