@@ -82,7 +82,7 @@ const summary: ServiceAccountSummary = {
   ],
   keys: [
     {
-      jti: "k1",
+      key_id: "k1",
       account_id: "nightly-sync",
       label: "HPC cron job",
       created_at: "2026-03-12T00:00:00Z",
@@ -91,7 +91,7 @@ const summary: ServiceAccountSummary = {
       last_used_at: "2026-03-20T00:00:00Z",
     },
     {
-      jti: "k2",
+      key_id: "k2",
       account_id: "nightly-sync",
       label: "Old laptop",
       created_at: "2025-03-12T00:00:00Z",

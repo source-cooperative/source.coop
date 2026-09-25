@@ -14,7 +14,7 @@ import {
 import { getPageSession } from "@/lib/api/utils";
 import { canManageAccount } from "@/lib/api/authz";
 import { createServiceAccountUrl } from "@/lib/urls";
-import { MembershipState, type ServiceAccountSummary } from "@/types";
+import { MembershipState, publicKey, type ServiceAccountSummary } from "@/types";
 
 export const metadata: Metadata = { title: "Service accounts" };
 
@@ -38,7 +38,7 @@ export default async function ServiceAccountsPage({ params }: PageProps) {
       grants: (await membershipsTable.listByUser(account.account_id)).filter(
         (m) => m.state === MembershipState.Member
       ),
-      keys: await serviceAccountKeysTable.listByAccount(account.account_id),
+      keys: (await serviceAccountKeysTable.listByAccount(account.account_id)).map(publicKey),
     }))
   );
 

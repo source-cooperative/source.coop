@@ -208,7 +208,7 @@ export function ServiceAccountDetail({
               const marker = keyMarker(key);
               return (
                 <ConnectionRow
-                  key={key.jti}
+                  key={key.key_id}
                   title={
                     <Text size="2" weight="medium">
                       {key.label}
@@ -224,7 +224,7 @@ export function ServiceAccountDetail({
                     !key.revoked_at && (
                       <form action={revokeAction}>
                         <input type="hidden" name="account_id" value={account.account_id} />
-                        <input type="hidden" name="jti" value={key.jti} />
+                        <input type="hidden" name="key_id" value={key.key_id} />
                         <Button type="submit" size="1" variant="ghost" color="red" disabled={revoking}>
                           Revoke
                         </Button>

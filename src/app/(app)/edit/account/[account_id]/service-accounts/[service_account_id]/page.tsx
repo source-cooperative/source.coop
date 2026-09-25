@@ -14,7 +14,7 @@ import { CONFIG } from "@/lib/config";
 import { getPageSession } from "@/lib/api/utils";
 import { managedServiceAccount } from "@/lib/accounts/service-accounts";
 import { editAccountServiceAccountsUrl } from "@/lib/urls";
-import { MembershipState } from "@/types";
+import { MembershipState, publicKey } from "@/types";
 
 export const metadata: Metadata = { title: "Service account" };
 
@@ -47,7 +47,8 @@ export default async function ServiceAccountPage({ params }: PageProps) {
           account,
           trusts,
           grants: memberships.filter((m) => m.state === MembershipState.Member),
-          keys,
+          // The hash stays on the server; the client component sees the rest.
+          keys: keys.map(publicKey),
         }}
         products={products.map(({ product_id, title }) => ({ product_id, title }))}
         proxyOrigin={CONFIG.storage.endpoint}
