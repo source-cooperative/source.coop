@@ -1,5 +1,5 @@
-import { Text, Flex, HoverCard } from "@radix-ui/themes";
-import { Account } from "@/types";
+import { Badge, Text, Flex, HoverCard } from "@radix-ui/themes";
+import { Account, isServiceAccount } from "@/types";
 import { AccountIdentity, accountCardSurface } from "./AccountIdentity";
 // Deep import, not the `../features/profiles` barrel: that barrel also
 // re-exports EditProfileForm and OrganizationMembers, which reach server-only
@@ -43,6 +43,15 @@ export function AccountInfoHoverCard({
             accountId={account.account_id}
             avatar={<ProfileAvatar account={account} size="2" />}
           />
+
+          {/* The badge the picker and the memberships table give a machine. */}
+          {isServiceAccount(account) && (
+            <Flex>
+              <Badge size="1" color="gray" variant="outline">
+                Service account
+              </Badge>
+            </Flex>
+          )}
 
           {account.metadata_public?.bio && (
             <Text size="2" color="gray">

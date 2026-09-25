@@ -26,6 +26,7 @@ export class DatabaseConstruct extends Construct {
   public readonly dataConnectionsTable: dynamodb.Table;
   public readonly apiKeysTable: dynamodb.Table;
   public readonly membershipsTable: dynamodb.Table;
+  public readonly accountTrustsTable: dynamodb.Table;
 
   constructor(
     scope: Construct,
@@ -57,6 +58,18 @@ export class DatabaseConstruct extends Construct {
           partitionKey: "owner_account_id",
         },
       ],
+      removalPolicy,
+    });
+
+    this.accountTrustsTable = this.createTable({
+      name: "account-trusts",
+      stage,
+      // Keyed by the account, like a role's trust policy: the exchange asks
+      // whether *this* account trusts *this* issuer and subject, one exact
+      // read, and an account's trusts are one query. `identity` is
+      // `${issuer} ${subject}`.
+      partitionKey: "account_id",
+      sortKey: "identity",
       removalPolicy,
     });
 

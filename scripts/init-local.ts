@@ -49,7 +49,8 @@ async function tablesExist() {
     tables.TableNames?.includes(getTableName("products")) &&
     tables.TableNames?.includes(getTableName("api-keys")) &&
     tables.TableNames?.includes(getTableName("data-connections")) &&
-    tables.TableNames?.includes(getTableName("memberships"))
+    tables.TableNames?.includes(getTableName("memberships")) &&
+    tables.TableNames?.includes(getTableName("account-trusts"))
   );
 }
 
@@ -77,6 +78,7 @@ async function createTables() {
   await deleteTable(getTableName("api-keys"));
   await deleteTable(getTableName("data-connections"));
   await deleteTable(getTableName("memberships"));
+  await deleteTable(getTableName("account-trusts"));
 
   // Wait for tables to be fully deleted
   await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -140,6 +142,31 @@ async function createTables() {
     console.log(`✓ Created ${getTableName("accounts")} table`);
   } catch (e) {
     console.error(`✗ Error creating ${getTableName("accounts")} table:`, e);
+    throw e;
+  }
+
+  // Create account-trusts table
+  try {
+    await client.send(
+      new CreateTableCommand({
+        TableName: getTableName("account-trusts"),
+        AttributeDefinitions: [
+          { AttributeName: "account_id", AttributeType: "S" },
+          { AttributeName: "identity", AttributeType: "S" },
+        ],
+        KeySchema: [
+          { AttributeName: "account_id", KeyType: "HASH" },
+          { AttributeName: "identity", KeyType: "RANGE" },
+        ],
+        ProvisionedThroughput: {
+          ReadCapacityUnits: 5,
+          WriteCapacityUnits: 5,
+        },
+      })
+    );
+    console.log(`✓ Created ${getTableName("account-trusts")} table`);
+  } catch (e) {
+    console.error(`✗ Error creating ${getTableName("account-trusts")} table:`, e);
     throw e;
   }
 

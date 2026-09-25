@@ -4,7 +4,7 @@ import {
   ScanCommand,
   type ScanCommandOutput,
   UpdateCommand,
-  DeleteCommand,
+  TransactWriteCommand,
   PutCommand,
   BatchGetCommand,
 } from "@aws-sdk/lib-dynamodb";
@@ -17,6 +17,7 @@ import {
 } from "@/types";
 
 import { BaseTable } from "./base";
+import { AccountTrustsTable, accountTrustsTable, identityKey } from "./account-trusts";
 import { LOGGER } from "@/lib/logging";
 
 /**
@@ -35,6 +36,17 @@ export interface AccountSuggestion {
 
 export class AccountsTable extends BaseTable {
   model = "accounts";
+  private readonly trusts: AccountTrustsTable;
+
+  constructor({
+    trusts,
+    ...base
+  }: {
+    trusts?: AccountTrustsTable;
+  } & ConstructorParameters<typeof BaseTable>[0] = {}) {
+    super(base);
+    this.trusts = trusts ?? accountTrustsTable;
+  }
 
   async fetchById(account_id: string): Promise<Account | null> {
     try {
@@ -323,13 +335,31 @@ export class AccountsTable extends BaseTable {
     ) as ServiceAccount[];
   }
 
-  async delete(Key: { account_id: string; type: AccountType }): Promise<void> {
-    await this.client.send(
-      new DeleteCommand({
-        TableName: this.table,
-        Key,
-      })
-    );
+  /**
+   * Removes the account and its trusts together. A trust that outlived its
+   * account would be a dangling grant, so the row goes in the same transaction
+   * as its trusts — the last one, when there are more than a transaction
+   * holds, so a failure part-way leaves an account with fewer trusts and never
+   * trusts without an account. The trusts are read fresh: a memoized list from
+   * earlier in the request could predate one of them.
+   */
+  async delete(account_id: string): Promise<void> {
+    const trusts = await this.trusts.listByAccount(account_id, true);
+    const deletes = [
+      ...trusts.map((t) => ({
+        Delete: {
+          TableName: this.trusts.table,
+          Key: { account_id, identity: identityKey(t.issuer, t.subject) },
+        },
+      })),
+      { Delete: { TableName: this.table, Key: { account_id } } },
+    ];
+    const TRANSACTION_ITEMS = 100; // DynamoDB's ceiling per TransactWriteItems
+    for (let i = 0; i < deletes.length; i += TRANSACTION_ITEMS) {
+      await this.client.send(
+        new TransactWriteCommand({ TransactItems: deletes.slice(i, i + TRANSACTION_ITEMS) })
+      );
+    }
   }
 }
 

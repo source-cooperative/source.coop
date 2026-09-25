@@ -2,6 +2,7 @@ import {
   isAdmin,
   isAuthorized,
   canManageAccount,
+  canManageServiceAccount,
   canManageAccountDataConnections,
   canCreateProductForAccount,
 } from "./authz";
@@ -3930,8 +3931,8 @@ describe("self-authorization is for people only", () => {
 
 describe("service accounts", () => {
   const org = accounts.find((a) => a.account_id === "organization")!;
-  const bot = accounts.find((a) => a.account_id === "organization-bot")!;
-  const botSession = sessions["organization-bot"]!;
+  const bot = accounts.find((a) => a.account_id === "organization--bot")!;
+  const botSession = sessions["organization--bot"]!;
   const orgRepo = mappedProducts["organization"]["org-repo-id"];
   const otherOrgRepo = mappedProducts["organization"]["unlisted-org-repo-id"];
 
@@ -3970,6 +3971,26 @@ describe("service accounts", () => {
     // A person may create one under their own account.
     const ownBot = { ...bot, owner_account_id: "regular-user" };
     expect(isAuthorized(sessions["regular-user"], ownBot, Actions.CreateAccount)).toBe(true);
+  });
+
+  test("are managed by whoever manages their owner, and by no one else", () => {
+    expect(canManageServiceAccount(sessions["organization-owner-user"], bot, org)).toBe(true);
+    expect(canManageServiceAccount(sessions["organization-maintainer-user"], bot, org)).toBe(true);
+    expect(canManageServiceAccount(sessions["admin"], bot, org)).toBe(true);
+    expect(canManageServiceAccount(sessions["organization-read-data-user"], bot, org)).toBe(false);
+    expect(canManageServiceAccount(sessions["regular-user"], bot, org)).toBe(false);
+    expect(canManageServiceAccount(botSession, bot, org)).toBe(false);
+    // Only for service accounts: an organization's owner does not "manage" it
+    // this way, and neither does an admin.
+    expect(canManageServiceAccount(sessions["organization-owner-user"], org, org)).toBe(false);
+    expect(canManageServiceAccount(sessions["admin"], org, org)).toBe(false);
+    // Only through its own owner: managing some other account is not managing it.
+    const person = accounts.find((a) => a.account_id === "regular-user")!;
+    expect(canManageServiceAccount(sessions["regular-user"], bot, person)).toBe(false);
+    // A disabled owner takes its service accounts out of reach, admins aside.
+    const frozen = { ...org, disabled: true };
+    expect(canManageServiceAccount(sessions["organization-owner-user"], bot, frozen)).toBe(false);
+    expect(canManageServiceAccount(sessions["admin"], bot, frozen)).toBe(true);
   });
 
   test("hold no rights over themselves", () => {

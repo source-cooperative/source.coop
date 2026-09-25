@@ -5,7 +5,8 @@ import type { Account } from "@/types";
 
 /**
  * The card that introduces an account on hover, wherever a name appears in
- * passing — a product's owner, a connection's owner, a member list.
+ * passing — a product's owner, a connection's owner, a member list. A service
+ * account is marked as one.
  *
  * **Hover the name to open it.** The card is the whole component, so a
  * screenshot of the closed state shows nothing.
@@ -44,6 +45,23 @@ export const WithoutBio: Story = {
   args: {
     account: { ...account, metadata_public: {} } as unknown as Account,
     children: <Text size="2">Alice Coltrane</Text>,
+  },
+};
+
+/**
+ * A service account, marked with the badge it carries in the account picker
+ * and the memberships table.
+ */
+export const ServiceAccount: Story = {
+  args: {
+    account: {
+      account_id: "miskatonic--nightly-sync",
+      name: "Nightly Sync",
+      type: "service",
+      owner_account_id: "miskatonic",
+      metadata_public: {},
+    } as unknown as Account,
+    children: <Text size="2">Nightly Sync</Text>,
   },
 };
 

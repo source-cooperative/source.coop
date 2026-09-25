@@ -15,6 +15,8 @@ import {
   MIN_ID_LENGTH,
   MAX_ID_LENGTH,
   ID_REGEX,
+  MAX_SERVICE_ACCOUNT_ID_LENGTH,
+  SERVICE_ACCOUNT_ID_REGEX,
   AccountFlagsSchema,
   MIN_NAME_LENGTH,
   MAX_NAME_LENGTH,
@@ -148,9 +150,15 @@ export const OrganizationalAccountSchema = BaseAccountSchema.extend({
 export type OrganizationalAccount = z.infer<typeof OrganizationalAccountSchema>;
 
 // Service account schema. A machine principal owned by another account: it
-// has no Ory identity (it authenticates through identity bindings) and no
+// has no Ory identity (it authenticates as a subject it trusts, or with an
+// API key) and no
 // profile beyond the shared fields.
 export const ServiceAccountSchema = BaseAccountSchema.extend({
+  account_id: z
+    .string()
+    .max(MAX_SERVICE_ACCOUNT_ID_LENGTH)
+    .regex(SERVICE_ACCOUNT_ID_REGEX, "A service account id is `{owner}--{id}`")
+    .openapi({ example: "acme--nightly-sync" }),
   type: z.literal(AccountType.SERVICE),
   identity_id: z.undefined(),
   owner_account_id: z.string().openapi({ example: "owner-account-id" }),
@@ -235,8 +243,13 @@ export type OrganizationCreationRequest = z.infer<
   typeof OrganizationCreationRequestSchema
 >;
 
+/**
+ * What the create form posts: the display name, the owner, and the service
+ * account's own short id, which the action joins to the owner's id.
+ */
 export const ServiceAccountCreationRequestSchema =
-  AccountCreationRequestSchema.extend({
+  AccountCreationRequestSchema.pick({ name: true }).extend({
+    local_id: AccountCreationRequestSchema.shape.account_id,
     owner_account_id: z.string(),
   });
 

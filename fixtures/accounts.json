@@ -334,7 +334,7 @@
     "metadata_private": {}
   },
   {
-    "account_id": "organization-bot",
+    "account_id": "organization--bot",
     "type": "service",
     "name": "Organization Bot",
     "owner_account_id": "organization",

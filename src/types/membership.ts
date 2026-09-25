@@ -11,7 +11,13 @@
 
 import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
 import { z } from "zod";
-import { MIN_ID_LENGTH, MAX_ID_LENGTH, ID_REGEX } from "./shared";
+import {
+  MIN_ID_LENGTH,
+  MAX_ID_LENGTH,
+  MAX_SERVICE_ACCOUNT_ID_LENGTH,
+  ACCOUNT_ID_REGEX,
+  ID_REGEX,
+} from "./shared";
 
 extendZodWithOpenApi(z);
 
@@ -58,12 +64,14 @@ export const MembershipSchema = z
       .string()
       .uuid()
       .openapi({ example: "00000000-0000-0000-0000-000000000000" }),
+    // The member, which may be a service account; the account it is a member
+    // of never is.
     account_id: z
       .string()
       .min(MIN_ID_LENGTH)
-      .max(MAX_ID_LENGTH)
+      .max(MAX_SERVICE_ACCOUNT_ID_LENGTH)
       .toLowerCase()
-      .regex(ID_REGEX, "Invalid account ID format")
+      .regex(ACCOUNT_ID_REGEX, "Invalid account ID format")
       .openapi({ example: "account-id" }),
     membership_account_id: z
       .string()

@@ -93,12 +93,12 @@ export const WithServiceAccount: Story = {
     editable: true,
     memberships: [
       membership("acoltrane", MembershipRole.Owners, MembershipState.Member),
-      membership("nightly-sync", MembershipRole.WriteData, MembershipState.Member),
+      membership("miskatonic--nightly-sync", MembershipRole.WriteData, MembershipState.Member),
       membership("newcomer", MembershipRole.ReadData, MembershipState.Invited),
     ],
     memberAccountsMap: new Map([
       ...memberAccountsMap,
-      ["nightly-sync", account("nightly-sync", "Nightly Sync", "service")],
+      ["miskatonic--nightly-sync", account("miskatonic--nightly-sync", "Nightly Sync", "service")],
     ]),
   },
 };
