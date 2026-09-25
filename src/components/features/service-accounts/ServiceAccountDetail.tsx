@@ -26,7 +26,7 @@ import {
   setServiceAccountDisabled,
 } from "@/lib/actions/service-accounts";
 import { githubWorkflowStep } from "@/lib/services/github-workflow";
-import { revokeApiKey } from "@/lib/actions/service-account-keys";
+import { revokeApiKey, setApiKeyExpiry } from "@/lib/actions/service-account-keys";
 import {
   GITHUB_ACTIONS_ISSUER,
   IDLE_API_KEY_ACTION_STATE,
@@ -41,6 +41,7 @@ import { AddGithubTrustDialog } from "./AddGithubTrustDialog";
 import { ProductAccessList, type ProductAccess } from "./ProductAccessList";
 import { WorkflowSnippet } from "./WorkflowSnippet";
 import { IssueApiKeyDialog } from "./IssueApiKeyDialog";
+import { ApiKeyExpiryField } from "./ApiKeyExpiryField";
 
 const issuerLabel = (issuer: string) =>
   issuer === GITHUB_ACTIONS_ISSUER ? "GitHub Actions" : issuer;
@@ -78,6 +79,44 @@ function ExampleUsage({ subject, step }: { subject: string; step: string }) {
             </Button>
           </Dialog.Close>
         </Flex>
+      </Dialog.Content>
+    </Dialog.Root>
+  );
+}
+
+/**
+ * A new expiry for a live key, counted from now, in a modal: longer for a
+ * workload that needs it, shorter during an incident, or never.
+ */
+function ChangeExpiry({ accountId, apiKey }: { accountId: string; apiKey: ServiceAccountKey }) {
+  const [state, action, saving] = useActionState(setApiKeyExpiry, IDLE_API_KEY_ACTION_STATE);
+  return (
+    <Dialog.Root>
+      <Dialog.Trigger>
+        <Button size="1" variant="ghost">
+          Change expiry
+        </Button>
+      </Dialog.Trigger>
+      <Dialog.Content style={{ maxWidth: 440 }} aria-describedby={undefined}>
+        <Dialog.Title>When should {apiKey.label} expire?</Dialog.Title>
+        <form action={action}>
+          <input type="hidden" name="account_id" value={accountId} />
+          <input type="hidden" name="key_id" value={apiKey.key_id} />
+          <Flex direction="column" gap="3">
+            <ApiKeyExpiryField id={`expiry-${apiKey.key_id}`} never={apiKey.expires_at === null} />
+            <Status state={state} />
+            <Flex justify="end" gap="2">
+              <Dialog.Close>
+                <Button type="button" variant="soft" color="gray">
+                  Close
+                </Button>
+              </Dialog.Close>
+              <Button type="submit" disabled={saving}>
+                Save
+              </Button>
+            </Flex>
+          </Flex>
+        </form>
       </Dialog.Content>
     </Dialog.Root>
   );
@@ -195,8 +234,8 @@ export function ServiceAccountDetail({
 
       <SectionHeader
         title="API keys"
-        description="For environments without OIDC. Each is shown once, when it is issued."
-        rightButton={<IssueApiKeyDialog accountId={account.account_id} />}
+        description="For environments without OIDC. Each is shown once, when it is issued. Revoke a key that leaks; to stop every key at once, disable the account below."
+        rightButton={<IssueApiKeyDialog accountId={account.account_id} proxyOrigin={proxyOrigin} />}
       >
         {keys.length === 0 ? (
           <Text size="2" color="gray">
@@ -222,13 +261,17 @@ export function ServiceAccountDetail({
                   ].join(" · ")}
                   actions={
                     !key.revoked_at && (
-                      <form action={revokeAction}>
-                        <input type="hidden" name="account_id" value={account.account_id} />
-                        <input type="hidden" name="key_id" value={key.key_id} />
-                        <Button type="submit" size="1" variant="ghost" color="red" disabled={revoking}>
-                          Revoke
-                        </Button>
-                      </form>
+                      <Flex align="center" gap="3">
+                        <ChangeExpiry accountId={account.account_id} apiKey={key} />
+                        {/* A flex box, so the button centres on the row like the one beside it. */}
+                        <form action={revokeAction} style={{ display: "flex" }}>
+                          <input type="hidden" name="account_id" value={account.account_id} />
+                          <input type="hidden" name="key_id" value={key.key_id} />
+                          <Button type="submit" size="1" variant="ghost" color="red" disabled={revoking}>
+                            Revoke
+                          </Button>
+                        </form>
+                      </Flex>
                     )
                   }
                 />
@@ -258,8 +301,8 @@ export function ServiceAccountDetail({
           <Flex justify="between" align="center" gap="3" wrap="wrap">
             <Text size="2" color="gray">
               {account.disabled
-                ? "Disabled: nothing can sign in as it. Its trusts and grants are kept."
-                : "Disabling stops every sign-in and keeps its trusts and grants."}
+                ? "Disabled: nothing can sign in as it. Enabling it lets its trusted workflows and unrevoked keys sign in again, so revoke any key that leaked first."
+                : "Disabling stops every sign-in, by workflow or by key, and within five minutes cuts credentials it already holds back to public data. Its trusts, keys and grants are kept."}
             </Text>
             <form action={toggleAction}>
               <input type="hidden" name="account_id" value={account.account_id} />
