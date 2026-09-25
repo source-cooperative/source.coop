@@ -50,7 +50,8 @@ async function tablesExist() {
     tables.TableNames?.includes(getTableName("api-keys")) &&
     tables.TableNames?.includes(getTableName("data-connections")) &&
     tables.TableNames?.includes(getTableName("memberships")) &&
-    tables.TableNames?.includes(getTableName("account-trusts"))
+    tables.TableNames?.includes(getTableName("account-trusts")) &&
+    tables.TableNames?.includes(getTableName("service-account-keys"))
   );
 }
 
@@ -79,6 +80,7 @@ async function createTables() {
   await deleteTable(getTableName("data-connections"));
   await deleteTable(getTableName("memberships"));
   await deleteTable(getTableName("account-trusts"));
+  await deleteTable(getTableName("service-account-keys"));
 
   // Wait for tables to be fully deleted
   await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -167,6 +169,41 @@ async function createTables() {
     console.log(`✓ Created ${getTableName("account-trusts")} table`);
   } catch (e) {
     console.error(`✗ Error creating ${getTableName("account-trusts")} table:`, e);
+    throw e;
+  }
+
+  // Create service-account-keys table
+  try {
+    await client.send(
+      new CreateTableCommand({
+        TableName: getTableName("service-account-keys"),
+        AttributeDefinitions: [
+          { AttributeName: "jti", AttributeType: "S" },
+          { AttributeName: "account_id", AttributeType: "S" },
+        ],
+        KeySchema: [{ AttributeName: "jti", KeyType: "HASH" }],
+        GlobalSecondaryIndexes: [
+          {
+            IndexName: "account_id",
+            KeySchema: [{ AttributeName: "account_id", KeyType: "HASH" }],
+            Projection: {
+              ProjectionType: "ALL",
+            },
+            ProvisionedThroughput: {
+              ReadCapacityUnits: 5,
+              WriteCapacityUnits: 5,
+            },
+          },
+        ],
+        ProvisionedThroughput: {
+          ReadCapacityUnits: 5,
+          WriteCapacityUnits: 5,
+        },
+      })
+    );
+    console.log(`✓ Created ${getTableName("service-account-keys")} table`);
+  } catch (e) {
+    console.error(`✗ Error creating ${getTableName("service-account-keys")} table:`, e);
     throw e;
   }
 

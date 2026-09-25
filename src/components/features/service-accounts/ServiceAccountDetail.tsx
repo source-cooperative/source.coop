@@ -26,19 +26,30 @@ import {
   setServiceAccountDisabled,
 } from "@/lib/actions/service-accounts";
 import { githubWorkflowStep } from "@/lib/services/github-workflow";
+import { revokeApiKey } from "@/lib/actions/service-account-keys";
 import {
   GITHUB_ACTIONS_ISSUER,
+  IDLE_API_KEY_ACTION_STATE,
   IDLE_SERVICE_ACCOUNT_ACTION_STATE as IDLE,
   type Product,
+  isKeyActive,
   type ServiceAccountActionState,
+  type ServiceAccountKey,
   type ServiceAccountSummary,
 } from "@/types";
 import { AddGithubTrustDialog } from "./AddGithubTrustDialog";
 import { ProductAccessList, type ProductAccess } from "./ProductAccessList";
 import { WorkflowSnippet } from "./WorkflowSnippet";
+import { IssueApiKeyDialog } from "./IssueApiKeyDialog";
 
 const issuerLabel = (issuer: string) =>
   issuer === GITHUB_ACTIONS_ISSUER ? "GitHub Actions" : issuer;
+
+const day = (iso: string) => new Date(iso).toLocaleDateString();
+
+/** Only a key that no longer works is marked; a live one is the norm. */
+const keyMarker = (key: ServiceAccountKey) =>
+  key.revoked_at ? "Revoked" : isKeyActive(key) ? null : "Expired";
 
 function Status({ state }: { state: ServiceAccountActionState }) {
   return state.message ? (
@@ -74,7 +85,7 @@ function ExampleUsage({ subject, step }: { subject: string; step: string }) {
 
 /**
  * One service account, and every control over it: the workflows it trusts,
- * each with its example usage; the products it reaches, changed, removed or
+ * each with its example usage; its API keys; the products it reaches, changed, removed or
  * granted with the create form's controls and saved as they are; and — set
  * apart — disabling and deleting it.
  */
@@ -89,7 +100,7 @@ export function ServiceAccountDetail({
   /** The data proxy a workflow signs in to; without it, no example is shown. */
   proxyOrigin?: string;
 }) {
-  const { account, trusts, grants } = summary;
+  const { account, trusts, grants, keys } = summary;
   const [accessState, accessAction, savingAccess] = useActionState(setProductAccess, IDLE);
   // Shown as chosen at once; the page's revalidation then confirms it, or the
   // failure below explains why it went back.
@@ -111,6 +122,7 @@ export function ServiceAccountDetail({
     });
   };
   const [removeState, removeAction, removing] = useActionState(removeTrust, IDLE);
+  const [revokeState, revokeAction, revoking] = useActionState(revokeApiKey, IDLE_API_KEY_ACTION_STATE);
   const [toggleState, toggleAction, toggling] = useActionState(setServiceAccountDisabled, IDLE);
   const [deleteState, deleteAction, deleting] = useActionState(deleteServiceAccount, IDLE);
 
@@ -179,6 +191,52 @@ export function ServiceAccountDetail({
           </ConnectionList>
         )}
         <Status state={removeState} />
+      </SectionHeader>
+
+      <SectionHeader
+        title="API keys"
+        description="For environments without OIDC. Each is shown once, when it is issued."
+        rightButton={<IssueApiKeyDialog accountId={account.account_id} />}
+      >
+        {keys.length === 0 ? (
+          <Text size="2" color="gray">
+            None.
+          </Text>
+        ) : (
+          <ConnectionList>
+            {keys.map((key) => {
+              const marker = keyMarker(key);
+              return (
+                <ConnectionRow
+                  key={key.jti}
+                  title={
+                    <Text size="2" weight="medium">
+                      {key.label}
+                    </Text>
+                  }
+                  markers={marker && <ConnectionMarker>{marker}</ConnectionMarker>}
+                  meta={[
+                    `issued ${day(key.created_at)}`,
+                    key.expires_at ? `expires ${day(key.expires_at)}` : "never expires",
+                    key.last_used_at ? `last used ${day(key.last_used_at)}` : "never used",
+                  ].join(" · ")}
+                  actions={
+                    !key.revoked_at && (
+                      <form action={revokeAction}>
+                        <input type="hidden" name="account_id" value={account.account_id} />
+                        <input type="hidden" name="jti" value={key.jti} />
+                        <Button type="submit" size="1" variant="ghost" color="red" disabled={revoking}>
+                          Revoke
+                        </Button>
+                      </form>
+                    )
+                  }
+                />
+              );
+            })}
+          </ConnectionList>
+        )}
+        <Status state={revokeState} />
       </SectionHeader>
 
       <SectionHeader

@@ -21,6 +21,7 @@ jest.mock("@/lib/actions/product-mirrors");
 jest.mock("@/lib/actions/products");
 jest.mock("@/lib/actions/memberships");
 jest.mock("@/lib/actions/service-accounts");
+jest.mock("@/lib/actions/service-account-keys");
 
 // Storybook's builder aliases next/navigation to this mock. Jest has no such
 // alias, so the real module comes through and its hooks are undefined outside
@@ -54,7 +55,7 @@ beforeAll(annotations.beforeAll);
  *   React 18 in package.json, where the hook does not exist.
  */
 const CANNOT_RENDER_UNDER_JEST =
-  /LiveGlobe|DynamicForm|DataConnectionForm|ProductMirrorsManager|ProductCreationForm|EditProfileForm|MembershipsTable|ServiceAccountForm|ServiceAccountDetail|AddGithubTrustDialog/;
+  /LiveGlobe|DynamicForm|DataConnectionForm|ProductMirrorsManager|ProductCreationForm|EditProfileForm|MembershipsTable|ServiceAccountForm|ServiceAccountDetail|AddGithubTrustDialog|IssueApiKeyDialog/;
 
 const storyFiles = readdirSync(__dirname, {
   recursive: true,
