@@ -3,84 +3,28 @@ import { NextRequest } from "next/server";
 import { apiKeysTable } from "@/lib/clients/database";
 import { getApiSession } from "@/lib/api/utils";
 import { isAuthorized } from "@/lib/api/authz";
+import { LEGACY_API_KEY_DEPRECATION } from "@/lib/api/legacy-api-keys";
 import { RedactedAPIKeySchema } from "@/types/api-key";
 import { GET, POST } from "./route";
 
 jest.mock("@/lib/clients/database", () => ({
   apiKeysTable: {
-    create: jest.fn(),
     listByAccount: jest.fn(),
   },
 }));
 jest.mock("@/lib/api/utils", () => ({
   getApiSession: jest.fn(),
 }));
-jest.mock("@/lib/actions/crypto", () => ({
-  generateAccessKeyID: jest.fn(() => "SCFAKEID"),
-  generateSecretAccessKey: jest.fn(() => "x".repeat(64)),
-}));
 jest.mock("@/lib/api/authz", () => ({ isAuthorized: jest.fn() }));
 
 describe("POST /api/v1/accounts/[account_id]/api-keys", () => {
-  afterEach(() => jest.resetAllMocks());
-
-  const validBody = {
-    name: "Test Key",
-    expires: new Date(Date.now() + 100000).toISOString(),
-  };
-
-  test("returns 400 if expiration is in the past", async () => {
-    const req = {
-      json: () =>
-        Promise.resolve({
-          ...validBody,
-          expires: new Date(Date.now() - 1000).toISOString(),
-        }),
-    } as unknown as NextRequest;
-    const res = await POST(req, { params: { account_id: "foo" } });
-    expect(res.status).toBe(400);
-  });
-
-  test("returns 404 if account not found", async () => {
-    (getApiSession as jest.Mock).mockResolvedValue({});
-    const req = {
-      json: () => Promise.resolve(validBody),
-    } as unknown as NextRequest;
-    const res = await POST(req, { params: { account_id: "foo" } });
-    expect(res.status).toBe(404);
-  });
-
-  test("returns 401 if not authorized", async () => {
-    (getApiSession as jest.Mock).mockResolvedValue({
-      account: { account_id: "foo" },
+  test("answers 410, whoever asks, and points to service account keys", async () => {
+    const res = POST();
+    expect(res.status).toBe(410);
+    await expect(res.json()).resolves.toEqual({
+      error: expect.stringContaining("service account"),
     });
-    (isAuthorized as jest.Mock).mockReturnValue(false);
-    const req = {
-      json: () => Promise.resolve(validBody),
-    } as unknown as NextRequest;
-    const res = await POST(req, { params: { account_id: "foo" } });
-    expect(res.status).toBe(401);
-  });
-
-  test("returns 200 and created key on success", async () => {
-    (getApiSession as jest.Mock).mockResolvedValue({
-      account: { account_id: "foo" },
-    });
-    (isAuthorized as jest.Mock).mockReturnValue(true);
-    const createdKey = {
-      ...validBody,
-      access_key_id: "SCFAKEID",
-      secret_access_key: "x".repeat(64),
-      account_id: "foo",
-      disabled: false,
-    };
-    (apiKeysTable.create as jest.Mock).mockResolvedValue(createdKey);
-    const req = {
-      json: () => Promise.resolve(validBody),
-    } as unknown as NextRequest;
-    const res = await POST(req, { params: { account_id: "foo" } });
-    expect(res.status).toBe(200);
-    await expect(res.json()).resolves.toEqual(createdKey);
+    expect(getApiSession).not.toHaveBeenCalled();
   });
 });
 
@@ -104,7 +48,7 @@ describe("GET /api/v1/accounts/[account_id]/api-keys", () => {
     expect(res.status).toBe(401);
   });
 
-  test("returns 200 and redacted keys on success", async () => {
+  test("returns redacted keys, marked deprecated", async () => {
     (getApiSession as jest.Mock).mockResolvedValue({
       account: { account_id: "foo" },
     });
@@ -128,5 +72,9 @@ describe("GET /api/v1/accounts/[account_id]/api-keys", () => {
     expect(res.status).toBe(200);
     const expected = apiKeys.map((k) => RedactedAPIKeySchema.parse(k));
     await expect(res.json()).resolves.toEqual(expected);
+    expect(res.headers.get("Deprecation")).toBe(
+      LEGACY_API_KEY_DEPRECATION.Deprecation
+    );
+    expect(res.headers.get("Sunset")).toBe(LEGACY_API_KEY_DEPRECATION.Sunset);
   });
 });

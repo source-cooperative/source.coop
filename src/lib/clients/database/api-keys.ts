@@ -1,10 +1,6 @@
 import { APIKey } from "@/types";
-import {
-  PutItemCommand,
-  ResourceNotFoundException,
-} from "@aws-sdk/client-dynamodb";
-import { QueryCommand, PutCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
-import { marshall } from "@aws-sdk/util-dynamodb";
+import { ResourceNotFoundException } from "@aws-sdk/client-dynamodb";
+import { DeleteCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
 import { BaseTable } from "./base";
 
 /**
@@ -59,73 +55,16 @@ export class APIKeysTable extends BaseTable {
     }
   }
 
-  async create(apiKey: APIKey): Promise<APIKey> {
+  async delete(accessKeyId: string): Promise<void> {
     try {
       await this.client.send(
-        new PutCommand({
+        new DeleteCommand({
           TableName: this.table,
-          Item: apiKey,
+          Key: { access_key_id: accessKeyId },
         })
       );
-      return apiKey;
     } catch (error) {
-      this.logError("create", error, { accessKeyId: apiKey.access_key_id });
-      throw error;
-    }
-  }
-
-  async update(apiKey: APIKey): Promise<APIKey> {
-    try {
-      const result = await this.client.send(
-        new UpdateCommand({
-          TableName: this.table,
-          Key: {
-            access_key_id: apiKey.access_key_id,
-          },
-          UpdateExpression:
-            "SET account_id = :account_id, repository_id = :repository_id, disabled = :disabled, expires = :expires, name = :name, secret_access_key = :secret_access_key",
-          ExpressionAttributeValues: {
-            ":account_id": apiKey.account_id,
-            ":repository_id": apiKey.repository_id,
-            ":disabled": apiKey.disabled,
-            ":expires": apiKey.expires,
-            ":name": apiKey.name,
-            ":secret_access_key": apiKey.secret_access_key,
-          },
-          ReturnValues: "ALL_NEW",
-        })
-      );
-      return result.Attributes as APIKey;
-    } catch (error) {
-      this.logError("update", error, { accessKeyId: apiKey.access_key_id });
-      throw error;
-    }
-  }
-
-  // Legacy method for backward compatibility - renamed to upsert
-  async upsert(
-    apiKey: APIKey,
-    checkIfExists: boolean = false
-  ): Promise<[APIKey, boolean]> {
-    try {
-      const command = new PutItemCommand({
-        TableName: this.table,
-        Item: marshall(apiKey),
-        ConditionExpression: checkIfExists
-          ? "attribute_not_exists(access_key_id)"
-          : undefined,
-      });
-
-      await this.client.send(command);
-      return [apiKey, true];
-    } catch (error) {
-      if (
-        error instanceof Error &&
-        error.name === "ConditionalCheckFailedException"
-      ) {
-        return [apiKey, false];
-      }
-      this.logError("upsert", error, { accessKeyId: apiKey.access_key_id });
+      this.logError("delete", error, { accessKeyId });
       throw error;
     }
   }

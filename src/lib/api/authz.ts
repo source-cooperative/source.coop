@@ -76,7 +76,6 @@ type ActionResourceMap = {
 
   // API Key actions
   [Actions.GetAPIKey]: APIKey;
-  [Actions.CreateAPIKey]: APIKey;
   [Actions.RevokeAPIKey]: APIKey;
 
   // Membership actions
@@ -216,11 +215,6 @@ export function isAuthorized(
 export function isAuthorized(
   principal: UserSession | null,
   resource: APIKey,
-  action: Actions.CreateAPIKey
-): boolean;
-export function isAuthorized(
-  principal: UserSession | null,
-  resource: APIKey,
   action: Actions.RevokeAPIKey
 ): boolean;
 
@@ -355,9 +349,6 @@ export function isAuthorized(
       )
       .with(Actions.GetAPIKey, () =>
         getAPIKey(principal, resource as ResourceForAction<Actions.GetAPIKey>)
-      )
-      .with(Actions.CreateAPIKey, () =>
-        createAPIKey(principal, resource as ResourceForAction<Actions.CreateAPIKey>)
       )
       .with(Actions.RevokeAPIKey, () =>
         revokeAPIKey(principal, resource as ResourceForAction<Actions.RevokeAPIKey>)
@@ -1286,36 +1277,6 @@ function createAccount(
   }
 
   return false;
-}
-
-function createAPIKey(principal: UserSession | null, api_key: APIKey): boolean {
-  // If the user does not have an account, they are not authorized
-  if (!principal?.account) {
-    return false;
-  }
-
-  // If the user is disabled, they are not authorized
-  if (principal?.account?.disabled) {
-    return false;
-  }
-
-  // If the user is an admin, they are authorized
-  if (isAdmin(principal)) {
-    return true;
-  }
-
-  // If the user is the owner of the API key, they are authorized
-  if (api_key.account_id === principal.account.account_id) {
-    return true;
-  }
-
-  // If the user is an owner or maintainer of the organization, they are authorized
-  return hasRole(
-    principal,
-    [MembershipRole.Owners, MembershipRole.Maintainers],
-    api_key.account_id,
-    api_key.repository_id
-  );
 }
 
 function listAccountAPIKeys(
