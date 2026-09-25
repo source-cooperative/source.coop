@@ -23,7 +23,7 @@
  *             properties:
  *               role:
  *                 type: string
- *                 enum: [owners, maintainers, members]
+ *                 enum: [owners, maintainers, read_data, write_data]
  *                 description: The new role for the membership
  *     responses:
  *       200:
@@ -92,7 +92,7 @@ export async function PUT(
         { status: StatusCodes.BAD_REQUEST }
       );
     }
-    if (!["owners", "maintainers", "members"].includes(role)) {
+    if (!Object.values(MembershipRole).includes(role)) {
       return NextResponse.json(
         { error: `Invalid role: ${role}` },
         { status: StatusCodes.BAD_REQUEST }
