@@ -21,9 +21,12 @@ import {
 import { useUploadManager } from "@/components/features/uploader/UploadProvider";
 import { productUrl } from "@/lib/urls";
 import { formatBytes } from "@/lib/format";
+import { DeleteProgress } from "./DeleteProgress";
 
-export function UploadsSubmenu() {
-  const { uploads, cancelUpload, retryUpload } = useUploadManager();
+/** Uploads and deletes running in this tab, under the account menu. */
+export function ActivitySubmenu() {
+  const { uploads, cancelUpload, retryUpload, deletions, dismissDeletion } =
+    useUploadManager();
 
   // Calculate active uploads (queued, uploading)
   const activeUploads = useMemo(() => {
@@ -32,8 +35,13 @@ export function UploadsSubmenu() {
     );
   }, [uploads]);
 
-  // Don't render if no active uploads
-  if (activeUploads.length === 0) {
+  // Failed deletes stay until dismissed: they may have left a folder half-gone.
+  const shownDeletions = deletions.filter((d) => d.status !== "completed");
+  const activeCount =
+    activeUploads.length +
+    shownDeletions.filter((d) => d.status === "deleting").length;
+
+  if (activeUploads.length === 0 && shownDeletions.length === 0) {
     return null;
   }
 
@@ -43,10 +51,12 @@ export function UploadsSubmenu() {
         <DropdownMenu.SubTrigger>
           <Flex align="center" gap="2">
             <UploadIcon />
-            Uploads
-            <Badge color="blue" size="1" style={{ marginLeft: "auto" }}>
-              {activeUploads.length}
-            </Badge>
+            Activity
+            {activeCount > 0 && (
+              <Badge color="blue" size="1" style={{ marginLeft: "auto" }}>
+                {activeCount}
+              </Badge>
+            )}
           </Flex>
         </DropdownMenu.SubTrigger>
         <DropdownMenu.SubContent
@@ -54,6 +64,13 @@ export function UploadsSubmenu() {
         >
           <ScrollArea style={{ maxHeight: "300px" }}>
             <Flex direction="column" gap="2">
+              {shownDeletions.map((job) => (
+                <DeleteProgress
+                  key={job.id}
+                  job={job}
+                  onDismiss={() => dismissDeletion(job.id)}
+                />
+              ))}
               {activeUploads.map((upload) => {
                 const uploadPrefix =
                   productUrl(upload.scope.accountId, upload.scope.productId) +
