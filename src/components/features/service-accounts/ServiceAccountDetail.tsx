@@ -1,19 +1,18 @@
 "use client";
 
-import React, { startTransition, useActionState, useOptimistic, useState } from "react";
+import React, { startTransition, useActionState, useOptimistic } from "react";
 import {
   AlertDialog,
   Button,
   Code,
   Dialog,
-  DropdownMenu,
   Flex,
   Heading,
   IconButton,
   Text,
   Tooltip,
 } from "@radix-ui/themes";
-import { Cross2Icon, DotsHorizontalIcon } from "@radix-ui/react-icons";
+import { Cross2Icon } from "@radix-ui/react-icons";
 import { SectionHeader } from "@/components/core";
 import {
   ConnectionList,
@@ -27,154 +26,21 @@ import {
   setServiceAccountDisabled,
 } from "@/lib/actions/service-accounts";
 import { githubWorkflowStep } from "@/lib/services/github-workflow";
-import { revokeApiKey, setApiKeyExpiry } from "@/lib/actions/service-account-keys";
 import {
   GITHUB_ACTIONS_ISSUER,
-  IDLE_API_KEY_ACTION_STATE,
   IDLE_SERVICE_ACCOUNT_ACTION_STATE as IDLE,
   type Product,
-  isKeyActive,
-  maskedApiKey,
   type ServiceAccountActionState,
-  type ServiceAccountKey,
   type ServiceAccountSummary,
 } from "@/types";
 import { AddGithubTrustDialog } from "./AddGithubTrustDialog";
 import { ProductAccessList, type ProductAccess } from "./ProductAccessList";
 import { WorkflowSnippet } from "./WorkflowSnippet";
 import { IssueApiKeyDialog } from "./IssueApiKeyDialog";
-import { ApiKeyExpiryField } from "./ApiKeyExpiryField";
+import { ApiKeyList } from "./ApiKeyList";
 
 const issuerLabel = (issuer: string) =>
   issuer === GITHUB_ACTIONS_ISSUER ? "GitHub Actions" : issuer;
-
-const date = (iso: string) =>
-  new Date(iso).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
-
-const RELATIVE = new Intl.RelativeTimeFormat(undefined, { numeric: "auto" });
-const DAY_MS = 86_400_000;
-/** "3 days ago", "in 5 months": the row's reading; the exact date is in its tooltip. */
-const relative = (iso: string, now = Date.now()) => {
-  const days = Math.round((Date.parse(iso) - now) / DAY_MS);
-  if (Math.abs(days) < 30) return RELATIVE.format(days, "day");
-  if (Math.abs(days) < 365) return RELATIVE.format(Math.round(days / 30), "month");
-  return RELATIVE.format(Math.round(days / 365), "year");
-};
-
-/** What a key's row says of it, in two short lines: its use, then its end. */
-const keyStanding = (key: ServiceAccountKey) => ({
-  used: key.last_used_at ? `Used ${relative(key.last_used_at)}` : "Never used",
-  ends: key.revoked_at
-    ? `Revoked ${relative(key.revoked_at)}`
-    : key.expires_at === null
-      ? "Never expires"
-      : Date.parse(key.expires_at) > Date.now()
-        ? `Expires ${relative(key.expires_at)}`
-        : `Expired ${relative(key.expires_at)}`,
-});
-
-/** The row's exact dates, for its tooltip. */
-const keyDates = (key: ServiceAccountKey) =>
-  [
-    `Issued ${date(key.created_at)} by ${key.created_by}`,
-    key.last_used_at && `Last used ${date(key.last_used_at)}`,
-    key.revoked_at
-      ? `Revoked ${date(key.revoked_at)}`
-      : key.expires_at
-        ? `Expires ${date(key.expires_at)}`
-        : "Never expires",
-  ]
-    .filter(Boolean)
-    .join(" · ");
-
-/**
- * One API key: its label and hint, how it has been used and when it ends, and
- * a menu for the two things done to it. Everything else is in the tooltip.
- */
-function KeyRow({
-  accountId,
-  apiKey,
-  onRevoke,
-  revoking,
-}: {
-  accountId: string;
-  apiKey: ServiceAccountKey;
-  onRevoke: (key_id: string) => void;
-  revoking: boolean;
-}) {
-  const [changingExpiry, setChangingExpiry] = useState(false);
-  const marker = keyMarker(apiKey);
-  const standing = keyStanding(apiKey);
-  return (
-    <ConnectionRow
-      title={
-        <Text size="2" weight="medium">
-          {apiKey.label}
-        </Text>
-      }
-      markers={marker && <ConnectionMarker>{marker}</ConnectionMarker>}
-      meta={maskedApiKey(apiKey) ?? undefined}
-      aside={
-        <Tooltip content={keyDates(apiKey)}>
-          <Flex direction="column" align="end" style={{ cursor: "default" }}>
-            <Text size="1" color="gray">
-              {standing.used}
-            </Text>
-            <Text size="1" color="gray">
-              {standing.ends}
-            </Text>
-          </Flex>
-        </Tooltip>
-      }
-      actions={
-        // A revoked key has nothing left to do, but keeps an invisible copy of
-        // the menu button, negative margins and all, so its dates line up with
-        // the rows above and below.
-        apiKey.revoked_at ? (
-          <IconButton size="1" variant="ghost" tabIndex={-1} aria-hidden style={{ visibility: "hidden" }}>
-            <DotsHorizontalIcon />
-          </IconButton>
-        ) : (
-          <>
-            <DropdownMenu.Root>
-              <DropdownMenu.Trigger>
-                <IconButton
-                  type="button"
-                  size="1"
-                  variant="ghost"
-                  color="gray"
-                  disabled={revoking}
-                  aria-label={`Actions for ${apiKey.label}`}
-                >
-                  <DotsHorizontalIcon />
-                </IconButton>
-              </DropdownMenu.Trigger>
-              <DropdownMenu.Content align="end">
-                <DropdownMenu.Item onSelect={() => setChangingExpiry(true)}>
-                  Change expiry
-                </DropdownMenu.Item>
-                <DropdownMenu.Separator />
-                <DropdownMenu.Item color="red" onSelect={() => onRevoke(apiKey.key_id)}>
-                  Revoke
-                </DropdownMenu.Item>
-              </DropdownMenu.Content>
-            </DropdownMenu.Root>
-            <ChangeExpiry
-              accountId={accountId}
-              apiKey={apiKey}
-              open={changingExpiry}
-              onOpenChange={setChangingExpiry}
-            />
-          </>
-        )
-      }
-    />
-  );
-}
-
-/** Only a key that no longer works is marked; a live one is the norm. */
-const keyMarker = (key: ServiceAccountKey) =>
-  key.revoked_at ? "Revoked" : isKeyActive(key) ? null : "Expired";
 
 function Status({ state }: { state: ServiceAccountActionState }) {
   return state.message ? (
@@ -203,49 +69,6 @@ function ExampleUsage({ subject, step }: { subject: string; step: string }) {
             </Button>
           </Dialog.Close>
         </Flex>
-      </Dialog.Content>
-    </Dialog.Root>
-  );
-}
-
-/**
- * A new expiry for a live key, counted from now, in a modal: longer for a
- * workload that needs it, shorter during an incident, or never.
- */
-function ChangeExpiry({
-  accountId,
-  apiKey,
-  open,
-  onOpenChange,
-}: {
-  accountId: string;
-  apiKey: ServiceAccountKey;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}) {
-  const [state, action, saving] = useActionState(setApiKeyExpiry, IDLE_API_KEY_ACTION_STATE);
-  return (
-    <Dialog.Root open={open} onOpenChange={onOpenChange}>
-      <Dialog.Content style={{ maxWidth: 440 }} aria-describedby={undefined}>
-        <Dialog.Title>When should {apiKey.label} expire?</Dialog.Title>
-        <form action={action}>
-          <input type="hidden" name="account_id" value={accountId} />
-          <input type="hidden" name="key_id" value={apiKey.key_id} />
-          <Flex direction="column" gap="3">
-            <ApiKeyExpiryField id={`expiry-${apiKey.key_id}`} never={apiKey.expires_at === null} />
-            <Status state={state} />
-            <Flex justify="end" gap="2">
-              <Dialog.Close>
-                <Button type="button" variant="soft" color="gray">
-                  Close
-                </Button>
-              </Dialog.Close>
-              <Button type="submit" disabled={saving}>
-                Save
-              </Button>
-            </Flex>
-          </Flex>
-        </form>
       </Dialog.Content>
     </Dialog.Root>
   );
@@ -290,13 +113,6 @@ export function ServiceAccountDetail({
     });
   };
   const [removeState, removeAction, removing] = useActionState(removeTrust, IDLE);
-  const [revokeState, revokeAction, revoking] = useActionState(revokeApiKey, IDLE_API_KEY_ACTION_STATE);
-  const revokeKey = (key_id: string) => {
-    const data = new FormData();
-    data.set("account_id", account.account_id);
-    data.set("key_id", key_id);
-    startTransition(() => revokeAction(data));
-  };
   const [toggleState, toggleAction, toggling] = useActionState(setServiceAccountDisabled, IDLE);
   const [deleteState, deleteAction, deleting] = useActionState(deleteServiceAccount, IDLE);
 
@@ -372,24 +188,7 @@ export function ServiceAccountDetail({
         description="For environments without OIDC. Each is shown once, when it is issued. Revoke a key that leaks; to stop every key at once, disable the account below."
         rightButton={<IssueApiKeyDialog accountId={account.account_id} proxyOrigin={proxyOrigin} />}
       >
-        {keys.length === 0 ? (
-          <Text size="2" color="gray">
-            None.
-          </Text>
-        ) : (
-          <ConnectionList>
-            {keys.map((key) => (
-              <KeyRow
-                key={key.key_id}
-                accountId={account.account_id}
-                apiKey={key}
-                onRevoke={revokeKey}
-                revoking={revoking}
-              />
-            ))}
-          </ConnectionList>
-        )}
-        <Status state={revokeState} />
+        <ApiKeyList accountId={account.account_id} keys={keys} />
       </SectionHeader>
 
       <SectionHeader
