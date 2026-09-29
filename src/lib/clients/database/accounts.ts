@@ -30,6 +30,8 @@ export interface AccountSuggestion {
   /** So a picker can say which of its suggestions are machines. */
   type: AccountType;
   profile_image?: string;
+  /** Present only when the search asked for disabled accounts. */
+  disabled?: true;
 }
 
 export class AccountsTable extends BaseTable {
@@ -188,7 +190,7 @@ export class AccountsTable extends BaseTable {
   async searchMemberCandidates(
     query: string,
     memberOf?: string,
-    limit = 10
+    { limit = 10, includeDisabled = false } = {}
   ): Promise<AccountSuggestion[]> {
     const q = query.trim().toLowerCase();
     if (!q) return [];
@@ -215,7 +217,8 @@ export class AccountsTable extends BaseTable {
           (isServiceAccount(item) &&
             memberOf !== undefined &&
             item.owner_account_id === memberOf);
-        if (!eligible || item.disabled) continue;
+        if (!eligible) continue;
+        if (item.disabled && !includeDisabled) continue;
         const name = item.name ?? "";
         if (!item.account_id.includes(q) && !name.toLowerCase().includes(q))
           continue;
@@ -224,6 +227,7 @@ export class AccountsTable extends BaseTable {
           name,
           type: item.type,
           profile_image: item.metadata_public?.profile_image,
+          ...(item.disabled && { disabled: true }),
         });
         if (matches.length >= limit) return matches;
       }

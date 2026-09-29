@@ -98,6 +98,17 @@ describe("AccountsTable.searchMemberCandidates", () => {
     expect(await table.searchMemberCandidates("acme", "someone-else")).toEqual([]);
   });
 
+  it("includes disabled accounts on request, and says which they are", async () => {
+    const { table } = tableFor(ITEMS);
+
+    expect(
+      await table.searchMemberCandidates("jan", undefined, { includeDisabled: true })
+    ).toEqual([
+      { account_id: "jane-doe", name: "Jane Doe", type: AccountType.INDIVIDUAL },
+      { account_id: "janitor", name: "Jan Retired", type: AccountType.INDIVIDUAL, disabled: true },
+    ]);
+  });
+
   it("returns nothing for an empty query without hitting DynamoDB", async () => {
     const { table, send } = tableFor(ITEMS);
 
@@ -109,7 +120,7 @@ describe("AccountsTable.searchMemberCandidates", () => {
     // LastEvaluatedKey would otherwise drive a second page.
     const { table, send } = tableFor(ITEMS, { LastEvaluatedKey: { account_id: "x" } });
 
-    expect(await table.searchMemberCandidates("j", undefined, 1)).toEqual([
+    expect(await table.searchMemberCandidates("j", undefined, { limit: 1 })).toEqual([
       { account_id: "jane-doe", name: "Jane Doe", type: AccountType.INDIVIDUAL },
     ]);
     expect(send).toHaveBeenCalledTimes(1);
