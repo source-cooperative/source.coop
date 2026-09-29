@@ -6,7 +6,7 @@ import { managedServiceAccount } from "@/lib/accounts/service-accounts";
 import { isApiKey, AccountType, type Account, type ApiKeyActionState, type UserSession } from "@/types";
 
 jest.mock("../clients", () => ({
-  serviceAccountKeysTable: { create: jest.fn(), listByAccount: jest.fn(), set: jest.fn() },
+  serviceAccountKeysTable: { create: jest.fn(), listByAccount: jest.fn(), set: jest.fn(), revoke: jest.fn() },
 }));
 jest.mock("../api/utils", () => ({ getPageSession: jest.fn() }));
 jest.mock("@/lib/accounts/service-accounts", () => ({ managedServiceAccount: jest.fn() }));
@@ -92,7 +92,7 @@ describe("revokeApiKey and setApiKeyExpiry", () => {
   it("revokes only a key on a service account the caller manages", async () => {
     keys.listByAccount.mockResolvedValue([record]);
     expect((await revokeApiKey(IDLE, form({ account_id: "acme--nightly-sync", key_id: "k1" }))).success).toBe(true);
-    expect(keys.set).toHaveBeenCalledWith("h1", "revoked_at", expect.any(String));
+    expect(keys.revoke).toHaveBeenCalledWith("h1", "owner");
 
     // A key the account does not hold is not found, whatever id is given.
     keys.listByAccount.mockResolvedValue([]);

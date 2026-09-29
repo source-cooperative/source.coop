@@ -1,6 +1,7 @@
 import { createHash } from "crypto";
 import { serviceAccountKeysTable } from "@/lib/clients";
 import { LOGGER } from "@/lib/logging";
+import type { RevokedVia } from "@/types";
 
 /** Hex SHA-256 of a key: what the record holds, and what the proxy presents. */
 export const hashApiKey = (key: string) => createHash("sha256").update(key).digest("hex");
@@ -14,14 +15,15 @@ export const hashApiKey = (key: string) => createHash("sha256").update(key).dige
  */
 export async function revokeLeakedKey(
   key: string,
-  metadata: Record<string, unknown>
+  via: RevokedVia,
+  metadata: Record<string, unknown> = {}
 ): Promise<boolean> {
   const record = await serviceAccountKeysTable.fetchByHash(hashApiKey(key));
   if (record && !record.revoked_at) {
-    await serviceAccountKeysTable.set(record.key_hash, "revoked_at", new Date().toISOString());
+    await serviceAccountKeysTable.revoke(record.key_hash, via);
     LOGGER.warn("Revoked a leaked API key", {
       operation: "revokeLeakedKey",
-      metadata: { key_id: record.key_id, account_id: record.account_id, ...metadata },
+      metadata: { key_id: record.key_id, account_id: record.account_id, via, ...metadata },
     });
   }
   return record !== null;

@@ -47,6 +47,6 @@ export async function POST(request: NextRequest) {
       { status: StatusCodes.BAD_REQUEST }
     );
   }
-  await revokeLeakedKey(parsed.data.key, { via: "self-revoke" });
+  await revokeLeakedKey(parsed.data.key, "holder");
   return new NextResponse(null, { status: StatusCodes.NO_CONTENT });
 }

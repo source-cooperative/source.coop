@@ -137,7 +137,7 @@ export async function POST(request: NextRequest) {
       .map(async ({ token, type, url, source }) => ({
         token_raw: token,
         token_type: type,
-        label: (await revokeLeakedKey(token, { via: "github", url, source }))
+        label: (await revokeLeakedKey(token, "github", { url, source }))
           ? "true_positive"
           : "false_positive",
       }))

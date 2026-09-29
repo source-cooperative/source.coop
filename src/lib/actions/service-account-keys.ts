@@ -98,7 +98,7 @@ export async function revokeApiKey(
   const own = await ownKey(formData);
   if (!own) return outcome("No such key on a service account you manage", false);
   if (own.key.revoked_at) return outcome("Already revoked", false);
-  await serviceAccountKeysTable.set(own.key.key_hash, "revoked_at", new Date().toISOString());
+  await serviceAccountKeysTable.revoke(own.key.key_hash, "owner");
   revalidatePath(editAccountServiceAccountsUrl(own.account.owner_account_id));
   revalidatePath(editServiceAccountUrl(own.account.owner_account_id, own.account.account_id));
   return outcome("Key revoked", true);

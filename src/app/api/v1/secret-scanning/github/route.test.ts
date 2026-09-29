@@ -6,7 +6,7 @@ import { apiKeyChecksum } from "@/types";
 import { POST } from "./route";
 
 jest.mock("@/lib/clients", () => ({
-  serviceAccountKeysTable: { fetchByHash: jest.fn(), set: jest.fn() },
+  serviceAccountKeysTable: { fetchByHash: jest.fn(), revoke: jest.fn() },
 }));
 
 // Throwaway P-256 pairs standing in for GitHub's signing keys.
@@ -70,8 +70,8 @@ describe("POST /api/v1/secret-scanning/github", () => {
       { token_raw: LIVE, token_type: "source_coop_api_key", label: "true_positive" },
       { token_raw: UNKNOWN, token_type: "source_coop_api_key", label: "false_positive" },
     ]);
-    expect(serviceAccountKeysTable.set).toHaveBeenCalledTimes(1);
-    expect(serviceAccountKeysTable.set).toHaveBeenCalledWith(sha256(LIVE), "revoked_at", expect.any(String));
+    expect(serviceAccountKeysTable.revoke).toHaveBeenCalledTimes(1);
+    expect(serviceAccountKeysTable.revoke).toHaveBeenCalledWith(sha256(LIVE), "github");
   });
 
   test("ignores tokens that are not API keys, including one whose checksum fails", async () => {
@@ -92,7 +92,7 @@ describe("POST /api/v1/secret-scanning/github", () => {
     ];
     for (const request of refused) expect((await POST(request)).status).toBe(401);
     expect(serviceAccountKeysTable.fetchByHash).not.toHaveBeenCalled();
-    expect(serviceAccountKeysTable.set).not.toHaveBeenCalled();
+    expect(serviceAccountKeysTable.revoke).not.toHaveBeenCalled();
   });
 
   test("is 400 for a signed body that is not a list of matches", async () => {
