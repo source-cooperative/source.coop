@@ -8,12 +8,13 @@ import {
   accountTrustsTable,
   membershipsTable,
   productsTable,
+  serviceAccountKeysTable,
 } from "@/lib/clients/database";
 import { CONFIG } from "@/lib/config";
 import { getPageSession } from "@/lib/api/utils";
 import { managedServiceAccount } from "@/lib/accounts/service-accounts";
 import { editAccountServiceAccountsUrl } from "@/lib/urls";
-import { MembershipState } from "@/types";
+import { MembershipState, publicKey } from "@/types";
 
 export const metadata: Metadata = { title: "Service account" };
 
@@ -27,10 +28,11 @@ export default async function ServiceAccountPage({ params }: PageProps) {
   // Reached only under its own owner, so the settings around it are that owner's.
   if (!account || account.owner_account_id !== account_id) notFound();
 
-  const [trusts, memberships, products] = await Promise.all([
+  const [trusts, memberships, products, keys] = await Promise.all([
     accountTrustsTable.listByAccount(account.account_id),
     membershipsTable.listByUser(account.account_id),
     productsTable.listByAccountAll(account_id),
+    serviceAccountKeysTable.listByAccount(account.account_id),
   ]);
 
   return (
@@ -45,6 +47,8 @@ export default async function ServiceAccountPage({ params }: PageProps) {
           account,
           trusts,
           grants: memberships.filter((m) => m.state === MembershipState.Member),
+          // The hash stays on the server; the client component sees the rest.
+          keys: keys.map(publicKey),
         }}
         products={products.map(({ product_id, title }) => ({ product_id, title }))}
         proxyOrigin={CONFIG.storage.endpoint}

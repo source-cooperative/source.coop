@@ -7,7 +7,7 @@ import {
   ConnectionRow,
 } from "@/components/features/data-connections/ConnectionRow";
 import { editServiceAccountUrl } from "@/lib/urls";
-import type { ServiceAccountSummary } from "@/types";
+import { isKeyActive, type ServiceAccountSummary } from "@/types";
 
 const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
@@ -32,7 +32,13 @@ export function ServiceAccountList({ summaries }: { summaries: ServiceAccountSum
   }
   return (
     <ConnectionList>
-      {summaries.map(({ account, trusts, grants }) => (
+      {summaries.map(({ account, trusts, grants, keys }) => {
+        const liveKeys = keys.filter((k) => !k.revoked_at && isKeyActive(k)).length;
+        const signIn = [
+          trusts.length && count(trusts.length, "workflow", "workflows"),
+          liveKeys && count(liveKeys, "key", "keys"),
+        ].filter(Boolean);
+        return (
         <ConnectionRow
           key={account.account_id}
           title={
@@ -49,15 +55,13 @@ export function ServiceAccountList({ summaries }: { summaries: ServiceAccountSum
           meta={account.account_id}
           aside={
             <Text size="1" color="gray">
-              {trusts.length === 0
-                ? "cannot sign in"
-                : count(trusts.length, "workflow", "workflows")}{" "}
-              · {count(grants.length, "product", "products")}
+              {[...(signIn.length ? signIn : ["cannot sign in"]), count(grants.length, "product", "products")].join(" · ")}
             </Text>
           }
           actions={<ChevronRightIcon color="var(--gray-9)" />}
         />
-      ))}
+        );
+      })}
     </ConnectionList>
   );
 }

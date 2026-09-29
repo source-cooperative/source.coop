@@ -39,6 +39,7 @@ sb.mock("../src/lib/actions/product-mirrors.ts");
 sb.mock("../src/lib/actions/products.ts");
 sb.mock("../src/lib/actions/memberships.ts");
 sb.mock("../src/lib/actions/service-accounts.ts");
+sb.mock("../src/lib/actions/service-account-keys.ts");
 
 // Mirrors src/styles/theme.tsx. Without it every Radix control renders
 // unstyled, and a story would tell you nothing about how the app looks.

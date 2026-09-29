@@ -36,6 +36,8 @@ import {
 import { AddGithubTrustDialog } from "./AddGithubTrustDialog";
 import { ProductAccessList, type ProductAccess } from "./ProductAccessList";
 import { WorkflowSnippet } from "./WorkflowSnippet";
+import { IssueApiKeyDialog } from "./IssueApiKeyDialog";
+import { ApiKeyList } from "./ApiKeyList";
 
 const issuerLabel = (issuer: string) =>
   issuer === GITHUB_ACTIONS_ISSUER ? "GitHub Actions" : issuer;
@@ -74,7 +76,7 @@ function ExampleUsage({ subject, step }: { subject: string; step: string }) {
 
 /**
  * One service account, and every control over it: the workflows it trusts,
- * each with its example usage; the products it reaches, changed, removed or
+ * each with its example usage; its API keys; the products it reaches, changed, removed or
  * granted with the create form's controls and saved as they are; and — set
  * apart — disabling and deleting it.
  */
@@ -89,7 +91,7 @@ export function ServiceAccountDetail({
   /** The data proxy a workflow signs in to; without it, no example is shown. */
   proxyOrigin?: string;
 }) {
-  const { account, trusts, grants } = summary;
+  const { account, trusts, grants, keys } = summary;
   const [accessState, accessAction, savingAccess] = useActionState(setProductAccess, IDLE);
   // Shown as chosen at once; the page's revalidation then confirms it, or the
   // failure below explains why it went back.
@@ -182,6 +184,14 @@ export function ServiceAccountDetail({
       </SectionHeader>
 
       <SectionHeader
+        title="API keys"
+        description="For environments without OIDC. Each is shown once, when it is issued. Revoke a key that leaks; to stop every key at once, disable the account below."
+        rightButton={<IssueApiKeyDialog accountId={account.account_id} proxyOrigin={proxyOrigin} />}
+      >
+        <ApiKeyList accountId={account.account_id} keys={keys} />
+      </SectionHeader>
+
+      <SectionHeader
         title="Can reach"
         description="The products it can read or write, each opened in a new tab to check what it holds. A change is saved at once, and takes effect on its next sign-in."
       >
@@ -200,8 +210,8 @@ export function ServiceAccountDetail({
           <Flex justify="between" align="center" gap="3" wrap="wrap">
             <Text size="2" color="gray">
               {account.disabled
-                ? "Disabled: nothing can sign in as it. Its trusts and grants are kept."
-                : "Disabling stops every sign-in and keeps its trusts and grants."}
+                ? "Disabled: nothing can sign in as it. Enabling it lets its trusted workflows and unrevoked keys sign in again, so revoke any key that leaked first."
+                : "Disabling stops every sign-in, by workflow or by key, and within five minutes cuts credentials it already holds back to public data. Its trusts, keys and grants are kept."}
             </Text>
             <form action={toggleAction}>
               <input type="hidden" name="account_id" value={account.account_id} />
