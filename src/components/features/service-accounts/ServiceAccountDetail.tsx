@@ -33,6 +33,7 @@ import {
   IDLE_SERVICE_ACCOUNT_ACTION_STATE as IDLE,
   type Product,
   isKeyActive,
+  maskedApiKey,
   type ServiceAccountActionState,
   type ServiceAccountKey,
   type ServiceAccountSummary,
@@ -255,10 +256,13 @@ export function ServiceAccountDetail({
                   }
                   markers={marker && <ConnectionMarker>{marker}</ConnectionMarker>}
                   meta={[
+                    maskedApiKey(key),
                     `issued ${day(key.created_at)}`,
                     key.expires_at ? `expires ${day(key.expires_at)}` : "never expires",
                     key.last_used_at ? `last used ${day(key.last_used_at)}` : "never used",
-                  ].join(" · ")}
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
                   actions={
                     !key.revoked_at && (
                       <Flex align="center" gap="3">

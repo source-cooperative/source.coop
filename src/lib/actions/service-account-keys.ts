@@ -59,6 +59,7 @@ export async function issueApiKey(
     key_id: randomUUID(),
     account_id: account.account_id,
     label: String(formData.get("label") ?? "").trim(),
+    hint: key.slice(-4),
     created_at: now,
     created_by: session.account.account_id,
     expires_at,

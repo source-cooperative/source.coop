@@ -6,7 +6,7 @@ import { ExclamationTriangleIcon, PlusIcon } from "@radix-ui/react-icons";
 import { CopyToClipboard } from "@/components/core/CopyToClipboard";
 import { Field } from "@/components/core";
 import { issueApiKey } from "@/lib/actions/service-account-keys";
-import { IDLE_API_KEY_ACTION_STATE } from "@/types";
+import { IDLE_API_KEY_ACTION_STATE, maskedApiKey } from "@/types";
 import { ApiKeyExpiryField } from "./ApiKeyExpiryField";
 
 /**
@@ -68,6 +68,10 @@ export function IssueApiKeyDialog({
               </Code>
               <CopyToClipboard text={state.issued.key} />
             </Flex>
+            <Text size="1" color="gray">
+              Listed as <Code size="1">{maskedApiKey(state.issued.record)}</Code> from now
+              on: its last four characters, to match against the key you hold.
+            </Text>
             {environment && (
               <Flex direction="column" gap="2">
                 <Flex justify="between" align="center" gap="2">

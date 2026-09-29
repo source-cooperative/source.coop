@@ -13,6 +13,14 @@ export const ServiceAccountKeySchema = z
     key_id: z.string().uuid(),
     account_id: z.string(),
     label: z.string().min(1).max(64),
+    /**
+     * The key's last four characters, to tell which key is which: 24 of its
+     * 256 random bits, leaving far too many to guess. It confirms a key in
+     * hand against this record, and is never used to look one up — across
+     * the platform, keys will share it. Absent on keys issued before it
+     * was recorded.
+     */
+    hint: z.string().regex(/^[A-Za-z0-9_-]{4}$/).optional(),
     created_at: z.string().datetime(),
     created_by: z.string(),
     /** Null for a key that lasts until revoked. */
@@ -44,6 +52,10 @@ export const publicKey = ({ key_hash: _, ...key }: ServiceAccountKeyRecord): Ser
  */
 export const API_KEY_PREFIX = "sck_";
 export const API_KEY_PATTERN = /^sck_[A-Za-z0-9_-]{43}$/;
+
+/** How a key is shown once it is no longer in hand: `sck_…Xy9Q`, or null without a hint. */
+export const maskedApiKey = (key: Pick<ServiceAccountKey, "hint">) =>
+  key.hint ? `${API_KEY_PREFIX}…${key.hint}` : null;
 
 /** Whether a key may still be exchanged: not revoked, and not past its expiry. */
 export const isKeyActive = (key: ServiceAccountKey, now = Date.now()): boolean =>

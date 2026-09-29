@@ -20,6 +20,7 @@ export const issueApiKey: typeof Real.issueApiKey = fn(
         key_id: "6f1c2a3b-4d5e-4f60-8a9b-0c1d2e3f4a5b",
         account_id: "nightly-sync",
         label: String(formData.get("label") || "CI"),
+        hint: "ghij",
         created_at: "2026-03-12T00:00:00Z",
         created_by: "acoltrane",
         expires_at: null,
