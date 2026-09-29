@@ -7,7 +7,7 @@ import { IssueApiKeyDialog } from "./IssueApiKeyDialog";
  * any AWS SDK or the AWS CLI at it.
  *
  * `issueApiKey` is mocked in `.storybook/preview.tsx` and resolves with a key
- * of the real shape, `sck_` and 43 characters of nothing secret, so
+ * of the real shape, `sck_` and 36 characters of nothing secret, so
  * **submitting the form shows the show-once view**. Open the dialog, give it
  * a label, and issue.
  */

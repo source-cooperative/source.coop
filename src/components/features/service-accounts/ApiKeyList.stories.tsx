@@ -4,7 +4,7 @@ import type { ServiceAccountKey } from "@/types";
 
 /**
  * A service account's API keys, as its page lists them. Each row gives the
- * key's label and its last four characters (`sck_…Xy9Q`) — enough to match a
+ * key's label and its last six characters, its checksum (`sck_…Xy9QeT`) — enough to match a
  * key in someone's environment to its record — and, to the right, how it has
  * been used and when it ends. Hover those two lines for the exact dates and
  * who issued the key. A live key's "⋯" menu changes its expiry or revokes it;
@@ -31,7 +31,7 @@ const key = (overrides: Partial<ServiceAccountKey>): ServiceAccountKey => ({
   key_id: "6f1c2a3b-4d5e-4f60-8a9b-0c1d2e3f4a5b",
   account_id: "miskatonic--nightly-sync",
   label: "HPC cron job",
-  hint: "Xy9Q",
+  hint: "Xy9QeT",
   created_at: at(-200),
   created_by: "acoltrane",
   expires_at: at(160),
@@ -42,11 +42,11 @@ const key = (overrides: Partial<ServiceAccountKey>): ServiceAccountKey => ({
 export const Default: Story = {
   args: {
     keys: [
-      key({ key_id: "k1", label: "HPC cron job", hint: "Xy9Q", last_used_at: at(-3) }),
-      key({ key_id: "k2", label: "Instrument uploader", hint: "m2Rd", expires_at: null, last_used_at: at(0) }),
-      key({ key_id: "k3", label: "Laptop, for testing", hint: "Q8_z", created_at: at(-1), expires_at: at(30) }),
-      key({ key_id: "k4", label: "Last year's sync", hint: "t0pA", created_at: at(-400), expires_at: at(-35), last_used_at: at(-40) }),
-      key({ key_id: "k5", label: "Old laptop", hint: "a_7k", created_at: at(-300), expires_at: null, revoked_at: at(-270) }),
+      key({ key_id: "k1", label: "HPC cron job", hint: "Xy9QeT", last_used_at: at(-3) }),
+      key({ key_id: "k2", label: "Instrument uploader", hint: "m2RdK7", expires_at: null, last_used_at: at(0) }),
+      key({ key_id: "k3", label: "Laptop, for testing", hint: "Q8vz0a", created_at: at(-1), expires_at: at(30) }),
+      key({ key_id: "k4", label: "Last year's sync", hint: "t0pAw3", created_at: at(-400), expires_at: at(-35), last_used_at: at(-40) }),
+      key({ key_id: "k5", label: "Old laptop", hint: "a07kT2", created_at: at(-300), expires_at: null, revoked_at: at(-270) }),
     ],
   },
 };
