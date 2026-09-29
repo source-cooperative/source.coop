@@ -4,11 +4,11 @@ import type { ServiceAccountKey } from "@/types";
 
 /**
  * A service account's API keys, as its page lists them. Each row gives the
- * key's label and its last six characters, its checksum (`sck_…Xy9QeT`) — enough to match a
- * key in someone's environment to its record — and, to the right, how it has
- * been used and when it ends. Hover those two lines for the exact dates and
- * who issued the key. A live key's "⋯" menu changes its expiry or revokes it;
- * a revoked key has nothing left to do.
+ * key's label and its last six characters (`sck_…Xy9QeT`), which are its
+ * checksum — enough to match a key in someone's environment to its record —
+ * and, to the right, how it has been used and when it ends. Hover those two
+ * lines for the exact dates and who issued the key. A live key's "⋯" menu
+ * changes its expiry or revokes it; a revoked key has nothing left to do.
  *
  * The actions are mocked in `.storybook/preview.tsx`. Dates here are set
  * relative to today, so the wording reads the same whenever the story is
@@ -57,8 +57,8 @@ export const Single: Story = {
 };
 
 /**
- * A key issued before keys kept their last four characters: listed without a
- * hint, rather than with an empty one.
+ * A key issued before keys kept a hint of their last characters: listed
+ * without one, rather than with an empty one.
  */
 export const WithoutHint: Story = {
   args: { keys: [key({ hint: undefined, last_used_at: at(-12) })] },
