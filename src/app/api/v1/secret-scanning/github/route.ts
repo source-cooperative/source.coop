@@ -5,7 +5,7 @@
  *     tags: [Accounts]
  *     summary: Revoke the API keys GitHub finds in public
  *     description: |
- *       The endpoint of GitHub's secret-scanning partner program (https://docs.github.com/en/code-security/tutorials/secret-scanning-partner-program). When GitHub finds tokens matching the API-key pattern in public, in a repository, gist, issue or npm package, it posts them here, signed with one of the keys at https://api.github.com/meta/public_keys/secret_scanning. Nothing in the body is read until that signature verifies. Every API key reported is then revoked, exactly as its holder could revoke it, and the answer labels each one for GitHub: `true_positive` for a key that exists, whether revoked now or before, and `false_positive` for one that does not. Tokens that are not API keys are left out.
+ *       The endpoint of GitHub's secret-scanning partner program (https://docs.github.com/en/code-security/tutorials/secret-scanning-partner-program). When GitHub finds tokens matching the API-key pattern in public, in a repository, gist, issue or npm package, it posts them here, signed with one of the keys at https://api.github.com/meta/public_keys/secret_scanning. Nothing in the body is read until that signature verifies. Every API key reported is then revoked, exactly as its holder could revoke it, and the answer labels each one for GitHub: `true_positive` for a key that exists, whether revoked now or before, and `false_positive` for one that does not. Tokens that are not API keys, including any whose checksum fails, are left out without a lookup.
  *     security: []
  *     parameters:
  *       - in: header
@@ -51,7 +51,7 @@ import { StatusCodes } from "http-status-codes";
 import { z } from "zod";
 import { revokeLeakedKey } from "@/lib/accounts/service-account-keys";
 import { LOGGER } from "@/lib/logging";
-import { API_KEY_PATTERN } from "@/types";
+import { isApiKey } from "@/types";
 
 const GITHUB_KEYS_URL = "https://api.github.com/meta/public_keys/secret_scanning";
 
@@ -133,7 +133,7 @@ export async function POST(request: NextRequest) {
   }
   const feedback = await Promise.all(
     parsed.data
-      .filter(({ token }) => API_KEY_PATTERN.test(token))
+      .filter(({ token }) => isApiKey(token))
       .map(async ({ token, type, url, source }) => ({
         token_raw: token,
         token_type: type,

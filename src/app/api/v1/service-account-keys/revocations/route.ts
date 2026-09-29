@@ -17,21 +17,21 @@
  *             properties:
  *               key:
  *                 type: string
- *                 description: The API key, `sck_` and 43 more characters
+ *                 description: The API key, `sck_` and 36 more characters, the last six a checksum of the rest
  *     responses:
  *       204:
  *         description: The key, if it exists, is revoked
  *       400:
- *         description: No API key in the body, or a key in the query string
+ *         description: No whole API key in the body (a cut-short or mistyped one fails its checksum), or a key in the query string
  */
 import { NextRequest, NextResponse } from "next/server";
 import { StatusCodes } from "http-status-codes";
 import { z } from "zod";
 import { revokeLeakedKey } from "@/lib/accounts/service-account-keys";
-import { API_KEY_PATTERN, API_KEY_PREFIX } from "@/types";
+import { API_KEY_PREFIX, isApiKey } from "@/types";
 
 // Trimmed first: a key copied out of a file carries its newline.
-const BodySchema = z.object({ key: z.string().trim().regex(API_KEY_PATTERN) });
+const BodySchema = z.object({ key: z.string().trim().refine(isApiKey) });
 
 export async function POST(request: NextRequest) {
   if (request.nextUrl.search.includes(API_KEY_PREFIX)) {

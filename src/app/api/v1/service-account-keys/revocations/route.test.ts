@@ -2,13 +2,15 @@
 import { createHash } from "crypto";
 import { NextRequest } from "next/server";
 import { serviceAccountKeysTable } from "@/lib/clients";
+import { apiKeyChecksum } from "@/types";
 import { POST } from "./route";
 
 jest.mock("@/lib/clients", () => ({
   serviceAccountKeysTable: { fetchByHash: jest.fn(), set: jest.fn() },
 }));
 
-const KEY = `sck_${"A".repeat(43)}`;
+// A key of the issued shape, assembled at run time so secret scanners don't flag this file.
+const KEY = `sck_${"A".repeat(30)}${apiKeyChecksum("A".repeat(30))}`;
 const HASH = createHash("sha256").update(KEY).digest("hex");
 const key = { key_hash: HASH, key_id: "k1", account_id: "acme--nightly-sync", label: "HPC", expires_at: null };
 const ENDPOINT = "http://localhost/api/v1/service-account-keys/revocations";
@@ -50,7 +52,8 @@ describe("POST /api/v1/service-account-keys/revocations", () => {
   });
 
   test("is 400 for a body that holds no API key, before any lookup", async () => {
-    for (const body of ["not json", {}, { key: 42 }, { key: "SCLEGACYKEY" }, { key: KEY.slice(0, -1) }]) {
+    const mistyped = `sck_B${KEY.slice(5)}`;
+    for (const body of ["not json", {}, { key: 42 }, { key: "SCLEGACYKEY" }, { key: KEY.slice(0, -1) }, { key: mistyped }]) {
       expect((await POST(req(body))).status).toBe(400);
     }
     expect(serviceAccountKeysTable.fetchByHash).not.toHaveBeenCalled();

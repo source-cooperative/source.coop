@@ -2,6 +2,7 @@
 import { createHash, generateKeyPairSync, sign, type KeyObject } from "crypto";
 import { NextRequest } from "next/server";
 import { serviceAccountKeysTable } from "@/lib/clients";
+import { apiKeyChecksum } from "@/types";
 import { POST } from "./route";
 
 jest.mock("@/lib/clients", () => ({
@@ -24,8 +25,10 @@ const published = (...keys: [string, KeyObject][]) =>
 const TEN_MINUTES = 10 * 60_000;
 let now = Date.now();
 
-const LIVE = `sck_${"L".repeat(43)}`;
-const UNKNOWN = `sck_${"U".repeat(43)}`;
+// Keys of the issued shape, assembled at run time so secret scanners don't flag this file.
+const apiKey = (c: string) => `sck_${c.repeat(30)}${apiKeyChecksum(c.repeat(30))}`;
+const LIVE = apiKey("L");
+const UNKNOWN = apiKey("U");
 const sha256 = (s: string) => createHash("sha256").update(s).digest("hex");
 const report = (...tokens: string[]) =>
   JSON.stringify(
@@ -71,8 +74,9 @@ describe("POST /api/v1/secret-scanning/github", () => {
     expect(serviceAccountKeysTable.set).toHaveBeenCalledWith(sha256(LIVE), "revoked_at", expect.any(String));
   });
 
-  test("ignores tokens that are not API keys", async () => {
-    const res = await POST(req(report(`ghp_${"x".repeat(36)}`, "sck_tooshort", `${LIVE}x`)));
+  test("ignores tokens that are not API keys, including one whose checksum fails", async () => {
+    const mistyped = `sck_M${LIVE.slice(5)}`;
+    const res = await POST(req(report(`ghp_${"x".repeat(36)}`, "sck_tooshort", `${LIVE}x`, mistyped)));
     expect(res.status).toBe(200);
     await expect(res.json()).resolves.toEqual([]);
     expect(serviceAccountKeysTable.fetchByHash).not.toHaveBeenCalled();
