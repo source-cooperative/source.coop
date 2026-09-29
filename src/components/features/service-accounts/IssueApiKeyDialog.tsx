@@ -87,9 +87,6 @@ export function IssueApiKeyDialog({
                 </Box>
               </Flex>
             )}
-            <Text size="1" color="gray">
-              Revoke it here if it leaks. Only its hash is stored — the key itself is not.
-            </Text>
             <Flex justify="end">
               <Dialog.Close>
                 <Button variant="soft">Done</Button>
