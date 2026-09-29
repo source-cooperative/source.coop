@@ -1,36 +1,45 @@
 "use client";
 
-import React, { useActionState, useState } from "react";
-import {
-  Button,
-  Callout,
-  Code,
-  Dialog,
-  Flex,
-  Select,
-  Text,
-  TextField,
-} from "@radix-ui/themes";
+import React, { useActionState } from "react";
+import { Box, Button, Callout, Code, Dialog, Flex, Text, TextField } from "@radix-ui/themes";
 import { ExclamationTriangleIcon, PlusIcon } from "@radix-ui/react-icons";
 import { CopyToClipboard } from "@/components/core/CopyToClipboard";
 import { Field } from "@/components/core";
 import { issueApiKey } from "@/lib/actions/service-account-keys";
 import { IDLE_API_KEY_ACTION_STATE } from "@/types";
-
-const EXPIRIES = [
-  { value: "30", label: "30 days" },
-  { value: "90", label: "90 days" },
-  { value: "365", label: "A year" },
-  { value: "", label: "Never — until revoked" },
-];
+import { ApiKeyExpiryField } from "./ApiKeyExpiryField";
 
 /**
- * Issues an API key for a service account and shows it once. There is no
- * second look: the key is not stored, only its record.
+ * What a stock AWS SDK or the AWS CLI needs to sign in with a key saved to a
+ * file: it reads the file, exchanges the key at the proxy's STS endpoint and
+ * refreshes on its own, so nothing else runs beside it. A key names its own
+ * account, so the role ARN's account segment is ignored; it is filled in to
+ * match the workflow snippet.
  */
-export function IssueApiKeyDialog({ accountId }: { accountId: string }) {
+const sdkEnvironment = (proxyOrigin: string, accountId: string) =>
+  [
+    `export AWS_ROLE_ARN=arn:aws:iam::${accountId}:role/FullAccess`,
+    "export AWS_WEB_IDENTITY_TOKEN_FILE=/path/to/the/saved/key",
+    `export AWS_ENDPOINT_URL_STS=${proxyOrigin}/.sts`,
+    `export AWS_ENDPOINT_URL_S3=${proxyOrigin}`,
+    "export AWS_REGION=us-west-2",
+  ].join("\n");
+
+/**
+ * Issues an API key for a service account and shows it once, with the
+ * variables an SDK needs to use it. There is no second look: the key is not
+ * stored, only its record.
+ */
+export function IssueApiKeyDialog({
+  accountId,
+  proxyOrigin,
+}: {
+  accountId: string;
+  /** The data proxy the key signs in to; without it, no variables are shown. */
+  proxyOrigin?: string;
+}) {
   const [state, formAction, pending] = useActionState(issueApiKey, IDLE_API_KEY_ACTION_STATE);
-  const [expiry, setExpiry] = useState("90");
+  const environment = proxyOrigin && sdkEnvironment(proxyOrigin, accountId);
 
   return (
     <Dialog.Root>
@@ -39,7 +48,7 @@ export function IssueApiKeyDialog({ accountId }: { accountId: string }) {
           <PlusIcon /> Issue an API key
         </Button>
       </Dialog.Trigger>
-      <Dialog.Content style={{ maxWidth: 560 }}>
+      <Dialog.Content style={{ maxWidth: 640 }}>
         <Dialog.Title>Issue an API key</Dialog.Title>
         {state.issued ? (
           <Flex direction="column" gap="3">
@@ -59,10 +68,23 @@ export function IssueApiKeyDialog({ accountId }: { accountId: string }) {
               </Code>
               <CopyToClipboard text={state.issued.key} />
             </Flex>
+            {environment && (
+              <Flex direction="column" gap="2">
+                <Flex justify="between" align="center" gap="2">
+                  <Text size="2">Save it to a file, then point any AWS SDK or the AWS CLI at it:</Text>
+                  <CopyToClipboard text={environment} />
+                </Flex>
+                <Box asChild p="3" style={{ background: "var(--gray-2)", overflowX: "auto" }}>
+                  <pre style={{ margin: 0 }}>
+                    <Code size="1" variant="ghost">
+                      {environment}
+                    </Code>
+                  </pre>
+                </Box>
+              </Flex>
+            )}
             <Text size="1" color="gray">
-              Put it in <Code size="1">AWS_WEB_IDENTITY_TOKEN_FILE</Code> and point
-              the SDK at the data proxy&apos;s STS endpoint. Revoke it here if it
-              leaks; only a hash of nothing is kept — the key itself is not stored.
+              Revoke it here if it leaks. Only its hash is stored — the key itself is not.
             </Text>
             <Flex justify="end">
               <Dialog.Close>
@@ -73,7 +95,6 @@ export function IssueApiKeyDialog({ accountId }: { accountId: string }) {
         ) : (
           <form action={formAction}>
             <input type="hidden" name="account_id" value={accountId} />
-            <input type="hidden" name="expires_in_days" value={expiry} />
             <Flex direction="column" gap="3">
               <Dialog.Description size="2">
                 For environments without OIDC: a server, a scheduler, an
@@ -83,18 +104,7 @@ export function IssueApiKeyDialog({ accountId }: { accountId: string }) {
               <Field label="Label" htmlFor="key-label" required help="Where this key lives, so you know which one to revoke.">
                 <TextField.Root id="key-label" name="label" placeholder="HPC cron job" maxLength={64} />
               </Field>
-              <Field label="Expires" htmlFor="key-expiry">
-                <Select.Root value={expiry} onValueChange={setExpiry}>
-                  <Select.Trigger id="key-expiry" />
-                  <Select.Content>
-                    {EXPIRIES.map((option) => (
-                      <Select.Item key={option.value} value={option.value}>
-                        {option.label}
-                      </Select.Item>
-                    ))}
-                  </Select.Content>
-                </Select.Root>
-              </Field>
+              <ApiKeyExpiryField id="key-expiry" />
               {state.message && (
                 <Text size="1" color="red">
                   {state.message}

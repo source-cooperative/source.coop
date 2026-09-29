@@ -4,13 +4,13 @@ import { z } from "zod";
 extendZodWithOpenApi(z);
 
 /**
- * The record behind an API key. The key itself — a JWT the data proxy signs
- * with this record's `jti` as its id (ADR-013) — is shown once at issue and
- * never stored; this row is what revocation and expiry act on.
+ * What the app and the UI see of an API key: everything but the hash. The
+ * key itself is an opaque secret (ADR-013) shown once at issue and never
+ * stored; `key_id` is its public handle for listing, revoking and expiry.
  */
 export const ServiceAccountKeySchema = z
   .object({
-    jti: z.string().uuid(),
+    key_id: z.string().uuid(),
     account_id: z.string(),
     label: z.string().min(1).max(64),
     created_at: z.string().datetime(),
@@ -25,11 +25,25 @@ export const ServiceAccountKeySchema = z
 export type ServiceAccountKey = z.infer<typeof ServiceAccountKeySchema>;
 
 /**
- * Every key starts with this. A JWT always begins `eyJ`, so a leaked key
- * matches `sck_eyJ[\w-]+\.[\w-]+\.[\w-]+` — the pattern to register with
- * secret scanners. The proxy strips the prefix before verifying.
+ * The stored row: the public fields plus `key_hash`, the table's partition
+ * key — hex SHA-256 of the key — which the data proxy presents to ask whether
+ * a key may be exchanged. It never leaves the server; pages strip it with
+ * `publicKey` before handing a record to a client component.
+ */
+export const ServiceAccountKeyRecordSchema = ServiceAccountKeySchema.extend({
+  key_hash: z.string().regex(/^[0-9a-f]{64}$/),
+});
+
+export type ServiceAccountKeyRecord = z.infer<typeof ServiceAccountKeyRecordSchema>;
+
+export const publicKey = ({ key_hash: _, ...key }: ServiceAccountKeyRecord): ServiceAccountKey => key;
+
+/**
+ * Every key is `sck_` + 32 random bytes in base64url: a fixed 47 characters,
+ * all entropy after the prefix. The pattern is what secret scanners register.
  */
 export const API_KEY_PREFIX = "sck_";
+export const API_KEY_PATTERN = /^sck_[A-Za-z0-9_-]{43}$/;
 
 /** Whether a key may still be exchanged: not revoked, and not past its expiry. */
 export const isKeyActive = (key: ServiceAccountKey, now = Date.now()): boolean =>
