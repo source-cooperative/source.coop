@@ -1,4 +1,5 @@
 import { Metadata } from "next";
+import { notFound } from "next/navigation";
 
 import { LOGGER, dataConnectionsTable, getPageSession } from "@/lib";
 import { getStorageClient } from "@/lib/clients/storage";
@@ -171,9 +172,8 @@ export default async function ProductPathPage({ params }: PageProps) {
   //    just-minted credentials haven't propagated yet — the private-data copy.
   //  - anything else (proxy hung / 5xx / unparseable response, or a misconfigured
   //    public connection): a generic "couldn't load the contents" notice.
-  // An empty listing is a valid S3 state (e.g. a directory with no uploads yet);
-  // DirectoryList renders the empty state. We intentionally do NOT fall back to
-  // the parent prefix here — that masked legitimately empty directories.
+  // We intentionally do NOT fall back to the parent prefix here — that masked
+  // legitimately empty directories.
   const effectivePrefix = objectPath.replace(/\/$/, "");
   let effectiveListing;
   try {
@@ -201,6 +201,18 @@ export default async function ProductPathPage({ params }: PageProps) {
         details={errorDetailsFor(error)}
       />
     );
+  }
+
+  // A non-root path with an empty listing doesn't exist: S3 returns an empty
+  // result for any prefix with no objects under it, including prefixes that
+  // have never been written to. An empty listing at the product root is valid
+  // (the product exists but nothing has been uploaded yet).
+  if (
+    objectPath &&
+    effectiveListing.objects.length === 0 &&
+    effectiveListing.directories.length === 0
+  ) {
+    notFound();
   }
 
   // Strip the bucket-key product prefix so paths are relative to the product.
