@@ -30,11 +30,19 @@ export const ServiceAccountKeySchema = z
     /** Null for a key that lasts until revoked. */
     expires_at: z.string().datetime().nullable(),
     revoked_at: z.string().datetime().optional(),
+    /**
+     * Who revoked the key: an `owner` in settings, a `holder` presenting it to
+     * the revocation endpoint, or `github` secret scanning finding it in
+     * public. Absent on keys revoked before it was recorded.
+     */
+    revoked_via: z.enum(["owner", "holder", "github"]).optional(),
     last_used_at: z.string().datetime().optional(),
   })
   .openapi("ServiceAccountKey");
 
 export type ServiceAccountKey = z.infer<typeof ServiceAccountKeySchema>;
+
+export type RevokedVia = NonNullable<ServiceAccountKey["revoked_via"]>;
 
 /**
  * The stored row: the public fields plus `key_hash`, the table's partition

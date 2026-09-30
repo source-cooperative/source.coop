@@ -7,7 +7,9 @@ import type { ServiceAccountKey } from "@/types";
  * key's label and its last six characters (`sck_…Xy9QeT`), which are its
  * checksum — enough to match a key in someone's environment to its record —
  * and, to the right, how it has been used and when it ends. Hover those two
- * lines for the exact dates and who issued the key. A live key's "⋯" menu
+ * lines for the exact dates, who issued the key and, once it is revoked, who
+ * revoked it: an owner in settings, someone holding the key, or GitHub on
+ * finding it in public. A live key's "⋯" menu
  * changes its expiry or revokes it; a revoked key has nothing left to do.
  *
  * The actions are mocked in `.storybook/preview.tsx`. Dates here are set
@@ -46,7 +48,8 @@ export const Default: Story = {
       key({ key_id: "k2", label: "Instrument uploader", hint: "m2RdK7", expires_at: null, last_used_at: at(0) }),
       key({ key_id: "k3", label: "Laptop, for testing", hint: "Q8vz0a", created_at: at(-1), expires_at: at(30) }),
       key({ key_id: "k4", label: "Last year's sync", hint: "t0pAw3", created_at: at(-400), expires_at: at(-35), last_used_at: at(-40) }),
-      key({ key_id: "k5", label: "Old laptop", hint: "a07kT2", created_at: at(-300), expires_at: null, revoked_at: at(-270) }),
+      key({ key_id: "k5", label: "Old laptop", hint: "a07kT2", created_at: at(-300), expires_at: null, revoked_at: at(-270), revoked_via: "owner" }),
+      key({ key_id: "k6", label: "Notebook demo", hint: "Hq4sLw", created_at: at(-20), expires_at: at(70), last_used_at: at(-6), revoked_at: at(-5), revoked_via: "github" }),
     ],
   },
 };

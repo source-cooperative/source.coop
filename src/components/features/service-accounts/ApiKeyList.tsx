@@ -14,6 +14,7 @@ import {
   isKeyActive,
   maskedApiKey,
   type ApiKeyActionState,
+  type RevokedVia,
   type ServiceAccountKey,
 } from "@/types";
 import { ApiKeyExpiryField } from "./ApiKeyExpiryField";
@@ -51,13 +52,19 @@ const keyStanding = (key: ServiceAccountKey) => ({
         : `Expired ${relative(key.expires_at)}`,
 });
 
-/** The row's exact dates, for its tooltip. */
+const REVOKED_VIA: Record<RevokedVia, string> = {
+  owner: " in settings",
+  holder: " by someone holding it",
+  github: " after GitHub found it in public",
+};
+
+/** The row's exact dates, and who revoked it, for its tooltip. */
 const keyDates = (key: ServiceAccountKey) =>
   [
     `Issued ${date(key.created_at)} by ${key.created_by}`,
     key.last_used_at && `Last used ${date(key.last_used_at)}`,
     key.revoked_at
-      ? `Revoked ${date(key.revoked_at)}`
+      ? `Revoked ${date(key.revoked_at)}${key.revoked_via ? REVOKED_VIA[key.revoked_via] : ""}`
       : key.expires_at
         ? `Expires ${date(key.expires_at)}`
         : "Never expires",
