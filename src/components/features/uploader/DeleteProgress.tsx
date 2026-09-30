@@ -5,17 +5,20 @@ import { Cross2Icon } from "@radix-ui/react-icons";
 import { productUrl } from "@/lib/urls";
 import type { DeleteJob } from "./UploadProvider";
 
-const count = (n: number) =>
-  `${n.toLocaleString()} ${n === 1 ? "file" : "files"}`;
+// "118.3K" rather than "118,342": a menu row has no room for the digits.
+const compact = new Intl.NumberFormat("en", {
+  notation: "compact",
+  maximumFractionDigits: 1,
+}).format;
+const count = (n: number) => `${compact(n)} ${n === 1 ? "file" : "files"}`;
 
 /** One line describing where a delete has got to. */
 export function deleteStatusText(
   job: Pick<DeleteJob, "status" | "counting" | "deleted" | "total">
 ): string {
   if (job.status === "completed") return `Deleted ${count(job.deleted)}`;
-  if (job.counting)
-    return `Counting files… ${job.total.toLocaleString()} found`;
-  return `Deleted ${job.deleted.toLocaleString()} of ${count(job.total)}`;
+  if (job.counting) return `Counting files… ${compact(job.total)} found`;
+  return `Deleted ${compact(job.deleted)} of ${count(job.total)}`;
 }
 
 interface DeleteProgressProps {

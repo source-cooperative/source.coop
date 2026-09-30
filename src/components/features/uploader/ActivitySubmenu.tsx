@@ -23,6 +23,9 @@ import { productUrl } from "@/lib/urls";
 import { formatBytes } from "@/lib/format";
 import { DeleteProgress } from "./DeleteProgress";
 
+// A folder upload queues one entry per file; rendering thousands hangs the tab.
+const MAX_SHOWN = 100;
+
 /** Uploads and deletes running in this tab, under the account menu. */
 export function ActivitySubmenu() {
   const { uploads, cancelUpload, retryUpload, deletions, dismissDeletion } =
@@ -40,6 +43,16 @@ export function ActivitySubmenu() {
   const activeCount =
     activeUploads.length +
     shownDeletions.filter((d) => d.status === "deleting").length;
+  const deletionsShown = shownDeletions.slice(0, MAX_SHOWN);
+  const uploadsShown = activeUploads.slice(
+    0,
+    MAX_SHOWN - deletionsShown.length
+  );
+  const hidden =
+    shownDeletions.length +
+    activeUploads.length -
+    deletionsShown.length -
+    uploadsShown.length;
 
   if (activeUploads.length === 0 && shownDeletions.length === 0) {
     return null;
@@ -64,14 +77,14 @@ export function ActivitySubmenu() {
         >
           <ScrollArea style={{ maxHeight: "300px" }}>
             <Flex direction="column" gap="2">
-              {shownDeletions.map((job) => (
+              {deletionsShown.map((job) => (
                 <DeleteProgress
                   key={job.id}
                   job={job}
                   onDismiss={() => dismissDeletion(job.id)}
                 />
               ))}
-              {activeUploads.map((upload) => {
+              {uploadsShown.map((upload) => {
                 const uploadPrefix =
                   productUrl(upload.scope.accountId, upload.scope.productId) +
                   "/" +
@@ -165,6 +178,11 @@ export function ActivitySubmenu() {
                   </Flex>
                 );
               })}
+              {hidden > 0 && (
+                <Text size="1" color="gray" align="center">
+                  and {hidden.toLocaleString("en")} more…
+                </Text>
+              )}
             </Flex>
           </ScrollArea>
         </DropdownMenu.SubContent>
