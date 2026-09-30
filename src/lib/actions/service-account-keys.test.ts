@@ -3,7 +3,7 @@ import { issueApiKey, revokeApiKey, setApiKeyExpiry } from "./service-account-ke
 import { serviceAccountKeysTable } from "../clients";
 import { getPageSession } from "../api/utils";
 import { managedServiceAccount } from "@/lib/accounts/service-accounts";
-import { API_KEY_PATTERN, AccountType, type Account, type ApiKeyActionState, type UserSession } from "@/types";
+import { isApiKey, AccountType, type Account, type ApiKeyActionState, type UserSession } from "@/types";
 
 jest.mock("../clients", () => ({
   serviceAccountKeysTable: { create: jest.fn(), listByAccount: jest.fn(), set: jest.fn() },
@@ -44,12 +44,12 @@ describe("issueApiKey", () => {
     const result = await issueApiKey(IDLE, form({ account_id: "acme--nightly-sync", label: "HPC", expires_in_days: "90" }));
     expect(result.success).toBe(true);
     const key = result.issued!.key;
-    expect(key).toMatch(API_KEY_PATTERN);
+    expect(isApiKey(key)).toBe(true);
     const stored = keys.create.mock.calls[0][0];
     expect(stored).toMatchObject({ key_hash: sha256(key), account_id: "acme--nightly-sync", label: "HPC", created_by: "alice" });
-    // The last four characters, and only those, so the key can be recognised later.
-    expect(stored.hint).toBe(key.slice(-4));
-    expect(result.issued!.record.hint).toBe(key.slice(-4));
+    // The checksum, the last six characters and only those, so the key can be recognised later.
+    expect(stored.hint).toBe(key.slice(-6));
+    expect(result.issued!.record.hint).toBe(key.slice(-6));
     expect(stored.expires_at).not.toBeNull();
     expect(JSON.stringify(stored)).not.toContain(key);
     // The record handed back is the public one: no hash, and the same handle.

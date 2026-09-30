@@ -1,10 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createHash, randomBytes, randomUUID } from "crypto";
+import { createHash, randomInt, randomUUID } from "crypto";
 import { LOGGER } from "@/lib/logging";
 import {
+  API_KEY_ALPHABET,
   API_KEY_PREFIX,
+  apiKeyChecksum,
   publicKey,
   ServiceAccountKeyRecordSchema,
   type ApiKeyActionState,
@@ -51,15 +53,16 @@ export async function issueApiKey(
   const expires_at = expiryFrom(formData);
   if (expires_at === undefined) return outcome("Expiry must be between 1 and 3650 days", false);
 
-  // 32 random bytes in base64url: fixed length, no bias, all entropy.
-  const key = API_KEY_PREFIX + randomBytes(32).toString("base64url");
+  // 30 characters drawn uniformly from base62 (178 bits), then their checksum.
+  const body = Array.from({ length: 30 }, () => API_KEY_ALPHABET[randomInt(62)]).join("");
+  const key = API_KEY_PREFIX + body + apiKeyChecksum(body);
   const now = new Date().toISOString();
   const parsed = ServiceAccountKeyRecordSchema.safeParse({
     key_hash: hashApiKey(key),
     key_id: randomUUID(),
     account_id: account.account_id,
     label: String(formData.get("label") ?? "").trim(),
-    hint: key.slice(-4),
+    hint: key.slice(-6),
     created_at: now,
     created_by: session.account.account_id,
     expires_at,
