@@ -84,7 +84,8 @@ export const sessions: Record<string, UserSession | null> = {
 };
 
 for (const account of accounts) {
-  if (account.type != AccountType.INDIVIDUAL) {
+  // Organizations never authenticate; people and service accounts do.
+  if (account.type === AccountType.ORGANIZATION) {
     continue;
   }
 
@@ -97,7 +98,7 @@ for (const account of accounts) {
 
   sessions[account.account_id] = {
     account: account,
-    identity_id: account.identity_id,
+    identity_id: account.identity_id ?? null,
     memberships: accountMemberships,
   };
 }

@@ -4,9 +4,9 @@ import {
   membershipsTable,
   productsTable,
 } from "@/lib/clients/database";
-import { type IndividualAccount, type Product, Actions } from "@/types";
+import { type IndividualAccount, Actions } from "@/types";
 import { getPageSession } from "@/lib/api/utils";
-import { isAuthorized } from "@/lib/api/authz";
+import { canCreateProductForAccount, isAuthorized } from "@/lib/api/authz";
 import { IndividualProfile } from "@/components/features/profiles/IndividualProfile";
 
 interface IndividualProfilePageProps {
@@ -25,9 +25,10 @@ export async function IndividualProfilePage({
     1000
   );
 
-  // Filter products based on authentication status
+  // ListRepository, not GetRepository: an unlisted product is readable by
+  // anyone with the link but listed only for the account and its members.
   products = products.filter((product) =>
-    isAuthorized(session, product, Actions.GetRepository)
+    isAuthorized(session, product, Actions.ListRepository)
   );
 
   const memberships = (
@@ -51,13 +52,7 @@ export async function IndividualProfilePage({
       organizations={organizations}
       showWelcome={showWelcome}
       canEdit={isAuthorized(session, account, Actions.PutAccountProfile)}
-      canCreateProduct={isAuthorized(
-        session,
-        // Same partial-product check the create action runs, so the link only
-        // appears when the create would actually be allowed.
-        { account_id: account.account_id } as Product,
-        Actions.CreateRepository
-      )}
+      canCreateProduct={canCreateProductForAccount(session, account)}
     />
   );
 }

@@ -13,8 +13,13 @@
  *                            double3: duration_ms
  *
  * Analytics Engine samples writes, so every count/sum must be weighted by
- * `_sample_interval`; COUNT(DISTINCT …) is the best available estimate for
- * uniques. It has no parameterized queries — every interpolated string goes
+ * `_sample_interval`. Distinct counts are NOT correctable that way — sampling
+ * drops whole rows, so COUNT(DISTINCT …) and row counts alike see only the
+ * survivors, and both shrink as a query's scan widens. Cloudflare documents
+ * this: unique counts of fields outside the index are not accurate. Prefer a
+ * sample-weighted sum wherever one answers the question; where it can't (the
+ * unique-IP stat), slice the scan so it stays at full resolution — see
+ * CHUNK_DAYS. It has no parameterized queries — every interpolated string goes
  * through sqlQuote(), and windows/buckets/columns come from whitelists only.
  *
  * Server-only: queries run over the SQL API with an account-level token.
@@ -64,9 +69,13 @@ export const FREQUENCY_BINS = [
 ] as const;
 
 export interface UsageUsers {
-  /** Distinct client IP hashes (blob8) that downloaded in the window */
+  /**
+   * Distinct client IP hashes (blob8) that downloaded in the window, unioned
+   * across CHUNK_DAYS-wide slices. A lower bound: ingest-level sampling drops
+   * events on very high-volume products before any query sees them.
+   */
   uniqueIps: number;
-  /** Distinct signed-in users (blob5) that downloaded in the window */
+  /** Sample-weighted requests from a signed-in user */
   registered: number;
   /** Sample-weighted requests with no signed-in user */
   anonRequests: number;
@@ -261,6 +270,41 @@ const USAGE_AGGREGATES = `
   COUNT(DISTINCT blob6) AS countries`;
 
 /**
+ * Width of one per-IP query slice. Analytics Engine picks a data resolution
+ * per query from the rows it estimates it will scan — time range dominating
+ * — so a whole-window `GROUP BY blob8` gets a coarsely sampled copy while
+ * week-wide slices of the same span get the full-resolution one. Every
+ * USAGE_WINDOWS value is a multiple of this, so the slices tile exactly.
+ */
+const CHUNK_DAYS = 7;
+
+/** Number of CHUNK_DAYS-wide slices that tile `days`. */
+const chunkCount = (days: UsageWindow): number => days / CHUNK_DAYS;
+
+/**
+ * Time bounds for the whole window, or for slice `chunk` of it (0 = the most
+ * recent CHUNK_DAYS days, counting back). Bounds are day offsets from today
+ * rather than absolute dates, so a given slice's SQL is byte-identical across
+ * windows — and since unstable_cache keys on the SQL, the 91d view only pays
+ * for the slices 7d/28d have not already warmed.
+ */
+function timeFilters(days: UsageWindow, chunk?: number): string[] {
+  if (chunk === undefined) {
+    return [`timestamp >= toStartOfDay(NOW() - INTERVAL '${days - 1}' DAY)`];
+  }
+  const filters = [
+    `timestamp >= toStartOfDay(NOW() - INTERVAL '${CHUNK_DAYS * (chunk + 1) - 1}' DAY)`,
+  ];
+  // Slice 0 is open-ended so it keeps the in-progress UTC day.
+  if (chunk > 0) {
+    filters.push(
+      `timestamp < toStartOfDay(NOW() - INTERVAL '${CHUNK_DAYS * chunk - 1}' DAY)`,
+    );
+  }
+  return filters;
+}
+
+/**
  * Shared FROM/WHERE for the usage queries. The window is day-aligned in SQL
  * — today (partial) plus days-1 full UTC days — so the day grid, headline
  * totals, and the country/file breakdowns all cover the identical span. (A
@@ -272,10 +316,11 @@ function usageFrom(
   productId: string,
   objectPath: string | undefined,
   days: UsageWindow,
+  chunk?: number,
 ): string {
   const filters = [
     SERVED_FILTER,
-    `timestamp >= toStartOfDay(NOW() - INTERVAL '${days - 1}' DAY)`,
+    ...timeFilters(days, chunk),
     `blob1 = ${sqlQuote(accountId)}`,
     `blob2 = ${sqlQuote(productId)}`,
   ];
@@ -301,24 +346,26 @@ export async function getUsage(
   const from = usageFrom(accountId, productId, objectPath, days);
 
   try {
-    const [seriesRows, windowRows, ipRows, registeredRows] = await Promise.all([
+    const [seriesRows, windowRows, ipChunks] = await Promise.all([
       usageQuery(
         `SELECT toStartOfDay(timestamp) AS day, ${USAGE_AGGREGATES} ${from} GROUP BY day ORDER BY day`,
       ),
       // Separate query: window-wide DISTINCT can't be summed from days.
       usageQuery(
-        `SELECT COUNT(DISTINCT blob6) AS countries, sumIf(_sample_interval, blob5 = '') AS anon_requests ${from}`,
+        `SELECT COUNT(DISTINCT blob6) AS countries, sumIf(_sample_interval, blob5 = '') AS anon_requests, sumIf(_sample_interval, blob5 != '') AS registered_requests ${from}`,
       ),
       // Sample-weighted request count per unique client IP hash, for the
-      // download-frequency histogram (blob8 is empty when the IP is unknown).
-      // ponytail: capped at AE's ~10k response rows — a product with more
-      // unique IPs in the window gets an (arbitrary, roughly unbiased)
-      // sample; the histogram is labeled an estimate anyway.
-      usageQuery(
-        `SELECT blob8 AS ip, SUM(_sample_interval) AS requests ${from} AND blob8 != '' GROUP BY ip`,
-      ),
-      usageQuery(
-        `SELECT COUNT(DISTINCT blob5) AS registered ${from} AND blob5 != ''`,
+      // unique-IP headline and the download-frequency histogram (blob8 is
+      // empty when the IP is unknown). Sliced into weeks and unioned below:
+      // Analytics Engine samples a whole-window GROUP BY hard enough that it
+      // returns FEWER distinct IPs for a wider window, and distinct counts —
+      // unlike the sample-weighted SUMs — cannot be corrected after the fact.
+      Promise.all(
+        Array.from({ length: chunkCount(days) }, (_, chunk) =>
+          usageQuery(
+            `SELECT blob8 AS ip, SUM(_sample_interval) AS requests ${usageFrom(accountId, productId, objectPath, days, chunk)} AND blob8 != '' GROUP BY ip`,
+          ),
+        ),
       ),
     ]);
 
@@ -348,13 +395,24 @@ export async function getUsage(
       { bytes: 0, requests: 0, countries: num(windowRows[0]?.countries) },
     );
 
+    // Union the slices: an IP active in several weeks is one IP, with its
+    // requests summed. The hashes are stable, so this is a real distinct
+    // count rather than a sum of per-slice counts (which would double-count).
+    const requestsByIp = new Map<string, number>();
+    for (const rows of ipChunks) {
+      for (const row of rows) {
+        const ip = str(row.ip);
+        requestsByIp.set(ip, (requestsByIp.get(ip) ?? 0) + num(row.requests));
+      }
+    }
+
     const distribution = FREQUENCY_BINS.map(({ label }) => ({
       label,
       ips: 0,
     }));
-    for (const row of ipRows) {
+    for (const requests of requestsByIp.values()) {
       // Sampling makes per-IP counts fractional estimates; round, floor 1.
-      const downloads = Math.max(1, Math.round(num(row.requests)));
+      const downloads = Math.max(1, Math.round(requests));
       distribution[
         FREQUENCY_BINS.findIndex((bin) => downloads <= bin.max)
       ].ips += 1;
@@ -365,8 +423,8 @@ export async function getUsage(
       totals,
       users: {
         // Same population as the histogram, so headline and bars agree.
-        uniqueIps: ipRows.length,
-        registered: num(registeredRows[0]?.registered),
+        uniqueIps: requestsByIp.size,
+        registered: num(windowRows[0]?.registered_requests),
         anonRequests: num(windowRows[0]?.anon_requests),
         distribution,
       },

@@ -7,6 +7,11 @@ export async function AccountSchemaMetadata({ account }: { account: Account }) {
   const baseUrl = await getBaseUrl();
   const url = `${baseUrl}${accountUrl(account.account_id)}`;
 
+  // A service account has no public profile, so there is nothing to describe.
+  if (account.type === "service") {
+    return null;
+  }
+
   const schemaData =
     account.type === "organization"
       ? {

@@ -87,7 +87,7 @@ export function OrganizationCreationForm({
     <DynamicForm<OrganizationFormData>
       fields={fields}
       action={createAccount}
-      submitButtonText="Create Organization"
+      submitButtonText="Create"
       hiddenFields={{
         owner_account_id: ownerAccountId,
         type: AccountType.ORGANIZATION,

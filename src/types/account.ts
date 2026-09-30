@@ -15,6 +15,8 @@ import {
   MIN_ID_LENGTH,
   MAX_ID_LENGTH,
   ID_REGEX,
+  MAX_SERVICE_ACCOUNT_ID_LENGTH,
+  SERVICE_ACCOUNT_ID_REGEX,
   AccountFlagsSchema,
   MIN_NAME_LENGTH,
   MAX_NAME_LENGTH,
@@ -25,7 +27,7 @@ extendZodWithOpenApi(z);
 export enum AccountType {
   INDIVIDUAL = "individual",
   ORGANIZATION = "organization",
-  // SERVICE = "service",  // TODO: Enable when we support services
+  SERVICE = "service",
 }
 
 export const AccountTypeSchema = z
@@ -35,7 +37,7 @@ export const AccountTypeSchema = z
   .openapi("AccountType");
 
 // Email interface for managing multiple emails per account
-const AccountEmailSchema = z
+export const AccountEmailSchema = z
   .object({
     address: z.string().email(),
     verified: z.boolean(),
@@ -60,12 +62,20 @@ export const AccountDomainSchema = z.object({
 // Export the type for use in other files
 export type AccountDomain = z.infer<typeof AccountDomainSchema>;
 
+// Exported so the edit form's character counter reads the same number the
+// validator enforces, rather than a second one written into help text.
+export const BIO_MAX_LENGTH = 1024;
+
 const BaseAccountProfileSchema = z.object({
   bio: z
     .preprocess((bio) => {
       if (!bio || typeof bio !== "string") return undefined;
       return bio === "" ? undefined : bio;
-    }, z.optional(z.string().max(1024, "Bio must not exceed 1024 characters")))
+    }, z.optional(
+      z
+        .string()
+        .max(BIO_MAX_LENGTH, `Bio must not exceed ${BIO_MAX_LENGTH} characters`)
+    ))
     .openapi({ example: "Software Engineer @radiantearth" }),
   location: z
     .preprocess((location) => {
@@ -139,10 +149,29 @@ export const OrganizationalAccountSchema = BaseAccountSchema.extend({
 
 export type OrganizationalAccount = z.infer<typeof OrganizationalAccountSchema>;
 
+// Service account schema. A machine principal owned by another account: it
+// has no Ory identity (it authenticates as a subject it trusts, or with an
+// API key) and no
+// profile beyond the shared fields.
+export const ServiceAccountSchema = BaseAccountSchema.extend({
+  account_id: z
+    .string()
+    .max(MAX_SERVICE_ACCOUNT_ID_LENGTH)
+    .regex(SERVICE_ACCOUNT_ID_REGEX, "A service account id is `{owner}--{id}`")
+    .openapi({ example: "acme--nightly-sync" }),
+  type: z.literal(AccountType.SERVICE),
+  identity_id: z.undefined(),
+  owner_account_id: z.string().openapi({ example: "owner-account-id" }),
+  metadata_public: BaseAccountProfileSchema,
+}).openapi("ServiceAccount");
+
+export type ServiceAccount = z.infer<typeof ServiceAccountSchema>;
+
 export const AccountSchema = z
   .discriminatedUnion("type", [
     IndividualAccountSchema,
     OrganizationalAccountSchema,
+    ServiceAccountSchema,
   ])
   .openapi("Account");
 
@@ -213,3 +242,27 @@ export const OrganizationCreationRequestSchema =
 export type OrganizationCreationRequest = z.infer<
   typeof OrganizationCreationRequestSchema
 >;
+
+/**
+ * What the create form posts: the display name, the owner, and the service
+ * account's own short id, which the action joins to the owner's id.
+ */
+export const ServiceAccountCreationRequestSchema =
+  AccountCreationRequestSchema.pick({ name: true }).extend({
+    local_id: AccountCreationRequestSchema.shape.account_id,
+    owner_account_id: z.string(),
+  });
+
+export type ServiceAccountCreationRequest = z.infer<
+  typeof ServiceAccountCreationRequestSchema
+>;
+
+// Type guards
+export const isIndividualAccount = (acc: Account): acc is IndividualAccount =>
+  acc.type === AccountType.INDIVIDUAL;
+
+export const isOrganizationalAccount = (acc: Account): acc is OrganizationalAccount =>
+  acc.type === AccountType.ORGANIZATION;
+
+export const isServiceAccount = (acc: Account): acc is ServiceAccount =>
+  acc.type === AccountType.SERVICE;

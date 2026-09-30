@@ -48,12 +48,16 @@ export function ProductsList({
   return (
     <Box>
       <nav aria-label="Product list">
-        <ul className={grid ? styles.gridList : styles.list} role="listbox">
+        {/* ponytail: a plain list, not a listbox. The j/k shortcuts are a
+            document-level keydown handler with no focus management and no
+            aria-activedescendant, so listbox/option promised a widget that
+            isn't implemented — and role="option" may not contain the link
+            each item renders. aria-current carries the highlight instead. */}
+        <ul className={grid ? styles.gridList : styles.list}>
           {products.map((product, index) => (
             <li
               key={`${product.account_id}/${product.product_id}`}
-              role="option"
-              aria-selected={index === selectedIndex}
+              aria-current={index === selectedIndex || undefined}
             >
               <ProductListItem
                 product={product}

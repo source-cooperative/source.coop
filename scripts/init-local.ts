@@ -49,7 +49,9 @@ async function tablesExist() {
     tables.TableNames?.includes(getTableName("products")) &&
     tables.TableNames?.includes(getTableName("api-keys")) &&
     tables.TableNames?.includes(getTableName("data-connections")) &&
-    tables.TableNames?.includes(getTableName("memberships"))
+    tables.TableNames?.includes(getTableName("memberships")) &&
+    tables.TableNames?.includes(getTableName("account-trusts")) &&
+    tables.TableNames?.includes(getTableName("service-account-keys"))
   );
 }
 
@@ -77,6 +79,8 @@ async function createTables() {
   await deleteTable(getTableName("api-keys"));
   await deleteTable(getTableName("data-connections"));
   await deleteTable(getTableName("memberships"));
+  await deleteTable(getTableName("account-trusts"));
+  await deleteTable(getTableName("service-account-keys"));
 
   // Wait for tables to be fully deleted
   await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -90,6 +94,7 @@ async function createTables() {
           { AttributeName: "account_id", AttributeType: "S" },
           { AttributeName: "type", AttributeType: "S" },
           { AttributeName: "identity_id", AttributeType: "S" },
+          { AttributeName: "owner_account_id", AttributeType: "S" },
         ],
         KeySchema: [{ AttributeName: "account_id", KeyType: "HASH" }],
         GlobalSecondaryIndexes: [
@@ -118,6 +123,17 @@ async function createTables() {
               WriteCapacityUnits: 5,
             },
           },
+          {
+            IndexName: "owner_account_id",
+            KeySchema: [{ AttributeName: "owner_account_id", KeyType: "HASH" }],
+            Projection: {
+              ProjectionType: "ALL",
+            },
+            ProvisionedThroughput: {
+              ReadCapacityUnits: 5,
+              WriteCapacityUnits: 5,
+            },
+          },
         ],
         ProvisionedThroughput: {
           ReadCapacityUnits: 5,
@@ -128,6 +144,66 @@ async function createTables() {
     console.log(`✓ Created ${getTableName("accounts")} table`);
   } catch (e) {
     console.error(`✗ Error creating ${getTableName("accounts")} table:`, e);
+    throw e;
+  }
+
+  // Create account-trusts table
+  try {
+    await client.send(
+      new CreateTableCommand({
+        TableName: getTableName("account-trusts"),
+        AttributeDefinitions: [
+          { AttributeName: "account_id", AttributeType: "S" },
+          { AttributeName: "identity", AttributeType: "S" },
+        ],
+        KeySchema: [
+          { AttributeName: "account_id", KeyType: "HASH" },
+          { AttributeName: "identity", KeyType: "RANGE" },
+        ],
+        ProvisionedThroughput: {
+          ReadCapacityUnits: 5,
+          WriteCapacityUnits: 5,
+        },
+      })
+    );
+    console.log(`✓ Created ${getTableName("account-trusts")} table`);
+  } catch (e) {
+    console.error(`✗ Error creating ${getTableName("account-trusts")} table:`, e);
+    throw e;
+  }
+
+  // Create service-account-keys table
+  try {
+    await client.send(
+      new CreateTableCommand({
+        TableName: getTableName("service-account-keys"),
+        AttributeDefinitions: [
+          { AttributeName: "key_hash", AttributeType: "S" },
+          { AttributeName: "account_id", AttributeType: "S" },
+        ],
+        KeySchema: [{ AttributeName: "key_hash", KeyType: "HASH" }],
+        GlobalSecondaryIndexes: [
+          {
+            IndexName: "account_id",
+            KeySchema: [{ AttributeName: "account_id", KeyType: "HASH" }],
+            Projection: {
+              ProjectionType: "ALL",
+            },
+            ProvisionedThroughput: {
+              ReadCapacityUnits: 5,
+              WriteCapacityUnits: 5,
+            },
+          },
+        ],
+        ProvisionedThroughput: {
+          ReadCapacityUnits: 5,
+          WriteCapacityUnits: 5,
+        },
+      })
+    );
+    console.log(`✓ Created ${getTableName("service-account-keys")} table`);
+  } catch (e) {
+    console.error(`✗ Error creating ${getTableName("service-account-keys")} table:`, e);
     throw e;
   }
 

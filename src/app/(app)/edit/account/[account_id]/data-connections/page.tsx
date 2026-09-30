@@ -6,7 +6,7 @@ import { accountsTable, dataConnectionsTable } from "@/lib/clients";
 import { getPageSession } from "@/lib/api/utils";
 import { canManageAccountDataConnections } from "@/lib/api/authz";
 import { FormTitle } from "@/components/core/FormTitle";
-import { DataConnectionsTable } from "@/components/features/data-connections";
+import { DataConnectionsList } from "@/components/features/data-connections";
 import {
   accountDataConnectionCreateUrl,
   accountDataConnectionEditUrl,
@@ -47,14 +47,14 @@ export default async function AccountDataConnectionsPage({ params }: PageProps) 
             description="Manage this account's connections to external storage."
           />
         </Box>
-        <Button asChild size="2">
+        <Button asChild size="2" highContrast>
           <Link href={accountDataConnectionCreateUrl(account_id)}>
             New Connection
           </Link>
         </Button>
       </Flex>
 
-      <DataConnectionsTable
+      <DataConnectionsList
         connections={connections}
         editHref={(id) => accountDataConnectionEditUrl(account_id, id)}
       />

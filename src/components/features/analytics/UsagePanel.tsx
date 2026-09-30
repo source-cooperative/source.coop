@@ -10,6 +10,7 @@ import {
   HoverCaption,
   numberFormat,
   Stat,
+  StatRow,
 } from "./panels";
 
 // Kept here for its existing unit tests / import sites.
@@ -32,7 +33,7 @@ export function UsagePanel({ days, totals }: UsagePanelProps) {
 
   return (
     <>
-      <Flex mt="3" pb="3" style={{ borderBottom: "1px solid var(--gray-4)" }}>
+      <StatRow mt="3" pb="3" style={{ borderBottom: "1px solid var(--gray-4)" }}>
         <Stat
           label="Downloads"
           help={HELP.downloads}
@@ -42,15 +43,13 @@ export function UsagePanel({ days, totals }: UsagePanelProps) {
           label="Data served"
           help={HELP.served}
           value={formatBytes(shown.bytes, 1)}
-          divider
         />
         <Stat
           label="Countries"
           help={HELP.countries}
           value={numberFormat.format(shown.countries)}
-          divider
         />
-      </Flex>
+      </StatRow>
 
       <Flex mt="3" direction="column">
         <HoverCaption days={days} hovered={hovered} />

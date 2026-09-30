@@ -19,6 +19,7 @@ import {
   mono,
   numberFormat,
   Stat,
+  StatRow,
   UsersContent,
 } from "./panels";
 
@@ -68,7 +69,7 @@ export function ProductAnalyticsView({
       </Tabs.List>
 
       <Tabs.Content value="downloads">
-        <Flex mt="3" pb="3" style={{ borderBottom: "1px solid var(--gray-4)" }}>
+        <StatRow mt="3" pb="3" style={{ borderBottom: "1px solid var(--gray-4)" }}>
           <Stat
             label="Downloads"
             help={HELP.downloads}
@@ -78,21 +79,18 @@ export function ProductAnalyticsView({
             label="Daily avg"
             help={HELP.dailyAvg}
             value={numberFormat.format(Math.round(totals.requests / days.length))}
-            divider
           />
           <Stat
             label="Data served"
             help={HELP.served}
             value={formatBytes(shown.bytes, 1)}
-            divider
           />
           <Stat
             label="Countries"
             help={HELP.countries}
             value={numberFormat.format(shown.countries)}
-            divider
           />
-        </Flex>
+        </StatRow>
 
         <Grid columns={{ initial: "1", md: "5" }} gap="6" mt="4">
           <Box style={{ gridColumn: "span 3" }}>

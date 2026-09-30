@@ -66,6 +66,10 @@ export function Dropzone({
           : {}),
       }}
     >
+      {/* eslint-disable-next-line no-restricted-syntax --
+          react-dropzone supplies type="file" through the spread, so the
+          exemption can't be seen statically. It is a visually hidden file
+          picker, not a themed control. */}
       <input {...getInputProps()} />
       <style>{`
         @keyframes fadeIn {

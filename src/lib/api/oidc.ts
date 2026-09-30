@@ -3,11 +3,12 @@ import {
   createRemoteJWKSet,
   decodeJwt,
   decodeProtectedHeader,
+  type JWTPayload,
 } from "jose";
 import { CONFIG } from "@/lib/config";
 import { accountsTable, membershipsTable } from "@/lib/clients/database";
 import { isAuthorized } from "@/lib/api/authz";
-import { Actions, UserSession } from "@/types";
+import { Actions, isServiceAccount, UserSession } from "@/types";
 import { LOGGER } from "../logging";
 
 let jwks: ReturnType<typeof createRemoteJWKSet> | null = null;
@@ -50,31 +51,46 @@ function getJwks() {
 }
 
 /**
- * Authenticates using a signed JWT from the data proxy's OIDC provider.
- * Validates the token signature, issuer, audience, and expiry, then
- * resolves the subject claim to a UserSession.
+ * The service account `account_id` names, or null. Only a service account
+ * answers by id: a person's or organization's handle is never a subject.
  */
-export async function authenticateWithOidcToken(
+async function serviceAccountById(account_id: string) {
+  const account = await accountsTable.fetchById(account_id);
+  return account && isServiceAccount(account) ? account : null;
+}
+
+/**
+ * The subject the data proxy signs with when it calls as itself rather than
+ * on behalf of an account (ADR-013, amending ADR-005): only the API-key
+ * standing lookup accepts it. A URN, so no account id can ever equal it.
+ */
+export const PROXY_SELF_SUBJECT = "urn:source:data-proxy";
+
+/**
+ * Verifies a proxy-signed assertion — signature against the proxy's JWKS,
+ * issuer, audience, RS256, expiry — and returns its claims, or null. Says
+ * nothing about who the subject is; callers decide what a subject may do.
+ */
+export async function verifyProxyAssertion(
   authorization: string | null,
   audience: string,
-): Promise<UserSession | null> {
+): Promise<JWTPayload | null> {
   if (!authorization || !authorization.toLowerCase().startsWith("bearer ")) {
     // A missing or non-Bearer Authorization header is an expected, normal input
     // (e.g. legacy clients still sending an API key), not an anomaly — log at
     // debug so it doesn't flood warn-level logs on every such request.
     LOGGER.debug("No Bearer token for OIDC authentication, skipping", {
-      operation: "authenticateWithOidcToken",
+      operation: "verifyProxyAssertion",
     });
     return null;
   }
 
   LOGGER.debug("Authenticating with OIDC token", {
-    operation: "authenticateWithOidcToken",
+    operation: "verifyProxyAssertion",
     metadata: { audience },
   });
   const token = authorization.slice(7);
 
-  let payload;
   try {
     const result = await jwtVerify(token, getJwks(), {
       // We assume that the data proxy is going to be hosting the JWKS
@@ -86,7 +102,7 @@ export async function authenticateWithOidcToken(
       algorithms: ["RS256"],
       clockTolerance: 30,
     });
-    payload = result.payload;
+    return result.payload;
   } catch (error) {
     // `Error` objects serialize to `{}`, hiding the cause. jose attaches a
     // machine-readable `code` (e.g. ERR_JWT_CLAIM_VALIDATION_FAILED,
@@ -116,7 +132,7 @@ export async function authenticateWithOidcToken(
       // Leave the failure marker.
     }
     const logPayload = {
-      operation: "authenticateWithOidcToken",
+      operation: "verifyProxyAssertion",
       metadata: {
         error_name: e?.name,
         error_code: e?.code,
@@ -136,6 +152,19 @@ export async function authenticateWithOidcToken(
     }
     return null;
   }
+}
+
+/**
+ * Authenticates using a signed JWT from the data proxy's OIDC provider.
+ * Validates the token signature, issuer, audience, and expiry, then
+ * resolves the subject claim to a UserSession.
+ */
+export async function authenticateWithOidcToken(
+  authorization: string | null,
+  audience: string,
+): Promise<UserSession | null> {
+  const payload = await verifyProxyAssertion(authorization, audience);
+  if (!payload) return null;
 
   const oryId = payload.sub;
   if (!oryId) {
@@ -145,12 +174,33 @@ export async function authenticateWithOidcToken(
     return null;
   }
 
-  // The token subject is the caller's Ory identity id (the data proxy signs
-  // tokens with the authenticated principal's Ory id as `sub`), so resolve the
-  // account via the identity_id index — NOT fetchById, which keys on the
-  // human-readable account_id. Only individual accounts have an Ory identity;
-  // org accounts are never the subject of a proxy-issued token.
-  const account = await accountsTable.fetchByOryId(oryId);
+  // The proxy calling as itself is not a session anywhere; the one route that
+  // takes it checks the subject directly.
+  if (oryId === PROXY_SELF_SUBJECT) {
+    LOGGER.warn("OIDC token carries the proxy's own subject; no session for it", {
+      operation: "authenticateWithOidcToken",
+    });
+    return null;
+  }
+
+  // The token subject is whatever the data proxy authenticated: a person's Ory
+  // identity id, or a service account's own id — for an API key it resolved
+  // (ADR-013), or a workload the account trusts (ADR-014), which names the
+  // account it wants when it exchanges its token. The two namespaces are read
+  // together; should a subject ever name both a person and a service account,
+  // it is ambiguous and neither is trusted.
+  const [person, service] = await Promise.all([
+    accountsTable.fetchByOryId(oryId),
+    serviceAccountById(oryId),
+  ]);
+  if (person && service) {
+    LOGGER.warn("OIDC token subject names both a person and a service account", {
+      operation: "authenticateWithOidcToken",
+      metadata: { sub: oryId, person: person.account_id, service: service.account_id },
+    });
+    return null;
+  }
+  const account = person ?? service;
   if (!account) {
     // Verified token, but no account is indexed under this Ory id. This is the
     // silent 401 path: the token is valid but the subject doesn't map to an
@@ -169,7 +219,8 @@ export async function authenticateWithOidcToken(
     return null;
   }
 
-  const identity_id = account.identity_id;
+  // A service account has no Ory identity; the session says so with null.
+  const identity_id = account.identity_id ?? null;
 
   const memberships = await membershipsTable.listByUser(account.account_id);
   const filteredMemberships = memberships.filter((membership) =>

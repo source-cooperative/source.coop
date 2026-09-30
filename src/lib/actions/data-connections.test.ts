@@ -337,7 +337,9 @@ describe("createDataConnection", () => {
     );
 
     expect(result.success).toBe(false);
-    expect(result.fieldErrors.data_connection_id).toBeDefined();
+    // Reported against the name: the id is derived, so it is not something the
+    // user can edit their way out of.
+    expect(result.fieldErrors.name).toBeDefined();
     expect(mockTable.create).not.toHaveBeenCalled();
   });
 
@@ -357,7 +359,8 @@ describe("createDataConnection", () => {
     );
 
     expect(result.success).toBe(false);
-    expect(result.fieldErrors.data_connection_id).toBeDefined();
+    // Same reasoning as the check above: the name is the field the user holds.
+    expect(result.fieldErrors.name).toBeDefined();
   });
 });
 
@@ -524,7 +527,7 @@ describe("account-owned connections", () => {
   // owner account (mockCanManage).
   const ownedFields = {
     ...baseS3Fields,
-    data_connection_id: "myslug",
+    name: "Myslug",
     owner: "acme",
     auth_type: DataConnectionAuthenticationType.S3AccessKey,
     access_key_id: "AKIA",
@@ -603,12 +606,34 @@ describe("account-owned connections", () => {
     expect(mockAccountsTable.fetchById).not.toHaveBeenCalled();
   });
 
-  test("rejects an admin-created (unowned) id containing the reserved -- delimiter", async () => {
+  test("cannot produce the reserved -- delimiter from a name", async () => {
+    // `--` is the ${account_id}--${slug} delimiter, so an unowned id containing
+    // one would shadow an account's namespace. It used to be rejected; now it
+    // cannot be expressed, because the slug comes from the name and runs of
+    // separators collapse to a single hyphen.
     const result = await createDataConnection(
       FORM_STATE,
       formDataFor({
         ...baseS3Fields,
-        data_connection_id: "acme--myconn", // no `owner` field → unowned path
+        name: "Acme -- My Conn", // no `owner` field → unowned path
+        auth_type: DataConnectionAuthenticationType.S3AccessKey,
+        access_key_id: "AKIA",
+        secret_access_key: "secret",
+      })
+    );
+
+    expect(result.success).toBe(true);
+    const created = mockTable.create.mock.calls[0][0];
+    expect(created.data_connection_id).toBe("acme-my-conn");
+    expect(created.data_connection_id).not.toContain("--");
+  });
+
+  test("rejects a name with too little to build an id from", async () => {
+    const result = await createDataConnection(
+      FORM_STATE,
+      formDataFor({
+        ...baseS3Fields,
+        name: "!!",
         auth_type: DataConnectionAuthenticationType.S3AccessKey,
         access_key_id: "AKIA",
         secret_access_key: "secret",
@@ -616,9 +641,7 @@ describe("account-owned connections", () => {
     );
 
     expect(result.success).toBe(false);
-    expect(result.fieldErrors.data_connection_id?.[0]).toContain(
-      "consecutive hyphens"
-    );
+    expect(result.fieldErrors.name).toBeDefined();
     expect(mockTable.create).not.toHaveBeenCalled();
   });
 });

@@ -2,7 +2,7 @@ import { Metadata } from "next";
 import { accountsTable, dataConnectionsTable } from "@/lib/clients";
 import { Flex, Button, Heading } from "@radix-ui/themes";
 import Link from "next/link";
-import { DataConnectionsTable } from "@/components/features/data-connections";
+import { DataConnectionsList } from "@/components/features/data-connections";
 import {
   adminDataConnectionCreateUrl,
   adminDataConnectionEditUrl,
@@ -33,12 +33,12 @@ export default async function DataConnectionsPage() {
     <Flex direction="column" gap="4">
       <Flex justify="between" align="center">
         <Heading size="4">Data Connections</Heading>
-        <Button asChild size="2">
+        <Button asChild size="2" highContrast>
           <Link href={adminDataConnectionCreateUrl()}>New Connection</Link>
         </Button>
       </Flex>
 
-      <DataConnectionsTable
+      <DataConnectionsList
         connections={connections}
         editHref={adminDataConnectionEditUrl}
         ownerAccounts={ownerAccounts}

@@ -8,8 +8,10 @@ import type {
 } from "@/types";
 import { DateText } from "@/components/display";
 import { ChecksumVerifier } from "../ChecksumVerifier";
-import { MonoText, CopyToClipboard } from "@/components/core";
-import { fileSourceUrl, formatBytes } from "@/lib";
+import { MonoText } from "@/components/core/MonoText";
+import { CopyToClipboard } from "@/components/core/CopyToClipboard";
+import { fileSourceUrl } from "@/lib/urls";
+import { formatBytes } from "@/lib/format";
 
 interface ObjectSummaryProps {
   product: Product;

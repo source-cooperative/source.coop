@@ -39,6 +39,7 @@ import {
   Actions,
   APIKey,
   DataConnection,
+  isServiceAccount,
   Membership,
   MembershipRole,
   MembershipState,
@@ -534,12 +535,35 @@ export function canManageAccount(
     return false;
   }
 
-  // hasRole treats the principal's own account as a match, so this also covers
-  // an individual account managing itself.
+  // hasRole treats a person's own account as a match, so this also covers an
+  // individual managing their own account.
   return hasRole(
     session,
     [MembershipRole.Owners, MembershipRole.Maintainers],
     account.account_id
+  );
+}
+
+/**
+ * Whether `session` may manage `account` as a service account — its
+ * integrations, memberships and lifecycle. That is whoever manages its
+ * `owner`, which the caller has fetched: the owner's owners and maintainers,
+ * or an individual owner themselves, or an admin. False for anything that is
+ * not a service account, and when `owner` is not its owner, whoever asks.
+ * A disabled service account is still managed this way, so it can be
+ * re-enabled or deleted; what may not happen to it while disabled (a new
+ * trust, a new key) is refused where that thing is attached. A disabled owner
+ * takes its service accounts out of reach with it, admins aside.
+ */
+export function canManageServiceAccount(
+  session: UserSession | null,
+  account: Account,
+  owner: Account
+): boolean {
+  return (
+    isServiceAccount(account) &&
+    owner.account_id === account.owner_account_id &&
+    canManageAccount(session, owner)
   );
 }
 
@@ -569,6 +593,26 @@ export function canManageAccountDataConnections(
   }
 
   return !!account.flags?.includes(AccountFlags.CREATE_DATA_CONNECTIONS);
+}
+
+/**
+ * Whether `session` may create a product under `account` specifically.
+ *
+ * Distinct from `isAuthorized(session, "*", Actions.CreateRepository)`, which
+ * asks "can this user create a product *somewhere*" (used to gate the
+ * /products/new route). This asks about one particular account, so UI that
+ * lists several accounts — the account switcher, the owner picker on the
+ * creation form — can show "New product" only where it would actually work.
+ */
+export function canCreateProductForAccount(
+  session: UserSession | null,
+  account: Account
+): boolean {
+  return isAuthorized(
+    session,
+    { account_id: account.account_id } as Product,
+    Actions.CreateRepository
+  );
 }
 
 function putAccountFlags(
@@ -650,9 +694,18 @@ function putAccountProfile(
     return false;
   }
 
-  // If the user is the account owner, they are authorized
-  if (principal?.account?.account_id === account.account_id) {
+  // A person may edit their own profile
+  if (isSelf(principal, account.account_id)) {
     return true;
+  }
+
+  // A service account's profile is managed by whoever manages its owner
+  if (isServiceAccount(account)) {
+    return hasRole(
+      principal,
+      [MembershipRole.Owners, MembershipRole.Maintainers],
+      account.owner_account_id
+    );
   }
 
   // If the account is not an organization, no one is authorized
@@ -933,6 +986,12 @@ function getAccountProfile(
   principal: UserSession | null,
   account: Account
 ): boolean {
+  // A service account has no profile: its page is not found for everyone,
+  // and whoever manages it reads it from its owner's settings instead.
+  if (isServiceAccount(account)) {
+    return false;
+  }
+
   // If the user is disabled, they are not authorized
   if (principal?.account?.disabled) {
     return false;
@@ -1009,6 +1068,15 @@ function disableAccount(
 
   if (account.type === AccountType.ORGANIZATION) {
     return hasRole(principal, [MembershipRole.Owners], account.account_id);
+  }
+
+  // A service account is disabled by whoever manages its owner
+  if (isServiceAccount(account)) {
+    return hasRole(
+      principal,
+      [MembershipRole.Owners, MembershipRole.Maintainers],
+      account.owner_account_id
+    );
   }
 
   return false;
@@ -1095,7 +1163,42 @@ function createRepository(
     return true;
   }
 
-  // If the user does not have the create repositories flag, they are not authorized
+  // Service accounts hold memberships; they do not own products.
+  if (isServiceAccount(principal.account)) {
+    return false;
+  }
+
+  // Org-wide owners and maintainers may create products under their org without
+  // needing CREATE_REPOSITORIES on their personal account — their role grants
+  // that right implicitly. We intentionally omit product_id here so that only
+  // org-wide memberships qualify; product-scoped memberships do not.
+  if (product !== "*" && principal.account.account_id !== product.account_id) {
+    if (
+      hasRole(
+        principal,
+        [MembershipRole.Owners, MembershipRole.Maintainers],
+        product.account_id
+      )
+    ) {
+      return true;
+    }
+  }
+
+  // For the wildcard check, also accept any active org-wide owner or maintainer.
+  if (product === "*") {
+    const hasOrgRole = principal?.memberships?.some(
+      (m) =>
+        m.state === MembershipState.Member &&
+        !m.repository_id &&
+        (m.role === MembershipRole.Owners ||
+          m.role === MembershipRole.Maintainers)
+    );
+    if (hasOrgRole) {
+      return true;
+    }
+  }
+
+  // For own-account creation without an org role, the flag is required.
   if (!principal?.account?.flags.includes(AccountFlags.CREATE_REPOSITORIES)) {
     return false;
   }
@@ -1124,6 +1227,11 @@ function createAccount(
 ): boolean {
   // If the user is disabled, they are not authorized
   if (principal?.account?.disabled) {
+    return false;
+  }
+
+  // A service account creates nothing
+  if (principal?.account && isServiceAccount(principal.account)) {
     return false;
   }
 
@@ -1168,11 +1276,14 @@ function createAccount(
     return false;
   }
 
-  // Let admins create service accounts
-  // NOTE: Service accounts are not supported yet
-  // if (account.type === AccountType.SERVICE) {
-  //   return isAdmin(principal);
-  // }
+  // A service account is created by whoever manages its owner
+  if (isServiceAccount(account)) {
+    return hasRole(
+      principal,
+      [MembershipRole.Owners, MembershipRole.Maintainers],
+      account.owner_account_id
+    );
+  }
 
   return false;
 }
@@ -1547,14 +1658,27 @@ function inviteMembership(
   );
 }
 
+/**
+ * Whether `principal` is `account_id` acting on itself. Only a person gets
+ * this. A machine principal has an account id of its own too, but must never
+ * hold the owner's rights over itself — that is how it would grant itself
+ * memberships or rewrite its own profile.
+ */
+function isSelf(principal: UserSession | null, account_id: string): boolean {
+  return (
+    principal?.account?.account_id === account_id &&
+    principal.account.type === AccountType.INDIVIDUAL
+  );
+}
+
 function hasRole(
   principal: UserSession | null,
   roles: MembershipRole[],
   account_id: string,
   repository_id?: string
 ): boolean {
-  // If the user is the owner of the account, they are authorized
-  if (principal?.account?.account_id === account_id) {
+  // A person is authorized on their own account
+  if (isSelf(principal, account_id)) {
     return true;
   }
 
@@ -1602,6 +1726,10 @@ function hasRole(
  * @returns A boolean indicating whether the user is an admin.
  */
 export function isAdmin(session?: UserSession | null): boolean {
+  // A service account never acts as admin, whatever its flags say.
+  if (session?.account && isServiceAccount(session.account)) {
+    return false;
+  }
   if (session?.account?.flags) {
     return session?.account?.flags.includes(AccountFlags.ADMIN);
   } else {

@@ -2,6 +2,7 @@
 
 import { LOGGER } from "@/lib/logging";
 import {
+  Account,
   AccountCreationRequestSchema,
   Actions,
   AccountCreationRequest,
@@ -10,16 +11,19 @@ import {
   MembershipRole,
   MembershipState,
   AccountType,
+  isServiceAccount,
   OrganizationCreationRequestSchema,
   OrganizationCreationRequest,
   IndividualAccount,
   OrganizationalAccount,
   AccountFlags,
   AccountFlagsSchema,
+  AccountEmailSchema,
 } from "@/types";
 import { isAuthorized } from "../api/authz";
 import { getPageSession } from "../api/utils";
 import { accountsTable, membershipsTable } from "../clients";
+import type { AccountSuggestion } from "../clients/database/accounts";
 import { FormState } from "@/components/core/DynamicForm";
 import { revalidatePath } from "next/cache";
 import {
@@ -51,8 +55,14 @@ export async function createAccount(
   }
 
   // Extract data from FormData
+  const type = formData.get("type");
+  // Service accounts have their own action, createServiceAccount, which
+  // settles the owner and composes the id.
+  if (type === AccountType.SERVICE) {
+    return { fieldErrors: {}, data: formData, message: "Invalid form data", success: false };
+  }
   const schema =
-    formData.get("type") === AccountType.ORGANIZATION
+    type === AccountType.ORGANIZATION
       ? OrganizationCreationRequestSchema
       : AccountCreationRequestSchema;
   const validatedFields = schema.safeParse(Object.fromEntries(formData));
@@ -77,7 +87,7 @@ export async function createAccount(
     metadata_public: {},
     metadata_private: {},
   };
-  const newAccount =
+  const newAccount: Account =
     validatedFields.data.type === AccountType.INDIVIDUAL
       ? ({
           ...baseAccount,
@@ -104,8 +114,31 @@ export async function createAccount(
     };
   }
 
-  // Create account
-  const account = await accountsTable.create(newAccount);
+  // Create account. `account_id` is caller-supplied and never checked for
+  // availability beforehand, so the conditional write in `create` is what stops
+  // one account being written over another. A collision is an ordinary signup
+  // outcome, not only an attack, so report it on the field rather than letting
+  // it surface as a server error.
+  let account: Account;
+  try {
+    account = await accountsTable.create(newAccount);
+  } catch (error) {
+    if ((error as { name?: string })?.name === "ConditionalCheckFailedException") {
+      LOGGER.warn("Account creation rejected: account_id already taken", {
+        operation: "createAccount",
+        context: "account creation",
+        metadata: { account_id: newAccount.account_id },
+      });
+      return {
+        fieldErrors: { account_id: ["That account ID is already taken."] },
+        data: formData,
+        message: "That account ID is already taken",
+        success: false,
+      };
+    }
+    throw error;
+  }
+
   LOGGER.info("Successfully created account", {
     operation: "createAccount",
     context: "account creation",
@@ -135,7 +168,9 @@ export async function createAccount(
     redirectTo:
       account.type === AccountType.INDIVIDUAL
         ? accountUrl(account.account_id, "welcome=true")
-        : accountUrl(account.account_id),
+        : isServiceAccount(account)
+          ? accountUrl(account.owner_account_id)
+          : accountUrl(account.account_id),
   };
 }
 
@@ -230,10 +265,43 @@ export async function updateAccountProfile(
         };
       });
 
+    // For organizations, process the contact email. An individual's email is
+    // their sign-in address, owned by the identity provider, so the field is
+    // read-only for them and anything submitted under it is ignored.
+    let updatedEmails = currentAccount.emails;
+    if (currentAccount.type === AccountType.ORGANIZATION) {
+      const email = ((formData.get("email") as string) || "").trim();
+      const currentPrimary = currentAccount.emails?.find((e) => e.is_primary);
+      if (!email) {
+        updatedEmails = [];
+      } else if (email !== currentPrimary?.address) {
+        // Only a changed address is rewritten: the form seeds the field with
+        // the current email, so every save resubmits it, and rebuilding the
+        // record each time would throw away the address's verified state.
+        if (!AccountEmailSchema.shape.address.safeParse(email).success) {
+          return {
+            fieldErrors: { email: ["Invalid email address"] },
+            data: formData,
+            message: "Invalid form data",
+            success: false,
+          };
+        }
+        updatedEmails = [
+          {
+            address: email,
+            verified: false,
+            is_primary: true,
+            added_at: new Date().toISOString(),
+          },
+        ];
+      }
+    }
+
     // Build update data
     const updateData = {
       ...currentAccount,
       name,
+      emails: updatedEmails,
       metadata_public: {
         ...currentAccount.metadata_public,
         bio: description || undefined,
@@ -340,6 +408,17 @@ export async function updateAccountFlags(
 
     // Validate flags
     const validatedFlags = AccountFlagsSchema.parse(flags);
+    if (
+      isServiceAccount(currentAccount) &&
+      validatedFlags.includes(AccountFlags.ADMIN)
+    ) {
+      return {
+        fieldErrors: {},
+        data: formData,
+        message: "A service account cannot hold the admin flag",
+        success: false,
+      };
+    }
 
     // Update the account
     await accountsTable.update({
@@ -377,4 +456,34 @@ export async function updateAccountFlags(
       success: false,
     };
   }
+}
+
+/**
+ * Type-ahead search over individual accounts, matching either the handle
+ * (`account_id`) or the display name. With `memberOf`, the service accounts
+ * that account owns are offered too. Returns only the public identity fields
+ * already shown on every profile page. Requires a session so it isn't an open
+ * directory-scraping endpoint.
+ */
+export async function searchAccounts(
+  query: string,
+  memberOf?: string
+): Promise<AccountSuggestion[]> {
+  const session = await getPageSession();
+  if (!session?.identity_id) return [];
+  if (query.trim().length < 2) return [];
+
+  // An account's service accounts are visible only to whoever may grant them
+  // access; to anyone else this is an ordinary search of people.
+  const mayInvite =
+    memberOf !== undefined &&
+    isAuthorized(
+      session,
+      { membership_account_id: memberOf },
+      Actions.InviteMembership
+    );
+  return accountsTable.searchMemberCandidates(
+    query,
+    mayInvite ? memberOf : undefined
+  );
 }
