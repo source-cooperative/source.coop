@@ -1,5 +1,5 @@
 import { GetCommand, PutCommand, QueryCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
-import type { ServiceAccountKeyRecord } from "@/types";
+import type { RevokedVia, ServiceAccountKeyRecord } from "@/types";
 import { BaseTable } from "./base";
 
 export class ServiceAccountKeysTable extends BaseTable {
@@ -43,7 +43,7 @@ export class ServiceAccountKeysTable extends BaseTable {
    */
   async set(
     key_hash: string,
-    field: "revoked_at" | "expires_at" | "last_used_at",
+    field: "expires_at" | "last_used_at",
     value: string | null
   ): Promise<void> {
     await this.client.send(
@@ -53,6 +53,19 @@ export class ServiceAccountKeysTable extends BaseTable {
         UpdateExpression: "SET #f = :v",
         ExpressionAttributeNames: { "#f": field },
         ExpressionAttributeValues: { ":v": value },
+        ConditionExpression: "attribute_exists(key_hash)",
+      })
+    );
+  }
+
+  /** Revokes a key, recording when and by whom in the one write. */
+  async revoke(key_hash: string, via: RevokedVia): Promise<void> {
+    await this.client.send(
+      new UpdateCommand({
+        TableName: this.table,
+        Key: { key_hash },
+        UpdateExpression: "SET revoked_at = :at, revoked_via = :via",
+        ExpressionAttributeValues: { ":at": new Date().toISOString(), ":via": via },
         ConditionExpression: "attribute_exists(key_hash)",
       })
     );

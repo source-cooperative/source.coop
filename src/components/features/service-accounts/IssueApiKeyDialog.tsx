@@ -70,7 +70,7 @@ export function IssueApiKeyDialog({
             </Flex>
             <Text size="1" color="gray">
               Listed as <Code size="1">{maskedApiKey(state.issued.record)}</Code> from now
-              on: its last four characters, to match against the key you hold.
+              on: its last six characters, to match against the key you hold.
             </Text>
             {environment && (
               <Flex direction="column" gap="2">

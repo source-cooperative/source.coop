@@ -1,10 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createHash, randomBytes, randomUUID } from "crypto";
+import { randomInt, randomUUID } from "crypto";
 import { LOGGER } from "@/lib/logging";
 import {
+  API_KEY_ALPHABET,
   API_KEY_PREFIX,
+  apiKeyChecksum,
   publicKey,
   ServiceAccountKeyRecordSchema,
   type ApiKeyActionState,
@@ -12,6 +14,7 @@ import {
 } from "@/types";
 import { getPageSession } from "../api/utils";
 import { serviceAccountKeysTable } from "../clients";
+import { hashApiKey } from "@/lib/accounts/service-account-keys";
 import { managedServiceAccount } from "@/lib/accounts/service-accounts";
 import { editAccountServiceAccountsUrl, editServiceAccountUrl } from "@/lib/urls";
 
@@ -28,9 +31,6 @@ function expiryFrom(formData: FormData): string | null | undefined {
   if (!Number.isInteger(days) || days < 1 || days > 3650) return undefined;
   return new Date(Date.now() + days * 86_400_000).toISOString();
 }
-
-/** Hex SHA-256 of a key: what the record holds, and what the proxy presents. */
-const hashApiKey = (key: string) => createHash("sha256").update(key).digest("hex");
 
 /**
  * Issues an API key: an opaque secret (ADR-013) whose hash is the record's
@@ -51,15 +51,16 @@ export async function issueApiKey(
   const expires_at = expiryFrom(formData);
   if (expires_at === undefined) return outcome("Expiry must be between 1 and 3650 days", false);
 
-  // 32 random bytes in base64url: fixed length, no bias, all entropy.
-  const key = API_KEY_PREFIX + randomBytes(32).toString("base64url");
+  // 30 characters drawn uniformly from base62 (178 bits), then their checksum.
+  const body = Array.from({ length: 30 }, () => API_KEY_ALPHABET[randomInt(62)]).join("");
+  const key = API_KEY_PREFIX + body + apiKeyChecksum(body);
   const now = new Date().toISOString();
   const parsed = ServiceAccountKeyRecordSchema.safeParse({
     key_hash: hashApiKey(key),
     key_id: randomUUID(),
     account_id: account.account_id,
     label: String(formData.get("label") ?? "").trim(),
-    hint: key.slice(-4),
+    hint: key.slice(-6),
     created_at: now,
     created_by: session.account.account_id,
     expires_at,
@@ -97,7 +98,7 @@ export async function revokeApiKey(
   const own = await ownKey(formData);
   if (!own) return outcome("No such key on a service account you manage", false);
   if (own.key.revoked_at) return outcome("Already revoked", false);
-  await serviceAccountKeysTable.set(own.key.key_hash, "revoked_at", new Date().toISOString());
+  await serviceAccountKeysTable.revoke(own.key.key_hash, "owner");
   revalidatePath(editAccountServiceAccountsUrl(own.account.owner_account_id));
   revalidatePath(editServiceAccountUrl(own.account.owner_account_id, own.account.account_id));
   return outcome("Key revoked", true);

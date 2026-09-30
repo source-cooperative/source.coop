@@ -14,23 +14,35 @@ export const ServiceAccountKeySchema = z
     account_id: z.string(),
     label: z.string().min(1).max(64),
     /**
-     * The key's last four characters, to tell which key is which: 24 of its
-     * 256 random bits, leaving far too many to guess. It confirms a key in
-     * hand against this record, and is never used to look one up — across
-     * the platform, keys will share it. Absent on keys issued before it
-     * was recorded.
+     * The key's last six characters — its checksum — to tell which key is
+     * which. A checksum of the key's 178 random bits narrows them by 32,
+     * leaving far too many to guess. It confirms a key in hand against this
+     * record, and is never used to look one up, since keys may share it.
+     * Four characters on keys issued before keys carried a checksum; absent
+     * on keys issued before it was recorded.
      */
-    hint: z.string().regex(/^[A-Za-z0-9_-]{4}$/).optional(),
+    hint: z
+      .string()
+      .regex(/^([0-9A-Za-z]{6}|[A-Za-z0-9_-]{4})$/)
+      .optional(),
     created_at: z.string().datetime(),
     created_by: z.string(),
     /** Null for a key that lasts until revoked. */
     expires_at: z.string().datetime().nullable(),
     revoked_at: z.string().datetime().optional(),
+    /**
+     * Who revoked the key: an `owner` in settings, a `holder` presenting it to
+     * the revocation endpoint, or `github` secret scanning finding it in
+     * public. Absent on keys revoked before it was recorded.
+     */
+    revoked_via: z.enum(["owner", "holder", "github"]).optional(),
     last_used_at: z.string().datetime().optional(),
   })
   .openapi("ServiceAccountKey");
 
 export type ServiceAccountKey = z.infer<typeof ServiceAccountKeySchema>;
+
+export type RevokedVia = NonNullable<ServiceAccountKey["revoked_via"]>;
 
 /**
  * The stored row: the public fields plus `key_hash`, the table's partition
@@ -47,13 +59,38 @@ export type ServiceAccountKeyRecord = z.infer<typeof ServiceAccountKeyRecordSche
 export const publicKey = ({ key_hash: _, ...key }: ServiceAccountKeyRecord): ServiceAccountKey => key;
 
 /**
- * Every key is `sck_` + 32 random bytes in base64url: a fixed 47 characters,
- * all entropy after the prefix. The pattern is what secret scanners register.
+ * Every key is `sck_`, 30 random base62 characters, and six more that are
+ * their checksum: a fixed 40 characters, GitHub's own token layout (ADR-013).
+ * The pattern is what secret scanners register; the checksum lets anything
+ * holding a key refuse one that was cut short or mistyped without a lookup.
  */
 export const API_KEY_PREFIX = "sck_";
-export const API_KEY_PATTERN = /^sck_[A-Za-z0-9_-]{43}$/;
+export const API_KEY_PATTERN = /^sck_[0-9A-Za-z]{36}$/;
+export const API_KEY_ALPHABET = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 
-/** How a key is shown once it is no longer in hand: `sck_…Xy9Q`, or null without a hint. */
+/**
+ * The six characters that end a key: the CRC-32 of its 30 random characters
+ * (IEEE, as zlib computes it), in base62, most significant digit first. It is
+ * computed here rather than with `zlib` because this module is also bundled
+ * for the browser.
+ */
+export function apiKeyChecksum(body: string): string {
+  let crc = ~0;
+  for (let i = 0; i < body.length; i++) {
+    crc ^= body.charCodeAt(i);
+    for (let bit = 0; bit < 8; bit++) crc = crc & 1 ? (crc >>> 1) ^ 0xedb88320 : crc >>> 1;
+  }
+  let n = ~crc >>> 0;
+  let digits = "";
+  for (let i = 0; i < 6; i++, n = Math.floor(n / 62)) digits = API_KEY_ALPHABET[n % 62] + digits;
+  return digits;
+}
+
+/** Whether a string is exactly a key: the pattern, and a checksum that holds. */
+export const isApiKey = (token: string) =>
+  API_KEY_PATTERN.test(token) && token.slice(-6) === apiKeyChecksum(token.slice(4, 34));
+
+/** How a key is shown once it is no longer in hand: `sck_…Xy9QeT`, or null without a hint. */
 export const maskedApiKey = (key: Pick<ServiceAccountKey, "hint">) =>
   key.hint ? `${API_KEY_PREFIX}…${key.hint}` : null;
 
