@@ -76,6 +76,11 @@ export default async function ProductPathPage({ params }: PageProps) {
   // getStorageClient doesn't read the cookie a second time.
   const s3 = await getStorageClient(creds ?? null);
 
+  // True only when getObjectInfo resolved to null (positively not a file).
+  // Stays false when the HEAD threw AccessDenied — in that auth-limited state
+  // we can't conclude the path doesn't exist.
+  let headConfirmedNotFile = false;
+
   // For non-root paths, check if this is a file via HEAD request.
   // If the HEAD succeeds, render the file view (ObjectSummary + ObjectPreview).
   // getObjectInfo returns null on NotFound (not a file → directory listing).
@@ -96,6 +101,7 @@ export default async function ProductPathPage({ params }: PageProps) {
         product_id,
         object_path: objectPath,
       });
+      headConfirmedNotFile = objectInfo === null;
     } catch (error) {
       if (!isAccessDeniedError(error)) {
         LOGGER.warn("Storage backend unavailable for object HEAD", {
@@ -206,9 +212,11 @@ export default async function ProductPathPage({ params }: PageProps) {
   // A non-root path with an empty listing doesn't exist: S3 returns an empty
   // result for any prefix with no objects under it, including prefixes that
   // have never been written to. An empty listing at the product root is valid
-  // (the product exists but nothing has been uploaded yet).
+  // (the product exists but nothing has been uploaded yet). Only apply this
+  // check when the HEAD positively confirmed the path is not a file — if the
+  // HEAD was access-denied we lack enough information to 404.
   if (
-    objectPath &&
+    headConfirmedNotFile &&
     effectiveListing.objects.length === 0 &&
     effectiveListing.directories.length === 0
   ) {
