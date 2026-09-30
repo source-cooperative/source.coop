@@ -8,6 +8,7 @@ import { TagList } from "./TagList";
 import styles from "./ProductList.module.css";
 import { productUrl } from "@/lib/urls";
 import { DisplayNameLink } from "@/components/core";
+import { MarkdownViewer } from "../markdown";
 
 interface ProductListItemProps {
   product: Product;
@@ -38,8 +39,10 @@ export function ProductListItem({ product, isSelected }: ProductListItemProps) {
         </Link>
 
         {product.description && (
-          <Text as="p" size="2" color="gray" mb="4">
-            {product.description}
+          <Text asChild size="2" color="gray" mb="4">
+            <div>
+              <MarkdownViewer content={product.description} />
+            </div>
           </Text>
         )}
 
