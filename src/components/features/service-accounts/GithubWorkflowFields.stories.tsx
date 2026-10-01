@@ -37,6 +37,28 @@ export const Empty: Story = {
 };
 
 /**
+ * A public repository typed the short way. Once you stop typing, GitHub's
+ * public API is asked for its ids, and the form offers the immutable name —
+ * `octocat@583231/Hello-World@1296269` — with a button that puts it in the
+ * field. Whether a repository's tokens carry that form is a setting only its
+ * admins can read, so the form offers it rather than switching to it.
+ */
+export const PublicRepository: Story = {
+  args: { workflow: { ...NEW_GITHUB_WORKFLOW, repository: "octocat/Hello-World" } },
+};
+
+/**
+ * A repository GitHub doesn't show publicly — private, or not there at all.
+ * Its ids can't be looked up anonymously, so the form gives the `gh` command
+ * that prints its immutable name for anyone who can see it.
+ */
+export const PrivateRepository: Story = {
+  args: {
+    workflow: { ...NEW_GITHUB_WORKFLOW, repository: "octocat/a-private-repository" },
+  },
+};
+
+/**
  * A repository named the immutable way GitHub mints for repositories created
  * after July 2026, pinned to an environment, with the Remove button the create
  * form puts on each card.
