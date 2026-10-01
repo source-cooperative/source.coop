@@ -113,6 +113,7 @@ function TrustRow({
                 </>
               }
               code={githubWorkflowStep(proxyOrigin, accountId)}
+              language="yaml"
               open={showingUsage}
               onOpenChange={setShowingUsage}
             />
