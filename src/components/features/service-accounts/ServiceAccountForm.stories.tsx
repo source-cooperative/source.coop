@@ -13,12 +13,12 @@ import { ServiceAccountForm } from "./ServiceAccountForm";
  * the owner: "Grant a product" adds one with read or read-and-write, the same
  * list the account's page uses, held here until the form is submitted.
  *
- * Submitting goes to the new account's page. With a key, it first shows the
- * key — the only time it can be seen — and a button on to that page.
- * Storybook cannot follow the redirect, so `createServiceAccount` is mocked
- * in `.storybook/preview.tsx` to resolve without it, and with a key of the
- * real shape when one was asked for: **add an API key, fill in a name and a
- * label, and submit** to see the show-once view.
+ * Submitting goes to the new account's page. With a key, the key goes along
+ * in memory and opens over that page, the only time it can be seen — see
+ * `IssuedApiKeyDialog`, and `ServiceAccountDetail`'s "Created with a key".
+ * Storybook cannot follow either way there, so `createServiceAccount` is
+ * mocked in `.storybook/preview.tsx` to resolve without redirecting, and the
+ * router's push does nothing.
  */
 const meta = {
   title: "Features/Service accounts/ServiceAccountForm",

@@ -8,8 +8,9 @@ export interface ServiceAccountFormState {
   message: string;
   success: boolean;
   /**
-   * Set when an API key was issued with the account. The form shows it once
-   * and then links on to `account_url`, in place of the usual redirect.
+   * Set when an API key was issued with the account, in place of the usual
+   * redirect: the form hands the key to the page at `account_url`, which shows
+   * it once.
    */
   issued?: { key: string; record: ServiceAccountKey; account_url: string };
 }

@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useActionState, useState } from "react";
+import React, { useActionState, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Box,
   Button,
@@ -10,8 +11,7 @@ import {
   IconButton,
   TextField,
 } from "@radix-ui/themes";
-import Link from "next/link";
-import { ArrowRightIcon, PlusIcon, TrashIcon } from "@radix-ui/react-icons";
+import { PlusIcon, TrashIcon } from "@radix-ui/react-icons";
 import { Field, FormActions, SectionHeader } from "@/components/core";
 import { createServiceAccount } from "@/lib/actions/service-accounts";
 import {
@@ -27,7 +27,7 @@ import {
   type GithubWorkflow,
 } from "./GithubWorkflowFields";
 import { ApiKeyExpiryField } from "./ApiKeyExpiryField";
-import { IssuedApiKey } from "./IssuedApiKey";
+import { handOffIssuedKey } from "./IssuedApiKeyDialog";
 
 interface ServiceAccountFormProps {
   ownerAccountId: string;
@@ -38,8 +38,8 @@ interface ServiceAccountFormProps {
  * Creates a service account: who it is, how software signs in as it — by
  * GitHub workflow or API key — and what it may reach. Sign-in and reach are
  * both optional at creation, and both can be changed on the account's page,
- * where submitting lands. A key issued here is shown first, the one time it
- * can be, with the way on to that page.
+ * where submitting lands. A key issued here is shown there, over the page,
+ * the one time it can be.
  */
 export function ServiceAccountForm({ ownerAccountId, products }: ServiceAccountFormProps) {
   const [state, formAction, pending] = useActionState(
@@ -57,20 +57,14 @@ export function ServiceAccountForm({ ownerAccountId, products }: ServiceAccountF
   const showIdField = editingId || !!state.fieldErrors.local_id;
   const prefix = `${ownerAccountId}--`;
 
-  if (state.issued) {
-    return (
-      <Flex direction="column" gap="4">
-        <IssuedApiKey apiKey={state.issued.key} record={state.issued.record} />
-        <Flex justify="end">
-          <Button asChild>
-            <Link href={state.issued.account_url}>
-              Continue to {name} <ArrowRightIcon />
-            </Link>
-          </Button>
-        </Flex>
-      </Flex>
-    );
-  }
+  // With a key there was no redirect, since it would lose the key: hand it
+  // to the account's page, which shows it over itself, and go there.
+  const router = useRouter();
+  useEffect(() => {
+    if (!state.issued) return;
+    handOffIssuedKey(state.issued);
+    router.push(state.issued.account_url);
+  }, [state.issued, router]);
 
   return (
     <form action={formAction}>

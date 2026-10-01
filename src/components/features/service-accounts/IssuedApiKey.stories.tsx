@@ -5,8 +5,8 @@ import { apiKeyChecksum } from "@/types";
 /**
  * An API key the moment it is issued — the only time anyone sees it: a
  * warning to copy it now, the key with a copy button, and the masked form it
- * is listed under from then on. Both the "Issue an API key" dialog and the
- * create form, when it is asked for a key, show it.
+ * is listed under from then on. The "Issue an API key" dialog shows it, and
+ * so does `IssuedApiKeyDialog`, over the page of an account created with one.
  */
 const meta = {
   title: "Features/Service accounts/IssuedApiKey",

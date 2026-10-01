@@ -37,6 +37,7 @@ import { AddGithubTrustDialog } from "./AddGithubTrustDialog";
 import { ProductAccessList, type ProductAccess } from "./ProductAccessList";
 import { WorkflowSnippet } from "./WorkflowSnippet";
 import { IssueApiKeyDialog } from "./IssueApiKeyDialog";
+import { IssuedApiKeyDialog } from "./IssuedApiKeyDialog";
 import { ApiKeyList } from "./ApiKeyList";
 
 const issuerLabel = (issuer: string) =>
@@ -118,6 +119,7 @@ export function ServiceAccountDetail({
 
   return (
     <Flex direction="column" gap="6">
+      <IssuedApiKeyDialog accountId={account.account_id} />
       <Flex direction="column" gap="1">
         <Flex align="center" gap="2" wrap="wrap">
           <Heading size="5">{account.name}</Heading>

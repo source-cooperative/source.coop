@@ -64,7 +64,7 @@ const trustGithub = (account_id: string, subject: string, created_by: string) =>
  * Creates a service account under an owner, grants it the chosen products,
  * trusts each GitHub workflow named, issues an API key if one is asked for,
  * and goes to the account's page. An issued key is returned instead, for the
- * form to show once before it links on to that page.
+ * form to carry to that page, which shows it once.
  */
 export async function createServiceAccount(
   _prev: ServiceAccountFormState,
