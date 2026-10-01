@@ -259,7 +259,7 @@ export function ServiceAccountDetail({
 
       <SectionHeader title="Danger zone" color="red">
         {/* Each button explains itself in the modal that confirms it. */}
-        <Flex gap="3" wrap="wrap">
+        <Flex gap="3" wrap="wrap" justify="end">
           <AlertDialog.Root open={confirmingToggle} onOpenChange={setConfirmingToggle}>
             <AlertDialog.Trigger>
               <Button variant="soft" color={account.disabled ? "gray" : "red"}>
@@ -348,7 +348,9 @@ export function ServiceAccountDetail({
             </AlertDialog.Content>
           </AlertDialog.Root>
         </Flex>
-        <Status state={toggleState} />
+        <Flex justify="end">
+          <Status state={toggleState} />
+        </Flex>
       </SectionHeader>
     </Flex>
   );
