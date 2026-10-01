@@ -615,6 +615,22 @@ export function canCreateProductForAccount(
   );
 }
 
+/**
+ * Whether a product appears in its account's profile listing. ListRepository
+ * keeps unlisted products out of strangers' view; a deactivated product stays
+ * listed for whoever can still open it, since the profile is where its owners
+ * go to find it.
+ */
+export function canListOnProfile(
+  session: UserSession | null,
+  product: Product
+): boolean {
+  return (
+    isAuthorized(session, product, Actions.ListRepository) ||
+    (product.disabled && isAuthorized(session, product, Actions.GetRepository))
+  );
+}
+
 function putAccountFlags(
   principal: UserSession | null,
   _account: Account
