@@ -20,7 +20,8 @@ import {
  * that way. Then the products it reaches, each with Read / Read and write and
  * an X, and "Grant a product" in the corner, a modal to choose a product and
  * its access — the create form's list and button; and, set apart in a danger
- * zone, disabling and deleting it.
+ * zone, Disable and Delete, each confirmed in a modal that says what it does;
+ * Delete waits for the account id to be typed.
  *
  * The actions are mocked in `.storybook/preview.tsx`. An access change shows
  * at once and the controls wait while it saves; the mock saves nothing, so

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { startTransition, useActionState, useOptimistic, useState } from "react";
+import React, { startTransition, useActionState, useEffect, useOptimistic, useState } from "react";
 import {
   AlertDialog,
   Button,
@@ -10,9 +10,10 @@ import {
   Heading,
   IconButton,
   Text,
+  TextField,
 } from "@radix-ui/themes";
 import { DotsHorizontalIcon } from "@radix-ui/react-icons";
-import { SectionHeader } from "@/components/core";
+import { Field, SectionHeader } from "@/components/core";
 import {
   ConnectionList,
   ConnectionMarker,
@@ -171,7 +172,11 @@ export function ServiceAccountDetail({
     startTransition(() => removeAction(data));
   };
   const [toggleState, toggleAction, toggling] = useActionState(setServiceAccountDisabled, IDLE);
+  // Each answer from the action closes the confirmation; the result shows beneath the buttons.
+  const [confirmingToggle, setConfirmingToggle] = useState(false);
+  useEffect(() => setConfirmingToggle(false), [toggleState]);
   const [deleteState, deleteAction, deleting] = useActionState(deleteServiceAccount, IDLE);
+  const [deleteConfirmation, setDeleteConfirmation] = useState("");
 
   return (
     <Flex direction="column" gap="6">
@@ -253,58 +258,98 @@ export function ServiceAccountDetail({
       </SectionHeader>
 
       <SectionHeader title="Danger zone" color="red">
-        <Flex direction="column" gap="4">
-          <Flex justify="between" align="center" gap="3" wrap="wrap">
-            <Text size="2" color="gray">
-              {account.disabled
-                ? "Disabled: nothing can sign in as it. Enabling it lets its trusted workflows and unrevoked keys sign in again, so revoke any key that leaked first."
-                : "Disabling stops every sign-in, by workflow or by key, and within five minutes cuts credentials it already holds back to public data. Its trusts, keys and grants are kept."}
-            </Text>
-            <form action={toggleAction}>
-              <input type="hidden" name="account_id" value={account.account_id} />
-              <input type="hidden" name="disabled" value={account.disabled ? "false" : "true"} />
-              <Button type="submit" variant="soft" color={account.disabled ? "gray" : "red"} disabled={toggling}>
+        {/* Each button explains itself in the modal that confirms it. */}
+        <Flex gap="3" wrap="wrap" justify="end">
+          <AlertDialog.Root open={confirmingToggle} onOpenChange={setConfirmingToggle}>
+            <AlertDialog.Trigger>
+              <Button variant="soft" color={account.disabled ? "gray" : "red"}>
                 {account.disabled ? "Enable" : "Disable"}
               </Button>
-            </form>
-          </Flex>
+            </AlertDialog.Trigger>
+            <AlertDialog.Content style={{ maxWidth: 440 }}>
+              <AlertDialog.Title>
+                {account.disabled ? "Enable" : "Disable"} {account.name}?
+              </AlertDialog.Title>
+              <AlertDialog.Description size="2">
+                {account.disabled
+                  ? "Its trusted workflows and unrevoked API keys can sign in again, so revoke any key that leaked first."
+                  : "Nothing can sign in as it, by workflow or by API key, and within five minutes credentials already generated are cut back to public data. Its workflows, keys and product access are kept."}
+              </AlertDialog.Description>
+              <Flex justify="end" gap="3" mt="4">
+                <AlertDialog.Cancel>
+                  <Button variant="soft" color="gray" disabled={toggling}>
+                    Cancel
+                  </Button>
+                </AlertDialog.Cancel>
+                <form action={toggleAction}>
+                  <input type="hidden" name="account_id" value={account.account_id} />
+                  <input type="hidden" name="disabled" value={account.disabled ? "false" : "true"} />
+                  {/* Not AlertDialog.Action, as with Delete below: the modal
+                      closes once the action has answered. */}
+                  <Button type="submit" color={account.disabled ? undefined : "red"} disabled={toggling} loading={toggling}>
+                    {account.disabled ? "Enable" : "Disable"}
+                  </Button>
+                </form>
+              </Flex>
+            </AlertDialog.Content>
+          </AlertDialog.Root>
+          {/* Typing the id clears on close, so every open asks again. */}
+          <AlertDialog.Root onOpenChange={() => setDeleteConfirmation("")}>
+            <AlertDialog.Trigger>
+              <Button variant="solid" color="red">
+                Delete
+              </Button>
+            </AlertDialog.Trigger>
+            <AlertDialog.Content style={{ maxWidth: 440 }}>
+              <AlertDialog.Title>Delete {account.name}?</AlertDialog.Title>
+              <AlertDialog.Description size="2" mb="4">
+                Its workflows and API keys stop working, and it loses access to every
+                product. Credentials already generated last until they expire. This
+                cannot be undone.
+              </AlertDialog.Description>
+              <Field
+                label={
+                  <>
+                    Type <Code size="2">{account.account_id}</Code> to confirm
+                  </>
+                }
+                htmlFor="delete-confirmation"
+              >
+                <TextField.Root
+                  id="delete-confirmation"
+                  autoComplete="off"
+                  spellCheck={false}
+                  value={deleteConfirmation}
+                  onChange={(e) => setDeleteConfirmation(e.target.value)}
+                />
+              </Field>
+              <Flex justify="end" gap="3" mt="4">
+                <AlertDialog.Cancel>
+                  <Button variant="soft" color="gray" disabled={deleting}>
+                    Cancel
+                  </Button>
+                </AlertDialog.Cancel>
+                <form action={deleteAction}>
+                  <input type="hidden" name="account_id" value={account.account_id} />
+                  {/* Not AlertDialog.Action: that closes the dialog on click,
+                      before the action is dispatched. A deleted account
+                      leaves for the list; a refused one stays to say why. */}
+                  <Button
+                    type="submit"
+                    color="red"
+                    disabled={deleting || deleteConfirmation !== account.account_id}
+                    loading={deleting}
+                  >
+                    Delete
+                  </Button>
+                </form>
+              </Flex>
+              <Status state={deleteState} />
+            </AlertDialog.Content>
+          </AlertDialog.Root>
+        </Flex>
+        <Flex justify="end">
           <Status state={toggleState} />
-          <Flex justify="between" align="center" gap="3" wrap="wrap">
-            <Text size="2" color="gray">
-              Deleting removes the account, its grants and its trusts.
-            </Text>
-            <AlertDialog.Root>
-              <AlertDialog.Trigger>
-                <Button variant="solid" color="red">
-                  Delete
-                </Button>
-              </AlertDialog.Trigger>
-              <AlertDialog.Content style={{ maxWidth: 440 }}>
-                <AlertDialog.Title>Delete {account.name}?</AlertDialog.Title>
-                <AlertDialog.Description size="2">
-                  Every grant it holds and every way it signs in go with it. Credentials
-                  it already obtained keep working until they expire.
-                </AlertDialog.Description>
-                <Flex justify="end" gap="3" mt="4">
-                  <AlertDialog.Cancel>
-                    <Button variant="soft" color="gray" disabled={deleting}>
-                      Cancel
-                    </Button>
-                  </AlertDialog.Cancel>
-                  <form action={deleteAction}>
-                    <input type="hidden" name="account_id" value={account.account_id} />
-                    {/* Not AlertDialog.Action: that closes the dialog on click,
-                        before the action is dispatched. A deleted account
-                        leaves for the list; a refused one stays to say why. */}
-                    <Button type="submit" color="red" disabled={deleting} loading={deleting}>
-                      Delete
-                    </Button>
-                  </form>
-                </Flex>
-                <Status state={deleteState} />
-              </AlertDialog.Content>
-            </AlertDialog.Root>
-          </Flex>
         </Flex>
       </SectionHeader>
     </Flex>
