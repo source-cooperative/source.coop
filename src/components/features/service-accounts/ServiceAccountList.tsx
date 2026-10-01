@@ -13,7 +13,7 @@ const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : 
 
 /**
  * An owner's service accounts, one row each: who it is, whether it is
- * disabled, and how much it trusts and reaches. Everything that changes an
+ * disabled, and how many workflows, live API keys and products it has. Everything that changes an
  * account is on its own page, a click away.
  */
 export function ServiceAccountList({ summaries }: { summaries: ServiceAccountSummary[] }) {
@@ -34,10 +34,6 @@ export function ServiceAccountList({ summaries }: { summaries: ServiceAccountSum
     <ConnectionList>
       {summaries.map(({ account, trusts, grants, keys }) => {
         const liveKeys = keys.filter((k) => !k.revoked_at && isKeyActive(k)).length;
-        const signIn = [
-          trusts.length && count(trusts.length, "workflow", "workflows"),
-          liveKeys && count(liveKeys, "key", "keys"),
-        ].filter(Boolean);
         return (
         <ConnectionRow
           key={account.account_id}
@@ -55,7 +51,11 @@ export function ServiceAccountList({ summaries }: { summaries: ServiceAccountSum
           meta={account.account_id}
           aside={
             <Text size="1" color="gray">
-              {[...(signIn.length ? signIn : ["cannot sign in"]), count(grants.length, "product", "products")].join(" · ")}
+              {[
+                count(trusts.length, "workflow", "workflows"),
+                count(liveKeys, "API key", "API keys"),
+                count(grants.length, "product", "products"),
+              ].join(" · ")}
             </Text>
           }
           actions={<ChevronRightIcon color="var(--gray-9)" />}
