@@ -15,7 +15,11 @@ import {
   MembershipState,
 } from "@/types";
 import { getPageSession } from "@/lib/api/utils";
-import { canCreateProductForAccount, isAuthorized } from "@/lib/api/authz";
+import {
+  canCreateProductForAccount,
+  canListOnProfile,
+  isAuthorized,
+} from "@/lib/api/authz";
 import { getPendingInvitation } from "@/lib/actions/memberships";
 
 interface OrganizationProfilePageProps {
@@ -70,11 +74,7 @@ export async function OrganizationProfilePage({
         !!account && isIndividualAccount(account)
     );
 
-  // ListRepository, not GetRepository: an unlisted product is readable by
-  // anyone with the link but listed only for the account and its members.
-  products = products.filter((product) =>
-    isAuthorized(session, product, Actions.ListRepository)
-  );
+  products = products.filter((product) => canListOnProfile(session, product));
 
   // Check for pending invitation
   const pendingInvitation = await getPendingInvitation(account.account_id);
