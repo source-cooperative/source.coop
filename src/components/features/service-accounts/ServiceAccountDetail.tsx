@@ -283,7 +283,7 @@ export function ServiceAccountDetail({
                 <AlertDialog.Title>Delete {account.name}?</AlertDialog.Title>
                 <AlertDialog.Description size="2">
                   Its workflows and API keys stop working, and it loses access to every
-                  product. Credentials it already holds last until they expire. This
+                  product. Credentials already generated last until they expire. This
                   cannot be undone.
                 </AlertDialog.Description>
                 <Flex justify="end" gap="3" mt="4">
