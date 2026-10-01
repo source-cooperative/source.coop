@@ -11,9 +11,9 @@ import {
 /**
  * An owner's service accounts, one row each, in the same bordered list the
  * data connections use: the name linking to the account's own page, its id,
- * a marker when it is disabled, how it signs in — trusted workflows and
- * live API keys — and how many products it reaches. The controls live on
- * that page, `ServiceAccountDetail`.
+ * a marker when it is disabled, and a count of each: trusted workflows, live
+ * API keys (revoked and expired ones are left out) and products it reaches.
+ * The controls live on that page, `ServiceAccountDetail`.
  */
 const meta = {
   title: "Features/Service accounts/ServiceAccountList",
