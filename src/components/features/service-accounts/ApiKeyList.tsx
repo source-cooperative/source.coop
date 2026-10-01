@@ -140,7 +140,7 @@ function KeyRow({
                   <DotsHorizontalIcon />
                 </IconButton>
               </DropdownMenu.Trigger>
-              <DropdownMenu.Content align="end">
+              <DropdownMenu.Content align="end" size="1">
                 {/* Only a key that works has a use to show. */}
                 {proxyOrigin && isKeyActive(apiKey) && (
                   <DropdownMenu.Item onSelect={() => setShowingUsage(true)}>

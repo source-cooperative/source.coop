@@ -55,7 +55,7 @@ beforeAll(annotations.beforeAll);
  *   React 18 in package.json, where the hook does not exist.
  */
 const CANNOT_RENDER_UNDER_JEST =
-  /LiveGlobe|DynamicForm|DataConnectionForm|ProductMirrorsManager|ProductCreationForm|EditProfileForm|MembershipsTable|ServiceAccountForm|ServiceAccountDetail|AddGithubTrustDialog|IssueApiKeyDialog|ApiKeyList/;
+  /LiveGlobe|DynamicForm|DataConnectionForm|ProductMirrorsManager|ProductCreationForm|EditProfileForm|MembershipsTable|ServiceAccountForm|ServiceAccountDetail|AddSignInMenu|AddGithubTrustDialog|IssueApiKeyDialog|ApiKeyList/;
 
 const storyFiles = readdirSync(__dirname, {
   recursive: true,

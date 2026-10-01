@@ -6,9 +6,9 @@ import { ProductAccessList, type ProductAccess } from "./ProductAccessList";
 
 /**
  * The products a service account reaches, each with Read or Read and write
- * and an X to remove it. "Grant a product" adds a row to choose another of
- * the owner's products and the access to give it, granted with its check. Each
- * title opens the product in a new tab, so a manager can check what it holds.
+ * and an X to remove it. Each title opens the product in a new tab, so a
+ * manager can check what it holds. Granting another is `GrantProductDialog`,
+ * in the section's corner.
  *
  * The create form and the account's page use the same list. The form holds
  * the grants until it is submitted; the page saves each as it is made. The
@@ -52,7 +52,7 @@ type Story = StoryObj<typeof meta>;
 /** Nothing granted yet, as a new service account starts. */
 export const NothingGranted: Story = {};
 
-/** An account that writes one product and reads another; one is left to grant. */
+/** An account that writes one product and reads another. */
 export const SomeGranted: Story = {
   args: {
     access: {
@@ -62,7 +62,7 @@ export const SomeGranted: Story = {
   },
 };
 
-/** Every product granted: there is nothing left to add. */
+/** Every product granted. */
 export const EverythingGranted: Story = {
   args: {
     access: {
