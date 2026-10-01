@@ -17,7 +17,12 @@ const product: Product = {
   featured: 0,
 };
 
-/** Product summaries display Markdown descriptions with links and paragraphs. */
+/**
+ * Product summaries display Markdown descriptions with their formatting and
+ * paragraphs. Links in a description render as plain text: a listing links only
+ * to the product and its publisher, and the description's links are on the
+ * product page.
+ */
 const meta = {
   title: "Features/Products/ProductListItem",
   component: ProductListItem,
@@ -27,12 +32,13 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** An organization product with linked sources and partner acknowledgments. */
+/** An organization product whose sources and partners are linked on its product page. */
 export const MarkdownDescription: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByRole("link", { name: "Taylor Geospatial" }))
-      .toHaveAttribute("href", "https://taylorgeospatial.org/");
+    await expect(canvas.queryByRole("link", { name: "Taylor Geospatial" }))
+      .not.toBeInTheDocument();
+    await expect(canvasElement).toHaveTextContent("Taylor Geospatial");
     await expect(canvas.getByRole("link", { name: product.title }))
       .toHaveAttribute("href", "/ftw/global-data-beta");
     await expect(canvasElement.querySelectorAll(".markdown-viewer p"))
@@ -41,7 +47,7 @@ export const MarkdownDescription: Story = {
   },
 };
 
-/** Links and paragraphs wrap within the card at phone width. */
+/** Paragraphs wrap within the card at phone width. */
 export const Narrow: Story = {
   ...MarkdownDescription,
   globals: { viewport: { value: "mobile1", isRotated: false } },

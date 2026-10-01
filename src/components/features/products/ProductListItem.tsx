@@ -39,10 +39,12 @@ export function ProductListItem({ product, isSelected }: ProductListItemProps) {
         </Link>
 
         {product.description && (
-          <Text asChild size="2" color="gray" mb="4">
-            <div>
-              <MarkdownViewer content={product.description} />
-            </div>
+          <Text as="div" size="2" color="gray" mb="4">
+            {/* Listings link only within Source; description links live on the product page. */}
+            <MarkdownViewer
+              content={product.description}
+              disallowedElements={["a"]}
+            />
           </Text>
         )}
 

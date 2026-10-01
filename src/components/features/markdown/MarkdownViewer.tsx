@@ -9,6 +9,8 @@ import "@/styles/MarkdownViewer.css";
 
 interface MarkdownViewerProps {
   content: string;
+  /** Elements to render as their text content only, e.g. `["a"]` to drop links. */
+  disallowedElements?: string[];
 }
 
 // Utility function to convert heading text to URL-friendly ID
@@ -31,7 +33,10 @@ const sanitizeSchema = {
   tagNames: [...(defaultSchema.tagNames || []), "img"],
 };
 
-export function MarkdownViewer({ content }: MarkdownViewerProps) {
+export function MarkdownViewer({
+  content,
+  disallowedElements,
+}: MarkdownViewerProps) {
   if (typeof content !== "string") {
     throw new Error(
       `MarkdownViewer expects string content, got ${typeof content}`
@@ -43,6 +48,8 @@ export function MarkdownViewer({ content }: MarkdownViewerProps) {
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeRaw, [rehypeSanitize, sanitizeSchema]]}
+        disallowedElements={disallowedElements}
+        unwrapDisallowed
         components={{
         h1: ({ children }) => (
           <HeadingWithPermalink
