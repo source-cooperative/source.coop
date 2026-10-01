@@ -19,7 +19,8 @@ interface ProductListItemProps {
 // Listings show a description's inline formatting only; the full description
 // is on the product page. Headings and links collapse to their text, as a
 // listing links only within Source. Tables and code blocks have no readable
-// inline form, so they are allowed here only to be left out entirely.
+// inline form, so they are allowed only so the components below can drop them:
+// left disallowed, unwrapDisallowed would spill their text into the card.
 const DESCRIPTION_ELEMENTS = [
   "p", "strong", "em", "del", "code", "ul", "ol", "li", "br", "table", "pre",
 ];
