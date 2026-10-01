@@ -52,6 +52,33 @@
   flex: 1;
 }
 
+.description {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
+.description p,
+.description ul,
+.description ol {
+  margin: 0 0 var(--space-1);
+}
+
+.description ul,
+.description ol {
+  padding-left: var(--space-5);
+}
+
+.description code {
+  background-color: var(--gray-a3);
+  border-radius: var(--radius-1);
+  padding: 0 0.3em;
+  font-size: 0.9em;
+}
+
 .itemSpacer {
   flex: 1;
 }
