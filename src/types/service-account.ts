@@ -7,6 +7,12 @@ export interface ServiceAccountFormState {
   fieldErrors: Record<string, string[]>;
   message: string;
   success: boolean;
+  /**
+   * Set when an API key was issued with the account, in place of the usual
+   * redirect: the form hands the key to the page at `account_url`, which shows
+   * it once.
+   */
+  issued?: { key: string; record: ServiceAccountKey; account_url: string };
 }
 
 export interface ServiceAccountActionState {

@@ -11,6 +11,7 @@ import {
   accountsTable,
   membershipsTable,
   productsTable,
+  serviceAccountKeysTable,
 } from "../clients";
 import { getPageSession } from "../api/utils";
 import { redirect } from "next/navigation";
@@ -38,6 +39,7 @@ jest.mock("../clients", () => ({
   },
   productsTable: { fetchById: jest.fn() },
   accountTrustsTable: { create: jest.fn(), delete: jest.fn() },
+  serviceAccountKeysTable: { create: jest.fn() },
 }));
 jest.mock("../api/utils", () => ({ getPageSession: jest.fn() }));
 jest.mock("../api/authz", () => ({ canManageAccount: jest.fn() }));
@@ -131,6 +133,38 @@ describe("createServiceAccount", () => {
         created_by: "acme-owner",
       })
     );
+  });
+
+  it("issues an API key asked for with the account, and returns it to show once instead of redirecting", async () => {
+    const created = await createServiceAccount(
+      IDLE_FORM,
+      form({ ...base, key_label: "HPC cron job", expires_in_days: "30" })
+    );
+    expect(redirect).not.toHaveBeenCalled();
+    expect(created.success).toBe(true);
+    expect(created.issued?.key).toMatch(/^sck_[0-9A-Za-z]{36}$/);
+    expect(created.issued?.account_url).toBe("/edit/account/acme/service-accounts/acme--nightly-sync");
+    // The page gets the record without its hash; the table gets the hash.
+    expect(created.issued?.record).not.toHaveProperty("key_hash");
+    expect(serviceAccountKeysTable.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        account_id: "acme--nightly-sync",
+        label: "HPC cron job",
+        created_by: "acme-owner",
+        key_hash: expect.stringMatching(/^[0-9a-f]{64}$/),
+      })
+    );
+  });
+
+  it("refuses a key with no label or an expiry out of range before writing anything", async () => {
+    for (const fields of [
+      { ...base, key_label: " " },
+      { ...base, key_label: "CI", expires_in_days: "0" },
+    ]) {
+      expect((await createServiceAccount(IDLE_FORM, form(fields))).success).toBe(false);
+    }
+    expect(mocks.accounts.create).not.toHaveBeenCalled();
+    expect(serviceAccountKeysTable.create).not.toHaveBeenCalled();
   });
 
   it("refuses an unpinned workflow, a product the owner does not have, a bad role, and a short id with its own `--` — before writing anything", async () => {

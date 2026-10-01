@@ -11,6 +11,7 @@ import {
   ServiceAccountCreationRequestSchema,
   serviceAccountId,
   isServiceAccount,
+  publicKey,
   type ServiceAccount,
   type ServiceAccountActionState,
   type ServiceAccountFormState,
@@ -26,7 +27,9 @@ import {
   accountsTable,
   membershipsTable,
   productsTable,
+  serviceAccountKeysTable,
 } from "../clients";
+import { expiryFrom, mintApiKey } from "@/lib/accounts/service-account-keys";
 import { AlreadyTrustedError } from "../clients/database/account-trusts";
 import { redirect } from "next/navigation";
 import { editAccountServiceAccountsUrl, editServiceAccountUrl } from "@/lib/urls";
@@ -59,8 +62,9 @@ const trustGithub = (account_id: string, subject: string, created_by: string) =>
 
 /**
  * Creates a service account under an owner, grants it the chosen products,
- * trusts each GitHub workflow named, and goes to the account's page, where
- * each workflow's example usage is a click away.
+ * trusts each GitHub workflow named, issues an API key if one is asked for,
+ * and goes to the account's page. An issued key is returned instead, for the
+ * form to carry to that page, which shows it once.
  */
 export async function createServiceAccount(
   _prev: ServiceAccountFormState,
@@ -125,6 +129,22 @@ export async function createServiceAccount(
     grants.push({ product_id, role });
   }
 
+  // Minted before anything is written, so a bad label or expiry leaves nothing behind.
+  let minted: ReturnType<typeof mintApiKey> = null;
+  if (formData.has("key_label")) {
+    const expires_at = expiryFrom(formData);
+    if (expires_at === undefined) return fail("Expiry must be between 1 and 3650 days");
+    minted = mintApiKey({
+      account_id,
+      label: String(formData.get("key_label")),
+      created_by: session.account.account_id,
+      expires_at,
+    });
+    if (!minted) {
+      return fail("Check the highlighted fields", { key_label: ["Up to 64 characters."] });
+    }
+  }
+
   try {
     await accountsTable.create(account);
   } catch (error) {
@@ -154,12 +174,24 @@ export async function createServiceAccount(
     await trustGithub(account_id, subject, session.account.account_id);
   }
 
+  if (minted) await serviceAccountKeysTable.create(minted.record);
+
   LOGGER.info("Created service account", {
     operation: "createServiceAccount",
-    metadata: { account_id, owner_account_id, grants: grants.length, trusts: subjects.length },
+    metadata: { account_id, owner_account_id, grants: grants.length, trusts: subjects.length, key: !!minted },
   });
   revalidatePath(editAccountServiceAccountsUrl(owner_account_id));
-  redirect(editServiceAccountUrl(owner_account_id, account_id));
+  const account_url = editServiceAccountUrl(owner_account_id, account_id);
+  // The key is in this response and nowhere else; a redirect would lose it.
+  if (minted) {
+    return {
+      fieldErrors: {},
+      message: "",
+      success: true,
+      issued: { key: minted.key, record: publicKey(minted.record), account_url },
+    };
+  }
+  redirect(account_url);
 }
 
 /** Trusts one more GitHub workflow on an existing service account. */

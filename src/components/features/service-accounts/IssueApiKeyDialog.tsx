@@ -1,13 +1,14 @@
 "use client";
 
 import React, { useActionState } from "react";
-import { Box, Button, Callout, Code, Dialog, Flex, Text, TextField } from "@radix-ui/themes";
-import { ExclamationTriangleIcon, PlusIcon } from "@radix-ui/react-icons";
+import { Box, Button, Code, Dialog, Flex, Text, TextField } from "@radix-ui/themes";
+import { PlusIcon } from "@radix-ui/react-icons";
 import { CopyToClipboard } from "@/components/core/CopyToClipboard";
 import { Field } from "@/components/core";
 import { issueApiKey } from "@/lib/actions/service-account-keys";
-import { IDLE_API_KEY_ACTION_STATE, maskedApiKey } from "@/types";
+import { IDLE_API_KEY_ACTION_STATE } from "@/types";
 import { ApiKeyExpiryField } from "./ApiKeyExpiryField";
+import { IssuedApiKey } from "./IssuedApiKey";
 
 /**
  * What a stock AWS SDK or the AWS CLI needs to sign in with a key saved to a
@@ -52,26 +53,7 @@ export function IssueApiKeyDialog({
         <Dialog.Title>Issue an API key</Dialog.Title>
         {state.issued ? (
           <Flex direction="column" gap="3">
-            <Callout.Root color="grass">
-              <Callout.Icon>
-                <ExclamationTriangleIcon />
-              </Callout.Icon>
-              <Callout.Text>
-                <Text size="2" weight="medium">
-                  Copy the key now — this is the only time it is shown.
-                </Text>
-              </Callout.Text>
-            </Callout.Root>
-            <Flex align="center" gap="2">
-              <Code size="2" style={{ wordBreak: "break-all" }}>
-                {state.issued.key}
-              </Code>
-              <CopyToClipboard text={state.issued.key} />
-            </Flex>
-            <Text size="1" color="gray">
-              Listed as <Code size="1">{maskedApiKey(state.issued.record)}</Code> from now
-              on: its last six characters, to match against the key you hold.
-            </Text>
+            <IssuedApiKey apiKey={state.issued.key} record={state.issued.record} />
             {environment && (
               <Flex direction="column" gap="2">
                 <Flex justify="between" align="center" gap="2">

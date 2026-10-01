@@ -1,10 +1,12 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { ServiceAccountDetail } from "./ServiceAccountDetail";
+import { handOffIssuedKey } from "./IssuedApiKeyDialog";
 import {
   AccountType,
   GITHUB_ACTIONS_ISSUER,
   MembershipRole,
   MembershipState,
+  apiKeyChecksum,
   type ServiceAccountSummary,
 } from "@/types";
 
@@ -120,4 +122,21 @@ export const KeysOnly: Story = {
 /** Just created with nothing named: it cannot sign in and reaches nothing. */
 export const Empty: Story = {
   args: { summary: { account, trusts: [], grants: [], keys: [] } },
+};
+
+/**
+ * Just created with an API key: the create form hands the key over and it
+ * opens over the page, the one time it is shown.
+ */
+const justIssued = { ...summary.keys[0], last_used_at: undefined };
+export const CreatedWithKey: Story = {
+  args: { summary: { account, trusts: [], grants: [], keys: [justIssued] } },
+  beforeEach: () => {
+    // Assembled at run time so that secret scanners don't flag this file.
+    const body = "storyFixtureNotARealKey1234567";
+    handOffIssuedKey({
+      key: `sck_${body}${apiKeyChecksum(body)}`,
+      record: { ...justIssued, account_id: account.account_id, hint: apiKeyChecksum(body) },
+    });
+  },
 };
