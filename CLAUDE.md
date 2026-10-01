@@ -80,8 +80,14 @@ A PR that touches the UI links the stories it affects, on that branch's Storyboo
 deploy:
 
 ```
-https://source-coop-ui-git-<branch-name-with-dashes>-radiantearth.vercel.app/?path=/story/<story-id>
+https://<deploy-host>/?path=/story/<story-id>
 ```
+
+Take `<deploy-host>` from the `source-coop-ui` row of the Vercel bot's comment
+on the PR (`gh pr view <n> --comments`) rather than building it from the branch
+name. Vercel caps a hostname label at 63 characters, so a long branch name is cut
+short and given a hash (`source-coop-ui-git-feat-github-immutable-re-82950d-radiantearth.vercel.app`),
+and a hostname guessed from the full name doesn't resolve.
 
 Link the specific stories rather than the root, and include a screenshot of
 anything visual — it shows the change in the review itself, and it outlives the
