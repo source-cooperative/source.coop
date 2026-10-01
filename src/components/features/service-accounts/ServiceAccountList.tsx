@@ -50,13 +50,17 @@ export function ServiceAccountList({ summaries }: { summaries: ServiceAccountSum
           markers={account.disabled && <ConnectionMarker>Disabled</ConnectionMarker>}
           meta={account.account_id}
           aside={
-            <Text size="1" color="gray">
+            <Flex direction="column" align="end">
               {[
                 count(trusts.length, "workflow", "workflows"),
                 count(liveKeys, "API key", "API keys"),
                 count(grants.length, "product", "products"),
-              ].join(" · ")}
-            </Text>
+              ].map((line) => (
+                <Text key={line} size="1" color="gray">
+                  {line}
+                </Text>
+              ))}
+            </Flex>
           }
           actions={<ChevronRightIcon color="var(--gray-9)" />}
         />
