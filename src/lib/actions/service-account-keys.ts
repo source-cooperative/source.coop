@@ -1,20 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { randomInt, randomUUID } from "crypto";
 import { LOGGER } from "@/lib/logging";
-import {
-  API_KEY_ALPHABET,
-  API_KEY_PREFIX,
-  apiKeyChecksum,
-  publicKey,
-  ServiceAccountKeyRecordSchema,
-  type ApiKeyActionState,
-  type ServiceAccountKeyRecord,
-} from "@/types";
+import { publicKey, type ApiKeyActionState } from "@/types";
 import { getPageSession } from "../api/utils";
 import { serviceAccountKeysTable } from "../clients";
-import { hashApiKey } from "@/lib/accounts/service-account-keys";
+import { expiryFrom, mintApiKey } from "@/lib/accounts/service-account-keys";
 import { managedServiceAccount } from "@/lib/accounts/service-accounts";
 import { editAccountServiceAccountsUrl, editServiceAccountUrl } from "@/lib/urls";
 
@@ -22,15 +13,6 @@ const outcome = (message: string, success: boolean): ApiKeyActionState => ({
   message,
   success,
 });
-
-/** `expires_in_days` from the form: empty for no expiry. */
-function expiryFrom(formData: FormData): string | null | undefined {
-  const raw = String(formData.get("expires_in_days") ?? "").trim();
-  if (raw === "") return null;
-  const days = Number(raw);
-  if (!Number.isInteger(days) || days < 1 || days > 3650) return undefined;
-  return new Date(Date.now() + days * 86_400_000).toISOString();
-}
 
 /**
  * Issues an API key: an opaque secret (ADR-013) whose hash is the record's
@@ -51,22 +33,14 @@ export async function issueApiKey(
   const expires_at = expiryFrom(formData);
   if (expires_at === undefined) return outcome("Expiry must be between 1 and 3650 days", false);
 
-  // 30 characters drawn uniformly from base62 (178 bits), then their checksum.
-  const body = Array.from({ length: 30 }, () => API_KEY_ALPHABET[randomInt(62)]).join("");
-  const key = API_KEY_PREFIX + body + apiKeyChecksum(body);
-  const now = new Date().toISOString();
-  const parsed = ServiceAccountKeyRecordSchema.safeParse({
-    key_hash: hashApiKey(key),
-    key_id: randomUUID(),
+  const minted = mintApiKey({
     account_id: account.account_id,
-    label: String(formData.get("label") ?? "").trim(),
-    hint: key.slice(-6),
-    created_at: now,
+    label: String(formData.get("label") ?? ""),
     created_by: session.account.account_id,
     expires_at,
   });
-  if (!parsed.success) return outcome("Give the key a label of up to 64 characters", false);
-  const record: ServiceAccountKeyRecord = parsed.data;
+  if (!minted) return outcome("Give the key a label of up to 64 characters", false);
+  const { key, record } = minted;
 
   await serviceAccountKeysTable.create(record);
   LOGGER.info("Issued API key", {
