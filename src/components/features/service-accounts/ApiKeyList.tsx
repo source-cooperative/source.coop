@@ -161,6 +161,7 @@ function KeyRow({
                 title={`Sign in with ${apiKey.label}`}
                 intro="Save the key to a file, then point any AWS SDK or the AWS CLI at it:"
                 code={apiKeyEnvironment(proxyOrigin, accountId)}
+                language="shell"
                 open={showingUsage}
                 onOpenChange={setShowingUsage}
               />

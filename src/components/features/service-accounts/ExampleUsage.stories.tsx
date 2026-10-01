@@ -9,7 +9,8 @@ import { apiKeyEnvironment, githubWorkflowStep } from "@/lib/services/service-ac
  * GitHub workflow it is the step the job adds; for a working API key, the
  * variables that point any AWS SDK or the AWS CLI at the key saved to a file.
  * Each names the account in the role ARN and points at the data proxy;
- * nothing in either is secret. The copy button takes the whole block.
+ * nothing in either is secret. Keys, values and comments are coloured, and
+ * the copy button in the block's corner takes all of it.
  */
 const meta = {
   title: "Features/Service accounts/ExampleUsage",
@@ -32,6 +33,7 @@ export const GithubWorkflow: Story = {
       </>
     ),
     code: githubWorkflowStep("https://data.source.coop", "miskatonic--nightly-sync"),
+    language: "yaml",
   },
 };
 
@@ -40,5 +42,15 @@ export const ApiKey: Story = {
     title: "Sign in with HPC cron job",
     intro: "Save the key to a file, then point any AWS SDK or the AWS CLI at it:",
     code: apiKeyEnvironment("https://data.source.coop", "miskatonic--nightly-sync"),
+    language: "shell",
   },
+};
+
+/**
+ * At phone width long lines wrap rather than scroll, each wrapped remainder
+ * hanging just inside its line's indent so the YAML still reads as nested.
+ */
+export const Mobile: Story = {
+  args: GithubWorkflow.args,
+  globals: { viewport: { value: "mobile1", isRotated: false } },
 };
