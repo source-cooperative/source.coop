@@ -271,8 +271,7 @@ export function ServiceAccountDetail({
           <Status state={toggleState} />
           <Flex justify="between" align="center" gap="3" wrap="wrap">
             <Text size="2" color="gray">
-              Deleting removes the account, its product access and its trusted workflows, and
-              stops its API keys working. It cannot be undone.
+              Deleting stops every sign-in and removes its product access. It cannot be undone.
             </Text>
             <AlertDialog.Root>
               <AlertDialog.Trigger>
@@ -283,10 +282,8 @@ export function ServiceAccountDetail({
               <AlertDialog.Content style={{ maxWidth: 440 }}>
                 <AlertDialog.Title>Delete {account.name}?</AlertDialog.Title>
                 <AlertDialog.Description size="2">
-                  It loses access to every product, its trusted workflows are removed, and
-                  its API keys stop working. Credentials it has already signed in for keep
-                  working until they expire, so disable it first to cut those off.
-                  Deleting cannot be undone.
+                  Its workflows and API keys stop working, and it loses access to every
+                  product. This cannot be undone.
                 </AlertDialog.Description>
                 <Flex justify="end" gap="3" mt="4">
                   <AlertDialog.Cancel>
