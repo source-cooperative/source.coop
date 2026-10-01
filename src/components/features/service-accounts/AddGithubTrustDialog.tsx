@@ -14,8 +14,8 @@ import {
 /**
  * Names a workflow the service account will trust. Nothing to run first: the
  * trust is written when the form is submitted, the way a role's trust policy
- * is edited, and the dialog closes onto the new row, whose "Example usage"
- * shows the step the workflow adds.
+ * is edited, and the dialog closes onto the new row. The step the workflow
+ * adds is on the same page, under Usage.
  */
 export function AddGithubTrustDialog({ accountId }: { accountId: string }) {
   const [open, setOpen] = useState(false);

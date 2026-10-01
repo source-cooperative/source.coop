@@ -1,9 +1,8 @@
 "use client";
 
 import React, { useActionState } from "react";
-import { Box, Button, Code, Dialog, Flex, Text, TextField } from "@radix-ui/themes";
+import { Button, Dialog, Flex, Text, TextField } from "@radix-ui/themes";
 import { PlusIcon } from "@radix-ui/react-icons";
-import { CopyToClipboard } from "@/components/core/CopyToClipboard";
 import { Field } from "@/components/core";
 import { issueApiKey } from "@/lib/actions/service-account-keys";
 import { IDLE_API_KEY_ACTION_STATE } from "@/types";
@@ -11,36 +10,12 @@ import { ApiKeyExpiryField } from "./ApiKeyExpiryField";
 import { IssuedApiKey } from "./IssuedApiKey";
 
 /**
- * What a stock AWS SDK or the AWS CLI needs to sign in with a key saved to a
- * file: it reads the file, exchanges the key at the proxy's STS endpoint and
- * refreshes on its own, so nothing else runs beside it. A key names its own
- * account, so the role ARN's account segment is ignored; it is filled in to
- * match the workflow snippet.
+ * Issues an API key for a service account and shows it once. There is no
+ * second look: the key is not stored, only its record. How to use it is on
+ * the account's page, under Usage.
  */
-const sdkEnvironment = (proxyOrigin: string, accountId: string) =>
-  [
-    `export AWS_ROLE_ARN=arn:aws:iam::${accountId}:role/FullAccess`,
-    "export AWS_WEB_IDENTITY_TOKEN_FILE=/path/to/the/saved/key",
-    `export AWS_ENDPOINT_URL_STS=${proxyOrigin}/.sts`,
-    `export AWS_ENDPOINT_URL_S3=${proxyOrigin}`,
-    "export AWS_REGION=us-west-2",
-  ].join("\n");
-
-/**
- * Issues an API key for a service account and shows it once, with the
- * variables an SDK needs to use it. There is no second look: the key is not
- * stored, only its record.
- */
-export function IssueApiKeyDialog({
-  accountId,
-  proxyOrigin,
-}: {
-  accountId: string;
-  /** The data proxy the key signs in to; without it, no variables are shown. */
-  proxyOrigin?: string;
-}) {
+export function IssueApiKeyDialog({ accountId }: { accountId: string }) {
   const [state, formAction, pending] = useActionState(issueApiKey, IDLE_API_KEY_ACTION_STATE);
-  const environment = proxyOrigin && sdkEnvironment(proxyOrigin, accountId);
 
   return (
     <Dialog.Root>
@@ -54,21 +29,6 @@ export function IssueApiKeyDialog({
         {state.issued ? (
           <Flex direction="column" gap="3">
             <IssuedApiKey apiKey={state.issued.key} record={state.issued.record} />
-            {environment && (
-              <Flex direction="column" gap="2">
-                <Flex justify="between" align="center" gap="2">
-                  <Text size="2">Save it to a file, then point any AWS SDK or the AWS CLI at it:</Text>
-                  <CopyToClipboard text={environment} />
-                </Flex>
-                <Box asChild p="3" style={{ background: "var(--gray-2)", overflowX: "auto" }}>
-                  <pre style={{ margin: 0 }}>
-                    <Code size="1" variant="ghost">
-                      {environment}
-                    </Code>
-                  </pre>
-                </Box>
-              </Flex>
-            )}
             <Flex justify="end">
               <Dialog.Close>
                 <Button variant="soft">Done</Button>

@@ -25,3 +25,20 @@ export function githubWorkflowStep(proxyOrigin: string, account_id: string): str
     "      aws-region: us-west-2",
   ].join("\n");
 }
+
+/**
+ * What a stock AWS SDK or the AWS CLI needs to sign in with an API key saved
+ * to a file: it reads the file, exchanges the key at the proxy's STS endpoint
+ * and refreshes on its own, so nothing else runs beside it. A key names its
+ * own account, so the role ARN's account segment is ignored; it is filled in
+ * to match the workflow step.
+ */
+export function apiKeyEnvironment(proxyOrigin: string, account_id: string): string {
+  return [
+    `export AWS_ROLE_ARN=arn:aws:iam::${account_id}:role/FullAccess`,
+    "export AWS_WEB_IDENTITY_TOKEN_FILE=/path/to/the/saved/key",
+    `export AWS_ENDPOINT_URL_STS=${proxyOrigin}/.sts`,
+    `export AWS_ENDPOINT_URL_S3=${proxyOrigin}`,
+    "export AWS_REGION=us-west-2",
+  ].join("\n");
+}

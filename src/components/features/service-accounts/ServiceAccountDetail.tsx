@@ -5,7 +5,6 @@ import {
   AlertDialog,
   Button,
   Code,
-  Dialog,
   Flex,
   Heading,
   IconButton,
@@ -25,7 +24,6 @@ import {
   setProductAccess,
   setServiceAccountDisabled,
 } from "@/lib/actions/service-accounts";
-import { githubWorkflowStep } from "@/lib/services/github-workflow";
 import {
   GITHUB_ACTIONS_ISSUER,
   IDLE_SERVICE_ACCOUNT_ACTION_STATE as IDLE,
@@ -35,7 +33,7 @@ import {
 } from "@/types";
 import { AddGithubTrustDialog } from "./AddGithubTrustDialog";
 import { ProductAccessList, type ProductAccess } from "./ProductAccessList";
-import { WorkflowSnippet } from "./WorkflowSnippet";
+import { UsageExamples } from "./UsageExamples";
 import { IssueApiKeyDialog } from "./IssueApiKeyDialog";
 import { IssuedApiKeyDialog } from "./IssuedApiKeyDialog";
 import { ApiKeyList } from "./ApiKeyList";
@@ -51,35 +49,11 @@ function Status({ state }: { state: ServiceAccountActionState }) {
   ) : null;
 }
 
-/** The step a trusted workflow adds to act as the account, in a modal. */
-function ExampleUsage({ subject, step }: { subject: string; step: string }) {
-  return (
-    <Dialog.Root>
-      <Dialog.Trigger>
-        <Button size="1" variant="ghost">
-          Example usage
-        </Button>
-      </Dialog.Trigger>
-      <Dialog.Content style={{ maxWidth: 640 }} aria-describedby={undefined}>
-        <Dialog.Title>Sign in from this workflow</Dialog.Title>
-        <WorkflowSnippet subject={subject} step={step} />
-        <Flex justify="end" mt="4">
-          <Dialog.Close>
-            <Button variant="soft" color="gray">
-              Close
-            </Button>
-          </Dialog.Close>
-        </Flex>
-      </Dialog.Content>
-    </Dialog.Root>
-  );
-}
-
 /**
  * One service account, and every control over it: how it signs in — the
- * workflows it trusts, each with its example usage, and its API keys; the
- * products it reaches, changed, removed or granted with the create form's controls and saved as they are; and — set
- * apart — disabling and deleting it.
+ * workflows it trusts and its API keys — and how software uses each; the
+ * products it reaches, changed, removed or granted with the create form's
+ * controls and saved as they are; and — set apart — disabling and deleting it.
  */
 export function ServiceAccountDetail({
   summary,
@@ -89,7 +63,7 @@ export function ServiceAccountDetail({
   summary: ServiceAccountSummary;
   /** The owner's products, each of which it may reach. */
   products: Pick<Product, "product_id" | "title">[];
-  /** The data proxy a workflow signs in to; without it, no example is shown. */
+  /** The data proxy software signs in to; without it, no usage is shown. */
   proxyOrigin?: string;
 }) {
   const { account, trusts, grants, keys } = summary;
@@ -136,7 +110,7 @@ export function ServiceAccountDetail({
         rightButton={
           <Flex gap="2" wrap="wrap" justify="end">
             <AddGithubTrustDialog accountId={account.account_id} />
-            <IssueApiKeyDialog accountId={account.account_id} proxyOrigin={proxyOrigin} />
+            <IssueApiKeyDialog accountId={account.account_id} />
           </Flex>
         }
       >
@@ -163,13 +137,7 @@ export function ServiceAccountDetail({
                       meta={issuerLabel(trust.issuer)}
                       actions={
                         <Flex align="center" gap="3">
-                          {proxyOrigin && trust.issuer === GITHUB_ACTIONS_ISSUER && (
-                            <ExampleUsage
-                              subject={trust.subject}
-                              step={githubWorkflowStep(proxyOrigin, account.account_id)}
-                            />
-                          )}
-                          {/* A flex box, so the icon centres on the row like the link beside it. */}
+                          {/* A flex box, so the icon centres on the row. */}
                           <form action={removeAction} style={{ display: "flex" }}>
                             <input type="hidden" name="account_id" value={account.account_id} />
                             <input type="hidden" name="issuer" value={trust.issuer} />
@@ -207,6 +175,15 @@ export function ServiceAccountDetail({
         {/* Outside the lists, so removing the last trust still says how it went. */}
         <Status state={removeState} />
       </SectionHeader>
+
+      {proxyOrigin && (
+        <SectionHeader
+          title="Usage"
+          description="What software adds to sign in as this account. Nothing here is secret: a workflow is let in because it is trusted, and a key is the one you saved when it was issued."
+        >
+          <UsageExamples accountId={account.account_id} proxyOrigin={proxyOrigin} />
+        </SectionHeader>
+      )}
 
       <SectionHeader
         title="Can reach"
