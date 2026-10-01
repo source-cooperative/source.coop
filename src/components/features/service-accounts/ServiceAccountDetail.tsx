@@ -50,15 +50,6 @@ function Status({ state }: { state: ServiceAccountActionState }) {
   ) : null;
 }
 
-/** Heads one kind of sign-in within the section. */
-function SignInKind({ children }: { children: React.ReactNode }) {
-  return (
-    <Text size="1" weight="medium" color="gray">
-      {children}
-    </Text>
-  );
-}
-
 /** The step a trusted workflow adds to act as the account, in a modal. */
 function ExampleUsage({ subject, step }: { subject: string; step: string }) {
   return (
@@ -155,7 +146,9 @@ export function ServiceAccountDetail({
           <Flex direction="column" gap="4">
             {trusts.length > 0 && (
               <Flex direction="column" gap="2">
-                <SignInKind>GitHub workflows</SignInKind>
+                <Text size="1" weight="medium" color="gray">
+                  GitHub workflows
+                </Text>
                 <ConnectionList>
                   {trusts.map((trust) => (
                     <ConnectionRow
@@ -197,17 +190,20 @@ export function ServiceAccountDetail({
                     />
                   ))}
                 </ConnectionList>
-                <Status state={removeState} />
               </Flex>
             )}
             {keys.length > 0 && (
               <Flex direction="column" gap="2">
-                <SignInKind>API keys</SignInKind>
+                <Text size="1" weight="medium" color="gray">
+                  API keys
+                </Text>
                 <ApiKeyList accountId={account.account_id} keys={keys} />
               </Flex>
             )}
           </Flex>
         )}
+        {/* Outside the lists, so removing the last trust still says how it went. */}
+        <Status state={removeState} />
       </SectionHeader>
 
       <SectionHeader
