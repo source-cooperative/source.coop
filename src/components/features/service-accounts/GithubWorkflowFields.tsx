@@ -1,6 +1,6 @@
 "use client";
 
-import { Box, Code, Flex, SegmentedControl, Text, TextField } from "@radix-ui/themes";
+import { Box, Code, Flex, Link, SegmentedControl, Text, TextField } from "@radix-ui/themes";
 import { Field } from "@/components/core";
 
 export interface GithubWorkflow {
@@ -14,6 +14,10 @@ export const NEW_GITHUB_WORKFLOW: GithubWorkflow = {
   kind: "ref",
   value: "refs/heads/main",
 };
+
+/** Where GitHub shows the subject each kind of ref or environment produces. */
+const SUBJECT_CLAIMS_DOCS =
+  "https://docs.github.com/en/actions/reference/security/oidc#example-subject-claims";
 
 /** GitHub's `sub` claim for the workflow, exactly as its token will carry it. */
 export const githubSubject = (w: GithubWorkflow) =>
@@ -87,6 +91,22 @@ export function GithubWorkflowFields({
             label={workflow.kind === "ref" ? "Ref" : "Environment"}
             htmlFor={`${id}-value`}
             required
+            help={
+              <>
+                {workflow.kind === "ref" ? (
+                  <>
+                    The full ref the workflow runs on: a branch as{" "}
+                    <Code size="1">refs/heads/main</Code>, a tag as{" "}
+                    <Code size="1">refs/tags/v1.0</Code>.
+                  </>
+                ) : (
+                  <>The name of the GitHub environment the job runs in.</>
+                )}{" "}
+                <Link href={SUBJECT_CLAIMS_DOCS} target="_blank" rel="noopener noreferrer" underline="always">
+                  See GitHub&apos;s examples
+                </Link>
+              </>
+            }
           >
             <TextField.Root
               id={`${id}-value`}
