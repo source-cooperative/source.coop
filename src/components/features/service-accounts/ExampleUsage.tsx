@@ -4,27 +4,26 @@ import { Box, Button, Code, Dialog, Flex, Text } from "@radix-ui/themes";
 import { CopyToClipboard } from "@/components/core/CopyToClipboard";
 
 /**
- * An "Example usage" link on a sign-in's row, opening what software adds to
- * sign in that way, ready to paste: a workflow's step, or the variables for a
- * key. Nothing in it is secret.
+ * What software adds to sign in one way, ready to paste — a workflow's step,
+ * or the variables for a key — in a modal opened from "Example usage" in the
+ * row's menu. Nothing in it is secret.
  */
 export function ExampleUsage({
   title,
   intro,
   code,
+  open,
+  onOpenChange,
 }: {
   title: string;
   /** The line above the code: where it goes. */
   intro: React.ReactNode;
   code: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }) {
   return (
-    <Dialog.Root>
-      <Dialog.Trigger>
-        <Button size="1" variant="ghost">
-          Example usage
-        </Button>
-      </Dialog.Trigger>
+    <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Content style={{ maxWidth: 640 }} aria-describedby={undefined}>
         <Dialog.Title>{title}</Dialog.Title>
         <Flex direction="column" gap="2">

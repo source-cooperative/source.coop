@@ -4,17 +4,19 @@ import { ExampleUsage } from "./ExampleUsage";
 import { apiKeyEnvironment, githubWorkflowStep } from "@/lib/services/service-account-usage";
 
 /**
- * The "Example usage" link on each way a service account signs in, opening
- * what software adds to use it, ready to paste. On a trusted GitHub workflow's
- * row it is the step the job adds; on a live API key's row, the variables that
- * point any AWS SDK or the AWS CLI at the key saved to a file. Each names the
- * account in the role ARN and points at the data proxy; nothing in either is
- * secret. The copy button takes the whole block.
+ * What software adds to sign in as a service account, ready to paste, opened
+ * from "Example usage" in the menu on each way it signs in. For a trusted
+ * GitHub workflow it is the step the job adds; for a working API key, the
+ * variables that point any AWS SDK or the AWS CLI at the key saved to a file.
+ * Each names the account in the role ARN and points at the data proxy;
+ * nothing in either is secret. The copy button takes the whole block.
  */
 const meta = {
   title: "Features/Service accounts/ExampleUsage",
   component: ExampleUsage,
   parameters: { layout: "padded" },
+  // Open, as choosing it from the menu leaves it; Close does nothing here.
+  args: { open: true, onOpenChange: () => {} },
 } satisfies Meta<typeof ExampleUsage>;
 
 export default meta;

@@ -1,17 +1,17 @@
 "use client";
 
-import React, { startTransition, useActionState, useOptimistic } from "react";
+import React, { startTransition, useActionState, useOptimistic, useState } from "react";
 import {
   AlertDialog,
   Button,
   Code,
+  DropdownMenu,
   Flex,
   Heading,
   IconButton,
   Text,
-  Tooltip,
 } from "@radix-ui/themes";
-import { Cross2Icon } from "@radix-ui/react-icons";
+import { DotsHorizontalIcon } from "@radix-ui/react-icons";
 import { SectionHeader } from "@/components/core";
 import {
   ConnectionList,
@@ -27,6 +27,7 @@ import {
 import {
   GITHUB_ACTIONS_ISSUER,
   IDLE_SERVICE_ACCOUNT_ACTION_STATE as IDLE,
+  type AccountTrust,
   type Product,
   type ServiceAccountActionState,
   type ServiceAccountSummary,
@@ -48,6 +49,78 @@ function Status({ state }: { state: ServiceAccountActionState }) {
       {state.message}
     </Text>
   ) : null;
+}
+
+/** One trusted workflow, with a menu to see its example usage or remove it. */
+function TrustRow({
+  accountId,
+  trust,
+  proxyOrigin,
+  onRemove,
+  removing,
+}: {
+  accountId: string;
+  trust: AccountTrust;
+  proxyOrigin?: string;
+  onRemove: (trust: AccountTrust) => void;
+  removing: boolean;
+}) {
+  const [showingUsage, setShowingUsage] = useState(false);
+  const example = proxyOrigin && trust.issuer === GITHUB_ACTIONS_ISSUER;
+  return (
+    <ConnectionRow
+      title={
+        <Text size="2" style={{ fontFamily: "var(--code-font-family)", wordBreak: "break-all" }}>
+          {trust.subject}
+        </Text>
+      }
+      meta={issuerLabel(trust.issuer)}
+      actions={
+        <>
+          <DropdownMenu.Root>
+            <DropdownMenu.Trigger>
+              <IconButton
+                type="button"
+                size="1"
+                variant="ghost"
+                color="gray"
+                disabled={removing}
+                aria-label={`Actions for ${trust.subject}`}
+              >
+                <DotsHorizontalIcon />
+              </IconButton>
+            </DropdownMenu.Trigger>
+            <DropdownMenu.Content align="end">
+              {example && (
+                <>
+                  <DropdownMenu.Item onSelect={() => setShowingUsage(true)}>
+                    Example usage
+                  </DropdownMenu.Item>
+                  <DropdownMenu.Separator />
+                </>
+              )}
+              <DropdownMenu.Item color="red" onSelect={() => onRemove(trust)}>
+                Remove
+              </DropdownMenu.Item>
+            </DropdownMenu.Content>
+          </DropdownMenu.Root>
+          {example && (
+            <ExampleUsage
+              title="Sign in from this workflow"
+              intro={
+                <>
+                  Add to the job in <Code>{trust.subject}</Code>, before it uses the data:
+                </>
+              }
+              code={githubWorkflowStep(proxyOrigin, accountId)}
+              open={showingUsage}
+              onOpenChange={setShowingUsage}
+            />
+          )}
+        </>
+      }
+    />
+  );
 }
 
 /**
@@ -89,6 +162,13 @@ export function ServiceAccountDetail({
     });
   };
   const [removeState, removeAction, removing] = useActionState(removeTrust, IDLE);
+  const removeTrustFrom = (trust: AccountTrust) => {
+    const data = new FormData();
+    data.set("account_id", account.account_id);
+    data.set("issuer", trust.issuer);
+    data.set("subject", trust.subject);
+    startTransition(() => removeAction(data));
+  };
   const [toggleState, toggleAction, toggling] = useActionState(setServiceAccountDisabled, IDLE);
   const [deleteState, deleteAction, deleting] = useActionState(deleteServiceAccount, IDLE);
 
@@ -128,47 +208,13 @@ export function ServiceAccountDetail({
                 </Text>
                 <ConnectionList>
                   {trusts.map((trust) => (
-                    <ConnectionRow
+                    <TrustRow
                       key={`${trust.issuer} ${trust.subject}`}
-                      title={
-                        <Text size="2" style={{ fontFamily: "var(--code-font-family)", wordBreak: "break-all" }}>
-                          {trust.subject}
-                        </Text>
-                      }
-                      meta={issuerLabel(trust.issuer)}
-                      actions={
-                        <Flex align="center" gap="3">
-                          {proxyOrigin && trust.issuer === GITHUB_ACTIONS_ISSUER && (
-                            <ExampleUsage
-                              title="Sign in from this workflow"
-                              intro={
-                                <>
-                                  Add to the job in <Code>{trust.subject}</Code>, before it uses the data:
-                                </>
-                              }
-                              code={githubWorkflowStep(proxyOrigin, account.account_id)}
-                            />
-                          )}
-                          {/* A flex box, so the icon centres on the row like the link beside it. */}
-                          <form action={removeAction} style={{ display: "flex" }}>
-                            <input type="hidden" name="account_id" value={account.account_id} />
-                            <input type="hidden" name="issuer" value={trust.issuer} />
-                            <input type="hidden" name="subject" value={trust.subject} />
-                            <Tooltip content="Remove">
-                              <IconButton
-                                type="submit"
-                                size="1"
-                                variant="ghost"
-                                color="red"
-                                disabled={removing}
-                                aria-label={`Remove trust in ${trust.subject}`}
-                              >
-                                <Cross2Icon />
-                              </IconButton>
-                            </Tooltip>
-                          </form>
-                        </Flex>
-                      }
+                      accountId={account.account_id}
+                      trust={trust}
+                      proxyOrigin={proxyOrigin}
+                      onRemove={removeTrustFrom}
+                      removing={removing}
                     />
                   ))}
                 </ConnectionList>
