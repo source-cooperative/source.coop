@@ -20,6 +20,7 @@ import {
   type Product,
 } from "@/types";
 import { ProductAccessList, type ProductAccess } from "./ProductAccessList";
+import { GrantProductDialog } from "./GrantProductDialog";
 import {
   GithubWorkflowFields,
   NEW_GITHUB_WORKFLOW,
@@ -51,6 +52,11 @@ export function ServiceAccountForm({ ownerAccountId, products }: ServiceAccountF
   const [editingId, setEditingId] = useState(false);
   const [workflows, setWorkflows] = useState<GithubWorkflow[]>([]);
   const [grants, setGrants] = useState<Record<string, ProductAccess>>({});
+  const setGrant = (product_id: string, access: ProductAccess | null) =>
+    setGrants((all) => {
+      const { [product_id]: _dropped, ...rest } = all;
+      return access ? { ...rest, [product_id]: access } : rest;
+    });
   const [withKey, setWithKey] = useState(false);
 
   // A rejected id opens the field, so the error sits beside something to fix.
@@ -208,6 +214,13 @@ export function ServiceAccountForm({ ownerAccountId, products }: ServiceAccountF
         <SectionHeader
           title="What it can reach"
           description={`Products ${ownerAccountId} owns that it may read or write. Each grant is an ordinary membership, revoked the same way as a person's.`}
+          rightButton={
+            <GrantProductDialog
+              ownerAccountId={ownerAccountId}
+              available={products.filter((p) => !grants[p.product_id])}
+              onGrant={setGrant}
+            />
+          }
         >
           {Object.entries(grants).map(([product_id, role]) => (
             <input key={product_id} type="hidden" name={`grant:${product_id}`} value={role} />
@@ -216,12 +229,7 @@ export function ServiceAccountForm({ ownerAccountId, products }: ServiceAccountF
             ownerAccountId={ownerAccountId}
             products={products}
             access={grants}
-            onChange={(product_id, access) =>
-              setGrants((all) => {
-                const { [product_id]: _dropped, ...rest } = all;
-                return access ? { ...rest, [product_id]: access } : rest;
-              })
-            }
+            onChange={setGrant}
           />
         </SectionHeader>
 

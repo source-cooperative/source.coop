@@ -10,8 +10,9 @@ import { ServiceAccountForm } from "./ServiceAccountForm";
  * exact subject it binds is shown beneath it as you type. "Add an API key"
  * asks for a label and an expiry, for one key issued with the account; more
  * are issued from its page. Products come from
- * the owner: "Grant a product" adds one with read or read-and-write, the same
- * list the account's page uses, held here until the form is submitted.
+ * the owner: "Grant a product", in the section's corner, opens a modal to add
+ * one with read or read-and-write — the same list and button the account's
+ * page uses — held here until the form is submitted.
  *
  * Submitting goes to the new account's page. With a key, the key goes along
  * in memory and opens over that page, the only time it can be seen — see

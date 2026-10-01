@@ -2,7 +2,6 @@
 
 import React, { useActionState, useEffect, useState } from "react";
 import { Button, Dialog, Flex, Text } from "@radix-ui/themes";
-import { PlusIcon } from "@radix-ui/react-icons";
 import { addGithubTrust } from "@/lib/actions/service-accounts";
 import { IDLE_SERVICE_ACCOUNT_ACTION_STATE } from "@/types";
 import {
@@ -12,25 +11,28 @@ import {
 } from "./GithubWorkflowFields";
 
 /**
- * Names a workflow the service account will trust. Nothing to run first: the
- * trust is written when the form is submitted, the way a role's trust policy
- * is edited, and the dialog closes onto the new row, whose menu has the
- * step the workflow adds, under "Example usage".
+ * Names a workflow the service account will trust, in a modal opened from
+ * "Add sign-in". Nothing to run first: the trust is written when the form is
+ * submitted, the way a role's trust policy is edited, and the modal closes
+ * onto the new row, whose menu has the step the workflow adds, under
+ * "Example usage".
  */
-export function AddGithubTrustDialog({ accountId }: { accountId: string }) {
-  const [open, setOpen] = useState(false);
+export function AddGithubTrustDialog({
+  accountId,
+  open,
+  onOpenChange,
+}: {
+  accountId: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
   return (
-    <Dialog.Root open={open} onOpenChange={setOpen}>
-      <Dialog.Trigger>
-        <Button size="1" variant="soft">
-          <PlusIcon /> Trust a GitHub workflow
-        </Button>
-      </Dialog.Trigger>
+    <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Content style={{ maxWidth: 560 }}>
         <Dialog.Title>Trust a GitHub workflow</Dialog.Title>
         {/* The content unmounts when the dialog closes, so the form lives in
             here and starts over on every open. */}
-        <TrustForm accountId={accountId} onTrusted={() => setOpen(false)} />
+        <TrustForm accountId={accountId} onTrusted={() => onOpenChange(false)} />
       </Dialog.Content>
     </Dialog.Root>
   );

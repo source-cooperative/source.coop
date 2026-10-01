@@ -32,11 +32,11 @@ import {
   type ServiceAccountActionState,
   type ServiceAccountSummary,
 } from "@/types";
-import { AddGithubTrustDialog } from "./AddGithubTrustDialog";
+import { AddSignInMenu } from "./AddSignInMenu";
+import { GrantProductDialog } from "./GrantProductDialog";
 import { ProductAccessList, type ProductAccess } from "./ProductAccessList";
 import { ExampleUsage } from "./ExampleUsage";
 import { githubWorkflowStep } from "@/lib/services/service-account-usage";
-import { IssueApiKeyDialog } from "./IssueApiKeyDialog";
 import { IssuedApiKeyDialog } from "./IssuedApiKeyDialog";
 import { ApiKeyList } from "./ApiKeyList";
 
@@ -90,7 +90,7 @@ function TrustRow({
                 <DotsHorizontalIcon />
               </IconButton>
             </DropdownMenu.Trigger>
-            <DropdownMenu.Content align="end">
+            <DropdownMenu.Content align="end" size="1">
               {example && (
                 <>
                   <DropdownMenu.Item onSelect={() => setShowingUsage(true)}>
@@ -189,12 +189,7 @@ export function ServiceAccountDetail({
       <SectionHeader
         title="Signs in with"
         description="GitHub workflows it trusts, and API keys for environments without OIDC. A key is shown once, when it is issued; revoke one that leaks, or disable the account below to stop every sign-in at once."
-        rightButton={
-          <Flex gap="2" wrap="wrap" justify="end">
-            <AddGithubTrustDialog accountId={account.account_id} />
-            <IssueApiKeyDialog accountId={account.account_id} />
-          </Flex>
-        }
+        rightButton={<AddSignInMenu accountId={account.account_id} />}
       >
         {trusts.length === 0 && keys.length === 0 ? (
           <Text size="2" color="gray">
@@ -238,6 +233,14 @@ export function ServiceAccountDetail({
       <SectionHeader
         title="Can reach"
         description="The products it can read or write, each opened in a new tab to check what it holds. A change is saved at once, and takes effect on its next sign-in."
+        rightButton={
+          <GrantProductDialog
+            ownerAccountId={account.owner_account_id}
+            available={products.filter((p) => !access[p.product_id])}
+            onGrant={setAccess}
+            disabled={savingAccess}
+          />
+        }
       >
         <ProductAccessList
           ownerAccountId={account.owner_account_id}

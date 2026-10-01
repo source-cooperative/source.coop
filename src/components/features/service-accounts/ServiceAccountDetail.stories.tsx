@@ -14,13 +14,13 @@ import {
  * One service account's page, reached from its row in the owner's list and
  * where creating one lands. One section shows how it signs in: the workflows
  * it trusts, then its API keys, marked once revoked or expired, each
- * revocable — with a dialog beside the heading to trust another workflow or
- * issue a key. Each workflow's "⋯" menu, and each working key's, has
- * "Example usage", opening what software adds to sign in that way. Then the
- * products it reaches, each with Read / Read and write and an X, and "Grant a
- * product", which adds a row to choose a
- * product and its access, saved with its check — the create form's list; and,
- * set apart in a danger zone, disabling and deleting it.
+ * revocable — with "Add sign-in" in the corner, a menu that opens a modal to
+ * trust another workflow or issue a key. Each workflow's "⋯" menu, and each
+ * working key's, has "Example usage", opening what software adds to sign in
+ * that way. Then the products it reaches, each with Read / Read and write and
+ * an X, and "Grant a product" in the corner, a modal to choose a product and
+ * its access — the create form's list and button; and, set apart in a danger
+ * zone, disabling and deleting it.
  *
  * The actions are mocked in `.storybook/preview.tsx`. An access change shows
  * at once and the controls wait while it saves; the mock saves nothing, so
