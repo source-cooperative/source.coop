@@ -11,7 +11,9 @@ import { apiKeyChecksum } from "@/types";
 const meta = {
   title: "Features/Service accounts/IssuedApiKeyDialog",
   component: IssuedApiKeyDialog,
-  parameters: { layout: "padded" },
+  // Each story opens a modal; on the docs page it gets a frame of its own, so
+  // the modal stays inside its preview instead of covering the page.
+  parameters: { layout: "padded", docs: { story: { inline: false, iframeHeight: 420 } } },
   args: { accountId: "miskatonic--nightly-sync" },
 } satisfies Meta<typeof IssuedApiKeyDialog>;
 

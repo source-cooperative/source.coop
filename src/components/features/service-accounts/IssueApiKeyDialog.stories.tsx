@@ -15,7 +15,9 @@ import { IssueApiKeyDialog } from "./IssueApiKeyDialog";
 const meta = {
   title: "Features/Service accounts/IssueApiKeyDialog",
   component: IssueApiKeyDialog,
-  parameters: { layout: "padded" },
+  // Each story opens a modal; on the docs page it gets a frame of its own, so
+  // the modal stays inside its preview instead of covering the page.
+  parameters: { layout: "padded", docs: { story: { inline: false, iframeHeight: 520 } } },
   args: { accountId: "miskatonic--nightly-sync", open: true, onOpenChange: fn() },
 } satisfies Meta<typeof IssueApiKeyDialog>;
 
