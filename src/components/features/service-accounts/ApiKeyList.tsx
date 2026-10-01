@@ -18,6 +18,8 @@ import {
   type ServiceAccountKey,
 } from "@/types";
 import { ApiKeyExpiryField } from "./ApiKeyExpiryField";
+import { ExampleUsage } from "./ExampleUsage";
+import { apiKeyEnvironment } from "@/lib/services/service-account-usage";
 
 function Status({ state }: { state: ApiKeyActionState }) {
   return state.message ? (
@@ -74,20 +76,24 @@ const keyDates = (key: ServiceAccountKey) =>
 
 /**
  * One API key: its label and hint, how it has been used and when it ends, and
- * a menu for the two things done to it. Everything else is in the tooltip.
+ * a menu with its example usage while it works and the two things done to it.
+ * Everything else is in the tooltip.
  */
 function KeyRow({
   accountId,
   apiKey,
   onRevoke,
   revoking,
+  proxyOrigin,
 }: {
   accountId: string;
   apiKey: ServiceAccountKey;
   onRevoke: (key_id: string) => void;
   revoking: boolean;
+  proxyOrigin?: string;
 }) {
   const [changingExpiry, setChangingExpiry] = useState(false);
+  const [showingUsage, setShowingUsage] = useState(false);
   const marker = keyMarker(apiKey);
   const standing = keyStanding(apiKey);
   return (
@@ -135,6 +141,12 @@ function KeyRow({
                 </IconButton>
               </DropdownMenu.Trigger>
               <DropdownMenu.Content align="end">
+                {/* Only a key that works has a use to show. */}
+                {proxyOrigin && isKeyActive(apiKey) && (
+                  <DropdownMenu.Item onSelect={() => setShowingUsage(true)}>
+                    Example usage
+                  </DropdownMenu.Item>
+                )}
                 <DropdownMenu.Item onSelect={() => setChangingExpiry(true)}>
                   Change expiry
                 </DropdownMenu.Item>
@@ -144,6 +156,15 @@ function KeyRow({
                 </DropdownMenu.Item>
               </DropdownMenu.Content>
             </DropdownMenu.Root>
+            {proxyOrigin && (
+              <ExampleUsage
+                title={`Sign in with ${apiKey.label}`}
+                intro="Save the key to a file, then point any AWS SDK or the AWS CLI at it:"
+                code={apiKeyEnvironment(proxyOrigin, accountId)}
+                open={showingUsage}
+                onOpenChange={setShowingUsage}
+              />
+            )}
             <ChangeExpiry
               accountId={accountId}
               apiKey={apiKey}
@@ -206,14 +227,18 @@ function ChangeExpiry({
 
 /**
  * A service account's API keys, one row each: its label and hint, how it has
- * been used and when it ends, and a menu to change its expiry or revoke it.
+ * been used and when it ends, and a menu to see its example usage while it
+ * works, change its expiry or revoke it.
  */
 export function ApiKeyList({
   accountId,
   keys,
+  proxyOrigin,
 }: {
   accountId: string;
   keys: ServiceAccountKey[];
+  /** The data proxy a key signs in to; without it, no example usage is shown. */
+  proxyOrigin?: string;
 }) {
   const [revokeState, revokeAction, revoking] = useActionState(revokeApiKey, IDLE_API_KEY_ACTION_STATE);
   const revokeKey = (key_id: string) => {
@@ -239,6 +264,7 @@ export function ApiKeyList({
             apiKey={key}
             onRevoke={revokeKey}
             revoking={revoking}
+            proxyOrigin={proxyOrigin}
           />
         ))}
       </ConnectionList>
