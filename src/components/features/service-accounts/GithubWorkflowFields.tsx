@@ -140,7 +140,9 @@ export function GithubWorkflowFields({
           <Code size="1">{ghImmutableRepositoryCommand(workflow.repository)}</Code>
         </Text>
       )}
-      <Flex gap="3" align="end" wrap="wrap">
+      {/* Stacked, so the ref or environment always starts a line of its own
+          rather than squeezing in beside the choice when it fits. */}
+      <Flex direction="column" gap="3" align="start">
         <Field label="Pinned to" htmlFor={`${id}-kind`} group>
           {(props) => (
             <SegmentedControl.Root
@@ -159,7 +161,7 @@ export function GithubWorkflowFields({
             </SegmentedControl.Root>
           )}
         </Field>
-        <Box flexGrow="1" style={{ minWidth: "min(12rem, 100%)" }}>
+        <Box width="100%">
           <Field
             label={workflow.kind === "ref" ? "Ref" : "Environment"}
             htmlFor={`${id}-value`}
