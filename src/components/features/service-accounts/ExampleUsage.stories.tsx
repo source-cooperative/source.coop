@@ -1,12 +1,12 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { Code } from "@radix-ui/themes";
 import { ExampleUsage } from "./ExampleUsage";
-import { apiKeyEnvironment, githubWorkflowStep } from "@/lib/services/service-account-usage";
+import { apiKeyEnvironment, githubWorkflow } from "@/lib/services/service-account-usage";
 
 /**
  * What software adds to sign in as a service account, ready to paste, opened
  * from "Example usage" in the menu on each way it signs in. For a trusted
- * GitHub workflow it is the step the job adds; for a working API key, the
+ * GitHub workflow it is a whole workflow file; for a working API key, the
  * variables that point any AWS SDK or the AWS CLI at the key saved to a file.
  * Each names the account in the role ARN and points at the data proxy;
  * nothing in either is secret. Keys, values and comments are coloured, and
@@ -28,12 +28,38 @@ export const GithubWorkflow: Story = {
     title: "Sign in from this workflow",
     intro: (
       <>
-        Add to the job in <Code>repo:miskatonic/climate-data:ref:refs/heads/main</Code>, before it
-        uses the data:
+        Save under <Code>.github/workflows/</Code> in the repository{" "}
+        <Code>repo:miskatonic/climate-data:ref:refs/heads/main</Code> names:
       </>
     ),
-    code: githubWorkflowStep("https://data.source.coop", "miskatonic--nightly-sync"),
+    code: githubWorkflow(
+      "https://data.source.coop",
+      "miskatonic--nightly-sync",
+      "repo:miskatonic/climate-data:ref:refs/heads/main"
+    ),
     language: "yaml",
+  },
+};
+
+/**
+ * A workflow trusted when it runs in a GitHub environment. The job names the
+ * environment, without which GitHub puts the ref in the token's subject rather
+ * than the environment, and the trust wouldn't match.
+ */
+export const GithubWorkflowInAnEnvironment: Story = {
+  args: {
+    ...GithubWorkflow.args,
+    intro: (
+      <>
+        Save under <Code>.github/workflows/</Code> in the repository{" "}
+        <Code>repo:miskatonic@8123456/climate-data@9456789:environment:production</Code> names:
+      </>
+    ),
+    code: githubWorkflow(
+      "https://data.source.coop",
+      "miskatonic--nightly-sync",
+      "repo:miskatonic@8123456/climate-data@9456789:environment:production"
+    ),
   },
 };
 
