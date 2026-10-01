@@ -75,9 +75,9 @@ function ExampleUsage({ subject, step }: { subject: string; step: string }) {
 }
 
 /**
- * One service account, and every control over it: the workflows it trusts,
- * each with its example usage; its API keys; the products it reaches, changed, removed or
- * granted with the create form's controls and saved as they are; and — set
+ * One service account, and every control over it: how it signs in — the
+ * workflows it trusts, each with its example usage, and its API keys; the
+ * products it reaches, changed, removed or granted with the create form's controls and saved as they are; and — set
  * apart — disabling and deleting it.
  */
 export function ServiceAccountDetail({
@@ -129,66 +129,81 @@ export function ServiceAccountDetail({
       </Flex>
 
       <SectionHeader
-        title="Signs in as"
-        description="Workflows trusted to act as this account."
-        rightButton={<AddGithubTrustDialog accountId={account.account_id} />}
+        title="Signs in with"
+        description="GitHub workflows it trusts, and API keys for environments without OIDC. A key is shown once, when it is issued; revoke one that leaks, or disable the account below to stop every sign-in at once."
+        rightButton={
+          <Flex gap="2" wrap="wrap" justify="end">
+            <AddGithubTrustDialog accountId={account.account_id} />
+            <IssueApiKeyDialog accountId={account.account_id} proxyOrigin={proxyOrigin} />
+          </Flex>
+        }
       >
-        {trusts.length === 0 ? (
+        {trusts.length === 0 && keys.length === 0 ? (
           <Text size="2" color="gray">
-            Nothing yet — it cannot sign in until a workflow is trusted.
+            Nothing yet — it cannot sign in until a workflow is trusted or a key is issued.
           </Text>
         ) : (
-          <ConnectionList>
-            {trusts.map((trust) => (
-              <ConnectionRow
-                key={`${trust.issuer} ${trust.subject}`}
-                title={
-                  <Text size="2" style={{ fontFamily: "var(--code-font-family)", wordBreak: "break-all" }}>
-                    {trust.subject}
-                  </Text>
-                }
-                meta={issuerLabel(trust.issuer)}
-                actions={
-                  <Flex align="center" gap="3">
-                    {proxyOrigin && trust.issuer === GITHUB_ACTIONS_ISSUER && (
-                      <ExampleUsage
-                        subject={trust.subject}
-                        step={githubWorkflowStep(proxyOrigin, account.account_id)}
-                      />
-                    )}
-                    {/* A flex box, so the icon centres on the row like the link beside it. */}
-                    <form action={removeAction} style={{ display: "flex" }}>
-                      <input type="hidden" name="account_id" value={account.account_id} />
-                      <input type="hidden" name="issuer" value={trust.issuer} />
-                      <input type="hidden" name="subject" value={trust.subject} />
-                      <Tooltip content="Remove">
-                        <IconButton
-                          type="submit"
-                          size="1"
-                          variant="ghost"
-                          color="red"
-                          disabled={removing}
-                          aria-label={`Remove trust in ${trust.subject}`}
-                        >
-                          <Cross2Icon />
-                        </IconButton>
-                      </Tooltip>
-                    </form>
-                  </Flex>
-                }
-              />
-            ))}
-          </ConnectionList>
+          <Flex direction="column" gap="4">
+            {trusts.length > 0 && (
+              <Flex direction="column" gap="2">
+                <Text size="1" weight="medium" color="gray">
+                  GitHub workflows
+                </Text>
+                <ConnectionList>
+                  {trusts.map((trust) => (
+                    <ConnectionRow
+                      key={`${trust.issuer} ${trust.subject}`}
+                      title={
+                        <Text size="2" style={{ fontFamily: "var(--code-font-family)", wordBreak: "break-all" }}>
+                          {trust.subject}
+                        </Text>
+                      }
+                      meta={issuerLabel(trust.issuer)}
+                      actions={
+                        <Flex align="center" gap="3">
+                          {proxyOrigin && trust.issuer === GITHUB_ACTIONS_ISSUER && (
+                            <ExampleUsage
+                              subject={trust.subject}
+                              step={githubWorkflowStep(proxyOrigin, account.account_id)}
+                            />
+                          )}
+                          {/* A flex box, so the icon centres on the row like the link beside it. */}
+                          <form action={removeAction} style={{ display: "flex" }}>
+                            <input type="hidden" name="account_id" value={account.account_id} />
+                            <input type="hidden" name="issuer" value={trust.issuer} />
+                            <input type="hidden" name="subject" value={trust.subject} />
+                            <Tooltip content="Remove">
+                              <IconButton
+                                type="submit"
+                                size="1"
+                                variant="ghost"
+                                color="red"
+                                disabled={removing}
+                                aria-label={`Remove trust in ${trust.subject}`}
+                              >
+                                <Cross2Icon />
+                              </IconButton>
+                            </Tooltip>
+                          </form>
+                        </Flex>
+                      }
+                    />
+                  ))}
+                </ConnectionList>
+              </Flex>
+            )}
+            {keys.length > 0 && (
+              <Flex direction="column" gap="2">
+                <Text size="1" weight="medium" color="gray">
+                  API keys
+                </Text>
+                <ApiKeyList accountId={account.account_id} keys={keys} />
+              </Flex>
+            )}
+          </Flex>
         )}
+        {/* Outside the lists, so removing the last trust still says how it went. */}
         <Status state={removeState} />
-      </SectionHeader>
-
-      <SectionHeader
-        title="API keys"
-        description="For environments without OIDC. Each is shown once, when it is issued. Revoke a key that leaks; to stop every key at once, disable the account below."
-        rightButton={<IssueApiKeyDialog accountId={account.account_id} proxyOrigin={proxyOrigin} />}
-      >
-        <ApiKeyList accountId={account.account_id} keys={keys} />
       </SectionHeader>
 
       <SectionHeader
