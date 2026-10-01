@@ -20,6 +20,16 @@ export const NEW_GITHUB_WORKFLOW: GithubWorkflow = {
 const SUBJECT_CLAIMS_DOCS =
   "https://docs.github.com/en/actions/reference/security/oidc#example-subject-claims";
 
+/** GitHub's announcement of the `owner@id/repo@id` subject, and which repositories get it. */
+const IMMUTABLE_SUBJECTS_DOCS =
+  "https://github.blog/changelog/2026-04-23-immutable-subject-claims-for-github-actions-oidc-tokens/";
+
+const ImmutableSubjectsLink = () => (
+  <Link href={IMMUTABLE_SUBJECTS_DOCS} target="_blank" rel="noopener noreferrer" underline="always">
+    immutable subjects
+  </Link>
+);
+
 /** GitHub's `sub` claim for the workflow, exactly as its token will carry it. */
 export const githubSubject = (w: GithubWorkflow) =>
   `repo:${w.repository}:${w.kind}:${w.value}`;
@@ -92,7 +102,7 @@ export function GithubWorkflowFields({
             help={
               <>
                 <Code size="1">owner/repo</Code>, or <Code size="1">owner@123/repo@456</Code>{" "}
-                if its tokens carry immutable subjects
+                if its tokens carry <ImmutableSubjectsLink />
               </>
             }
           >
@@ -126,7 +136,7 @@ export function GithubWorkflowFields({
       {immutable === null && (
         <Text size="1" color="gray" style={{ wordBreak: "break-all" }}>
           GitHub doesn&apos;t show this repository publicly. If it&apos;s private and its tokens
-          carry immutable subjects, this prints the name to use:{" "}
+          carry <ImmutableSubjectsLink />, this prints the name to use:{" "}
           <Code size="1">{ghImmutableRepositoryCommand(workflow.repository)}</Code>
         </Text>
       )}
