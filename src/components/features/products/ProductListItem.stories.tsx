@@ -4,11 +4,11 @@ import { ProductVisibility, type Product } from "@/types";
 import { ProductListItem } from "./ProductListItem";
 
 const product: Product = {
-  account_id: "ftw",
-  product_id: "global-data-beta",
-  title: "Global Fields of The World (FTW) - 2nd Edition",
+  account_id: "acoltrane",
+  product_id: "universal-consciousness",
+  title: "Universal Consciousness - Global Field Boundaries, 2nd Edition",
   description:
-    "The Global Fields of The World - 2nd Edition release provides updated global-scale estimates of agricultural fields for 2017-2025. The dataset is run on the [Sentinel-2 Level 3 Quarterly Cloudless Mosaics](https://documentation.dataspace.copernicus.eu/Data/SentinelMissions/Sentinel2.html#sentinel-2-level-3-quarterly-mosaics) from [CDSE](https://dataspace.copernicus.eu/) rehosted by Taylor Geospatial on Source Cooperative [here](https://source.coop/tge-labs/sentinel-2-quarterly-cloudless-mosaics). The data product contains raw prediction COGs, vectorized GeoParquet, and PMTiles for visualization.\n\nThis product is sponsored and developed by [Taylor Geospatial](https://taylorgeospatial.org/) in partnership with the [FTW organization](https://fieldsofthe.world/) and its partners.",
+    "Universal Consciousness - 2nd Edition provides updated global-scale estimates of agricultural fields for 2017-2025. The model runs on the [Journey in Satchidananda Quarterly Mosaics](https://example.org/satchidananda/mosaics) from [Impulse!](https://example.org/impulse) rehosted by the Arkestra on Source Cooperative [here](https://example.org/arkestra/mosaics). The product contains raw prediction COGs, vectorized GeoParquet, and PMTiles for visualization.\n\nThis product is sponsored and developed by [Sun Ra Arkestra](https://example.org/arkestra) in partnership with the [Ptah Collective](https://example.org/ptah) and its partners.",
   created_at: "2026-09-27T12:00:00Z",
   updated_at: "2026-09-27T12:00:00Z",
   visibility: ProductVisibility.Unlisted,
@@ -18,10 +18,10 @@ const product: Product = {
 };
 
 /**
- * Product summaries display Markdown descriptions with their formatting and
- * paragraphs. Links in a description render as plain text: a listing links only
- * to the product and its publisher, and the description's links are on the
- * product page.
+ * Product summaries display a description's inline Markdown — paragraphs,
+ * emphasis, lists and inline code — clamped to three lines. Headings, tables,
+ * code blocks and links render as plain text: a listing links only to the
+ * product and its publisher, and the full description is on the product page.
  */
 const meta = {
   title: "Features/Products/ProductListItem",
@@ -32,18 +32,18 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** An organization product whose sources and partners are linked on its product page. */
+/** A product whose sources and partners are linked on its product page. */
 export const MarkdownDescription: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.queryByRole("link", { name: "Taylor Geospatial" }))
+    await expect(canvas.queryByRole("link", { name: "Sun Ra Arkestra" }))
       .not.toBeInTheDocument();
-    await expect(canvasElement).toHaveTextContent("Taylor Geospatial");
+    await expect(canvasElement).toHaveTextContent("Sun Ra Arkestra");
     await expect(canvas.getByRole("link", { name: product.title }))
-      .toHaveAttribute("href", "/ftw/global-data-beta");
-    await expect(canvasElement.querySelectorAll(".markdown-viewer p"))
+      .toHaveAttribute("href", "/acoltrane/universal-consciousness");
+    await expect(canvasElement.querySelectorAll("article p"))
       .toHaveLength(2);
-    await expect(canvasElement).not.toHaveTextContent("[CDSE]");
+    await expect(canvasElement).not.toHaveTextContent("[Impulse!]");
   },
 };
 
@@ -63,12 +63,82 @@ export const WithoutDescription: Story = {
   args: { product: { ...product, description: "" } },
 };
 
-/** Emphasis, lists, and inline code use the product page's Markdown styling. */
+/** Emphasis, lists and inline code keep their formatting. */
 export const Formatting: Story = {
   args: {
     product: {
       ...product,
       description: "**Field boundaries** with *global coverage*.\n\n- Predictions in `COG` format\n- Vectors in GeoParquet",
+    },
+  },
+};
+
+/**
+ * A description holding a whole README: headings, fenced code, a table and
+ * bare URLs. Its headings and code blocks read as plain text, and the
+ * description stops after three lines.
+ */
+export const ReadmeDescription: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getAllByRole("heading")).toHaveLength(1);
+    await expect(canvas.getAllByRole("link")).toHaveLength(1);
+    await expect(canvasElement.querySelector("article pre, article table"))
+      .toBeNull();
+    const description = canvas.getByText(/Modal-compressed/).closest("div")!;
+    await expect(description.scrollHeight).toBeGreaterThan(
+      description.clientHeight
+    );
+  },
+  args: {
+    product: {
+      ...product,
+      account_id: "mdavis",
+      product_id: "kind-of-blue",
+      title: "Kind of Blue: Gap-free 20 m 5-Day Leaf Area Index, 1959–1964",
+      description: `# Kind of Blue
+
+Modal-compressed version of **So What-LS20**, a gap-free, 20 m, 5-day leaf
+area index product derived from integrated Landsat and Sentinel-2 data.
+
+Files are stored as \`.modal\` instead of GeoTIFF to reduce size. **A decoder
+is required to read them.**
+
+## Decode
+
+\`\`\`bash
+pip install pymodal
+\`\`\`
+
+Documentation: https://example.org/mdavis/pymodal
+
+### Minimal example
+
+\`\`\`python
+import pymodal
+
+data = pymodal.read("KindOfBlue_n040w074_1959_v01_LAI.modal")
+print(data.shape)  # (73, rows, cols)
+\`\`\`
+
+> Note: decoded values are already physical. Do **not** apply scale factors.
+
+## Physical values & ranges
+
+| Variable | Range | Unit |
+|----------|-------|------|
+| LAI      | 0 – 10.0 | m² m⁻² |
+| FAPAR    | 0 – 1.0  | unitless |
+
+## Citation
+
+Davis, M., J. Coltrane, and B. Evans (1959). "Kind of Blue." *Columbia*, 1, 8163.
+
+## Contact
+
+- Original product: Cannonball Adderley
+- Decoder: Paul Chambers
+`,
     },
   },
 };

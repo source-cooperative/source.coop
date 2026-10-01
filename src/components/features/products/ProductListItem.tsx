@@ -8,12 +8,17 @@ import { TagList } from "./TagList";
 import styles from "./ProductList.module.css";
 import { productUrl } from "@/lib/urls";
 import { DisplayNameLink } from "@/components/core";
-import { MarkdownViewer } from "../markdown";
+import ReactMarkdown from "react-markdown";
 
 interface ProductListItemProps {
   product: Product;
   isSelected?: boolean;
 }
+
+// Listings show a description's inline formatting only. Headings, tables, code
+// blocks and links collapse to their text: a listing links only within Source,
+// and the full description is on the product page.
+const DESCRIPTION_ELEMENTS = ["p", "strong", "em", "code", "ul", "ol", "li", "br"];
 
 const VISIBILITY_CONFIG = {
   public: { color: "green" as const, label: "Public" },
@@ -39,12 +44,19 @@ export function ProductListItem({ product, isSelected }: ProductListItemProps) {
         </Link>
 
         {product.description && (
-          <Text as="div" size="2" color="gray" mb="4">
-            {/* Listings link only within Source; description links live on the product page. */}
-            <MarkdownViewer
-              content={product.description}
-              disallowedElements={["a"]}
-            />
+          <Text
+            as="div"
+            size="2"
+            color="gray"
+            mb="4"
+            className={styles.description}
+          >
+            <ReactMarkdown
+              allowedElements={DESCRIPTION_ELEMENTS}
+              unwrapDisallowed
+            >
+              {product.description}
+            </ReactMarkdown>
           </Text>
         )}
 
