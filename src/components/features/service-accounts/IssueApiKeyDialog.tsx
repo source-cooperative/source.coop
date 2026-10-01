@@ -12,7 +12,7 @@ import { IssuedApiKey } from "./IssuedApiKey";
 /**
  * Issues an API key for a service account and shows it once. There is no
  * second look: the key is not stored, only its record. How to use it is on
- * the account's page, under Usage.
+ * the key's row, under "Example usage".
  */
 export function IssueApiKeyDialog({ accountId }: { accountId: string }) {
   const [state, formAction, pending] = useActionState(issueApiKey, IDLE_API_KEY_ACTION_STATE);

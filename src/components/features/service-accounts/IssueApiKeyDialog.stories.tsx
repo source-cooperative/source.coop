@@ -4,7 +4,7 @@ import { IssueApiKeyDialog } from "./IssueApiKeyDialog";
 /**
  * Issuing an API key: a label and an expiry, then the key — shown once, with
  * the copy affordance and the warning that says so. How to use it lives on
- * the account's page, under Usage (`UsageExamples`).
+ * the key's row, under "Example usage" (`ExampleUsage`).
  *
  * `issueApiKey` is mocked in `.storybook/preview.tsx` and resolves with a key
  * of the real shape, `sck_` and 36 characters of nothing secret, so

@@ -18,6 +18,8 @@ import {
   type ServiceAccountKey,
 } from "@/types";
 import { ApiKeyExpiryField } from "./ApiKeyExpiryField";
+import { ExampleUsage } from "./ExampleUsage";
+import { apiKeyEnvironment } from "@/lib/services/service-account-usage";
 
 function Status({ state }: { state: ApiKeyActionState }) {
   return state.message ? (
@@ -73,23 +75,27 @@ const keyDates = (key: ServiceAccountKey) =>
     .join(" · ");
 
 /**
- * One API key: its label and hint, how it has been used and when it ends, and
- * a menu for the two things done to it. Everything else is in the tooltip.
+ * One API key: its label and hint, how it has been used and when it ends, how
+ * to use it while it works, and a menu for the two things done to it.
+ * Everything else is in the tooltip.
  */
 function KeyRow({
   accountId,
   apiKey,
   onRevoke,
   revoking,
+  proxyOrigin,
 }: {
   accountId: string;
   apiKey: ServiceAccountKey;
   onRevoke: (key_id: string) => void;
   revoking: boolean;
+  proxyOrigin?: string;
 }) {
   const [changingExpiry, setChangingExpiry] = useState(false);
   const marker = keyMarker(apiKey);
   const standing = keyStanding(apiKey);
+  const works = !apiKey.revoked_at && isKeyActive(apiKey);
   return (
     <ConnectionRow
       title={
@@ -112,46 +118,61 @@ function KeyRow({
         </Tooltip>
       }
       actions={
-        // A revoked key has nothing left to do, but keeps an invisible copy of
-        // the menu button, negative margins and all, so its dates line up with
-        // the rows above and below.
-        apiKey.revoked_at ? (
-          <IconButton size="1" variant="ghost" tabIndex={-1} aria-hidden style={{ visibility: "hidden" }}>
-            <DotsHorizontalIcon />
-          </IconButton>
-        ) : (
-          <>
-            <DropdownMenu.Root>
-              <DropdownMenu.Trigger>
-                <IconButton
-                  type="button"
-                  size="1"
-                  variant="ghost"
-                  color="gray"
-                  disabled={revoking}
-                  aria-label={`Actions for ${apiKey.label}`}
-                >
-                  <DotsHorizontalIcon />
-                </IconButton>
-              </DropdownMenu.Trigger>
-              <DropdownMenu.Content align="end">
-                <DropdownMenu.Item onSelect={() => setChangingExpiry(true)}>
-                  Change expiry
-                </DropdownMenu.Item>
-                <DropdownMenu.Separator />
-                <DropdownMenu.Item color="red" onSelect={() => onRevoke(apiKey.key_id)}>
-                  Revoke
-                </DropdownMenu.Item>
-              </DropdownMenu.Content>
-            </DropdownMenu.Root>
-            <ChangeExpiry
-              accountId={accountId}
-              apiKey={apiKey}
-              open={changingExpiry}
-              onOpenChange={setChangingExpiry}
-            />
-          </>
-        )
+        // A key that no longer works has no example usage, and a revoked one
+        // has nothing left to do, but each keeps an invisible copy of what it
+        // lacks, negative margins and all, so its dates line up with the rows
+        // above and below.
+        <Flex align="center" gap="3">
+          {proxyOrigin &&
+            (works ? (
+              <ExampleUsage
+                title={`Sign in with ${apiKey.label}`}
+                intro="Save the key to a file, then point any AWS SDK or the AWS CLI at it:"
+                code={apiKeyEnvironment(proxyOrigin, accountId)}
+              />
+            ) : (
+              <Button size="1" variant="ghost" tabIndex={-1} aria-hidden style={{ visibility: "hidden" }}>
+                Example usage
+              </Button>
+            ))}
+          {apiKey.revoked_at ? (
+            <IconButton size="1" variant="ghost" tabIndex={-1} aria-hidden style={{ visibility: "hidden" }}>
+              <DotsHorizontalIcon />
+            </IconButton>
+          ) : (
+            <>
+              <DropdownMenu.Root>
+                <DropdownMenu.Trigger>
+                  <IconButton
+                    type="button"
+                    size="1"
+                    variant="ghost"
+                    color="gray"
+                    disabled={revoking}
+                    aria-label={`Actions for ${apiKey.label}`}
+                  >
+                    <DotsHorizontalIcon />
+                  </IconButton>
+                </DropdownMenu.Trigger>
+                <DropdownMenu.Content align="end">
+                  <DropdownMenu.Item onSelect={() => setChangingExpiry(true)}>
+                    Change expiry
+                  </DropdownMenu.Item>
+                  <DropdownMenu.Separator />
+                  <DropdownMenu.Item color="red" onSelect={() => onRevoke(apiKey.key_id)}>
+                    Revoke
+                  </DropdownMenu.Item>
+                </DropdownMenu.Content>
+              </DropdownMenu.Root>
+              <ChangeExpiry
+                accountId={accountId}
+                apiKey={apiKey}
+                open={changingExpiry}
+                onOpenChange={setChangingExpiry}
+              />
+            </>
+          )}
+        </Flex>
       }
     />
   );
@@ -206,14 +227,18 @@ function ChangeExpiry({
 
 /**
  * A service account's API keys, one row each: its label and hint, how it has
- * been used and when it ends, and a menu to change its expiry or revoke it.
+ * been used and when it ends, its example usage while it works, and a menu to
+ * change its expiry or revoke it.
  */
 export function ApiKeyList({
   accountId,
   keys,
+  proxyOrigin,
 }: {
   accountId: string;
   keys: ServiceAccountKey[];
+  /** The data proxy a key signs in to; without it, no example usage is shown. */
+  proxyOrigin?: string;
 }) {
   const [revokeState, revokeAction, revoking] = useActionState(revokeApiKey, IDLE_API_KEY_ACTION_STATE);
   const revokeKey = (key_id: string) => {
@@ -239,6 +264,7 @@ export function ApiKeyList({
             apiKey={key}
             onRevoke={revokeKey}
             revoking={revoking}
+            proxyOrigin={proxyOrigin}
           />
         ))}
       </ConnectionList>

@@ -33,7 +33,8 @@ import {
 } from "@/types";
 import { AddGithubTrustDialog } from "./AddGithubTrustDialog";
 import { ProductAccessList, type ProductAccess } from "./ProductAccessList";
-import { UsageExamples } from "./UsageExamples";
+import { ExampleUsage } from "./ExampleUsage";
+import { githubWorkflowStep } from "@/lib/services/service-account-usage";
 import { IssueApiKeyDialog } from "./IssueApiKeyDialog";
 import { IssuedApiKeyDialog } from "./IssuedApiKeyDialog";
 import { ApiKeyList } from "./ApiKeyList";
@@ -51,7 +52,7 @@ function Status({ state }: { state: ServiceAccountActionState }) {
 
 /**
  * One service account, and every control over it: how it signs in — the
- * workflows it trusts and its API keys — and how software uses each; the
+ * workflows it trusts and its API keys, each with its example usage; the
  * products it reaches, changed, removed or granted with the create form's
  * controls and saved as they are; and — set apart — disabling and deleting it.
  */
@@ -63,7 +64,7 @@ export function ServiceAccountDetail({
   summary: ServiceAccountSummary;
   /** The owner's products, each of which it may reach. */
   products: Pick<Product, "product_id" | "title">[];
-  /** The data proxy software signs in to; without it, no usage is shown. */
+  /** The data proxy software signs in to; without it, no example usage is shown. */
   proxyOrigin?: string;
 }) {
   const { account, trusts, grants, keys } = summary;
@@ -137,7 +138,18 @@ export function ServiceAccountDetail({
                       meta={issuerLabel(trust.issuer)}
                       actions={
                         <Flex align="center" gap="3">
-                          {/* A flex box, so the icon centres on the row. */}
+                          {proxyOrigin && trust.issuer === GITHUB_ACTIONS_ISSUER && (
+                            <ExampleUsage
+                              title="Sign in from this workflow"
+                              intro={
+                                <>
+                                  Add to the job in <Code>{trust.subject}</Code>, before it uses the data:
+                                </>
+                              }
+                              code={githubWorkflowStep(proxyOrigin, account.account_id)}
+                            />
+                          )}
+                          {/* A flex box, so the icon centres on the row like the link beside it. */}
                           <form action={removeAction} style={{ display: "flex" }}>
                             <input type="hidden" name="account_id" value={account.account_id} />
                             <input type="hidden" name="issuer" value={trust.issuer} />
@@ -167,7 +179,7 @@ export function ServiceAccountDetail({
                 <Text size="1" weight="medium" color="gray">
                   API keys
                 </Text>
-                <ApiKeyList accountId={account.account_id} keys={keys} />
+                <ApiKeyList accountId={account.account_id} keys={keys} proxyOrigin={proxyOrigin} />
               </Flex>
             )}
           </Flex>
@@ -175,15 +187,6 @@ export function ServiceAccountDetail({
         {/* Outside the lists, so removing the last trust still says how it went. */}
         <Status state={removeState} />
       </SectionHeader>
-
-      {proxyOrigin && (
-        <SectionHeader
-          title="Usage"
-          description="What software adds to sign in as this account. Nothing here is secret: a workflow is let in because it is trusted, and a key is the one you saved when it was issued."
-        >
-          <UsageExamples accountId={account.account_id} proxyOrigin={proxyOrigin} />
-        </SectionHeader>
-      )}
 
       <SectionHeader
         title="Can reach"

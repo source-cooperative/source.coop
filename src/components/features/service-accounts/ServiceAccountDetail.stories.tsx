@@ -15,8 +15,8 @@ import {
  * where creating one lands. One section shows how it signs in: the workflows
  * it trusts, then its API keys, marked once revoked or expired, each
  * revocable — with a dialog beside the heading to trust another workflow or
- * issue a key. Usage follows: the step a GitHub workflow adds and the
- * variables that point an AWS SDK at a key, a tab each. Then the products it reaches, each with Read / Read
+ * issue a key. Each workflow, and each live key, has an "Example usage" link
+ * opening what software adds to sign in that way. Then the products it reaches, each with Read / Read
  * and write and an X, and "Grant a product", which adds a row to choose a
  * product and its access, saved with its check — the create form's list; and,
  * set apart in a danger zone, disabling and deleting it.

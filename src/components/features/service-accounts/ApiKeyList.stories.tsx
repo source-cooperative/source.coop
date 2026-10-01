@@ -9,8 +9,9 @@ import type { ServiceAccountKey } from "@/types";
  * and, to the right, how it has been used and when it ends. Hover those two
  * lines for the exact dates, who issued the key and, once it is revoked, who
  * revoked it: an owner in settings, someone holding the key, or GitHub on
- * finding it in public. A live key's "⋯" menu
- * changes its expiry or revokes it; a revoked key has nothing left to do.
+ * finding it in public. A live key's "Example usage" opens the variables that
+ * point an AWS SDK at it, and its "⋯" menu changes its expiry or revokes it;
+ * an expired key keeps the menu, and a revoked key has nothing left to do.
  *
  * The actions are mocked in `.storybook/preview.tsx`. Dates here are set
  * relative to today, so the wording reads the same whenever the story is
@@ -20,7 +21,7 @@ const meta = {
   title: "Features/Service accounts/ApiKeyList",
   component: ApiKeyList,
   parameters: { layout: "padded" },
-  args: { accountId: "miskatonic--nightly-sync" },
+  args: { accountId: "miskatonic--nightly-sync", proxyOrigin: "https://data.source.coop" },
 } satisfies Meta<typeof ApiKeyList>;
 
 export default meta;
