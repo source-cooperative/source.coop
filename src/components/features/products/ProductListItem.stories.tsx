@@ -74,9 +74,45 @@ export const Formatting: Story = {
 };
 
 /**
+ * A short description using the Markdown basics. The heading and link read as
+ * plain text, emphasis, strikethrough, inline code and the list keep their
+ * formatting, and the table is left out — it is on the product page.
+ */
+export const TableDescription: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvasElement.querySelector("article table")).toBeNull();
+    await expect(canvasElement).not.toHaveTextContent("Resolution");
+    await expect(canvas.getAllByRole("heading")).toHaveLength(1);
+    await expect(canvas.getAllByRole("link")).toHaveLength(1);
+    await expect(canvasElement).toHaveTextContent("Blue Note archive");
+  },
+  args: {
+    product: {
+      ...product,
+      account_id: "tmonk",
+      product_id: "straight-no-chaser",
+      title: "Straight, No Chaser: 10 m Surface Reflectance",
+      description: `## Bands
+
+| Band | Wavelength | Resolution |
+|------|------------|------------|
+| B02  | 490 nm     | 10 m       |
+| B08  | 842 nm     | 10 m       |
+
+**Cloud-free** composites, *quarterly*, ~~monthly~~ from the [Blue Note archive](https://example.org/bluenote).
+
+- Stored as \`COG\`
+- Indexed in GeoParquet
+`,
+    },
+  },
+};
+
+/**
  * A description holding a whole README: headings, fenced code, a table and
- * bare URLs. Its headings and code blocks read as plain text, and the
- * description stops after three lines.
+ * bare URLs. Its headings read as plain text, its code blocks and table are
+ * left out, and the description stops after three lines.
  */
 export const ReadmeDescription: Story = {
   play: async ({ canvasElement }) => {
@@ -86,9 +122,12 @@ export const ReadmeDescription: Story = {
     await expect(canvasElement.querySelector("article pre, article table"))
       .toBeNull();
     const description = canvas.getByText(/Modal-compressed/).closest("div")!;
-    await expect(description.scrollHeight).toBeGreaterThan(
-      description.clientHeight
-    );
+    // Only a browser lays the description out; jsdom reports every height as 0.
+    if (description.clientHeight > 0) {
+      await expect(description.scrollHeight).toBeGreaterThan(
+        description.clientHeight
+      );
+    }
   },
   args: {
     product: {

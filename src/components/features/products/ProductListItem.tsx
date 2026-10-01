@@ -8,17 +8,25 @@ import { TagList } from "./TagList";
 import styles from "./ProductList.module.css";
 import { productUrl } from "@/lib/urls";
 import { DisplayNameLink } from "@/components/core";
-import ReactMarkdown from "react-markdown";
+import ReactMarkdown, { type Components } from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 interface ProductListItemProps {
   product: Product;
   isSelected?: boolean;
 }
 
-// Listings show a description's inline formatting only. Headings, tables, code
-// blocks and links collapse to their text: a listing links only within Source,
-// and the full description is on the product page.
-const DESCRIPTION_ELEMENTS = ["p", "strong", "em", "code", "ul", "ol", "li", "br"];
+// Listings show a description's inline formatting only; the full description
+// is on the product page. Headings and links collapse to their text, as a
+// listing links only within Source. Tables and code blocks have no readable
+// inline form, so they are allowed here only to be left out entirely.
+const DESCRIPTION_ELEMENTS = [
+  "p", "strong", "em", "del", "code", "ul", "ol", "li", "br", "table", "pre",
+];
+const DESCRIPTION_COMPONENTS: Components = {
+  table: () => null,
+  pre: () => null,
+};
 
 const VISIBILITY_CONFIG = {
   public: { color: "green" as const, label: "Public" },
@@ -52,7 +60,9 @@ export function ProductListItem({ product, isSelected }: ProductListItemProps) {
             className={styles.description}
           >
             <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
               allowedElements={DESCRIPTION_ELEMENTS}
+              components={DESCRIPTION_COMPONENTS}
               unwrapDisallowed
             >
               {product.description}
