@@ -10,10 +10,11 @@ import {
 
 /**
  * One service account's page, reached from its row in the owner's list and
- * where creating one lands. It shows the workflows the account trusts, each
- * with an "Example usage" modal holding the step the workflow adds, and a
- * dialog to trust another; its API keys, marked once revoked or expired,
- * each revocable, with a dialog to issue one; the products it reaches, each with Read / Read
+ * where creating one lands. One section shows how it signs in: the workflows
+ * it trusts, each with an "Example usage" modal holding the step the workflow
+ * adds, then its API keys, marked once revoked or expired, each revocable —
+ * with a dialog beside the heading to trust another workflow or issue a key.
+ * Then the products it reaches, each with Read / Read
  * and write and an X, and "Grant a product", which adds a row to choose a
  * product and its access, saved with its check — the create form's list; and,
  * set apart in a danger zone, disabling and deleting it.
@@ -109,6 +110,11 @@ export const Default: Story = { args: { summary } };
 /** Disabled: marked beside the name, with Enable in place of Disable. */
 export const Disabled: Story = {
   args: { summary: { ...summary, account: { ...account, disabled: true } } },
+};
+
+/** Signs in only with API keys: the workflows' list is left out. */
+export const KeysOnly: Story = {
+  args: { summary: { ...summary, trusts: [] } },
 };
 
 /** Just created with nothing named: it cannot sign in and reaches nothing. */
