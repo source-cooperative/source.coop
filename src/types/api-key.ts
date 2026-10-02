@@ -65,26 +65,6 @@ export const APIKeySchema = z
 
 export type APIKey = z.infer<typeof APIKeySchema>;
 
-export const APIKeyRequestSchema = z
-  .object({
-    name: z
-      .preprocess(
-        (name) => {
-          if (!name || typeof name !== "string") return undefined;
-          return name === "" ? undefined : name;
-        },
-        z.string({
-          required_error: "API key name is required",
-          invalid_type_error: "API key name must be a string",
-        })
-      )
-      .openapi({ example: "Dev Machine" }),
-    expires: z.string().datetime("Invalid expiration date format"),
-  })
-  .openapi("APIKeyRequest");
-
-export type APIKeyRequest = z.infer<typeof APIKeyRequestSchema>;
-
 export const RedactedAPIKeySchema = APIKeySchema.omit({
   secret_access_key: true,
 }).openapi("RedactedAPIKey");
