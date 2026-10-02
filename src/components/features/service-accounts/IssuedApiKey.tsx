@@ -13,7 +13,6 @@ import { maskedApiKey, type ServiceAccountKey } from "@/types";
  */
 export function IssuedApiKey({ apiKey, record }: { apiKey: string; record: ServiceAccountKey }) {
   const [shown, setShown] = useState(false);
-  const masked = maskedApiKey(record);
   return (
     <Flex direction="column" gap="3">
       <Callout.Root color="grass">
@@ -28,7 +27,7 @@ export function IssuedApiKey({ apiKey, record }: { apiKey: string; record: Servi
       </Callout.Root>
       <Flex align="center" gap="2">
         <Code size="2" style={{ wordBreak: "break-all" }}>
-          {shown ? apiKey : masked}
+          {shown ? apiKey : maskedApiKey(record)}
         </Code>
         <CopyToClipboard text={apiKey} />
         <Tooltip content={shown ? "Hide key" : "Show key"}>
@@ -45,10 +44,6 @@ export function IssuedApiKey({ apiKey, record }: { apiKey: string; record: Servi
           </IconButton>
         </Tooltip>
       </Flex>
-      <Text size="1" color="gray">
-        Listed as <Code size="1">{masked}</Code> from now on: its last six characters, to
-        match against the key you hold.
-      </Text>
     </Flex>
   );
 }
