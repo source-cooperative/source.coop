@@ -1,10 +1,6 @@
 import { Flex, Text } from "@radix-ui/themes";
 import { CubeIcon } from "@radix-ui/react-icons";
-import {
-  RowList,
-  RowMarker,
-  ListRow,
-} from "@/components/core/ListRow";
+import { ItemList } from "@/components/core/ItemList";
 import { editServiceAccountUrl } from "@/lib/urls";
 import { isKeyActive, type ServiceAccountSummary } from "@/types";
 
@@ -30,11 +26,11 @@ export function ServiceAccountList({ summaries }: { summaries: ServiceAccountSum
     );
   }
   return (
-    <RowList>
+    <ItemList.Root>
       {summaries.map(({ account, trusts, grants, keys }) => {
         const liveKeys = keys.filter((k) => !k.revoked_at && isKeyActive(k)).length;
         return (
-        <ListRow
+        <ItemList.Row
           key={account.account_id}
           href={editServiceAccountUrl(account.owner_account_id, account.account_id)}
           title={
@@ -42,7 +38,7 @@ export function ServiceAccountList({ summaries }: { summaries: ServiceAccountSum
               {account.name}
             </Text>
           }
-          markers={account.disabled && <RowMarker>Disabled</RowMarker>}
+          markers={account.disabled && <ItemList.Marker>Disabled</ItemList.Marker>}
           meta={account.account_id}
           aside={
             <Flex direction="column" align="end">
@@ -60,6 +56,6 @@ export function ServiceAccountList({ summaries }: { summaries: ServiceAccountSum
         />
         );
       })}
-    </RowList>
+    </ItemList.Root>
   );
 }

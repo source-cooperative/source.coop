@@ -20,4 +20,4 @@ export { EditButton } from "./EditButton";
 export { LinkAway } from "./LinkAway";
 export * from "./AccountLinks";
 export { CopyToClipboard } from "./CopyToClipboard";
-export { RowList, ListRow, RowMarker } from "./ListRow";
+export { ItemList } from "./ItemList";

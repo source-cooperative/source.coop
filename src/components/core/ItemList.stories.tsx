@@ -1,25 +1,26 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { Button, Flex, Text, TextField } from "@radix-ui/themes";
-import { ListRow, RowList, RowMarker } from "./ListRow";
+import { ItemList } from "./ItemList";
 
 /**
  * One item in a list of settings-like objects: data connections, service
  * accounts, API keys, the products an account reaches.
  *
  * Every such list shares this row, so they read as one kind of object and
- * cannot drift apart. Rows sit in a `RowList`, one bordered box with hairline
- * separators.
+ * cannot drift apart. `ItemList.Root` is the one bordered box with hairline
+ * separators; each `ItemList.Row` sits in it, with at most one
+ * `ItemList.Marker` beside its name.
  */
 const meta = {
-  title: "Components/Layout/ListRow",
-  component: ListRow,
+  title: "Components/Layout/ItemList",
+  component: ItemList.Row,
   parameters: { layout: "padded" },
   render: (args) => (
-    <RowList>
-      <ListRow {...args} />
-    </RowList>
+    <ItemList.Root>
+      <ItemList.Row {...args} />
+    </ItemList.Root>
   ),
-} satisfies Meta<typeof ListRow>;
+} satisfies Meta<typeof ItemList.Row>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
@@ -58,7 +59,7 @@ export const Default: Story = {
 export const WithMarker: Story = {
   args: {
     ...Default.args,
-    markers: <RowMarker>Read only</RowMarker>,
+    markers: <ItemList.Marker>Read only</ItemList.Marker>,
   },
 };
 
@@ -98,33 +99,33 @@ export const WithFooter: Story = {
 };
 
 /**
- * Several rows in one `RowList`. One bordered box with hairlines holds up at
+ * Several rows in one `ItemList.Root`. One bordered box with hairlines holds up at
  * thirty rows, where a card each would be a page that is mostly gaps.
  */
 export const AList: Story = {
   args: Default.args,
   render: () => (
-    <RowList>
-      <ListRow
+    <ItemList.Root>
+      <ItemList.Row
         href="#"
         title={title("Nightly Sync")}
         meta="miskatonic--nightly-sync"
         aside={quiet("1 workflow · 1 API key")}
       />
-      <ListRow
+      <ItemList.Row
         href="#"
         title={title("Archive Mirror")}
-        markers={<RowMarker>Disabled</RowMarker>}
+        markers={<ItemList.Marker>Disabled</ItemList.Marker>}
         meta="miskatonic--archive-mirror"
         aside={quiet("0 workflows · 0 API keys")}
       />
-      <ListRow
+      <ItemList.Row
         href="#"
         title={title("Black Mesa Survey Files")}
-        markers={<RowMarker>Read only</RowMarker>}
+        markers={<ItemList.Marker>Read only</ItemList.Marker>}
         meta="gcs · black-mesa-files"
         aside={quiet("public, unlisted")}
       />
-    </RowList>
+    </ItemList.Root>
   ),
 };

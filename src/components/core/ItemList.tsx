@@ -1,14 +1,14 @@
 import Link from "next/link";
 import { Box, Flex, Text } from "@radix-ui/themes";
 import { ChevronRightIcon } from "@radix-ui/react-icons";
-import styles from "./ListRow.module.css";
+import styles from "./ItemList.module.css";
 
 /**
  * The container rows sit in: one bordered box with hairline separators, rather
  * than a card per item. A card each looks fine at three rows and falls apart at
  * thirty, where a page of separately bordered boxes is mostly gaps.
  */
-export function RowList({ children }: { children: React.ReactNode }) {
+function Root({ children }: { children: React.ReactNode }) {
   return (
     <Box
       style={{
@@ -22,15 +22,15 @@ export function RowList({ children }: { children: React.ReactNode }) {
 }
 
 /**
- * One item in a `RowList`: name and state on the first line, identifiers in
- * the code face beneath, actions right, and an optional footer for anything
- * editable in place. Every list of settings-like objects uses it, so they
- * cannot drift apart.
+ * One item in an `ItemList.Root`: name and state on the first line,
+ * identifiers in the code face beneath, actions right, and an optional footer
+ * for anything editable in place. Every list of settings-like objects uses it,
+ * so they cannot drift apart.
  *
  * With an `href` the whole row opens that page: the title becomes the link,
  * stretched over the row, and a chevron stands in for actions.
  */
-export function ListRow({
+function Row({
   href,
   title,
   markers,
@@ -145,7 +145,7 @@ export function ListRow({
  * (ownership, permitted visibilities) is quiet text instead: four identical
  * outlined boxes per row read as a wall, and nothing inside a wall stands out.
  */
-export function RowMarker({ children }: { children: React.ReactNode }) {
+function Marker({ children }: { children: React.ReactNode }) {
   return (
     <Text
       size="1"
@@ -162,3 +162,10 @@ export function RowMarker({ children }: { children: React.ReactNode }) {
     </Text>
   );
 }
+
+/**
+ * A bordered list of settings-like objects — data connections, service
+ * accounts, API keys — as `ItemList.Root` holding `ItemList.Row`s, each with
+ * at most one `ItemList.Marker`.
+ */
+export const ItemList = { Root, Row, Marker };

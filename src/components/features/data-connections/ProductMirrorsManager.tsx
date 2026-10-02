@@ -33,11 +33,7 @@ import {
   accountDataConnectionEditUrl,
 } from "@/lib/urls";
 import type { DataConnectionOption } from "./redact";
-import {
-  RowList,
-  ListRow,
-  RowMarker,
-} from "@/components/core/ListRow";
+import { ItemList } from "@/components/core/ItemList";
 import { ConnectionsEmpty } from "./ConnectionsEmpty";
 
 interface ProductMirrorsManagerProps {
@@ -225,7 +221,7 @@ export function ProductMirrorsManager({
             : "No data connections have been configured for this product."}
         </ConnectionsEmpty>
       ) : (
-        <RowList>
+        <ItemList.Root>
           {mirrors.map(([key, mirror]) => {
             const info = connectionInfo[mirror.connection_id];
             const canEditPrefix = editablePrefixConnections.has(
@@ -239,7 +235,7 @@ export function ProductMirrorsManager({
               // so the destructive one stops competing with the routine ones.
               // Footer: the prefix, editable only for users who manage both the
               // owning account and the connection; the server action re-checks.
-              <ListRow
+              <ItemList.Row
                 key={key}
                 title={
                   <Text size="2" weight="medium">
@@ -250,7 +246,7 @@ export function ProductMirrorsManager({
                 }
                 markers={
                   mirror.is_primary && (
-                    <RowMarker>Primary</RowMarker>
+                    <ItemList.Marker>Primary</ItemList.Marker>
                   )
                 }
                 meta={info && `${info.provider} · ${info.bucket}`}
@@ -376,7 +372,7 @@ export function ProductMirrorsManager({
               />
             );
           })}
-        </RowList>
+        </ItemList.Root>
       )}
 
       {canManageMirrors && (

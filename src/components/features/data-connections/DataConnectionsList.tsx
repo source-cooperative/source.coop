@@ -3,11 +3,7 @@ import Link from "next/link";
 import { Account, DataConnection, DataProvider } from "@/types";
 import { AccountInfoHoverCard } from "@/components/core/AccountInfoHoverCard";
 import { accountUrl } from "@/lib/urls";
-import {
-  RowList,
-  ListRow,
-  RowMarker,
-} from "@/components/core/ListRow";
+import { ItemList } from "@/components/core/ItemList";
 import { ConnectionsEmpty } from "./ConnectionsEmpty";
 
 const PROVIDER_LABEL: Record<DataProvider, string> = {
@@ -104,9 +100,9 @@ export function DataConnectionsList({
   }
 
   return (
-    <RowList>
+    <ItemList.Root>
       {connections.map((conn) => (
-        <ListRow
+        <ItemList.Row
           key={conn.data_connection_id}
           href={editHref(conn.data_connection_id)}
           title={
@@ -117,7 +113,7 @@ export function DataConnectionsList({
           markers={
             // The one state here worth marking. Read-only is deliberate, not a
             // fault, so it is marked where true and unmentioned where false.
-            conn.read_only && <RowMarker>Read only</RowMarker>
+            conn.read_only && <ItemList.Marker>Read only</ItemList.Marker>
           }
           meta={
             <>
@@ -142,6 +138,6 @@ export function DataConnectionsList({
           }
         />
       ))}
-    </RowList>
+    </ItemList.Root>
   );
 }

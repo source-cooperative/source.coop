@@ -14,11 +14,7 @@ import {
 } from "@radix-ui/themes";
 import { DotsHorizontalIcon } from "@radix-ui/react-icons";
 import { Field, SectionHeader } from "@/components/core";
-import {
-  RowList,
-  RowMarker,
-  ListRow,
-} from "@/components/core/ListRow";
+import { ItemList } from "@/components/core/ItemList";
 import {
   deleteServiceAccount,
   removeTrust,
@@ -69,7 +65,7 @@ function TrustRow({
   const [showingUsage, setShowingUsage] = useState(false);
   const example = proxyOrigin && trust.issuer === GITHUB_ACTIONS_ISSUER;
   return (
-    <ListRow
+    <ItemList.Row
       title={
         <Text size="2" style={{ fontFamily: "var(--code-font-family)", wordBreak: "break-all" }}>
           {trust.subject}
@@ -184,7 +180,7 @@ export function ServiceAccountDetail({
       <Flex direction="column" gap="1">
         <Flex align="center" gap="2" wrap="wrap">
           <Heading size="5">{account.name}</Heading>
-          {account.disabled && <RowMarker>Disabled</RowMarker>}
+          {account.disabled && <ItemList.Marker>Disabled</ItemList.Marker>}
         </Flex>
         <Code size="2" variant="ghost" color="gray">
           {account.account_id}
@@ -207,7 +203,7 @@ export function ServiceAccountDetail({
                 <Text size="1" weight="medium" color="gray">
                   GitHub workflows
                 </Text>
-                <RowList>
+                <ItemList.Root>
                   {trusts.map((trust) => (
                     <TrustRow
                       key={`${trust.issuer} ${trust.subject}`}
@@ -218,7 +214,7 @@ export function ServiceAccountDetail({
                       removing={removing}
                     />
                   ))}
-                </RowList>
+                </ItemList.Root>
               </Flex>
             )}
             {keys.length > 0 && (

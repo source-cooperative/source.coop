@@ -3,10 +3,7 @@
 import Link from "next/link";
 import { Flex, IconButton, SegmentedControl, Text, Tooltip } from "@radix-ui/themes";
 import { Cross2Icon, ExternalLinkIcon } from "@radix-ui/react-icons";
-import {
-  RowList,
-  ListRow,
-} from "@/components/core/ListRow";
+import { ItemList } from "@/components/core/ItemList";
 import { productUrl } from "@/lib/urls";
 import { MembershipRole, type Product } from "@/types";
 
@@ -77,9 +74,9 @@ export function ProductAccessList({
           Nothing yet. Grant a product to let it read or write data.
         </Text>
       ) : (
-        <RowList>
+        <ItemList.Root>
           {reached.map(({ product_id, title }) => (
-            <ListRow
+            <ItemList.Row
               key={product_id}
               title={
                 <Link
@@ -122,7 +119,7 @@ export function ProductAccessList({
               }
             />
           ))}
-        </RowList>
+        </ItemList.Root>
       )}
     </>
   );
