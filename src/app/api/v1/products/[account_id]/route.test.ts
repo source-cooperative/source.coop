@@ -8,7 +8,6 @@
 import { NextRequest } from "next/server";
 import { productsTable } from "@/lib/clients/database/products";
 import {
-  apiKeysTable,
   accountsTable,
   membershipsTable,
   isIndividualAccount,
@@ -25,9 +24,6 @@ jest.mock("@/lib/clients/database/products", () => ({
 }));
 
 jest.mock("@/lib/clients/database", () => ({
-  apiKeysTable: {
-    fetchById: jest.fn(),
-  },
   accountsTable: {
     fetchById: jest.fn(),
   },

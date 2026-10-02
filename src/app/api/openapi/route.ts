@@ -2,12 +2,9 @@ import { StatusCodes } from "http-status-codes";
 import { NextRequest, NextResponse } from "next/server";
 import { OpenApiGeneratorV3 } from "@asteasolutions/zod-to-openapi";
 import {
-  APIKeyRequestSchema,
-  APIKeySchema,
   DataConnectionObjectSchema,
   MembershipInvitationSchema,
   MembershipSchema,
-  RedactedAPIKeySchema,
 } from "@/types";
 import { AccountSchema } from "@/types/account";
 
@@ -15,9 +12,6 @@ export async function GET(_req: NextRequest) {
   const generator = new OpenApiGeneratorV3([
     AccountSchema,
     MembershipSchema,
-    APIKeySchema,
-    APIKeyRequestSchema,
-    RedactedAPIKeySchema,
     MembershipInvitationSchema,
     DataConnectionObjectSchema,
   ]);
@@ -34,18 +28,8 @@ export async function GET(_req: NextRequest) {
         description: "Source Cooperative",
       },
     ],
-    security: [{ ApiKeyAuth: [] }],
     paths: {},
     components: {
-      securitySchemes: {
-        ApiKeyAuth: {
-          type: "apiKey",
-          in: "header",
-          name: "Authorization",
-          description:
-            "Follows the format `<access-key-id> <secret-access-key>`",
-        },
-      },
       schemas: generator.generateComponents().components?.schemas || {},
     },
   };

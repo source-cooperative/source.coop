@@ -103,7 +103,6 @@ export enum Actions {
   DisableRepository = "repository:disable",
   ListRepository = "repository:list",
   GetRepository = "repository:get",
-  ListRepositoryAPIKeys = "repository:listAPIKeys",
   ListRepositoryMemberships = "repository:listMemberships",
 
   ReadRepositoryData = "repository:data:read",
@@ -114,7 +113,6 @@ export enum Actions {
   // TODO: Need permission for editing account
   GetAccount = "account:get",
   ListAccount = "account:list",
-  ListAccountAPIKeys = "account:listAPIKeys",
   ListAccountMemberships = "account:listMemberships",
 
   GetAccountFlags = "account:flags:get",
@@ -122,10 +120,6 @@ export enum Actions {
 
   GetAccountProfile = "account:profile:get",
   PutAccountProfile = "account:profile:put",
-
-  GetAPIKey = "api_key:get",
-  CreateAPIKey = "api_key:create",
-  RevokeAPIKey = "api_key:revoke",
 
   GetMembership = "membership:get",
   AcceptMembership = "membership:accept",
