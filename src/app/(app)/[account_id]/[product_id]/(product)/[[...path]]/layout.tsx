@@ -13,6 +13,7 @@ import { BreadcrumbNav } from "@/components/display/BreadcrumbNav";
 import { FetchCredentialsButton } from "@/components/features/uploader/FetchCredentialsButton";
 import { PendingInvitationBanner } from "@/components/features/memberships/PendingInvitationBanner";
 import { ProductSummaryCard } from "@/components/features/products/ProductSummaryCard";
+import { ProductCatalogSummary } from "@/components/features/products/ProductCatalogSummary";
 import { ProductMetaCard } from "@/components/features/products/ProductMetaCard";
 import {
   ProductTabs,
@@ -128,6 +129,7 @@ export default async function ProductLayout({
           <Box px={{ initial: "4", md: "0" }}>
             <ProductSummaryCard product={product} />
           </Box>
+          <ProductCatalogSummary accountId={account_id} productId={product_id} />
           <Dropzone product={product} prefix={prefix}>
             <Card>
               <SectionHeader
