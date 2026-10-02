@@ -21,9 +21,15 @@ import {
 import { useUploadManager } from "@/components/features/uploader/UploadProvider";
 import { productUrl } from "@/lib/urls";
 import { formatBytes } from "@/lib/format";
+import { DeleteProgress } from "./DeleteProgress";
 
-export function UploadsSubmenu() {
-  const { uploads, cancelUpload, retryUpload } = useUploadManager();
+// A folder upload queues one entry per file; rendering thousands hangs the tab.
+const MAX_SHOWN = 100;
+
+/** Uploads and deletes running in this tab, under the account menu. */
+export function ActivitySubmenu() {
+  const { uploads, cancelUpload, retryUpload, deletions, dismissDeletion } =
+    useUploadManager();
 
   // Calculate active uploads (queued, uploading)
   const activeUploads = useMemo(() => {
@@ -32,8 +38,23 @@ export function UploadsSubmenu() {
     );
   }, [uploads]);
 
-  // Don't render if no active uploads
-  if (activeUploads.length === 0) {
+  // Failed deletes stay until dismissed: they may have left a folder half-gone.
+  const shownDeletions = deletions.filter((d) => d.status !== "completed");
+  const activeCount =
+    activeUploads.length +
+    shownDeletions.filter((d) => d.status === "deleting").length;
+  const deletionsShown = shownDeletions.slice(0, MAX_SHOWN);
+  const uploadsShown = activeUploads.slice(
+    0,
+    MAX_SHOWN - deletionsShown.length
+  );
+  const hidden =
+    shownDeletions.length +
+    activeUploads.length -
+    deletionsShown.length -
+    uploadsShown.length;
+
+  if (activeUploads.length === 0 && shownDeletions.length === 0) {
     return null;
   }
 
@@ -43,10 +64,12 @@ export function UploadsSubmenu() {
         <DropdownMenu.SubTrigger>
           <Flex align="center" gap="2">
             <UploadIcon />
-            Uploads
-            <Badge color="blue" size="1" style={{ marginLeft: "auto" }}>
-              {activeUploads.length}
-            </Badge>
+            Activity
+            {activeCount > 0 && (
+              <Badge color="blue" size="1" style={{ marginLeft: "auto" }}>
+                {activeCount}
+              </Badge>
+            )}
           </Flex>
         </DropdownMenu.SubTrigger>
         <DropdownMenu.SubContent
@@ -54,7 +77,14 @@ export function UploadsSubmenu() {
         >
           <ScrollArea style={{ maxHeight: "300px" }}>
             <Flex direction="column" gap="2">
-              {activeUploads.map((upload) => {
+              {deletionsShown.map((job) => (
+                <DeleteProgress
+                  key={job.id}
+                  job={job}
+                  onDismiss={() => dismissDeletion(job.id)}
+                />
+              ))}
+              {uploadsShown.map((upload) => {
                 const uploadPrefix =
                   productUrl(upload.scope.accountId, upload.scope.productId) +
                   "/" +
@@ -148,6 +178,11 @@ export function UploadsSubmenu() {
                   </Flex>
                 );
               })}
+              {hidden > 0 && (
+                <Text size="1" color="gray" align="center">
+                  and {hidden.toLocaleString("en")} more…
+                </Text>
+              )}
             </Flex>
           </ScrollArea>
         </DropdownMenu.SubContent>
