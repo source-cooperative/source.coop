@@ -21,7 +21,7 @@ export function IssuedApiKey({ apiKey, record }: { apiKey: string; record: Servi
         </Callout.Icon>
         <Callout.Text>
           <Text size="2" weight="medium">
-            Copy the key now — this is the only time it is shown.
+            Copy the key now — this is the only time it is available in full.
           </Text>
         </Callout.Text>
       </Callout.Root>
