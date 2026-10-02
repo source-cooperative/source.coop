@@ -35,10 +35,10 @@ export function githubWorkflowStep(proxyOrigin: string, account_id: string): str
  */
 export function apiKeyEnvironment(proxyOrigin: string, account_id: string): string {
   return [
+    "export AWS_REGION=us-west-2",
+    `export AWS_ENDPOINT_URL_S3=${proxyOrigin}`,
+    `export AWS_ENDPOINT_URL_STS=${proxyOrigin}/.sts`,
     `export AWS_ROLE_ARN=arn:aws:iam::${account_id}:role/FullAccess`,
     "export AWS_WEB_IDENTITY_TOKEN_FILE=/path/to/the/saved/key",
-    `export AWS_ENDPOINT_URL_STS=${proxyOrigin}/.sts`,
-    `export AWS_ENDPOINT_URL_S3=${proxyOrigin}`,
-    "export AWS_REGION=us-west-2",
   ].join("\n");
 }
