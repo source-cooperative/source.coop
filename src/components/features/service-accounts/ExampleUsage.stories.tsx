@@ -15,7 +15,9 @@ import { apiKeyEnvironment, githubWorkflowStep } from "@/lib/services/service-ac
 const meta = {
   title: "Features/Service accounts/ExampleUsage",
   component: ExampleUsage,
-  parameters: { layout: "padded" },
+  // Each story opens a modal; on the docs page it gets a frame of its own, so
+  // the modal stays inside its preview instead of covering the page.
+  parameters: { layout: "padded", docs: { story: { inline: false, iframeHeight: 560 } } },
   // Open, as choosing it from the menu leaves it; Close does nothing here.
   args: { open: true, onOpenChange: () => {} },
 } satisfies Meta<typeof ExampleUsage>;

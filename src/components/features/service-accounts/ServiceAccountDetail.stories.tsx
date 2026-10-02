@@ -133,6 +133,9 @@ export const Empty: Story = {
 const justIssued = { ...summary.keys[0], last_used_at: undefined };
 export const CreatedWithKey: Story = {
   args: { summary: { account, trusts: [], grants: [], keys: [justIssued] } },
+  // Its own frame on the docs page: the key it hands over would otherwise be
+  // picked up by every story there, each opening the modal over the page.
+  parameters: { docs: { story: { inline: false, iframeHeight: 640 } } },
   beforeEach: () => {
     // Assembled at run time so that secret scanners don't flag this file.
     const body = "storyFixtureNotARealKey1234567";
