@@ -34,11 +34,11 @@ import {
 } from "@/lib/urls";
 import type { DataConnectionOption } from "./redact";
 import {
-  ConnectionList,
-  ConnectionRow,
-  ConnectionMarker,
-  ConnectionsEmpty,
-} from "./ConnectionRow";
+  RowList,
+  ListRow,
+  RowMarker,
+} from "@/components/core/ListRow";
+import { ConnectionsEmpty } from "./ConnectionsEmpty";
 
 interface ProductMirrorsManagerProps {
   product: Product;
@@ -225,7 +225,7 @@ export function ProductMirrorsManager({
             : "No data connections have been configured for this product."}
         </ConnectionsEmpty>
       ) : (
-        <ConnectionList>
+        <RowList>
           {mirrors.map(([key, mirror]) => {
             const info = connectionInfo[mirror.connection_id];
             const canEditPrefix = editablePrefixConnections.has(
@@ -239,7 +239,7 @@ export function ProductMirrorsManager({
               // so the destructive one stops competing with the routine ones.
               // Footer: the prefix, editable only for users who manage both the
               // owning account and the connection; the server action re-checks.
-              <ConnectionRow
+              <ListRow
                 key={key}
                 title={
                   <Text size="2" weight="medium">
@@ -250,7 +250,7 @@ export function ProductMirrorsManager({
                 }
                 markers={
                   mirror.is_primary && (
-                    <ConnectionMarker>Primary</ConnectionMarker>
+                    <RowMarker>Primary</RowMarker>
                   )
                 }
                 meta={info && `${info.provider} · ${info.bucket}`}
@@ -376,7 +376,7 @@ export function ProductMirrorsManager({
               />
             );
           })}
-        </ConnectionList>
+        </RowList>
       )}
 
       {canManageMirrors && (

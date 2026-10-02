@@ -1,10 +1,10 @@
 import { Flex, Text } from "@radix-ui/themes";
 import { CubeIcon } from "@radix-ui/react-icons";
 import {
-  ConnectionList,
-  ConnectionMarker,
-  ConnectionRow,
-} from "@/components/features/data-connections/ConnectionRow";
+  RowList,
+  RowMarker,
+  ListRow,
+} from "@/components/core/ListRow";
 import { editServiceAccountUrl } from "@/lib/urls";
 import { isKeyActive, type ServiceAccountSummary } from "@/types";
 
@@ -30,11 +30,11 @@ export function ServiceAccountList({ summaries }: { summaries: ServiceAccountSum
     );
   }
   return (
-    <ConnectionList>
+    <RowList>
       {summaries.map(({ account, trusts, grants, keys }) => {
         const liveKeys = keys.filter((k) => !k.revoked_at && isKeyActive(k)).length;
         return (
-        <ConnectionRow
+        <ListRow
           key={account.account_id}
           href={editServiceAccountUrl(account.owner_account_id, account.account_id)}
           title={
@@ -42,7 +42,7 @@ export function ServiceAccountList({ summaries }: { summaries: ServiceAccountSum
               {account.name}
             </Text>
           }
-          markers={account.disabled && <ConnectionMarker>Disabled</ConnectionMarker>}
+          markers={account.disabled && <RowMarker>Disabled</RowMarker>}
           meta={account.account_id}
           aside={
             <Flex direction="column" align="end">
@@ -60,6 +60,6 @@ export function ServiceAccountList({ summaries }: { summaries: ServiceAccountSum
         />
         );
       })}
-    </ConnectionList>
+    </RowList>
   );
 }

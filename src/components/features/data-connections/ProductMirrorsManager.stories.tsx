@@ -6,7 +6,7 @@ import type { Product } from "@/types";
  * The storage a product mirrors to, and the controls for changing it.
  *
  * This is the other half of the pair #504 normalized: it and
- * `DataConnectionsList` render the same entity, so they share `ConnectionRow`
+ * `DataConnectionsList` render the same entity, so they share `ListRow`
  * and must not drift. Until the mirror actions were mocked only one of the two
  * had a story, which made "they look like the same thing" a claim you had to
  * take on trust. Put this beside **Data connections/DataConnectionsList**.

@@ -4,10 +4,10 @@ import { startTransition, useActionState, useState } from "react";
 import { Button, Dialog, DropdownMenu, Flex, IconButton, Text, Tooltip } from "@radix-ui/themes";
 import { DotsHorizontalIcon } from "@radix-ui/react-icons";
 import {
-  ConnectionList,
-  ConnectionMarker,
-  ConnectionRow,
-} from "@/components/features/data-connections/ConnectionRow";
+  RowList,
+  RowMarker,
+  ListRow,
+} from "@/components/core/ListRow";
 import { revokeApiKey, setApiKeyExpiry } from "@/lib/actions/service-account-keys";
 import {
   IDLE_API_KEY_ACTION_STATE,
@@ -97,13 +97,13 @@ function KeyRow({
   const marker = keyMarker(apiKey);
   const standing = keyStanding(apiKey);
   return (
-    <ConnectionRow
+    <ListRow
       title={
         <Text size="2" weight="medium">
           {apiKey.label}
         </Text>
       }
-      markers={marker && <ConnectionMarker>{marker}</ConnectionMarker>}
+      markers={marker && <RowMarker>{marker}</RowMarker>}
       meta={maskedApiKey(apiKey) ?? undefined}
       aside={
         <Tooltip content={keyDates(apiKey)}>
@@ -257,7 +257,7 @@ export function ApiKeyList({
   }
   return (
     <>
-      <ConnectionList>
+      <RowList>
         {keys.map((key) => (
           <KeyRow
             key={key.key_id}
@@ -268,7 +268,7 @@ export function ApiKeyList({
             proxyOrigin={proxyOrigin}
           />
         ))}
-      </ConnectionList>
+      </RowList>
       <Status state={revokeState} />
     </>
   );

@@ -4,9 +4,9 @@ import Link from "next/link";
 import { Flex, IconButton, SegmentedControl, Text, Tooltip } from "@radix-ui/themes";
 import { Cross2Icon, ExternalLinkIcon } from "@radix-ui/react-icons";
 import {
-  ConnectionList,
-  ConnectionRow,
-} from "@/components/features/data-connections/ConnectionRow";
+  RowList,
+  ListRow,
+} from "@/components/core/ListRow";
 import { productUrl } from "@/lib/urls";
 import { MembershipRole, type Product } from "@/types";
 
@@ -77,9 +77,9 @@ export function ProductAccessList({
           Nothing yet. Grant a product to let it read or write data.
         </Text>
       ) : (
-        <ConnectionList>
+        <RowList>
           {reached.map(({ product_id, title }) => (
-            <ConnectionRow
+            <ListRow
               key={product_id}
               title={
                 <Link
@@ -122,7 +122,7 @@ export function ProductAccessList({
               }
             />
           ))}
-        </ConnectionList>
+        </RowList>
       )}
     </>
   );
