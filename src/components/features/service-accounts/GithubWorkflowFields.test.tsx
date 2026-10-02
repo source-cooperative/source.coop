@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import { Theme } from "@radix-ui/themes";
-import { GithubWorkflowFields, NEW_GITHUB_WORKFLOW } from "./GithubWorkflowFields";
+import { GithubWorkflowFields, NEW_GITHUB_WORKFLOW, githubCondition } from "./GithubWorkflowFields";
 
 const renderFor = (repository: string, onChange = jest.fn()) => {
   render(
@@ -21,6 +21,18 @@ const respond = (status: number, body: unknown = {}) =>
     .mockResolvedValue({ ok: status === 200, json: async () => body } as Response);
 
 afterEach(() => jest.restoreAllMocks());
+
+describe("githubCondition", () => {
+  it("spells the trust out as a StringEquals on GitHub's sub claim", () => {
+    expect(
+      JSON.parse(githubCondition({ repository: "octocat/repo", kind: "environment", value: "prod" }))
+    ).toEqual({
+      StringEquals: {
+        "token.actions.githubusercontent.com:sub": "repo:octocat/repo:environment:prod",
+      },
+    });
+  });
+});
 
 describe("GithubWorkflowFields", () => {
   it("fills in a public repository as its tokens name it", async () => {

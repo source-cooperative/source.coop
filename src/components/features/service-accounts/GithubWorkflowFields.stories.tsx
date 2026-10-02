@@ -7,9 +7,9 @@ import { GithubWorkflowFields, NEW_GITHUB_WORKFLOW } from "./GithubWorkflowField
 
 /**
  * Names one GitHub workflow: a repository, pinned to a ref or an environment.
- * The exact subject the trust will match is spelled out under the fields as
- * you type, since that string — not the fields — is what the token has to
- * match. Under the ref or environment, a line says what form it takes — a
+ * The trust is spelled out under the fields as you type, as the JSON
+ * condition a token has to meet — a `StringEquals` on GitHub's `sub` claim —
+ * since that string, not the fields, is what the token has to match. Under the ref or environment, a line says what form it takes — a
  * branch as `refs/heads/main`, a tag as `refs/tags/v1.0` — and links to
  * GitHub's examples of the subject each produces. The create form stacks one
  * of these per workflow; the trust dialog shows one.

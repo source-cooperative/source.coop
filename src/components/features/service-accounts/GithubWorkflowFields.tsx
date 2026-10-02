@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Box, Code, Flex, Link, SegmentedControl, Text, TextField } from "@radix-ui/themes";
 import { Field } from "@/components/core";
+import { GITHUB_ACTIONS_ISSUER } from "@/types";
 
 export interface GithubWorkflow {
   repository: string;
@@ -33,6 +34,18 @@ const ImmutableSubjectsLink = () => (
 /** GitHub's `sub` claim for the workflow, exactly as its token will carry it. */
 export const githubSubject = (w: GithubWorkflow) =>
   `repo:${w.repository}:${w.kind}:${w.value}`;
+
+/**
+ * The trust as an AWS-style condition. The subject is the whole of it: the
+ * issuer is GitHub's, and the audience is checked against the proxy for every
+ * token alike.
+ */
+export const githubCondition = (w: GithubWorkflow) =>
+  JSON.stringify(
+    { StringEquals: { [`${new URL(GITHUB_ACTIONS_ISSUER).host}:sub`]: githubSubject(w) } },
+    null,
+    2
+  );
 
 /** A repository named the mutable way, `owner/repo`. */
 const SHORT_REPOSITORY = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/;
@@ -201,9 +214,26 @@ export function GithubWorkflowFields({
           </Field>
         </Box>
       </Flex>
-      <Text size="1" color="gray" style={{ wordBreak: "break-all" }}>
-        Trusts <Code size="1">{githubSubject(workflow)}</Code>
-      </Text>
+      <Box>
+        <Text as="p" size="1" color="gray" mb="1">
+          Trusts tokens matching
+        </Text>
+        <Box
+          asChild
+          p="3"
+          style={{
+            margin: 0,
+            background: "var(--gray-3)",
+            borderRadius: "var(--radius-2)",
+            whiteSpace: "pre-wrap",
+            overflowWrap: "anywhere",
+            fontFamily: "var(--code-font-family)",
+            fontSize: "var(--font-size-1)",
+          }}
+        >
+          <pre>{githubCondition(workflow)}</pre>
+        </Box>
+      </Box>
     </Flex>
   );
 }
