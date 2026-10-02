@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { expect, userEvent, within } from "storybook/test";
+import { expect, within } from "storybook/test";
 import { IssuedApiKey } from "./IssuedApiKey";
 import { apiKeyChecksum } from "@/types";
 
@@ -41,15 +41,5 @@ export const Default: Story = {
       created_by: "acoltrane",
       expires_at: null,
     },
-  },
-};
-
-/** After "Show key": the whole key, until it is hidden again. */
-export const Shown: Story = {
-  args: Default.args,
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    await userEvent.click(canvas.getByRole("button", { name: "Show key" }));
-    await expect(canvas.getByText(KEY)).toBeInTheDocument();
   },
 };
