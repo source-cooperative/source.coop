@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { Box, Button, Dialog, Flex, SegmentedControl, Text } from "@radix-ui/themes";
+import { Box, Button, Code, Dialog, Flex, Link, Text } from "@radix-ui/themes";
 import { CopyToClipboard } from "@/components/core/CopyToClipboard";
 import { highlightLine, type Language, type TokenKind } from "./highlight";
 
@@ -15,16 +14,32 @@ const COLOURS: Record<TokenKind, string | undefined> = {
   plain: undefined,
 };
 
+/** Where a trusted GitHub workflow goes, and the stock AWS action it signs in with. */
+export function GithubWorkflowIntro({ subject }: { subject: string }) {
+  return (
+    <>
+      It signs in with AWS&apos;s own{" "}
+      <Link href="https://github.com/aws-actions/configure-aws-credentials" target="_blank" rel="noopener noreferrer">
+        configure-aws-credentials
+      </Link>{" "}
+      action: Source Cooperative speaks the STS protocol it expects, so no custom action or stored secret is
+      needed. In <Code>{subject.split(":")[1]}</Code>, save this workflow under{" "}
+      <Code>.github/workflows/</Code>, or add the highlighted step to a job of your own:
+    </>
+  );
+}
+
 /**
- * What software adds to sign in one way, ready to paste — a workflow's step,
- * or the variables for a key — in a modal opened from "Example usage" in the
- * row's menu. Given several forms of it by label, a switch above the code
- * chooses between them. Nothing in it is secret.
+ * What software adds to sign in one way, ready to paste — a workflow, or the
+ * variables for a key — in a modal opened from "Example usage" in the row's
+ * menu. Given a `focus`, the lines outside it fade, so the part that signs in
+ * stands out from the scaffolding around it. Nothing in it is secret.
  */
 export function ExampleUsage({
   title,
   intro,
-  code: forms,
+  code,
+  focus,
   language,
   open,
   onOpenChange,
@@ -32,30 +47,19 @@ export function ExampleUsage({
   title: string;
   /** The line above the code: where it goes. */
   intro: React.ReactNode;
-  /** The snippet, or its forms keyed by the label that chooses each. */
-  code: string | Record<string, string>;
+  code: string;
+  /** The lines kept at full strength, `[first, end)`; the rest fade. */
+  focus?: [number, number];
   language: Language;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const labels = typeof forms === "string" ? [] : Object.keys(forms);
-  const [chosen, choose] = useState(labels[0]);
-  const code = typeof forms === "string" ? forms : forms[chosen];
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Content style={{ maxWidth: 720 }} aria-describedby={undefined}>
         <Dialog.Title>{title}</Dialog.Title>
         <Flex direction="column" gap="3">
           <Text size="2">{intro}</Text>
-          {labels.length > 0 && (
-            <SegmentedControl.Root size="1" value={chosen} onValueChange={choose} style={{ alignSelf: "start" }}>
-              {labels.map((label) => (
-                <SegmentedControl.Item key={label} value={label}>
-                  {label}
-                </SegmentedControl.Item>
-              ))}
-            </SegmentedControl.Root>
-          )}
           <Box position="relative">
             <Box position="absolute" top="3" right="3">
               <CopyToClipboard text={code} />
@@ -86,6 +90,7 @@ export function ExampleUsage({
                     style={{
                       paddingLeft: `${line.search(/\S|$/) + 2}ch`,
                       textIndent: "-2ch",
+                      opacity: focus && (i < focus[0] || i >= focus[1]) ? 0.4 : undefined,
                     }}
                   >
                     {highlightLine(line.trimStart(), language).map((token, j) => (
