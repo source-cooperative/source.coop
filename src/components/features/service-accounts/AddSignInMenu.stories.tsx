@@ -13,7 +13,7 @@ import { AddSignInMenu } from "./AddSignInMenu";
 const meta = {
   title: "Features/Service accounts/AddSignInMenu",
   component: AddSignInMenu,
-  parameters: { layout: "centered" },
+  parameters: { layout: "centered", docs: { story: { inline: false, iframeHeight: 560 } } },
   args: { accountId: "miskatonic--nightly-sync" },
 } satisfies Meta<typeof AddSignInMenu>;
 

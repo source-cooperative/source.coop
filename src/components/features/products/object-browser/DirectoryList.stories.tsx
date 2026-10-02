@@ -27,7 +27,7 @@ import type { Product, ProductObject } from "@/types";
 const meta = {
   title: "Features/Object browser/DirectoryList",
   component: DirectoryList,
-  parameters: { layout: "padded" },
+  parameters: { layout: "padded", docs: { story: { inline: false, iframeHeight: 640 } } },
   // The rows read upload progress from context, so the real providers wrap
   // every story -- the real ones, not stubs. Nothing here uploads, so no
   // credential is ever minted and `credentials` needs no mock.

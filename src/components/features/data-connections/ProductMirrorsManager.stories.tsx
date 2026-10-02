@@ -19,7 +19,7 @@ import type { Product } from "@/types";
 const meta = {
   title: "Features/Data connections/ProductMirrorsManager",
   component: ProductMirrorsManager,
-  parameters: { layout: "padded" },
+  parameters: { layout: "padded", docs: { story: { inline: false, iframeHeight: 640 } } },
 } satisfies Meta<typeof ProductMirrorsManager>;
 
 export default meta;
