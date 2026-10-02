@@ -31,6 +31,15 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
+/** Answers the subject lookup as GitHub would, so a story doesn't hang on a real repository. */
+const githubAnswers = (status: number, body?: object) => () => {
+  const real = window.fetch;
+  window.fetch = async () => new Response(JSON.stringify(body ?? {}), { status });
+  return () => {
+    window.fetch = real;
+  };
+};
+
 /** As the create form adds it: no repository yet, the default branch pinned. */
 export const Empty: Story = {
   args: { workflow: NEW_GITHUB_WORKFLOW },
@@ -38,24 +47,44 @@ export const Empty: Story = {
 
 /**
  * A public repository typed the short way. Once you stop typing, GitHub's
- * public API is asked for its ids, and the form offers the immutable name —
- * `octocat@583231/Hello-World@1296269` — with a button that puts it in the
- * field. Whether a repository's tokens carry that form is a setting only its
- * admins can read, so the form offers it rather than switching to it.
+ * public API is asked how the repository's tokens name it, and the field is
+ * filled in with that name. This one's tokens carry its ids, so
+ * `octocat/hello-world` becomes `octocat@583231/Hello-World@1296269`; one
+ * whose tokens don't keeps its short name, in GitHub's casing.
  */
 export const PublicRepository: Story = {
-  args: { workflow: { ...NEW_GITHUB_WORKFLOW, repository: "octocat/Hello-World" } },
+  args: { workflow: { ...NEW_GITHUB_WORKFLOW, repository: "octocat/hello-world" } },
+  beforeEach: githubAnswers(200, {
+    use_default: true,
+    use_immutable_subject: true,
+    sub_claim_prefix: "repo:octocat@583231/Hello-World@1296269",
+  }),
+};
+
+/**
+ * A public repository with its own subject template. Its tokens may name
+ * something other than the repository and ref, which a trust can't match, so
+ * the form says so.
+ */
+export const CustomizedSubject: Story = {
+  args: { workflow: { ...NEW_GITHUB_WORKFLOW, repository: "cli/cli" } },
+  beforeEach: githubAnswers(200, {
+    use_default: false,
+    include_claim_keys: ["repository_owner_id", "repository_id", "context"],
+    sub_claim_prefix: "repo:cli/cli",
+  }),
 };
 
 /**
  * A repository GitHub doesn't show publicly — private, or not there at all.
- * Its ids can't be looked up anonymously, so the form gives the `gh` command
- * that prints its immutable name for anyone who can see it.
+ * How its tokens name it can't be looked up anonymously, so the form gives
+ * the `gh` command that prints it for anyone who can see the repository.
  */
 export const PrivateRepository: Story = {
   args: {
     workflow: { ...NEW_GITHUB_WORKFLOW, repository: "octocat/a-private-repository" },
   },
+  beforeEach: githubAnswers(404),
 };
 
 /**

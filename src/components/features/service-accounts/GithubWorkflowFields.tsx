@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Box, Button, Code, Flex, Link, SegmentedControl, Text, TextField } from "@radix-ui/themes";
+import { Box, Code, Flex, Link, SegmentedControl, Text, TextField } from "@radix-ui/themes";
 import { Field } from "@/components/core";
 
 export interface GithubWorkflow {
@@ -37,39 +37,51 @@ export const githubSubject = (w: GithubWorkflow) =>
 /** A repository named the mutable way, `owner/repo`. */
 const SHORT_REPOSITORY = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/;
 
-/** Prints a repository's immutable name, for one the public API can't see. */
-const ghImmutableRepositoryCommand = (repository: string) =>
-  `gh api repos/${repository} --jq '"\\(.owner.login)@\\(.owner.id)/\\(.name)@\\(.id)"'`;
+/** Prints how a repository's tokens name it, for one the public API can't see. */
+const ghSubjectPrefixCommand = (repository: string) =>
+  `gh api repos/${repository}/actions/oidc/customization/sub --jq .sub_claim_prefix`;
+
+interface SubjectSetting {
+  /** As the tokens name it: `owner/repo`, or `owner@id/repo@id` once they carry ids. */
+  repository: string;
+  /** False when the repository has its own subject template. */
+  standard: boolean;
+}
 
 /**
- * The immutable name of a repository typed the short way, from GitHub's public
- * API: `owner@id/repo@id`, or `null` when GitHub doesn't show it — a private
- * repository, or none by that name. `undefined` until the answer for the
- * current value arrives. Asked from the browser, so the anonymous rate limit
- * is the viewer's own.
+ * How a repository typed the short way is named in its tokens, from GitHub's
+ * public API, or `null` when GitHub doesn't show it — a private repository,
+ * or none by that name. `undefined` until the answer for the current value
+ * arrives. Asked from the browser, so the anonymous rate limit is the
+ * viewer's own.
  */
-function useImmutableRepository(repository: string) {
-  const [answer, setAnswer] = useState<{ repository: string; immutable: string | null }>();
+function useSubjectSetting(repository: string) {
+  const [answer, setAnswer] = useState<{ repository: string; setting: SubjectSetting | null }>();
   useEffect(() => {
     if (!SHORT_REPOSITORY.test(repository)) return;
     const controller = new AbortController();
     const timer = setTimeout(() => {
-      fetch(`https://api.github.com/repos/${repository}`, { signal: controller.signal })
+      fetch(`https://api.github.com/repos/${repository}/actions/oidc/customization/sub`, {
+        signal: controller.signal,
+      })
         .then((res) => (res.ok ? res.json() : null))
         .then((r) =>
           setAnswer({
             repository,
-            immutable: r ? `${r.owner.login}@${r.owner.id}/${r.name}@${r.id}` : null,
+            setting: r && {
+              repository: r.sub_claim_prefix.replace(/^repo:/, ""),
+              standard: r.use_default,
+            },
           })
         )
-        .catch((e) => e.name !== "AbortError" && setAnswer({ repository, immutable: null }));
+        .catch((e) => e.name !== "AbortError" && setAnswer({ repository, setting: null }));
     }, 400);
     return () => {
       clearTimeout(timer);
       controller.abort();
     };
   }, [repository]);
-  return answer?.repository === repository ? answer.immutable : undefined;
+  return answer?.repository === repository ? answer.setting : undefined;
 }
 
 /**
@@ -90,7 +102,13 @@ export function GithubWorkflowFields({
   /** Rendered at the end of the repository row — a Remove button, say. */
   trailing?: React.ReactNode;
 }) {
-  const immutable = useImmutableRepository(workflow.repository);
+  const setting = useSubjectSetting(workflow.repository);
+  // The field takes the name exactly as the tokens carry it, ids included when
+  // GitHub signs with them, so the subject below is the one to trust.
+  useEffect(() => {
+    if (setting && setting.repository !== workflow.repository)
+      onChange({ ...workflow, repository: setting.repository });
+  }, [setting, workflow, onChange]);
   return (
     <Flex direction="column" gap="3">
       <Flex gap="3" align="end">
@@ -117,26 +135,17 @@ export function GithubWorkflowFields({
         </Box>
         {trailing}
       </Flex>
-      {immutable && (
-        // The button sits in the sentence, so it follows the name it uses.
-        <Text size="1" color="gray">
-          Repositories created after July 2026 sign tokens with their ids. If this one does, it
-          is <Code size="1">{immutable}</Code>{" "}
-          <Button
-            type="button"
-            size="1"
-            variant="soft"
-            onClick={() => onChange({ ...workflow, repository: immutable })}
-          >
-            Use it
-          </Button>
+      {setting && !setting.standard && (
+        <Text size="1" color="amber">
+          This repository customizes its subject claim, so its tokens may not carry the subject
+          below. Only subjects shaped like GitHub&apos;s default can be trusted.
         </Text>
       )}
-      {immutable === null && (
+      {setting === null && (
         <Text size="1" color="gray" style={{ wordBreak: "break-all" }}>
-          GitHub doesn&apos;t show this repository publicly. If it&apos;s private and its tokens
-          carry <ImmutableSubjectsLink />, this prints the name to use:{" "}
-          <Code size="1">{ghImmutableRepositoryCommand(workflow.repository)}</Code>
+          GitHub doesn&apos;t show this repository publicly. If it&apos;s private, this prints how
+          its tokens name it — enter what follows <Code size="1">repo:</Code> above:{" "}
+          <Code size="1">{ghSubjectPrefixCommand(workflow.repository)}</Code>
         </Text>
       )}
       {/* Stacked, so the ref or environment always starts a line of its own
