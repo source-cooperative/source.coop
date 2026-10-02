@@ -54,6 +54,9 @@ export const removeTrust: typeof Real.removeTrust = fn(async () => idle()).mockN
 export const setServiceAccountDisabled: typeof Real.setServiceAccountDisabled = fn(
   async () => idle()
 ).mockName("setServiceAccountDisabled");
+export const renameServiceAccount: typeof Real.renameServiceAccount = fn(
+  async (): Promise<ServiceAccountActionState> => ({ message: "Name saved", success: true })
+).mockName("renameServiceAccount");
 export const deleteServiceAccount: typeof Real.deleteServiceAccount = fn(async () => idle()).mockName(
   "deleteServiceAccount"
 );

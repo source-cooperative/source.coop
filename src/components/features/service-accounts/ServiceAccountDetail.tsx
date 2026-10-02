@@ -3,11 +3,11 @@
 import React, { startTransition, useActionState, useEffect, useOptimistic, useState } from "react";
 import {
   AlertDialog,
+  Box,
   Button,
   Code,
   DropdownMenu,
   Flex,
-  Heading,
   IconButton,
   Text,
   TextField,
@@ -18,6 +18,7 @@ import { ItemList } from "@/components/core/ItemList";
 import {
   deleteServiceAccount,
   removeTrust,
+  renameServiceAccount,
   setProductAccess,
   setServiceAccountDisabled,
 } from "@/lib/actions/service-accounts";
@@ -122,7 +123,8 @@ function TrustRow({
 }
 
 /**
- * One service account, and every control over it: how it signs in — the
+ * One service account, and every control over it: its name, which can
+ * change, beside its id, which cannot; how it signs in — the
  * workflows it trusts and its API keys, each with its example usage; the
  * products it reaches, changed, removed or granted with the create form's
  * controls and saved as they are; and — set apart — disabling and deleting it.
@@ -171,21 +173,53 @@ export function ServiceAccountDetail({
   // Each answer from the action closes the confirmation; the result shows beneath the buttons.
   const [confirmingToggle, setConfirmingToggle] = useState(false);
   useEffect(() => setConfirmingToggle(false), [toggleState]);
+  const [renameState, renameAction, renaming] = useActionState(renameServiceAccount, IDLE);
+  const [name, setName] = useState(account.name);
   const [deleteState, deleteAction, deleting] = useActionState(deleteServiceAccount, IDLE);
   const [deleteConfirmation, setDeleteConfirmation] = useState("");
 
   return (
     <Flex direction="column" gap="6">
       <IssuedApiKeyDialog accountId={account.account_id} />
-      <Flex direction="column" gap="1">
-        <Flex align="center" gap="2" wrap="wrap">
-          <Heading size="5">{account.name}</Heading>
-          {account.disabled && <ItemList.Marker>Disabled</ItemList.Marker>}
+      <SectionHeader
+        title="Who it is"
+        rightButton={account.disabled && <ItemList.Marker>Disabled</ItemList.Marker>}
+      >
+        <Flex direction="column" gap="4">
+          <form action={renameAction}>
+            <input type="hidden" name="account_id" value={account.account_id} />
+            <Field label="Name" htmlFor="sa-name">
+              <Flex gap="3">
+                <Box flexGrow="1">
+                  <TextField.Root
+                    id="sa-name"
+                    name="name"
+                    size="3"
+                    required
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                  />
+                </Box>
+                <Button
+                  type="submit"
+                  size="3"
+                  highContrast
+                  disabled={renaming || name.trim() === account.name}
+                  loading={renaming}
+                >
+                  Save
+                </Button>
+              </Flex>
+            </Field>
+            <Status state={renameState} />
+          </form>
+          <Field label="Account ID" help="The handle software signs in as. Permanent once created." group>
+            <Code size="2" variant="ghost" color="gray">
+              {account.account_id}
+            </Code>
+          </Field>
         </Flex>
-        <Code size="2" variant="ghost" color="gray">
-          {account.account_id}
-        </Code>
-      </Flex>
+      </SectionHeader>
 
       <SectionHeader
         title="Signs in with"

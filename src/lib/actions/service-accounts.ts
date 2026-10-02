@@ -253,6 +253,20 @@ export async function setServiceAccountDisabled(
   return outcome(disabled ? "Service account disabled" : "Service account enabled", true);
 }
 
+/** Changes the display name; the id, which software signs in as, stays. */
+export async function renameServiceAccount(
+  _prev: ServiceAccountActionState,
+  formData: FormData
+): Promise<ServiceAccountActionState> {
+  const account = await managedFrom(formData);
+  if (!account) return outcome("You do not manage that service account", false);
+  const parsed = ServiceAccountCreationRequestSchema.shape.name.safeParse(formData.get("name"));
+  if (!parsed.success) return outcome(parsed.error.issues[0].message, false);
+  await accountsTable.update({ ...account, name: parsed.data, updated_at: new Date().toISOString() });
+  revalidate(account);
+  return outcome("Name saved", true);
+}
+
 /** Removes the account, every grant it held, and every way it could sign in. */
 export async function deleteServiceAccount(
   _prev: ServiceAccountActionState,

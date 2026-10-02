@@ -1,6 +1,8 @@
 import { Metadata } from "next";
 import { Suspense } from "react";
-import { Box, Flex, Text } from "@radix-ui/themes";
+import Link from "next/link";
+import { Box, Button, Text } from "@radix-ui/themes";
+import { ArrowLeftIcon } from "@radix-ui/react-icons";
 import { notFound } from "next/navigation";
 import { accountsTable, dataConnectionsTable } from "@/lib/clients";
 import { getPageSession } from "@/lib/api/utils";
@@ -12,7 +14,8 @@ import {
 } from "@/components/features/data-connections";
 import { ConnectionUsage } from "@/components/features/data-connections/ConnectionUsage";
 import { toEditableDataConnection } from "@/components/features/data-connections/redact";
-import { FormTitle, DangerZone } from "@/components/core";
+import { DangerZone } from "@/components/core";
+import { accountDataConnectionsUrl } from "@/lib/urls";
 
 export const metadata: Metadata = {
   title: "Edit data connection",
@@ -42,10 +45,11 @@ export default async function AccountEditDataConnectionPage({
 
   return (
     <Box>
-      <FormTitle
-        title="Edit Data Connection"
-        description="Update this connection's settings and credentials."
-      />
+      <Button asChild variant="ghost" size="1" mb="4">
+        <Link href={accountDataConnectionsUrl(account_id)}>
+          <ArrowLeftIcon /> Data connections
+        </Link>
+      </Button>
       <DataConnectionForm
         mode="edit"
         ownerAccountId={account_id}
