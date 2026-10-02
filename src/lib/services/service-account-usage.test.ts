@@ -18,8 +18,14 @@ describe("githubWorkflowStep", () => {
 describe("apiKeyEnvironment", () => {
   it("points the SDK's web-identity provider at a saved key and the proxy's STS", () => {
     const env = apiKeyEnvironment("https://data.source.coop", "nightly-sync");
-    expect(env).toContain("export AWS_WEB_IDENTITY_TOKEN_FILE=");
-    expect(env).toContain("export AWS_ENDPOINT_URL_STS=https://data.source.coop/.sts");
-    expect(env).toContain("export AWS_ROLE_ARN=arn:aws:iam::nightly-sync:role/FullAccess");
+    expect(env).toBe(
+      [
+        "export AWS_REGION=us-west-2",
+        "export AWS_ENDPOINT_URL_S3=https://data.source.coop",
+        "export AWS_ENDPOINT_URL_STS=https://data.source.coop/.sts",
+        "export AWS_ROLE_ARN=arn:aws:iam::nightly-sync:role/FullAccess",
+        "export AWS_WEB_IDENTITY_TOKEN_FILE=/path/to/the/saved/key",
+      ].join("\n")
+    );
   });
 });
