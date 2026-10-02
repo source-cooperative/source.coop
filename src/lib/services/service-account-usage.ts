@@ -1,17 +1,35 @@
 /**
+ * The `aws-actions/configure-aws-credentials` step that signs a GitHub Actions
+ * job in as a service account, pointed at the data proxy's STS endpoint and
+ * naming the account in `role-to-assume` — the account segment of the ARN, as
+ * an AWS role's ARN names its account. The action mints the job's OIDC token
+ * for the proxy (which `id-token: write` permits), exchanges it for
+ * credentials carrying the account's memberships if the account trusts the
+ * workflow's subject (ADR-014), and exports them for every later step. The
+ * audience and STS endpoint are read from `AWS_ENDPOINT_URL_S3`, the variable
+ * that also points S3 clients at the proxy, so the proxy is named once. The
+ * partition is `aws` because the action treats any other value as a bare role
+ * name. `FullAccess` is everything the account may do; `ReadOnly` narrows it
+ * to reads.
+ */
+const signInStep = (account_id: string, env: string[] = []) => [
+  `- name: Sign in to Source Cooperative as ${account_id}`,
+  "  uses: aws-actions/configure-aws-credentials@v6",
+  ...env,
+  "  with:",
+  `    role-to-assume: arn:aws:iam::${account_id}:role/FullAccess`,
+  "    audience: ${{ env.AWS_ENDPOINT_URL_S3 }}",
+  "    sts-endpoint: ${{ env.AWS_ENDPOINT_URL_S3 }}/.sts",
+  "    aws-region: us-west-2",
+];
+
+/**
  * A whole GitHub Actions workflow that acts as a service account, ready to
- * save under `.github/workflows/` as it is, for the trusted `subject`: the
- * `aws-actions/configure-aws-credentials` step, pointed at the data proxy's
- * STS endpoint and naming the account in `role-to-assume` — the account
- * segment of the ARN, as an AWS role's ARN names its account. The action
- * mints the job's OIDC token for the proxy (which `id-token: write` permits),
- * exchanges it for credentials carrying the account's memberships if the
- * account trusts the workflow's subject (ADR-014), and exports them for every
- * later step; `env` points S3 clients at the proxy. A subject pinned to an
+ * save under `.github/workflows/` as it is, for the trusted `subject`: one job
+ * running the sign-in step, with `AWS_ENDPOINT_URL_S3` set for the whole
+ * workflow so every step's S3 client reaches the proxy. A subject pinned to an
  * environment needs the job to name it, or the token's subject names the ref
- * instead. The partition is `aws` because the action treats any other value
- * as a bare role name. `FullAccess` is everything the account may do;
- * `ReadOnly` narrows it to reads.
+ * instead.
  */
 export function githubWorkflow(proxyOrigin: string, account_id: string, subject: string): string {
   const environment = subject.match(/:environment:(.+)$/)?.[1];
@@ -19,6 +37,8 @@ export function githubWorkflow(proxyOrigin: string, account_id: string, subject:
   return [
     "name: Source Cooperative",
     ref ? `on: workflow_dispatch  # run it on ${ref}, the ref ${account_id} trusts` : "on: workflow_dispatch",
+    "env:",
+    `  AWS_ENDPOINT_URL_S3: ${proxyOrigin}`,
     "",
     "jobs:",
     "  data:",
@@ -27,18 +47,24 @@ export function githubWorkflow(proxyOrigin: string, account_id: string, subject:
     "    permissions:",
     "      id-token: write",
     "      contents: read",
-    "    env:",
-    `      AWS_ENDPOINT_URL_S3: ${proxyOrigin}`,
     "    steps:",
-    `      - name: Sign in to Source Cooperative as ${account_id}`,
-    "        uses: aws-actions/configure-aws-credentials@v6",
-    "        with:",
-    `          role-to-assume: arn:aws:iam::${account_id}:role/FullAccess`,
-    `          audience: ${proxyOrigin}`,
-    `          sts-endpoint: ${proxyOrigin}/.sts`,
-    "          aws-region: us-west-2",
+    ...signInStep(account_id).map((line) => `      ${line}`),
     `      # From here on, any AWS SDK or the AWS CLI acts as ${account_id}.`,
     `      - run: aws s3 ls s3://${account_id.split("--")[0]}/`,
+  ].join("\n");
+}
+
+/**
+ * The sign-in step alone, for a workflow that already exists, with
+ * `AWS_ENDPOINT_URL_S3` set on the step itself. A step's `env` reaches only
+ * that step, so the comment above it says what the job needs around it.
+ */
+export function githubWorkflowStep(proxyOrigin: string, account_id: string, subject: string): string {
+  const environment = subject.match(/:environment:(.+)$/)?.[1];
+  return [
+    `# In a job with permissions: { id-token: write }${environment ? ` and environment: ${JSON.stringify(environment)}` : ""}.`,
+    "# Set AWS_ENDPOINT_URL_S3 on the job too for later steps to reach Source Cooperative.",
+    ...signInStep(account_id, ["  env:", `    AWS_ENDPOINT_URL_S3: ${proxyOrigin}`]),
   ].join("\n");
 }
 
