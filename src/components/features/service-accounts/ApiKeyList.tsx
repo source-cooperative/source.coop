@@ -215,7 +215,7 @@ function ChangeExpiry({
                   Close
                 </Button>
               </Dialog.Close>
-              <Button type="submit" disabled={saving}>
+              <Button type="submit" highContrast disabled={saving}>
                 Save
               </Button>
             </Flex>

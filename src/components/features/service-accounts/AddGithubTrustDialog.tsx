@@ -70,7 +70,7 @@ function TrustForm({ accountId, onTrusted }: { accountId: string; onTrusted: () 
               Cancel
             </Button>
           </Dialog.Close>
-          <Button type="submit" disabled={pending} loading={pending}>
+          <Button type="submit" highContrast disabled={pending} loading={pending}>
             Trust it
           </Button>
         </Flex>

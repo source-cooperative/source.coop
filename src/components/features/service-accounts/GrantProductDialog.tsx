@@ -110,7 +110,7 @@ function GrantForm({
             Cancel
           </Button>
         </Dialog.Close>
-        <Button type="button" disabled={!product_id} onClick={() => product_id && onGrant(product_id, access)}>
+        <Button type="button" highContrast disabled={!product_id} onClick={() => product_id && onGrant(product_id, access)}>
           Grant
         </Button>
       </Flex>
