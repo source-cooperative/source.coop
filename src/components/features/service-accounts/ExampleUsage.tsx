@@ -48,7 +48,7 @@ export function ExampleUsage({
         <Flex direction="column" gap="3">
           <Text size="2">{intro}</Text>
           {labels.length > 0 && (
-            <SegmentedControl.Root value={chosen} onValueChange={choose} style={{ alignSelf: "start" }}>
+            <SegmentedControl.Root size="1" value={chosen} onValueChange={choose} style={{ alignSelf: "start" }}>
               {labels.map((label) => (
                 <SegmentedControl.Item key={label} value={label}>
                   {label}
