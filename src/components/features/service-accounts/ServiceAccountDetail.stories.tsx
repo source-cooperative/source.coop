@@ -12,8 +12,10 @@ import {
 
 /**
  * One service account's page, reached from its row in the owner's list and
- * where creating one lands. One section shows how it signs in: the workflows
- * it trusts, then its API keys, marked once revoked or expired, each
+ * where creating one lands. It opens with who it is: the name, edited in
+ * place and saved with its own button, above the account id, which cannot
+ * change because it is what software signs in as. Then how it signs in: the
+ * workflows it trusts, then its API keys, marked once revoked or expired, each
  * revocable — with "Add sign-in" in the corner, a menu that opens a modal to
  * trust another workflow or issue a key. Each workflow's "⋯" menu, and each
  * working key's, has "Example usage", opening what software adds to sign in

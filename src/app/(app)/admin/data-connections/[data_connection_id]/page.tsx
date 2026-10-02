@@ -1,6 +1,8 @@
 import { Metadata } from "next";
 import { Suspense } from "react";
-import { Flex, Heading, Text } from "@radix-ui/themes";
+import Link from "next/link";
+import { Box, Button, Flex, Text } from "@radix-ui/themes";
+import { ArrowLeftIcon } from "@radix-ui/react-icons";
 import { notFound } from "next/navigation";
 import { dataConnectionsTable } from "@/lib/clients";
 import {
@@ -11,6 +13,7 @@ import {
 import { ConnectionUsage } from "@/components/features/data-connections/ConnectionUsage";
 import { toEditableDataConnection } from "@/components/features/data-connections/redact";
 import { DangerZone } from "@/components/core";
+import { adminDataConnectionsUrl } from "@/lib/urls";
 
 export const metadata: Metadata = {
   title: "Admin — Edit data connection",
@@ -34,7 +37,13 @@ export default async function EditDataConnectionPage({
 
   return (
     <Flex direction="column" gap="4">
-      <Heading size="4">Edit Data Connection</Heading>
+      <Box>
+        <Button asChild variant="ghost" size="1">
+          <Link href={adminDataConnectionsUrl()}>
+            <ArrowLeftIcon /> Data connections
+          </Link>
+        </Button>
+      </Box>
       <DataConnectionForm
         mode="edit"
         dataConnection={toEditableDataConnection(dataConnection)}

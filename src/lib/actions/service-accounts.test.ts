@@ -4,6 +4,7 @@ import {
   createServiceAccount,
   deleteServiceAccount,
   removeTrust,
+  renameServiceAccount,
   setServiceAccountDisabled,
 } from "./service-accounts";
 import {
@@ -222,6 +223,14 @@ describe("lifecycle", () => {
   it("disables and enables", async () => {
     await setServiceAccountDisabled(IDLE, form({ account_id: "acme--nightly-sync", disabled: "true" }));
     expect(mocks.accounts.update).toHaveBeenCalledWith(expect.objectContaining({ disabled: true }));
+  });
+
+  it("renames, keeping the id, and refuses a name too short", async () => {
+    expect((await renameServiceAccount(IDLE, form({ account_id: "acme--nightly-sync", name: "Hourly Sync" }))).success).toBe(true);
+    expect(mocks.accounts.update).toHaveBeenCalledWith(
+      expect.objectContaining({ account_id: "acme--nightly-sync", name: "Hourly Sync" })
+    );
+    expect((await renameServiceAccount(IDLE, form({ account_id: "acme--nightly-sync", name: "" }))).success).toBe(false);
   });
 
   it("removes a trust by the account's own key, so no other account's can be touched", async () => {
