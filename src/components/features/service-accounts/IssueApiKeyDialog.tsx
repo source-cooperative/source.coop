@@ -70,7 +70,7 @@ function IssueForm({ accountId }: { accountId: string }) {
               Cancel
             </Button>
           </Dialog.Close>
-          <Button type="submit" disabled={pending}>
+          <Button type="submit" highContrast disabled={pending}>
             Issue key
           </Button>
         </Flex>

@@ -49,7 +49,7 @@ export default async function ServiceAccountsPage({ params }: PageProps) {
           title="Service Accounts"
           description="Logins for software — a nightly sync, a publishing pipeline, an instrument — granted and revoked without sharing anyone's account."
         />
-        <Button asChild size="2">
+        <Button asChild size="2" highContrast>
           <Link href={createServiceAccountUrl(account_id)}>
             <PlusIcon width="16" height="16" /> New service account
           </Link>

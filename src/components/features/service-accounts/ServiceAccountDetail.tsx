@@ -14,11 +14,7 @@ import {
 } from "@radix-ui/themes";
 import { DotsHorizontalIcon } from "@radix-ui/react-icons";
 import { Field, SectionHeader } from "@/components/core";
-import {
-  ConnectionList,
-  ConnectionMarker,
-  ConnectionRow,
-} from "@/components/features/data-connections/ConnectionRow";
+import { ItemList } from "@/components/core/ItemList";
 import {
   deleteServiceAccount,
   removeTrust,
@@ -70,7 +66,7 @@ function TrustRow({
   const [showingUsage, setShowingUsage] = useState(false);
   const example = proxyOrigin && trust.issuer === GITHUB_ACTIONS_ISSUER;
   return (
-    <ConnectionRow
+    <ItemList.Row
       title={
         <Text size="2" style={{ fontFamily: "var(--code-font-family)", wordBreak: "break-all" }}>
           {trust.subject}
@@ -187,7 +183,7 @@ export function ServiceAccountDetail({
       <IssuedApiKeyDialog accountId={account.account_id} />
       <SectionHeader
         title="Who it is"
-        rightButton={account.disabled && <ConnectionMarker>Disabled</ConnectionMarker>}
+        rightButton={account.disabled && <ItemList.Marker>Disabled</ItemList.Marker>}
       >
         <Flex direction="column" gap="4">
           <form action={renameAction}>
@@ -207,6 +203,7 @@ export function ServiceAccountDetail({
                 <Button
                   type="submit"
                   size="3"
+                  highContrast
                   disabled={renaming || name.trim() === account.name}
                   loading={renaming}
                 >
@@ -240,7 +237,7 @@ export function ServiceAccountDetail({
                 <Text size="1" weight="medium" color="gray">
                   GitHub workflows
                 </Text>
-                <ConnectionList>
+                <ItemList.Root>
                   {trusts.map((trust) => (
                     <TrustRow
                       key={`${trust.issuer} ${trust.subject}`}
@@ -251,7 +248,7 @@ export function ServiceAccountDetail({
                       removing={removing}
                     />
                   ))}
-                </ConnectionList>
+                </ItemList.Root>
               </Flex>
             )}
             {keys.length > 0 && (
@@ -319,7 +316,7 @@ export function ServiceAccountDetail({
                   <input type="hidden" name="disabled" value={account.disabled ? "false" : "true"} />
                   {/* Not AlertDialog.Action, as with Delete below: the modal
                       closes once the action has answered. */}
-                  <Button type="submit" color={account.disabled ? undefined : "red"} disabled={toggling} loading={toggling}>
+                  <Button type="submit" color={account.disabled ? undefined : "red"} highContrast={account.disabled} disabled={toggling} loading={toggling}>
                     {account.disabled ? "Enable" : "Disable"}
                   </Button>
                 </form>
