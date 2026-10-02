@@ -118,11 +118,10 @@ export function GithubWorkflowFields({
         {trailing}
       </Flex>
       {immutable && (
-        <Flex gap="2" align="center" wrap="wrap">
-          <Text size="1" color="gray">
-            Repositories created after July 2026 sign tokens with their ids. If this one does, it
-            is <Code size="1">{immutable}</Code>
-          </Text>
+        // The button sits in the sentence, so it follows the name it uses.
+        <Text size="1" color="gray">
+          Repositories created after July 2026 sign tokens with their ids. If this one does, it
+          is <Code size="1">{immutable}</Code>{" "}
           <Button
             type="button"
             size="1"
@@ -131,7 +130,7 @@ export function GithubWorkflowFields({
           >
             Use it
           </Button>
-        </Flex>
+        </Text>
       )}
       {immutable === null && (
         <Text size="1" color="gray" style={{ wordBreak: "break-all" }}>
