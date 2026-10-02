@@ -286,7 +286,7 @@ export function ServiceAccountDetail({
                   <input type="hidden" name="disabled" value={account.disabled ? "false" : "true"} />
                   {/* Not AlertDialog.Action, as with Delete below: the modal
                       closes once the action has answered. */}
-                  <Button type="submit" color={account.disabled ? undefined : "red"} disabled={toggling} loading={toggling}>
+                  <Button type="submit" color={account.disabled ? undefined : "red"} highContrast={account.disabled} disabled={toggling} loading={toggling}>
                     {account.disabled ? "Enable" : "Disable"}
                   </Button>
                 </form>
