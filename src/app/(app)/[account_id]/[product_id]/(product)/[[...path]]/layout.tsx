@@ -14,6 +14,7 @@ import { FetchCredentialsButton } from "@/components/features/uploader/FetchCred
 import { PendingInvitationBanner } from "@/components/features/memberships/PendingInvitationBanner";
 import { ProductSummaryCard } from "@/components/features/products/ProductSummaryCard";
 import { ProductMetaCard } from "@/components/features/products/ProductMetaCard";
+import { RefreshListingButton } from "@/components/features/products/object-browser/RefreshListingButton";
 import {
   ProductTabs,
   UsageCard,
@@ -133,12 +134,15 @@ export default async function ProductLayout({
               <SectionHeader
                 title="Contents"
                 rightButton={
-                  canWriteData && (
-                    <FetchCredentialsButton
-                      scope={{ accountId: account_id, productId: product_id }}
-                      prefix={prefix}
-                    />
-                  )
+                  <Flex gap="3" align="center">
+                    <RefreshListingButton />
+                    {canWriteData && (
+                      <FetchCredentialsButton
+                        scope={{ accountId: account_id, productId: product_id }}
+                        prefix={prefix}
+                      />
+                    )}
+                  </Flex>
                 }
               >
                 <Box
