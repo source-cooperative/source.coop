@@ -30,7 +30,7 @@ import {
   type ServiceAccountActionState,
   type ServiceAccountSummary,
 } from "@/types";
-import { AddSignInMenu } from "./AddSignInMenu";
+import { AddSignInMenu, SIGN_IN_DESCRIPTION } from "./AddSignInMenu";
 import { GrantProductDialog } from "./GrantProductDialog";
 import { ProductAccessList, type ProductAccess } from "./ProductAccessList";
 import { ExampleUsage } from "./ExampleUsage";
@@ -227,7 +227,7 @@ export function ServiceAccountDetail({
 
       <SectionHeader
         title="Signs in with"
-        description="GitHub workflows it trusts, and API keys for environments without OIDC. A key is shown once, when it is issued; revoke one that leaks, or disable the account below to stop every sign-in at once."
+        description={`${SIGN_IN_DESCRIPTION} Revoke a key that leaks, or disable the account below to stop every sign-in at once.`}
         rightButton={<AddSignInMenu accountId={account.account_id} />}
       >
         {trusts.length === 0 && keys.length === 0 ? (

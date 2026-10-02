@@ -8,18 +8,28 @@ import { IDLE_API_KEY_ACTION_STATE } from "@/types";
 import { ApiKeyExpiryField } from "./ApiKeyExpiryField";
 import { IssuedApiKey } from "./IssuedApiKey";
 
+/** The fields that issue a key, before there is an account to issue it for. */
+export interface ApiKeyDraft {
+  label: string;
+  /** Empty for a key that never expires. */
+  expires_in_days: string;
+}
+
 /**
  * Issues an API key for a service account and shows it once, in a modal
  * opened from "Add sign-in". There is no second look: the key is not stored,
  * only its record. How to use it is on the key's row, under "Example usage"
- * in its menu.
+ * in its menu. With `onAdd` instead of an `accountId`, the label and expiry
+ * are handed back rather than issued, for a form that issues the key later.
  */
 export function IssueApiKeyDialog({
   accountId,
+  onAdd,
   open,
   onOpenChange,
 }: {
-  accountId: string;
+  accountId?: string;
+  onAdd?: (key: ApiKeyDraft) => void;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
@@ -29,13 +39,28 @@ export function IssueApiKeyDialog({
         <Dialog.Title>Issue an API key</Dialog.Title>
         {/* The content unmounts when the dialog closes, so the form — and the
             key it shows — lives in here: the next open starts a new key. */}
-        <IssueForm accountId={accountId} />
+        <IssueForm
+          accountId={accountId}
+          onAdd={
+            onAdd &&
+            ((key) => {
+              onAdd(key);
+              onOpenChange(false);
+            })
+          }
+        />
       </Dialog.Content>
     </Dialog.Root>
   );
 }
 
-function IssueForm({ accountId }: { accountId: string }) {
+function IssueForm({
+  accountId,
+  onAdd,
+}: {
+  accountId?: string;
+  onAdd?: (key: ApiKeyDraft) => void;
+}) {
   const [state, formAction, pending] = useActionState(issueApiKey, IDLE_API_KEY_ACTION_STATE);
   return state.issued ? (
     <Flex direction="column" gap="3">
@@ -47,8 +72,18 @@ function IssueForm({ accountId }: { accountId: string }) {
       </Flex>
     </Flex>
   ) : (
-    <form action={formAction}>
-      <input type="hidden" name="account_id" value={accountId} />
+    <form
+      action={
+        onAdd
+          ? (data) =>
+              onAdd({
+                label: String(data.get("label")),
+                expires_in_days: String(data.get("expires_in_days")),
+              })
+          : formAction
+      }
+    >
+      <input type="hidden" name="account_id" value={accountId ?? ""} />
       <Flex direction="column" gap="3">
         <Dialog.Description size="2">
           For environments without OIDC: a server, a scheduler, an
@@ -56,7 +91,7 @@ function IssueForm({ accountId }: { accountId: string }) {
           exactly its grants.
         </Dialog.Description>
         <Field label="Label" htmlFor="key-label" required help="Where this key lives, so you know which one to revoke.">
-          <TextField.Root id="key-label" name="label" placeholder="HPC cron job" maxLength={64} />
+          <TextField.Root id="key-label" name="label" required placeholder="HPC cron job" maxLength={64} />
         </Field>
         <ApiKeyExpiryField id="key-expiry" />
         {state.message && (
@@ -71,7 +106,7 @@ function IssueForm({ accountId }: { accountId: string }) {
             </Button>
           </Dialog.Close>
           <Button type="submit" highContrast disabled={pending}>
-            Issue key
+            {onAdd ? "Add key" : "Issue key"}
           </Button>
         </Flex>
       </Flex>

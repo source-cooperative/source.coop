@@ -5,14 +5,14 @@ import { ServiceAccountForm } from "./ServiceAccountForm";
  * Creating a service account: who it is, how software signs in as it, and what
  * it may reach.
  *
- * The id fills itself in from the name until it is edited by hand. A GitHub
- * workflow is pinned to one repository and one ref or environment, and the
- * exact subject it binds is shown beneath it as you type. "Add an API key"
- * asks for a label and an expiry, for one key issued with the account; more
- * are issued from its page. Products come from
- * the owner: "Grant a product", in the section's corner, opens a modal to add
- * one with read or read-and-write — the same list and button the account's
- * page uses — held here until the form is submitted.
+ * The id fills itself in from the name until it is edited by hand. "Signs in
+ * with" and "Can reach" are the sections the account's page has, with the
+ * same buttons in their corners. "Add sign-in" opens the same modals too — a
+ * GitHub workflow pinned to one repository and one ref or environment, or an
+ * API key's label and expiry — but what they collect is held here, as rows
+ * that can be removed, until the form is submitted. One key can be issued
+ * with the account; more are issued from its page. "Grant a product" adds one
+ * of the owner's products with read or read-and-write, held the same way.
  *
  * Submitting goes to the new account's page. With a key, the key goes along
  * in memory and opens over that page, the only time it can be seen — see

@@ -15,14 +15,17 @@ import {
  * "Add sign-in". Nothing to run first: the trust is written when the form is
  * submitted, the way a role's trust policy is edited, and the modal closes
  * onto the new row, whose menu has the step the workflow adds, under
- * "Example usage".
+ * "Example usage". With `onAdd` instead of an `accountId`, the subject is
+ * handed back rather than saved, for a form that saves it later.
  */
 export function AddGithubTrustDialog({
   accountId,
+  onAdd,
   open,
   onOpenChange,
 }: {
-  accountId: string;
+  accountId?: string;
+  onAdd?: (subject: string) => void;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
@@ -32,13 +35,21 @@ export function AddGithubTrustDialog({
         <Dialog.Title>Trust a GitHub workflow</Dialog.Title>
         {/* The content unmounts when the dialog closes, so the form lives in
             here and starts over on every open. */}
-        <TrustForm accountId={accountId} onTrusted={() => onOpenChange(false)} />
+        <TrustForm accountId={accountId} onAdd={onAdd} onTrusted={() => onOpenChange(false)} />
       </Dialog.Content>
     </Dialog.Root>
   );
 }
 
-function TrustForm({ accountId, onTrusted }: { accountId: string; onTrusted: () => void }) {
+function TrustForm({
+  accountId,
+  onAdd,
+  onTrusted,
+}: {
+  accountId?: string;
+  onAdd?: (subject: string) => void;
+  onTrusted: () => void;
+}) {
   const [state, formAction, pending] = useActionState(
     addGithubTrust,
     IDLE_SERVICE_ACCOUNT_ACTION_STATE
@@ -50,8 +61,17 @@ function TrustForm({ accountId, onTrusted }: { accountId: string; onTrusted: () 
   }, [state, onTrusted]);
 
   return (
-    <form action={formAction}>
-      <input type="hidden" name="account_id" value={accountId} />
+    <form
+      action={
+        onAdd
+          ? () => {
+              onAdd(githubSubject(workflow));
+              onTrusted();
+            }
+          : formAction
+      }
+    >
+      <input type="hidden" name="account_id" value={accountId ?? ""} />
       <input type="hidden" name="subject" value={githubSubject(workflow)} />
       <Flex direction="column" gap="3">
         <Dialog.Description size="2">
