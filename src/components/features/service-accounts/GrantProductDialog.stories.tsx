@@ -12,7 +12,7 @@ import { GrantProductDialog } from "./GrantProductDialog";
 const meta = {
   title: "Features/Service accounts/GrantProductDialog",
   component: GrantProductDialog,
-  parameters: { layout: "centered" },
+  parameters: { layout: "centered", docs: { story: { inline: false, iframeHeight: 480 } } },
   args: {
     ownerAccountId: "miskatonic",
     onGrant: fn(),

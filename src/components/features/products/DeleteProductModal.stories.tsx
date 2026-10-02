@@ -14,7 +14,7 @@ import { DeleteProductModal } from "./DeleteProductModal";
 const meta = {
   title: "Features/Products/DeleteProductModal",
   component: DeleteProductModal,
-  parameters: { layout: "padded" },
+  parameters: { layout: "padded", docs: { story: { inline: false, iframeHeight: 560 } } },
   args: {
     accountId: "miskatonic",
     productId: "abyssal-acoustics",
