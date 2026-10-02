@@ -1,5 +1,7 @@
+import Link from "next/link";
 import { Box, Flex, Text } from "@radix-ui/themes";
-import { Link1Icon } from "@radix-ui/react-icons";
+import { ChevronRightIcon, Link1Icon } from "@radix-ui/react-icons";
+import styles from "./ConnectionRow.module.css";
 
 /**
  * The container both connection lists sit in: one bordered box with hairline
@@ -29,8 +31,12 @@ export function ConnectionList({ children }: { children: React.ReactNode }) {
  * backing a product — so they share a row: name and state on the first line,
  * identifiers in the code face beneath, actions right, and an optional footer
  * for anything editable in place.
+ *
+ * With an `href` the whole row opens that page: the title becomes the link,
+ * stretched over the row, and a chevron stands in for actions.
  */
 export function ConnectionRow({
+  href,
   title,
   markers,
   meta,
@@ -38,6 +44,8 @@ export function ConnectionRow({
   actions,
   footer,
 }: {
+  /** The page the row opens. Rows that act in place leave it unset. */
+  href?: string;
   title: React.ReactNode;
   /** State worth reacting to, beside the name. Keep it to one thing. */
   markers?: React.ReactNode;
@@ -57,7 +65,13 @@ export function ConnectionRow({
         marginTop: "-1px",
       }}
     >
-      <Flex align="center" gap="3" px="4" py="3">
+      <Flex
+        align="center"
+        gap="3"
+        px="4"
+        py="3"
+        className={href ? styles.linked : undefined}
+      >
         {/* The aside wraps below the name when the two no longer fit side by
             side. */}
         <Flex
@@ -73,7 +87,13 @@ export function ConnectionRow({
               the floor from overflowing a container narrower than it is. */}
           <Box flexGrow="1" style={{ minWidth: "min(13rem, 100%)" }}>
             <Flex align="center" gap="2" wrap="wrap">
-              {title}
+              {href ? (
+                <Link href={href} className={styles.title}>
+                  {title}
+                </Link>
+              ) : (
+                title
+              )}
               {markers}
             </Flex>
             {meta && (
@@ -92,10 +112,16 @@ export function ConnectionRow({
           </Box>
           {aside && <Box ml="auto">{aside}</Box>}
         </Flex>
-        {actions && (
-          <Flex align="center" flexShrink="0">
-            {actions}
-          </Flex>
+        {href ? (
+          <span className={styles.chevron} aria-hidden>
+            <ChevronRightIcon />
+          </span>
+        ) : (
+          actions && (
+            <Flex align="center" flexShrink="0">
+              {actions}
+            </Flex>
+          )
         )}
       </Flex>
       {footer && (

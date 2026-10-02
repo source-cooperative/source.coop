@@ -1,5 +1,4 @@
 import { Text } from "@radix-ui/themes";
-import { ChevronRightIcon } from "@radix-ui/react-icons";
 import Link from "next/link";
 import { Account, DataConnection, DataProvider } from "@/types";
 import { AccountInfoHoverCard } from "@/components/core/AccountInfoHoverCard";
@@ -109,15 +108,11 @@ export function DataConnectionsList({
       {connections.map((conn) => (
         <ConnectionRow
           key={conn.data_connection_id}
+          href={editHref(conn.data_connection_id)}
           title={
-            <Link
-              href={editHref(conn.data_connection_id)}
-              style={{ color: "var(--accent-11)", textDecoration: "none" }}
-            >
-              <Text size="2" weight="medium">
-                {conn.name}
-              </Text>
-            </Link>
+            <Text size="2" weight="medium">
+              {conn.name}
+            </Text>
           }
           markers={
             // The one state here worth marking. Read-only is deliberate, not a
@@ -145,7 +140,6 @@ export function DataConnectionsList({
                 : conn.allowed_visibilities.join(", ")}
             </Text>
           }
-          actions={<ChevronRightIcon color="var(--gray-9)" />}
         />
       ))}
     </ConnectionList>

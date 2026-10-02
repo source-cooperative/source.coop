@@ -1,6 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { Button, Flex, Text, TextField } from "@radix-ui/themes";
-import { ChevronRightIcon } from "@radix-ui/react-icons";
 import {
   ConnectionList,
   ConnectionMarker,
@@ -31,6 +30,10 @@ const title = (name: string) => (
   </Text>
 );
 
+/**
+ * A row with an `href` is one link from edge to edge: hover anywhere on it and
+ * the background tints and the chevron gains a circle.
+ */
 export const Default: Story = {
   args: {
     title: title("[PROD] AWS Open Data (US-West-2)"),
@@ -40,7 +43,7 @@ export const Default: Story = {
         public
       </Text>
     ),
-    actions: <ChevronRightIcon color="var(--gray-9)" />,
+    href: "#",
   },
   render: (args) => (
     <ConnectionList>
@@ -61,10 +64,28 @@ export const WithMarker: Story = {
   render: Default.render,
 };
 
+/**
+ * A row that acts in place leaves `href` unset and puts its controls in
+ * `actions`; it has no hover state, because the row itself does nothing.
+ */
+export const InPlace: Story = {
+  args: {
+    title: title("Miskatonic Archive"),
+    meta: "s3 · miskatonic-archive",
+    actions: (
+      <Button size="1" variant="soft" color="red">
+        Remove
+      </Button>
+    ),
+  },
+  render: Default.render,
+};
+
 /** The tinted strip is for a value that can be edited without leaving the row. */
 export const WithFooter: Story = {
   args: {
     ...Default.args,
+    href: undefined,
     footer: (
       <Flex align="center" gap="2">
         <Text size="1" color="gray">
@@ -98,7 +119,7 @@ export const AList: Story = {
             public
           </Text>
         }
-        actions={<ChevronRightIcon color="var(--gray-9)" />}
+        href="#"
       />
       <ConnectionRow
         title={title("Black Mesa Survey Files")}
@@ -109,7 +130,7 @@ export const AList: Story = {
             public, unlisted
           </Text>
         }
-        actions={<ChevronRightIcon color="var(--gray-9)" />}
+        href="#"
       />
       <ConnectionRow
         title={title("Miskatonic Archive")}
@@ -119,7 +140,7 @@ export const AList: Story = {
             permits nothing
           </Text>
         }
-        actions={<ChevronRightIcon color="var(--gray-9)" />}
+        href="#"
       />
     </ConnectionList>
   ),

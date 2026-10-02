@@ -1,0 +1,53 @@
+/* A row that opens a page. The title link stretches over the whole row, so the
+   row is one target without wrapping other links (an owner's name) in it. */
+.linked {
+  position: relative;
+  transition: background-color 120ms;
+}
+
+.linked:hover {
+  background-color: var(--gray-a2);
+}
+
+.title {
+  color: var(--accent-11);
+  text-decoration: none;
+}
+
+.title::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+.title:focus-visible {
+  outline: none;
+}
+
+.title:focus-visible::after {
+  outline: 2px solid var(--focus-8);
+  outline-offset: -2px;
+}
+
+/* Other links in the row sit above the stretched one and keep their own
+   target. */
+.linked a:not(.title) {
+  position: relative;
+  z-index: 1;
+}
+
+.chevron {
+  display: flex;
+  padding: 4px;
+  border-radius: 50%;
+  color: var(--gray-9);
+  transition:
+    background-color 120ms,
+    color 120ms;
+}
+
+.linked:hover .chevron,
+.linked:has(.title:focus-visible) .chevron {
+  background-color: var(--gray-a4);
+  color: var(--gray-12);
+}

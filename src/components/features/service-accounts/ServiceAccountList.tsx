@@ -1,6 +1,5 @@
-import Link from "next/link";
 import { Flex, Text } from "@radix-ui/themes";
-import { ChevronRightIcon, CubeIcon } from "@radix-ui/react-icons";
+import { CubeIcon } from "@radix-ui/react-icons";
 import {
   ConnectionList,
   ConnectionMarker,
@@ -37,15 +36,11 @@ export function ServiceAccountList({ summaries }: { summaries: ServiceAccountSum
         return (
         <ConnectionRow
           key={account.account_id}
+          href={editServiceAccountUrl(account.owner_account_id, account.account_id)}
           title={
-            <Link
-              href={editServiceAccountUrl(account.owner_account_id, account.account_id)}
-              style={{ color: "var(--accent-11)", textDecoration: "none" }}
-            >
-              <Text size="2" weight="medium">
-                {account.name}
-              </Text>
-            </Link>
+            <Text size="2" weight="medium">
+              {account.name}
+            </Text>
           }
           markers={account.disabled && <ConnectionMarker>Disabled</ConnectionMarker>}
           meta={account.account_id}
@@ -62,7 +57,6 @@ export function ServiceAccountList({ summaries }: { summaries: ServiceAccountSum
               ))}
             </Flex>
           }
-          actions={<ChevronRightIcon color="var(--gray-9)" />}
         />
         );
       })}
