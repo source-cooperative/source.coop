@@ -33,8 +33,8 @@ import {
 import { AddSignInMenu, SIGN_IN_DESCRIPTION } from "./AddSignInMenu";
 import { GrantProductDialog } from "./GrantProductDialog";
 import { ProductAccessList, type ProductAccess } from "./ProductAccessList";
-import { ExampleUsage } from "./ExampleUsage";
-import { githubWorkflow, githubWorkflowStep } from "@/lib/services/service-account-usage";
+import { ExampleUsage, GITHUB_WORKFLOW_INTRO } from "./ExampleUsage";
+import { githubWorkflow } from "@/lib/services/service-account-usage";
 import { IssuedApiKeyDialog } from "./IssuedApiKeyDialog";
 import { ApiKeyList } from "./ApiKeyList";
 
@@ -105,16 +105,8 @@ function TrustRow({
           {example && (
             <ExampleUsage
               title="Sign in from this workflow"
-              intro={
-                <>
-                  In the repository <Code>{trust.subject}</Code> names, save the full workflow under{" "}
-                  <Code>.github/workflows/</Code>, or add the step to a job of your own:
-                </>
-              }
-              code={{
-                "Full Workflow": githubWorkflow(proxyOrigin, accountId, trust.subject),
-                Step: githubWorkflowStep(proxyOrigin, accountId, trust.subject),
-              }}
+              intro={GITHUB_WORKFLOW_INTRO}
+              {...githubWorkflow(proxyOrigin, accountId, trust.subject)}
               language="yaml"
               open={showingUsage}
               onOpenChange={setShowingUsage}

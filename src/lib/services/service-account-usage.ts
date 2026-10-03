@@ -6,66 +6,86 @@
  * for the proxy (which `id-token: write` permits), exchanges it for
  * credentials carrying the account's memberships if the account trusts the
  * workflow's subject (ADR-014), and exports them for every later step. The
- * audience and STS endpoint are read from `AWS_ENDPOINT_URL_S3`, the variable
+ * audience and STS endpoint are read from `AWS_ENDPOINT_URL`, the variable
  * that also points S3 clients at the proxy, so the proxy is named once. The
  * partition is `aws` because the action treats any other value as a bare role
  * name. `FullAccess` is everything the account may do; `ReadOnly` narrows it
  * to reads.
  */
-const signInStep = (account_id: string, env: string[] = []) => [
+const signInStep = (account_id: string) => [
   `- name: Sign in to Source Cooperative as ${account_id}`,
   "  uses: aws-actions/configure-aws-credentials@v6",
-  ...env,
   "  with:",
   `    role-to-assume: arn:aws:iam::${account_id}:role/FullAccess`,
-  "    audience: ${{ env.AWS_ENDPOINT_URL_S3 }}",
-  "    sts-endpoint: ${{ env.AWS_ENDPOINT_URL_S3 }}/.sts",
+  "    audience: ${{ env.AWS_ENDPOINT_URL }}",
+  "    sts-endpoint: ${{ env.AWS_ENDPOINT_URL }}/.sts",
   "    aws-region: us-west-2",
 ];
 
 /**
  * A whole GitHub Actions workflow that acts as a service account, ready to
  * save under `.github/workflows/` as it is, for the trusted `subject`: one job
- * running the sign-in step, with `AWS_ENDPOINT_URL_S3` set for the whole
- * workflow so every step's S3 client reaches the proxy. A subject pinned to an
- * environment needs the job to name it, or the token's subject names the ref
- * instead.
+ * running the sign-in step, with `AWS_ENDPOINT_URL` set for the whole workflow
+ * so every step's AWS client reaches the proxy. `AWS_ENDPOINT_URL` rather than
+ * `AWS_ENDPOINT_URL_S3`, because more SDKs and tools honour the general
+ * variable than the per-service one. A subject pinned to an environment needs
+ * the job to name it, or the token's subject names the ref instead. It runs
+ * nightly and on demand; a schedule always runs on the default branch, so for
+ * a trust pinned to another ref only the runs started by hand on that ref can
+ * sign in. `focus` is the line ranges, `[first, end)`, that are Source
+ * Cooperative's — the `env` block, the job's `environment` when the trust names
+ * one, its `id-token: write` permission, and the sign-in step — so a reader adding
+ * them to a workflow of their own can see which parts to carry over.
  */
-export function githubWorkflow(proxyOrigin: string, account_id: string, subject: string): string {
+export function githubWorkflow(
+  proxyOrigin: string,
+  account_id: string,
+  subject: string
+): { code: string; focus: [number, number][] } {
   const environment = subject.match(/:environment:(.+)$/)?.[1];
-  const ref = subject.match(/:ref:(.+)$/)?.[1];
-  return [
+  const branch = subject.match(/:ref:(.+)$/)?.[1].replace(/^refs\/heads\//, "");
+  const lines: string[] = [];
+  const focus: [number, number][] = [];
+  // Adds lines that are Source Cooperative's, recording their range in `focus`.
+  const ours = (...part: string[]) => {
+    focus.push([lines.length, lines.length + part.length]);
+    lines.push(...part);
+  };
+  lines.push(
     "name: Source Cooperative",
-    ref ? `on: workflow_dispatch  # run it on ${ref}, the ref ${account_id} trusts` : "on: workflow_dispatch",
+    "on:",
+    "  schedule:",
+    branch
+      ? `    # Nightly @ 2am UTC; works only if ${branch} is the default branch`
+      : "    # Nightly @ 2am UTC; GitHub runs schedules on the default branch",
+    '    - cron: "0 2 * * *"',
+    "  workflow_dispatch:  # and by hand, from the Actions tab"
+  );
+  ours(
     "env:",
-    `  AWS_ENDPOINT_URL_S3: ${proxyOrigin}`,
-    "",
-    "jobs:",
-    "  data:",
-    "    runs-on: ubuntu-latest",
-    ...(environment ? [`    environment: ${JSON.stringify(environment)}`] : []),
-    "    permissions:",
-    "      id-token: write",
+    "  # Configures AWS CLI/SDKs to use Source Cooperative's data proxy.",
+    `  AWS_ENDPOINT_URL: ${proxyOrigin}`
+  );
+  lines.push("", "jobs:", "  data:", "    runs-on: ubuntu-latest");
+  if (environment) {
+    ours(
+      `    environment: ${JSON.stringify(environment)}  # Must run on ${environment} as per Service Account "${account_id}" trust policy.`
+    );
+  }
+  ours("    permissions:", "      id-token: write  # required for aws-actions/configure-aws-credentials");
+  lines.push(
     "      contents: read",
     "    steps:",
-    ...signInStep(account_id).map((line) => `      ${line}`),
-    `      # From here on, any AWS SDK or the AWS CLI acts as ${account_id}.`,
-    `      - run: aws s3 ls s3://${account_id.split("--")[0]}/`,
-  ].join("\n");
-}
-
-/**
- * The sign-in step alone, for a workflow that already exists, with
- * `AWS_ENDPOINT_URL_S3` set on the step itself. A step's `env` reaches only
- * that step, so the comment above it says what the job needs around it.
- */
-export function githubWorkflowStep(proxyOrigin: string, account_id: string, subject: string): string {
-  const environment = subject.match(/:environment:(.+)$/)?.[1];
-  return [
-    `# In a job with permissions: { id-token: write }${environment ? ` and environment: ${JSON.stringify(environment)}` : ""}.`,
-    "# Set AWS_ENDPOINT_URL_S3 on the job too for later steps to reach Source Cooperative.",
-    ...signInStep(account_id, ["  env:", `    AWS_ENDPOINT_URL_S3: ${proxyOrigin}`]),
-  ].join("\n");
+    "      # Any setup of your own (checkout, installing tools) can come first.",
+    ""
+  );
+  ours(...signInStep(account_id).map((line) => `      ${line}`));
+  lines.push(
+    "",
+    `      # From here on, any AWS SDK/CLI acts as ${account_id}.`,
+    `      - run: aws s3 ls s3://${account_id.split("--")[0]}/`
+  );
+  return { code: lines.join("\n"), focus };
 }
 
 /**
@@ -73,7 +93,7 @@ export function githubWorkflowStep(proxyOrigin: string, account_id: string, subj
  * to a file: it reads the file, exchanges the key at the proxy's STS endpoint
  * and refreshes on its own, so nothing else runs beside it. A key names its
  * own account, so the role ARN's account segment is ignored; it is filled in
- * to match the workflow step.
+ * to match the workflow.
  */
 export function apiKeyEnvironment(proxyOrigin: string, account_id: string): string {
   return [
