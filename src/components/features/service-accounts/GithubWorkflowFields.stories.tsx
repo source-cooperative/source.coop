@@ -7,8 +7,7 @@ import { GithubWorkflowFields, NEW_GITHUB_WORKFLOW } from "./GithubWorkflowField
 
 /**
  * Names one GitHub workflow: a repository, and the branch, tag or environment
- * its runs sign in from. The repository is typed after a fixed `github.com/`,
- * and a pasted address keeps only its `owner/repo`. The rest is typed as a plain name — `main`, `v1.0`,
+ * its runs sign in from. Each is typed as a plain name — `main`, `v1.0`,
  * `production` — and a line under the choice says how GitHub picks one for a
  * run: a job with an `environment:` line is identified by its environment,
  * any other by its branch or tag, and pull request runs can't sign in. A full
