@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { Theme } from "@radix-ui/themes";
 import {
   GithubWorkflowFields,
@@ -78,6 +78,18 @@ describe("GithubWorkflowFields", () => {
     expect(global.fetch).toHaveBeenCalledWith(
       "https://api.github.com/repos/octocat/hello-world/actions/oidc/customization/sub",
       expect.anything()
+    );
+  });
+
+  it("keeps only owner/repo from a pasted address", () => {
+    const onChange = renderFor({});
+
+    fireEvent.change(screen.getByLabelText(/Repository/), {
+      target: { value: "https://github.com/octocat/Hello-World" },
+    });
+
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({ repository: "octocat/Hello-World" })
     );
   });
 

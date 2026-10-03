@@ -147,25 +147,25 @@ export function GithubWorkflowFields({
     <Flex direction="column" gap="3">
       <Flex gap="3" align="end">
         <Box flexGrow="1">
-          <Field
-            label="Repository"
-            htmlFor={`${id}-repo`}
-            required
-            help={
-              <>
-                As in its address: github.com/<Code size="1">owner/repo</Code>
-              </>
-            }
-          >
+          <Field label="Repository" htmlFor={`${id}-repo`} required>
             <TextField.Root
               id={`${id}-repo`}
               size="2"
               placeholder="owner/repo"
               value={workflow.repository}
               onChange={(e) =>
-                onChange({ ...workflow, repository: e.target.value, tokenRepository: undefined })
+                onChange({
+                  ...workflow,
+                  // A pasted address keeps only the part after the prefix.
+                  repository: e.target.value.replace(/^(https?:\/\/)?(www\.)?github\.com\//, ""),
+                  tokenRepository: undefined,
+                })
               }
-            />
+            >
+              <TextField.Slot>
+                <Text color="gray">github.com/</Text>
+              </TextField.Slot>
+            </TextField.Root>
           </Field>
         </Box>
         {trailing}
