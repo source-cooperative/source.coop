@@ -3,16 +3,16 @@
 import React, { useActionState, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  Box,
   Button,
-  Card,
   Code,
   Flex,
   IconButton,
+  Text,
   TextField,
 } from "@radix-ui/themes";
-import { PlusIcon, TrashIcon } from "@radix-ui/react-icons";
+import { TrashIcon } from "@radix-ui/react-icons";
 import { Field, FormActions, SectionHeader } from "@/components/core";
+import { ItemList } from "@/components/core/ItemList";
 import { createServiceAccount } from "@/lib/actions/service-accounts";
 import {
   IDLE_SERVICE_ACCOUNT_FORM_STATE,
@@ -21,14 +21,18 @@ import {
 } from "@/types";
 import { ProductAccessList, type ProductAccess } from "./ProductAccessList";
 import { GrantProductDialog } from "./GrantProductDialog";
-import {
-  GithubWorkflowFields,
-  NEW_GITHUB_WORKFLOW,
-  githubSubject,
-  type GithubWorkflow,
-} from "./GithubWorkflowFields";
-import { ApiKeyExpiryField } from "./ApiKeyExpiryField";
+import { AddSignInMenu, SIGN_IN_DESCRIPTION } from "./AddSignInMenu";
+import type { ApiKeyDraft } from "./IssueApiKeyDialog";
 import { handOffIssuedKey } from "./IssuedApiKeyDialog";
+
+/** Drops a sign-in the form holds; nothing is saved yet, so there is nothing else to do with it. */
+function RemoveButton({ label, onRemove }: { label: string; onRemove: () => void }) {
+  return (
+    <IconButton type="button" size="1" variant="ghost" color="red" aria-label={`Remove ${label}`} onClick={onRemove}>
+      <TrashIcon />
+    </IconButton>
+  );
+}
 
 interface ServiceAccountFormProps {
   ownerAccountId: string;
@@ -50,14 +54,14 @@ export function ServiceAccountForm({ ownerAccountId, products }: ServiceAccountF
   const [name, setName] = useState("");
   const [localId, setLocalId] = useState("");
   const [editingId, setEditingId] = useState(false);
-  const [workflows, setWorkflows] = useState<GithubWorkflow[]>([]);
+  const [subjects, setSubjects] = useState<string[]>([]);
   const [grants, setGrants] = useState<Record<string, ProductAccess>>({});
   const setGrant = (product_id: string, access: ProductAccess | null) =>
     setGrants((all) => {
       const { [product_id]: _dropped, ...rest } = all;
       return access ? { ...rest, [product_id]: access } : rest;
     });
-  const [withKey, setWithKey] = useState(false);
+  const [apiKey, setApiKey] = useState<ApiKeyDraft | null>(null);
 
   // A rejected id opens the field, so the error sits beside something to fix.
   const showIdField = editingId || !!state.fieldErrors.local_id;
@@ -135,84 +139,89 @@ export function ServiceAccountForm({ ownerAccountId, products }: ServiceAccountF
         </SectionHeader>
 
         <SectionHeader
-          title="How software signs in"
-          description="GitHub Actions workflows, each pinned to one repository and one ref or environment; GitHub vouches for every run, so there is no secret to store. Or an API key, for environments without OIDC."
+          title="Signs in with"
+          description={SIGN_IN_DESCRIPTION}
+          rightButton={
+            <AddSignInMenu
+              // One key at creation; the account's page issues more.
+              keyDisabled={!!apiKey}
+              onAddGithub={(subject) =>
+                setSubjects((all) => (all.includes(subject) ? all : [...all, subject]))
+              }
+              onAddKey={setApiKey}
+            />
+          }
         >
-          <Flex direction="column" gap="3">
-            {workflows.map((workflow, index) => (
-              <Card key={index}>
-                <input type="hidden" name="github_subject" value={githubSubject(workflow)} />
-                <GithubWorkflowFields
-                  id={`wf-${index}`}
-                  workflow={workflow}
-                  onChange={(next) =>
-                    setWorkflows((all) => all.map((w, i) => (i === index ? next : w)))
-                  }
-                  trailing={
-                    <IconButton
-                      type="button"
-                      size="2"
-                      variant="soft"
-                      color="red"
-                      aria-label={`Remove workflow ${index + 1}`}
-                      onClick={() => setWorkflows((all) => all.filter((_, i) => i !== index))}
-                    >
-                      <TrashIcon />
-                    </IconButton>
-                  }
-                />
-              </Card>
-            ))}
-            {withKey && (
-              <Card>
-                <Flex direction="column" gap="3">
-                  <Flex gap="3" align="end">
-                    <Box flexGrow="1">
-                      <Field
-                        label="API key label"
-                        htmlFor="key-label"
-                        required
-                        help="Where this key will live, so you know which one to revoke."
-                        errors={state.fieldErrors.key_label}
-                      >
-                        <TextField.Root id="key-label" name="key_label" size="2" placeholder="HPC cron job" maxLength={64} />
-                      </Field>
-                    </Box>
-                    <IconButton
-                      type="button"
-                      size="2"
-                      variant="soft"
-                      color="red"
-                      aria-label="Remove the API key"
-                      onClick={() => setWithKey(false)}
-                    >
-                      <TrashIcon />
-                    </IconButton>
-                  </Flex>
-                  <ApiKeyExpiryField id="key-expiry" />
+          {subjects.map((subject) => (
+            <input key={subject} type="hidden" name="github_subject" value={subject} />
+          ))}
+          {apiKey && (
+            <>
+              <input type="hidden" name="key_label" value={apiKey.label} />
+              <input type="hidden" name="expires_in_days" value={apiKey.expires_in_days} />
+            </>
+          )}
+          {subjects.length === 0 && !apiKey ? (
+            <Text size="2" color="gray">
+              Nothing yet. Add a workflow or key to grant access from an external environment.
+            </Text>
+          ) : (
+            <Flex direction="column" gap="4">
+              {subjects.length > 0 && (
+                <Flex direction="column" gap="2">
+                  <Text size="1" weight="medium" color="gray">
+                    GitHub workflows
+                  </Text>
+                  <ItemList.Root>
+                    {subjects.map((subject) => (
+                      <ItemList.Row
+                        key={subject}
+                        title={
+                          <Text size="2" style={{ fontFamily: "var(--code-font-family)", wordBreak: "break-all" }}>
+                            {subject}
+                          </Text>
+                        }
+                        meta="GitHub Actions"
+                        actions={
+                          <RemoveButton
+                            label={subject}
+                            onRemove={() => setSubjects((all) => all.filter((s) => s !== subject))}
+                          />
+                        }
+                      />
+                    ))}
+                  </ItemList.Root>
                 </Flex>
-              </Card>
-            )}
-            <Flex gap="3" wrap="wrap">
-              <Button
-                type="button"
-                variant="soft"
-                onClick={() => setWorkflows((all) => [...all, NEW_GITHUB_WORKFLOW])}
-              >
-                <PlusIcon /> Add a GitHub workflow
-              </Button>
-              {/* One at creation; the account's page issues more. */}
-              {!withKey && (
-                <Button type="button" variant="soft" onClick={() => setWithKey(true)}>
-                  <PlusIcon /> Add an API key
-                </Button>
+              )}
+              {apiKey && (
+                <Flex direction="column" gap="2">
+                  <Text size="1" weight="medium" color="gray">
+                    API keys
+                  </Text>
+                  <ItemList.Root>
+                    <ItemList.Row
+                      title={<Text size="2" weight="medium">{apiKey.label}</Text>}
+                      meta={
+                        apiKey.expires_in_days
+                          ? `Expires ${apiKey.expires_in_days} days after it is issued`
+                          : "Never expires"
+                      }
+                      actions={<RemoveButton label={apiKey.label} onRemove={() => setApiKey(null)} />}
+                    />
+                  </ItemList.Root>
+                </Flex>
               )}
             </Flex>
-          </Flex>
+          )}
+          {state.fieldErrors.key_label && (
+            <Text as="p" size="1" color="red" mt="2">
+              {state.fieldErrors.key_label.join(" ")}
+            </Text>
+          )}
         </SectionHeader>
 
         <SectionHeader
-          title="What it can reach"
+          title="Can reach"
           description={`Products ${ownerAccountId} owns that it may read or write. Each grant is an ordinary membership, revoked the same way as a person's.`}
           rightButton={
             <GrantProductDialog

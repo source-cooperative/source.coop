@@ -3,7 +3,7 @@
 import React, { useActionState, useEffect, useState } from "react";
 import { Button, Dialog, Flex, Text } from "@radix-ui/themes";
 import { addGithubTrust } from "@/lib/actions/service-accounts";
-import { IDLE_SERVICE_ACCOUNT_ACTION_STATE } from "@/types";
+import { GITHUB_ACTIONS_SUBJECT_REGEX, IDLE_SERVICE_ACCOUNT_ACTION_STATE } from "@/types";
 import {
   GithubWorkflowFields,
   NEW_GITHUB_WORKFLOW,
@@ -15,14 +15,17 @@ import {
  * "Add sign-in". Nothing to run first: the trust is written when the form is
  * submitted, the way a role's trust policy is edited, and the modal closes
  * onto the new row, whose menu has the step the workflow adds, under
- * "Example usage".
+ * "Example usage". With `onAdd` instead of an `accountId`, the subject is
+ * handed back rather than saved, for a form that saves it later.
  */
 export function AddGithubTrustDialog({
   accountId,
+  onAdd,
   open,
   onOpenChange,
 }: {
-  accountId: string;
+  accountId?: string;
+  onAdd?: (subject: string) => void;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
@@ -32,26 +35,49 @@ export function AddGithubTrustDialog({
         <Dialog.Title>Trust a GitHub workflow</Dialog.Title>
         {/* The content unmounts when the dialog closes, so the form lives in
             here and starts over on every open. */}
-        <TrustForm accountId={accountId} onTrusted={() => onOpenChange(false)} />
+        <TrustForm accountId={accountId} onAdd={onAdd} onTrusted={() => onOpenChange(false)} />
       </Dialog.Content>
     </Dialog.Root>
   );
 }
 
-function TrustForm({ accountId, onTrusted }: { accountId: string; onTrusted: () => void }) {
+function TrustForm({
+  accountId,
+  onAdd,
+  onTrusted,
+}: {
+  accountId?: string;
+  onAdd?: (subject: string) => void;
+  onTrusted: () => void;
+}) {
   const [state, formAction, pending] = useActionState(
     addGithubTrust,
     IDLE_SERVICE_ACCOUNT_ACTION_STATE
   );
   const [workflow, setWorkflow] = useState(NEW_GITHUB_WORKFLOW);
+  // With onAdd nothing reaches the server until the create form is
+  // submitted, so the subject is checked here, the way addGithubTrust would.
+  const [invalid, setInvalid] = useState(false);
+  const message = invalid ? "Name one repository and one ref or environment" : !state.success && state.message;
 
   useEffect(() => {
     if (state.success) onTrusted();
   }, [state, onTrusted]);
 
   return (
-    <form action={formAction}>
-      <input type="hidden" name="account_id" value={accountId} />
+    <form
+      action={
+        onAdd
+          ? () => {
+              const subject = githubSubject(workflow);
+              if (!GITHUB_ACTIONS_SUBJECT_REGEX.test(subject)) return setInvalid(true);
+              onAdd(subject);
+              onTrusted();
+            }
+          : formAction
+      }
+    >
+      {accountId && <input type="hidden" name="account_id" value={accountId} />}
       <input type="hidden" name="subject" value={githubSubject(workflow)} />
       <Flex direction="column" gap="3">
         <Dialog.Description size="2">
@@ -59,9 +85,9 @@ function TrustForm({ accountId, onTrusted }: { accountId: string; onTrusted: () 
           workflow at every run; nothing is stored here but the name.
         </Dialog.Description>
         <GithubWorkflowFields id="gh" workflow={workflow} onChange={setWorkflow} />
-        {!state.success && state.message && (
+        {message && (
           <Text size="1" color="red">
-            {state.message}
+            {message}
           </Text>
         )}
         <Flex justify="end" gap="2">
