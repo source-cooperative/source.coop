@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
+import { getRouter } from "@storybook/nextjs-vite/navigation.mock";
 import { ProductContentsCard } from "./ProductContentsCard";
 import { DirectoryList } from "./DirectoryList";
 import {
@@ -32,6 +33,13 @@ const meta = {
       </S3CredentialsProvider>
     ),
   ],
+  // There's no server to re-fetch from, so the mocked refresh takes a second,
+  // long enough to see the spinner the refresh icon shows meanwhile.
+  beforeEach: () => {
+    getRouter().refresh.mockImplementation(
+      () => new Promise((resolve) => setTimeout(resolve, 1000))
+    );
+  },
 } satisfies Meta<typeof ProductContentsCard>;
 
 export default meta;
