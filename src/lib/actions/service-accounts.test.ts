@@ -249,6 +249,9 @@ describe("lifecycle", () => {
     // An environment name may contain a space; a ref may not.
     expect((await addGithubTrust(IDLE, form({ account_id: "acme--nightly-sync", subject: "repo:acme/data:environment:Production Approval" }))).success).toBe(true);
     expect((await addGithubTrust(IDLE, form({ account_id: "acme--nightly-sync", subject: "repo:acme/data:ref:refs/heads/my branch" }))).success).toBe(false);
+    // An empty branch or tag field builds a ref with nothing after the slash.
+    expect((await addGithubTrust(IDLE, form({ account_id: "acme--nightly-sync", subject: "repo:acme/data:ref:refs/heads/" }))).success).toBe(false);
+    expect((await addGithubTrust(IDLE, form({ account_id: "acme--nightly-sync", subject: "repo:acme/data:ref:refs/tags/" }))).success).toBe(false);
 
     mocks.trusts.create.mockRejectedValueOnce(new AlreadyTrustedError("acme--nightly-sync", "i", "s"));
     expect((await addGithubTrust(IDLE, form({ account_id: "acme--nightly-sync", subject: "repo:acme/data:ref:refs/heads/main" }))).message).toMatch(/Already trusted/);
