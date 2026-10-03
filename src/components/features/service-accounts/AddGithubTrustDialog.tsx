@@ -3,7 +3,7 @@
 import React, { useActionState, useEffect, useState } from "react";
 import { Button, Dialog, Flex, Text } from "@radix-ui/themes";
 import { addGithubTrust } from "@/lib/actions/service-accounts";
-import { IDLE_SERVICE_ACCOUNT_ACTION_STATE } from "@/types";
+import { GITHUB_ACTIONS_SUBJECT_REGEX, IDLE_SERVICE_ACCOUNT_ACTION_STATE } from "@/types";
 import {
   GithubWorkflowFields,
   NEW_GITHUB_WORKFLOW,
@@ -55,6 +55,10 @@ function TrustForm({
     IDLE_SERVICE_ACCOUNT_ACTION_STATE
   );
   const [workflow, setWorkflow] = useState(NEW_GITHUB_WORKFLOW);
+  // With onAdd nothing reaches the server until the create form is
+  // submitted, so the subject is checked here, the way addGithubTrust would.
+  const [invalid, setInvalid] = useState(false);
+  const message = invalid ? "Name one repository and one ref or environment" : !state.success && state.message;
 
   useEffect(() => {
     if (state.success) onTrusted();
@@ -65,7 +69,9 @@ function TrustForm({
       action={
         onAdd
           ? () => {
-              onAdd(githubSubject(workflow));
+              const subject = githubSubject(workflow);
+              if (!GITHUB_ACTIONS_SUBJECT_REGEX.test(subject)) return setInvalid(true);
+              onAdd(subject);
               onTrusted();
             }
           : formAction
@@ -79,9 +85,9 @@ function TrustForm({
           workflow at every run; nothing is stored here but the name.
         </Dialog.Description>
         <GithubWorkflowFields id="gh" workflow={workflow} onChange={setWorkflow} />
-        {!state.success && state.message && (
+        {message && (
           <Text size="1" color="red">
-            {state.message}
+            {message}
           </Text>
         )}
         <Flex justify="end" gap="2">
