@@ -155,7 +155,7 @@ function KeyRow({
             {proxyOrigin && (
               <ExampleUsage
                 title={`Sign in with ${apiKey.label}`}
-                intro="Save the key to a file, then point any AWS SDK or the AWS CLI at it:"
+                intro="Save the API key to a file and set environment variables accordingly:"
                 code={apiKeyEnvironment(proxyOrigin, accountId)}
                 language="shell"
                 open={showingUsage}

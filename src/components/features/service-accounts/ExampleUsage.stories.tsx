@@ -62,7 +62,7 @@ export const GithubWorkflowInAnEnvironment: Story = {
 export const ApiKey: Story = {
   args: {
     title: "Sign in with HPC cron job",
-    intro: "Save the key to a file, then point any AWS SDK or the AWS CLI at it:",
+    intro: "Save the API key to a file and set environment variables accordingly:",
     code: apiKeyEnvironment("https://data.source.coop", "miskatonic--nightly-sync"),
     language: "shell",
   },
