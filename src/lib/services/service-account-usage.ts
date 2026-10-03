@@ -48,7 +48,7 @@ export function githubWorkflow(
     [
       [
         "name: Source Cooperative",
-        ...(ref ? [`# Every run must be on ${ref}, the ref ${account_id} trusts.`] : []),
+        ...(ref ? [`# NOTE: Run must be on ${ref} as per Service Account "${account_id}" trust policy.`] : []),
         "on:",
         "  schedule:  # nightly; GitHub runs schedules on the default branch",
         '    - cron: "0 6 * * *"',

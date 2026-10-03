@@ -9,7 +9,7 @@ describe("githubWorkflow", () => {
   it("is a whole workflow: env for every step, one job permitted to mint an OIDC token, with the sign-in step", () => {
     const { code: workflow } = githubWorkflow("https://data.source.coop", "acme--nightly-sync", REF);
     expect(workflow).toMatch(
-      /^name: .+\n# Every run must be on refs\/heads\/main.*\non:\n {2}schedule:.*\n {4}- cron: "0 6 \* \* \*"\n {2}workflow_dispatch:.*\n# .*data proxy.*\nenv:\n {2}AWS_ENDPOINT_URL: https:\/\/data.source.coop\n/
+      /^name: .+\n# NOTE: Run must be on refs\/heads\/main as per Service Account "acme--nightly-sync" trust policy\.\non:\n {2}schedule:.*\n {4}- cron: "0 6 \* \* \*"\n {2}workflow_dispatch:.*\n# .*data proxy.*\nenv:\n {2}AWS_ENDPOINT_URL: https:\/\/data.source.coop\n/
     );
     expect(workflow).toContain(
       "\njobs:\n  data:\n    runs-on: ubuntu-latest\n    permissions:\n      id-token: write\n"
