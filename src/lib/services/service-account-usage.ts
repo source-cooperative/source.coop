@@ -28,7 +28,9 @@ const signInStep = (account_id: string) => [
  * running the sign-in step, with `AWS_ENDPOINT_URL_S3` set for the whole
  * workflow so every step's S3 client reaches the proxy. A subject pinned to an
  * environment needs the job to name it, or the token's subject names the ref
- * instead. `focus` is the sign-in step's lines, `[first, end)`, so a reader
+ * instead. It runs nightly and on demand; a schedule always runs on the
+ * default branch, so for a trust pinned to another ref only the runs started
+ * by hand on that ref can sign in. `focus` is the sign-in step's lines, `[first, end)`, so a reader
  * adding it to a job of their own can see which part is Source Cooperative's.
  */
 export function githubWorkflow(
@@ -40,7 +42,11 @@ export function githubWorkflow(
   const ref = subject.match(/:ref:(.+)$/)?.[1];
   const before = [
     "name: Source Cooperative",
-    ref ? `on: workflow_dispatch  # run it on ${ref}, the ref ${account_id} trusts` : "on: workflow_dispatch",
+    ...(ref ? [`# Every run must be on ${ref}, the ref ${account_id} trusts.`] : []),
+    "on:",
+    "  schedule:  # nightly; GitHub runs schedules on the default branch",
+    '    - cron: "0 6 * * *"',
+    "  workflow_dispatch:  # and by hand, from the Actions tab",
     "env:",
     `  AWS_ENDPOINT_URL_S3: ${proxyOrigin}`,
     "",
