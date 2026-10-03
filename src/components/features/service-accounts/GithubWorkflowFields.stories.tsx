@@ -8,10 +8,10 @@ import { GithubWorkflowFields, NEW_GITHUB_WORKFLOW } from "./GithubWorkflowField
 /**
  * Names one GitHub workflow: a repository, and the branch, tag or environment
  * its runs sign in from. Each is typed as a plain name — `main`, `v1.0`,
- * `production` — and a line under the choice says how GitHub picks one for a
- * run: a job with an `environment:` line is identified by its environment,
- * any other by its branch or tag, and runs triggered by a pull request can't
- * sign in, since their tokens name none of the three. A full ref such as
+ * `production` — and a line under the choice says which one a run's token
+ * names: a job's subject claim names its environment if one is specified
+ * within the workflow, otherwise its branch or tag. Pull request runs name
+ * neither, so they can't sign in. A full ref such as
  * `refs/pull/1/merge` typed as the branch is used as it is.
  *
  * Once you stop typing a repository, GitHub is asked how its tokens name it:

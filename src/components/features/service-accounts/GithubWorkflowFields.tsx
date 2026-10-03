@@ -314,10 +314,9 @@ export function GithubWorkflowFields({
           group
           help={
             <>
-              GitHub decides which a run counts as: a job with an{" "}
-              <Code size="1">environment:</Code> line is identified by its environment, any other
-              by its branch or tag. Runs triggered by a pull request can&apos;t sign in: their
-              tokens name no branch, tag or environment.{" "}
+              A job&apos;s subject claim names its environment if one is specified within the
+              workflow, otherwise its branch or tag. Pull request runs name neither, so they
+              can&apos;t sign in.{" "}
               <DocsLink href={SUBJECT_CLAIMS_DOCS}>See GitHub&apos;s examples</DocsLink>
             </>
           }
