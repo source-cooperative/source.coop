@@ -153,7 +153,9 @@ export function GithubWorkflowFields({
             required
             help={
               <>
-                As in its address: github.com/<Code size="1">owner/repo</Code>
+                <Code size="1">owner/repo</Code>, or with its permanent ids as{" "}
+                <Code size="1">owner@123/repo@456</Code>.{" "}
+                <DocsLink href={IMMUTABLE_SUBJECTS_DOCS}>About repository ids</DocsLink>
               </>
             }
           >
@@ -173,8 +175,7 @@ export function GithubWorkflowFields({
       {(workflow.tokenRepository ?? workflow.repository).includes("@") && (
         <Text size="1" color="gray">
           GitHub identifies this repository by its permanent ids, so the trust holds if it&apos;s
-          renamed, and a new repository given its old name can&apos;t use it.{" "}
-          <DocsLink href={IMMUTABLE_SUBJECTS_DOCS}>Learn more</DocsLink>
+          renamed, and a new repository given its old name can&apos;t use it.
         </Text>
       )}
       {setting && !setting.standard && (
