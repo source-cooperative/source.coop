@@ -24,7 +24,7 @@ import { ServiceAccountForm } from "./ServiceAccountForm";
 const meta = {
   title: "Features/Service accounts/ServiceAccountForm",
   component: ServiceAccountForm,
-  parameters: { layout: "padded" },
+  parameters: { layout: "padded", docs: { story: { inline: false, iframeHeight: 640 } } },
 } satisfies Meta<typeof ServiceAccountForm>;
 
 export default meta;

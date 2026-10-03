@@ -1,6 +1,7 @@
 "use client";
 
-import { Box, Button, Dialog, Flex, Text } from "@radix-ui/themes";
+import { useState } from "react";
+import { Box, Button, Dialog, Flex, SegmentedControl, Text } from "@radix-ui/themes";
 import { CopyToClipboard } from "@/components/core/CopyToClipboard";
 import { highlightLine, type Language, type TokenKind } from "./highlight";
 
@@ -17,12 +18,13 @@ const COLOURS: Record<TokenKind, string | undefined> = {
 /**
  * What software adds to sign in one way, ready to paste — a workflow's step,
  * or the variables for a key — in a modal opened from "Example usage" in the
- * row's menu. Nothing in it is secret.
+ * row's menu. Given several forms of it by label, a switch above the code
+ * chooses between them. Nothing in it is secret.
  */
 export function ExampleUsage({
   title,
   intro,
-  code,
+  code: forms,
   language,
   open,
   onOpenChange,
@@ -30,17 +32,30 @@ export function ExampleUsage({
   title: string;
   /** The line above the code: where it goes. */
   intro: React.ReactNode;
-  code: string;
+  /** The snippet, or its forms keyed by the label that chooses each. */
+  code: string | Record<string, string>;
   language: Language;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const labels = typeof forms === "string" ? [] : Object.keys(forms);
+  const [chosen, choose] = useState(labels[0]);
+  const code = typeof forms === "string" ? forms : forms[chosen];
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Content style={{ maxWidth: 720 }} aria-describedby={undefined}>
         <Dialog.Title>{title}</Dialog.Title>
         <Flex direction="column" gap="3">
           <Text size="2">{intro}</Text>
+          {labels.length > 0 && (
+            <SegmentedControl.Root size="1" value={chosen} onValueChange={choose} style={{ alignSelf: "start" }}>
+              {labels.map((label) => (
+                <SegmentedControl.Item key={label} value={label}>
+                  {label}
+                </SegmentedControl.Item>
+              ))}
+            </SegmentedControl.Root>
+          )}
           <Box position="relative">
             <Box position="absolute" top="3" right="3">
               <CopyToClipboard text={code} />

@@ -24,7 +24,7 @@ import { AdminBreakdownChart } from "./AdminBreakdownChart";
 const meta = {
   component: AdminBreakdownChart,
   title: "Features/Analytics/AdminBreakdownChart",
-  parameters: { layout: "padded" },
+  parameters: { layout: "padded", docs: { story: { inline: false, iframeHeight: 640 } } },
   args: { otherKey: OTHER_KEY, initialMetric: "bytes" },
 } satisfies Meta<typeof AdminBreakdownChart>;
 
