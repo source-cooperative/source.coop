@@ -6,34 +6,54 @@ import { Field } from "@/components/core";
 import { GITHUB_ACTIONS_ISSUER } from "@/types";
 
 export interface GithubWorkflow {
+  /** As the user typed it, e.g. `octocat/hello-world`. */
   repository: string;
-  kind: "ref" | "environment";
+  /**
+   * How GitHub names the repository in its tokens, looked up from the typed
+   * one — `octocat@583231/Hello-World@1296269` once it signs with ids. Unset
+   * when GitHub doesn't say, and the repository is then used as typed.
+   */
+  tokenRepository?: string;
+  kind: "branch" | "tag" | "environment";
+  /** A branch, tag or environment name. A full `refs/…` ref is taken as is. */
   value: string;
 }
 
 export const NEW_GITHUB_WORKFLOW: GithubWorkflow = {
   repository: "",
-  kind: "ref",
-  value: "refs/heads/main",
+  kind: "branch",
+  value: "main",
 };
 
-/** Where GitHub shows the subject each kind of ref or environment produces. */
+/** Where GitHub explains which subject a job's token carries. */
 const SUBJECT_CLAIMS_DOCS =
   "https://docs.github.com/en/actions/reference/security/oidc#example-subject-claims";
 
-/** GitHub's announcement of the `owner@id/repo@id` subject, and which repositories get it. */
+/** GitHub's announcement of repositories named by id in their tokens. */
 const IMMUTABLE_SUBJECTS_DOCS =
   "https://github.blog/changelog/2026-04-23-immutable-subject-claims-for-github-actions-oidc-tokens/";
 
-const ImmutableSubjectsLink = () => (
-  <Link href={IMMUTABLE_SUBJECTS_DOCS} target="_blank" rel="noopener noreferrer" underline="always">
-    immutable subjects
+const DocsLink = ({ href, children }: { href: string; children: React.ReactNode }) => (
+  <Link href={href} target="_blank" rel="noopener noreferrer" underline="always">
+    {children}
   </Link>
 );
 
+const KINDS = {
+  branch: { label: "Branch", placeholder: "main", ref: "refs/heads/" },
+  tag: { label: "Tag", placeholder: "v1.0", ref: "refs/tags/" },
+  environment: { label: "Environment", placeholder: "production", ref: undefined },
+} as const;
+
 /** GitHub's `sub` claim for the workflow, exactly as its token will carry it. */
-export const githubSubject = (w: GithubWorkflow) =>
-  `repo:${w.repository}:${w.kind}:${w.value}`;
+export const githubSubject = (w: GithubWorkflow) => {
+  const prefix = KINDS[w.kind].ref;
+  const context =
+    prefix === undefined
+      ? `environment:${w.value}`
+      : `ref:${w.value.startsWith("refs/") ? w.value : prefix + w.value}`;
+  return `repo:${w.tokenRepository ?? w.repository}:${context}`;
+};
 
 /**
  * The trust as an AWS-style condition. The subject is the whole of it: the
@@ -98,9 +118,9 @@ function useSubjectSetting(repository: string) {
 }
 
 /**
- * Names one workflow: a repository, pinned to a ref or an environment. Shows
- * the exact subject that will be trusted, since that string — not the fields —
- * is what the token has to match.
+ * Names one workflow: a repository, and the branch, tag or environment its
+ * runs sign in from. Shows the exact condition that will be trusted, since
+ * that — not the fields — is what the token has to match.
  */
 export function GithubWorkflowFields({
   id,
@@ -116,12 +136,13 @@ export function GithubWorkflowFields({
   trailing?: React.ReactNode;
 }) {
   const setting = useSubjectSetting(workflow.repository);
-  // The field takes the name exactly as the tokens carry it, ids included when
-  // GitHub signs with them, so the subject below is the one to trust.
+  // The typed name stays in the field; the subject uses the one GitHub's
+  // tokens carry, so nobody has to know which form their repository signs with.
   useEffect(() => {
-    if (setting && setting.repository !== workflow.repository)
-      onChange({ ...workflow, repository: setting.repository });
+    if (setting && setting.repository !== workflow.tokenRepository)
+      onChange({ ...workflow, tokenRepository: setting.repository });
   }, [setting, workflow, onChange]);
+  const kind = KINDS[workflow.kind];
   return (
     <Flex direction="column" gap="3">
       <Flex gap="3" align="end">
@@ -132,8 +153,7 @@ export function GithubWorkflowFields({
             required
             help={
               <>
-                <Code size="1">owner/repo</Code>, or <Code size="1">owner@123/repo@456</Code>{" "}
-                if its tokens carry <ImmutableSubjectsLink />
+                As in its address: github.com/<Code size="1">owner/repo</Code>
               </>
             }
           >
@@ -142,12 +162,21 @@ export function GithubWorkflowFields({
               size="2"
               placeholder="owner/repo"
               value={workflow.repository}
-              onChange={(e) => onChange({ ...workflow, repository: e.target.value })}
+              onChange={(e) =>
+                onChange({ ...workflow, repository: e.target.value, tokenRepository: undefined })
+              }
             />
           </Field>
         </Box>
         {trailing}
       </Flex>
+      {(workflow.tokenRepository ?? workflow.repository).includes("@") && (
+        <Text size="1" color="gray">
+          GitHub identifies this repository by its permanent ids, so the trust holds if it&apos;s
+          renamed, and a new repository given its old name can&apos;t use it.{" "}
+          <DocsLink href={IMMUTABLE_SUBJECTS_DOCS}>Learn more</DocsLink>
+        </Text>
+      )}
       {setting && !setting.standard && (
         <Text size="1" color="amber">
           This repository customizes its subject claim, so its tokens may not carry the subject
@@ -156,58 +185,53 @@ export function GithubWorkflowFields({
       )}
       {setting === null && (
         <Text size="1" color="gray" style={{ wordBreak: "break-all" }}>
-          GitHub doesn&apos;t show this repository publicly. If it&apos;s private, this prints how
-          its tokens name it — enter what follows <Code size="1">repo:</Code> above:{" "}
+          GitHub doesn&apos;t show this repository publicly. If it&apos;s private, run this and
+          enter what it prints after <Code size="1">repo:</Code> as the repository:{" "}
           <Code size="1">{ghSubjectPrefixCommand(workflow.repository)}</Code>
         </Text>
       )}
-      {/* Stacked, so the ref or environment always starts a line of its own
-          rather than squeezing in beside the choice when it fits. */}
+      {/* Stacked, so the name always starts a line of its own rather than
+          squeezing in beside the choice when it fits. */}
       <Flex direction="column" gap="3" align="start">
-        <Field label="Pinned to" htmlFor={`${id}-kind`} group>
+        <Field
+          label="Allow runs from"
+          htmlFor={`${id}-kind`}
+          group
+          help={
+            <>
+              GitHub decides which a run counts as: a job with an{" "}
+              <Code size="1">environment:</Code> line is identified by its environment, any other
+              by its branch or tag. Pull request runs can&apos;t sign in.{" "}
+              <DocsLink href={SUBJECT_CLAIMS_DOCS}>See GitHub&apos;s examples</DocsLink>
+            </>
+          }
+        >
           {(props) => (
             <SegmentedControl.Root
               aria-labelledby={props["aria-labelledby"]}
               value={workflow.kind}
-              onValueChange={(kind) =>
+              onValueChange={(next) =>
                 onChange({
                   ...workflow,
-                  kind: kind as GithubWorkflow["kind"],
-                  value: kind === "ref" ? "refs/heads/main" : "",
+                  kind: next as GithubWorkflow["kind"],
+                  value: next === "branch" ? "main" : "",
                 })
               }
             >
-              <SegmentedControl.Item value="ref">Ref</SegmentedControl.Item>
-              <SegmentedControl.Item value="environment">Environment</SegmentedControl.Item>
+              {Object.entries(KINDS).map(([value, { label }]) => (
+                <SegmentedControl.Item key={value} value={value}>
+                  {label}
+                </SegmentedControl.Item>
+              ))}
             </SegmentedControl.Root>
           )}
         </Field>
         <Box width="100%">
-          <Field
-            label={workflow.kind === "ref" ? "Ref" : "Environment"}
-            htmlFor={`${id}-value`}
-            required
-            help={
-              <>
-                {workflow.kind === "ref" ? (
-                  <>
-                    The full ref the workflow runs on: a branch as{" "}
-                    <Code size="1">refs/heads/main</Code>, a tag as{" "}
-                    <Code size="1">refs/tags/v1.0</Code>.
-                  </>
-                ) : (
-                  <>The name of the GitHub environment the job runs in.</>
-                )}{" "}
-                <Link href={SUBJECT_CLAIMS_DOCS} target="_blank" rel="noopener noreferrer" underline="always">
-                  See GitHub&apos;s examples
-                </Link>
-              </>
-            }
-          >
+          <Field label={kind.label} htmlFor={`${id}-value`} required>
             <TextField.Root
               id={`${id}-value`}
               size="2"
-              placeholder={workflow.kind === "ref" ? "refs/heads/main" : "production"}
+              placeholder={kind.placeholder}
               value={workflow.value}
               onChange={(e) => onChange({ ...workflow, value: e.target.value })}
             />

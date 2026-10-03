@@ -6,13 +6,17 @@ import { TrashIcon } from "@radix-ui/react-icons";
 import { GithubWorkflowFields, NEW_GITHUB_WORKFLOW } from "./GithubWorkflowFields";
 
 /**
- * Names one GitHub workflow: a repository, pinned to a ref or an environment.
+ * Names one GitHub workflow: a repository, and the branch, tag or environment
+ * its runs sign in from. Each is typed as a plain name — `main`, `v1.0`,
+ * `production` — and a line under the choice says how GitHub picks one for a
+ * run: a job with an `environment:` line is identified by its environment,
+ * any other by its branch or tag, and pull request runs can't sign in. A full
+ * ref such as `refs/pull/1/merge` typed as the branch is used as it is.
+ *
  * The trust is spelled out under the fields as you type, as the JSON
  * condition a token has to meet — a `StringEquals` on GitHub's `sub` claim —
- * since that string, not the fields, is what the token has to match. Under the ref or environment, a line says what form it takes — a
- * branch as `refs/heads/main`, a tag as `refs/tags/v1.0` — and links to
- * GitHub's examples of the subject each produces. The create form stacks one
- * of these per workflow; the trust dialog shows one.
+ * since that string, not the fields, is what the token has to match. The
+ * create form stacks one of these per workflow; the trust dialog shows one.
  *
  * The component is controlled, so these stories keep the workflow in state
  * and the fields can be typed into.
@@ -46,11 +50,13 @@ export const Empty: Story = {
 };
 
 /**
- * A public repository typed the short way. Once you stop typing, GitHub's
- * public API is asked how the repository's tokens name it, and the field is
- * filled in with that name. This one's tokens carry its ids, so
- * `octocat/hello-world` becomes `octocat@583231/Hello-World@1296269`; one
- * whose tokens don't keeps its short name, in GitHub's casing.
+ * A public repository. Once you stop typing, GitHub's public API is asked how
+ * the repository's tokens name it, and the condition uses that name while the
+ * field keeps what you typed. This one's tokens carry its permanent ids —
+ * `octocat@583231/Hello-World@1296269` — so a line explains what that buys:
+ * the trust survives a rename, and a new repository given the old name can't
+ * use it. A repository whose tokens don't carry ids shows no such line, and
+ * is named in its tokens with GitHub's own capitalization.
  */
 export const PublicRepository: Story = {
   args: { workflow: { ...NEW_GITHUB_WORKFLOW, repository: "octocat/hello-world" } },
@@ -77,8 +83,9 @@ export const CustomizedSubject: Story = {
 
 /**
  * A repository GitHub doesn't show publicly — private, or not there at all.
- * How its tokens name it can't be looked up anonymously, so the form gives
- * the `gh` command that prints it for anyone who can see the repository.
+ * How its tokens name it can't be looked up anonymously, so the condition
+ * uses the name as typed, and the form gives the `gh` command that prints the
+ * right one for anyone who can see the repository.
  */
 export const PrivateRepository: Story = {
   args: {
@@ -87,12 +94,23 @@ export const PrivateRepository: Story = {
   beforeEach: githubAnswers(404),
 };
 
+/** Runs for a release tag. */
+export const Tag: Story = {
+  args: {
+    workflow: { repository: "miskatonic/climate-data", kind: "tag", value: "v1.0" },
+  },
+  beforeEach: githubAnswers(200, {
+    use_default: true,
+    sub_claim_prefix: "repo:miskatonic/climate-data",
+  }),
+};
+
 /**
- * A repository named the immutable way GitHub mints for repositories created
- * after July 2026, pinned to an environment, with the Remove button the create
- * form puts on each card.
+ * Jobs in a GitHub environment, for a repository typed straight in by its ids
+ * — as someone who already knows its tokens carry them might — with the
+ * Remove button the create form puts on each card.
  */
-export const ImmutableRepositoryWithRemove: Story = {
+export const EnvironmentWithRemove: Story = {
   args: {
     workflow: {
       repository: "miskatonic@8123456/climate-data@9456789",
