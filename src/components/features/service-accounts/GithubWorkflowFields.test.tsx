@@ -22,12 +22,10 @@ const renderFor = (workflow: Partial<GithubWorkflow>, onChange = jest.fn()) => {
 };
 
 const respond = (status: number, body: unknown = {}) =>
-  jest
-    .spyOn(global, "fetch")
-    .mockResolvedValue({
-      ok: status === 200,
-      json: async () => body,
-    } as Response);
+  jest.spyOn(global, "fetch").mockResolvedValue({
+    ok: status === 200,
+    json: async () => body,
+  } as Response);
 
 afterEach(() => jest.restoreAllMocks());
 
