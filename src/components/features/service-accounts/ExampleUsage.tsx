@@ -17,7 +17,7 @@ const COLOURS: Record<TokenKind, string | undefined> = {
 /** Where a trusted GitHub workflow's example goes. */
 export const GITHUB_WORKFLOW_INTRO = (
   <>
-    Customize and save this workflow under <Code>.github/workflows/</Code>:
+    Customize and save this workflow to a file under <Code>.github/workflows/</Code>:
   </>
 );
 
