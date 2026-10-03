@@ -33,7 +33,8 @@ const signInStep = (account_id: string) => [
  * nightly and on demand; a schedule always runs on the default branch, so for
  * a trust pinned to another ref only the runs started by hand on that ref can
  * sign in. `focus` is the line ranges, `[first, end)`, that are Source
- * Cooperative's — the `env` block and the sign-in step — so a reader adding
+ * Cooperative's — the `env` block, the job's `environment` when the trust names
+ * one, and the sign-in step — so a reader adding
  * them to a workflow of their own can see which parts to carry over.
  */
 export function githubWorkflow(
@@ -64,13 +65,17 @@ export function githubWorkflow(
       ],
       true,
     ],
+    [["", "jobs:", "  data:", "    runs-on: ubuntu-latest"], false],
+    [
+      environment
+        ? [
+            `    environment: ${JSON.stringify(environment)}  # Must run on ${environment} as per Service Account "${account_id}" trust policy.`,
+          ]
+        : [],
+      true,
+    ],
     [
       [
-        "",
-        "jobs:",
-        "  data:",
-        "    runs-on: ubuntu-latest",
-        ...(environment ? [`    environment: ${JSON.stringify(environment)}`] : []),
         "    permissions:",
         "      id-token: write",
         "      contents: read",
@@ -91,7 +96,7 @@ export function githubWorkflow(
   const lines: string[] = [];
   const focus: [number, number][] = [];
   for (const [part, ours] of parts) {
-    if (ours) focus.push([lines.length, lines.length + part.length]);
+    if (ours && part.length) focus.push([lines.length, lines.length + part.length]);
     lines.push(...part);
   }
   return { code: lines.join("\n"), focus };

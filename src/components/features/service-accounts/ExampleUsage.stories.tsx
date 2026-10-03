@@ -49,7 +49,8 @@ export const GithubWorkflow: Story = {
 /**
  * A workflow trusted when it runs in a GitHub environment. The job names the
  * environment, without which GitHub puts the ref in the token's subject rather
- * than the environment, and the trust wouldn't match.
+ * than the environment, and the trust wouldn't match — so that line stays at
+ * full strength too, with a comment naming the trust it satisfies.
  */
 export const GithubWorkflowInAnEnvironment: Story = {
   args: {
@@ -65,13 +66,4 @@ export const ApiKey: Story = {
     code: apiKeyEnvironment("https://data.source.coop", "miskatonic--nightly-sync"),
     language: "shell",
   },
-};
-
-/**
- * At phone width long lines wrap rather than scroll, each wrapped remainder
- * hanging just inside its line's indent so the YAML still reads as nested.
- */
-export const Mobile: Story = {
-  args: GithubWorkflow.args,
-  globals: { viewport: { value: "mobile1", isRotated: false } },
 };

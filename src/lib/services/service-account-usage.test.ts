@@ -32,11 +32,18 @@ describe("githubWorkflow", () => {
     ]);
     expect(step[0]).toBe("      - name: Sign in to Source Cooperative as acme--nightly-sync");
     expect(step.at(-1)).toBe("          aws-region: us-west-2");
+
+    // A trust pinned to an environment adds the job's environment line between them.
+    const pinned = githubWorkflow("https://data.source.coop", "acme--nightly-sync", ENVIRONMENT);
+    const [, environment] = pinned.focus.map((range) => pinned.code.split("\n").slice(...range));
+    expect(environment).toEqual([expect.stringMatching(/^ {4}environment: "production" {2}# Must run on production/)]);
   });
 
   it("names the environment a trust is pinned to, so the token's subject carries it", () => {
     const { code: workflow } = githubWorkflow("https://data.source.coop", "acme--nightly-sync", ENVIRONMENT);
-    expect(workflow).toContain('\n    runs-on: ubuntu-latest\n    environment: "production"\n');
+    expect(workflow).toContain(
+      '\n    runs-on: ubuntu-latest\n    environment: "production"  # Must run on production as per Service Account "acme--nightly-sync" trust policy.\n'
+    );
   });
 
   it("uses configure-aws-credentials against the proxy, naming the account in the role ARN", () => {
