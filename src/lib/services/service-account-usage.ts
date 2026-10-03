@@ -44,61 +44,46 @@ export function githubWorkflow(
 ): { code: string; focus: [number, number][] } {
   const environment = subject.match(/:environment:(.+)$/)?.[1];
   const ref = subject.match(/:ref:(.+)$/)?.[1];
-  // Each part of the file, and whether it is Source Cooperative's.
-  const parts: [string[], boolean][] = [
-    [
-      [
-        "name: Source Cooperative",
-        ...(ref ? [`# NOTE: Run must be on ${ref} as per Service Account "${account_id}" trust policy.`] : []),
-        "on:",
-        "  schedule:  # nightly; GitHub runs schedules on the default branch",
-        '    - cron: "0 6 * * *"',
-        "  workflow_dispatch:  # and by hand, from the Actions tab",
-      ],
-      false,
-    ],
-    [
-      [
-        "# Tells AWS SDKs and the AWS CLI to reach S3 through Source Cooperative's data proxy.",
-        "env:",
-        `  AWS_ENDPOINT_URL: ${proxyOrigin}`,
-      ],
-      true,
-    ],
-    [["", "jobs:", "  data:", "    runs-on: ubuntu-latest"], false],
-    [
-      environment
-        ? [
-            `    environment: ${JSON.stringify(environment)}  # Must run on ${environment} as per Service Account "${account_id}" trust policy.`,
-          ]
-        : [],
-      true,
-    ],
-    [
-      [
-        "    permissions:",
-        "      id-token: write",
-        "      contents: read",
-        "    steps:",
-        "      # Any setup of your own (checkout, installing tools) can come first.",
-      ],
-      false,
-    ],
-    [signInStep(account_id).map((line) => `      ${line}`), true],
-    [
-      [
-        `      # From here on, any AWS SDK or the AWS CLI acts as ${account_id}.`,
-        `      - run: aws s3 ls s3://${account_id.split("--")[0]}/`,
-      ],
-      false,
-    ],
-  ];
   const lines: string[] = [];
   const focus: [number, number][] = [];
-  for (const [part, ours] of parts) {
-    if (ours && part.length) focus.push([lines.length, lines.length + part.length]);
+  // Adds lines that are Source Cooperative's, recording their range in `focus`.
+  const ours = (...part: string[]) => {
+    focus.push([lines.length, lines.length + part.length]);
     lines.push(...part);
+  };
+  lines.push(
+    "name: Source Cooperative",
+    ...(ref ? [`# NOTE: Run must be on ${ref} as per Service Account "${account_id}" trust policy.`] : []),
+    "on:",
+    ref
+      ? `  schedule:  # nightly; works only if ${ref} is the default branch, where GitHub runs schedules`
+      : "  schedule:  # nightly; GitHub runs schedules on the default branch",
+    '    - cron: "0 6 * * *"',
+    "  workflow_dispatch:  # and by hand, from the Actions tab"
+  );
+  ours(
+    "# Tells AWS SDKs and the AWS CLI to reach S3 through Source Cooperative's data proxy.",
+    "env:",
+    `  AWS_ENDPOINT_URL: ${proxyOrigin}`
+  );
+  lines.push("", "jobs:", "  data:", "    runs-on: ubuntu-latest");
+  if (environment) {
+    ours(
+      `    environment: ${JSON.stringify(environment)}  # Must run on ${environment} as per Service Account "${account_id}" trust policy.`
+    );
   }
+  lines.push(
+    "    permissions:",
+    "      id-token: write",
+    "      contents: read",
+    "    steps:",
+    "      # Any setup of your own (checkout, installing tools) can come first."
+  );
+  ours(...signInStep(account_id).map((line) => `      ${line}`));
+  lines.push(
+    `      # From here on, any AWS SDK or the AWS CLI acts as ${account_id}.`,
+    `      - run: aws s3 ls s3://${account_id.split("--")[0]}/`
+  );
   return { code: lines.join("\n"), focus };
 }
 
