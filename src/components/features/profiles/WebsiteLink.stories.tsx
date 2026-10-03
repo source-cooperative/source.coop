@@ -19,10 +19,6 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Generic: Story = {
-  args: { url: "https://acoltrane.org" },
-};
-
 export const KnownHosts: Story = {
   args: { url: "https://github.com/acoltrane" },
   render: () => (
@@ -32,15 +28,6 @@ export const KnownHosts: Story = {
       <WebsiteLink url="https://acoltrane.org" />
     </Flex>
   ),
-};
-
-/**
- * A bare hostname is upgraded to https rather than treated as a relative path.
- * It renders the same as Generic, since the scheme is dropped from the display
- * text either way — the difference is only in the href and the title.
- */
-export const WithoutScheme: Story = {
-  args: { url: "acoltrane.org" },
 };
 
 /**

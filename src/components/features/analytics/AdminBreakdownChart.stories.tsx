@@ -196,23 +196,6 @@ export const WeeklyBuckets: Story = {
 };
 
 /**
- * Opened from a URL carrying `?metric=requests`, so the toggle starts on
- * requests. Ranking is by bytes either way, which is why the tall band is not
- * always the one on top here.
- */
-export const RankedByRequests: Story = {
-  args: {
-    buckets: dailyBuckets,
-    bucketMinutes: 1440,
-    series: products,
-    points: dailyPoints,
-    totals: totalsOf(dailyPoints, 41_882, 96),
-    elapsedSeconds: elapsed(28, 1440),
-    initialMetric: "requests",
-  },
-};
-
-/**
  * With the executed SQL attached, which is what puts the code button beside
  * the metric toggle. Two statements, because the timeseries and the ranked
  * totals are separate queries — and they are long, single-line, and the

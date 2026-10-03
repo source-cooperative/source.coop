@@ -52,18 +52,6 @@ export const Default: Story = {
 };
 
 /**
- * A marker labels deliberate state beside the name — read only, primary,
- * disabled. It is the only chip on a row, so it is used where true and left
- * out where false.
- */
-export const WithMarker: Story = {
-  args: {
-    ...Default.args,
-    markers: <ItemList.Marker>Read only</ItemList.Marker>,
-  },
-};
-
-/**
  * A row that acts in place leaves `href` unset and puts its controls in
  * `actions`. It has no hover state, because the row itself does nothing.
  */

@@ -32,11 +32,6 @@ const organization = {
   type: "organization",
 } as unknown as Account;
 
-/** No image and no email: the initial. */
-export const Initial: Story = {
-  args: { account: individual },
-};
-
 /** Round for a person, squared for an organization. */
 export const Shapes: Story = {
   args: { account: individual },

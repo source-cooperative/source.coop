@@ -27,10 +27,6 @@ export const Root: Story = {
   args: { path: [] },
 };
 
-export const OneLevel: Story = {
-  args: { path: ["recordings"] },
-};
-
 /** Four segments still fit; nothing is elided. */
 export const AtTheTruncationLimit: Story = {
   args: { path: ["recordings", "2019", "site-a", "raw"] },

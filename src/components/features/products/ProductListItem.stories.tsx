@@ -53,24 +53,9 @@ export const Narrow: Story = {
   globals: { viewport: { value: "mobile1", isRotated: false } },
 };
 
-/** Plain descriptions remain readable without Markdown syntax. */
-export const PlainText: Story = {
-  args: { product: { ...product, description: "Global agricultural field boundaries." } },
-};
-
 /** Products can omit their description. */
 export const WithoutDescription: Story = {
   args: { product: { ...product, description: "" } },
-};
-
-/** Emphasis, lists and inline code keep their formatting. */
-export const Formatting: Story = {
-  args: {
-    product: {
-      ...product,
-      description: "**Field boundaries** with *global coverage*.\n\n- Predictions in `COG` format\n- Vectors in GeoParquet",
-    },
-  },
 };
 
 /**

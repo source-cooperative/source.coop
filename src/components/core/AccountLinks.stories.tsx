@@ -39,10 +39,6 @@ export const Compact: Story = {
   args: { account: individual },
 };
 
-export const CompactWithHandle: Story = {
-  args: { account: individual, showAccountId: true },
-};
-
 /** Organizations get a squared avatar; individuals a round one. */
 export const OrganizationAndIndividual: Story = {
   args: { account: individual },
