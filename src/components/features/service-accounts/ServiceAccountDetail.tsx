@@ -220,7 +220,7 @@ export function ServiceAccountDetail({
       <SectionHeader
         title="Signs in with"
         description={`${SIGN_IN_DESCRIPTION} Revoke a key that leaks, or disable the account below to stop every sign-in at once.`}
-        rightButton={<AddSignInMenu accountId={account.account_id} />}
+        rightButton={<AddSignInMenu accountId={account.account_id} proxyOrigin={proxyOrigin} />}
       >
         {trusts.length === 0 && keys.length === 0 ? (
           <Text size="2" color="gray">

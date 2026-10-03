@@ -56,6 +56,18 @@ describe("githubCondition", () => {
       },
     });
   });
+
+  it("requires the proxy's audience when it's known", () => {
+    const condition = JSON.parse(
+      githubCondition(
+        { repository: "octocat/repo", kind: "branch", value: "main" },
+        "https://data.source.coop"
+      )
+    );
+    expect(condition.StringEquals["token.actions.githubusercontent.com:aud"]).toBe(
+      "https://data.source.coop"
+    );
+  });
 });
 
 describe("GithubWorkflowFields", () => {
@@ -79,6 +91,7 @@ describe("GithubWorkflowFields", () => {
       "https://api.github.com/repos/octocat/hello-world/actions/oidc/customization/sub",
       expect.anything()
     );
+    expect(screen.getByRole("status").textContent).toMatch(/^Verified with GitHub/);
   });
 
   it("takes a pasted subject prefix without its repo:", () => {

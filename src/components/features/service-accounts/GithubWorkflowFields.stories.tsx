@@ -10,13 +10,18 @@ import { GithubWorkflowFields, NEW_GITHUB_WORKFLOW } from "./GithubWorkflowField
  * its runs sign in from. Each is typed as a plain name — `main`, `v1.0`,
  * `production` — and a line under the choice says how GitHub picks one for a
  * run: a job with an `environment:` line is identified by its environment,
- * any other by its branch or tag, and pull request runs can't sign in. A full
- * ref such as `refs/pull/1/merge` typed as the branch is used as it is.
+ * any other by its branch or tag, and runs triggered by a pull request can't
+ * sign in, since their tokens name none of the three. A full ref such as
+ * `refs/pull/1/merge` typed as the branch is used as it is.
+ *
+ * Once you stop typing a repository, GitHub is asked how its tokens name it:
+ * a green note confirms the answer, and an amber box says when GitHub can't
+ * be asked — a private repository — and the two ways to find out instead.
  *
  * The trust is spelled out under the fields as you type, as the JSON
- * condition a token has to meet — a `StringEquals` on GitHub's `sub` claim —
- * since that string, not the fields, is what the token has to match. The
- * create form stacks one of these per workflow; the trust dialog shows one.
+ * condition a token has to meet: a `StringEquals` on GitHub's `aud` claim,
+ * which must name the data proxy, and on its `sub` claim. The create form
+ * stacks one of these per workflow; the trust dialog shows one.
  *
  * The component is controlled, so these stories keep the workflow in state
  * and the fields can be typed into.
@@ -25,7 +30,7 @@ const meta = {
   title: "Features/Service accounts/GithubWorkflowFields",
   component: GithubWorkflowFields,
   parameters: { layout: "padded" },
-  args: { id: "wf", onChange: fn() },
+  args: { id: "wf", onChange: fn(), audience: "https://data.source.coop" },
   render: function Controlled(args) {
     const [workflow, setWorkflow] = useState(args.workflow);
     return <GithubWorkflowFields {...args} workflow={workflow} onChange={setWorkflow} />;

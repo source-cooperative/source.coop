@@ -23,12 +23,15 @@ export function AddSignInMenu({
   onAddGithub,
   onAddKey,
   keyDisabled,
+  proxyOrigin,
 }: {
   accountId?: string;
   onAddGithub?: (subject: string) => void;
   onAddKey?: (key: ApiKeyDraft) => void;
   /** Turns off "API key", as the create form does once it holds one. */
   keyDisabled?: boolean;
+  /** The data proxy's origin, shown as the audience a trusted workflow's token must carry. */
+  proxyOrigin?: string;
 }) {
   const [adding, setAdding] = useState<"github" | "key" | null>(null);
   const close = (open: boolean) => !open && setAdding(null);
@@ -51,6 +54,7 @@ export function AddSignInMenu({
       <AddGithubTrustDialog
         accountId={accountId}
         onAdd={onAddGithub}
+        proxyOrigin={proxyOrigin}
         open={adding === "github"}
         onOpenChange={close}
       />

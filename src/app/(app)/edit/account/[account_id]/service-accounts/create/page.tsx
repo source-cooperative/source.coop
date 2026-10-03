@@ -6,6 +6,7 @@ import { ServiceAccountForm } from "@/components/features/service-accounts";
 import { accountsTable, productsTable } from "@/lib/clients/database";
 import { getPageSession } from "@/lib/api/utils";
 import { canManageAccount } from "@/lib/api/authz";
+import { CONFIG } from "@/lib/config";
 
 export const metadata: Metadata = { title: "Create service account" };
 
@@ -30,7 +31,11 @@ export default async function CreateServiceAccountPage({ params }: PageProps) {
         title="New Service Account"
         description="A login for software that you grant and revoke without sharing anyone's account."
       />
-      <ServiceAccountForm ownerAccountId={account_id} products={products} />
+      <ServiceAccountForm
+        ownerAccountId={account_id}
+        products={products}
+        proxyOrigin={CONFIG.storage.endpoint}
+      />
     </Box>
   );
 }

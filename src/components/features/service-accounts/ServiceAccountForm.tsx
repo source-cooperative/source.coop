@@ -37,6 +37,8 @@ function RemoveButton({ label, onRemove }: { label: string; onRemove: () => void
 interface ServiceAccountFormProps {
   ownerAccountId: string;
   products: Pick<Product, "product_id" | "title">[];
+  /** The data proxy's origin, shown as the audience a trusted workflow's token must carry. */
+  proxyOrigin?: string;
 }
 
 /**
@@ -46,7 +48,11 @@ interface ServiceAccountFormProps {
  * where submitting lands. A key issued here is shown there, over the page,
  * the one time it can be.
  */
-export function ServiceAccountForm({ ownerAccountId, products }: ServiceAccountFormProps) {
+export function ServiceAccountForm({
+  ownerAccountId,
+  products,
+  proxyOrigin,
+}: ServiceAccountFormProps) {
   const [state, formAction, pending] = useActionState(
     createServiceAccount,
     IDLE_SERVICE_ACCOUNT_FORM_STATE
@@ -143,6 +149,7 @@ export function ServiceAccountForm({ ownerAccountId, products }: ServiceAccountF
           description={SIGN_IN_DESCRIPTION}
           rightButton={
             <AddSignInMenu
+              proxyOrigin={proxyOrigin}
               // One key at creation; the account's page issues more.
               keyDisabled={!!apiKey}
               onAddGithub={(subject) =>
