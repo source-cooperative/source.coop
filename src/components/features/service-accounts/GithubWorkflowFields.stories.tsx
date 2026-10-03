@@ -35,16 +35,26 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Answers the subject lookup as GitHub would, so a story doesn't hang on a real repository. */
-const githubAnswers = (status: number, body?: object) => () => {
+/**
+ * Answers the lookup for the story's own repository with what GitHub returned
+ * for it when the story was written, so the story opens the same way every
+ * time; any other repository typed in is looked up on GitHub itself.
+ */
+const githubAnswers = (repository: string, status: number, body?: object) => () => {
   const real = window.fetch;
-  window.fetch = async () => new Response(JSON.stringify(body ?? {}), { status });
+  window.fetch = async (input, init) =>
+    String(input).includes(`/repos/${repository}/`)
+      ? new Response(JSON.stringify(body ?? {}), { status })
+      : real(input, init);
   return () => {
     window.fetch = real;
   };
 };
 
-/** As the create form adds it: no repository yet, the default branch pinned. */
+/**
+ * As the create form adds it: no repository yet, the default branch pinned.
+ * Type any repository to see how GitHub's tokens name it.
+ */
 export const Empty: Story = {
   args: { workflow: NEW_GITHUB_WORKFLOW },
 };
@@ -53,17 +63,19 @@ export const Empty: Story = {
  * A public repository. Once you stop typing, GitHub's public API is asked how
  * the repository's tokens name it, and the condition uses that name while the
  * field keeps what you typed. This one's tokens carry its permanent ids —
- * `octocat@583231/Hello-World@1296269` — so a line explains what that buys:
- * the trust survives a rename, and a new repository given the old name can't
- * use it. A repository whose tokens don't carry ids shows no such line, and
- * is named in its tokens with GitHub's own capitalization.
+ * `alukach@897290/source-coop-upload-test@1400565438` — so a line explains
+ * what that buys: the trust survives a rename, and a new repository given the
+ * old name can't use it. A repository whose tokens don't carry ids shows no
+ * such line, and is named in its tokens with GitHub's own capitalization.
  */
 export const PublicRepository: Story = {
-  args: { workflow: { ...NEW_GITHUB_WORKFLOW, repository: "octocat/hello-world" } },
-  beforeEach: githubAnswers(200, {
+  args: {
+    workflow: { ...NEW_GITHUB_WORKFLOW, repository: "alukach/source-coop-upload-test" },
+  },
+  beforeEach: githubAnswers("alukach/source-coop-upload-test", 200, {
     use_default: true,
     use_immutable_subject: true,
-    sub_claim_prefix: "repo:octocat@583231/Hello-World@1296269",
+    sub_claim_prefix: "repo:alukach@897290/source-coop-upload-test@1400565438",
   }),
 };
 
@@ -74,8 +86,9 @@ export const PublicRepository: Story = {
  */
 export const CustomizedSubject: Story = {
   args: { workflow: { ...NEW_GITHUB_WORKFLOW, repository: "cli/cli" } },
-  beforeEach: githubAnswers(200, {
+  beforeEach: githubAnswers("cli/cli", 200, {
     use_default: false,
+    use_immutable_subject: false,
     include_claim_keys: ["repository_owner_id", "repository_id", "context"],
     sub_claim_prefix: "repo:cli/cli",
   }),
@@ -84,25 +97,31 @@ export const CustomizedSubject: Story = {
 /**
  * A repository GitHub doesn't show publicly — private, or not there at all.
  * How its tokens name it can't be looked up anonymously, so the condition
- * uses the name as typed, and the form gives the `gh` command that prints the
- * right one for anyone who can see the repository, on a line of its own with
- * a button that copies it.
+ * uses the name as typed. The form links to the repository's OIDC settings,
+ * where its admins see the **Default subject claim prefix** to paste in —
+ * `repo:` and all, which the field drops — and, for anyone else who can see
+ * the repository, gives a `gh` command that prints the same, with a button
+ * that copies it.
  */
 export const PrivateRepository: Story = {
   args: {
-    workflow: { ...NEW_GITHUB_WORKFLOW, repository: "octocat/a-private-repository" },
+    workflow: { ...NEW_GITHUB_WORKFLOW, repository: "source-cooperative/a-private-repository" },
   },
-  beforeEach: githubAnswers(404),
+  beforeEach: githubAnswers("source-cooperative/a-private-repository", 404),
 };
 
-/** Runs for a release tag. */
+/**
+ * Runs for a release tag, in a repository whose tokens name it the short way,
+ * `owner/repo`.
+ */
 export const Tag: Story = {
   args: {
-    workflow: { repository: "miskatonic/climate-data", kind: "tag", value: "v1.0" },
+    workflow: { repository: "source-cooperative/source.coop", kind: "tag", value: "v1.0" },
   },
-  beforeEach: githubAnswers(200, {
+  beforeEach: githubAnswers("source-cooperative/source.coop", 200, {
     use_default: true,
-    sub_claim_prefix: "repo:miskatonic/climate-data",
+    use_immutable_subject: false,
+    sub_claim_prefix: "repo:source-cooperative/source.coop",
   }),
 };
 
@@ -114,7 +133,7 @@ export const Tag: Story = {
 export const EnvironmentWithRemove: Story = {
   args: {
     workflow: {
-      repository: "miskatonic@8123456/climate-data@9456789",
+      repository: "alukach@897290/source-coop-upload-test@1400565438",
       kind: "environment",
       value: "production",
     },
