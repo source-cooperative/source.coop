@@ -25,7 +25,7 @@
  *       401:
  *         description: Unauthorized
  */
-import { NextRequest, NextResponse } from "next/server";
+import { after, NextRequest, NextResponse } from "next/server";
 import { StatusCodes } from "http-status-codes";
 import { z } from "zod";
 import { PROXY_SELF_SUBJECT, verifyProxyAssertion } from "@/lib/api/oidc";
@@ -68,15 +68,18 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ active: false });
   }
 
-  // Best-effort: a throttled write must not refuse a live key.
-  await serviceAccountKeysTable
-    .set(key.key_hash, "last_used_at", new Date().toISOString())
-    .catch((error: unknown) =>
-      LOGGER.warn("Could not record API key use", {
-        operation: "serviceAccountKeyExchange",
-        metadata: { ...meta, error: error instanceof Error ? error.message : String(error) },
-      })
-    );
+  // Best-effort and after the response: a throttled write must neither refuse
+  // nor delay a live key.
+  after(() =>
+    serviceAccountKeysTable
+      .set(key.key_hash, "last_used_at", new Date().toISOString())
+      .catch((error: unknown) =>
+        LOGGER.warn("Could not record API key use", {
+          operation: "serviceAccountKeyExchange",
+          metadata: { ...meta, error: error instanceof Error ? error.message : String(error) },
+        })
+      )
+  );
   LOGGER.info("API key exchanged", { operation: "serviceAccountKeyExchange", metadata: meta });
   return NextResponse.json({ account_id: key.account_id, key_id: key.key_id, active: true });
 }
