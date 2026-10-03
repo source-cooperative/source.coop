@@ -23,7 +23,9 @@ export function AddGithubTrustDialog({
   onAdd,
   open,
   onOpenChange,
-}: ({ accountId: string; onAdd?: never } | { accountId?: never; onAdd: (subject: string) => void }) & {
+}: {
+  accountId?: string;
+  onAdd?: (subject: string) => void;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
@@ -69,7 +71,7 @@ function TrustForm({
           : formAction
       }
     >
-      <input type="hidden" name="account_id" value={accountId ?? ""} />
+      {accountId && <input type="hidden" name="account_id" value={accountId} />}
       <input type="hidden" name="subject" value={githubSubject(workflow)} />
       <Flex direction="column" gap="3">
         <Dialog.Description size="2">

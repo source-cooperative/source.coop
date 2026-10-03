@@ -27,7 +27,9 @@ export function IssueApiKeyDialog({
   onAdd,
   open,
   onOpenChange,
-}: ({ accountId: string; onAdd?: never } | { accountId?: never; onAdd: (key: ApiKeyDraft) => void }) & {
+}: {
+  accountId?: string;
+  onAdd?: (key: ApiKeyDraft) => void;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
@@ -37,16 +39,7 @@ export function IssueApiKeyDialog({
         <Dialog.Title>Issue an API key</Dialog.Title>
         {/* The content unmounts when the dialog closes, so the form — and the
             key it shows — lives in here: the next open starts a new key. */}
-        <IssueForm
-          accountId={accountId}
-          onAdd={
-            onAdd &&
-            ((key) => {
-              onAdd(key);
-              onOpenChange(false);
-            })
-          }
-        />
+        <IssueForm accountId={accountId} onAdd={onAdd} onAdded={() => onOpenChange(false)} />
       </Dialog.Content>
     </Dialog.Root>
   );
@@ -55,9 +48,11 @@ export function IssueApiKeyDialog({
 function IssueForm({
   accountId,
   onAdd,
+  onAdded,
 }: {
   accountId?: string;
   onAdd?: (key: ApiKeyDraft) => void;
+  onAdded: () => void;
 }) {
   const [state, formAction, pending] = useActionState(issueApiKey, IDLE_API_KEY_ACTION_STATE);
   return state.issued ? (
@@ -73,15 +68,17 @@ function IssueForm({
     <form
       action={
         onAdd
-          ? (data) =>
+          ? (data) => {
               onAdd({
                 label: String(data.get("label")),
                 expires_in_days: String(data.get("expires_in_days") ?? ""),
-              })
+              });
+              onAdded();
+            }
           : formAction
       }
     >
-      <input type="hidden" name="account_id" value={accountId ?? ""} />
+      {accountId && <input type="hidden" name="account_id" value={accountId} />}
       <Flex direction="column" gap="3">
         <Dialog.Description size="2">
           For environments without OIDC: a server, a scheduler, an

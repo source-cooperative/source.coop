@@ -18,16 +18,18 @@ export const SIGN_IN_DESCRIPTION =
  * instead, it is handed back for a form to submit, as the create form does
  * before the account exists.
  */
-export function AddSignInMenu(
-  props: (
-    | { accountId: string }
-    | { onAddGithub: (subject: string) => void; onAddKey: (key: ApiKeyDraft) => void }
-  ) & {
-    /** Turns off "API key", as the create form does once it holds one. */
-    keyDisabled?: boolean;
-  }
-) {
-  const saved = "accountId" in props;
+export function AddSignInMenu({
+  accountId,
+  onAddGithub,
+  onAddKey,
+  keyDisabled,
+}: {
+  accountId?: string;
+  onAddGithub?: (subject: string) => void;
+  onAddKey?: (key: ApiKeyDraft) => void;
+  /** Turns off "API key", as the create form does once it holds one. */
+  keyDisabled?: boolean;
+}) {
   const [adding, setAdding] = useState<"github" | "key" | null>(null);
   const close = (open: boolean) => !open && setAdding(null);
   return (
@@ -41,18 +43,20 @@ export function AddSignInMenu(
         </DropdownMenu.Trigger>
         <DropdownMenu.Content align="end" size="1">
           <DropdownMenu.Item onSelect={() => setAdding("github")}>GitHub workflow</DropdownMenu.Item>
-          <DropdownMenu.Item disabled={props.keyDisabled} onSelect={() => setAdding("key")}>
+          <DropdownMenu.Item disabled={keyDisabled} onSelect={() => setAdding("key")}>
             API key
           </DropdownMenu.Item>
         </DropdownMenu.Content>
       </DropdownMenu.Root>
       <AddGithubTrustDialog
-        {...(saved ? { accountId: props.accountId } : { onAdd: props.onAddGithub })}
+        accountId={accountId}
+        onAdd={onAddGithub}
         open={adding === "github"}
         onOpenChange={close}
       />
       <IssueApiKeyDialog
-        {...(saved ? { accountId: props.accountId } : { onAdd: props.onAddKey })}
+        accountId={accountId}
+        onAdd={onAddKey}
         open={adding === "key"}
         onOpenChange={close}
       />
