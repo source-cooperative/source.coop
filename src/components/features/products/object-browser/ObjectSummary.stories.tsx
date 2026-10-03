@@ -73,13 +73,6 @@ export const Default: Story = {
   args: { product, objectInfo },
 };
 
-/** On S3, so the Cloud URI is an `s3://` address under the mirror's prefix. */
-export const OnS3: Story = {
-  // Storybook title-cases the export name, which turns OnS3 into "On S 3".
-  name: "On S3",
-  args: { product, objectInfo, connectionDetails: s3Connection },
-};
-
 /**
  * On Azure the same row is an HTTPS blob URL built from the storage account
  * and container — a different shape, not a different scheme prefix.
@@ -106,27 +99,6 @@ export const OnAzure: Story = {
   },
 };
 
-/** GCS resolves no Cloud URI, so that row is absent rather than blank. */
-export const OnGoogleCloud: Story = {
-  name: "On Google Cloud",
-  args: {
-    product,
-    objectInfo,
-    connectionDetails: {
-      primaryMirror: { connection_id: "black-mesa-files", prefix: "", is_primary: true },
-      dataConnection: {
-        data_connection_id: "black-mesa-files",
-        name: "Black Mesa Survey Files",
-        details: {
-          provider: DataProvider.GCS,
-          bucket: "black-mesa-files",
-          base_prefix: "",
-        },
-      } as unknown as DataConnection,
-    },
-  },
-};
-
 /** With a recorded sha256, the checksum row and its verifier appear. */
 export const WithChecksum: Story = {
   args: {
@@ -138,20 +110,6 @@ export const WithChecksum: Story = {
         sha256:
           "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
       },
-    } as ProductObject,
-  },
-};
-
-/** A tiny text file rather than a large binary — different size and type. */
-export const SmallTextFile: Story = {
-  args: {
-    product,
-    connectionDetails: s3Connection,
-    objectInfo: {
-      ...objectInfo,
-      path: "README.md",
-      size: 2_140,
-      mime_type: "text/markdown",
     } as ProductObject,
   },
 };

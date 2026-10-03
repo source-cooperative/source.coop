@@ -29,10 +29,6 @@ export const Default: Story = {
   args: { placeholder: "Search by username or name" },
 };
 
-export const Required: Story = {
-  args: { placeholder: "Search by username or name", required: true },
-};
-
 /** Editing an existing value rather than starting empty. */
 export const Prefilled: Story = {
   args: { defaultValue: "acoltrane" },

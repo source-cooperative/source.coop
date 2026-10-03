@@ -27,8 +27,3 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
-
-/** Held while the account's page saves a change. */
-export const Saving: Story = {
-  args: { disabled: true },
-};

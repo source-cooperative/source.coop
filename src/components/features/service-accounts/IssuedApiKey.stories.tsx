@@ -8,8 +8,8 @@ import { apiKeyChecksum } from "@/types";
  * warning to copy it now, and the key with buttons to copy it and to show it.
  * The key starts masked, in the form it is listed under from then on, so a
  * shared screen doesn't leak it; copying always copies the whole key. The
- * "Issue an API key" dialog shows it, and so does `IssuedApiKeyDialog`, over
- * the page of an account created with one.
+ * "Issue an API key" dialog shows it, and so does the page of an account
+ * created with one (`ServiceAccountDetail`'s "Created with a key").
  */
 const meta = {
   title: "Features/Service accounts/IssuedApiKey",

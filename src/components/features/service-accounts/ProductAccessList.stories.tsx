@@ -62,17 +62,6 @@ export const SomeGranted: Story = {
   },
 };
 
-/** Every product granted. */
-export const EverythingGranted: Story = {
-  args: {
-    access: {
-      "climate-data": MembershipRole.WriteData as ProductAccess,
-      "reference-data": MembershipRole.ReadData as ProductAccess,
-      "field-notes": MembershipRole.ReadData as ProductAccess,
-    },
-  },
-};
-
 /** Held while the account's page saves a change. */
 export const Saving: Story = {
   args: { ...SomeGranted.args, disabled: true },
