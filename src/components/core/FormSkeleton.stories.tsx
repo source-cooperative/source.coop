@@ -16,11 +16,3 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
-
-export const Short: Story = {
-  args: { fieldCount: 2 },
-};
-
-export const WithoutSubmit: Story = {
-  args: { fieldCount: 3, showSubmitButton: false },
-};

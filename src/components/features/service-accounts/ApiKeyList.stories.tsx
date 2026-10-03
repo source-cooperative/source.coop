@@ -58,11 +58,6 @@ export const Default: Story = {
   },
 };
 
-/** One live key: the usual case. */
-export const Single: Story = {
-  args: { keys: [key({ last_used_at: at(-3) })] },
-};
-
 /**
  * A key issued before keys kept a hint of their last characters: listed
  * without one, rather than with an empty one.

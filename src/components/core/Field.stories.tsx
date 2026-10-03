@@ -3,8 +3,6 @@ import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import {
   Checkbox,
   Flex,
-  RadioCards,
-  Select,
   Switch,
   Text,
   TextArea,
@@ -100,113 +98,6 @@ export const WithCounter: Story = {
   },
 };
 
-export const AsSelect: Story = {
-  args: {
-    label: "Data connection",
-    help: "Where this product's objects live. Permanent once created.",
-    children: (props) => (
-      <Select.Root size="3" defaultValue="us-west-2">
-        <Select.Trigger {...props} style={{ width: "100%" }} />
-        <Select.Content>
-          <Select.Item value="us-west-2">Source Cooperative — US West</Select.Item>
-          <Select.Item value="eu-central-1">Source Cooperative — EU</Select.Item>
-        </Select.Content>
-      </Select.Root>
-    ),
-  },
-};
-
-/**
- * Radio cards are for a handful of options that each need a sentence — and
- * unlike a disabled `<option>`, a disabled card can say why.
- */
-export const AsRadioCards: Story = {
-  args: {
-    label: "Visibility",
-    help: "Who can reach this product. The options depend on its data connection.",
-    group: true,
-    children: (
-      <RadioCards.Root size="1" columns="3" defaultValue="public">
-        {[
-          {
-            value: "public",
-            label: "Public",
-            description: "Anyone can find and download it.",
-          },
-          {
-            value: "unlisted",
-            label: "Unlisted",
-            description: "Link only. Hidden from search.",
-          },
-          {
-            value: "restricted",
-            label: "Restricted",
-            description: "Members of this product only.",
-            disabled: true,
-          },
-        ].map((option) => (
-          <RadioCards.Item
-            key={option.value}
-            value={option.value}
-            disabled={option.disabled}
-            // Mirrors DynamicForm: Radix centres item content on both axes, so
-            // a shorter card would float mid-height and indent from the left.
-            style={{ alignItems: "flex-start", justifyContent: "flex-start" }}
-          >
-            <Flex align="start" gap="2" width="100%">
-              {/* Mirrors DynamicForm's RadioDot: Radix ships no indicator, so
-                  the card border would otherwise be the only selection cue. */}
-              <span
-                aria-hidden
-                style={{
-                  position: "relative",
-                  display: "inline-block",
-                  flexShrink: 0,
-                  width: "var(--space-4)",
-                  height: "var(--space-4)",
-                  marginTop: "2px",
-                  borderRadius: "100%",
-                  backgroundColor: option.disabled
-                    ? "var(--gray-a3)"
-                    : option.value === "public"
-                      ? "var(--accent-indicator)"
-                      : "var(--color-surface)",
-                  boxShadow:
-                    option.value === "public" && !option.disabled
-                      ? undefined
-                      : `inset 0 0 0 1px var(--gray-a${option.disabled ? "6" : "7"})`,
-                }}
-              >
-                {option.value === "public" && (
-                  <span
-                    style={{
-                      position: "absolute",
-                      inset: 0,
-                      margin: "auto",
-                      width: "40%",
-                      height: "40%",
-                      borderRadius: "100%",
-                      backgroundColor: "var(--accent-contrast)",
-                    }}
-                  />
-                )}
-              </span>
-              <Flex direction="column" align="start" gap="1">
-                <Text size="2" weight="medium">
-                  {option.label}
-                </Text>
-                <Text size="1" color="gray">
-                  {option.description}
-                </Text>
-              </Flex>
-            </Flex>
-          </RadioCards.Item>
-        ))}
-      </RadioCards.Root>
-    ),
-  },
-};
-
 /**
  * A control small enough to sit on the label row lives in `aside`, and the
  * field has no children at all. Pass `htmlFor` and set that id on the control,
@@ -229,21 +120,6 @@ export const WithInlineSwitch: Story = {
         // The label row aligns on the text baseline, which a switch does not have.
         style={{ alignSelf: "center" }}
       />
-    ),
-  },
-};
-
-/** A two-value select is a switch wearing a costume. */
-export const AsSwitch: Story = {
-  args: {
-    label: "Status",
-    help: "Deactivating hides the product and blocks the data API. Only an administrator can reactivate it.",
-    group: true,
-    children: (
-      <Flex align="center" gap="2">
-        <Switch size="2" defaultChecked />
-        <Text size="2">Active</Text>
-      </Flex>
     ),
   },
 };

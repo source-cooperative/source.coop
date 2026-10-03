@@ -17,8 +17,3 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
-
-/** Where the surrounding page already owns the filters. */
-export const WithoutFilters: Story = {
-  args: { showFilters: false },
-};

@@ -106,16 +106,6 @@ export const AdminWithOwners: Story = {
   args: { connections, ownerAccounts },
 };
 
-/** An owner id that no longer resolves to an account falls back to the raw id. */
-export const UnresolvableOwner: Story = {
-  args: {
-    connections: [
-      { ...connections[0], owner: "deleted-account" } as DataConnection,
-    ],
-    ownerAccounts: {},
-  },
-};
-
 export const Empty: Story = {
   args: { connections: [] },
 };

@@ -15,7 +15,3 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {
   args: { children: "All products" },
 };
-
-export const LongLabel: Story = {
-  args: { children: "See every product using this data connection" },
-};

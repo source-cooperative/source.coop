@@ -21,9 +21,6 @@ const mobile = {
   globals: { viewport: { value: "mobile1", isRotated: false } },
 };
 
-/** At phone width the DOI should end in an ellipsis, copy button still on screen. */
-export const Narrow: Story = { ...mobile, args: Default.args };
-
 /** Registered DOIs run much longer than the common case. */
 export const LongDoi: Story = {
   ...mobile,

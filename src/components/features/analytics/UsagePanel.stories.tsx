@@ -137,17 +137,6 @@ export const HighVolume: Story = {
   args: { days: petabyte, totals: totalsOf(petabyte, 148) },
 };
 
-const week = makeDays(7, (i) => 210 + wobble(i, 3) * 140);
-
-/**
- * Seven days rather than 28. The card is pinned to `USAGE_DAYS` in the app,
- * so this window is only reachable through the full analytics page — but the
- * panel is the same one, and it has to hold up with a quarter of the bars.
- */
-export const ShortWindow: Story = {
-  args: { days: week, totals: totalsOf(week, 19) },
-};
-
 /**
  * The card at phone width, where the stats row has to give up its single
  * line. The metrics reflow onto a second row rather than running off the side
