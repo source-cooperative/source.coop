@@ -1,5 +1,4 @@
 import { Text, Flex, Link as RadixLink } from "@radix-ui/themes";
-import { MonoText } from "./MonoText";
 import { AccountInfoHoverCard } from "./AccountInfoHoverCard";
 import { accountUrl } from "@/lib/urls";
 import { Account } from "@/types";
@@ -17,13 +16,11 @@ interface AccountDisplayProps {
 }
 
 export function AvatarLinkCompact({
-  showAccountId = false,
   link = true,
   size = "2",
   ...props
 }: AccountDisplayProps & {
   showHoverCard?: boolean;
-  showAccountId?: boolean;
   link?: boolean;
 }) {
   const content = (
@@ -46,9 +43,6 @@ export function AvatarLinkCompact({
           content
         )}
       </AccountInfoHoverCard>
-      {showAccountId && (
-        <MonoText size="1">{props.account.account_id}</MonoText>
-      )}
     </Flex>
   );
 }

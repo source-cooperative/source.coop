@@ -1,14 +1,8 @@
 import { Box } from "@radix-ui/themes";
 
-export function SmallColumnContainer({
-  children,
-  maxWidth = "800px",
-}: {
-  children: React.ReactNode;
-  maxWidth?: string;
-}) {
+export function SmallColumnContainer({ children }: { children: React.ReactNode }) {
   return (
-    <Box style={{ maxWidth, margin: "0 auto" }} py="4">
+    <Box style={{ maxWidth: "800px", margin: "0 auto" }} py="4">
       {children}
     </Box>
   );
