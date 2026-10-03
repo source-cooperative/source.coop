@@ -239,8 +239,12 @@ export function GithubWorkflowFields({
           {/* Callout.Text is a <p>, which can't hold the list. */}
           <Box>
             <Callout.Text>
-              GitHub doesn&apos;t show this repository publicly, so its subject can&apos;t be
-              verified. If it&apos;s private, enter its subject prefix as the repository:
+              We can&apos;t see{" "}
+              <DocsLink href={`https://github.com/${workflow.repository}`}>
+                {workflow.repository}
+              </DocsLink>
+              , so it&apos;s either private or doesn&apos;t exist. Check that it exists, then
+              enter its default subject claim prefix as the repository. To find it:
             </Callout.Text>
             <Text size="1" asChild>
               <ul style={{ margin: "var(--space-1) 0 0", paddingLeft: "var(--space-4)" }}>
