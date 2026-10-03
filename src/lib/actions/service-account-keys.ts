@@ -61,7 +61,7 @@ async function ownKey(formData: FormData) {
   const key = (await serviceAccountKeysTable.listByAccount(account.account_id)).find(
     (k) => k.key_id === key_id
   );
-  return key ? { account, key } : null;
+  return key ? { account, key, session } : null;
 }
 
 /** Revocation takes effect for new exchanges within the proxy's cache TTL. */
@@ -72,7 +72,7 @@ export async function revokeApiKey(
   const own = await ownKey(formData);
   if (!own) return outcome("No such key on a service account you manage", false);
   if (own.key.revoked_at) return outcome("Already revoked", false);
-  await serviceAccountKeysTable.revoke(own.key.key_hash, "owner");
+  await serviceAccountKeysTable.revoke(own.key.key_hash, "owner", own.session?.account?.account_id);
   revalidatePath(editAccountServiceAccountsUrl(own.account.owner_account_id));
   revalidatePath(editServiceAccountUrl(own.account.owner_account_id, own.account.account_id));
   return outcome("Key revoked", true);
