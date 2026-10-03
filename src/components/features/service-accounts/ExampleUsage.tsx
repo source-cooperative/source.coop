@@ -24,7 +24,7 @@ export function GithubWorkflowIntro({ subject }: { subject: string }) {
       </Link>{" "}
       action: Source Cooperative speaks the STS protocol it expects, so no custom action or stored secret is
       needed. In <Code>{subject.split(":")[1]}</Code>, save this workflow under{" "}
-      <Code>.github/workflows/</Code>, or add the highlighted step to a job of your own:
+      <Code>.github/workflows/</Code>, or carry the highlighted lines into a workflow of your own:
     </>
   );
 }
@@ -32,8 +32,8 @@ export function GithubWorkflowIntro({ subject }: { subject: string }) {
 /**
  * What software adds to sign in one way, ready to paste — a workflow, or the
  * variables for a key — in a modal opened from "Example usage" in the row's
- * menu. Given a `focus`, the lines outside it fade, so the part that signs in
- * stands out from the scaffolding around it. Nothing in it is secret.
+ * menu. Given a `focus`, the lines outside it fade, so the parts that are
+ * Source Cooperative's stand out from the scaffolding around them. Nothing in it is secret.
  */
 export function ExampleUsage({
   title,
@@ -48,8 +48,8 @@ export function ExampleUsage({
   /** The line above the code: where it goes. */
   intro: React.ReactNode;
   code: string;
-  /** The lines kept at full strength, `[first, end)`; the rest fade. */
-  focus?: [number, number];
+  /** The line ranges kept at full strength, each `[first, end)`; the rest fade. */
+  focus?: [number, number][];
   language: Language;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -90,7 +90,7 @@ export function ExampleUsage({
                     style={{
                       paddingLeft: `${line.search(/\S|$/) + 2}ch`,
                       textIndent: "-2ch",
-                      opacity: focus && (i < focus[0] || i >= focus[1]) ? 0.4 : undefined,
+                      opacity: focus && !focus.some(([first, end]) => i >= first && i < end) ? 0.4 : undefined,
                     }}
                   >
                     {highlightLine(line.trimStart(), language).map((token, j) => (

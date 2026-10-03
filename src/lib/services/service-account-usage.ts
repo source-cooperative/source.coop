@@ -6,7 +6,7 @@
  * for the proxy (which `id-token: write` permits), exchanges it for
  * credentials carrying the account's memberships if the account trusts the
  * workflow's subject (ADR-014), and exports them for every later step. The
- * audience and STS endpoint are read from `AWS_ENDPOINT_URL_S3`, the variable
+ * audience and STS endpoint are read from `AWS_ENDPOINT_URL`, the variable
  * that also points S3 clients at the proxy, so the proxy is named once. The
  * partition is `aws` because the action treats any other value as a bare role
  * name. `FullAccess` is everything the account may do; `ReadOnly` narrows it
@@ -17,59 +17,84 @@ const signInStep = (account_id: string) => [
   "  uses: aws-actions/configure-aws-credentials@v6",
   "  with:",
   `    role-to-assume: arn:aws:iam::${account_id}:role/FullAccess`,
-  "    audience: ${{ env.AWS_ENDPOINT_URL_S3 }}",
-  "    sts-endpoint: ${{ env.AWS_ENDPOINT_URL_S3 }}/.sts",
+  "    audience: ${{ env.AWS_ENDPOINT_URL }}",
+  "    sts-endpoint: ${{ env.AWS_ENDPOINT_URL }}/.sts",
   "    aws-region: us-west-2",
 ];
 
 /**
  * A whole GitHub Actions workflow that acts as a service account, ready to
  * save under `.github/workflows/` as it is, for the trusted `subject`: one job
- * running the sign-in step, with `AWS_ENDPOINT_URL_S3` set for the whole
- * workflow so every step's S3 client reaches the proxy. A subject pinned to an
- * environment needs the job to name it, or the token's subject names the ref
- * instead. It runs nightly and on demand; a schedule always runs on the
- * default branch, so for a trust pinned to another ref only the runs started
- * by hand on that ref can sign in. `focus` is the sign-in step's lines, `[first, end)`, so a reader
- * adding it to a job of their own can see which part is Source Cooperative's.
+ * running the sign-in step, with `AWS_ENDPOINT_URL` set for the whole workflow
+ * so every step's AWS client reaches the proxy. `AWS_ENDPOINT_URL` rather than
+ * `AWS_ENDPOINT_URL_S3`, because more SDKs and tools honour the general
+ * variable than the per-service one. A subject pinned to an environment needs
+ * the job to name it, or the token's subject names the ref instead. It runs
+ * nightly and on demand; a schedule always runs on the default branch, so for
+ * a trust pinned to another ref only the runs started by hand on that ref can
+ * sign in. `focus` is the line ranges, `[first, end)`, that are Source
+ * Cooperative's — the `env` block and the sign-in step — so a reader adding
+ * them to a workflow of their own can see which parts to carry over.
  */
 export function githubWorkflow(
   proxyOrigin: string,
   account_id: string,
   subject: string
-): { code: string; focus: [number, number] } {
+): { code: string; focus: [number, number][] } {
   const environment = subject.match(/:environment:(.+)$/)?.[1];
   const ref = subject.match(/:ref:(.+)$/)?.[1];
-  const before = [
-    "name: Source Cooperative",
-    ...(ref ? [`# Every run must be on ${ref}, the ref ${account_id} trusts.`] : []),
-    "on:",
-    "  schedule:  # nightly; GitHub runs schedules on the default branch",
-    '    - cron: "0 6 * * *"',
-    "  workflow_dispatch:  # and by hand, from the Actions tab",
-    "env:",
-    `  AWS_ENDPOINT_URL_S3: ${proxyOrigin}`,
-    "",
-    "jobs:",
-    "  data:",
-    "    runs-on: ubuntu-latest",
-    ...(environment ? [`    environment: ${JSON.stringify(environment)}`] : []),
-    "    permissions:",
-    "      id-token: write",
-    "      contents: read",
-    "    steps:",
-    "      # Any setup of your own (checkout, installing tools) can come first.",
+  // Each part of the file, and whether it is Source Cooperative's.
+  const parts: [string[], boolean][] = [
+    [
+      [
+        "name: Source Cooperative",
+        ...(ref ? [`# Every run must be on ${ref}, the ref ${account_id} trusts.`] : []),
+        "on:",
+        "  schedule:  # nightly; GitHub runs schedules on the default branch",
+        '    - cron: "0 6 * * *"',
+        "  workflow_dispatch:  # and by hand, from the Actions tab",
+      ],
+      false,
+    ],
+    [
+      [
+        "# Tells AWS SDKs and the AWS CLI to reach S3 through Source Cooperative's data proxy.",
+        "env:",
+        `  AWS_ENDPOINT_URL: ${proxyOrigin}`,
+      ],
+      true,
+    ],
+    [
+      [
+        "",
+        "jobs:",
+        "  data:",
+        "    runs-on: ubuntu-latest",
+        ...(environment ? [`    environment: ${JSON.stringify(environment)}`] : []),
+        "    permissions:",
+        "      id-token: write",
+        "      contents: read",
+        "    steps:",
+        "      # Any setup of your own (checkout, installing tools) can come first.",
+      ],
+      false,
+    ],
+    [signInStep(account_id).map((line) => `      ${line}`), true],
+    [
+      [
+        `      # From here on, any AWS SDK or the AWS CLI acts as ${account_id}.`,
+        `      - run: aws s3 ls s3://${account_id.split("--")[0]}/`,
+      ],
+      false,
+    ],
   ];
-  const step = signInStep(account_id).map((line) => `      ${line}`);
-  return {
-    code: [
-      ...before,
-      ...step,
-      `      # From here on, any AWS SDK or the AWS CLI acts as ${account_id}.`,
-      `      - run: aws s3 ls s3://${account_id.split("--")[0]}/`,
-    ].join("\n"),
-    focus: [before.length, before.length + step.length],
-  };
+  const lines: string[] = [];
+  const focus: [number, number][] = [];
+  for (const [part, ours] of parts) {
+    if (ours) focus.push([lines.length, lines.length + part.length]);
+    lines.push(...part);
+  }
+  return { code: lines.join("\n"), focus };
 }
 
 /**

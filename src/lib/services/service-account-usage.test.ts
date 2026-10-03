@@ -9,7 +9,7 @@ describe("githubWorkflow", () => {
   it("is a whole workflow: env for every step, one job permitted to mint an OIDC token, with the sign-in step", () => {
     const { code: workflow } = githubWorkflow("https://data.source.coop", "acme--nightly-sync", REF);
     expect(workflow).toMatch(
-      /^name: .+\n# Every run must be on refs\/heads\/main.*\non:\n {2}schedule:.*\n {4}- cron: "0 6 \* \* \*"\n {2}workflow_dispatch:.*\nenv:\n {2}AWS_ENDPOINT_URL_S3: https:\/\/data.source.coop\n/
+      /^name: .+\n# Every run must be on refs\/heads\/main.*\non:\n {2}schedule:.*\n {4}- cron: "0 6 \* \* \*"\n {2}workflow_dispatch:.*\n# .*data proxy.*\nenv:\n {2}AWS_ENDPOINT_URL: https:\/\/data.source.coop\n/
     );
     expect(workflow).toContain(
       "\njobs:\n  data:\n    runs-on: ubuntu-latest\n    permissions:\n      id-token: write\n"
@@ -21,9 +21,15 @@ describe("githubWorkflow", () => {
     expect(workflow).not.toContain("environment:");
   });
 
-  it("focuses on exactly the sign-in step", () => {
+  it("focuses on exactly the env block and the sign-in step", () => {
     const { code, focus } = githubWorkflow("https://data.source.coop", "acme--nightly-sync", REF);
-    const step = code.split("\n").slice(...focus);
+    const lines = code.split("\n");
+    const [env, step] = focus.map((range) => lines.slice(...range));
+    expect(env).toEqual([
+      expect.stringMatching(/^# .*data proxy/),
+      "env:",
+      "  AWS_ENDPOINT_URL: https://data.source.coop",
+    ]);
     expect(step[0]).toBe("      - name: Sign in to Source Cooperative as acme--nightly-sync");
     expect(step.at(-1)).toBe("          aws-region: us-west-2");
   });
@@ -39,8 +45,8 @@ describe("githubWorkflow", () => {
     // The action rebuilds any role that does not start with arn:aws as a bare
     // name, so the partition is aws whatever the proxy calls itself.
     expect(workflow).toContain("role-to-assume: arn:aws:iam::nightly-sync:role/FullAccess");
-    expect(workflow).toContain("audience: ${{ env.AWS_ENDPOINT_URL_S3 }}");
-    expect(workflow).toContain("sts-endpoint: ${{ env.AWS_ENDPOINT_URL_S3 }}/.sts");
+    expect(workflow).toContain("audience: ${{ env.AWS_ENDPOINT_URL }}");
+    expect(workflow).toContain("sts-endpoint: ${{ env.AWS_ENDPOINT_URL }}/.sts");
     // Nothing account-specific beyond the id: no secret, no challenge.
     expect(workflow).not.toMatch(/eyJ/);
   });
