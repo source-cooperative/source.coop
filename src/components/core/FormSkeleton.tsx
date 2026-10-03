@@ -3,13 +3,9 @@ import { Skeleton } from "./Skeleton";
 
 interface FormSkeletonProps {
   fieldCount?: number;
-  showSubmitButton?: boolean;
 }
 
-export function FormSkeleton({
-  fieldCount = 4,
-  showSubmitButton = true,
-}: FormSkeletonProps) {
+export function FormSkeleton({ fieldCount = 4 }: FormSkeletonProps) {
   return (
     <>
       <Box mb="4">
@@ -29,11 +25,9 @@ export function FormSkeleton({
           </Box>
         ))}
 
-        {showSubmitButton && (
-          <Flex justify="end" mt="4">
-            <Skeleton height="36px" width="140px" />
-          </Flex>
-        )}
+        <Flex justify="end" mt="4">
+          <Skeleton height="36px" width="140px" />
+        </Flex>
       </Box>
     </>
   );
