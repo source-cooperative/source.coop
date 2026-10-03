@@ -23,9 +23,7 @@ export function AddGithubTrustDialog({
   onAdd,
   open,
   onOpenChange,
-}: {
-  accountId?: string;
-  onAdd?: (subject: string) => void;
+}: ({ accountId: string; onAdd?: never } | { accountId?: never; onAdd: (subject: string) => void }) & {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {

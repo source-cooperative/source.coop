@@ -5,13 +5,12 @@ import { useRouter } from "next/navigation";
 import {
   Button,
   Code,
-  DropdownMenu,
   Flex,
   IconButton,
   Text,
   TextField,
 } from "@radix-ui/themes";
-import { DotsHorizontalIcon } from "@radix-ui/react-icons";
+import { TrashIcon } from "@radix-ui/react-icons";
 import { Field, FormActions, SectionHeader } from "@/components/core";
 import { ItemList } from "@/components/core/ItemList";
 import { createServiceAccount } from "@/lib/actions/service-accounts";
@@ -26,21 +25,12 @@ import { AddSignInMenu, SIGN_IN_DESCRIPTION } from "./AddSignInMenu";
 import type { ApiKeyDraft } from "./IssueApiKeyDialog";
 import { handOffIssuedKey } from "./IssuedApiKeyDialog";
 
-/** A sign-in's menu, as on the account's page; nothing is saved yet, so only "Remove". */
-function RemoveMenu({ label, onRemove }: { label: string; onRemove: () => void }) {
+/** Drops a sign-in the form holds; nothing is saved yet, so there is nothing else to do with it. */
+function RemoveButton({ label, onRemove }: { label: string; onRemove: () => void }) {
   return (
-    <DropdownMenu.Root>
-      <DropdownMenu.Trigger>
-        <IconButton type="button" size="1" variant="ghost" color="gray" aria-label={`Actions for ${label}`}>
-          <DotsHorizontalIcon />
-        </IconButton>
-      </DropdownMenu.Trigger>
-      <DropdownMenu.Content align="end" size="1">
-        <DropdownMenu.Item color="red" onSelect={onRemove}>
-          Remove
-        </DropdownMenu.Item>
-      </DropdownMenu.Content>
-    </DropdownMenu.Root>
+    <IconButton type="button" size="1" variant="ghost" color="red" aria-label={`Remove ${label}`} onClick={onRemove}>
+      <TrashIcon />
+    </IconButton>
   );
 }
 
@@ -155,11 +145,10 @@ export function ServiceAccountForm({ ownerAccountId, products }: ServiceAccountF
             <AddSignInMenu
               // One key at creation; the account's page issues more.
               keyDisabled={!!apiKey}
-              onAdd={(signIn) =>
-                "github" in signIn
-                  ? setSubjects((all) => (all.includes(signIn.github) ? all : [...all, signIn.github]))
-                  : setApiKey(signIn.key)
+              onAddGithub={(subject) =>
+                setSubjects((all) => (all.includes(subject) ? all : [...all, subject]))
               }
+              onAddKey={setApiKey}
             />
           }
         >
@@ -194,7 +183,7 @@ export function ServiceAccountForm({ ownerAccountId, products }: ServiceAccountF
                         }
                         meta="GitHub Actions"
                         actions={
-                          <RemoveMenu
+                          <RemoveButton
                             label={subject}
                             onRemove={() => setSubjects((all) => all.filter((s) => s !== subject))}
                           />
@@ -217,7 +206,7 @@ export function ServiceAccountForm({ ownerAccountId, products }: ServiceAccountF
                           ? `Expires ${apiKey.expires_in_days} days after it is issued`
                           : "Never expires"
                       }
-                      actions={<RemoveMenu label={apiKey.label} onRemove={() => setApiKey(null)} />}
+                      actions={<RemoveButton label={apiKey.label} onRemove={() => setApiKey(null)} />}
                     />
                   </ItemList.Root>
                 </Flex>

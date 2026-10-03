@@ -27,9 +27,7 @@ export function IssueApiKeyDialog({
   onAdd,
   open,
   onOpenChange,
-}: {
-  accountId?: string;
-  onAdd?: (key: ApiKeyDraft) => void;
+}: ({ accountId: string; onAdd?: never } | { accountId?: never; onAdd: (key: ApiKeyDraft) => void }) & {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
@@ -78,7 +76,7 @@ function IssueForm({
           ? (data) =>
               onAdd({
                 label: String(data.get("label")),
-                expires_in_days: String(data.get("expires_in_days")),
+                expires_in_days: String(data.get("expires_in_days") ?? ""),
               })
           : formAction
       }
