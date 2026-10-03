@@ -1,11 +1,7 @@
 import { Box, Flex } from "@radix-ui/themes";
 import { Skeleton } from "./Skeleton";
 
-interface FormSkeletonProps {
-  fieldCount?: number;
-}
-
-export function FormSkeleton({ fieldCount = 4 }: FormSkeletonProps) {
+export function FormSkeleton({ fieldCount = 4 }: { fieldCount?: number }) {
   return (
     <>
       <Box mb="4">
