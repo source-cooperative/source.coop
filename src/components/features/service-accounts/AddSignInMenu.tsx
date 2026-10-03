@@ -8,7 +8,7 @@ import { IssueApiKeyDialog, type ApiKeyDraft } from "./IssueApiKeyDialog";
 
 /** What "Signs in with" says of itself, on the create form and the account's page alike. */
 export const SIGN_IN_DESCRIPTION =
-  "GitHub Actions workflows, each pinned to one repository and one ref or environment; GitHub vouches for every run, so there is no secret to store. Or an API key, for environments without OIDC, shown once when it is issued.";
+  "GitHub Actions workflows, each pinned to one repository and one branch, tag or environment; GitHub vouches for every run, so there is no secret to store. Or an API key, for environments without OIDC, shown once when it is issued.";
 
 /**
  * "Add sign-in", for the corner of a service account's "Signs in with": a

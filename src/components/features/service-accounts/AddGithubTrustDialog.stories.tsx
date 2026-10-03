@@ -4,8 +4,8 @@ import { AddGithubTrustDialog } from "./AddGithubTrustDialog";
 
 /**
  * Trusting a GitHub workflow, opened from "Add sign-in" → "GitHub workflow":
- * one repository, pinned to a ref or an environment, with the exact subject
- * that will be trusted shown beneath as you type.
+ * one repository, pinned to a branch, a tag or an environment, with the exact
+ * condition that will be trusted shown beneath as you type.
  *
  * `addGithubTrust` is mocked in `.storybook/preview.tsx` to succeed, so
  * submitting closes the modal as it does in the app — here, by calling

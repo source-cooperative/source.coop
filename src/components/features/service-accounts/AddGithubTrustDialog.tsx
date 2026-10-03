@@ -68,7 +68,7 @@ function TrustForm({
   // With onAdd nothing reaches the server until the create form is
   // submitted, so the subject is checked here, the way addGithubTrust would.
   const [invalid, setInvalid] = useState(false);
-  const message = invalid ? "Name one repository and one ref or environment" : !state.success && state.message;
+  const message = invalid ? "Name one repository and one branch, tag or environment" : !state.success && state.message;
 
   useEffect(() => {
     if (state.success) onTrusted();
@@ -91,7 +91,7 @@ function TrustForm({
       <input type="hidden" name="subject" value={githubSubject(workflow)} />
       <Flex direction="column" gap="3">
         <Dialog.Description size="2">
-          One repository, pinned to one ref or one environment. GitHub vouches for the
+          One repository, pinned to one branch, tag or environment. GitHub vouches for the
           workflow at every run; nothing is stored here but the name.
         </Dialog.Description>
         <GithubWorkflowFields

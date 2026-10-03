@@ -74,12 +74,12 @@ export const githubSubject = (w: GithubWorkflow) => {
  * it's known.
  */
 export const githubCondition = (w: GithubWorkflow, audience?: string) => {
-  const claim = (name: string) => `${new URL(GITHUB_ACTIONS_ISSUER).host}:${name}`;
+  const host = new URL(GITHUB_ACTIONS_ISSUER).host;
   return JSON.stringify(
     {
       StringEquals: {
-        ...(audience && { [claim("aud")]: audience }),
-        [claim("sub")]: githubSubject(w),
+        ...(audience && { [`${host}:aud`]: audience }),
+        [`${host}:sub`]: githubSubject(w),
       },
     },
     null,
