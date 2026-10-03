@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { Theme } from "@radix-ui/themes";
 import {
   GithubWorkflowFields,
@@ -81,6 +81,18 @@ describe("GithubWorkflowFields", () => {
     );
   });
 
+  it("takes a pasted subject prefix without its repo:", () => {
+    const onChange = renderFor({});
+
+    fireEvent.change(screen.getByLabelText(/Repository/), {
+      target: { value: "repo:octocat@583231/Hello-World@1296269 " },
+    });
+
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({ repository: "octocat@583231/Hello-World@1296269" })
+    );
+  });
+
   it("explains a repository named by its ids", () => {
     renderFor({ repository: "octocat@583231/Hello-World@1296269" });
 
@@ -94,10 +106,13 @@ describe("GithubWorkflowFields", () => {
     expect(await screen.findByText(/customizes its subject claim/)).toBeTruthy();
   });
 
-  it("gives the gh command for a repository GitHub doesn't show", async () => {
+  it("points a repository GitHub doesn't show at its OIDC settings, and gives the gh command", async () => {
     respond(404);
     renderFor({ repository: "octocat/secret" });
 
+    expect((await screen.findByRole("link", { name: "OIDC settings" })).getAttribute("href")).toBe(
+      "https://github.com/octocat/secret/settings/actions/oidc-configuration"
+    );
     expect(
       await screen.findByText(
         "gh api repos/octocat/secret/actions/oidc/customization/sub --jq .sub_claim_prefix"

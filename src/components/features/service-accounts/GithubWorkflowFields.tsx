@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Box, Code, Flex, Link, SegmentedControl, Text, TextField } from "@radix-ui/themes";
+import { Box, Code, Flex, Link, SegmentedControl, Strong, Text, TextField } from "@radix-ui/themes";
 import { Field } from "@/components/core";
 import { CopyToClipboard } from "@/components/core/CopyToClipboard";
 import { GITHUB_ACTIONS_ISSUER } from "@/types";
@@ -70,6 +70,10 @@ export const githubCondition = (w: GithubWorkflow) =>
 
 /** A repository named the mutable way, `owner/repo`. */
 const SHORT_REPOSITORY = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/;
+
+/** The settings page that shows a repository's subject prefix to its admins. */
+const oidcSettingsUrl = (repository: string) =>
+  `https://github.com/${repository}/settings/actions/oidc-configuration`;
 
 /** Prints how a repository's tokens name it, for one the public API can't see. */
 const ghSubjectPrefixCommand = (repository: string) =>
@@ -166,7 +170,12 @@ export function GithubWorkflowFields({
               placeholder="owner/repo"
               value={workflow.repository}
               onChange={(e) =>
-                onChange({ ...workflow, repository: e.target.value, tokenRepository: undefined })
+                onChange({
+                  ...workflow,
+                  // GitHub shows the name as a subject prefix, `repo:` and all.
+                  repository: e.target.value.trim().replace(/^repo:/, ""),
+                  tokenRepository: undefined,
+                })
               }
             />
           </Field>
@@ -188,8 +197,10 @@ export function GithubWorkflowFields({
       {setting === null && (
         <Flex direction="column" gap="1">
           <Text size="1" color="gray">
-            GitHub doesn&apos;t show this repository publicly. If it&apos;s private, run this and
-            enter what it prints after <Code size="1">repo:</Code> as the repository:
+            GitHub doesn&apos;t show this repository publicly. If it&apos;s private, paste the{" "}
+            <Strong>Default subject claim prefix</Strong> from its{" "}
+            <DocsLink href={oidcSettingsUrl(workflow.repository)}>OIDC settings</DocsLink> as the
+            repository. Without admin access there, this prints the same:
           </Text>
           <Flex gap="2" align="center">
             <Code size="1" style={{ wordBreak: "break-all" }}>
