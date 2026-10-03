@@ -131,7 +131,7 @@ export default async function ProductLayout({
               productId={product_id}
               path={path?.map((p) => decodeURIComponent(p)) || []}
               prefix={prefix}
-              canWriteData={!!canWriteData}
+              canWriteData={canWriteData}
             >
               {children}
             </ProductContentsCard>

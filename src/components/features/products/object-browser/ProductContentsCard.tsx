@@ -48,12 +48,10 @@ export function ProductContentsCard({
             borderBottom: "1px solid var(--gray-5)",
           }}
         >
-          <Flex direction="row" gap="2" align="center" justify="between">
-            <BreadcrumbNav
-              path={path}
-              baseUrl={productUrl(accountId, productId)}
-            />
-          </Flex>
+          <BreadcrumbNav
+            path={path}
+            baseUrl={productUrl(accountId, productId)}
+          />
         </Box>
       </SectionHeader>
       {children}
