@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { Avatar, Box } from "@radix-ui/themes";
-import { AccountIdentity, accountCardSurface } from "./AccountIdentity";
+import { Avatar } from "@radix-ui/themes";
+import { AccountIdentity } from "./AccountIdentity";
 
 /**
  * How an account is introduced anywhere it appears out of context: avatar,
@@ -36,16 +36,6 @@ export const Default: Story = {
 /** Size 2 is what the picker's suggestion rows use, so the list stays dense. */
 export const InAList: Story = {
   args: { ...Default.args, size: "2" },
-};
-
-/** On the shared card surface, which is how both callers present it. */
-export const OnCardSurface: Story = {
-  args: Default.args,
-  render: (args) => (
-    <Box p="4" style={{ ...accountCardSurface, maxWidth: 300 }}>
-      <AccountIdentity {...args} />
-    </Box>
-  ),
 };
 
 /** A long display name must not push the handle out of the row. */

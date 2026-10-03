@@ -38,11 +38,21 @@ const relative = (iso: string, now = Date.now()) => {
   return RELATIVE.format(Math.round(days / 365), "year");
 };
 
+const REVOKED_VIA: Record<RevokedVia, string> = {
+  owner: " in settings",
+  holder: " anonymously via the API",
+  github: " by GitHub secret scanning",
+};
+
+/** Who revoked a key — the person, an anonymous holder, or GitHub — as a phrase to follow "Revoked …". */
+const revoker = (key: ServiceAccountKey) =>
+  key.revoked_by ? ` by ${key.revoked_by}` : key.revoked_via ? REVOKED_VIA[key.revoked_via] : "";
+
 /** What a key's row says of it, in two short lines: its use, then its end. */
 const keyStanding = (key: ServiceAccountKey) => ({
   used: key.last_used_at ? `Used ${relative(key.last_used_at)}` : "Never used",
   ends: key.revoked_at
-    ? `Revoked ${relative(key.revoked_at)}`
+    ? `Revoked ${relative(key.revoked_at)}${revoker(key)}`
     : key.expires_at === null
       ? "Never expires"
       : Date.parse(key.expires_at) > Date.now()
@@ -50,19 +60,13 @@ const keyStanding = (key: ServiceAccountKey) => ({
         : `Expired ${relative(key.expires_at)}`,
 });
 
-const REVOKED_VIA: Record<RevokedVia, string> = {
-  owner: " in settings",
-  holder: " by someone holding it",
-  github: " after GitHub found it in public",
-};
-
 /** The row's exact dates, and who revoked it, for its tooltip. */
 const keyDates = (key: ServiceAccountKey) =>
   [
     `Issued ${date(key.created_at)} by ${key.created_by}`,
     key.last_used_at && `Last used ${date(key.last_used_at)}`,
     key.revoked_at
-      ? `Revoked ${date(key.revoked_at)}${key.revoked_via ? REVOKED_VIA[key.revoked_via] : ""}`
+      ? `Revoked ${date(key.revoked_at)}${revoker(key)}`
       : key.expires_at
         ? `Expires ${date(key.expires_at)}`
         : "Never expires",

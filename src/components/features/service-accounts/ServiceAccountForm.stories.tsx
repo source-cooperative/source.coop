@@ -16,7 +16,7 @@ import { ServiceAccountForm } from "./ServiceAccountForm";
  *
  * Submitting goes to the new account's page. With a key, the key goes along
  * in memory and opens over that page, the only time it can be seen — see
- * `IssuedApiKeyDialog`, and `ServiceAccountDetail`'s "Created with a key".
+ * `ServiceAccountDetail`'s "Created with a key".
  * Storybook cannot follow either way there, so `createServiceAccount` is
  * mocked in `.storybook/preview.tsx` to resolve without redirecting, and the
  * router's push does nothing.

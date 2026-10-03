@@ -92,7 +92,8 @@ describe("revokeApiKey and setApiKeyExpiry", () => {
   it("revokes only a key on a service account the caller manages", async () => {
     keys.listByAccount.mockResolvedValue([record]);
     expect((await revokeApiKey(IDLE, form({ account_id: "acme--nightly-sync", key_id: "k1" }))).success).toBe(true);
-    expect(keys.revoke).toHaveBeenCalledWith("h1", "owner");
+    // Records the signed-in person, not the service account.
+    expect(keys.revoke).toHaveBeenCalledWith("h1", "owner", "alice");
 
     // A key the account does not hold is not found, whatever id is given.
     keys.listByAccount.mockResolvedValue([]);

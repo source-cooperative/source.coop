@@ -36,6 +36,12 @@ export const ServiceAccountKeySchema = z
      * public. Absent on keys revoked before it was recorded.
      */
     revoked_via: z.enum(["owner", "holder", "github"]).optional(),
+    /**
+     * The account that revoked the key, when an `owner` did: the signed-in
+     * person, not the service account. A `holder` is anonymous and GitHub is
+     * no account, so neither sets it.
+     */
+    revoked_by: z.string().optional(),
     last_used_at: z.string().datetime().optional(),
   })
   .openapi("ServiceAccountKey");

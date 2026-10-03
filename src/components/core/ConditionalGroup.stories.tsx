@@ -79,17 +79,3 @@ export const UnderItsControl: Story = {
     </Flex>
   ),
 };
-
-/** A single field still earns the rule: the point is stating the cause. */
-export const OneField: Story = {
-  args: {
-    because: "provider is Google Cloud",
-    children: (
-      <Field label="Bucket" required>
-        {(props) => (
-          <TextField.Root {...props} size="3" defaultValue="black-mesa-files" />
-        )}
-      </Field>
-    ),
-  },
-};

@@ -58,14 +58,21 @@ export class ServiceAccountKeysTable extends BaseTable {
     );
   }
 
-  /** Revokes a key, recording when and by whom in the one write. */
-  async revoke(key_hash: string, via: RevokedVia): Promise<void> {
+  /**
+   * Revokes a key, recording when, through which channel and — for an owner —
+   * which account, in the one write.
+   */
+  async revoke(key_hash: string, via: RevokedVia, by?: string): Promise<void> {
     await this.client.send(
       new UpdateCommand({
         TableName: this.table,
         Key: { key_hash },
-        UpdateExpression: "SET revoked_at = :at, revoked_via = :via",
-        ExpressionAttributeValues: { ":at": new Date().toISOString(), ":via": via },
+        UpdateExpression: `SET revoked_at = :at, revoked_via = :via${by ? ", revoked_by = :by" : ""}`,
+        ExpressionAttributeValues: {
+          ":at": new Date().toISOString(),
+          ":via": via,
+          ...(by ? { ":by": by } : {}),
+        },
         ConditionExpression: "attribute_exists(key_hash)",
       })
     );
