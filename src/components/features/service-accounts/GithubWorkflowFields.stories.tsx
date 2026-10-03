@@ -3,7 +3,10 @@ import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { fn } from "storybook/test";
 import { IconButton } from "@radix-ui/themes";
 import { TrashIcon } from "@radix-ui/react-icons";
-import { GithubWorkflowFields, NEW_GITHUB_WORKFLOW } from "./GithubWorkflowFields";
+import {
+  GithubWorkflowFields,
+  NEW_GITHUB_WORKFLOW,
+} from "./GithubWorkflowFields";
 
 /**
  * Names one GitHub workflow: a repository, and the branch, tag or environment
@@ -33,7 +36,13 @@ const meta = {
   args: { id: "wf", onChange: fn(), audience: "https://data.source.coop" },
   render: function Controlled(args) {
     const [workflow, setWorkflow] = useState(args.workflow);
-    return <GithubWorkflowFields {...args} workflow={workflow} onChange={setWorkflow} />;
+    return (
+      <GithubWorkflowFields
+        {...args}
+        workflow={workflow}
+        onChange={setWorkflow}
+      />
+    );
   },
 } satisfies Meta<typeof GithubWorkflowFields>;
 
@@ -45,16 +54,17 @@ type Story = StoryObj<typeof meta>;
  * for it when the story was written, so the story opens the same way every
  * time; any other repository typed in is looked up on GitHub itself.
  */
-const githubAnswers = (repository: string, status: number, body?: object) => () => {
-  const real = window.fetch;
-  window.fetch = async (input, init) =>
-    String(input).includes(`/repos/${repository}/`)
-      ? new Response(JSON.stringify(body ?? {}), { status })
-      : real(input, init);
-  return () => {
-    window.fetch = real;
+const githubAnswers =
+  (repository: string, status: number, body?: object) => () => {
+    const real = window.fetch;
+    window.fetch = async (input, init) =>
+      String(input).includes(`/repos/${repository}/`)
+        ? new Response(JSON.stringify(body ?? {}), { status })
+        : real(input, init);
+    return () => {
+      window.fetch = real;
+    };
   };
-};
 
 /**
  * As the create form adds it: no repository yet, the default branch pinned.
@@ -74,7 +84,10 @@ export const Empty: Story = {
  */
 export const PublicRepository: Story = {
   args: {
-    workflow: { ...NEW_GITHUB_WORKFLOW, repository: "alukach/source-coop-upload-test" },
+    workflow: {
+      ...NEW_GITHUB_WORKFLOW,
+      repository: "alukach/source-coop-upload-test",
+    },
   },
   beforeEach: githubAnswers("alukach/source-coop-upload-test", 200, {
     use_default: true,
@@ -112,7 +125,10 @@ export const CustomizedSubject: Story = {
  */
 export const PrivateRepository: Story = {
   args: {
-    workflow: { ...NEW_GITHUB_WORKFLOW, repository: "source-cooperative/a-private-repository" },
+    workflow: {
+      ...NEW_GITHUB_WORKFLOW,
+      repository: "source-cooperative/a-private-repository",
+    },
   },
   beforeEach: githubAnswers("source-cooperative/a-private-repository", 404),
 };
@@ -125,7 +141,12 @@ export const PrivateRepository: Story = {
  * subject claim prefix by hand.
  */
 export const RateLimited: Story = {
-  args: { workflow: { ...NEW_GITHUB_WORKFLOW, repository: "source-cooperative/source.coop" } },
+  args: {
+    workflow: {
+      ...NEW_GITHUB_WORKFLOW,
+      repository: "source-cooperative/source.coop",
+    },
+  },
   beforeEach: githubAnswers("source-cooperative/source.coop", 403, {
     message: "API rate limit exceeded",
   }),
@@ -137,7 +158,11 @@ export const RateLimited: Story = {
  */
 export const Tag: Story = {
   args: {
-    workflow: { repository: "source-cooperative/source.coop", kind: "tag", value: "v1.0" },
+    workflow: {
+      repository: "source-cooperative/source.coop",
+      kind: "tag",
+      value: "v1.0",
+    },
   },
   beforeEach: githubAnswers("source-cooperative/source.coop", 200, {
     use_default: true,
@@ -159,7 +184,12 @@ export const EnvironmentWithRemove: Story = {
       value: "production",
     },
     trailing: (
-      <IconButton type="button" variant="soft" color="red" aria-label="Remove workflow">
+      <IconButton
+        type="button"
+        variant="soft"
+        color="red"
+        aria-label="Remove workflow"
+      >
         <TrashIcon />
       </IconButton>
     ),

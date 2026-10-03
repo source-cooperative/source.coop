@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CheckCircledIcon, ExclamationTriangleIcon } from "@radix-ui/react-icons";
+import {
+  CheckCircledIcon,
+  ExclamationTriangleIcon,
+} from "@radix-ui/react-icons";
 import {
   Box,
   Button,
@@ -46,8 +49,19 @@ const SUBJECT_CLAIMS_DOCS =
 const IMMUTABLE_SUBJECTS_DOCS =
   "https://github.blog/changelog/2026-04-23-immutable-subject-claims-for-github-actions-oidc-tokens/";
 
-const DocsLink = ({ href, children }: { href: string; children: React.ReactNode }) => (
-  <Link href={href} target="_blank" rel="noopener noreferrer" underline="always">
+const DocsLink = ({
+  href,
+  children,
+}: {
+  href: string;
+  children: React.ReactNode;
+}) => (
+  <Link
+    href={href}
+    target="_blank"
+    rel="noopener noreferrer"
+    underline="always"
+  >
     {children}
   </Link>
 );
@@ -55,7 +69,11 @@ const DocsLink = ({ href, children }: { href: string; children: React.ReactNode 
 const KINDS = {
   branch: { label: "Branch", placeholder: "main", ref: "refs/heads/" },
   tag: { label: "Tag", placeholder: "v1.0", ref: "refs/tags/" },
-  environment: { label: "Environment", placeholder: "production", ref: undefined },
+  environment: {
+    label: "Environment",
+    placeholder: "production",
+    ref: undefined,
+  },
 } as const;
 
 /** GitHub's `sub` claim for the workflow, exactly as its token will carry it. */
@@ -83,7 +101,7 @@ export const githubCondition = (w: GithubWorkflow, audience?: string) => {
       },
     },
     null,
-    2
+    2,
   );
 };
 
@@ -123,9 +141,12 @@ function useSubjectSetting(repository: string) {
     if (!SHORT_REPOSITORY.test(repository)) return;
     const controller = new AbortController();
     const timer = setTimeout(() => {
-      fetch(`https://api.github.com/repos/${repository}/actions/oidc/customization/sub`, {
-        signal: controller.signal,
-      })
+      fetch(
+        `https://api.github.com/repos/${repository}/actions/oidc/customization/sub`,
+        {
+          signal: controller.signal,
+        },
+      )
         .then((res) => {
           if (res.status === 404) return null;
           if (!res.ok) throw new Error(`GitHub answered ${res.status}`);
@@ -142,12 +163,17 @@ function useSubjectSetting(repository: string) {
                     // the default's shape, so it's as trustable as the default.
                     standard:
                       r.use_default ||
-                      JSON.stringify(r.include_claim_keys) === '["repo","context"]',
+                      JSON.stringify(r.include_claim_keys) ===
+                        '["repo","context"]',
                   }
                 : null,
-          })
+          }),
         )
-        .catch((e) => e.name !== "AbortError" && setAnswer({ repository, setting: "unreachable" }));
+        .catch(
+          (e) =>
+            e.name !== "AbortError" &&
+            setAnswer({ repository, setting: "unreachable" }),
+        );
     }, 400);
     return () => {
       clearTimeout(timer);
@@ -207,7 +233,9 @@ export function GithubWorkflowFields({
               <>
                 <Code size="1">owner/repo</Code>, or with its permanent ids as{" "}
                 <Code size="1">owner@123/repo@456</Code>.{" "}
-                <DocsLink href={IMMUTABLE_SUBJECTS_DOCS}>About immutable subject claims</DocsLink>
+                <DocsLink href={IMMUTABLE_SUBJECTS_DOCS}>
+                  About immutable subject claims
+                </DocsLink>
               </>
             }
           >
@@ -246,10 +274,14 @@ export function GithubWorkflowFields({
             <ExclamationTriangleIcon />
           </Callout.Icon>
           <Callout.Text size="1">
-            This repository customizes its subject claim, so its tokens won&apos;t carry the
-            subject below, and only subjects shaped like GitHub&apos;s default can be trusted. An
-            admin can switch it back by selecting <Strong>Use default template</Strong> in its{" "}
-            <DocsLink href={oidcSettingsUrl(workflow.repository)}>OIDC settings</DocsLink>.
+            This repository customizes its subject claim, so its tokens
+            won&apos;t carry the subject below, and only subjects shaped like
+            GitHub&apos;s default can be trusted. An admin can switch it back by
+            selecting <Strong>Use default template</Strong> in its{" "}
+            <DocsLink href={oidcSettingsUrl(workflow.repository)}>
+              OIDC settings
+            </DocsLink>
+            .
           </Callout.Text>
         </Callout.Root>
       )}
@@ -266,8 +298,9 @@ export function GithubWorkflowFields({
                 <DocsLink href={`https://github.com/${workflow.repository}`}>
                   {workflow.repository}
                 </DocsLink>
-                , so it&apos;s either private or doesn&apos;t exist. Check that it exists, then
-                enter its default subject claim prefix as the repository. To find it:
+                , so it&apos;s either private or doesn&apos;t exist. Check that
+                it exists, then enter its default subject claim prefix as the
+                repository. To find it:
               </Callout.Text>
             ) : (
               <Callout.Text size="1">
@@ -275,20 +308,29 @@ export function GithubWorkflowFields({
                 <DocsLink href={`https://github.com/${workflow.repository}`}>
                   {workflow.repository}
                 </DocsLink>{" "}
-                with GitHub just now, most likely because it limits how often it can be asked.{" "}
+                with GitHub just now, most likely because it limits how often it
+                can be asked.{" "}
                 <Button type="button" size="1" variant="soft" onClick={retry}>
                   Try again
                 </Button>{" "}
-                in a few minutes, or enter its default subject claim prefix as the repository. To
-                find it:
+                in a few minutes, or enter its default subject claim prefix as
+                the repository. To find it:
               </Callout.Text>
             )}
             <Text size="1" asChild>
-              <ul style={{ margin: "var(--space-1) 0 0", paddingLeft: "var(--space-4)" }}>
+              <ul
+                style={{
+                  margin: "var(--space-1) 0 0",
+                  paddingLeft: "var(--space-4)",
+                }}
+              >
                 <li>
                   As an admin of the repository, copy the{" "}
                   <Strong>Default subject claim prefix</Strong> from its{" "}
-                  <DocsLink href={oidcSettingsUrl(workflow.repository)}>OIDC settings</DocsLink>.
+                  <DocsLink href={oidcSettingsUrl(workflow.repository)}>
+                    OIDC settings
+                  </DocsLink>
+                  .
                 </li>
                 <li>
                   Otherwise, run this with the{" "}
@@ -297,7 +339,9 @@ export function GithubWorkflowFields({
                     <Code size="1" style={{ wordBreak: "break-all" }}>
                       {ghSubjectPrefixCommand(workflow.repository)}
                     </Code>
-                    <CopyToClipboard text={ghSubjectPrefixCommand(workflow.repository)} />
+                    <CopyToClipboard
+                      text={ghSubjectPrefixCommand(workflow.repository)}
+                    />
                   </Flex>
                 </li>
               </ul>
@@ -314,10 +358,12 @@ export function GithubWorkflowFields({
           group
           help={
             <>
-              A job&apos;s subject claim names its environment if one is specified within the
-              workflow, otherwise its branch or tag. Pull request runs name neither, so they
-              can&apos;t sign in.{" "}
-              <DocsLink href={SUBJECT_CLAIMS_DOCS}>See GitHub&apos;s examples</DocsLink>
+              A job&apos;s subject claim names its environment if one is
+              specified within the workflow, otherwise its branch or tag. Pull
+              request runs name neither, so they can&apos;t sign in.{" "}
+              <DocsLink href={SUBJECT_CLAIMS_DOCS}>
+                See GitHub&apos;s examples
+              </DocsLink>
             </>
           }
         >

@@ -16,7 +16,7 @@ const renderFor = (workflow: Partial<GithubWorkflow>, onChange = jest.fn()) => {
         workflow={{ ...NEW_GITHUB_WORKFLOW, ...workflow }}
         onChange={onChange}
       />
-    </Theme>
+    </Theme>,
   );
   return onChange;
 };
@@ -24,24 +24,40 @@ const renderFor = (workflow: Partial<GithubWorkflow>, onChange = jest.fn()) => {
 const respond = (status: number, body: unknown = {}) =>
   jest
     .spyOn(global, "fetch")
-    .mockResolvedValue({ ok: status === 200, json: async () => body } as Response);
+    .mockResolvedValue({
+      ok: status === 200,
+      json: async () => body,
+    } as Response);
 
 afterEach(() => jest.restoreAllMocks());
 
 describe("githubSubject", () => {
   const repo = { repository: "octocat/repo" };
   it.each([
-    [{ kind: "branch", value: "main" }, "repo:octocat/repo:ref:refs/heads/main"],
+    [
+      { kind: "branch", value: "main" },
+      "repo:octocat/repo:ref:refs/heads/main",
+    ],
     [{ kind: "tag", value: "v1.0" }, "repo:octocat/repo:ref:refs/tags/v1.0"],
-    [{ kind: "branch", value: "refs/pull/1/merge" }, "repo:octocat/repo:ref:refs/pull/1/merge"],
-    [{ kind: "environment", value: "prod" }, "repo:octocat/repo:environment:prod"],
+    [
+      { kind: "branch", value: "refs/pull/1/merge" },
+      "repo:octocat/repo:ref:refs/pull/1/merge",
+    ],
+    [
+      { kind: "environment", value: "prod" },
+      "repo:octocat/repo:environment:prod",
+    ],
   ] as const)("builds %o", (w, subject) => {
     expect(githubSubject({ ...repo, ...w })).toBe(subject);
   });
 
   it("names the repository as its tokens do", () => {
     expect(
-      githubSubject({ ...NEW_GITHUB_WORKFLOW, ...repo, tokenRepository: "octocat@1/repo@2" })
+      githubSubject({
+        ...NEW_GITHUB_WORKFLOW,
+        ...repo,
+        tokenRepository: "octocat@1/repo@2",
+      }),
     ).toBe("repo:octocat@1/repo@2:ref:refs/heads/main");
   });
 });
@@ -49,10 +65,17 @@ describe("githubSubject", () => {
 describe("githubCondition", () => {
   it("spells the trust out as a StringEquals on GitHub's sub claim", () => {
     expect(
-      JSON.parse(githubCondition({ repository: "octocat/repo", kind: "environment", value: "prod" }))
+      JSON.parse(
+        githubCondition({
+          repository: "octocat/repo",
+          kind: "environment",
+          value: "prod",
+        }),
+      ),
     ).toEqual({
       StringEquals: {
-        "token.actions.githubusercontent.com:sub": "repo:octocat/repo:environment:prod",
+        "token.actions.githubusercontent.com:sub":
+          "repo:octocat/repo:environment:prod",
       },
     });
   });
@@ -61,12 +84,12 @@ describe("githubCondition", () => {
     const condition = JSON.parse(
       githubCondition(
         { repository: "octocat/repo", kind: "branch", value: "main" },
-        "https://data.source.coop"
-      )
+        "https://data.source.coop",
+      ),
     );
-    expect(condition.StringEquals["token.actions.githubusercontent.com:aud"]).toBe(
-      "https://data.source.coop"
-    );
+    expect(
+      condition.StringEquals["token.actions.githubusercontent.com:aud"],
+    ).toBe("https://data.source.coop");
   });
 });
 
@@ -84,15 +107,15 @@ describe("GithubWorkflowFields", () => {
         expect.objectContaining({
           repository: "octocat/hello-world",
           tokenRepository: "octocat@583231/Hello-World@1296269",
-        })
-      )
+        }),
+      ),
     );
     expect(global.fetch).toHaveBeenCalledWith(
       "https://api.github.com/repos/octocat/hello-world/actions/oidc/customization/sub",
-      expect.anything()
+      expect.anything(),
     );
     expect(screen.getByRole("status").textContent).toBe(
-      "Confirmed via GitHub, subject claim prefix is repo:octocat@583231/Hello-World@1296269"
+      "Confirmed via GitHub, subject claim prefix is repo:octocat@583231/Hello-World@1296269",
     );
   });
 
@@ -104,7 +127,9 @@ describe("GithubWorkflowFields", () => {
     });
 
     expect(onChange).toHaveBeenCalledWith(
-      expect.objectContaining({ repository: "octocat@583231/Hello-World@1296269" })
+      expect.objectContaining({
+        repository: "octocat@583231/Hello-World@1296269",
+      }),
     );
   });
 
@@ -116,10 +141,12 @@ describe("GithubWorkflowFields", () => {
     });
     renderFor({ repository: "cli/cli" });
 
-    expect(await screen.findByText(/customizes its subject claim/)).toBeTruthy();
-    expect(screen.getByRole("link", { name: "OIDC settings" }).getAttribute("href")).toBe(
-      "https://github.com/cli/cli/settings/actions/oidc-configuration"
-    );
+    expect(
+      await screen.findByText(/customizes its subject claim/),
+    ).toBeTruthy();
+    expect(
+      screen.getByRole("link", { name: "OIDC settings" }).getAttribute("href"),
+    ).toBe("https://github.com/cli/cli/settings/actions/oidc-configuration");
   });
 
   it("confirms a custom template that builds the default's shape", async () => {
@@ -130,7 +157,9 @@ describe("GithubWorkflowFields", () => {
     });
     renderFor({ repository: "octocat/repo" });
 
-    expect((await screen.findByRole("status")).textContent).toMatch(/^Confirmed via GitHub/);
+    expect((await screen.findByRole("status")).textContent).toMatch(
+      /^Confirmed via GitHub/,
+    );
     expect(screen.queryByText(/customizes its subject claim/)).toBeNull();
   });
 
@@ -138,13 +167,17 @@ describe("GithubWorkflowFields", () => {
     respond(404);
     renderFor({ repository: "octocat/secret" });
 
-    expect((await screen.findByRole("link", { name: "OIDC settings" })).getAttribute("href")).toBe(
-      "https://github.com/octocat/secret/settings/actions/oidc-configuration"
+    expect(
+      (await screen.findByRole("link", { name: "OIDC settings" })).getAttribute(
+        "href",
+      ),
+    ).toBe(
+      "https://github.com/octocat/secret/settings/actions/oidc-configuration",
     );
     expect(
       await screen.findByText(
-        "gh api repos/octocat/secret/actions/oidc/customization/sub --jq .sub_claim_prefix"
-      )
+        "gh api repos/octocat/secret/actions/oidc/customization/sub --jq .sub_claim_prefix",
+      ),
     ).toBeTruthy();
   });
 
