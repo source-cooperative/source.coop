@@ -34,7 +34,7 @@ const signInStep = (account_id: string) => [
  * a trust pinned to another ref only the runs started by hand on that ref can
  * sign in. `focus` is the line ranges, `[first, end)`, that are Source
  * Cooperative's — the `env` block, the job's `environment` when the trust names
- * one, and the sign-in step — so a reader adding
+ * one, its `id-token: write` permission, and the sign-in step — so a reader adding
  * them to a workflow of their own can see which parts to carry over.
  */
 export function githubWorkflow(
@@ -43,7 +43,7 @@ export function githubWorkflow(
   subject: string
 ): { code: string; focus: [number, number][] } {
   const environment = subject.match(/:environment:(.+)$/)?.[1];
-  const ref = subject.match(/:ref:(.+)$/)?.[1];
+  const branch = subject.match(/:ref:(.+)$/)?.[1].replace(/^refs\/heads\//, "");
   const lines: string[] = [];
   const focus: [number, number][] = [];
   // Adds lines that are Source Cooperative's, recording their range in `focus`.
@@ -53,17 +53,17 @@ export function githubWorkflow(
   };
   lines.push(
     "name: Source Cooperative",
-    ...(ref ? [`# NOTE: Run must be on ${ref} as per Service Account "${account_id}" trust policy.`] : []),
     "on:",
-    ref
-      ? `  schedule:  # nightly; works only if ${ref} is the default branch, where GitHub runs schedules`
-      : "  schedule:  # nightly; GitHub runs schedules on the default branch",
-    '    - cron: "0 6 * * *"',
+    "  schedule:",
+    branch
+      ? `    # Nightly @ 2am UTC; works only if ${branch} is the default branch`
+      : "    # Nightly @ 2am UTC; GitHub runs schedules on the default branch",
+    '    - cron: "0 2 * * *"',
     "  workflow_dispatch:  # and by hand, from the Actions tab"
   );
   ours(
-    "# Tells AWS SDKs and the AWS CLI to reach S3 through Source Cooperative's data proxy.",
     "env:",
+    "  # Configures AWS CLI/SDKs to use Source Cooperative's data proxy.",
     `  AWS_ENDPOINT_URL: ${proxyOrigin}`
   );
   lines.push("", "jobs:", "  data:", "    runs-on: ubuntu-latest");
@@ -72,16 +72,17 @@ export function githubWorkflow(
       `    environment: ${JSON.stringify(environment)}  # Must run on ${environment} as per Service Account "${account_id}" trust policy.`
     );
   }
+  ours("    permissions:", "      id-token: write  # required for aws-actions/configure-aws-credentials");
   lines.push(
-    "    permissions:",
-    "      id-token: write",
     "      contents: read",
     "    steps:",
-    "      # Any setup of your own (checkout, installing tools) can come first."
+    "      # Any setup of your own (checkout, installing tools) can come first.",
+    ""
   );
   ours(...signInStep(account_id).map((line) => `      ${line}`));
   lines.push(
-    `      # From here on, any AWS SDK or the AWS CLI acts as ${account_id}.`,
+    "",
+    `      # From here on, any AWS SDK/CLI acts as ${account_id}.`,
     `      - run: aws s3 ls s3://${account_id.split("--")[0]}/`
   );
   return { code: lines.join("\n"), focus };

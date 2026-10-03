@@ -9,31 +9,32 @@ describe("githubWorkflow", () => {
   it("is a whole workflow: env for every step, one job permitted to mint an OIDC token, with the sign-in step", () => {
     const { code: workflow } = githubWorkflow("https://data.source.coop", "acme--nightly-sync", REF);
     expect(workflow).toMatch(
-      /^name: .+\n# NOTE: Run must be on refs\/heads\/main as per Service Account "acme--nightly-sync" trust policy\.\non:\n {2}schedule: {2}# nightly; works only if refs\/heads\/main is the default branch.*\n {4}- cron: "0 6 \* \* \*"\n {2}workflow_dispatch:.*\n# .*data proxy.*\nenv:\n {2}AWS_ENDPOINT_URL: https:\/\/data.source.coop\n/
+      /^name: .+\non:\n {2}schedule:\n {4}# Nightly @ 2am UTC; works only if main is the default branch\n {4}- cron: "0 2 \* \* \*"\n {2}workflow_dispatch:.*\nenv:\n {2}# .*data proxy.*\n {2}AWS_ENDPOINT_URL: https:\/\/data.source.coop\n/
     );
     expect(workflow).toContain(
-      "\njobs:\n  data:\n    runs-on: ubuntu-latest\n    permissions:\n      id-token: write\n"
+      "\njobs:\n  data:\n    runs-on: ubuntu-latest\n    permissions:\n      id-token: write  # required for aws-actions/configure-aws-credentials\n"
     );
     expect(workflow).toContain(
-      "\n    steps:\n      # Any setup of your own (checkout, installing tools) can come first.\n      - name: Sign in to Source Cooperative as acme--nightly-sync\n        uses: aws-actions/configure-aws-credentials@v6\n        with:\n"
+      "\n    steps:\n      # Any setup of your own (checkout, installing tools) can come first.\n\n      - name: Sign in to Source Cooperative as acme--nightly-sync\n        uses: aws-actions/configure-aws-credentials@v6\n        with:\n"
     );
     expect(workflow).toContain("\n      - run: aws s3 ls s3://acme/");
     expect(workflow).not.toContain("environment:");
   });
 
-  it("focuses on exactly the env block and the sign-in step", () => {
+  it("focuses on exactly the env block, the OIDC permission and the sign-in step", () => {
     const { code, focus } = githubWorkflow("https://data.source.coop", "acme--nightly-sync", REF);
     const lines = code.split("\n");
-    const [env, step] = focus.map((range) => lines.slice(...range));
+    const [env, permissions, step] = focus.map((range) => lines.slice(...range));
     expect(env).toEqual([
-      expect.stringMatching(/^# .*data proxy/),
       "env:",
+      expect.stringMatching(/^ {2}# .*data proxy/),
       "  AWS_ENDPOINT_URL: https://data.source.coop",
     ]);
+    expect(permissions).toEqual(["    permissions:", expect.stringMatching(/^ {6}id-token: write /)]);
     expect(step[0]).toBe("      - name: Sign in to Source Cooperative as acme--nightly-sync");
     expect(step.at(-1)).toBe("          aws-region: us-west-2");
 
-    // A trust pinned to an environment adds the job's environment line between them.
+    // A trust pinned to an environment adds the job's environment line after the env block.
     const pinned = githubWorkflow("https://data.source.coop", "acme--nightly-sync", ENVIRONMENT);
     const [, environment] = pinned.focus.map((range) => pinned.code.split("\n").slice(...range));
     expect(environment).toEqual([expect.stringMatching(/^ {4}environment: "production" {2}# Must run on production/)]);
