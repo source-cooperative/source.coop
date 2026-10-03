@@ -85,7 +85,8 @@ export const CustomizedSubject: Story = {
  * A repository GitHub doesn't show publicly — private, or not there at all.
  * How its tokens name it can't be looked up anonymously, so the condition
  * uses the name as typed, and the form gives the `gh` command that prints the
- * right one for anyone who can see the repository.
+ * right one for anyone who can see the repository, on a line of its own with
+ * a button that copies it.
  */
 export const PrivateRepository: Story = {
   args: {

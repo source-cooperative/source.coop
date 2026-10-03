@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Box, Code, Flex, Link, SegmentedControl, Text, TextField } from "@radix-ui/themes";
 import { Field } from "@/components/core";
+import { CopyToClipboard } from "@/components/core/CopyToClipboard";
 import { GITHUB_ACTIONS_ISSUER } from "@/types";
 
 export interface GithubWorkflow {
@@ -185,11 +186,18 @@ export function GithubWorkflowFields({
         </Text>
       )}
       {setting === null && (
-        <Text size="1" color="gray" style={{ wordBreak: "break-all" }}>
-          GitHub doesn&apos;t show this repository publicly. If it&apos;s private, run this and
-          enter what it prints after <Code size="1">repo:</Code> as the repository:{" "}
-          <Code size="1">{ghSubjectPrefixCommand(workflow.repository)}</Code>
-        </Text>
+        <Flex direction="column" gap="1">
+          <Text size="1" color="gray">
+            GitHub doesn&apos;t show this repository publicly. If it&apos;s private, run this and
+            enter what it prints after <Code size="1">repo:</Code> as the repository:
+          </Text>
+          <Flex gap="2" align="center">
+            <Code size="1" style={{ wordBreak: "break-all" }}>
+              {ghSubjectPrefixCommand(workflow.repository)}
+            </Code>
+            <CopyToClipboard text={ghSubjectPrefixCommand(workflow.repository)} />
+          </Flex>
+        </Flex>
       )}
       {/* Stacked, so the name always starts a line of its own rather than
           squeezing in beside the choice when it fits. */}
