@@ -8,7 +8,7 @@ import { ServiceAccountForm } from "./ServiceAccountForm";
  * The id fills itself in from the name until it is edited by hand. "Signs in
  * with" and "Can reach" are the sections the account's page has, with the
  * same buttons in their corners. "Add sign-in" opens the same modals too — a
- * GitHub workflow pinned to one repository and one ref or environment, or an
+ * GitHub workflow pinned to one repository and one branch, tag or environment, or an
  * API key's label and expiry — but what they collect is held here, as rows
  * that can be removed, until the form is submitted. One key can be issued
  * with the account; more are issued from its page. "Grant a product" adds one

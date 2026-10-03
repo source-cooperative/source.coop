@@ -1,54 +1,98 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Box, Code, Flex, Link, SegmentedControl, Text, TextField } from "@radix-ui/themes";
+import { CheckCircledIcon, ExclamationTriangleIcon } from "@radix-ui/react-icons";
+import {
+  Box,
+  Button,
+  Callout,
+  Code,
+  Flex,
+  Link,
+  SegmentedControl,
+  Strong,
+  Text,
+  TextField,
+} from "@radix-ui/themes";
 import { Field } from "@/components/core";
+import { CopyToClipboard } from "@/components/core/CopyToClipboard";
 import { GITHUB_ACTIONS_ISSUER } from "@/types";
 
 export interface GithubWorkflow {
+  /** As the user typed it, e.g. `octocat/hello-world`. */
   repository: string;
-  kind: "ref" | "environment";
+  /**
+   * How GitHub names the repository in its tokens, looked up from the typed
+   * one — `octocat@583231/Hello-World@1296269` once it signs with ids. Unset
+   * when GitHub doesn't say, and the repository is then used as typed.
+   */
+  tokenRepository?: string;
+  kind: "branch" | "tag" | "environment";
+  /** A branch, tag or environment name. A full `refs/…` ref is taken as is. */
   value: string;
 }
 
 export const NEW_GITHUB_WORKFLOW: GithubWorkflow = {
   repository: "",
-  kind: "ref",
-  value: "refs/heads/main",
+  kind: "branch",
+  value: "main",
 };
 
-/** Where GitHub shows the subject each kind of ref or environment produces. */
+/** Where GitHub explains which subject a job's token carries. */
 const SUBJECT_CLAIMS_DOCS =
   "https://docs.github.com/en/actions/reference/security/oidc#example-subject-claims";
 
-/** GitHub's announcement of the `owner@id/repo@id` subject, and which repositories get it. */
+/** GitHub's announcement of repositories named by id in their tokens. */
 const IMMUTABLE_SUBJECTS_DOCS =
   "https://github.blog/changelog/2026-04-23-immutable-subject-claims-for-github-actions-oidc-tokens/";
 
-const ImmutableSubjectsLink = () => (
-  <Link href={IMMUTABLE_SUBJECTS_DOCS} target="_blank" rel="noopener noreferrer" underline="always">
-    immutable subjects
+const DocsLink = ({ href, children }: { href: string; children: React.ReactNode }) => (
+  <Link href={href} target="_blank" rel="noopener noreferrer" underline="always">
+    {children}
   </Link>
 );
 
+const KINDS = {
+  branch: { label: "Branch", placeholder: "main", ref: "refs/heads/" },
+  tag: { label: "Tag", placeholder: "v1.0", ref: "refs/tags/" },
+  environment: { label: "Environment", placeholder: "production", ref: undefined },
+} as const;
+
 /** GitHub's `sub` claim for the workflow, exactly as its token will carry it. */
-export const githubSubject = (w: GithubWorkflow) =>
-  `repo:${w.repository}:${w.kind}:${w.value}`;
+export const githubSubject = (w: GithubWorkflow) => {
+  const prefix = KINDS[w.kind].ref;
+  const context =
+    prefix === undefined
+      ? `environment:${w.value}`
+      : `ref:${w.value.startsWith("refs/") ? w.value : prefix + w.value}`;
+  return `repo:${w.tokenRepository ?? w.repository}:${context}`;
+};
 
 /**
- * The trust as an AWS-style condition. The subject is the whole of it: the
- * issuer is GitHub's, and the audience is checked against the proxy for every
- * token alike.
+ * The trust as an AWS-style condition: the subject the trust stores, and the
+ * audience the proxy requires of every GitHub token — its own origin — when
+ * it's known.
  */
-export const githubCondition = (w: GithubWorkflow) =>
-  JSON.stringify(
-    { StringEquals: { [`${new URL(GITHUB_ACTIONS_ISSUER).host}:sub`]: githubSubject(w) } },
+export const githubCondition = (w: GithubWorkflow, audience?: string) => {
+  const host = new URL(GITHUB_ACTIONS_ISSUER).host;
+  return JSON.stringify(
+    {
+      StringEquals: {
+        ...(audience && { [`${host}:aud`]: audience }),
+        [`${host}:sub`]: githubSubject(w),
+      },
+    },
     null,
     2
   );
+};
 
 /** A repository named the mutable way, `owner/repo`. */
 const SHORT_REPOSITORY = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/;
+
+/** The settings page that shows a repository's subject prefix to its admins. */
+const oidcSettingsUrl = (repository: string) =>
+  `https://github.com/${repository}/settings/actions/oidc-configuration`;
 
 /** Prints how a repository's tokens name it, for one the public API can't see. */
 const ghSubjectPrefixCommand = (repository: string) =>
@@ -63,13 +107,18 @@ interface SubjectSetting {
 
 /**
  * How a repository typed the short way is named in its tokens, from GitHub's
- * public API, or `null` when GitHub doesn't show it — a private repository,
- * or none by that name. `undefined` until the answer for the current value
- * arrives. Asked from the browser, so the anonymous rate limit is the
- * viewer's own.
+ * public API: `null` when GitHub doesn't show it — a private repository, or
+ * none by that name — and `"unreachable"` when GitHub couldn't be asked, most
+ * often because it's rate-limiting the viewer. `undefined` until the answer
+ * for the current value arrives. Asked from the browser, so the anonymous
+ * rate limit, 60 an hour, is the viewer's own; `retry` asks again.
  */
 function useSubjectSetting(repository: string) {
-  const [answer, setAnswer] = useState<{ repository: string; setting: SubjectSetting | null }>();
+  const [answer, setAnswer] = useState<{
+    repository: string;
+    setting: SubjectSetting | null | "unreachable";
+  }>();
+  const [attempt, setAttempt] = useState(0);
   useEffect(() => {
     if (!SHORT_REPOSITORY.test(repository)) return;
     const controller = new AbortController();
@@ -77,36 +126,54 @@ function useSubjectSetting(repository: string) {
       fetch(`https://api.github.com/repos/${repository}/actions/oidc/customization/sub`, {
         signal: controller.signal,
       })
-        .then((res) => (res.ok ? res.json() : null))
+        .then((res) => {
+          if (res.status === 404) return null;
+          if (!res.ok) throw new Error(`GitHub answered ${res.status}`);
+          return res.json();
+        })
         .then((r) =>
           setAnswer({
             repository,
-            setting: r && {
-              repository: r.sub_claim_prefix.replace(/^repo:/, ""),
-              standard: r.use_default,
-            },
+            setting:
+              typeof r?.sub_claim_prefix === "string"
+                ? {
+                    repository: r.sub_claim_prefix.replace(/^repo:/, ""),
+                    // A template of exactly these keys, in this order, builds
+                    // the default's shape, so it's as trustable as the default.
+                    standard:
+                      r.use_default ||
+                      JSON.stringify(r.include_claim_keys) === '["repo","context"]',
+                  }
+                : null,
           })
         )
-        .catch((e) => e.name !== "AbortError" && setAnswer({ repository, setting: null }));
+        .catch((e) => e.name !== "AbortError" && setAnswer({ repository, setting: "unreachable" }));
     }, 400);
     return () => {
       clearTimeout(timer);
       controller.abort();
     };
-  }, [repository]);
-  return answer?.repository === repository ? answer.setting : undefined;
+  }, [repository, attempt]);
+  return {
+    setting: answer?.repository === repository ? answer.setting : undefined,
+    retry: () => {
+      setAnswer(undefined);
+      setAttempt((n) => n + 1);
+    },
+  };
 }
 
 /**
- * Names one workflow: a repository, pinned to a ref or an environment. Shows
- * the exact subject that will be trusted, since that string — not the fields —
- * is what the token has to match.
+ * Names one workflow: a repository, and the branch, tag or environment its
+ * runs sign in from. Shows the exact condition that will be trusted, since
+ * that — not the fields — is what the token has to match.
  */
 export function GithubWorkflowFields({
   id,
   workflow,
   onChange,
   trailing,
+  audience,
 }: {
   /** Prefix for the field ids, unique per workflow on the page. */
   id: string;
@@ -114,14 +181,20 @@ export function GithubWorkflowFields({
   onChange: (next: GithubWorkflow) => void;
   /** Rendered at the end of the repository row — a Remove button, say. */
   trailing?: React.ReactNode;
+  /** The proxy's origin, the audience it requires of GitHub's tokens. */
+  audience?: string;
 }) {
-  const setting = useSubjectSetting(workflow.repository);
-  // The field takes the name exactly as the tokens carry it, ids included when
-  // GitHub signs with them, so the subject below is the one to trust.
+  const { setting, retry } = useSubjectSetting(workflow.repository);
+  const found = setting && setting !== "unreachable" ? setting : undefined;
+  // The typed name stays in the field; the subject uses the one GitHub's
+  // tokens carry, so nobody has to know which form their repository signs with.
+  // It lives on the workflow, not derived here, because the forms submit
+  // `githubSubject(workflow)`.
   useEffect(() => {
-    if (setting && setting.repository !== workflow.repository)
-      onChange({ ...workflow, repository: setting.repository });
-  }, [setting, workflow, onChange]);
+    if (found && found.repository !== workflow.tokenRepository)
+      onChange({ ...workflow, tokenRepository: found.repository });
+  }, [found, workflow, onChange]);
+  const kind = KINDS[workflow.kind];
   return (
     <Flex direction="column" gap="3">
       <Flex gap="3" align="end">
@@ -132,8 +205,9 @@ export function GithubWorkflowFields({
             required
             help={
               <>
-                <Code size="1">owner/repo</Code>, or <Code size="1">owner@123/repo@456</Code>{" "}
-                if its tokens carry <ImmutableSubjectsLink />
+                <Code size="1">owner/repo</Code>, or with its permanent ids as{" "}
+                <Code size="1">owner@123/repo@456</Code>.{" "}
+                <DocsLink href={IMMUTABLE_SUBJECTS_DOCS}>About immutable subject claims</DocsLink>
               </>
             }
           >
@@ -142,72 +216,138 @@ export function GithubWorkflowFields({
               size="2"
               placeholder="owner/repo"
               value={workflow.repository}
-              onChange={(e) => onChange({ ...workflow, repository: e.target.value })}
+              onChange={(e) =>
+                onChange({
+                  ...workflow,
+                  // GitHub shows the name as a subject prefix, `repo:` and all.
+                  repository: e.target.value.trim().replace(/^repo:/, ""),
+                  tokenRepository: undefined,
+                })
+              }
             />
           </Field>
         </Box>
         {trailing}
       </Flex>
-      {setting && !setting.standard && (
-        <Text size="1" color="amber">
-          This repository customizes its subject claim, so its tokens may not carry the subject
-          below. Only subjects shaped like GitHub&apos;s default can be trusted.
-        </Text>
+      {found?.standard && (
+        <Callout.Root size="1" color="green" role="status">
+          <Callout.Icon>
+            <CheckCircledIcon />
+          </Callout.Icon>
+          <Callout.Text size="1" style={{ wordBreak: "break-all" }}>
+            Confirmed via GitHub, subject claim prefix is{" "}
+            <Code size="1">repo:{found.repository}</Code>
+          </Callout.Text>
+        </Callout.Root>
       )}
-      {setting === null && (
-        <Text size="1" color="gray" style={{ wordBreak: "break-all" }}>
-          GitHub doesn&apos;t show this repository publicly. If it&apos;s private, this prints how
-          its tokens name it — enter what follows <Code size="1">repo:</Code> above:{" "}
-          <Code size="1">{ghSubjectPrefixCommand(workflow.repository)}</Code>
-        </Text>
+      {found && !found.standard && (
+        <Callout.Root size="1" color="amber" role="alert">
+          <Callout.Icon>
+            <ExclamationTriangleIcon />
+          </Callout.Icon>
+          <Callout.Text size="1">
+            This repository customizes its subject claim, so its tokens won&apos;t carry the
+            subject below, and only subjects shaped like GitHub&apos;s default can be trusted. An
+            admin can switch it back by selecting <Strong>Use default template</Strong> in its{" "}
+            <DocsLink href={oidcSettingsUrl(workflow.repository)}>OIDC settings</DocsLink>.
+          </Callout.Text>
+        </Callout.Root>
       )}
-      {/* Stacked, so the ref or environment always starts a line of its own
-          rather than squeezing in beside the choice when it fits. */}
+      {(setting === null || setting === "unreachable") && (
+        <Callout.Root size="1" color="amber" role="alert">
+          <Callout.Icon>
+            <ExclamationTriangleIcon />
+          </Callout.Icon>
+          {/* Callout.Text is a <p>, which can't hold the list. */}
+          <Box>
+            {setting === null ? (
+              <Callout.Text size="1">
+                We can&apos;t see{" "}
+                <DocsLink href={`https://github.com/${workflow.repository}`}>
+                  {workflow.repository}
+                </DocsLink>
+                , so it&apos;s either private or doesn&apos;t exist. Check that it exists, then
+                enter its default subject claim prefix as the repository. To find it:
+              </Callout.Text>
+            ) : (
+              <Callout.Text size="1">
+                We couldn&apos;t check{" "}
+                <DocsLink href={`https://github.com/${workflow.repository}`}>
+                  {workflow.repository}
+                </DocsLink>{" "}
+                with GitHub just now, most likely because it limits how often it can be asked.{" "}
+                <Button type="button" size="1" variant="soft" onClick={retry}>
+                  Try again
+                </Button>{" "}
+                in a few minutes, or enter its default subject claim prefix as the repository. To
+                find it:
+              </Callout.Text>
+            )}
+            <Text size="1" asChild>
+              <ul style={{ margin: "var(--space-1) 0 0", paddingLeft: "var(--space-4)" }}>
+                <li>
+                  As an admin of the repository, copy the{" "}
+                  <Strong>Default subject claim prefix</Strong> from its{" "}
+                  <DocsLink href={oidcSettingsUrl(workflow.repository)}>OIDC settings</DocsLink>.
+                </li>
+                <li>
+                  Otherwise, run this with the{" "}
+                  <DocsLink href="https://cli.github.com">GitHub CLI</DocsLink>:
+                  <Flex gap="2" align="center" mt="1">
+                    <Code size="1" style={{ wordBreak: "break-all" }}>
+                      {ghSubjectPrefixCommand(workflow.repository)}
+                    </Code>
+                    <CopyToClipboard text={ghSubjectPrefixCommand(workflow.repository)} />
+                  </Flex>
+                </li>
+              </ul>
+            </Text>
+          </Box>
+        </Callout.Root>
+      )}
+      {/* Stacked, so the name always starts a line of its own rather than
+          squeezing in beside the choice when it fits. */}
       <Flex direction="column" gap="3" align="start">
-        <Field label="Pinned to" htmlFor={`${id}-kind`} group>
+        <Field
+          label="Allow runs from"
+          htmlFor={`${id}-kind`}
+          group
+          help={
+            <>
+              GitHub decides which a run counts as: a job with an{" "}
+              <Code size="1">environment:</Code> line is identified by its environment, any other
+              by its branch or tag. Runs triggered by a pull request can&apos;t sign in: their
+              tokens name no branch, tag or environment.{" "}
+              <DocsLink href={SUBJECT_CLAIMS_DOCS}>See GitHub&apos;s examples</DocsLink>
+            </>
+          }
+        >
           {(props) => (
             <SegmentedControl.Root
               aria-labelledby={props["aria-labelledby"]}
               value={workflow.kind}
-              onValueChange={(kind) =>
+              onValueChange={(next) =>
                 onChange({
                   ...workflow,
-                  kind: kind as GithubWorkflow["kind"],
-                  value: kind === "ref" ? "refs/heads/main" : "",
+                  kind: next as GithubWorkflow["kind"],
+                  value: next === "branch" ? "main" : "",
                 })
               }
             >
-              <SegmentedControl.Item value="ref">Ref</SegmentedControl.Item>
-              <SegmentedControl.Item value="environment">Environment</SegmentedControl.Item>
+              {Object.entries(KINDS).map(([value, { label }]) => (
+                <SegmentedControl.Item key={value} value={value}>
+                  {label}
+                </SegmentedControl.Item>
+              ))}
             </SegmentedControl.Root>
           )}
         </Field>
         <Box width="100%">
-          <Field
-            label={workflow.kind === "ref" ? "Ref" : "Environment"}
-            htmlFor={`${id}-value`}
-            required
-            help={
-              <>
-                {workflow.kind === "ref" ? (
-                  <>
-                    The full ref the workflow runs on: a branch as{" "}
-                    <Code size="1">refs/heads/main</Code>, a tag as{" "}
-                    <Code size="1">refs/tags/v1.0</Code>.
-                  </>
-                ) : (
-                  <>The name of the GitHub environment the job runs in.</>
-                )}{" "}
-                <Link href={SUBJECT_CLAIMS_DOCS} target="_blank" rel="noopener noreferrer" underline="always">
-                  See GitHub&apos;s examples
-                </Link>
-              </>
-            }
-          >
+          <Field label={kind.label} htmlFor={`${id}-value`} required>
             <TextField.Root
               id={`${id}-value`}
               size="2"
-              placeholder={workflow.kind === "ref" ? "refs/heads/main" : "production"}
+              placeholder={kind.placeholder}
               value={workflow.value}
               onChange={(e) => onChange({ ...workflow, value: e.target.value })}
             />
@@ -231,7 +371,7 @@ export function GithubWorkflowFields({
             fontSize: "var(--font-size-1)",
           }}
         >
-          <pre>{githubCondition(workflow)}</pre>
+          <pre>{githubCondition(workflow, audience)}</pre>
         </Box>
       </Box>
     </Flex>

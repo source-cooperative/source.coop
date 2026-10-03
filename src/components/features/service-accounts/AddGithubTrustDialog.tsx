@@ -23,11 +23,14 @@ export function AddGithubTrustDialog({
   onAdd,
   open,
   onOpenChange,
+  proxyOrigin,
 }: {
   accountId?: string;
   onAdd?: (subject: string) => void;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** The data proxy's origin, shown as the audience the workflow's token must carry. */
+  proxyOrigin?: string;
 }) {
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
@@ -35,7 +38,12 @@ export function AddGithubTrustDialog({
         <Dialog.Title>Trust a GitHub workflow</Dialog.Title>
         {/* The content unmounts when the dialog closes, so the form lives in
             here and starts over on every open. */}
-        <TrustForm accountId={accountId} onAdd={onAdd} onTrusted={() => onOpenChange(false)} />
+        <TrustForm
+          accountId={accountId}
+          onAdd={onAdd}
+          proxyOrigin={proxyOrigin}
+          onTrusted={() => onOpenChange(false)}
+        />
       </Dialog.Content>
     </Dialog.Root>
   );
@@ -44,10 +52,12 @@ export function AddGithubTrustDialog({
 function TrustForm({
   accountId,
   onAdd,
+  proxyOrigin,
   onTrusted,
 }: {
   accountId?: string;
   onAdd?: (subject: string) => void;
+  proxyOrigin?: string;
   onTrusted: () => void;
 }) {
   const [state, formAction, pending] = useActionState(
@@ -58,7 +68,7 @@ function TrustForm({
   // With onAdd nothing reaches the server until the create form is
   // submitted, so the subject is checked here, the way addGithubTrust would.
   const [invalid, setInvalid] = useState(false);
-  const message = invalid ? "Name one repository and one ref or environment" : !state.success && state.message;
+  const message = invalid ? "Name one repository and one branch, tag or environment" : !state.success && state.message;
 
   useEffect(() => {
     if (state.success) onTrusted();
@@ -81,10 +91,15 @@ function TrustForm({
       <input type="hidden" name="subject" value={githubSubject(workflow)} />
       <Flex direction="column" gap="3">
         <Dialog.Description size="2">
-          One repository, pinned to one ref or one environment. GitHub vouches for the
+          One repository, pinned to one branch, tag or environment. GitHub vouches for the
           workflow at every run; nothing is stored here but the name.
         </Dialog.Description>
-        <GithubWorkflowFields id="gh" workflow={workflow} onChange={setWorkflow} />
+        <GithubWorkflowFields
+          id="gh"
+          workflow={workflow}
+          onChange={setWorkflow}
+          audience={proxyOrigin}
+        />
         {message && (
           <Text size="1" color="red">
             {message}

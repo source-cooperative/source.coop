@@ -112,7 +112,7 @@ export async function createServiceAccount(
   const subjects = [...new Set(formData.getAll("github_subject").map(String).filter(Boolean))];
   const badSubject = subjects.find((s) => !GITHUB_ACTIONS_SUBJECT_REGEX.test(s));
   if (badSubject) {
-    return fail(`${badSubject} does not name one repository and one ref or environment`);
+    return fail(`${badSubject} does not name one repository and one branch, tag or environment`);
   }
 
   const grants: { product_id: string; role: MembershipRole }[] = [];
@@ -208,7 +208,7 @@ export async function addGithubTrust(
   if (account.disabled) return outcome("That service account is disabled", false);
   const subject = String(formData.get("subject") ?? "");
   if (!GITHUB_ACTIONS_SUBJECT_REGEX.test(subject)) {
-    return outcome("Name one repository and one ref or environment", false);
+    return outcome("Name one repository and one branch, tag or environment", false);
   }
   try {
     await trustGithub(account.account_id, subject, session.account.account_id);

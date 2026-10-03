@@ -8,7 +8,7 @@ import { IssueApiKeyDialog, type ApiKeyDraft } from "./IssueApiKeyDialog";
 
 /** What "Signs in with" says of itself, on the create form and the account's page alike. */
 export const SIGN_IN_DESCRIPTION =
-  "GitHub Actions workflows, each pinned to one repository and one ref or environment; GitHub vouches for every run, so there is no secret to store. Or an API key, for environments without OIDC, shown once when it is issued.";
+  "GitHub Actions workflows, each pinned to one repository and one branch, tag or environment; GitHub vouches for every run, so there is no secret to store. Or an API key, for environments without OIDC, shown once when it is issued.";
 
 /**
  * "Add sign-in", for the corner of a service account's "Signs in with": a
@@ -23,12 +23,15 @@ export function AddSignInMenu({
   onAddGithub,
   onAddKey,
   keyDisabled,
+  proxyOrigin,
 }: {
   accountId?: string;
   onAddGithub?: (subject: string) => void;
   onAddKey?: (key: ApiKeyDraft) => void;
   /** Turns off "API key", as the create form does once it holds one. */
   keyDisabled?: boolean;
+  /** The data proxy's origin, shown as the audience a trusted workflow's token must carry. */
+  proxyOrigin?: string;
 }) {
   const [adding, setAdding] = useState<"github" | "key" | null>(null);
   const close = (open: boolean) => !open && setAdding(null);
@@ -51,6 +54,7 @@ export function AddSignInMenu({
       <AddGithubTrustDialog
         accountId={accountId}
         onAdd={onAddGithub}
+        proxyOrigin={proxyOrigin}
         open={adding === "github"}
         onOpenChange={close}
       />
