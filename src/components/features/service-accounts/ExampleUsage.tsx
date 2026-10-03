@@ -1,6 +1,6 @@
 "use client";
 
-import { Box, Button, Code, Dialog, Flex, Link, Text } from "@radix-ui/themes";
+import { Box, Button, Code, Dialog, Flex, Text } from "@radix-ui/themes";
 import { CopyToClipboard } from "@/components/core/CopyToClipboard";
 import { highlightLine, type Language, type TokenKind } from "./highlight";
 
@@ -14,20 +14,12 @@ const COLOURS: Record<TokenKind, string | undefined> = {
   plain: undefined,
 };
 
-/** Where a trusted GitHub workflow goes, and the stock AWS action it signs in with. */
-export function GithubWorkflowIntro({ subject }: { subject: string }) {
-  return (
-    <>
-      It signs in with AWS&apos;s own{" "}
-      <Link href="https://github.com/aws-actions/configure-aws-credentials" target="_blank" rel="noopener noreferrer">
-        configure-aws-credentials
-      </Link>{" "}
-      action: Source Cooperative speaks the STS protocol it expects, so no custom action or stored secret is
-      needed. In <Code>{subject.split(":")[1]}</Code>, save this workflow under{" "}
-      <Code>.github/workflows/</Code>, or carry the highlighted lines into a workflow of your own:
-    </>
-  );
-}
+/** Where a trusted GitHub workflow's example goes. */
+export const GITHUB_WORKFLOW_INTRO = (
+  <>
+    Customize and save this workflow under <Code>.github/workflows/</Code>:
+  </>
+);
 
 /**
  * What software adds to sign in one way, ready to paste — a workflow, or the

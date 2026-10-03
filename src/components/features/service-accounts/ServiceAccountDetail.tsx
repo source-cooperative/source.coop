@@ -33,7 +33,7 @@ import {
 import { AddSignInMenu } from "./AddSignInMenu";
 import { GrantProductDialog } from "./GrantProductDialog";
 import { ProductAccessList, type ProductAccess } from "./ProductAccessList";
-import { ExampleUsage, GithubWorkflowIntro } from "./ExampleUsage";
+import { ExampleUsage, GITHUB_WORKFLOW_INTRO } from "./ExampleUsage";
 import { githubWorkflow } from "@/lib/services/service-account-usage";
 import { IssuedApiKeyDialog } from "./IssuedApiKeyDialog";
 import { ApiKeyList } from "./ApiKeyList";
@@ -105,7 +105,7 @@ function TrustRow({
           {example && (
             <ExampleUsage
               title="Sign in from this workflow"
-              intro={<GithubWorkflowIntro subject={trust.subject} />}
+              intro={GITHUB_WORKFLOW_INTRO}
               {...githubWorkflow(proxyOrigin, accountId, trust.subject)}
               language="yaml"
               open={showingUsage}

@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { ExampleUsage, GithubWorkflowIntro } from "./ExampleUsage";
+import { ExampleUsage, GITHUB_WORKFLOW_INTRO } from "./ExampleUsage";
 import { apiKeyEnvironment, githubWorkflow } from "@/lib/services/service-account-usage";
 
 /**
@@ -40,7 +40,7 @@ const ENVIRONMENT = "repo:miskatonic@8123456/climate-data@9456789:environment:pr
 export const GithubWorkflow: Story = {
   args: {
     title: "Sign in from this workflow",
-    intro: <GithubWorkflowIntro subject={REF} />,
+    intro: GITHUB_WORKFLOW_INTRO,
     ...githubWorkflow("https://data.source.coop", "miskatonic--nightly-sync", REF),
     language: "yaml",
   },
@@ -54,7 +54,6 @@ export const GithubWorkflow: Story = {
 export const GithubWorkflowInAnEnvironment: Story = {
   args: {
     ...GithubWorkflow.args,
-    intro: <GithubWorkflowIntro subject={ENVIRONMENT} />,
     ...githubWorkflow("https://data.source.coop", "miskatonic--nightly-sync", ENVIRONMENT),
   },
 };
