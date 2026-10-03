@@ -148,6 +148,17 @@ describe("GithubWorkflowFields", () => {
     ).toBeTruthy();
   });
 
+  it("tells a rate limit apart from a repository it can't see, and tries again", async () => {
+    const fetch = respond(403);
+    renderFor({ repository: "octocat/hello-world" });
+
+    expect(await screen.findByText(/couldn.t check/)).toBeTruthy();
+    expect(screen.queryByText(/private or doesn.t exist/)).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(2));
+  });
+
   it("doesn't look up a repository already named the immutable way", async () => {
     const fetch = respond(200);
     renderFor({ repository: "octocat@583231/Hello-World@1296269" });

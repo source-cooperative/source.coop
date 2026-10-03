@@ -118,6 +118,20 @@ export const PrivateRepository: Story = {
 };
 
 /**
+ * A repository GitHub couldn't be asked about — most often because it's
+ * rate-limiting the viewer, who gets 60 anonymous lookups an hour. Rather
+ * than calling a public repository private, the form says the check didn't
+ * happen, offers to try again, and gives the same two ways to find the
+ * subject claim prefix by hand.
+ */
+export const RateLimited: Story = {
+  args: { workflow: { ...NEW_GITHUB_WORKFLOW, repository: "source-cooperative/source.coop" } },
+  beforeEach: githubAnswers("source-cooperative/source.coop", 403, {
+    message: "API rate limit exceeded",
+  }),
+};
+
+/**
  * Runs for a release tag, in a repository whose tokens name it the short way,
  * `owner/repo`.
  */

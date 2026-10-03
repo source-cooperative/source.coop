@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { CheckCircledIcon, ExclamationTriangleIcon } from "@radix-ui/react-icons";
 import {
   Box,
+  Button,
   Callout,
   Code,
   Flex,
@@ -106,13 +107,18 @@ interface SubjectSetting {
 
 /**
  * How a repository typed the short way is named in its tokens, from GitHub's
- * public API, or `null` when GitHub doesn't show it — a private repository,
- * or none by that name. `undefined` until the answer for the current value
- * arrives. Asked from the browser, so the anonymous rate limit is the
- * viewer's own.
+ * public API: `null` when GitHub doesn't show it — a private repository, or
+ * none by that name — and `"unreachable"` when GitHub couldn't be asked, most
+ * often because it's rate-limiting the viewer. `undefined` until the answer
+ * for the current value arrives. Asked from the browser, so the anonymous
+ * rate limit, 60 an hour, is the viewer's own; `retry` asks again.
  */
 function useSubjectSetting(repository: string) {
-  const [answer, setAnswer] = useState<{ repository: string; setting: SubjectSetting | null }>();
+  const [answer, setAnswer] = useState<{
+    repository: string;
+    setting: SubjectSetting | null | "unreachable";
+  }>();
+  const [attempt, setAttempt] = useState(0);
   useEffect(() => {
     if (!SHORT_REPOSITORY.test(repository)) return;
     const controller = new AbortController();
@@ -120,27 +126,41 @@ function useSubjectSetting(repository: string) {
       fetch(`https://api.github.com/repos/${repository}/actions/oidc/customization/sub`, {
         signal: controller.signal,
       })
-        .then((res) => (res.ok ? res.json() : null))
+        .then((res) => {
+          if (res.status === 404) return null;
+          if (!res.ok) throw new Error(`GitHub answered ${res.status}`);
+          return res.json();
+        })
         .then((r) =>
           setAnswer({
             repository,
-            setting: r && {
-              repository: r.sub_claim_prefix.replace(/^repo:/, ""),
-              // A template of exactly these keys, in this order, builds the
-              // default's shape, so it's as trustable as the default.
-              standard:
-                r.use_default || JSON.stringify(r.include_claim_keys) === '["repo","context"]',
-            },
+            setting:
+              typeof r?.sub_claim_prefix === "string"
+                ? {
+                    repository: r.sub_claim_prefix.replace(/^repo:/, ""),
+                    // A template of exactly these keys, in this order, builds
+                    // the default's shape, so it's as trustable as the default.
+                    standard:
+                      r.use_default ||
+                      JSON.stringify(r.include_claim_keys) === '["repo","context"]',
+                  }
+                : null,
           })
         )
-        .catch((e) => e.name !== "AbortError" && setAnswer({ repository, setting: null }));
+        .catch((e) => e.name !== "AbortError" && setAnswer({ repository, setting: "unreachable" }));
     }, 400);
     return () => {
       clearTimeout(timer);
       controller.abort();
     };
-  }, [repository]);
-  return answer?.repository === repository ? answer.setting : undefined;
+  }, [repository, attempt]);
+  return {
+    setting: answer?.repository === repository ? answer.setting : undefined,
+    retry: () => {
+      setAnswer(undefined);
+      setAttempt((n) => n + 1);
+    },
+  };
 }
 
 /**
@@ -164,13 +184,16 @@ export function GithubWorkflowFields({
   /** The proxy's origin, the audience it requires of GitHub's tokens. */
   audience?: string;
 }) {
-  const setting = useSubjectSetting(workflow.repository);
+  const { setting, retry } = useSubjectSetting(workflow.repository);
+  const found = setting && setting !== "unreachable" ? setting : undefined;
   // The typed name stays in the field; the subject uses the one GitHub's
   // tokens carry, so nobody has to know which form their repository signs with.
+  // It lives on the workflow, not derived here, because the forms submit
+  // `githubSubject(workflow)`.
   useEffect(() => {
-    if (setting && setting.repository !== workflow.tokenRepository)
-      onChange({ ...workflow, tokenRepository: setting.repository });
-  }, [setting, workflow, onChange]);
+    if (found && found.repository !== workflow.tokenRepository)
+      onChange({ ...workflow, tokenRepository: found.repository });
+  }, [found, workflow, onChange]);
   const kind = KINDS[workflow.kind];
   return (
     <Flex direction="column" gap="3">
@@ -206,18 +229,18 @@ export function GithubWorkflowFields({
         </Box>
         {trailing}
       </Flex>
-      {setting?.standard && (
+      {found?.standard && (
         <Callout.Root size="1" color="green" role="status">
           <Callout.Icon>
             <CheckCircledIcon />
           </Callout.Icon>
           <Callout.Text size="1" style={{ wordBreak: "break-all" }}>
             Confirmed via GitHub, subject claim prefix is{" "}
-            <Code size="1">repo:{setting.repository}</Code>
+            <Code size="1">repo:{found.repository}</Code>
           </Callout.Text>
         </Callout.Root>
       )}
-      {setting && !setting.standard && (
+      {found && !found.standard && (
         <Callout.Root size="1" color="amber" role="alert">
           <Callout.Icon>
             <ExclamationTriangleIcon />
@@ -230,21 +253,36 @@ export function GithubWorkflowFields({
           </Callout.Text>
         </Callout.Root>
       )}
-      {setting === null && (
+      {(setting === null || setting === "unreachable") && (
         <Callout.Root size="1" color="amber" role="alert">
           <Callout.Icon>
             <ExclamationTriangleIcon />
           </Callout.Icon>
           {/* Callout.Text is a <p>, which can't hold the list. */}
           <Box>
-            <Callout.Text size="1">
-              We can&apos;t see{" "}
-              <DocsLink href={`https://github.com/${workflow.repository}`}>
-                {workflow.repository}
-              </DocsLink>
-              , so it&apos;s either private or doesn&apos;t exist. Check that it exists, then
-              enter its default subject claim prefix as the repository. To find it:
-            </Callout.Text>
+            {setting === null ? (
+              <Callout.Text size="1">
+                We can&apos;t see{" "}
+                <DocsLink href={`https://github.com/${workflow.repository}`}>
+                  {workflow.repository}
+                </DocsLink>
+                , so it&apos;s either private or doesn&apos;t exist. Check that it exists, then
+                enter its default subject claim prefix as the repository. To find it:
+              </Callout.Text>
+            ) : (
+              <Callout.Text size="1">
+                We couldn&apos;t check{" "}
+                <DocsLink href={`https://github.com/${workflow.repository}`}>
+                  {workflow.repository}
+                </DocsLink>{" "}
+                with GitHub just now, most likely because it limits how often it can be asked.{" "}
+                <Button type="button" size="1" variant="soft" onClick={retry}>
+                  Try again
+                </Button>{" "}
+                in a few minutes, or enter its default subject claim prefix as the repository. To
+                find it:
+              </Callout.Text>
+            )}
             <Text size="1" asChild>
               <ul style={{ margin: "var(--space-1) 0 0", paddingLeft: "var(--space-4)" }}>
                 <li>
