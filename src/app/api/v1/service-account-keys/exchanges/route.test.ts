@@ -7,6 +7,12 @@ jest.mock("@/lib/clients/database", () => ({
   serviceAccountKeysTable: { fetchByHash: jest.fn(), set: jest.fn() },
   accountsTable: { fetchById: jest.fn() },
 }));
+// No request scope here for `after` to defer into, so the deferred work runs
+// in place.
+jest.mock("next/server", () => ({
+  ...jest.requireActual("next/server"),
+  after: (task: () => unknown) => task(),
+}));
 jest.mock("@/lib/api/oidc", () => ({
   verifyProxyAssertion: jest.fn(),
   PROXY_SELF_SUBJECT: "urn:source:data-proxy",
