@@ -126,7 +126,10 @@ function useSubjectSetting(repository: string) {
             repository,
             setting: r && {
               repository: r.sub_claim_prefix.replace(/^repo:/, ""),
-              standard: r.use_default,
+              // A template of exactly these keys, in this order, builds the
+              // default's shape, so it's as trustable as the default.
+              standard:
+                r.use_default || JSON.stringify(r.include_claim_keys) === '["repo","context"]',
             },
           })
         )
@@ -208,7 +211,7 @@ export function GithubWorkflowFields({
           <Callout.Icon>
             <CheckCircledIcon />
           </Callout.Icon>
-          <Callout.Text style={{ wordBreak: "break-all" }}>
+          <Callout.Text size="1" style={{ wordBreak: "break-all" }}>
             Confirmed via GitHub, subject claim prefix is{" "}
             <Code size="1">repo:{setting.repository}</Code>
           </Callout.Text>
@@ -219,9 +222,11 @@ export function GithubWorkflowFields({
           <Callout.Icon>
             <ExclamationTriangleIcon />
           </Callout.Icon>
-          <Callout.Text>
-            This repository customizes its subject claim, so its tokens may not carry the subject
-            below. Only subjects shaped like GitHub&apos;s default can be trusted.
+          <Callout.Text size="1">
+            This repository customizes its subject claim, so its tokens won&apos;t carry the
+            subject below, and only subjects shaped like GitHub&apos;s default can be trusted. An
+            admin can switch it back by selecting <Strong>Use default template</Strong> in its{" "}
+            <DocsLink href={oidcSettingsUrl(workflow.repository)}>OIDC settings</DocsLink>.
           </Callout.Text>
         </Callout.Root>
       )}
@@ -232,7 +237,7 @@ export function GithubWorkflowFields({
           </Callout.Icon>
           {/* Callout.Text is a <p>, which can't hold the list. */}
           <Box>
-            <Callout.Text>
+            <Callout.Text size="1">
               We can&apos;t see{" "}
               <DocsLink href={`https://github.com/${workflow.repository}`}>
                 {workflow.repository}

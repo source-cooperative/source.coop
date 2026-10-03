@@ -84,9 +84,12 @@ export const PublicRepository: Story = {
 };
 
 /**
- * A public repository with its own subject template. Its tokens may name
+ * A public repository with its own subject template. Its tokens name
  * something other than the repository and ref, which a trust can't match, so
- * the form says so.
+ * the form says so, and points an admin at the repository's OIDC settings,
+ * where selecting **Use default template** undoes it. A template of exactly
+ * `repo` then `context` builds the default's shape, so it's confirmed like
+ * the default rather than warned about.
  */
 export const CustomizedSubject: Story = {
   args: { workflow: { ...NEW_GITHUB_WORKFLOW, repository: "cli/cli" } },

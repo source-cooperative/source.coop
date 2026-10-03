@@ -108,11 +108,30 @@ describe("GithubWorkflowFields", () => {
     );
   });
 
-  it("warns when the repository customizes its subject", async () => {
-    respond(200, { use_default: false, sub_claim_prefix: "repo:cli/cli" });
+  it("warns when the repository customizes its subject, and says where to undo it", async () => {
+    respond(200, {
+      use_default: false,
+      include_claim_keys: ["repository_owner_id", "repository_id", "context"],
+      sub_claim_prefix: "repo:cli/cli",
+    });
     renderFor({ repository: "cli/cli" });
 
     expect(await screen.findByText(/customizes its subject claim/)).toBeTruthy();
+    expect(screen.getByRole("link", { name: "OIDC settings" }).getAttribute("href")).toBe(
+      "https://github.com/cli/cli/settings/actions/oidc-configuration"
+    );
+  });
+
+  it("confirms a custom template that builds the default's shape", async () => {
+    respond(200, {
+      use_default: false,
+      include_claim_keys: ["repo", "context"],
+      sub_claim_prefix: "repo:octocat/repo",
+    });
+    renderFor({ repository: "octocat/repo" });
+
+    expect((await screen.findByRole("status")).textContent).toMatch(/^Confirmed via GitHub/);
+    expect(screen.queryByText(/customizes its subject claim/)).toBeNull();
   });
 
   it("points a repository GitHub doesn't show at its OIDC settings, and gives the gh command", async () => {
