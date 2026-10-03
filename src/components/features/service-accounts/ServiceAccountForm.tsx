@@ -174,7 +174,7 @@ export function ServiceAccountForm({ ownerAccountId, products }: ServiceAccountF
           )}
           {subjects.length === 0 && !apiKey ? (
             <Text size="2" color="gray">
-              Nothing yet — add a workflow or a key now, or later from its page.
+              Nothing yet. Add a workflow or key to grant access from an external environment.
             </Text>
           ) : (
             <Flex direction="column" gap="4">
