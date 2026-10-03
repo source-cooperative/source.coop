@@ -91,7 +91,9 @@ describe("GithubWorkflowFields", () => {
       "https://api.github.com/repos/octocat/hello-world/actions/oidc/customization/sub",
       expect.anything()
     );
-    expect(screen.getByRole("status").textContent).toMatch(/^Verified with GitHub/);
+    expect(screen.getByRole("status").textContent).toBe(
+      "Confirmed via GitHub, subject claim prefix is repo:octocat@583231/Hello-World@1296269"
+    );
   });
 
   it("takes a pasted subject prefix without its repo:", () => {
@@ -104,12 +106,6 @@ describe("GithubWorkflowFields", () => {
     expect(onChange).toHaveBeenCalledWith(
       expect.objectContaining({ repository: "octocat@583231/Hello-World@1296269" })
     );
-  });
-
-  it("explains a repository named by its ids", () => {
-    renderFor({ repository: "octocat@583231/Hello-World@1296269" });
-
-    expect(screen.getByText(/identifies this repository by its permanent ids/)).toBeTruthy();
   });
 
   it("warns when the repository customizes its subject", async () => {

@@ -67,11 +67,10 @@ export const Empty: Story = {
 /**
  * A public repository. Once you stop typing, GitHub's public API is asked how
  * the repository's tokens name it, and the condition uses that name while the
- * field keeps what you typed. This one's tokens carry its permanent ids —
- * `alukach@897290/source-coop-upload-test@1400565438` — so a line explains
- * what that buys: the trust survives a rename, and a new repository given the
- * old name can't use it. A repository whose tokens don't carry ids shows no
- * such line, and is named in its tokens with GitHub's own capitalization.
+ * field keeps what you typed. A green note confirms the subject claim prefix
+ * GitHub reported — here one with the repository's immutable ids,
+ * `repo:alukach@897290/source-coop-upload-test@1400565438`; a repository
+ * whose tokens don't carry ids is named with GitHub's own capitalization.
  */
 export const PublicRepository: Story = {
   args: {

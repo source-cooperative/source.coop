@@ -181,7 +181,7 @@ export function GithubWorkflowFields({
               <>
                 <Code size="1">owner/repo</Code>, or with its permanent ids as{" "}
                 <Code size="1">owner@123/repo@456</Code>.{" "}
-                <DocsLink href={IMMUTABLE_SUBJECTS_DOCS}>About repository ids</DocsLink>
+                <DocsLink href={IMMUTABLE_SUBJECTS_DOCS}>About immutable subject claims</DocsLink>
               </>
             }
           >
@@ -203,20 +203,14 @@ export function GithubWorkflowFields({
         </Box>
         {trailing}
       </Flex>
-      {(workflow.tokenRepository ?? workflow.repository).includes("@") && (
-        <Text size="1" color="gray">
-          GitHub identifies this repository by its permanent ids, so the trust holds if it&apos;s
-          renamed, and a new repository given its old name can&apos;t use it.
-        </Text>
-      )}
       {setting?.standard && (
         <Callout.Root size="1" color="green" role="status">
           <Callout.Icon>
             <CheckCircledIcon />
           </Callout.Icon>
           <Callout.Text style={{ wordBreak: "break-all" }}>
-            Verified with GitHub: its tokens name this repository{" "}
-            <Code size="1">{setting.repository}</Code>.
+            Confirmed via GitHub, subject claim prefix is{" "}
+            <Code size="1">repo:{setting.repository}</Code>
           </Callout.Text>
         </Callout.Root>
       )}
