@@ -12,7 +12,7 @@ import {
   serviceAccountKeysTable,
 } from "@/lib/clients/database";
 import { getPageSession } from "@/lib/api/utils";
-import { canManageAccount } from "@/lib/api/authz";
+import { canManageAccountServiceAccounts } from "@/lib/api/authz";
 import { createServiceAccountUrl } from "@/lib/urls";
 import { MembershipState, publicKey, type ServiceAccountSummary } from "@/types";
 
@@ -26,7 +26,7 @@ export default async function ServiceAccountsPage({ params }: PageProps) {
   const { account_id } = await params;
   const session = await getPageSession();
   const owner = await accountsTable.fetchById(account_id);
-  if (!owner || !canManageAccount(session, owner)) {
+  if (!owner || !canManageAccountServiceAccounts(session, owner)) {
     notFound();
   }
 
