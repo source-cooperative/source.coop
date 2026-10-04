@@ -581,16 +581,11 @@ export function canManageAccountServiceAccounts(
   session: UserSession | null,
   account: Account
 ): boolean {
-  // canManageAccount already denies a disabled session or owner account.
-  if (!canManageAccount(session, account)) {
-    return false;
-  }
-
-  if (isAdmin(session)) {
-    return true;
-  }
-
-  return !!account.flags?.includes(AccountFlags.CREATE_SERVICE_ACCOUNTS);
+  return canManageWithFlag(
+    session,
+    account,
+    AccountFlags.CREATE_SERVICE_ACCOUNTS
+  );
 }
 
 /**
@@ -608,17 +603,33 @@ export function canManageAccountDataConnections(
   session: UserSession | null,
   account: Account
 ): boolean {
+  return canManageWithFlag(
+    session,
+    account,
+    AccountFlags.CREATE_DATA_CONNECTIONS
+  );
+}
+
+/**
+ * Whether `session` manages `account` and `account` holds the platform-granted
+ * capability `flag`. The flag is read from the account being managed, never
+ * the session's own, and admins bypass it.
+ */
+function canManageWithFlag(
+  session: UserSession | null,
+  account: Account,
+  flag: AccountFlags
+): boolean {
   // canManageAccount already denies a disabled session or owner account.
   if (!canManageAccount(session, account)) {
     return false;
   }
 
-  // Admins bypass the platform-granted flag.
   if (isAdmin(session)) {
     return true;
   }
 
-  return !!account.flags?.includes(AccountFlags.CREATE_DATA_CONNECTIONS);
+  return !!account.flags?.includes(flag);
 }
 
 /**
