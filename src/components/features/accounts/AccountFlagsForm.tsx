@@ -47,7 +47,7 @@ export function AccountFlagsForm({ session, account }: AccountFlagsFormProps) {
   const isOrganization = account.type === AccountType.ORGANIZATION;
 
   // Organizations can only be granted the data-connection and service-account
-  // capabilities; the other flags (repositories, organizations, admin) are
+  // capabilities; the other flags (products, organizations, admin) are
   // individual-account concerns.
   const fields: Array<[AccountFlags, string, string]> = isOrganization
     ? [
@@ -65,8 +65,8 @@ export function AccountFlagsForm({ session, account }: AccountFlagsFormProps) {
     : [
         [
           AccountFlags.CREATE_REPOSITORIES,
-          "Create Repositories",
-          "Allows this account to create new repositories and manage repository settings.",
+          "Create Products",
+          "Allows this account to create new products and manage product settings.",
         ],
         [
           AccountFlags.CREATE_ORGANIZATIONS,
@@ -89,7 +89,7 @@ export function AccountFlagsForm({ session, account }: AccountFlagsFormProps) {
     fields.push([
       AccountFlags.ADMIN,
       "Administrator",
-      "Full administrative access to the platform. Can manage all accounts, repositories, and system settings.",
+      "Full administrative access to the platform. Can manage all accounts, products, and system settings.",
     ]);
   }
 
