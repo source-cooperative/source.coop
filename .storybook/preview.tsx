@@ -59,6 +59,35 @@ const preview: Preview = {
     // router mock is never mounted and the story throws
     // "invariant expected app router to be mounted".
     nextjs: { appDirectory: true },
+    // Features are grouped by where they appear in the app, and ordered the
+    // way a visitor meets them: a product, the catalog, an account, then the
+    // settings, admin and site-wide chrome. Settings follow the sidebar.
+    options: {
+      storySort: {
+        order: [
+          "Components",
+          "Features",
+          [
+            "Product page",
+            ["Summary", "Contents", "Analytics"],
+            "Product listing",
+            "Account page",
+            "Settings",
+            [
+              "Details",
+              "Data connections",
+              "Permissions",
+              "Service accounts",
+              ["List", "Create", "Detail", "Sign-in methods"],
+              "Memberships",
+            ],
+            "Admin",
+            "App shell",
+            "Home",
+          ],
+        ],
+      },
+    },
     controls: {
       matchers: {
         color: /(background|color)$/i,

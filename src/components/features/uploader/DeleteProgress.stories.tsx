@@ -13,7 +13,7 @@ import type { DeleteJob } from "./UploadProvider";
  * app; leaving or reloading the tab stops it, and the browser asks first.
  */
 const meta = {
-  title: "Features/Uploader/DeleteProgress",
+  title: "Features/App shell/DeleteProgress",
   component: DeleteProgress,
   parameters: { layout: "padded" },
   // The account menu's submenu is 320px wide.

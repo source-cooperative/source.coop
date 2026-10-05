@@ -17,7 +17,7 @@ import type { Product } from "@/types";
  * Submitting does nothing — the four mirror actions are `fn()` stubs.
  */
 const meta = {
-  title: "Features/Data connections/ProductMirrorsManager",
+  title: "Features/Settings/Data connections/ProductMirrorsManager",
   component: ProductMirrorsManager,
   parameters: { layout: "padded", docs: { story: { inline: false, iframeHeight: 640 } } },
 } satisfies Meta<typeof ProductMirrorsManager>;

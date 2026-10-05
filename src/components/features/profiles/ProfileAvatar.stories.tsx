@@ -12,7 +12,7 @@ import type { Account } from "@/types";
  * squared — which is the only thing distinguishing them in a mixed list.
  */
 const meta = {
-  title: "Features/Profiles/ProfileAvatar",
+  title: "Components/Accounts/ProfileAvatar",
   component: ProfileAvatar,
   parameters: { layout: "padded" },
 } satisfies Meta<typeof ProfileAvatar>;

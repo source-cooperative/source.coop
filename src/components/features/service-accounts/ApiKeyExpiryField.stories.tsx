@@ -7,7 +7,7 @@ import { ApiKeyExpiryField } from "./ApiKeyExpiryField";
  * a key that never expires starts at never.
  */
 const meta = {
-  title: "Features/Service accounts/ApiKeyExpiryField",
+  title: "Features/Settings/Service accounts/Sign-in methods/ApiKeyExpiryField",
   component: ApiKeyExpiryField,
   parameters: { layout: "padded" },
 } satisfies Meta<typeof ApiKeyExpiryField>;

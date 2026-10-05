@@ -22,7 +22,7 @@ import { ServiceAccountForm } from "./ServiceAccountForm";
  * router's push does nothing.
  */
 const meta = {
-  title: "Features/Service accounts/ServiceAccountForm",
+  title: "Features/Settings/Service accounts/Create/ServiceAccountForm",
   component: ServiceAccountForm,
   parameters: { layout: "padded", docs: { story: { inline: false, iframeHeight: 640 } } },
 } satisfies Meta<typeof ServiceAccountForm>;

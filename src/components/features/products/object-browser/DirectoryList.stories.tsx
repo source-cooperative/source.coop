@@ -25,7 +25,7 @@ import type { Product, ProductObject } from "@/types";
  * is what this branch is stacked on.
  */
 const meta = {
-  title: "Features/Object browser/DirectoryList",
+  title: "Features/Product page/Contents/DirectoryList",
   component: DirectoryList,
   parameters: { layout: "padded", docs: { story: { inline: false, iframeHeight: 640 } } },
   // The rows read upload progress from context, so the real providers wrap

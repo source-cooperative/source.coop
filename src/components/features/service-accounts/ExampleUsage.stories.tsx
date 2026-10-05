@@ -16,7 +16,7 @@ import { apiKeyEnvironment, githubWorkflow } from "@/lib/services/service-accoun
  * copy button in the block's corner takes all of it.
  */
 const meta = {
-  title: "Features/Service accounts/ExampleUsage",
+  title: "Features/Settings/Service accounts/Detail/ExampleUsage",
   component: ExampleUsage,
   // Each story opens a modal; on the docs page it gets a frame of its own, so
   // the modal stays inside its preview instead of covering the page.

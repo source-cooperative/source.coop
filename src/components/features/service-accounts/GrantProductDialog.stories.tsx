@@ -10,7 +10,7 @@ import { GrantProductDialog } from "./GrantProductDialog";
  * the button is not shown.
  */
 const meta = {
-  title: "Features/Service accounts/GrantProductDialog",
+  title: "Features/Settings/Service accounts/Detail/GrantProductDialog",
   component: GrantProductDialog,
   parameters: { layout: "centered", docs: { story: { inline: false, iframeHeight: 480 } } },
   args: {

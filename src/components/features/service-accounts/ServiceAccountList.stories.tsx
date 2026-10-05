@@ -16,7 +16,7 @@ import {
  * The controls live on that page, `ServiceAccountDetail`.
  */
 const meta = {
-  title: "Features/Service accounts/ServiceAccountList",
+  title: "Features/Settings/Service accounts/List/ServiceAccountList",
   component: ServiceAccountList,
   parameters: { layout: "padded" },
 } satisfies Meta<typeof ServiceAccountList>;

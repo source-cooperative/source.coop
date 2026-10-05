@@ -12,7 +12,7 @@ import { AddGithubTrustDialog } from "./AddGithubTrustDialog";
  * `onOpenChange`, which does nothing.
  */
 const meta = {
-  title: "Features/Service accounts/AddGithubTrustDialog",
+  title: "Features/Settings/Service accounts/Sign-in methods/AddGithubTrustDialog",
   component: AddGithubTrustDialog,
   // Each story opens a modal; on the docs page it gets a frame of its own, so
   // the modal stays inside its preview instead of covering the page.

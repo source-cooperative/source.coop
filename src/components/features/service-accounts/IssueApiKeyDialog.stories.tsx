@@ -13,7 +13,7 @@ import { IssueApiKeyDialog } from "./IssueApiKeyDialog";
  * **submitting the form shows the show-once view**. Give it a label, and issue.
  */
 const meta = {
-  title: "Features/Service accounts/IssueApiKeyDialog",
+  title: "Features/Settings/Service accounts/Sign-in methods/IssueApiKeyDialog",
   component: IssueApiKeyDialog,
   // Each story opens a modal; on the docs page it gets a frame of its own, so
   // the modal stays inside its preview instead of covering the page.
