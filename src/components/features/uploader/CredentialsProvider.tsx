@@ -17,7 +17,9 @@ import {
 
 // Reuse cached credentials only while they have this long left: enough for the
 // upload SDK, which refreshes on its own 5 minutes before expiry, and for
-// pasting them from "View Credentials" into another tool.
+// pasting them from "View Credentials" into another tool. getTemporaryCredentials
+// applies the same floor to the cookie it reuses, so a re-mint never comes back
+// with the same short-lived credentials.
 const MIN_REMAINING_MS = 15 * 60 * 1000;
 
 export interface CredentialsScope {
@@ -38,11 +40,16 @@ interface CredentialsContextType {
   ) => "loading" | "success" | "failed" | undefined;
   /** Warms the cache for `scope` without turning edit mode on. */
   prefetchCredentials: (scope: CredentialsScope) => void;
+  /** Cached credentials for `scope`, re-minted when they are near expiry. */
+  loadCredentials: (scope: CredentialsScope) => Promise<TemporaryCredentials>;
   fetchCredentials: (scope: CredentialsScope) => Promise<void>;
   clearCredentials: (scope: CredentialsScope) => void;
   clearAllCredentials: () => void;
   getAllCredentials: () => Map<CredentialsScope, TemporaryCredentials>;
 }
+
+const getScopeKey = (scope: CredentialsScope): string =>
+  `${scope.accountId}:${scope.productId}`;
 
 const CredentialsContext = createContext<CredentialsContextType | undefined>(
   undefined
@@ -54,9 +61,15 @@ export function S3CredentialsProvider({ children }: { children: ReactNode }) {
     Map<string, CredentialsEntry>
   >(new Map());
 
-  const getScopeKey = (scope: CredentialsScope): string => {
-    return `${scope.accountId}:${scope.productId}`;
-  };
+  // Minted credentials outlive edit mode: switching to "Read Only" only drops
+  // the scope from `credentialsMap`, so turning edit mode back on within the
+  // hour reuses these instead of re-running the Ory + STS mint. In-flight
+  // fetches are shared, so a prefetch and the click that follows it mint once.
+  // A reuse skips getTemporaryCredentials' write check, so a permission revoked
+  // mid-session leaves edit mode on until the credentials near expiry; the data
+  // proxy authorizes every request itself, so writes are refused all the same.
+  const cacheRef = useRef(new Map<string, TemporaryCredentials>());
+  const inflightRef = useRef(new Map<string, Promise<TemporaryCredentials>>());
 
   const getCredentials = (
     scope: CredentialsScope
@@ -84,6 +97,7 @@ export function S3CredentialsProvider({ children }: { children: ReactNode }) {
   };
 
   const clearAllCredentials = () => {
+    cacheRef.current.clear();
     setCredentialsMap(new Map());
   };
 
@@ -108,14 +122,8 @@ export function S3CredentialsProvider({ children }: { children: ReactNode }) {
     [credentialsMapMemo]
   );
 
-  // Minted credentials outlive edit mode: switching to "Read Only" only drops
-  // the scope from `credentialsMap`, so turning edit mode back on within the
-  // hour reuses these instead of re-running the Ory + STS mint. In-flight
-  // fetches are shared, so a prefetch and the click that follows it mint once.
-  const cacheRef = useRef(new Map<string, TemporaryCredentials>());
-  const inflightRef = useRef(new Map<string, Promise<TemporaryCredentials>>());
-
-  const loadCredentials = (scope: CredentialsScope) => {
+  // Stable identity (refs only), so UploadProvider can depend on it.
+  const loadCredentials = useCallback((scope: CredentialsScope) => {
     const key = getScopeKey(scope);
     const cached = cacheRef.current.get(key);
     if (
@@ -135,10 +143,10 @@ export function S3CredentialsProvider({ children }: { children: ReactNode }) {
       inflightRef.current.set(key, pending);
     }
     return pending;
-  };
+  }, []);
 
-  // A failed prefetch is not an error yet: the click that wants the
-  // credentials fetches again and reports its own failure.
+  // A failed prefetch is not an error yet: a click that joins the failing mint
+  // reports its failure, and the next click mints again.
   const prefetchCredentials = (scope: CredentialsScope) => {
     loadCredentials(scope).catch(() => {});
   };
@@ -193,6 +201,7 @@ export function S3CredentialsProvider({ children }: { children: ReactNode }) {
         getCredentials,
         getStatus,
         prefetchCredentials,
+        loadCredentials,
         fetchCredentials,
         clearCredentials,
         clearAllCredentials,

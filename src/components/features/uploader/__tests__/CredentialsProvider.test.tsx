@@ -59,6 +59,21 @@ describe("S3CredentialsProvider", () => {
     expect(getTemporaryCredentials).toHaveBeenCalledTimes(2);
   });
 
+  it("serves the upload SDK from the cache, and forgets it on clearAllCredentials", async () => {
+    (getTemporaryCredentials as jest.Mock).mockResolvedValue(
+      credsExpiringIn(60 * 60 * 1000),
+    );
+    const { result } = renderCredentials();
+
+    await act(() => result.current.fetchCredentials(scope));
+    await act(async () => void (await result.current.loadCredentials(scope)));
+    expect(getTemporaryCredentials).toHaveBeenCalledTimes(1);
+
+    act(() => result.current.clearAllCredentials());
+    await act(async () => void (await result.current.loadCredentials(scope)));
+    expect(getTemporaryCredentials).toHaveBeenCalledTimes(2);
+  });
+
   it("retries on click after a failed prefetch", async () => {
     (getTemporaryCredentials as jest.Mock)
       .mockRejectedValueOnce(new Error("mint failed"))

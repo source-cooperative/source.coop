@@ -71,6 +71,19 @@ describe("getTemporaryCredentials", () => {
     expect(getProxyCredentials).not.toHaveBeenCalled();
   });
 
+  it("mints instead of handing out a cookie with under 15 minutes left", async () => {
+    (readProxyCredentials as jest.Mock).mockResolvedValue({
+      ...CREDS,
+      expiration: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+    });
+    const out = await getTemporaryCredentials({
+      accountId: "acc",
+      productId: "p",
+    });
+    expect(getProxyCredentials).toHaveBeenCalledWith("id-1");
+    expect(out.expiration).toBe(CREDS.expiration);
+  });
+
   it("rejects an uploader without write permission", async () => {
     (isAuthorized as jest.Mock).mockReturnValue(false);
     await expect(

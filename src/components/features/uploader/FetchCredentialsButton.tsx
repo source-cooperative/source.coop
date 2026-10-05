@@ -65,25 +65,22 @@ export const FetchCredentialsButton = ({
   };
 
   const handleViewCredentials = async () => {
-    // Auto-fetch credentials if not available
-    if (!s3Credentials && !isLoading) {
+    // Always via the cache: it answers at once while the credentials have time
+    // left, and re-mints rather than showing ones about to expire.
+    if (!isLoading) {
       await fetchCredentials(scope);
     }
     setShowCredentialsDialog(true);
   };
 
   return (
-    <DropdownMenu.Root>
+    // Opening the menu starts the mint, so it is usually done by the time
+    // "Edit Mode" is chosen.
+    <DropdownMenu.Root
+      onOpenChange={(open) => open && !isEditMode && prefetchCredentials(scope)}
+    >
       <DropdownMenu.Trigger>
-        {/* Opening the menu starts the mint, so it is usually done by the time
-            "Edit Mode" is chosen. */}
-        <Button
-          variant="ghost"
-          size="1"
-          disabled={isLoading}
-          mr="1"
-          onPointerDown={() => isEditMode || prefetchCredentials(scope)}
-        >
+        <Button variant="ghost" size="1" disabled={isLoading} mr="1">
           {isLoading ? (
             <Spinner />
           ) : isEditMode ? (

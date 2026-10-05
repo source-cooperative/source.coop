@@ -10,7 +10,6 @@ import {
   useRef,
 } from "react";
 import { S3UploadService } from "@/lib/services/s3-upload";
-import { getTemporaryCredentials } from "@/lib/actions/credentials";
 import { useS3Credentials } from "./CredentialsProvider";
 import type { CredentialsScope } from "./CredentialsProvider";
 import { useBeforeUnload } from "@/hooks/useBeforeUnload";
@@ -52,7 +51,7 @@ const s3ServiceKey = (scope: CredentialsScope) =>
   `${scope.accountId}:${scope.productId}`;
 
 export function UploadProvider({ children }: UploadProviderProps) {
-  const { getAllCredentials } = useS3Credentials();
+  const { getAllCredentials, loadCredentials } = useS3Credentials();
   const [uploads, setUploads] = useState<ScopedUploadItem[]>([]);
   const [s3Services, setS3Services] = useState<Map<string, S3UploadService>>(
     new Map()
@@ -92,8 +91,8 @@ export function UploadProvider({ children }: UploadProviderProps) {
         if (!next.has(key)) {
           // endpoint/bucket/region/prefix are stable per scope (taken from the
           // first mint); only the STS token rotates. Hand the client a provider
-          // that re-mints via the server action so the SDK refreshes it before
-          // expiry, keeping long uploads alive (#401).
+          // backed by the credentials cache, which re-mints near expiry, so the
+          // SDK refreshes before expiry and long uploads stay alive.
           next.set(
             key,
             new S3UploadService({
@@ -102,7 +101,7 @@ export function UploadProvider({ children }: UploadProviderProps) {
               region: credentials.region,
               prefix: credentials.prefix,
               credentials: async () => {
-                const c = await getTemporaryCredentials(scope);
+                const c = await loadCredentials(scope);
                 return {
                   accessKeyId: c.accessKeyId,
                   secretAccessKey: c.secretAccessKey,
@@ -116,7 +115,7 @@ export function UploadProvider({ children }: UploadProviderProps) {
       }
       return next;
     });
-  }, [getAllCredentials]);
+  }, [getAllCredentials, loadCredentials]);
 
   const getS3Service = (scope: CredentialsScope) => {
     return s3Services.get(s3ServiceKey(scope)) || null;

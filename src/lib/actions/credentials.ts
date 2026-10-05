@@ -7,6 +7,11 @@ import { CONFIG, productsTable } from "@/lib";
 import { getProxyCredentials } from "@/lib/actions/proxy-credentials";
 import { readProxyCredentials } from "@/lib/services/proxy-credentials-read";
 
+// The browser caches what this returns and re-mints below 15 minutes left
+// (CredentialsProvider), so a cookie with less than that is not handed out:
+// the re-mint would get the same short-lived credentials back.
+const MIN_HANDOUT_MS = 15 * 60 * 1000;
+
 export interface TemporaryCredentials {
   accessKeyId: string;
   secretAccessKey: string;
@@ -67,9 +72,12 @@ export async function getTemporaryCredentials({
   // identity comes from the verified session — the only safe input to
   // getProxyCredentials (see its security note) — and passing it to the read
   // spares a second Ory whoami.
+  const cached = await readProxyCredentials(session.identity_id);
   const creds =
-    (await readProxyCredentials(session.identity_id)) ??
-    (await getProxyCredentials(session.identity_id));
+    cached &&
+    new Date(cached.expiration).getTime() - MIN_HANDOUT_MS > Date.now()
+      ? cached
+      : await getProxyCredentials(session.identity_id);
 
   return {
     accessKeyId: creds.accessKeyId,
