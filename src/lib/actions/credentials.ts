@@ -35,8 +35,8 @@ export interface GetCredentialsParams {
  *
  * Reuses the user's cached proxy-credentials cookie when one is still fresh
  * (the read path warms it for restricted products); otherwise mints fresh via
- * the Ory + STS flow. The browser caches the result per scope, so this runs
- * about once per "edit mode" enable.
+ * the Ory + STS flow. The browser caches the result per scope until it nears
+ * expiry, so toggling edit mode off and on again doesn't come back here.
  */
 export async function getTemporaryCredentials({
   accountId,
@@ -65,9 +65,10 @@ export async function getTemporaryCredentials({
 
   // Reuse the read path's cached cookie when fresh; mint otherwise. The
   // identity comes from the verified session — the only safe input to
-  // getProxyCredentials (see its security note).
+  // getProxyCredentials (see its security note) — and passing it to the read
+  // spares a second Ory whoami.
   const creds =
-    (await readProxyCredentials()) ??
+    (await readProxyCredentials(session.identity_id)) ??
     (await getProxyCredentials(session.identity_id));
 
   return {

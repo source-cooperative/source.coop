@@ -465,7 +465,7 @@ export async function deleteProduct(
     // bucket=account_id, key=product_id/… — so there's no per-provider branch.
     if (!preserveData && dataConnection && !dataConnection.read_only) {
       const credentials =
-        (await readProxyCredentials()) ??
+        (await readProxyCredentials(session.identity_id)) ??
         (await getProxyCredentials(session.identity_id));
       const storage = await getStorageClient(credentials);
       await storage.deleteByPrefix(account_id, `${product_id}/`);

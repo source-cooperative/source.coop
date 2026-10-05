@@ -86,6 +86,15 @@ describe("readProxyCredentials", () => {
     expect(await readProxyCredentials()).toBeUndefined();
   });
 
+  test("checks a caller-supplied identity without resolving the session again", async () => {
+    const creds = freshCreds();
+    mockGet.mockReturnValue({ value: await encryptJson(creds) });
+
+    expect(await readProxyCredentials("user-1")).toEqual(creds);
+    expect(await readProxyCredentials("user-2")).toBeUndefined();
+    expect(mockGetServerSession).not.toHaveBeenCalled();
+  });
+
   test("returns undefined when a cookie is present but there is no session", async () => {
     const creds = freshCreds();
     mockGet.mockReturnValue({ value: await encryptJson(creds) });

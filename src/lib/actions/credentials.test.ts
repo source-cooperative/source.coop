@@ -52,7 +52,9 @@ describe("getTemporaryCredentials", () => {
       accountId: "acc",
       productId: "p",
     });
-    // Minted from the verified session identity — never from request input.
+    // Read and minted with the verified session identity — never from request
+    // input — so the cookie check doesn't resolve the session a second time.
+    expect(readProxyCredentials).toHaveBeenCalledWith("id-1");
     expect(getProxyCredentials).toHaveBeenCalledWith("id-1");
     expect(out).toEqual({
       ...CREDS,

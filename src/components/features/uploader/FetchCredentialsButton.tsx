@@ -20,8 +20,13 @@ export const FetchCredentialsButton = ({
   scope,
   prefix,
 }: FetchCredentialsButtonProps) => {
-  const { getCredentials, getStatus, fetchCredentials, clearCredentials } =
-    useS3Credentials();
+  const {
+    getCredentials,
+    getStatus,
+    prefetchCredentials,
+    fetchCredentials,
+    clearCredentials,
+  } = useS3Credentials();
   const { uploadFiles } = useUploadManager();
   const [showCredentialsDialog, setShowCredentialsDialog] = useState(false);
 
@@ -70,7 +75,15 @@ export const FetchCredentialsButton = ({
   return (
     <DropdownMenu.Root>
       <DropdownMenu.Trigger>
-        <Button variant="ghost" size="1" disabled={isLoading} mr="1">
+        {/* Opening the menu starts the mint, so it is usually done by the time
+            "Edit Mode" is chosen. */}
+        <Button
+          variant="ghost"
+          size="1"
+          disabled={isLoading}
+          mr="1"
+          onPointerDown={() => isEditMode || prefetchCredentials(scope)}
+        >
           {isLoading ? (
             <Spinner />
           ) : isEditMode ? (

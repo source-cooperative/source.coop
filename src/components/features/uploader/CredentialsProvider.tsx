@@ -12,7 +12,13 @@ import {
   ReactNode,
   useMemo,
   useCallback,
+  useRef,
 } from "react";
+
+// Reuse cached credentials only while they have this long left: enough for the
+// upload SDK, which refreshes on its own 5 minutes before expiry, and for
+// pasting them from "View Credentials" into another tool.
+const MIN_REMAINING_MS = 15 * 60 * 1000;
 
 export interface CredentialsScope {
   accountId: string;
@@ -30,6 +36,8 @@ interface CredentialsContextType {
   getStatus: (
     scope: CredentialsScope
   ) => "loading" | "success" | "failed" | undefined;
+  /** Warms the cache for `scope` without turning edit mode on. */
+  prefetchCredentials: (scope: CredentialsScope) => void;
   fetchCredentials: (scope: CredentialsScope) => Promise<void>;
   clearCredentials: (scope: CredentialsScope) => void;
   clearAllCredentials: () => void;
@@ -100,6 +108,41 @@ export function S3CredentialsProvider({ children }: { children: ReactNode }) {
     [credentialsMapMemo]
   );
 
+  // Minted credentials outlive edit mode: switching to "Read Only" only drops
+  // the scope from `credentialsMap`, so turning edit mode back on within the
+  // hour reuses these instead of re-running the Ory + STS mint. In-flight
+  // fetches are shared, so a prefetch and the click that follows it mint once.
+  const cacheRef = useRef(new Map<string, TemporaryCredentials>());
+  const inflightRef = useRef(new Map<string, Promise<TemporaryCredentials>>());
+
+  const loadCredentials = (scope: CredentialsScope) => {
+    const key = getScopeKey(scope);
+    const cached = cacheRef.current.get(key);
+    if (
+      cached &&
+      new Date(cached.expiration).getTime() - MIN_REMAINING_MS > Date.now()
+    ) {
+      return Promise.resolve(cached);
+    }
+    let pending = inflightRef.current.get(key);
+    if (!pending) {
+      pending = getTemporaryCredentials(scope)
+        .then((credentials) => {
+          cacheRef.current.set(key, credentials);
+          return credentials;
+        })
+        .finally(() => inflightRef.current.delete(key));
+      inflightRef.current.set(key, pending);
+    }
+    return pending;
+  };
+
+  // A failed prefetch is not an error yet: the click that wants the
+  // credentials fetches again and reports its own failure.
+  const prefetchCredentials = (scope: CredentialsScope) => {
+    loadCredentials(scope).catch(() => {});
+  };
+
   const fetchCredentials = async (scope: CredentialsScope) => {
     const key = getScopeKey(scope);
 
@@ -113,10 +156,7 @@ export function S3CredentialsProvider({ children }: { children: ReactNode }) {
     );
 
     try {
-      // Simulate fetching credentials for specific scope
-      await new Promise((resolve) => setTimeout(resolve, 100));
-
-      const credentials = await getTemporaryCredentials(scope);
+      const credentials = await loadCredentials(scope);
 
       LOGGER.debug("Setting credentials for scope", {
         operation: "setCredentials",
@@ -152,6 +192,7 @@ export function S3CredentialsProvider({ children }: { children: ReactNode }) {
       value={{
         getCredentials,
         getStatus,
+        prefetchCredentials,
         fetchCredentials,
         clearCredentials,
         clearAllCredentials,

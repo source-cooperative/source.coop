@@ -24,10 +24,14 @@ import {
  * Returns `undefined` when there is no cookie, the cookie is stale, the
  * cookie cannot be decrypted (tampered / wrong key), or the cookie belongs to
  * a different user than the current session.
+ *
+ * A caller that has already resolved the session passes its `identityId`, so
+ * the binding check doesn't cost a second Ory whoami. It MUST come from a
+ * verified session, never from request input.
  */
-export async function readProxyCredentials(): Promise<
-  ProxyCredentials | undefined
-> {
+export async function readProxyCredentials(
+  sessionIdentityId?: string,
+): Promise<ProxyCredentials | undefined> {
   const jar = await cookies();
   const token = jar.get(PROXY_CREDS_COOKIE_NAME)?.value;
   if (!token) return undefined;
@@ -45,8 +49,9 @@ export async function readProxyCredentials(): Promise<
   // don't need: the comparison only requires the Ory identity id. Cookies
   // minted before identity binding existed have no identityId and fail the
   // comparison — treated as absent, the gate simply re-mints.
-  const orySession = await getServerSession();
-  const identityId = orySession ? getOryId(orySession) : null;
+  const orySession = sessionIdentityId ? null : await getServerSession();
+  const identityId =
+    sessionIdentityId ?? (orySession ? getOryId(orySession) : null);
   if (!identityId || cached.identityId !== identityId) {
     return undefined;
   }
