@@ -32,9 +32,6 @@ jest.mock("@/lib/clients/database/products", () => ({
 }));
 
 jest.mock("@/lib/clients/database", () => ({
-  apiKeysTable: {
-    fetchById: jest.fn(),
-  },
   accountsTable: {
     fetchById: jest.fn(),
   },

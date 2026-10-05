@@ -3,8 +3,6 @@ import {
   UserSession,
   Membership,
   MembershipSchema,
-  APIKey,
-  APIKeySchema,
   Product,
   ProductSchema,
   DataConnection,
@@ -53,11 +51,6 @@ function loadAndValidateJson<T extends z.ZodType>(
 export const accounts: Account[] = loadAndValidateJson(
   path.join("fixtures", "accounts.json"),
   z.array(AccountSchema)
-);
-
-export const apiKeys: APIKey[] = loadAndValidateJson(
-  path.join("fixtures", "api-keys.json"),
-  z.array(APIKeySchema)
 );
 
 export const memberships: Membership[] = loadAndValidateJson(
@@ -109,9 +102,4 @@ for (const product of products) {
     mappedProducts[product.account_id] = {};
   }
   mappedProducts[product.account_id][product.product_id] = product;
-}
-
-export const mappedAPIKeys: Record<string, APIKey> = {};
-for (const apiKey of apiKeys) {
-  mappedAPIKeys[apiKey.access_key_id] = apiKey;
 }
