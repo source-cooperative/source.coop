@@ -16,7 +16,7 @@ import {
   type ServiceAccountActionState,
   type ServiceAccountFormState,
 } from "@/types";
-import { canManageAccount } from "../api/authz";
+import { canManageAccountServiceAccounts } from "../api/authz";
 import {
   managedServiceAccount,
   serviceAccountGrantProblem,
@@ -87,8 +87,8 @@ export async function createServiceAccount(
   // The owner is settled before any of its products are read, so the product
   // checks below cannot be used to probe another account's products.
   const owner = await accountsTable.fetchById(owner_account_id);
-  if (!owner || !canManageAccount(session, owner)) {
-    return fail("You do not manage that account");
+  if (!owner || !canManageAccountServiceAccounts(session, owner)) {
+    return fail("You do not manage service accounts for that account");
   }
   if (isServiceAccount(owner)) {
     return fail("A service account cannot own another");

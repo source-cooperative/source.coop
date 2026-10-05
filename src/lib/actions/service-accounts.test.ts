@@ -16,7 +16,7 @@ import {
 } from "../clients";
 import { getPageSession } from "../api/utils";
 import { redirect } from "next/navigation";
-import { canManageAccount } from "../api/authz";
+import { canManageAccountServiceAccounts } from "../api/authz";
 import { managedServiceAccount } from "@/lib/accounts/service-accounts";
 import { AlreadyTrustedError } from "../clients/database/account-trusts";
 import {
@@ -43,7 +43,7 @@ jest.mock("../clients", () => ({
   serviceAccountKeysTable: { create: jest.fn() },
 }));
 jest.mock("../api/utils", () => ({ getPageSession: jest.fn() }));
-jest.mock("../api/authz", () => ({ canManageAccount: jest.fn() }));
+jest.mock("../api/authz", () => ({ canManageAccountServiceAccounts: jest.fn() }));
 jest.mock("@/lib/accounts/service-accounts", () => ({
   managedServiceAccount: jest.fn(),
   serviceAccountGrantProblem: jest.requireActual("@/lib/accounts/service-accounts")
@@ -58,7 +58,7 @@ const mocks = {
   products: productsTable as jest.Mocked<typeof productsTable>,
   trusts: accountTrustsTable as jest.Mocked<typeof accountTrustsTable>,
   session: getPageSession as jest.MockedFunction<typeof getPageSession>,
-  canManageAccount: canManageAccount as jest.MockedFunction<typeof canManageAccount>,
+  canManageAccountServiceAccounts: canManageAccountServiceAccounts as jest.MockedFunction<typeof canManageAccountServiceAccounts>,
   managed: managedServiceAccount as jest.MockedFunction<typeof managedServiceAccount>,
 };
 
@@ -89,7 +89,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   mocks.session.mockResolvedValue({ identity_id: "an-identity", account: { account_id: "acme-owner" } } as UserSession);
   mocks.trusts.create.mockImplementation(async (t) => t);
-  mocks.canManageAccount.mockReturnValue(true);
+  mocks.canManageAccountServiceAccounts.mockReturnValue(true);
   mocks.accounts.fetchById.mockImplementation(async (id) => (id === "acme" ? org : null));
   mocks.accounts.create.mockImplementation(async (a) => a);
   mocks.products.fetchById.mockImplementation(async (owner, id) =>
@@ -181,7 +181,7 @@ describe("createServiceAccount", () => {
   });
 
   it("refuses someone who does not manage the owner, an owner that is missing or a service account, and reports a taken id on the field", async () => {
-    mocks.canManageAccount.mockReturnValue(false);
+    mocks.canManageAccountServiceAccounts.mockReturnValue(false);
     const denied = await createServiceAccount(
       IDLE_FORM,
       form({ ...base, "grant:climate-data": MembershipRole.ReadData })
@@ -190,7 +190,7 @@ describe("createServiceAccount", () => {
     // ...and learns nothing about the owner's products on the way out.
     expect(mocks.products.fetchById).not.toHaveBeenCalled();
 
-    mocks.canManageAccount.mockReturnValue(true);
+    mocks.canManageAccountServiceAccounts.mockReturnValue(true);
     expect((await createServiceAccount(IDLE_FORM, form({ ...base, owner_account_id: "nobody" }))).success).toBe(false);
     mocks.accounts.fetchById.mockResolvedValue(bot);
     expect((await createServiceAccount(IDLE_FORM, form({ ...base, owner_account_id: "acme--nightly-sync" }))).message).toMatch(/cannot own/);

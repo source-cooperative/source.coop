@@ -5,7 +5,7 @@ import { FormTitle } from "@/components/core/FormTitle";
 import { ServiceAccountForm } from "@/components/features/service-accounts";
 import { accountsTable, productsTable } from "@/lib/clients/database";
 import { getPageSession } from "@/lib/api/utils";
-import { canManageAccount } from "@/lib/api/authz";
+import { canManageAccountServiceAccounts } from "@/lib/api/authz";
 import { CONFIG } from "@/lib/config";
 
 export const metadata: Metadata = { title: "Create service account" };
@@ -18,7 +18,7 @@ export default async function CreateServiceAccountPage({ params }: PageProps) {
   const { account_id } = await params;
   const session = await getPageSession();
   const owner = await accountsTable.fetchById(account_id);
-  if (!owner || !canManageAccount(session, owner)) {
+  if (!owner || !canManageAccountServiceAccounts(session, owner)) {
     notFound();
   }
   const products = (await productsTable.listByAccountAll(account_id)).map(

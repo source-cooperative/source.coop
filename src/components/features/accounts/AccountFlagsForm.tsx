@@ -46,14 +46,20 @@ export function AccountFlagsForm({ session, account }: AccountFlagsFormProps) {
 
   const isOrganization = account.type === AccountType.ORGANIZATION;
 
-  // Organizations can only be granted the data-connection capability; the other
-  // flags (repositories, organizations, admin) are individual-account concerns.
+  // Organizations can only be granted the data-connection and service-account
+  // capabilities; the other flags (repositories, organizations, admin) are
+  // individual-account concerns.
   const fields: Array<[AccountFlags, string, string]> = isOrganization
     ? [
         [
           AccountFlags.CREATE_DATA_CONNECTIONS,
           "Create Data Connections",
           "Allows this organization to create and manage its own data connections to external storage.",
+        ],
+        [
+          AccountFlags.CREATE_SERVICE_ACCOUNTS,
+          "Create Service Accounts",
+          "Allows this organization to create and manage service accounts for its software and pipelines.",
         ],
       ]
     : [
@@ -71,6 +77,11 @@ export function AccountFlagsForm({ session, account }: AccountFlagsFormProps) {
           AccountFlags.CREATE_DATA_CONNECTIONS,
           "Create Data Connections",
           "Allows this account to create and manage its own data connections to external storage.",
+        ],
+        [
+          AccountFlags.CREATE_SERVICE_ACCOUNTS,
+          "Create Service Accounts",
+          "Allows this account to create and manage service accounts for its software and pipelines.",
         ],
       ];
 
