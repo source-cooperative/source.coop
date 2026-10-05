@@ -1,0 +1,47 @@
+.card {
+  width: 22rem;
+  max-width: 100%;
+  padding: var(--space-2);
+}
+
+.table table {
+  font-size: var(--font-size-1);
+  line-height: var(--line-height-1);
+  font-variant-numeric: tabular-nums;
+}
+
+.table th,
+.table td {
+  height: auto;
+  padding: var(--space-1) calc(var(--space-1) / 2);
+  box-shadow: none;
+}
+
+.table td {
+  white-space: nowrap;
+}
+
+.table .share {
+  width: 1%;
+  padding-left: var(--space-1);
+}
+
+.table tr > :first-child {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.table thead th:first-child {
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+.table tbody tr:nth-child(even) > * {
+  background-color: var(--gray-a3);
+}
+
+.table thead th,
+.table tfoot th,
+.table tfoot td {
+  background-color: var(--blue-3);
+}
