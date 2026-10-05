@@ -69,7 +69,7 @@ const preview: Preview = {
           "Features",
           [
             "Product page",
-            ["Summary", "Contents", "Usage", "Analytics"],
+            ["Summary", "Contents", "Analytics"],
             "Product listing",
             "Account page",
             "Settings",
