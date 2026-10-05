@@ -4,6 +4,7 @@ import {
   canManageAccount,
   canManageServiceAccount,
   canManageAccountDataConnections,
+  canManageAccountServiceAccounts,
   canCreateProductForAccount,
   canListOnProfile,
 } from "./authz";
@@ -3842,6 +3843,44 @@ describe("canManageAccountDataConnections", () => {
   });
 });
 
+describe("canManageAccountServiceAccounts", () => {
+  const org = accounts.find((a) => a.account_id === "organization")!;
+  const regularUser = accounts.find((a) => a.account_id === "regular-user")!;
+  const withFlag = (account: Account): Account => ({
+    ...account,
+    flags: [AccountFlags.CREATE_SERVICE_ACCOUNTS],
+  });
+  const noFlag = (account: Account): Account => ({ ...account, flags: [] });
+
+  test("org owners and maintainers may manage only when the org holds the flag", () => {
+    expect(canManageAccountServiceAccounts(sessions["organization-owner-user"], withFlag(org))).toBe(true);
+    expect(canManageAccountServiceAccounts(sessions["organization-maintainer-user"], withFlag(org))).toBe(true);
+    expect(canManageAccountServiceAccounts(sessions["organization-read-data-user"], withFlag(org))).toBe(false);
+    expect(canManageAccountServiceAccounts(sessions["regular-user"], withFlag(org))).toBe(false);
+    expect(canManageAccountServiceAccounts(sessions["organization-owner-user"], noFlag(org))).toBe(false);
+  });
+
+  test("reads the owner's flag, not the person's", () => {
+    const flaggedOwner = {
+      ...sessions["organization-owner-user"]!,
+      account: withFlag(sessions["organization-owner-user"]!.account!),
+    };
+    expect(canManageAccountServiceAccounts(flaggedOwner, noFlag(org))).toBe(false);
+  });
+
+  test("individuals manage their own only with the flag", () => {
+    expect(canManageAccountServiceAccounts(sessions["regular-user"], withFlag(regularUser))).toBe(true);
+    expect(canManageAccountServiceAccounts(sessions["regular-user"], noFlag(regularUser))).toBe(false);
+    expect(canManageAccountServiceAccounts(sessions["organization-owner-user"], withFlag(regularUser))).toBe(false);
+  });
+
+  test("admins bypass the flag; disabled and anonymous sessions are denied", () => {
+    expect(canManageAccountServiceAccounts(sessions["admin"], noFlag(org))).toBe(true);
+    expect(canManageAccountServiceAccounts(sessions["disabled"], withFlag(org))).toBe(false);
+    expect(canManageAccountServiceAccounts(sessions["anonymous"], withFlag(org))).toBe(false);
+  });
+});
+
 describe("canCreateProductForAccount", () => {
   const org = accounts.find((a) => a.account_id === "organization")!;
   const ownAccount = accounts.find(
@@ -3975,23 +4014,28 @@ describe("service accounts", () => {
   });
 
   test("are managed by whoever manages their owner, and by no one else", () => {
-    expect(canManageServiceAccount(sessions["organization-owner-user"], bot, org)).toBe(true);
-    expect(canManageServiceAccount(sessions["organization-maintainer-user"], bot, org)).toBe(true);
-    expect(canManageServiceAccount(sessions["admin"], bot, org)).toBe(true);
-    expect(canManageServiceAccount(sessions["organization-read-data-user"], bot, org)).toBe(false);
-    expect(canManageServiceAccount(sessions["regular-user"], bot, org)).toBe(false);
-    expect(canManageServiceAccount(botSession, bot, org)).toBe(false);
+    const owner = { ...org, flags: [AccountFlags.CREATE_SERVICE_ACCOUNTS] };
+    expect(canManageServiceAccount(sessions["organization-owner-user"], bot, owner)).toBe(true);
+    expect(canManageServiceAccount(sessions["organization-maintainer-user"], bot, owner)).toBe(true);
+    expect(canManageServiceAccount(sessions["admin"], bot, owner)).toBe(true);
+    expect(canManageServiceAccount(sessions["organization-read-data-user"], bot, owner)).toBe(false);
+    expect(canManageServiceAccount(sessions["regular-user"], bot, owner)).toBe(false);
+    expect(canManageServiceAccount(botSession, bot, owner)).toBe(false);
     // Only for service accounts: an organization's owner does not "manage" it
     // this way, and neither does an admin.
-    expect(canManageServiceAccount(sessions["organization-owner-user"], org, org)).toBe(false);
-    expect(canManageServiceAccount(sessions["admin"], org, org)).toBe(false);
+    expect(canManageServiceAccount(sessions["organization-owner-user"], owner, owner)).toBe(false);
+    expect(canManageServiceAccount(sessions["admin"], owner, owner)).toBe(false);
     // Only through its own owner: managing some other account is not managing it.
     const person = accounts.find((a) => a.account_id === "regular-user")!;
     expect(canManageServiceAccount(sessions["regular-user"], bot, person)).toBe(false);
     // A disabled owner takes its service accounts out of reach, admins aside.
-    const frozen = { ...org, disabled: true };
+    const frozen = { ...owner, disabled: true };
     expect(canManageServiceAccount(sessions["organization-owner-user"], bot, frozen)).toBe(false);
     expect(canManageServiceAccount(sessions["admin"], bot, frozen)).toBe(true);
+    // So does an owner without the flag, admins aside.
+    const unflagged = { ...org, flags: [] };
+    expect(canManageServiceAccount(sessions["organization-owner-user"], bot, unflagged)).toBe(false);
+    expect(canManageServiceAccount(sessions["admin"], bot, unflagged)).toBe(true);
   });
 
   test("hold no rights over themselves", () => {

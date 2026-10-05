@@ -73,6 +73,7 @@ export enum AccountFlags {
   CREATE_REPOSITORIES = "create_repositories",
   CREATE_ORGANIZATIONS = "create_organizations",
   CREATE_DATA_CONNECTIONS = "create_data_connections",
+  CREATE_SERVICE_ACCOUNTS = "create_service_accounts",
 }
 
 export const DEFAULT_INDIVIDUAL_FLAGS: AccountFlags[] = [];

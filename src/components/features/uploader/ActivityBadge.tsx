@@ -4,20 +4,20 @@ import { useMemo } from "react";
 import { useUploadManager } from "@/components/features/uploader/UploadProvider";
 
 /**
- * Badge indicator showing count of active uploads
+ * Badge indicator showing count of active uploads and deletes
  * Displays as a positioned badge overlay (typically on an avatar)
  */
-export function UploadBadge() {
-  const { uploads } = useUploadManager();
+export function ActivityBadge() {
+  const { uploads, deletions } = useUploadManager();
 
-  // Calculate active uploads (queued, uploading)
   const activeCount = useMemo(() => {
-    return uploads.filter(
-      (upload) => upload.status === "queued" || upload.status === "uploading"
-    ).length;
-  }, [uploads]);
+    return (
+      uploads.filter(
+        (upload) => upload.status === "queued" || upload.status === "uploading"
+      ).length + deletions.filter((d) => d.status === "deleting").length
+    );
+  }, [uploads, deletions]);
 
-  // Don't render if no active uploads
   if (activeCount === 0) {
     return null;
   }
