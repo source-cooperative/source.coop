@@ -10,7 +10,7 @@ import type { IndividualAccount, OrganizationalAccount } from "@/types";
  * See the Mobile story for that case.
  */
 const meta = {
-  title: "Features/Profiles/IndividualProfile",
+  title: "Features/Account page/IndividualProfile",
   component: IndividualProfile,
   parameters: { layout: "padded" },
 } satisfies Meta<typeof IndividualProfile>;

@@ -12,7 +12,7 @@ import { apiKeyChecksum } from "@/types";
  * created with one (`ServiceAccountDetail`'s "Created with a key").
  */
 const meta = {
-  title: "Features/Service accounts/IssuedApiKey",
+  title: "Features/Settings/Service accounts/Sign-in methods/IssuedApiKey",
   component: IssuedApiKey,
   parameters: { layout: "padded" },
 } satisfies Meta<typeof IssuedApiKey>;

@@ -11,7 +11,7 @@ import { WebsiteLink } from "./WebsiteLink";
  * in the middle rather than allowed to wrap. See Truncation.
  */
 const meta = {
-  title: "Features/Profiles/WebsiteLink",
+  title: "Features/Account page/WebsiteLink",
   component: WebsiteLink,
   parameters: { layout: "padded" },
 } satisfies Meta<typeof WebsiteLink>;

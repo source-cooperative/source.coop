@@ -139,7 +139,7 @@ function withMockTraffic(Story: React.ComponentType) {
  * beyond the two textures.
  */
 const meta = {
-  title: "Features/Globe/LiveGlobe",
+  title: "Features/Home/LiveGlobe",
   component: LiveGlobe,
   decorators: [withMockTraffic],
   args: {

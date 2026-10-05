@@ -3,7 +3,7 @@ import { ProductDoi } from "./ProductDoi";
 
 /** A product's DOI, with a button to copy it. */
 const meta = {
-  title: "Features/Products/ProductDoi",
+  title: "Features/Product page/Summary/ProductDoi",
   component: ProductDoi,
   parameters: { layout: "padded" },
 } satisfies Meta<typeof ProductDoi>;

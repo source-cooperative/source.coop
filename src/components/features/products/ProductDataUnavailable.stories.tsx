@@ -10,7 +10,7 @@ import { ProductDataUnavailable } from "./ProductDataUnavailable";
  * it is hard to see: reproducing it in the app means breaking the data proxy.
  */
 const meta = {
-  title: "Features/Products/ProductDataUnavailable",
+  title: "Features/Product page/Contents/ProductDataUnavailable",
   component: ProductDataUnavailable,
   parameters: { layout: "padded" },
 } satisfies Meta<typeof ProductDataUnavailable>;

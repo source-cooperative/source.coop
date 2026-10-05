@@ -19,7 +19,7 @@ import type { Product, ProductObject } from "@/types";
  * switches the card into edit mode for uploads.
  */
 const meta = {
-  title: "Features/Object browser/ProductContentsCard",
+  title: "Features/Product page/Contents/ProductContentsCard",
   component: ProductContentsCard,
   parameters: { layout: "padded" },
   // The lock and the rows read credentials and upload progress from context,

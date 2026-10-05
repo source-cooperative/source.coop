@@ -15,7 +15,7 @@ import { ProductAccessList, type ProductAccess } from "./ProductAccessList";
  * stories hold them in state, so every control can be used.
  */
 const meta = {
-  title: "Features/Service accounts/ProductAccessList",
+  title: "Features/Settings/Service accounts/Detail/ProductAccessList",
   component: ProductAccessList,
   parameters: { layout: "padded" },
   args: {

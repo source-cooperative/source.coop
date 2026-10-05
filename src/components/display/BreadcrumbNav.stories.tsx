@@ -13,7 +13,7 @@ import { BreadcrumbNav } from "./BreadcrumbNav";
  * the case a real product rarely gives you on demand.
  */
 const meta = {
-  title: "Features/Object browser/BreadcrumbNav",
+  title: "Features/Product page/Contents/BreadcrumbNav",
   component: BreadcrumbNav,
   parameters: { layout: "padded" },
   args: { baseUrl: "/miskatonic/abyssal-acoustics" },

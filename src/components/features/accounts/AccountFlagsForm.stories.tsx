@@ -19,7 +19,7 @@ import {
  * `updateAccountFlags` is an `fn()` stub, so saving does nothing.
  */
 const meta = {
-  title: "Features/Accounts/AccountFlagsForm",
+  title: "Features/Settings/Permissions/AccountFlagsForm",
   component: AccountFlagsForm,
   parameters: { layout: "padded" },
 } satisfies Meta<typeof AccountFlagsForm>;

@@ -20,7 +20,7 @@ import type { ServiceAccountKey } from "@/types";
  * opened.
  */
 const meta = {
-  title: "Features/Service accounts/ApiKeyList",
+  title: "Features/Settings/Service accounts/Detail/ApiKeyList",
   component: ApiKeyList,
   parameters: { layout: "padded", docs: { story: { inline: false, iframeHeight: 560 } } },
   args: { accountId: "miskatonic--nightly-sync", proxyOrigin: "https://data.source.coop" },

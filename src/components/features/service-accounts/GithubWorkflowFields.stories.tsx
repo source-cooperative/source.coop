@@ -30,7 +30,7 @@ import {
  * and the fields can be typed into.
  */
 const meta = {
-  title: "Features/Service accounts/GithubWorkflowFields",
+  title: "Features/Settings/Service accounts/Sign-in methods/GithubWorkflowFields",
   component: GithubWorkflowFields,
   parameters: { layout: "padded" },
   args: { id: "wf", onChange: fn(), audience: "https://data.source.coop" },

@@ -30,7 +30,7 @@ import {
  * the choice then springs back where the app would keep it.
  */
 const meta = {
-  title: "Features/Service accounts/ServiceAccountDetail",
+  title: "Features/Settings/Service accounts/Detail/ServiceAccountDetail",
   component: ServiceAccountDetail,
   parameters: { layout: "padded", docs: { story: { inline: false, iframeHeight: 640 } } },
   args: {

@@ -23,7 +23,7 @@ import { UsagePanel } from "./UsagePanel";
  */
 const meta = {
   component: UsagePanel,
-  title: "Features/Analytics/UsagePanel",
+  title: "Features/Product page/Usage/UsagePanel",
   parameters: { layout: "padded" },
   decorators: [
     (Story, context) => (

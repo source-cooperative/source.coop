@@ -24,7 +24,7 @@ const product: Product = {
  * product and its publisher, and the full description is on the product page.
  */
 const meta = {
-  title: "Features/Products/ProductListItem",
+  title: "Features/Product listing/ProductListItem",
   component: ProductListItem,
   args: { product },
 } satisfies Meta<typeof ProductListItem>;
