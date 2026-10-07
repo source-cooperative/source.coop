@@ -1,6 +1,7 @@
 "use server";
 
 import { Membership, MembershipState } from "@/types";
+import { LOGGER } from "@/lib/logging";
 import { getPageSession } from "../api/utils";
 import * as ops from "../operations/memberships";
 import { OperationResult, toFormState } from "../operations/result";
@@ -66,10 +67,17 @@ export async function getPendingInvitation(
   membershipAccountId: string,
   repositoryId?: string
 ): Promise<Membership | null> {
-  const result = await ops.listMemberships(await getPageSession(), {
-    state: MembershipState.Invited,
-  });
-  if (!result.ok) return null;
+  // A banner isn't worth failing the page it sits on.
+  const result = await ops
+    .listMemberships(await getPageSession(), { state: MembershipState.Invited })
+    .catch((error) => {
+      LOGGER.error("Error fetching pending invitation", {
+        operation: "getPendingInvitation",
+        error,
+      });
+      return null;
+    });
+  if (!result?.ok) return null;
   return (
     result.value.find(
       (m) =>

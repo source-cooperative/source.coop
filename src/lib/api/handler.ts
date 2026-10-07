@@ -33,9 +33,7 @@ export function toResponse<T>(
       result.fieldErrors
     );
   }
-  return status === StatusCodes.NO_CONTENT
-    ? new Response(null, { status })
-    : NextResponse.json(result.value, { status });
+  return NextResponse.json(result.value, { status });
 }
 
 interface ApiContext<P> {

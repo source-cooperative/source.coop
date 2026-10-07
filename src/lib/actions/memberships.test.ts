@@ -94,8 +94,10 @@ describe("getPendingInvitation", () => {
     });
   });
 
-  it("is null when the operation refuses", async () => {
+  it("is null when the operation refuses or fails", async () => {
     operations.listMemberships.mockResolvedValue(forbidden("No"));
+    expect(await getPendingInvitation("an-org")).toBeNull();
+    operations.listMemberships.mockRejectedValue(new Error("DynamoDB down"));
     expect(await getPendingInvitation("an-org")).toBeNull();
   });
 });

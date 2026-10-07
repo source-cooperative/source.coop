@@ -14,7 +14,7 @@ registry.registerPath({
   request: { params: membershipIdParams },
   responses: {
     200: json("The membership, as it now stands.", MembershipSchema),
-    ...errors(401, 403, 404, 409),
+    ...errors(400, 401, 403, 404, 409),
   },
 });
 

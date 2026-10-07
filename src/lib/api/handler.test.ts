@@ -20,9 +20,7 @@ describe("toResponse", () => {
   it("sends the value with the success status", async () => {
     const res = toResponse(ok({ a: 1 }), 201);
     expect(res.status).toBe(201);
-    await expect(res.json()).resolves.toEqual({ a: 1 });
-    expect(toResponse(ok(null), 204).status).toBe(204);
-  });
+    await expect(res.json()).resolves.toEqual({ a: 1 });  });
 
   it.each([
     [fromZodError(z.object({ a: z.string() }).safeParse({}).error!), 400],

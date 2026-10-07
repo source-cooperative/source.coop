@@ -38,9 +38,9 @@ export const InviteMemberSchema = MembershipSchema.pick({
   role: true,
 });
 
-export const UpdateMembershipSchema = MembershipSchema.pick({ role: true })
-  .required()
-  .openapi("UpdateMembership");
+export const UpdateMembershipSchema = MembershipSchema.pick({
+  role: true,
+}).openapi("UpdateMembership");
 
 export const ListMembershipsQuerySchema = z.object({
   state: MembershipStateSchema.optional(),
@@ -48,9 +48,6 @@ export const ListMembershipsQuerySchema = z.object({
 
 const deny = (session: UserSession | null, message: string) =>
   session ? forbidden(message) : unauthenticated();
-
-const isActive = (m: Membership) =>
-  m.state === MembershipState.Member || m.state === MembershipState.Invited;
 
 /**
  * Invites an account to an account or product. A service account becomes a
@@ -108,7 +105,7 @@ export async function inviteMember(
     membership_account_id,
     repository_id
   );
-  if (existing.some((m) => m.account_id === account_id && isActive(m))) {
+  if (existing.some((m) => m.account_id === account_id && m.state !== MembershipState.Revoked)) {
     return conflict(
       `${account_id} is already a member or has a pending invitation`
     );
