@@ -1,38 +1,17 @@
-import { StatusCodes } from "http-status-codes";
-import { NextRequest, NextResponse } from "next/server";
-import { OpenApiGeneratorV3 } from "@asteasolutions/zod-to-openapi";
-import {
-  DataConnectionObjectSchema,
-  MembershipInvitationSchema,
-  MembershipSchema,
-} from "@/types";
-import { AccountSchema } from "@/types/account";
+import { NextResponse } from "next/server";
+import { generateDocument } from "@/lib/api/openapi";
 
-export async function GET(_req: NextRequest) {
-  const generator = new OpenApiGeneratorV3([
-    AccountSchema,
-    MembershipSchema,
-    MembershipInvitationSchema,
-    DataConnectionObjectSchema,
-  ]);
+// Each route registers its own path when its module loads. A route missing
+// from this list is missing from the document, which route-coverage.test.ts
+// catches.
+import "../v1/accounts/[account_id]/members/route";
+import "../v1/memberships/route";
+import "../v1/memberships/[membership_id]/route";
+import "../v1/memberships/[membership_id]/accept/route";
+import "../v1/memberships/[membership_id]/reject/route";
+import "../v1/memberships/[membership_id]/revoke/route";
+import "../v1/products/[account_id]/[repository_id]/members/route";
 
-  const openapiSpecification = {
-    openapi: "3.0.0",
-    info: {
-      title: "Source Cooperative API",
-      version: "1.0.0",
-    },
-    servers: [
-      {
-        url: "https://source.coop/api/v1",
-        description: "Source Cooperative",
-      },
-    ],
-    paths: {},
-    components: {
-      schemas: generator.generateComponents().components?.schemas || {},
-    },
-  };
-
-  return NextResponse.json(openapiSpecification, { status: StatusCodes.OK });
+export function GET() {
+  return NextResponse.json(generateDocument());
 }

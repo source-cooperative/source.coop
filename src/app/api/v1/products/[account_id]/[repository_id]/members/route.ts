@@ -1,251 +1,66 @@
-import { NextRequest, NextResponse } from "next/server";
-import { serviceAccountGrantProblem } from "@/lib/accounts/service-accounts";
-import {
-  Actions,
-  Membership,
-  MembershipInvitation,
-  MembershipInvitationSchema,
-  MembershipState,
-  AccountType,
-  isServiceAccount,
-} from "@/types";
+import { z } from "zod";
 import { StatusCodes } from "http-status-codes";
-import { isAuthorized } from "@/lib/api/authz";
-import { getApiSession } from "@/lib/api/utils";
-import { randomUUID } from "crypto";
-import {
-  accountsTable,
-  membershipsTable,
-  productsTable,
-} from "@/lib/clients/database";
+import { MembershipInvitationSchema, MembershipSchema } from "@/types";
+import { withApiSession, toResponse } from "@/lib/api/handler";
+import { bearer, errors, json, registry } from "@/lib/api/openapi";
+import { inviteMember, listMembers } from "@/lib/operations/memberships";
 
-/**
- * @openapi
- * /products/{account_id}/{repository_id}/members:
- *   post:
- *     tags: [Memberships, Products]
- *     summary: Invite a new member to a repository.
- *     description: >
- *       Invites a new member to the specified repository.
- *       For user accounts, you must be authenticated as the user account you are inviting the member to.
- *       For organization accounts, you must be authenticated as either an `owners` or `maintainers` member of the organization or repository you are inviting the member to.
- *
- *       Users with the `admin` flag may invite users to any repository.
- *     parameters:
- *       - in: path
- *         name: account_id
- *         required: true
- *         schema:
- *           type: string
- *         description: The ID of the account that owns the repository
- *       - in: path
- *         name: repository_id
- *         required: true
- *         schema:
- *           type: string
- *         description: The ID of the repository to invite the member to
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/MembershipInvitation'
- *     responses:
- *       200:
- *         description: Successfully invited member
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Membership'
- *       400:
- *         description: Bad request - Invalid request body or member already invited/exists
- *       401:
- *         description: Unauthorized - No valid session found or insufficient permissions
- *       404:
- *         description: Not Found - Repository not found
- *       500:
- *         description: Internal server error
- */
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ account_id: string; repository_id: string }> }
-) {
-  try {
-    const session = await getApiSession(request);
-    const { account_id, repository_id } = await params;
-    const membershipInvitation: MembershipInvitation =
-      MembershipInvitationSchema.parse(await request.json());
-    const product = await productsTable.fetchById(account_id, repository_id);
-    if (!product) {
-      return NextResponse.json(
-        {
-          error: `Repository with ID ${account_id}/${repository_id} not found`,
-        },
-        { status: StatusCodes.NOT_FOUND }
-      );
-    }
-    const invitedAccount = await accountsTable.fetchById(
-      membershipInvitation.account_id
-    );
-    if (!invitedAccount) {
-      return NextResponse.json(
-        {
-          error: `Invited account with ID ${membershipInvitation.account_id} not found`,
-        },
-        { status: StatusCodes.NOT_FOUND }
-      );
-    }
-    if (invitedAccount.type === AccountType.ORGANIZATION) {
-      return NextResponse.json(
-        {
-          error: `Invited account with ID ${membershipInvitation.account_id} is an organization`,
-        },
-        { status: StatusCodes.BAD_REQUEST }
-      );
-    }
-    const grantProblem = serviceAccountGrantProblem(
-      invitedAccount,
-      {
-        membership_account_id: product.account_id,
-        repository_id: product.product_id,
-      },
-      membershipInvitation.role
-    );
-    if (grantProblem) {
-      return NextResponse.json(
-        { error: grantProblem },
-        { status: StatusCodes.BAD_REQUEST }
-      );
-    }
-    const membership: Membership = {
-      ...membershipInvitation,
-      membership_id: randomUUID(),
-      membership_account_id: product.account_id,
-      repository_id: product.product_id,
-      // Its owner grants a service account access directly — nobody is at
-      // the keyboard to accept an invitation.
-      state:
-        isServiceAccount(invitedAccount)
-          ? MembershipState.Member
-          : MembershipState.Invited,
-      state_changed: new Date().toISOString(),
-    };
-    if (!isAuthorized(session, membership, Actions.InviteMembership)) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: StatusCodes.UNAUTHORIZED }
-      );
-    }
-    const existingMembership = await membershipsTable.listByAccount(
-      product.account_id,
-      product.product_id
-    );
-    for (const existing of existingMembership) {
-      if (
-        existing.account_id === membership.account_id &&
-        [MembershipState.Member, MembershipState.Invited].includes(
-          existing.state
-        )
-      ) {
-        return NextResponse.json(
-          {
-            error: `Account with ID ${membership.account_id} is already a member or has a pending invitation for repository with ID ${product.account_id}/${product.product_id}`,
-          },
-          { status: StatusCodes.BAD_REQUEST }
-        );
-      }
-    }
-    return NextResponse.json(await membershipsTable.create(membership), {
-      status: StatusCodes.OK,
-    });
-  } catch (err: any) {
-    return NextResponse.json(
-      { error: err.message || "Internal server error" },
-      { status: StatusCodes.INTERNAL_SERVER_ERROR }
-    );
-  }
-}
+type Params = { account_id: string; repository_id: string };
 
-/**
- * @openapi
- * /products/{account_id}/{repository_id}/members:
- *   get:
- *     tags: [Memberships, Products]
- *     summary: List the memberships for a repository
- *     description: |
- *       Retrieves all memberships associated with the specified repository.
- *       For user accounts, you must be authenticated as the user account you are listing memberships for.
- *       For organization accounts, you must be authenticated as either an `owners` or `maintainers` member for the organization or repository you are listing memberships for.
- *
- *       Users with the `admin` flag may list memberships for any repository.
- *     parameters:
- *       - in: path
- *         name: account_id
- *         required: true
- *         schema:
- *           type: string
- *         description: The ID of the account that owns the repository
- *       - in: path
- *         name: repository_id
- *         required: true
- *         schema:
- *           type: string
- *         description: The ID of the repository to list memberships for
- *     responses:
- *       '200':
- *         description: Successfully retrieved memberships
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/Membership'
- *       '401':
- *         description: Unauthorized - No valid session found or insufficient permissions
- *       '404':
- *         description: Not Found - Repository not found
- *       '500':
- *         description: Internal server error
- */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ account_id: string; repository_id: string }> }
-) {
-  try {
-    const session = await getApiSession(request);
-    const { account_id, repository_id } = await params;
-    const product = await productsTable.fetchById(account_id, repository_id);
-    if (!product) {
-      return NextResponse.json(
-        {
-          error: `Repository with ID ${account_id}/${repository_id} not found`,
-        },
-        { status: StatusCodes.NOT_FOUND }
-      );
-    }
-    if (!isAuthorized(session, product, Actions.ListRepositoryMemberships)) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: StatusCodes.UNAUTHORIZED }
-      );
-    }
-    const memberships = await membershipsTable.listByAccount(
-      product.account_id,
-      product.product_id
-    );
-    const authorizedMemberships: Membership[] = [];
-    for (const membership of memberships) {
-      if (isAuthorized(session, membership, Actions.GetMembership)) {
-        authorizedMemberships.push(membership);
-      }
-    }
-    return NextResponse.json(authorizedMemberships, {
-      status: StatusCodes.OK,
-    });
-  } catch (err: any) {
-    return NextResponse.json(
-      { error: err.message || "Internal server error" },
-      { status: StatusCodes.INTERNAL_SERVER_ERROR }
-    );
-  }
-}
+const params = z.object({
+  account_id: z.string().openapi({ description: "The product owner's ID." }),
+  repository_id: z.string().openapi({ description: "The product's ID." }),
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/products/{account_id}/{repository_id}/members",
+  tags: ["Memberships"],
+  summary: "List a product's members",
+  description:
+    "The memberships of one product, in every state, that the caller may see. Members of the owning organization aren't listed here.",
+  security: bearer,
+  request: { params },
+  responses: {
+    200: json("The memberships.", z.array(MembershipSchema)),
+    ...errors(401, 403, 404),
+  },
+});
+
+export const GET = withApiSession<Params>(async ({ session, params }) =>
+  toResponse(
+    await listMembers(session, {
+      account_id: params.account_id,
+      product_id: params.repository_id,
+    })
+  )
+);
+
+registry.registerPath({
+  method: "post",
+  path: "/products/{account_id}/{repository_id}/members",
+  tags: ["Memberships"],
+  summary: "Invite a member to a product",
+  description:
+    "Invites a person to a product; they become a member once they accept. A service account owned by the product's owner is granted access at once, with the `read_data` or `write_data` role.",
+  security: bearer,
+  request: {
+    params,
+    body: { content: { "application/json": { schema: MembershipInvitationSchema } } },
+  },
+  responses: {
+    201: json("The invitation, or a service account's membership.", MembershipSchema),
+    ...errors(400, 401, 403, 404, 409),
+  },
+});
+
+export const POST = withApiSession<Params>(async ({ session, params, body }) =>
+  toResponse(
+    await inviteMember(session, {
+      ...(body as object),
+      membership_account_id: params.account_id,
+      repository_id: params.repository_id,
+    }),
+    StatusCodes.CREATED
+  )
+);
