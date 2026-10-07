@@ -23,7 +23,7 @@ interface PageProps {
 
 function previewCard(viewerUrl: string | null, children: ReactNode) {
   return (
-    <Card mt="4">
+    <Card id="product-preview" mt="4">
       <SectionHeader
         title="Object Preview"
         rightButton={
