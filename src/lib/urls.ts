@@ -2,6 +2,15 @@ import { CONFIG } from "./config";
 
 // Public URLs
 export const homeUrl = () => "/";
+
+/**
+ * Resolves a post-logout return path against our origin, falling back to the
+ * origin itself for anything that would leave the site.
+ */
+export const logoutReturnTo = (path: string | null, origin: string) => {
+  const url = new URL(path || "/", origin);
+  return url.origin === origin ? url.href : origin;
+};
 export const accountUrl = (account_id: string, params?: string) =>
   `/${account_id}` + (params ? `?${params}` : "");
 export const productUrl = (

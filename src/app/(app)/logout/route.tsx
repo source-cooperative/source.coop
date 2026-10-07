@@ -1,9 +1,14 @@
 import { CONFIG, LOGGER } from "@/lib";
 import { NextRequest, NextResponse } from "next/server";
 import { PROXY_CREDS_COOKIE_NAME } from "@/lib/services/proxy-credentials-shared";
+import { logoutReturnTo } from "@/lib/urls";
 
 export async function GET(request: NextRequest) {
-  const returnTo = new URL(request.url).origin;
+  const { origin } = new URL(request.url);
+  const returnTo = logoutReturnTo(
+    request.nextUrl.searchParams.get("return_to"),
+    origin,
+  );
   const url = new URL(CONFIG.auth.routes.logout);
   url.searchParams.set("return_to", returnTo);
   const response = await fetch(url, {
