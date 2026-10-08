@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
+import { userEvent, within } from "storybook/test";
 import { TagPicker } from "./TagPicker";
 
 const options = [
@@ -11,9 +12,10 @@ const options = [
 ];
 
 /**
- * Choosing a product's tags. Only tags from the known corpus can be added:
- * typing suggests them, and picking one adds it. Each chosen tag is submitted
- * as its own `tags` form value.
+ * Choosing a product's tags. Chosen tags show as chips; "Edit tags" opens a
+ * list of every tag in the known corpus, with a box to filter it, and ticking
+ * one adds it. Only corpus tags can be added. Each chosen tag is submitted as
+ * its own `tags` form value.
  */
 const meta = {
   title: "Features/Settings/Details/TagPicker",
@@ -41,7 +43,17 @@ export const RetiredTag: Story = {
   args: { defaultValue: ["acoustics", "deep-sea-legacy"] },
 };
 
-/** Every tag in the corpus is already chosen, so there is nothing to add. */
-export const AllChosen: Story = {
-  args: { defaultValue: options },
+/** The list open, narrowed by the filter box. */
+export const Filtering: Story = {
+  args: { defaultValue: ["acoustics"] },
+  play: async ({ canvasElement }) => {
+    await userEvent.click(
+      within(canvasElement).getByRole("button", { name: "Edit tags" })
+    );
+    // The list is portalled, so it renders outside the story's canvas.
+    await userEvent.type(
+      within(document.body).getByPlaceholderText("Filter tags"),
+      "c"
+    );
+  },
 };

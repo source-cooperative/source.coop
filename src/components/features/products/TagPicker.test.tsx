@@ -27,33 +27,18 @@ test("submits each chosen tag and drops a removed one", () => {
   expect(submitted(container)).toEqual(["ocean"]);
 });
 
-test("typing a tag's prefix doesn't add it; Enter adds an exact match", () => {
-  const { container } = renderPicker();
-  const input = screen.getByPlaceholderText("Add a tag");
+test("the popover filters the corpus and toggles tags", () => {
+  const { container } = renderPicker(["ocean"]);
+  fireEvent.click(screen.getByRole("button", { name: "Edit tags" }));
 
-  fireEvent.input(input, {
-    target: { value: "climate" },
-    inputType: "insertText",
+  fireEvent.change(screen.getByPlaceholderText("Filter tags"), {
+    target: { value: "CLIM" },
   });
-  expect(submitted(container)).toEqual([]);
+  expect(screen.queryByRole("checkbox", { name: "ocean" })).toBeNull();
 
-  fireEvent.input(input, { target: { value: "Made-up" } });
-  fireEvent.keyDown(input, { key: "Enter" });
-  expect(submitted(container)).toEqual([]);
+  fireEvent.click(screen.getByRole("checkbox", { name: "climate-change" }));
+  expect(submitted(container)).toEqual(["ocean", "climate-change"]);
 
-  fireEvent.input(input, {
-    target: { value: "CLIMATE" },
-    inputType: "insertText",
-  });
-  fireEvent.keyDown(input, { key: "Enter" });
-  expect(submitted(container)).toEqual(["climate"]);
-});
-
-test("picking a suggestion adds it at once", () => {
-  const { container } = renderPicker();
-  fireEvent.input(screen.getByPlaceholderText("Add a tag"), {
-    target: { value: "ocean" },
-    inputType: "insertReplacementText",
-  });
+  fireEvent.click(screen.getByRole("checkbox", { name: "climate-change" }));
   expect(submitted(container)).toEqual(["ocean"]);
 });
