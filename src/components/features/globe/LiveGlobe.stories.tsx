@@ -116,6 +116,24 @@ const MOCK_WS_URL = "wss://example.invalid/live-traffic";
  */
 let realWebSocket: typeof WebSocket | undefined;
 
+/**
+ * A `?wsUrl=` on the page, so a link can name a live feed. Storybook's own
+ * `&args=` can't carry one: it drops string args holding anything beyond
+ * letters, digits, spaces, `_` and `-`. The manager doesn't pass unknown
+ * params through to the preview iframe, so look at the parent frame too.
+ */
+function wsUrlFromPage(): string | null {
+  for (const w of [window, window.parent]) {
+    try {
+      const url = new URLSearchParams(w.location.search).get("wsUrl");
+      if (url) return url;
+    } catch {
+      // A cross-origin parent (an embed) has no readable location.
+    }
+  }
+  return null;
+}
+
 function withMockTraffic(
   Story: React.ComponentType,
   { args }: { args: { wsUrl?: string } },
@@ -150,14 +168,15 @@ function withMockTraffic(
  *
  * To watch real traffic instead, put a live-traffic socket URL (a `wss://`
  * address) in the `wsUrl` control: the stand-in steps aside and the globe
- * connects to it.
+ * connects to it. To share that view, add `&wsUrl=` and the URL-encoded
+ * address to the page's link.
  */
 const meta = {
   title: "Features/Home/LiveGlobe",
   component: LiveGlobe,
   decorators: [withMockTraffic],
   args: {
-    wsUrl: MOCK_WS_URL,
+    wsUrl: wsUrlFromPage() ?? MOCK_WS_URL,
     width: 560,
     height: 560,
     showClouds: true,
