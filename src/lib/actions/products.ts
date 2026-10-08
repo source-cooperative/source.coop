@@ -1,6 +1,11 @@
 "use server";
 
-import { productsTable, membershipsTable, dataConnectionsTable } from "@/lib/clients/database";
+import {
+  productsTable,
+  membershipsTable,
+  dataConnectionsTable,
+  tagsTable,
+} from "@/lib/clients/database";
 import {
   Actions,
   ProductCreationRequestSchema,
@@ -98,6 +103,29 @@ export async function getPaginatedProducts(
     });
     throw new Error("Failed to fetch products");
   }
+}
+
+/**
+ * The submitted tags, or the ones outside the corpus. A tag the product
+ * already carries is kept even if the corpus has since dropped it, so editing
+ * some other field isn't blocked by a tag the user didn't choose today.
+ */
+async function parseTags(
+  formData: FormData,
+  current: string[] = []
+): Promise<{ tags: string[]; unknown: string[] }> {
+  const tags = [...new Set(formData.getAll("tags").map(String))];
+  const corpus = new Set([...(await tagsTable.listAll()), ...current]);
+  return { tags, unknown: tags.filter((tag) => !corpus.has(tag)) };
+}
+
+function unknownTagsState<T>(formData: FormData, unknown: string[]): FormState<T> {
+  return {
+    fieldErrors: { tags: [`Unknown tags: ${unknown.join(", ")}`] },
+    data: formData,
+    message: "Invalid tags",
+    success: false,
+  };
 }
 
 export async function createProduct(
@@ -218,6 +246,9 @@ export async function createProduct(
     };
   }
 
+  const { tags, unknown } = await parseTags(formData);
+  if (unknown.length) return unknownTagsState(formData, unknown);
+
   const product: Product = {
     ...validatedFields.data,
     created_at: new Date().toISOString(),
@@ -225,7 +256,7 @@ export async function createProduct(
     disabled: false,
     featured: 0,
     metadata: {
-      tags: [],
+      tags,
       primary_mirror: dataConnection.data_connection_id,
       mirrors: {
         [dataConnection.data_connection_id]: {
@@ -368,9 +399,16 @@ export async function updateProduct(
       }
     }
 
+    const { tags, unknown } = await parseTags(
+      formData,
+      currentProduct.metadata.tags
+    );
+    if (unknown.length) return unknownTagsState(formData, unknown);
+
     // Build update data
     const updateData = {
       ...currentProduct,
+      metadata: { ...currentProduct.metadata, tags },
       title: title || currentProduct.title,
       description: description || currentProduct.description,
       visibility: visibility || currentProduct.visibility,
