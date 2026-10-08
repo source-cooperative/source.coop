@@ -116,24 +116,6 @@ const MOCK_WS_URL = "wss://example.invalid/live-traffic";
  */
 let realWebSocket: typeof WebSocket | undefined;
 
-/**
- * A `?wsUrl=` on the page, so a link can name a live feed. Storybook's own
- * `&args=` can't carry one: it drops string args holding anything beyond
- * letters, digits, spaces, `_` and `-`. The manager doesn't pass unknown
- * params through to the preview iframe, so look at the parent frame too.
- */
-function wsUrlFromPage(): string | null {
-  for (const w of [window, window.parent]) {
-    try {
-      const url = new URLSearchParams(w.location.search).get("wsUrl");
-      if (url) return url;
-    } catch {
-      // A cross-origin parent (an embed) has no readable location.
-    }
-  }
-  return null;
-}
-
 function withMockTraffic(
   Story: React.ComponentType,
   { args }: { args: { wsUrl?: string } },
@@ -166,17 +148,16 @@ function withMockTraffic(
  * replays a fixed loop of sample traffic, so nothing here reaches the network
  * beyond the two textures.
  *
- * To watch real traffic instead, put a live-traffic socket URL (a `wss://`
- * address) in the `wsUrl` control: the stand-in steps aside and the globe
- * connects to it. To share that view, add `&wsUrl=` and the URL-encoded
- * address to the page's link.
+ * To watch real traffic instead, open the Live Traffic story, or put any
+ * live-traffic socket URL (a `wss://` address) in the `wsUrl` control: the
+ * stand-in steps aside and the globe connects to it.
  */
 const meta = {
   title: "Features/Home/LiveGlobe",
   component: LiveGlobe,
   decorators: [withMockTraffic],
   args: {
-    wsUrl: wsUrlFromPage() ?? MOCK_WS_URL,
+    wsUrl: MOCK_WS_URL,
     width: 560,
     height: 560,
     showClouds: true,
@@ -199,3 +180,15 @@ type Story = StoryObj<typeof meta>;
  * is what gives the dither its drifting texture.
  */
 export const Default: Story = {};
+
+/**
+ * The globe on the production analytics feed: real traffic, as the landing
+ * page shows it. Point `wsUrl` in the controls at another feed to watch that
+ * one instead.
+ */
+export const LiveTraffic: Story = {
+  // ponytail: hard-coded, not read from NEXT_PUBLIC_LOCATION_WS_URL; the
+  // address is public, and the Storybook build doesn't carry that env var.
+  // Read it from env if the feed address starts to vary by deploy.
+  args: { wsUrl: "wss://logs.source.coop/ws" },
+};
