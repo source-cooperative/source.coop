@@ -23,6 +23,7 @@ Read files through `data.source.coop` rather than by following the file browser 
 
 - [Source CLI](https://github.com/source-cooperative/source-coop-cli): logs in and supplies temporary S3 credentials for private products and uploads
 - [Upload with the CLI](https://docs.source.coop/upload-with-the-cli): one-time setup and upload commands
+- [API reference](https://source.coop/api/openapi): OpenAPI document for `https://source.coop/api/v1`, generated from the API's own routes; reading public products needs no credentials, while anything else needs `Authorization: Bearer` with a token from the CLI's login or a service account
 - [Automated access](https://docs.source.coop/automated-access): service accounts for software that runs with nobody there to log in
 
 ## Optional
