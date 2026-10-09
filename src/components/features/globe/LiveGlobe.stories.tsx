@@ -103,8 +103,12 @@ class MockTrafficSocket {
   }
 }
 
+/** The `wsUrl` that stands for "no real feed": while it's set, the mock plays. */
+const MOCK_WS_URL = "wss://example.invalid/live-traffic";
+
 /**
- * Swaps the global WebSocket for the run of the story.
+ * Swaps the global WebSocket for the mock while `wsUrl` is the placeholder, and
+ * puts the real one back as soon as the control holds anything else.
  *
  * The swap happens during render rather than in an effect because React runs a
  * child's effects before its parent's: from a decorator effect, LiveGlobe would
@@ -112,9 +116,15 @@ class MockTrafficSocket {
  */
 let realWebSocket: typeof WebSocket | undefined;
 
-function withMockTraffic(Story: React.ComponentType) {
+function withMockTraffic(
+  Story: React.ComponentType,
+  { args }: { args: { wsUrl?: string } },
+) {
   realWebSocket ??= window.WebSocket;
-  window.WebSocket = MockTrafficSocket as unknown as typeof WebSocket;
+  window.WebSocket =
+    args.wsUrl === MOCK_WS_URL
+      ? (MockTrafficSocket as unknown as typeof WebSocket)
+      : realWebSocket;
   useEffect(() => {
     return () => {
       if (realWebSocket) window.WebSocket = realWebSocket;
@@ -137,13 +147,17 @@ function withMockTraffic(Story: React.ComponentType) {
  * passes fixed numbers, and replaces the analytics socket with a stand-in that
  * replays a fixed loop of sample traffic, so nothing here reaches the network
  * beyond the two textures.
+ *
+ * To watch real traffic instead, open the Live Traffic story, or put any
+ * live-traffic socket URL (a `wss://` address) in the `wsUrl` control: the
+ * stand-in steps aside and the globe connects to it.
  */
 const meta = {
   title: "Features/Home/LiveGlobe",
   component: LiveGlobe,
   decorators: [withMockTraffic],
   args: {
-    wsUrl: "wss://example.invalid/live-traffic",
+    wsUrl: MOCK_WS_URL,
     width: 560,
     height: 560,
     showClouds: true,
@@ -166,3 +180,15 @@ type Story = StoryObj<typeof meta>;
  * is what gives the dither its drifting texture.
  */
 export const Default: Story = {};
+
+/**
+ * The globe on the production analytics feed: real traffic, as the landing
+ * page shows it. Point `wsUrl` in the controls at another feed to watch that
+ * one instead.
+ */
+export const LiveTraffic: Story = {
+  // ponytail: hard-coded, not read from NEXT_PUBLIC_LOCATION_WS_URL; the
+  // address is public, and the Storybook build doesn't carry that env var.
+  // Read it from env if the feed address starts to vary by deploy.
+  args: { wsUrl: "wss://logs.source.coop/ws" },
+};
