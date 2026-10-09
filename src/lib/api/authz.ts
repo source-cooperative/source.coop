@@ -80,7 +80,8 @@ type ActionResourceMap = {
   [Actions.InviteMembership]: Pick<
     Membership,
     "membership_account_id" | "repository_id"
-  >;
+  > &
+    Partial<Pick<Membership, "role">>;
 
   // Data Connection actions
   [Actions.GetDataConnection]: DataConnection;
@@ -217,7 +218,8 @@ export function isAuthorized(
 ): boolean;
 export function isAuthorized(
   principal: UserSession | null,
-  resource: Pick<Membership, "membership_account_id" | "repository_id">,
+  resource: Pick<Membership, "membership_account_id" | "repository_id"> &
+    Partial<Pick<Membership, "role">>,
   action: Actions.InviteMembership
 ): boolean;
 
@@ -1441,10 +1443,11 @@ function revokeMembership(
     return true;
   }
 
-  // If the user is an owner or maintainer of the organization or repository, they are authorized
+  // Owners and maintainers of the organization or product manage its
+  // memberships, but only an owner manages an owner's.
   return hasRole(
     principal,
-    [MembershipRole.Owners, MembershipRole.Maintainers],
+    grantors(membership.role),
     membership.membership_account_id,
     membership.repository_id
   );
@@ -1464,10 +1467,11 @@ function updateMembershipRole(
     return true;
   }
 
-  // If the user is an owner or maintainer of the organization or repository, they are authorized
+  // Owners and maintainers of the organization or product manage its
+  // memberships, but only an owner manages an owner's.
   return hasRole(
     principal,
-    [MembershipRole.Owners, MembershipRole.Maintainers],
+    grantors(membership.role),
     membership.membership_account_id,
     membership.repository_id
   );
@@ -1475,7 +1479,8 @@ function updateMembershipRole(
 
 function inviteMembership(
   principal: UserSession | null,
-  membership: Pick<Membership, "membership_account_id" | "repository_id">
+  membership: Pick<Membership, "membership_account_id" | "repository_id"> &
+    Partial<Pick<Membership, "role">>
 ): boolean {
   // If the user is disabled, they are not authorized
   if (principal?.account?.disabled) {
@@ -1487,10 +1492,11 @@ function inviteMembership(
     return true;
   }
 
-  // If the user is an owner or maintainer of the organization or repository, they are authorized
+  // Owners and maintainers of the organization or product manage its
+  // memberships, but only an owner manages an owner's.
   return hasRole(
     principal,
-    [MembershipRole.Owners, MembershipRole.Maintainers],
+    grantors(membership.role),
     membership.membership_account_id,
     membership.repository_id
   );
@@ -1507,6 +1513,13 @@ function isSelf(principal: UserSession | null, account_id: string): boolean {
     principal?.account?.account_id === account_id &&
     principal.account.type === AccountType.INDIVIDUAL
   );
+}
+
+/** Who may grant or take away `role`: only an owner may make or unmake one. */
+function grantors(role?: MembershipRole): MembershipRole[] {
+  return role === MembershipRole.Owners
+    ? [MembershipRole.Owners]
+    : [MembershipRole.Owners, MembershipRole.Maintainers];
 }
 
 function hasRole(

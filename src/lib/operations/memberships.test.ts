@@ -283,6 +283,21 @@ describe("updateMembership", () => {
     });
   });
 
+  it("needs the right to both the current role and the new one", async () => {
+    // As for a maintainer: every role but owners.
+    authorized.mockImplementation((_, m) => m.role !== MembershipRole.Owners);
+    expect(await updateMembership(session, "m-1", { role: "owners" })).toMatchObject({
+      error: "forbidden",
+    });
+    memberships.fetchById.mockResolvedValue(
+      membership({ role: MembershipRole.Owners, state: MembershipState.Member })
+    );
+    expect(await updateMembership(session, "m-1", { role: "read_data" })).toMatchObject({
+      error: "forbidden",
+    });
+    expect(memberships.update).not.toHaveBeenCalled();
+  });
+
   it("requires a valid role", async () => {
     expect(await updateMembership(session, "m-1", {})).toMatchObject({ error: "invalid" });
     expect(await updateMembership(session, "m-1", { role: "members" })).toMatchObject({ error: "invalid" });

@@ -23,6 +23,8 @@ import {
   ProductVisibility,
   UserSession,
   Product,
+  MembershipRole,
+  MembershipState,
 } from "@/types";
 import { AccountType } from "@/types/account";
 import { Account } from "@/types/account";
@@ -2186,9 +2188,10 @@ describe("Authorization Tests", () => {
     expect(
       isAuthorized(sessions["organization-owner-user"], membership, action)
     ).toBe(true);
+    // Only an owner manages an owner's membership.
     expect(
       isAuthorized(sessions["organization-maintainer-user"], membership, action)
-    ).toBe(true);
+    ).toBe(false);
     expect(
       isAuthorized(sessions["organization-read-data-user"], membership, action)
     ).toBe(false);
@@ -2281,9 +2284,10 @@ describe("Authorization Tests", () => {
     expect(
       isAuthorized(sessions["organization-owner-user"], membership, action)
     ).toBe(true);
+    // Only an owner manages an owner's membership.
     expect(
       isAuthorized(sessions["organization-maintainer-user"], membership, action)
-    ).toBe(true);
+    ).toBe(false);
     expect(
       isAuthorized(sessions["organization-read-data-user"], membership, action)
     ).toBe(false);
@@ -2295,7 +2299,7 @@ describe("Authorization Tests", () => {
     ).toBe(true);
     expect(
       isAuthorized(sessions["repo-member-maintainer"], membership, action)
-    ).toBe(true);
+    ).toBe(false);
     expect(
       isAuthorized(sessions["repo-member-read-data"], membership, action)
     ).toBe(false);
@@ -2379,9 +2383,10 @@ describe("Authorization Tests", () => {
     expect(
       isAuthorized(sessions["organization-owner-user"], membership, action)
     ).toBe(true);
+    // Only an owner manages an owner's membership.
     expect(
       isAuthorized(sessions["organization-maintainer-user"], membership, action)
-    ).toBe(true);
+    ).toBe(false);
     expect(
       isAuthorized(sessions["organization-read-data-user"], membership, action)
     ).toBe(false);
@@ -2394,9 +2399,10 @@ describe("Authorization Tests", () => {
     expect(
       isAuthorized(sessions["repo-member-owner"], membership, action)
     ).toBe(true);
+    // Only an owner manages an owner's membership.
     expect(
       isAuthorized(sessions["repo-member-maintainer"], membership, action)
-    ).toBe(true);
+    ).toBe(false);
     expect(
       isAuthorized(sessions["repo-member-read-data"], membership, action)
     ).toBe(false);
@@ -3409,5 +3415,41 @@ describe("canListOnProfile", () => {
     expect(canListOnProfile(sessions["organization-maintainer-user"], disabled)).toBe(true);
     expect(canListOnProfile(sessions["organization-read-data-user"], disabled)).toBe(false);
     expect(canListOnProfile(sessions["anonymous"], disabled)).toBe(false);
+  });
+});
+
+describe("only an owner manages an owner's membership", () => {
+  const owner = sessions["organization-owner-user"];
+  const maintainer = sessions["organization-maintainer-user"];
+  const membershipWith = (role: MembershipRole, account_id = "regular-user") => ({
+    membership_id: "m",
+    account_id,
+    membership_account_id: "organization",
+    role,
+    state: MembershipState.Member,
+    state_changed: "2024-01-01T00:00:00.000Z",
+  });
+  const actions = [
+    Actions.InviteMembership,
+    Actions.RevokeMembership,
+    Actions.UpdateMembershipRole,
+  ];
+
+  test.each(actions)("%s: a maintainer manages every other role", (action) => {
+    for (const role of [MembershipRole.Maintainers, MembershipRole.ReadData]) {
+      expect(isAuthorized(maintainer, membershipWith(role), action as never)).toBe(true);
+    }
+  });
+
+  test.each(actions)("%s: only an owner or admin manages an owner", (action) => {
+    const ownership = membershipWith(MembershipRole.Owners);
+    expect(isAuthorized(maintainer, ownership, action as never)).toBe(false);
+    expect(isAuthorized(owner, ownership, action as never)).toBe(true);
+    expect(isAuthorized(sessions["admin"], ownership, action as never)).toBe(true);
+  });
+
+  test("an owner can still leave", () => {
+    const own = membershipWith(MembershipRole.Owners, "organization-owner-user");
+    expect(isAuthorized(owner, own, Actions.RevokeMembership)).toBe(true);
   });
 });

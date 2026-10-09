@@ -5,6 +5,7 @@ import {
   Actions,
   isServiceAccount,
   Membership,
+  MembershipRole,
   MembershipSchema,
   MembershipState,
   UserSession,
@@ -88,7 +89,11 @@ export async function inviteMember(
   // Before any lookup, so a caller who may not invite here learns nothing
   // about which accounts and products exist.
   if (!isAuthorized(session, parsed.data, Actions.InviteMembership)) {
-    return forbidden("You may not invite members here");
+    return forbidden(
+      role === MembershipRole.Owners
+        ? "Only an owner can invite an owner"
+        : "You may not invite members here"
+    );
   }
 
   if (repository_id) {
@@ -274,7 +279,11 @@ export async function updateMembership(
   return changeMembership(
     session,
     membership_id,
-    (m) => isAuthorized(session, m, Actions.UpdateMembershipRole),
+    // Both the role it has and the role it gets, so no one without the right
+    // to hold the higher of the two can grant or take it away.
+    (m) =>
+      isAuthorized(session, m, Actions.UpdateMembershipRole) &&
+      isAuthorized(session, { ...m, role }, Actions.UpdateMembershipRole),
     async (m) => {
       if (m.state !== MembershipState.Member) {
         return conflict("Membership is not active");
