@@ -1,228 +1,60 @@
-import { NextRequest, NextResponse } from "next/server";
-import { serviceAccountGrantProblem } from "@/lib/accounts/service-accounts";
-import {
-  Actions,
-  Membership,
-  MembershipInvitation,
-  MembershipInvitationSchema,
-  MembershipState,
-} from "@/types";
-import { AccountType, isServiceAccount } from "@/types/account";
+import { z } from "zod";
 import { StatusCodes } from "http-status-codes";
-import { accountsTable, membershipsTable } from "@/lib/clients/database";
-import { isAuthorized } from "@/lib/api/authz";
-import { getApiSession } from "@/lib/api/utils";
-import { randomUUID } from "crypto";
+import { MembershipInvitationSchema, MembershipSchema } from "@/types";
+import { withApiSession, toResponse } from "@/lib/api/handler";
+import { bearer, errors, json, registry } from "@/lib/api/openapi";
+import { inviteMember, listMembers } from "@/lib/operations/memberships";
 
-/**
- * @openapi
- * /accounts/{account_id}/members:
- *   post:
- *     tags: [Memberships, Accounts]
- *     summary: Invite a new member to an account.
- *     description: >
- *       Invites a new member to the specified account.
- *       For user accounts, you must be authenticated as the user account you are inviting the member to.
- *       For organization accounts, you must be authenticated as either an `owners` or `maintainers` member for the organization account you are inviting the member to.
- *
- *       Service accounts cannot have members.
- *     parameters:
- *       - in: path
- *         name: account_id
- *         required: true
- *         schema:
- *           type: string
- *         description: The ID of the account to invite the member to
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/MembershipInvitation'
- *     responses:
- *       200:
- *         description: Successfully invited member
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Membership'
- *       400:
- *         description: Bad request - Invalid request body or member already invited/exists
- *       401:
- *         description: Unauthorized - No valid session found or insufficient permissions
- *       404:
- *         description: Not Found - Account not found
- *       500:
- *         description: Internal server error
- */
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ account_id: string }> }
-) {
-  try {
-    const session = await getApiSession(request);
-    const { account_id } = await params;
-    const membershipInvitation: MembershipInvitation =
-      MembershipInvitationSchema.parse(await request.json());
-    const account = await accountsTable.fetchById(account_id);
-    if (!account) {
-      return NextResponse.json(
-        { error: `Account with ID ${account_id} not found` },
-        { status: StatusCodes.NOT_FOUND }
-      );
-    }
-    const invitedAccount = await accountsTable.fetchById(
-      membershipInvitation.account_id
-    );
-    if (!invitedAccount) {
-      return NextResponse.json(
-        {
-          error: `Invited account with ID ${membershipInvitation.account_id} not found`,
-        },
-        { status: StatusCodes.NOT_FOUND }
-      );
-    }
-    if (isServiceAccount(account)) {
-      return NextResponse.json(
-        { error: "Service accounts cannot have members" },
-        { status: StatusCodes.BAD_REQUEST }
-      );
-    }
-    if (invitedAccount.type === AccountType.ORGANIZATION) {
-      return NextResponse.json(
-        {
-          error: `Invited account with ID ${membershipInvitation.account_id} is an organization`,
-        },
-        { status: StatusCodes.BAD_REQUEST }
-      );
-    }
-    const grantProblem = serviceAccountGrantProblem(
-      invitedAccount,
-      { membership_account_id: account.account_id },
-      membershipInvitation.role
-    );
-    if (grantProblem) {
-      return NextResponse.json(
-        { error: grantProblem },
-        { status: StatusCodes.BAD_REQUEST }
-      );
-    }
-    const membership: Membership = {
-      ...membershipInvitation,
-      membership_id: randomUUID(),
-      membership_account_id: account.account_id,
-      state: MembershipState.Invited,
-      state_changed: new Date().toISOString(),
-    };
-    if (!isAuthorized(session, membership, Actions.InviteMembership)) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: StatusCodes.UNAUTHORIZED }
-      );
-    }
-    const existingMembership = await membershipsTable.listByAccount(
-      account.account_id
-    );
-    for (const existing of existingMembership) {
-      if (
-        existing.account_id === membership.account_id &&
-        [MembershipState.Member, MembershipState.Invited].includes(
-          existing.state
-        )
-      ) {
-        return NextResponse.json(
-          {
-            error: `Account with ID ${membership.account_id} is already a member or has a pending invitation for account with ID ${account.account_id}`,
-          },
-          { status: StatusCodes.BAD_REQUEST }
-        );
-      }
-    }
-    const createdMembership = await membershipsTable.create(membership);
-    return NextResponse.json(createdMembership, {
-      status: StatusCodes.OK,
-    });
-  } catch (err: unknown) {
-    const errorMessage =
-      err instanceof Error ? err.message : "Internal server error";
-    return NextResponse.json(
-      { error: errorMessage },
-      { status: StatusCodes.INTERNAL_SERVER_ERROR }
-    );
-  }
-}
+type Params = { account_id: string };
 
-/**
- * @openapi
- * /accounts/{account_id}/members:
- *   get:
- *     tags: [Memberships, Accounts]
- *     summary: List the memberships for an account
- *     description: |
- *       Retrieves all memberships associated with the specified account.
- *       For user accounts, you must be authenticated as the user account you are listing memberships for.
- *       For organization accounts, you must be authenticated as either an `owners` or `maintainers` member of the organization account you are listing memberships for.
- *
- *       Service accounts have no members.
- *     parameters:
- *       - in: path
- *         name: account_id
- *         required: true
- *         schema:
- *           type: string
- *         description: The ID of the account to list memberships for
- *     responses:
- *       '200':
- *         description: Successfully retrieved memberships
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/Membership'
- *       '401':
- *         description: Unauthorized - No valid session found or insufficient permissions
- *       '404':
- *         description: Not Found - Account not found
- *       '500':
- *         description: Internal server error
- */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ account_id: string }> }
-) {
-  try {
-    const session = await getApiSession(request);
-    const { account_id } = await params;
-    const account = await accountsTable.fetchById(account_id);
-    if (!account) {
-      return NextResponse.json(
-        { error: `Account with ID ${account_id} not found` },
-        { status: StatusCodes.NOT_FOUND }
-      );
-    }
-    if (!isAuthorized(session, account, Actions.ListAccountMemberships)) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: StatusCodes.UNAUTHORIZED }
-      );
-    }
-    const memberships = await membershipsTable.listByAccount(
-      account.account_id
-    );
-    const authorizedMemberships: Membership[] = [];
-    for (const membership of memberships) {
-      if (isAuthorized(session, membership, Actions.GetMembership)) {
-        authorizedMemberships.push(membership);
-      }
-    }
-    return NextResponse.json(authorizedMemberships, { status: StatusCodes.OK });
-  } catch (err: unknown) {
-    const errorMessage =
-      err instanceof Error ? err.message : "Internal server error";
-    return NextResponse.json(
-      { error: errorMessage },
-      { status: StatusCodes.INTERNAL_SERVER_ERROR }
-    );
-  }
-}
+const params = z.object({
+  account_id: z.string().openapi({ description: "The account's ID." }),
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/accounts/{account_id}/members",
+  tags: ["Memberships"],
+  summary: "List an account's members",
+  description:
+    "The memberships of an account, in every state, that the caller may see.",
+  security: bearer,
+  request: { params },
+  responses: {
+    200: json("The memberships.", z.array(MembershipSchema)),
+    ...errors(401, 403, 404),
+  },
+});
+
+export const GET = withApiSession<Params>(async ({ session, params }) =>
+  toResponse(await listMembers(session, params))
+);
+
+registry.registerPath({
+  method: "post",
+  path: "/accounts/{account_id}/members",
+  tags: ["Memberships"],
+  summary: "Invite a member to an account",
+  description:
+    "Invites a person to an organization. They become a member once they accept. A service account can't be a member of an account, only of its owner's products. Organizations can't be members, and service accounts can't have members.",
+  security: bearer,
+  request: {
+    params,
+    body: { content: { "application/json": { schema: MembershipInvitationSchema } } },
+  },
+  responses: {
+    201: json("The invitation.", MembershipSchema),
+    ...errors(400, 401, 403, 404, 409),
+  },
+});
+
+export const POST = withApiSession<Params>(async ({ session, params, body }) =>
+  toResponse(
+    await inviteMember(session, {
+      ...(body as object),
+      membership_account_id: params.account_id,
+      repository_id: undefined,
+    }),
+    StatusCodes.CREATED
+  )
+);

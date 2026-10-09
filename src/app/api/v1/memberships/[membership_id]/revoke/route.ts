@@ -1,82 +1,24 @@
-/**
- * @openapi
- * /memberships/{membership_id}/revoke:
- *   post:
- *     tags: [Memberships]
- *     summary: Revoke a membership.
- *     description: >
- *       Revokes a membership for the specified membership.
- *       The user must be authorized to revoke the membership.
- *     parameters:
- *       - in: path
- *         name: membership_id
- *         required: true
- *         schema:
- *           type: string
- *         description: The ID of the membership to revoke
- *     responses:
- *       200:
- *         description: Successfully revoked membership
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Membership'
- *       400:
- *         description: Bad Request - Membership is already revoked
- *       401:
- *         description: Unauthorized - No valid session found or insufficient permissions
- *       404:
- *         description: Not Found - Membership not found
- *       500:
- *         description: Internal server error
- */
-import { NextRequest, NextResponse } from "next/server";
-import { Actions, MembershipState } from "@/types";
-import { StatusCodes } from "http-status-codes";
-import { isAuthorized } from "@/lib/api/authz";
-import { getApiSession } from "@/lib/api/utils";
-import { membershipsTable } from "@/lib/clients/database";
+import { MembershipSchema } from "@/types";
+import { withApiSession, toResponse } from "@/lib/api/handler";
+import { bearer, errors, json, membershipIdParams, registry } from "@/lib/api/openapi";
+import { revokeMembership } from "@/lib/operations/memberships";
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ membership_id: string }> }
-) {
-  try {
-    const session = await getApiSession(request);
-    const { membership_id } = await params;
-    const membership = await membershipsTable.fetchById(membership_id);
-    if (!membership) {
-      return NextResponse.json(
-        { error: `Membership with ID ${membership_id} not found` },
-        { status: StatusCodes.NOT_FOUND }
-      );
-    }
-    if (!isAuthorized(session, membership, Actions.RevokeMembership)) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: StatusCodes.UNAUTHORIZED }
-      );
-    }
-    if (membership.state === MembershipState.Revoked) {
-      return NextResponse.json(
-        { error: `Membership with ID ${membership_id} is already revoked` },
-        { status: StatusCodes.BAD_REQUEST }
-      );
-    }
-    return NextResponse.json(
-      await membershipsTable.update({
-        ...membership,
-        state: MembershipState.Revoked,
-        state_changed: new Date().toISOString(),
-      }),
-      { status: StatusCodes.OK }
-    );
-  } catch (err: unknown) {
-    const errorMessage =
-      err instanceof Error ? err.message : "Internal server error";
-    return NextResponse.json(
-      { error: errorMessage },
-      { status: StatusCodes.INTERNAL_SERVER_ERROR }
-    );
-  }
-}
+registry.registerPath({
+  method: "post",
+  path: "/memberships/{membership_id}/revoke",
+  tags: ["Memberships"],
+  summary: "Revoke a membership",
+  description:
+    "Ends a membership or withdraws an invitation. Owners and maintainers can revoke the memberships of the account or product they manage, and anyone can revoke their own.",
+  security: bearer,
+  request: { params: membershipIdParams },
+  responses: {
+    200: json("The membership, as it now stands.", MembershipSchema),
+    ...errors(400, 401, 403, 404, 409),
+  },
+});
+
+export const POST = withApiSession<{ membership_id: string }>(
+  async ({ session, params }) =>
+    toResponse(await revokeMembership(session, params.membership_id))
+);

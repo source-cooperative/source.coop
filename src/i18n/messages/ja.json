@@ -762,25 +762,8 @@
     "signIn": "ログイン"
   },
   "MembershipActions": {
-    "unauthenticated": "ログインが必要です。",
-    "missingFields": "必須項目が入力されていません。",
-    "organizationNotFound": "組織が見つかりません。",
-    "inviteeNotFound": "招待するアカウントが見つかりません。",
-    "organizationsCannotBeMembers": "組織はメンバーになれません。",
-    "unauthorizedInvite": "この組織にメンバーを招待する権限がありません。",
-    "alreadyMember": "このユーザーはすでにメンバーであるか、保留中の招待があります。",
     "invited": "メンバーを招待しました。",
-    "inviteFailed": "メンバーを招待できませんでした。もう一度お試しください。",
-    "membershipNotFound": "メンバーシップが見つかりません。",
-    "unauthorizedAccept": "この招待を承諾する権限がありません。",
-    "notPending": "このメンバーシップは保留中ではありません。",
-    "acceptFailed": "招待を承諾できませんでした。",
-    "unauthorizedReject": "この招待を辞退する権限がありません。",
-    "rejectFailed": "招待を辞退できませんでした。",
-    "missingMembershipId": "メンバーシップIDが指定されていません。",
-    "unauthorizedRevoke": "このメンバーシップを取り消す権限がありません。",
-    "revoked": "メンバーシップを取り消しました。",
-    "revokeFailed": "メンバーシップを取り消せませんでした。もう一度お試しください。"
+    "revoked": "メンバーシップを取り消しました。"
   },
   "MembershipsTable": {
     "member": "メンバー",

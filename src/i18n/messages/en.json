@@ -762,25 +762,8 @@
     "signIn": "Sign in"
   },
   "MembershipActions": {
-    "unauthenticated": "Unauthenticated",
-    "missingFields": "Missing required fields",
-    "organizationNotFound": "Organization not found",
-    "inviteeNotFound": "Account to invite not found",
-    "organizationsCannotBeMembers": "Organizations cannot be members",
-    "unauthorizedInvite": "Unauthorized to invite members to this organization",
-    "alreadyMember": "User is already a member or has a pending invitation",
     "invited": "Member invited successfully!",
-    "inviteFailed": "Failed to invite member. Please try again.",
-    "membershipNotFound": "Membership not found",
-    "unauthorizedAccept": "Unauthorized to accept this invitation",
-    "notPending": "Membership is not in a pending state",
-    "acceptFailed": "Failed to accept invitation",
-    "unauthorizedReject": "Unauthorized to reject this invitation",
-    "rejectFailed": "Failed to reject invitation",
-    "missingMembershipId": "Missing membership ID",
-    "unauthorizedRevoke": "Unauthorized to revoke this membership",
-    "revoked": "Membership revoked successfully!",
-    "revokeFailed": "Failed to revoke membership. Please try again."
+    "revoked": "Membership revoked successfully!"
   },
   "MembershipsTable": {
     "member": "Member",
