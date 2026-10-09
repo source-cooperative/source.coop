@@ -36,7 +36,7 @@ export function TagPicker({
     tag.toLowerCase().includes(filter.trim().toLowerCase())
   );
   const toggle = (tag: string, on: boolean) =>
-    setTags(on ? [...tags, tag] : tags.filter((t) => t !== tag));
+    setTags((tags) => (on ? [...tags, tag] : tags.filter((t) => t !== tag)));
 
   return (
     <Flex gap="2" wrap="wrap" align="center">

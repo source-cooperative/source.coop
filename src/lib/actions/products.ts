@@ -116,6 +116,7 @@ async function parseTags<T>(
   current: string[] = []
 ): Promise<string[] | FormState<T>> {
   const tags = [...new Set(formData.getAll("tags").map(String))];
+  if (!tags.length) return tags;
   const corpus = new Set([...(await tagsTable.listAll()), ...current]);
   const unknown = tags.filter((tag) => !corpus.has(tag));
   if (!unknown.length) return tags;

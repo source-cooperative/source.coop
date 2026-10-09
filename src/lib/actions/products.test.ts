@@ -146,6 +146,17 @@ describe("createProduct", () => {
     expect(productsTable.create).toHaveBeenCalledTimes(1);
   });
 
+  test("a product without tags never reads the tag table", async () => {
+    (dataConnectionsTable.fetchById as jest.Mock).mockResolvedValue(
+      connection()
+    );
+
+    const result = await createProduct(undefined, buildFormData());
+
+    expect(result.success).toBe(true);
+    expect(tagsTable.listAll).not.toHaveBeenCalled();
+  });
+
   test("a connection without a prefix template mirrors at the root", async () => {
     (dataConnectionsTable.fetchById as jest.Mock).mockResolvedValue(
       connection()
