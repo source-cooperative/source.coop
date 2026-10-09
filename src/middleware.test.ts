@@ -3,7 +3,7 @@
  * failure mode is a silently dead ANALYTICS tab — pin its behavior.
  */
 import { NextRequest } from "next/server";
-import { handleProductAnalyticsTab } from "./middleware";
+import { handleProductAnalyticsTab, restoreOryCookies } from "./middleware";
 
 const rewriteTarget = (url: string): string | null =>
   handleProductAnalyticsTab(new NextRequest(url))?.headers.get(
@@ -38,4 +38,20 @@ it("ignores non-matching requests", () => {
   expect(
     rewriteTarget("https://source.coop/products/new?tab=analytics"),
   ).toBeNull();
+});
+
+describe("restoreOryCookies", () => {
+  it("decodes the padding Next.js encodes in a server action redirect", () => {
+    expect(
+      restoreOryCookies("theme=dark; ory_session_abc=MTcx_a-b%3D%3D; x=a%3Db"),
+    ).toBe("theme=dark; ory_session_abc=MTcx_a-b==; x=a%3Db");
+    expect(restoreOryCookies("ory_kratos_session=YQ%3D")).toBe(
+      "ory_kratos_session=YQ=",
+    );
+  });
+
+  it("leaves an unencoded header alone", () => {
+    expect(restoreOryCookies("ory_session_abc=MTcx==; x=a%3Db")).toBeNull();
+    expect(restoreOryCookies(null)).toBeNull();
+  });
 });

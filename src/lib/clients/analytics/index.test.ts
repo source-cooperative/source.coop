@@ -8,6 +8,7 @@ import {
   getAdminBreakdown,
   getProductBreakdowns,
   USAGE_DAYS,
+  USAGE_WINDOWS,
 } from "./index";
 import { CONFIG } from "@/lib/config";
 
@@ -65,33 +66,71 @@ describe("getUsage", () => {
   it("queries with sampling weights and served-bytes filters", async () => {
     await getUsage("acct", "prod");
 
-    const [seriesSql, windowSql, ipsSql, registeredSql] = sentSql();
-    for (const sql of [seriesSql, windowSql, ipsSql, registeredSql]) {
+    const [seriesSql, windowSql, ...ipSqls] = sentSql();
+    for (const sql of sentSql()) {
       // Float literals: AE 422s on Double-vs-Integer comparisons.
       expect(sql).toContain("blob4 = 'GET' AND double2 IN (200.0, 206.0)");
       expect(sql).toContain("blob1 = 'acct'");
       expect(sql).toContain("blob2 = 'prod'");
-      // Day-aligned window: today (partial) + USAGE_DAYS-1 full UTC days,
-      // identical for series, totals, and breakdowns.
+      expect(sql).toContain("FROM test_dataset");
+    }
+    // Day-aligned window: today (partial) + USAGE_DAYS-1 full UTC days,
+    // identical for series and totals.
+    for (const sql of [seriesSql, windowSql]) {
       expect(sql).toContain(
         `timestamp >= toStartOfDay(NOW() - INTERVAL '${USAGE_DAYS - 1}' DAY)`,
       );
-      expect(sql).toContain("FROM test_dataset");
     }
     expect(seriesSql).toContain("toStartOfDay(timestamp)");
     expect(seriesSql).toContain("SUM(_sample_interval * double1) AS bytes");
     expect(seriesSql).toContain("SUM(_sample_interval) AS requests");
     expect(windowSql).toContain("COUNT(DISTINCT blob6) AS countries");
     expect(windowSql).toContain("sumIf(_sample_interval, blob5 = '') AS anon_requests");
+    // Registered usage is a sample-weighted sum, not COUNT(DISTINCT blob5):
+    // distinct counts see only the rows that survived sampling, so they
+    // shrink as the scan widens.
+    expect(windowSql).toContain(
+      "sumIf(_sample_interval, blob5 != '') AS registered_requests",
+    );
     expect(windowSql).not.toContain("GROUP BY");
-    expect(ipsSql).toContain("blob8 != ''");
-    expect(ipsSql).toContain("GROUP BY ip");
-    expect(registeredSql).toContain("COUNT(DISTINCT blob5) AS registered");
-    expect(registeredSql).toContain("blob5 != ''");
+    expect(sentSql().join(" ")).not.toContain("COUNT(DISTINCT blob5)");
+    for (const sql of ipSqls) {
+      expect(sql).toContain("blob8 != ''");
+      expect(sql).toContain("GROUP BY ip");
+    }
 
     const [, options] = fetchMock.mock.calls[0];
     expect(options.headers.Authorization).toBe("Bearer cf-token");
   });
+
+  it.each(USAGE_WINDOWS)(
+    "tiles the %id window with week-wide per-IP slices, no gap or overlap",
+    async (days) => {
+      await getUsage("acct", "prod", undefined, days);
+
+      // Series + window query, then one slice query per week.
+      const ipSqls = sentSql().slice(2);
+      expect(ipSqls).toHaveLength(days / 7);
+
+      const bound = (sql: string, op: string) =>
+        sql.match(
+          new RegExp(
+            `timestamp ${op} toStartOfDay\\(NOW\\(\\) - INTERVAL '(\\d+)' DAY\\)`,
+          ),
+        )?.[1];
+
+      // Slice 0 stays open-ended so it keeps the in-progress UTC day.
+      expect(bound(ipSqls[0], "<")).toBeUndefined();
+      // Each slice starts where the next-older one ends, so no day is counted
+      // twice (which would inflate an IP's downloads) or skipped entirely.
+      ipSqls.forEach((sql, i) => {
+        expect(bound(sql, ">=")).toBe(String(7 * (i + 1) - 1));
+        if (i > 0) expect(bound(sql, "<")).toBe(bound(ipSqls[i - 1], ">="));
+      });
+      // The oldest slice reaches exactly as far back as the window itself.
+      expect(bound(ipSqls[ipSqls.length - 1], ">=")).toBe(String(days - 1));
+    },
+  );
 
   it("escapes quotes, backslashes, and control chars in values", async () => {
     await getUsage("a'; DROP--", "pr\\od", "dir/we'ird\u0000.txt");
@@ -117,8 +156,11 @@ describe("getUsage", () => {
         ]),
       )
       .mockResolvedValueOnce(
-        jsonResponse([{ countries: 2, anon_requests: "5" }]),
+        jsonResponse([
+          { countries: 2, anon_requests: "5", registered_requests: "2" },
+        ]),
       )
+      // One response per week-wide slice of the window.
       .mockResolvedValueOnce(
         jsonResponse([
           { ip: "h1", requests: 1 },
@@ -129,7 +171,15 @@ describe("getUsage", () => {
           { ip: "h5", requests: 0.4 },
         ]),
       )
-      .mockResolvedValueOnce(jsonResponse([{ registered: "2" }]));
+      // h1 recurs in an older slice: one IP, requests summed across slices.
+      .mockResolvedValueOnce(
+        jsonResponse([
+          { ip: "h1", requests: 1 },
+          { ip: "h6", requests: 5 },
+        ]),
+      )
+      .mockResolvedValueOnce(jsonResponse([]))
+      .mockResolvedValueOnce(jsonResponse([]));
 
     const usage = await getUsage("acct", "prod");
 
@@ -140,16 +190,16 @@ describe("getUsage", () => {
     // Every earlier day is zero-filled
     expect(usage!.days[0]).toMatchObject({ bytes: 0, requests: 0 });
     expect(usage!.totals).toEqual({ bytes: 1024, requests: 7, countries: 2 });
-    // Quasi-log bins: the 0.4 sampled fraction floors into "1" alongside
-    // the exact-1 IP; 3 → "3–5", 7 → "6–10", 25 → "11–25"; the rest zero.
+    // Quasi-log bins: the 0.4 sampled fraction floors into "1"; h1 sums to
+    // 1+1=2 across slices; 3 and 5 → "3–5", 7 → "6–10", 25 → "11–25".
     expect(usage!.users).toEqual({
-      uniqueIps: 5,
+      uniqueIps: 6,
       registered: 2,
       anonRequests: 5,
       distribution: [
-        { label: "1", ips: 2 },
-        { label: "2", ips: 0 },
-        { label: "3–5", ips: 1 },
+        { label: "1", ips: 1 },
+        { label: "2", ips: 1 },
+        { label: "3–5", ips: 2 },
         { label: "6–10", ips: 1 },
         { label: "11–25", ips: 1 },
         { label: "26–50", ips: 0 },

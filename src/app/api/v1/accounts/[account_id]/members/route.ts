@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { serviceAccountGrantProblem } from "@/lib/accounts/service-accounts";
 import {
   Actions,
   Membership,
@@ -6,7 +7,7 @@ import {
   MembershipInvitationSchema,
   MembershipState,
 } from "@/types";
-import { AccountType } from "@/types/account";
+import { AccountType, isServiceAccount } from "@/types/account";
 import { StatusCodes } from "http-status-codes";
 import { accountsTable, membershipsTable } from "@/lib/clients/database";
 import { isAuthorized } from "@/lib/api/authz";
@@ -24,7 +25,7 @@ import { randomUUID } from "crypto";
  *       For user accounts, you must be authenticated as the user account you are inviting the member to.
  *       For organization accounts, you must be authenticated as either an `owners` or `maintainers` member for the organization account you are inviting the member to.
  *
- *       Only users with the `admin` flag may invite members to service accounts.
+ *       Service accounts cannot have members.
  *     parameters:
  *       - in: path
  *         name: account_id
@@ -81,11 +82,28 @@ export async function POST(
         { status: StatusCodes.NOT_FOUND }
       );
     }
-    if (invitedAccount.type !== AccountType.INDIVIDUAL) {
+    if (isServiceAccount(account)) {
+      return NextResponse.json(
+        { error: "Service accounts cannot have members" },
+        { status: StatusCodes.BAD_REQUEST }
+      );
+    }
+    if (invitedAccount.type === AccountType.ORGANIZATION) {
       return NextResponse.json(
         {
-          error: `Invited account with ID ${membershipInvitation.account_id} is not a user account`,
+          error: `Invited account with ID ${membershipInvitation.account_id} is an organization`,
         },
+        { status: StatusCodes.BAD_REQUEST }
+      );
+    }
+    const grantProblem = serviceAccountGrantProblem(
+      invitedAccount,
+      { membership_account_id: account.account_id },
+      membershipInvitation.role
+    );
+    if (grantProblem) {
+      return NextResponse.json(
+        { error: grantProblem },
         { status: StatusCodes.BAD_REQUEST }
       );
     }
@@ -145,7 +163,7 @@ export async function POST(
  *       For user accounts, you must be authenticated as the user account you are listing memberships for.
  *       For organization accounts, you must be authenticated as either an `owners` or `maintainers` member of the organization account you are listing memberships for.
  *
- *       Only users with the `admin` flag may list memberships for service accounts.
+ *       Service accounts have no members.
  *     parameters:
  *       - in: path
  *         name: account_id

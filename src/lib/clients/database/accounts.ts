@@ -1,7 +1,10 @@
+import { isIndividualAccount, isOrganizationalAccount, isServiceAccount } from "@/types";
 import {
   QueryCommand,
+  ScanCommand,
+  type ScanCommandOutput,
   UpdateCommand,
-  DeleteCommand,
+  TransactWriteCommand,
   PutCommand,
   BatchGetCommand,
 } from "@aws-sdk/lib-dynamodb";
@@ -10,14 +13,40 @@ import {
   type Account,
   AccountType,
   type IndividualAccount,
-  type OrganizationalAccount,
+  type ServiceAccount,
 } from "@/types";
 
 import { BaseTable } from "./base";
+import { AccountTrustsTable, accountTrustsTable, identityKey } from "./account-trusts";
 import { LOGGER } from "@/lib/logging";
+
+/**
+ * What a type-ahead picker needs to introduce an account: enough to render the
+ * same identity block the profile hover card shows. Public fields only.
+ */
+export interface AccountSuggestion {
+  account_id: string;
+  name: string;
+  /** So a picker can say which of its suggestions are machines. */
+  type: AccountType;
+  profile_image?: string;
+  /** Present only when the search asked for disabled accounts. */
+  disabled?: true;
+}
 
 export class AccountsTable extends BaseTable {
   model = "accounts";
+  private readonly trusts: AccountTrustsTable;
+
+  constructor({
+    trusts,
+    ...base
+  }: {
+    trusts?: AccountTrustsTable;
+  } & ConstructorParameters<typeof BaseTable>[0] = {}) {
+    super(base);
+    this.trusts = trusts ?? accountTrustsTable;
+  }
 
   async fetchById(account_id: string): Promise<Account | null> {
     try {
@@ -130,13 +159,100 @@ export class AccountsTable extends BaseTable {
     }
   }
 
+  /**
+   * Creates an account, failing if `account_id` is already taken.
+   *
+   * `account_id` is the table's partition key, so an unconditioned `PutCommand`
+   * would *replace* an existing row rather than fail. `account_id` is chosen by
+   * the caller at signup and never checked for availability beforehand, so the
+   * conditional write is what keeps one account from being written over another
+   * -- including one bound to a different `identity_id`.
+   *
+   * Throws `ConditionalCheckFailedException` when the id is taken; callers that
+   * accept a user-supplied id should catch it and report the collision rather
+   * than surfacing a server error.
+   */
+  /**
+   * Substring match over the accounts that can be made a member: individuals,
+   * plus the service accounts owned by `memberOf` when it is given. For
+   * type-ahead pickers. Returns only publicly visible identity fields --
+   * `profile_image` comes from `metadata_public` and is what profile pages
+   * already render. Deliberately no email: the Gravatar fallback used elsewhere
+   * would leak an address hash for every account a search happens to match.
+   *
+   * ponytail: full table scan filtered app-side. DynamoDB has no
+   * case-insensitive `contains()` and this table has no search index, so
+   * matching on `name` any other way means denormalizing a lowercased
+   * `search_text` field (as `products` does) and backfilling it. Fine at the
+   * current account count; do that — or move to a search service — if the
+   * scans start to hurt.
+   */
+  async searchMemberCandidates(
+    query: string,
+    memberOf?: string,
+    { limit = 10, includeDisabled = false } = {}
+  ): Promise<AccountSuggestion[]> {
+    const q = query.trim().toLowerCase();
+    if (!q) return [];
+
+    const matches: AccountSuggestion[] = [];
+    let lastEvaluatedKey: Record<string, any> | undefined = undefined;
+
+    do {
+      // Annotated because the paging assignment below otherwise makes the
+      // inferred type of `result` depend on itself.
+      const result: ScanCommandOutput = await this.cachedSend(
+        new ScanCommand({
+          TableName: this.table,
+          ProjectionExpression:
+            "account_id, #name, #type, disabled, owner_account_id, metadata_public.profile_image",
+          ExpressionAttributeNames: { "#name": "name", "#type": "type" },
+          ExclusiveStartKey: lastEvaluatedKey,
+        })
+      );
+
+      for (const item of (result.Items ?? []) as Account[]) {
+        const eligible =
+          isIndividualAccount(item) ||
+          (isServiceAccount(item) &&
+            memberOf !== undefined &&
+            item.owner_account_id === memberOf);
+        if (!eligible) continue;
+        if (item.disabled && !includeDisabled) continue;
+        const name = item.name ?? "";
+        if (!item.account_id.includes(q) && !name.toLowerCase().includes(q))
+          continue;
+        matches.push({
+          account_id: item.account_id,
+          name,
+          type: item.type,
+          profile_image: item.metadata_public?.profile_image,
+          ...(item.disabled && { disabled: true }),
+        });
+        if (matches.length >= limit) return matches;
+      }
+
+      lastEvaluatedKey = result.LastEvaluatedKey;
+    } while (lastEvaluatedKey);
+
+    return matches;
+  }
+
   async create(account: Account): Promise<Account> {
-    await this.client.send(
-      new PutCommand({
-        TableName: this.table,
-        Item: account,
-      })
-    );
+    try {
+      await this.client.send(
+        new PutCommand({
+          TableName: this.table,
+          Item: account,
+          ConditionExpression: "attribute_not_exists(account_id)",
+        })
+      );
+    } catch (error) {
+      if ((error as { name?: string })?.name !== "ConditionalCheckFailedException") {
+        this.logError("create", error, { account_id: account.account_id });
+      }
+      throw error;
+    }
 
     return account;
   }
@@ -204,23 +320,50 @@ export class AccountsTable extends BaseTable {
     return result.Attributes as Account;
   }
 
-  async delete(Key: { account_id: string; type: AccountType }): Promise<void> {
-    await this.client.send(
-      new DeleteCommand({
+  /** The service accounts owned by `owner_account_id`. */
+  async listByOwner(owner_account_id: string): Promise<ServiceAccount[]> {
+    const result = await this.cachedSend(
+      new QueryCommand({
         TableName: this.table,
-        Key,
+        IndexName: "owner_account_id",
+        KeyConditionExpression: "owner_account_id = :owner_account_id",
+        ExpressionAttributeValues: { ":owner_account_id": owner_account_id },
       })
     );
+    return (result.Items ?? []).filter((item) =>
+      isServiceAccount(item as Account)
+    ) as ServiceAccount[];
+  }
+
+  /**
+   * Removes the account and its trusts together. A trust that outlived its
+   * account would be a dangling grant, so the row goes in the same transaction
+   * as its trusts — the last one, when there are more than a transaction
+   * holds, so a failure part-way leaves an account with fewer trusts and never
+   * trusts without an account. The trusts are read fresh: a memoized list from
+   * earlier in the request could predate one of them.
+   */
+  async delete(account_id: string): Promise<void> {
+    const trusts = await this.trusts.listByAccount(account_id, true);
+    const deletes = [
+      ...trusts.map((t) => ({
+        Delete: {
+          TableName: this.trusts.table,
+          Key: { account_id, identity: identityKey(t.issuer, t.subject) },
+        },
+      })),
+      { Delete: { TableName: this.table, Key: { account_id } } },
+    ];
+    const TRANSACTION_ITEMS = 100; // DynamoDB's ceiling per TransactWriteItems
+    for (let i = 0; i < deletes.length; i += TRANSACTION_ITEMS) {
+      await this.client.send(
+        new TransactWriteCommand({ TransactItems: deletes.slice(i, i + TRANSACTION_ITEMS) })
+      );
+    }
   }
 }
 
-// Type guards
-export const isIndividualAccount = (acc: Account): acc is IndividualAccount =>
-  acc.type === AccountType.INDIVIDUAL;
-
-export const isOrganizationalAccount = (
-  acc: Account
-): acc is OrganizationalAccount => acc.type === AccountType.ORGANIZATION;
+export { isIndividualAccount, isOrganizationalAccount, isServiceAccount };
 
 // Export a singleton instance
 export const accountsTable = new AccountsTable({});

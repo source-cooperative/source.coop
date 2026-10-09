@@ -11,7 +11,7 @@
  * authorization functions based on the action being performed.
  *
  * Key features:
- * - Granular permission checks for accounts, repositories, API keys, and memberships
+ * - Granular permission checks for accounts, repositories, and memberships
  * - Support for different account types (user, organization, service)
  * - Handling of various membership roles and states
  * - Special handling for admin users
@@ -37,8 +37,8 @@ import {
   AccountFlags,
   AccountType,
   Actions,
-  APIKey,
   DataConnection,
+  isServiceAccount,
   Membership,
   MembershipRole,
   MembershipState,
@@ -57,7 +57,6 @@ type ActionResourceMap = {
   [Actions.PutAccountFlags]: Account;
   [Actions.ListAccount]: Account;
   [Actions.DisableAccount]: Account;
-  [Actions.ListAccountAPIKeys]: Account;
   [Actions.ListAccountMemberships]: Account;
   [Actions.CreateAccount]: Account | "*";
 
@@ -69,14 +68,8 @@ type ActionResourceMap = {
   [Actions.DisableRepository]: Product;
   [Actions.ReadRepositoryData]: Product;
   [Actions.WriteRepositoryData]: Product;
-  [Actions.ListRepositoryAPIKeys]: Product;
   [Actions.ListRepositoryMemberships]: Product;
   [Actions.CreateRepository]: Product | "*";
-
-  // API Key actions
-  [Actions.GetAPIKey]: APIKey;
-  [Actions.CreateAPIKey]: APIKey;
-  [Actions.RevokeAPIKey]: APIKey;
 
   // Membership actions
   [Actions.GetMembership]: Membership;
@@ -141,11 +134,6 @@ export function isAuthorized(
 export function isAuthorized(
   principal: UserSession | null,
   resource: Account,
-  action: Actions.ListAccountAPIKeys
-): boolean;
-export function isAuthorized(
-  principal: UserSession | null,
-  resource: Account,
   action: Actions.ListAccountMemberships
 ): boolean;
 export function isAuthorized(
@@ -193,34 +181,12 @@ export function isAuthorized(
 export function isAuthorized(
   principal: UserSession | null,
   resource: Product,
-  action: Actions.ListRepositoryAPIKeys
-): boolean;
-export function isAuthorized(
-  principal: UserSession | null,
-  resource: Product,
   action: Actions.ListRepositoryMemberships
 ): boolean;
 export function isAuthorized(
   principal: UserSession | null,
   resource: Product | "*",
   action: Actions.CreateRepository
-): boolean;
-
-// API Key action overloads
-export function isAuthorized(
-  principal: UserSession | null,
-  resource: APIKey,
-  action: Actions.GetAPIKey
-): boolean;
-export function isAuthorized(
-  principal: UserSession | null,
-  resource: APIKey,
-  action: Actions.CreateAPIKey
-): boolean;
-export function isAuthorized(
-  principal: UserSession | null,
-  resource: APIKey,
-  action: Actions.RevokeAPIKey
 ): boolean;
 
 // Membership action overloads
@@ -349,18 +315,6 @@ export function isAuthorized(
       .with(Actions.PutAccountFlags, () =>
         putAccountFlags(principal, resource as ResourceForAction<Actions.PutAccountFlags>)
       )
-      .with(Actions.ListAccountAPIKeys, () =>
-        listAccountAPIKeys(principal, resource as ResourceForAction<Actions.ListAccountAPIKeys>)
-      )
-      .with(Actions.GetAPIKey, () =>
-        getAPIKey(principal, resource as ResourceForAction<Actions.GetAPIKey>)
-      )
-      .with(Actions.CreateAPIKey, () =>
-        createAPIKey(principal, resource as ResourceForAction<Actions.CreateAPIKey>)
-      )
-      .with(Actions.RevokeAPIKey, () =>
-        revokeAPIKey(principal, resource as ResourceForAction<Actions.RevokeAPIKey>)
-      )
       .with(Actions.GetMembership, () =>
         getMembership(principal, resource as ResourceForAction<Actions.GetMembership>)
       )
@@ -375,9 +329,6 @@ export function isAuthorized(
       )
       .with(Actions.InviteMembership, () =>
         inviteMembership(principal, resource as ResourceForAction<Actions.InviteMembership>)
-      )
-      .with(Actions.ListRepositoryAPIKeys, () =>
-        listRepositoryAPIKeys(principal, resource as ResourceForAction<Actions.ListRepositoryAPIKeys>)
       )
       .with(Actions.ListRepositoryMemberships, () =>
         listRepositoryMemberships(principal, resource as ResourceForAction<Actions.ListRepositoryMemberships>)
@@ -534,12 +485,56 @@ export function canManageAccount(
     return false;
   }
 
-  // hasRole treats the principal's own account as a match, so this also covers
-  // an individual account managing itself.
+  // hasRole treats a person's own account as a match, so this also covers an
+  // individual managing their own account.
   return hasRole(
     session,
     [MembershipRole.Owners, MembershipRole.Maintainers],
     account.account_id
+  );
+}
+
+/**
+ * Whether `session` may manage `account` as a service account — its
+ * integrations, memberships and lifecycle. That is whoever manages its
+ * `owner`, which the caller has fetched: the owner's owners and maintainers,
+ * or an individual owner themselves, or an admin. False for anything that is
+ * not a service account, and when `owner` is not its owner, whoever asks.
+ * A disabled service account is still managed this way, so it can be
+ * re-enabled or deleted; what may not happen to it while disabled (a new
+ * trust, a new key) is refused where that thing is attached. A disabled owner
+ * takes its service accounts out of reach with it, admins aside, and so does
+ * an owner without the CREATE_SERVICE_ACCOUNTS flag (see
+ * canManageAccountServiceAccounts).
+ */
+export function canManageServiceAccount(
+  session: UserSession | null,
+  account: Account,
+  owner: Account
+): boolean {
+  return (
+    isServiceAccount(account) &&
+    owner.account_id === account.owner_account_id &&
+    canManageAccountServiceAccounts(session, owner)
+  );
+}
+
+/**
+ * Whether `session` may create and manage service accounts *owned by*
+ * `account`. On top of managing the account, the account (individual or org)
+ * must hold the platform-granted CREATE_SERVICE_ACCOUNTS flag, which limits
+ * service accounts to the accounts an admin has opted in. Admins bypass the
+ * flag. The owner's flag is read, never the session's: a person with the flag
+ * does not carry it into an organization that lacks it.
+ */
+export function canManageAccountServiceAccounts(
+  session: UserSession | null,
+  account: Account
+): boolean {
+  return canManageWithFlag(
+    session,
+    account,
+    AccountFlags.CREATE_SERVICE_ACCOUNTS
   );
 }
 
@@ -558,17 +553,69 @@ export function canManageAccountDataConnections(
   session: UserSession | null,
   account: Account
 ): boolean {
+  return canManageWithFlag(
+    session,
+    account,
+    AccountFlags.CREATE_DATA_CONNECTIONS
+  );
+}
+
+/**
+ * Whether `session` manages `account` and `account` holds the platform-granted
+ * capability `flag`. The flag is read from the account being managed, never
+ * the session's own, and admins bypass it.
+ */
+function canManageWithFlag(
+  session: UserSession | null,
+  account: Account,
+  flag: AccountFlags
+): boolean {
   // canManageAccount already denies a disabled session or owner account.
   if (!canManageAccount(session, account)) {
     return false;
   }
 
-  // Admins bypass the platform-granted flag.
   if (isAdmin(session)) {
     return true;
   }
 
-  return !!account.flags?.includes(AccountFlags.CREATE_DATA_CONNECTIONS);
+  return !!account.flags?.includes(flag);
+}
+
+/**
+ * Whether `session` may create a product under `account` specifically.
+ *
+ * Distinct from `isAuthorized(session, "*", Actions.CreateRepository)`, which
+ * asks "can this user create a product *somewhere*" (used to gate the
+ * /products/new route). This asks about one particular account, so UI that
+ * lists several accounts — the account switcher, the owner picker on the
+ * creation form — can show "New product" only where it would actually work.
+ */
+export function canCreateProductForAccount(
+  session: UserSession | null,
+  account: Account
+): boolean {
+  return isAuthorized(
+    session,
+    { account_id: account.account_id } as Product,
+    Actions.CreateRepository
+  );
+}
+
+/**
+ * Whether a product appears in its account's profile listing. ListRepository
+ * keeps unlisted products out of strangers' view; a deactivated product stays
+ * listed for whoever can still open it, since the profile is where its owners
+ * go to find it.
+ */
+export function canListOnProfile(
+  session: UserSession | null,
+  product: Product
+): boolean {
+  return (
+    isAuthorized(session, product, Actions.ListRepository) ||
+    (product.disabled && isAuthorized(session, product, Actions.GetRepository))
+  );
 }
 
 function putAccountFlags(
@@ -650,9 +697,18 @@ function putAccountProfile(
     return false;
   }
 
-  // If the user is the account owner, they are authorized
-  if (principal?.account?.account_id === account.account_id) {
+  // A person may edit their own profile
+  if (isSelf(principal, account.account_id)) {
     return true;
+  }
+
+  // A service account's profile is managed by whoever manages its owner
+  if (isServiceAccount(account)) {
+    return hasRole(
+      principal,
+      [MembershipRole.Owners, MembershipRole.Maintainers],
+      account.owner_account_id
+    );
   }
 
   // If the account is not an organization, no one is authorized
@@ -933,6 +989,12 @@ function getAccountProfile(
   principal: UserSession | null,
   account: Account
 ): boolean {
+  // A service account has no profile: its page is not found for everyone,
+  // and whoever manages it reads it from its owner's settings instead.
+  if (isServiceAccount(account)) {
+    return false;
+  }
+
   // If the user is disabled, they are not authorized
   if (principal?.account?.disabled) {
     return false;
@@ -1009,6 +1071,15 @@ function disableAccount(
 
   if (account.type === AccountType.ORGANIZATION) {
     return hasRole(principal, [MembershipRole.Owners], account.account_id);
+  }
+
+  // A service account is disabled by whoever manages its owner
+  if (isServiceAccount(account)) {
+    return hasRole(
+      principal,
+      [MembershipRole.Owners, MembershipRole.Maintainers],
+      account.owner_account_id
+    );
   }
 
   return false;
@@ -1095,7 +1166,42 @@ function createRepository(
     return true;
   }
 
-  // If the user does not have the create repositories flag, they are not authorized
+  // Service accounts hold memberships; they do not own products.
+  if (isServiceAccount(principal.account)) {
+    return false;
+  }
+
+  // Org-wide owners and maintainers may create products under their org without
+  // needing CREATE_REPOSITORIES on their personal account — their role grants
+  // that right implicitly. We intentionally omit product_id here so that only
+  // org-wide memberships qualify; product-scoped memberships do not.
+  if (product !== "*" && principal.account.account_id !== product.account_id) {
+    if (
+      hasRole(
+        principal,
+        [MembershipRole.Owners, MembershipRole.Maintainers],
+        product.account_id
+      )
+    ) {
+      return true;
+    }
+  }
+
+  // For the wildcard check, also accept any active org-wide owner or maintainer.
+  if (product === "*") {
+    const hasOrgRole = principal?.memberships?.some(
+      (m) =>
+        m.state === MembershipState.Member &&
+        !m.repository_id &&
+        (m.role === MembershipRole.Owners ||
+          m.role === MembershipRole.Maintainers)
+    );
+    if (hasOrgRole) {
+      return true;
+    }
+  }
+
+  // For own-account creation without an org role, the flag is required.
   if (!principal?.account?.flags.includes(AccountFlags.CREATE_REPOSITORIES)) {
     return false;
   }
@@ -1124,6 +1230,11 @@ function createAccount(
 ): boolean {
   // If the user is disabled, they are not authorized
   if (principal?.account?.disabled) {
+    return false;
+  }
+
+  // A service account creates nothing
+  if (principal?.account && isServiceAccount(principal.account)) {
     return false;
   }
 
@@ -1168,75 +1279,16 @@ function createAccount(
     return false;
   }
 
-  // Let admins create service accounts
-  // NOTE: Service accounts are not supported yet
-  // if (account.type === AccountType.SERVICE) {
-  //   return isAdmin(principal);
-  // }
+  // A service account is created by whoever manages its owner
+  if (isServiceAccount(account)) {
+    return hasRole(
+      principal,
+      [MembershipRole.Owners, MembershipRole.Maintainers],
+      account.owner_account_id
+    );
+  }
 
   return false;
-}
-
-function createAPIKey(principal: UserSession | null, api_key: APIKey): boolean {
-  // If the user does not have an account, they are not authorized
-  if (!principal?.account) {
-    return false;
-  }
-
-  // If the user is disabled, they are not authorized
-  if (principal?.account?.disabled) {
-    return false;
-  }
-
-  // If the user is an admin, they are authorized
-  if (isAdmin(principal)) {
-    return true;
-  }
-
-  // If the user is the owner of the API key, they are authorized
-  if (api_key.account_id === principal.account.account_id) {
-    return true;
-  }
-
-  // If the user is an owner or maintainer of the organization, they are authorized
-  return hasRole(
-    principal,
-    [MembershipRole.Owners, MembershipRole.Maintainers],
-    api_key.account_id,
-    api_key.repository_id
-  );
-}
-
-function listAccountAPIKeys(
-  principal: UserSession | null,
-  account: Account
-): boolean {
-  // If the user does not have an account, they are not authorized
-  if (!principal?.account) {
-    return false;
-  }
-
-  // If the user is disabled, they are not authorized
-  if (principal?.account?.disabled) {
-    return false;
-  }
-
-  // If the user is an admin, they are authorized
-  if (isAdmin(principal)) {
-    return true;
-  }
-
-  // If the user is the owner of the API key, they are authorized
-  if (account.account_id === principal.account.account_id) {
-    return true;
-  }
-
-  // If the user is an owner or maintainer of the organization, they are authorized
-  return hasRole(
-    principal,
-    [MembershipRole.Owners, MembershipRole.Maintainers],
-    account.account_id
-  );
 }
 
 function listAccountMemberships(
@@ -1249,39 +1301,6 @@ function listAccountMemberships(
   }
 
   return true;
-}
-
-function listRepositoryAPIKeys(
-  principal: UserSession | null,
-  product: Product
-): boolean {
-  // If the user does not have an account, they are not authorized
-  if (!principal?.account) {
-    return false;
-  }
-
-  // If the user is disabled, they are not authorized
-  if (principal?.account?.disabled) {
-    return false;
-  }
-
-  // If the user is an admin, they are authorized
-  if (isAdmin(principal)) {
-    return true;
-  }
-
-  // If the user is the owner of the API key, they are authorized
-  if (product.account_id === principal.account.account_id) {
-    return true;
-  }
-
-  // If the user is an owner or maintainer of the organization, they are authorized
-  return hasRole(
-    principal,
-    [MembershipRole.Owners, MembershipRole.Maintainers],
-    product.account_id,
-    product.product_id
-  );
 }
 
 function listRepositoryMemberships(
@@ -1303,7 +1322,7 @@ function listRepositoryMemberships(
     return true;
   }
 
-  // If the user is the owner of the API key, they are authorized
+  // If the repository is under the user's account, they are authorized
   if (product.account_id === principal.account.account_id) {
     return true;
   }
@@ -1314,76 +1333,6 @@ function listRepositoryMemberships(
     [MembershipRole.Owners, MembershipRole.Maintainers],
     product.account_id,
     product.product_id
-  );
-}
-
-function revokeAPIKey(principal: UserSession | null, api_key: APIKey): boolean {
-  // If the user does not have an account, they are not authorized
-  if (!principal?.account) {
-    return false;
-  }
-
-  // If the user is disabled, they are not authorized
-  if (principal?.account?.disabled) {
-    return false;
-  }
-
-  // If the user is an admin, they are authorized
-  if (isAdmin(principal)) {
-    return true;
-  }
-
-  // If the API key is disabled, the user is not authorized
-  if (api_key.disabled) {
-    return false;
-  }
-
-  // If the user is the owner of the API key, they are authorized
-  if (api_key.account_id === principal.account.account_id) {
-    return true;
-  }
-
-  // If the user is an owner or maintainer of the organization, they are authorized
-  return hasRole(
-    principal,
-    [MembershipRole.Owners, MembershipRole.Maintainers],
-    api_key.account_id,
-    api_key.repository_id
-  );
-}
-
-function getAPIKey(principal: UserSession | null, api_key: APIKey): boolean {
-  // If the user does not have an account, they are not authorized
-  if (!principal?.account) {
-    return false;
-  }
-
-  // If the user is disabled, they are not authorized
-  if (principal?.account?.disabled) {
-    return false;
-  }
-
-  // If the user is an admin, they are authorized
-  if (isAdmin(principal)) {
-    return true;
-  }
-
-  // If the API key is disabled, the user is not authorized
-  if (api_key.disabled) {
-    return false;
-  }
-
-  // If the user is the owner of the API key, they are authorized
-  if (api_key.account_id === principal?.account?.account_id) {
-    return true;
-  }
-
-  // If the user is an owner or maintainer of the organization, they are authorized
-  return hasRole(
-    principal,
-    [MembershipRole.Owners, MembershipRole.Maintainers],
-    api_key.account_id,
-    api_key.repository_id
   );
 }
 
@@ -1547,14 +1496,27 @@ function inviteMembership(
   );
 }
 
+/**
+ * Whether `principal` is `account_id` acting on itself. Only a person gets
+ * this. A machine principal has an account id of its own too, but must never
+ * hold the owner's rights over itself — that is how it would grant itself
+ * memberships or rewrite its own profile.
+ */
+function isSelf(principal: UserSession | null, account_id: string): boolean {
+  return (
+    principal?.account?.account_id === account_id &&
+    principal.account.type === AccountType.INDIVIDUAL
+  );
+}
+
 function hasRole(
   principal: UserSession | null,
   roles: MembershipRole[],
   account_id: string,
   repository_id?: string
 ): boolean {
-  // If the user is the owner of the account, they are authorized
-  if (principal?.account?.account_id === account_id) {
+  // A person is authorized on their own account
+  if (isSelf(principal, account_id)) {
     return true;
   }
 
@@ -1602,6 +1564,10 @@ function hasRole(
  * @returns A boolean indicating whether the user is an admin.
  */
 export function isAdmin(session?: UserSession | null): boolean {
+  // A service account never acts as admin, whatever its flags say.
+  if (session?.account && isServiceAccount(session.account)) {
+    return false;
+  }
   if (session?.account?.flags) {
     return session?.account?.flags.includes(AccountFlags.ADMIN);
   } else {

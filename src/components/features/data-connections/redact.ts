@@ -13,7 +13,14 @@ import {
  * ARNs, workload-identity IDs) plus the discriminating `type`.
  */
 export type RedactedAuthentication =
-  | { type: DataConnectionAuthenticationType.S3AccessKey }
+  | {
+      type: DataConnectionAuthenticationType.S3AccessKey;
+      // An identifier, not a secret: it appears in ARNs, logs and the AWS
+      // console. Kept for the same reason role_arn and client_id are — the edit
+      // form has to be able to show which credential is configured. The paired
+      // secret_access_key is what never leaves the server.
+      access_key_id: string;
+    }
   | { type: DataConnectionAuthenticationType.AzureSasToken }
   | { type: DataConnectionAuthenticationType.S3WebIdentityRole; role_arn: string }
   | {
@@ -51,6 +58,7 @@ function redactAuthentication(
         client_id: auth.client_id,
       };
     case DataConnectionAuthenticationType.S3AccessKey:
+      return { type: auth.type, access_key_id: auth.access_key_id };
     case DataConnectionAuthenticationType.AzureSasToken:
       return { type: auth.type };
   }

@@ -1,13 +1,8 @@
 import { ProductCreationForm } from "@/components/features/products/ProductCreationForm";
 import { accountsTable, getPageSession, membershipsTable } from "@/lib";
-import { isAuthorized } from "@/lib/api/authz";
+import { canCreateProductForAccount, isAuthorized } from "@/lib/api/authz";
 import { listUsableDataConnections } from "@/lib/data-connections";
-import {
-  Actions,
-  DataConnectionObjectSchema,
-  MembershipRole,
-  MembershipState,
-} from "@/types";
+import { Actions, DataConnectionObjectSchema, MembershipState } from "@/types";
 import { Heading, Text } from "@radix-ui/themes";
 import { FormTitle } from "@/components/core";
 
@@ -47,30 +42,22 @@ export default async function NewProductPage({
   const memberships = await membershipsTable.listByUser(
     session.account.account_id
   );
-  // Only accounts this user may actually create products under. A read-data
-  // member can't (createRepository requires owner/maintainer), and a membership
-  // scoped to one product doesn't reach the account at all — offering either
-  // would both present an owner createProduct rejects and, since this list also
-  // scopes the connections below, expose that account's storage details.
-  const potentialOwnerAccounts = [
+  const candidateOwnerAccounts = [
     session.account,
     ...(await accountsTable.fetchManyByIds(
       memberships
-        .filter(
-          (membership) =>
-            membership.state === MembershipState.Member &&
-            !membership.repository_id &&
-            (membership.role === MembershipRole.Owners ||
-              membership.role === MembershipRole.Maintainers)
-        )
+        .filter((membership) => membership.state === MembershipState.Member)
         .map((membership) => membership.membership_account_id)
     )),
   ];
+  // Only accounts the user can actually create a product under (self with the
+  // flag, or an org they own/maintain) — a read/write-data membership doesn't
+  // qualify, even though it makes the account "potential" above.
+  const potentialOwnerAccounts = candidateOwnerAccounts.filter((account) =>
+    canCreateProductForAccount(session, account)
+  );
 
-  // Only connections usable by an account this user can create products under —
-  // an owned connection exposes its account's bucket names and prefixes, so the
-  // form's owner filter must not be the only one. Strip credentials before
-  // handing what remains to the client component.
+  // Strip credentials before handing connections to the client component.
   const dataConnections = (
     await listUsableDataConnections(
       session,

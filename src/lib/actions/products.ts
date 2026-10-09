@@ -12,6 +12,7 @@ import {
 import { getPageSession, LOGGER } from "@/lib";
 import { FormState } from "@/components/core/DynamicForm";
 import { isAuthorized, isAdmin } from "../api/authz";
+import { denyDataConnectionFor } from "@/lib/data-connections";
 import { revalidatePath } from "next/cache";
 import { productUrl, editProductDetailsUrl, accountUrl } from "@/lib/urls";
 import { getProxyCredentials } from "@/lib/actions/proxy-credentials";
@@ -171,33 +172,33 @@ export async function createProduct(
     };
   }
 
-  // Enforce that the user may create products against this connection
-  // (connections gated behind an account flag).
-  if (!isAuthorized(session, dataConnection, Actions.UseDataConnection)) {
-    return {
-      fieldErrors: {},
-      data: formData,
-      message: "You are not permitted to use the selected data connection",
-      success: false,
-    };
-  }
-
-  // Enforce that the connection is available for the product's account. An
-  // owned connection may only be used by the account that owns it.
-  if (
-    dataConnection.owner &&
-    dataConnection.owner !== validatedFields.data.account_id
+  // Enforce that this connection may back a product under this account, and
+  // report each denial reason as its own field error.
+  switch (
+    denyDataConnectionFor(
+      session,
+      dataConnection,
+      validatedFields.data.account_id
+    )
   ) {
-    return {
-      fieldErrors: {
-        data_connection_id: [
-          "Selected data connection is not available for this account",
-        ],
-      },
-      data: formData,
-      message: "Invalid data connection for this account",
-      success: false,
-    };
+    case "not-usable":
+      return {
+        fieldErrors: {},
+        data: formData,
+        message: "You are not permitted to use the selected data connection",
+        success: false,
+      };
+    case "wrong-account":
+      return {
+        fieldErrors: {
+          data_connection_id: [
+            "Selected data connection is not available for this account",
+          ],
+        },
+        data: formData,
+        message: "Invalid data connection for this account",
+        success: false,
+      };
   }
 
   // Enforce the connection's allowed visibilities. Even though the form only

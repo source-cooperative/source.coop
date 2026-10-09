@@ -9,8 +9,8 @@ import {
   useCallback,
   useRef,
 } from "react";
-import { S3UploadService } from "@/lib/services/s3-upload";
-import { getTemporaryCredentials } from "@/lib";
+import { S3UploadService, type DeleteProgress } from "@/lib/services/s3-upload";
+import { getTemporaryCredentials } from "@/lib/actions/credentials";
 import { useS3Credentials } from "./CredentialsProvider";
 import type { CredentialsScope } from "./CredentialsProvider";
 import { useBeforeUnload } from "@/hooks/useBeforeUnload";
@@ -23,6 +23,16 @@ import {
 export type { UploadStatus, CredentialsScope };
 export type ScopedUploadItem = QueuedUpload;
 
+/** A file or folder delete running in the background. */
+export interface DeleteJob extends DeleteProgress {
+  id: string;
+  scope: CredentialsScope;
+  path: string;
+  isDirectory: boolean;
+  status: "deleting" | "completed" | "error";
+  error?: string;
+}
+
 interface UploadContextType {
   uploads: ScopedUploadItem[];
   hasActiveUploads: boolean;
@@ -34,8 +44,16 @@ interface UploadContextType {
   cancelUpload: (id: string) => Promise<void>;
   cancelAllUploads: (scope?: CredentialsScope) => Promise<void>;
   retryUpload: (id: string) => Promise<void>;
-  deleteObject: (key: string, scope: CredentialsScope) => Promise<void>;
-  deletePrefix: (prefix: string, scope: CredentialsScope) => Promise<void>;
+  deletions: DeleteJob[];
+  hasActiveDeletions: boolean;
+  /** Start a delete in the background. Resolves once it completes, rejects
+      on failure; either way the job's state is in `deletions`. */
+  deletePath: (
+    path: string,
+    isDirectory: boolean,
+    scope: CredentialsScope
+  ) => Promise<void>;
+  dismissDeletion: (id: string) => void;
   clearUploads: (status?: UploadStatus, scope?: CredentialsScope) => void;
   clearAllUploads: (scope?: CredentialsScope) => void;
   getUploadsForScope: (scope: CredentialsScope) => ScopedUploadItem[];
@@ -54,6 +72,7 @@ const s3ServiceKey = (scope: CredentialsScope) =>
 export function UploadProvider({ children }: UploadProviderProps) {
   const { getAllCredentials } = useS3Credentials();
   const [uploads, setUploads] = useState<ScopedUploadItem[]>([]);
+  const [deletions, setDeletions] = useState<DeleteJob[]>([]);
   const [s3Services, setS3Services] = useState<Map<string, S3UploadService>>(
     new Map()
   );
@@ -76,11 +95,12 @@ export function UploadProvider({ children }: UploadProviderProps) {
     (u) => u.status === "uploading" || u.status === "queued"
   );
   const hasActiveUploads = activeUploads.length > 0;
+  const hasActiveDeletions = deletions.some((d) => d.status === "deleting");
 
-  // Warn before leaving page if uploads are in progress
+  // Both run in this tab; leaving it stops them part-way.
   useBeforeUnload(
-    hasActiveUploads,
-    "You have uploads in progress that will be lost if you leave."
+    hasActiveUploads || hasActiveDeletions,
+    "Uploads or deletes in progress will be interrupted if you leave."
   );
 
   // Sync credentials to S3 services
@@ -152,25 +172,63 @@ export function UploadProvider({ children }: UploadProviderProps) {
     await queueRef.current!.retry(id);
   }, []);
 
-  const deleteObject = useCallback(
-    async (key: string, scope: CredentialsScope) => {
+  const deletePath = useCallback(
+    async (path: string, isDirectory: boolean, scope: CredentialsScope) => {
       const s3Service = getS3Service(scope);
       if (!s3Service)
-        throw new Error(`No S3 service available for scope ${s3ServiceKey(scope)}`);
-      await s3Service.deleteObject(key);
+        throw new Error(
+          `No S3 service available for scope ${s3ServiceKey(scope)}`
+        );
+      const id = crypto.randomUUID();
+      const update = (patch: Partial<DeleteJob>) =>
+        setDeletions((prev) =>
+          prev.map((d) => (d.id === id ? { ...d, ...patch } : d))
+        );
+      // A retry of the same path replaces its earlier (failed) job.
+      setDeletions((prev) => [
+        ...prev.filter(
+          (d) =>
+            d.path !== path || s3ServiceKey(d.scope) !== s3ServiceKey(scope)
+        ),
+        {
+          id,
+          scope,
+          path,
+          isDirectory,
+          status: "deleting",
+          deleted: 0,
+          total: isDirectory ? 0 : 1,
+          counting: isDirectory,
+        },
+      ]);
+      try {
+        if (isDirectory) {
+          await s3Service.deletePrefix(path, update);
+        } else {
+          await s3Service.deleteObject(path);
+          update({ deleted: 1 });
+        }
+        update({ status: "completed" });
+      } catch (error) {
+        const reason =
+          error instanceof Error ? error.message : "request failed";
+        // A folder delete is per-batch and non-atomic, so a mid-way failure
+        // leaves some objects gone and the rest intact.
+        update({
+          status: "error",
+          error: isDirectory
+            ? `Delete may be partial — ${reason}. Retry to remove remaining items.`
+            : `Delete failed — ${reason}. Please retry.`,
+        });
+        throw error;
+      }
     },
     [s3Services]
   );
 
-  const deletePrefix = useCallback(
-    async (prefix: string, scope: CredentialsScope) => {
-      const s3Service = getS3Service(scope);
-      if (!s3Service)
-        throw new Error(`No S3 service available for scope ${s3ServiceKey(scope)}`);
-      await s3Service.deletePrefix(prefix);
-    },
-    [s3Services]
-  );
+  const dismissDeletion = useCallback((id: string) => {
+    setDeletions((prev) => prev.filter((d) => d.id !== id));
+  }, []);
 
   const clearUploads = useCallback(
     (status?: UploadStatus, scope?: CredentialsScope) => {
@@ -204,8 +262,10 @@ export function UploadProvider({ children }: UploadProviderProps) {
     cancelUpload,
     cancelAllUploads,
     retryUpload,
-    deleteObject,
-    deletePrefix,
+    deletions,
+    hasActiveDeletions,
+    deletePath,
+    dismissDeletion,
     clearUploads,
     clearAllUploads,
     getUploadsForScope,

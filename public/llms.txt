@@ -1,0 +1,31 @@
+# Source Cooperative
+
+> Source Cooperative is a neutral, non-profit data-sharing platform run by Radiant Earth. Organizations and individuals publish data products — mostly geospatial and scientific datasets in cloud-native formats — and anyone can read public products over HTTP or an S3-compatible API, without an account.
+
+A product is addressed as `{account_id}/{product_id}`, for example `kerner-lab/fields-of-the-world`. The same pair appears in every interface:
+
+- Product page: `https://source.coop/{account_id}/{product_id}`
+- Product metadata as JSON: `https://source.coop/api/v1/products/{account_id}/{product_id}`
+- An account's public products as JSON: `https://source.coop/api/v1/products/{account_id}`
+- Files, over HTTP: `https://data.source.coop/{account_id}/{product_id}/{path}`
+- Files, over S3: bucket `{account_id}`, key prefix `{product_id}/`, endpoint `https://data.source.coop`; public products need no credentials (`aws s3 ls s3://{account_id}/{product_id}/ --endpoint-url https://data.source.coop --no-sign-request`)
+
+Read files through `data.source.coop` rather than by following the file browser under a product page. Most products have a `README.md` at the root of their files, which is the best description of what the data is and how it is laid out.
+
+## Docs
+
+- [What is Source Cooperative](https://docs.source.coop/what-is-source): what the platform is for and who runs it
+- [Core concepts](https://docs.source.coop/core-concepts): accounts, organizations, products and data connections
+- [Access data](https://docs.source.coop/data-proxy): reading products through the S3-compatible data proxy, anonymously or with credentials
+- [Create a data product](https://docs.source.coop/create-a-data-product): publishing a new product
+
+## Tools
+
+- [Source CLI](https://github.com/source-cooperative/source-coop-cli): logs in and supplies temporary S3 credentials for private products and uploads
+- [Upload with the CLI](https://docs.source.coop/upload-with-the-cli): one-time setup and upload commands
+- [Automated access](https://docs.source.coop/automated-access): service accounts for software that runs with nobody there to log in
+
+## Optional
+
+- [Bring your own bucket](https://docs.source.coop/bring-your-own-bucket): serving a product from storage the publisher already owns
+- [Sitemap](https://source.coop/sitemap.xml): every public product page

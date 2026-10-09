@@ -3,8 +3,6 @@ import {
   UserSession,
   Membership,
   MembershipSchema,
-  APIKey,
-  APIKeySchema,
   Product,
   ProductSchema,
   DataConnection,
@@ -55,11 +53,6 @@ export const accounts: Account[] = loadAndValidateJson(
   z.array(AccountSchema)
 );
 
-export const apiKeys: APIKey[] = loadAndValidateJson(
-  path.join("fixtures", "api-keys.json"),
-  z.array(APIKeySchema)
-);
-
 export const memberships: Membership[] = loadAndValidateJson(
   path.join("fixtures", "memberships.json"),
   z.array(MembershipSchema)
@@ -84,7 +77,8 @@ export const sessions: Record<string, UserSession | null> = {
 };
 
 for (const account of accounts) {
-  if (account.type != AccountType.INDIVIDUAL) {
+  // Organizations never authenticate; people and service accounts do.
+  if (account.type === AccountType.ORGANIZATION) {
     continue;
   }
 
@@ -97,7 +91,7 @@ for (const account of accounts) {
 
   sessions[account.account_id] = {
     account: account,
-    identity_id: account.identity_id,
+    identity_id: account.identity_id ?? null,
     memberships: accountMemberships,
   };
 }
@@ -108,9 +102,4 @@ for (const product of products) {
     mappedProducts[product.account_id] = {};
   }
   mappedProducts[product.account_id][product.product_id] = product;
-}
-
-export const mappedAPIKeys: Record<string, APIKey> = {};
-for (const apiKey of apiKeys) {
-  mappedAPIKeys[apiKey.access_key_id] = apiKey;
 }

@@ -1,5 +1,5 @@
 import { Box, Flex } from "@radix-ui/themes";
-import { Skeleton } from "@/components/core";
+import { Skeleton } from "@/components/core/Skeleton";
 
 export default function DirectoryListLoading() {
   return (

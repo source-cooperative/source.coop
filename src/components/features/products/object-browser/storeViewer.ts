@@ -1,6 +1,6 @@
 import "server-only";
 
-import { LOGGER } from "@/lib";
+import { LOGGER } from "@/lib/logging";
 import { fileSourceUrl } from "@/lib/urls";
 import { getStorageClient } from "@/lib/clients/storage";
 import type { ProxyCredentials } from "@/lib/actions/proxy-credentials";

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Tooltip } from "@radix-ui/themes";
+import { Theme, Tooltip } from "@radix-ui/themes";
 import { CONFIG } from "@/lib/config";
 import Globe, { GlobeMethods } from "react-globe.gl";
 import {
@@ -12,6 +12,7 @@ import {
   MeshPhongMaterial,
   Object3D,
   SphereGeometry,
+  Texture,
   TextureLoader,
   Vector2,
   Vector3,
@@ -59,6 +60,23 @@ const MAX_DOT_SCALE = 3; // busiest-datacenter dot grows up to 3x the base size
 
 // Monotonic ID counter — shared across instances, but always unique
 let nextPointId = 0;
+
+// The clouds texture, requested as soon as this module evaluates.
+//
+// three-globe only fires onGlobeReady once its own globeImageUrl texture has
+// finished loading, so anything that waits on the globe — including this
+// component's scene-setup effect — queues the clouds behind a completed
+// download instead of alongside it. Even a mount effect here is too late:
+// React runs the <Globe> child's effect, and three-globe's synchronous scene
+// build, before any effect of ours. Module scope is the one point that beats
+// both, and this module is only ever imported to render the globe.
+//
+// Never disposed: it outlives any single mount so a remount reuses it.
+const cloudsTexture = new Promise<Texture>((resolve) => {
+  new TextureLoader().load("/img/clouds.webp", resolve, undefined, () => {
+    // Leave the promise pending — same as before: no texture, no clouds.
+  });
+});
 
 // Cheap structural compare for the top-products list (≤5 entries) so the
 // selected popup only re-renders when its contents actually change.
@@ -160,7 +178,7 @@ export function LiveGlobe({
 
       // Add clouds
       if (showClouds) {
-        new TextureLoader().load("/img/clouds.png", (texture) => {
+        cloudsTexture.then((texture) => {
           if (cancelled || !globe) return;
           clouds = new Mesh(
             new SphereGeometry(
@@ -169,7 +187,7 @@ export function LiveGlobe({
               75,
             ),
             new MeshPhongMaterial({
-              map: texture,
+              alphaMap: texture,
               transparent: true,
               opacity: 0.3,
             }),
@@ -320,8 +338,9 @@ export function LiveGlobe({
             _pointVec.set(pos3d.x, pos3d.y, pos3d.z);
             _projVec.copy(_pointVec); // save unnormalized for projection
             _camToPoint.copy(_pointVec).sub(camera.position);
-            const cosAngle =
-              -_pointVec.normalize().dot(_camToPoint.normalize());
+            const cosAngle = -_pointVec
+              .normalize()
+              .dot(_camToPoint.normalize());
             if (cosAngle <= 0) {
               el.style.display = "none";
               continue;
@@ -430,9 +449,7 @@ export function LiveGlobe({
         ditherPassRef.current = null;
         if (clouds) {
           globe?.scene().remove(clouds);
-          const mat = clouds.material as MeshPhongMaterial;
-          mat.map?.dispose();
-          mat.dispose();
+          (clouds.material as MeshPhongMaterial).dispose();
           clouds.geometry.dispose();
         }
         // Clear overlay DOM
@@ -533,7 +550,7 @@ export function LiveGlobe({
           width={width}
           height={height}
           backgroundColor="rgba(0,0,0,0)"
-          globeImageUrl="/img/earth-blue-marble.jpg"
+          globeImageUrl="/img/earth-blue-marble.webp"
           showAtmosphere={false}
           onGlobeReady={() => {
             globeReadyRef.current = true;
@@ -545,35 +562,39 @@ export function LiveGlobe({
       </div>
       {selected &&
         createPortal(
-          <div
-            className={styles.popup}
-            style={{
-              left: selected.x,
-              top: selected.y,
-            }}
-          >
-            {selected.location && (
-              <div className={styles.popupLocation}>{selected.location}</div>
-            )}
-            {selected.products.length > 0 && (
-              <div className={styles.popupProducts}>
-                {selected.products.map(([name, n]) => (
-                  <Tooltip
-                    key={name}
-                    className={styles.tooltipContent}
-                    content={`${n.toLocaleString()} ${n === 1 ? "request" : "requests"}`}
-                  >
-                    <a href={`/${name}`} className={styles.popupLink}>
-                      <span className={styles.popupName}>{name}</span>
-                      <span className={styles.popupArrow} aria-hidden="true">
-                        →
-                      </span>
-                    </a>
-                  </Tooltip>
-                ))}
-              </div>
-            )}
-          </div>,
+          // The portal leaves the app's Theme root; a nested Theme carries its
+          // appearance (and so its colors) out to document.body.
+          <Theme asChild>
+            <div
+              className={styles.popup}
+              style={{
+                left: selected.x,
+                top: selected.y,
+              }}
+            >
+              {selected.location && (
+                <div className={styles.popupLocation}>{selected.location}</div>
+              )}
+              {selected.products.length > 0 && (
+                <div className={styles.popupProducts}>
+                  {selected.products.map(([name, n]) => (
+                    <Tooltip
+                      key={name}
+                      className={styles.tooltipContent}
+                      content={`${n.toLocaleString()} ${n === 1 ? "request" : "requests"}`}
+                    >
+                      <a href={`/${name}`} className={styles.popupLink}>
+                        <span className={styles.popupName}>{name}</span>
+                        <span className={styles.popupArrow} aria-hidden="true">
+                          →
+                        </span>
+                      </a>
+                    </Tooltip>
+                  ))}
+                </div>
+              )}
+            </div>
+          </Theme>,
           document.body,
         )}
     </>

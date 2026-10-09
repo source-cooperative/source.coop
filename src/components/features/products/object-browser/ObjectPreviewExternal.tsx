@@ -1,6 +1,6 @@
 import "server-only";
 
-import { LOGGER } from "@/lib";
+import { LOGGER } from "@/lib/logging";
 import { fileSourceUrl } from "@/lib/urls";
 import { Code } from "@radix-ui/themes";
 import { getExtension } from "@/lib/files";

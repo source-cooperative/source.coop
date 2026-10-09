@@ -109,8 +109,12 @@ export class Logger {
 
 export const LOGGER = Logger.getInstance(CONFIG.environment.isDevelopment);
 LOGGER.registerSensitiveValue(CONFIG.auth.accessToken);
+// A literal, not `__filename`: that is a CommonJS global, and this line runs at
+// import time. Any browser bundle that reached this module -- through a server
+// action, a barrel, or the uploader -- threw `__filename is not defined` before
+// rendering anything, which is why so many components could not be storied.
 LOGGER.debug("Loaded Config", {
   operation: "config",
-  context: __filename,
+  context: "src/lib/logging.ts",
   metadata: { CONFIG },
 });

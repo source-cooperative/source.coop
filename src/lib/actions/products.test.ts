@@ -184,6 +184,10 @@ describe("createProduct", () => {
     const result = await createProduct(undefined, buildFormData());
 
     expect(result.success).toBe(false);
+    expect(result.message).toBe(
+      "You are not permitted to use the selected data connection"
+    );
+    expect(result.fieldErrors).toEqual({});
     expect(productsTable.create).not.toHaveBeenCalled();
   });
 
@@ -210,7 +214,10 @@ describe("createProduct", () => {
     );
 
     expect(result.success).toBe(false);
-    expect(result.fieldErrors.data_connection_id).toBeDefined();
+    expect(result.message).toBe("Invalid data connection for this account");
+    expect(result.fieldErrors.data_connection_id).toEqual([
+      "Selected data connection is not available for this account",
+    ]);
     expect(productsTable.create).not.toHaveBeenCalled();
   });
 

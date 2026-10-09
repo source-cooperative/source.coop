@@ -39,22 +39,16 @@ export function DeleteDataConnectionButton({
   return (
     <AlertDialog.Root>
       <AlertDialog.Trigger>
-        <Button size="2" color="red" variant="soft">
-          Delete
+        <Button size="2" color="red" variant="soft" disabled={inUse}>
+          Delete connection
         </Button>
       </AlertDialog.Trigger>
       <AlertDialog.Content maxWidth="450px">
-        <AlertDialog.Title>Delete Data Connection</AlertDialog.Title>
-        <AlertDialog.Description>
-          Are you sure you want to delete this data connection? This action
-          cannot be undone.
+        <AlertDialog.Title>Delete this connection?</AlertDialog.Title>
+        <AlertDialog.Description size="2">
+          This removes the connection record and its stored credentials. The
+          bucket and its objects are not touched. It cannot be undone.
         </AlertDialog.Description>
-        {inUse && (
-          <Text as="p" size="1" color="red" mt="2">
-            You cannot delete a connection while products are using it — remove
-            it from all products first.
-          </Text>
-        )}
         <Flex gap="3" mt="4" justify="end">
           <AlertDialog.Cancel>
             <Button variant="soft" color="gray">

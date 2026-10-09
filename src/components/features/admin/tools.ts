@@ -33,7 +33,7 @@ export const ADMIN_TOOLS: AdminTool[] = [
   },
   {
     name: "User Lookup",
-    description: "Find a user by email and open their profile.",
+    description: "Find a user by username, name, or email and open their profile.",
     href: adminUserLookupUrl(),
     Icon: MagnifyingGlassIcon,
   },

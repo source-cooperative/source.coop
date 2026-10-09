@@ -95,7 +95,7 @@ export function BreadcrumbNav({
   }
 
   return (
-    <Flex>
+    <Flex align="center" wrap="wrap">
       {/* Root link */}
       <div style={{ lineHeight: "22px" }}>
         {isRoot ? (

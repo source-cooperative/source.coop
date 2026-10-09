@@ -46,8 +46,9 @@ export function AccountFlagsForm({ session, account }: AccountFlagsFormProps) {
 
   const isOrganization = account.type === AccountType.ORGANIZATION;
 
-  // Organizations can only be granted the data-connection capability; the other
-  // flags (repositories, organizations, admin) are individual-account concerns.
+  // Organizations can only be granted the data-connection and service-account
+  // capabilities; the other flags (products, organizations, admin) are
+  // individual-account concerns.
   const fields: Array<[AccountFlags, string, string]> = isOrganization
     ? [
         [
@@ -55,12 +56,17 @@ export function AccountFlagsForm({ session, account }: AccountFlagsFormProps) {
           "Create Data Connections",
           "Allows this organization to create and manage its own data connections to external storage.",
         ],
+        [
+          AccountFlags.CREATE_SERVICE_ACCOUNTS,
+          "Create Service Accounts",
+          "Allows this organization to create and manage service accounts for its software and pipelines.",
+        ],
       ]
     : [
         [
           AccountFlags.CREATE_REPOSITORIES,
-          "Create Repositories",
-          "Allows this account to create new repositories and manage repository settings.",
+          "Create Products",
+          "Allows this account to create new products and manage product settings.",
         ],
         [
           AccountFlags.CREATE_ORGANIZATIONS,
@@ -72,13 +78,18 @@ export function AccountFlagsForm({ session, account }: AccountFlagsFormProps) {
           "Create Data Connections",
           "Allows this account to create and manage its own data connections to external storage.",
         ],
+        [
+          AccountFlags.CREATE_SERVICE_ACCOUNTS,
+          "Create Service Accounts",
+          "Allows this account to create and manage service accounts for its software and pipelines.",
+        ],
       ];
 
   if (!isOrganization && isAdmin(session)) {
     fields.push([
       AccountFlags.ADMIN,
       "Administrator",
-      "Full administrative access to the platform. Can manage all accounts, repositories, and system settings.",
+      "Full administrative access to the platform. Can manage all accounts, products, and system settings.",
     ]);
   }
 
@@ -90,10 +101,14 @@ export function AccountFlagsForm({ session, account }: AccountFlagsFormProps) {
         name,
         description,
         type: "custom" as const,
-        customComponent: (
+        // Function form: the checkbox itself takes aria-describedby, so each
+        // flag's explanation is announced with it. As a plain node the ids had
+        // nowhere to land and the description sat unassociated.
+        customComponent: (controlProps) => (
           <Label.Root htmlFor={name}>
             <Flex align="center" gap="2">
               <Checkbox
+                {...controlProps}
                 name={name}
                 id={name}
                 checked={flagValues[name]}
@@ -112,7 +127,6 @@ export function AccountFlagsForm({ session, account }: AccountFlagsFormProps) {
       }))}
       action={updateAccountFlags}
       disabled={disabled}
-      submitButtonText="Update"
       initialValues={initialValues}
       hiddenFields={{ account_id: account.account_id }}
     />
