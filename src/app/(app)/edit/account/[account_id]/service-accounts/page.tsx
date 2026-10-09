@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Box, Button, Flex } from "@radix-ui/themes";
 import { PlusIcon } from "@radix-ui/react-icons";
+import { getTranslations } from "next-intl/server";
 import { FormTitle } from "@/components/core/FormTitle";
 import { ServiceAccountList } from "@/components/features/service-accounts";
 import {
@@ -16,7 +17,10 @@ import { canManageAccountServiceAccounts } from "@/lib/api/authz";
 import { createServiceAccountUrl } from "@/lib/urls";
 import { MembershipState, publicKey, type ServiceAccountSummary } from "@/types";
 
-export const metadata: Metadata = { title: "Service accounts" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("ServiceAccountsPage");
+  return { title: t("metaTitle") };
+}
 
 interface PageProps {
   params: Promise<{ account_id: string }>;
@@ -41,17 +45,18 @@ export default async function ServiceAccountsPage({ params }: PageProps) {
       keys: (await serviceAccountKeysTable.listByAccount(account.account_id)).map(publicKey),
     }))
   );
+  const t = await getTranslations("ServiceAccountsPage");
 
   return (
     <Box>
       <Flex justify="between" align="start" gap="3" mb="4">
         <FormTitle
-          title="Service Accounts"
-          description="Logins for software — a nightly sync, a publishing pipeline, an instrument — granted and revoked without sharing anyone's account."
+          title={t("title")}
+          description={t("description")}
         />
         <Button asChild size="2" highContrast>
           <Link href={createServiceAccountUrl(account_id)}>
-            <PlusIcon width="16" height="16" /> New service account
+            <PlusIcon width="16" height="16" /> {t("newServiceAccount")}
           </Link>
         </Button>
       </Flex>

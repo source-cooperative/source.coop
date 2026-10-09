@@ -4,13 +4,15 @@ import { Box } from "@radix-ui/themes";
 import { EditProfileForm } from "@/components/features/profiles/EditProfileForm";
 import { FormTitle } from "@/components/core/FormTitle";
 import { accountsTable } from "@/lib/clients/database";
+import { getTranslations } from "next-intl/server";
 
 export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
   const { account_id } = await params;
   const account = await accountsTable.fetchById(account_id);
-  return { title: `Edit ${account!.name} profile` };
+  const t = await getTranslations("EditAccountProfilePage");
+  return { title: t("metaTitle", { name: account!.name }) };
 }
 
 interface PageProps {
@@ -24,14 +26,15 @@ export default async function ProfilePage({ params }: PageProps) {
   if (!account) {
     notFound();
   }
+  const t = await getTranslations("EditAccountProfilePage");
   return (
     <Box>
       <FormTitle
-        title="Public Profile"
+        title={t("title")}
         description={
           account.type === "individual"
-            ? "Update your public profile information"
-            : "Update your organization's public profile information"
+            ? t("descriptionIndividual")
+            : t("descriptionOrganization")
         }
       />
       <EditProfileForm account={account} />

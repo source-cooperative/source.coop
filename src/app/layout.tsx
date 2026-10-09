@@ -5,7 +5,7 @@ import { SessionProvider } from "@ory/elements-react/client";
 import NextTopLoader from "nextjs-toploader";
 import { IBM_Plex_Sans } from "next/font/google";
 import { S3CredentialsProvider, UploadProvider } from "@/components";
-import { metadata } from "./metadata";
+import { generateMetadata } from "./metadata";
 import { CONFIG } from "@/lib/config";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale } from "next-intl/server";
@@ -15,7 +15,7 @@ const ibmPlexSans = IBM_Plex_Sans({
   variable: "--font-ibm-plex",
 });
 
-export { metadata };
+export { generateMetadata };
 
 interface RootLayoutProps {
   children: React.ReactNode;

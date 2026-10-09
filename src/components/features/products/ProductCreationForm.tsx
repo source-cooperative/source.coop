@@ -7,20 +7,16 @@ import { Account, DataConnection } from "@/types";
 import { Product, ProductVisibility } from "@/types/product";
 import { useProductIdValidation } from "@/hooks/useIdValidation";
 import { createProduct, updateProduct } from "@/lib/actions/products";
+import { useFormatter, useTranslations } from "next-intl";
 
-const VISIBILITY_LABELS: Record<ProductVisibility, string> = {
-  [ProductVisibility.Public]: "Public",
-  [ProductVisibility.Unlisted]: "Unlisted",
-  [ProductVisibility.Restricted]: "Restricted",
-};
+type Translator = ReturnType<typeof useTranslations<"ProductCreationForm">>;
+type Formatter = ReturnType<typeof useFormatter>;
 
-const VISIBILITY_DESCRIPTIONS: Record<ProductVisibility, string> = {
-  [ProductVisibility.Public]:
-    "Anyone can find and download it. Appears in search and the product feed.",
-  [ProductVisibility.Unlisted]:
-    "Anyone with the link can download it. Hidden from search and the feed.",
-  [ProductVisibility.Restricted]: "Members of this product only.",
-};
+const VISIBILITY_KEYS = {
+  [ProductVisibility.Public]: "public",
+  [ProductVisibility.Unlisted]: "unlisted",
+  [ProductVisibility.Restricted]: "restricted",
+} as const satisfies Record<ProductVisibility, string>;
 
 // Fallback when no data connection is selected (e.g. legacy products in edit
 // mode whose connection can no longer be resolved).
@@ -63,14 +59,26 @@ function pickDefaultConnection(
 }
 
 // "AWS Open Data (us-west-2) · Public, Unlisted · Read Only"
-function describeConnection(connection: DataConnection): string {
+function describeConnection(
+  connection: DataConnection,
+  t: Translator,
+  format: Formatter
+): string {
   const visibilities =
-    connection.allowed_visibilities.map((v) => VISIBILITY_LABELS[v]).join(", ") ||
-    "no visibilities";
+    format.list(
+      connection.allowed_visibilities.map((v) =>
+        t(`visibility.${VISIBILITY_KEYS[v]}.label`)
+      ),
+      // Narrow conjunction is the bare comma list ("Public, Unlisted") in English.
+      { type: "conjunction", style: "narrow" }
+    ) || t("noVisibilities");
   const region = regionOf(connection);
   const location = region ? ` (${region})` : "";
-  const readOnly = connection.read_only ? " · Read Only" : "";
-  return `${connection.name}${location} · ${visibilities}${readOnly}`;
+  return t(connection.read_only ? "connectionOptionReadOnly" : "connectionOption", {
+    name: connection.name,
+    location,
+    visibilities,
+  });
 }
 
 interface ProductCreationFormProps {
@@ -89,6 +97,9 @@ export function ProductCreationForm({
   defaultOwnerId,
 }: ProductCreationFormProps) {
   const isEditMode = mode === "edit" && product;
+  const t = useTranslations("ProductCreationForm");
+  const tCommon = useTranslations("Common");
+  const format = useFormatter();
 
   // In create mode, start on the preselected owner when given, else the first.
   const initialOwnerId = isEditMode
@@ -185,25 +196,25 @@ export function ProductCreationForm({
 
   const fields: FormField<Product>[] = [
     {
-      label: "Product Title",
+      label: t("titleLabel"),
       name: "title",
       type: "text",
       required: true,
-      section: "Description",
-      description: "The name of your product",
-      placeholder: "Enter product name",
+      section: t("sectionDescription"),
+      description: t("titleDescription"),
+      placeholder: t("titlePlaceholder"),
     },
     // Only show account selection and product ID validation in create mode
     ...(isEditMode
       ? []
       : ([
           {
-            label: "Owner Account",
+            label: t("ownerLabel"),
             name: "account_id",
             type: "select",
             required: true,
-            section: "Description",
-            description: "The account that owns the product",
+            section: t("sectionDescription"),
+            description: t("ownerDescription"),
             options: potentialOwnerAccounts.map((account) => ({
               value: account.account_id,
               label: account.name,
@@ -213,14 +224,14 @@ export function ProductCreationForm({
             onValueChange: handleAccountChange,
           },
           {
-            label: "Product ID",
+            label: t("productIdLabel"),
             name: "product_id",
             type: "text",
             required: true,
-            section: "Description",
+            section: t("sectionDescription"),
             mono: true,
-            description: "The ID of your product",
-            placeholder: "Enter product ID",
+            description: t("productIdDescription"),
+            placeholder: t("productIdPlaceholder"),
             controlled: true,
             value: productId,
             onValueChange: setProductId,
@@ -229,13 +240,18 @@ export function ProductCreationForm({
               <Flex align="center" gap="1">
                 <Spinner size="1" />
                 <Text size="1" color="gray">
-                  Checking availability of{" "}
-                  <code>{`${accountId}/${productId}`}</code>
+                  {t.rich("checkingAvailability", {
+                    id: `${accountId}/${productId}`,
+                    code: (chunks) => <code>{chunks}</code>,
+                  })}
                 </Text>
               </Flex>
             ) : validationState.isValid === true ? (
               <Text size="1" color="green">
-                ✓ Available: <code>{`${accountId}/${productId}`}</code>
+                {t.rich("available", {
+                  id: `${accountId}/${productId}`,
+                  code: (chunks) => <code>{chunks}</code>,
+                })}
               </Text>
             ) : validationState.isValid === false && validationState.error ? (
               <Text size="1" color="red">
@@ -245,13 +261,13 @@ export function ProductCreationForm({
           },
         ] as FormField<Product>[])),
     {
-      label: "Description",
+      label: t("descriptionLabel"),
       name: "description",
       type: "textarea",
       required: false,
-      section: "Description",
-      description: "A brief description of your product",
-      placeholder: "Describe your product",
+      section: t("sectionDescription"),
+      description: t("descriptionDescription"),
+      placeholder: t("descriptionPlaceholder"),
     },
     // Data connection selector (create mode only). Drives the region and the
     // visibility options available below.
@@ -259,13 +275,12 @@ export function ProductCreationForm({
       ? []
       : ([
           {
-            label: "Data Connection",
+            label: t("connectionLabel"),
             name: "data_connection_id" as keyof Product,
             type: "select",
             required: true,
-            section: "Storage",
-            description:
-              "Where this product's data is stored. Determines the available region and visibility options. If you're unsure, choose a us-west-2 connection.",
+            section: t("sectionStorage"),
+            description: t("connectionDescription"),
             options: [...availableConnections]
               .sort(
                 (a, b) =>
@@ -274,11 +289,11 @@ export function ProductCreationForm({
               )
               .map((connection) => ({
                 value: connection.data_connection_id,
-                label: describeConnection(connection),
+                label: describeConnection(connection, t, format),
               })),
             placeholder:
               availableConnections.length === 0
-                ? "No data connections available"
+                ? t("noConnections")
                 : undefined,
             readOnly: availableConnections.length === 0,
             controlled: true,
@@ -287,21 +302,21 @@ export function ProductCreationForm({
           },
         ] as FormField<Product>[])),
     {
-      label: "Visibility",
+      label: t("visibilityLabel"),
       name: "visibility",
       type: "radio-cards",
       required: true,
-      section: "Access",
+      section: t("sectionAccess"),
       description: connectionMissing
-        ? "This product's data connection could not be found, so its visibility can't be changed."
-        : "Who can reach this product. The options depend on its data connection.",
+        ? t("visibilityConnectionMissing")
+        : t("visibilityDescription"),
       // Every visibility is listed; the connection decides which are selectable.
       options: ALL_VISIBILITIES.map((value) => {
         const permitted = allowedVisibilities.includes(value);
         return {
           value,
-          label: VISIBILITY_LABELS[value],
-          description: VISIBILITY_DESCRIPTIONS[value],
+          label: t(`visibility.${VISIBILITY_KEYS[value]}.label`),
+          description: t(`visibility.${VISIBILITY_KEYS[value]}.description`),
           // The current value stays selectable even when the connection no
           // longer permits it (legacy drift), so an edit of some other field
           // isn't blocked by a visibility the user didn't choose today.
@@ -320,15 +335,14 @@ export function ProductCreationForm({
     ...(isEditMode
       ? ([
           {
-            label: "Status",
+            label: t("statusLabel"),
             name: "disabled" as keyof Product,
             type: "switch",
-            section: "Access",
-            switchLabel: disabled ? "Deactivated" : "Active",
+            section: t("sectionAccess"),
+            switchLabel: disabled ? t("statusDeactivated") : t("statusActive"),
             invert: true,
             dangerWhenOff: true,
-            description:
-              "Deactivating hides the product from source.coop and blocks the data.source.coop API. The data is kept, but only a Source Cooperative administrator can reactivate it.",
+            description: t("statusDescription"),
             controlled: true,
             value: String(disabled),
             onValueChange: (value) => setDisabled(value === "true"),
@@ -341,7 +355,7 @@ export function ProductCreationForm({
     <DynamicForm
       fields={fields}
       action={isEditMode ? updateProduct : createProduct}
-      submitButtonText={isEditMode ? "Save" : "Create"}
+      submitButtonText={isEditMode ? tCommon("save") : tCommon("create")}
       hiddenFields={
         isEditMode
           ? {

@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Box, Button, Flex, Text, AlertDialog } from "@radix-ui/themes";
 import { ImageIcon, UploadIcon, TrashIcon } from "@radix-ui/react-icons";
 import { Account } from "@/types";
@@ -25,6 +26,8 @@ export function ProfileImageUpload({
   account,
   onUploadComplete,
 }: ProfileImageUploadProps) {
+  const t = useTranslations("ProfileImageUpload");
+  const tCommon = useTranslations("Common");
   const router = useRouter();
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -46,13 +49,13 @@ export function ProfileImageUpload({
 
     // Validate file type
     if (!ALLOWED_TYPES.includes(file.type)) {
-      setError(`Invalid file type. Allowed types: ${ALLOWED_TYPES.join(", ")}`);
+      setError(t("invalidType", { types: ALLOWED_TYPES.join(", ") }));
       return;
     }
 
     // Validate file size
     if (file.size > MAX_FILE_SIZE) {
-      setError(`File size must be less than ${MAX_FILE_SIZE / 1024 / 1024}MB`);
+      setError(t("tooLarge", { size: MAX_FILE_SIZE / 1024 / 1024 }));
       return;
     }
 
@@ -76,7 +79,9 @@ export function ProfileImageUpload({
       });
 
       if (!uploadResponse.ok) {
-        throw new Error(`Upload failed: ${uploadResponse.statusText}`);
+        throw new Error(
+          t("uploadFailedStatus", { status: uploadResponse.statusText })
+        );
       }
 
       // Update account with new profile image
@@ -96,7 +101,7 @@ export function ProfileImageUpload({
       // Refresh the router cache to show the new image
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Upload failed");
+      setError(err instanceof Error ? err.message : t("uploadFailed"));
     } finally {
       setUploading(false);
       // Reset file input
@@ -127,7 +132,7 @@ export function ProfileImageUpload({
       // Refresh the router cache to show the default avatar
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Delete failed");
+      setError(err instanceof Error ? err.message : t("deleteFailed"));
     } finally {
       setDeleting(false);
     }
@@ -141,13 +146,13 @@ export function ProfileImageUpload({
           <Flex direction="column" gap="2">
             <Text size="3" weight="medium">
               {account.type === "individual"
-                ? "Your Profile Picture"
-                : "Organization Profile Picture"}
+                ? t("titleIndividual")
+                : t("titleOrganization")}
             </Text>
             <Text size="2" color="gray">
               {account.type === "individual"
-                ? "Upload a profile picture to personalize your account. If no custom image is uploaded, your Gravatar will be displayed."
-                : "Upload a profile picture for your organization. If no custom image is uploaded, a default icon will be displayed."}
+                ? t("descriptionIndividual")
+                : t("descriptionOrganization")}
             </Text>
           </Flex>
         </Box>
@@ -174,11 +179,11 @@ export function ProfileImageUpload({
           >
             {uploading ? (
               <>
-                <UploadIcon /> Uploading...
+                <UploadIcon /> {t("uploading")}
               </>
             ) : (
               <>
-                <ImageIcon /> Upload New Image
+                <ImageIcon /> {t("uploadNew")}
               </>
             )}
           </Button>
@@ -194,33 +199,32 @@ export function ProfileImageUpload({
                 >
                   {deleting ? (
                     <>
-                      <TrashIcon /> Deleting...
+                      <TrashIcon /> {t("deleting")}
                     </>
                   ) : (
                     <>
-                      <TrashIcon /> Remove Image
+                      <TrashIcon /> {t("removeImage")}
                     </>
                   )}
                 </Button>
               </AlertDialog.Trigger>
               <AlertDialog.Content maxWidth="450px">
-                <AlertDialog.Title>Remove Profile Image</AlertDialog.Title>
+                <AlertDialog.Title>{t("removeTitle")}</AlertDialog.Title>
                 <AlertDialog.Description size="2">
-                  Are you sure you want to remove your profile image?
                   {account.type === "individual"
-                    ? " Your account will fall back to using your Gravatar."
-                    : " Your organization will display the default icon."}
+                    ? t("removeConfirmIndividual")
+                    : t("removeConfirmOrganization")}
                 </AlertDialog.Description>
 
                 <Flex gap="3" mt="4" justify="end">
                   <AlertDialog.Cancel>
                     <Button variant="soft" color="gray">
-                      Cancel
+                      {tCommon("cancel")}
                     </Button>
                   </AlertDialog.Cancel>
                   <AlertDialog.Action>
                     <Button variant="solid" color="red" onClick={handleDelete}>
-                      Remove Image
+                      {t("removeImage")}
                     </Button>
                   </AlertDialog.Action>
                 </Flex>
@@ -239,8 +243,7 @@ export function ProfileImageUpload({
             }}
           >
             <Text size="2" color="green">
-              ✓ {deleting ? "Profile image removed" : "Profile image uploaded"}{" "}
-              successfully!
+              {deleting ? t("removed") : t("uploaded")}
             </Text>
           </Box>
         )}
@@ -270,19 +273,19 @@ export function ProfileImageUpload({
         >
           <Flex direction="column" gap="2">
             <Text size="2" weight="medium">
-              Image Guidelines
+              {t("guidelines")}
             </Text>
             <Text size="1" color="gray">
-              • Recommended dimensions: 400x400 pixels or larger
+              {t("guidelineDimensions")}
             </Text>
             <Text size="1" color="gray">
-              • Square images work best for profile pictures
+              {t("guidelineSquare")}
             </Text>
             <Text size="1" color="gray">
-              • Supported formats: JPG, PNG, WebP, GIF
+              {t("guidelineFormats")}
             </Text>
             <Text size="1" color="gray">
-              • Maximum file size: 5MB
+              {t("guidelineSize")}
             </Text>
           </Flex>
         </Box>

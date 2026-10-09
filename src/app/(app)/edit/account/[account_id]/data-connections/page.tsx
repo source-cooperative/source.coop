@@ -2,6 +2,7 @@ import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Box, Flex, Button } from "@radix-ui/themes";
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { accountsTable, dataConnectionsTable } from "@/lib/clients";
 import { getPageSession } from "@/lib/api/utils";
 import { canManageAccountDataConnections } from "@/lib/api/authz";
@@ -12,9 +13,10 @@ import {
   accountDataConnectionEditUrl,
 } from "@/lib/urls";
 
-export const metadata: Metadata = {
-  title: "Data connections",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("AccountDataConnectionsPage");
+  return { title: t("metaTitle") };
+}
 
 interface PageProps {
   params: Promise<{ account_id: string }>;
@@ -37,19 +39,20 @@ export default async function AccountDataConnectionsPage({ params }: PageProps) 
         a.details.provider.localeCompare(b.details.provider) ||
         a.name.localeCompare(b.name)
     );
+  const t = await getTranslations("AccountDataConnectionsPage");
 
   return (
     <Box>
       <Flex justify="between" align="center" mb="6">
         <Box>
           <FormTitle
-            title="Data Connections"
-            description="Manage this account's connections to external storage."
+            title={t("title")}
+            description={t("description")}
           />
         </Box>
         <Button asChild size="2" highContrast>
           <Link href={accountDataConnectionCreateUrl(account_id)}>
-            New Connection
+            {t("newConnection")}
           </Link>
         </Button>
       </Flex>

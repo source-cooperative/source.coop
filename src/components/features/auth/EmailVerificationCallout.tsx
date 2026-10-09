@@ -1,6 +1,7 @@
 import { Box, Callout, Link } from "@radix-ui/themes";
 import { CheckCircledIcon, InfoCircledIcon } from "@radix-ui/react-icons";
 import { verifyEmailUrl } from "@/lib";
+import { useTranslations } from "next-intl";
 
 /**
  * Which banner to render. "unverified" shows a reminder to verify;
@@ -15,6 +16,7 @@ interface EmailVerificationCalloutProps {
 export function EmailVerificationCallout({
   status,
 }: EmailVerificationCalloutProps) {
+  const t = useTranslations("EmailVerificationCallout");
   return (
     <Box mb="6">
       {status === "unverified" ? (
@@ -23,10 +25,9 @@ export function EmailVerificationCallout({
             <InfoCircledIcon />
           </Callout.Icon>
           <Callout.Text>
-            Please check your email. We&apos;ve sent you a code to verify your
-            email address. Or, you can click{" "}
-            <Link href={verifyEmailUrl()}>here</Link> to verify your email
-            address.
+            {t.rich("unverified", {
+              link: (chunks) => <Link href={verifyEmailUrl()}>{chunks}</Link>,
+            })}
           </Callout.Text>
         </Callout.Root>
       ) : (
@@ -35,8 +36,7 @@ export function EmailVerificationCallout({
             <CheckCircledIcon />
           </Callout.Icon>
           <Callout.Text>
-            Your email has been successfully verified. Thank you for confirming
-            your account.
+            {t("justVerified")}
           </Callout.Text>
         </Callout.Root>
       )}

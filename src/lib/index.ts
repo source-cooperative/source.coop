@@ -1,5 +1,5 @@
 // Export date formatting functions
-export { formatDate, formatDateSSR, formatBytes } from "./format";
+export { formatBytes } from "./format";
 
 // Export any other utilities that may be needed by components
 export * from "./api/utils";

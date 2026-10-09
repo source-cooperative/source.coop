@@ -17,6 +17,7 @@ import {
   Text,
   TextField,
 } from "@radix-ui/themes";
+import { useTranslations } from "next-intl";
 import { Field } from "@/components/core";
 import { CopyToClipboard } from "@/components/core/CopyToClipboard";
 import { GITHUB_ACTIONS_ISSUER } from "@/types";
@@ -67,10 +68,10 @@ const DocsLink = ({
 );
 
 const KINDS = {
-  branch: { label: "Branch", placeholder: "main", ref: "refs/heads/" },
-  tag: { label: "Tag", placeholder: "v1.0", ref: "refs/tags/" },
+  branch: { labelKey: "kindBranch", placeholder: "main", ref: "refs/heads/" },
+  tag: { labelKey: "kindTag", placeholder: "v1.0", ref: "refs/tags/" },
   environment: {
-    label: "Environment",
+    labelKey: "kindEnvironment",
     placeholder: "production",
     ref: undefined,
   },
@@ -211,6 +212,7 @@ export function GithubWorkflowFields({
   audience?: string;
 }) {
   const { setting, retry } = useSubjectSetting(workflow.repository);
+  const t = useTranslations("GithubWorkflowFields");
   const found = setting && setting !== "unreachable" ? setting : undefined;
   // The typed name stays in the field; the subject uses the one GitHub's
   // tokens carry, so nobody has to know which form their repository signs with.
@@ -226,18 +228,15 @@ export function GithubWorkflowFields({
       <Flex gap="3" align="end">
         <Box flexGrow="1">
           <Field
-            label="Repository"
+            label={t("repository")}
             htmlFor={`${id}-repo`}
             required
-            help={
-              <>
-                <Code size="1">owner/repo</Code>, or with its permanent ids as{" "}
-                <Code size="1">owner@123/repo@456</Code>.{" "}
-                <DocsLink href={IMMUTABLE_SUBJECTS_DOCS}>
-                  About immutable subject claims
-                </DocsLink>
-              </>
-            }
+            help={t.rich("repositoryHelp", {
+              code: (chunks) => <Code size="1">{chunks}</Code>,
+              docs: (chunks) => (
+                <DocsLink href={IMMUTABLE_SUBJECTS_DOCS}>{chunks}</DocsLink>
+              ),
+            })}
           >
             <TextField.Root
               id={`${id}-repo`}
@@ -263,8 +262,10 @@ export function GithubWorkflowFields({
             <CheckCircledIcon />
           </Callout.Icon>
           <Callout.Text size="1" style={{ wordBreak: "break-all" }}>
-            Confirmed via GitHub, subject claim prefix is{" "}
-            <Code size="1">repo:{found.repository}</Code>
+            {t.rich("confirmed", {
+              repository: found.repository,
+              code: (chunks) => <Code size="1">{chunks}</Code>,
+            })}
           </Callout.Text>
         </Callout.Root>
       )}
@@ -274,14 +275,14 @@ export function GithubWorkflowFields({
             <ExclamationTriangleIcon />
           </Callout.Icon>
           <Callout.Text size="1">
-            This repository customizes its subject claim, so its tokens
-            won&apos;t carry the subject below, and only subjects shaped like
-            GitHub&apos;s default can be trusted. An admin can switch it back by
-            selecting <Strong>Use default template</Strong> in its{" "}
-            <DocsLink href={oidcSettingsUrl(workflow.repository)}>
-              OIDC settings
-            </DocsLink>
-            .
+            {t.rich("customized", {
+              strong: (chunks) => <Strong>{chunks}</Strong>,
+              link: (chunks) => (
+                <DocsLink href={oidcSettingsUrl(workflow.repository)}>
+                  {chunks}
+                </DocsLink>
+              ),
+            })}
           </Callout.Text>
         </Callout.Root>
       )}
@@ -294,27 +295,30 @@ export function GithubWorkflowFields({
           <Box>
             {setting === null ? (
               <Callout.Text size="1">
-                We can&apos;t see{" "}
-                <DocsLink href={`https://github.com/${workflow.repository}`}>
-                  {workflow.repository}
-                </DocsLink>
-                , so it&apos;s either private or doesn&apos;t exist. Check that
-                it exists, then enter its default subject claim prefix as the
-                repository. To find it:
+                {t.rich("notVisible", {
+                  repository: workflow.repository,
+                  repo: (chunks) => (
+                    <DocsLink href={`https://github.com/${workflow.repository}`}>
+                      {chunks}
+                    </DocsLink>
+                  ),
+                })}
               </Callout.Text>
             ) : (
               <Callout.Text size="1">
-                We couldn&apos;t check{" "}
-                <DocsLink href={`https://github.com/${workflow.repository}`}>
-                  {workflow.repository}
-                </DocsLink>{" "}
-                with GitHub just now, most likely because it limits how often it
-                can be asked.{" "}
-                <Button type="button" size="1" variant="soft" onClick={retry}>
-                  Try again
-                </Button>{" "}
-                in a few minutes, or enter its default subject claim prefix as
-                the repository. To find it:
+                {t.rich("unreachable", {
+                  repository: workflow.repository,
+                  repo: (chunks) => (
+                    <DocsLink href={`https://github.com/${workflow.repository}`}>
+                      {chunks}
+                    </DocsLink>
+                  ),
+                  retry: (chunks) => (
+                    <Button type="button" size="1" variant="soft" onClick={retry}>
+                      {chunks}
+                    </Button>
+                  ),
+                })}
               </Callout.Text>
             )}
             <Text size="1" asChild>
@@ -325,16 +329,21 @@ export function GithubWorkflowFields({
                 }}
               >
                 <li>
-                  As an admin of the repository, copy the{" "}
-                  <Strong>Default subject claim prefix</Strong> from its{" "}
-                  <DocsLink href={oidcSettingsUrl(workflow.repository)}>
-                    OIDC settings
-                  </DocsLink>
-                  .
+                  {t.rich("findAsAdmin", {
+                    strong: (chunks) => <Strong>{chunks}</Strong>,
+                    link: (chunks) => (
+                      <DocsLink href={oidcSettingsUrl(workflow.repository)}>
+                        {chunks}
+                      </DocsLink>
+                    ),
+                  })}
                 </li>
                 <li>
-                  Otherwise, run this with the{" "}
-                  <DocsLink href="https://cli.github.com">GitHub CLI</DocsLink>:
+                  {t.rich("findWithCli", {
+                    link: (chunks) => (
+                      <DocsLink href="https://cli.github.com">{chunks}</DocsLink>
+                    ),
+                  })}
                   <Flex gap="2" align="center" mt="1">
                     <Code size="1" style={{ wordBreak: "break-all" }}>
                       {ghSubjectPrefixCommand(workflow.repository)}
@@ -353,19 +362,14 @@ export function GithubWorkflowFields({
           squeezing in beside the choice when it fits. */}
       <Flex direction="column" gap="3" align="start">
         <Field
-          label="Allow runs from"
+          label={t("allowRunsFrom")}
           htmlFor={`${id}-kind`}
           group
-          help={
-            <>
-              A job&apos;s subject claim names its environment if one is
-              specified within the workflow, otherwise its branch or tag. Pull
-              request runs name neither, so they can&apos;t sign in.{" "}
-              <DocsLink href={SUBJECT_CLAIMS_DOCS}>
-                See GitHub&apos;s examples
-              </DocsLink>
-            </>
-          }
+          help={t.rich("allowRunsFromHelp", {
+            link: (chunks) => (
+              <DocsLink href={SUBJECT_CLAIMS_DOCS}>{chunks}</DocsLink>
+            ),
+          })}
         >
           {(props) => (
             <SegmentedControl.Root
@@ -379,16 +383,16 @@ export function GithubWorkflowFields({
                 })
               }
             >
-              {Object.entries(KINDS).map(([value, { label }]) => (
+              {Object.entries(KINDS).map(([value, { labelKey }]) => (
                 <SegmentedControl.Item key={value} value={value}>
-                  {label}
+                  {t(labelKey)}
                 </SegmentedControl.Item>
               ))}
             </SegmentedControl.Root>
           )}
         </Field>
         <Box width="100%">
-          <Field label={kind.label} htmlFor={`${id}-value`} required>
+          <Field label={t(kind.labelKey)} htmlFor={`${id}-value`} required>
             <TextField.Root
               id={`${id}-value`}
               size="2"
@@ -401,7 +405,7 @@ export function GithubWorkflowFields({
       </Flex>
       <Box>
         <Text as="p" size="1" color="gray" mb="1">
-          Trusts tokens matching
+          {t("trustsTokensMatching")}
         </Text>
         <Box
           asChild

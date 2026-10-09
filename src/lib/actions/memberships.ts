@@ -1,5 +1,6 @@
 "use server";
 
+import { getTranslations } from "next-intl/server";
 import { LOGGER } from "@/lib/logging";
 import {
   Actions,
@@ -30,13 +31,14 @@ export async function inviteMember(
   _initialState: any,
   formData: FormData
 ): Promise<FormState<any>> {
+  const t = await getTranslations("MembershipActions");
   const session = await getPageSession();
 
   if (!session?.identity_id) {
     return {
       fieldErrors: {},
       data: formData,
-      message: "Unauthenticated",
+      message: t("unauthenticated"),
       success: false,
     };
   }
@@ -50,7 +52,7 @@ export async function inviteMember(
     return {
       fieldErrors: {},
       data: formData,
-      message: "Missing required fields",
+      message: t("missingFields"),
       success: false,
     };
   }
@@ -62,7 +64,7 @@ export async function inviteMember(
       return {
         fieldErrors: {},
         data: formData,
-        message: "Organization not found",
+        message: t("organizationNotFound"),
         success: false,
       };
     }
@@ -73,7 +75,7 @@ export async function inviteMember(
       return {
         fieldErrors: {},
         data: formData,
-        message: "Account to invite not found",
+        message: t("inviteeNotFound"),
         success: false,
       };
     }
@@ -82,7 +84,7 @@ export async function inviteMember(
       return {
         fieldErrors: {},
         data: formData,
-        message: "Organizations cannot be members",
+        message: t("organizationsCannotBeMembers"),
         success: false,
       };
     }
@@ -131,7 +133,7 @@ export async function inviteMember(
       return {
         fieldErrors: {},
         data: formData,
-        message: "Unauthorized to invite members to this organization",
+        message: t("unauthorizedInvite"),
         success: false,
       };
     }
@@ -151,7 +153,7 @@ export async function inviteMember(
       return {
         fieldErrors: {},
         data: formData,
-        message: "User is already a member or has a pending invitation",
+        message: t("alreadyMember"),
         success: false,
       };
     }
@@ -171,7 +173,7 @@ export async function inviteMember(
     return {
       fieldErrors: {},
       data: formData,
-      message: "Member invited successfully!",
+      message: t("invited"),
       success: true,
     };
   } catch (error) {
@@ -184,7 +186,7 @@ export async function inviteMember(
     return {
       fieldErrors: {},
       data: formData,
-      message: "Failed to invite member. Please try again.",
+      message: t("inviteFailed"),
       success: false,
     };
   }
@@ -199,27 +201,28 @@ export async function inviteMember(
 export async function acceptInvitation(
   membershipId: string
 ): Promise<{ success: boolean; error?: string }> {
+  const t = await getTranslations("MembershipActions");
   const session = await getPageSession();
 
   if (!session?.identity_id) {
-    return { success: false, error: "Unauthenticated" };
+    return { success: false, error: t("unauthenticated") };
   }
 
   try {
     const membership = await membershipsTable.fetchById(membershipId);
     if (!membership) {
-      return { success: false, error: "Membership not found" };
+      return { success: false, error: t("membershipNotFound") };
     }
 
     if (!isAuthorized(session, membership, Actions.AcceptMembership)) {
-      return { success: false, error: "Unauthorized to accept this invitation" };
+      return { success: false, error: t("unauthorizedAccept") };
     }
 
     if (
       membership.state === MembershipState.Member ||
       membership.state === MembershipState.Revoked
     ) {
-      return { success: false, error: "Membership is not in a pending state" };
+      return { success: false, error: t("notPending") };
     }
 
     await membershipsTable.update({
@@ -245,7 +248,7 @@ export async function acceptInvitation(
       error: error,
     });
 
-    return { success: false, error: "Failed to accept invitation" };
+    return { success: false, error: t("acceptFailed") };
   }
 }
 
@@ -258,27 +261,28 @@ export async function acceptInvitation(
 export async function rejectInvitation(
   membershipId: string
 ): Promise<{ success: boolean; error?: string }> {
+  const t = await getTranslations("MembershipActions");
   const session = await getPageSession();
 
   if (!session?.identity_id) {
-    return { success: false, error: "Unauthenticated" };
+    return { success: false, error: t("unauthenticated") };
   }
 
   try {
     const membership = await membershipsTable.fetchById(membershipId);
     if (!membership) {
-      return { success: false, error: "Membership not found" };
+      return { success: false, error: t("membershipNotFound") };
     }
 
     if (!isAuthorized(session, membership, Actions.RejectMembership)) {
-      return { success: false, error: "Unauthorized to reject this invitation" };
+      return { success: false, error: t("unauthorizedReject") };
     }
 
     if (
       membership.state === MembershipState.Member ||
       membership.state === MembershipState.Revoked
     ) {
-      return { success: false, error: "Membership is not in a pending state" };
+      return { success: false, error: t("notPending") };
     }
 
     await membershipsTable.update({
@@ -304,7 +308,7 @@ export async function rejectInvitation(
       error: error,
     });
 
-    return { success: false, error: "Failed to reject invitation" };
+    return { success: false, error: t("rejectFailed") };
   }
 }
 
@@ -360,13 +364,14 @@ export async function revokeMembership(
   _initialState: any,
   formData: FormData
 ): Promise<FormState<any>> {
+  const t = await getTranslations("MembershipActions");
   const session = await getPageSession();
 
   if (!session?.identity_id) {
     return {
       fieldErrors: {},
       data: formData,
-      message: "Unauthenticated",
+      message: t("unauthenticated"),
       success: false,
     };
   }
@@ -377,7 +382,7 @@ export async function revokeMembership(
     return {
       fieldErrors: {},
       data: formData,
-      message: "Missing membership ID",
+      message: t("missingMembershipId"),
       success: false,
     };
   }
@@ -389,7 +394,7 @@ export async function revokeMembership(
       return {
         fieldErrors: {},
         data: formData,
-        message: "Membership not found",
+        message: t("membershipNotFound"),
         success: false,
       };
     }
@@ -399,7 +404,7 @@ export async function revokeMembership(
       return {
         fieldErrors: {},
         data: formData,
-        message: "Unauthorized to revoke this membership",
+        message: t("unauthorizedRevoke"),
         success: false,
       };
     }
@@ -427,7 +432,7 @@ export async function revokeMembership(
     return {
       fieldErrors: {},
       data: formData,
-      message: "Membership revoked successfully!",
+      message: t("revoked"),
       success: true,
     };
   } catch (error) {
@@ -440,7 +445,7 @@ export async function revokeMembership(
     return {
       fieldErrors: {},
       data: formData,
-      message: "Failed to revoke membership. Please try again.",
+      message: t("revokeFailed"),
       success: false,
     };
   }

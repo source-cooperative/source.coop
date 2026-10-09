@@ -22,6 +22,606 @@
     "none": "None",
     "unknownError": "Something went wrong. Please try again."
   },
+  "AccountActions": {
+    "unauthenticated": "Unauthenticated",
+    "invalidFormData": "Invalid form data",
+    "unauthorizedCreate": "Unauthorized to create this type of account",
+    "accountIdTakenField": "That account ID is already taken.",
+    "accountIdTaken": "That account ID is already taken",
+    "accountIdRequired": "Account ID is required",
+    "accountNotFound": "Account not found",
+    "unauthorizedUpdate": "Unauthorized to update this account",
+    "invalidEmail": "Invalid email address",
+    "profileUpdated": "Profile updated successfully!",
+    "profileUpdateFailed": "Failed to update profile. Please try again.",
+    "unauthorizedUpdateFlags": "Unauthorized to update this account's flags",
+    "serviceAccountNoAdmin": "A service account cannot hold the admin flag",
+    "flagsUpdated": "Account flags updated successfully!",
+    "flagsUpdateFailed": "Failed to update account flags. Please try again."
+  },
+  "AccountCreateDataConnectionPage": {
+    "metaTitle": "Create data connection",
+    "title": "Create Data Connection",
+    "description": "Connect external storage this account's products can mirror to."
+  },
+  "AccountDataConnectionsPage": {
+    "metaTitle": "Data connections",
+    "title": "Data Connections",
+    "description": "Manage this account's connections to external storage.",
+    "newConnection": "New Connection"
+  },
+  "AccountDropdown": {
+    "pendingInvitations": "You have pending invitations",
+    "you": "you",
+    "viewProfile": "View profile",
+    "viewOrganization": "View organization",
+    "products": "Products",
+    "noProducts": "No products yet",
+    "noCreateProductPermission": "You don't have permission to create products",
+    "newProduct": "New product",
+    "noCreateOrgPermission": "You don't have permission to create organizations",
+    "newOrganization": "New organization",
+    "invitations": "Invitations",
+    "noInvitations": "No pending invitations",
+    "admin": "Admin",
+    "logout": "Logout"
+  },
+  "AccountFlagsForm": {
+    "createDataConnections": "Create Data Connections",
+    "createDataConnectionsOrgDescription": "Allows this organization to create and manage its own data connections to external storage.",
+    "createDataConnectionsDescription": "Allows this account to create and manage its own data connections to external storage.",
+    "createServiceAccounts": "Create Service Accounts",
+    "createServiceAccountsOrgDescription": "Allows this organization to create and manage service accounts for its software and pipelines.",
+    "createServiceAccountsDescription": "Allows this account to create and manage service accounts for its software and pipelines.",
+    "createProducts": "Create Products",
+    "createProductsDescription": "Allows this account to create new products and manage product settings.",
+    "createOrganizations": "Create Organizations",
+    "createOrganizationsDescription": "Allows this account to create new organizations and manage organizational accounts.",
+    "admin": "Administrator",
+    "adminDescription": "Full administrative access to the platform. Can manage all accounts, products, and system settings."
+  },
+  "AccountInfoHoverCard": {
+    "serviceAccount": "Service account"
+  },
+  "AccountMetadata": {
+    "title": "{name} · {type, select, individual {Individual} other {Organization}} · Source Cooperative",
+    "description": "{name} is an {type, select, individual {individual} other {organization}} on Source Cooperative"
+  },
+  "AccountNotFoundPage": {
+    "title": "Account Not Found",
+    "description": "The requested account could not be found."
+  },
+  "AccountSearchInput": {
+    "matchingAccounts": "Matching accounts",
+    "serviceAccount": "Service account"
+  },
+  "ActivitySubmenu": {
+    "activity": "Activity",
+    "status": "{status, select, queued {queued} uploading {uploading} completed {completed} error {error} cancelled {cancelled} other {{status}}}",
+    "moreHidden": "and {count, number} more…"
+  },
+  "AddGithubTrustDialog": {
+    "title": "Trust a GitHub workflow",
+    "invalid": "Name one repository and one branch, tag or environment",
+    "description": "One repository, pinned to one branch, tag or environment. GitHub vouches for the workflow at every run; nothing is stored here but the name.",
+    "trustIt": "Trust it"
+  },
+  "AddSignInMenu": {
+    "description": "GitHub Actions workflows, each pinned to one repository and one branch, tag or environment; GitHub vouches for every run, so there is no secret to store. Or an API key, for environments without OIDC, shown once when it is issued.",
+    "addSignIn": "Add sign-in",
+    "githubWorkflow": "GitHub workflow",
+    "apiKey": "API key"
+  },
+  "AdminAnalyticsPage": {
+    "metaTitle": "Admin — Analytics",
+    "heading": "Analytics",
+    "notConfigured": "Analytics is not configured. Set {vars}.",
+    "dateRange": "Date range (UTC)",
+    "rangeDays": "{days, plural, one {# day} other {# days}}",
+    "backRange": "Back {range} (the shown range)",
+    "forwardRange": "Forward {range} (the shown range)",
+    "backDay": "Back 1 day",
+    "forwardDay": "Forward 1 day",
+    "presetToday": "Today",
+    "presetDays": "{days}d",
+    "groupBy": "Group by",
+    "interval": "Interval",
+    "auto": "Auto",
+    "dimensions": {
+      "account": "Account",
+      "product": "Product",
+      "country": "Country",
+      "client": "IP hash"
+    },
+    "intervals": {
+      "minute": "Minute",
+      "hourly": "Hourly",
+      "sixHour": "6-hour",
+      "daily": "Daily",
+      "weekly": "Weekly"
+    },
+    "bucketMinutes": "{n}-minute",
+    "bucketHours": "{n}-hour",
+    "bucketDays": "{n}-day",
+    "spanHours": "{n, plural, one {# hour} other {# hours}}",
+    "spanDays": "{n, plural, one {# day} other {# days}}",
+    "intervalTooFine": "{interval} buckets fit ranges up to {span} — this range spans {range}",
+    "noTraffic": "No traffic recorded for this selection between {from} and {to}.",
+    "coarsened": "Showing {bucket} buckets — the requested interval would draw more than {max} bars over this range.",
+    "scope": "Scope",
+    "share": "Share",
+    "other": "Other"
+  },
+  "AdminBreakdownChart": {
+    "avgBandwidth": "Avg bandwidth",
+    "bytes": "Bytes",
+    "viewSql": "View SQL",
+    "sqlTitle": "Analytics Engine SQL",
+    "sqlDescription": "The statements that produced this view, in execution order.",
+    "fullscreen": "Fullscreen",
+    "exitFullscreen": "Exit fullscreen",
+    "total": "Total",
+    "other": "Other",
+    "bucketUtc": "{date} UTC",
+    "bucketPlusDays": "{date} + {days}d",
+    "footnote": "Times are UTC. Values are estimates — high-volume traffic is measured from a sample. Click a bar (or drag across several) to zoom in; the browser back button zooms out."
+  },
+  "AdminCreateDataConnectionPage": {
+    "metaTitle": "Admin — Create data connection",
+    "title": "Create Data Connection"
+  },
+  "AdminDataConnectionsPage": {
+    "metaTitle": "Admin — Data connections",
+    "title": "Data Connections",
+    "newConnection": "New Connection"
+  },
+  "AdminFiltersForm": {
+    "placeholderAccount": "account id",
+    "placeholderProduct": "product id",
+    "placeholderCountry": "country code (US)",
+    "placeholderClient": "ip hash prefix",
+    "placeholderValue": "value",
+    "fromAria": "From (UTC)",
+    "toAria": "To (UTC, exclusive)",
+    "utcHint": "UTC · end exclusive",
+    "filterBy": "Filter by",
+    "filterDimension": "Filter dimension",
+    "removeFilter": "Remove filter",
+    "addFilter": "Add filter",
+    "apply": "Apply"
+  },
+  "AdminLayout": {
+    "title": "Admin"
+  },
+  "AdminTools": {
+    "analytics": {
+      "name": "Analytics"
+    },
+    "userLookup": {
+      "name": "User Lookup"
+    },
+    "dataConnections": {
+      "name": "Data Connections"
+    }
+  },
+  "AdminUserLookup": {
+    "disabled": "Disabled",
+    "oryNoIdentity": "Ory has no identity with the email “{query}”.",
+    "oryNoProfile": "Ory has an identity with the email “{query}”, but it has no source.coop profile.",
+    "oryResolved": "Resolved the email “{query}” through Ory.",
+    "databaseNoMatch": "No account handle or display name in the database contains “{query}”.",
+    "databaseMatches": "Handles and display names in the database containing “{query}”."
+  },
+  "AdminUserLookupPage": {
+    "metaTitle": "Admin — User lookup",
+    "title": "User lookup",
+    "description": "Find users by username, name, or email and open their profiles."
+  },
+  "AdminUserSearchField": {
+    "placeholder": "username, name, or user@example.com",
+    "ariaLabel": "Search users"
+  },
+  "AnalyticsHelp": {
+    "downloads": "Number of successful downloads.",
+    "window": "Dates are UTC days. The range covers the most recent full days plus today so far.",
+    "served": "Total amount of data downloaded.",
+    "bandwidth": "Average rate that data was downloaded over this range.",
+    "requests": "Requests that successfully returned data.",
+    "countries": "How many different countries downloads came from.",
+    "dailyAvg": "Average downloads per day over the period.",
+    "uniqueIps": "How many different IP addresses downloaded data. Everyone sharing a network — an office, a university, a cloud provider — counts once, and very busy products may count a little low.",
+    "uniqueIpsSampled": "How many different IP addresses appear in this range. Busy ranges are measured from a sample, so this undercounts — the wider the range, the more it undercounts.",
+    "registered": "Downloads by signed-in users.",
+    "anon": "Downloads with no signed-in user.",
+    "distribution": "How many IP addresses downloaded once, twice, and so on. The line adds them up left to right, so at any bar it shows the share that downloaded that many times or fewer."
+  },
+  "AnalyticsPanels": {
+    "downloads": "Downloads",
+    "dataServed": "Data served",
+    "countries": "Countries",
+    "requests": "Requests",
+    "uniqueIps": "Unique IPs",
+    "registered": "Registered",
+    "anonDownloads": "Anon downloads",
+    "windowDownloads": "{days}-day downloads",
+    "dailyDownloadsAria": "Daily downloads over the past {days} days",
+    "ipsByDownloadCount": "IPs by download count",
+    "noActivity": "No download activity in this period.",
+    "distributionAria": "Pareto chart of unique IPs by downloads per IP",
+    "tooltipIps": "{ips} IPs · {label} downloads",
+    "tooltipShare": "{share} of IPs at or below this",
+    "legendIps": "IPs",
+    "legendCumulative": "cumulative"
+  },
+  "ApiKeyExpiryField": {
+    "expires": "Expires",
+    "days30": "30 days",
+    "days90": "90 days",
+    "year": "A year",
+    "never": "Never — until revoked"
+  },
+  "ApiKeyList": {
+    "used": "Used {when}",
+    "neverUsed": "Never used",
+    "revoked": "Revoked {when}{via, select, person { by {who}} owner { in settings} holder { anonymously via the API} github { by GitHub secret scanning} other {}}",
+    "neverExpires": "Never expires",
+    "expires": "Expires {when}",
+    "expired": "Expired {when}",
+    "issued": "Issued {when} by {who}",
+    "lastUsed": "Last used {when}",
+    "actionsFor": "Actions for {label}",
+    "exampleUsage": "Example usage",
+    "changeExpiry": "Change expiry",
+    "revoke": "Revoke",
+    "signInWith": "Sign in with {label}",
+    "usageIntro": "Save the API key to a file and set environment variables accordingly:",
+    "markerRevoked": "Revoked",
+    "markerExpired": "Expired",
+    "expiryTitle": "When should {label} expire?",
+    "none": "None."
+  },
+  "AuthButtons": {
+    "noProfile": "You do not yet have a profile. Please click <link>here</link> to complete your profile."
+  },
+  "BreadcrumbNav": {
+    "root": "root"
+  },
+  "CaseStudyCarousel": {
+    "readCaseStudy": "Read case study →",
+    "previousQuote": "Previous quote",
+    "nextQuote": "Next quote"
+  },
+  "ChecksumVerifier": {
+    "notAvailable": "Checksum not available in response headers",
+    "failed": "Failed to verify checksum",
+    "verify": "Verify {algorithm}",
+    "verifying": "Verifying...",
+    "verified": "Checksum verified",
+    "mismatch": "Checksum mismatch"
+  },
+  "ConditionalGroup": {
+    "because": "Because {because}"
+  },
+  "ConnectionUsage": {
+    "heading": "Used by {count, plural, one {# product} other {# products}}",
+    "unused": "Nothing uses this connection, so it can be deleted.",
+    "columnProduct": "Product",
+    "columnRole": "Role",
+    "columnStatus": "Status",
+    "primary": "Primary",
+    "mirror": "Mirror",
+    "deactivated": "Deactivated",
+    "active": "Active"
+  },
+  "ConnectionsEmpty": {
+    "title": "No data connections"
+  },
+  "CopyToClipboard": {
+    "copyToClipboard": "Copy to clipboard"
+  },
+  "CreateServiceAccountPage": {
+    "metaTitle": "Create service account",
+    "title": "New Service Account",
+    "description": "A login for software that you grant and revoke without sharing anyone's account."
+  },
+  "DangerZone": {
+    "title": "Danger zone"
+  },
+  "DataConnectionActions": {
+    "unauthenticated": "Unauthenticated",
+    "invalidFormData": "Invalid form data",
+    "nameTooShort": "Name needs at least {min} letters or numbers, so an ID can be made from it.",
+    "invalidName": "Invalid connection name",
+    "unauthorizedCreate": "Unauthorized to create data connections",
+    "nameTakenField": "That name is already taken — it would produce the ID \"{id}\".",
+    "nameTaken": "A data connection with that name already exists",
+    "created": "Data connection created successfully!",
+    "createFailed": "Failed to create data connection. Please try again.",
+    "idRequired": "Data connection ID is required",
+    "notFound": "Data connection not found",
+    "unauthorizedUpdate": "Unauthorized to update data connections",
+    "deletedConcurrently": "Data connection was deleted concurrently",
+    "updated": "Data connection updated successfully!",
+    "updateFailed": "Failed to update data connection. Please try again.",
+    "unauthorizedDelete": "Unauthorized to delete data connections",
+    "inUse": "Cannot delete: {count} product(s) still use this connection. Remove it from them first.",
+    "deleted": "Data connection deleted successfully!",
+    "deleteFailed": "Failed to delete data connection. Please try again."
+  },
+  "DataConnectionEditPage": {
+    "metaTitle": "Edit data connection",
+    "adminMetaTitle": "Admin — Edit data connection",
+    "back": "Data connections",
+    "loadingUsage": "Loading product usage…",
+    "deleteTitle": "Delete this connection",
+    "deleteDescription": "Removes the connection record and its stored credentials. The bucket and its objects are not touched."
+  },
+  "DataConnectionForm": {
+    "providerS3Description": "Or an S3-compatible backend: Cloudflare R2, MinIO, Ceph.",
+    "providerAzureDescription": "A storage account and one of its containers.",
+    "providerGcsDescription": "Keyless: federated through Workload Identity.",
+    "authAccessKey": "Access Key",
+    "authWebIdentityRole": "Web Identity Role (federated)",
+    "authSasToken": "SAS Token",
+    "authWorkloadIdentity": "Workload Identity (federated)",
+    "authAccessKeyDescription": "Static IAM access key and secret you provide.",
+    "authWebIdentityRoleDescription": "Keyless: the proxy assumes a customer IAM role via web identity.",
+    "authSasTokenDescription": "A shared access signature token you provide.",
+    "authAzureWorkloadIdentityDescription": "Keyless: the proxy federates into an Azure AD app registration.",
+    "authGcpWorkloadIdentityDescription": "Keyless: the proxy federates into a GCP service account via Workload Identity.",
+    "authNoneDescription": "How the data proxy authenticates to this backend when serving the product's data. Choose None for unsigned (public) access.",
+    "visibility": {
+      "public": "Public",
+      "unlisted": "Unlisted",
+      "restricted": "Restricted"
+    },
+    "visibilityDescription": {
+      "public": "Products anyone can find and download.",
+      "unlisted": "Products reachable by link only.",
+      "restricted": "Products limited to their members."
+    },
+    "sectionIdentity": "Identity",
+    "nameLabel": "Name",
+    "nameHelp": "Shown in admin lists and in each product's storage picker.",
+    "idLabel": "ID",
+    "idHelpEdit": "Permanent; renaming does not move it.",
+    "idHelpDerived": "Made from the name. Permanent once created.",
+    "idHelpEmpty": "Add a few letters or numbers to the name.",
+    "sectionBackend": "Backend",
+    "providerLabel": "Provider",
+    "providerHelp": "Decides which connection and authentication fields apply below.",
+    "becauseProviderS3": "provider is AWS S3",
+    "becauseProviderGcs": "provider is Google Cloud",
+    "becauseProviderAzure": "provider is Azure Blob",
+    "bucketLabel": "Bucket",
+    "bucketHelpS3": "Name of the S3 bucket that stores the data.",
+    "bucketHelpGcs": "Name of the Google Cloud Storage bucket.",
+    "regionLabel": "Region",
+    "regionHelpS3": "AWS region the bucket is hosted in. Use “auto” for S3-compatible backends like Cloudflare R2.",
+    "regionHelpAzure": "Azure region the storage account is hosted in.",
+    "regionPlaceholder": "Select a region",
+    "endpointLabel": "Endpoint",
+    "endpointHelp": "Custom S3-compatible endpoint for non-AWS backends (Cloudflare R2, MinIO, Ceph). Leave blank for AWS S3.",
+    "accountNameLabel": "Account Name",
+    "accountNameHelp": "Azure Storage account name.",
+    "containerNameLabel": "Container Name",
+    "containerNameHelp": "Azure Blob Storage container name.",
+    "sectionAuthentication": "Authentication",
+    "authTypeLabel": "Authentication Type",
+    "authTypeHelp": "The methods offered depend on the backend selected above.",
+    "authNone": "None (unsigned)",
+    "becauseMethodAccessKey": "method is Access Key",
+    "becauseMethodSasToken": "method is SAS Token",
+    "becauseMethodWebIdentityRole": "method is Web Identity Role",
+    "becauseMethodWorkloadIdentity": "method is Workload Identity",
+    "accessKeyIdLabel": "Access Key ID",
+    "accessKeyIdHelp": "Identifies which credential is in use. Not a secret — it is the paired secret access key that is never shown.",
+    "secretAccessKeyLabel": "Secret Access Key",
+    "secretAccessKeyHelp": "Paired with the access key ID. Stored encrypted and never shown again.",
+    "sasTokenLabel": "SAS Token",
+    "sasTokenHelp": "Shared access signature granting access to the container. Stored encrypted and never shown again.",
+    "roleArnLabel": "Role ARN",
+    "roleArnHelp": "IAM role the proxy assumes via AssumeRoleWithWebIdentity (keyless federation). This is an ARN, not a secret.",
+    "trustSubjectLabel": "Trust-policy subject",
+    "trustSubjectHelp": "The proxy presents this OIDC subject when assuming the role. In the role's trust policy, add a <b>StringLike</b> condition on <b>data.source.coop:sub</b> matching it, alongside <b>data.source.coop:aud = sts.amazonaws.com</b>.",
+    "tenantIdLabel": "Tenant ID",
+    "tenantIdHelp": "Azure AD tenant (directory) ID used for workload-identity federation.",
+    "clientIdLabel": "Client ID",
+    "clientIdHelp": "App registration (client) ID that holds the federated identity credential.",
+    "workloadIdentityProviderLabel": "Workload Identity Provider",
+    "workloadIdentityProviderHelp": "Full GCP Workload Identity provider resource. Not a secret.",
+    "serviceAccountLabel": "Service Account",
+    "serviceAccountHelp": "Email of the GCP service account the proxy impersonates. Not a secret.",
+    "sectionKeyLayout": "Key layout",
+    "basePrefixLabel": "Base Prefix",
+    "basePrefixHelp": "Optional shared root inside the bucket or container. Every product on this connection sits under it. Leave blank for the root.",
+    "prefixTemplateLabel": "Prefix Template",
+    "prefixTemplateHelp": "Where each product's objects land inside the bucket or container. {accountIdVar} and {repositoryIdVar} are substituted when a product attaches this connection.",
+    "examplePrefixLabel": "Example Prefix",
+    "examplePrefixHelp": "Where a product at <code>{path}</code> would be stored.",
+    "sectionPolicy": "Policy",
+    "readOnlyLabel": "Read only",
+    "readOnlyHelp": "Products can browse and download but never write. Required for unsigned connections.",
+    "allowedVisibilitiesLabel": "Allowed Visibilities",
+    "allowedVisibilitiesHelp": "Which visibilities a product on this connection may use. Checked when a product is created and whenever its visibility changes.",
+    "requiredFlagLabel": "Required Flag",
+    "requiredFlagHelp": "Account flag an owner must hold before this connection can back their products. Choose None for no restriction."
+  },
+  "DataConnectionsList": {
+    "systemOwner": "system",
+    "emptyHint": "Create a data connection to get started.",
+    "readOnly": "Read only",
+    "permitsNothing": "permits nothing",
+    "listSeparator": ", ",
+    "visibility": {
+      "public": "public",
+      "unlisted": "unlisted",
+      "restricted": "restricted"
+    }
+  },
+  "DeleteConnectionNote": {
+    "blocked": "Blocked: {count, plural, one {# product still uses it} other {# products still use it}}. Remove it from each first."
+  },
+  "DeleteDataConnectionButton": {
+    "trigger": "Delete connection",
+    "confirmTitle": "Delete this connection?",
+    "confirmDescription": "This removes the connection record and its stored credentials. The bucket and its objects are not touched. It cannot be undone."
+  },
+  "DeleteProductModal": {
+    "deleteFailed": "Failed to delete product",
+    "deleteProduct": "Delete Product",
+    "readOnlyTooltip": "This connection is read-only, so Source won't delete its underlying data.",
+    "recordOnlyLabel": "Delete the product record only",
+    "recordOnlyReadOnly": "This connection is read-only, so its underlying data is always kept.",
+    "recordOnlyDescription": "Remove the product and its memberships, but keep the underlying data in the connection.",
+    "confirmPrompt": "To confirm, type <code>{expected}</code> below:",
+    "consequencesHeading": "Deleting this product will:",
+    "consequenceRecord": "Remove the product record and its page",
+    "consequenceMemberships": "Remove all of its memberships",
+    "consequenceKeepData": "Keep the underlying data in the connection",
+    "consequenceDeleteData": "Delete all underlying data in the connection",
+    "cannotBeUndone": "This cannot be undone."
+  },
+  "DeleteProgress": {
+    "dismiss": "Dismiss",
+    "deleted": "{count, plural, one {Deleted {shown} file} other {Deleted {shown} files}}",
+    "counting": "Counting files… {found} found",
+    "deletedOfTotal": "{count, plural, one {Deleted {deleted} of {total} file} other {Deleted {deleted} of {total} files}}"
+  },
+  "DirectoryList": {
+    "empty": "This directory is empty.",
+    "scrollForMore": "Scroll for more"
+  },
+  "DirectoryRow": {
+    "retryUpload": "Retry upload",
+    "cancelUpload": "Cancel upload",
+    "download": "Download {name}",
+    "copyUrl": "Copy URL to clipboard",
+    "deleteFailed": "Delete failed",
+    "deleteItem": "Delete {name}",
+    "deleteFolderTitle": "Delete folder",
+    "deleteFileTitle": "Delete file",
+    "deleteFolderConfirm": "Are you sure you want to delete <strong>{name}</strong> and everything inside it? This action cannot be undone.",
+    "deleteFileConfirm": "Are you sure you want to delete <strong>{name}</strong>? This action cannot be undone.",
+    "queued": "Queued...",
+    "uploading": "Uploading {percent}%",
+    "uploadError": "Error: {error}",
+    "cancelled": "Cancelled"
+  },
+  "Dropzone": {
+    "dropToUpload": "Drop files here to upload"
+  },
+  "EditAccountLayout": {
+    "details": "Details",
+    "profilePicture": "Profile Picture",
+    "dataConnections": "Data Connections",
+    "permissions": "Permissions",
+    "serviceAccounts": "Service Accounts",
+    "memberships": "Memberships",
+    "authentication": "Authentication",
+    "authenticationDisabledTooltip": "Admins can't edit another user's authentication details.",
+    "viewProfile": "View Profile"
+  },
+  "EditAccountMembershipsPage": {
+    "metaTitle": "Edit {name} memberships",
+    "title": "Memberships",
+    "description": "Manage organization members and their roles",
+    "emptyTitle": "No members yet",
+    "emptyDescription": "Invite people to join your organization"
+  },
+  "EditAccountPermissionsPage": {
+    "metaTitle": "Edit {name} permissions",
+    "title": "Permissions",
+    "description": "Manage this account's permissions and capabilities"
+  },
+  "EditAccountProfilePage": {
+    "metaTitle": "Edit {name} profile",
+    "title": "Public Profile",
+    "descriptionIndividual": "Update your public profile information",
+    "descriptionOrganization": "Update your organization's public profile information"
+  },
+  "EditAccountProfilePicturePage": {
+    "metaTitle": "{name} settings",
+    "title": "Profile Picture",
+    "descriptionIndividual": "Manage your account's profile picture",
+    "descriptionOrganization": "Manage your organization's profile picture"
+  },
+  "EditProductDetailsPage": {
+    "metaTitle": "Edit {title} details",
+    "deleteTitle": "Delete this product",
+    "deleteDescription": "Permanent. Removes the product record, its memberships and its access records. Whether the underlying objects go too depends on the data connection."
+  },
+  "EditProductLayout": {
+    "details": "Details",
+    "memberships": "Memberships",
+    "dataConnections": "Data Connections",
+    "viewProduct": "View Product"
+  },
+  "EditProductMembershipsPage": {
+    "metaTitle": "Edit {title} memberships",
+    "title": "Memberships",
+    "description": "Manage product members and their roles",
+    "productMembers": "Product Members",
+    "productMembersDescription": "The following users have been explicitly granted access to this product",
+    "productMembersEmptyTitle": "No members yet",
+    "productMembersEmptyDescription": "Invite people to join your product",
+    "organizationMembers": "Organization Members",
+    "organizationMembersDescription": "The following users have implicit access to this product via their <link>organization membership</link>",
+    "organizationMembersEmptyTitle": "No organization members",
+    "organizationMembersEmptyDescription": "Organization has no members"
+  },
+  "EditProductNotFound": {
+    "metaTitle": "Product Not Found | Source Cooperative",
+    "metaDescription": "The requested product could not be found.",
+    "notFound": "Not Found"
+  },
+  "EditProfileForm": {
+    "sectionIdentity": "Identity",
+    "sectionAbout": "About",
+    "sectionIdentifiers": "Identifiers",
+    "sectionLinks": "Links",
+    "name": "Name",
+    "namePlaceholder": "Your Name",
+    "nameDescription": "This is the name that will be displayed on your profile",
+    "email": "Email",
+    "emailDescriptionIndividual": "Your primary email address. You can change it in your <link>account settings</link>.",
+    "emailDescriptionOrganization": "Contact email for your organization",
+    "bio": "Bio",
+    "description": "Description",
+    "bioPlaceholder": "Tell us about yourself",
+    "bioDescription": "A brief description of yourself or your work",
+    "descriptionPlaceholder": "Tell us about your organization",
+    "descriptionDescription": "A brief description of your organization",
+    "orcid": "ORCID ID",
+    "orcidDescription": "Your ORCID identifier (optional)",
+    "rorId": "ROR ID",
+    "rorIdDescription": "Your Research Organization Registry identifier (optional)",
+    "websites": "Websites",
+    "websitesDescription": "Add websites associated with your profile",
+    "addWebsite": "Add another website",
+    "removeWebsite": "Remove website"
+  },
+  "EmailVerificationCallout": {
+    "unverified": "Please check your email. We've sent you a code to verify your email address. Or, you can click <link>here</link> to verify your email address.",
+    "justVerified": "Your email has been successfully verified. Thank you for confirming your account."
+  },
+  "EmailVerificationStatus": {
+    "verifiedOn": "Email verified on {date}",
+    "notVerified": "Email not verified"
+  },
+  "ExampleUsage": {
+    "githubWorkflowIntro": "Customize and save this workflow to a file under <code>.github/workflows/</code>:"
+  },
+  "FetchCredentialsButton": {
+    "editMode": "Edit Mode",
+    "readOnly": "Read Only",
+    "viewCredentials": "View Credentials",
+    "uploadFiles": "Upload Files",
+    "uploadDirectory": "Upload Directory"
+  },
+  "Field": {
+    "required": "(required)"
+  },
   "Footer": {
     "aboutUs": "ABOUT US",
     "docs": "Docs",
@@ -29,11 +629,732 @@
     "allProducts": "All Products",
     "attribution": "Source Cooperative is a <org>Radiant Earth</org> project"
   },
+  "GithubWorkflowFields": {
+    "repository": "Repository",
+    "repositoryHelp": "<code>owner/repo</code>, or with its permanent ids as <code>owner@123/repo@456</code>. <docs>About immutable subject claims</docs>",
+    "confirmed": "Confirmed via GitHub, subject claim prefix is <code>repo:{repository}</code>",
+    "customized": "This repository customizes its subject claim, so its tokens won't carry the subject below, and only subjects shaped like GitHub's default can be trusted. An admin can switch it back by selecting <strong>Use default template</strong> in its <link>OIDC settings</link>.",
+    "notVisible": "We can't see <repo>{repository}</repo>, so it's either private or doesn't exist. Check that it exists, then enter its default subject claim prefix as the repository. To find it:",
+    "unreachable": "We couldn't check <repo>{repository}</repo> with GitHub just now, most likely because it limits how often it can be asked. <retry>Try again</retry> in a few minutes, or enter its default subject claim prefix as the repository. To find it:",
+    "findAsAdmin": "As an admin of the repository, copy the <strong>Default subject claim prefix</strong> from its <link>OIDC settings</link>.",
+    "findWithCli": "Otherwise, run this with the <link>GitHub CLI</link>:",
+    "allowRunsFrom": "Allow runs from",
+    "allowRunsFromHelp": "A job's subject claim names its environment if one is specified within the workflow, otherwise its branch or tag. Pull request runs name neither, so they can't sign in. <link>See GitHub's examples</link>",
+    "kindBranch": "Branch",
+    "kindTag": "Tag",
+    "kindEnvironment": "Environment",
+    "trustsTokensMatching": "Trusts tokens matching"
+  },
+  "GlobalUploadNotification": {
+    "title": "Uploads ({count, number})",
+    "uploadingCount": "{count, number} uploading",
+    "queuedCount": "{count, number} queued",
+    "all": "All ({count, number})",
+    "status": "{status, select, queued {queued} uploading {uploading} completed {completed} error {error} cancelled {cancelled} other {{status}}}",
+    "viewFile": "View file",
+    "viewDirectory": "View directory",
+    "clearCompleted": "Clear Completed",
+    "clearErrors": "Clear Errors",
+    "clearAll": "Clear All"
+  },
+  "GrantProductDialog": {
+    "grantProduct": "Grant a product",
+    "product": "Product",
+    "productPlaceholder": "Choose a product",
+    "access": "Access",
+    "read": "Read",
+    "readWrite": "Read and write",
+    "grant": "Grant"
+  },
+  "HeadingWithPermalink": {
+    "permalink": "Permalink"
+  },
+  "HeroGlobe": {
+    "alt": "Visualization of live data requests around the world"
+  },
+  "IndividualProfile": {
+    "websites": "{count, plural, one {Website} other {Websites}}",
+    "organizations": "Organizations",
+    "products": "Products",
+    "newProduct": "New product",
+    "noProducts": "No products available.",
+    "contributions": "Contributions"
+  },
+  "InviteMemberForm": {
+    "account": "Account",
+    "accountDescription": "Search by username or name, or type an account ID. The organization's service accounts are offered too.",
+    "accountPlaceholder": "username or name",
+    "role": "Role",
+    "rolePlaceholder": "Select a role",
+    "roleDescription": "The role to assign to the new member",
+    "roleReader": "Reader",
+    "roleWriter": "Writer",
+    "roleMaintainer": "Maintainer",
+    "roleOwner": "Owner",
+    "invite": "Invite Member",
+    "title": "Invite New Member",
+    "description": "Invite a user to join {name} as a member.",
+    "submit": "Send invitation"
+  },
+  "IssueApiKeyDialog": {
+    "title": "Issue an API key",
+    "done": "Done",
+    "description": "For environments without OIDC: a server, a scheduler, an instrument. The key signs in as this service account with exactly its grants.",
+    "label": "Label",
+    "labelHelp": "Where this key lives, so you know which one to revoke.",
+    "labelPlaceholder": "HPC cron job",
+    "addKey": "Add key",
+    "issueKey": "Issue key"
+  },
+  "IssuedApiKey": {
+    "copyNow": "Copy the key now — this is the only time it is available in full.",
+    "hideKey": "Hide key",
+    "showKey": "Show key"
+  },
+  "IssuedApiKeyDialog": {
+    "title": "API key issued",
+    "done": "Done"
+  },
+  "LandingPage": {
+    "heroTitle": "The Cooperative Data Publishing Utility",
+    "heroTagline": "Data publishing at any scale for everyone.",
+    "heroBody": "Upload, share, and access data without needing to build or maintain your own infrastructure.",
+    "readDocs": "Read the docs →",
+    "exploreProducts": "Explore Data Products →",
+    "featuredEyebrow": "Explore Source Datasets",
+    "featuredHeading": "Featured Products",
+    "whatIsEyebrow": "What is Source Cooperative?",
+    "challengeHeading": "The Challenge",
+    "challenge1": "Scientific data infrastructure wasn't built for cross-border, cross-sector cooperation.",
+    "challenge2": "Addressing global challenges means combining data from governments, research institutions, commercial providers, and civil society—each with its own formats, access patterns, and APIs.",
+    "challenge3": "Data engineers, scientists, and researchers spend more time wrangling infrastructure than doing their actual work, hampering collaboration and limiting informed decision making.",
+    "solutionHeading": "Our Solution",
+    "solution1": "Source is a nonprofit data publishing utility built on commodity cloud object storage. Researchers publish data at any scale without running servers, building portals, or writing APIs.",
+    "solution2": "Source handles cloud infrastructure so researchers can focus on their data, not their hosting. Users access everything through standard URLs that work with existing tools—no custom portals, no proprietary APIs.",
+    "solution3": "The service is intentionally commoditized: built to resist lock-in and designed so that no single provider, funder, or political decision can make research data disappear.",
+    "whyEyebrow": "Why Source is different",
+    "whyHeading": "Data publishing for everyone",
+    "iconAlt": "icon",
+    "integrateHeading": "Integrate into any workflow",
+    "integrateBody": "Source is a vendor-neutral data publishing utility that works with any S3-compatible cloud provider.",
+    "neutralHeading": "Neutral hosting, mission backed",
+    "neutralBody": "Retain full ownership and control of your data. Source supports open formats and is a non-commercial repository, so you're never trapped by proprietary APIs or workflows.",
+    "pricingHeading": "Flat pricing",
+    "pricing1": "Instead of building and maintaining data portals or trying to wrangle variable cloud costs, Source lets you focus on the fundamentals that make data easy to publish and easy to use.",
+    "pricing2": "Pricing plans based on data volume and usage will be announced soon.",
+    "caseStudiesEyebrow": "Case Studies",
+    "caseStudiesHeading": "Open Source, Governed, and Trusted By These Teams",
+    "builtForHeading": "Built for Data Engineers, Scientists, and Developers",
+    "builtForBody": "Source Cooperative supports your data lifecycle, from prototyping to public release, without navigating corporate cloud policies.",
+    "exploreData": "Explore the data →"
+  },
+  "LiveGlobe": {
+    "aria": "Interactive 3D globe showing live data request locations",
+    "requests": "{count, plural, one {# request} other {# requests}}"
+  },
   "LocaleSwitcher": {
     "label": "Language"
+  },
+  "LoginButton": {
+    "logInOrRegister": "Log In / Register"
+  },
+  "LoginRequired": {
+    "signIn": "Sign in"
+  },
+  "MembershipActions": {
+    "unauthenticated": "Unauthenticated",
+    "missingFields": "Missing required fields",
+    "organizationNotFound": "Organization not found",
+    "inviteeNotFound": "Account to invite not found",
+    "organizationsCannotBeMembers": "Organizations cannot be members",
+    "unauthorizedInvite": "Unauthorized to invite members to this organization",
+    "alreadyMember": "User is already a member or has a pending invitation",
+    "invited": "Member invited successfully!",
+    "inviteFailed": "Failed to invite member. Please try again.",
+    "membershipNotFound": "Membership not found",
+    "unauthorizedAccept": "Unauthorized to accept this invitation",
+    "notPending": "Membership is not in a pending state",
+    "acceptFailed": "Failed to accept invitation",
+    "unauthorizedReject": "Unauthorized to reject this invitation",
+    "rejectFailed": "Failed to reject invitation",
+    "missingMembershipId": "Missing membership ID",
+    "unauthorizedRevoke": "Unauthorized to revoke this membership",
+    "revoked": "Membership revoked successfully!",
+    "revokeFailed": "Failed to revoke membership. Please try again."
+  },
+  "MembershipsTable": {
+    "member": "Member",
+    "role": "Role",
+    "status": "Status",
+    "lastUpdated": "Last Updated",
+    "actions": "Actions",
+    "serviceAccount": "Service account",
+    "roleOwner": "Owner",
+    "roleMaintainer": "Maintainer",
+    "roleWriter": "Writer",
+    "roleReader": "Reader",
+    "stateMember": "Member",
+    "stateInvited": "Invited",
+    "stateRevoked": "Revoked",
+    "unknown": "Unknown",
+    "revoke": "Revoke"
+  },
+  "MobileMenu": {
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "menu": "Menu",
+    "products": "Products",
+    "docs": "Docs",
+    "you": "you",
+    "viewProfile": "View profile",
+    "viewOrganization": "View organization",
+    "noProducts": "No products yet",
+    "newProduct": "New product",
+    "newOrganization": "New organization",
+    "invitations": "Invitations",
+    "noInvitations": "No pending invitations",
+    "admin": "Admin",
+    "logout": "Log out"
   },
   "NavLinks": {
     "products": "Products",
     "docs": "Docs"
+  },
+  "NewOrganizationPage": {
+    "accessDenied": "Access Denied",
+    "loginRequired": "You must be logged in to create an organization.",
+    "title": "Create New Organization",
+    "description": "Create a new organization to collaborate with others"
+  },
+  "NewProductPage": {
+    "accessDenied": "Access Denied",
+    "mustLogIn": "You must be logged in to create a product.",
+    "noPermission": "You do not have permission to create products.",
+    "contactUs": "If you believe this is an error, please contact <code>{email}</code>.",
+    "title": "Create New Product",
+    "description": "Create a new product to share with others"
+  },
+  "NotFoundMetadata": {
+    "title": "Page Not Found",
+    "description": "The page you are looking for does not exist."
+  },
+  "ObjectPreviewExternal": {
+    "noPreview": "No preview available for file type <code>.{extension}</code>. <link>Open an issue</link> if you would like support for this file type.",
+    "previewTitle": "Preview of {path}"
+  },
+  "ObjectPreviewSlot": {
+    "title": "Object Preview",
+    "openInNewTab": "Open in new tab",
+    "iframeTitle": "Preview of {path}"
+  },
+  "ObjectSummary": {
+    "name": "Name",
+    "size": "Size",
+    "contentType": "Content Type",
+    "lastModified": "Last Modified",
+    "checksum": "Checksum",
+    "sourceUrl": "Source URL",
+    "cloudUri": "Cloud URI",
+    "download": "Download"
+  },
+  "OnboardingForm": {
+    "username": "Username",
+    "usernameDescription": "This will be your profile URL: source.coop/[username]",
+    "usernamePlaceholder": "Choose a username",
+    "checking": "Checking username availability...",
+    "available": "✓ Username is available",
+    "fullName": "Full Name",
+    "fullNameDescription": "This is the name that will be displayed on your profile",
+    "fullNamePlaceholder": "Your Name",
+    "submit": "Complete profile"
+  },
+  "OnboardingPage": {
+    "title": "Complete Your Profile",
+    "metaDescription": "Choose your username and set up your profile",
+    "description": "You're almost done! Choose a username for your account and tell us your name."
+  },
+  "OrganizationCreationForm": {
+    "name": "Organization Name",
+    "nameDescription": "The name of your organization",
+    "namePlaceholder": "Enter organization name",
+    "accountId": "Account ID",
+    "accountIdDescription": "The account ID of your organization",
+    "accountIdPlaceholder": "Enter account ID",
+    "checking": "Checking account ID availability...",
+    "available": "✓ Available",
+    "description": "Description",
+    "descriptionDescription": "A brief description of your organization",
+    "descriptionPlaceholder": "Describe your organization",
+    "website": "Website",
+    "websiteDescription": "Your organization's website (optional)",
+    "email": "Email",
+    "emailDescription": "Contact email for your organization (optional)",
+    "submit": "Create"
+  },
+  "OrganizationMembers": {
+    "empty": "No members to display",
+    "owners": "Owners",
+    "admins": "Administrators",
+    "members": "Members"
+  },
+  "OrganizationProfile": {
+    "details": "Organization Details",
+    "emailLabel": "Email:",
+    "rorIdLabel": "ROR ID:",
+    "members": "Members",
+    "products": "Products",
+    "newProduct": "New product",
+    "noProducts": "No products available."
+  },
+  "PendingInvitationBanner": {
+    "acceptFailed": "Failed to accept invitation",
+    "acceptError": "An error occurred while accepting the invitation",
+    "rejectFailed": "Failed to reject invitation",
+    "rejectError": "An error occurred while rejecting the invitation",
+    "roleOwners": "Owner",
+    "roleMaintainers": "Maintainer",
+    "roleReadData": "Data Reader",
+    "roleWriteData": "Data Writer",
+    "message": "You have been invited to join this {invitationType, select, product {product} other {organization}} as {role, select, owners {an} other {a}} <strong>{roleName}</strong>.",
+    "processing": "Processing...",
+    "accept": "Accept",
+    "decline": "Decline"
+  },
+  "PreviewIframe": {
+    "unsupported": "Your browser does not support iframes."
+  },
+  "ProductAccessList": {
+    "noProducts": "{owner} has no products yet.",
+    "empty": "Nothing yet. Grant a product to let it read or write data.",
+    "opensInNewTab": "opens in a new tab",
+    "accessTo": "Access to {product}",
+    "removeAccess": "Remove access to {product}",
+    "read": "Read",
+    "readWrite": "Read and write"
+  },
+  "ProductActions": {
+    "unauthenticated": "Unauthenticated",
+    "invalidFormData": "Invalid form data",
+    "unauthorizedCreate": "Unauthorized to create product",
+    "connectionRequired": "A data connection is required",
+    "connectionNotFoundField": "Selected data connection was not found",
+    "invalidConnection": "Invalid data connection",
+    "connectionNotPermitted": "You are not permitted to use the selected data connection",
+    "connectionWrongAccountField": "Selected data connection is not available for this account",
+    "connectionWrongAccount": "Invalid data connection for this account",
+    "visibilityNotAllowed": "The \"{name}\" data connection does not allow {visibility} products",
+    "invalidVisibility": "Invalid visibility for the selected data connection",
+    "idsRequired": "Account ID and Product ID are required",
+    "productNotFound": "Product not found",
+    "unauthorizedUpdate": "Unauthorized to update this product",
+    "connectionMissingField": "This product's data connection could not be found, so its visibility cannot be changed",
+    "connectionMissing": "Data connection not found for this product",
+    "invalidVisibilityForProduct": "Invalid visibility for the product's data connection",
+    "updated": "Product updated successfully!",
+    "updateFailed": "Failed to update product. Please try again.",
+    "unauthorizedDelete": "Unauthorized to delete this product",
+    "cannotPreserveData": "You are not permitted to keep this product's data when deleting it.",
+    "deleteFailed": "Failed to delete product: {reason}"
+  },
+  "ProductAnalyticsPage": {
+    "metaTitle": "{title} — Analytics",
+    "heading": "Analytics",
+    "previewNotice": "Analytics is a preview feature. The metrics shown here and who can access them may change in the near future. Let us know what you think at <link>hello@source.coop</link>.",
+    "windowDays": "{days}d",
+    "unavailable": "Analytics are unavailable right now. Try again in a few minutes."
+  },
+  "ProductAnalyticsView": {
+    "downloadsTab": "DOWNLOADS",
+    "usersTab": "USERS",
+    "dailyAvg": "Daily avg",
+    "byCountry": "By country",
+    "breakdownUnavailable": "Country breakdown unavailable.",
+    "otherCountries": "{count} others",
+    "unknownCountry": "Unknown",
+    "topFiles": "Top files",
+    "noFileDownloads": "No file downloads in this period.",
+    "file": "File"
+  },
+  "ProductContentsCard": {
+    "contents": "Contents"
+  },
+  "ProductCreationForm": {
+    "visibility": {
+      "public": {
+        "label": "Public",
+        "description": "Anyone can find and download it. Appears in search and the product feed."
+      },
+      "unlisted": {
+        "label": "Unlisted",
+        "description": "Anyone with the link can download it. Hidden from search and the feed."
+      },
+      "restricted": {
+        "label": "Restricted",
+        "description": "Members of this product only."
+      }
+    },
+    "noVisibilities": "no visibilities",
+    "connectionOption": "{name}{location} · {visibilities}",
+    "connectionOptionReadOnly": "{name}{location} · {visibilities} · Read Only",
+    "sectionDescription": "Description",
+    "sectionStorage": "Storage",
+    "sectionAccess": "Access",
+    "titleLabel": "Product Title",
+    "titleDescription": "The name of your product",
+    "titlePlaceholder": "Enter product name",
+    "ownerLabel": "Owner Account",
+    "ownerDescription": "The account that owns the product",
+    "productIdLabel": "Product ID",
+    "productIdDescription": "The ID of your product",
+    "productIdPlaceholder": "Enter product ID",
+    "checkingAvailability": "Checking availability of <code>{id}</code>",
+    "available": "✓ Available: <code>{id}</code>",
+    "descriptionLabel": "Description",
+    "descriptionDescription": "A brief description of your product",
+    "descriptionPlaceholder": "Describe your product",
+    "connectionLabel": "Data Connection",
+    "connectionDescription": "Where this product's data is stored. Determines the available region and visibility options. If you're unsure, choose a us-west-2 connection.",
+    "noConnections": "No data connections available",
+    "visibilityLabel": "Visibility",
+    "visibilityConnectionMissing": "This product's data connection could not be found, so its visibility can't be changed.",
+    "visibilityDescription": "Who can reach this product. The options depend on its data connection.",
+    "statusLabel": "Status",
+    "statusActive": "Active",
+    "statusDeactivated": "Deactivated",
+    "statusDescription": "Deactivating hides the product from source.coop and blocks the data.source.coop API. The data is kept, but only a Source Cooperative administrator can reactivate it."
+  },
+  "ProductDataUnavailable": {
+    "accessUnconfirmed": "Your access to this private product's data couldn't be confirmed just now.",
+    "errorDetails": "Error details (visible to maintainers only)",
+    "tryAgain": "Try again"
+  },
+  "ProductErrorPage": {
+    "heading": "Something went wrong loading this product",
+    "body": "We couldn't load this product's contents right now. This is usually temporary — please try again in a moment.",
+    "reference": "Reference: {digest}",
+    "tryAgain": "Try again"
+  },
+  "ProductLayout": {
+    "deactivatedNotice": "This product is deactivated. It is hidden from everyone except its owners and administrators."
+  },
+  "ProductListItem": {
+    "providedBy": "Provided by <account></account>",
+    "publishedOn": "Published on <date></date>",
+    "public": "Public",
+    "unlisted": "Unlisted",
+    "restricted": "Restricted",
+    "publicProduct": "Public product",
+    "unlistedProduct": "Unlisted product",
+    "restrictedProduct": "Restricted product",
+    "deactivated": "Deactivated",
+    "deactivatedProduct": "Deactivated product"
+  },
+  "ProductLoading": {
+    "contents": "Contents",
+    "details": "Details"
+  },
+  "ProductMetaCard": {
+    "details": "Details"
+  },
+  "ProductMetaContent": {
+    "visibility": "Visibility",
+    "public": "Public",
+    "unlisted": "Unlisted",
+    "restricted": "Restricted",
+    "owner": "Owner",
+    "created": "Created",
+    "lastUpdated": "Last Updated"
+  },
+  "ProductMetadata": {
+    "unknownAccount": "Unknown Account",
+    "description": "A data product by {account}"
+  },
+  "ProductMirrorActions": {
+    "notAccountManager": "Only owners and maintainers of the owning account can manage this product's data connections",
+    "concurrentEdit": "This product was modified by someone else. Please reload and try again.",
+    "unauthenticated": "Unauthenticated",
+    "missingFields": "Missing required fields",
+    "productNotFound": "Product not found",
+    "connectionNotFound": "Data connection not found",
+    "connectionUnavailable": "This data connection is not available for this account",
+    "alreadyAssociated": "This data connection is already associated with this product",
+    "added": "Data connection added successfully!",
+    "addFailed": "Failed to add data connection. Please try again.",
+    "mirrorNotFound": "Mirror not found",
+    "removed": "Data connection removed successfully!",
+    "removeFailed": "Failed to remove data connection. Please try again.",
+    "invalidPrefix": "Prefix can't start with '/' or contain '..'",
+    "cannotEditPrefix": "You must be able to manage both this account and the data connection to edit its prefix",
+    "prefixUpdated": "Prefix updated successfully!",
+    "prefixUpdateFailed": "Failed to update prefix. Please try again.",
+    "primaryUpdated": "Primary mirror updated successfully!",
+    "primaryUpdateFailed": "Failed to update primary mirror. Please try again."
+  },
+  "ProductMirrorsManager": {
+    "title": "Data Connections",
+    "description": "Where this product's objects live. The primary connection is the one visitors download from.",
+    "readOnlyNotice": "Only owners and maintainers of <code>{account}</code> can change this product's data connections.",
+    "cacheNotice": "The data proxy caches these settings. Changes here can take up to five minutes to take effect.",
+    "emptyManage": "Add a data connection to this product.",
+    "emptyReadOnly": "No data connections have been configured for this product.",
+    "primary": "Primary",
+    "actionsFor": "Actions for {name}",
+    "makePrimary": "Make primary",
+    "editConnection": "Edit connection",
+    "removeFromProduct": "Remove from product…",
+    "prefixLabel": "Prefix",
+    "prefixHelp": "Where this product's objects sit inside the connection. You can change it because you manage both this product's account and its connection.",
+    "connectionRoot": "(connection root)",
+    "addTitle": "Add a connection",
+    "noneAvailable": "No other connections are available to this account.",
+    "allAttached": "Every connection available to this account is already attached.",
+    "choosePlaceholder": "Choose a connection…",
+    "add": "Add",
+    "removeConfirmTitle": "Remove {name}?",
+    "removeConfirmDescription": "This product will no longer be served from that storage. The objects themselves are not deleted, and you can attach the connection again later."
+  },
+  "ProductNotFoundPage": {
+    "metaTitle": "Product Not Found | Source Cooperative",
+    "metaDescription": "The requested product could not be found.",
+    "title": "Not Found"
+  },
+  "ProductPage": {
+    "dataUnavailable": "This product's files couldn't be loaded just now — the storage backend didn't respond. Try again in a moment."
+  },
+  "ProductSearchResult": {
+    "updated": "Updated <date></date>",
+    "public": "Public",
+    "private": "Private"
+  },
+  "ProductTabs": {
+    "product": "PRODUCT",
+    "analytics": "ANALYTICS",
+    "restrictedTooltip": "Visible only to this product's owners, maintainers, and site admins.",
+    "restricted": "Restricted"
+  },
+  "ProductsFilters": {
+    "searchPlaceholder": "Search products...",
+    "tagsPlaceholder": "Filter by tags (comma-separated)",
+    "featured": "Featured",
+    "clearFilters": "Clear Filters"
+  },
+  "ProductsList": {
+    "empty": "No products found matching your criteria.",
+    "navLabel": "Product list"
+  },
+  "ProductsPage": {
+    "metaTitle": "Products | Source Cooperative",
+    "metaDescription": "Browse and discover public data products on Source.coop",
+    "title": "Products",
+    "showingCount": "Showing {count, plural, one {# product} other {# products}}",
+    "searchBadge": "Search: “{search}”",
+    "tagsBadge": "Tags: {tags}",
+    "featured": "Featured"
+  },
+  "ProductsSkeleton": {
+    "navLabel": "Product list loading"
+  },
+  "ProfileImageUpload": {
+    "invalidType": "Invalid file type. Allowed types: {types}",
+    "tooLarge": "File size must be less than {size}MB",
+    "uploadFailedStatus": "Upload failed: {status}",
+    "uploadFailed": "Upload failed",
+    "deleteFailed": "Delete failed",
+    "titleIndividual": "Your Profile Picture",
+    "titleOrganization": "Organization Profile Picture",
+    "descriptionIndividual": "Upload a profile picture to personalize your account. If no custom image is uploaded, your Gravatar will be displayed.",
+    "descriptionOrganization": "Upload a profile picture for your organization. If no custom image is uploaded, a default icon will be displayed.",
+    "uploading": "Uploading...",
+    "uploadNew": "Upload New Image",
+    "deleting": "Deleting...",
+    "removeImage": "Remove Image",
+    "removeTitle": "Remove Profile Image",
+    "removeConfirmIndividual": "Are you sure you want to remove your profile image? Your account will fall back to using your Gravatar.",
+    "removeConfirmOrganization": "Are you sure you want to remove your profile image? Your organization will display the default icon.",
+    "removed": "✓ Profile image removed successfully!",
+    "uploaded": "✓ Profile image uploaded successfully!",
+    "guidelines": "Image Guidelines",
+    "guidelineDimensions": "• Recommended dimensions: 400x400 pixels or larger",
+    "guidelineSquare": "• Square images work best for profile pictures",
+    "guidelineFormats": "• Supported formats: JPG, PNG, WebP, GIF",
+    "guidelineSize": "• Maximum file size: 5MB"
+  },
+  "ProxyCredentialsGate": {
+    "error": "We couldn't load your access credentials for this private product. Please try again, and if the problem persists, sign out and back in.",
+    "tryAgain": "Try again",
+    "fetching": "Fetching access credentials…"
+  },
+  "RefreshListingButton": {
+    "refresh": "Refresh",
+    "refreshListing": "Refresh listing"
+  },
+  "STACSection": {
+    "catalog": "STAC Catalog: <link>{url}</link>"
+  },
+  "SecretField": {
+    "keepCurrent": "Keep current",
+    "stored": "Stored",
+    "replace": "Replace…"
+  },
+  "ServiceAccountActions": {
+    "unauthenticated": "Unauthenticated",
+    "checkFields": "Check the highlighted fields",
+    "notOwnerManager": "You do not manage service accounts for that account",
+    "cannotOwnAnother": "A service account cannot own another",
+    "badSubject": "{subject} does not name one repository and one branch, tag or environment",
+    "accessReadOrWrite": "{product}: access must be read or write",
+    "noSuchProduct": "{account} has no product {product}",
+    "expiryRange": "Expiry must be between 1 and 3650 days",
+    "keyLabelTooLong": "Up to 64 characters.",
+    "accountIdTaken": "That account ID is already taken",
+    "localIdTaken": "{owner} already has a service account called {id}.",
+    "notManaged": "You do not manage that service account",
+    "disabled": "That service account is disabled",
+    "nameOneRepo": "Name one repository and one branch, tag or environment",
+    "alreadyTrusted": "Already trusted",
+    "trusted": "Trusted",
+    "noSuchTrust": "No such trust on this account",
+    "trustRemoved": "Trust removed",
+    "accountDisabled": "Service account disabled",
+    "accountEnabled": "Service account enabled",
+    "nameSaved": "Name saved"
+  },
+  "ServiceAccountDetail": {
+    "actionsFor": "Actions for {subject}",
+    "exampleUsage": "Example usage",
+    "signInFromWorkflow": "Sign in from this workflow",
+    "whoItIs": "Who it is",
+    "disabled": "Disabled",
+    "name": "Name",
+    "accountId": "Account ID",
+    "accountIdHelp": "The handle software signs in as. Permanent once created.",
+    "signsInWith": "Signs in with",
+    "signInDescription": "GitHub Actions workflows, each pinned to one repository and one branch, tag or environment; GitHub vouches for every run, so there is no secret to store. Or an API key, for environments without OIDC, shown once when it is issued. Revoke a key that leaks, or disable the account below to stop every sign-in at once.",
+    "nothingYet": "Nothing yet — it cannot sign in until a workflow is trusted or a key is issued.",
+    "githubWorkflows": "GitHub workflows",
+    "apiKeys": "API keys",
+    "canReach": "Can reach",
+    "canReachDescription": "The products it can read or write, each opened in a new tab to check what it holds. A change is saved at once, and takes effect on its next sign-in.",
+    "dangerZone": "Danger zone",
+    "enable": "Enable",
+    "disable": "Disable",
+    "enableTitle": "Enable {name}?",
+    "disableTitle": "Disable {name}?",
+    "enableDescription": "Its trusted workflows and unrevoked API keys can sign in again, so revoke any key that leaked first.",
+    "disableDescription": "Nothing can sign in as it, by workflow or by API key, and within five minutes credentials already generated are cut back to public data. Its workflows, keys and product access are kept.",
+    "deleteTitle": "Delete {name}?",
+    "deleteDescription": "Its workflows and API keys stop working, and it loses access to every product. Credentials already generated last until they expire. This cannot be undone.",
+    "typeToConfirm": "Type <code>{accountId}</code> to confirm"
+  },
+  "ServiceAccountForm": {
+    "removeLabel": "Remove {label}",
+    "whoItIs": "Who it is",
+    "ownedBy": "Owned by {owner}; whoever manages that account manages this one.",
+    "name": "Name",
+    "namePlaceholder": "Nightly Sync",
+    "accountId": "Account ID",
+    "accountIdEditHelp": "The handle software signs in as. Lowercase letters, numbers and single hyphens.",
+    "accountIdHelp": "Made from the name. Permanent once created.",
+    "signsInWith": "Signs in with",
+    "nothingYet": "Nothing yet. Add a workflow or key to grant access from an external environment.",
+    "githubWorkflows": "GitHub workflows",
+    "apiKeys": "API keys",
+    "expiresAfter": "{days, plural, one {Expires # day after it is issued} other {Expires # days after it is issued}}",
+    "neverExpires": "Never expires",
+    "canReach": "Can reach",
+    "canReachDescription": "Products {owner} owns that it may read or write. Each grant is an ordinary membership, revoked the same way as a person's.",
+    "submit": "Create service account"
+  },
+  "ServiceAccountKeyActions": {
+    "notManaged": "You do not manage that service account",
+    "disabled": "That service account is disabled",
+    "expiryRange": "Expiry must be between 1 and 3650 days",
+    "labelTooLong": "Give the key a label of up to 64 characters",
+    "noSuchKey": "No such key on a service account you manage",
+    "alreadyRevoked": "Already revoked",
+    "revoked": "Key revoked",
+    "expiryUpdated": "Expiry updated",
+    "noExpiry": "Key no longer expires"
+  },
+  "ServiceAccountList": {
+    "emptyTitle": "No service accounts yet",
+    "emptyBody": "Create one for a nightly sync, a publishing pipeline, or an instrument.",
+    "disabled": "Disabled",
+    "workflows": "{count, plural, one {# workflow} other {# workflows}}",
+    "apiKeys": "{count, plural, one {# API key} other {# API keys}}",
+    "products": "{count, plural, one {# product} other {# products}}"
+  },
+  "ServiceAccountPage": {
+    "metaTitle": "Service account",
+    "back": "Service accounts"
+  },
+  "ServiceAccountsPage": {
+    "metaTitle": "Service accounts",
+    "title": "Service Accounts",
+    "description": "Logins for software — a nightly sync, a publishing pipeline, an instrument — granted and revoked without sharing anyone's account.",
+    "newServiceAccount": "New service account"
+  },
+  "ShortcutHelp": {
+    "title": "Keyboard Shortcuts",
+    "descriptionProductList": "Keyboard shortcuts for product list. Use these shortcuts to navigate and interact with the interface.",
+    "descriptionObjectBrowser": "Keyboard shortcuts for object browser. Use these shortcuts to navigate and interact with the interface.",
+    "descriptionObjectDetails": "Keyboard shortcuts for object details. Use these shortcuts to navigate and interact with the interface.",
+    "keyHeader": "Key",
+    "actionHeader": "Action",
+    "pressEscapeToClose": "Press Escape to close",
+    "toggleHelp": "Show/hide this help dialog",
+    "goHome": "Go to homepage",
+    "navigateUp": "Navigate up",
+    "navigateDown": "Navigate down",
+    "openSelectedProduct": "Open selected product",
+    "copySelectedProductUrl": "Copy URL of selected product",
+    "clearSelection": "Clear selection",
+    "openSelectedItem": "Open selected item",
+    "copySelectedItemUrl": "Copy URL of selected item",
+    "goUpOneLevel": "Go up one level",
+    "navigateUpProperties": "Navigate up through properties",
+    "navigateDownProperties": "Navigate down through properties",
+    "copySelectedPropertyValue": "Copy selected property value",
+    "returnToDirectoryView": "Return to directory view"
+  },
+  "SiteMetadata": {
+    "description": "A data publishing utility for the open web."
+  },
+  "StatusPage": {
+    "notFoundTitle": "404: Not Found",
+    "notFoundDescription": "We couldn't find what you're looking for.<br></br>The path may have been moved or no longer exists.",
+    "notAuthorizedTitle": "403: Not Authorized",
+    "notAuthorizedDescription": "You don't have permission to access this resource.<br></br>Please contact an administrator if you believe this is an error.",
+    "unauthenticatedTitle": "Sign in required",
+    "unauthenticatedDescription": "You need to sign in to access this page.<br></br>You'll be returned here after logging in.",
+    "returnHome": "Return to Homepage"
+  },
+  "UploadProvider": {
+    "leaveWarning": "Uploads or deletes in progress will be interrupted if you leave.",
+    "requestFailed": "request failed",
+    "deletePartial": "Delete may be partial — {reason}. Retry to remove remaining items.",
+    "deleteFailed": "Delete failed — {reason}. Please retry."
+  },
+  "UsageCard": {
+    "title": "Analytics",
+    "windowDays": "{days} days"
+  },
+  "ViewCredentialsDialog": {
+    "title": "View Credentials",
+    "description": "Copy these temporary credentials to use in your applications.",
+    "cliCallout": "Prefer a simpler workflow? The <link>Source Coop CLI</link> handles credentials for you, with longer-lived credentials (up to 12 hours).",
+    "tabJson": "JSON (SDK)",
+    "tabEnv": "Environment Variables",
+    "jsonHint": "For SDK clients (boto3, AWS SDK, etc.)",
+    "envHint": "For terminal/shell usage",
+    "iniHint": "For ~/.aws/credentials (AWS CLI profile)",
+    "boundaries": "Boundaries",
+    "expiration": "Expiration",
+    "bucket": "Bucket",
+    "prefix": "Prefix",
+    "copyToClipboard": "Copy to clipboard"
+  },
+  "WelcomeCallout": {
+    "message": "Welcome to Source Cooperative. This is your profile page. <link>Edit it to add more details</link>."
   }
 }

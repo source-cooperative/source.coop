@@ -10,6 +10,7 @@ import { useS3Credentials, CredentialsScope } from "./CredentialsProvider";
 import { useUploadManager } from "./UploadProvider";
 import { ViewCredentialsDialog } from "./ViewCredentialsDialog";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 
 interface FetchCredentialsButtonProps {
   scope: CredentialsScope;
@@ -23,6 +24,7 @@ export const FetchCredentialsButton = ({
   const { getCredentials, getStatus, fetchCredentials, clearCredentials } =
     useS3Credentials();
   const { uploadFiles } = useUploadManager();
+  const t = useTranslations("FetchCredentialsButton");
   const [showCredentialsDialog, setShowCredentialsDialog] = useState(false);
 
   const s3Credentials = getCredentials(scope);
@@ -87,21 +89,21 @@ export const FetchCredentialsButton = ({
           onCheckedChange={handleEnableEdit}
           disabled={isLoading || isEditMode}
         >
-          Edit Mode
+          {t("editMode")}
         </DropdownMenu.CheckboxItem>
         <DropdownMenu.CheckboxItem
           checked={!isEditMode}
           onCheckedChange={handleDisableEdit}
           disabled={isLoading || !isEditMode}
         >
-          Read Only
+          {t("readOnly")}
         </DropdownMenu.CheckboxItem>
 
         <DropdownMenu.Separator />
 
         <DropdownMenu.Item onClick={handleViewCredentials} disabled={isLoading}>
           <EyeOpenIcon />
-          View Credentials
+          {t("viewCredentials")}
         </DropdownMenu.Item>
 
         {isEditMode && (
@@ -111,14 +113,14 @@ export const FetchCredentialsButton = ({
               disabled={!s3Credentials}
             >
               <UploadIcon />
-              Upload Files
+              {t("uploadFiles")}
             </DropdownMenu.Item>
             <DropdownMenu.Item
               onClick={handleUploadClick(true)}
               disabled={!s3Credentials}
             >
               <UploadIcon />
-              Upload Directory
+              {t("uploadDirectory")}
             </DropdownMenu.Item>
           </>
         )}

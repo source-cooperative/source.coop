@@ -1,8 +1,8 @@
 import { Card } from "@radix-ui/themes";
+import { getTranslations } from "next-intl/server";
 import { SectionHeader } from "@/components/core/SectionHeader";
 import { getUsage } from "@/lib/clients/analytics";
 import { MonoLabel } from "./panels";
-import { HELP } from "./style";
 import { UsagePanel } from "./UsagePanel";
 
 interface UsageCardProps {
@@ -20,6 +20,8 @@ interface UsageCardProps {
 export async function UsageCard({ accountId, productId }: UsageCardProps) {
   const usage = await getUsage(accountId, productId);
   if (!usage) return null;
+  const t = await getTranslations("UsageCard");
+  const tHelp = await getTranslations("AnalyticsHelp");
 
   return (
     // flexShrink 0: in the grid-stretched meta column an over-constrained
@@ -27,9 +29,11 @@ export async function UsageCard({ accountId, productId }: UsageCardProps) {
     // (Radix Card is overflow:hidden).
     <Card size={{ initial: "2", sm: "1" }} style={{ flexShrink: 0 }}>
       <SectionHeader
-        title="Analytics"
+        title={t("title")}
         rightButton={
-          <MonoLabel help={HELP.window}>{usage.days.length} days</MonoLabel>
+          <MonoLabel help={tHelp("window")}>
+            {t("windowDays", { days: usage.days.length })}
+          </MonoLabel>
         }
       >
         <UsagePanel days={usage.days} totals={usage.totals} />

@@ -10,6 +10,7 @@ import {
 } from "@radix-ui/themes";
 import { PlusIcon } from "@radix-ui/react-icons";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import type {
   IndividualAccount,
   OrganizationalAccount,
@@ -44,6 +45,7 @@ export function OrganizationProfile({
   canEdit,
   canCreateProduct,
 }: OrganizationProfileProps) {
+  const t = useTranslations("OrganizationProfile");
   return (
     <Box>
       <Flex gap="4" mb="6" justify="between" align="start">
@@ -66,7 +68,7 @@ export function OrganizationProfile({
       <Grid columns={{ initial: "1", md: "2" }} gap="6" mb="6">
         <Box>
           <Heading as="h2" size="4" mb="2">
-            Organization Details
+            {t("details")}
           </Heading>
 
           {account.metadata_public.location && (
@@ -85,7 +87,7 @@ export function OrganizationProfile({
           {account.emails?.find((email: AccountEmail) => email.is_primary)
             ?.address && (
             <Text as="p" size="2">
-              Email:{" "}
+              {t("emailLabel")}{" "}
               <RadixLink
                 href={`mailto:${
                   account.emails?.find(
@@ -103,7 +105,7 @@ export function OrganizationProfile({
           )}
           {account.metadata_public.ror_id && (
             <Text as="p" size="2">
-              ROR ID:{" "}
+              {t("rorIdLabel")}{" "}
               <RadixLink
                 href={`https://ror.org/${account.metadata_public.ror_id}`}
               >
@@ -115,7 +117,7 @@ export function OrganizationProfile({
 
         <Box>
           <Heading as="h2" size="4" mb="2">
-            Members
+            {t("members")}
           </Heading>
           <OrganizationMembers
             owners={owners}
@@ -128,13 +130,13 @@ export function OrganizationProfile({
       <Box>
         <Flex justify="between" align="center" mb="2">
           <Heading as="h2" size="4">
-            Products
+            {t("products")}
           </Heading>
           {canCreateProduct && (
             <RadixLink asChild size="1">
               <Link href={newProductUrl(account.account_id)}>
                 <Flex as="span" align="center" gap="1">
-                  <PlusIcon width="12" height="12" /> New product
+                  <PlusIcon width="12" height="12" /> {t("newProduct")}
                 </Flex>
               </Link>
             </RadixLink>
@@ -144,7 +146,7 @@ export function OrganizationProfile({
           <ProductsList products={products} />
         ) : (
           <Text as="p" size="2">
-            No products available.
+            {t("noProducts")}
           </Text>
         )}
       </Box>

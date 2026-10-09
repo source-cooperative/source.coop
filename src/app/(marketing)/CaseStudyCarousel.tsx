@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Blockquote, Box, Flex, Link, Text } from "@radix-ui/themes";
 import styles from "./Landing.module.css";
 
@@ -32,6 +33,7 @@ const SLIDE_H = 260;
 const PEEK = Math.round(SLIDE_H * 0.2); // 52px visible above and below
 
 export function CaseStudyCarousel() {
+  const t = useTranslations("CaseStudyCarousel");
   const [index, setIndex] = useState(0);
 
   const canPrev = index > 0;
@@ -80,7 +82,7 @@ export function CaseStudyCarousel() {
                 rel="noopener noreferrer"
                 size="1"
               >
-                Read case study &rarr;
+                {t("readCaseStudy")}
               </Link>
             </Box>
           ))}
@@ -92,7 +94,7 @@ export function CaseStudyCarousel() {
         <Text
           size="7"
           onClick={goPrev}
-          aria-label="Previous quote"
+          aria-label={t("previousQuote")}
           style={{ opacity: canPrev ? 1 : 0.25, cursor: canPrev ? "pointer" : "default" }}
         >
           ↑
@@ -100,7 +102,7 @@ export function CaseStudyCarousel() {
         <Text
           size="7"
           onClick={goNext}
-          aria-label="Next quote"
+          aria-label={t("nextQuote")}
           style={{ opacity: canNext ? 1 : 0.25, cursor: canNext ? "pointer" : "default" }}
         >
           ↓

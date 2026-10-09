@@ -8,13 +8,15 @@ import { NotAuthorizedPage } from "@/components/core";
 import { notFound } from "next/navigation";
 import { isAuthorized } from "@/lib/api/authz";
 import { Actions } from "@/types";
+import { getTranslations } from "next-intl/server";
 
 export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
   const { account_id } = await params;
   const account = await accountsTable.fetchById(account_id);
-  return { title: `Edit ${account!.name} permissions` };
+  const t = await getTranslations("EditAccountPermissionsPage");
+  return { title: t("metaTitle", { name: account!.name }) };
 }
 interface PageProps {
   params: Promise<{ account_id: string }>;
@@ -33,11 +35,12 @@ export default async function PermissionsPage({ params }: PageProps) {
   if (!isAuthorized(session, account, Actions.GetAccountFlags)) {
     return <NotAuthorizedPage />;
   }
+  const t = await getTranslations("EditAccountPermissionsPage");
   return (
     <Box>
       <FormTitle
-        title="Permissions"
-        description="Manage this account's permissions and capabilities"
+        title={t("title")}
+        description={t("description")}
       />
       <AccountFlagsForm session={session} account={account} />
     </Box>

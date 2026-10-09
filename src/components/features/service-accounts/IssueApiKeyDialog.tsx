@@ -2,6 +2,7 @@
 
 import React, { useActionState } from "react";
 import { Button, Dialog, Flex, Text, TextField } from "@radix-ui/themes";
+import { useTranslations } from "next-intl";
 import { Field } from "@/components/core";
 import { issueApiKey } from "@/lib/actions/service-account-keys";
 import { IDLE_API_KEY_ACTION_STATE } from "@/types";
@@ -33,10 +34,11 @@ export function IssueApiKeyDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const t = useTranslations("IssueApiKeyDialog");
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Content style={{ maxWidth: 640 }}>
-        <Dialog.Title>Issue an API key</Dialog.Title>
+        <Dialog.Title>{t("title")}</Dialog.Title>
         {/* The content unmounts when the dialog closes, so the form — and the
             key it shows — lives in here: the next open starts a new key. */}
         <IssueForm accountId={accountId} onAdd={onAdd} onAdded={() => onOpenChange(false)} />
@@ -55,12 +57,14 @@ function IssueForm({
   onAdded: () => void;
 }) {
   const [state, formAction, pending] = useActionState(issueApiKey, IDLE_API_KEY_ACTION_STATE);
+  const t = useTranslations("IssueApiKeyDialog");
+  const tc = useTranslations("Common");
   return state.issued ? (
     <Flex direction="column" gap="3">
       <IssuedApiKey apiKey={state.issued.key} record={state.issued.record} />
       <Flex justify="end">
         <Dialog.Close>
-          <Button variant="soft">Done</Button>
+          <Button variant="soft">{t("done")}</Button>
         </Dialog.Close>
       </Flex>
     </Flex>
@@ -81,12 +85,10 @@ function IssueForm({
       {accountId && <input type="hidden" name="account_id" value={accountId} />}
       <Flex direction="column" gap="3">
         <Dialog.Description size="2">
-          For environments without OIDC: a server, a scheduler, an
-          instrument. The key signs in as this service account with
-          exactly its grants.
+          {t("description")}
         </Dialog.Description>
-        <Field label="Label" htmlFor="key-label" required help="Where this key lives, so you know which one to revoke.">
-          <TextField.Root id="key-label" name="label" required placeholder="HPC cron job" maxLength={64} />
+        <Field label={t("label")} htmlFor="key-label" required help={t("labelHelp")}>
+          <TextField.Root id="key-label" name="label" required placeholder={t("labelPlaceholder")} maxLength={64} />
         </Field>
         <ApiKeyExpiryField id="key-expiry" />
         {state.message && (
@@ -97,11 +99,11 @@ function IssueForm({
         <Flex justify="end" gap="2">
           <Dialog.Close>
             <Button type="button" variant="soft" color="gray">
-              Cancel
+              {tc("cancel")}
             </Button>
           </Dialog.Close>
           <Button type="submit" highContrast disabled={pending}>
-            {onAdd ? "Add key" : "Issue key"}
+            {onAdd ? t("addKey") : t("issueKey")}
           </Button>
         </Flex>
       </Flex>

@@ -22,6 +22,606 @@
     "none": "なし",
     "unknownError": "問題が発生しました。もう一度お試しください。"
   },
+  "AccountActions": {
+    "unauthenticated": "ログインが必要です。",
+    "invalidFormData": "入力内容が正しくありません。",
+    "unauthorizedCreate": "この種類のアカウントを作成する権限がありません。",
+    "accountIdTakenField": "そのアカウントIDはすでに使用されています。",
+    "accountIdTaken": "そのアカウントIDはすでに使用されています。",
+    "accountIdRequired": "アカウントIDは必須です。",
+    "accountNotFound": "アカウントが見つかりません。",
+    "unauthorizedUpdate": "このアカウントを更新する権限がありません。",
+    "invalidEmail": "メールアドレスが正しくありません。",
+    "profileUpdated": "プロフィールを更新しました。",
+    "profileUpdateFailed": "プロフィールを更新できませんでした。もう一度お試しください。",
+    "unauthorizedUpdateFlags": "このアカウントのフラグを更新する権限がありません。",
+    "serviceAccountNoAdmin": "サービスアカウントに管理者フラグは付与できません。",
+    "flagsUpdated": "アカウントのフラグを更新しました。",
+    "flagsUpdateFailed": "アカウントのフラグを更新できませんでした。もう一度お試しください。"
+  },
+  "AccountCreateDataConnectionPage": {
+    "metaTitle": "データ接続を作成",
+    "title": "データ接続を作成",
+    "description": "このアカウントのプロダクトがミラーできる外部ストレージを接続します。"
+  },
+  "AccountDataConnectionsPage": {
+    "metaTitle": "データ接続",
+    "title": "データ接続",
+    "description": "このアカウントの外部ストレージへの接続を管理します。",
+    "newConnection": "新しい接続"
+  },
+  "AccountDropdown": {
+    "pendingInvitations": "保留中の招待があります",
+    "you": "あなた",
+    "viewProfile": "プロフィールを表示",
+    "viewOrganization": "組織を表示",
+    "products": "プロダクト",
+    "noProducts": "プロダクトはまだありません",
+    "noCreateProductPermission": "プロダクトを作成する権限がありません",
+    "newProduct": "新規プロダクト",
+    "noCreateOrgPermission": "組織を作成する権限がありません",
+    "newOrganization": "新規組織",
+    "invitations": "招待",
+    "noInvitations": "保留中の招待はありません",
+    "admin": "管理者",
+    "logout": "ログアウト"
+  },
+  "AccountFlagsForm": {
+    "createDataConnections": "データ接続の作成",
+    "createDataConnectionsOrgDescription": "この組織が外部ストレージへの独自のデータ接続を作成・管理できるようにします。",
+    "createDataConnectionsDescription": "このアカウントが外部ストレージへの独自のデータ接続を作成・管理できるようにします。",
+    "createServiceAccounts": "サービスアカウントの作成",
+    "createServiceAccountsOrgDescription": "この組織がソフトウェアやパイプライン用のサービスアカウントを作成・管理できるようにします。",
+    "createServiceAccountsDescription": "このアカウントがソフトウェアやパイプライン用のサービスアカウントを作成・管理できるようにします。",
+    "createProducts": "プロダクトの作成",
+    "createProductsDescription": "このアカウントが新しいプロダクトを作成し、プロダクトの設定を管理できるようにします。",
+    "createOrganizations": "組織の作成",
+    "createOrganizationsDescription": "このアカウントが新しい組織を作成し、組織アカウントを管理できるようにします。",
+    "admin": "管理者",
+    "adminDescription": "プラットフォームへの完全な管理者権限です。すべてのアカウント、プロダクト、システム設定を管理できます。"
+  },
+  "AccountInfoHoverCard": {
+    "serviceAccount": "サービスアカウント"
+  },
+  "AccountMetadata": {
+    "title": "{name} · {type, select, individual {個人アカウント} other {組織}} · Source Cooperative",
+    "description": "{name}はSource Cooperativeの{type, select, individual {個人アカウント} other {組織}}です。"
+  },
+  "AccountNotFoundPage": {
+    "title": "アカウントが見つかりません",
+    "description": "リクエストされたアカウントは見つかりませんでした。"
+  },
+  "AccountSearchInput": {
+    "matchingAccounts": "一致するアカウント",
+    "serviceAccount": "サービスアカウント"
+  },
+  "ActivitySubmenu": {
+    "activity": "アクティビティ",
+    "status": "{status, select, queued {待機中} uploading {アップロード中} completed {完了} error {エラー} cancelled {キャンセル済み} other {{status}}}",
+    "moreHidden": "他{count, number}件…"
+  },
+  "AddGithubTrustDialog": {
+    "title": "GitHub ワークフローを信頼",
+    "invalid": "リポジトリを1つと、ブランチ、タグ、または環境を1つ指定してください",
+    "description": "1つのリポジトリを、1つのブランチ、タグ、または環境に固定します。実行のたびに GitHub がワークフローを保証するため、ここに保存されるのは名前だけです。",
+    "trustIt": "信頼する"
+  },
+  "AddSignInMenu": {
+    "description": "GitHub Actions のワークフロー（それぞれ1つのリポジトリと、1つのブランチ、タグ、または環境に固定）。実行のたびに GitHub が保証するため、保存すべきシークレットはありません。または、OIDC が使えない環境向けの APIキー（発行時に一度だけ表示）。",
+    "addSignIn": "ログイン方法を追加",
+    "githubWorkflow": "GitHub ワークフロー",
+    "apiKey": "APIキー"
+  },
+  "AdminAnalyticsPage": {
+    "metaTitle": "管理者 — アナリティクス",
+    "heading": "アナリティクス",
+    "notConfigured": "アナリティクスが設定されていません。{vars}を設定してください。",
+    "dateRange": "期間（UTC）",
+    "rangeDays": "{days, plural, other {#日}}",
+    "backRange": "{range}戻る（表示中の期間）",
+    "forwardRange": "{range}進む（表示中の期間）",
+    "backDay": "1日戻る",
+    "forwardDay": "1日進む",
+    "presetToday": "今日",
+    "presetDays": "{days}日",
+    "groupBy": "グループ化",
+    "interval": "間隔",
+    "auto": "自動",
+    "dimensions": {
+      "account": "アカウント",
+      "product": "プロダクト",
+      "country": "国",
+      "client": "IPハッシュ"
+    },
+    "intervals": {
+      "minute": "1分",
+      "hourly": "1時間",
+      "sixHour": "6時間",
+      "daily": "1日",
+      "weekly": "1週間"
+    },
+    "bucketMinutes": "{n}分",
+    "bucketHours": "{n}時間",
+    "bucketDays": "{n}日",
+    "spanHours": "{n, plural, other {#時間}}",
+    "spanDays": "{n, plural, other {#日}}",
+    "intervalTooFine": "{interval}間隔は最大{span}の期間に対応しています。この期間は{range}です",
+    "noTraffic": "{from}から{to}までの期間に、この条件でのトラフィックは記録されていません。",
+    "coarsened": "{bucket}間隔で表示しています。指定された間隔では、この期間のバーが{max}本を超えるためです。",
+    "scope": "範囲",
+    "share": "割合",
+    "other": "その他"
+  },
+  "AdminBreakdownChart": {
+    "avgBandwidth": "平均帯域幅",
+    "bytes": "バイト",
+    "viewSql": "SQLを表示",
+    "sqlTitle": "Analytics Engine SQL",
+    "sqlDescription": "このビューを生成したステートメントを実行順に表示します。",
+    "fullscreen": "全画面表示",
+    "exitFullscreen": "全画面表示を終了",
+    "total": "合計",
+    "other": "その他",
+    "bucketUtc": "{date} UTC",
+    "bucketPlusDays": "{date} + {days}日",
+    "footnote": "時刻はUTCです。値は推定値で、大量のトラフィックはサンプルから測定しています。バーをクリック（または複数のバーをドラッグ）すると拡大し、ブラウザの戻るボタンで縮小します。"
+  },
+  "AdminCreateDataConnectionPage": {
+    "metaTitle": "管理者 — データ接続を作成",
+    "title": "データ接続を作成"
+  },
+  "AdminDataConnectionsPage": {
+    "metaTitle": "管理者 — データ接続",
+    "title": "データ接続",
+    "newConnection": "新しい接続"
+  },
+  "AdminFiltersForm": {
+    "placeholderAccount": "アカウントID",
+    "placeholderProduct": "プロダクトID",
+    "placeholderCountry": "国コード（US）",
+    "placeholderClient": "IPハッシュの先頭",
+    "placeholderValue": "値",
+    "fromAria": "開始（UTC）",
+    "toAria": "終了（UTC、終了時刻を含まない）",
+    "utcHint": "UTC · 終了時刻を含まない",
+    "filterBy": "フィルター",
+    "filterDimension": "フィルターの項目",
+    "removeFilter": "フィルターを削除",
+    "addFilter": "フィルターを追加",
+    "apply": "適用"
+  },
+  "AdminLayout": {
+    "title": "管理者"
+  },
+  "AdminTools": {
+    "analytics": {
+      "name": "アナリティクス"
+    },
+    "userLookup": {
+      "name": "ユーザー検索"
+    },
+    "dataConnections": {
+      "name": "データ接続"
+    }
+  },
+  "AdminUserLookup": {
+    "disabled": "無効",
+    "oryNoIdentity": "Ory にメールアドレス「{query}」の ID はありません。",
+    "oryNoProfile": "Ory にメールアドレス「{query}」の ID はありますが、source.coop のプロフィールがありません。",
+    "oryResolved": "メールアドレス「{query}」を Ory で解決しました。",
+    "databaseNoMatch": "データベース内に「{query}」を含むアカウントハンドルや表示名はありません。",
+    "databaseMatches": "データベース内で「{query}」を含むハンドルと表示名です。"
+  },
+  "AdminUserLookupPage": {
+    "metaTitle": "管理者 — ユーザー検索",
+    "title": "ユーザー検索",
+    "description": "ユーザー名、名前、メールアドレスでユーザーを探し、プロフィールを開きます。"
+  },
+  "AdminUserSearchField": {
+    "placeholder": "ユーザー名、名前、または user@example.com",
+    "ariaLabel": "ユーザーを検索"
+  },
+  "AnalyticsHelp": {
+    "downloads": "成功したダウンロードの件数です。",
+    "window": "日付はUTCの日単位です。期間は直近の丸一日分と、今日のこれまでの分を含みます。",
+    "served": "ダウンロードされたデータの総量です。",
+    "bandwidth": "この期間にデータがダウンロードされた平均速度です。",
+    "requests": "データを正常に返したリクエストです。",
+    "countries": "ダウンロード元の国の数です。",
+    "dailyAvg": "期間中の1日あたりの平均ダウンロード数です。",
+    "uniqueIps": "データをダウンロードしたIPアドレスの数です。同じネットワーク（オフィス、大学、クラウドプロバイダーなど）を共有する利用者は1つとして数えられ、アクセスが非常に多いプロダクトではやや少なめに表示される場合があります。",
+    "uniqueIpsSampled": "この期間に現れたIPアドレスの数です。アクセスの多い期間はサンプルから測定するため、実際より少なく表示されます。期間が広いほど、その差は大きくなります。",
+    "registered": "ログイン中のユーザーによるダウンロードです。",
+    "anon": "ログインしていないユーザーによるダウンロードです。",
+    "distribution": "1回、2回…とダウンロードしたIPアドレスの数です。線は左から右へ累計しており、各バーの位置でその回数以下ダウンロードしたIPアドレスの割合を示します。"
+  },
+  "AnalyticsPanels": {
+    "downloads": "ダウンロード数",
+    "dataServed": "配信データ量",
+    "countries": "国",
+    "requests": "リクエスト",
+    "uniqueIps": "ユニークIP",
+    "registered": "登録ユーザー",
+    "anonDownloads": "匿名ダウンロード",
+    "windowDownloads": "{days}日間のダウンロード数",
+    "dailyDownloadsAria": "過去{days}日間の日別ダウンロード数",
+    "ipsByDownloadCount": "ダウンロード回数別のIP数",
+    "noActivity": "この期間にダウンロードはありません。",
+    "distributionAria": "IPあたりのダウンロード回数別ユニークIP数のパレート図",
+    "tooltipIps": "{ips} IP · {label}回ダウンロード",
+    "tooltipShare": "IPの{share}がこの回数以下",
+    "legendIps": "IP",
+    "legendCumulative": "累計"
+  },
+  "ApiKeyExpiryField": {
+    "expires": "有効期限",
+    "days30": "30日",
+    "days90": "90日",
+    "year": "1年",
+    "never": "無期限 — 失効させるまで"
+  },
+  "ApiKeyList": {
+    "used": "{when}に使用",
+    "neverUsed": "未使用",
+    "revoked": "{when}に{via, select, person {{who} が} owner {設定で} holder {API経由で匿名で} github {GitHub のシークレットスキャンにより} other {}}失効",
+    "neverExpires": "無期限",
+    "expires": "{when}に期限切れ",
+    "expired": "{when}に期限切れ",
+    "issued": "{when}に {who} が発行",
+    "lastUsed": "最終使用 {when}",
+    "actionsFor": "{label} の操作",
+    "exampleUsage": "使用例",
+    "changeExpiry": "有効期限を変更",
+    "revoke": "失効",
+    "signInWith": "{label} でログイン",
+    "usageIntro": "APIキーをファイルに保存し、それに合わせて環境変数を設定してください：",
+    "markerRevoked": "失効済み",
+    "markerExpired": "期限切れ",
+    "expiryTitle": "{label} の有効期限はいつにしますか？",
+    "none": "ありません。"
+  },
+  "AuthButtons": {
+    "noProfile": "まだプロフィールがありません。プロフィールを完成させるには<link>こちら</link>をクリックしてください。"
+  },
+  "BreadcrumbNav": {
+    "root": "ルート"
+  },
+  "CaseStudyCarousel": {
+    "readCaseStudy": "導入事例を読む →",
+    "previousQuote": "前の引用",
+    "nextQuote": "次の引用"
+  },
+  "ChecksumVerifier": {
+    "notAvailable": "レスポンスヘッダーにチェックサムがありません。",
+    "failed": "チェックサムを検証できませんでした。",
+    "verify": "{algorithm}を検証",
+    "verifying": "検証中…",
+    "verified": "チェックサムを確認しました",
+    "mismatch": "チェックサムが一致しません"
+  },
+  "ConditionalGroup": {
+    "because": "条件：{because}"
+  },
+  "ConnectionUsage": {
+    "heading": "{count, plural, other {#件のプロダクト}}で使用中",
+    "unused": "この接続を使用しているものはないため、削除できます。",
+    "columnProduct": "プロダクト",
+    "columnRole": "役割",
+    "columnStatus": "ステータス",
+    "primary": "プライマリ",
+    "mirror": "ミラー",
+    "deactivated": "無効",
+    "active": "有効"
+  },
+  "ConnectionsEmpty": {
+    "title": "データ接続はありません"
+  },
+  "CopyToClipboard": {
+    "copyToClipboard": "クリップボードにコピー"
+  },
+  "CreateServiceAccountPage": {
+    "metaTitle": "サービスアカウントを作成",
+    "title": "新しいサービスアカウント",
+    "description": "誰かのアカウントを共有することなく、付与や取り消しができるソフトウェア用のログインです。"
+  },
+  "DangerZone": {
+    "title": "危険な操作"
+  },
+  "DataConnectionActions": {
+    "unauthenticated": "ログインが必要です。",
+    "invalidFormData": "入力内容が正しくありません。",
+    "nameTooShort": "IDを作成できるよう、名前には英数字を{min}文字以上含めてください。",
+    "invalidName": "接続名が正しくありません。",
+    "unauthorizedCreate": "データ接続を作成する権限がありません。",
+    "nameTakenField": "その名前はすでに使用されています（ID「{id}」が生成されます）。",
+    "nameTaken": "その名前のデータ接続はすでに存在します。",
+    "created": "データ接続を作成しました。",
+    "createFailed": "データ接続を作成できませんでした。もう一度お試しください。",
+    "idRequired": "データ接続IDは必須です。",
+    "notFound": "データ接続が見つかりません。",
+    "unauthorizedUpdate": "データ接続を更新する権限がありません。",
+    "deletedConcurrently": "このデータ接続は別の操作によって削除されました。",
+    "updated": "データ接続を更新しました。",
+    "updateFailed": "データ接続を更新できませんでした。もう一度お試しください。",
+    "unauthorizedDelete": "データ接続を削除する権限がありません。",
+    "inUse": "削除できません：{count}件のプロダクトがまだこの接続を使用しています。先に各プロダクトから外してください。",
+    "deleted": "データ接続を削除しました。",
+    "deleteFailed": "データ接続を削除できませんでした。もう一度お試しください。"
+  },
+  "DataConnectionEditPage": {
+    "metaTitle": "データ接続を編集",
+    "adminMetaTitle": "管理者 — データ接続を編集",
+    "back": "データ接続",
+    "loadingUsage": "プロダクトの使用状況を読み込み中…",
+    "deleteTitle": "この接続を削除",
+    "deleteDescription": "接続レコードと保存されている認証情報を削除します。バケットとその中のオブジェクトには影響しません。"
+  },
+  "DataConnectionForm": {
+    "providerS3Description": "S3 互換のバックエンド（Cloudflare R2、MinIO、Ceph）にも対応します。",
+    "providerAzureDescription": "ストレージアカウントとそのコンテナの 1 つ。",
+    "providerGcsDescription": "キー不要：Workload Identity でフェデレーションします。",
+    "authAccessKey": "アクセスキー",
+    "authWebIdentityRole": "Web Identity ロール（フェデレーション）",
+    "authSasToken": "SAS トークン",
+    "authWorkloadIdentity": "Workload Identity（フェデレーション）",
+    "authAccessKeyDescription": "お客様が用意する静的な IAM アクセスキーとシークレットです。",
+    "authWebIdentityRoleDescription": "キー不要：プロキシが Web Identity 経由でお客様の IAM ロールを引き受けます。",
+    "authSasTokenDescription": "お客様が用意する共有アクセス署名（SAS）トークンです。",
+    "authAzureWorkloadIdentityDescription": "キー不要：プロキシが Azure AD のアプリ登録にフェデレーションします。",
+    "authGcpWorkloadIdentityDescription": "キー不要：プロキシが Workload Identity 経由で GCP のサービスアカウントにフェデレーションします。",
+    "authNoneDescription": "プロダクトのデータを配信する際に、データプロキシがこのバックエンドに認証する方法です。署名なし（公開）アクセスにする場合は「なし」を選択してください。",
+    "visibility": {
+      "public": "公開",
+      "unlisted": "限定公開",
+      "restricted": "制限付き"
+    },
+    "visibilityDescription": {
+      "public": "誰でも検索・ダウンロードできるプロダクト。",
+      "unlisted": "リンクを知っている人だけがアクセスできるプロダクト。",
+      "restricted": "メンバーに限定されたプロダクト。"
+    },
+    "sectionIdentity": "識別情報",
+    "nameLabel": "名前",
+    "nameHelp": "管理者用の一覧と、各プロダクトのストレージ選択に表示されます。",
+    "idLabel": "ID",
+    "idHelpEdit": "変更できません。名前を変えても ID は変わりません。",
+    "idHelpDerived": "名前から生成されます。作成後は変更できません。",
+    "idHelpEmpty": "名前に英数字をいくつか含めてください。",
+    "sectionBackend": "バックエンド",
+    "providerLabel": "プロバイダー",
+    "providerHelp": "以下に表示される接続設定と認証の項目が決まります。",
+    "becauseProviderS3": "プロバイダーが AWS S3 の場合",
+    "becauseProviderGcs": "プロバイダーが Google Cloud の場合",
+    "becauseProviderAzure": "プロバイダーが Azure Blob の場合",
+    "bucketLabel": "バケット",
+    "bucketHelpS3": "データを保存する S3 バケットの名前です。",
+    "bucketHelpGcs": "Google Cloud Storage バケットの名前です。",
+    "regionLabel": "リージョン",
+    "regionHelpS3": "バケットがホストされている AWS リージョンです。Cloudflare R2 などの S3 互換バックエンドでは「auto」を使用してください。",
+    "regionHelpAzure": "ストレージアカウントがホストされている Azure リージョンです。",
+    "regionPlaceholder": "リージョンを選択",
+    "endpointLabel": "エンドポイント",
+    "endpointHelp": "AWS 以外のバックエンド（Cloudflare R2、MinIO、Ceph）用のカスタム S3 互換エンドポイントです。AWS S3 の場合は空欄にしてください。",
+    "accountNameLabel": "アカウント名",
+    "accountNameHelp": "Azure Storage のアカウント名です。",
+    "containerNameLabel": "コンテナ名",
+    "containerNameHelp": "Azure Blob Storage のコンテナ名です。",
+    "sectionAuthentication": "認証",
+    "authTypeLabel": "認証方式",
+    "authTypeHelp": "選択できる方式は、上で選んだバックエンドによって異なります。",
+    "authNone": "なし（署名なし）",
+    "becauseMethodAccessKey": "認証方式がアクセスキーの場合",
+    "becauseMethodSasToken": "認証方式が SAS トークンの場合",
+    "becauseMethodWebIdentityRole": "認証方式が Web Identity ロールの場合",
+    "becauseMethodWorkloadIdentity": "認証方式が Workload Identity の場合",
+    "accessKeyIdLabel": "アクセスキー ID",
+    "accessKeyIdHelp": "使用中の認証情報を識別します。秘密情報ではありません。表示されることがないのは、対になるシークレットアクセスキーの方です。",
+    "secretAccessKeyLabel": "シークレットアクセスキー",
+    "secretAccessKeyHelp": "アクセスキー ID と対になるキーです。暗号化して保存され、再表示されることはありません。",
+    "sasTokenLabel": "SAS トークン",
+    "sasTokenHelp": "コンテナへのアクセスを許可する共有アクセス署名です。暗号化して保存され、再表示されることはありません。",
+    "roleArnLabel": "ロール ARN",
+    "roleArnHelp": "プロキシが AssumeRoleWithWebIdentity（キー不要のフェデレーション）で引き受ける IAM ロールです。ARN であり、秘密情報ではありません。",
+    "trustSubjectLabel": "信頼ポリシーのサブジェクト",
+    "trustSubjectHelp": "プロキシはロールを引き受ける際にこの OIDC サブジェクトを提示します。ロールの信頼ポリシーで、<b>data.source.coop:aud = sts.amazonaws.com</b> とあわせて、<b>data.source.coop:sub</b> がこの値に一致する <b>StringLike</b> 条件を追加してください。",
+    "tenantIdLabel": "テナント ID",
+    "tenantIdHelp": "Workload Identity フェデレーションに使用する Azure AD のテナント（ディレクトリ）ID です。",
+    "clientIdLabel": "クライアント ID",
+    "clientIdHelp": "フェデレーション ID 資格情報を持つアプリ登録の（クライアント）ID です。",
+    "workloadIdentityProviderLabel": "Workload Identity プロバイダー",
+    "workloadIdentityProviderHelp": "GCP Workload Identity プロバイダーの完全なリソース名です。秘密情報ではありません。",
+    "serviceAccountLabel": "サービスアカウント",
+    "serviceAccountHelp": "プロキシが成り代わる GCP サービスアカウントのメールアドレスです。秘密情報ではありません。",
+    "sectionKeyLayout": "キーの配置",
+    "basePrefixLabel": "ベースプレフィックス",
+    "basePrefixHelp": "バケットまたはコンテナ内の共通ルート（任意）です。この接続のすべてのプロダクトがこの下に配置されます。ルートを使う場合は空欄にしてください。",
+    "prefixTemplateLabel": "プレフィックステンプレート",
+    "prefixTemplateHelp": "バケットまたはコンテナ内で、各プロダクトのオブジェクトが配置される場所です。プロダクトがこの接続を追加すると、{accountIdVar} と {repositoryIdVar} が置き換えられます。",
+    "examplePrefixLabel": "プレフィックスの例",
+    "examplePrefixHelp": "<code>{path}</code> のプロダクトが保存される場所です。",
+    "sectionPolicy": "ポリシー",
+    "readOnlyLabel": "読み取り専用",
+    "readOnlyHelp": "プロダクトは閲覧とダウンロードのみ可能で、書き込みはできません。署名なしの接続では必須です。",
+    "allowedVisibilitiesLabel": "許可する公開範囲",
+    "allowedVisibilitiesHelp": "この接続のプロダクトが使用できる公開範囲です。プロダクトの作成時と、公開範囲の変更時に確認されます。",
+    "requiredFlagLabel": "必須フラグ",
+    "requiredFlagHelp": "この接続をプロダクトに使用するために、オーナーが持っている必要があるアカウントフラグです。制限しない場合は「なし」を選択してください。"
+  },
+  "DataConnectionsList": {
+    "systemOwner": "システム",
+    "emptyHint": "データ接続を作成して始めましょう。",
+    "readOnly": "読み取り専用",
+    "permitsNothing": "許可なし",
+    "listSeparator": "、",
+    "visibility": {
+      "public": "公開",
+      "unlisted": "限定公開",
+      "restricted": "制限付き"
+    }
+  },
+  "DeleteConnectionNote": {
+    "blocked": "削除できません：{count, plural, other {#件のプロダクト}}がまだこの接続を使用しています。先に各プロダクトから外してください。"
+  },
+  "DeleteDataConnectionButton": {
+    "trigger": "接続を削除",
+    "confirmTitle": "この接続を削除しますか？",
+    "confirmDescription": "接続レコードと保存されている認証情報を削除します。バケットとその中のオブジェクトには影響しません。この操作は取り消せません。"
+  },
+  "DeleteProductModal": {
+    "deleteFailed": "プロダクトを削除できませんでした。",
+    "deleteProduct": "プロダクトを削除",
+    "readOnlyTooltip": "この接続は読み取り専用のため、Source が基になるデータを削除することはありません。",
+    "recordOnlyLabel": "プロダクトのレコードのみ削除",
+    "recordOnlyReadOnly": "この接続は読み取り専用のため、基になるデータは常に保持されます。",
+    "recordOnlyDescription": "プロダクトとそのメンバーシップを削除し、接続内の基になるデータは保持します。",
+    "confirmPrompt": "確認のため、下に <code>{expected}</code> と入力してください：",
+    "consequencesHeading": "このプロダクトを削除すると、次のようになります：",
+    "consequenceRecord": "プロダクトのレコードとページを削除",
+    "consequenceMemberships": "すべてのメンバーシップを削除",
+    "consequenceKeepData": "接続内の基になるデータは保持",
+    "consequenceDeleteData": "接続内の基になるデータをすべて削除",
+    "cannotBeUndone": "この操作は元に戻せません。"
+  },
+  "DeleteProgress": {
+    "dismiss": "閉じる",
+    "deleted": "{count, plural, other {{shown}件のファイルを削除済み}}",
+    "counting": "ファイルを集計中… {found}件",
+    "deletedOfTotal": "{count, plural, other {{total}件中{deleted}件のファイルを削除済み}}"
+  },
+  "DirectoryList": {
+    "empty": "このディレクトリは空です。",
+    "scrollForMore": "スクロールして続きを表示"
+  },
+  "DirectoryRow": {
+    "retryUpload": "アップロードを再試行",
+    "cancelUpload": "アップロードをキャンセル",
+    "download": "{name}をダウンロード",
+    "copyUrl": "URLをクリップボードにコピー",
+    "deleteFailed": "削除に失敗しました",
+    "deleteItem": "{name}を削除",
+    "deleteFolderTitle": "フォルダを削除",
+    "deleteFileTitle": "ファイルを削除",
+    "deleteFolderConfirm": "<strong>{name}</strong> とその中身をすべて削除してもよろしいですか？この操作は元に戻せません。",
+    "deleteFileConfirm": "<strong>{name}</strong> を削除してもよろしいですか？この操作は元に戻せません。",
+    "queued": "待機中…",
+    "uploading": "アップロード中 {percent}%",
+    "uploadError": "エラー：{error}",
+    "cancelled": "キャンセル済み"
+  },
+  "Dropzone": {
+    "dropToUpload": "ここにファイルをドロップしてアップロード"
+  },
+  "EditAccountLayout": {
+    "details": "詳細",
+    "profilePicture": "プロフィール画像",
+    "dataConnections": "データ接続",
+    "permissions": "権限",
+    "serviceAccounts": "サービスアカウント",
+    "memberships": "メンバーシップ",
+    "authentication": "認証",
+    "authenticationDisabledTooltip": "管理者は他のユーザーの認証情報を編集できません。",
+    "viewProfile": "プロフィールを表示"
+  },
+  "EditAccountMembershipsPage": {
+    "metaTitle": "{name}のメンバーシップを編集",
+    "title": "メンバーシップ",
+    "description": "組織のメンバーとそのロールを管理します",
+    "emptyTitle": "メンバーはまだいません",
+    "emptyDescription": "組織にメンバーを招待しましょう"
+  },
+  "EditAccountPermissionsPage": {
+    "metaTitle": "{name}の権限を編集",
+    "title": "権限",
+    "description": "このアカウントの権限と機能を管理します"
+  },
+  "EditAccountProfilePage": {
+    "metaTitle": "{name}のプロフィールを編集",
+    "title": "公開プロフィール",
+    "descriptionIndividual": "公開プロフィール情報を更新します",
+    "descriptionOrganization": "組織の公開プロフィール情報を更新します"
+  },
+  "EditAccountProfilePicturePage": {
+    "metaTitle": "{name}の設定",
+    "title": "プロフィール画像",
+    "descriptionIndividual": "アカウントのプロフィール画像を管理します",
+    "descriptionOrganization": "組織のプロフィール画像を管理します"
+  },
+  "EditProductDetailsPage": {
+    "metaTitle": "{title}の詳細を編集",
+    "deleteTitle": "このプロダクトを削除",
+    "deleteDescription": "元に戻せません。プロダクトのレコード、そのメンバーシップ、アクセス記録を削除します。基盤となるオブジェクトも削除されるかどうかは、データ接続によって異なります。"
+  },
+  "EditProductLayout": {
+    "details": "詳細",
+    "memberships": "メンバーシップ",
+    "dataConnections": "データ接続",
+    "viewProduct": "プロダクトを表示"
+  },
+  "EditProductMembershipsPage": {
+    "metaTitle": "{title}のメンバーシップを編集",
+    "title": "メンバーシップ",
+    "description": "プロダクトのメンバーとそのロールを管理します",
+    "productMembers": "プロダクトのメンバー",
+    "productMembersDescription": "以下のユーザーには、このプロダクトへのアクセスが明示的に付与されています。",
+    "productMembersEmptyTitle": "メンバーはまだいません",
+    "productMembersEmptyDescription": "プロダクトにメンバーを招待しましょう",
+    "organizationMembers": "組織のメンバー",
+    "organizationMembersDescription": "以下のユーザーは、<link>組織のメンバーシップ</link>を通じてこのプロダクトに暗黙的にアクセスできます。",
+    "organizationMembersEmptyTitle": "組織のメンバーはいません",
+    "organizationMembersEmptyDescription": "この組織にはメンバーがいません"
+  },
+  "EditProductNotFound": {
+    "metaTitle": "プロダクトが見つかりません | Source Cooperative",
+    "metaDescription": "指定されたプロダクトは見つかりませんでした。",
+    "notFound": "見つかりません"
+  },
+  "EditProfileForm": {
+    "sectionIdentity": "基本情報",
+    "sectionAbout": "紹介",
+    "sectionIdentifiers": "識別子",
+    "sectionLinks": "リンク",
+    "name": "名前",
+    "namePlaceholder": "あなたの名前",
+    "nameDescription": "プロフィールに表示される名前です",
+    "email": "メールアドレス",
+    "emailDescriptionIndividual": "主要なメールアドレスです。<link>アカウント設定</link>で変更できます。",
+    "emailDescriptionOrganization": "組織の連絡先メールアドレス",
+    "bio": "自己紹介",
+    "description": "説明",
+    "bioPlaceholder": "あなたについて教えてください",
+    "bioDescription": "あなた自身やあなたの活動の簡単な説明",
+    "descriptionPlaceholder": "組織について教えてください",
+    "descriptionDescription": "組織の簡単な説明",
+    "orcid": "ORCID ID",
+    "orcidDescription": "ORCID識別子（任意）",
+    "rorId": "ROR ID",
+    "rorIdDescription": "Research Organization Registry識別子（任意）",
+    "websites": "ウェブサイト",
+    "websitesDescription": "プロフィールに関連するウェブサイトを追加",
+    "addWebsite": "ウェブサイトを追加",
+    "removeWebsite": "ウェブサイトを削除"
+  },
+  "EmailVerificationCallout": {
+    "unverified": "メールをご確認ください。メールアドレスを確認するためのコードを送信しました。または、<link>こちら</link>をクリックしてメールアドレスを確認してください。",
+    "justVerified": "メールアドレスの確認が完了しました。アカウントの確認にご協力いただきありがとうございます。"
+  },
+  "EmailVerificationStatus": {
+    "verifiedOn": "{date}にメールアドレスを確認済み",
+    "notVerified": "メールアドレス未確認"
+  },
+  "ExampleUsage": {
+    "githubWorkflowIntro": "このワークフローをカスタマイズし、<code>.github/workflows/</code> 以下のファイルに保存してください："
+  },
+  "FetchCredentialsButton": {
+    "editMode": "編集モード",
+    "readOnly": "読み取り専用",
+    "viewCredentials": "認証情報を表示",
+    "uploadFiles": "ファイルをアップロード",
+    "uploadDirectory": "フォルダをアップロード"
+  },
+  "Field": {
+    "required": "（必須）"
+  },
   "Footer": {
     "aboutUs": "概要",
     "docs": "ドキュメント",
@@ -29,11 +629,732 @@
     "allProducts": "すべてのプロダクト",
     "attribution": "Source Cooperative は <org>Radiant Earth</org> のプロジェクトです"
   },
+  "GithubWorkflowFields": {
+    "repository": "リポジトリ",
+    "repositoryHelp": "<code>owner/repo</code>、または永続的な ID を含めた <code>owner@123/repo@456</code> の形式です。<docs>不変のサブジェクトクレームについて</docs>",
+    "confirmed": "GitHub で確認済み。サブジェクトクレームのプレフィックスは <code>repo:{repository}</code> です",
+    "customized": "このリポジトリはサブジェクトクレームをカスタマイズしているため、そのトークンには以下のサブジェクトが含まれません。信頼できるのは GitHub のデフォルト形式のサブジェクトのみです。管理者はリポジトリの<link>OIDC settings</link>で <strong>Use default template</strong> を選択すると元に戻せます。",
+    "notVisible": "<repo>{repository}</repo> を参照できません。非公開か、存在しないリポジトリです。存在を確認してから、デフォルトのサブジェクトクレームのプレフィックスをリポジトリとして入力してください。確認方法：",
+    "unreachable": "現在 GitHub で <repo>{repository}</repo> を確認できませんでした。問い合わせ回数の制限が原因と思われます。数分後に<retry>再試行</retry>するか、デフォルトのサブジェクトクレームのプレフィックスをリポジトリとして入力してください。確認方法：",
+    "findAsAdmin": "リポジトリの管理者として、<link>OIDC settings</link>から <strong>Default subject claim prefix</strong> をコピーします。",
+    "findWithCli": "または、<link>GitHub CLI</link> で次を実行します：",
+    "allowRunsFrom": "実行を許可する対象",
+    "allowRunsFromHelp": "ジョブのサブジェクトクレームには、ワークフロー内で環境が指定されていればその環境が、そうでなければブランチまたはタグが含まれます。プルリクエストの実行にはどちらも含まれないため、ログインできません。<link>GitHub の例を見る</link>",
+    "kindBranch": "ブランチ",
+    "kindTag": "タグ",
+    "kindEnvironment": "環境",
+    "trustsTokensMatching": "次に一致するトークンを信頼"
+  },
+  "GlobalUploadNotification": {
+    "title": "アップロード（{count, number}）",
+    "uploadingCount": "{count, number}件アップロード中",
+    "queuedCount": "{count, number}件待機中",
+    "all": "すべて（{count, number}）",
+    "status": "{status, select, queued {待機中} uploading {アップロード中} completed {完了} error {エラー} cancelled {キャンセル済み} other {{status}}}",
+    "viewFile": "ファイルを表示",
+    "viewDirectory": "フォルダを表示",
+    "clearCompleted": "完了をクリア",
+    "clearErrors": "エラーをクリア",
+    "clearAll": "すべてクリア"
+  },
+  "GrantProductDialog": {
+    "grantProduct": "プロダクトを付与",
+    "product": "プロダクト",
+    "productPlaceholder": "プロダクトを選択",
+    "access": "アクセス",
+    "read": "読み取り",
+    "readWrite": "読み取りと書き込み",
+    "grant": "付与"
+  },
+  "HeadingWithPermalink": {
+    "permalink": "パーマリンク"
+  },
+  "HeroGlobe": {
+    "alt": "世界中のリアルタイムのデータリクエストの可視化"
+  },
+  "IndividualProfile": {
+    "websites": "{count, plural, other {ウェブサイト}}",
+    "organizations": "組織",
+    "products": "プロダクト",
+    "newProduct": "新しいプロダクト",
+    "noProducts": "プロダクトはありません。",
+    "contributions": "コントリビューション"
+  },
+  "InviteMemberForm": {
+    "account": "アカウント",
+    "accountDescription": "ユーザー名または名前で検索するか、アカウントIDを入力してください。組織のサービスアカウントも候補に表示されます。",
+    "accountPlaceholder": "ユーザー名または名前",
+    "role": "ロール",
+    "rolePlaceholder": "ロールを選択",
+    "roleDescription": "新しいメンバーに割り当てるロール",
+    "roleReader": "読み取り",
+    "roleWriter": "書き込み",
+    "roleMaintainer": "メンテナー",
+    "roleOwner": "オーナー",
+    "invite": "メンバーを招待",
+    "title": "新しいメンバーを招待",
+    "description": "ユーザーを{name}のメンバーとして招待します。",
+    "submit": "招待を送信"
+  },
+  "IssueApiKeyDialog": {
+    "title": "APIキーを発行",
+    "done": "完了",
+    "description": "OIDC が使えない環境（サーバー、スケジューラー、観測機器など）向けです。このキーは、このサービスアカウントとして、付与された権限のとおりにログインします。",
+    "label": "ラベル",
+    "labelHelp": "このキーの使用場所です。どのキーを失効させるべきか判断できるようにします。",
+    "labelPlaceholder": "HPC の cron ジョブ",
+    "addKey": "キーを追加",
+    "issueKey": "キーを発行"
+  },
+  "IssuedApiKey": {
+    "copyNow": "今すぐキーをコピーしてください。キー全体が表示されるのはこの一度だけです。",
+    "hideKey": "キーを隠す",
+    "showKey": "キーを表示"
+  },
+  "IssuedApiKeyDialog": {
+    "title": "APIキーを発行しました",
+    "done": "完了"
+  },
+  "LandingPage": {
+    "heroTitle": "協同で運営するデータ公開ユーティリティ",
+    "heroTagline": "あらゆる規模のデータを、誰もが公開できます。",
+    "heroBody": "独自のインフラを構築・運用することなく、データをアップロード、共有、利用できます。",
+    "readDocs": "ドキュメントを読む →",
+    "exploreProducts": "データプロダクトを探す →",
+    "featuredEyebrow": "Sourceのデータセットを探す",
+    "featuredHeading": "注目のプロダクト",
+    "whatIsEyebrow": "Source Cooperativeとは？",
+    "challengeHeading": "課題",
+    "challenge1": "科学データのインフラは、国境や分野を越えた協力を前提に作られていません。",
+    "challenge2": "地球規模の課題に取り組むには、政府、研究機関、商用プロバイダー、市民社会のデータを組み合わせる必要がありますが、それぞれが独自の形式、アクセス方法、APIを持っています。",
+    "challenge3": "データエンジニア、科学者、研究者は本来の仕事よりもインフラへの対応に多くの時間を費やしており、それが協力を妨げ、情報に基づく意思決定を制限しています。",
+    "solutionHeading": "私たちのソリューション",
+    "solution1": "Sourceは、汎用的なクラウドオブジェクトストレージ上に構築された非営利のデータ公開ユーティリティです。研究者はサーバーの運用、ポータルの構築、APIの開発なしに、あらゆる規模のデータを公開できます。",
+    "solution2": "Sourceがクラウドインフラを担うため、研究者はホスティングではなくデータに集中できます。ユーザーは既存のツールで使える標準的なURLを通じてすべてにアクセスでき、独自のポータルや専用のAPIは必要ありません。",
+    "solution3": "このサービスは意図的にコモディティ化されています。ロックインを避けるよう作られており、特定のプロバイダー、資金提供者、政治的決定によって研究データが失われることのないよう設計されています。",
+    "whyEyebrow": "Sourceが違う理由",
+    "whyHeading": "誰もが使えるデータ公開",
+    "iconAlt": "アイコン",
+    "integrateHeading": "あらゆるワークフローに統合",
+    "integrateBody": "Sourceは、S3互換のあらゆるクラウドプロバイダーで動作する、ベンダー中立のデータ公開ユーティリティです。",
+    "neutralHeading": "中立的なホスティング、ミッション主導の運営",
+    "neutralBody": "データの所有権と管理権を完全に保持できます。Sourceはオープンフォーマットをサポートする非商用リポジトリなので、独自のAPIやワークフローに縛られることはありません。",
+    "pricingHeading": "定額料金",
+    "pricing1": "データポータルの構築・維持や変動するクラウドコストへの対応に追われることなく、データを公開しやすく使いやすくするための基本に集中できます。",
+    "pricing2": "データ量と利用量に基づく料金プランは近日発表予定です。",
+    "caseStudiesEyebrow": "導入事例",
+    "caseStudiesHeading": "オープンソースで、ガバナンスのもとに運営され、これらのチームに信頼されています",
+    "builtForHeading": "データエンジニア、科学者、開発者のために",
+    "builtForBody": "Source Cooperativeは、企業のクラウドポリシーに煩わされることなく、プロトタイプから一般公開までデータのライフサイクルを支えます。",
+    "exploreData": "データを探す →"
+  },
+  "LiveGlobe": {
+    "aria": "ライブのデータリクエストの発生地点を示すインタラクティブな3D地球儀",
+    "requests": "{count, plural, other {#件のリクエスト}}"
+  },
   "LocaleSwitcher": {
     "label": "言語"
+  },
+  "LoginButton": {
+    "logInOrRegister": "ログイン / 新規登録"
+  },
+  "LoginRequired": {
+    "signIn": "ログイン"
+  },
+  "MembershipActions": {
+    "unauthenticated": "ログインが必要です。",
+    "missingFields": "必須項目が入力されていません。",
+    "organizationNotFound": "組織が見つかりません。",
+    "inviteeNotFound": "招待するアカウントが見つかりません。",
+    "organizationsCannotBeMembers": "組織はメンバーになれません。",
+    "unauthorizedInvite": "この組織にメンバーを招待する権限がありません。",
+    "alreadyMember": "このユーザーはすでにメンバーであるか、保留中の招待があります。",
+    "invited": "メンバーを招待しました。",
+    "inviteFailed": "メンバーを招待できませんでした。もう一度お試しください。",
+    "membershipNotFound": "メンバーシップが見つかりません。",
+    "unauthorizedAccept": "この招待を承諾する権限がありません。",
+    "notPending": "このメンバーシップは保留中ではありません。",
+    "acceptFailed": "招待を承諾できませんでした。",
+    "unauthorizedReject": "この招待を辞退する権限がありません。",
+    "rejectFailed": "招待を辞退できませんでした。",
+    "missingMembershipId": "メンバーシップIDが指定されていません。",
+    "unauthorizedRevoke": "このメンバーシップを取り消す権限がありません。",
+    "revoked": "メンバーシップを取り消しました。",
+    "revokeFailed": "メンバーシップを取り消せませんでした。もう一度お試しください。"
+  },
+  "MembershipsTable": {
+    "member": "メンバー",
+    "role": "ロール",
+    "status": "ステータス",
+    "lastUpdated": "最終更新",
+    "actions": "操作",
+    "serviceAccount": "サービスアカウント",
+    "roleOwner": "オーナー",
+    "roleMaintainer": "メンテナー",
+    "roleWriter": "書き込み",
+    "roleReader": "読み取り",
+    "stateMember": "メンバー",
+    "stateInvited": "招待中",
+    "stateRevoked": "取り消し済み",
+    "unknown": "不明",
+    "revoke": "取り消す"
+  },
+  "MobileMenu": {
+    "openMenu": "メニューを開く",
+    "closeMenu": "メニューを閉じる",
+    "menu": "メニュー",
+    "products": "プロダクト",
+    "docs": "ドキュメント",
+    "you": "あなた",
+    "viewProfile": "プロフィールを表示",
+    "viewOrganization": "組織を表示",
+    "noProducts": "プロダクトはまだありません",
+    "newProduct": "新規プロダクト",
+    "newOrganization": "新規組織",
+    "invitations": "招待",
+    "noInvitations": "保留中の招待はありません",
+    "admin": "管理者",
+    "logout": "ログアウト"
   },
   "NavLinks": {
     "products": "プロダクト",
     "docs": "ドキュメント"
+  },
+  "NewOrganizationPage": {
+    "accessDenied": "アクセスが拒否されました",
+    "loginRequired": "組織を作成するにはログインする必要があります。",
+    "title": "新しい組織を作成",
+    "description": "新しい組織を作成して、他のユーザーと共同作業できます"
+  },
+  "NewProductPage": {
+    "accessDenied": "アクセスが拒否されました",
+    "mustLogIn": "プロダクトを作成するにはログインが必要です。",
+    "noPermission": "プロダクトを作成する権限がありません。",
+    "contactUs": "誤りと思われる場合は、<code>{email}</code> までお問い合わせください。",
+    "title": "新しいプロダクトを作成",
+    "description": "他のユーザーと共有する新しいプロダクトを作成します"
+  },
+  "NotFoundMetadata": {
+    "title": "ページが見つかりません",
+    "description": "お探しのページは存在しません。"
+  },
+  "ObjectPreviewExternal": {
+    "noPreview": "ファイル形式 <code>.{extension}</code> のプレビューはありません。この形式への対応をご希望の場合は、<link>Issue を作成</link>してください。",
+    "previewTitle": "{path}のプレビュー"
+  },
+  "ObjectPreviewSlot": {
+    "title": "オブジェクトのプレビュー",
+    "openInNewTab": "新しいタブで開く",
+    "iframeTitle": "{path}のプレビュー"
+  },
+  "ObjectSummary": {
+    "name": "名前",
+    "size": "サイズ",
+    "contentType": "コンテンツタイプ",
+    "lastModified": "最終更新日時",
+    "checksum": "チェックサム",
+    "sourceUrl": "Source URL",
+    "cloudUri": "クラウドURI",
+    "download": "ダウンロード"
+  },
+  "OnboardingForm": {
+    "username": "ユーザー名",
+    "usernameDescription": "プロフィールのURLになります：source.coop/[username]",
+    "usernamePlaceholder": "ユーザー名を選択",
+    "checking": "ユーザー名が使用可能か確認しています…",
+    "available": "✓ このユーザー名は使用できます",
+    "fullName": "氏名",
+    "fullNameDescription": "プロフィールに表示される名前です",
+    "fullNamePlaceholder": "あなたの名前",
+    "submit": "プロフィールを完成"
+  },
+  "OnboardingPage": {
+    "title": "プロフィールを完成",
+    "metaDescription": "ユーザー名を選んでプロフィールを設定します",
+    "description": "あと少しで完了です。アカウントのユーザー名を選び、お名前を入力してください。"
+  },
+  "OrganizationCreationForm": {
+    "name": "組織名",
+    "nameDescription": "組織の名前",
+    "namePlaceholder": "組織名を入力",
+    "accountId": "アカウントID",
+    "accountIdDescription": "組織のアカウントID",
+    "accountIdPlaceholder": "アカウントIDを入力",
+    "checking": "アカウントIDが使用可能か確認しています…",
+    "available": "✓ 使用できます",
+    "description": "説明",
+    "descriptionDescription": "組織の簡単な説明",
+    "descriptionPlaceholder": "組織について説明してください",
+    "website": "ウェブサイト",
+    "websiteDescription": "組織のウェブサイト（任意）",
+    "email": "メールアドレス",
+    "emailDescription": "組織の連絡先メールアドレス（任意）",
+    "submit": "作成"
+  },
+  "OrganizationMembers": {
+    "empty": "表示するメンバーはいません",
+    "owners": "オーナー",
+    "admins": "管理者",
+    "members": "メンバー"
+  },
+  "OrganizationProfile": {
+    "details": "組織の詳細",
+    "emailLabel": "メールアドレス：",
+    "rorIdLabel": "ROR ID：",
+    "members": "メンバー",
+    "products": "プロダクト",
+    "newProduct": "新しいプロダクト",
+    "noProducts": "プロダクトはありません。"
+  },
+  "PendingInvitationBanner": {
+    "acceptFailed": "招待を承諾できませんでした",
+    "acceptError": "招待の承諾中にエラーが発生しました",
+    "rejectFailed": "招待を辞退できませんでした",
+    "rejectError": "招待の辞退中にエラーが発生しました",
+    "roleOwners": "オーナー",
+    "roleMaintainers": "メンテナー",
+    "roleReadData": "データ読み取り",
+    "roleWriteData": "データ書き込み",
+    "message": "この{invitationType, select, product {プロダクト} other {組織}}に<strong>{roleName}</strong>として参加するよう招待されています。",
+    "processing": "処理中…",
+    "accept": "承諾",
+    "decline": "辞退"
+  },
+  "PreviewIframe": {
+    "unsupported": "お使いのブラウザは iframe に対応していません。"
+  },
+  "ProductAccessList": {
+    "noProducts": "{owner} にはまだプロダクトがありません。",
+    "empty": "まだありません。プロダクトを付与すると、データの読み取りや書き込みができるようになります。",
+    "opensInNewTab": "新しいタブで開きます",
+    "accessTo": "{product} へのアクセス",
+    "removeAccess": "{product} へのアクセスを削除",
+    "read": "読み取り",
+    "readWrite": "読み取りと書き込み"
+  },
+  "ProductActions": {
+    "unauthenticated": "ログインが必要です。",
+    "invalidFormData": "入力内容が正しくありません。",
+    "unauthorizedCreate": "プロダクトを作成する権限がありません。",
+    "connectionRequired": "データ接続は必須です。",
+    "connectionNotFoundField": "選択したデータ接続が見つかりません。",
+    "invalidConnection": "データ接続が正しくありません。",
+    "connectionNotPermitted": "選択したデータ接続を使用する権限がありません。",
+    "connectionWrongAccountField": "選択したデータ接続はこのアカウントでは利用できません。",
+    "connectionWrongAccount": "このアカウントでは使用できないデータ接続です。",
+    "visibilityNotAllowed": "データ接続「{name}」では{visibility, select, public {公開} unlisted {限定公開} restricted {制限付き} other {{visibility}}}のプロダクトは許可されていません。",
+    "invalidVisibility": "選択したデータ接続では、この公開範囲を使用できません。",
+    "idsRequired": "アカウントIDとプロダクトIDは必須です。",
+    "productNotFound": "プロダクトが見つかりません。",
+    "unauthorizedUpdate": "このプロダクトを更新する権限がありません。",
+    "connectionMissingField": "このプロダクトのデータ接続が見つからないため、公開範囲を変更できません。",
+    "connectionMissing": "このプロダクトのデータ接続が見つかりません。",
+    "invalidVisibilityForProduct": "このプロダクトのデータ接続では、この公開範囲を使用できません。",
+    "updated": "プロダクトを更新しました。",
+    "updateFailed": "プロダクトを更新できませんでした。もう一度お試しください。",
+    "unauthorizedDelete": "このプロダクトを削除する権限がありません。",
+    "cannotPreserveData": "このプロダクトを削除する際にデータを残す権限がありません。",
+    "deleteFailed": "プロダクトを削除できませんでした：{reason}"
+  },
+  "ProductAnalyticsPage": {
+    "metaTitle": "{title} — アナリティクス",
+    "heading": "アナリティクス",
+    "previewNotice": "アナリティクスはプレビュー機能です。ここに表示される指標や閲覧できるユーザーは、近いうちに変更される可能性があります。ご意見は<link>hello@source.coop</link>までお寄せください。",
+    "windowDays": "{days}日",
+    "unavailable": "現在アナリティクスを利用できません。数分後にもう一度お試しください。"
+  },
+  "ProductAnalyticsView": {
+    "downloadsTab": "ダウンロード",
+    "usersTab": "ユーザー",
+    "dailyAvg": "1日平均",
+    "byCountry": "国別",
+    "breakdownUnavailable": "国別の内訳を表示できません。",
+    "otherCountries": "その他{count}か国",
+    "unknownCountry": "不明",
+    "topFiles": "上位ファイル",
+    "noFileDownloads": "この期間にファイルのダウンロードはありません。",
+    "file": "ファイル"
+  },
+  "ProductContentsCard": {
+    "contents": "コンテンツ"
+  },
+  "ProductCreationForm": {
+    "visibility": {
+      "public": {
+        "label": "公開",
+        "description": "誰でも検索・ダウンロードできます。検索結果とプロダクトフィードに表示されます。"
+      },
+      "unlisted": {
+        "label": "限定公開",
+        "description": "リンクを知っている人なら誰でもダウンロードできます。検索結果とフィードには表示されません。"
+      },
+      "restricted": {
+        "label": "制限付き",
+        "description": "このプロダクトのメンバーのみ。"
+      }
+    },
+    "noVisibilities": "公開範囲なし",
+    "connectionOption": "{name}{location} · {visibilities}",
+    "connectionOptionReadOnly": "{name}{location} · {visibilities} · 読み取り専用",
+    "sectionDescription": "説明",
+    "sectionStorage": "ストレージ",
+    "sectionAccess": "アクセス",
+    "titleLabel": "プロダクト名",
+    "titleDescription": "プロダクトの名前",
+    "titlePlaceholder": "プロダクト名を入力",
+    "ownerLabel": "オーナーアカウント",
+    "ownerDescription": "プロダクトを所有するアカウント",
+    "productIdLabel": "プロダクトID",
+    "productIdDescription": "プロダクトのID",
+    "productIdPlaceholder": "プロダクトIDを入力",
+    "checkingAvailability": "<code>{id}</code> が使用可能か確認中",
+    "available": "✓ 使用可能：<code>{id}</code>",
+    "descriptionLabel": "説明",
+    "descriptionDescription": "プロダクトの簡単な説明",
+    "descriptionPlaceholder": "プロダクトについて説明してください",
+    "connectionLabel": "データ接続",
+    "connectionDescription": "このプロダクトのデータの保存先です。選択できるリージョンと公開範囲が決まります。迷った場合は us-west-2 の接続を選んでください。",
+    "noConnections": "利用できるデータ接続がありません",
+    "visibilityLabel": "公開範囲",
+    "visibilityConnectionMissing": "このプロダクトのデータ接続が見つからないため、公開範囲を変更できません。",
+    "visibilityDescription": "このプロダクトにアクセスできる人です。選択肢はデータ接続によって異なります。",
+    "statusLabel": "ステータス",
+    "statusActive": "有効",
+    "statusDeactivated": "無効",
+    "statusDescription": "無効にすると、プロダクトは source.coop に表示されなくなり、data.source.coop API からもアクセスできなくなります。データは保持されますが、再度有効にできるのは Source Cooperative の管理者のみです。"
+  },
+  "ProductDataUnavailable": {
+    "accessUnconfirmed": "この非公開プロダクトのデータへのアクセス権を現在確認できません。",
+    "errorDetails": "エラーの詳細（メンテナーのみ表示）",
+    "tryAgain": "再試行"
+  },
+  "ProductErrorPage": {
+    "heading": "プロダクトの読み込み中に問題が発生しました",
+    "body": "現在このプロダクトのコンテンツを読み込めません。通常は一時的な問題です。しばらくしてからもう一度お試しください。",
+    "reference": "参照番号：{digest}",
+    "tryAgain": "再試行"
+  },
+  "ProductLayout": {
+    "deactivatedNotice": "このプロダクトは無効化されています。オーナーと管理者以外には表示されません。"
+  },
+  "ProductListItem": {
+    "providedBy": "提供：<account></account>",
+    "publishedOn": "公開日：<date></date>",
+    "public": "公開",
+    "unlisted": "限定公開",
+    "restricted": "制限付き",
+    "publicProduct": "公開プロダクト",
+    "unlistedProduct": "限定公開プロダクト",
+    "restrictedProduct": "制限付きプロダクト",
+    "deactivated": "無効",
+    "deactivatedProduct": "無効化されたプロダクト"
+  },
+  "ProductLoading": {
+    "contents": "コンテンツ",
+    "details": "詳細"
+  },
+  "ProductMetaCard": {
+    "details": "詳細"
+  },
+  "ProductMetaContent": {
+    "visibility": "公開範囲",
+    "public": "公開",
+    "unlisted": "限定公開",
+    "restricted": "制限付き",
+    "owner": "オーナー",
+    "created": "作成日",
+    "lastUpdated": "最終更新日"
+  },
+  "ProductMetadata": {
+    "unknownAccount": "不明なアカウント",
+    "description": "{account}によるデータプロダクト"
+  },
+  "ProductMirrorActions": {
+    "notAccountManager": "このプロダクトのデータ接続を管理できるのは、所有アカウントのオーナーとメンテナーのみです。",
+    "concurrentEdit": "このプロダクトは他のユーザーによって変更されました。再読み込みしてもう一度お試しください。",
+    "unauthenticated": "ログインが必要です。",
+    "missingFields": "必須項目が入力されていません。",
+    "productNotFound": "プロダクトが見つかりません。",
+    "connectionNotFound": "データ接続が見つかりません。",
+    "connectionUnavailable": "このデータ接続はこのアカウントでは利用できません。",
+    "alreadyAssociated": "このデータ接続はすでにこのプロダクトに関連付けられています。",
+    "added": "データ接続を追加しました。",
+    "addFailed": "データ接続を追加できませんでした。もう一度お試しください。",
+    "mirrorNotFound": "ミラーが見つかりません。",
+    "removed": "データ接続を外しました。",
+    "removeFailed": "データ接続を外せませんでした。もう一度お試しください。",
+    "invalidPrefix": "プレフィックスは「/」で始めることも、「..」を含めることもできません。",
+    "cannotEditPrefix": "プレフィックスを編集するには、このアカウントとデータ接続の両方を管理できる必要があります。",
+    "prefixUpdated": "プレフィックスを更新しました。",
+    "prefixUpdateFailed": "プレフィックスを更新できませんでした。もう一度お試しください。",
+    "primaryUpdated": "プライマリミラーを更新しました。",
+    "primaryUpdateFailed": "プライマリミラーを更新できませんでした。もう一度お試しください。"
+  },
+  "ProductMirrorsManager": {
+    "title": "データ接続",
+    "description": "このプロダクトのオブジェクトの保存先です。訪問者はプライマリ接続からダウンロードします。",
+    "readOnlyNotice": "このプロダクトのデータ接続を変更できるのは、<code>{account}</code> のオーナーとメンテナーのみです。",
+    "cacheNotice": "データプロキシはこれらの設定をキャッシュします。ここでの変更が反映されるまで最大 5 分かかる場合があります。",
+    "emptyManage": "このプロダクトにデータ接続を追加してください。",
+    "emptyReadOnly": "このプロダクトにはデータ接続が設定されていません。",
+    "primary": "プライマリ",
+    "actionsFor": "{name} の操作",
+    "makePrimary": "プライマリにする",
+    "editConnection": "接続を編集",
+    "removeFromProduct": "プロダクトから外す…",
+    "prefixLabel": "プレフィックス",
+    "prefixHelp": "接続内でこのプロダクトのオブジェクトが置かれる場所です。このプロダクトのアカウントと接続の両方を管理しているため、変更できます。",
+    "connectionRoot": "（接続のルート）",
+    "addTitle": "接続を追加",
+    "noneAvailable": "このアカウントで利用できる接続はほかにありません。",
+    "allAttached": "このアカウントで利用できる接続はすべて追加済みです。",
+    "choosePlaceholder": "接続を選択…",
+    "add": "追加",
+    "removeConfirmTitle": "{name} を外しますか？",
+    "removeConfirmDescription": "このプロダクトはそのストレージから配信されなくなります。オブジェクト自体は削除されず、後で接続を再度追加できます。"
+  },
+  "ProductNotFoundPage": {
+    "metaTitle": "プロダクトが見つかりません | Source Cooperative",
+    "metaDescription": "指定されたプロダクトは見つかりませんでした。",
+    "title": "見つかりません"
+  },
+  "ProductPage": {
+    "dataUnavailable": "現在このプロダクトのファイルを読み込めません。ストレージバックエンドから応答がありませんでした。しばらくしてからもう一度お試しください。"
+  },
+  "ProductSearchResult": {
+    "updated": "更新日：<date></date>",
+    "public": "公開",
+    "private": "非公開"
+  },
+  "ProductTabs": {
+    "product": "プロダクト",
+    "analytics": "アナリティクス",
+    "restrictedTooltip": "このプロダクトのオーナー、メンテナー、サイト管理者のみに表示されます。",
+    "restricted": "制限付き"
+  },
+  "ProductsFilters": {
+    "searchPlaceholder": "プロダクトを検索…",
+    "tagsPlaceholder": "タグで絞り込み（カンマ区切り）",
+    "featured": "注目",
+    "clearFilters": "フィルターをクリア"
+  },
+  "ProductsList": {
+    "empty": "条件に一致するプロダクトが見つかりません。",
+    "navLabel": "プロダクト一覧"
+  },
+  "ProductsPage": {
+    "metaTitle": "プロダクト | Source Cooperative",
+    "metaDescription": "Source.coop で公開されているデータプロダクトを探す",
+    "title": "プロダクト",
+    "showingCount": "{count, plural, other {#件のプロダクトを表示中}}",
+    "searchBadge": "検索：「{search}」",
+    "tagsBadge": "タグ：{tags}",
+    "featured": "注目"
+  },
+  "ProductsSkeleton": {
+    "navLabel": "プロダクト一覧を読み込み中"
+  },
+  "ProfileImageUpload": {
+    "invalidType": "無効なファイル形式です。使用できる形式：{types}",
+    "tooLarge": "ファイルサイズは{size}MB未満にしてください。",
+    "uploadFailedStatus": "アップロードに失敗しました：{status}",
+    "uploadFailed": "アップロードに失敗しました",
+    "deleteFailed": "削除に失敗しました",
+    "titleIndividual": "プロフィール画像",
+    "titleOrganization": "組織のプロフィール画像",
+    "descriptionIndividual": "プロフィール画像をアップロードしてアカウントをカスタマイズしましょう。画像をアップロードしない場合は、Gravatarが表示されます。",
+    "descriptionOrganization": "組織のプロフィール画像をアップロードしてください。画像をアップロードしない場合は、デフォルトのアイコンが表示されます。",
+    "uploading": "アップロード中…",
+    "uploadNew": "新しい画像をアップロード",
+    "deleting": "削除中…",
+    "removeImage": "画像を削除",
+    "removeTitle": "プロフィール画像を削除",
+    "removeConfirmIndividual": "プロフィール画像を削除してもよろしいですか？アカウントにはGravatarが表示されるようになります。",
+    "removeConfirmOrganization": "プロフィール画像を削除してもよろしいですか？組織にはデフォルトのアイコンが表示されます。",
+    "removed": "✓ プロフィール画像を削除しました。",
+    "uploaded": "✓ プロフィール画像をアップロードしました。",
+    "guidelines": "画像のガイドライン",
+    "guidelineDimensions": "• 推奨サイズ：400×400ピクセル以上",
+    "guidelineSquare": "• プロフィール画像には正方形の画像が最適です",
+    "guidelineFormats": "• 対応形式：JPG、PNG、WebP、GIF",
+    "guidelineSize": "• 最大ファイルサイズ：5MB"
+  },
+  "ProxyCredentialsGate": {
+    "error": "この非公開プロダクトのアクセス用認証情報を読み込めませんでした。もう一度お試しください。問題が解決しない場合は、ログアウトしてから再度ログインしてください。",
+    "tryAgain": "再試行",
+    "fetching": "アクセス用認証情報を取得中…"
+  },
+  "RefreshListingButton": {
+    "refresh": "更新",
+    "refreshListing": "一覧を更新"
+  },
+  "STACSection": {
+    "catalog": "STACカタログ：<link>{url}</link>"
+  },
+  "SecretField": {
+    "keepCurrent": "現在の値を維持",
+    "stored": "保存済み",
+    "replace": "置き換え…"
+  },
+  "ServiceAccountActions": {
+    "unauthenticated": "ログインが必要です。",
+    "checkFields": "強調表示された項目を確認してください。",
+    "notOwnerManager": "そのアカウントのサービスアカウントを管理する権限がありません。",
+    "cannotOwnAnother": "サービスアカウントは別のサービスアカウントを所有できません。",
+    "badSubject": "{subject} は、1つのリポジトリと1つのブランチ、タグ、または環境を指定していません。",
+    "accessReadOrWrite": "{product}：アクセス権は読み取りまたは書き込みのいずれかにしてください。",
+    "noSuchProduct": "{account} にプロダクト {product} はありません。",
+    "expiryRange": "有効期限は1日から3650日の間で指定してください。",
+    "keyLabelTooLong": "64文字以内で入力してください。",
+    "accountIdTaken": "そのアカウントIDはすでに使用されています。",
+    "localIdTaken": "{owner} にはすでに {id} という名前のサービスアカウントがあります。",
+    "notManaged": "そのサービスアカウントを管理する権限がありません。",
+    "disabled": "そのサービスアカウントは無効になっています。",
+    "nameOneRepo": "1つのリポジトリと1つのブランチ、タグ、または環境を指定してください。",
+    "alreadyTrusted": "すでに信頼済みです。",
+    "trusted": "信頼を追加しました",
+    "noSuchTrust": "このアカウントにその信頼設定はありません。",
+    "trustRemoved": "信頼設定を削除しました",
+    "accountDisabled": "サービスアカウントを無効にしました",
+    "accountEnabled": "サービスアカウントを有効にしました",
+    "nameSaved": "名前を保存しました"
+  },
+  "ServiceAccountDetail": {
+    "actionsFor": "{subject} の操作",
+    "exampleUsage": "使用例",
+    "signInFromWorkflow": "このワークフローからログイン",
+    "whoItIs": "基本情報",
+    "disabled": "無効",
+    "name": "名前",
+    "accountId": "アカウント ID",
+    "accountIdHelp": "ソフトウェアがログインに使うハンドルです。作成後は変更できません。",
+    "signsInWith": "ログイン方法",
+    "signInDescription": "GitHub Actions のワークフロー（それぞれ1つのリポジトリと、1つのブランチ、タグ、または環境に固定）。実行のたびに GitHub が保証するため、保存すべきシークレットはありません。または、OIDC が使えない環境向けの APIキー（発行時に一度だけ表示）。漏えいしたキーは失効させてください。すべてのログインを一度に止めるには、下でアカウントを無効にします。",
+    "nothingYet": "まだありません。ワークフローを信頼するかキーを発行するまで、ログインできません。",
+    "githubWorkflows": "GitHub ワークフロー",
+    "apiKeys": "APIキー",
+    "canReach": "アクセス先",
+    "canReachDescription": "読み取りまたは書き込みができるプロダクトです。それぞれ新しいタブで開いて内容を確認できます。変更はすぐに保存され、次回のログインから反映されます。",
+    "dangerZone": "危険な操作",
+    "enable": "有効にする",
+    "disable": "無効にする",
+    "enableTitle": "{name} を有効にしますか？",
+    "disableTitle": "{name} を無効にしますか？",
+    "enableDescription": "信頼済みのワークフローと失効していない APIキーで再びログインできるようになります。漏えいしたキーは先に失効させてください。",
+    "disableDescription": "ワークフローでも APIキーでも、このアカウントとしてログインできなくなります。すでに生成された認証情報は5分以内に公開データのみに制限されます。ワークフロー、キー、プロダクトへのアクセスは保持されます。",
+    "deleteTitle": "{name} を削除しますか？",
+    "deleteDescription": "ワークフローと APIキーは使えなくなり、すべてのプロダクトへのアクセスを失います。すでに生成された認証情報は期限切れまで有効です。この操作は元に戻せません。",
+    "typeToConfirm": "確認のため <code>{accountId}</code> と入力してください"
+  },
+  "ServiceAccountForm": {
+    "removeLabel": "{label} を削除",
+    "whoItIs": "基本情報",
+    "ownedBy": "オーナーは {owner} です。そのアカウントを管理するユーザーがこのアカウントも管理します。",
+    "name": "名前",
+    "namePlaceholder": "夜間同期",
+    "accountId": "アカウント ID",
+    "accountIdEditHelp": "ソフトウェアがログインに使うハンドルです。英小文字、数字、単一のハイフンが使えます。",
+    "accountIdHelp": "名前から生成されます。作成後は変更できません。",
+    "signsInWith": "ログイン方法",
+    "nothingYet": "まだありません。外部環境からのアクセスを許可するには、ワークフローまたはキーを追加してください。",
+    "githubWorkflows": "GitHub ワークフロー",
+    "apiKeys": "APIキー",
+    "expiresAfter": "{days, plural, other {発行から#日後に期限切れ}}",
+    "neverExpires": "無期限",
+    "canReach": "アクセス先",
+    "canReachDescription": "{owner} が所有するプロダクトのうち、読み取りまたは書き込みを許可するものです。各付与は通常のメンバーシップであり、人のメンバーシップと同じ方法で取り消せます。",
+    "submit": "サービスアカウントを作成"
+  },
+  "ServiceAccountKeyActions": {
+    "notManaged": "そのサービスアカウントを管理する権限がありません。",
+    "disabled": "そのサービスアカウントは無効になっています。",
+    "expiryRange": "有効期限は1日から3650日の間で指定してください。",
+    "labelTooLong": "キーには64文字以内のラベルを付けてください。",
+    "noSuchKey": "管理しているサービスアカウントにそのキーはありません。",
+    "alreadyRevoked": "すでに無効化されています。",
+    "revoked": "キーを無効化しました",
+    "expiryUpdated": "有効期限を更新しました",
+    "noExpiry": "キーを無期限にしました"
+  },
+  "ServiceAccountList": {
+    "emptyTitle": "サービスアカウントはまだありません",
+    "emptyBody": "夜間の同期、公開パイプライン、観測機器などのために作成できます。",
+    "disabled": "無効",
+    "workflows": "{count, plural, other {#件のワークフロー}}",
+    "apiKeys": "{count, plural, other {#件のAPIキー}}",
+    "products": "{count, plural, other {#件のプロダクト}}"
+  },
+  "ServiceAccountPage": {
+    "metaTitle": "サービスアカウント",
+    "back": "サービスアカウント"
+  },
+  "ServiceAccountsPage": {
+    "metaTitle": "サービスアカウント",
+    "title": "サービスアカウント",
+    "description": "ソフトウェア（夜間の同期、公開パイプライン、観測機器など）用のログインです。誰かのアカウントを共有することなく、付与や取り消しができます。",
+    "newServiceAccount": "新しいサービスアカウント"
+  },
+  "ShortcutHelp": {
+    "title": "キーボードショートカット",
+    "descriptionProductList": "プロダクト一覧のキーボードショートカットです。これらのショートカットで画面の移動や操作ができます。",
+    "descriptionObjectBrowser": "オブジェクトブラウザのキーボードショートカットです。これらのショートカットで画面の移動や操作ができます。",
+    "descriptionObjectDetails": "オブジェクト詳細のキーボードショートカットです。これらのショートカットで画面の移動や操作ができます。",
+    "keyHeader": "キー",
+    "actionHeader": "操作",
+    "pressEscapeToClose": "Escapeキーで閉じる",
+    "toggleHelp": "このヘルプを表示/非表示",
+    "goHome": "ホームページへ移動",
+    "navigateUp": "上へ移動",
+    "navigateDown": "下へ移動",
+    "openSelectedProduct": "選択したプロダクトを開く",
+    "copySelectedProductUrl": "選択したプロダクトのURLをコピー",
+    "clearSelection": "選択を解除",
+    "openSelectedItem": "選択した項目を開く",
+    "copySelectedItemUrl": "選択した項目のURLをコピー",
+    "goUpOneLevel": "1つ上の階層へ移動",
+    "navigateUpProperties": "プロパティを上へ移動",
+    "navigateDownProperties": "プロパティを下へ移動",
+    "copySelectedPropertyValue": "選択したプロパティの値をコピー",
+    "returnToDirectoryView": "ディレクトリ表示に戻る"
+  },
+  "SiteMetadata": {
+    "description": "オープンウェブのためのデータ公開ユーティリティ。"
+  },
+  "StatusPage": {
+    "notFoundTitle": "404: ページが見つかりません",
+    "notFoundDescription": "お探しのページが見つかりませんでした。<br></br>パスが移動されたか、存在しない可能性があります。",
+    "notAuthorizedTitle": "403: アクセス権限がありません",
+    "notAuthorizedDescription": "このリソースにアクセスする権限がありません。<br></br>誤りだと思われる場合は、管理者にお問い合わせください。",
+    "unauthenticatedTitle": "ログインが必要です",
+    "unauthenticatedDescription": "このページにアクセスするにはログインが必要です。<br></br>ログイン後、このページに戻ります。",
+    "returnHome": "ホームページに戻る"
+  },
+  "UploadProvider": {
+    "leaveWarning": "ページを離れると、進行中のアップロードや削除が中断されます。",
+    "requestFailed": "リクエストに失敗しました",
+    "deletePartial": "削除が一部しか完了していない可能性があります（{reason}）。再試行して残りの項目を削除してください。",
+    "deleteFailed": "削除に失敗しました（{reason}）。再試行してください。"
+  },
+  "UsageCard": {
+    "title": "アナリティクス",
+    "windowDays": "{days}日間"
+  },
+  "ViewCredentialsDialog": {
+    "title": "認証情報を表示",
+    "description": "アプリケーションで使用するには、この一時的な認証情報をコピーしてください。",
+    "cliCallout": "もっと簡単な方法をお探しですか？<link>Source Coop CLI</link>を使うと認証情報が自動で管理され、より長く有効な認証情報（最大12時間）を利用できます。",
+    "tabJson": "JSON（SDK）",
+    "tabEnv": "環境変数",
+    "jsonHint": "SDKクライアント向け（boto3、AWS SDKなど）",
+    "envHint": "ターミナル・シェル向け",
+    "iniHint": "~/.aws/credentials 向け（AWS CLIプロファイル）",
+    "boundaries": "適用範囲",
+    "expiration": "有効期限",
+    "bucket": "バケット",
+    "prefix": "プレフィックス",
+    "copyToClipboard": "クリップボードにコピー"
+  },
+  "WelcomeCallout": {
+    "message": "Source Cooperativeへようこそ。ここはあなたのプロフィールページです。<link>編集して詳細を追加</link>してください。"
   }
 }

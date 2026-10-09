@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Flex, IconButton, SegmentedControl, Text, Tooltip } from "@radix-ui/themes";
 import { Cross2Icon, ExternalLinkIcon } from "@radix-ui/react-icons";
+import { useTranslations } from "next-intl";
 import { ItemList } from "@/components/core/ItemList";
 import { productUrl } from "@/lib/urls";
 import { MembershipRole, type Product } from "@/types";
@@ -20,6 +21,7 @@ function AccessControl({
   onChange: (next: ProductAccess) => void;
   disabled?: boolean;
 }) {
+  const t = useTranslations("ProductAccessList");
   return (
     <SegmentedControl.Root
       size="1"
@@ -28,8 +30,8 @@ function AccessControl({
       disabled={disabled}
       onValueChange={(next) => onChange(next as ProductAccess)}
     >
-      <SegmentedControl.Item value={MembershipRole.ReadData}>Read</SegmentedControl.Item>
-      <SegmentedControl.Item value={MembershipRole.WriteData}>Read and write</SegmentedControl.Item>
+      <SegmentedControl.Item value={MembershipRole.ReadData}>{t("read")}</SegmentedControl.Item>
+      <SegmentedControl.Item value={MembershipRole.WriteData}>{t("readWrite")}</SegmentedControl.Item>
     </SegmentedControl.Root>
   );
 }
@@ -58,12 +60,14 @@ export function ProductAccessList({
   onChange: (product_id: string, access: ProductAccess | null) => void;
   disabled?: boolean;
 }) {
+  const t = useTranslations("ProductAccessList");
+  const tc = useTranslations("Common");
   const reached = products.filter((p) => access[p.product_id]);
 
   if (products.length === 0) {
     return (
       <Text size="2" color="gray">
-        {ownerAccountId} has no products yet.
+        {t("noProducts", { owner: ownerAccountId })}
       </Text>
     );
   }
@@ -71,7 +75,7 @@ export function ProductAccessList({
     <>
       {reached.length === 0 ? (
         <Text size="2" color="gray">
-          Nothing yet. Grant a product to let it read or write data.
+          {t("empty")}
         </Text>
       ) : (
         <ItemList.Root>
@@ -89,7 +93,7 @@ export function ProductAccessList({
                     <Text size="2" weight="medium">
                       {title}
                     </Text>
-                    <ExternalLinkIcon width="12" height="12" aria-label="opens in a new tab" />
+                    <ExternalLinkIcon width="12" height="12" aria-label={t("opensInNewTab")} />
                   </Flex>
                 </Link>
               }
@@ -97,19 +101,19 @@ export function ProductAccessList({
               actions={
                 <Flex align="center" gap="3">
                   <AccessControl
-                    label={`Access to ${product_id}`}
+                    label={t("accessTo", { product: product_id })}
                     value={access[product_id]}
                     onChange={(next) => onChange(product_id, next)}
                     disabled={disabled}
                   />
-                  <Tooltip content="Remove">
+                  <Tooltip content={tc("remove")}>
                     <IconButton
                       type="button"
                       size="1"
                       variant="ghost"
                       color="red"
                       disabled={disabled}
-                      aria-label={`Remove access to ${product_id}`}
+                      aria-label={t("removeAccess", { product: product_id })}
                       onClick={() => onChange(product_id, null)}
                     >
                       <Cross2Icon />

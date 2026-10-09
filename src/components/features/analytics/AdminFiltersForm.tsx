@@ -11,16 +11,23 @@ import {
   TextField,
 } from "@radix-ui/themes";
 import { Cross2Icon, PlusIcon } from "@radix-ui/react-icons";
+import { useTranslations } from "next-intl";
 import { MonoLabel } from "./panels";
 
 const DEBOUNCE_MS = 500;
 
-/** Value-input hints per dimension key (labels come from the page). */
-const PLACEHOLDER: Record<string, string> = {
-  account: "account id",
-  product: "product id",
-  country: "country code (US)",
-  client: "ip hash prefix",
+/** Value-input hint message keys per dimension key (labels come from the page). */
+const PLACEHOLDER: Record<
+  string,
+  | "placeholderAccount"
+  | "placeholderProduct"
+  | "placeholderCountry"
+  | "placeholderClient"
+> = {
+  account: "placeholderAccount",
+  product: "placeholderProduct",
+  country: "placeholderCountry",
+  client: "placeholderClient",
 };
 
 interface AdminFiltersFormProps {
@@ -47,6 +54,7 @@ export function AdminFiltersForm({
   defaults,
   hidden,
 }: AdminFiltersFormProps) {
+  const t = useTranslations("AdminFiltersForm");
   const form = useRef<HTMLFormElement>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const [pending, setPending] = useState(false);
@@ -100,7 +108,7 @@ export function AdminFiltersForm({
             type="datetime-local"
             name="from"
             defaultValue={defaults.from}
-            aria-label="From (UTC)"
+            aria-label={t("fromAria")}
             onChange={submitSoon}
           />
           <TextField.Root
@@ -108,16 +116,16 @@ export function AdminFiltersForm({
             type="datetime-local"
             name="to"
             defaultValue={defaults.to}
-            aria-label="To (UTC, exclusive)"
+            aria-label={t("toAria")}
             onChange={submitSoon}
           />
           <Text color="gray" style={{ fontSize: 11 }}>
-            UTC · end exclusive
+            {t("utcHint")}
           </Text>
         </Flex>
         <Box>
           <Box mb="1">
-            <MonoLabel>Filter by</MonoLabel>
+            <MonoLabel>{t("filterBy")}</MonoLabel>
           </Box>
           <Flex direction="column" gap="2" align="start">
             {rows.map((row, index) => (
@@ -127,7 +135,7 @@ export function AdminFiltersForm({
                   value={row.dim}
                   onValueChange={(dim) => setRow(index, { ...row, dim })}
                 >
-                  <Select.Trigger aria-label="Filter dimension" />
+                  <Select.Trigger aria-label={t("filterDimension")} />
                   <Select.Content>
                     {dimensions.map((d) => (
                       <Select.Item
@@ -156,13 +164,13 @@ export function AdminFiltersForm({
                     );
                     submitSoon();
                   }}
-                  placeholder={PLACEHOLDER[row.dim] ?? "value"}
+                  placeholder={t(PLACEHOLDER[row.dim] ?? "placeholderValue")}
                 />
                 <IconButton
                   size="1"
                   variant="soft"
                   type="button"
-                  aria-label="Remove filter"
+                  aria-label={t("removeFilter")}
                   onClick={() => removeRow(index)}
                 >
                   <Cross2Icon />
@@ -177,10 +185,10 @@ export function AdminFiltersForm({
                 onClick={addRow}
                 disabled={rows.length >= dimensions.length}
               >
-                <PlusIcon /> Add filter
+                <PlusIcon /> {t("addFilter")}
               </Button>
               <Button size="1" variant="soft" type="submit" loading={pending}>
-                Apply
+                {t("apply")}
               </Button>
             </Flex>
           </Flex>

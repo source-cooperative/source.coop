@@ -12,6 +12,7 @@ import { MonoText } from "@/components/core/MonoText";
 import { CopyToClipboard } from "@/components/core/CopyToClipboard";
 import { fileSourceUrl } from "@/lib/urls";
 import { formatBytes } from "@/lib/format";
+import { useTranslations } from "next-intl";
 
 interface ObjectSummaryProps {
   product: Product;
@@ -27,6 +28,7 @@ export function ObjectSummary({
   objectInfo,
   connectionDetails,
 }: ObjectSummaryProps) {
+  const t = useTranslations("ObjectSummary");
   const details = connectionDetails?.dataConnection.details;
   const prefix = connectionDetails?.primaryMirror.prefix;
   const cloudUri =
@@ -45,7 +47,7 @@ export function ObjectSummary({
     <>
       <DataList.Root>
         <DataList.Item>
-          <DataList.Label>Name</DataList.Label>
+          <DataList.Label>{t("name")}</DataList.Label>
           <DataList.Value>
             <MonoText>
               {objectInfo.path.split("/").filter(Boolean).pop()}
@@ -54,21 +56,21 @@ export function ObjectSummary({
         </DataList.Item>
 
         <DataList.Item>
-          <DataList.Label>Size</DataList.Label>
+          <DataList.Label>{t("size")}</DataList.Label>
           <DataList.Value>
             <MonoText>{formatBytes(objectInfo.size)}</MonoText>
           </DataList.Value>
         </DataList.Item>
 
         <DataList.Item>
-          <DataList.Label>Content Type</DataList.Label>
+          <DataList.Label>{t("contentType")}</DataList.Label>
           <DataList.Value>
             <MonoText>{objectInfo.mime_type}</MonoText>
           </DataList.Value>
         </DataList.Item>
 
         <DataList.Item>
-          <DataList.Label>Last Modified</DataList.Label>
+          <DataList.Label>{t("lastModified")}</DataList.Label>
           <DataList.Value>
             <MonoText>
               <DateText date={objectInfo.updated_at} includeTime={true} />
@@ -80,7 +82,7 @@ export function ObjectSummary({
           objectInfo.metadata.sha256 &&
           product.account && (
             <DataList.Item>
-              <DataList.Label minWidth="120px">Checksum</DataList.Label>
+              <DataList.Label minWidth="120px">{t("checksum")}</DataList.Label>
               <DataList.Value>
                 <Flex align="center" gap="2">
                   <ChecksumVerifier
@@ -95,7 +97,7 @@ export function ObjectSummary({
           )}
 
         <DataList.Item>
-          <DataList.Label>Source URL</DataList.Label>
+          <DataList.Label>{t("sourceUrl")}</DataList.Label>
           <DataList.Value>
             <Flex align="center" gap="2">
               <MonoText style={{ wordBreak: "break-all" }}>
@@ -108,7 +110,7 @@ export function ObjectSummary({
 
         {cloudUri && (
           <DataList.Item>
-            <DataList.Label>Cloud URI</DataList.Label>
+            <DataList.Label>{t("cloudUri")}</DataList.Label>
             <DataList.Value>
               <Flex align="center" gap="2">
                 <MonoText style={{ wordBreak: "break-all" }}>
@@ -131,7 +133,7 @@ export function ObjectSummary({
             rel="noopener noreferrer"
           >
             <DownloadIcon />
-            Download
+            {t("download")}
           </a>
         </Button>
       </Box>

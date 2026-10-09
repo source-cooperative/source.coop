@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Theme, Tooltip } from "@radix-ui/themes";
+import { useTranslations } from "next-intl";
 import { CONFIG } from "@/lib/config";
 import Globe, { GlobeMethods } from "react-globe.gl";
 import {
@@ -96,6 +97,7 @@ export function LiveGlobe({
 }: LiveGlobeProps) {
   const globeRef = useRef<GlobeMethods | undefined>(undefined);
   const pointsRef = useRef<LocationPoint[]>([]);
+  const t = useTranslations("LiveGlobe");
   const [globeReady, setGlobeReady] = useState(false);
   const [sceneReady, setSceneReady] = useState(false);
   const globeReadyRef = useRef(false);
@@ -543,7 +545,7 @@ export function LiveGlobe({
         ref={wrapperRef}
         className={`${styles.container} ${sceneReady ? styles.ready : styles.loading}`}
         role="img"
-        aria-label="Interactive 3D globe showing live data request locations"
+        aria-label={t("aria")}
       >
         <Globe
           ref={globeRef}
@@ -581,7 +583,7 @@ export function LiveGlobe({
                     <Tooltip
                       key={name}
                       className={styles.tooltipContent}
-                      content={`${n.toLocaleString()} ${n === 1 ? "request" : "requests"}`}
+                      content={t("requests", { count: n })}
                     >
                       <a href={`/${name}`} className={styles.popupLink}>
                         <span className={styles.popupName}>{name}</span>

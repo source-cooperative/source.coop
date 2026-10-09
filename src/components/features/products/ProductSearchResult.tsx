@@ -5,6 +5,7 @@ import DOMPurify from 'isomorphic-dompurify';
 import type { Product } from "@/types";
 import { DateText } from '@/components/display';
 import { productUrl } from "@/lib/urls";
+import { useTranslations } from 'next-intl';
 
 interface ProductSearchResultProps {
   product: Product;
@@ -15,6 +16,7 @@ interface ProductSearchResultProps {
 }
 
 export function ProductSearchResult({ product, highlight }: ProductSearchResultProps) {
+  const t = useTranslations('ProductSearchResult');
   const sanitizedTitle = highlight?.title ? DOMPurify.sanitize(highlight.title) : product.title;
   const sanitizedDescription = highlight?.description ? 
     DOMPurify.sanitize(highlight.description) : 
@@ -37,13 +39,15 @@ export function ProductSearchResult({ product, highlight }: ProductSearchResultP
           )}
           <Flex gap="3" align="center">
             <Text size="2" color="gray">
-              Updated <DateText date={product.updated_at} />
+              {t.rich('updated', {
+                date: () => <DateText date={product.updated_at} />,
+              })}
             </Text>
             <Text size="2" color="blue">
               {product.account?.name}
             </Text>
             <Badge color={product.visibility === "public" ? "green" : "red"}>
-              {product.visibility === "public" ? "Public" : "Private"}
+              {product.visibility === "public" ? t('public') : t('private')}
             </Badge>
           </Flex>
         </Flex>

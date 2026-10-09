@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { Select } from "@radix-ui/themes";
+import { useTranslations } from "next-intl";
 import { Field } from "@/components/core";
 
 // Select forbids an empty item value, so "never" stands for the empty
@@ -9,27 +10,28 @@ import { Field } from "@/components/core";
 const NEVER = "never";
 
 const EXPIRIES = [
-  { value: "30", label: "30 days" },
-  { value: "90", label: "90 days" },
-  { value: "365", label: "A year" },
-  { value: NEVER, label: "Never — until revoked" },
-];
+  { value: "30", labelKey: "days30" },
+  { value: "90", labelKey: "days90" },
+  { value: "365", labelKey: "year" },
+  { value: NEVER, labelKey: "never" },
+] as const;
 
 /**
  * How long an API key lasts, counted from now: the `expires_in_days` field
  * that both issuing a key and changing its expiry submit.
  */
 export function ApiKeyExpiryField({ id, never = false }: { id: string; never?: boolean }) {
-  const [expiry, setExpiry] = useState(never ? NEVER : "90");
+  const [expiry, setExpiry] = useState<string>(never ? NEVER : "90");
+  const t = useTranslations("ApiKeyExpiryField");
   return (
-    <Field label="Expires" htmlFor={id}>
+    <Field label={t("expires")} htmlFor={id}>
       <input type="hidden" name="expires_in_days" value={expiry === NEVER ? "" : expiry} />
       <Select.Root value={expiry} onValueChange={setExpiry}>
         <Select.Trigger id={id} />
         <Select.Content>
           {EXPIRIES.map((option) => (
             <Select.Item key={option.value} value={option.value}>
-              {option.label}
+              {t(option.labelKey)}
             </Select.Item>
           ))}
         </Select.Content>

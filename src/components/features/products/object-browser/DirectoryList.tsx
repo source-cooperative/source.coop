@@ -10,6 +10,7 @@ import type { Product, ProductObject } from "@/types";
 import styles from "./ObjectBrowser.module.css";
 import { DirectoryRow } from "./DirectoryRow";
 import { useUploadManager } from "@/components/features/uploader";
+import { useTranslations } from "next-intl";
 
 interface DirectoryListProps {
   product: Product;
@@ -33,6 +34,7 @@ export function DirectoryList({
   const parentRef = useRef<HTMLDivElement>(null);
   const [showScrollIndicator, setShowScrollIndicator] = useState(false);
   const itemRefs = useRef<(HTMLAnchorElement | null)[]>([]);
+  const t = useTranslations("DirectoryList");
 
   const { getUploadsForScope } = useUploadManager();
 
@@ -150,7 +152,7 @@ export function DirectoryList({
     >
       {items.length === 0 && (
         <Box p="4">
-          <MonoText color="gray">This directory is empty.</MonoText>
+          <MonoText color="gray">{t("empty")}</MonoText>
         </Box>
       )}
 
@@ -173,7 +175,7 @@ export function DirectoryList({
           }}
         >
           <Text size="1" color="gray">
-            Scroll for more
+            {t("scrollForMore")}
           </Text>
           <ChevronDownIcon width={12} height={12} />
         </Box>

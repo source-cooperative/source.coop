@@ -2,16 +2,18 @@ import { DataList, Badge } from "@radix-ui/themes";
 import type { Product } from "@/types";
 import { AvatarLinkCompact } from "@/components/core";
 import { DateText } from "@/components/display";
+import { useTranslations } from "next-intl";
 
 interface ProductMetaContentProps {
   product: Product;
 }
 
 export function ProductMetaContent({ product }: ProductMetaContentProps) {
+  const t = useTranslations("ProductMetaContent");
   return (
     <DataList.Root>
       <DataList.Item>
-        <DataList.Label>Visibility</DataList.Label>
+        <DataList.Label>{t("visibility")}</DataList.Label>
         <DataList.Value>
           <Badge
             color={
@@ -23,30 +25,30 @@ export function ProductMetaContent({ product }: ProductMetaContentProps) {
             }
           >
             {product.visibility === "public"
-              ? "Public"
+              ? t("public")
               : product.visibility === "unlisted"
-              ? "Unlisted"
-              : "Restricted"}
+              ? t("unlisted")
+              : t("restricted")}
           </Badge>
         </DataList.Value>
       </DataList.Item>
 
       <DataList.Item style={{ alignItems: "center" }}>
-        <DataList.Label>Owner</DataList.Label>
+        <DataList.Label>{t("owner")}</DataList.Label>
         <DataList.Value>
           <AvatarLinkCompact account={product.account!} />
         </DataList.Value>
       </DataList.Item>
 
       <DataList.Item>
-        <DataList.Label>Created</DataList.Label>
+        <DataList.Label>{t("created")}</DataList.Label>
         <DataList.Value>
           <DateText date={product.created_at} />
         </DataList.Value>
       </DataList.Item>
 
       <DataList.Item>
-        <DataList.Label>Last Updated</DataList.Label>
+        <DataList.Label>{t("lastUpdated")}</DataList.Label>
         <DataList.Value>
           <DateText date={product.updated_at} />
         </DataList.Value>

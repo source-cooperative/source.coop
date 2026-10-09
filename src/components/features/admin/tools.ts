@@ -18,28 +18,25 @@ type IconProps = ComponentProps<typeof MagnifyingGlassIcon>;
  * account dropdown's Admin submenu.
  */
 export interface AdminTool {
-  name: string;
-  description: string;
+  /** The tool's name is `AdminTools.<key>.name` in the message catalog. */
+  key: "analytics" | "userLookup" | "dataConnections";
   href: string;
   Icon: ComponentType<IconProps>;
 }
 
 export const ADMIN_TOOLS: AdminTool[] = [
   {
-    name: "Analytics",
-    description: "Explore which accounts and products serve the most traffic.",
+    key: "analytics",
     href: adminAnalyticsUrl(),
     Icon: BarChartIcon,
   },
   {
-    name: "User Lookup",
-    description: "Find a user by username, name, or email and open their profile.",
+    key: "userLookup",
     href: adminUserLookupUrl(),
     Icon: MagnifyingGlassIcon,
   },
   {
-    name: "Data Connections",
-    description: "Manage the storage backends products mirror their data to.",
+    key: "dataConnections",
     href: adminDataConnectionsUrl(),
     Icon: Link1Icon,
   },

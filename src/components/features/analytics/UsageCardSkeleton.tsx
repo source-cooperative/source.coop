@@ -1,4 +1,5 @@
 import { Box, Card, Flex, Skeleton } from "@radix-ui/themes";
+import { useTranslations } from "next-intl";
 import { SectionHeader } from "@/components/core/SectionHeader";
 
 /**
@@ -8,9 +9,10 @@ import { SectionHeader } from "@/components/core/SectionHeader";
  * resolves to nothing and the skeleton would flash and vanish.
  */
 export function UsageCardSkeleton() {
+  const t = useTranslations("UsageCard");
   return (
     <Card size={{ initial: "2", sm: "1" }} style={{ flexShrink: 0 }}>
-      <SectionHeader title="Analytics">
+      <SectionHeader title={t("title")}>
         <Skeleton width="120px" height="16px" />
         <Flex gap="3" mt="3">
           <Skeleton width="80px" height="40px" />

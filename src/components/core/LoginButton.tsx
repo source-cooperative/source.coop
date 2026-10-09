@@ -3,6 +3,7 @@
 import { Button } from "@radix-ui/themes";
 import { ReactNode, useEffect, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { loginUrl } from "@/lib/urls";
 
 /**
@@ -18,10 +19,11 @@ import { loginUrl } from "@/lib/urls";
  * first frame returns to Ory's default rather than the current page.
  */
 export function LoginButton({
-  children = "Log In / Register",
+  children,
 }: {
   children?: ReactNode;
 }) {
+  const t = useTranslations("LoginButton");
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [href, setHref] = useState(loginUrl());
@@ -31,7 +33,7 @@ export function LoginButton({
 
   return (
     <Button asChild>
-      <a href={href}>{children}</a>
+      <a href={href}>{children ?? t("logInOrRegister")}</a>
     </Button>
   );
 }

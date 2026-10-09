@@ -1,5 +1,6 @@
 "use server";
 
+import { getTranslations } from "next-intl/server";
 import { productsTable, membershipsTable, dataConnectionsTable } from "@/lib/clients/database";
 import {
   Actions,
@@ -104,13 +105,14 @@ export async function createProduct(
   initialState: any,
   formData: FormData,
 ): Promise<FormState<ProductCreationRequest>> {
+  const t = await getTranslations("ProductActions");
   const session = await getPageSession();
 
   if (!session?.identity_id || !session.account) {
     return {
       fieldErrors: {},
       data: formData,
-      message: "Unauthenticated",
+      message: t("unauthenticated"),
       success: false,
     };
   }
@@ -123,7 +125,7 @@ export async function createProduct(
     return {
       fieldErrors: validatedFields.error.flatten().fieldErrors,
       data: formData,
-      message: "Invalid form data",
+      message: t("invalidFormData"),
       success: false,
     };
   }
@@ -145,7 +147,7 @@ export async function createProduct(
     return {
       fieldErrors: {},
       data: formData,
-      message: "Unauthorized to create product",
+      message: t("unauthorizedCreate"),
       success: false,
     };
   }
@@ -153,9 +155,9 @@ export async function createProduct(
   const dataConnectionId = formData.get("data_connection_id");
   if (typeof dataConnectionId !== "string" || dataConnectionId.length === 0) {
     return {
-      fieldErrors: { data_connection_id: ["A data connection is required"] },
+      fieldErrors: { data_connection_id: [t("connectionRequired")] },
       data: formData,
-      message: "Invalid form data",
+      message: t("invalidFormData"),
       success: false,
     };
   }
@@ -164,10 +166,10 @@ export async function createProduct(
   if (!dataConnection) {
     return {
       fieldErrors: {
-        data_connection_id: ["Selected data connection was not found"],
+        data_connection_id: [t("connectionNotFoundField")],
       },
       data: formData,
-      message: "Invalid data connection",
+      message: t("invalidConnection"),
       success: false,
     };
   }
@@ -185,18 +187,18 @@ export async function createProduct(
       return {
         fieldErrors: {},
         data: formData,
-        message: "You are not permitted to use the selected data connection",
+        message: t("connectionNotPermitted"),
         success: false,
       };
     case "wrong-account":
       return {
         fieldErrors: {
           data_connection_id: [
-            "Selected data connection is not available for this account",
+            t("connectionWrongAccountField"),
           ],
         },
         data: formData,
-        message: "Invalid data connection for this account",
+        message: t("connectionWrongAccount"),
         success: false,
       };
   }
@@ -209,11 +211,11 @@ export async function createProduct(
     return {
       fieldErrors: {
         visibility: [
-          `The "${dataConnection.name}" data connection does not allow ${validatedFields.data.visibility} products`,
+          t("visibilityNotAllowed", { name: dataConnection.name, visibility: validatedFields.data.visibility }),
         ],
       },
       data: formData,
-      message: "Invalid visibility for the selected data connection",
+      message: t("invalidVisibility"),
       success: false,
     };
   }
@@ -268,13 +270,14 @@ export async function updateProduct(
   initialState: any,
   formData: FormData,
 ): Promise<FormState<Partial<Product>>> {
+  const t = await getTranslations("ProductActions");
   const session = await getPageSession();
 
   if (!session?.identity_id || !session.account) {
     return {
       fieldErrors: {},
       data: formData,
-      message: "Unauthenticated",
+      message: t("unauthenticated"),
       success: false,
     };
   }
@@ -286,7 +289,7 @@ export async function updateProduct(
     return {
       fieldErrors: {},
       data: formData,
-      message: "Account ID and Product ID are required",
+      message: t("idsRequired"),
       success: false,
     };
   }
@@ -298,7 +301,7 @@ export async function updateProduct(
       return {
         fieldErrors: {},
         data: formData,
-        message: "Product not found",
+        message: t("productNotFound"),
         success: false,
       };
     }
@@ -308,7 +311,7 @@ export async function updateProduct(
       return {
         fieldErrors: {},
         data: formData,
-        message: "Unauthorized to update this product",
+        message: t("unauthorizedUpdate"),
         success: false,
       };
     }
@@ -345,11 +348,11 @@ export async function updateProduct(
         return {
           fieldErrors: {
             visibility: [
-              "This product's data connection could not be found, so its visibility cannot be changed",
+              t("connectionMissingField"),
             ],
           },
           data: formData,
-          message: "Data connection not found for this product",
+          message: t("connectionMissing"),
           success: false,
         };
       }
@@ -358,11 +361,11 @@ export async function updateProduct(
         return {
           fieldErrors: {
             visibility: [
-              `The "${dataConnection.name}" data connection does not allow ${visibility} products`,
+              t("visibilityNotAllowed", { name: dataConnection.name, visibility }),
             ],
           },
           data: formData,
-          message: "Invalid visibility for the product's data connection",
+          message: t("invalidVisibilityForProduct"),
           success: false,
         };
       }
@@ -394,7 +397,7 @@ export async function updateProduct(
     return {
       fieldErrors: {},
       data: formData,
-      message: "Product updated successfully!",
+      message: t("updated"),
       success: true,
     };
   } catch (error) {
@@ -408,7 +411,7 @@ export async function updateProduct(
     return {
       fieldErrors: {},
       data: formData,
-      message: "Failed to update product. Please try again.",
+      message: t("updateFailed"),
       success: false,
     };
   }
@@ -419,19 +422,21 @@ export async function deleteProduct(
   product_id: string,
   preserveData: boolean = false
 ): Promise<{ success: boolean; error?: string }> {
+  const t = await getTranslations("ProductActions");
+  const tCommon = await getTranslations("Common");
   const session = await getPageSession();
 
   if (!session?.identity_id || !session.account) {
-    return { success: false, error: "Unauthenticated" };
+    return { success: false, error: t("unauthenticated") };
   }
 
   const product = await productsTable.fetchById(account_id, product_id);
   if (!product) {
-    return { success: false, error: "Product not found" };
+    return { success: false, error: t("productNotFound") };
   }
 
   if (!isAuthorized(session, product, Actions.DeleteRepository)) {
-    return { success: false, error: "Unauthorized to delete this product" };
+    return { success: false, error: t("unauthorizedDelete") };
   }
 
   try {
@@ -452,7 +457,7 @@ export async function deleteProduct(
     if (preserveData && !canPreserveData) {
       return {
         success: false,
-        error: "You are not permitted to keep this product's data when deleting it.",
+        error: t("cannotPreserveData"),
       };
     }
 
@@ -497,7 +502,7 @@ export async function deleteProduct(
 
     // Surface the underlying cause (e.g. S3 "Access Denied") instead of a
     // generic "try again" — most failures here are not transient.
-    const reason = error instanceof Error ? error.message : "Unknown error";
-    return { success: false, error: `Failed to delete product: ${reason}` };
+    const reason = error instanceof Error ? error.message : tCommon("unknownError");
+    return { success: false, error: t("deleteFailed", { reason }) };
   }
 }

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useFormatter, useTranslations } from "next-intl";
 import {
   Box,
   Dialog,
@@ -27,7 +28,7 @@ import {
 } from "recharts";
 import { formatBytes } from "@/lib/format";
 import { parseActiveIndex, Stat, StatRow } from "./panels";
-import { HELP, mono } from "./style";
+import { mono } from "./style";
 import { seriesColor } from "./palette";
 
 type Metric = "bytes" | "requests";
@@ -52,30 +53,11 @@ interface AdminBreakdownChartProps {
   queries?: string[];
 }
 
-const MONTHS = "Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split(" ");
 const DAY_MIN = 1440;
 const DAY_MS = 86_400_000;
 
-const hhmm = (d: Date) =>
-  `${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")}`;
-
-function tickLabel(iso: string, bucketMinutes: number): string {
-  const d = new Date(iso);
-  const day = `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]}`;
-  // Sub-daily buckets need the time too; daily+ buckets always start at
-  // 00:00 UTC, so the time would be noise.
-  return bucketMinutes < DAY_MIN ? `${day} ${hhmm(d)}` : day;
-}
-
-function bucketLabel(iso: string, bucketMinutes: number): string {
-  const d = new Date(iso);
-  const day = `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
-  return bucketMinutes < DAY_MIN
-    ? `${day} ${hhmm(d)} UTC`
-    : bucketMinutes > DAY_MIN
-      ? `${day} + ${bucketMinutes / DAY_MIN - 1}d`
-      : day;
-}
+const DAY = { day: "numeric", month: "short" } as const;
+const TIME = { hour: "2-digit", minute: "2-digit", hourCycle: "h23" } as const;
 
 /**
  * Zooming in: the interval shown after drilling into one bucket of a given
@@ -92,26 +74,9 @@ const DRILL_INTERVAL: Record<number, number> = {
   1: 1,
 };
 
-// en-US explicitly: this renders in SSR HTML, and locale-following
-// toLocaleString() would hydrate differently for non-en visitors.
-const compact = new Intl.NumberFormat("en-US", { notation: "compact" });
-const plain = new Intl.NumberFormat("en-US");
-
-function formatMetric(value: number, metric: Metric): string {
-  return metric === "bytes" ? formatBytes(value) : compact.format(value);
-}
-
 /** formatBytes chokes on sub-1 values (negative log); pin those to bytes. */
 const byteRate = (perSec: number) =>
   `${perSec > 0 && perSec < 1 ? `${perSec.toFixed(2)} B` : formatBytes(perSec, 1)}/s`;
-
-/** Average rate over one bucket: "0.43/s" requests, "12.3 MB/s" bytes. */
-function rate(value: number, bucketMinutes: number, metric: Metric): string {
-  const perSec = value / (bucketMinutes * 60);
-  return metric === "bytes"
-    ? byteRate(perSec)
-    : `${perSec >= 10 ? compact.format(perSec) : perSec.toFixed(2)}/s`;
-}
 
 /**
  * Stacked bar timeseries of traffic, one bar per time bucket, stacked by the
@@ -131,6 +96,42 @@ export function AdminBreakdownChart({
 }: AdminBreakdownChartProps) {
   const [metric, setMetric] = useState<Metric>(initialMetric);
   const router = useRouter();
+  const t = useTranslations("AdminBreakdownChart");
+  const tStat = useTranslations("AnalyticsPanels");
+  const tHelp = useTranslations("AnalyticsHelp");
+  const format = useFormatter();
+  const compact = (value: number) =>
+    format.number(value, { notation: "compact" });
+
+  const formatMetric = (value: number, metric: Metric): string =>
+    metric === "bytes" ? formatBytes(value) : compact(value);
+
+  /** Average rate over one bucket: "0.43/s" requests, "12.3 MB/s" bytes. */
+  const rate = (value: number, bucketMinutes: number, metric: Metric) => {
+    const perSec = value / (bucketMinutes * 60);
+    return metric === "bytes"
+      ? byteRate(perSec)
+      : `${perSec >= 10 ? compact(perSec) : perSec.toFixed(2)}/s`;
+  };
+
+  // Sub-daily buckets need the time too; daily+ buckets always start at
+  // 00:00 UTC, so the time would be noise.
+  const tickLabel = (iso: string, bucketMinutes: number) =>
+    format.dateTime(
+      new Date(iso),
+      bucketMinutes < DAY_MIN ? { ...DAY, ...TIME } : DAY,
+    );
+
+  const bucketLabel = (iso: string, bucketMinutes: number) => {
+    const d = new Date(iso);
+    const day = format.dateTime(d, { ...DAY, year: "numeric" });
+    return bucketMinutes < DAY_MIN
+      ? t("bucketUtc", { date: format.dateTime(d, { ...DAY, year: "numeric", ...TIME }) })
+      : bucketMinutes > DAY_MIN
+        ? t("bucketPlusDays", { date: day, days: bucketMinutes / DAY_MIN - 1 })
+        : day;
+  };
+  const seriesName = (key: string) => (key === otherKey ? t("other") : key);
 
   // History back/forward re-renders this mounted component with a different
   // ?metric= — resync the local (instant-toggle) copy.
@@ -237,29 +238,29 @@ export function AdminBreakdownChart({
       >
         <StatRow style={{ flexGrow: 1 }}>
           <Stat
-            label="Requests"
-            help={HELP.requests}
-            value={plain.format(Math.round(totals.requests))}
+            label={tStat("requests")}
+            help={tHelp("requests")}
+            value={format.number(Math.round(totals.requests))}
           />
           <Stat
-            label="Data served"
-            help={HELP.served}
+            label={tStat("dataServed")}
+            help={tHelp("served")}
             value={formatBytes(totals.bytes, 1)}
           />
           <Stat
-            label="Avg bandwidth"
-            help={HELP.bandwidth}
+            label={t("avgBandwidth")}
+            help={tHelp("bandwidth")}
             value={byteRate(totals.bytes / elapsedSeconds)}
           />
           <Stat
-            label="Unique IPs"
-            help={HELP.uniqueIpsSampled}
-            value={plain.format(totals.uniqueIps)}
+            label={tStat("uniqueIps")}
+            help={tHelp("uniqueIpsSampled")}
+            value={format.number(totals.uniqueIps)}
           />
           <Stat
-            label="Countries"
-            help={HELP.countries}
-            value={plain.format(totals.countries)}
+            label={tStat("countries")}
+            help={tHelp("countries")}
+            value={format.number(totals.countries)}
           />
         </StatRow>
         <Flex gap="2" align="center">
@@ -268,22 +269,24 @@ export function AdminBreakdownChart({
             value={metric}
             onValueChange={(value) => changeMetric(value as Metric)}
           >
-            <SegmentedControl.Item value="bytes">Bytes</SegmentedControl.Item>
+            <SegmentedControl.Item value="bytes">
+              {t("bytes")}
+            </SegmentedControl.Item>
             <SegmentedControl.Item value="requests">
-              Requests
+              {tStat("requests")}
             </SegmentedControl.Item>
           </SegmentedControl.Root>
           {queries.length > 0 && (
             <Dialog.Root>
               <Dialog.Trigger>
-                <IconButton size="1" variant="soft" aria-label="View SQL">
+                <IconButton size="1" variant="soft" aria-label={t("viewSql")}>
                   <CodeIcon />
                 </IconButton>
               </Dialog.Trigger>
               <Dialog.Content maxWidth="720px">
-                <Dialog.Title size="3">Analytics Engine SQL</Dialog.Title>
+                <Dialog.Title size="3">{t("sqlTitle")}</Dialog.Title>
                 <Dialog.Description size="1" color="gray" mb="3">
-                  The statements that produced this view, in execution order.
+                  {t("sqlDescription")}
                 </Dialog.Description>
                 {queries.map((sql, i) => (
                   <Box
@@ -316,7 +319,7 @@ export function AdminBreakdownChart({
             <IconButton
               size="1"
               variant="soft"
-              aria-label={fullscreen ? "Exit fullscreen" : "Fullscreen"}
+              aria-label={fullscreen ? t("exitFullscreen") : t("fullscreen")}
               onClick={toggleFullscreen}
             >
               {fullscreen ? <ExitFullScreenIcon /> : <EnterFullScreenIcon />}
@@ -411,7 +414,7 @@ export function AdminBreakdownChart({
                         truncate
                         style={{ flex: 1, minWidth: 0 }}
                       >
-                        {series[entry.index]}
+                        {seriesName(series[entry.index])}
                       </Text>
                       <Text size="1" weight="medium">
                         {formatMetric(entry.value, metric)}
@@ -426,7 +429,7 @@ export function AdminBreakdownChart({
                     <Flex align="center" gap="2" mt="1">
                       <Box width="8px" flexShrink="0" />
                       <Text size="1" color="gray" style={{ flex: 1 }}>
-                        Total
+                        {t("total")}
                       </Text>
                       <Text size="1" weight="bold">
                         {formatMetric(total, metric)}
@@ -474,15 +477,13 @@ export function AdminBreakdownChart({
               style={{ background: colorAt(s) }}
             />
             <Text size="1" color="gray" style={mono()}>
-              {key}
+              {seriesName(key)}
             </Text>
           </Flex>
         ))}
       </Flex>
       <Text as="div" size="1" color="gray" mt="2">
-        Times are UTC. Values are estimates — high-volume traffic is measured
-        from a sample. Click a bar (or drag across several) to zoom in; the
-        browser back button zooms out.
+        {t("footnote")}
       </Text>
     </Box>
   );

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Box, Button } from "@radix-ui/themes";
 import { ArrowLeftIcon } from "@radix-ui/react-icons";
+import { getTranslations } from "next-intl/server";
 import { ServiceAccountDetail } from "@/components/features/service-accounts";
 import {
   accountTrustsTable,
@@ -16,7 +17,10 @@ import { managedServiceAccount } from "@/lib/accounts/service-accounts";
 import { editAccountServiceAccountsUrl } from "@/lib/urls";
 import { MembershipState, publicKey } from "@/types";
 
-export const metadata: Metadata = { title: "Service account" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("ServiceAccountPage");
+  return { title: t("metaTitle") };
+}
 
 interface PageProps {
   params: Promise<{ account_id: string; service_account_id: string }>;
@@ -34,12 +38,13 @@ export default async function ServiceAccountPage({ params }: PageProps) {
     productsTable.listByAccountAll(account_id),
     serviceAccountKeysTable.listByAccount(account.account_id),
   ]);
+  const t = await getTranslations("ServiceAccountPage");
 
   return (
     <Box>
       <Button asChild variant="ghost" size="1" mb="4">
         <Link href={editAccountServiceAccountsUrl(account_id)}>
-          <ArrowLeftIcon /> Service accounts
+          <ArrowLeftIcon /> {t("back")}
         </Link>
       </Button>
       <ServiceAccountDetail

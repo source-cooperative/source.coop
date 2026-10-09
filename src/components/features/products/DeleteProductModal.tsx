@@ -19,6 +19,7 @@ import { TrashIcon, ExclamationTriangleIcon } from "@radix-ui/react-icons";
 import { deleteProduct } from "@/lib/actions/products";
 import { useRouter } from "next/navigation";
 import { accountUrl } from "@/lib/urls";
+import { useTranslations } from "next-intl";
 
 interface DeleteProductModalProps {
   accountId: string;
@@ -48,6 +49,8 @@ export function DeleteProductModal({
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
+  const t = useTranslations("DeleteProductModal");
+  const tCommon = useTranslations("Common");
 
   const expectedText = `${accountId}/${productId}`;
   const isConfirmed = confirmText === expectedText;
@@ -74,7 +77,7 @@ export function DeleteProductModal({
       if (result.success) {
         router.push(accountUrl(accountId));
       } else {
-        setError(result.error ?? "Failed to delete product");
+        setError(result.error ?? t("deleteFailed"));
       }
     });
   };
@@ -84,19 +87,19 @@ export function DeleteProductModal({
       <Dialog.Trigger>
         <Button color="red" variant="outline">
           <TrashIcon />
-          Delete Product
+          {t("deleteProduct")}
         </Button>
       </Dialog.Trigger>
 
       <Dialog.Content maxWidth="520px">
-        <Dialog.Title mb="4">Delete Product</Dialog.Title>
+        <Dialog.Title mb="4">{t("deleteProduct")}</Dialog.Title>
 
         <Flex direction="column" gap="4">
           {showKeepOption && (
             <Card asChild>
               <label>
                 <Tooltip
-                  content="This connection is read-only, so Source won't delete its underlying data."
+                  content={t("readOnlyTooltip")}
                   // Only meaningful when the option is locked on.
                   open={dataReadOnly ? undefined : false}
                 >
@@ -111,12 +114,12 @@ export function DeleteProductModal({
                     />
                     <Box>
                       <Text as="div" size="2" weight="medium">
-                        Delete the product record only
+                        {t("recordOnlyLabel")}
                       </Text>
                       <Text as="div" size="1" color="gray">
                         {dataReadOnly
-                          ? "This connection is read-only, so its underlying data is always kept."
-                          : "Remove the product and its memberships, but keep the underlying data in the connection."}
+                          ? t("recordOnlyReadOnly")
+                          : t("recordOnlyDescription")}
                       </Text>
                     </Box>
                   </Flex>
@@ -127,7 +130,10 @@ export function DeleteProductModal({
 
           <Box>
             <Text as="p" size="2" mb="2">
-              To confirm, type <Code>{expectedText}</Code> below:
+              {t.rich("confirmPrompt", {
+                expected: expectedText,
+                code: (chunks) => <Code>{chunks}</Code>,
+              })}
             </Text>
             <TextField.Root
               placeholder={expectedText}
@@ -164,29 +170,29 @@ export function DeleteProductModal({
             </Text>
             <Box>
               <Text as="p" size="2" weight="bold" color="red" mb="2">
-                Deleting this product will:
+                {t("consequencesHeading")}
               </Text>
               <ul style={{ margin: 0, paddingInlineStart: "1.25rem" }}>
                 <li>
-                  <Text size="2">Remove the product record and its page</Text>
+                  <Text size="2">{t("consequenceRecord")}</Text>
                 </li>
                 <li>
-                  <Text size="2">Remove all of its memberships</Text>
+                  <Text size="2">{t("consequenceMemberships")}</Text>
                 </li>
                 <li>
                   {keepData ? (
                     <Text size="2" color="gray">
-                      Keep the underlying data in the connection
+                      {t("consequenceKeepData")}
                     </Text>
                   ) : (
                     <Text size="2" weight="medium">
-                      Delete all underlying data in the connection
+                      {t("consequenceDeleteData")}
                     </Text>
                   )}
                 </li>
               </ul>
               <Text as="p" size="2" weight="medium" color="red" mt="2">
-                This cannot be undone.
+                {t("cannotBeUndone")}
               </Text>
             </Box>
           </Flex>
@@ -195,7 +201,7 @@ export function DeleteProductModal({
         <Flex gap="3" justify="end">
           <Dialog.Close>
             <Button variant="soft" color="gray" disabled={isPending}>
-              Cancel
+              {tCommon("cancel")}
             </Button>
           </Dialog.Close>
           <Button
@@ -205,7 +211,7 @@ export function DeleteProductModal({
             onClick={handleDelete}
           >
             <TrashIcon />
-            Delete Product
+            {t("deleteProduct")}
           </Button>
         </Flex>
       </Dialog.Content>

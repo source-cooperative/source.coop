@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { formatDate, formatDateSSR } from '@/lib/format';
+import { useFormatter } from 'next-intl';
 
 interface DateTextProps {
   date: string;
@@ -9,16 +8,20 @@ interface DateTextProps {
 }
 
 export function DateText({ date, includeTime = false }: DateTextProps) {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  // Use SSR-safe format for initial render to avoid jitter
-  if (!mounted) {
-    return <span>{formatDateSSR(date)}</span>;
-  }
-
-  return <span>{formatDate(date, includeTime)}</span>;
-} 
+  const format = useFormatter();
+  return (
+    <span>
+      {format.dateTime(new Date(date), {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+        ...(includeTime && {
+          hour: '2-digit',
+          minute: '2-digit',
+          hourCycle: 'h23',
+          timeZoneName: 'short',
+        }),
+      })}
+    </span>
+  );
+}

@@ -22,6 +22,7 @@ import styles from "./Landing.module.css";
 import { productListUrl } from "@/lib/urls";
 import { HeroGlobe } from "./HeroGlobe";
 import { CONFIG } from "@/lib/config";
+import { getTranslations } from "next-intl/server";
 
 function SectionSubheading({ children }: { children: React.ReactNode }) {
   return (
@@ -32,6 +33,7 @@ function SectionSubheading({ children }: { children: React.ReactNode }) {
 }
 
 export default async function Landing() {
+  const t = await getTranslations("LandingPage");
   const featuredCount = 4;
   const featured = await getFeaturedProducts(20);
   // Shuffle and pick 4 for the homepage
@@ -60,15 +62,12 @@ export default async function Landing() {
                     minWidth={{ sm: "60ch" }}
                   >
                     <Heading size={{ initial: "8", xs: "9" }} my="5">
-                      The Cooperative Data Publishing Utility
+                      {t("heroTitle")}
                     </Heading>
                     <Text size={{ xs: "5", sm: "6" }} weight="bold">
-                      Data publishing at any scale for everyone.
+                      {t("heroTagline")}
                     </Text>
-                    <Text size={{ xs: "5", sm: "6" }}>
-                      Upload, share, and access data without needing to build or
-                      maintain your own infrastructure.
-                    </Text>
+                    <Text size={{ xs: "5", sm: "6" }}>{t("heroBody")}</Text>
                     <Flex
                       gap="4"
                       align={{ initial: "stretch", xs: "start" }}
@@ -81,7 +80,7 @@ export default async function Landing() {
                           variant="outline"
                           highContrast
                         >
-                          Read the docs &rarr;
+                          {t("readDocs")}
                         </Button>
                       </Link>
                       <Link href={productListUrl()}>
@@ -91,7 +90,7 @@ export default async function Landing() {
                           variant="solid"
                           highContrast
                         >
-                          Explore Data Products &rarr;
+                          {t("exploreProducts")}
                         </Button>
                       </Link>
                     </Flex>
@@ -109,18 +108,16 @@ export default async function Landing() {
             </Section>
             <Section className={styles.productsSection} px="4">
               <Container>
-                <SectionSubheading>Explore Source Datasets</SectionSubheading>
+                <SectionSubheading>{t("featuredEyebrow")}</SectionSubheading>
                 <Heading size="8" mb="6">
-                  Featured Products
+                  {t("featuredHeading")}
                 </Heading>
                 <ProductsList products={products} grid />
               </Container>
             </Section>
             <Section px="4">
               <Container>
-                <SectionSubheading>
-                  What is Source Cooperative?
-                </SectionSubheading>
+                <SectionSubheading>{t("whatIsEyebrow")}</SectionSubheading>
                 <Flex
                   direction={{ initial: "column", sm: "row" }}
                   align="start"
@@ -128,45 +125,30 @@ export default async function Landing() {
                 >
                   <Box flexBasis="50%">
                     <Heading size="8" mb="6">
-                      The Challenge
+                      {t("challengeHeading")}
                     </Heading>
                     <Text>
-                      Scientific data infrastructure wasn&apos;t built for
-                      cross-border, cross-sector cooperation.
+                      {t("challenge1")}
                       <br />
                       <br />
-                      Addressing global challenges means combining data from
-                      governments, research institutions, commercial providers,
-                      and civil society—each with its own formats, access
-                      patterns, and APIs.
+                      {t("challenge2")}
                       <br />
                       <br />
-                      Data engineers, scientists, and researchers spend more
-                      time wrangling infrastructure than doing their actual
-                      work, hampering collaboration and limiting informed
-                      decision making.
+                      {t("challenge3")}
                     </Text>
                   </Box>
                   <Box flexBasis="50%">
                     <Heading size="8" mb="6">
-                      Our Solution
+                      {t("solutionHeading")}
                     </Heading>
                     <Text>
-                      Source is a nonprofit data publishing utility built on
-                      commodity cloud object storage. Researchers publish data
-                      at any scale without running servers, building portals, or
-                      writing APIs.
+                      {t("solution1")}
                       <br />
                       <br />
-                      Source handles cloud infrastructure so researchers can
-                      focus on their data, not their hosting. Users access
-                      everything through standard URLs that work with existing
-                      tools—no custom portals, no proprietary APIs.
+                      {t("solution2")}
                       <br />
                       <br />
-                      The service is intentionally commoditized: built to resist
-                      lock-in and designed so that no single provider, funder,
-                      or political decision can make research data disappear.
+                      {t("solution3")}
                     </Text>
                   </Box>
                 </Flex>
@@ -189,11 +171,9 @@ export default async function Landing() {
                   align="start"
                 >
                   <Box style={{ flex: 1 }}>
-                    <SectionSubheading>
-                      Why Source is different
-                    </SectionSubheading>
+                    <SectionSubheading>{t("whyEyebrow")}</SectionSubheading>
                     <Heading size="8" mb="6">
-                      Data publishing for everyone
+                      {t("whyHeading")}
                     </Heading>
                   </Box>
                   <Flex direction="column" gap="6" style={{ flex: 1 }}>
@@ -203,16 +183,13 @@ export default async function Landing() {
                         height={64}
                         lightSrc="/img/ringsIcon.svg"
                         darkSrc="/img/ringsIcon-dark.svg"
-                        alt="icon"
+                        alt={t("iconAlt")}
                       />
                       <Box>
                         <Heading size="3" className={styles.subheading}>
-                          Integrate into any workflow
+                          {t("integrateHeading")}
                         </Heading>
-                        <Text>
-                          Source is a vendor-neutral data publishing utility
-                          that works with any S3-compatible cloud provider.
-                        </Text>
+                        <Text>{t("integrateBody")}</Text>
                       </Box>
                     </Flex>
                     <Flex
@@ -233,14 +210,9 @@ export default async function Landing() {
                       </Box>
                       <Box>
                         <Heading size="3" className={styles.subheading}>
-                          Neutral hosting, mission backed
+                          {t("neutralHeading")}
                         </Heading>
-                        <Text>
-                          Retain full ownership and control of your data. Source
-                          supports open formats and is a non-commercial
-                          repository, so you&apos;re never trapped by
-                          proprietary APIs or workflows.
-                        </Text>
+                        <Text>{t("neutralBody")}</Text>
                       </Box>
                     </Flex>
                     <Flex
@@ -261,17 +233,13 @@ export default async function Landing() {
                       </Box>
                       <Box>
                         <Heading size="3" className={styles.subheading}>
-                          Flat pricing
+                          {t("pricingHeading")}
                         </Heading>
                         <Text>
-                          Instead of building and maintaining data portals or
-                          trying to wrangle variable cloud costs, Source lets
-                          you focus on the fundamentals that make data easy to
-                          publish and easy to use.
+                          {t("pricing1")}
                           <br />
                           <br />
-                          Pricing plans based on data volume and usage will be
-                          announced soon.
+                          {t("pricing2")}
                         </Text>
                       </Box>
                     </Flex>
@@ -292,9 +260,9 @@ export default async function Landing() {
                 align="start"
               >
                 <Box flexBasis="50%">
-                  <SectionSubheading>Case Studies</SectionSubheading>
+                  <SectionSubheading>{t("caseStudiesEyebrow")}</SectionSubheading>
                   <Heading size="8" mb="6">
-                    Open Source, Governed, and Trusted By These Teams
+                    {t("caseStudiesHeading")}
                   </Heading>
                 </Box>
                 <CaseStudyCarousel />
@@ -309,19 +277,15 @@ export default async function Landing() {
                 align="start"
               >
                 <Box flexGrow="2">
-                  <Heading size="8">
-                    Built for Data Engineers, Scientists, and Developers
-                  </Heading>
+                  <Heading size="8">{t("builtForHeading")}</Heading>
                 </Box>
                 <Box flexGrow="1">
                   <Text size="5" mb="4" as="div">
-                    Source Cooperative supports your data lifecycle, from
-                    prototyping to public release, without navigating corporate
-                    cloud policies.
+                    {t("builtForBody")}
                   </Text>
                   <Link href={productListUrl()}>
                     <Button className={styles.subheading} highContrast>
-                      Explore the data &rarr;
+                      {t("exploreData")}
                     </Button>
                   </Link>
                 </Box>

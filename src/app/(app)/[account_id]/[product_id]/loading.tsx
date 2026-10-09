@@ -3,8 +3,10 @@ import { SectionHeader, Skeleton } from "@/components/core";
 import { UsageCardSkeleton } from "@/components/features/analytics";
 import { isAnalyticsConfigured } from "@/lib/clients/analytics";
 import DirectoryListLoading from "@/components/features/products/object-browser/DirectoryListLoading";
+import { useTranslations } from "next-intl";
 
 export default function ProductDetailsLoading() {
+  const t = useTranslations("ProductLoading");
   return (
     <Grid mt="4" columns={{ initial: "1", md: "3" }} gap={{ initial: "4", md: "6" }}>
       {/* Left column: summary + contents */}
@@ -35,7 +37,7 @@ export default function ProductDetailsLoading() {
         <Card>
           <Box>
             {/* Breadcrumb Skeleton */}
-            <SectionHeader title="Contents">
+            <SectionHeader title={t("contents")}>
               <Flex
                 pb="3"
                 mb="3"
@@ -58,7 +60,7 @@ export default function ProductDetailsLoading() {
       {/* Right column: details + analytics stacked */}
       <Flex width="100%" className="product-meta" direction="column" gap="4">
         <Card size={{ initial: "2", sm: "1" }}>
-          <SectionHeader title="Details">
+          <SectionHeader title={t("details")}>
             <DataList.Root>
               {/* Visibility Badge Skeleton */}
               <DataList.Item>

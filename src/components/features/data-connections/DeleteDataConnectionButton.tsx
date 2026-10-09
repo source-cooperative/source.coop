@@ -4,6 +4,7 @@ import React, { useActionState } from "react";
 import { Button, Text, Flex, AlertDialog } from "@radix-ui/themes";
 import Form from "next/form";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { deleteDataConnection } from "@/lib/actions/data-connections";
 
 interface DeleteDataConnectionButtonProps {
@@ -19,6 +20,8 @@ export function DeleteDataConnectionButton({
 }: DeleteDataConnectionButtonProps) {
   const inUse = productsInUse > 0;
   const router = useRouter();
+  const t = useTranslations("DeleteDataConnectionButton");
+  const tc = useTranslations("Common");
   const [state, formAction, pending] = useActionState(deleteDataConnection, {
     message: "",
     data: new FormData(),
@@ -40,19 +43,18 @@ export function DeleteDataConnectionButton({
     <AlertDialog.Root>
       <AlertDialog.Trigger>
         <Button size="2" color="red" variant="soft" disabled={inUse}>
-          Delete connection
+          {t("trigger")}
         </Button>
       </AlertDialog.Trigger>
       <AlertDialog.Content maxWidth="450px">
-        <AlertDialog.Title>Delete this connection?</AlertDialog.Title>
+        <AlertDialog.Title>{t("confirmTitle")}</AlertDialog.Title>
         <AlertDialog.Description size="2">
-          This removes the connection record and its stored credentials. The
-          bucket and its objects are not touched. It cannot be undone.
+          {t("confirmDescription")}
         </AlertDialog.Description>
         <Flex gap="3" mt="4" justify="end">
           <AlertDialog.Cancel>
             <Button variant="soft" color="gray">
-              Cancel
+              {tc("cancel")}
             </Button>
           </AlertDialog.Cancel>
           <Form action={formAction}>
@@ -72,7 +74,7 @@ export function DeleteDataConnectionButton({
               disabled={pending || inUse}
               loading={pending}
             >
-              Delete
+              {tc("delete")}
             </Button>
           </Form>
         </Flex>
