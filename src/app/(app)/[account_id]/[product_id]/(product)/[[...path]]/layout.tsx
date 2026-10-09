@@ -122,7 +122,7 @@ export default async function ProductLayout({
         >
           {/* Mobile edge padding applies to the summary text only — cards
               stay full-bleed like they were before the two-column rework */}
-          <Box px={{ initial: "4", md: "0" }}>
+          <Box id="summary" px={{ initial: "4", md: "0" }}>
             <ProductSummaryCard product={product} />
           </Box>
           <Dropzone product={product} prefix={prefix}>

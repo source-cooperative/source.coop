@@ -25,7 +25,7 @@ export async function UsageCard({ accountId, productId }: UsageCardProps) {
     // flexShrink 0: in the grid-stretched meta column an over-constrained
     // flex layout would otherwise crush the card and clip the chart
     // (Radix Card is overflow:hidden).
-    <Card size={{ initial: "2", sm: "1" }} style={{ flexShrink: 0 }}>
+    <Card id="analytics" size={{ initial: "2", sm: "1" }} style={{ flexShrink: 0 }}>
       <SectionHeader
         title="Analytics"
         rightButton={
