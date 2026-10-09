@@ -2,6 +2,7 @@
 
 import { useId } from "react";
 import { Flex, Text } from "@radix-ui/themes";
+import { useTranslations } from "next-intl";
 
 export interface FieldProps {
   /** Visible label. Omit only for a control that labels itself (a checkbox group uses `legend`). */
@@ -74,6 +75,7 @@ export function Field({
   group,
   children,
 }: FieldProps) {
+  const t = useTranslations("Field");
   const generatedId = useId();
   const id = htmlFor ?? generatedId;
   const labelId = `${id}-label`;
@@ -90,7 +92,7 @@ export function Field({
           <Text color="red" aria-hidden="true">
             *
           </Text>
-          <span className="sr-only"> (required)</span>
+          <span className="sr-only"> {t("required")}</span>
         </>
       )}
     </>

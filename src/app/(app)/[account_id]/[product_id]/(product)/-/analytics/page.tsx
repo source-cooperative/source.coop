@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { InfoCircledIcon } from "@radix-ui/react-icons";
 import {
   Box,
@@ -47,7 +48,8 @@ export async function generateMetadata({
   if (!isAuthorized(session, product, Actions.PutRepository)) {
     notFound();
   }
-  return { title: `${product.title || product_id} — Analytics` };
+  const t = await getTranslations("ProductAnalyticsPage");
+  return { title: t("metaTitle", { title: product.title || product_id }) };
 }
 
 function parseWindow(value: string | string[] | undefined): UsageWindow {
@@ -72,6 +74,7 @@ export default async function ProductAnalyticsPage({
   }
 
   const windowDays = parseWindow((await searchParams).window);
+  const t = await getTranslations("ProductAnalyticsPage");
   const [usage, breakdowns] = await Promise.all([
     getUsage(account_id, product_id, undefined, windowDays),
     getProductBreakdowns(account_id, product_id, windowDays),
@@ -93,19 +96,17 @@ export default async function ProductAnalyticsPage({
           <InfoCircledIcon />
         </Callout.Icon>
         <Callout.Text>
-          Analytics is a preview feature. The metrics shown here and who can
-          access them may change in the near future. Let us know what you think
-          at{" "}
-          <RadixLink href="mailto:hello@source.coop">
-            hello@source.coop
-          </RadixLink>
-          .
+          {t.rich("previewNotice", {
+            link: (chunks) => (
+              <RadixLink href="mailto:hello@source.coop">{chunks}</RadixLink>
+            ),
+          })}
         </Callout.Text>
       </Callout.Root>
 
       <Card size="2">
         <SectionHeader
-          title="Analytics"
+          title={t("heading")}
           rightButton={
             <Flex gap="1">
               {USAGE_WINDOWS.map((days) => (
@@ -118,7 +119,7 @@ export default async function ProductAnalyticsPage({
                   <Link
                     href={`${productAnalyticsUrl(account_id, product_id)}&window=${days}`}
                   >
-                    {days}d
+                    {t("windowDays", { days })}
                   </Link>
                 </Button>
               ))}
@@ -136,7 +137,7 @@ export default async function ProductAnalyticsPage({
             />
           ) : (
             <Text size="2" color="gray">
-              Analytics are unavailable right now. Try again in a few minutes.
+              {t("unavailable")}
             </Text>
           )}
         </SectionHeader>

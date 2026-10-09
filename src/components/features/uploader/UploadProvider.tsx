@@ -9,6 +9,7 @@ import {
   useCallback,
   useRef,
 } from "react";
+import { useTranslations } from "next-intl";
 import { S3UploadService, type DeleteProgress } from "@/lib/services/s3-upload";
 import { getTemporaryCredentials } from "@/lib/actions/credentials";
 import { useS3Credentials } from "./CredentialsProvider";
@@ -71,6 +72,7 @@ const s3ServiceKey = (scope: CredentialsScope) =>
 
 export function UploadProvider({ children }: UploadProviderProps) {
   const { getAllCredentials } = useS3Credentials();
+  const t = useTranslations("UploadProvider");
   const [uploads, setUploads] = useState<ScopedUploadItem[]>([]);
   const [deletions, setDeletions] = useState<DeleteJob[]>([]);
   const [s3Services, setS3Services] = useState<Map<string, S3UploadService>>(
@@ -100,7 +102,7 @@ export function UploadProvider({ children }: UploadProviderProps) {
   // Both run in this tab; leaving it stops them part-way.
   useBeforeUnload(
     hasActiveUploads || hasActiveDeletions,
-    "Uploads or deletes in progress will be interrupted if you leave."
+    t("leaveWarning")
   );
 
   // Sync credentials to S3 services
@@ -211,19 +213,19 @@ export function UploadProvider({ children }: UploadProviderProps) {
         update({ status: "completed" });
       } catch (error) {
         const reason =
-          error instanceof Error ? error.message : "request failed";
+          error instanceof Error ? error.message : t("requestFailed");
         // A folder delete is per-batch and non-atomic, so a mid-way failure
         // leaves some objects gone and the rest intact.
         update({
           status: "error",
           error: isDirectory
-            ? `Delete may be partial — ${reason}. Retry to remove remaining items.`
-            : `Delete failed — ${reason}. Please retry.`,
+            ? t("deletePartial", { reason })
+            : t("deleteFailed", { reason }),
         });
         throw error;
       }
     },
-    [s3Services]
+    [s3Services, t]
   );
 
   const dismissDeletion = useCallback((id: string) => {

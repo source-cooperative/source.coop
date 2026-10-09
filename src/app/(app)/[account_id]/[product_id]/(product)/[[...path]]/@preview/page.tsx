@@ -12,6 +12,7 @@ import { fileSourceUrl } from "@/lib/urls";
 import { ExternalLinkIcon } from "@radix-ui/react-icons";
 import { getExtension, isStoreExtension } from "@/lib/files";
 import { getIframeSrc } from "@/components/features/products/object-browser/ObjectPreviewExternal";
+import { getTranslations } from "next-intl/server";
 
 interface PageProps {
   params: Promise<{
@@ -21,11 +22,12 @@ interface PageProps {
   }>;
 }
 
-function previewCard(viewerUrl: string | null, children: ReactNode) {
+async function previewCard(viewerUrl: string | null, children: ReactNode) {
+  const t = await getTranslations("ObjectPreviewSlot");
   return (
     <Card mt="4">
       <SectionHeader
-        title="Object Preview"
+        title={t("title")}
         rightButton={
           viewerUrl && (
             <Link
@@ -35,7 +37,7 @@ function previewCard(viewerUrl: string | null, children: ReactNode) {
               size="1"
             >
               <Flex align="center" gap="1">
-                Open in new tab
+                {t("openInNewTab")}
                 <ExternalLinkIcon width="14" height="14" />
               </Flex>
             </Link>
@@ -110,7 +112,9 @@ export default async function ObjectPreviewSlot({ params }: PageProps) {
           viewerUrl,
           <PreviewIframe
             src={viewerUrl}
-            title={`Preview of ${object_path}`}
+            title={(await getTranslations("ObjectPreviewSlot"))("iframeTitle", {
+              path: object_path,
+            })}
           />,
         )
       : null;

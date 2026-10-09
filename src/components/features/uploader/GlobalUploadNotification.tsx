@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import NextLink from "next/link";
+import { useTranslations } from "next-intl";
 import {
   Flex,
   Text,
@@ -35,6 +36,7 @@ export function GlobalUploadNotification() {
     clearUploads,
     getUploadsByScope,
   } = useUploadManager();
+  const t = useTranslations("GlobalUploadNotification");
 
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
@@ -172,16 +174,16 @@ export function GlobalUploadNotification() {
           <Flex align="center" gap="2">
             <UploadIcon />
             <Text size="2" weight="medium">
-              Uploads ({totalUploads})
+              {t("title", { count: totalUploads })}
             </Text>
             {uploadingCount > 0 && (
               <Badge color="blue" variant="soft">
-                {uploadingCount} uploading
+                {t("uploadingCount", { count: uploadingCount })}
               </Badge>
             )}
             {queuedCount > 0 && (
               <Badge color="gray" variant="soft">
-                {queuedCount} queued
+                {t("queuedCount", { count: queuedCount })}
               </Badge>
             )}
           </Flex>
@@ -213,7 +215,7 @@ export function GlobalUploadNotification() {
                   variant={selectedScope === null ? "solid" : "soft"}
                   onClick={() => setSelectedScope(null)}
                 >
-                  All ({totalUploads})
+                  {t("all", { count: totalUploads })}
                 </Button>
                 {scopes.map((scope) => {
                   const scopeUploads = uploadsByScope.get(scope) || [];
@@ -277,7 +279,7 @@ export function GlobalUploadNotification() {
                           size="1"
                         >
                           {getStatusIcon(upload.status)}
-                          {upload.status}
+                          {t("status", { status: upload.status })}
                         </Badge>
                         <Text size="1" color="gray">
                           {formatBytes(upload.uploadedBytes)} /{" "}
@@ -293,8 +295,8 @@ export function GlobalUploadNotification() {
                       >
                         <NextLink href={getUploadLink(upload)}>
                           {upload.status === "completed"
-                            ? "View file"
-                            : "View directory"}
+                            ? t("viewFile")
+                            : t("viewDirectory")}
                         </NextLink>
                       </Link>
 
@@ -339,7 +341,7 @@ export function GlobalUploadNotification() {
                         )
                       }
                     >
-                      Clear Completed
+                      {t("clearCompleted")}
                     </Button>
                     <Button
                       size="1"
@@ -357,7 +359,7 @@ export function GlobalUploadNotification() {
                         )
                       }
                     >
-                      Clear Errors
+                      {t("clearErrors")}
                     </Button>
                   </Flex>
                   <Button
@@ -373,7 +375,7 @@ export function GlobalUploadNotification() {
                       }
                     }}
                   >
-                    Clear All
+                    {t("clearAll")}
                   </Button>
                 </Flex>
               </>

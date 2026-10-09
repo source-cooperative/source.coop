@@ -20,6 +20,7 @@ import {
 } from "@radix-ui/react-icons";
 import Form from "next/form";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { Product } from "@/types";
 import { Field, FormTitle, SectionHeader } from "@/components/core";
 import {
@@ -101,6 +102,8 @@ export function ProductMirrorsManager({
   connectionInfo,
   editablePrefixConnectionIds,
 }: ProductMirrorsManagerProps) {
+  const t = useTranslations("ProductMirrorsManager");
+  const tc = useTranslations("Common");
   const ownedConnections = new Set(ownedConnectionIds);
   const editablePrefixConnections = new Set(editablePrefixConnectionIds);
   const [addState, addAction, addPending] = useActionState(
@@ -185,8 +188,8 @@ export function ProductMirrorsManager({
   return (
     <Box>
       <FormTitle
-        title="Data Connections"
-        description="Where this product's objects live. The primary connection is the one visitors download from."
+        title={t("title")}
+        description={t("description")}
       />
 
       {!canManageMirrors && (
@@ -195,8 +198,10 @@ export function ProductMirrorsManager({
             <InfoCircledIcon />
           </Callout.Icon>
           <Callout.Text>
-            Only owners and maintainers of <Code>{product.account_id}</Code> can
-            change this product&apos;s data connections.
+            {t.rich("readOnlyNotice", {
+              account: product.account_id,
+              code: (chunks) => <Code>{chunks}</Code>,
+            })}
           </Callout.Text>
         </Callout.Root>
       )}
@@ -208,8 +213,7 @@ export function ProductMirrorsManager({
             <InfoCircledIcon />
           </Callout.Icon>
           <Callout.Text>
-            The data proxy caches these settings. Changes here can take up to
-            five minutes to take effect.
+            {t("cacheNotice")}
           </Callout.Text>
         </Callout.Root>
       )}
@@ -217,8 +221,8 @@ export function ProductMirrorsManager({
       {mirrors.length === 0 ? (
         <ConnectionsEmpty>
           {canManageMirrors
-            ? "Add a data connection to this product."
-            : "No data connections have been configured for this product."}
+            ? t("emptyManage")
+            : t("emptyReadOnly")}
         </ConnectionsEmpty>
       ) : (
         <ItemList.Root>
@@ -246,7 +250,7 @@ export function ProductMirrorsManager({
                 }
                 markers={
                   mirror.is_primary && (
-                    <ItemList.Marker>Primary</ItemList.Marker>
+                    <ItemList.Marker>{t("primary")}</ItemList.Marker>
                   )
                 }
                 meta={info && `${info.provider} · ${info.bucket}`}
@@ -258,7 +262,9 @@ export function ProductMirrorsManager({
                           size="1"
                           variant="soft"
                           color="gray"
-                          aria-label={`Actions for ${info?.name ?? mirror.connection_id}`}
+                          aria-label={t("actionsFor", {
+                            name: info?.name ?? mirror.connection_id,
+                          })}
                           disabled={removePending || primaryPending}
                         >
                           <DotsHorizontalIcon />
@@ -271,7 +277,7 @@ export function ProductMirrorsManager({
                               dispatchForMirror(primaryAction, key, "primary")
                             }
                           >
-                            Make primary
+                            {t("makePrimary")}
                           </DropdownMenu.Item>
                         )}
                         {canOpenConnection && (
@@ -293,7 +299,7 @@ export function ProductMirrorsManager({
                                     )
                               }
                             >
-                              Edit connection
+                              {t("editConnection")}
                             </Link>
                           </DropdownMenu.Item>
                         )}
@@ -304,7 +310,7 @@ export function ProductMirrorsManager({
                               color="red"
                               onSelect={() => setPendingRemoval(key)}
                             >
-                              Remove from product…
+                              {t("removeFromProduct")}
                             </DropdownMenu.Item>
                           </>
                         )}
@@ -328,8 +334,8 @@ export function ProductMirrorsManager({
                       />
                       <input type="hidden" name="mirror_key" value={key} />
                       <Field
-                        label="Prefix"
-                        help="Where this product's objects sit inside the connection. You can change it because you manage both this product's account and its connection."
+                        label={t("prefixLabel")}
+                        help={t("prefixHelp")}
                       >
                         {(controlProps) => (
                           <Flex gap="2" align="center">
@@ -338,7 +344,7 @@ export function ProductMirrorsManager({
                               name="prefix"
                               size="1"
                               defaultValue={mirror.prefix}
-                              placeholder="(connection root)"
+                              placeholder={t("connectionRoot")}
                               style={{
                                 flex: 1,
                                 fontFamily: "var(--code-font-family)",
@@ -352,16 +358,16 @@ export function ProductMirrorsManager({
                               disabled={prefixPending}
                               loading={prefixPending}
                             >
-                              Save
+                              {tc("save")}
                             </Button>
                           </Flex>
                         )}
                       </Field>
                     </Form>
                   ) : (
-                    <Field label="Prefix" group>
+                    <Field label={t("prefixLabel")} group>
                       <Code size="2" variant="ghost" color="gray">
-                        {mirror.prefix || "(connection root)"}
+                        {mirror.prefix || t("connectionRoot")}
                       </Code>
                     </Field>
                   )}
@@ -377,12 +383,12 @@ export function ProductMirrorsManager({
 
       {canManageMirrors && (
         <Box mt="6">
-          <SectionHeader title="Add a connection">
+          <SectionHeader title={t("addTitle")}>
             {unusedConnections.length === 0 ? (
               <Text size="2" color="gray">
                 {availableConnections.length === 0
-                  ? "No other connections are available to this account."
-                  : "Every connection available to this account is already attached."}
+                  ? t("noneAvailable")
+                  : t("allAttached")}
               </Text>
             ) : (
               <Form action={addAction}>
@@ -399,7 +405,7 @@ export function ProductMirrorsManager({
                 <Flex gap="2" align="center">
                   <Select.Root name="connection_id" size="2" required>
                     <Select.Trigger
-                      placeholder="Choose a connection…"
+                      placeholder={t("choosePlaceholder")}
                       style={{ flex: 1 }}
                     />
                     <Select.Content>
@@ -420,7 +426,7 @@ export function ProductMirrorsManager({
                     disabled={addPending}
                     loading={addPending}
                   >
-                    Add
+                    {t("add")}
                   </Button>
                 </Flex>
               </Form>
@@ -446,16 +452,14 @@ export function ProductMirrorsManager({
         onOpenChange={(open) => !open && setPendingRemoval(null)}
       >
         <AlertDialog.Content maxWidth="450px">
-          <AlertDialog.Title>Remove {removalName}?</AlertDialog.Title>
+          <AlertDialog.Title>{t("removeConfirmTitle", { name: removalName })}</AlertDialog.Title>
           <AlertDialog.Description size="2">
-            This product will no longer be served from that storage. The objects
-            themselves are not deleted, and you can attach the connection again
-            later.
+            {t("removeConfirmDescription")}
           </AlertDialog.Description>
           <Flex gap="3" mt="4" justify="end">
             <AlertDialog.Cancel>
               <Button variant="soft" color="gray">
-                Cancel
+                {tc("cancel")}
               </Button>
             </AlertDialog.Cancel>
             <Button
@@ -469,7 +473,7 @@ export function ProductMirrorsManager({
                 setPendingRemoval(null);
               }}
             >
-              Remove
+              {tc("remove")}
             </Button>
           </Flex>
         </AlertDialog.Content>

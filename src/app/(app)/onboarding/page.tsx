@@ -4,11 +4,12 @@ import { OnboardingForm } from "@/components/features/onboarding";
 import { getPageSession } from "@/lib/api/utils";
 import { FormTitle } from "@/components/core";
 import { homeUrl, accountUrl } from "@/lib/urls";
+import { getTranslations } from "next-intl/server";
 
-export const metadata: Metadata = {
-  title: "Complete Your Profile",
-  description: "Choose your username and set up your profile",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("OnboardingPage");
+  return { title: t("title"), description: t("metaDescription") };
+}
 
 export default async function OnboardingPage({
   searchParams,
@@ -31,12 +32,11 @@ export default async function OnboardingPage({
     );
   }
 
+  const t = await getTranslations("OnboardingPage");
+
   return (
     <>
-      <FormTitle
-        title="Complete Your Profile"
-        description="You're almost done! Choose a username for your account and tell us your name."
-      />
+      <FormTitle title={t("title")} description={t("description")} />
       <OnboardingForm identityId={identityId} />
     </>
   );

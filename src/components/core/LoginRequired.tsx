@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import { StatusPage } from "./StatusPage";
 import { LoginButton } from "./LoginButton";
 
@@ -7,10 +8,11 @@ import { LoginButton } from "./LoginButton";
  * computed client-side (see LoginButton) instead of via middleware headers.
  */
 export function LoginRequired() {
+  const t = useTranslations("LoginRequired");
   return (
     <StatusPage
       type="unauthenticated"
-      action={<LoginButton>Sign in</LoginButton>}
+      action={<LoginButton>{t("signIn")}</LoginButton>}
     />
   );
 }

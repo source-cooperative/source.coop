@@ -13,13 +13,15 @@ import { notFound, redirect } from "next/navigation";
 import { getPageSession } from "@/lib";
 import { isAuthorized } from "@/lib/api/authz";
 import { editAccountProfileUrl } from "@/lib/urls";
+import { getTranslations } from "next-intl/server";
 
 export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
   const { account_id } = await params;
   const account = await accountsTable.fetchById(account_id);
-  return { title: `Edit ${account!.name} memberships` };
+  const t = await getTranslations("EditAccountMembershipsPage");
+  return { title: t("metaTitle", { name: account!.name }) };
 }
 
 interface PageProps {
@@ -72,13 +74,15 @@ export default async function MembershipsPage({ params }: PageProps) {
     Actions.InviteMembership
   );
 
+  const t = await getTranslations("EditAccountMembershipsPage");
+
   return (
     <Box>
       <Flex justify="between" align="center" mb="6">
         <Box>
           <FormTitle
-            title="Memberships"
-            description="Manage organization members and their roles"
+            title={t("title")}
+            description={t("description")}
           />
         </Box>
         {canInviteMembership && <InviteMemberForm organization={account} />}
@@ -88,8 +92,8 @@ export default async function MembershipsPage({ params }: PageProps) {
         memberships={activeMemberships}
         memberAccountsMap={memberAccountsMap}
         userSession={userSession}
-        emptyStateMessage="No members yet"
-        emptyStateDescription="Invite people to join your organization"
+        emptyStateMessage={t("emptyTitle")}
+        emptyStateDescription={t("emptyDescription")}
       />
     </Box>
   );

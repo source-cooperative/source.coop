@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { getFormatter, getTranslations } from "next-intl/server";
 import { getPageSession } from "@/lib";
 import { isAdmin } from "@/lib/api/authz";
 import {
@@ -33,16 +34,32 @@ import {
   AdminBreakdownChart,
   seriesColor,
 } from "@/components/features/analytics";
-// Components come from the client module; HELP/mono must come from the
-// plain style module — client-module exports can't be called on the server.
+// Components come from the client module; mono must come from the plain
+// style module — client-module exports can't be called on the server.
 import { MonoLabel } from "@/components/features/analytics/panels";
-import { HELP, mono } from "@/components/features/analytics/style";
+import { mono } from "@/components/features/analytics/style";
 import { AdminFiltersForm } from "@/components/features/analytics/AdminFiltersForm";
 import { GroupByChips } from "@/components/features/analytics/GroupByChips";
 import { adminAnalyticsUrl, formatBytes } from "@/lib";
 import { accountUrl } from "@/lib/urls";
 
-export const metadata: Metadata = { title: "Admin — Analytics" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("AdminAnalyticsPage");
+  return { title: t("metaTitle") };
+}
+
+type Translator = Awaited<
+  ReturnType<typeof getTranslations<"AdminAnalyticsPage">>
+>;
+
+/** Message keys for the BUCKET_INTERVALS ladder, by minutes. */
+const INTERVAL_KEY = {
+  1: "minute",
+  60: "hourly",
+  360: "sixHour",
+  1440: "daily",
+  10080: "weekly",
+} as const;
 
 interface PageState {
   /**
@@ -64,8 +81,6 @@ interface PageState {
 const first = (v: string | string[] | undefined) =>
   Array.isArray(v) ? v[0] : v;
 
-const numberFormat = new Intl.NumberFormat("en-US");
-
 const DAY_MS = 86_400_000;
 const isoDay = (ms: number) => new Date(ms).toISOString().slice(0, 10);
 const todayUtc = () => new Date().setUTCHours(0, 0, 0, 0);
@@ -80,26 +95,21 @@ const paramMs = (value: string): number =>
   Date.parse(value.length === 10 ? `${value}T00:00:00Z` : `${value}:00Z`);
 
 /** "15-minute" / "6-hour" / "3-day" for any ladder value. */
-const bucketName = (minutes: number): string =>
+const bucketName = (t: Translator, minutes: number): string =>
   minutes < 60
-    ? `${minutes}-minute`
+    ? t("bucketMinutes", { n: minutes })
     : minutes < 1440
-      ? `${minutes / 60}-hour`
-      : `${minutes / 1440}-day`;
+      ? t("bucketHours", { n: minutes / 60 })
+      : t("bucketDays", { n: minutes / 1440 });
 
 /** "6 hours" / "16 days" — the longest range an interval can draw. */
-const spanName = (minutes: number): string =>
+const spanName = (t: Translator, minutes: number): string =>
   minutes < 1440
-    ? `${Math.floor(minutes / 60)} hours`
-    : `${Math.floor(minutes / 1440)} days`;
+    ? t("spanHours", { n: Math.floor(minutes / 60) })
+    : t("spanDays", { n: Math.floor(minutes / 1440) });
 
 // Whole weeks (plus "Today"), to avoid aliasing day-of-week patterns.
-const PRESETS = [
-  { label: "Today", days: 1 },
-  { label: "7d", days: 7 },
-  { label: "28d", days: 28 },
-  { label: "91d", days: 91 },
-];
+const PRESETS = [1, 7, 28, 91];
 
 function parseState(params: Record<string, string | string[] | undefined>): PageState {
   const groupByParam = first(params.groupBy);
@@ -194,18 +204,30 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
   }
 
   const state = parseState(await searchParams);
+  const t = await getTranslations("AdminAnalyticsPage");
+  const tStat = await getTranslations("AnalyticsPanels");
+  const tHelp = await getTranslations("AnalyticsHelp");
+  const format = await getFormatter();
+  const dimensionOptions = (
+    Object.keys(ADMIN_DIMENSIONS) as AdminDimension[]
+  ).map((dim) => ({ key: dim, label: t(`dimensions.${dim}`) }));
 
   if (!isAnalyticsConfigured()) {
     return (
       <Flex direction="column" gap="4">
-        <Heading size="4">Analytics</Heading>
+        <Heading size="4">{t("heading")}</Heading>
         <Callout.Root color="gray">
           <Callout.Icon>
             <InfoCircledIcon />
           </Callout.Icon>
           <Callout.Text>
-            Analytics is not configured. Set CF_ANALYTICS_ACCOUNT_ID,
-            CF_ANALYTICS_API_TOKEN, and CF_ANALYTICS_DATASET.
+            {t("notConfigured", {
+              vars: format.list([
+                "CF_ANALYTICS_ACCOUNT_ID",
+                "CF_ANALYTICS_API_TOKEN",
+                "CF_ANALYTICS_DATASET",
+              ]),
+            })}
           </Callout.Text>
         </Callout.Root>
       </Flex>
@@ -238,7 +260,7 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
   const retentionEdge = today - RETENTION_DAYS * DAY_MS;
   const rangeDays = Math.round((lastDayMs - fromDayMs) / DAY_MS) + 1;
   const rangeMinutes = (endMs - fromMs) / 60_000;
-  const rangeLabel = `${rangeDays} day${rangeDays === 1 ? "" : "s"}`;
+  const rangeLabel = t("rangeDays", { days: rangeDays });
   // Shift the whole range by N days, clamped so its length is preserved at
   // the edges (today forward, ~retention backward). Shifting a drilled
   // sub-day range deliberately widens it back to whole days.
@@ -264,7 +286,7 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
 
   return (
     <Flex direction="column" gap="4">
-      <Heading size="4">Analytics</Heading>
+      <Heading size="4">{t("heading")}</Heading>
 
       {/* Two zones: what data (dates + entity filters) | how it's drawn
           (group by + interval), split by the stats-row hairline. */}
@@ -281,47 +303,49 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
           >
             <Box>
               <Box mb="1">
-                <MonoLabel>Date range (UTC)</MonoLabel>
+                <MonoLabel>{t("dateRange")}</MonoLabel>
               </Box>
               <Flex gap="1" wrap="wrap" align="center">
                 <ShiftButton
                   label="«"
-                  help={`Back ${rangeLabel} (the shown range)`}
+                  help={t("backRange", { range: rangeLabel })}
                   disabled={atRetention}
                   href={shiftUrl(-rangeDays)}
                 />
                 <ShiftButton
                   label="‹"
-                  help="Back 1 day"
+                  help={t("backDay")}
                   disabled={atRetention}
                   href={shiftUrl(-1)}
                 />
-                {PRESETS.map((preset) => {
-                  const from = isoDay(today - (preset.days - 1) * DAY_MS);
+                {PRESETS.map((days) => {
+                  const from = isoDay(today - (days - 1) * DAY_MS);
                   const to = isoDay(today);
                   const active = range.from === from && range.to === to;
                   return (
                     <Button
-                      key={preset.label}
+                      key={days}
                       asChild
                       size="1"
                       variant={active ? "solid" : "soft"}
                     >
                       <Link href={pageUrl({ ...state, from, to })}>
-                        {preset.label}
+                        {days === 1
+                          ? t("presetToday")
+                          : t("presetDays", { days })}
                       </Link>
                     </Button>
                   );
                 })}
                 <ShiftButton
                   label="›"
-                  help="Forward 1 day"
+                  help={t("forwardDay")}
                   disabled={atToday}
                   href={shiftUrl(1)}
                 />
                 <ShiftButton
                   label="»"
-                  help={`Forward ${rangeLabel} (the shown range)`}
+                  help={t("forwardRange", { range: rangeLabel })}
                   disabled={atToday}
                   href={shiftUrl(rangeDays)}
                 />
@@ -332,12 +356,7 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
               // so prop changes alone never reach them.
               key={`${range.from}|${range.to}|${JSON.stringify(state.filters)}`}
               action={adminAnalyticsUrl()}
-              dimensions={(
-                Object.keys(ADMIN_DIMENSIONS) as AdminDimension[]
-              ).map((dim) => ({
-                key: dim,
-                label: ADMIN_DIMENSIONS[dim].label,
-              }))}
+              dimensions={dimensionOptions}
               defaults={{
                 // datetime-local values over the resolved [from, end) —
                 // midnight-aligned submissions collapse back to day grain
@@ -369,24 +388,19 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
           >
             <Box>
               <Box mb="1">
-                <MonoLabel>Group by</MonoLabel>
+                <MonoLabel>{t("groupBy")}</MonoLabel>
               </Box>
               <GroupByChips
                 // Remount when the URL-derived selection changes (history
                 // back/forward) — local chip state doesn't watch props.
                 key={state.groupBy.join(",")}
-                dimensions={(
-                  Object.keys(ADMIN_DIMENSIONS) as AdminDimension[]
-                ).map((dim) => ({
-                  key: dim,
-                  label: ADMIN_DIMENSIONS[dim].label,
-                }))}
+                dimensions={dimensionOptions}
                 selected={state.groupBy}
               />
             </Box>
             <Box>
               <Box mb="1">
-                <MonoLabel>Interval</MonoLabel>
+                <MonoLabel>{t("interval")}</MonoLabel>
               </Box>
               <Flex gap="1" wrap="wrap">
                 <Button
@@ -395,10 +409,11 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
                   variant={state.bucketMinutes === undefined ? "solid" : "soft"}
                 >
                   <Link href={pageUrl({ ...state, bucketMinutes: undefined })}>
-                    Auto
+                    {t("auto")}
                   </Link>
                 </Button>
                 {BUCKET_INTERVALS.map((bucket) => {
+                  const label = t(`intervals.${INTERVAL_KEY[bucket.minutes]}`);
                   // An interval that would draw more bars than the chart can
                   // hold is disabled rather than silently coarsened.
                   const fits =
@@ -407,10 +422,14 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
                     return (
                       <Tooltip
                         key={bucket.minutes}
-                        content={`${bucket.label} buckets fit ranges up to ${spanName(MAX_CHART_BUCKETS * bucket.minutes)} — this range spans ${rangeLabel}`}
+                        content={t("intervalTooFine", {
+                          interval: label,
+                          span: spanName(t, MAX_CHART_BUCKETS * bucket.minutes),
+                          range: rangeLabel,
+                        })}
                       >
                         <Button size="1" variant="soft" disabled>
-                          {bucket.label}
+                          {label}
                         </Button>
                       </Tooltip>
                     );
@@ -423,7 +442,7 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
                       variant={state.bucketMinutes === bucket.minutes ? "solid" : "soft"}
                     >
                       <Link href={pageUrl({ ...state, bucketMinutes: bucket.minutes })}>
-                        {bucket.label}
+                        {label}
                       </Link>
                     </Button>
                   );
@@ -448,8 +467,7 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
             <InfoCircledIcon />
           </Callout.Icon>
           <Callout.Text>
-            No traffic recorded for this selection between {range.from} and{" "}
-            {range.to}.
+            {t("noTraffic", { from: range.from, to: range.to })}
           </Callout.Text>
         </Callout.Root>
       ) : (
@@ -458,9 +476,10 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
             {state.bucketMinutes !== undefined &&
               breakdown.bucketMinutes !== state.bucketMinutes && (
                 <Text as="div" size="1" color="orange" mb="2">
-                  Showing {bucketName(breakdown.bucketMinutes)} buckets — the
-                  requested interval would draw more than {MAX_CHART_BUCKETS}{" "}
-                  bars over this range.
+                  {t("coarsened", {
+                    bucket: bucketName(t, breakdown.bucketMinutes),
+                    max: MAX_CHART_BUCKETS,
+                  })}
                 </Text>
               )}
             <AdminBreakdownChart
@@ -486,19 +505,23 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
                   <MonoLabel>
                     {state.groupBy.length
                       ? state.groupBy
-                          .map((d) => ADMIN_DIMENSIONS[d].label)
+                          .map((d) => t(`dimensions.${d}`))
                           .join(" · ")
-                      : "Scope"}
+                      : t("scope")}
                   </MonoLabel>
                 </Table.ColumnHeaderCell>
                 <Table.ColumnHeaderCell justify="end">
-                  <MonoLabel help={HELP.served}>Data served</MonoLabel>
+                  <MonoLabel help={tHelp("served")}>
+                    {tStat("dataServed")}
+                  </MonoLabel>
                 </Table.ColumnHeaderCell>
                 <Table.ColumnHeaderCell justify="end">
-                  <MonoLabel help={HELP.requests}>Requests</MonoLabel>
+                  <MonoLabel help={tHelp("requests")}>
+                    {tStat("requests")}
+                  </MonoLabel>
                 </Table.ColumnHeaderCell>
                 <Table.ColumnHeaderCell>
-                  <MonoLabel>Share</MonoLabel>
+                  <MonoLabel>{t("share")}</MonoLabel>
                 </Table.ColumnHeaderCell>
               </Table.Row>
             </Table.Header>
@@ -533,6 +556,8 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
                         <Text size="1" style={mono()}>
                           {href ? (
                             <Link href={href}>{group.key}</Link>
+                          ) : group.key === OTHER_KEY ? (
+                            t("other")
                           ) : (
                             group.key
                           )}
@@ -546,7 +571,7 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
                     </Table.Cell>
                     <Table.Cell justify="end">
                       <Text size="1" style={mono()}>
-                        {numberFormat.format(Math.round(group.requests))}
+                        {format.number(Math.round(group.requests))}
                       </Text>
                     </Table.Cell>
                     <Table.Cell>

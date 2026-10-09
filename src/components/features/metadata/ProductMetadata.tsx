@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { ProductVisibility, type Product } from "@/types";
 import { CONFIG } from "@/lib";
 import { getBaseUrl } from "@/lib/baseUrl";
@@ -10,14 +11,15 @@ interface ProductMetadataProps {
 export async function generateProductMetadata({
   product,
 }: ProductMetadataProps): Promise<Metadata> {
+  const t = await getTranslations("ProductMetadata");
   // Handle case where account might be undefined
-  const accountName = product.account?.name || "Unknown Account";
+  const accountName = product.account?.name || t("unknownAccount");
   const accountId = product.account?.account_id || "unknown";
 
   const baseUrl = await getBaseUrl();
 
   const title = `${product.title} · ${accountName} · Source Cooperative`;
-  const description = product.description || `A data product by ${accountName}`;
+  const description = product.description || t("description", { account: accountName });
   const url = `${baseUrl}/${accountId}/${product.product_id}`;
 
   // Generate OG image URL

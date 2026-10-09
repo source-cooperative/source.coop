@@ -7,6 +7,7 @@ import { getExtension } from "@/lib/files";
 import { DuckDBConnection } from "@duckdb/node-api";
 import { cache } from "react";
 import { PreviewIframe } from "./PreviewIframe";
+import { getTranslations } from "next-intl/server";
 
 // cache(): the remote parquet-schema probe is requested by both the
 // "Open in new tab" link and the preview iframe in one render.
@@ -97,20 +98,28 @@ export async function ObjectPreviewExternal(props: ObjectPreviewExternalProps) {
     return null;
   }
 
+  const t = await getTranslations("ObjectPreviewExternal");
   const src = await getIframeSrc(cloudUri, extension);
   if (!src) {
     return (
       <p>
-        No preview available for file type <Code>.{extension}</Code>.{" "}
-        <a href="https://github.com/source-cooperative/source.coop/issues">
-          Open an issue
-        </a>{" "}
-        if you would like support for this file type.
+        {t.rich("noPreview", {
+          extension,
+          code: (chunks) => <Code>{chunks}</Code>,
+          link: (chunks) => (
+            <a href="https://github.com/source-cooperative/source.coop/issues">
+              {chunks}
+            </a>
+          ),
+        })}
       </p>
     );
   }
 
   return (
-    <PreviewIframe src={src} title={`Preview of ${props.object_path}`} />
+    <PreviewIframe
+      src={src}
+      title={t("previewTitle", { path: props.object_path })}
+    />
   );
 }

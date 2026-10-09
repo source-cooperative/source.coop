@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { Avatar, Badge, Box, Flex, Text } from "@radix-ui/themes";
 import {
   AccountIdentity,
@@ -21,13 +22,14 @@ interface AdminUserLookupProps {
  * since "not found" means something different from Ory than from the database.
  */
 export function AdminUserLookup({ query, search }: AdminUserLookupProps) {
+  const t = useTranslations("AdminUserLookup");
   return (
     <Box>
       <AdminUserSearchField query={query}>
         {search && (
           <Box mt="4">
             <Text as="p" size="2" color="gray" mb="2">
-              {describe(search, query)}
+              {describe(t, search, query)}
             </Text>
             <Flex direction="column" gap="2">
               {search.results.map((user) => (
@@ -56,7 +58,7 @@ export function AdminUserLookup({ query, search }: AdminUserLookupProps) {
                         />
                       }
                     />
-                    {user.disabled && <Badge color="red">Disabled</Badge>}
+                    {user.disabled && <Badge color="red">{t("disabled")}</Badge>}
                   </Flex>
                 </Link>
               ))}
@@ -68,16 +70,17 @@ export function AdminUserLookup({ query, search }: AdminUserLookupProps) {
   );
 }
 
-function describe(search: UserSearch, query: string): string {
-  const q = `“${query}”`;
+function describe(
+  t: ReturnType<typeof useTranslations<"AdminUserLookup">>,
+  search: UserSearch,
+  query: string
+): string {
   if (search.source === "ory") {
-    if (!search.identityFound)
-      return `Ory has no identity with the email ${q}.`;
-    if (search.results.length === 0)
-      return `Ory has an identity with the email ${q}, but it has no source.coop profile.`;
-    return `Resolved the email ${q} through Ory.`;
+    if (!search.identityFound) return t("oryNoIdentity", { query });
+    if (search.results.length === 0) return t("oryNoProfile", { query });
+    return t("oryResolved", { query });
   }
   return search.results.length === 0
-    ? `No account handle or display name in the database contains ${q}.`
-    : `Handles and display names in the database containing ${q}.`;
+    ? t("databaseNoMatch", { query })
+    : t("databaseMatches", { query });
 }

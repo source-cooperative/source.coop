@@ -1,4 +1,5 @@
 import { Box, Text, Flex } from "@radix-ui/themes";
+import { useTranslations } from "next-intl";
 import type { IndividualAccount } from "@/types";
 import { AvatarLinkCompact } from "@/components/core/AccountLinks";
 
@@ -13,6 +14,7 @@ export function OrganizationMembers({
   admins,
   members,
 }: OrganizationMembersProps) {
+  const t = useTranslations("OrganizationMembers");
   // Calculate total to show
   const totalMembers = owners.length + admins.length + members.length;
 
@@ -20,7 +22,7 @@ export function OrganizationMembers({
   if (totalMembers === 0) {
     return (
       <Text size="2" color="gray">
-        No members to display
+        {t("empty")}
       </Text>
     );
   }
@@ -43,9 +45,9 @@ export function OrganizationMembers({
 
   // Group members by role for cleaner display
   const memberGroups = [
-    { role: "owner", title: "Owners", members: owners },
-    { role: "admin", title: "Administrators", members: uniqueAdmins },
-    { role: "member", title: "Members", members: uniqueMembers },
+    { role: "owner", title: t("owners"), members: owners },
+    { role: "admin", title: t("admins"), members: uniqueAdmins },
+    { role: "member", title: t("members"), members: uniqueMembers },
   ].filter((group) => group.members.length > 0);
 
   return (

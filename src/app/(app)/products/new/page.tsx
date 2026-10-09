@@ -5,6 +5,7 @@ import { listUsableDataConnections } from "@/lib/data-connections";
 import { Actions, DataConnectionObjectSchema, MembershipState } from "@/types";
 import { Heading, Text } from "@radix-ui/themes";
 import { FormTitle } from "@/components/core";
+import { getTranslations } from "next-intl/server";
 
 export default async function NewProductPage({
   searchParams,
@@ -13,15 +14,16 @@ export default async function NewProductPage({
 }) {
   const { owner } = await searchParams;
   const session = await getPageSession();
+  const t = await getTranslations("NewProductPage");
   if (!session?.account) {
     return (
       <>
         <Heading size="6" mb="4">
-          Access Denied
+          {t("accessDenied")}
         </Heading>
 
         <Text as="p" size="3" color="gray" className="mb-4">
-          You must be logged in to create a product.
+          {t("mustLogIn")}
         </Text>
       </>
     );
@@ -31,10 +33,12 @@ export default async function NewProductPage({
   if (!isAuthorized(session, "*", Actions.CreateRepository)) {
     return (
       <Text>
-        You do not have permission to create products.
+        {t("noPermission")}
         <br />
-        If you believe this is an error, please contact{" "}
-        <code>hello@source.coop</code>.
+        {t.rich("contactUs", {
+          email: "hello@source.coop",
+          code: (chunks) => <code>{chunks}</code>,
+        })}
       </Text>
     );
   }
@@ -70,8 +74,8 @@ export default async function NewProductPage({
   return (
     <>
       <FormTitle
-        title="Create New Product"
-        description="Create a new product to share with others"
+        title={t("title")}
+        description={t("description")}
       />
 
       <ProductCreationForm

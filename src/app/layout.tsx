@@ -5,23 +5,26 @@ import { SessionProvider } from "@ory/elements-react/client";
 import NextTopLoader from "nextjs-toploader";
 import { IBM_Plex_Sans } from "next/font/google";
 import { S3CredentialsProvider, UploadProvider } from "@/components";
-import { metadata } from "./metadata";
+import { generateMetadata } from "./metadata";
 import { CONFIG } from "@/lib/config";
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale } from "next-intl/server";
 const ibmPlexSans = IBM_Plex_Sans({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
   variable: "--font-ibm-plex",
 });
 
-export { metadata };
+export { generateMetadata };
 
 interface RootLayoutProps {
   children: React.ReactNode;
 }
 
 export default async function RootLayout({ children }: RootLayoutProps) {
+  const locale = await getLocale();
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang={locale} suppressHydrationWarning>
       <body className={ibmPlexSans.variable} suppressHydrationWarning>
         <link
           rel="preconnect"
@@ -38,13 +41,15 @@ export default async function RootLayout({ children }: RootLayoutProps) {
           storageKey="source-theme"
         >
           <NextTopLoader />
-          <SessionProvider>
-            <S3CredentialsProvider>
-              <UploadProvider>
-                {children}
-              </UploadProvider>
-            </S3CredentialsProvider>
-          </SessionProvider>
+          <NextIntlClientProvider>
+            <SessionProvider>
+              <S3CredentialsProvider>
+                <UploadProvider>
+                  {children}
+                </UploadProvider>
+              </S3CredentialsProvider>
+            </SessionProvider>
+          </NextIntlClientProvider>
         </ThemeProvider>
       </body>
     </html>

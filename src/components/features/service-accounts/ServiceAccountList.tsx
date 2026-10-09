@@ -1,10 +1,9 @@
 import { Flex, Text } from "@radix-ui/themes";
 import { CubeIcon } from "@radix-ui/react-icons";
+import { useTranslations } from "next-intl";
 import { ItemList } from "@/components/core/ItemList";
 import { editServiceAccountUrl } from "@/lib/urls";
 import { isKeyActive, type ServiceAccountSummary } from "@/types";
-
-const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
 /**
  * An owner's service accounts, one row each: who it is, whether it is
@@ -12,15 +11,16 @@ const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : 
  * account is on its own page, a click away.
  */
 export function ServiceAccountList({ summaries }: { summaries: ServiceAccountSummary[] }) {
+  const t = useTranslations("ServiceAccountList");
   if (summaries.length === 0) {
     return (
       <Flex direction="column" align="center" gap="2" py="8" style={{ userSelect: "none" }}>
         <CubeIcon width="48" height="48" color="var(--gray-8)" />
         <Text size="4" weight="medium" color="gray">
-          No service accounts yet
+          {t("emptyTitle")}
         </Text>
         <Text size="2" color="gray">
-          Create one for a nightly sync, a publishing pipeline, or an instrument.
+          {t("emptyBody")}
         </Text>
       </Flex>
     );
@@ -38,14 +38,14 @@ export function ServiceAccountList({ summaries }: { summaries: ServiceAccountSum
               {account.name}
             </Text>
           }
-          markers={account.disabled && <ItemList.Marker>Disabled</ItemList.Marker>}
+          markers={account.disabled && <ItemList.Marker>{t("disabled")}</ItemList.Marker>}
           meta={account.account_id}
           aside={
             <Flex direction="column" align="end">
               {[
-                count(trusts.length, "workflow", "workflows"),
-                count(liveKeys, "API key", "API keys"),
-                count(grants.length, "product", "products"),
+                t("workflows", { count: trusts.length }),
+                t("apiKeys", { count: liveKeys }),
+                t("products", { count: grants.length }),
               ].map((line) => (
                 <Text key={line} size="1" color="gray">
                   {line}

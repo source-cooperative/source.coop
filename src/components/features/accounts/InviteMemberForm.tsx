@@ -10,6 +10,7 @@ import {
 } from "@/components/core";
 import { inviteMember } from "@/lib/actions/memberships";
 import { PlusIcon } from "@radix-ui/react-icons";
+import { useTranslations } from "next-intl";
 
 interface InviteMemberFormProps {
   organization: Account;
@@ -26,38 +27,39 @@ export function InviteMemberForm({
   organization,
   product,
 }: InviteMemberFormProps) {
+  const t = useTranslations("InviteMemberForm");
+  const tCommon = useTranslations("Common");
   const [open, setOpen] = useState(false);
 
   const fields: FormField<InviteMemberFormData>[] = [
     {
-      label: "Account",
+      label: t("account"),
       name: "account_id",
       type: "custom",
       required: true,
-      description:
-        "Search by username or name, or type an account ID. The organization's service accounts are offered too.",
+      description: t("accountDescription"),
       customComponent: (controlProps) => (
         <AccountSearchInput
           {...controlProps}
           name="account_id"
           required
-          placeholder="username or name"
+          placeholder={t("accountPlaceholder")}
           memberOf={organization.account_id}
         />
       ),
     },
     {
-      label: "Role",
+      label: t("role"),
       name: "role",
       type: "select",
       required: true,
-      placeholder: "Select a role",
-      description: "The role to assign to the new member",
+      placeholder: t("rolePlaceholder"),
+      description: t("roleDescription"),
       options: [
-        { value: MembershipRole.ReadData, label: "Reader" },
-        { value: MembershipRole.WriteData, label: "Writer" },
-        { value: MembershipRole.Maintainers, label: "Maintainer" },
-        { value: MembershipRole.Owners, label: "Owner" },
+        { value: MembershipRole.ReadData, label: t("roleReader") },
+        { value: MembershipRole.WriteData, label: t("roleWriter") },
+        { value: MembershipRole.Maintainers, label: t("roleMaintainer") },
+        { value: MembershipRole.Owners, label: t("roleOwner") },
       ],
     },
   ];
@@ -72,13 +74,13 @@ export function InviteMemberForm({
       <Dialog.Trigger>
         <Button size="2" highContrast>
           <PlusIcon width="16" height="16" />
-          Invite Member
+          {t("invite")}
         </Button>
       </Dialog.Trigger>
       <Dialog.Content style={{ maxWidth: 450 }}>
-        <Dialog.Title>Invite New Member</Dialog.Title>
+        <Dialog.Title>{t("title")}</Dialog.Title>
         <Dialog.Description size="2" mb="4">
-          Invite a user to join {organization.name} as a member.
+          {t("description", { name: organization.name })}
         </Dialog.Description>
 
         {/* Cancel goes through the form's own action row — as a sibling of the
@@ -86,7 +88,7 @@ export function InviteMemberForm({
         <DynamicForm<InviteMemberFormData>
           fields={fields}
           action={inviteMember}
-          submitButtonText="Send invitation"
+          submitButtonText={t("submit")}
           initialValues={initialValues}
           hiddenFields={{
             organization_id: product
@@ -98,7 +100,7 @@ export function InviteMemberForm({
           secondaryAction={
             <Dialog.Close>
               <Button type="button" size="3" variant="soft" color="gray">
-                Cancel
+                {tCommon("cancel")}
               </Button>
             </Dialog.Close>
           }

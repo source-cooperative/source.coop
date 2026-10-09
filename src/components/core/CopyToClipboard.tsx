@@ -2,12 +2,14 @@
 import { useState } from "react";
 import { CheckIcon, CopyIcon } from "@radix-ui/react-icons";
 import { IconButton, Tooltip } from "@radix-ui/themes";
+import { useTranslations } from "next-intl";
 
 interface CopyToClipboardProps {
   text: string | undefined;
 }
 
 export function CopyToClipboard({ text }: CopyToClipboardProps) {
+  const t = useTranslations("CopyToClipboard");
   const [copied, setCopied] = useState(false);
   const copyToClipboard = (text: string | undefined) => {
     navigator.clipboard.writeText(text || "").then(() => {
@@ -21,14 +23,14 @@ export function CopyToClipboard({ text }: CopyToClipboardProps) {
   };
 
   return (
-    <Tooltip content="Copy to clipboard">
+    <Tooltip content={t("copyToClipboard")}>
       <IconButton
         type="button"
         size="1"
         variant="ghost"
         color={copied ? "green" : "gray"}
         onClick={() => copyToClipboard(text)}
-        aria-label="Copy to clipboard"
+        aria-label={t("copyToClipboard")}
       >
         {copied ? <CheckIcon /> : <CopyIcon />}
       </IconButton>

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { Button, Flex } from "@radix-ui/themes";
 import { ChevronLeftIcon, ChevronRightIcon } from "@radix-ui/react-icons";
+import { useTranslations } from "next-intl";
 import type { PaginationProps } from "./ProductsList";
 
 export function Pagination({
@@ -15,6 +16,7 @@ export function Pagination({
 }: PaginationProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const t = useTranslations("Common");
 
   if (!hasNextPage && !hasPreviousPage) return null;
 
@@ -48,23 +50,23 @@ export function Pagination({
       {previousUrl ? (
         <Button asChild variant="soft" size="2">
           <Link href={previousUrl}>
-            <ChevronLeftIcon /> Previous
+            <ChevronLeftIcon /> {t("previous")}
           </Link>
         </Button>
       ) : (
         <Button variant="soft" size="2" disabled>
-          <ChevronLeftIcon /> Previous
+          <ChevronLeftIcon /> {t("previous")}
         </Button>
       )}
       {nextUrl ? (
         <Button asChild variant="soft" size="2">
           <Link href={nextUrl}>
-            Next <ChevronRightIcon />
+            {t("next")} <ChevronRightIcon />
           </Link>
         </Button>
       ) : (
         <Button variant="soft" size="2" disabled>
-          Next <ChevronRightIcon />
+          {t("next")} <ChevronRightIcon />
         </Button>
       )}
     </Flex>

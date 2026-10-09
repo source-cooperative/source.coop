@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import dynamic from "next/dynamic";
+import { useTranslations } from "next-intl";
 import styles from "./Landing.module.css";
 
 const LiveGlobe = dynamic(
@@ -13,6 +14,7 @@ const LiveGlobe = dynamic(
 );
 
 export function HeroGlobe({ wsUrl }: { wsUrl: string }) {
+  const t = useTranslations("HeroGlobe");
   const [errored, setErrored] = useState(false);
   const [size, setSize] = useState({ width: 0, height: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
@@ -52,7 +54,7 @@ export function HeroGlobe({ wsUrl }: { wsUrl: string }) {
       <img
         className={styles.heroImage}
         src="/img/dithered-globe.png"
-        alt="Visualization of live data requests around the world"
+        alt={t("alt")}
       />
     );
   }

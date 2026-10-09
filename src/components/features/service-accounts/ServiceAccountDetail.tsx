@@ -13,6 +13,7 @@ import {
   TextField,
 } from "@radix-ui/themes";
 import { DotsHorizontalIcon } from "@radix-ui/react-icons";
+import { useTranslations } from "next-intl";
 import { Field, SectionHeader } from "@/components/core";
 import { ItemList } from "@/components/core/ItemList";
 import {
@@ -30,7 +31,7 @@ import {
   type ServiceAccountActionState,
   type ServiceAccountSummary,
 } from "@/types";
-import { AddSignInMenu, SIGN_IN_DESCRIPTION } from "./AddSignInMenu";
+import { AddSignInMenu } from "./AddSignInMenu";
 import { GrantProductDialog } from "./GrantProductDialog";
 import { ProductAccessList, type ProductAccess } from "./ProductAccessList";
 import { ExampleUsage, GITHUB_WORKFLOW_INTRO } from "./ExampleUsage";
@@ -65,6 +66,8 @@ function TrustRow({
 }) {
   const [showingUsage, setShowingUsage] = useState(false);
   const example = proxyOrigin && trust.issuer === GITHUB_ACTIONS_ISSUER;
+  const t = useTranslations("ServiceAccountDetail");
+  const tc = useTranslations("Common");
   return (
     <ItemList.Row
       title={
@@ -83,7 +86,7 @@ function TrustRow({
                 variant="ghost"
                 color="gray"
                 disabled={removing}
-                aria-label={`Actions for ${trust.subject}`}
+                aria-label={t("actionsFor", { subject: trust.subject })}
               >
                 <DotsHorizontalIcon />
               </IconButton>
@@ -92,19 +95,19 @@ function TrustRow({
               {example && (
                 <>
                   <DropdownMenu.Item onSelect={() => setShowingUsage(true)}>
-                    Example usage
+                    {t("exampleUsage")}
                   </DropdownMenu.Item>
                   <DropdownMenu.Separator />
                 </>
               )}
               <DropdownMenu.Item color="red" onSelect={() => onRemove(trust)}>
-                Remove
+                {tc("remove")}
               </DropdownMenu.Item>
             </DropdownMenu.Content>
           </DropdownMenu.Root>
           {example && (
             <ExampleUsage
-              title="Sign in from this workflow"
+              title={t("signInFromWorkflow")}
               intro={GITHUB_WORKFLOW_INTRO}
               {...githubWorkflow(proxyOrigin, accountId, trust.subject)}
               language="yaml"
@@ -137,6 +140,8 @@ export function ServiceAccountDetail({
   proxyOrigin?: string;
 }) {
   const { account, trusts, grants, keys } = summary;
+  const t = useTranslations("ServiceAccountDetail");
+  const tc = useTranslations("Common");
   const [accessState, accessAction, savingAccess] = useActionState(setProductAccess, IDLE);
   // Shown as chosen at once; the page's revalidation then confirms it, or the
   // failure below explains why it went back.
@@ -178,13 +183,13 @@ export function ServiceAccountDetail({
     <Flex direction="column" gap="6">
       <IssuedApiKeyDialog accountId={account.account_id} />
       <SectionHeader
-        title="Who it is"
-        rightButton={account.disabled && <ItemList.Marker>Disabled</ItemList.Marker>}
+        title={t("whoItIs")}
+        rightButton={account.disabled && <ItemList.Marker>{t("disabled")}</ItemList.Marker>}
       >
         <Flex direction="column" gap="4">
           <form action={renameAction}>
             <input type="hidden" name="account_id" value={account.account_id} />
-            <Field label="Name" htmlFor="sa-name">
+            <Field label={t("name")} htmlFor="sa-name">
               <Flex gap="3">
                 <Box flexGrow="1">
                   <TextField.Root
@@ -203,13 +208,13 @@ export function ServiceAccountDetail({
                   disabled={renaming || name.trim() === account.name}
                   loading={renaming}
                 >
-                  Save
+                  {tc("save")}
                 </Button>
               </Flex>
             </Field>
             <Status state={renameState} />
           </form>
-          <Field label="Account ID" help="The handle software signs in as. Permanent once created." group>
+          <Field label={t("accountId")} help={t("accountIdHelp")} group>
             <Code size="2" variant="ghost" color="gray">
               {account.account_id}
             </Code>
@@ -218,20 +223,20 @@ export function ServiceAccountDetail({
       </SectionHeader>
 
       <SectionHeader
-        title="Signs in with"
-        description={`${SIGN_IN_DESCRIPTION} Revoke a key that leaks, or disable the account below to stop every sign-in at once.`}
+        title={t("signsInWith")}
+        description={t("signInDescription")}
         rightButton={<AddSignInMenu accountId={account.account_id} proxyOrigin={proxyOrigin} />}
       >
         {trusts.length === 0 && keys.length === 0 ? (
           <Text size="2" color="gray">
-            Nothing yet — it cannot sign in until a workflow is trusted or a key is issued.
+            {t("nothingYet")}
           </Text>
         ) : (
           <Flex direction="column" gap="4">
             {trusts.length > 0 && (
               <Flex direction="column" gap="2">
                 <Text size="1" weight="medium" color="gray">
-                  GitHub workflows
+                  {t("githubWorkflows")}
                 </Text>
                 <ItemList.Root>
                   {trusts.map((trust) => (
@@ -250,7 +255,7 @@ export function ServiceAccountDetail({
             {keys.length > 0 && (
               <Flex direction="column" gap="2">
                 <Text size="1" weight="medium" color="gray">
-                  API keys
+                  {t("apiKeys")}
                 </Text>
                 <ApiKeyList accountId={account.account_id} keys={keys} proxyOrigin={proxyOrigin} />
               </Flex>
@@ -262,8 +267,8 @@ export function ServiceAccountDetail({
       </SectionHeader>
 
       <SectionHeader
-        title="Can reach"
-        description="The products it can read or write, each opened in a new tab to check what it holds. A change is saved at once, and takes effect on its next sign-in."
+        title={t("canReach")}
+        description={t("canReachDescription")}
         rightButton={
           <GrantProductDialog
             ownerAccountId={account.owner_account_id}
@@ -283,28 +288,30 @@ export function ServiceAccountDetail({
         {!accessState.success && <Status state={accessState} />}
       </SectionHeader>
 
-      <SectionHeader title="Danger zone" color="red">
+      <SectionHeader title={t("dangerZone")} color="red">
         {/* Each button explains itself in the modal that confirms it. */}
         <Flex gap="3" wrap="wrap" justify="end">
           <AlertDialog.Root open={confirmingToggle} onOpenChange={setConfirmingToggle}>
             <AlertDialog.Trigger>
               <Button variant="soft" color={account.disabled ? "gray" : "red"}>
-                {account.disabled ? "Enable" : "Disable"}
+                {account.disabled ? t("enable") : t("disable")}
               </Button>
             </AlertDialog.Trigger>
             <AlertDialog.Content style={{ maxWidth: 440 }}>
               <AlertDialog.Title>
-                {account.disabled ? "Enable" : "Disable"} {account.name}?
+                {account.disabled
+                  ? t("enableTitle", { name: account.name })
+                  : t("disableTitle", { name: account.name })}
               </AlertDialog.Title>
               <AlertDialog.Description size="2">
                 {account.disabled
-                  ? "Its trusted workflows and unrevoked API keys can sign in again, so revoke any key that leaked first."
-                  : "Nothing can sign in as it, by workflow or by API key, and within five minutes credentials already generated are cut back to public data. Its workflows, keys and product access are kept."}
+                  ? t("enableDescription")
+                  : t("disableDescription")}
               </AlertDialog.Description>
               <Flex justify="end" gap="3" mt="4">
                 <AlertDialog.Cancel>
                   <Button variant="soft" color="gray" disabled={toggling}>
-                    Cancel
+                    {tc("cancel")}
                   </Button>
                 </AlertDialog.Cancel>
                 <form action={toggleAction}>
@@ -313,7 +320,7 @@ export function ServiceAccountDetail({
                   {/* Not AlertDialog.Action, as with Delete below: the modal
                       closes once the action has answered. */}
                   <Button type="submit" color={account.disabled ? undefined : "red"} highContrast={account.disabled} disabled={toggling} loading={toggling}>
-                    {account.disabled ? "Enable" : "Disable"}
+                    {account.disabled ? t("enable") : t("disable")}
                   </Button>
                 </form>
               </Flex>
@@ -323,22 +330,19 @@ export function ServiceAccountDetail({
           <AlertDialog.Root onOpenChange={() => setDeleteConfirmation("")}>
             <AlertDialog.Trigger>
               <Button variant="solid" color="red">
-                Delete
+                {tc("delete")}
               </Button>
             </AlertDialog.Trigger>
             <AlertDialog.Content style={{ maxWidth: 440 }}>
-              <AlertDialog.Title>Delete {account.name}?</AlertDialog.Title>
+              <AlertDialog.Title>{t("deleteTitle", { name: account.name })}</AlertDialog.Title>
               <AlertDialog.Description size="2" mb="4">
-                Its workflows and API keys stop working, and it loses access to every
-                product. Credentials already generated last until they expire. This
-                cannot be undone.
+                {t("deleteDescription")}
               </AlertDialog.Description>
               <Field
-                label={
-                  <>
-                    Type <Code size="2">{account.account_id}</Code> to confirm
-                  </>
-                }
+                label={t.rich("typeToConfirm", {
+                  accountId: account.account_id,
+                  code: (chunks) => <Code size="2">{chunks}</Code>,
+                })}
                 htmlFor="delete-confirmation"
               >
                 <TextField.Root
@@ -352,7 +356,7 @@ export function ServiceAccountDetail({
               <Flex justify="end" gap="3" mt="4">
                 <AlertDialog.Cancel>
                   <Button variant="soft" color="gray" disabled={deleting}>
-                    Cancel
+                    {tc("cancel")}
                   </Button>
                 </AlertDialog.Cancel>
                 <form action={deleteAction}>
@@ -366,7 +370,7 @@ export function ServiceAccountDetail({
                     disabled={deleting || deleteConfirmation !== account.account_id}
                     loading={deleting}
                   >
-                    Delete
+                    {tc("delete")}
                   </Button>
                 </form>
               </Flex>

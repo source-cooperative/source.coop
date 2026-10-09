@@ -1,5 +1,6 @@
 import { Text, Table } from "@radix-ui/themes";
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { productsTable } from "@/lib/clients";
 import { productUrl } from "@/lib/urls";
 import { SectionHeader } from "@/components/core";
@@ -22,16 +23,14 @@ export async function ConnectionUsage({
 }) {
   const products = await productsTable.listProductsByConnectionId(connectionId);
 
-  const heading =
-    products.length === 1
-      ? "Used by 1 product"
-      : `Used by ${products.length} products`;
+  const t = await getTranslations("ConnectionUsage");
+  const heading = t("heading", { count: products.length });
 
   return (
     <SectionHeader title={heading}>
       {products.length === 0 ? (
         <Text size="2" color="gray">
-          Nothing uses this connection, so it can be deleted.
+          {t("unused")}
         </Text>
       ) : (
         // `surface` brings the outer border and panel fill with it, so this
@@ -44,9 +43,9 @@ export async function ConnectionUsage({
             {/* Radix leaves the header transparent in this variant; the tint is
                 what separates labels from the first row without a second rule. */}
             <Table.Row style={{ backgroundColor: "var(--gray-2)" }}>
-              <Table.ColumnHeaderCell>Product</Table.ColumnHeaderCell>
-              <Table.ColumnHeaderCell>Role</Table.ColumnHeaderCell>
-              <Table.ColumnHeaderCell>Status</Table.ColumnHeaderCell>
+              <Table.ColumnHeaderCell>{t("columnProduct")}</Table.ColumnHeaderCell>
+              <Table.ColumnHeaderCell>{t("columnRole")}</Table.ColumnHeaderCell>
+              <Table.ColumnHeaderCell>{t("columnStatus")}</Table.ColumnHeaderCell>
             </Table.Row>
           </Table.Header>
           <Table.Body>
@@ -87,10 +86,10 @@ export async function ConnectionUsage({
                     {/* Primary is the one served from, so it is marked; being a
                         mirror is the ordinary case and stays plain. */}
                     {isPrimary ? (
-                      <ItemList.Marker>Primary</ItemList.Marker>
+                      <ItemList.Marker>{t("primary")}</ItemList.Marker>
                     ) : (
                       <Text size="2" color="gray">
-                        Mirror
+                        {t("mirror")}
                       </Text>
                     )}
                   </Table.Cell>
@@ -99,9 +98,9 @@ export async function ConnectionUsage({
                         Deactivating is a deliberate act, not a fault, and a badge
                         on every row saying "nothing is wrong" is noise. */}
                     {product.disabled ? (
-                      <ItemList.Marker>Deactivated</ItemList.Marker>
+                      <ItemList.Marker>{t("deactivated")}</ItemList.Marker>
                     ) : (
-                      <Text size="2">Active</Text>
+                      <Text size="2">{t("active")}</Text>
                     )}
                   </Table.Cell>
                 </Table.Row>

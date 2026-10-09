@@ -14,13 +14,15 @@ import { getPageSession } from "@/lib";
 import { isAuthorized } from "@/lib/api/authz";
 import { editAccountProfileUrl, editAccountMembershipsUrl } from "@/lib/urls";
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 
 export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
   const { account_id, product_id } = await params;
   const product = await productsTable.fetchById(account_id, product_id);
-  return { title: `Edit ${product!.title} memberships` };
+  const t = await getTranslations("EditProductMembershipsPage");
+  return { title: t("metaTitle", { title: product!.title }) };
 }
 interface PageProps {
   params: Promise<{ account_id: string; product_id: string }>;
@@ -92,12 +94,14 @@ export default async function MembershipsPage({ params }: PageProps) {
     Actions.InviteMembership
   );
 
+  const t = await getTranslations("EditProductMembershipsPage");
+
   return (
     <Box>
       <Flex justify="between" align="center" mb="6">
         <FormTitle
-          title="Memberships"
-          description="Manage product members and their roles"
+          title={t("title")}
+          description={t("description")}
         />
         {canInviteMembership && (
           <InviteMemberForm organization={account} product={product} />
@@ -106,36 +110,37 @@ export default async function MembershipsPage({ params }: PageProps) {
 
       <Box>
         <Text size="4" weight="medium" as="p">
-          Product Members
+          {t("productMembers")}
         </Text>
         <Text size="2" color="gray">
-          The following users have been explicitly granted access to this product
+          {t("productMembersDescription")}
         </Text>
         <MembershipsTable
           memberships={activeMemberships}
           memberAccountsMap={memberAccountsMap}
           userSession={userSession}
-          emptyStateMessage="No members yet"
-          emptyStateDescription="Invite people to join your product"
+          emptyStateMessage={t("productMembersEmptyTitle")}
+          emptyStateDescription={t("productMembersEmptyDescription")}
         />
       </Box>
 
       <Box mt="8">
         <Text size="4" weight="medium" as="p">
-          Organization Members
+          {t("organizationMembers")}
         </Text>
         <Text size="2" color="gray">
-          The following users have implicit access to this product via their{" "}
-          <Link href={editAccountMembershipsUrl(account_id)}>
-            organization membership
-          </Link>
+          {t.rich("organizationMembersDescription", {
+            link: (chunks) => (
+              <Link href={editAccountMembershipsUrl(account_id)}>{chunks}</Link>
+            ),
+          })}
         </Text>
         <MembershipsTable
           memberships={activeOrgMemberships}
           memberAccountsMap={memberAccountsMap}
           userSession={userSession}
-          emptyStateMessage="No organization members"
-          emptyStateDescription="Organization has no members"
+          emptyStateMessage={t("organizationMembersEmptyTitle")}
+          emptyStateDescription={t("organizationMembersEmptyDescription")}
           editable={false}
         />
       </Box>

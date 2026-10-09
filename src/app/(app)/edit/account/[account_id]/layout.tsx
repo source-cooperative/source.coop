@@ -35,6 +35,7 @@ import {
 } from "@/lib/urls";
 import { LinkAway } from "@/components/core/LinkAway";
 import { getManageableAccounts } from "@/lib/clients/lookups";
+import { getTranslations } from "next-intl/server";
 
 interface AccountLayoutProps {
   children: ReactNode;
@@ -46,6 +47,7 @@ export default async function AccountLayout({
   params,
 }: AccountLayoutProps) {
   const { account_id } = await params;
+  const t = await getTranslations("EditAccountLayout");
 
   const userSession = await getPageSession();
 
@@ -96,21 +98,21 @@ export default async function AccountLayout({
   const menuItems = [
     {
       id: "profile",
-      label: "Details",
+      label: t("details"),
       href: editAccountProfileUrl(account_id),
       icon: <Pencil1Icon width="16" height="16" />,
       condition: canReadAccount,
     },
     {
       id: "profile-picture",
-      label: "Profile Picture",
+      label: t("profilePicture"),
       href: editAccountProfilePictureUrl(account_id),
       icon: <ImageIcon width="16" height="16" />,
       condition: canEditAccount,
     },
     {
       id: "data-connections",
-      label: "Data Connections",
+      label: t("dataConnections"),
       href: accountDataConnectionsUrl(account_id),
       icon: <Link1Icon width="16" height="16" />,
       condition: canManageDataConnections,
@@ -119,7 +121,7 @@ export default async function AccountLayout({
     // view requires GetAccountFlags, edit is admin-only (enforced in the form).
     {
       id: "permissions",
-      label: "Permissions",
+      label: t("permissions"),
       href: editAccountPermissionsUrl(account_id),
       icon: <LockClosedIcon width="16" height="16" />,
       condition: isAuthorized(
@@ -132,7 +134,7 @@ export default async function AccountLayout({
     // granted the CREATE_SERVICE_ACCOUNTS flag.
     {
       id: "service-accounts",
-      label: "Service Accounts",
+      label: t("serviceAccounts"),
       href: editAccountServiceAccountsUrl(account_id),
       icon: <CubeIcon width="16" height="16" />,
       condition: canManageAccountServiceAccounts(userSession, accountToEdit),
@@ -141,7 +143,7 @@ export default async function AccountLayout({
       ? [
           {
             id: "memberships",
-            label: "Memberships",
+            label: t("memberships"),
             href: editAccountMembershipsUrl(account_id),
             icon: <PersonIcon width="16" height="16" />,
             condition: canReadMembership,
@@ -150,14 +152,13 @@ export default async function AccountLayout({
       : [
           {
             id: "authentication",
-            label: "Authentication",
+            label: t("authentication"),
             href: orySettingsUrl(),
             icon: <ExternalLinkIcon width="16" height="16" />,
             condition: canReadAccount,
             external: true,
             disabled: !isOwnAccount,
-            disabledTooltip:
-              "Admins can't edit another user's authentication details.",
+            disabledTooltip: t("authenticationDisabledTooltip"),
           },
         ]),
   ];
@@ -172,7 +173,7 @@ export default async function AccountLayout({
         />
 
         <LinkAway href={accountUrl(accountToEdit.account_id)}>
-          View Profile
+          {t("viewProfile")}
         </LinkAway>
       </SettingsHeader>
 

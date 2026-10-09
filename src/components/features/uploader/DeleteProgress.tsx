@@ -3,22 +3,28 @@ import NextLink from "next/link";
 import { Flex, Text, Progress, IconButton, Link } from "@radix-ui/themes";
 import { Cross2Icon } from "@radix-ui/react-icons";
 import { productUrl } from "@/lib/urls";
+import { useFormatter, useTranslations } from "next-intl";
 import type { DeleteJob } from "./UploadProvider";
 
-// "118.3K" rather than "118,342": a menu row has no room for the digits.
-const compact = new Intl.NumberFormat("en", {
-  notation: "compact",
-  maximumFractionDigits: 1,
-}).format;
-const count = (n: number) => `${compact(n)} ${n === 1 ? "file" : "files"}`;
-
-/** One line describing where a delete has got to. */
-export function deleteStatusText(
-  job: Pick<DeleteJob, "status" | "counting" | "deleted" | "total">
-): string {
-  if (job.status === "completed") return `Deleted ${count(job.deleted)}`;
-  if (job.counting) return `Counting files… ${compact(job.total)} found`;
-  return `Deleted ${compact(job.deleted)} of ${count(job.total)}`;
+/** Formats one line describing where a delete has got to. */
+export function useDeleteStatusText() {
+  const t = useTranslations("DeleteProgress");
+  const format = useFormatter();
+  // "118.3K" rather than "118,342": a menu row has no room for the digits.
+  const compact = (n: number) =>
+    format.number(n, { notation: "compact", maximumFractionDigits: 1 });
+  return (
+    job: Pick<DeleteJob, "status" | "counting" | "deleted" | "total">
+  ): string => {
+    if (job.status === "completed")
+      return t("deleted", { count: job.deleted, shown: compact(job.deleted) });
+    if (job.counting) return t("counting", { found: compact(job.total) });
+    return t("deletedOfTotal", {
+      count: job.total,
+      deleted: compact(job.deleted),
+      total: compact(job.total),
+    });
+  };
 }
 
 interface DeleteProgressProps {
@@ -29,6 +35,8 @@ interface DeleteProgressProps {
 
 /** A background delete's name, product, progress and any error. */
 export function DeleteProgress({ job, onDismiss }: DeleteProgressProps) {
+  const t = useTranslations("DeleteProgress");
+  const deleteStatusText = useDeleteStatusText();
   const product = productUrl(job.scope.accountId, job.scope.productId);
   const parent = job.path.replace(/\/$/, "").split("/").slice(0, -1).join("/");
   const name = job.path.replace(/\/$/, "").split("/").pop();
@@ -60,7 +68,7 @@ export function DeleteProgress({ job, onDismiss }: DeleteProgressProps) {
             variant="ghost"
             color="gray"
             onClick={onDismiss}
-            aria-label="Dismiss"
+            aria-label={t("dismiss")}
           >
             <Cross2Icon />
           </IconButton>

@@ -21,6 +21,7 @@ import {
   editProductDataConnectionsUrl,
 } from "@/lib/urls";
 import { getManageableAccounts } from "@/lib/clients/lookups";
+import { getTranslations } from "next-intl/server";
 
 interface ProductLayoutProps {
   children: ReactNode;
@@ -32,6 +33,7 @@ export default async function ProductLayout({
   params,
 }: ProductLayoutProps) {
   const { account_id, product_id } = await params;
+  const t = await getTranslations("EditProductLayout");
 
   const session = await getPageSession();
 
@@ -70,21 +72,21 @@ export default async function ProductLayout({
   const menuItems = [
     {
       id: "details",
-      label: "Details",
+      label: t("details"),
       href: editProductDetailsUrl(account_id, product_id),
       icon: <Pencil1Icon width="16" height="16" />,
       condition: canEditProduct,
     },
     {
       id: "memberships",
-      label: "Memberships",
+      label: t("memberships"),
       href: editProductMembershipsUrl(account_id, product_id),
       icon: <PersonIcon width="16" height="16" />,
       condition: canReadMembership,
     },
     {
       id: "data-connections",
-      label: "Data Connections",
+      label: t("dataConnections"),
       href: editProductDataConnectionsUrl(account_id, product_id),
       icon: <Link1Icon width="16" height="16" />,
       condition: canEditProduct || isAdmin(session),
@@ -106,7 +108,7 @@ export default async function ProductLayout({
         </Flex>
 
         <LinkAway href={productUrl(product.account_id, product.product_id)}>
-          View Product
+          {t("viewProduct")}
         </LinkAway>
       </SettingsHeader>
       <SettingsLayout menuItems={menuItems}>{children}</SettingsLayout>

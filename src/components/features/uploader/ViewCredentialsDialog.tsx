@@ -17,6 +17,7 @@ import {
 } from "@radix-ui/themes";
 import { CopyIcon, CheckIcon, InfoCircledIcon } from "@radix-ui/react-icons";
 import React, { useState } from "react";
+import { useTranslations } from "next-intl";
 import { MonoText } from "@/components/core/MonoText";
 
 interface ViewCredentialsDialogProps {
@@ -30,6 +31,8 @@ export function ViewCredentialsDialog({
   open,
   onOpenChange,
 }: ViewCredentialsDialogProps) {
+  const t = useTranslations("ViewCredentialsDialog");
+  const tCommon = useTranslations("Common");
   // The credentials are only valid against the data proxy, so the endpoint must
   // travel with them — an SDK pointed at the default AWS endpoint would 403.
   const jsonFormat = JSON.stringify(
@@ -70,9 +73,9 @@ export function ViewCredentialsDialog({
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Content maxWidth="600px">
-        <Dialog.Title>View Credentials</Dialog.Title>
+        <Dialog.Title>{t("title")}</Dialog.Title>
         <Dialog.Description size="2" mb="4">
-          Copy these temporary credentials to use in your applications.
+          {t("description")}
         </Dialog.Description>
 
         <Callout.Root size="1" mb="4">
@@ -80,36 +83,37 @@ export function ViewCredentialsDialog({
             <InfoCircledIcon />
           </Callout.Icon>
           <Callout.Text>
-            Prefer a simpler workflow? The{" "}
-            <Link
-              href="https://github.com/source-cooperative/source-coop-cli"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Source Coop CLI
-            </Link>{" "}
-            handles credentials for you, with longer-lived credentials (up to
-            12 hours).
+            {t.rich("cliCallout", {
+              link: (chunks) => (
+                <Link
+                  href="https://github.com/source-cooperative/source-coop-cli"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {chunks}
+                </Link>
+              ),
+            })}
           </Callout.Text>
         </Callout.Root>
 
         <Tabs.Root defaultValue="json">
           <Tabs.List>
-            <Tabs.Trigger value="json">JSON (SDK)</Tabs.Trigger>
-            <Tabs.Trigger value="env">Environment Variables</Tabs.Trigger>
+            <Tabs.Trigger value="json">{t("tabJson")}</Tabs.Trigger>
+            <Tabs.Trigger value="env">{t("tabEnv")}</Tabs.Trigger>
             <Tabs.Trigger value="ini">INI</Tabs.Trigger>
           </Tabs.List>
 
           <Box pt="3">
             <CredentialsTabContent
               value="json"
-              title="For SDK clients (boto3, AWS SDK, etc.)"
+              title={t("jsonHint")}
               content={jsonFormat}
             />
 
             <CredentialsTabContent
               value="env"
-              title="For terminal/shell usage"
+              title={t("envHint")}
               content={envFormat}
               controls={
                 <SegmentedControl.Root
@@ -129,7 +133,7 @@ export function ViewCredentialsDialog({
 
             <CredentialsTabContent
               value="ini"
-              title="For ~/.aws/credentials (AWS CLI profile)"
+              title={t("iniHint")}
               content={iniFormat}
             />
           </Box>
@@ -138,14 +142,14 @@ export function ViewCredentialsDialog({
         <Box mb="4">
           <Box mb="2">
             <Text size="2" color="gray" weight="bold">
-              Boundaries
+              {t("boundaries")}
             </Text>
           </Box>
           <DataList.Root size="1">
             {(
               [
                 [
-                  "Expiration",
+                  "expiration",
                   <span key="expiration" title={credentials.expiration}>
                     {new Date(credentials.expiration).toLocaleString(undefined, {
                       timeZoneName: "short",
@@ -154,19 +158,19 @@ export function ViewCredentialsDialog({
                   credentials.expiration,
                 ],
                 [
-                  "Bucket",
+                  "bucket",
                   <MonoText key="bucket">{credentials.bucket}</MonoText>,
                   credentials.bucket,
                 ],
                 [
-                  "Prefix",
+                  "prefix",
                   <MonoText key="prefix">{credentials.prefix}</MonoText>,
                   credentials.prefix,
                 ],
               ] as const
             ).map(([label, element, content]) => (
               <DataList.Item align="center" key={label}>
-                <DataList.Label>{label}</DataList.Label>
+                <DataList.Label>{t(label)}</DataList.Label>
                 <DataList.Value>
                   <Flex align="center" gap="2">
                     {element}
@@ -181,7 +185,7 @@ export function ViewCredentialsDialog({
         <Flex gap="3" mt="4" justify="end">
           <Dialog.Close>
             <Button variant="soft" color="gray">
-              Close
+              {tCommon("close")}
             </Button>
           </Dialog.Close>
         </Flex>
@@ -214,6 +218,8 @@ interface CopyButtonProps {
 }
 
 function CopyButton({ content, variant = "soft" }: CopyButtonProps) {
+  const t = useTranslations("ViewCredentialsDialog");
+  const tCommon = useTranslations("Common");
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
@@ -223,7 +229,7 @@ function CopyButton({ content, variant = "soft" }: CopyButtonProps) {
   };
 
   return (
-    <Tooltip content={copied ? "Copied!" : "Copy to clipboard"}>
+    <Tooltip content={copied ? tCommon("copied") : t("copyToClipboard")}>
       <IconButton size="1" variant={variant} onClick={handleCopy}>
         {copied ? <CheckIcon /> : <CopyIcon />}
       </IconButton>

@@ -1,5 +1,15 @@
 import type { Metadata } from 'next';
+import { getTranslations } from "next-intl/server";
 import { CONFIG } from "@/lib";
+
+/**
+ * The site description follows the reader's locale; the OpenGraph and Twitter
+ * cards stay in English, since crawlers fetch them without a language.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("SiteMetadata");
+  return { ...metadata, description: t("description") };
+}
 
 export const metadata: Metadata = {
   title: {

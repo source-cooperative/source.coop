@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { CONFIG } from "@/lib";
 import { getBaseUrl } from "@/lib/baseUrl";
 
@@ -9,10 +10,13 @@ interface NotFoundMetadataProps {
 }
 
 export async function generateNotFoundMetadata({
-  title = "Page Not Found",
-  description = "The page you are looking for does not exist.",
+  title,
+  description,
   url,
 }: NotFoundMetadataProps = {}): Promise<Metadata> {
+  const t = await getTranslations("NotFoundMetadata");
+  title ??= t("title");
+  description ??= t("description");
   const fullTitle = `${title} · Source Cooperative`;
   const baseUrl = await getBaseUrl();
   const canonicalUrl = url ? `${baseUrl}${url}` : undefined;

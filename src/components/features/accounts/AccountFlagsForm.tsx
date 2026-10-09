@@ -7,6 +7,7 @@ import { DynamicForm } from "@/components/core";
 import { updateAccountFlags } from "@/lib/actions/account";
 import { isAdmin, isAuthorized } from "@/lib/api/authz";
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 
 interface AccountFlagsFormProps {
   session: UserSession;
@@ -19,6 +20,7 @@ type AccountFlagsFormData = {
 };
 
 export function AccountFlagsForm({ session, account }: AccountFlagsFormProps) {
+  const t = useTranslations("AccountFlagsForm");
   // Create initial values for the form dynamically
   const initialValues = Object.fromEntries(
     Object.values(AccountFlags).map((flag) => [
@@ -53,43 +55,43 @@ export function AccountFlagsForm({ session, account }: AccountFlagsFormProps) {
     ? [
         [
           AccountFlags.CREATE_DATA_CONNECTIONS,
-          "Create Data Connections",
-          "Allows this organization to create and manage its own data connections to external storage.",
+          t("createDataConnections"),
+          t("createDataConnectionsOrgDescription"),
         ],
         [
           AccountFlags.CREATE_SERVICE_ACCOUNTS,
-          "Create Service Accounts",
-          "Allows this organization to create and manage service accounts for its software and pipelines.",
+          t("createServiceAccounts"),
+          t("createServiceAccountsOrgDescription"),
         ],
       ]
     : [
         [
           AccountFlags.CREATE_REPOSITORIES,
-          "Create Products",
-          "Allows this account to create new products and manage product settings.",
+          t("createProducts"),
+          t("createProductsDescription"),
         ],
         [
           AccountFlags.CREATE_ORGANIZATIONS,
-          "Create Organizations",
-          "Allows this account to create new organizations and manage organizational accounts.",
+          t("createOrganizations"),
+          t("createOrganizationsDescription"),
         ],
         [
           AccountFlags.CREATE_DATA_CONNECTIONS,
-          "Create Data Connections",
-          "Allows this account to create and manage its own data connections to external storage.",
+          t("createDataConnections"),
+          t("createDataConnectionsDescription"),
         ],
         [
           AccountFlags.CREATE_SERVICE_ACCOUNTS,
-          "Create Service Accounts",
-          "Allows this account to create and manage service accounts for its software and pipelines.",
+          t("createServiceAccounts"),
+          t("createServiceAccountsDescription"),
         ],
       ];
 
   if (!isOrganization && isAdmin(session)) {
     fields.push([
       AccountFlags.ADMIN,
-      "Administrator",
-      "Full administrative access to the platform. Can manage all accounts, products, and system settings.",
+      t("admin"),
+      t("adminDescription"),
     ]);
   }
 
