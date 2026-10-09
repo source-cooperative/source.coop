@@ -128,14 +128,16 @@ export const AccountOwned: Story = {
 
 /**
  * Keyless S3 access: the proxy assumes your IAM role with its own OIDC token,
- * so nothing secret is stored. Below the role ARN is the subject that token
- * carries — the value your role's trust policy must require, exactly, or any
- * connection on Source Cooperative could assume the role.
+ * so nothing secret is stored. Below the role ARN is the trust policy to give
+ * that role, filled in with its AWS account and this connection's id. It admits
+ * this connection alone; a role that trusts the proxy without it can be
+ * assumed by any connection on Source Cooperative.
  */
 export const WebIdentityRole: Story = {
   args: {
     mode: "edit",
     ownerAccountId: "miskatonic",
+    proxyOrigin: "https://data.source.coop",
     dataConnection: {
       ...s3Connection,
       authentication: {
