@@ -125,3 +125,23 @@ export const AccountOwned: Story = {
     dataConnection: s3Connection,
   },
 };
+
+/**
+ * Keyless S3 access: the proxy assumes your IAM role with its own OIDC token,
+ * so nothing secret is stored. Below the role ARN is the subject that token
+ * carries — the value your role's trust policy must require, exactly, or any
+ * connection on Source Cooperative could assume the role.
+ */
+export const WebIdentityRole: Story = {
+  args: {
+    mode: "edit",
+    ownerAccountId: "miskatonic",
+    dataConnection: {
+      ...s3Connection,
+      authentication: {
+        type: DataConnectionAuthenticationType.S3WebIdentityRole,
+        role_arn: "arn:aws:iam::123456789012:role/source-cooperative-proxy",
+      },
+    } as unknown as EditableDataConnection,
+  },
+};

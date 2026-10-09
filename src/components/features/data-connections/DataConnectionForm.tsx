@@ -230,8 +230,9 @@ export function DataConnectionForm({
     auth?.type === DataConnectionAuthenticationType.S3WebIdentityRole
       ? auth.role_arn
       : "";
-  // OIDC subject the proxy presents; owners match it in their IAM trust policy.
-  const subPattern = `scv1:conn:${dataConnection?.data_connection_id ?? ""}:*`;
+  // OIDC subject the proxy presents (data.source.coop ADR-006); owners match it
+  // exactly in their IAM trust policy.
+  const subject = `scv1:conn:${dataConnection?.data_connection_id ?? ""}`;
   const initialTenantId =
     auth?.type === DataConnectionAuthenticationType.AzureWorkloadIdentity
       ? auth.tenant_id
@@ -750,7 +751,7 @@ export function DataConnectionForm({
                       <>
                         The proxy presents this OIDC subject when assuming the role.
                         In the role&apos;s trust policy, add a{" "}
-                        <Text weight="medium">StringLike</Text> condition on{" "}
+                        <Text weight="medium">StringEquals</Text> condition on{" "}
                         <Text weight="medium">data.source.coop:sub</Text> matching
                         it, alongside{" "}
                         <Text weight="medium">
@@ -763,9 +764,9 @@ export function DataConnectionForm({
                   >
                     <Flex align="center" gap="2">
                       <Code size="2" variant="soft">
-                        {subPattern}
+                        {subject}
                       </Code>
-                      <CopyToClipboard text={subPattern} />
+                      <CopyToClipboard text={subject} />
                     </Flex>
                   </Field>
                 )}
