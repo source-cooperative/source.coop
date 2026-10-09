@@ -12,6 +12,8 @@ import { denyDataConnectionFor } from "@/lib/data-connections";
 import { LOGGER } from "@/lib/logging";
 import { getProxyCredentials } from "@/lib/actions/proxy-credentials";
 import { getStorageClient } from "@/lib/clients/storage";
+import { accountUrl, editProductDetailsUrl, productUrl } from "@/lib/urls";
+import { revalidatePath } from "next/cache";
 import {
   accountsTable,
   dataConnectionsTable,
@@ -78,6 +80,7 @@ export const UpdateProductSchema = ProductSchema.pick({
   visibility: true,
   disabled: true,
 })
+  .extend({ title: ProductSchema.shape.title.trim().min(1, "A title is required") })
   .partial()
   .openapi("UpdateProduct");
 
@@ -125,6 +128,27 @@ const page = async (
   items: await productsTable.attachAccounts(result.products.filter(visible)),
   next_cursor: encodeCursor(result.lastEvaluatedKey),
 });
+
+/**
+ * Drops the cached pages that show a product, and its account's listing of
+ * it, whichever adapter changed it.
+ */
+function revalidate(account_id: string, product_id?: string) {
+  revalidatePath(accountUrl(account_id));
+  if (product_id) {
+    revalidatePath(productUrl(account_id, product_id));
+    revalidatePath(editProductDetailsUrl(account_id, product_id));
+  }
+}
+
+/**
+ * A refusal to act on `product`. A deactivated product the caller can't see is
+ * as missing to them here as it is to getProduct.
+ */
+const refuse = (session: UserSession, product: Product, message: string) =>
+  product.disabled && !isAuthorized(session, product, Actions.GetRepository)
+    ? notFound(`Product ${product.account_id}/${product.product_id} not found`)
+    : forbidden(message);
 
 /**
  * One page of products: an account's, when `account_id` is given, and
@@ -217,16 +241,15 @@ export async function createProduct(
   ) {
     return forbidden("You may not create products for this account");
   }
-  if (!(await accountsTable.fetchById(account_id))) {
-    return notFound(`Account ${account_id} not found`);
-  }
+  const [account, existing, connection] = await Promise.all([
+    accountsTable.fetchById(account_id),
+    productsTable.fetchById(account_id, product_id),
+    dataConnectionsTable.fetchById(data_connection_id),
+  ]);
+  if (!account) return notFound(`Account ${account_id} not found`);
   // ponytail: check-then-put, so two simultaneous creates can still race;
   // a conditional put in productsTable.create closes it if that ever matters.
-  if (await productsTable.fetchById(account_id, product_id)) {
-    return conflict(`Product ${account_id}/${product_id} already exists`);
-  }
-
-  const connection = await dataConnectionsTable.fetchById(data_connection_id);
+  if (existing) return conflict(`Product ${account_id}/${product_id} already exists`);
   if (!connection) {
     return invalid("Selected data connection was not found", "data_connection_id");
   }
@@ -265,7 +288,9 @@ export async function createProduct(
       },
     },
   };
-  return ok(await productsTable.create(product));
+  await productsTable.create(product);
+  revalidate(account_id);
+  return ok(product);
 }
 
 export async function updateProduct(
@@ -284,16 +309,16 @@ export async function updateProduct(
   // Reactivating a deactivated product is admin-only: PutRepository refuses
   // everyone else on a deactivated product.
   if (!isAuthorized(session, product, Actions.PutRepository)) {
-    return forbidden("You may not edit this product");
+    return refuse(session, product, "You may not edit this product");
   }
 
-  // The data connection is fixed at creation, so the allowed visibilities
-  // come from the primary mirror's. Without it there's no knowing what's
-  // allowed, so the visibility stays as it is.
   // Zod keeps a key given as undefined, which would blank the stored value.
   const changes = Object.fromEntries(
     Object.entries(parsed.data).filter(([, value]) => value !== undefined)
   );
+  // The data connection is fixed at creation, so the allowed visibilities
+  // come from the primary mirror's. Without it there's no knowing what's
+  // allowed, so the visibility stays as it is.
   const { visibility } = parsed.data;
   if (visibility && visibility !== product.visibility) {
     const id = product.metadata?.primary_mirror;
@@ -312,11 +337,10 @@ export async function updateProduct(
     }
   }
 
-  const updated = await productsTable.update({
-    ...product,
-    ...changes,
-    updated_at: new Date().toISOString(),
-  });
+  // The product as fetched, account included, so the answer matches getProduct's.
+  const updated = { ...product, ...changes, updated_at: new Date().toISOString() };
+  await productsTable.update(updated);
+  revalidate(account_id, product_id);
   LOGGER.info("Product updated", {
     operation: "updateProduct",
     metadata: { account_id, product_id, by: session.account?.account_id, ...changes },
@@ -342,10 +366,10 @@ export async function deleteProduct(
   const product = await productsTable.fetchById(account_id, product_id);
   if (!product) return notFound(`Product ${account_id}/${product_id} not found`);
   if (!isAuthorized(session, product, Actions.DeleteRepository)) {
-    return forbidden("You may not delete this product");
+    return refuse(session, product, "You may not delete this product");
   }
 
-  const mirror = product.metadata.mirrors[product.metadata.primary_mirror];
+  const mirror = product.metadata?.mirrors?.[product.metadata.primary_mirror];
   const connection = mirror
     ? await dataConnectionsTable.fetchById(mirror.connection_id)
     : undefined;
@@ -373,6 +397,7 @@ export async function deleteProduct(
   }
   await membershipsTable.deleteByProduct(account_id, product_id);
   await productsTable.delete(account_id, product_id);
+  revalidate(account_id, product_id);
 
   LOGGER.info("Product deleted", {
     operation: "deleteProduct",

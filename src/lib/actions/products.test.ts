@@ -1,5 +1,4 @@
 /** @jest-environment node */
-import { revalidatePath } from "next/cache";
 import { Product } from "@/types";
 import { getPageSession } from "@/lib";
 import * as ops from "@/lib/operations/products";
@@ -12,7 +11,6 @@ jest.mock("@/lib", () => ({
 }));
 jest.mock("@/lib/clients/database", () => ({}));
 jest.mock("@/lib/operations/products");
-jest.mock("next/cache", () => ({ revalidatePath: jest.fn() }));
 
 const operations = ops as jest.Mocked<typeof ops>;
 const session = { identity_id: "user-1" };
@@ -56,7 +54,6 @@ describe("updateProduct", () => {
       visibility: "public",
       disabled: undefined,
     });
-    expect(revalidatePath).toHaveBeenCalled();
   });
 
   test.each([["true", true], ["false", false]])(
@@ -68,24 +65,22 @@ describe("updateProduct", () => {
     }
   );
 
-  test("shows the refusal, and revalidates nothing", async () => {
+  test("shows the refusal", async () => {
     operations.updateProduct.mockResolvedValue(forbidden("No"));
     expect(await updateProduct(undefined, form({}))).toMatchObject({
       success: false,
       message: "No",
     });
-    expect(revalidatePath).not.toHaveBeenCalled();
   });
 });
 
 describe("deleteProduct", () => {
-  test("passes whether to keep the data, and revalidates the account", async () => {
+  test("passes whether to keep the data", async () => {
     operations.deleteProduct.mockResolvedValue(ok(product));
     expect(await deleteProduct("alice", "my-product", true)).toEqual({ success: true });
     expect(operations.deleteProduct).toHaveBeenCalledWith(session, "alice", "my-product", {
       preserve_data: "true",
     });
-    expect(revalidatePath).toHaveBeenCalledWith("/alice");
   });
 
   test("reports a refusal", async () => {

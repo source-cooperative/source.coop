@@ -9,6 +9,7 @@ import {
 import { canListOnProfile, isAdmin, isAuthorized } from "@/lib/api/authz";
 import { getProxyCredentials } from "@/lib/actions/proxy-credentials";
 import { getStorageClient } from "@/lib/clients/storage";
+import { revalidatePath } from "next/cache";
 import {
   createProduct,
   deleteProduct,
@@ -38,6 +39,7 @@ jest.mock("@/lib/api/authz", () => ({
 }));
 jest.mock("@/lib/actions/proxy-credentials", () => ({ getProxyCredentials: jest.fn() }));
 jest.mock("@/lib/clients/storage", () => ({ getStorageClient: jest.fn() }));
+jest.mock("next/cache", () => ({ revalidatePath: jest.fn() }));
 
 const SESSION = { identity_id: "user-1", account: { account_id: "alice", flags: [] } } as never;
 
@@ -337,6 +339,33 @@ describe("updateProduct", () => {
     expect(productsTable.fetchById).not.toHaveBeenCalled();
   });
 
+  test("refuses an empty title, which only the form may leave out", async () => {
+    expect(await updateProduct(SESSION, "alice", "my-product", { title: " " })).toMatchObject({
+      error: "invalid",
+      fieldErrors: { title: ["A title is required"] },
+    });
+  });
+
+  test("answers with the product as GET does, and drops its cached pages", async () => {
+    (productsTable.fetchById as jest.Mock).mockResolvedValue(
+      product({ account: { account_id: "alice" } })
+    );
+    const result = await updateProduct(SESSION, "alice", "my-product", { title: "New" });
+    expect(result.ok && result.value).toMatchObject({ title: "New", account: { account_id: "alice" } });
+    expect(revalidatePath).toHaveBeenCalledWith("/alice/my-product");
+  });
+
+  test("a deactivated product the caller can't see is not found, not forbidden", async () => {
+    (productsTable.fetchById as jest.Mock).mockResolvedValue(product({ disabled: true }));
+    (isAuthorized as jest.Mock).mockReturnValue(false);
+    expect(await updateProduct(SESSION, "alice", "my-product", {})).toMatchObject({
+      error: "not_found",
+    });
+    expect(await deleteProduct(SESSION, "alice", "my-product", {})).toMatchObject({
+      error: "not_found",
+    });
+  });
+
   test("refuses whoever may not edit the product", async () => {
     allowExcept(Actions.PutRepository);
     expect(await updateProduct(SESSION, "alice", "my-product", {})).toMatchObject({
@@ -379,6 +408,13 @@ describe("deleteProduct", () => {
     expect(deleteByPrefix).toHaveBeenCalledWith("alice", "my-product/");
     expect(membershipsTable.deleteByProduct).toHaveBeenCalledWith("alice", "my-product");
     expect(productsTable.delete).toHaveBeenCalledWith("alice", "my-product");
+    expect(revalidatePath).toHaveBeenCalledWith("/alice");
+  });
+
+  test("deletes a product with no metadata, which has no objects to delete", async () => {
+    (productsTable.fetchById as jest.Mock).mockResolvedValue(product({ metadata: undefined }));
+    expect(await deleteProduct(SESSION, "alice", "my-product", {})).toMatchObject({ ok: true });
+    expect(getStorageClient).not.toHaveBeenCalled();
   });
 
   test("does not touch storage for a read-only data connection, even to keep it", async () => {
