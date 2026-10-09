@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.8.0](https://github.com/source-cooperative/source.coop/compare/v1.7.0...v1.8.0) (2026-10-09)
+
+
+### Features
+
+* **api:** operations layer, generated OpenAPI docs, and the memberships API ([#642](https://github.com/source-cooperative/source.coop/issues/642)) ([6316196](https://github.com/source-cooperative/source.coop/commit/631619672bd5e1bbc13a4700373fd93244fa93f7))
+* publish llms.txt for AI agents ([#641](https://github.com/source-cooperative/source.coop/issues/641)) ([90bdcb1](https://github.com/source-cooperative/source.coop/commit/90bdcb1f29f8fa7f4f925a45c91345661676c004))
+
+
+### Bug Fixes
+
+* **data-connections:** stop listing other accounts' connections on product create ([#480](https://github.com/source-cooperative/source.coop/issues/480)) ([4dbe597](https://github.com/source-cooperative/source.coop/commit/4dbe5972f70125f1e5780be526816d7b5f8f8016))
+
 ## [1.7.0](https://github.com/source-cooperative/source.coop/compare/v1.6.0...v1.7.0) (2026-10-05)
 
 
