@@ -12,7 +12,7 @@ import { LOGGER } from "@/lib";
 
 /**
  * @openapi
- * /products/{account_id}/{repository_id}/permissions:
+ * /products/{account_id}/{product_id}/permissions:
  *   get:
  *     tags: [Products]
  *     summary: Get repository permissions
@@ -25,7 +25,7 @@ import { LOGGER } from "@/lib";
  *           type: string
  *         description: The ID of the account that owns the repository
  *       - in: path
- *         name: repository_id
+ *         name: product_id
  *         required: true
  *         schema:
  *           type: string
@@ -48,18 +48,18 @@ import { LOGGER } from "@/lib";
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ account_id: string; repository_id: string }> }
+  { params }: { params: Promise<{ account_id: string; product_id: string }> }
 ) {
   try {
     const session = await getApiSession(request);
-    const { account_id, repository_id } = await params;
+    const { account_id, product_id } = await params;
 
-    const product = await productsTable.fetchById(account_id, repository_id);
+    const product = await productsTable.fetchById(account_id, product_id);
 
     if (!product) {
       return NextResponse.json(
         {
-          error: `Repository with ID ${account_id}/${repository_id} not found`,
+          error: `Repository with ID ${account_id}/${product_id} not found`,
         },
         { status: StatusCodes.NOT_FOUND }
       );
@@ -76,7 +76,7 @@ export async function GET(
       context: "permissions check",
       metadata: {
         account_id,
-        repository_id,
+        product_id,
         hasSession: !!session,
         hasProduct: !!product,
       },

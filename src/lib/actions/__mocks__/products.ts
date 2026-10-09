@@ -7,7 +7,7 @@ import type { FormState } from "@/components/core/DynamicForm";
  * `__mocks__/data-connections.ts` for why these exist and how the redirect
  * works.
  *
- * The two read actions return empty rather than fixtures: nothing storied so
+ * The read action returns empty rather than fixtures: nothing storied so
  * far calls them, and inventing a product list here would be a second source of
  * truth for what a product looks like. A story that needs products should pass
  * them as props.
@@ -35,12 +35,3 @@ export const getFeaturedProducts: typeof Real.getFeaturedProducts = fn(
   async () => []
 ).mockName("getFeaturedProducts");
 
-export const getPaginatedProducts: typeof Real.getPaginatedProducts = fn(
-  async () => ({
-    products: [],
-    hasNextPage: false,
-    hasPreviousPage: false,
-    nextCursor: undefined,
-    previousCursor: undefined,
-  })
-).mockName("getPaginatedProducts");

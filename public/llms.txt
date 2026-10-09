@@ -6,7 +6,8 @@ A product is addressed as `{account_id}/{product_id}`, for example `kerner-lab/f
 
 - Product page: `https://source.coop/{account_id}/{product_id}`
 - Product metadata as JSON: `https://source.coop/api/v1/products/{account_id}/{product_id}`
-- An account's public products as JSON: `https://source.coop/api/v1/products/{account_id}`
+- An account's public products as JSON: `https://source.coop/api/v1/products/{account_id}`, a page at a time as `{"items": [...], "next_cursor": ...}`; pass `next_cursor` back as `?cursor=` until it's null, and `?limit=` up to 100
+- Search all public products: `https://source.coop/api/v1/products?q={text}&tags={tag,tag}`, paged the same way
 - Files, over HTTP: `https://data.source.coop/{account_id}/{product_id}/{path}`
 - Files, over S3: bucket `{account_id}`, key prefix `{product_id}/`, endpoint `https://data.source.coop`; public products need no credentials (`aws s3 ls s3://{account_id}/{product_id}/ --endpoint-url https://data.source.coop --no-sign-request`)
 

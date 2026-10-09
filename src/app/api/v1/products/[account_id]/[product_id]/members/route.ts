@@ -5,16 +5,16 @@ import { withApiSession, toResponse } from "@/lib/api/handler";
 import { bearer, errors, json, registry } from "@/lib/api/openapi";
 import { inviteMember, listMembers } from "@/lib/operations/memberships";
 
-type Params = { account_id: string; repository_id: string };
+type Params = { account_id: string; product_id: string };
 
 const params = z.object({
   account_id: z.string().openapi({ description: "The product owner's ID." }),
-  repository_id: z.string().openapi({ description: "The product's ID." }),
+  product_id: z.string().openapi({ description: "The product's ID." }),
 });
 
 registry.registerPath({
   method: "get",
-  path: "/products/{account_id}/{repository_id}/members",
+  path: "/products/{account_id}/{product_id}/members",
   tags: ["Memberships"],
   summary: "List a product's members",
   description:
@@ -31,14 +31,14 @@ export const GET = withApiSession<Params>(async ({ session, params }) =>
   toResponse(
     await listMembers(session, {
       account_id: params.account_id,
-      product_id: params.repository_id,
+      product_id: params.product_id,
     })
   )
 );
 
 registry.registerPath({
   method: "post",
-  path: "/products/{account_id}/{repository_id}/members",
+  path: "/products/{account_id}/{product_id}/members",
   tags: ["Memberships"],
   summary: "Invite a member to a product",
   description:
@@ -59,7 +59,7 @@ export const POST = withApiSession<Params>(async ({ session, params, body }) =>
     await inviteMember(session, {
       ...(body as object),
       membership_account_id: params.account_id,
-      repository_id: params.repository_id,
+      repository_id: params.product_id,
     }),
     StatusCodes.CREATED
   )
