@@ -68,11 +68,18 @@ a decision, not the code that implements it, so a change that merely implements
 one leaves it alone. A change that moves the decision needs a new ADR, or an
 amendment to the one it supersedes, in that repository.
 
-The PR description says which way it went: name the doc or ADR the change
-affects and link the PR carrying that update, or name the ones you checked and
-say why they still hold. "Checked the data-proxy ADRs; 005 still describes the
-model" is worth writing, because silence reads the same whether the docs were
-checked or forgotten.
+[`public/llms.txt`](public/llms.txt) is the same documentation written for AI
+agents, and it lives in this repository, so it ships in the same PR as the
+change that dates it. A new feature an agent could use — a public endpoint, a
+new way to read or publish data, a new docs page worth pointing at — gets a line
+there, and a renamed docs slug, moved endpoint or removed feature gets its line
+fixed. Every URL in the file should resolve in production without auth.
+
+The PR description says which way it went: name the doc, ADR or `llms.txt`
+line the change affects and link the PR carrying that update, or name the ones
+you checked and say why they still hold. "Checked the data-proxy ADRs; 005 still
+describes the model" is worth writing, because silence reads the same whether
+the docs were checked or forgotten.
 
 ## Pull requests
 
