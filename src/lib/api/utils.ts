@@ -40,12 +40,20 @@ import { NextRequest } from "next/server";
 import { getOryId } from "../ory";
 import md5 from "md5";
 import { authenticateWithOidcToken } from "./oidc";
+import {
+  authenticateWithOryAccessToken,
+  isOryToken,
+} from "./ory-access-token";
 import { CONFIG } from "@/lib/config";
 import { LOGGER } from "@/lib/logging";
 
 /**
  * Retrieves the current user session from the request context.
- * Attempts OIDC token authentication first, then falls back to cookie-based authentication.
+ *
+ * A bearer token is either an Ory access token (from `source-coop login`) or
+ * an assertion the data proxy signed on a caller's behalf; its issuer says
+ * which, and only that verifier sees it. Without an Authorization header, the
+ * session cookie is used.
  *
  * @param req - The Next.js API request object.
  * @returns A Promise that resolves to a UserSession object if a valid session exists, or null if not authenticated.
@@ -61,6 +69,12 @@ export async function getApiSession(
       metadata: { method: "OIDC token" },
     });
     const audience = new URL(req.url).origin;
+    const token = authorization.toLowerCase().startsWith("bearer ")
+      ? authorization.slice(7)
+      : "";
+    if (isOryToken(token)) {
+      return authenticateWithOryAccessToken(token, audience);
+    }
     const oidcSession = await authenticateWithOidcToken(
       authorization,
       audience,
