@@ -37,6 +37,7 @@ sb.mock("../src/lib/actions/data-connections.ts");
 sb.mock("../src/lib/actions/account.ts");
 sb.mock("../src/lib/actions/product-mirrors.ts");
 sb.mock("../src/lib/actions/products.ts");
+sb.mock("../src/lib/actions/tags.ts");
 sb.mock("../src/lib/actions/memberships.ts");
 sb.mock("../src/lib/actions/service-accounts.ts");
 sb.mock("../src/lib/actions/service-account-keys.ts");

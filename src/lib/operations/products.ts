@@ -100,6 +100,8 @@ export const UpdateProductSchema = ProductSchema.pick({
  * the corpus's entry if there is one, and otherwise to a tag the product
  * already carries, which is kept as it is even if the corpus has since dropped
  * it, so editing some other field isn't blocked by a tag nobody chose today.
+ * The corpus includes tags still pending review, so a product can carry the
+ * tag it suggested.
  */
 async function checkTags(
   tags: string[],
@@ -108,7 +110,7 @@ async function checkTags(
   const keys = [...new Set(tags.map(canonTag).filter(Boolean))];
   if (!keys.length) return ok([]);
   const bySpelling = (list: string[]) => new Map(list.map((t) => [canonTag(t), t]));
-  const corpus = bySpelling(await tagsTable.listAll());
+  const corpus = bySpelling((await tagsTable.listAll()).map((tag) => tag.tag_id));
   const carried = bySpelling(current);
   const unknown = keys.filter((key) => !corpus.has(key) && !carried.has(key));
   return unknown.length
