@@ -1,5 +1,7 @@
-// The reference renders this deploy's own /api/openapi, so a branch preview
-// documents exactly that branch's endpoints.
+// The published reference is api.docs.source.coop, which renders production's
+// /api/openapi. This page renders the deploy's own, so a branch preview — whose
+// Vercel login a cross-origin page can't pass — documents that branch's
+// endpoints for review.
 const HTML = `<!doctype html>
 <html lang="en">
   <head>

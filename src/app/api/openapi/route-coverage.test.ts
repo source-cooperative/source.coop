@@ -63,6 +63,10 @@ describe("/api/openapi", () => {
     return !!document.paths[route]?.[method.toLowerCase()];
   };
 
+  test("can be fetched from api.docs.source.coop", () => {
+    expect(GET().headers.get("Access-Control-Allow-Origin")).toBe("*");
+  });
+
   test("is a valid OpenAPI 3 document", async () => {
     await expect(
       SwaggerParser.validate(structuredClone(document) as never)

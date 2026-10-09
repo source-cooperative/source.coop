@@ -12,6 +12,9 @@ import "../v1/memberships/[membership_id]/reject/route";
 import "../v1/memberships/[membership_id]/revoke/route";
 import "../v1/products/[account_id]/[repository_id]/members/route";
 
+// api.docs.source.coop renders this document from its own origin.
 export function GET() {
-  return NextResponse.json(generateDocument());
+  return NextResponse.json(generateDocument(), {
+    headers: { "Access-Control-Allow-Origin": "*" },
+  });
 }
