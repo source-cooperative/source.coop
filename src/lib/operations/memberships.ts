@@ -7,11 +7,14 @@ import {
   Membership,
   MembershipSchema,
   MembershipState,
-  MembershipStateSchema,
   UserSession,
 } from "@/types";
 import { isAuthorized } from "@/lib/api/authz";
-import { serviceAccountGrantProblem } from "@/lib/accounts/service-accounts";
+import {
+  SERVICE_ACCOUNT_ROLES,
+  serviceAccountGrantProblem,
+} from "@/lib/accounts/service-accounts";
+import { LOGGER } from "@/lib/logging";
 import {
   accountsTable,
   membershipsTable,
@@ -42,12 +45,32 @@ export const UpdateMembershipSchema = MembershipSchema.pick({
   role: true,
 }).openapi("UpdateMembership");
 
+// Revoked memberships aren't offered: GetMembership hides them from everyone
+// but admins, the member included.
 export const ListMembershipsQuerySchema = z.object({
-  state: MembershipStateSchema.optional(),
+  state: z.enum([MembershipState.Invited, MembershipState.Member]).optional(),
 });
 
 const deny = (session: UserSession | null, message: string) =>
   session ? forbidden(message) : unauthenticated();
+
+/** Every membership change leaves a log line saying who made it. */
+function audit(operation: string, session: UserSession, m: Membership) {
+  LOGGER.info("Membership changed", {
+    operation,
+    context: "memberships",
+    metadata: {
+      by: session.account?.account_id ?? session.identity_id,
+      membership_id: m.membership_id,
+      account_id: m.account_id,
+      membership_account_id: m.membership_account_id,
+      repository_id: m.repository_id,
+      role: m.role,
+      state: m.state,
+    },
+  });
+  return m;
+}
 
 /**
  * Invites an account to an account or product. A service account becomes a
@@ -62,6 +85,11 @@ export async function inviteMember(
   if (!parsed.success) return fromZodError(parsed.error);
   const { membership_account_id, repository_id, account_id, role } =
     parsed.data;
+  // Before any lookup, so a caller who may not invite here learns nothing
+  // about which accounts and products exist.
+  if (!isAuthorized(session, parsed.data, Actions.InviteMembership)) {
+    return forbidden("You may not invite members here");
+  }
 
   if (repository_id) {
     const product = await productsTable.fetchById(
@@ -87,7 +115,14 @@ export async function inviteMember(
     return invalid("Organizations cannot be members", "account_id");
   }
   const grantProblem = serviceAccountGrantProblem(member, parsed.data, role);
-  if (grantProblem) return invalid(grantProblem, "role");
+  if (grantProblem) {
+    // Only a disallowed role is the role field's fault; the other problem is
+    // the target, which no role would fix.
+    return invalid(
+      grantProblem,
+      SERVICE_ACCOUNT_ROLES.includes(role) ? undefined : "role"
+    );
+  }
 
   const membership: Membership = {
     ...parsed.data,
@@ -97,9 +132,6 @@ export async function inviteMember(
       : MembershipState.Invited,
     state_changed: new Date().toISOString(),
   };
-  if (!isAuthorized(session, membership, Actions.InviteMembership)) {
-    return forbidden("You may not invite members here");
-  }
 
   const existing = await membershipsTable.listByAccount(
     membership_account_id,
@@ -110,7 +142,7 @@ export async function inviteMember(
       `${account_id} is already a member or has a pending invitation`
     );
   }
-  return ok(await membershipsTable.create(membership));
+  return ok(audit("inviteMember", session, await membershipsTable.create(membership)));
 }
 
 /** The memberships of an account, or of one of its products. */
@@ -171,14 +203,17 @@ async function changeMembership(
   change: Partial<Membership>
 ): Promise<OperationResult<Membership>> {
   if (!session) return unauthenticated();
-  const membership = await membershipsTable.fetchById(membership_id);
+  // DynamoDB rejects an empty key outright.
+  const membership =
+    membership_id && (await membershipsTable.fetchById(membership_id));
   if (!membership) return notFound(`Membership ${membership_id} not found`);
   if (!allowed(membership)) {
     return forbidden("You may not change this membership");
   }
   const refusal = await refuse(membership);
   if (refusal) return refusal;
-  return ok(await membershipsTable.update({ ...membership, ...change }));
+  const updated = await membershipsTable.update({ ...membership, ...change });
+  return ok(audit("changeMembership", session, updated));
 }
 
 const resolved = () => ({ state_changed: new Date().toISOString() });

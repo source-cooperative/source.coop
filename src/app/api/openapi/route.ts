@@ -12,9 +12,13 @@ import "../v1/memberships/[membership_id]/reject/route";
 import "../v1/memberships/[membership_id]/revoke/route";
 import "../v1/products/[account_id]/[repository_id]/members/route";
 
+// The registry is complete once the imports above have run, so the document
+// is built once per instance rather than per request.
+const document = generateDocument();
+
 // api.docs.source.coop renders this document from its own origin.
 export function GET() {
-  return NextResponse.json(generateDocument(), {
+  return NextResponse.json(document, {
     headers: { "Access-Control-Allow-Origin": "*" },
   });
 }

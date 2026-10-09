@@ -162,6 +162,20 @@ describe("inviteMember", () => {
     expect(await invite({ account_id: "a-person" })).toMatchObject({ error: "forbidden" });
     expect(memberships.create).not.toHaveBeenCalled();
   });
+
+  it("refuses an unauthorized caller before revealing whether anything exists", async () => {
+    authorized.mockReturnValue(false);
+    expect(
+      await invite({ repository_id: "secret", account_id: "nobody" })
+    ).toMatchObject({ error: "forbidden" });
+    expect(products.fetchById).not.toHaveBeenCalled();
+    expect(accounts.fetchById).not.toHaveBeenCalled();
+  });
+
+  it("blames the role field only when the role is the problem", async () => {
+    const wrongTarget = await invite({ account_id: "an-org--bot" });
+    expect(wrongTarget).toMatchObject({ error: "invalid", fieldErrors: undefined });
+  });
 });
 
 describe("listMembers", () => {
@@ -200,6 +214,8 @@ describe("listMemberships", () => {
 
   it("rejects an unknown state, and needs a session", async () => {
     expect(await listMemberships(session, { state: "pending" })).toMatchObject({ error: "invalid" });
+    // Nobody but an admin may see a revoked membership, so it isn't offered.
+    expect(await listMemberships(session, { state: "revoked" })).toMatchObject({ error: "invalid" });
     expect(await listMemberships(null, {})).toMatchObject({ error: "unauthenticated" });
   });
 });
@@ -242,6 +258,11 @@ describe("revokeMembership", () => {
         value: { state: MembershipState.Revoked },
       });
     }
+  });
+
+  it("treats an empty ID as not found, without asking DynamoDB", async () => {
+    expect(await revokeMembership(session, "")).toMatchObject({ error: "not_found" });
+    expect(memberships.fetchById).not.toHaveBeenCalled();
   });
 
   it("refuses one already revoked", async () => {

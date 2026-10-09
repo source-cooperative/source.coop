@@ -68,8 +68,10 @@ export async function getPendingInvitation(
   repositoryId?: string
 ): Promise<Membership | null> {
   // A banner isn't worth failing the page it sits on.
-  const result = await ops
-    .listMemberships(await getPageSession(), { state: MembershipState.Invited })
+  const result = await getPageSession()
+    .then((session) =>
+      ops.listMemberships(session, { state: MembershipState.Invited })
+    )
     .catch((error) => {
       LOGGER.error("Error fetching pending invitation", {
         operation: "getPendingInvitation",

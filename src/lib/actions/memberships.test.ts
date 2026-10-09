@@ -99,5 +99,7 @@ describe("getPendingInvitation", () => {
     expect(await getPendingInvitation("an-org")).toBeNull();
     operations.listMemberships.mockRejectedValue(new Error("DynamoDB down"));
     expect(await getPendingInvitation("an-org")).toBeNull();
+    (getPageSession as jest.Mock).mockRejectedValue(new Error("Ory down"));
+    expect(await getPendingInvitation("an-org")).toBeNull();
   });
 });
