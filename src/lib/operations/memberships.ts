@@ -23,6 +23,7 @@ import {
 } from "@/lib/clients/database";
 import {
   conflict,
+  deny,
   forbidden,
   fromZodError,
   invalid,
@@ -51,9 +52,6 @@ export const UpdateMembershipSchema = MembershipSchema.pick({
 export const ListMembershipsQuerySchema = z.object({
   state: z.enum([MembershipState.Invited, MembershipState.Member]).optional(),
 });
-
-const deny = (session: UserSession | null, message: string) =>
-  session ? forbidden(message) : unauthenticated();
 
 /** Every membership change leaves a log line saying who made it. */
 function audit(operation: string, session: UserSession, m: Membership) {

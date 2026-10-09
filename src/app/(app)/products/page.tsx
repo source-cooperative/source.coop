@@ -1,7 +1,9 @@
 import { PageHeader } from "@/components/layout";
 import { ProductsList } from "@/components/features/products/ProductsList";
 import { ProductsFilters } from "@/components/features/products/ProductsFilters";
-import { getPaginatedProducts } from "@/lib/actions/products";
+import { getPageSession } from "@/lib";
+import { listProducts } from "@/lib/operations/products";
+import { notFound } from "next/navigation";
 import { Badge, Box, Flex, Text } from "@radix-ui/themes";
 
 export const metadata = {
@@ -35,11 +37,16 @@ export default async function ProductsPage({
   const { search, tags, cursor, previous, featured } = await searchParams;
 
   const featuredOnly = featured === "1";
-  const filters = search || tags || featuredOnly
-    ? { search, tags, featuredOnly: featuredOnly || undefined }
-    : undefined;
-  const { products, hasNextPage, hasPreviousPage, nextCursor, previousCursor } =
-    await getPaginatedProducts(100, cursor, previous, undefined, filters);
+  const result = await listProducts(await getPageSession(), {
+    q: search,
+    tags,
+    featured: featuredOnly ? "true" : undefined,
+    cursor,
+    limit: 100,
+  });
+  // Only a hand-edited URL, with a cursor that isn't one, gets here.
+  if (!result.ok) notFound();
+  const { items: products, next_cursor } = result.value;
 
   const hasActiveFilters = search || tags || featuredOnly;
 
@@ -75,10 +82,10 @@ export default async function ProductsPage({
       <ProductsList
         products={products}
         pagination={{
-          hasNextPage,
-          hasPreviousPage,
-          nextCursor,
-          previousCursor,
+          hasNextPage: !!next_cursor,
+          hasPreviousPage: !!cursor,
+          nextCursor: next_cursor ?? undefined,
+          previousCursor: previous,
           currentCursor: cursor,
         }}
       />

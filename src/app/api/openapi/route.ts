@@ -10,7 +10,10 @@ import "../v1/memberships/[membership_id]/route";
 import "../v1/memberships/[membership_id]/accept/route";
 import "../v1/memberships/[membership_id]/reject/route";
 import "../v1/memberships/[membership_id]/revoke/route";
-import "../v1/products/[account_id]/[repository_id]/members/route";
+import "../v1/products/route";
+import "../v1/products/[account_id]/route";
+import "../v1/products/[account_id]/[product_id]/route";
+import "../v1/products/[account_id]/[product_id]/members/route";
 
 // The registry is complete once the imports above have run, so the document
 // is built once per instance rather than per request.
