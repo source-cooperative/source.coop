@@ -1,18 +1,8 @@
 /**
  * @jest-environment node
  *
- * Tests for the products GET endpoint (/api/v1/products/[account_id]/[repository_id])
+ * Tests for the products GET endpoint (/api/v1/products/[account_id]/[product_id])
  */
-
-// Mock the logger BEFORE importing anything else to prevent errors during import
-// jest.mock("@/lib/logging", () => ({
-//   LOGGER: {
-//     error: jest.fn(),
-//     warn: jest.fn(),
-//     info: jest.fn(),
-//     debug: jest.fn(),
-//   },
-// }));
 
 import { NextRequest } from "next/server";
 import { productsTable } from "@/lib/clients/database/products";
@@ -32,6 +22,8 @@ jest.mock("@/lib/clients/database/products", () => ({
 }));
 
 jest.mock("@/lib/clients/database", () => ({
+  // The product table the route's operation reads, under its other import path.
+  ...jest.requireMock("@/lib/clients/database/products"),
   accountsTable: {
     fetchById: jest.fn(),
   },
@@ -56,10 +48,10 @@ jest.mock("@/lib/api/oidc", () => ({
 
 const { GET } = require("./route");
 
-describe("/api/v1/products/[account_id]/[repository_id]", () => {
+describe("/api/v1/products/[account_id]/[product_id]", () => {
   const mockRepository = {
     account_id: "test-account",
-    repository_id: "test-repo",
+    product_id: "test-repo",
     name: "Test Repository",
     description: "A test repository",
     created_at: "2024-01-01T00:00:00Z",
@@ -82,7 +74,7 @@ describe("/api/v1/products/[account_id]/[repository_id]", () => {
     (authenticateWithOidcToken as jest.Mock).mockResolvedValue(null);
   });
 
-  describe("GET /api/v1/products/[account_id]/[repository_id]", () => {
+  describe("GET /api/v1/products/[account_id]/[product_id]", () => {
     test("returns 401 when not authenticated", async () => {
       (productsTable.fetchById as jest.Mock).mockResolvedValue(mockRepository);
 
@@ -93,13 +85,13 @@ describe("/api/v1/products/[account_id]/[repository_id]", () => {
       const response = await GET(request, {
         params: Promise.resolve({
           account_id: "test-account",
-          repository_id: "test-repo",
+          product_id: "test-repo",
         }),
       });
 
       expect(response.status).toBe(401);
       const responseData = await response.json();
-      expect(responseData).toEqual({ error: "Unauthorized" });
+      expect(responseData).toMatchObject({ error: { code: "unauthenticated" } });
     });
 
     test("returns 404 when repository is not found", async () => {
@@ -111,15 +103,13 @@ describe("/api/v1/products/[account_id]/[repository_id]", () => {
       const response = await GET(request, {
         params: Promise.resolve({
           account_id: "test-account",
-          repository_id: "nonexistent-repo",
+          product_id: "nonexistent-repo",
         }),
       });
 
       expect(response.status).toBe(404);
       const responseData = await response.json();
-      expect(responseData).toEqual({
-        error: "Repository with ID test-account/nonexistent-repo not found",
-      });
+      expect(responseData).toMatchObject({ error: { code: "not_found" } });
     });
 
     test("returns 404 (not 401) for a deactivated product when not permitted", async () => {
@@ -135,15 +125,13 @@ describe("/api/v1/products/[account_id]/[repository_id]", () => {
       const response = await GET(request, {
         params: Promise.resolve({
           account_id: "test-account",
-          repository_id: "test-repo",
+          product_id: "test-repo",
         }),
       });
 
       expect(response.status).toBe(404);
       const responseData = await response.json();
-      expect(responseData).toEqual({
-        error: "Repository with ID test-account/test-repo not found",
-      });
+      expect(responseData).toMatchObject({ error: { code: "not_found" } });
     });
 
   });
@@ -170,7 +158,7 @@ describe("/api/v1/products/[account_id]/[repository_id]", () => {
       const orgOwnedProduct = {
         ...mockRepository,
         account_id: "test-org",
-        repository_id: "private-repo",
+        product_id: "private-repo",
       };
       (productsTable.fetchById as jest.Mock).mockResolvedValue(orgOwnedProduct);
 
@@ -181,7 +169,7 @@ describe("/api/v1/products/[account_id]/[repository_id]", () => {
       const response = await GET(request, {
         params: Promise.resolve({
           account_id: "test-org",
-          repository_id: "private-repo",
+          product_id: "private-repo",
         }),
       });
 
@@ -190,7 +178,7 @@ describe("/api/v1/products/[account_id]/[repository_id]", () => {
       expect(responseData).toEqual(orgOwnedProduct);
     });
 
-    test("org account cannot access another account's private product", async () => {
+    test("org account may not read another account's private product", async () => {
       // Product is owned by a different account
       (productsTable.fetchById as jest.Mock).mockResolvedValue(mockRepository);
 
@@ -201,11 +189,11 @@ describe("/api/v1/products/[account_id]/[repository_id]", () => {
       const response = await GET(request, {
         params: Promise.resolve({
           account_id: "test-account",
-          repository_id: "test-repo",
+          product_id: "test-repo",
         }),
       });
 
-      expect(response.status).toBe(401);
+      expect(response.status).toBe(403);
     });
   });
 });

@@ -6,7 +6,7 @@ import { StatusCodes } from "http-status-codes";
 
 /**
  * @openapi
- * /products/{account_id}/{repository_id}/featured:
+ * /products/{account_id}/{product_id}/featured:
  *   put:
  *     tags: [Products]
  *     summary: Updates a products featured state
@@ -21,7 +21,7 @@ import { StatusCodes } from "http-status-codes";
  *           type: string
  *         description: The ID of the account that owns the repository
  *       - in: path
- *         name: repository_id
+ *         name: product_id
  *         required: true
  *         schema:
  *           type: string
@@ -46,18 +46,18 @@ import { StatusCodes } from "http-status-codes";
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ account_id: string; repository_id: string }> }
+  { params }: { params: Promise<{ account_id: string; product_id: string }> }
 ) {
   try {
     const session = await getApiSession(request);
-    const { account_id, repository_id } = await params;
+    const { account_id, product_id } = await params;
 
-    const repository = await productsTable.fetchById(account_id, repository_id);
+    const repository = await productsTable.fetchById(account_id, product_id);
 
     if (!repository) {
       return NextResponse.json(
         {
-          error: `Repository with ID ${account_id}/${repository_id} not found`,
+          error: `Repository with ID ${account_id}/${product_id} not found`,
         },
         { status: StatusCodes.NOT_FOUND }
       );
