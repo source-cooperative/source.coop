@@ -11,7 +11,6 @@ import { canListOnProfile, isAdmin, isAuthorized } from "@/lib/api/authz";
 import { denyDataConnectionFor } from "@/lib/data-connections";
 import { LOGGER } from "@/lib/logging";
 import { getProxyCredentials } from "@/lib/actions/proxy-credentials";
-import { readProxyCredentials } from "@/lib/services/proxy-credentials-read";
 import { getStorageClient } from "@/lib/clients/storage";
 import {
   accountsTable,
@@ -49,6 +48,9 @@ export const ListProductsQuerySchema = PageQuerySchema.extend({
     .optional()
     .openapi({ description: "Comma-separated tags, every one of which a product has." }),
   featured: z.enum(["true", "false"]).optional(),
+  limit: PageQuerySchema.shape.limit.openapi({
+    description: "At most this many, except with `q` or `tags`, whose pages can hold more.",
+  }),
 });
 
 export const ProductPageSchema = z
@@ -61,7 +63,9 @@ export const ProductPageSchema = z
   })
   .openapi("ProductPage");
 
-export const CreateProductSchema = ProductCreationRequestSchema.extend({
+export const CreateProductSchema = ProductCreationRequestSchema.omit({
+  search_text: true,
+}).extend({
   data_connection_id: z
     .string({ required_error: "A data connection is required" })
     .min(1, "A data connection is required")
@@ -86,15 +90,24 @@ export const DeleteProductQuerySchema = z.object({
 
 type ProductPage = z.infer<typeof ProductPageSchema>;
 
-// The cursor is DynamoDB's LastEvaluatedKey, base64'd: a map of key attributes.
-const CursorSchema = z.record(z.union([z.string(), z.number()]));
+// A cursor is DynamoDB's LastEvaluatedKey, base64'd: the key attributes of
+// the table, plus the index's for the public listing. One that names other
+// attributes, or another partition, is refused here rather than by DynamoDB.
+const accountCursor = (account_id: string) =>
+  z.object({ account_id: z.literal(account_id), product_id: z.string() }).strict();
+const publicCursor = z
+  .object({
+    account_id: z.string(),
+    product_id: z.string(),
+    visibility: z.literal("public"),
+    featured: z.number(),
+  })
+  .strict();
 
-function decodeCursor(cursor: string) {
+function decodeCursor(cursor: string, schema: z.ZodTypeAny) {
   try {
-    const key = CursorSchema.safeParse(
-      JSON.parse(Buffer.from(cursor, "base64").toString())
-    );
-    if (key.success) return key.data;
+    const key = schema.safeParse(JSON.parse(Buffer.from(cursor, "base64").toString()));
+    if (key.success) return key.data as Record<string, unknown>;
   } catch {}
   return null;
 }
@@ -124,7 +137,9 @@ export async function listProducts(
   const parsed = (account_id ? PageQuerySchema : ListProductsQuerySchema).safeParse(query);
   if (!parsed.success) return fromZodError(parsed.error);
   const { cursor, limit } = parsed.data;
-  const start = cursor ? decodeCursor(cursor) : undefined;
+  const start = cursor
+    ? decodeCursor(cursor, account_id ? accountCursor(account_id) : publicCursor)
+    : undefined;
   if (start === null) return invalid("Invalid cursor", "cursor");
 
   if (account_id) {
@@ -261,7 +276,9 @@ export async function updateProduct(
   if (!session) return unauthenticated();
   const parsed = UpdateProductSchema.safeParse(input);
   if (!parsed.success) return fromZodError(parsed.error);
-  const product = await productsTable.fetchById(account_id, product_id);
+  // DynamoDB rejects an empty key outright.
+  const product =
+    account_id && product_id && (await productsTable.fetchById(account_id, product_id));
   if (!product) return notFound(`Product ${account_id}/${product_id} not found`);
   // Reactivating a deactivated product is admin-only: PutRepository refuses
   // everyone else on a deactivated product.
@@ -272,6 +289,10 @@ export async function updateProduct(
   // The data connection is fixed at creation, so the allowed visibilities
   // come from the primary mirror's. Without it there's no knowing what's
   // allowed, so the visibility stays as it is.
+  // Zod keeps a key given as undefined, which would blank the stored value.
+  const changes = Object.fromEntries(
+    Object.entries(parsed.data).filter(([, value]) => value !== undefined)
+  );
   const { visibility } = parsed.data;
   if (visibility && visibility !== product.visibility) {
     const id = product.metadata?.primary_mirror;
@@ -292,12 +313,12 @@ export async function updateProduct(
 
   const updated = await productsTable.update({
     ...product,
-    ...parsed.data,
+    ...changes,
     updated_at: new Date().toISOString(),
   });
   LOGGER.info("Product updated", {
     operation: "updateProduct",
-    metadata: { account_id, product_id, by: session.account?.account_id, ...parsed.data },
+    metadata: { account_id, product_id, by: session.account?.account_id, ...changes },
   });
   return ok(updated);
 }
@@ -335,11 +356,18 @@ export async function deleteProduct(
   }
 
   // The proxy addresses every backend as bucket=account_id, key=product_id/….
+  // The credentials are minted for this session's identity rather than read
+  // from the cookie cache, which belongs to whoever's browser sent the
+  // request, not necessarily to the bearer token it carries.
   if (!preserveData && connection && !connection.read_only) {
-    const credentials =
-      (await readProxyCredentials()) ??
-      (await getProxyCredentials(session.identity_id ?? ""));
-    const storage = await getStorageClient(credentials);
+    if (!session.identity_id) {
+      return forbidden(
+        "Only a person can delete a product's stored objects; keep them with preserve_data, or delete it signed in as a person."
+      );
+    }
+    const storage = await getStorageClient(
+      await getProxyCredentials(session.identity_id)
+    );
     await storage.deleteByPrefix(account_id, `${product_id}/`);
   }
   await membershipsTable.deleteByProduct(account_id, product_id);

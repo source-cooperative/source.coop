@@ -8,7 +8,6 @@ import {
 } from "@/lib/clients/database";
 import { canListOnProfile, isAdmin, isAuthorized } from "@/lib/api/authz";
 import { getProxyCredentials } from "@/lib/actions/proxy-credentials";
-import { readProxyCredentials } from "@/lib/services/proxy-credentials-read";
 import { getStorageClient } from "@/lib/clients/storage";
 import {
   createProduct,
@@ -38,9 +37,6 @@ jest.mock("@/lib/api/authz", () => ({
   isAuthorized: jest.fn(),
 }));
 jest.mock("@/lib/actions/proxy-credentials", () => ({ getProxyCredentials: jest.fn() }));
-jest.mock("@/lib/services/proxy-credentials-read", () => ({
-  readProxyCredentials: jest.fn(),
-}));
 jest.mock("@/lib/clients/storage", () => ({ getStorageClient: jest.fn() }));
 
 const SESSION = { identity_id: "user-1", account: { account_id: "alice", flags: [] } } as never;
@@ -79,6 +75,7 @@ beforeEach(() => {
 
 describe("listProducts", () => {
   const key = { account_id: "alice", product_id: "b" };
+  const encode = (k: unknown) => Buffer.from(JSON.stringify(k)).toString("base64");
   const cursor = Buffer.from(JSON.stringify(key)).toString("base64");
 
   test("pages through an account's products, showing only those the caller may", async () => {
@@ -115,15 +112,20 @@ describe("listProducts", () => {
     expect(result.ok && result.value.items).toEqual([]);
   });
 
-  test.each(["not base64 json", Buffer.from('["a"]').toString("base64")])(
-    "refuses a cursor that isn't one: %s",
-    async (cursor) => {
-      expect(await listProducts(null, { cursor })).toMatchObject({
-        error: "invalid",
-        fieldErrors: { cursor: expect.any(Array) },
-      });
-    }
-  );
+  test.each([
+    ["isn't JSON", undefined, "not base64 json"],
+    ["is empty", undefined, encode({})],
+    ["is an account listing's", undefined, encode(key)],
+    ["is another account's", "bob", encode(key)],
+    ["is the public listing's", "alice", encode({ ...key, visibility: "public", featured: 0 })],
+  ])("refuses a cursor that %s", async (_, account, cursor) => {
+    expect(await listProducts(null, { cursor }, account)).toMatchObject({
+      error: "invalid",
+      fieldErrors: { cursor: expect.any(Array) },
+    });
+    expect(productsTable.listPublic).not.toHaveBeenCalled();
+    expect(productsTable.listByAccount).not.toHaveBeenCalled();
+  });
 
   test("refuses a limit over 100", async () => {
     expect(await listProducts(null, { limit: "101" })).toMatchObject({ error: "invalid" });
@@ -323,6 +325,18 @@ describe("updateProduct", () => {
     expect(result.ok && result.value.disabled).toBe(disabled);
   });
 
+  test("leaves a field given as undefined, as an empty form field is, as it is", async () => {
+    await updateProduct(SESSION, "alice", "my-product", { description: undefined });
+    expect((productsTable.update as jest.Mock).mock.calls[0][0].description).toBe(
+      "A description"
+    );
+  });
+
+  test("a product with no ID is not found, without asking DynamoDB", async () => {
+    expect(await updateProduct(SESSION, "alice", "", {})).toMatchObject({ error: "not_found" });
+    expect(productsTable.fetchById).not.toHaveBeenCalled();
+  });
+
   test("refuses whoever may not edit the product", async () => {
     allowExcept(Actions.PutRepository);
     expect(await updateProduct(SESSION, "alice", "my-product", {})).toMatchObject({
@@ -360,7 +374,6 @@ describe("deleteProduct", () => {
 
     expect(await deleteProduct(SESSION, "alice", "my-product", {})).toMatchObject({ ok: true });
 
-    expect(readProxyCredentials).toHaveBeenCalled();
     // Minted for the verified session identity, not request params.
     expect(getProxyCredentials).toHaveBeenCalledWith("user-1");
     expect(deleteByPrefix).toHaveBeenCalledWith("alice", "my-product/");
@@ -398,6 +411,15 @@ describe("deleteProduct", () => {
     });
     expect(deleteByPrefix).not.toHaveBeenCalled();
     expect(productsTable.delete).toHaveBeenCalled();
+  });
+
+  test("refuses to delete stored objects for a caller with no identity", async () => {
+    (dataConnectionsTable.fetchById as jest.Mock).mockResolvedValue({ read_only: false });
+    const bot = { identity_id: null, account: { account_id: "alice--bot" } } as never;
+    expect(await deleteProduct(bot, "alice", "my-product", {})).toMatchObject({
+      error: "forbidden",
+    });
+    expect(productsTable.delete).not.toHaveBeenCalled();
   });
 
   test("refuses whoever may not delete the product", async () => {
