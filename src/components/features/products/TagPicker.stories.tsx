@@ -11,17 +11,37 @@ const options = [
   "remote-sensing",
 ];
 
+const openAndFilter = async (canvasElement: HTMLElement, text: string) => {
+  await userEvent.click(
+    within(canvasElement).getByRole("button", { name: /tags$/ })
+  );
+  // The list is portalled, so it renders outside the story's canvas.
+  await userEvent.type(
+    within(document.body).getByPlaceholderText("Filter tags"),
+    text
+  );
+};
+
 /**
  * Choosing a product's tags. Chosen tags show as chips; "Edit tags" opens a
- * list of every tag in the known corpus, with a box to filter it, and ticking
- * one adds it. Only corpus tags can be added. Each chosen tag is submitted as
- * its own `tags` form value.
+ * list of every approved tag, with a box to filter it, and ticking one adds it.
+ * When no tag fits, the filter text can be suggested as a new tag: it goes on
+ * the product straight away, marked pending until an admin reviews it. Each
+ * chosen tag is submitted as its own `tags` form value.
  */
 const meta = {
   title: "Features/Settings/Details/TagPicker",
   component: TagPicker,
   parameters: { layout: "padded" },
-  args: { name: "tags", options },
+  args: {
+    name: "tags",
+    options,
+    onSuggest: async (
+      tag: string
+    ): Promise<{ tag: string } | { error: string }> => ({
+      tag: tag.trim().toLowerCase(),
+    }),
+  },
 } satisfies Meta<typeof TagPicker>;
 
 export default meta;
@@ -46,14 +66,35 @@ export const RetiredTag: Story = {
 /** The list open, narrowed by the filter box. */
 export const Filtering: Story = {
   args: { defaultValue: ["acoustics"] },
+  play: ({ canvasElement }) => openAndFilter(canvasElement, "c"),
+};
+
+/**
+ * No tag fits, so the list offers to suggest the filter text as a new one.
+ * The offer also appears when other tags only partly match.
+ */
+export const Suggesting: Story = {
+  args: { defaultValue: ["acoustics"] },
+  play: ({ canvasElement }) => openAndFilter(canvasElement, "sea ice"),
+};
+
+/** A suggested tag is on the product but hasn't been reviewed yet. */
+export const PendingTag: Story = {
+  args: { defaultValue: ["acoustics", "sea ice"], pending: ["sea ice"] },
+};
+
+/** A suggestion the server refused, with its reason. */
+export const SuggestionRefused: Story = {
+  args: {
+    onSuggest: async () => ({
+      error:
+        "You have 5 tags awaiting review. Suggest more once they've been reviewed.",
+    }),
+  },
   play: async ({ canvasElement }) => {
+    await openAndFilter(canvasElement, "sea ice");
     await userEvent.click(
-      within(canvasElement).getByRole("button", { name: "Edit tags" })
-    );
-    // The list is portalled, so it renders outside the story's canvas.
-    await userEvent.type(
-      within(document.body).getByPlaceholderText("Filter tags"),
-      "c"
+      within(document.body).getByRole("button", { name: /^Suggest/ })
     );
   },
 };

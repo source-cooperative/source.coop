@@ -3,9 +3,11 @@ import {
   MagnifyingGlassIcon,
   Link1Icon,
   BarChartIcon,
+  BookmarkIcon,
 } from "@radix-ui/react-icons";
 import {
   adminAnalyticsUrl,
+  adminTagsUrl,
   adminUserLookupUrl,
   adminDataConnectionsUrl,
 } from "@/lib";
@@ -36,6 +38,12 @@ export const ADMIN_TOOLS: AdminTool[] = [
     description: "Find a user by username, name, or email and open their profile.",
     href: adminUserLookupUrl(),
     Icon: MagnifyingGlassIcon,
+  },
+  {
+    name: "Tags",
+    description: "Approve, merge or reject the tags people suggest.",
+    href: adminTagsUrl(),
+    Icon: BookmarkIcon,
   },
   {
     name: "Data Connections",
