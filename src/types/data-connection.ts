@@ -367,6 +367,28 @@ export const DataConnectionSchema = DataConnectionObjectSchema.superRefine(
 export type DataConnection = z.infer<typeof DataConnectionSchema>;
 
 /**
+ * Why a connection's id doesn't belong to its owner, or null if it does. The
+ * proxy presents `scv1:conn:{id}` and owners trust that subject in their IAM
+ * role, so the id has to name the owner: an owned id is `${owner}--${slug}`,
+ * and an unowned id never contains the `--` an account namespace uses. The
+ * account-scoped form composes ids this way; the admin API takes them as given.
+ */
+export function connectionNamespaceError(
+  connection: Pick<DataConnection, "data_connection_id" | "owner">
+): string | null {
+  const { data_connection_id: id, owner } = connection;
+  if (!owner) {
+    return id.includes("--")
+      ? "ID may not contain consecutive hyphens (--)"
+      : null;
+  }
+  return id.startsWith(`${owner}--`) &&
+    ID_REGEX.test(id.slice(owner.length + 2))
+    ? null
+    : `ID of a connection owned by ${owner} must be ${owner}--<slug>`;
+}
+
+/**
  * The object-key prefix a product mirror receives on this connection.
  * Substitutes the repository tokens in `prefix_template`; an empty/undefined
  * template means "no prefix" — the product mirrors at the bucket root.
