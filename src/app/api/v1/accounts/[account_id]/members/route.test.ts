@@ -1,49 +1,39 @@
 /** @jest-environment node */
 import { NextRequest } from "next/server";
-import { accountsTable, membershipsTable } from "@/lib/clients/database";
 import { getApiSession } from "@/lib/api/utils";
-import { isAuthorized } from "@/lib/api/authz";
-import { AccountType } from "@/types/account";
-import { MembershipRole } from "@/types";
+import { inviteMember } from "@/lib/operations/memberships";
+import { ok } from "@/lib/operations/result";
 import { POST } from "./route";
 
-jest.mock("@/lib/clients/database", () => ({
-  accountsTable: { fetchById: jest.fn() },
-  membershipsTable: { create: jest.fn(), listByAccount: jest.fn() },
-}));
 jest.mock("@/lib/api/utils", () => ({ getApiSession: jest.fn() }));
-jest.mock("@/lib/api/authz", () => ({ isAuthorized: jest.fn() }));
+jest.mock("@/lib/operations/memberships");
 
 describe("POST /api/v1/accounts/[account_id]/members", () => {
-  afterEach(() => jest.resetAllMocks());
+  it("invites to the account in the path, never to a product named in the body", async () => {
+    const session = { identity_id: "id" };
+    (getApiSession as jest.Mock).mockResolvedValue(session);
+    (inviteMember as jest.Mock).mockResolvedValue(ok({ membership_id: "m-1" }));
 
-  const validBody = { account_id: "invitee", role: MembershipRole.ReadData };
-
-  // Regression: a successful invite must return 200 with the created membership.
-  // The handler previously gated its only return on a `const success = false`,
-  // so a successful POST created the membership then fell through to undefined.
-  test("returns 200 and created membership on success", async () => {
-    (getApiSession as jest.Mock).mockResolvedValue({});
-    (accountsTable.fetchById as jest.Mock).mockResolvedValue({
-      account_id: "org",
-      type: AccountType.INDIVIDUAL,
-    });
-    (isAuthorized as jest.Mock).mockReturnValue(true);
-    (membershipsTable.listByAccount as jest.Mock).mockResolvedValue([]);
-    (membershipsTable.create as jest.Mock).mockImplementation((m) =>
-      Promise.resolve(m)
+    const res = await POST(
+      new NextRequest("http://localhost/api/v1/accounts/org/members", {
+        method: "POST",
+        headers: { Authorization: "Bearer t" },
+        body: JSON.stringify({
+          account_id: "invitee",
+          role: "read_data",
+          membership_account_id: "elsewhere",
+          repository_id: "a-product",
+        }),
+      }),
+      { params: Promise.resolve({ account_id: "org" }) }
     );
 
-    const req = {
-      json: () => Promise.resolve(validBody),
-    } as unknown as NextRequest;
-    const res = await POST(req, { params: Promise.resolve({ account_id: "org" }) });
-
-    expect(res?.status).toBe(200);
-    await expect(res?.json()).resolves.toMatchObject({
+    expect(res.status).toBe(201);
+    expect(inviteMember).toHaveBeenCalledWith(session, {
       account_id: "invitee",
+      role: "read_data",
       membership_account_id: "org",
-      state: "invited",
+      repository_id: undefined,
     });
   });
 });

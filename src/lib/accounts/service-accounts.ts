@@ -8,7 +8,7 @@ import {
 import { canManageServiceAccount } from "@/lib/api/authz";
 import { accountsTable } from "@/lib/clients";
 
-const SERVICE_ACCOUNT_ROLES = [MembershipRole.ReadData, MembershipRole.WriteData];
+export const SERVICE_ACCOUNT_ROLES = [MembershipRole.ReadData, MembershipRole.WriteData];
 
 /**
  * Why `account` may not hold `role` on `target`, or null if it may. Only a
