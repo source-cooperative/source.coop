@@ -7,6 +7,7 @@ import {
   accountsTable,
   dataConnectionsTable,
   tagsTable,
+  tagProps,
 } from "@/lib/clients/database";
 import { getPageSession } from "@/lib";
 import { isAuthorized, isAdmin } from "@/lib/api/authz";
@@ -32,7 +33,7 @@ interface PageProps {
 export default async function DetailsPage({ params }: PageProps) {
   const { account_id, product_id } = await params;
 
-  const [product, account, session, tagOptions] = await Promise.all([
+  const [product, account, session, tags] = await Promise.all([
     productsTable.fetchById(account_id, product_id),
     accountsTable.fetchById(account_id),
     getPageSession(),
@@ -74,7 +75,7 @@ export default async function DetailsPage({ params }: PageProps) {
         product={product}
         dataConnections={dataConnections}
         mode="edit"
-        tagOptions={tagOptions}
+        {...tagProps(tags)}
       />
 
       {canDelete && (

@@ -79,7 +79,11 @@ beforeEach(() => {
   (productsTable.attachAccounts as jest.Mock).mockImplementation(async (p) => p);
   (productsTable.create as jest.Mock).mockImplementation(async (p) => p);
   (productsTable.update as jest.Mock).mockImplementation(async (p) => p);
-  (tagsTable.listAll as jest.Mock).mockResolvedValue(["acoustics", "ocean"]);
+  (tagsTable.listAll as jest.Mock).mockResolvedValue([
+    { tag_id: "acoustics" },
+    { tag_id: "ocean" },
+    { tag_id: "sea-ice", pending: true },
+  ]);
 });
 
 describe("listProducts", () => {
@@ -402,6 +406,16 @@ describe("updateProduct", () => {
       ...product().metadata,
       tags: ["ocean", "acoustics"],
     });
+  });
+
+  test("accepts a tag that is still pending review", async () => {
+    const result = await updateProduct(SESSION, "alice", "my-product", {
+      tags: ["sea-ice"],
+    });
+    expect(result.ok).toBe(true);
+    expect((productsTable.update as jest.Mock).mock.calls[0][0].metadata.tags).toEqual([
+      "sea-ice",
+    ]);
   });
 
   test("keeps a tag the product already has after the corpus drops it", async () => {
