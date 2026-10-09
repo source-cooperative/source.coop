@@ -8,6 +8,7 @@ import {
   Switch,
   CheckboxCards,
   Code,
+  Link,
   Select,
   TextField,
   RadioCards,
@@ -36,6 +37,7 @@ import {
   updateDataConnection,
 } from "@/lib/actions/data-connections";
 import type { EditableDataConnection } from "./redact";
+import { trustPolicy } from "./trust-policy";
 
 interface DataConnectionFormProps {
   dataConnection?: EditableDataConnection;
@@ -44,6 +46,9 @@ interface DataConnectionFormProps {
   // account. Posts a hidden `owner`, hides the platform-only Required Flag, and
   // (on create) shows the ID namespacing prefix.
   ownerAccountId?: string;
+  // The data proxy's origin, which is also its OIDC issuer. When set, a Web
+  // Identity Role connection shows the trust policy to give its role.
+  proxyOrigin?: string;
 }
 
 // Storage providers limited to those with a `details` schema (S3, Azure, GCS).
@@ -159,6 +164,7 @@ export function DataConnectionForm({
   dataConnection,
   mode,
   ownerAccountId,
+  proxyOrigin,
 }: DataConnectionFormProps) {
   const router = useRouter();
   const action = mode === "create" ? createDataConnection : updateDataConnection;
@@ -230,8 +236,8 @@ export function DataConnectionForm({
     auth?.type === DataConnectionAuthenticationType.S3WebIdentityRole
       ? auth.role_arn
       : "";
-  // OIDC subject the proxy presents; owners match it in their IAM trust policy.
-  const subPattern = `scv1:conn:${dataConnection?.data_connection_id ?? ""}:*`;
+  // Controlled so the trust policy below fills in its account as it's typed.
+  const [roleArn, setRoleArn] = useState(initialRoleArn);
   const initialTenantId =
     auth?.type === DataConnectionAuthenticationType.AzureWorkloadIdentity
       ? auth.tenant_id
@@ -735,38 +741,35 @@ export function DataConnectionForm({
                       name="role_arn"
                       required
                       placeholder="arn:aws:iam::123456789012:role/my-role"
-                      defaultValue={
-                        (state.data.get("role_arn") as string) || initialRoleArn
-                      }
+                      value={roleArn}
+                      onChange={(e) => setRoleArn(e.target.value)}
                       size="3"
                     />
                   )}
                 </Field>
 
-                {mode === "edit" && (
+                {proxyOrigin && (
                   <Field
-                    label="Trust-policy subject"
+                    label="Trust policy"
                     help={
                       <>
-                        The proxy presents this OIDC subject when assuming the role.
-                        In the role&apos;s trust policy, add a{" "}
-                        <Text weight="medium">StringLike</Text> condition on{" "}
-                        <Text weight="medium">data.source.coop:sub</Text> matching
-                        it, alongside{" "}
-                        <Text weight="medium">
-                          data.source.coop:aud = sts.amazonaws.com
-                        </Text>
-                        .
+                        Give the role this trust policy. It lets the proxy assume
+                        the role for this connection and no other, once the
+                        role&apos;s AWS account has an OIDC provider for{" "}
+                        <Code>{proxyOrigin}</Code> (
+                        <Link
+                          href="https://docs.source.coop/bring-your-own-bucket"
+                          target="_blank"
+                        >
+                          setup guide
+                        </Link>
+                        ).
                       </>
                     }
-                    group
                   >
-                    <Flex align="center" gap="2">
-                      <Code size="2" variant="soft">
-                        {subPattern}
-                      </Code>
-                      <CopyToClipboard text={subPattern} />
-                    </Flex>
+                    <TrustPolicy
+                      policy={trustPolicy(proxyOrigin, roleArn, derivedId)}
+                    />
                   </Field>
                 )}
               </ConditionalGroup>
@@ -1055,5 +1058,30 @@ export function DataConnectionForm({
         />
       </Flex>
     </form>
+  );
+}
+
+function TrustPolicy({ policy }: { policy: string }) {
+  return (
+    <Box position="relative">
+      <Box position="absolute" top="2" right="2">
+        <CopyToClipboard text={policy} />
+      </Box>
+      <Box
+        p="2"
+        pr="7"
+        style={{
+          margin: 0,
+          border: "1px solid var(--gray-6)",
+          backgroundColor: "var(--gray-2)",
+          borderRadius: "var(--radius-2)",
+          overflowX: "auto",
+          fontSize: "var(--font-size-1)",
+        }}
+        asChild
+      >
+        <pre>{policy}</pre>
+      </Box>
+    </Box>
   );
 }
