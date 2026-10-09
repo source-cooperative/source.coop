@@ -1,0 +1,39 @@
+{
+  "Common": {
+    "save": "Save",
+    "saving": "Saving…",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "deleting": "Deleting…",
+    "remove": "Remove",
+    "edit": "Edit",
+    "create": "Create",
+    "close": "Close",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "confirm": "Confirm",
+    "loading": "Loading…",
+    "search": "Search",
+    "copy": "Copy",
+    "copied": "Copied",
+    "yes": "Yes",
+    "no": "No",
+    "none": "None",
+    "unknownError": "Something went wrong. Please try again."
+  },
+  "Footer": {
+    "aboutUs": "ABOUT US",
+    "docs": "Docs",
+    "home": "Home",
+    "allProducts": "All Products",
+    "attribution": "Source Cooperative is a <org>Radiant Earth</org> project"
+  },
+  "LocaleSwitcher": {
+    "label": "Language"
+  },
+  "NavLinks": {
+    "products": "Products",
+    "docs": "Docs"
+  }
+}

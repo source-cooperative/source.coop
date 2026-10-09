@@ -3,6 +3,9 @@ import type { Preview } from "@storybook/nextjs-vite";
 import { sb } from "storybook/test";
 import { Theme } from "@radix-ui/themes";
 import { IBM_Plex_Sans } from "next/font/google";
+import { NextIntlClientProvider } from "next-intl";
+import en from "../src/i18n/messages/en.json";
+import ja from "../src/i18n/messages/ja.json";
 import "@radix-ui/themes/styles.css";
 import "../src/styles/globals.css";
 
@@ -101,6 +104,19 @@ const preview: Preview = {
     },
   },
   globalTypes: {
+    locale: {
+      description: "Display language",
+      defaultValue: "en",
+      toolbar: {
+        title: "Language",
+        icon: "globe",
+        items: [
+          { value: "en", title: "English" },
+          { value: "ja", title: "日本語" },
+        ],
+        dynamicTitle: true,
+      },
+    },
     appearance: {
       description: "Radix theme appearance",
       defaultValue: "light",
@@ -115,6 +131,7 @@ const preview: Preview = {
   decorators: [
     (Story, context) => {
       const appearance = context.globals.appearance as "light" | "dark";
+      const locale = context.globals.locale === "ja" ? "ja" : "en";
       // .radix-themes is min-height:100vh -- right for one story to a frame,
       // but a docs page stacks them into screens of whitespace.
       const fillsFrame = context.viewMode !== "docs";
@@ -124,9 +141,15 @@ const preview: Preview = {
           appearance={appearance}
           style={fillsFrame ? undefined : { minHeight: 0 }}
         >
-          <div style={{ padding: 24, maxWidth: 720 }}>
-            <Story />
-          </div>
+          <NextIntlClientProvider
+            locale={locale}
+            messages={locale === "ja" ? ja : en}
+            timeZone="UTC"
+          >
+            <div style={{ padding: 24, maxWidth: 720 }}>
+              <Story />
+            </div>
+          </NextIntlClientProvider>
         </Theme>
       );
     },

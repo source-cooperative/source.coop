@@ -1,5 +1,6 @@
 "use client";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Link, Separator } from "@radix-ui/themes";
 import NextLink from "next/link";
 import styles from "./Navigation.module.css";
@@ -12,15 +13,16 @@ import { docsUrl, homeUrl, productListUrl } from "@/lib";
  */
 export function NavLinks({ divider = false }: { divider?: boolean }) {
   const pathname = usePathname();
+  const t = useTranslations("NavLinks");
   if (pathname === homeUrl()) return null;
 
   return (
     <>
       <Link asChild size="2" className={styles.productsLink}>
-        <NextLink href={productListUrl()}>Products</NextLink>
+        <NextLink href={productListUrl()}>{t("products")}</NextLink>
       </Link>
       <Link size="2" href={docsUrl()} className={styles.productsLink}>
-        Docs
+        {t("docs")}
       </Link>
       {divider && (
         <Separator orientation="vertical" style={{ height: "1.5rem" }} />

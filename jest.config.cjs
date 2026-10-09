@@ -20,7 +20,7 @@ const customJestConfig = {
     "^.+\\.(js|jsx|ts|tsx|mjs)$": ["babel-jest", { presets: ["next/babel"] }],
   },
   transformIgnorePatterns: [
-    "/node_modules/(?!(@storybook/[^/]+|storybook|react-markdown|bright|vfile|vfile-.*|unist-.*|unified|bail|is-plain-obj|trough|remark-.*|devlop|markdown-table|longest-streak|mdast-util-.*|micromark.*|decode-named-character-reference|character-entities|property-information|hast-util-.*|html-url-attributes|style-to-js|estree-util-is-identifier-name|zwitch|ccount|escape-string-regexp|trim-lines|space-separated-tokens|comma-separated-tokens|pretty-bytes|aws-sdk-client-mock|sinon|jose)/)",
+    "/node_modules/(?!(@storybook/[^/]+|storybook|react-markdown|bright|vfile|vfile-.*|unist-.*|unified|bail|is-plain-obj|trough|remark-.*|devlop|markdown-table|longest-streak|mdast-util-.*|micromark.*|decode-named-character-reference|character-entities|property-information|hast-util-.*|html-url-attributes|style-to-js|estree-util-is-identifier-name|zwitch|ccount|escape-string-regexp|trim-lines|space-separated-tokens|comma-separated-tokens|pretty-bytes|aws-sdk-client-mock|sinon|jose|next-intl|use-intl|@formatjs|intl-messageformat|icu-minify|@schummar)/)",
   ],
   collectCoverageFrom: [
     "src/**/*.{js,jsx,ts,tsx}",
