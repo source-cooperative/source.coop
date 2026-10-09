@@ -107,9 +107,10 @@ const publicCursor = z
 function decodeCursor(cursor: string, schema: z.ZodTypeAny) {
   try {
     const key = schema.safeParse(JSON.parse(Buffer.from(cursor, "base64").toString()));
-    if (key.success) return key.data as Record<string, unknown>;
-  } catch {}
-  return null;
+    return key.success ? (key.data as Record<string, unknown>) : null;
+  } catch {
+    return null;
+  }
 }
 
 const encodeCursor = (key: unknown) =>
