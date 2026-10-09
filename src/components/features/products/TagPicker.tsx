@@ -72,6 +72,8 @@ export function TagPicker({
               // Enter would submit the form behind the popover.
               onKeyDown={(e) => e.key === "Enter" && e.preventDefault()}
             />
+            {/* ponytail: renders every tag; fine to a few hundred, virtualise
+                the list if the corpus grows past that. */}
             <Flex
               direction="column"
               gap="1"

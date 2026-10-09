@@ -106,20 +106,19 @@ export async function getPaginatedProducts(
 }
 
 /**
- * The submitted tags, or the ones outside the corpus. A tag the product
- * already carries is kept even if the corpus has since dropped it, so editing
- * some other field isn't blocked by a tag the user didn't choose today.
+ * The submitted tags, or the form error naming those outside the corpus. A tag
+ * the product already carries is kept even if the corpus has since dropped it,
+ * so editing some other field isn't blocked by a tag the user didn't choose
+ * today.
  */
-async function parseTags(
+async function parseTags<T>(
   formData: FormData,
   current: string[] = []
-): Promise<{ tags: string[]; unknown: string[] }> {
+): Promise<string[] | FormState<T>> {
   const tags = [...new Set(formData.getAll("tags").map(String))];
   const corpus = new Set([...(await tagsTable.listAll()), ...current]);
-  return { tags, unknown: tags.filter((tag) => !corpus.has(tag)) };
-}
-
-function unknownTagsState<T>(formData: FormData, unknown: string[]): FormState<T> {
+  const unknown = tags.filter((tag) => !corpus.has(tag));
+  if (!unknown.length) return tags;
   return {
     fieldErrors: { tags: [`Unknown tags: ${unknown.join(", ")}`] },
     data: formData,
@@ -246,8 +245,8 @@ export async function createProduct(
     };
   }
 
-  const { tags, unknown } = await parseTags(formData);
-  if (unknown.length) return unknownTagsState(formData, unknown);
+  const tags = await parseTags<ProductCreationRequest>(formData);
+  if (!Array.isArray(tags)) return tags;
 
   const product: Product = {
     ...validatedFields.data,
@@ -399,11 +398,11 @@ export async function updateProduct(
       }
     }
 
-    const { tags, unknown } = await parseTags(
+    const tags = await parseTags<Partial<Product>>(
       formData,
       currentProduct.metadata.tags
     );
-    if (unknown.length) return unknownTagsState(formData, unknown);
+    if (!Array.isArray(tags)) return tags;
 
     // Build update data
     const updateData = {
