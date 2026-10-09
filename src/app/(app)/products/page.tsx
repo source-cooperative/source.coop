@@ -37,14 +37,17 @@ export default async function ProductsPage({
   const { search, tags, cursor, previous, featured } = await searchParams;
 
   const featuredOnly = featured === "1";
-  const result = await listProducts(await getPageSession(), {
+  const session = await getPageSession();
+  const query = {
     q: search,
     tags,
     featured: featuredOnly ? "true" : undefined,
-    cursor,
     limit: 100,
-  });
-  // Only a hand-edited URL, with a cursor that isn't one, gets here.
+  };
+  // A cursor that's no longer one (a stale bookmark) starts over at page one.
+  let result = await listProducts(session, { ...query, cursor });
+  if (!result.ok && cursor) result = await listProducts(session, query);
+  // Only a hand-edited query, such as a repeated ?tags=, gets here.
   if (!result.ok) notFound();
   const { items: products, next_cursor } = result.value;
 

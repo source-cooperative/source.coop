@@ -4,8 +4,7 @@ import { productsTable } from "@/lib/clients/database";
 import type { Product, ProductCreationRequest } from "@/types";
 import { getPageSession, LOGGER } from "@/lib";
 import { FormState } from "@/components/core/DynamicForm";
-import { revalidatePath } from "next/cache";
-import { productUrl, editProductDetailsUrl, accountUrl } from "@/lib/urls";
+import { productUrl } from "@/lib/urls";
 import * as ops from "@/lib/operations/products";
 import { toFormState } from "@/lib/operations/result";
 
@@ -66,10 +65,6 @@ export async function updateProduct(
       disabled: disabled === null ? undefined : disabled === "true",
     },
   );
-  if (result.ok) {
-    revalidatePath(productUrl(account_id, product_id));
-    revalidatePath(editProductDetailsUrl(account_id, product_id));
-  }
   return toFormState(result, formData, "Product updated successfully!");
 }
 
@@ -98,9 +93,5 @@ export async function deleteProduct(
     const reason = error instanceof Error ? error.message : "Unknown error";
     return { success: false, error: `Failed to delete product: ${reason}` };
   }
-  // Other users stop seeing the product, and its account stops listing it.
-  revalidatePath(productUrl(account_id, product_id));
-  revalidatePath(editProductDetailsUrl(account_id, product_id));
-  revalidatePath(accountUrl(account_id));
   return { success: true };
 }
