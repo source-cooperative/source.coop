@@ -314,9 +314,10 @@ export const DataConnectionObjectSchema = z
     /**
      * Account (individual or organization) that owns this connection. Absent =
      * unowned (e.g. Source Cooperative-managed), usable by any account; set ⇒
-     * only that account's products may use it (enforced in `createProduct`). The
-     * proxy also keys its federated-credential cache off this: owned ⇒ per
-     * product-grained subject, unowned ⇒ one shared credential per connection.
+     * only that account's products may use it (enforced in `createProduct` and
+     * `addProductMirror`). Either way the proxy presents one subject per
+     * connection (`scv1:conn:{id}`), so every product on it shares the role's
+     * credentials.
      */
     owner: z.optional(
       z
