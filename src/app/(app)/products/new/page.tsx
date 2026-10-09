@@ -62,11 +62,13 @@ export default async function NewProductPage({
   );
 
   // Strip credentials before handing connections to the client component.
-  const dataConnections = (await listUsableDataConnections(session)).map(
-    (connection) =>
-      DataConnectionObjectSchema.omit({ authentication: true }).parse(
-        connection
-      )
+  const dataConnections = (
+    await listUsableDataConnections(
+      session,
+      potentialOwnerAccounts.map((account) => account.account_id)
+    )
+  ).map((connection) =>
+    DataConnectionObjectSchema.omit({ authentication: true }).parse(connection)
   );
 
   return (
