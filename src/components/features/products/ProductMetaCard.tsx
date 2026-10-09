@@ -9,7 +9,7 @@ interface ProductMetaCardProps {
 
 export function ProductMetaCard({ product }: ProductMetaCardProps) {
   return (
-    <Card id="product-details" size={{ initial: '2', sm: '1' }}>
+    <Card id="details" size={{ initial: '2', sm: '1' }}>
       <SectionHeader title="Details">
         <ProductMetaContent product={product} />
       </SectionHeader>

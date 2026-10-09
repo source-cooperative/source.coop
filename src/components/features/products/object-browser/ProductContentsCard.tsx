@@ -26,7 +26,7 @@ export function ProductContentsCard({
   children,
 }: ProductContentsCardProps) {
   return (
-    <Card id="product-contents">
+    <Card id="contents">
       <SectionHeader
         title="Contents"
         rightButton={
