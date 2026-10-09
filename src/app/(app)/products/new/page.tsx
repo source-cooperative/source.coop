@@ -4,6 +4,7 @@ import {
   getPageSession,
   membershipsTable,
   tagsTable,
+  tagProps,
 } from "@/lib";
 import { canCreateProductForAccount, isAuthorized } from "@/lib/api/authz";
 import { listUsableDataConnections } from "@/lib/data-connections";
@@ -80,7 +81,7 @@ export default async function NewProductPage({
       <ProductCreationForm
         potentialOwnerAccounts={potentialOwnerAccounts}
         dataConnections={dataConnections}
-        tagOptions={await tagsTable.listAll()}
+        {...tagProps(await tagsTable.listAll())}
         defaultOwnerId={
           // Preselect the owner from ?owner=… (e.g. "New product" opened from an
           // org's menu), but only if the user can actually own products there.

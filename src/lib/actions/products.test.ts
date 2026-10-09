@@ -103,7 +103,11 @@ describe("createProduct", () => {
     // resetAllMocks wipes the factory implementation, so re-establish the
     // success URL that the action returns as redirectTo.
     (productUrl as jest.Mock).mockReturnValue("/account/product");
-    (tagsTable.listAll as jest.Mock).mockResolvedValue(["acoustics", "ocean"]);
+    (tagsTable.listAll as jest.Mock).mockResolvedValue([
+      { tag_id: "acoustics" },
+      { tag_id: "ocean" },
+      { tag_id: "sea-ice", pending: true },
+    ]);
   });
 
   test("builds mirror metadata from the selected data connection", async () => {
@@ -319,7 +323,11 @@ describe("updateProduct", () => {
     // resetAllMocks wipes the factory implementation, so re-establish the
     // success URL that the action returns as redirectTo.
     (productUrl as jest.Mock).mockReturnValue("/account/product");
-    (tagsTable.listAll as jest.Mock).mockResolvedValue(["acoustics", "ocean"]);
+    (tagsTable.listAll as jest.Mock).mockResolvedValue([
+      { tag_id: "acoustics" },
+      { tag_id: "ocean" },
+      { tag_id: "sea-ice", pending: true },
+    ]);
   });
 
   test("rejects a visibility not allowed by the product's data connection", async () => {
@@ -422,6 +430,18 @@ describe("updateProduct", () => {
     const updated = (productsTable.update as jest.Mock).mock.calls[0][0];
     expect(updated.metadata.tags).toEqual(["ocean", "acoustics"]);
     expect(updated.metadata.primary_mirror).toBe("conn-x");
+  });
+
+  test("accepts a tag that is still pending review", async () => {
+    (productsTable.fetchById as jest.Mock).mockResolvedValue(currentProduct());
+    const fd = buildUpdateFormData({ visibility: "public" });
+    fd.append("tags", "sea-ice");
+
+    const result = await updateProduct(undefined, fd);
+
+    expect(result.success).toBe(true);
+    const updated = (productsTable.update as jest.Mock).mock.calls[0][0];
+    expect(updated.metadata.tags).toEqual(["sea-ice"]);
   });
 
   test("rejects a tag outside the corpus", async () => {

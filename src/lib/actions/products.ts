@@ -106,10 +106,11 @@ export async function getPaginatedProducts(
 }
 
 /**
- * The submitted tags, or the form error naming those outside the corpus. A tag
- * the product already carries is kept even if the corpus has since dropped it,
- * so editing some other field isn't blocked by a tag the user didn't choose
- * today.
+ * The submitted tags, or the form error naming those outside the corpus. The
+ * corpus includes tags still pending review, so a product can carry the tag it
+ * suggested. A tag the product already carries is kept even if the corpus has
+ * since dropped it, so editing some other field isn't blocked by a tag the
+ * user didn't choose today.
  */
 async function parseTags<T>(
   formData: FormData,
@@ -117,7 +118,8 @@ async function parseTags<T>(
 ): Promise<string[] | FormState<T>> {
   const tags = [...new Set(formData.getAll("tags").map(String))];
   if (!tags.length) return tags;
-  const corpus = new Set([...(await tagsTable.listAll()), ...current]);
+  const known = (await tagsTable.listAll()).map((tag) => tag.tag_id);
+  const corpus = new Set([...known, ...current]);
   const unknown = tags.filter((tag) => !corpus.has(tag));
   if (!unknown.length) return tags;
   return {

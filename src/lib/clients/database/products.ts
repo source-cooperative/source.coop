@@ -368,6 +368,44 @@ export class ProductsTable extends BaseTable {
     }));
   }
 
+  /**
+   * Every product carrying the tag, public or not. Scans the whole table like
+   * listProductsByConnectionId; meant for admin review of suggested tags.
+   */
+  async listByTag(tag: string): Promise<Product[]> {
+    const matches: Product[] = [];
+    let lastEvaluatedKey: any = undefined;
+    do {
+      const result = await this.list(1000, lastEvaluatedKey);
+      matches.push(
+        ...result.products.filter((p) => p.metadata?.tags?.includes(tag))
+      );
+      lastEvaluatedKey = result.lastEvaluatedKey;
+    } while (lastEvaluatedKey);
+    return matches;
+  }
+
+  /** Replaces a product's tags, and nothing else about it. */
+  async setTags(
+    account_id: string,
+    product_id: string,
+    tags: string[]
+  ): Promise<void> {
+    try {
+      await this.client.send(
+        new UpdateCommand({
+          TableName: this.table,
+          Key: { account_id, product_id },
+          UpdateExpression: "SET metadata.tags = :tags",
+          ExpressionAttributeValues: { ":tags": tags },
+        })
+      );
+    } catch (error) {
+      this.logError("setTags", error, { account_id, product_id });
+      throw error;
+    }
+  }
+
   async delete(account_id: string, product_id: string): Promise<void> {
     try {
       await this.client.send(
