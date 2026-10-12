@@ -1,6 +1,7 @@
 "use client";
 
 import { Box, Button, Code, Dialog, Flex, Text } from "@radix-ui/themes";
+import { useTranslations } from "next-intl";
 import { CopyToClipboard } from "@/components/core/CopyToClipboard";
 import { highlightLine, type Language, type TokenKind } from "./highlight";
 
@@ -15,11 +16,11 @@ const COLOURS: Record<TokenKind, string | undefined> = {
 };
 
 /** Where a trusted GitHub workflow's example goes. */
-export const GITHUB_WORKFLOW_INTRO = (
-  <>
-    Customize and save this workflow to a file under <Code>.github/workflows/</Code>:
-  </>
-);
+function GithubWorkflowIntro() {
+  const t = useTranslations("ExampleUsage");
+  return t.rich("githubWorkflowIntro", { code: (chunks) => <Code>{chunks}</Code> });
+}
+export const GITHUB_WORKFLOW_INTRO = <GithubWorkflowIntro />;
 
 /**
  * What software adds to sign in one way, ready to paste — a workflow, or the
@@ -46,6 +47,7 @@ export function ExampleUsage({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const tc = useTranslations("Common");
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Content style={{ maxWidth: 720 }} aria-describedby={undefined}>
@@ -99,7 +101,7 @@ export function ExampleUsage({
         <Flex justify="end" mt="4">
           <Dialog.Close>
             <Button variant="soft" color="gray">
-              Close
+              {tc("close")}
             </Button>
           </Dialog.Close>
         </Flex>

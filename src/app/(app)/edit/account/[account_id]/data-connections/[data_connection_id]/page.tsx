@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Box, Button, Text } from "@radix-ui/themes";
 import { ArrowLeftIcon } from "@radix-ui/react-icons";
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { accountsTable, dataConnectionsTable } from "@/lib/clients";
 import { getPageSession } from "@/lib/api/utils";
 import { canManageAccountDataConnections } from "@/lib/api/authz";
@@ -17,9 +18,10 @@ import { toEditableDataConnection } from "@/components/features/data-connections
 import { DangerZone } from "@/components/core";
 import { accountDataConnectionsUrl } from "@/lib/urls";
 
-export const metadata: Metadata = {
-  title: "Edit data connection",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("DataConnectionEditPage");
+  return { title: t("metaTitle") };
+}
 
 interface PageProps {
   params: Promise<{ account_id: string; data_connection_id: string }>;
@@ -42,12 +44,13 @@ export default async function AccountEditDataConnectionPage({
   if (!dataConnection || dataConnection.owner !== account_id) {
     notFound();
   }
+  const t = await getTranslations("DataConnectionEditPage");
 
   return (
     <Box>
       <Button asChild variant="ghost" size="1" mb="4">
         <Link href={accountDataConnectionsUrl(account_id)}>
-          <ArrowLeftIcon /> Data connections
+          <ArrowLeftIcon /> {t("back")}
         </Link>
       </Button>
       <DataConnectionForm
@@ -60,7 +63,7 @@ export default async function AccountEditDataConnectionPage({
         <Suspense
           fallback={
             <Text size="2" color="gray">
-              Loading product usage…
+              {t("loadingUsage")}
             </Text>
           }
         >
@@ -70,8 +73,8 @@ export default async function AccountEditDataConnectionPage({
 
       {/* Below the usage list, which is what answers "can I delete this?" */}
       <DangerZone
-        title="Delete this connection"
-        description="Removes the connection record and its stored credentials. The bucket and its objects are not touched."
+        title={t("deleteTitle")}
+        description={t("deleteDescription")}
         action={
           <DeleteConnectionControl
             connectionId={dataConnection.data_connection_id}

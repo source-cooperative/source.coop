@@ -1,3 +1,5 @@
+import { useTranslations } from "next-intl";
+
 interface PreviewIframeProps {
   src: string;
   title: string;
@@ -9,6 +11,7 @@ interface PreviewIframeProps {
  * escape hatch lives on the surrounding card's SectionHeader.
  */
 export function PreviewIframe({ src, title }: PreviewIframeProps) {
+  const t = useTranslations("PreviewIframe");
   return (
     <iframe
       width="100%"
@@ -19,7 +22,7 @@ export function PreviewIframe({ src, title }: PreviewIframeProps) {
       title={title}
       loading="lazy"
     >
-      Your browser does not support iframes.
+      {t("unsupported")}
     </iframe>
   );
 }

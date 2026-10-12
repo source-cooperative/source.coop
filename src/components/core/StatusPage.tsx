@@ -13,6 +13,7 @@ import {
   PersonIcon,
 } from "@radix-ui/react-icons";
 import { ReactNode } from "react";
+import { useTranslations } from "next-intl";
 
 type StatusType = "not-found" | "not-authorized" | "unauthenticated";
 
@@ -32,38 +33,20 @@ interface StatusPageProps {
 const statusConfig = {
   "not-found": {
     icon: LinkBreak2Icon,
-    defaultTitle: "404: Not Found",
-    defaultDescription: (
-      <>
-        We couldn&apos;t find what you&apos;re looking for.
-        <br />
-        The path may have been moved or no longer exists.
-      </>
-    ),
+    titleKey: "notFoundTitle",
+    descriptionKey: "notFoundDescription",
   },
   "not-authorized": {
     icon: LockClosedIcon,
-    defaultTitle: "403: Not Authorized",
-    defaultDescription: (
-      <>
-        You don&apos;t have permission to access this resource.
-        <br />
-        Please contact an administrator if you believe this is an error.
-      </>
-    ),
+    titleKey: "notAuthorizedTitle",
+    descriptionKey: "notAuthorizedDescription",
   },
   unauthenticated: {
     icon: PersonIcon,
-    defaultTitle: "Sign in required",
-    defaultDescription: (
-      <>
-        You need to sign in to access this page.
-        <br />
-        You&apos;ll be returned here after logging in.
-      </>
-    ),
+    titleKey: "unauthenticatedTitle",
+    descriptionKey: "unauthenticatedDescription",
   },
-};
+} as const;
 
 export function StatusPage({
   type,
@@ -76,12 +59,14 @@ export function StatusPage({
   containerSize,
   minHeight = "60vh",
 }: StatusPageProps) {
+  const t = useTranslations("StatusPage");
   const config = statusConfig[type];
   const IconComponent = config.icon;
 
-  const finalTitle = title || config.defaultTitle;
-  const finalDescription = description || config.defaultDescription;
-  const finalActionText = actionText || "Return to Homepage";
+  const finalTitle = title || t(config.titleKey);
+  const finalDescription =
+    description || t.rich(config.descriptionKey, { br: () => <br /> });
+  const finalActionText = actionText || t("returnHome");
   const finalActionHref = actionHref || "/";
 
   return (

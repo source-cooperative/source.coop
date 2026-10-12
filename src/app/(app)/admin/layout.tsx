@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
 import { Heading } from "@radix-ui/themes";
+import { getTranslations } from "next-intl/server";
 import { getPageSession } from "@/lib/api/utils";
 import { isAdmin } from "@/lib/api/authz";
 import { NotAuthorizedPage } from "@/components/core";
@@ -20,9 +21,11 @@ export default async function AdminLayout({
     return <NotAuthorizedPage />;
   }
 
+  const t = await getTranslations("AdminLayout");
+  const tTools = await getTranslations("AdminTools");
   const menuItems = ADMIN_TOOLS.map((tool) => ({
     id: tool.href,
-    label: tool.name,
+    label: tTools(`${tool.key}.name`),
     href: tool.href,
     icon: <tool.Icon width="16" height="16" />,
     condition: true,
@@ -31,7 +34,7 @@ export default async function AdminLayout({
   return (
     <>
       <SettingsHeader>
-        <Heading size="5">Admin</Heading>
+        <Heading size="5">{t("title")}</Heading>
       </SettingsHeader>
       <SettingsLayout menuItems={menuItems}>{children}</SettingsLayout>
     </>

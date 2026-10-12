@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Button, Flex, Text, TextField } from "@radix-ui/themes";
 import { CheckIcon } from "@radix-ui/react-icons";
+import { useTranslations } from "next-intl";
 import { Field } from "./Field";
 
 /**
@@ -35,6 +36,7 @@ export function SecretField({
   errors?: string[];
   defaultValue: string;
 }) {
+  const t = useTranslations("SecretField");
   // Open when there is nothing stored to keep.
   //
   // The defaultValue clause only matters on a remount — switching auth type away
@@ -66,7 +68,7 @@ export function SecretField({
                 color="gray"
                 onClick={() => setReplacing(false)}
               >
-                Keep current
+                {t("keepCurrent")}
               </Button>
             )}
           </Flex>
@@ -90,7 +92,7 @@ export function SecretField({
         <Flex align="center" gap="2">
           <CheckIcon color="var(--green-11)" />
           <Text size="2" weight="medium">
-            Stored
+            {t("stored")}
           </Text>
         </Flex>
         <Button
@@ -99,7 +101,7 @@ export function SecretField({
           variant="soft"
           onClick={() => setReplacing(true)}
         >
-          Replace…
+          {t("replace")}
         </Button>
       </Flex>
     </Field>

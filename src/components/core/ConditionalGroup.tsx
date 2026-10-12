@@ -1,4 +1,5 @@
 import { Box, Flex, Text } from "@radix-ui/themes";
+import { useTranslations } from "next-intl";
 
 /**
  * Fields that exist because of a choice made above them.
@@ -19,6 +20,7 @@ export function ConditionalGroup({
   because: string;
   children: React.ReactNode;
 }) {
+  const t = useTranslations("ConditionalGroup");
   return (
     <Box pl="4" style={{ borderLeft: "2px solid var(--gray-5)" }}>
       <Flex direction="column" gap="4">
@@ -31,7 +33,7 @@ export function ConditionalGroup({
             letterSpacing: "0.1em",
           }}
         >
-          Because {because}
+          {t("because", { because })}
         </Text>
         {children}
       </Flex>

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import type { Account } from "@/types";
 import { CONFIG } from "@/lib";
 import { getBaseUrl } from "@/lib/baseUrl";
@@ -12,15 +13,14 @@ export async function generateAccountMetadata({
   account,
 }: AccountMetadataProps): Promise<Metadata> {
   const baseUrl = await getBaseUrl();
+  const t = await getTranslations("AccountMetadata");
 
-  const accountType =
-    account.type === AccountType.INDIVIDUAL ? "Individual" : "Organization";
-  const title = `${account.name} · ${accountType} · Source Cooperative`;
+  const type =
+    account.type === AccountType.INDIVIDUAL ? "individual" : "organization";
+  const title = t("title", { name: account.name, type });
   const description =
     account.metadata_public.bio ||
-    `${account.name} is ${
-      account.type === AccountType.INDIVIDUAL ? "an" : "an"
-    } ${accountType.toLowerCase()} on Source Cooperative`;
+    t("description", { name: account.name, type });
   const url = `${baseUrl}/${account.account_id}`;
 
   // Generate OG image URL

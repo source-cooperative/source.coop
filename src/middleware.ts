@@ -2,6 +2,29 @@ import { createOryMiddleware } from "@ory/nextjs/middleware";
 import { NextRequest, NextResponse } from "next/server";
 import { LOGGER } from "@/lib";
 import { productUrl } from "@/lib/urls";
+import { LOCALE_COOKIE, LOCALES, type Locale } from "@/i18n/locales";
+
+/**
+ * `?lang=ja` on any link opens it in that language. The choice becomes the
+ * same cookie the footer's language switcher writes, and the parameter is
+ * dropped from the URL so it isn't passed along when the page is shared again.
+ * An unsupported value is dropped without changing anything.
+ */
+export const handleLocaleParam = (request: NextRequest): NextResponse | null => {
+  const lang = request.nextUrl.searchParams.get("lang");
+  if (lang === null) return null;
+  const url = request.nextUrl.clone();
+  url.searchParams.delete("lang");
+  const response = NextResponse.redirect(url);
+  if (LOCALES.includes(lang as Locale)) {
+    response.cookies.set(LOCALE_COOKIE, lang, {
+      path: "/",
+      maxAge: 31_536_000,
+      sameSite: "lax",
+    });
+  }
+  return response;
+};
 
 /**
  * Ignore Chrome DevTools requests by returning 404.
@@ -138,7 +161,11 @@ const ORY_PROXIED_PREFIXES = [
 ];
 
 export const middleware = async (request: NextRequest) => {
-  for (const handler of [handleLegacyRedirects, handleChromeDevTools]) {
+  for (const handler of [
+    handleLocaleParam,
+    handleLegacyRedirects,
+    handleChromeDevTools,
+  ]) {
     const response = await handler(request);
     if (response) return response;
   }

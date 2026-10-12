@@ -2,16 +2,10 @@
 
 import { useState } from "react";
 import { Flex } from "@radix-ui/themes";
+import { useFormatter, useTranslations } from "next-intl";
 import type { UsagePoint, UsageTotals } from "@/lib/clients/analytics";
 import { formatBytes } from "@/lib/format";
-import {
-  DownloadsChart,
-  HELP,
-  HoverCaption,
-  numberFormat,
-  Stat,
-  StatRow,
-} from "./panels";
+import { DownloadsChart, HoverCaption, Stat, StatRow } from "./panels";
 
 // Kept here for its existing unit tests / import sites.
 export { parseActiveIndex } from "./panels";
@@ -30,24 +24,27 @@ interface UsagePanelProps {
 export function UsagePanel({ days, totals }: UsagePanelProps) {
   const [hovered, setHovered] = useState<number | null>(null);
   const shown = hovered === null ? totals : days[hovered];
+  const t = useTranslations("AnalyticsPanels");
+  const tHelp = useTranslations("AnalyticsHelp");
+  const format = useFormatter();
 
   return (
     <>
       <StatRow mt="3" pb="3" style={{ borderBottom: "1px solid var(--gray-4)" }}>
         <Stat
-          label="Downloads"
-          help={HELP.downloads}
-          value={numberFormat.format(Math.round(shown.requests))}
+          label={t("downloads")}
+          help={tHelp("downloads")}
+          value={format.number(Math.round(shown.requests))}
         />
         <Stat
-          label="Data served"
-          help={HELP.served}
+          label={t("dataServed")}
+          help={tHelp("served")}
           value={formatBytes(shown.bytes, 1)}
         />
         <Stat
-          label="Countries"
-          help={HELP.countries}
-          value={numberFormat.format(shown.countries)}
+          label={t("countries")}
+          help={tHelp("countries")}
+          value={format.number(shown.countries)}
         />
       </StatRow>
 

@@ -2,6 +2,7 @@
 
 import React, { useActionState, useEffect, useState } from "react";
 import { Button, Dialog, Flex, Text } from "@radix-ui/themes";
+import { useTranslations } from "next-intl";
 import { addGithubTrust } from "@/lib/actions/service-accounts";
 import { GITHUB_ACTIONS_SUBJECT_REGEX, IDLE_SERVICE_ACCOUNT_ACTION_STATE } from "@/types";
 import {
@@ -32,10 +33,11 @@ export function AddGithubTrustDialog({
   /** The data proxy's origin, shown as the audience the workflow's token must carry. */
   proxyOrigin?: string;
 }) {
+  const t = useTranslations("AddGithubTrustDialog");
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Content style={{ maxWidth: 560 }}>
-        <Dialog.Title>Trust a GitHub workflow</Dialog.Title>
+        <Dialog.Title>{t("title")}</Dialog.Title>
         {/* The content unmounts when the dialog closes, so the form lives in
             here and starts over on every open. */}
         <TrustForm
@@ -65,10 +67,12 @@ function TrustForm({
     IDLE_SERVICE_ACCOUNT_ACTION_STATE
   );
   const [workflow, setWorkflow] = useState(NEW_GITHUB_WORKFLOW);
+  const t = useTranslations("AddGithubTrustDialog");
+  const tc = useTranslations("Common");
   // With onAdd nothing reaches the server until the create form is
   // submitted, so the subject is checked here, the way addGithubTrust would.
   const [invalid, setInvalid] = useState(false);
-  const message = invalid ? "Name one repository and one branch, tag or environment" : !state.success && state.message;
+  const message = invalid ? t("invalid") : !state.success && state.message;
 
   useEffect(() => {
     if (state.success) onTrusted();
@@ -91,8 +95,7 @@ function TrustForm({
       <input type="hidden" name="subject" value={githubSubject(workflow)} />
       <Flex direction="column" gap="3">
         <Dialog.Description size="2">
-          One repository, pinned to one branch, tag or environment. GitHub vouches for the
-          workflow at every run; nothing is stored here but the name.
+          {t("description")}
         </Dialog.Description>
         <GithubWorkflowFields
           id="gh"
@@ -108,11 +111,11 @@ function TrustForm({
         <Flex justify="end" gap="2">
           <Dialog.Close>
             <Button type="button" variant="soft" color="gray">
-              Cancel
+              {tc("cancel")}
             </Button>
           </Dialog.Close>
           <Button type="submit" highContrast disabled={pending} loading={pending}>
-            Trust it
+            {t("trustIt")}
           </Button>
         </Flex>
       </Flex>

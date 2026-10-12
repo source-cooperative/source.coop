@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Button, Dialog, Flex } from "@radix-ui/themes";
+import { useTranslations } from "next-intl";
 import type { ServiceAccountKey } from "@/types";
 import { IssuedApiKey } from "./IssuedApiKey";
 
@@ -25,6 +26,7 @@ export const handOffIssuedKey = (issued: Issued) => {
 export function IssuedApiKeyDialog({ accountId }: { accountId: string }) {
   const [issued] = useState(() => (pending?.record.account_id === accountId ? pending : null));
   const [open, setOpen] = useState(issued !== null);
+  const t = useTranslations("IssuedApiKeyDialog");
   if (!issued) return null;
   return (
     <Dialog.Root
@@ -35,11 +37,11 @@ export function IssuedApiKeyDialog({ accountId }: { accountId: string }) {
       }}
     >
       <Dialog.Content style={{ maxWidth: 640 }} aria-describedby={undefined}>
-        <Dialog.Title>API key issued</Dialog.Title>
+        <Dialog.Title>{t("title")}</Dialog.Title>
         <IssuedApiKey apiKey={issued.key} record={issued.record} />
         <Flex justify="end" mt="4">
           <Dialog.Close>
-            <Button variant="soft">Done</Button>
+            <Button variant="soft">{t("done")}</Button>
           </Dialog.Close>
         </Flex>
       </Dialog.Content>

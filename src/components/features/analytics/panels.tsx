@@ -5,6 +5,7 @@
  * product analytics page (ProductAnalyticsView).
  */
 import { Box, Flex, Text, Tooltip } from "@radix-ui/themes";
+import { useFormatter, useTranslations } from "next-intl";
 import {
   BarChart,
   Bar,
@@ -19,17 +20,11 @@ import {
 // Types only — a value import would drag the server data layer (CONFIG,
 // LOGGER) into the client bundle.
 import type { UsagePoint, UsageUsers } from "@/lib/clients/analytics";
-import { formatDateSSR } from "@/lib/format";
-import { HELP, mono } from "./style";
+import { mono } from "./style";
 
-export { HELP, mono };
+export { mono };
 
-// Deterministic across server and client — no-arg toLocaleString() follows
-// the runtime locale and causes hydration mismatches.
-export const numberFormat = new Intl.NumberFormat("en-US");
-export const compactFormat = new Intl.NumberFormat("en-US", {
-  notation: "compact",
-});
+const DAY_FORMAT = { day: "numeric", month: "short", year: "numeric" } as const;
 
 /**
  * recharts 3 delivers activeTooltipIndex as a numeric string (or null);
@@ -135,6 +130,9 @@ export function HoverCaption({
   days: UsagePoint[];
   hovered: number | null;
 }) {
+  const t = useTranslations("AnalyticsPanels");
+  const tHelp = useTranslations("AnalyticsHelp");
+  const format = useFormatter();
   return (
     <Flex align="center" gap="2" mb="2">
       {hovered !== null && (
@@ -144,10 +142,10 @@ export function HoverCaption({
           style={{ background: "var(--green-9)", flexShrink: 0 }}
         />
       )}
-      <MonoLabel help={HELP.window}>
+      <MonoLabel help={tHelp("window")}>
         {hovered === null
-          ? `${days.length}-day downloads`
-          : formatDateSSR(days[hovered].date)}
+          ? t("windowDownloads", { days: days.length })
+          : format.dateTime(new Date(days[hovered].date), DAY_FORMAT)}
       </MonoLabel>
     </Flex>
   );
@@ -165,10 +163,12 @@ export function DownloadsChart({
   onHover: (index: number | null) => void;
   height: number;
 }) {
+  const t = useTranslations("AnalyticsPanels");
+  const format = useFormatter();
   return (
     <Box
       role="img"
-      aria-label={`Daily downloads over the past ${days.length} days`}
+      aria-label={t("dailyDownloadsAria", { days: days.length })}
       onMouseLeave={() => onHover(null)}
       // Clicking the chart must not move focus (a click inside the Radix
       // tab panel otherwise promotes focus to it and draws its focus ring
@@ -204,8 +204,10 @@ export function DownloadsChart({
         </BarChart>
       </ResponsiveContainer>
       <Flex justify="between" mt="1">
-        <MonoLabel>{formatDateSSR(days[0].date)}</MonoLabel>
-        <MonoLabel>{formatDateSSR(days[days.length - 1].date)}</MonoLabel>
+        <MonoLabel>{format.dateTime(new Date(days[0].date), DAY_FORMAT)}</MonoLabel>
+        <MonoLabel>
+          {format.dateTime(new Date(days[days.length - 1].date), DAY_FORMAT)}
+        </MonoLabel>
       </Flex>
     </Box>
   );
@@ -213,31 +215,40 @@ export function DownloadsChart({
 
 /** USERS tab body: unique IPs, registered vs anonymous usage, per-IP histogram. */
 export function UsersContent({ users }: { users: UsageUsers }) {
+  const t = useTranslations("AnalyticsPanels");
+  const tHelp = useTranslations("AnalyticsHelp");
+  const format = useFormatter();
   return (
     <>
       <StatRow mt="3" pb="3" style={{ borderBottom: "1px solid var(--gray-4)" }}>
         <Stat
-          label="Unique IPs"
-          help={HELP.uniqueIps}
-          value={numberFormat.format(users.uniqueIps)}
+          label={t("uniqueIps")}
+          help={tHelp("uniqueIps")}
+          value={format.number(users.uniqueIps)}
         />
         <Stat
-          label="Registered"
-          help={HELP.registered}
-          value={compactFormat.format(Math.round(users.registered)).toLowerCase()}
+          label={t("registered")}
+          help={tHelp("registered")}
+          value={format
+            .number(Math.round(users.registered), { notation: "compact" })
+            .toLowerCase()}
         />
         <Stat
-          label="Anon downloads"
-          help={HELP.anon}
-          value={compactFormat.format(Math.round(users.anonRequests)).toLowerCase()}
+          label={t("anonDownloads")}
+          help={tHelp("anon")}
+          value={format
+            .number(Math.round(users.anonRequests), { notation: "compact" })
+            .toLowerCase()}
         />
       </StatRow>
 
       <Box mt="3">
-        <MonoLabel help={HELP.distribution}>IPs by download count</MonoLabel>
+        <MonoLabel help={tHelp("distribution")}>
+          {t("ipsByDownloadCount")}
+        </MonoLabel>
         {users.uniqueIps === 0 ? (
           <Text as="div" size="1" color="gray" mt="2">
-            No download activity in this period.
+            {t("noActivity")}
           </Text>
         ) : (
           <Box mt="2">
@@ -262,6 +273,8 @@ function DistributionChart({
 }: {
   distribution: UsageUsers["distribution"];
 }) {
+  const t = useTranslations("AnalyticsPanels");
+  const format = useFormatter();
   const total = distribution.reduce((sum, bin) => sum + bin.ips, 0);
   // Trim trailing empty bins (a sparse product would waste half the axis);
   // interior zeros stay — they are part of the distribution's shape.
@@ -277,7 +290,7 @@ function DistributionChart({
   return (
     <Box
       role="img"
-      aria-label="Pareto chart of unique IPs by downloads per IP"
+      aria-label={t("distributionAria")}
       onMouseDown={(event) => event.preventDefault()}
       style={{ userSelect: "none", WebkitUserSelect: "none" }}
     >
@@ -321,10 +334,15 @@ function DistributionChart({
                   })}
                 >
                   <Text as="div" size="1">
-                    {numberFormat.format(row.ips)} IPs · {label} downloads
+                    {t("tooltipIps", { ips: format.number(row.ips), label: label ?? "" })}
                   </Text>
                   <Text as="div" size="1" color="gray">
-                    {(row.share * 100).toFixed(0)}% of IPs at or below this
+                    {t("tooltipShare", {
+                      share: format.number(row.share, {
+                        style: "percent",
+                        maximumFractionDigits: 0,
+                      }),
+                    })}
                   </Text>
                 </Box>
               );
@@ -349,7 +367,7 @@ function DistributionChart({
             style={{ background: "var(--gray-12)" }}
           />
           <Text size="1" color="gray" style={mono()}>
-            IPs
+            {t("legendIps")}
           </Text>
         </Flex>
         <Flex align="center" gap="1">
@@ -360,7 +378,7 @@ function DistributionChart({
             style={{ background: "var(--green-9)" }}
           />
           <Text size="1" color="gray" style={mono()}>
-            cumulative
+            {t("legendCumulative")}
           </Text>
         </Flex>
       </Flex>

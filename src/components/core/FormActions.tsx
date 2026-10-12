@@ -1,4 +1,5 @@
 import { Button, Flex, Text } from "@radix-ui/themes";
+import { useTranslations } from "next-intl";
 
 interface FormActionsProps {
   /**
@@ -22,13 +23,14 @@ interface FormActionsProps {
 
 /** The single action row a form ends with. */
 export function FormActions({
-  submitLabel = "Save",
+  submitLabel,
   pending,
   disabled,
   secondary,
   message,
   success,
 }: FormActionsProps) {
+  const t = useTranslations("Common");
   return (
     <Flex mt="4" direction="column" gap="2" align="end">
       <Flex align="center" gap="3">
@@ -50,7 +52,7 @@ export function FormActions({
           disabled={disabled || pending}
           loading={pending}
         >
-          {submitLabel}
+          {submitLabel ?? t("save")}
         </Button>
       </Flex>
     </Flex>

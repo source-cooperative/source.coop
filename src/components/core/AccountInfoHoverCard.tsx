@@ -1,4 +1,5 @@
 import { Badge, Text, Flex, HoverCard } from "@radix-ui/themes";
+import { useTranslations } from "next-intl";
 import { Account, isServiceAccount } from "@/types";
 import { AccountIdentity, accountCardSurface } from "./AccountIdentity";
 // Deep import, not the `../features/profiles` barrel: that barrel also
@@ -20,6 +21,7 @@ export function AccountInfoHoverCard({
   showHoverCard = true,
   isLink = true,
 }: AccountInfoHoverCardProps) {
+  const t = useTranslations("AccountInfoHoverCard");
   if (!showHoverCard) {
     return <>{children}</>;
   }
@@ -48,7 +50,7 @@ export function AccountInfoHoverCard({
           {isServiceAccount(account) && (
             <Flex>
               <Badge size="1" color="gray" variant="outline">
-                Service account
+                {t("serviceAccount")}
               </Badge>
             </Flex>
           )}

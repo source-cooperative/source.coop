@@ -1,5 +1,6 @@
 "use server";
 
+import { getTranslations } from "next-intl/server";
 import { LOGGER } from "@/lib/logging";
 import {
   Account,
@@ -43,13 +44,14 @@ export async function createAccount(
   initialState: any,
   formData: FormData
 ): Promise<FormState<AccountCreationRequest>> {
+  const t = await getTranslations("AccountActions");
   const session = await getPageSession();
 
   if (!session?.identity_id) {
     return {
       fieldErrors: {},
       data: formData,
-      message: "Unauthenticated",
+      message: t("unauthenticated"),
       success: false,
     };
   }
@@ -59,7 +61,7 @@ export async function createAccount(
   // Service accounts have their own action, createServiceAccount, which
   // settles the owner and composes the id.
   if (type === AccountType.SERVICE) {
-    return { fieldErrors: {}, data: formData, message: "Invalid form data", success: false };
+    return { fieldErrors: {}, data: formData, message: t("invalidFormData"), success: false };
   }
   const schema =
     type === AccountType.ORGANIZATION
@@ -71,7 +73,7 @@ export async function createAccount(
     return {
       fieldErrors: validatedFields.error.flatten().fieldErrors,
       data: formData,
-      message: "Invalid form data",
+      message: t("invalidFormData"),
       success: false,
     };
   }
@@ -109,7 +111,7 @@ export async function createAccount(
     return {
       fieldErrors: {},
       data: formData,
-      message: "Unauthorized to create this type of account",
+      message: t("unauthorizedCreate"),
       success: false,
     };
   }
@@ -130,9 +132,9 @@ export async function createAccount(
         metadata: { account_id: newAccount.account_id },
       });
       return {
-        fieldErrors: { account_id: ["That account ID is already taken."] },
+        fieldErrors: { account_id: [t("accountIdTakenField")] },
         data: formData,
-        message: "That account ID is already taken",
+        message: t("accountIdTaken"),
         success: false,
       };
     }
@@ -184,13 +186,14 @@ export async function updateAccountProfile(
   initialState: any,
   formData: FormData
 ): Promise<FormState<any>> {
+  const t = await getTranslations("AccountActions");
   const session = await getPageSession();
 
   if (!session?.identity_id) {
     return {
       fieldErrors: {},
       data: formData,
-      message: "Unauthenticated",
+      message: t("unauthenticated"),
       success: false,
     };
   }
@@ -200,7 +203,7 @@ export async function updateAccountProfile(
     return {
       fieldErrors: {},
       data: formData,
-      message: "Account ID is required",
+      message: t("accountIdRequired"),
       success: false,
     };
   }
@@ -212,7 +215,7 @@ export async function updateAccountProfile(
       return {
         fieldErrors: {},
         data: formData,
-        message: "Account not found",
+        message: t("accountNotFound"),
         success: false,
       };
     }
@@ -222,7 +225,7 @@ export async function updateAccountProfile(
       return {
         fieldErrors: {},
         data: formData,
-        message: "Unauthorized to update this account",
+        message: t("unauthorizedUpdate"),
         success: false,
       };
     }
@@ -280,9 +283,9 @@ export async function updateAccountProfile(
         // record each time would throw away the address's verified state.
         if (!AccountEmailSchema.shape.address.safeParse(email).success) {
           return {
-            fieldErrors: { email: ["Invalid email address"] },
+            fieldErrors: { email: [t("invalidEmail")] },
             data: formData,
-            message: "Invalid form data",
+            message: t("invalidFormData"),
             success: false,
           };
         }
@@ -328,7 +331,7 @@ export async function updateAccountProfile(
     return {
       fieldErrors: {},
       data: formData,
-      message: "Profile updated successfully!",
+      message: t("profileUpdated"),
       success: true,
     };
   } catch (error) {
@@ -341,7 +344,7 @@ export async function updateAccountProfile(
     return {
       fieldErrors: {},
       data: formData,
-      message: "Failed to update profile. Please try again.",
+      message: t("profileUpdateFailed"),
       success: false,
     };
   }
@@ -357,13 +360,14 @@ export async function updateAccountFlags(
   initialState: any,
   formData: FormData
 ): Promise<FormState<any>> {
+  const t = await getTranslations("AccountActions");
   const session = await getPageSession();
 
   if (!session?.identity_id) {
     return {
       fieldErrors: {},
       data: formData,
-      message: "Unauthenticated",
+      message: t("unauthenticated"),
       success: false,
     };
   }
@@ -373,7 +377,7 @@ export async function updateAccountFlags(
     return {
       fieldErrors: {},
       data: formData,
-      message: "Account ID is required",
+      message: t("accountIdRequired"),
       success: false,
     };
   }
@@ -385,7 +389,7 @@ export async function updateAccountFlags(
       return {
         fieldErrors: {},
         data: formData,
-        message: "Account not found",
+        message: t("accountNotFound"),
         success: false,
       };
     }
@@ -395,7 +399,7 @@ export async function updateAccountFlags(
       return {
         fieldErrors: {},
         data: formData,
-        message: "Unauthorized to update this account's flags",
+        message: t("unauthorizedUpdateFlags"),
         success: false,
       };
     }
@@ -415,7 +419,7 @@ export async function updateAccountFlags(
       return {
         fieldErrors: {},
         data: formData,
-        message: "A service account cannot hold the admin flag",
+        message: t("serviceAccountNoAdmin"),
         success: false,
       };
     }
@@ -439,7 +443,7 @@ export async function updateAccountFlags(
     return {
       fieldErrors: {},
       data: formData,
-      message: "Account flags updated successfully!",
+      message: t("flagsUpdated"),
       success: true,
     };
   } catch (error) {
@@ -452,7 +456,7 @@ export async function updateAccountFlags(
     return {
       fieldErrors: {},
       data: formData,
-      message: "Failed to update account flags. Please try again.",
+      message: t("flagsUpdateFailed"),
       success: false,
     };
   }

@@ -4,6 +4,7 @@ import { SectionHeader } from "@/components/core/SectionHeader";
 import { FetchCredentialsButton } from "@/components/features/uploader/FetchCredentialsButton";
 import { productUrl } from "@/lib/urls";
 import { RefreshListingButton } from "./RefreshListingButton";
+import { useTranslations } from "next-intl";
 
 interface ProductContentsCardProps {
   accountId: string;
@@ -25,10 +26,11 @@ export function ProductContentsCard({
   canWriteData,
   children,
 }: ProductContentsCardProps) {
+  const t = useTranslations("ProductContentsCard");
   return (
     <Card>
       <SectionHeader
-        title="Contents"
+        title={t("contents")}
         rightButton={
           <Flex gap="3" align="center">
             <RefreshListingButton />

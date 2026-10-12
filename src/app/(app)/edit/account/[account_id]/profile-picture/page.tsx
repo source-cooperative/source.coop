@@ -4,13 +4,15 @@ import { Box } from "@radix-ui/themes";
 import { FormTitle } from "@/components/core/FormTitle";
 import { ProfileImageUpload } from "@/components/features/profiles/ProfileImageUpload";
 import { accountsTable } from "@/lib/clients/database";
+import { getTranslations } from "next-intl/server";
 
 export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
   const { account_id } = await params;
   const account = await accountsTable.fetchById(account_id);
-  return { title: `${account!.name} settings` };
+  const t = await getTranslations("EditAccountProfilePicturePage");
+  return { title: t("metaTitle", { name: account!.name }) };
 }
 
 interface PageProps {
@@ -25,13 +27,17 @@ export default async function ProfilePicturePage({ params }: PageProps) {
     notFound();
   }
 
+  const t = await getTranslations("EditAccountProfilePicturePage");
+
   return (
     <Box>
       <FormTitle
-        title="Profile Picture"
-        description={`Manage your ${
-          account.type === "individual" ? "account" : "organization"
-        }'s profile picture`}
+        title={t("title")}
+        description={
+          account.type === "individual"
+            ? t("descriptionIndividual")
+            : t("descriptionOrganization")
+        }
       />
       <ProfileImageUpload account={account} />
     </Box>

@@ -7,6 +7,7 @@ import { Avatar, Badge, Box, Flex, Spinner, TextField, Theme } from "@radix-ui/t
 // inside it disappears. Same package Themes builds its own Popover on, and the
 // repo already depends on four other @radix-ui/react-* primitives directly.
 import * as PopoverPrimitive from "@radix-ui/react-popover";
+import { useTranslations } from "next-intl";
 import { searchAccounts } from "@/lib/actions/account";
 import type { AccountSuggestion } from "@/lib/clients/database/accounts";
 import { AccountType } from "@/types";
@@ -44,6 +45,7 @@ export function AccountSearchInput({
   memberOf,
   ...controlProps
 }: AccountSearchInputProps) {
+  const t = useTranslations("AccountSearchInput");
   const listId = useId();
   const optionId = (index: number) => `${listId}-option-${index}`;
 
@@ -176,7 +178,7 @@ export function AccountSearchInput({
           <PopoverPrimitive.Content
             id={listId}
             role="listbox"
-            aria-label="Matching accounts"
+            aria-label={t("matchingAccounts")}
             side="bottom"
             align="start"
             sideOffset={4}
@@ -232,7 +234,7 @@ export function AccountSearchInput({
                   bot reads as one before it is picked, not only after. */}
               {match.type === AccountType.SERVICE && (
                 <Badge size="1" color="gray" variant="outline">
-                  Service account
+                  {t("serviceAccount")}
                 </Badge>
               )}
             </Flex>

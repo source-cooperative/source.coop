@@ -1,5 +1,6 @@
 import { Box, Skeleton, Flex } from "@radix-ui/themes";
 import styles from "./ProductList.module.css";
+import { useTranslations } from "next-intl";
 
 interface ProductsSkeletonProps {
   showFilters?: boolean;
@@ -8,6 +9,7 @@ interface ProductsSkeletonProps {
 export function ProductsSkeleton({
   showFilters = true,
 }: ProductsSkeletonProps) {
+  const t = useTranslations("ProductsSkeleton");
   return (
     <Box>
       {/* Search and Filters Skeleton - only show when showFilters is true */}
@@ -22,7 +24,7 @@ export function ProductsSkeleton({
 
       {/* Products List Skeleton - using the same structure as ProductListItem */}
       <div>
-        <nav aria-label="Product list loading">
+        <nav aria-label={t("navLabel")}>
           <ul className={styles.list}>
             {Array.from({ length: 5 }).map((_, index) => (
               <li key={index}>

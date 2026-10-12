@@ -8,6 +8,7 @@ import { ShortcutHelp } from "@/components/features/keyboard/ShortcutHelp";
 import { useProductListKeyboardShortcuts } from "@/hooks/useProductListKeyboardShortcuts";
 import { Pagination } from "./Pagination";
 import styles from "./ProductList.module.css";
+import { useTranslations } from "next-intl";
 
 export interface PaginationProps {
   hasNextPage: boolean;
@@ -29,6 +30,7 @@ export function ProductsList({
   pagination,
 }: ProductsListProps) {
   const [showHelp, setShowHelp] = useState(false);
+  const t = useTranslations("ProductsList");
 
   const { selectedIndex } = useProductListKeyboardShortcuts({
     products,
@@ -39,7 +41,7 @@ export function ProductsList({
     return (
       <Box p="8">
         <Text size="3" color="gray" align="center">
-          No products found matching your criteria.
+          {t("empty")}
         </Text>
       </Box>
     );
@@ -47,7 +49,7 @@ export function ProductsList({
 
   return (
     <Box>
-      <nav aria-label="Product list">
+      <nav aria-label={t("navLabel")}>
         {/* ponytail: a plain list, not a listbox. The j/k shortcuts are a
             document-level keydown handler with no focus management and no
             aria-activedescendant, so listbox/option promised a widget that

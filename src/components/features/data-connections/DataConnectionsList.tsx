@@ -1,5 +1,6 @@
 import { Text } from "@radix-ui/themes";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { Account, DataConnection, DataProvider } from "@/types";
 import { AccountInfoHoverCard } from "@/components/core/AccountInfoHoverCard";
 import { accountUrl } from "@/lib/urls";
@@ -60,8 +61,9 @@ function OwnerLabel({
   owner?: string;
   ownerAccounts: Record<string, Account>;
 }) {
+  const t = useTranslations("DataConnectionsList");
   if (!owner) {
-    return <>system</>;
+    return <>{t("systemOwner")}</>;
   }
 
   const account = ownerAccounts[owner];
@@ -93,9 +95,10 @@ export function DataConnectionsList({
   editHref,
   ownerAccounts,
 }: DataConnectionsListProps) {
+  const t = useTranslations("DataConnectionsList");
   if (connections.length === 0) {
     return (
-      <ConnectionsEmpty>Create a data connection to get started.</ConnectionsEmpty>
+      <ConnectionsEmpty>{t("emptyHint")}</ConnectionsEmpty>
     );
   }
 
@@ -113,7 +116,7 @@ export function DataConnectionsList({
           markers={
             // The one state here worth marking. Read-only is deliberate, not a
             // fault, so it is marked where true and unmentioned where false.
-            conn.read_only && <ItemList.Marker>Read only</ItemList.Marker>
+            conn.read_only && <ItemList.Marker>{t("readOnly")}</ItemList.Marker>
           }
           meta={
             <>
@@ -132,8 +135,10 @@ export function DataConnectionsList({
           aside={
             <Text size="1" color="gray">
               {conn.allowed_visibilities.length === 0
-                ? "permits nothing"
-                : conn.allowed_visibilities.join(", ")}
+                ? t("permitsNothing")
+                : conn.allowed_visibilities
+                    .map((v) => t(`visibility.${v}`))
+                    .join(t("listSeparator"))}
             </Text>
           }
         />

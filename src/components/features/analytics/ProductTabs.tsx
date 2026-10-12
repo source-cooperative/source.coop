@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Box, Flex, Text, Tooltip } from "@radix-ui/themes";
 import { LockClosedIcon } from "@radix-ui/react-icons";
+import { useTranslations } from "next-intl";
 import { productAnalyticsUrl, productUrl } from "@/lib/urls";
 
 interface ProductTabsProps {
@@ -20,11 +21,12 @@ const label = (active: boolean): React.CSSProperties => ({
  * manage the product (the analytics route 404s everyone else).
  */
 export function ProductTabs({ accountId, productId, active }: ProductTabsProps) {
+  const t = useTranslations("ProductTabs");
   const tabs = [
-    { key: "product", text: "PRODUCT", href: productUrl(accountId, productId) },
+    { key: "product", text: t("product"), href: productUrl(accountId, productId) },
     {
       key: "analytics",
-      text: "ANALYTICS",
+      text: t("analytics"),
       href: productAnalyticsUrl(accountId, productId),
     },
   ] as const;
@@ -49,12 +51,12 @@ export function ProductTabs({ accountId, productId, active }: ProductTabsProps) 
           >
             <Flex align="center" gap="1">
               {tab.key === "analytics" && (
-                <Tooltip content="Visible only to this product's owners, maintainers, and site admins.">
+                <Tooltip content={t("restrictedTooltip")}>
                   <LockClosedIcon
                     width="11"
                     height="11"
                     color="var(--gray-9)"
-                    aria-label="Restricted"
+                    aria-label={t("restricted")}
                   />
                 </Tooltip>
               )}

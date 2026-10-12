@@ -5,6 +5,7 @@ import { UploadIcon } from "@radix-ui/react-icons";
 import { useDropzone } from "react-dropzone";
 import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import type { Product } from "@/types";
 import {
   useS3Credentials,
@@ -24,6 +25,7 @@ export function Dropzone({
   const { getCredentials } = useS3Credentials();
   const { uploadFiles, getUploadsForScope } = useUploadManager();
   const router = useRouter();
+  const t = useTranslations("Dropzone");
   const scope = {
     accountId: product.account_id,
     productId: product.product_id,
@@ -111,7 +113,7 @@ export function Dropzone({
                 color: "white",
               }}
             >
-              Drop files here to upload
+              {t("dropToUpload")}
             </Text>
           </Box>
         </Box>

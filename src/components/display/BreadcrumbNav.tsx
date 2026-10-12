@@ -3,6 +3,7 @@
 import { Flex } from "@radix-ui/themes";
 import Link from "next/link";
 import { ChevronRightIcon } from "@radix-ui/react-icons";
+import { useTranslations } from "next-intl";
 import { MonoText } from "@/components/core";
 
 interface BreadcrumbNavProps {
@@ -16,6 +17,7 @@ export function BreadcrumbNav({
   fileName,
   baseUrl = "",
 }: BreadcrumbNavProps) {
+  const t = useTranslations("BreadcrumbNav");
   const isRoot = path.length === 0 && !fileName;
 
   // Create link styling that doesn't affect layout
@@ -100,11 +102,11 @@ export function BreadcrumbNav({
       <div style={{ lineHeight: "22px" }}>
         {isRoot ? (
           <MonoText size="2" color="gray">
-            root
+            {t("root")}
           </MonoText>
         ) : (
           <Link href={baseUrl || "/"} style={linkStyle}>
-            <MonoText size="2">root</MonoText>
+            <MonoText size="2">{t("root")}</MonoText>
           </Link>
         )}
       </div>

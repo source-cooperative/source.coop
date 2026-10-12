@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Callout, Code, Flex, IconButton, Text, Tooltip } from "@radix-ui/themes";
 import { ExclamationTriangleIcon, EyeClosedIcon, EyeOpenIcon } from "@radix-ui/react-icons";
+import { useTranslations } from "next-intl";
 import { CopyToClipboard } from "@/components/core/CopyToClipboard";
 import { maskedApiKey, type ServiceAccountKey } from "@/types";
 
@@ -13,6 +14,7 @@ import { maskedApiKey, type ServiceAccountKey } from "@/types";
  */
 export function IssuedApiKey({ apiKey, record }: { apiKey: string; record: ServiceAccountKey }) {
   const [shown, setShown] = useState(false);
+  const t = useTranslations("IssuedApiKey");
   return (
     <Flex direction="column" gap="3">
       <Callout.Root color="grass">
@@ -21,7 +23,7 @@ export function IssuedApiKey({ apiKey, record }: { apiKey: string; record: Servi
         </Callout.Icon>
         <Callout.Text>
           <Text size="2" weight="medium">
-            Copy the key now — this is the only time it is available in full.
+            {t("copyNow")}
           </Text>
         </Callout.Text>
       </Callout.Root>
@@ -30,14 +32,14 @@ export function IssuedApiKey({ apiKey, record }: { apiKey: string; record: Servi
           {shown ? apiKey : maskedApiKey(record)}
         </Code>
         <CopyToClipboard text={apiKey} />
-        <Tooltip content={shown ? "Hide key" : "Show key"}>
+        <Tooltip content={shown ? t("hideKey") : t("showKey")}>
           <IconButton
             type="button"
             size="1"
             variant="ghost"
             color="gray"
             onClick={() => setShown(!shown)}
-            aria-label={shown ? "Hide key" : "Show key"}
+            aria-label={shown ? t("hideKey") : t("showKey")}
             aria-pressed={shown}
           >
             {shown ? <EyeClosedIcon /> : <EyeOpenIcon />}

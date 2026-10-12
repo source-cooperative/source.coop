@@ -1,5 +1,6 @@
 "use client";
 import { useMemo } from "react";
+import { useTranslations } from "next-intl";
 import NextLink from "next/link";
 import {
   Flex,
@@ -30,6 +31,7 @@ const MAX_SHOWN = 100;
 export function ActivitySubmenu() {
   const { uploads, cancelUpload, retryUpload, deletions, dismissDeletion } =
     useUploadManager();
+  const t = useTranslations("ActivitySubmenu");
 
   // Calculate active uploads (queued, uploading)
   const activeUploads = useMemo(() => {
@@ -64,7 +66,7 @@ export function ActivitySubmenu() {
         <DropdownMenu.SubTrigger>
           <Flex align="center" gap="2">
             <UploadIcon />
-            Activity
+            {t("activity")}
             {activeCount > 0 && (
               <Badge color="blue" size="1" style={{ marginLeft: "auto" }}>
                 {activeCount}
@@ -153,7 +155,7 @@ export function ActivitySubmenu() {
                         size="1"
                       >
                         {getStatusIcon(upload.status)}
-                        {upload.status}
+                        {t("status", { status: upload.status })}
                       </Badge>
                       <Text size="1" color="gray">
                         {formatBytes(upload.uploadedBytes)} /{" "}
@@ -180,7 +182,7 @@ export function ActivitySubmenu() {
               })}
               {hidden > 0 && (
                 <Text size="1" color="gray" align="center">
-                  and {hidden.toLocaleString("en")} more…
+                  {t("moreHidden", { count: hidden })}
                 </Text>
               )}
             </Flex>

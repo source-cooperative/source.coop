@@ -1,6 +1,7 @@
 "use client";
 import { useState, type ReactNode } from "react";
 import NextLink from "next/link";
+import { useTranslations } from "next-intl";
 import { Dialog, Flex, IconButton, Text } from "@radix-ui/themes";
 import {
   HamburgerMenuIcon,
@@ -32,11 +33,17 @@ function MobileMenuSheet({
 }: {
   children: (close: () => void) => ReactNode;
 }) {
+  const t = useTranslations("MobileMenu");
   const [open, setOpen] = useState(false);
   return (
     <Dialog.Root open={open} onOpenChange={setOpen}>
       <Dialog.Trigger>
-        <IconButton variant="ghost" color="gray" size="3" aria-label="Open menu">
+        <IconButton
+          variant="ghost"
+          color="gray"
+          size="3"
+          aria-label={t("openMenu")}
+        >
           <HamburgerMenuIcon width="22" height="22" />
         </IconButton>
       </Dialog.Trigger>
@@ -47,14 +54,14 @@ function MobileMenuSheet({
       >
         <Flex align="center" justify="between" px="4" py="3">
           <Dialog.Title size="4" mb="0">
-            Menu
+            {t("menu")}
           </Dialog.Title>
           <Dialog.Close>
             <IconButton
               variant="ghost"
               color="gray"
               size="3"
-              aria-label="Close menu"
+              aria-label={t("closeMenu")}
             >
               <Cross1Icon width="20" height="20" />
             </IconButton>
@@ -76,6 +83,8 @@ export function MobileMenu({
   accounts: DropdownAccount[];
   pendingInvitations: DropdownInvitation[];
 }) {
+  const t = useTranslations("MobileMenu");
+  const tTools = useTranslations("AdminTools");
   // Single-open accordion: one expanded section at a time (account id / "…").
   const [expanded, setExpanded] = useState<string | null>(null);
   const canCreateOrg = isAuthorized(session, "*", Actions.CreateAccount);
@@ -92,10 +101,10 @@ export function MobileMenu({
             className={styles.mobileRow}
             onClick={close}
           >
-            Products
+            {t("products")}
           </NextLink>
           <a href={docsUrl()} className={styles.mobileRow} onClick={close}>
-            Docs
+            {t("docs")}
           </a>
           <div className={styles.mobileDivider} />
 
@@ -115,7 +124,7 @@ export function MobileMenu({
                     <Text>{account.name}</Text>
                     {isSelf && (
                       <Text size="1" color="gray">
-                        you
+                        {t("you")}
                       </Text>
                     )}
                   </Flex>
@@ -126,7 +135,7 @@ export function MobileMenu({
                   onNavigate={close}
                   indent
                 >
-                  {isSelf ? "View profile" : "View organization"}
+                  {isSelf ? t("viewProfile") : t("viewOrganization")}
                 </Row>
                 {products.length > 0 ? (
                   products.map((p) => (
@@ -140,7 +149,7 @@ export function MobileMenu({
                     </Row>
                   ))
                 ) : (
-                  <MutedRow indent>No products yet</MutedRow>
+                  <MutedRow indent>{t("noProducts")}</MutedRow>
                 )}
                 {canCreateProduct && (
                   <Row
@@ -149,7 +158,7 @@ export function MobileMenu({
                     indent
                     icon={<PlusIcon />}
                   >
-                    New product
+                    {t("newProduct")}
                   </Row>
                 )}
               </Section>
@@ -163,7 +172,7 @@ export function MobileMenu({
               onNavigate={close}
               icon={<PlusIcon />}
             >
-              New organization
+              {t("newOrganization")}
             </Row>
           )}
 
@@ -173,7 +182,7 @@ export function MobileMenu({
             onToggle={() => toggle("invitations")}
             label={
               <Flex align="center" gap="2">
-                <Text>Invitations</Text>
+                <Text>{t("invitations")}</Text>
                 {hasInvitations && <span className={styles.mobileDot} />}
               </Flex>
             }
@@ -185,7 +194,7 @@ export function MobileMenu({
                 </Row>
               ))
             ) : (
-              <MutedRow indent>No pending invitations</MutedRow>
+              <MutedRow indent>{t("noInvitations")}</MutedRow>
             )}
           </Section>
 
@@ -193,11 +202,11 @@ export function MobileMenu({
             <Section
               expanded={expanded === "admin"}
               onToggle={() => toggle("admin")}
-              label={<Text>Admin</Text>}
+              label={<Text>{t("admin")}</Text>}
             >
               {ADMIN_TOOLS.map((tool) => (
                 <Row key={tool.href} href={tool.href} onNavigate={close} indent>
-                  {tool.name}
+                  {tTools(`${tool.key}.name`)}
                 </Row>
               ))}
             </Section>
@@ -213,7 +222,7 @@ export function MobileMenu({
               logout();
             }}
           >
-            Log out
+            {t("logout")}
           </button>
         </>
       )}
@@ -223,6 +232,7 @@ export function MobileMenu({
 
 /** Logged-out: the same hamburger sheet with just Products + login. */
 export function LoggedOutMobileMenu() {
+  const t = useTranslations("MobileMenu");
   return (
     <MobileMenuSheet>
       {(close) => (
@@ -232,10 +242,10 @@ export function LoggedOutMobileMenu() {
             className={styles.mobileRow}
             onClick={close}
           >
-            Products
+            {t("products")}
           </NextLink>
           <a href={docsUrl()} className={styles.mobileRow} onClick={close}>
-            Docs
+            {t("docs")}
           </a>
           <div className={styles.mobileDivider} />
           {/* LoginButton is a full-page nav to the Ory flow; it carries its own

@@ -8,6 +8,7 @@ import {
 } from "@radix-ui/themes";
 import { PlusIcon } from "@radix-ui/react-icons";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import type {
   IndividualAccount,
   OrganizationalAccount,
@@ -42,6 +43,7 @@ export function IndividualProfile({
   canEdit,
   canCreateProduct,
 }: IndividualProfileProps) {
+  const t = useTranslations("IndividualProfile");
   const primaryEmail = account.emails?.find((email) => email.is_primary);
   return (
     <Box>
@@ -77,9 +79,9 @@ export function IndividualProfile({
             account.metadata_public.domains.length > 0 && (
               <Box>
                 <Text as="div" size="2" color="gray" mb="2">
-                  {account.metadata_public.domains.length === 1
-                    ? "Website"
-                    : "Websites"}
+                  {t("websites", {
+                    count: account.metadata_public.domains.length,
+                  })}
                 </Text>
                 {account.metadata_public.domains.map((domain, index) => (
                   <Box key={index} mb="2">
@@ -110,7 +112,7 @@ export function IndividualProfile({
       {organizations.length > 0 && (
         <Box mb="6">
           <Heading size="4" mb="2">
-            Organizations
+            {t("organizations")}
           </Heading>
           <Grid columns={{ initial: "1", xs: "2", sm: "3" }} gap="4">
             {organizations.map((org) => (
@@ -123,12 +125,12 @@ export function IndividualProfile({
       {(ownedProducts.length > 0 || canCreateProduct) && (
         <Box mb="6">
           <Flex justify="between" align="center" mb="2">
-            <Heading size="4">Products</Heading>
+            <Heading size="4">{t("products")}</Heading>
             {canCreateProduct && (
               <RadixLink asChild size="1">
                 <Link href={newProductUrl(account.account_id)}>
                   <Flex as="span" align="center" gap="1">
-                    <PlusIcon width="12" height="12" /> New product
+                    <PlusIcon width="12" height="12" /> {t("newProduct")}
                   </Flex>
                 </Link>
               </RadixLink>
@@ -138,7 +140,7 @@ export function IndividualProfile({
             <ProductsList products={ownedProducts} />
           ) : (
             <Text as="p" size="2">
-              No products available.
+              {t("noProducts")}
             </Text>
           )}
         </Box>
@@ -147,7 +149,7 @@ export function IndividualProfile({
       {contributedProducts.length > 0 && (
         <Box>
           <Heading size="4" mb="2">
-            Contributions
+            {t("contributions")}
           </Heading>
           <ProductsList products={contributedProducts} />
         </Box>

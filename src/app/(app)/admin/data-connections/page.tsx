@@ -2,15 +2,17 @@ import { Metadata } from "next";
 import { accountsTable, dataConnectionsTable } from "@/lib/clients";
 import { Flex, Button, Heading } from "@radix-ui/themes";
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { DataConnectionsList } from "@/components/features/data-connections";
 import {
   adminDataConnectionCreateUrl,
   adminDataConnectionEditUrl,
 } from "@/lib/urls";
 
-export const metadata: Metadata = {
-  title: "Admin — Data connections",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("AdminDataConnectionsPage");
+  return { title: t("metaTitle") };
+}
 
 export default async function DataConnectionsPage() {
   const connections = (await dataConnectionsTable.listAll()).sort(
@@ -28,13 +30,14 @@ export default async function DataConnectionsPage() {
       acct,
     ])
   );
+  const t = await getTranslations("AdminDataConnectionsPage");
 
   return (
     <Flex direction="column" gap="4">
       <Flex justify="between" align="center">
-        <Heading size="4">Data Connections</Heading>
+        <Heading size="4">{t("title")}</Heading>
         <Button asChild size="2" highContrast>
-          <Link href={adminDataConnectionCreateUrl()}>New Connection</Link>
+          <Link href={adminDataConnectionCreateUrl()}>{t("newConnection")}</Link>
         </Button>
       </Flex>
 

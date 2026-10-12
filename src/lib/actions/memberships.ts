@@ -8,6 +8,7 @@ import { OperationResult, toFormState } from "../operations/result";
 import { FormState } from "@/components/core/DynamicForm";
 import { revalidatePath } from "next/cache";
 import { editAccountProfileUrl } from "@/lib/urls";
+import { getTranslations } from "next-intl/server";
 
 function revalidate(result: OperationResult<Membership>) {
   if (result.ok) {
@@ -28,7 +29,8 @@ export async function inviteMember(
     account_id: formData.get("account_id"),
     role: formData.get("role"),
   });
-  return toFormState(revalidate(result), formData, "Member invited successfully!");
+  const t = await getTranslations("MembershipActions");
+  return toFormState(revalidate(result), formData, t("invited"));
 }
 
 /** Revokes the membership named by the form's `membership_id`. */
@@ -40,7 +42,8 @@ export async function revokeMembership(
     await getPageSession(),
     String(formData.get("membership_id") ?? "")
   );
-  return toFormState(revalidate(result), formData, "Membership revoked successfully!");
+  const t = await getTranslations("MembershipActions");
+  return toFormState(revalidate(result), formData, t("revoked"));
 }
 
 async function respond(

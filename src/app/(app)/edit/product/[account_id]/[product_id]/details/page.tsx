@@ -15,13 +15,15 @@ import {
   DataConnectionObjectSchema,
 } from "@/types";
 import { DangerZone } from "@/components/core";
+import { getTranslations } from "next-intl/server";
 
 export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
   const { account_id, product_id } = await params;
   const product = await productsTable.fetchById(account_id, product_id);
-  return { title: `Edit ${product!.title} details` };
+  const t = await getTranslations("EditProductDetailsPage");
+  return { title: t("metaTitle", { title: product!.title }) };
 }
 
 interface PageProps {
@@ -64,6 +66,7 @@ export default async function DetailsPage({ params }: PageProps) {
   // (account-owned) connections, or for admins on any connection. The server
   // re-checks this; this only decides whether to offer the option in the UI.
   const canPreserveData = !!connection?.owner || isAdmin(session);
+  const t = await getTranslations("EditProductDetailsPage");
 
   return (
     <>
@@ -76,8 +79,8 @@ export default async function DetailsPage({ params }: PageProps) {
 
       {canDelete && (
         <DangerZone
-          title="Delete this product"
-          description="Permanent. Removes the product record, its memberships and its access records. Whether the underlying objects go too depends on the data connection."
+          title={t("deleteTitle")}
+          description={t("deleteDescription")}
           action={
             <DeleteProductModal
               accountId={account_id}

@@ -1,5 +1,6 @@
 "use server";
 
+import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 import { LOGGER } from "@/lib/logging";
 import {
@@ -61,13 +62,14 @@ export async function createDataConnection(
   _prevState: FormState<DataConnection>,
   formData: FormData
 ): Promise<FormState<DataConnection>> {
+  const t = await getTranslations("DataConnectionActions");
   const session = await getPageSession();
 
   if (!session?.identity_id) {
     return {
       fieldErrors: {},
       data: formData,
-      message: "Unauthenticated",
+      message: t("unauthenticated"),
       success: false,
     };
   }
@@ -81,11 +83,11 @@ export async function createDataConnection(
     return {
       fieldErrors: {
         name: [
-          `Name needs at least ${MIN_ID_LENGTH} letters or numbers, so an ID can be made from it.`,
+          t("nameTooShort", { min: MIN_ID_LENGTH }),
         ],
       },
       data: formData,
-      message: "Invalid connection name",
+      message: t("invalidName"),
       success: false,
     };
   }
@@ -113,7 +115,7 @@ export async function createDataConnection(
       return {
         fieldErrors: fieldErrorsFromZod(validated.error),
         data: formData,
-        message: "Invalid form data",
+        message: t("invalidFormData"),
         success: false,
       };
     }
@@ -128,7 +130,7 @@ export async function createDataConnection(
       return {
         fieldErrors: {},
         data: formData,
-        message: "Unauthorized to create data connections",
+        message: t("unauthorizedCreate"),
         success: false,
       };
     }
@@ -142,11 +144,11 @@ export async function createDataConnection(
       return {
         fieldErrors: {
           name: [
-            `That name is already taken — it would produce the ID "${validated.data.data_connection_id}".`,
+            t("nameTakenField", { id: validated.data.data_connection_id }),
           ],
         },
         data: formData,
-        message: "A data connection with that name already exists",
+        message: t("nameTaken"),
         success: false,
       };
     }
@@ -163,11 +165,11 @@ export async function createDataConnection(
         return {
           fieldErrors: {
             name: [
-              `That name is already taken — it would produce the ID "${validated.data.data_connection_id}".`,
+              t("nameTakenField", { id: validated.data.data_connection_id }),
             ],
           },
           data: formData,
-          message: "A data connection with that name already exists",
+          message: t("nameTaken"),
           success: false,
         };
       }
@@ -190,7 +192,7 @@ export async function createDataConnection(
     return {
       fieldErrors: {},
       data: formData,
-      message: "Data connection created successfully!",
+      message: t("created"),
       success: true,
       redirectTo: owner
         ? accountDataConnectionEditUrl(owner, newId)
@@ -205,7 +207,7 @@ export async function createDataConnection(
     return {
       fieldErrors: {},
       data: formData,
-      message: "Failed to create data connection. Please try again.",
+      message: t("createFailed"),
       success: false,
     };
   }
@@ -215,13 +217,14 @@ export async function updateDataConnection(
   _prevState: FormState<DataConnection>,
   formData: FormData
 ): Promise<FormState<DataConnection>> {
+  const t = await getTranslations("DataConnectionActions");
   const session = await getPageSession();
 
   if (!session?.identity_id) {
     return {
       fieldErrors: {},
       data: formData,
-      message: "Unauthenticated",
+      message: t("unauthenticated"),
       success: false,
     };
   }
@@ -231,7 +234,7 @@ export async function updateDataConnection(
     return {
       fieldErrors: {},
       data: formData,
-      message: "Data connection ID is required",
+      message: t("idRequired"),
       success: false,
     };
   }
@@ -242,7 +245,7 @@ export async function updateDataConnection(
       return {
         fieldErrors: {},
         data: formData,
-        message: "Data connection not found",
+        message: t("notFound"),
         success: false,
       };
     }
@@ -257,7 +260,7 @@ export async function updateDataConnection(
       return {
         fieldErrors: {},
         data: formData,
-        message: "Unauthorized to update data connections",
+        message: t("unauthorizedUpdate"),
         success: false,
       };
     }
@@ -271,7 +274,7 @@ export async function updateDataConnection(
       return {
         fieldErrors: fieldErrorsFromZod(validated.error),
         data: formData,
-        message: "Invalid form data",
+        message: t("invalidFormData"),
         success: false,
       };
     }
@@ -288,7 +291,7 @@ export async function updateDataConnection(
         return {
           fieldErrors: {},
           data: formData,
-          message: "Data connection was deleted concurrently",
+          message: t("deletedConcurrently"),
           success: false,
         };
       }
@@ -313,7 +316,7 @@ export async function updateDataConnection(
     return {
       fieldErrors: {},
       data: formData,
-      message: "Data connection updated successfully!",
+      message: t("updated"),
       success: true,
     };
   } catch (error) {
@@ -325,7 +328,7 @@ export async function updateDataConnection(
     return {
       fieldErrors: {},
       data: formData,
-      message: "Failed to update data connection. Please try again.",
+      message: t("updateFailed"),
       success: false,
     };
   }
@@ -335,13 +338,14 @@ export async function deleteDataConnection(
   _prevState: FormState<unknown>,
   formData: FormData
 ): Promise<FormState<unknown>> {
+  const t = await getTranslations("DataConnectionActions");
   const session = await getPageSession();
 
   if (!session?.identity_id) {
     return {
       fieldErrors: {},
       data: formData,
-      message: "Unauthenticated",
+      message: t("unauthenticated"),
       success: false,
     };
   }
@@ -351,7 +355,7 @@ export async function deleteDataConnection(
     return {
       fieldErrors: {},
       data: formData,
-      message: "Data connection ID is required",
+      message: t("idRequired"),
       success: false,
     };
   }
@@ -362,7 +366,7 @@ export async function deleteDataConnection(
       return {
         fieldErrors: {},
         data: formData,
-        message: "Data connection not found",
+        message: t("notFound"),
         success: false,
       };
     }
@@ -377,7 +381,7 @@ export async function deleteDataConnection(
       return {
         fieldErrors: {},
         data: formData,
-        message: "Unauthorized to delete data connections",
+        message: t("unauthorizedDelete"),
         success: false,
       };
     }
@@ -391,7 +395,7 @@ export async function deleteDataConnection(
       return {
         fieldErrors: {},
         data: formData,
-        message: `Cannot delete: ${dependents.length} product(s) still use this connection. Remove it from them first.`,
+        message: t("inUse", { count: dependents.length }),
         success: false,
       };
     }
@@ -411,7 +415,7 @@ export async function deleteDataConnection(
     return {
       fieldErrors: {},
       data: formData,
-      message: "Data connection deleted successfully!",
+      message: t("deleted"),
       success: true,
       redirectTo: listUrl,
     };
@@ -424,7 +428,7 @@ export async function deleteDataConnection(
     return {
       fieldErrors: {},
       data: formData,
-      message: "Failed to delete data connection. Please try again.",
+      message: t("deleteFailed"),
       success: false,
     };
   }

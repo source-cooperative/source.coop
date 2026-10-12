@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Box, Text } from "@radix-ui/themes";
+import { useTranslations } from "next-intl";
 import { DynamicForm, FormField } from "@/components/core";
 import { createAccount } from "@/lib/actions/account";
 import { AccountType, Account } from "@/types";
@@ -11,17 +12,18 @@ import { EmailVerificationCallout } from "@/components/features/auth/EmailVerifi
 type OnboardingFormData = Pick<Account, "account_id" | "name">;
 
 export function OnboardingForm({ identityId }: { identityId: string }) {
+  const t = useTranslations("OnboardingForm");
   const [accountId, setAccountId] = useState("");
   const validationState = useAccountIdValidation(accountId);
 
   const fields: FormField<OnboardingFormData>[] = [
     {
-      label: "Username",
+      label: t("username"),
       name: "account_id",
       type: "text",
       required: true,
-      description: "This will be your profile URL: source.coop/[username]",
-      placeholder: "Choose a username",
+      description: t("usernameDescription"),
+      placeholder: t("usernamePlaceholder"),
       controlled: true,
       value: accountId,
       onValueChange: (value: string) => {
@@ -31,11 +33,11 @@ export function OnboardingForm({ identityId }: { identityId: string }) {
       isValid: !!validationState.isValid,
       message: validationState.isLoading ? (
         <Text size="1" color="gray">
-          Checking username availability...
+          {t("checking")}
         </Text>
       ) : validationState.isValid === true ? (
         <Text size="1" color="green">
-          ✓ Username is available
+          {t("available")}
         </Text>
       ) : validationState.isValid === false && validationState.error ? (
         <Text size="1" color="red">
@@ -44,12 +46,12 @@ export function OnboardingForm({ identityId }: { identityId: string }) {
       ) : null,
     },
     {
-      label: "Full Name",
+      label: t("fullName"),
       name: "name",
       type: "text",
       required: true,
-      description: "This is the name that will be displayed on your profile",
-      placeholder: "Your Name",
+      description: t("fullNameDescription"),
+      placeholder: t("fullNamePlaceholder"),
     },
   ];
 
@@ -59,7 +61,7 @@ export function OnboardingForm({ identityId }: { identityId: string }) {
       <DynamicForm<OnboardingFormData>
         fields={fields}
         action={createAccount}
-        submitButtonText="Complete profile"
+        submitButtonText={t("submit")}
         hiddenFields={{
           type: AccountType.INDIVIDUAL,
           identity_id: identityId,

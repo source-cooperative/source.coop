@@ -1,6 +1,8 @@
 import { Suspense } from "react";
 import { Button, Flex, Text } from "@radix-ui/themes";
 import { LockClosedIcon } from "@radix-ui/react-icons";
+import { useTranslations } from "next-intl";
+import { getTranslations } from "next-intl/server";
 import { productsTable } from "@/lib/clients";
 import { DeleteDataConnectionButton } from "./DeleteDataConnectionButton";
 
@@ -24,11 +26,12 @@ export function DeleteConnectionControl({
 }: {
   connectionId: string;
 }) {
+  const t = useTranslations("DeleteDataConnectionButton");
   return (
     <Suspense
       fallback={
         <Button size="2" color="red" variant="soft" disabled>
-          Delete connection
+          {t("trigger")}
         </Button>
       }
     >
@@ -71,16 +74,13 @@ export function DeleteConnectionNote({
 async function DeleteNoteInner({ connectionId }: { connectionId: string }) {
   const products = await productsTable.listProductsByConnectionId(connectionId);
   if (products.length === 0) return null;
+  const t = await getTranslations("DeleteConnectionNote");
 
   return (
     <Flex align="center" gap="1">
       <LockClosedIcon width="14" height="14" color="var(--red-11)" />
       <Text size="1" color="red">
-        Blocked:{" "}
-        {products.length === 1
-          ? "1 product still uses it"
-          : `${products.length} products still use it`}
-        . Remove it from each first.
+        {t("blocked", { count: products.length })}
       </Text>
     </Flex>
   );

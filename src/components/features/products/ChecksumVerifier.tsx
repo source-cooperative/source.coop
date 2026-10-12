@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Text, Flex, Button, Box } from '@radix-ui/themes';
 import { CheckCircledIcon, CrossCircledIcon, UpdateIcon } from '@radix-ui/react-icons';
+import { useTranslations } from 'next-intl';
 
 interface ChecksumVerifierProps {
   objectUrl: string;
@@ -17,6 +18,7 @@ export function ChecksumVerifier({
 }: ChecksumVerifierProps) {
   const [status, setStatus] = useState<'idle' | 'checking' | 'match' | 'mismatch' | 'error'>('idle');
   const [error, setError] = useState<string | null>(null);
+  const t = useTranslations('ChecksumVerifier');
 
   async function verifyChecksum() {
     try {
@@ -33,14 +35,14 @@ export function ChecksumVerifier({
       const headerHash = response.headers.get(algorithm === 'SHA-256' ? 'x-amz-checksum-sha256' : 'x-amz-checksum-sha1');
       
       if (!headerHash) {
-        setError('Checksum not available in response headers');
+        setError(t('notAvailable'));
         setStatus('error');
         return;
       }
 
       setStatus(headerHash.toLowerCase() === expectedHash.toLowerCase() ? 'match' : 'mismatch');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to verify checksum');
+      setError(err instanceof Error ? err.message : t('failed'));
       setStatus('error');
     }
   }
@@ -52,12 +54,12 @@ export function ChecksumVerifier({
         onClick={verifyChecksum}
         disabled={status === 'checking'}
       >
-        Verify {algorithm}
+        {t('verify', { algorithm })}
       </Button>
       {status === 'checking' && (
         <Flex align="center" gap="1">
           <UpdateIcon className="animate-spin" />
-          <Text size="1">Verifying...</Text>
+          <Text size="1">{t('verifying')}</Text>
         </Flex>
       )}
       {status === 'match' && (
@@ -65,7 +67,7 @@ export function ChecksumVerifier({
           <Box style={{ color: 'var(--green-9)' }}>
             <CheckCircledIcon />
           </Box>
-          <Text size="1" color="green">Checksum verified</Text>
+          <Text size="1" color="green">{t('verified')}</Text>
         </Flex>
       )}
       {status === 'mismatch' && (
@@ -73,7 +75,7 @@ export function ChecksumVerifier({
           <Box style={{ color: 'var(--red-9)' }}>
             <CrossCircledIcon />
           </Box>
-          <Text size="1" color="red">Checksum mismatch</Text>
+          <Text size="1" color="red">{t('mismatch')}</Text>
         </Flex>
       )}
       {status === 'error' && (

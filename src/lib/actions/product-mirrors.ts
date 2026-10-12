@@ -1,5 +1,6 @@
 "use server";
 
+import { getTranslations } from "next-intl/server";
 import { LOGGER } from "@/lib/logging";
 import { canManageAccount } from "../api/authz";
 import { getPageSession } from "../api/utils";
@@ -22,16 +23,14 @@ import {
  * Returns the message to report when the caller is not permitted, or null when
  * they are.
  */
-const NOT_ACCOUNT_MANAGER_MESSAGE =
-  "Only owners and maintainers of the owning account can manage this product's data connections";
-
 async function denyUnlessAccountManager(
   session: Awaited<ReturnType<typeof getPageSession>>,
   accountId: string
 ): Promise<string | null> {
+  const t = await getTranslations("ProductMirrorActions");
   const account = await accountsTable.fetchById(accountId);
   if (!account || !canManageAccount(session, account)) {
-    return NOT_ACCOUNT_MANAGER_MESSAGE;
+    return t("notAccountManager");
   }
   return null;
 }
@@ -40,9 +39,6 @@ async function denyUnlessAccountManager(
 // optimistic compare-and-swap on the product's updated_at, so two people editing
 // the same product's mirrors concurrently can't silently clobber each other —
 // the second write fails and the action reports a conflict instead.
-const CONCURRENT_EDIT_MESSAGE =
-  "This product was modified by someone else. Please reload and try again.";
-
 function isConcurrentEdit(error: unknown): boolean {
   return (
     error instanceof Error &&
@@ -54,13 +50,14 @@ export async function addProductMirror(
   _prevState: FormState<unknown>,
   formData: FormData
 ): Promise<FormState<unknown>> {
+  const t = await getTranslations("ProductMirrorActions");
   const session = await getPageSession();
 
   if (!session?.identity_id) {
     return {
       fieldErrors: {},
       data: formData,
-      message: "Unauthenticated",
+      message: t("unauthenticated"),
       success: false,
     };
   }
@@ -73,7 +70,7 @@ export async function addProductMirror(
     return {
       fieldErrors: {},
       data: formData,
-      message: "Missing required fields",
+      message: t("missingFields"),
       success: false,
     };
   }
@@ -91,7 +88,7 @@ export async function addProductMirror(
       return {
         fieldErrors: {},
         data: formData,
-        message: "Product not found",
+        message: t("productNotFound"),
         success: false,
       };
     }
@@ -101,7 +98,7 @@ export async function addProductMirror(
       return {
         fieldErrors: {},
         data: formData,
-        message: "Data connection not found",
+        message: t("connectionNotFound"),
         success: false,
       };
     }
@@ -112,7 +109,7 @@ export async function addProductMirror(
       return {
         fieldErrors: {},
         data: formData,
-        message: "This data connection is not available for this account",
+        message: t("connectionUnavailable"),
         success: false,
       };
     }
@@ -121,7 +118,7 @@ export async function addProductMirror(
       return {
         fieldErrors: {},
         data: formData,
-        message: "This data connection is already associated with this product",
+        message: t("alreadyAssociated"),
         success: false,
       };
     }
@@ -163,7 +160,7 @@ export async function addProductMirror(
     return {
       fieldErrors: {},
       data: formData,
-      message: "Data connection added successfully!",
+      message: t("added"),
       success: true,
     };
   } catch (error) {
@@ -171,7 +168,7 @@ export async function addProductMirror(
       return {
         fieldErrors: {},
         data: formData,
-        message: CONCURRENT_EDIT_MESSAGE,
+        message: t("concurrentEdit"),
         success: false,
       };
     }
@@ -182,7 +179,7 @@ export async function addProductMirror(
     return {
       fieldErrors: {},
       data: formData,
-      message: "Failed to add data connection. Please try again.",
+      message: t("addFailed"),
       success: false,
     };
   }
@@ -192,13 +189,14 @@ export async function removeProductMirror(
   _prevState: FormState<unknown>,
   formData: FormData
 ): Promise<FormState<unknown>> {
+  const t = await getTranslations("ProductMirrorActions");
   const session = await getPageSession();
 
   if (!session?.identity_id) {
     return {
       fieldErrors: {},
       data: formData,
-      message: "Unauthenticated",
+      message: t("unauthenticated"),
       success: false,
     };
   }
@@ -211,7 +209,7 @@ export async function removeProductMirror(
     return {
       fieldErrors: {},
       data: formData,
-      message: "Missing required fields",
+      message: t("missingFields"),
       success: false,
     };
   }
@@ -227,7 +225,7 @@ export async function removeProductMirror(
       return {
         fieldErrors: {},
         data: formData,
-        message: "Product not found",
+        message: t("productNotFound"),
         success: false,
       };
     }
@@ -236,7 +234,7 @@ export async function removeProductMirror(
       return {
         fieldErrors: {},
         data: formData,
-        message: "Mirror not found",
+        message: t("mirrorNotFound"),
         success: false,
       };
     }
@@ -280,7 +278,7 @@ export async function removeProductMirror(
     return {
       fieldErrors: {},
       data: formData,
-      message: "Data connection removed successfully!",
+      message: t("removed"),
       success: true,
     };
   } catch (error) {
@@ -288,7 +286,7 @@ export async function removeProductMirror(
       return {
         fieldErrors: {},
         data: formData,
-        message: CONCURRENT_EDIT_MESSAGE,
+        message: t("concurrentEdit"),
         success: false,
       };
     }
@@ -299,7 +297,7 @@ export async function removeProductMirror(
     return {
       fieldErrors: {},
       data: formData,
-      message: "Failed to remove data connection. Please try again.",
+      message: t("removeFailed"),
       success: false,
     };
   }
@@ -317,13 +315,14 @@ export async function updateMirrorPrefix(
   _prevState: FormState<unknown>,
   formData: FormData
 ): Promise<FormState<unknown>> {
+  const t = await getTranslations("ProductMirrorActions");
   const session = await getPageSession();
 
   if (!session?.identity_id) {
     return {
       fieldErrors: {},
       data: formData,
-      message: "Unauthenticated",
+      message: t("unauthenticated"),
       success: false,
     };
   }
@@ -337,7 +336,7 @@ export async function updateMirrorPrefix(
     return {
       fieldErrors: {},
       data: formData,
-      message: "Missing required fields",
+      message: t("missingFields"),
       success: false,
     };
   }
@@ -353,7 +352,7 @@ export async function updateMirrorPrefix(
     return {
       fieldErrors: {},
       data: formData,
-      message: "Prefix can't start with '/' or contain '..'",
+      message: t("invalidPrefix"),
       success: false,
     };
   }
@@ -371,7 +370,7 @@ export async function updateMirrorPrefix(
       return {
         fieldErrors: {},
         data: formData,
-        message: "Product not found",
+        message: t("productNotFound"),
         success: false,
       };
     }
@@ -381,7 +380,7 @@ export async function updateMirrorPrefix(
       return {
         fieldErrors: {},
         data: formData,
-        message: "Mirror not found",
+        message: t("mirrorNotFound"),
         success: false,
       };
     }
@@ -395,7 +394,7 @@ export async function updateMirrorPrefix(
         fieldErrors: {},
         data: formData,
         message:
-          "You must be able to manage both this account and the data connection to edit its prefix",
+          t("cannotEditPrefix"),
         success: false,
       };
     }
@@ -425,7 +424,7 @@ export async function updateMirrorPrefix(
     return {
       fieldErrors: {},
       data: formData,
-      message: "Prefix updated successfully!",
+      message: t("prefixUpdated"),
       success: true,
     };
   } catch (error) {
@@ -433,7 +432,7 @@ export async function updateMirrorPrefix(
       return {
         fieldErrors: {},
         data: formData,
-        message: CONCURRENT_EDIT_MESSAGE,
+        message: t("concurrentEdit"),
         success: false,
       };
     }
@@ -444,7 +443,7 @@ export async function updateMirrorPrefix(
     return {
       fieldErrors: {},
       data: formData,
-      message: "Failed to update prefix. Please try again.",
+      message: t("prefixUpdateFailed"),
       success: false,
     };
   }
@@ -454,13 +453,14 @@ export async function setPrimaryMirror(
   _prevState: FormState<unknown>,
   formData: FormData
 ): Promise<FormState<unknown>> {
+  const t = await getTranslations("ProductMirrorActions");
   const session = await getPageSession();
 
   if (!session?.identity_id) {
     return {
       fieldErrors: {},
       data: formData,
-      message: "Unauthenticated",
+      message: t("unauthenticated"),
       success: false,
     };
   }
@@ -473,7 +473,7 @@ export async function setPrimaryMirror(
     return {
       fieldErrors: {},
       data: formData,
-      message: "Missing required fields",
+      message: t("missingFields"),
       success: false,
     };
   }
@@ -489,7 +489,7 @@ export async function setPrimaryMirror(
       return {
         fieldErrors: {},
         data: formData,
-        message: "Product not found",
+        message: t("productNotFound"),
         success: false,
       };
     }
@@ -498,7 +498,7 @@ export async function setPrimaryMirror(
       return {
         fieldErrors: {},
         data: formData,
-        message: "Mirror not found",
+        message: t("mirrorNotFound"),
         success: false,
       };
     }
@@ -534,7 +534,7 @@ export async function setPrimaryMirror(
     return {
       fieldErrors: {},
       data: formData,
-      message: "Primary mirror updated successfully!",
+      message: t("primaryUpdated"),
       success: true,
     };
   } catch (error) {
@@ -542,7 +542,7 @@ export async function setPrimaryMirror(
       return {
         fieldErrors: {},
         data: formData,
-        message: CONCURRENT_EDIT_MESSAGE,
+        message: t("concurrentEdit"),
         success: false,
       };
     }
@@ -553,7 +553,7 @@ export async function setPrimaryMirror(
     return {
       fieldErrors: {},
       data: formData,
-      message: "Failed to update primary mirror. Please try again.",
+      message: t("primaryUpdateFailed"),
       success: false,
     };
   }

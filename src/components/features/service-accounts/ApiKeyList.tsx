@@ -3,6 +3,7 @@
 import { startTransition, useActionState, useState } from "react";
 import { Button, Dialog, DropdownMenu, Flex, IconButton, Text, Tooltip } from "@radix-ui/themes";
 import { DotsHorizontalIcon } from "@radix-ui/react-icons";
+import { useLocale, useTranslations } from "next-intl";
 import { ItemList } from "@/components/core/ItemList";
 import { revokeApiKey, setApiKeyExpiry } from "@/lib/actions/service-account-keys";
 import {
@@ -10,7 +11,6 @@ import {
   isKeyActive,
   maskedApiKey,
   type ApiKeyActionState,
-  type RevokedVia,
   type ServiceAccountKey,
 } from "@/types";
 import { ApiKeyExpiryField } from "./ApiKeyExpiryField";
@@ -25,51 +25,51 @@ function Status({ state }: { state: ApiKeyActionState }) {
   ) : null;
 }
 
-const date = (iso: string) =>
-  new Date(iso).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+const date = (iso: string, locale: string) =>
+  new Date(iso).toLocaleDateString(locale, { year: "numeric", month: "short", day: "numeric" });
 
-const RELATIVE = new Intl.RelativeTimeFormat(undefined, { numeric: "auto" });
 const DAY_MS = 86_400_000;
 /** "3 days ago", "in 5 months": the row's reading; the exact date is in its tooltip. */
-const relative = (iso: string, now = Date.now()) => {
+const relative = (iso: string, locale: string, now = Date.now()) => {
+  const rtf = new Intl.RelativeTimeFormat(locale, { numeric: "auto" });
   const days = Math.round((Date.parse(iso) - now) / DAY_MS);
-  if (Math.abs(days) < 30) return RELATIVE.format(days, "day");
-  if (Math.abs(days) < 365) return RELATIVE.format(Math.round(days / 30), "month");
-  return RELATIVE.format(Math.round(days / 365), "year");
+  if (Math.abs(days) < 30) return rtf.format(days, "day");
+  if (Math.abs(days) < 365) return rtf.format(Math.round(days / 30), "month");
+  return rtf.format(Math.round(days / 365), "year");
 };
 
-const REVOKED_VIA: Record<RevokedVia, string> = {
-  owner: " in settings",
-  holder: " anonymously via the API",
-  github: " by GitHub secret scanning",
-};
+type T = ReturnType<typeof useTranslations<"ApiKeyList">>;
 
-/** Who revoked a key — the person, an anonymous holder, or GitHub — as a phrase to follow "Revoked …". */
-const revoker = (key: ServiceAccountKey) =>
-  key.revoked_by ? ` by ${key.revoked_by}` : key.revoked_via ? REVOKED_VIA[key.revoked_via] : "";
+/** "Revoked …" with who revoked a key — the person, an anonymous holder, or GitHub. */
+const revoked = (t: T, key: ServiceAccountKey, when: string) =>
+  t("revoked", {
+    when,
+    via: key.revoked_by ? "person" : (key.revoked_via ?? "none"),
+    who: key.revoked_by ?? "",
+  });
 
 /** What a key's row says of it, in two short lines: its use, then its end. */
-const keyStanding = (key: ServiceAccountKey) => ({
-  used: key.last_used_at ? `Used ${relative(key.last_used_at)}` : "Never used",
+const keyStanding = (t: T, key: ServiceAccountKey, locale: string) => ({
+  used: key.last_used_at ? t("used", { when: relative(key.last_used_at, locale) }) : t("neverUsed"),
   ends: key.revoked_at
-    ? `Revoked ${relative(key.revoked_at)}${revoker(key)}`
+    ? revoked(t, key, relative(key.revoked_at, locale))
     : key.expires_at === null
-      ? "Never expires"
+      ? t("neverExpires")
       : Date.parse(key.expires_at) > Date.now()
-        ? `Expires ${relative(key.expires_at)}`
-        : `Expired ${relative(key.expires_at)}`,
+        ? t("expires", { when: relative(key.expires_at, locale) })
+        : t("expired", { when: relative(key.expires_at, locale) }),
 });
 
 /** The row's exact dates, and who revoked it, for its tooltip. */
-const keyDates = (key: ServiceAccountKey) =>
+const keyDates = (t: T, key: ServiceAccountKey, locale: string) =>
   [
-    `Issued ${date(key.created_at)} by ${key.created_by}`,
-    key.last_used_at && `Last used ${date(key.last_used_at)}`,
+    t("issued", { when: date(key.created_at, locale), who: key.created_by }),
+    key.last_used_at && t("lastUsed", { when: date(key.last_used_at, locale) }),
     key.revoked_at
-      ? `Revoked ${date(key.revoked_at)}${revoker(key)}`
+      ? revoked(t, key, date(key.revoked_at, locale))
       : key.expires_at
-        ? `Expires ${date(key.expires_at)}`
-        : "Never expires",
+        ? t("expires", { when: date(key.expires_at, locale) })
+        : t("neverExpires"),
   ]
     .filter(Boolean)
     .join(" · ");
@@ -94,8 +94,10 @@ function KeyRow({
 }) {
   const [changingExpiry, setChangingExpiry] = useState(false);
   const [showingUsage, setShowingUsage] = useState(false);
-  const marker = keyMarker(apiKey);
-  const standing = keyStanding(apiKey);
+  const t = useTranslations("ApiKeyList");
+  const marker = keyMarker(t, apiKey);
+  const locale = useLocale();
+  const standing = keyStanding(t, apiKey, locale);
   return (
     <ItemList.Row
       title={
@@ -106,7 +108,7 @@ function KeyRow({
       markers={marker && <ItemList.Marker>{marker}</ItemList.Marker>}
       meta={maskedApiKey(apiKey) ?? undefined}
       aside={
-        <Tooltip content={keyDates(apiKey)}>
+        <Tooltip content={keyDates(t, apiKey, locale)}>
           <Flex direction="column" align="end" style={{ cursor: "default" }}>
             <Text size="1" color="gray">
               {standing.used}
@@ -135,7 +137,7 @@ function KeyRow({
                   variant="ghost"
                   color="gray"
                   disabled={revoking}
-                  aria-label={`Actions for ${apiKey.label}`}
+                  aria-label={t("actionsFor", { label: apiKey.label })}
                 >
                   <DotsHorizontalIcon />
                 </IconButton>
@@ -144,22 +146,22 @@ function KeyRow({
                 {/* Only a key that works has a use to show. */}
                 {proxyOrigin && isKeyActive(apiKey) && (
                   <DropdownMenu.Item onSelect={() => setShowingUsage(true)}>
-                    Example usage
+                    {t("exampleUsage")}
                   </DropdownMenu.Item>
                 )}
                 <DropdownMenu.Item onSelect={() => setChangingExpiry(true)}>
-                  Change expiry
+                  {t("changeExpiry")}
                 </DropdownMenu.Item>
                 <DropdownMenu.Separator />
                 <DropdownMenu.Item color="red" onSelect={() => onRevoke(apiKey.key_id)}>
-                  Revoke
+                  {t("revoke")}
                 </DropdownMenu.Item>
               </DropdownMenu.Content>
             </DropdownMenu.Root>
             {proxyOrigin && (
               <ExampleUsage
-                title={`Sign in with ${apiKey.label}`}
-                intro="Save the API key to a file and set environment variables accordingly:"
+                title={t("signInWith", { label: apiKey.label })}
+                intro={t("usageIntro")}
                 code={apiKeyEnvironment(proxyOrigin, accountId)}
                 language="shell"
                 open={showingUsage}
@@ -180,8 +182,8 @@ function KeyRow({
 }
 
 /** Only a key that no longer works is marked; a live one is the norm. */
-const keyMarker = (key: ServiceAccountKey) =>
-  key.revoked_at ? "Revoked" : isKeyActive(key) ? null : "Expired";
+const keyMarker = (t: T, key: ServiceAccountKey) =>
+  key.revoked_at ? t("markerRevoked") : isKeyActive(key) ? null : t("markerExpired");
 
 /**
  * A new expiry for a live key, counted from now, in a modal: longer for a
@@ -199,10 +201,12 @@ function ChangeExpiry({
   onOpenChange: (open: boolean) => void;
 }) {
   const [state, action, saving] = useActionState(setApiKeyExpiry, IDLE_API_KEY_ACTION_STATE);
+  const t = useTranslations("ApiKeyList");
+  const tc = useTranslations("Common");
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Content style={{ maxWidth: 440 }} aria-describedby={undefined}>
-        <Dialog.Title>When should {apiKey.label} expire?</Dialog.Title>
+        <Dialog.Title>{t("expiryTitle", { label: apiKey.label })}</Dialog.Title>
         <form action={action}>
           <input type="hidden" name="account_id" value={accountId} />
           <input type="hidden" name="key_id" value={apiKey.key_id} />
@@ -212,11 +216,11 @@ function ChangeExpiry({
             <Flex justify="end" gap="2">
               <Dialog.Close>
                 <Button type="button" variant="soft" color="gray">
-                  Close
+                  {tc("close")}
                 </Button>
               </Dialog.Close>
               <Button type="submit" highContrast disabled={saving}>
-                Save
+                {tc("save")}
               </Button>
             </Flex>
           </Flex>
@@ -242,6 +246,7 @@ export function ApiKeyList({
   proxyOrigin?: string;
 }) {
   const [revokeState, revokeAction, revoking] = useActionState(revokeApiKey, IDLE_API_KEY_ACTION_STATE);
+  const t = useTranslations("ApiKeyList");
   const revokeKey = (key_id: string) => {
     const data = new FormData();
     data.set("account_id", accountId);
@@ -251,7 +256,7 @@ export function ApiKeyList({
   if (keys.length === 0) {
     return (
       <Text size="2" color="gray">
-        None.
+        {t("none")}
       </Text>
     );
   }

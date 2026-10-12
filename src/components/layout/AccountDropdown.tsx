@@ -2,6 +2,7 @@
 import { useState, type CSSProperties } from "react";
 import { Flex, DropdownMenu, Text, Box } from "@radix-ui/themes";
 import { ChevronDownIcon, PlusIcon } from "@radix-ui/react-icons";
+import { useTranslations } from "next-intl";
 import styles from "./Navigation.module.css";
 import {
   accountUrl,
@@ -65,6 +66,8 @@ export function AccountDropdown({
   accounts?: DropdownAccount[];
   pendingInvitations?: DropdownInvitation[];
 }) {
+  const t = useTranslations("AccountDropdown");
+  const tTools = useTranslations("AdminTools");
   const [isOpen, setIsOpen] = useState(false);
   const hasInvitations = pendingInvitations.length > 0;
   const canCreateOrg = isAuthorized(session, "*", Actions.CreateAccount);
@@ -78,7 +81,7 @@ export function AccountDropdown({
             <ActivityBadge />
             {hasInvitations && (
               <Box
-                aria-label="You have pending invitations"
+                aria-label={t("pendingInvitations")}
                 style={{
                   position: "absolute",
                   bottom: -1,
@@ -116,7 +119,7 @@ export function AccountDropdown({
                   <Text style={entityNameStyle}>{account.name}</Text>
                   {isSelf && (
                     <Text size="1" color="gray">
-                      you
+                      {t("you")}
                     </Text>
                   )}
                 </Flex>
@@ -124,10 +127,10 @@ export function AccountDropdown({
               items={[
                 {
                   href: accountUrl(account.account_id),
-                  children: isSelf ? "View profile" : "View organization",
+                  children: isSelf ? t("viewProfile") : t("viewOrganization"),
                 },
               ]}
-              actionsLabel="Products"
+              actionsLabel={t("products")}
               actions={[
                 ...(products.length > 0
                   ? products.slice(0, 20).map((product) => ({
@@ -144,7 +147,7 @@ export function AccountDropdown({
                     }))
                   : [
                       {
-                        children: "No products yet",
+                        children: t("noProducts"),
                         color: "gray" as const,
                         disabled: true,
                       },
@@ -159,11 +162,11 @@ export function AccountDropdown({
                   disabled: !canCreateProduct,
                   tooltip: canCreateProduct
                     ? undefined
-                    : "You don't have permission to create products",
+                    : t("noCreateProductPermission"),
                   children: (
                     <>
                       <PlusIcon />
-                      New product
+                      {t("newProduct")}
                     </>
                   ),
                 },
@@ -185,11 +188,11 @@ export function AccountDropdown({
               disabled: !canCreateOrg,
               tooltip: canCreateOrg
                 ? undefined
-                : "You don't have permission to create organizations",
+                : t("noCreateOrgPermission"),
               children: (
                 <>
                   <PlusIcon />
-                  New organization
+                  {t("newOrganization")}
                 </>
               ),
             },
@@ -204,7 +207,7 @@ export function AccountDropdown({
             <span
               style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
             >
-              Invitations
+              {t("invitations")}
               {hasInvitations && <span className={styles.mobileDot} />}
             </span>
           }
@@ -218,7 +221,7 @@ export function AccountDropdown({
                 }))
               : [
                   {
-                    children: "No pending invitations",
+                    children: t("noInvitations"),
                     color: "gray" as const,
                     disabled: true,
                   },
@@ -226,11 +229,11 @@ export function AccountDropdown({
           }
         />
         <DropdownSubmenu
-          label="Admin"
+          label={t("admin")}
           condition={isAdmin(session)}
           items={ADMIN_TOOLS.map((tool) => ({
             href: tool.href,
-            children: tool.name,
+            children: tTools(`${tool.key}.name`),
           }))}
         />
         <ActivitySubmenu />
@@ -239,7 +242,7 @@ export function AccountDropdown({
           items={[
             {
               onClick: logout,
-              children: "Logout",
+              children: t("logout"),
               color: "red",
             },
           ]}

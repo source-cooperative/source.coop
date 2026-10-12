@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button, Callout, Flex, Spinner, Text } from "@radix-ui/themes";
 import { refreshProxyCredentials } from "@/lib/services/proxy-credentials-cache";
 import { withTimeout } from "@/lib/with-timeout";
+import { useTranslations } from "next-intl";
 
 type Status = "loading" | "error";
 
@@ -29,6 +30,7 @@ const RECHECK_MS = 3_000;
  */
 export function ProxyCredentialsGate() {
   const router = useRouter();
+  const t = useTranslations("ProxyCredentialsGate");
   const [status, setStatus] = useState<Status>("loading");
   const startedRef = useRef(false);
   const attemptsRef = useRef(0);
@@ -76,13 +78,11 @@ export function ProxyCredentialsGate() {
     return (
       <Callout.Root color="red" role="alert">
         <Callout.Text>
-          We couldn&apos;t load your access credentials for this private
-          product. Please try again, and if the problem persists, sign out and
-          back in.
+          {t("error")}
         </Callout.Text>
         <Flex mt="2">
           <Button variant="soft" onClick={retry}>
-            Try again
+            {t("tryAgain")}
           </Button>
         </Flex>
       </Callout.Root>
@@ -92,7 +92,7 @@ export function ProxyCredentialsGate() {
   return (
     <Flex align="center" gap="2" p="2">
       <Spinner />
-      <Text color="gray">Fetching access credentials…</Text>
+      <Text color="gray">{t("fetching")}</Text>
     </Flex>
   );
 }

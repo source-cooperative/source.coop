@@ -29,10 +29,11 @@ import { formatBytes } from "@/lib/format";
 import { objectUrl } from "@/lib/urls";
 import styles from "./ObjectBrowser.module.css";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   useUploadManager,
   useS3Credentials,
-  deleteStatusText,
+  useDeleteStatusText,
 } from "@/components/features/uploader";
 
 interface DirectoryRowProps {
@@ -73,6 +74,9 @@ export function DirectoryRow({
     deletePath,
   } = useUploadManager();
   const { getCredentials } = useS3Credentials();
+  const deleteStatusText = useDeleteStatusText();
+  const t = useTranslations("DirectoryRow");
+  const tCommon = useTranslations("Common");
 
   // Get uploads for this specific product scope
   const scope = {
@@ -209,7 +213,7 @@ export function DirectoryRow({
                 <Flex gap="1">
                   {/* Retry button for failed uploads */}
                   {item.uploadProgress?.status === "error" && (
-                    <Tooltip content="Retry upload">
+                    <Tooltip content={t("retryUpload")}>
                       <IconButton
                         variant="soft"
                         size="1"
@@ -228,7 +232,7 @@ export function DirectoryRow({
                   {/* Cancel button for active/queued uploads */}
                   {(item.uploadProgress?.status === "uploading" ||
                     item.uploadProgress?.status === "queued") && (
-                    <Tooltip content="Cancel upload">
+                    <Tooltip content={t("cancelUpload")}>
                       <IconButton
                         variant="soft"
                         size="1"
@@ -250,7 +254,7 @@ export function DirectoryRow({
               {!item.isDirectory && !isUploading && (
                 <Flex gap="1">
                   {/* Primary Download Button */}
-                  <Tooltip content={`Download ${item.name}`}>
+                  <Tooltip content={t("download", { name: item.name })}>
                     <IconButton
                       variant="solid"
                       size="1"
@@ -270,7 +274,7 @@ export function DirectoryRow({
                   </Tooltip>
 
                   {/* Secondary Copy URL Button */}
-                  <Tooltip content={`Copy URL to clipboard`}>
+                  <Tooltip content={t("copyUrl")}>
                     <IconButton
                       variant="surface"
                       size="1"
@@ -306,7 +310,7 @@ export function DirectoryRow({
               {deletion?.status === "error" && (
                 <Tooltip content={deletion.error}>
                   <Text size="1" color="red">
-                    Delete failed
+                    {t("deleteFailed")}
                   </Text>
                 </Tooltip>
               )}
@@ -324,30 +328,37 @@ export function DirectoryRow({
                       color="red"
                       onClick={(e) => e.stopPropagation()}
                       style={{ minWidth: "auto", cursor: "pointer" }}
-                      aria-label={`Delete ${item.name}`}
+                      aria-label={t("deleteItem", { name: item.name })}
                     >
                       <TrashIcon width={14} height={14} />
                     </IconButton>
                   </AlertDialog.Trigger>
                   <AlertDialog.Content maxWidth="450px">
                     <AlertDialog.Title>
-                      Delete {item.isDirectory ? "folder" : "file"}
+                      {item.isDirectory
+                        ? t("deleteFolderTitle")
+                        : t("deleteFileTitle")}
                     </AlertDialog.Title>
                     <AlertDialog.Description size="2">
-                      Are you sure you want to delete{" "}
-                      <strong>{item.name}</strong>
-                      {item.isDirectory ? " and everything inside it" : ""}?
-                      This action cannot be undone.
+                      {t.rich(
+                        item.isDirectory
+                          ? "deleteFolderConfirm"
+                          : "deleteFileConfirm",
+                        {
+                          name: item.name,
+                          strong: (chunks) => <strong>{chunks}</strong>,
+                        }
+                      )}
                     </AlertDialog.Description>
                     <Flex gap="3" mt="4" justify="end">
                       <AlertDialog.Cancel>
                         <Button variant="soft" color="gray">
-                          Cancel
+                          {tCommon("cancel")}
                         </Button>
                       </AlertDialog.Cancel>
                       <AlertDialog.Action>
                         <Button color="red" onClick={handleDelete}>
-                          Delete
+                          {tCommon("delete")}
                         </Button>
                       </AlertDialog.Action>
                     </Flex>
@@ -386,12 +397,12 @@ export function DirectoryRow({
             </Box>
             {/* Upload Status Text */}
             <MonoText size="1" color="gray" style={{ fontSize: "10px" }}>
-              {item.uploadProgress?.status === "queued" && "Queued..."}
+              {item.uploadProgress?.status === "queued" && t("queued")}
               {item.uploadProgress?.status === "uploading" &&
-                `Uploading ${Math.round(progressPercent)}%`}
+                t("uploading", { percent: Math.round(progressPercent) })}
               {item.uploadProgress?.status === "error" &&
-                `Error: ${item.uploadProgress.error}`}
-              {item.uploadProgress?.status === "cancelled" && "Cancelled"}
+                t("uploadError", { error: item.uploadProgress.error ?? "" })}
+              {item.uploadProgress?.status === "cancelled" && t("cancelled")}
             </MonoText>
           </>
         )}

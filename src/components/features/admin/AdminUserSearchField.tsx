@@ -10,6 +10,7 @@ import {
 import { usePathname, useRouter } from "next/navigation";
 import { Box, Spinner, TextField } from "@radix-ui/themes";
 import { MagnifyingGlassIcon } from "@radix-ui/react-icons";
+import { useTranslations } from "next-intl";
 import { useDebounce } from "@/hooks/useDebounce";
 
 interface AdminUserSearchFieldProps {
@@ -33,6 +34,7 @@ export function AdminUserSearchField({
   query,
   children,
 }: AdminUserSearchFieldProps) {
+  const t = useTranslations("AdminUserSearchField");
   const router = useRouter();
   const pathname = usePathname();
   const [value, setValue] = useState(query);
@@ -68,8 +70,8 @@ export function AdminUserSearchField({
       <TextField.Root
         value={value}
         onChange={(e) => setValue(e.target.value)}
-        placeholder="username, name, or user@example.com"
-        aria-label="Search users"
+        placeholder={t("placeholder")}
+        aria-label={t("ariaLabel")}
         autoFocus
       >
         <TextField.Slot>

@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { Box, Button, Callout, Flex } from "@radix-ui/themes";
+import { useTranslations } from "next-intl";
 
 /**
  * Rendered by the product page when a read through the data proxy fails for a
@@ -30,12 +31,12 @@ export function ProductDataUnavailable({
   details?: string;
 }) {
   const router = useRouter();
+  const t = useTranslations("ProductDataUnavailable");
   return (
     <Box mt="4">
       <Callout.Root color="amber" role="alert">
         <Callout.Text>
-          {message ??
-            "Your access to this private product's data couldn't be confirmed just now."}
+          {message ?? t("accessUnconfirmed")}
         </Callout.Text>
       </Callout.Root>
       {details && (
@@ -47,7 +48,7 @@ export function ProductDataUnavailable({
               color: "var(--gray-11)",
             }}
           >
-            Error details (visible to maintainers only)
+            {t("errorDetails")}
           </summary>
           <pre
             style={{
@@ -67,7 +68,7 @@ export function ProductDataUnavailable({
       )}
       <Flex mt="3">
         <Button variant="soft" onClick={() => router.refresh()}>
-          Try again
+          {t("tryAgain")}
         </Button>
       </Flex>
     </Box>

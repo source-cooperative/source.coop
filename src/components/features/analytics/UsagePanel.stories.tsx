@@ -1,9 +1,9 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { Card } from "@radix-ui/themes";
+import { useTranslations } from "next-intl";
 import { SectionHeader } from "@/components/core/SectionHeader";
 import type { UsagePoint, UsageTotals } from "@/lib/clients/analytics";
 import { MonoLabel } from "./panels";
-import { HELP } from "./style";
 import { UsagePanel } from "./UsagePanel";
 
 /**
@@ -21,6 +21,12 @@ import { UsagePanel } from "./UsagePanel";
  * that got linked from somewhere big on a single day, one serving petabytes.
  * Hovering a bar swaps the stats row to that day — that part is live here.
  */
+function WindowLabel({ days }: { days: number }) {
+  const t = useTranslations("UsageCard");
+  const tHelp = useTranslations("AnalyticsHelp");
+  return <MonoLabel help={tHelp("window")}>{t("windowDays", { days })}</MonoLabel>;
+}
+
 const meta = {
   component: UsagePanel,
   title: "Features/Product page/Analytics/UsagePanel",
@@ -31,9 +37,7 @@ const meta = {
         <SectionHeader
           title="Analytics"
           rightButton={
-            <MonoLabel help={HELP.window}>
-              {(context.args.days as UsagePoint[]).length} days
-            </MonoLabel>
+            <WindowLabel days={(context.args.days as UsagePoint[]).length} />
           }
         >
           <Story />

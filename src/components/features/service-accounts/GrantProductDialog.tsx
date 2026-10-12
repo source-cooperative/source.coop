@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Button, Dialog, Flex, SegmentedControl, Select, Text } from "@radix-ui/themes";
 import { PlusIcon } from "@radix-ui/react-icons";
+import { useTranslations } from "next-intl";
 import { Field } from "@/components/core";
 import { MembershipRole, type Product } from "@/types";
 import type { ProductAccess } from "./ProductAccessList";
@@ -25,16 +26,17 @@ export function GrantProductDialog({
   disabled?: boolean;
 }) {
   const [open, setOpen] = useState(false);
+  const t = useTranslations("GrantProductDialog");
   if (available.length === 0) return null;
   return (
     <Dialog.Root open={open} onOpenChange={setOpen}>
       <Dialog.Trigger>
         <Button type="button" size="1" variant="soft" disabled={disabled}>
-          <PlusIcon /> Grant a product
+          <PlusIcon /> {t("grantProduct")}
         </Button>
       </Dialog.Trigger>
       <Dialog.Content style={{ maxWidth: 480 }} aria-describedby={undefined}>
-        <Dialog.Title>Grant a product</Dialog.Title>
+        <Dialog.Title>{t("grantProduct")}</Dialog.Title>
         {/* Unmounts on close, so every open starts with nothing chosen. */}
         <GrantForm
           ownerAccountId={ownerAccountId}
@@ -60,15 +62,17 @@ function GrantForm({
 }) {
   const [product_id, setProductId] = useState<string>();
   const [access, setAccess] = useState<ProductAccess>(MembershipRole.ReadData);
+  const t = useTranslations("GrantProductDialog");
+  const tc = useTranslations("Common");
   return (
     <Flex direction="column" gap="4">
-      <Field label="Product" htmlFor="grant-product" required>
+      <Field label={t("product")} htmlFor="grant-product" required>
         <Select.Root value={product_id} onValueChange={setProductId}>
           {/* The chosen title alone: the options' second line would make the
               closed dropdown two lines tall. Never undefined, even before a
               choice: Radix copies the chosen option into an empty trigger,
               and switching between that and these children breaks the DOM. */}
-          <Select.Trigger id="grant-product" placeholder="Choose a product">
+          <Select.Trigger id="grant-product" placeholder={t("productPlaceholder")}>
             {available.find((p) => p.product_id === product_id)?.title ?? ""}
           </Select.Trigger>
           <Select.Content position="popper">
@@ -92,26 +96,26 @@ function GrantForm({
           </Select.Content>
         </Select.Root>
       </Field>
-      <Field label="Access" htmlFor="grant-access" group>
+      <Field label={t("access")} htmlFor="grant-access" group>
         {(props) => (
           <SegmentedControl.Root
             aria-labelledby={props["aria-labelledby"]}
             value={access}
             onValueChange={(next) => setAccess(next as ProductAccess)}
           >
-            <SegmentedControl.Item value={MembershipRole.ReadData}>Read</SegmentedControl.Item>
-            <SegmentedControl.Item value={MembershipRole.WriteData}>Read and write</SegmentedControl.Item>
+            <SegmentedControl.Item value={MembershipRole.ReadData}>{t("read")}</SegmentedControl.Item>
+            <SegmentedControl.Item value={MembershipRole.WriteData}>{t("readWrite")}</SegmentedControl.Item>
           </SegmentedControl.Root>
         )}
       </Field>
       <Flex justify="end" gap="2">
         <Dialog.Close>
           <Button type="button" variant="soft" color="gray">
-            Cancel
+            {tc("cancel")}
           </Button>
         </Dialog.Close>
         <Button type="button" highContrast disabled={!product_id} onClick={() => product_id && onGrant(product_id, access)}>
-          Grant
+          {t("grant")}
         </Button>
       </Flex>
     </Flex>

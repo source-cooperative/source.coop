@@ -4,6 +4,7 @@ import { Membership, MembershipRole } from "@/types";
 import { Callout, Button, Flex } from "@radix-ui/themes";
 import { InfoCircledIcon } from "@radix-ui/react-icons";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { acceptInvitation, rejectInvitation } from "@/lib/actions/memberships";
 
 interface PendingInvitationBannerProps {
@@ -17,6 +18,7 @@ export function PendingInvitationBanner({
   organizationName,
   productName,
 }: PendingInvitationBannerProps) {
+  const t = useTranslations("PendingInvitationBanner");
   const [isProcessing, setIsProcessing] = useState(false);
   const [isHidden, setIsHidden] = useState(false);
 
@@ -30,11 +32,11 @@ export function PendingInvitationBanner({
         setIsHidden(true);
         window.location.reload(); // Reload to show updated UI
       } else {
-        alert(result.error || "Failed to accept invitation");
+        alert(result.error || t("acceptFailed"));
         setIsProcessing(false);
       }
     } catch (error) {
-      alert("An error occurred while accepting the invitation");
+      alert(t("acceptError"));
       setIsProcessing(false);
     }
   };
@@ -46,11 +48,11 @@ export function PendingInvitationBanner({
       if (result.success) {
         setIsHidden(true);
       } else {
-        alert(result.error || "Failed to reject invitation");
+        alert(result.error || t("rejectFailed"));
         setIsProcessing(false);
       }
     } catch (error) {
-      alert("An error occurred while rejecting the invitation");
+      alert(t("rejectError"));
       setIsProcessing(false);
     }
   };
@@ -61,10 +63,10 @@ export function PendingInvitationBanner({
   const roleName =
     (
       {
-        owners: "Owner",
-        maintainers: "Maintainer",
-        read_data: "Data Reader",
-        write_data: "Data Writer",
+        owners: t("roleOwners"),
+        maintainers: t("roleMaintainers"),
+        read_data: t("roleReadData"),
+        write_data: t("roleWriteData"),
       } as Record<MembershipRole, string>
     )[invitation.role] || invitation.role;
 
@@ -75,11 +77,12 @@ export function PendingInvitationBanner({
       </Callout.Icon>
       <Flex direction="column" gap="2" style={{ width: "100%" }}>
         <Callout.Text>
-          You have been invited to join this {invitationType} as a
-          {["a", "e", "i", "o", "u"].includes(roleName.charAt(0).toLowerCase())
-            ? "n "
-            : " "}
-          <strong>{roleName}</strong>.
+          {t.rich("message", {
+            invitationType,
+            role: invitation.role,
+            roleName,
+            strong: (chunks) => <strong>{chunks}</strong>,
+          })}
         </Callout.Text>
         <Flex gap="2">
           <Button
@@ -88,7 +91,7 @@ export function PendingInvitationBanner({
             disabled={isProcessing}
             variant="solid"
           >
-            {isProcessing ? "Processing..." : "Accept"}
+            {isProcessing ? t("processing") : t("accept")}
           </Button>
           <Button
             size="1"
@@ -97,7 +100,7 @@ export function PendingInvitationBanner({
             variant="soft"
             color="gray"
           >
-            Decline
+            {t("decline")}
           </Button>
         </Flex>
       </Flex>

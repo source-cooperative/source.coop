@@ -9,9 +9,11 @@ import {
 } from "@radix-ui/themes";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { MonoText } from "@/components/core";
 import { homeUrl, productListUrl } from "@/lib/urls";
 import { Logo } from "./Logo";
+import { LocaleSwitcher } from "./LocaleSwitcher";
 
 // ponytail: at 0.75rem these links are ~15px tall, under the 24px WCAG 2.2
 // minimum. inline-block is what makes the padding count toward the hit box —
@@ -20,6 +22,7 @@ const tapTarget = { display: "inline-block", paddingBlock: "5px" } as const;
 
 export function Footer() {
   const pathname = usePathname();
+  const t = useTranslations("Footer");
 
   return (
     <Box py="4" m="2" mt="6" style={{ borderTop: "1px solid var(--gray-5)" }}>
@@ -38,7 +41,7 @@ export function Footer() {
               <Logo />
               <Flex gap="6" direction={{ initial: "column", sm: "row" }}>
                 <Box>
-                  <Heading size="3">ABOUT US</Heading>
+                  <Heading size="3">{t("aboutUs")}</Heading>
                   <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
                     <li>
                       <RadixLink
@@ -47,7 +50,7 @@ export function Footer() {
                         underline="always"
                         style={tapTarget}
                       >
-                        Docs
+                        {t("docs")}
                       </RadixLink>
                     </li>
                     <li>
@@ -90,7 +93,7 @@ export function Footer() {
                 <Box mb="2">
                   <RadixLink color="gray" underline="always" asChild>
                     <Link href={homeUrl()}>
-                      <MonoText size="2">Home</MonoText>
+                      <MonoText size="2">{t("home")}</MonoText>
                     </Link>
                   </RadixLink>
                 </Box>
@@ -98,7 +101,7 @@ export function Footer() {
               <Box mb="2">
                 <RadixLink color="gray" underline="always" asChild>
                   <Link href={productListUrl()}>
-                    <MonoText size="2">All Products</MonoText>
+                    <MonoText size="2">{t("allProducts")}</MonoText>
                   </Link>
                 </RadixLink>
               </Box>
@@ -108,7 +111,7 @@ export function Footer() {
                   color="gray"
                   underline="always"
                 >
-                  <MonoText size="2">Docs</MonoText>
+                  <MonoText size="2">{t("docs")}</MonoText>
                 </RadixLink>
               </Box>
             </Box>
@@ -122,19 +125,24 @@ export function Footer() {
                 width: "100%",
               }}
             />
-            <MonoText size="2" color="gray">
-              Source Cooperative is a{" "}
-              <RadixLink
-                href="https://radiant.earth"
-                color="gray"
-                style={{ textDecoration: "underline" }}
-              >
-                <MonoText size="2" style={{ textTransform: "uppercase" }}>
-                  Radiant Earth
-                </MonoText>
-              </RadixLink>{" "}
-              project
-            </MonoText>
+            <Flex justify="between" align="center" gap="3" wrap="wrap">
+              <MonoText size="2" color="gray">
+                {t.rich("attribution", {
+                  org: (chunks) => (
+                    <RadixLink
+                      href="https://radiant.earth"
+                      color="gray"
+                      style={{ textDecoration: "underline" }}
+                    >
+                      <MonoText size="2" style={{ textTransform: "uppercase" }}>
+                        {chunks}
+                      </MonoText>
+                    </RadixLink>
+                  ),
+                })}
+              </MonoText>
+              <LocaleSwitcher />
+            </Flex>
           </Box>
         </Box>
       </Container>

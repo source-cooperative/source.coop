@@ -16,6 +16,7 @@ import { isAuthorized } from "@/lib/api/authz";
 import { revokeMembership } from "@/lib/actions/memberships";
 import Form from "next/form";
 import { useActionState } from "react";
+import { useTranslations } from "next-intl";
 
 interface MembershipsTableProps {
   memberships: Membership[];
@@ -34,6 +35,7 @@ export function MembershipsTable({
   emptyStateDescription,
   editable = true,
 }: MembershipsTableProps) {
+  const t = useTranslations("MembershipsTable");
   // Helper function to check if user can revoke a membership
   const canRevokeMembership = (membership: Membership) =>
     isAuthorized(userSession, membership, Actions.RevokeMembership);
@@ -103,12 +105,12 @@ export function MembershipsTable({
       <Table.Root>
         <Table.Header>
           <Table.Row>
-            <Table.ColumnHeaderCell>Member</Table.ColumnHeaderCell>
-            <Table.ColumnHeaderCell>Role</Table.ColumnHeaderCell>
+            <Table.ColumnHeaderCell>{t("member")}</Table.ColumnHeaderCell>
+            <Table.ColumnHeaderCell>{t("role")}</Table.ColumnHeaderCell>
             {editable && <>
-              <Table.ColumnHeaderCell>Status</Table.ColumnHeaderCell>
-              <Table.ColumnHeaderCell>Last Updated</Table.ColumnHeaderCell>
-              <Table.ColumnHeaderCell>Actions</Table.ColumnHeaderCell>
+              <Table.ColumnHeaderCell>{t("status")}</Table.ColumnHeaderCell>
+              <Table.ColumnHeaderCell>{t("lastUpdated")}</Table.ColumnHeaderCell>
+              <Table.ColumnHeaderCell>{t("actions")}</Table.ColumnHeaderCell>
             </>}
           </Table.Row>
         </Table.Header>
@@ -128,7 +130,7 @@ export function MembershipsTable({
                         link={false}
                       />
                       <Badge size="1" color="gray" variant="outline">
-                        Service account
+                        {t("serviceAccount")}
                       </Badge>
                     </Flex>
                   ) : (
@@ -151,11 +153,11 @@ export function MembershipsTable({
                     }
                   >
                     {{
-                      [MembershipRole.Owners]: "Owner",
-                      [MembershipRole.Maintainers]: "Maintainer",
-                      [MembershipRole.WriteData]: "Writer",
-                      [MembershipRole.ReadData]: "Reader",
-                    }[membership.role] || "Unknown"}
+                      [MembershipRole.Owners]: t("roleOwner"),
+                      [MembershipRole.Maintainers]: t("roleMaintainer"),
+                      [MembershipRole.WriteData]: t("roleWriter"),
+                      [MembershipRole.ReadData]: t("roleReader"),
+                    }[membership.role] || t("unknown")}
                   </Badge>
                 </Table.Cell>
                 {editable && <>
@@ -173,10 +175,10 @@ export function MembershipsTable({
                       }
                     >
                       {{
-                        [MembershipState.Member]: "Member",
-                        [MembershipState.Invited]: "Invited",
-                        [MembershipState.Revoked]: "Revoked",
-                      }[membership.state] || "Unknown"}
+                        [MembershipState.Member]: t("stateMember"),
+                        [MembershipState.Invited]: t("stateInvited"),
+                        [MembershipState.Revoked]: t("stateRevoked"),
+                      }[membership.state] || t("unknown")}
                     </Text>
                   </Table.Cell>
                   <Table.Cell>
@@ -197,7 +199,7 @@ export function MembershipsTable({
                         membership.state === MembershipState.Revoked
                       }
                     >
-                      Revoke
+                      {t("revoke")}
                     </Button>
                   </Table.Cell>
                 </>}

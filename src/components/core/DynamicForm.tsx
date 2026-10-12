@@ -230,7 +230,8 @@ export function DynamicForm<T extends Record<string, any>>({
   fields,
   action,
   disabled,
-  submitButtonText = "Save",
+  // Unset falls through to FormActions' own default label.
+  submitButtonText,
   hiddenFields = {},
   className,
   initialValues,

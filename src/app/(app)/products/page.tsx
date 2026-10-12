@@ -3,21 +3,28 @@ import { ProductsList } from "@/components/features/products/ProductsList";
 import { ProductsFilters } from "@/components/features/products/ProductsFilters";
 import { getPaginatedProducts } from "@/lib/actions/products";
 import { Badge, Box, Flex, Text } from "@radix-ui/themes";
+import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 
-export const metadata = {
-  title: "Products | Source Cooperative",
-  description: "Browse and discover public data products on Source.coop",
-  openGraph: {
-    title: "Products | Source Cooperative",
-    description: "Browse and discover public data products on Source.coop",
-    type: "website",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Products | Source Cooperative",
-    description: "Browse and discover public data products on Source.coop",
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("ProductsPage");
+  const title = t("metaTitle");
+  const description = t("metaDescription");
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+    },
+  };
+}
 
 interface ProductsPageProps {
   searchParams: Promise<{
@@ -42,31 +49,32 @@ export default async function ProductsPage({
     await getPaginatedProducts(100, cursor, previous, undefined, filters);
 
   const hasActiveFilters = search || tags || featuredOnly;
+  const t = await getTranslations("ProductsPage");
 
   return (
     <Box>
-      <PageHeader title="Products" />
+      <PageHeader title={t("title")} />
 
       <ProductsFilters />
 
       {hasActiveFilters && (
         <Flex gap="2" align="center" mb="3">
           <Text size="2" color="gray">
-            Showing {products.length} products
+            {t("showingCount", { count: products.length })}
           </Text>
           {search && (
             <Badge variant="soft" color="blue">
-              Search: &ldquo;{search}&rdquo;
+              {t("searchBadge", { search })}
             </Badge>
           )}
           {tags && (
             <Badge variant="soft" color="green">
-              Tags: {tags}
+              {t("tagsBadge", { tags })}
             </Badge>
           )}
           {featuredOnly && (
             <Badge variant="soft" color="orange">
-              Featured
+              {t("featured")}
             </Badge>
           )}
         </Flex>

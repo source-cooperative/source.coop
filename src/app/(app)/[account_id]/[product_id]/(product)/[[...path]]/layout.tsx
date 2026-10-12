@@ -29,6 +29,7 @@ import { ExclamationTriangleIcon } from "@radix-ui/react-icons";
 import { getPendingInvitation } from "@/lib/actions/memberships";
 import { ProductSchemaMetadata } from "@/components/features/products/ProductSchemaMetadata";
 import { getAuthorizedProduct } from "./data";
+import { getTranslations } from "next-intl/server";
 
 interface ProductLayoutProps {
   children: React.ReactNode;
@@ -71,6 +72,7 @@ export default async function ProductLayout({
 
   // Check for pending invitation
   const pendingInvitation = await getPendingInvitation(account_id, product_id);
+  const t = await getTranslations("ProductLayout");
 
   return (
     <>
@@ -84,10 +86,7 @@ export default async function ProductLayout({
             <Callout.Icon>
               <ExclamationTriangleIcon />
             </Callout.Icon>
-            <Callout.Text>
-              This product is deactivated. It is hidden from everyone except its
-              owners and administrators.
-            </Callout.Text>
+            <Callout.Text>{t("deactivatedNotice")}</Callout.Text>
           </Callout.Root>
         </Box>
       )}

@@ -1,10 +1,7 @@
+import { getTranslations } from "next-intl/server";
 import { NotFoundPage } from "@/components/core";
 
 export default async function AccountNotFound() {
-  return (
-    <NotFoundPage
-      title="Account Not Found"
-      description={"The requested account could not be found."}
-    />
-  );
+  const t = await getTranslations("AccountNotFoundPage");
+  return <NotFoundPage title={t("title")} description={t("description")} />;
 }

@@ -10,6 +10,7 @@ import {
 } from "@/lib/clients/database";
 import { Box, Callout, Flex, Link } from "@radix-ui/themes";
 import { ExclamationTriangleIcon } from "@radix-ui/react-icons";
+import { getTranslations } from "next-intl/server";
 import { Account, Actions, MembershipState } from "@/types";
 import { onboardingUrl } from "@/lib/urls";
 import { LoginButton } from "@/components/core";
@@ -128,14 +129,16 @@ export async function AuthButtons() {
   }
 
   if (session && !session.account) {
+    const t = await getTranslations("AuthButtons");
     return (
       <Callout.Root color="yellow">
         <Callout.Icon>
           <ExclamationTriangleIcon />
         </Callout.Icon>
         <Callout.Text>
-          You do not yet have a profile. Please click{" "}
-          <Link href={onboardingUrl()}>here</Link> to complete your profile.
+          {t.rich("noProfile", {
+            link: (chunks) => <Link href={onboardingUrl()}>{chunks}</Link>,
+          })}
         </Callout.Text>
       </Callout.Root>
     );

@@ -14,6 +14,7 @@ import {
 } from "@radix-ui/themes";
 import { CopyToClipboard } from "@/components/core/CopyToClipboard";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   slugifyToId,
   DataProvider,
@@ -47,27 +48,24 @@ interface DataConnectionFormProps {
 }
 
 // Storage providers limited to those with a `details` schema (S3, Azure, GCS).
-const providerOptions: Array<{
-  value: DataProvider;
-  label: string;
-  description: string;
-}> = [
+// Labels are product names and stay untranslated.
+const providerOptions = [
   {
     value: DataProvider.S3,
     label: "AWS S3",
-    description: "Or an S3-compatible backend: Cloudflare R2, MinIO, Ceph.",
+    descriptionKey: "providerS3Description",
   },
   {
     value: DataProvider.Azure,
     label: "Azure Blob",
-    description: "A storage account and one of its containers.",
+    descriptionKey: "providerAzureDescription",
   },
   {
     value: DataProvider.GCS,
     label: "Google Cloud",
-    description: "Keyless: federated through Workload Identity.",
+    descriptionKey: "providerGcsDescription",
   },
-];
+] as const;
 
 const s3AuthTypes = [
   DataConnectionAuthenticationType.S3AccessKey,
@@ -87,33 +85,27 @@ const authTypesByProvider: Record<string, DataConnectionAuthenticationType[]> = 
   [DataProvider.GCS]: gcpAuthTypes,
 };
 
-const AUTH_TYPE_LABELS: Record<DataConnectionAuthenticationType, string> = {
-  [DataConnectionAuthenticationType.S3AccessKey]: "Access Key",
-  [DataConnectionAuthenticationType.S3WebIdentityRole]:
-    "Web Identity Role (federated)",
-  [DataConnectionAuthenticationType.AzureSasToken]: "SAS Token",
+const AUTH_TYPE_LABELS = {
+  [DataConnectionAuthenticationType.S3AccessKey]: "authAccessKey",
+  [DataConnectionAuthenticationType.S3WebIdentityRole]: "authWebIdentityRole",
+  [DataConnectionAuthenticationType.AzureSasToken]: "authSasToken",
   [DataConnectionAuthenticationType.AzureWorkloadIdentity]:
-    "Workload Identity (federated)",
-  [DataConnectionAuthenticationType.GcpWorkloadIdentity]:
-    "Workload Identity (federated)",
-};
+    "authWorkloadIdentity",
+  [DataConnectionAuthenticationType.GcpWorkloadIdentity]: "authWorkloadIdentity",
+} as const;
 
 // One-line description of what each authentication type means, shown under the
 // Authentication Type select so the admin knows what they're choosing.
-const AUTH_TYPE_DESCRIPTIONS: Partial<
-  Record<DataConnectionAuthenticationType, string>
-> = {
-  [DataConnectionAuthenticationType.S3AccessKey]:
-    "Static IAM access key and secret you provide.",
+const AUTH_TYPE_DESCRIPTIONS = {
+  [DataConnectionAuthenticationType.S3AccessKey]: "authAccessKeyDescription",
   [DataConnectionAuthenticationType.S3WebIdentityRole]:
-    "Keyless: the proxy assumes a customer IAM role via web identity.",
-  [DataConnectionAuthenticationType.AzureSasToken]:
-    "A shared access signature token you provide.",
+    "authWebIdentityRoleDescription",
+  [DataConnectionAuthenticationType.AzureSasToken]: "authSasTokenDescription",
   [DataConnectionAuthenticationType.AzureWorkloadIdentity]:
-    "Keyless: the proxy federates into an Azure AD app registration.",
+    "authAzureWorkloadIdentityDescription",
   [DataConnectionAuthenticationType.GcpWorkloadIdentity]:
-    "Keyless: the proxy federates into a GCP service account via Workload Identity.",
-};
+    "authGcpWorkloadIdentityDescription",
+} as const;
 
 /**
  * Where a product's objects land: backend root, the connection's shared base
@@ -142,25 +134,14 @@ export function exampleLocation(
 // Radix Select has no empty-string item value; this stands in for "unset".
 const NONE = "__none__";
 
-const VISIBILITY_LABELS: Record<ProductVisibility, string> = {
-  [ProductVisibility.Public]: "Public",
-  [ProductVisibility.Unlisted]: "Unlisted",
-  [ProductVisibility.Restricted]: "Restricted",
-};
-
-// Phrased from the connection's side: which products it will carry.
-const VISIBILITY_DESCRIPTIONS: Record<ProductVisibility, string> = {
-  [ProductVisibility.Public]: "Products anyone can find and download.",
-  [ProductVisibility.Unlisted]: "Products reachable by link only.",
-  [ProductVisibility.Restricted]: "Products limited to their members.",
-};
-
 export function DataConnectionForm({
   dataConnection,
   mode,
   ownerAccountId,
 }: DataConnectionFormProps) {
   const router = useRouter();
+  const t = useTranslations("DataConnectionForm");
+  const tc = useTranslations("Common");
   const action = mode === "create" ? createDataConnection : updateDataConnection;
 
   const [state, formAction, pending] = useActionState(action, {
@@ -372,11 +353,11 @@ export function DataConnectionForm({
             value={dataConnection.data_connection_id}
           />
         )}
-        <SectionHeader title="Identity">
+        <SectionHeader title={t("sectionIdentity")}>
           <Flex direction="column" gap="4">
             <Field
-              label="Name"
-              help="Shown in admin lists and in each product's storage picker."
+              label={t("nameLabel")}
+              help={t("nameHelp")}
               errors={state.fieldErrors?.name}
             >
               {(props) => (
@@ -396,13 +377,13 @@ export function DataConnectionForm({
                 up in URLs and as the storage key, so it is shown rather than
                 sprung on the user after saving. */}
             <Field
-              label="ID"
+              label={t("idLabel")}
               help={
                 mode === "edit"
-                  ? "Permanent; renaming does not move it."
+                  ? t("idHelpEdit")
                   : derivedId
-                    ? "Made from the name. Permanent once created."
-                    : "Add a few letters or numbers to the name."
+                    ? t("idHelpDerived")
+                    : t("idHelpEmpty")
               }
               group
             >
@@ -414,11 +395,11 @@ export function DataConnectionForm({
           </Flex>
         </SectionHeader>
 
-        <SectionHeader title="Backend">
+        <SectionHeader title={t("sectionBackend")}>
           <Flex direction="column" gap="4">
             <Field
-              label="Provider"
-              help="Decides which connection and authentication fields apply below."
+              label={t("providerLabel")}
+              help={t("providerHelp")}
               errors={state.fieldErrors?.provider}
               group
             >
@@ -452,7 +433,7 @@ export function DataConnectionForm({
                               {option.label}
                             </Text>
                             <Text size="1" color="gray">
-                              {option.description}
+                              {t(option.descriptionKey)}
                             </Text>
                           </Flex>
                         </Flex>
@@ -465,10 +446,10 @@ export function DataConnectionForm({
 
             {/* Provider-specific fields */}
             {provider === DataProvider.S3 && (
-              <ConditionalGroup because="provider is AWS S3">
+              <ConditionalGroup because={t("becauseProviderS3")}>
                 <Field
-                  label="Bucket"
-                  help="Name of the S3 bucket that stores the data."
+                  label={t("bucketLabel")}
+                  help={t("bucketHelpS3")}
                   errors={state.fieldErrors?.bucket}
                 >
                   {(props) => (
@@ -485,8 +466,8 @@ export function DataConnectionForm({
 
 
                 <Field
-                  label="Region"
-                  help="AWS region the bucket is hosted in. Use “auto” for S3-compatible backends like Cloudflare R2."
+                  label={t("regionLabel")}
+                  help={t("regionHelpS3")}
                   errors={state.fieldErrors?.region}
                 >
                   {(props) => (
@@ -498,7 +479,7 @@ export function DataConnectionForm({
                     >
                       <Select.Trigger
                         {...props}
-                        placeholder="Select a region"
+                        placeholder={t("regionPlaceholder")}
                         style={{ width: "100%" }}
                       />
                       <Select.Content>
@@ -513,8 +494,8 @@ export function DataConnectionForm({
                 </Field>
 
                 <Field
-                  label="Endpoint"
-                  help="Custom S3-compatible endpoint for non-AWS backends (Cloudflare R2, MinIO, Ceph). Leave blank for AWS S3."
+                  label={t("endpointLabel")}
+                  help={t("endpointHelp")}
                   errors={state.fieldErrors?.endpoint}
                 >
                   {(props) => (
@@ -537,10 +518,10 @@ export function DataConnectionForm({
             )}
 
             {provider === DataProvider.GCS && (
-              <ConditionalGroup because="provider is Google Cloud">
+              <ConditionalGroup because={t("becauseProviderGcs")}>
                 <Field
-                  label="Bucket"
-                  help="Name of the Google Cloud Storage bucket."
+                  label={t("bucketLabel")}
+                  help={t("bucketHelpGcs")}
                   errors={state.fieldErrors?.bucket}
                 >
                   {(props) => (
@@ -559,10 +540,10 @@ export function DataConnectionForm({
             )}
 
             {provider === DataProvider.Azure && (
-              <ConditionalGroup because="provider is Azure Blob">
+              <ConditionalGroup because={t("becauseProviderAzure")}>
                 <Field
-                  label="Account Name"
-                  help="Azure Storage account name."
+                  label={t("accountNameLabel")}
+                  help={t("accountNameHelp")}
                   errors={state.fieldErrors?.account_name}
                 >
                   {(props) => (
@@ -578,8 +559,8 @@ export function DataConnectionForm({
                 </Field>
 
                 <Field
-                  label="Container Name"
-                  help="Azure Blob Storage container name."
+                  label={t("containerNameLabel")}
+                  help={t("containerNameHelp")}
                   errors={state.fieldErrors?.container_name}
                 >
                   {(props) => (
@@ -596,8 +577,8 @@ export function DataConnectionForm({
 
 
                 <Field
-                  label="Region"
-                  help="Azure region the storage account is hosted in."
+                  label={t("regionLabel")}
+                  help={t("regionHelpAzure")}
                   errors={state.fieldErrors?.region}
                 >
                   {(props) => (
@@ -609,7 +590,7 @@ export function DataConnectionForm({
                     >
                       <Select.Trigger
                         {...props}
-                        placeholder="Select a region"
+                        placeholder={t("regionPlaceholder")}
                         style={{ width: "100%" }}
                       />
                       <Select.Content>
@@ -628,18 +609,20 @@ export function DataConnectionForm({
           </Flex>
         </SectionHeader>
 
-        <SectionHeader title="Authentication">
+        <SectionHeader title={t("sectionAuthentication")}>
           <Flex direction="column" gap="4">
             <Field
-              label="Authentication Type"
+              label={t("authTypeLabel")}
               help={
                 <>
-                  The methods offered depend on the backend selected above.{" "}
-                  {(authType &&
-                    AUTH_TYPE_DESCRIPTIONS[
-                      authType as DataConnectionAuthenticationType
-                    ]) ||
-                    "How the data proxy authenticates to this backend when serving the product's data. Choose None for unsigned (public) access."}
+                  {t("authTypeHelp")}{" "}
+                  {t(
+                    (authType &&
+                      AUTH_TYPE_DESCRIPTIONS[
+                        authType as DataConnectionAuthenticationType
+                      ]) ||
+                      "authNoneDescription"
+                  )}
                 </>
               }
               errors={state.fieldErrors?.auth_type}
@@ -657,10 +640,10 @@ export function DataConnectionForm({
                       style={{ width: "100%" }}
                     />
                     <Select.Content>
-                      <Select.Item value={NONE}>None (unsigned)</Select.Item>
+                      <Select.Item value={NONE}>{t("authNone")}</Select.Item>
                       {authOptions.map((type) => (
                         <Select.Item key={type} value={type}>
-                          {AUTH_TYPE_LABELS[type]}
+                          {t(AUTH_TYPE_LABELS[type])}
                         </Select.Item>
                       ))}
                     </Select.Content>
@@ -671,10 +654,10 @@ export function DataConnectionForm({
 
             {/* Auth-specific fields */}
             {authType === DataConnectionAuthenticationType.S3AccessKey && (
-              <ConditionalGroup because="method is Access Key">
+              <ConditionalGroup because={t("becauseMethodAccessKey")}>
                 <Field
-                  label="Access Key ID"
-                  help="Identifies which credential is in use. Not a secret — it is the paired secret access key that is never shown."
+                  label={t("accessKeyIdLabel")}
+                  help={t("accessKeyIdHelp")}
                   errors={state.fieldErrors?.access_key_id}
                 >
                   {(props) => (
@@ -694,8 +677,8 @@ export function DataConnectionForm({
                 </Field>
 
                 <SecretField
-                  label="Secret Access Key"
-                  help="Paired with the access key ID. Stored encrypted and never shown again."
+                  label={t("secretAccessKeyLabel")}
+                  help={t("secretAccessKeyHelp")}
                   name="secret_access_key"
                   stored={hasStoredSecret}
                   required={mode === "create"}
@@ -708,10 +691,10 @@ export function DataConnectionForm({
             )}
 
             {authType === DataConnectionAuthenticationType.AzureSasToken && (
-              <ConditionalGroup because="method is SAS Token">
+              <ConditionalGroup because={t("becauseMethodSasToken")}>
                 <SecretField
-                label="SAS Token"
-                help="Shared access signature granting access to the container. Stored encrypted and never shown again."
+                label={t("sasTokenLabel")}
+                help={t("sasTokenHelp")}
                 name="sas_token"
                 stored={hasStoredSecret}
                 required={mode === "create"}
@@ -722,10 +705,10 @@ export function DataConnectionForm({
             )}
 
             {authType === DataConnectionAuthenticationType.S3WebIdentityRole && (
-              <ConditionalGroup because="method is Web Identity Role">
+              <ConditionalGroup because={t("becauseMethodWebIdentityRole")}>
                 <Field
-                  label="Role ARN"
-                  help="IAM role the proxy assumes via AssumeRoleWithWebIdentity (keyless federation). This is an ARN, not a secret."
+                  label={t("roleArnLabel")}
+                  help={t("roleArnHelp")}
                   errors={state.fieldErrors?.role_arn}
                 >
                   {(props) => (
@@ -745,20 +728,10 @@ export function DataConnectionForm({
 
                 {mode === "edit" && (
                   <Field
-                    label="Trust-policy subject"
-                    help={
-                      <>
-                        The proxy presents this OIDC subject when assuming the role.
-                        In the role&apos;s trust policy, add a{" "}
-                        <Text weight="medium">StringLike</Text> condition on{" "}
-                        <Text weight="medium">data.source.coop:sub</Text> matching
-                        it, alongside{" "}
-                        <Text weight="medium">
-                          data.source.coop:aud = sts.amazonaws.com
-                        </Text>
-                        .
-                      </>
-                    }
+                    label={t("trustSubjectLabel")}
+                    help={t.rich("trustSubjectHelp", {
+                      b: (chunks) => <Text weight="medium">{chunks}</Text>,
+                    })}
                     group
                   >
                     <Flex align="center" gap="2">
@@ -773,10 +746,10 @@ export function DataConnectionForm({
             )}
 
             {authType === DataConnectionAuthenticationType.AzureWorkloadIdentity && (
-              <ConditionalGroup because="method is Workload Identity">
+              <ConditionalGroup because={t("becauseMethodWorkloadIdentity")}>
                 <Field
-                  label="Tenant ID"
-                  help="Azure AD tenant (directory) ID used for workload-identity federation."
+                  label={t("tenantIdLabel")}
+                  help={t("tenantIdHelp")}
                   errors={state.fieldErrors?.tenant_id}
                 >
                   {(props) => (
@@ -795,8 +768,8 @@ export function DataConnectionForm({
                 </Field>
 
                 <Field
-                  label="Client ID"
-                  help="App registration (client) ID that holds the federated identity credential."
+                  label={t("clientIdLabel")}
+                  help={t("clientIdHelp")}
                   errors={state.fieldErrors?.client_id}
                 >
                   {(props) => (
@@ -818,10 +791,10 @@ export function DataConnectionForm({
 
             {authType ===
               DataConnectionAuthenticationType.GcpWorkloadIdentity && (
-              <ConditionalGroup because="method is Workload Identity">
+              <ConditionalGroup because={t("becauseMethodWorkloadIdentity")}>
                 <Field
-                  label="Workload Identity Provider"
-                  help="Full GCP Workload Identity provider resource. Not a secret."
+                  label={t("workloadIdentityProviderLabel")}
+                  help={t("workloadIdentityProviderHelp")}
                   errors={state.fieldErrors?.workload_identity_provider}
                 >
                   {(props) => (
@@ -841,8 +814,8 @@ export function DataConnectionForm({
                 </Field>
 
                 <Field
-                  label="Service Account"
-                  help="Email of the GCP service account the proxy impersonates. Not a secret."
+                  label={t("serviceAccountLabel")}
+                  help={t("serviceAccountHelp")}
                   errors={state.fieldErrors?.service_account}
                 >
                   {(props) => (
@@ -866,11 +839,11 @@ export function DataConnectionForm({
           </Flex>
         </SectionHeader>
 
-        <SectionHeader title="Key layout">
+        <SectionHeader title={t("sectionKeyLayout")}>
           <Flex direction="column" gap="4">
             <Field
-              label="Base Prefix"
-              help="Optional shared root inside the bucket or container. Every product on this connection sits under it. Leave blank for the root."
+              label={t("basePrefixLabel")}
+              help={t("basePrefixHelp")}
               errors={state.fieldErrors?.base_prefix}
             >
               {(props) => (
@@ -886,8 +859,11 @@ export function DataConnectionForm({
             </Field>
 
             <Field
-              label="Prefix Template"
-              help="Where each product's objects land inside the bucket or container. {{repository.account_id}} and {{repository.repository_id}} are substituted when a product attaches this connection."
+              label={t("prefixTemplateLabel")}
+              help={t("prefixTemplateHelp", {
+                accountIdVar: "{{repository.account_id}}",
+                repositoryIdVar: "{{repository.repository_id}}",
+              })}
               errors={state.fieldErrors?.prefix_template}
             >
               {(props) => (
@@ -906,16 +882,15 @@ export function DataConnectionForm({
                 prose and leaving the reader to run it in their head. */}
             <Field
               group
-              label="Example Prefix"
-              help={
-                <>
-                  Where a product at{" "}
+              label={t("examplePrefixLabel")}
+              help={t.rich("examplePrefixHelp", {
+                path: "example-org/rainfall",
+                code: (chunks) => (
                   <Code size="1" variant="ghost">
-                    example-org/rainfall
-                  </Code>{" "}
-                  would be stored.
-                </>
-              }
+                    {chunks}
+                  </Code>
+                ),
+              })}
             >
               <Box
                 p="2"
@@ -935,12 +910,12 @@ export function DataConnectionForm({
           </Flex>
         </SectionHeader>
 
-        <SectionHeader title="Policy">
+        <SectionHeader title={t("sectionPolicy")}>
           <Flex direction="column" gap="4">
             <Field
-              label="Read only"
+              label={t("readOnlyLabel")}
               htmlFor="read-only-switch"
-              help="Products can browse and download but never write. Required for unsigned connections."
+              help={t("readOnlyHelp")}
               errors={state.fieldErrors?.read_only}
               aside={
                 <Switch
@@ -957,8 +932,8 @@ export function DataConnectionForm({
             />
 
             <Field
-              label="Allowed Visibilities"
-              help="Which visibilities a product on this connection may use. Checked when a product is created and whenever its visibility changes."
+              label={t("allowedVisibilitiesLabel")}
+              help={t("allowedVisibilitiesHelp")}
               errors={state.fieldErrors?.allowed_visibilities}
               group
             >
@@ -995,10 +970,12 @@ export function DataConnectionForm({
                     >
                       <Flex direction="column" align="start" gap="1">
                         <Text size="2" weight="medium">
-                          {VISIBILITY_LABELS[visibility]}
+                          {t(`visibility.${visibility}`)}
                         </Text>
+                        {/* Phrased from the connection's side: which products
+                            it will carry. */}
                         <Text size="1" color="gray">
-                          {VISIBILITY_DESCRIPTIONS[visibility]}
+                          {t(`visibilityDescription.${visibility}`)}
                         </Text>
                       </Flex>
                     </CheckboxCards.Item>
@@ -1010,8 +987,8 @@ export function DataConnectionForm({
             {/* Required Flag is a platform-only gate; hidden on owned connections. */}
             {!ownerAccountId && (
               <Field
-                label="Required Flag"
-                help="Account flag an owner must hold before this connection can back their products. Choose None for no restriction."
+                label={t("requiredFlagLabel")}
+                help={t("requiredFlagHelp")}
                 errors={state.fieldErrors?.required_flag}
               >
                 {(props) => (
@@ -1031,7 +1008,7 @@ export function DataConnectionForm({
                         style={{ width: "100%" }}
                       />
                       <Select.Content>
-                        <Select.Item value={NONE}>None</Select.Item>
+                        <Select.Item value={NONE}>{tc("none")}</Select.Item>
                         {Object.values(AccountFlags).map((flag) => (
                           <Select.Item key={flag} value={flag}>
                             {flag}
@@ -1048,7 +1025,7 @@ export function DataConnectionForm({
         </SectionHeader>
 
         <FormActions
-          submitLabel={mode === "create" ? "Create" : "Save"}
+          submitLabel={mode === "create" ? tc("create") : tc("save")}
           pending={pending}
           message={state?.message}
           success={state.success}

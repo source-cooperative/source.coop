@@ -13,6 +13,47 @@ jest.mock("next/navigation", () => ({
   usePathname: () => "/",
 }));
 
+// Components read their strings through next-intl, which needs a provider on
+// the client and a request on the server. Tests have neither, so both resolve
+// against the real English catalog, and assertions match the text users see.
+const intl = () => {
+  const { createTranslator, createFormatter } = jest.requireActual<
+    typeof import("use-intl/core")
+  >("use-intl/core");
+  const messages = jest.requireActual("@/i18n/messages/en.json") as Record<
+    string,
+    never
+  >;
+  const config = { locale: "en", timeZone: "UTC", messages } as const;
+  return {
+    t: (namespace?: string) =>
+      createTranslator({ ...config, namespace: namespace as never }),
+    format: () => createFormatter(config),
+  };
+};
+jest.mock("next-intl", () => {
+  const { t, format } = intl();
+  return {
+    useTranslations: t,
+    useFormatter: format,
+    useLocale: () => "en",
+    useTimeZone: () => "UTC",
+    useNow: () => new Date(),
+    NextIntlClientProvider: ({ children }: { children: unknown }) => children,
+  };
+});
+jest.mock("next-intl/server", () => {
+  const { t, format } = intl();
+  return {
+    getTranslations: async (
+      arg?: string | { namespace?: string }
+    ) => t(typeof arg === "string" ? arg : arg?.namespace),
+    getFormatter: async () => format(),
+    getLocale: async () => "en",
+    getRequestConfig: (fn: unknown) => fn,
+  };
+});
+
 // @ts-ignore
 global.Request = Request;
 // @ts-ignore

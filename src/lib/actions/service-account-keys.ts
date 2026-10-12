@@ -1,5 +1,6 @@
 "use server";
 
+import { getTranslations } from "next-intl/server";
 import { revalidatePath } from "next/cache";
 import { LOGGER } from "@/lib/logging";
 import { publicKey, type ApiKeyActionState } from "@/types";
@@ -23,15 +24,16 @@ export async function issueApiKey(
   _prev: ApiKeyActionState,
   formData: FormData
 ): Promise<ApiKeyActionState> {
+  const t = await getTranslations("ServiceAccountKeyActions");
   const session = await getPageSession();
   const account = await managedServiceAccount(session, String(formData.get("account_id") ?? ""));
   if (!account || !session?.account) {
-    return outcome("You do not manage that service account", false);
+    return outcome(t("notManaged"), false);
   }
   // Disabled means frozen: no new key until it is enabled again.
-  if (account.disabled) return outcome("That service account is disabled", false);
+  if (account.disabled) return outcome(t("disabled"), false);
   const expires_at = expiryFrom(formData);
-  if (expires_at === undefined) return outcome("Expiry must be between 1 and 3650 days", false);
+  if (expires_at === undefined) return outcome(t("expiryRange"), false);
 
   const minted = mintApiKey({
     account_id: account.account_id,
@@ -39,7 +41,7 @@ export async function issueApiKey(
     created_by: session.account.account_id,
     expires_at,
   });
-  if (!minted) return outcome("Give the key a label of up to 64 characters", false);
+  if (!minted) return outcome(t("labelTooLong"), false);
   const { key, record } = minted;
 
   await serviceAccountKeysTable.create(record);
@@ -69,13 +71,14 @@ export async function revokeApiKey(
   _prev: ApiKeyActionState,
   formData: FormData
 ): Promise<ApiKeyActionState> {
+  const t = await getTranslations("ServiceAccountKeyActions");
   const own = await ownKey(formData);
-  if (!own) return outcome("No such key on a service account you manage", false);
-  if (own.key.revoked_at) return outcome("Already revoked", false);
+  if (!own) return outcome(t("noSuchKey"), false);
+  if (own.key.revoked_at) return outcome(t("alreadyRevoked"), false);
   await serviceAccountKeysTable.revoke(own.key.key_hash, "owner", own.session?.account?.account_id);
   revalidatePath(editAccountServiceAccountsUrl(own.account.owner_account_id));
   revalidatePath(editServiceAccountUrl(own.account.owner_account_id, own.account.account_id));
-  return outcome("Key revoked", true);
+  return outcome(t("revoked"), true);
 }
 
 /** Expiry may be extended for a workload that needs longer, or shortened during an incident. */
@@ -83,12 +86,13 @@ export async function setApiKeyExpiry(
   _prev: ApiKeyActionState,
   formData: FormData
 ): Promise<ApiKeyActionState> {
+  const t = await getTranslations("ServiceAccountKeyActions");
   const own = await ownKey(formData);
-  if (!own) return outcome("No such key on a service account you manage", false);
+  if (!own) return outcome(t("noSuchKey"), false);
   const expires_at = expiryFrom(formData);
-  if (expires_at === undefined) return outcome("Expiry must be between 1 and 3650 days", false);
+  if (expires_at === undefined) return outcome(t("expiryRange"), false);
   await serviceAccountKeysTable.set(own.key.key_hash, "expires_at", expires_at);
   revalidatePath(editAccountServiceAccountsUrl(own.account.owner_account_id));
   revalidatePath(editServiceAccountUrl(own.account.owner_account_id, own.account.account_id));
-  return outcome(expires_at ? "Expiry updated" : "Key no longer expires", true);
+  return outcome(expires_at ? t("expiryUpdated") : t("noExpiry"), true);
 }

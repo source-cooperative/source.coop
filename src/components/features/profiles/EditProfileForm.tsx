@@ -12,6 +12,7 @@ import {
   Link,
 } from "@radix-ui/themes";
 import { TrashIcon } from "@radix-ui/react-icons";
+import { useTranslations } from "next-intl";
 import { DynamicForm, FormField } from "@/components/core";
 import { updateAccountProfile } from "@/lib/actions/account";
 import { orySettingsUrl } from "@/lib/urls";
@@ -38,6 +39,7 @@ interface EditProfileFormData {
 export function EditProfileForm({
   account: initialAccount,
 }: EditProfileFormProps) {
+  const t = useTranslations("EditProfileForm");
   // Initialize websites from account data
   const [websites, setWebsites] = useState<Website[]>(() => {
     const accountWebsites = initialAccount.metadata_public?.domains || [];
@@ -83,37 +85,38 @@ export function EditProfileForm({
 
   const fields: FormField<EditProfileFormData>[] = [
     {
-      label: "Name",
+      label: t("name"),
       name: "name",
       type: "text",
       required: true,
-      section: "Identity",
-      placeholder: "Your Name",
-      description: "This is the name that will be displayed on your profile",
+      section: t("sectionIdentity"),
+      placeholder: t("namePlaceholder"),
+      description: t("nameDescription"),
     },
     {
-      label: "Email",
+      label: t("email"),
       name: "email",
       type: "email",
       readOnly: initialAccount.type === "individual",
-      section: "Identity",
+      section: t("sectionIdentity"),
       mono: true,
       placeholder: "you@example.com",
       description:
         initialAccount.type === "individual" ? (
-          <>
-            Your primary email address. You can change it in your{" "}
-            <Link href={orySettingsUrl()} target="_blank" rel="noopener noreferrer">account settings</Link>.
-          </>
+          t.rich("emailDescriptionIndividual", {
+            link: (chunks) => (
+              <Link href={orySettingsUrl()} target="_blank" rel="noopener noreferrer">{chunks}</Link>
+            ),
+          })
         ) : (
-          "Contact email for your organization"
+          t("emailDescriptionOrganization")
         ),
     },
     {
-      label: initialAccount.type === "individual" ? "Bio" : "Description",
+      label: initialAccount.type === "individual" ? t("bio") : t("description"),
       name: "description",
       type: "textarea",
-      section: "About",
+      section: t("sectionAbout"),
       // BIO_MAX_LENGTH comes from the schema that validates this, so the
       // counter and the validator cannot drift apart the way the old
       // "220 characters maximum" help text had.
@@ -123,46 +126,46 @@ export function EditProfileForm({
       onValueChange: setDescription,
       ...(initialAccount.type === "individual"
         ? {
-            placeholder: "Tell us about yourself",
-            description: "A brief description of yourself or your work",
+            placeholder: t("bioPlaceholder"),
+            description: t("bioDescription"),
           }
         : {
-            placeholder: "Tell us about your organization",
-            description: "A brief description of your organization",
+            placeholder: t("descriptionPlaceholder"),
+            description: t("descriptionDescription"),
           }),
     },
     ...(initialAccount.type === "individual"
       ? [
           {
-            label: "ORCID ID",
+            label: t("orcid"),
             name: "orcid",
             type: "text" as const,
-            section: "Identifiers",
+            section: t("sectionIdentifiers"),
             mono: true,
             placeholder: "0000-0002-1825-0097",
-            description: "Your ORCID identifier (optional)",
+            description: t("orcidDescription"),
           } as const,
         ]
       : []),
     ...(initialAccount.type === "organization"
       ? [
           {
-            label: "ROR ID",
+            label: t("rorId"),
             name: "ror_id",
             type: "text" as const,
-            section: "Identifiers",
+            section: t("sectionIdentifiers"),
             mono: true,
             placeholder: "03yrm5c26",
-            description: "Your Research Organization Registry identifier (optional)",
+            description: t("rorIdDescription"),
           } as const,
         ]
       : []),
     {
-      label: "Websites",
+      label: t("websites"),
       name: "websites",
       type: "custom",
-      section: "Links",
-      description: "Add websites associated with your profile",
+      section: t("sectionLinks"),
+      description: t("websitesDescription"),
       customComponent: (
         <Box>
           <Flex direction="column" gap="3">
@@ -178,7 +181,7 @@ export function EditProfileForm({
           </Flex>
           <Box mt="3">
             <Button type="button" variant="soft" onClick={addWebsite} size="2">
-              Add another website
+              {t("addWebsite")}
             </Button>
           </Box>
         </Box>
@@ -215,6 +218,7 @@ function WebsiteInputField({
   onRemove?: () => void;
   showRemoveButton: boolean;
 }) {
+  const t = useTranslations("EditProfileForm");
   return (
     <Flex align="center" gap="2">
       <Box style={{ flexGrow: 1 }}>
@@ -231,13 +235,13 @@ function WebsiteInputField({
         />
       </Box>
       {showRemoveButton && onRemove && (
-        <Tooltip content="Remove website">
+        <Tooltip content={t("removeWebsite")}>
           <IconButton
             type="button"
             size="3"
             variant="ghost"
             color="gray"
-            aria-label="Remove website"
+            aria-label={t("removeWebsite")}
             onClick={onRemove}
           >
             <TrashIcon width="18" height="18" />

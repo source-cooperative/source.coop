@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Text } from "@radix-ui/themes";
+import { useTranslations } from "next-intl";
 import { DynamicForm, FormField } from "@/components/core";
 import { createAccount } from "@/lib/actions/account";
 import { AccountType } from "@/types";
@@ -22,36 +23,37 @@ interface OrganizationFormData {
 export function OrganizationCreationForm({
   ownerAccountId,
 }: OrganizationCreationFormProps) {
+  const t = useTranslations("OrganizationCreationForm");
   const [accountId, setAccountId] = useState("");
   const validationState = useAccountIdValidation(accountId);
 
   const fields: FormField<OrganizationFormData>[] = [
     {
-      label: "Organization Name",
+      label: t("name"),
       name: "name",
       type: "text",
       required: true,
-      description: "The name of your organization",
-      placeholder: "Enter organization name",
+      description: t("nameDescription"),
+      placeholder: t("namePlaceholder"),
     },
     {
-      label: "Account ID",
+      label: t("accountId"),
       name: "account_id",
       type: "text",
       required: true,
-      description: "The account ID of your organization",
-      placeholder: "Enter account ID",
+      description: t("accountIdDescription"),
+      placeholder: t("accountIdPlaceholder"),
       controlled: true,
       value: accountId,
       onValueChange: setAccountId,
       isValid: !!validationState.isValid, // not checked (null) -> invalid
       message: validationState.isLoading ? (
         <Text size="1" color="gray">
-          Checking account ID availability...
+          {t("checking")}
         </Text>
       ) : validationState.isValid === true ? (
         <Text size="1" color="green">
-          ✓ Available
+          {t("available")}
         </Text>
       ) : validationState.isValid === false && validationState.error ? (
         <Text size="1" color="red">
@@ -60,25 +62,25 @@ export function OrganizationCreationForm({
       ) : null,
     },
     {
-      label: "Description",
+      label: t("description"),
       name: "description",
       type: "textarea",
       required: true,
-      description: "A brief description of your organization",
-      placeholder: "Describe your organization",
+      description: t("descriptionDescription"),
+      placeholder: t("descriptionPlaceholder"),
     },
     {
-      label: "Website",
+      label: t("website"),
       name: "website",
       type: "url",
-      description: "Your organization's website (optional)",
+      description: t("websiteDescription"),
       placeholder: "https://example.com",
     },
     {
-      label: "Email",
+      label: t("email"),
       name: "email",
       type: "email",
-      description: "Contact email for your organization (optional)",
+      description: t("emailDescription"),
       placeholder: "contact@example.com",
     },
   ];
@@ -87,7 +89,7 @@ export function OrganizationCreationForm({
     <DynamicForm<OrganizationFormData>
       fields={fields}
       action={createAccount}
-      submitButtonText="Create"
+      submitButtonText={t("submit")}
       hiddenFields={{
         owner_account_id: ownerAccountId,
         type: AccountType.ORGANIZATION,

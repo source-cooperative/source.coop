@@ -1,20 +1,19 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 
-export const metadata: Metadata = {
-  title: "Product Not Found | Source Cooperative",
-  description: "The requested product could not be found.",
-  openGraph: {
-    title: "Product Not Found | Source Cooperative",
-    description: "The requested product could not be found.",
-    type: "website",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Product Not Found | Source Cooperative",
-    description: "The requested product could not be found.",
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("EditProductNotFound");
+  const title = t("metaTitle");
+  const description = t("metaDescription");
+  return {
+    title,
+    description,
+    openGraph: { title, description, type: "website" },
+    twitter: { card: "summary_large_image", title, description },
+  };
+}
 
-export default function NotFoundPage() {
-  return <div>Not Found</div>;
+export default async function NotFoundPage() {
+  const t = await getTranslations("EditProductNotFound");
+  return <div>{t("notFound")}</div>;
 }

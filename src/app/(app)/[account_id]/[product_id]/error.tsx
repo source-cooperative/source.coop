@@ -10,6 +10,7 @@ import {
   Heading,
   Text,
 } from "@radix-ui/themes";
+import { useTranslations } from "next-intl";
 
 /**
  * Error boundary for the product route subtree (the product layout, the path
@@ -25,6 +26,7 @@ export default function ProductError({
   reset: () => void;
 }) {
   const router = useRouter();
+  const t = useTranslations("ProductErrorPage");
 
   useEffect(() => {
     // Surface the error in the browser console for debugging; the full
@@ -44,22 +46,19 @@ export default function ProductError({
   return (
     <Box mt="4">
       <Heading size="4" mb="2">
-        Something went wrong loading this product
+        {t("heading")}
       </Heading>
       <Callout.Root color="red" role="alert">
-        <Callout.Text>
-          We couldn&apos;t load this product&apos;s contents right now. This is
-          usually temporary — please try again in a moment.
-        </Callout.Text>
+        <Callout.Text>{t("body")}</Callout.Text>
       </Callout.Root>
       {error.digest && (
         <Text as="p" size="1" color="gray" mt="2">
-          Reference: {error.digest}
+          {t("reference", { digest: error.digest })}
         </Text>
       )}
       <Flex mt="3">
         <Button variant="soft" onClick={retry}>
-          Try again
+          {t("tryAgain")}
         </Button>
       </Flex>
     </Box>

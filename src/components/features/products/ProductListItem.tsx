@@ -10,6 +10,7 @@ import { productUrl } from "@/lib/urls";
 import { DisplayNameLink } from "@/components/core";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { useTranslations } from "next-intl";
 
 interface ProductListItemProps {
   product: Product;
@@ -30,12 +31,13 @@ const DESCRIPTION_COMPONENTS: Components = {
 };
 
 const VISIBILITY_CONFIG = {
-  public: { color: "green" as const, label: "Public" },
-  unlisted: { color: "yellow" as const, label: "Unlisted" },
-  restricted: { color: "red" as const, label: "Restricted" },
+  public: { color: "green" as const, labelKey: "public", ariaKey: "publicProduct" },
+  unlisted: { color: "yellow" as const, labelKey: "unlisted", ariaKey: "unlistedProduct" },
+  restricted: { color: "red" as const, labelKey: "restricted", ariaKey: "restrictedProduct" },
 } as const;
 
 export function ProductListItem({ product, isSelected }: ProductListItemProps) {
+  const t = useTranslations("ProductListItem");
   const visibility =
     VISIBILITY_CONFIG[product.visibility] || VISIBILITY_CONFIG.restricted;
 
@@ -77,24 +79,28 @@ export function ProductListItem({ product, isSelected }: ProductListItemProps) {
           {product.account?.name && (
             <>
               <Text size="1" color="gray">
-                Provided by <DisplayNameLink account={product.account!} />
+                {t.rich("providedBy", {
+                  account: () => <DisplayNameLink account={product.account!} />,
+                })}
               </Text>
               {" • "}
             </>
           )}
           <Text size="1" color="gray">
-            Published on <DateText date={product.created_at} />
+            {t.rich("publishedOn", {
+              date: () => <DateText date={product.created_at} />,
+            })}
           </Text>
           <Badge
             size="1"
             color={visibility.color}
-            aria-label={`${visibility.label} product`}
+            aria-label={t(visibility.ariaKey)}
           >
-            {visibility.label}
+            {t(visibility.labelKey)}
           </Badge>
           {product.disabled && (
-            <Badge size="1" color="amber" aria-label="Deactivated product">
-              Deactivated
+            <Badge size="1" color="amber" aria-label={t("deactivatedProduct")}>
+              {t("deactivated")}
             </Badge>
           )}
         </Box>

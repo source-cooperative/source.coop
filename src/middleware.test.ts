@@ -3,7 +3,11 @@
  * failure mode is a silently dead ANALYTICS tab — pin its behavior.
  */
 import { NextRequest } from "next/server";
-import { handleProductAnalyticsTab, restoreOryCookies } from "./middleware";
+import {
+  handleLocaleParam,
+  handleProductAnalyticsTab,
+  restoreOryCookies,
+} from "./middleware";
 
 const rewriteTarget = (url: string): string | null =>
   handleProductAnalyticsTab(new NextRequest(url))?.headers.get(
@@ -53,5 +57,27 @@ describe("restoreOryCookies", () => {
   it("leaves an unencoded header alone", () => {
     expect(restoreOryCookies("ory_session_abc=MTcx==; x=a%3Db")).toBeNull();
     expect(restoreOryCookies(null)).toBeNull();
+  });
+});
+
+describe("handleLocaleParam", () => {
+  const run = (url: string) => handleLocaleParam(new NextRequest(url));
+
+  it("sets the locale cookie and redirects to the URL without ?lang", () => {
+    const response = run("https://source.coop/acme/climate?lang=ja&tab=x");
+    expect(response?.headers.get("location")).toBe(
+      "https://source.coop/acme/climate?tab=x",
+    );
+    expect(response?.cookies.get("NEXT_LOCALE")?.value).toBe("ja");
+  });
+
+  it("drops an unsupported value without setting the cookie", () => {
+    const response = run("https://source.coop/?lang=xx");
+    expect(response?.headers.get("location")).toBe("https://source.coop/");
+    expect(response?.cookies.get("NEXT_LOCALE")).toBeUndefined();
+  });
+
+  it("ignores requests without ?lang", () => {
+    expect(run("https://source.coop/acme/climate")).toBeNull();
   });
 });

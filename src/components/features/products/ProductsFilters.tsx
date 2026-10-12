@@ -4,6 +4,7 @@ import { useTransition, useState, useEffect } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { TextField, Button, Flex } from "@radix-ui/themes";
 import { Cross2Icon, StarFilledIcon } from "@radix-ui/react-icons";
+import { useTranslations } from "next-intl";
 import { useDebounce } from "@/hooks/useDebounce";
 
 export function ProductsFilters() {
@@ -11,6 +12,7 @@ export function ProductsFilters() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
+  const t = useTranslations("ProductsFilters");
 
   // Read current values from URL
   const currentSearch = searchParams.get("search") || "";
@@ -93,7 +95,7 @@ export function ProductsFilters() {
       <TextField.Root
         size="1"
         style={{ minWidth: "300px" }}
-        placeholder="Search products..."
+        placeholder={t("searchPlaceholder")}
         value={searchInput}
         onChange={(e) => setSearchInput(e.target.value)}
       />
@@ -101,7 +103,7 @@ export function ProductsFilters() {
       <TextField.Root
         size="1"
         style={{ minWidth: "250px" }}
-        placeholder="Filter by tags (comma-separated)"
+        placeholder={t("tagsPlaceholder")}
         value={tagsInput}
         onChange={(e) => setTagsInput(e.target.value)}
       />
@@ -114,7 +116,7 @@ export function ProductsFilters() {
         disabled={isPending}
       >
         <StarFilledIcon />
-        Featured
+        {t("featured")}
       </Button>
 
       {hasActiveFilters && (
@@ -126,7 +128,7 @@ export function ProductsFilters() {
           disabled={isPending}
         >
           <Cross2Icon />
-          Clear Filters
+          {t("clearFilters")}
         </Button>
       )}
     </Flex>

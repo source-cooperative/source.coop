@@ -1,3 +1,4 @@
+/** @jest-environment node */
 import nextConfig from "./next.config.js";
 
 describe("next.config headers()", () => {

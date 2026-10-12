@@ -1,5 +1,6 @@
 "use server";
 
+import { getTranslations } from "next-intl/server";
 import { revalidatePath } from "next/cache";
 import { LOGGER } from "@/lib/logging";
 import {
@@ -70,8 +71,9 @@ export async function createServiceAccount(
   _prev: ServiceAccountFormState,
   formData: FormData
 ): Promise<ServiceAccountFormState> {
+  const t = await getTranslations("ServiceAccountActions");
   const session = await getPageSession();
-  if (!session?.identity_id || !session.account) return fail("Unauthenticated");
+  if (!session?.identity_id || !session.account) return fail(t("unauthenticated"));
 
   const parsed = ServiceAccountCreationRequestSchema.safeParse({
     local_id: formData.get("local_id"),
@@ -79,7 +81,7 @@ export async function createServiceAccount(
     owner_account_id: formData.get("owner_account_id"),
   });
   if (!parsed.success) {
-    return fail("Check the highlighted fields", parsed.error.flatten().fieldErrors);
+    return fail(t("checkFields"), parsed.error.flatten().fieldErrors);
   }
   const { local_id, name, owner_account_id } = parsed.data;
   const account_id = serviceAccountId(owner_account_id, local_id);
@@ -88,10 +90,10 @@ export async function createServiceAccount(
   // checks below cannot be used to probe another account's products.
   const owner = await accountsTable.fetchById(owner_account_id);
   if (!owner || !canManageAccountServiceAccounts(session, owner)) {
-    return fail("You do not manage service accounts for that account");
+    return fail(t("notOwnerManager"));
   }
   if (isServiceAccount(owner)) {
-    return fail("A service account cannot own another");
+    return fail(t("cannotOwnAnother"));
   }
 
   const now = new Date().toISOString();
@@ -112,7 +114,7 @@ export async function createServiceAccount(
   const subjects = [...new Set(formData.getAll("github_subject").map(String).filter(Boolean))];
   const badSubject = subjects.find((s) => !GITHUB_ACTIONS_SUBJECT_REGEX.test(s));
   if (badSubject) {
-    return fail(`${badSubject} does not name one repository and one branch, tag or environment`);
+    return fail(t("badSubject", { subject: badSubject }));
   }
 
   const grants: { product_id: string; role: MembershipRole }[] = [];
@@ -121,10 +123,10 @@ export async function createServiceAccount(
     const product_id = key.slice("grant:".length);
     const role = formData.get(key) as MembershipRole;
     if (![MembershipRole.ReadData, MembershipRole.WriteData].includes(role)) {
-      return fail(`${product_id}: access must be read or write`);
+      return fail(t("accessReadOrWrite", { product: product_id }));
     }
     if (!(await productsTable.fetchById(owner_account_id, product_id))) {
-      return fail(`${owner_account_id} has no product ${product_id}`);
+      return fail(t("noSuchProduct", { account: owner_account_id, product: product_id }));
     }
     grants.push({ product_id, role });
   }
@@ -133,7 +135,7 @@ export async function createServiceAccount(
   let minted: ReturnType<typeof mintApiKey> = null;
   if (formData.has("key_label")) {
     const expires_at = expiryFrom(formData);
-    if (expires_at === undefined) return fail("Expiry must be between 1 and 3650 days");
+    if (expires_at === undefined) return fail(t("expiryRange"));
     minted = mintApiKey({
       account_id,
       label: String(formData.get("key_label")),
@@ -141,7 +143,7 @@ export async function createServiceAccount(
       expires_at,
     });
     if (!minted) {
-      return fail("Check the highlighted fields", { key_label: ["Up to 64 characters."] });
+      return fail(t("checkFields"), { key_label: [t("keyLabelTooLong")] });
     }
   }
 
@@ -149,8 +151,8 @@ export async function createServiceAccount(
     await accountsTable.create(account);
   } catch (error) {
     if ((error as { name?: string })?.name === "ConditionalCheckFailedException") {
-      return fail("That account ID is already taken", {
-        local_id: [`${owner_account_id} already has a service account called ${local_id}.`],
+      return fail(t("accountIdTaken"), {
+        local_id: [t("localIdTaken", { owner: owner_account_id, id: local_id })],
       });
     }
     throw error;
@@ -199,58 +201,61 @@ export async function addGithubTrust(
   _prev: ServiceAccountActionState,
   formData: FormData
 ): Promise<ServiceAccountActionState> {
+  const t = await getTranslations("ServiceAccountActions");
   const session = await getPageSession();
   const account = await managedServiceAccount(session, String(formData.get("account_id") ?? ""));
   if (!account || !session?.account) {
-    return outcome("You do not manage that service account", false);
+    return outcome(t("notManaged"), false);
   }
   // Disabled means frozen: nothing new may act as it until it is enabled.
-  if (account.disabled) return outcome("That service account is disabled", false);
+  if (account.disabled) return outcome(t("disabled"), false);
   const subject = String(formData.get("subject") ?? "");
   if (!GITHUB_ACTIONS_SUBJECT_REGEX.test(subject)) {
-    return outcome("Name one repository and one branch, tag or environment", false);
+    return outcome(t("nameOneRepo"), false);
   }
   try {
     await trustGithub(account.account_id, subject, session.account.account_id);
   } catch (error) {
-    if (error instanceof AlreadyTrustedError) return outcome("Already trusted", false);
+    if (error instanceof AlreadyTrustedError) return outcome(t("alreadyTrusted"), false);
     throw error;
   }
   revalidate(account);
-  return outcome("Trusted", true);
+  return outcome(t("trusted"), true);
 }
 
 export async function removeTrust(
   _prev: ServiceAccountActionState,
   formData: FormData
 ): Promise<ServiceAccountActionState> {
+  const t = await getTranslations("ServiceAccountActions");
   const account = await managedServiceAccount(
     await getPageSession(),
     String(formData.get("account_id") ?? "")
   );
-  if (!account) return outcome("You do not manage that service account", false);
+  if (!account) return outcome(t("notManaged"), false);
   const issuer = String(formData.get("issuer") ?? "");
   const subject = String(formData.get("subject") ?? "");
-  if (!issuer || !subject) return outcome("No such trust on this account", false);
+  if (!issuer || !subject) return outcome(t("noSuchTrust"), false);
   // Keyed by the account, so this can only ever touch its own trusts.
   await accountTrustsTable.delete(account.account_id, issuer, subject);
   revalidate(account);
-  return outcome("Trust removed", true);
+  return outcome(t("trustRemoved"), true);
 }
 
 export async function setServiceAccountDisabled(
   _prev: ServiceAccountActionState,
   formData: FormData
 ): Promise<ServiceAccountActionState> {
+  const t = await getTranslations("ServiceAccountActions");
   const account = await managedServiceAccount(
     await getPageSession(),
     String(formData.get("account_id") ?? "")
   );
-  if (!account) return outcome("You do not manage that service account", false);
+  if (!account) return outcome(t("notManaged"), false);
   const disabled = formData.get("disabled") === "true";
   await accountsTable.update({ ...account, disabled, updated_at: new Date().toISOString() });
   revalidate(account);
-  return outcome(disabled ? "Service account disabled" : "Service account enabled", true);
+  return outcome(disabled ? t("accountDisabled") : t("accountEnabled"), true);
 }
 
 /** Changes the display name; the id, which software signs in as, stays. */
@@ -258,13 +263,14 @@ export async function renameServiceAccount(
   _prev: ServiceAccountActionState,
   formData: FormData
 ): Promise<ServiceAccountActionState> {
+  const t = await getTranslations("ServiceAccountActions");
   const account = await managedFrom(formData);
-  if (!account) return outcome("You do not manage that service account", false);
+  if (!account) return outcome(t("notManaged"), false);
   const parsed = ServiceAccountCreationRequestSchema.shape.name.safeParse(formData.get("name"));
   if (!parsed.success) return outcome(parsed.error.issues[0].message, false);
   await accountsTable.update({ ...account, name: parsed.data, updated_at: new Date().toISOString() });
   revalidate(account);
-  return outcome("Name saved", true);
+  return outcome(t("nameSaved"), true);
 }
 
 /** Removes the account, every grant it held, and every way it could sign in. */
@@ -272,11 +278,12 @@ export async function deleteServiceAccount(
   _prev: ServiceAccountActionState,
   formData: FormData
 ): Promise<ServiceAccountActionState> {
+  const t = await getTranslations("ServiceAccountActions");
   const account = await managedServiceAccount(
     await getPageSession(),
     String(formData.get("account_id") ?? "")
   );
-  if (!account) return outcome("You do not manage that service account", false);
+  if (!account) return outcome(t("notManaged"), false);
   for (const membership of await membershipsTable.listByUser(account.account_id)) {
     await membershipsTable.delete(membership.membership_id);
   }
@@ -304,8 +311,9 @@ export async function setProductAccess(
   _prev: ServiceAccountActionState,
   formData: FormData
 ): Promise<ServiceAccountActionState> {
+  const t = await getTranslations("ServiceAccountActions");
   const account = await managedFrom(formData);
-  if (!account) return outcome("You do not manage that service account", false);
+  if (!account) return outcome(t("notManaged"), false);
   const repository_id = String(formData.get("product_id") ?? "");
   const access = String(formData.get("access") ?? "");
   const held = (await membershipsTable.listByUser(account.account_id)).find(
@@ -329,7 +337,7 @@ export async function setProductAccess(
       await membershipsTable.update({ ...held, role, state_changed: now });
     } else {
       if (!(await productsTable.fetchById(account.owner_account_id, repository_id))) {
-        return outcome(`${account.owner_account_id} has no product ${repository_id}`, false);
+        return outcome(t("noSuchProduct", { account: account.owner_account_id, product: repository_id }), false);
       }
       await membershipsTable.create({
         membership_id: randomUUID(),

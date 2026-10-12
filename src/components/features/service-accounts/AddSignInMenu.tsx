@@ -3,12 +3,9 @@
 import { useState } from "react";
 import { Button, DropdownMenu } from "@radix-ui/themes";
 import { PlusIcon } from "@radix-ui/react-icons";
+import { useTranslations } from "next-intl";
 import { AddGithubTrustDialog } from "./AddGithubTrustDialog";
 import { IssueApiKeyDialog, type ApiKeyDraft } from "./IssueApiKeyDialog";
-
-/** What "Signs in with" says of itself, on the create form and the account's page alike. */
-export const SIGN_IN_DESCRIPTION =
-  "GitHub Actions workflows, each pinned to one repository and one branch, tag or environment; GitHub vouches for every run, so there is no secret to store. Or an API key, for environments without OIDC, shown once when it is issued.";
 
 /**
  * "Add sign-in", for the corner of a service account's "Signs in with": a
@@ -35,19 +32,20 @@ export function AddSignInMenu({
 }) {
   const [adding, setAdding] = useState<"github" | "key" | null>(null);
   const close = (open: boolean) => !open && setAdding(null);
+  const t = useTranslations("AddSignInMenu");
   return (
     <>
       <DropdownMenu.Root>
         <DropdownMenu.Trigger>
           <Button type="button" size="1" variant="soft">
-            <PlusIcon /> Add sign-in
+            <PlusIcon /> {t("addSignIn")}
             <DropdownMenu.TriggerIcon />
           </Button>
         </DropdownMenu.Trigger>
         <DropdownMenu.Content align="end" size="1">
-          <DropdownMenu.Item onSelect={() => setAdding("github")}>GitHub workflow</DropdownMenu.Item>
+          <DropdownMenu.Item onSelect={() => setAdding("github")}>{t("githubWorkflow")}</DropdownMenu.Item>
           <DropdownMenu.Item disabled={keyDisabled} onSelect={() => setAdding("key")}>
-            API key
+            {t("apiKey")}
           </DropdownMenu.Item>
         </DropdownMenu.Content>
       </DropdownMenu.Root>

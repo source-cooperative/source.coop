@@ -12,6 +12,7 @@ import { ProductDataUnavailable } from "@/components/features/products/ProductDa
 import { DirectoryList } from "@/components/features/products/object-browser/DirectoryList";
 import { ObjectSummary } from "@/components/features/products/object-browser/ObjectSummary";
 import { generateProductMetadata } from "@/components/features/metadata/ProductMetadata";
+import { getTranslations } from "next-intl/server";
 
 export async function generateMetadata({
   params,
@@ -32,14 +33,14 @@ interface PageProps {
   }>;
 }
 
-// Shown when a read through the data proxy fails for a non-authz reason (the
-// backend hung / 5xx'd / returned an unparseable body). Recoverable, so the
-// ProductDataUnavailable "Try again" button refreshes.
-const DATA_UNAVAILABLE_MESSAGE =
-  "This product's files couldn't be loaded just now — the storage backend didn't respond. Try again in a moment.";
-
 export default async function ProductPathPage({ params }: PageProps) {
   let { account_id, product_id, path } = await params;
+  // Shown when a read through the data proxy fails for a non-authz reason (the
+  // backend hung / 5xx'd / returned an unparseable body). Recoverable, so the
+  // ProductDataUnavailable "Try again" button refreshes.
+  const DATA_UNAVAILABLE_MESSAGE = (await getTranslations("ProductPage"))(
+    "dataUnavailable"
+  );
   path = path?.map((p) => decodeURIComponent(p)) || [];
   const objectPath = path.join("/");
 

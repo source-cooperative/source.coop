@@ -1,4 +1,5 @@
 import { Box, Flex, Text } from "@radix-ui/themes";
+import { useTranslations } from "next-intl";
 import { SectionHeader } from "./SectionHeader";
 
 interface DangerZoneProps {
@@ -24,12 +25,13 @@ export function DangerZone({
   action,
   note,
 }: DangerZoneProps) {
+  const t = useTranslations("DangerZone");
   return (
     // Its own top margin, now that SectionHeader carries none: this sits at the
     // end of a page rather than inside a form's wrapper, so nothing else is
     // separating it from what comes before.
     <Box mt="6">
-      <SectionHeader title="Danger zone" color="red">
+      <SectionHeader title={t("title")} color="red">
         <Flex
           align="start"
           justify="between"
