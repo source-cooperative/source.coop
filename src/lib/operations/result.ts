@@ -57,11 +57,11 @@ const fail =
 export const unauthenticated = () =>
   fail("unauthenticated")("Authentication required");
 export const forbidden = fail("forbidden");
-export const notFound = fail("not_found");
-export const conflict = fail("conflict");
-/** Refused: to a caller with no session, for want of one. */
+/** Refused: 401 to a caller who could sign in and try again, 403 otherwise. */
 export const deny = (session: unknown, message: string) =>
   session ? forbidden(message) : unauthenticated();
+export const notFound = fail("not_found");
+export const conflict = fail("conflict");
 /** A rule about the input failed; name the field when there is one. */
 export const invalid = (message: string, field?: string) =>
   fail("invalid")(message, field ? { [field]: [message] } : undefined);

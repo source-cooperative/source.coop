@@ -456,6 +456,18 @@ describe("updateDataConnection", () => {
   });
 });
 
+test("reports an unexpected failure on the form instead of throwing", async () => {
+  mockTable.fetchById.mockRejectedValue(new Error("throttled"));
+
+  const result = await deleteDataConnection(
+    FORM_STATE,
+    formDataFor({ data_connection_id: "my-connection" })
+  );
+
+  expect(result.success).toBe(false);
+  expect(result.message).toContain("try again");
+});
+
 describe("deleteDataConnection", () => {
   test("deletes an existing connection and redirects to the list", async () => {
     mockTable.fetchById.mockResolvedValue({

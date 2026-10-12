@@ -6,6 +6,7 @@ import {
   DataConnectionAuthenticationType,
   ProductVisibility,
 } from "@/types";
+import { LOGGER } from "@/lib/logging";
 import { getPageSession } from "../api/utils";
 import * as ops from "../operations/data-connections";
 import { OperationResult, toFormState } from "../operations/result";
@@ -40,55 +41,86 @@ function byLeaf<T>(state: FormState<T>): FormState<T> {
 }
 
 /**
- * Revalidates the list a changed connection appears in and, when given
- * `redirectTo`, sends the browser on to that page of the connection: a
- * client-side navigation (see FormState.redirectTo) refetches the shared
- * layout with the current session.
+ * Runs `operation` as the visitor and answers the form. A changed connection's
+ * list and page are revalidated and, given `redirectTo`, the browser is sent on
+ * to that page of it: a client-side navigation (see FormState.redirectTo)
+ * refetches the shared layout with the current session. Anything thrown is
+ * logged and reported on the form, which keeps what the visitor typed.
  */
-function respond<T>(
-  result: OperationResult<DataConnection>,
+async function respond<T>(
+  operation: (
+    session: Awaited<ReturnType<typeof getPageSession>>
+  ) => Promise<OperationResult<DataConnection>>,
   formData: FormData,
   message: string,
   redirectTo?: (c: DataConnection) => string
-): FormState<T> {
-  if (result.ok) revalidatePath(listUrl(result.value));
+): Promise<FormState<T>> {
+  let result: OperationResult<DataConnection>;
+  try {
+    result = await operation(await getPageSession());
+  } catch (error) {
+    LOGGER.error("Data connection action failed", {
+      operation: "data-connection form",
+      metadata: { data_connection_id: connectionId(formData) },
+      error,
+    });
+    return {
+      success: false,
+      data: formData,
+      message: "Something went wrong. Please try again.",
+      fieldErrors: {},
+    };
+  }
+  if (result.ok) {
+    revalidatePath(listUrl(result.value));
+    revalidatePath(editUrl(result.value));
+  }
   const url = result.ok && redirectTo ? redirectTo(result.value) : undefined;
   return byLeaf(toFormState(result, formData, message, url) as FormState<T>);
 }
+
+const connectionId = (formData: FormData) =>
+  String(formData.get("data_connection_id") ?? "");
 
 export async function createDataConnection(
   _prevState: FormState<DataConnection>,
   formData: FormData
 ): Promise<FormState<DataConnection>> {
-  const result = await ops.createDataConnection(
-    await getPageSession(),
-    buildDataConnectionFromForm(formData)
+  return respond(
+    (session) =>
+      ops.createDataConnection(session, buildDataConnectionFromForm(formData)),
+    formData,
+    "Data connection created successfully!",
+    editUrl
   );
-  return respond(result, formData, "Data connection created successfully!", editUrl);
 }
 
 export async function updateDataConnection(
   _prevState: FormState<DataConnection>,
   formData: FormData
 ): Promise<FormState<DataConnection>> {
-  const result = await ops.updateDataConnection(
-    await getPageSession(),
-    String(formData.get("data_connection_id") ?? ""),
-    buildDataConnectionFromForm(formData)
+  return respond(
+    (session) =>
+      ops.updateDataConnection(
+        session,
+        connectionId(formData),
+        buildDataConnectionFromForm(formData)
+      ),
+    formData,
+    "Data connection updated successfully!"
   );
-  if (result.ok) revalidatePath(editUrl(result.value));
-  return respond(result, formData, "Data connection updated successfully!");
 }
 
 export async function deleteDataConnection(
   _prevState: FormState<unknown>,
   formData: FormData
 ): Promise<FormState<unknown>> {
-  const result = await ops.deleteDataConnection(
-    await getPageSession(),
-    String(formData.get("data_connection_id") ?? "")
+  return respond(
+    (session) => ops.deleteDataConnection(session, connectionId(formData)),
+    formData,
+    "Data connection deleted successfully!",
+    listUrl
   );
-  return respond(result, formData, "Data connection deleted successfully!", listUrl);
 }
 
 /**

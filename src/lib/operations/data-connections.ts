@@ -1,3 +1,4 @@
+import { isDeepStrictEqual } from "util";
 import { z } from "zod";
 import {
   Actions,
@@ -8,7 +9,11 @@ import {
   slugifyToId,
   UserSession,
 } from "@/types";
-import { canCreateProductForAccount, isAuthorized } from "@/lib/api/authz";
+import {
+  canCreateProductForAccount,
+  canManageAccountDataConnections,
+  isAuthorized,
+} from "@/lib/api/authz";
 import { sanitizeDataConnection } from "@/lib/api/sanitize-data-connection";
 import {
   canManageDataConnection,
@@ -22,6 +27,7 @@ import {
 } from "@/lib/clients/database";
 import {
   conflict,
+  deny,
   forbidden,
   fromZodError,
   invalid,
@@ -36,21 +42,26 @@ export const CreateDataConnectionSchema = DataConnectionObjectSchema.omit({
   data_connection_id: true,
 }).openapi("CreateDataConnection");
 
-/**
- * Top-level fields replace the stored ones; a field left out keeps its stored
- * value. `owner` is not here: a connection never changes hands.
- */
-export const UpdateDataConnectionSchema = DataConnectionObjectSchema.omit({
+const UpdateFields = DataConnectionObjectSchema.omit({
   data_connection_id: true,
   owner: true,
-})
-  .partial()
-  .openapi("UpdateDataConnection");
+}).partial();
+
+/**
+ * Top-level fields replace the stored ones; a field left out keeps its stored
+ * value, and `null` clears an optional one. `owner` is not here: a connection
+ * never changes hands.
+ */
+export const UpdateDataConnectionSchema = UpdateFields.extend({
+  prefix_template: UpdateFields.shape.prefix_template.nullable(),
+  required_flag: UpdateFields.shape.required_flag.nullable(),
+  authentication: UpdateFields.shape.authentication.nullable(),
+}).openapi("UpdateDataConnection");
 
 export const ListDataConnectionsQuerySchema = z.object({
   owner: z.string().optional().openapi({
     description:
-      "Only the connections this account owns: the management view, which leaves out the platform's own.",
+      "Only the connections this account owns: the management view, open to those who manage the account's connections.",
   }),
   usable_for: z.string().optional().openapi({
     description:
@@ -58,8 +69,11 @@ export const ListDataConnectionsQuerySchema = z.object({
   }),
 });
 
-const deny = (session: UserSession | null, message: string) =>
-  session ? forbidden(message) : unauthenticated();
+export interface DataConnectionPage {
+  items: DataConnection[];
+  /** Always null: every connection fits on one page. */
+  next_cursor: string | null;
+}
 
 const raced = (error: unknown) =>
   error instanceof Error && error.name === "ConditionalCheckFailedException";
@@ -89,55 +103,98 @@ const complete = (c: Record<string, unknown>) =>
 
 /**
  * Secrets never leave the database, so a client editing a connection can't
- * send them back: a blank or missing secret under the same authentication type
- * keeps the stored one.
+ * send them back: a blank or missing secret keeps the stored one, as long as
+ * the authentication type and the storage it points at are unchanged. A
+ * credential re-pointed at another bucket or endpoint has to be given again,
+ * or whoever edits the connection could aim someone else's key anywhere.
  */
 function withStoredSecrets(input: unknown, stored: DataConnection) {
-  const auth = (input as { authentication?: Record<string, unknown> } | null)
-    ?.authentication;
-  if (!auth || auth.type !== stored.authentication?.type) return input;
-  const given = Object.entries(auth).filter(([, v]) => v !== "");
+  const given = input as {
+    authentication?: Record<string, unknown>;
+    details?: unknown;
+  } | null;
+  const auth = given?.authentication;
+  if (
+    !auth ||
+    auth.type !== stored.authentication?.type ||
+    (given.details !== undefined &&
+      !isDeepStrictEqual(given.details, stored.details))
+  ) {
+    return input;
+  }
+  const fields = Object.entries(auth).filter(([, v]) => v !== "");
   return {
-    ...(input as object),
-    authentication: { ...stored.authentication, ...Object.fromEntries(given) },
+    ...given,
+    authentication: { ...stored.authentication, ...Object.fromEntries(fields) },
   };
+}
+
+/**
+ * What a list shows without `usable_for`: the platform's own connections, and
+ * the owned ones the caller manages. An owned connection names its account's
+ * buckets, so it isn't for everyone to browse.
+ */
+async function visible(session: UserSession | null, c: DataConnection) {
+  return (
+    isAuthorized(session, c, Actions.GetDataConnection) &&
+    (!c.owner || (await canManageDataConnection(session, c)))
+  );
 }
 
 export async function listDataConnections(
   session: UserSession | null,
   query: unknown
-): Promise<OperationResult<DataConnection[]>> {
+): Promise<OperationResult<DataConnectionPage>> {
   const parsed = ListDataConnectionsQuerySchema.safeParse(query);
   if (!parsed.success) return fromZodError(parsed.error);
   const { owner, usable_for } = parsed.data;
 
+  for (const [id, may, what] of [
+    [owner, canManageAccountDataConnections, "manage"],
+    [usable_for, canCreateProductForAccount, "create products under"],
+  ] as const) {
+    if (!id) continue;
+    const account = await accountsTable.fetchById(id);
+    if (!account) return notFound(`Account ${id} not found`);
+    // UseDataConnection judges only the connection, so the account is checked
+    // here: otherwise anyone could list an account's buckets by naming it.
+    if (!may(session, account)) {
+      return deny(session, `You may not ${what} this account's connections`);
+    }
+  }
+
   let connections: DataConnection[];
   if (usable_for) {
-    const account = await accountsTable.fetchById(usable_for);
-    if (!account) return notFound(`Account ${usable_for} not found`);
-    // UseDataConnection judges only the connection, so the account is checked
-    // here: otherwise anyone could list an account's own buckets by naming it.
-    if (!canCreateProductForAccount(session, account)) {
-      return deny(session, "You may not create products under this account");
-    }
     connections = await listUsableDataConnections(session, [usable_for]);
   } else {
-    connections = (await dataConnectionsTable.listAll()).filter((c) =>
-      isAuthorized(session, c, Actions.GetDataConnection)
-    );
+    const all = await dataConnectionsTable.listAll();
+    const shown = await Promise.all(all.map((c) => visible(session, c)));
+    connections = all.filter((_, i) => shown[i]);
   }
-  return ok(
-    connections
+  return ok({
+    items: connections
       .filter((c) => !owner || c.owner === owner)
-      .map(sanitizeDataConnection)
-  );
+      .sort(
+        (a, b) =>
+          a.details.provider.localeCompare(b.details.provider) ||
+          a.name.localeCompare(b.name)
+      )
+      .map(sanitizeDataConnection),
+    next_cursor: null,
+  });
 }
+
+/** DynamoDB rejects an empty key outright, so an empty id is simply not found. */
+const fetchById = async (data_connection_id: string) =>
+  (data_connection_id &&
+    (await dataConnectionsTable.fetchById(data_connection_id))) ||
+  null;
 
 export async function getDataConnection(
   session: UserSession | null,
   data_connection_id: string
 ): Promise<OperationResult<DataConnection>> {
-  const connection = await dataConnectionsTable.fetchById(data_connection_id);
+  const connection = await fetchById(data_connection_id);
   if (!connection) {
     return notFound(`Data connection ${data_connection_id} not found`);
   }
@@ -192,7 +249,7 @@ async function fetchManaged(
   data_connection_id: string
 ): Promise<OperationResult<DataConnection>> {
   if (!session) return unauthenticated();
-  const connection = await dataConnectionsTable.fetchById(data_connection_id);
+  const connection = await fetchById(data_connection_id);
   if (!connection) {
     return notFound(`Data connection ${data_connection_id} not found`);
   }
@@ -214,7 +271,10 @@ export async function updateDataConnection(
     withStoredSecrets(input, existing)
   );
   if (!parsed.success) return fromZodError(parsed.error);
-  const full = complete({ ...existing, ...parsed.data });
+  const changes = Object.fromEntries(
+    Object.entries(parsed.data).map(([k, v]) => [k, v ?? undefined])
+  );
+  const full = complete({ ...existing, ...changes });
   if (!full.success) return fromZodError(full.error);
 
   try {
