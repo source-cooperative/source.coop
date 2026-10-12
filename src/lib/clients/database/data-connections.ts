@@ -1,4 +1,5 @@
 import { DataConnection } from "@/types";
+import { isConditionalCheckFailed } from "./errors";
 import {
   PutItemCommand,
   ResourceNotFoundException,
@@ -173,10 +174,7 @@ export class DataConnectionsTable extends BaseTable {
       await this.client.send(command);
       return [dataConnection, true];
     } catch (error) {
-      if (
-        error instanceof Error &&
-        error.name === "ConditionalCheckFailedException"
-      ) {
+      if (isConditionalCheckFailed(error)) {
         return [dataConnection, false];
       }
       this.logError("upsert", error, {

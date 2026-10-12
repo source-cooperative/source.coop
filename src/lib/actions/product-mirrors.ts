@@ -1,6 +1,7 @@
 "use server";
 
 import { LOGGER } from "@/lib/logging";
+import { isConditionalCheckFailed } from "@/lib/clients/database/errors";
 import { canManageAccount } from "../api/authz";
 import { getPageSession } from "../api/utils";
 import { accountsTable, productsTable, dataConnectionsTable } from "../clients";
@@ -43,12 +44,7 @@ async function denyUnlessAccountManager(
 const CONCURRENT_EDIT_MESSAGE =
   "This product was modified by someone else. Please reload and try again.";
 
-function isConcurrentEdit(error: unknown): boolean {
-  return (
-    error instanceof Error &&
-    error.name === "ConditionalCheckFailedException"
-  );
-}
+const isConcurrentEdit = isConditionalCheckFailed;
 
 export async function addProductMirror(
   _prevState: FormState<unknown>,
