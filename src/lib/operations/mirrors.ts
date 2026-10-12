@@ -19,7 +19,7 @@ import {
   dataConnectionsTable,
   productsTable,
 } from "@/lib/clients/database";
-import { getProduct } from "./products";
+import { getProduct, revalidate } from "./products";
 import {
   conflict,
   deny,
@@ -79,6 +79,9 @@ export const UpdateMirrorSchema = z
       description:
         "Make this the primary mirror, which visitors download from. To change the primary, promote another mirror.",
     }),
+  })
+  .refine((body) => body.prefix !== undefined || body.is_primary, {
+    message: "Give a prefix, is_primary, or both",
   })
   .openapi("UpdateMirror");
 
@@ -145,6 +148,8 @@ async function saveMirrors(
     throw error;
   }
   const { account_id, product_id } = product;
+  // The primary mirror is what the product's pages serve from.
+  revalidate(account_id, product_id);
   revalidatePath(editProductDataConnectionsUrl(account_id, product_id));
   LOGGER.info("Product mirrors changed", {
     operation,
@@ -197,7 +202,12 @@ export async function addMirror(
       );
   }
   const { mirrors, primary_mirror } = product.metadata;
-  if (mirrors[connection_id]) {
+  // Older products key mirrors by other names, and the new mirror's key must
+  // not overwrite one of those either.
+  if (
+    Object.hasOwn(mirrors, connection_id) ||
+    Object.values(mirrors).some((m) => m.connection_id === connection_id)
+  ) {
     return conflict("This data connection is already associated with this product");
   }
 

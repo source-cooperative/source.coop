@@ -23,7 +23,7 @@ jest.mock("@/lib/data-connections", () => ({
   canManageDataConnection: jest.fn(),
   denyDataConnectionFor: jest.fn(),
 }));
-jest.mock("./products", () => ({ getProduct: jest.fn() }));
+jest.mock("./products", () => ({ getProduct: jest.fn(), revalidate: jest.fn() }));
 jest.mock("next/cache", () => ({ revalidatePath: jest.fn() }));
 
 const SESSION = { identity_id: "user-1", account: { account_id: "alice" } } as never;
@@ -150,11 +150,16 @@ describe("addMirror", () => {
     ["a connection another account owns", { connection_id: "c" }, "wrong-account", "invalid"],
     ["a connection the caller may not use", { connection_id: "c" }, "not-usable", "forbidden"],
     ["a connection already mirrored", { connection_id: "a" }, null, "conflict"],
+    ["a connection mirrored under an older key", { connection_id: "old" }, "legacy", "conflict"],
   ])("refuses %s", async (_n, input, denial, error) => {
-    (productsTable.fetchById as jest.Mock).mockResolvedValue(TWO());
+    (productsTable.fetchById as jest.Mock).mockResolvedValue(
+      denial === "legacy"
+        ? productWith({ "aws-us-east-1": mirror("old", true) }, "aws-us-east-1")
+        : TWO()
+    );
     if (denial === "missing") {
       (dataConnectionsTable.fetchById as jest.Mock).mockResolvedValue(null);
-    } else {
+    } else if (denial !== "legacy") {
       (denyDataConnectionFor as jest.Mock).mockReturnValue(denial);
     }
     expect(await addMirror(SESSION, "acct", "prod", input)).toMatchObject({ error });
@@ -213,6 +218,13 @@ describe("updateMirror", () => {
     expect(
       await updateMirror(SESSION, "acct", "prod", "a", { is_primary: false })
     ).toMatchObject({ error: "invalid" });
+  });
+
+  test("refuses an edit that changes nothing, before writing", async () => {
+    expect(await updateMirror(SESSION, "acct", "prod", "b", {})).toMatchObject({
+      error: "invalid",
+    });
+    expect(productsTable.update).not.toHaveBeenCalled();
   });
 
   test("a prefix also needs management of the connection", async () => {
