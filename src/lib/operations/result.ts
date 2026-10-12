@@ -66,12 +66,12 @@ export const deny = (session: unknown, message: string) =>
 export const invalid = (message: string, field?: string) =>
   fail("invalid")(message, field ? { [field]: [message] } : undefined);
 
+/** Field errors are keyed by dotted path, so a nested field is named in full. */
 export function fromZodError(error: ZodError) {
-  const fieldErrors = Object.fromEntries(
-    Object.entries(error.flatten().fieldErrors).filter(
-      (entry): entry is [string, string[]] => !!entry[1]?.length
-    )
-  );
+  const fieldErrors: Record<string, string[]> = {};
+  for (const { path, message } of error.issues) {
+    if (path.length) (fieldErrors[path.join(".")] ??= []).push(message);
+  }
   return fail("invalid")(error.issues[0]?.message ?? "Invalid input", fieldErrors);
 }
 

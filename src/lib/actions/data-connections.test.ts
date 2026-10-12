@@ -3,9 +3,13 @@ import {
   updateDataConnection,
   deleteDataConnection,
 } from "./data-connections";
-import { dataConnectionsTable, productsTable, accountsTable } from "../clients";
+import {
+  dataConnectionsTable,
+  productsTable,
+  accountsTable,
+} from "@/lib/clients/database";
 import { getPageSession } from "../api/utils";
-import { isAuthorized, canManageAccountDataConnections } from "../api/authz";
+import { isAdmin, canManageAccountDataConnections } from "../api/authz";
 import {
   Account,
   DataConnection,
@@ -13,7 +17,9 @@ import {
   DataProvider,
 } from "@/types";
 
-jest.mock("../clients", () => ({
+// The actions run the real operation, so its rules are tested end to end from
+// the form.
+jest.mock("@/lib/clients/database", () => ({
   dataConnectionsTable: {
     fetchById: jest.fn(),
     create: jest.fn(),
@@ -34,6 +40,8 @@ jest.mock("../api/utils", () => ({
 
 jest.mock("../api/authz", () => ({
   isAuthorized: jest.fn(),
+  isAdmin: jest.fn(),
+  canCreateProductForAccount: jest.fn(),
   canManageAccountDataConnections: jest.fn(),
 }));
 
@@ -46,9 +54,7 @@ const mockProductsTable = productsTable as jest.Mocked<typeof productsTable>;
 const mockGetPageSession = getPageSession as jest.MockedFunction<
   typeof getPageSession
 >;
-const mockIsAuthorized = isAuthorized as jest.MockedFunction<
-  typeof isAuthorized
->;
+const mockIsAdmin = isAdmin as jest.MockedFunction<typeof isAdmin>;
 const mockAccountsTable = accountsTable as jest.Mocked<typeof accountsTable>;
 const mockCanManage = canManageAccountDataConnections as jest.MockedFunction<
   typeof canManageAccountDataConnections
@@ -96,7 +102,7 @@ beforeEach(() => {
   mockGetPageSession.mockResolvedValue({
     identity_id: "id-1",
   } as Awaited<ReturnType<typeof getPageSession>>);
-  mockIsAuthorized.mockReturnValue(true);
+  mockIsAdmin.mockReturnValue(true);
   mockTable.fetchById.mockResolvedValue(null);
   mockTable.create.mockImplementation(async (dc) => dc);
   mockTable.update.mockImplementation(async (dc) => dc);
@@ -122,12 +128,12 @@ describe("createDataConnection", () => {
     );
 
     expect(result.success).toBe(false);
-    expect(result.message).toBe("Unauthenticated");
+    expect(result.message).toBe("Authentication required");
     expect(mockTable.create).not.toHaveBeenCalled();
   });
 
   test("rejects an unauthorized caller before any write", async () => {
-    mockIsAuthorized.mockReturnValue(false);
+    mockIsAdmin.mockReturnValue(false);
 
     const result = await createDataConnection(
       FORM_STATE,
@@ -140,7 +146,7 @@ describe("createDataConnection", () => {
     );
 
     expect(result.success).toBe(false);
-    expect(result.message).toContain("Unauthorized");
+    expect(result.message).toContain("may not");
     expect(mockTable.create).not.toHaveBeenCalled();
   });
 
@@ -322,28 +328,7 @@ describe("createDataConnection", () => {
     });
   });
 
-  test("rejects an existing connection ID", async () => {
-    mockTable.fetchById.mockResolvedValue({
-      data_connection_id: "my-connection",
-    } as DataConnection);
-
-    const result = await createDataConnection(
-      FORM_STATE,
-      formDataFor({
-        ...baseS3Fields,
-        // unsigned (no auth_type) ⇒ must be read-only
-        read_only: "on",
-      })
-    );
-
-    expect(result.success).toBe(false);
-    // Reported against the name: the id is derived, so it is not something the
-    // user can edit their way out of.
-    expect(result.fieldErrors.name).toBeDefined();
-    expect(mockTable.create).not.toHaveBeenCalled();
-  });
-
-  test("translates a conditional-put race into a duplicate-ID error", async () => {
+  test("reports a taken name, found by the conditional put", async () => {
     const conditionalFailure = Object.assign(new Error("conditional"), {
       name: "ConditionalCheckFailedException",
     });
@@ -467,7 +452,7 @@ describe("updateDataConnection", () => {
     );
 
     expect(result.success).toBe(false);
-    expect(result.message).toContain("deleted concurrently");
+    expect(result.message).toContain("was deleted");
   });
 });
 
@@ -475,6 +460,15 @@ describe("deleteDataConnection", () => {
   test("deletes an existing connection and redirects to the list", async () => {
     mockTable.fetchById.mockResolvedValue({
       data_connection_id: "my-connection",
+      name: "My Connection",
+      read_only: true,
+      allowed_visibilities: [],
+      details: {
+        provider: DataProvider.S3,
+        bucket: "b",
+        base_prefix: "",
+        region: "us-east-1",
+      },
     } as DataConnection);
 
     const result = await deleteDataConnection(
@@ -535,7 +529,7 @@ describe("account-owned connections", () => {
   };
 
   test("namespaces the id as ${owner}--${slug} and redirects to the account view", async () => {
-    mockIsAuthorized.mockReturnValue(false); // not a platform admin
+    mockIsAdmin.mockReturnValue(false); // not a platform admin
 
     const result = await createDataConnection(
       FORM_STATE,
@@ -553,7 +547,7 @@ describe("account-owned connections", () => {
   });
 
   test("ignores a required_flag injected via a crafted POST on an owned connection", async () => {
-    mockIsAuthorized.mockReturnValue(false);
+    mockIsAdmin.mockReturnValue(false);
 
     const result = await createDataConnection(
       FORM_STATE,
@@ -565,7 +559,7 @@ describe("account-owned connections", () => {
   });
 
   test("rejects a caller who is not an admin of the owner account", async () => {
-    mockIsAuthorized.mockReturnValue(false);
+    mockIsAdmin.mockReturnValue(false);
     mockCanManage.mockReturnValue(false);
 
     const result = await createDataConnection(
@@ -574,12 +568,12 @@ describe("account-owned connections", () => {
     );
 
     expect(result.success).toBe(false);
-    expect(result.message).toContain("Unauthorized");
+    expect(result.message).toContain("may not");
     expect(mockTable.create).not.toHaveBeenCalled();
   });
 
   test("lets a platform admin manage an orphaned connection whose owner was deleted", async () => {
-    mockIsAuthorized.mockReturnValue(true); // platform admin
+    mockIsAdmin.mockReturnValue(true); // platform admin
     mockAccountsTable.fetchById.mockResolvedValue(null); // owner account gone
     mockTable.fetchById.mockResolvedValue({
       data_connection_id: "ghost--conn",

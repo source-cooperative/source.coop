@@ -6,6 +6,8 @@ import { generateDocument } from "@/lib/api/openapi";
 // catches.
 import "../v1/accounts/[account_id]/route";
 import "../v1/accounts/[account_id]/trusts/exchanges/route";
+import "../v1/data-connections/route";
+import "../v1/data-connections/[data_connection_id]/route";
 import "../v1/memberships/route";
 import "../v1/memberships/[membership_id]/route";
 import "../v1/products/route";
