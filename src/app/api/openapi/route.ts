@@ -14,6 +14,8 @@ import "../v1/products/route";
 import "../v1/products/[account_id]/route";
 import "../v1/products/[account_id]/[product_id]/route";
 import "../v1/products/[account_id]/[product_id]/members/route";
+import "../v1/products/[account_id]/[product_id]/mirrors/route";
+import "../v1/products/[account_id]/[product_id]/mirrors/[key]/route";
 
 // The registry is complete once the imports above have run, so the document
 // is built once per instance rather than per request.

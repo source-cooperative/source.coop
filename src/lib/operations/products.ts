@@ -156,7 +156,7 @@ const page = (
  * Drops the cached pages that show a product, and its account's listing of
  * it, whichever adapter changed it.
  */
-function revalidate(account_id: string, product_id?: string) {
+export function revalidate(account_id: string, product_id?: string) {
   revalidatePath(accountUrl(account_id));
   if (product_id) {
     revalidatePath(productUrl(account_id, product_id));
