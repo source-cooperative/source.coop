@@ -124,24 +124,31 @@ const encodeCursor = (key: unknown) =>
   key ? Buffer.from(JSON.stringify(key)).toString("base64url") : null;
 
 /**
- * What a listing shows of a product's account: its public profile. The stored
+ * `product` with as much of its account as the caller may read: the whole
+ * record for whoever GetAccount allows, and otherwise its public profile. The
  * record also holds its people's emails, Ory identity, flags and private
- * metadata, which GetAccount keeps from strangers.
+ * metadata.
  */
-const publicAccount = (account?: Account) =>
-  account &&
-  ({
-    account_id: account.account_id,
-    type: account.type,
-    name: account.name,
-    disabled: account.disabled,
-    metadata_public: account.metadata_public,
-  } as Account);
+// ponytail: field by field, because Account is a union of three schemas that
+// zod can't .pick() across.
+function shown(session: UserSession | null, product: Product): Product {
+  const { account } = product;
+  if (!account || isAuthorized(session, account, Actions.GetAccount)) return product;
+  const { account_id, type, name, disabled, metadata_public } = account;
+  return {
+    ...product,
+    account: { account_id, type, name, disabled, metadata_public } as Account,
+  };
+}
 
 // ponytail: filtering after the read can leave a page short of `limit`; the
 // cursor still moves on correctly.
-const page = (items: Product[], lastEvaluatedKey: unknown): ProductPage => ({
-  items: items.map((p) => ({ ...p, account: publicAccount(p.account) })),
+const page = (
+  session: UserSession | null,
+  items: Product[],
+  lastEvaluatedKey: unknown
+): ProductPage => ({
+  items: items.map((p) => shown(session, p)),
   next_cursor: encodeCursor(lastEvaluatedKey),
 });
 
@@ -193,6 +200,7 @@ export async function listProducts(
     if (!account) return notFound(`Account ${account_id} not found`);
     return ok(
       page(
+        session,
         result.products
           .filter((p) => canListOnProfile(session, p))
           .map((p) => ({ ...p, account })),
@@ -208,6 +216,7 @@ export async function listProducts(
   });
   return ok(
     page(
+      session,
       await productsTable.attachAccounts(
         result.products.filter((p) => isAuthorized(session, p, Actions.ListRepository))
       ),
@@ -238,7 +247,7 @@ export async function getProduct(
     });
     return refuse(session, product, "You may not view this product");
   }
-  return ok(product);
+  return ok(shown(session, product));
 }
 
 /**
@@ -368,7 +377,7 @@ export async function updateProduct(
     operation: "updateProduct",
     metadata: { account_id, product_id, by: session.account?.account_id, ...changes },
   });
-  return ok(updated);
+  return ok(shown(session, updated));
 }
 
 /**
@@ -409,13 +418,9 @@ export async function deleteProduct(
   // request, not necessarily to the bearer token it carries.
   if (!preserveData && connection && !connection.read_only) {
     if (!session.identity_id) {
-      return forbidden(
-        "Only a person can delete a product's stored objects."
-      );
+      return forbidden("Only a person can delete a product's stored objects.");
     }
-    const storage = await getStorageClient(
-      await getProxyCredentials(session.identity_id)
-    );
+    const storage = await getStorageClient(await getProxyCredentials(session.identity_id));
     await storage.deleteByPrefix(account_id, `${product_id}/`);
   }
   await membershipsTable.deleteByProduct(account_id, product_id);
@@ -426,5 +431,5 @@ export async function deleteProduct(
     operation: "deleteProduct",
     metadata: { account_id, product_id, by: session.account?.account_id, preserveData },
   });
-  return ok(product);
+  return ok(shown(session, product));
 }
