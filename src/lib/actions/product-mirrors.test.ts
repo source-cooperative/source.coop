@@ -55,6 +55,14 @@ test("setPrimaryMirror promotes the mirror", async () => {
   });
 });
 
+test("a thrown failure becomes the form's message", async () => {
+  (ops.addMirror as jest.Mock).mockRejectedValue(new Error("throttled"));
+  expect(await addProductMirror(STATE, form({ ...IDS, connection_id: "c" }))).toMatchObject({
+    success: false,
+    message: "Failed to save. Please try again.",
+  });
+});
+
 test("a refusal becomes the form's message", async () => {
   (ops.removeMirror as jest.Mock).mockResolvedValue({
     ok: false,
