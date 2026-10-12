@@ -77,8 +77,8 @@ beforeEach(() => {
 
 describe("listProducts", () => {
   const key = { account_id: "alice", product_id: "b" };
-  const encode = (k: unknown) => Buffer.from(JSON.stringify(k)).toString("base64");
-  const cursor = Buffer.from(JSON.stringify(key)).toString("base64");
+  const encode = (k: unknown) => Buffer.from(JSON.stringify(k)).toString("base64url");
+  const cursor = encode(key);
 
   test("pages through an account's products, showing only those the caller may", async () => {
     const [shown, hidden] = [product(), product({ product_id: "hidden" })];
@@ -91,7 +91,41 @@ describe("listProducts", () => {
     const result = await listProducts(SESSION, { limit: "10", cursor }, "alice");
 
     expect(productsTable.listByAccount).toHaveBeenCalledWith("alice", 10, key);
-    expect(result).toEqual({ ok: true, value: { items: [shown], next_cursor: cursor } });
+    expect(result).toEqual({
+      ok: true,
+      value: { items: [{ ...shown, account: { account_id: "alice" } }], next_cursor: cursor },
+    });
+  });
+
+  test("shows an account's public profile, never its private fields", async () => {
+    (accountsTable.fetchById as jest.Mock).mockResolvedValue({
+      account_id: "alice",
+      name: "Alice",
+      emails: [{ address: "alice@example.com" }],
+      identity_id: "ory-alice",
+      flags: ["admin"],
+      metadata_private: { note: "secret" },
+      metadata_public: { bio: "hi" },
+    });
+    (productsTable.listByAccount as jest.Mock).mockResolvedValue({ products: [product()] });
+    (canListOnProfile as jest.Mock).mockReturnValue(true);
+
+    const result = await listProducts(null, {}, "alice");
+
+    expect(result.ok && result.value.items[0].account).toEqual({
+      account_id: "alice",
+      name: "Alice",
+      metadata_public: { bio: "hi" },
+    });
+  });
+
+  test("refuses an unfeatured cursor when listing featured products", async () => {
+    (productsTable.listPublic as jest.Mock).mockResolvedValue({ products: [] });
+    const unfeatured = encode({ ...key, visibility: "public", featured: 0 });
+    expect(await listProducts(null, { featured: "true", cursor: unfeatured })).toMatchObject({
+      error: "invalid",
+    });
+    expect(await listProducts(null, { cursor: unfeatured })).toMatchObject({ ok: true });
   });
 
   test("searches public products, and the last page has no cursor", async () => {
@@ -337,6 +371,15 @@ describe("updateProduct", () => {
   test("a product with no ID is not found, without asking DynamoDB", async () => {
     expect(await updateProduct(SESSION, "alice", "", {})).toMatchObject({ error: "not_found" });
     expect(productsTable.fetchById).not.toHaveBeenCalled();
+  });
+
+  test("answers with the row as written", async () => {
+    (productsTable.update as jest.Mock).mockImplementation(async (p) => ({
+      ...p,
+      updated_at: "as stored",
+    }));
+    const result = await updateProduct(SESSION, "alice", "my-product", { title: "New" });
+    expect(result.ok && result.value.updated_at).toBe("as stored");
   });
 
   test("refuses an empty title, which only the form may leave out", async () => {
