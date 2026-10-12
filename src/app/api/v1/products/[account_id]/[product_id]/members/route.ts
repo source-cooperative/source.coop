@@ -2,15 +2,12 @@ import { z } from "zod";
 import { StatusCodes } from "http-status-codes";
 import { MembershipInvitationSchema, MembershipSchema } from "@/types";
 import { withApiSession, toResponse } from "@/lib/api/handler";
-import { bearer, errors, json, registry } from "@/lib/api/openapi";
+import { bearer, errors, json, productParams, registry } from "@/lib/api/openapi";
 import { inviteMember, listMembers } from "@/lib/operations/memberships";
 
 type Params = { account_id: string; product_id: string };
 
-const params = z.object({
-  account_id: z.string().openapi({ description: "The product owner's ID." }),
-  product_id: z.string().openapi({ description: "The product's ID." }),
-});
+const params = productParams;
 
 registry.registerPath({
   method: "get",

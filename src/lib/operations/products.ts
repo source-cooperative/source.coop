@@ -1,5 +1,6 @@
 import { z } from "zod";
 import {
+  Account,
   Actions,
   Product,
   ProductCreationRequestSchema,
@@ -93,23 +94,26 @@ export const DeleteProductQuerySchema = z.object({
 
 type ProductPage = z.infer<typeof ProductPageSchema>;
 
-// A cursor is DynamoDB's LastEvaluatedKey, base64'd: the key attributes of
-// the table, plus the index's for the public listing. One that names other
-// attributes, or another partition, is refused here rather than by DynamoDB.
+// A cursor is DynamoDB's LastEvaluatedKey, base64url'd so it survives a query
+// string unescaped: the key attributes of the table, plus the index's for the
+// public listing. One that names other attributes, another partition, or a
+// place outside the query (an unfeatured product, when listing featured ones)
+// is refused here rather than by DynamoDB.
 const accountCursor = (account_id: string) =>
   z.object({ account_id: z.literal(account_id), product_id: z.string() }).strict();
-const publicCursor = z
-  .object({
-    account_id: z.string(),
-    product_id: z.string(),
-    visibility: z.literal("public"),
-    featured: z.number(),
-  })
-  .strict();
+const publicCursor = (featuredOnly: boolean) =>
+  z
+    .object({
+      account_id: z.string(),
+      product_id: z.string(),
+      visibility: z.literal("public"),
+      featured: featuredOnly ? z.number().positive() : z.number(),
+    })
+    .strict();
 
 function decodeCursor(cursor: string, schema: z.ZodTypeAny) {
   try {
-    const key = schema.safeParse(JSON.parse(Buffer.from(cursor, "base64").toString()));
+    const key = schema.safeParse(JSON.parse(Buffer.from(cursor, "base64url").toString()));
     return key.success ? (key.data as Record<string, unknown>) : null;
   } catch {
     return null;
@@ -117,16 +121,28 @@ function decodeCursor(cursor: string, schema: z.ZodTypeAny) {
 }
 
 const encodeCursor = (key: unknown) =>
-  key ? Buffer.from(JSON.stringify(key)).toString("base64") : null;
+  key ? Buffer.from(JSON.stringify(key)).toString("base64url") : null;
 
-const page = async (
-  result: { products: Product[]; lastEvaluatedKey: unknown },
-  visible: (p: Product) => boolean
-): Promise<ProductPage> => ({
-  // ponytail: filtering after the read can leave a page short of `limit`;
-  // the cursor still moves on correctly.
-  items: await productsTable.attachAccounts(result.products.filter(visible)),
-  next_cursor: encodeCursor(result.lastEvaluatedKey),
+/**
+ * What a listing shows of a product's account: its public profile. The stored
+ * record also holds its people's emails, Ory identity, flags and private
+ * metadata, which GetAccount keeps from strangers.
+ */
+const publicAccount = (account?: Account) =>
+  account &&
+  ({
+    account_id: account.account_id,
+    type: account.type,
+    name: account.name,
+    disabled: account.disabled,
+    metadata_public: account.metadata_public,
+  } as Account);
+
+// ponytail: filtering after the read can leave a page short of `limit`; the
+// cursor still moves on correctly.
+const page = (items: Product[], lastEvaluatedKey: unknown): ProductPage => ({
+  items: items.map((p) => ({ ...p, account: publicAccount(p.account) })),
+  next_cursor: encodeCursor(lastEvaluatedKey),
 });
 
 /**
@@ -142,13 +158,13 @@ function revalidate(account_id: string, product_id?: string) {
 }
 
 /**
- * A refusal to act on `product`. A deactivated product the caller can't see is
- * as missing to them here as it is to getProduct.
+ * A refusal to act on `product`. A deactivated product is indistinguishable
+ * from a missing one to anyone not allowed to see it.
  */
-const refuse = (session: UserSession, product: Product, message: string) =>
+const refuse = (session: UserSession | null, product: Product, message: string) =>
   product.disabled && !isAuthorized(session, product, Actions.GetRepository)
     ? notFound(`Product ${product.account_id}/${product.product_id} not found`)
-    : forbidden(message);
+    : deny(session, message);
 
 /**
  * One page of products: an account's, when `account_id` is given, and
@@ -162,31 +178,40 @@ export async function listProducts(
   const parsed = (account_id ? PageQuerySchema : ListProductsQuerySchema).safeParse(query);
   if (!parsed.success) return fromZodError(parsed.error);
   const { cursor, limit } = parsed.data;
+  const { q, tags, featured } = parsed.data as z.infer<typeof ListProductsQuerySchema>;
+  const featuredOnly = featured === "true";
   const start = cursor
-    ? decodeCursor(cursor, account_id ? accountCursor(account_id) : publicCursor)
+    ? decodeCursor(cursor, account_id ? accountCursor(account_id) : publicCursor(featuredOnly))
     : undefined;
   if (start === null) return invalid("Invalid cursor", "cursor");
 
   if (account_id) {
-    if (!(await accountsTable.fetchById(account_id))) {
-      return notFound(`Account ${account_id} not found`);
-    }
+    const [account, result] = await Promise.all([
+      accountsTable.fetchById(account_id),
+      productsTable.listByAccount(account_id, limit, start),
+    ]);
+    if (!account) return notFound(`Account ${account_id} not found`);
     return ok(
-      await page(await productsTable.listByAccount(account_id, limit, start), (p) =>
-        canListOnProfile(session, p)
+      page(
+        result.products
+          .filter((p) => canListOnProfile(session, p))
+          .map((p) => ({ ...p, account })),
+        result.lastEvaluatedKey
       )
     );
   }
 
-  const { q, tags, featured } = parsed.data as z.infer<typeof ListProductsQuerySchema>;
+  const result = await productsTable.listPublic(limit, start, {
+    search: q,
+    tags,
+    featuredOnly,
+  });
   return ok(
-    await page(
-      await productsTable.listPublic(limit, start, {
-        search: q,
-        tags,
-        featuredOnly: featured === "true",
-      }),
-      (p) => isAuthorized(session, p, Actions.ListRepository)
+    page(
+      await productsTable.attachAccounts(
+        result.products.filter((p) => isAuthorized(session, p, Actions.ListRepository))
+      ),
+      result.lastEvaluatedKey
     )
   );
 }
@@ -197,12 +222,8 @@ export async function getProduct(
   product_id: string
 ): Promise<OperationResult<Product>> {
   const product = await productsTable.fetchById(account_id, product_id);
-  const missing = notFound(`Product ${account_id}/${product_id} not found`);
-  if (!product) return missing;
+  if (!product) return notFound(`Product ${account_id}/${product_id} not found`);
   if (!isAuthorized(session, product, Actions.GetRepository)) {
-    // A deactivated product is indistinguishable from a missing one to
-    // anyone not allowed to see it.
-    if (product.disabled) return missing;
     // Tells a token that didn't resolve to a session (see the
     // authenticateWithOidcToken warnings) from a session that may not read.
     LOGGER.warn("Product read authorization denied", {
@@ -215,7 +236,7 @@ export async function getProduct(
         visibility: product.visibility,
       },
     });
-    return deny(session, "You may not view this product");
+    return refuse(session, product, "You may not view this product");
   }
   return ok(product);
 }
@@ -337,9 +358,11 @@ export async function updateProduct(
     }
   }
 
-  // The product as fetched, account included, so the answer matches getProduct's.
-  const updated = { ...product, ...changes, updated_at: new Date().toISOString() };
-  await productsTable.update(updated);
+  const updated = {
+    // The row as written, with the account it doesn't store.
+    ...(await productsTable.update({ ...product, ...changes })),
+    account: product.account,
+  };
   revalidate(account_id, product_id);
   LOGGER.info("Product updated", {
     operation: "updateProduct",
@@ -387,7 +410,7 @@ export async function deleteProduct(
   if (!preserveData && connection && !connection.read_only) {
     if (!session.identity_id) {
       return forbidden(
-        "Only a person can delete a product's stored objects; keep them with preserve_data, or delete it signed in as a person."
+        "Only a person can delete a product's stored objects."
       );
     }
     const storage = await getStorageClient(

@@ -1,7 +1,6 @@
 import { PageHeader } from "@/components/layout";
 import { ProductsList } from "@/components/features/products/ProductsList";
 import { ProductsFilters } from "@/components/features/products/ProductsFilters";
-import { getPageSession } from "@/lib";
 import { listProducts } from "@/lib/operations/products";
 import { notFound } from "next/navigation";
 import { Badge, Box, Flex, Text } from "@radix-ui/themes";
@@ -37,16 +36,21 @@ export default async function ProductsPage({
   const { search, tags, cursor, previous, featured } = await searchParams;
 
   const featuredOnly = featured === "1";
-  const session = await getPageSession();
   const query = {
     q: search,
     tags,
     featured: featuredOnly ? "true" : undefined,
     limit: 100,
   };
+  // Listed as anyone sees it: the session would only add the deactivated
+  // products an admin may list, at a session lookup per view.
   // A cursor that's no longer one (a stale bookmark) starts over at page one.
-  let result = await listProducts(session, { ...query, cursor });
-  if (!result.ok && cursor) result = await listProducts(session, query);
+  let current = cursor;
+  let result = await listProducts(null, { ...query, cursor });
+  if (!result.ok && cursor) {
+    current = undefined;
+    result = await listProducts(null, query);
+  }
   // Only a hand-edited query, such as a repeated ?tags=, gets here.
   if (!result.ok) notFound();
   const { items: products, next_cursor } = result.value;
@@ -86,10 +90,10 @@ export default async function ProductsPage({
         products={products}
         pagination={{
           hasNextPage: !!next_cursor,
-          hasPreviousPage: !!cursor,
+          hasPreviousPage: !!current,
           nextCursor: next_cursor ?? undefined,
-          previousCursor: previous,
-          currentCursor: cursor,
+          previousCursor: current && previous,
+          currentCursor: current,
         }}
       />
     </Box>

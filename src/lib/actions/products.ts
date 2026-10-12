@@ -54,18 +54,32 @@ export async function updateProduct(
   // activation toggle, which otherwise submits "true" or "false".
   const field = (name: string) => formData.get(name) || undefined;
   const disabled = formData.get("disabled");
-  const result = await ops.updateProduct(
-    await getPageSession(),
-    account_id,
-    product_id,
-    {
-      title: field("title"),
-      description: field("description"),
-      visibility: field("visibility"),
-      disabled: disabled === null ? undefined : disabled === "true",
-    },
-  );
-  return toFormState(result, formData, "Product updated successfully!");
+  try {
+    const result = await ops.updateProduct(
+      await getPageSession(),
+      account_id,
+      product_id,
+      {
+        title: field("title"),
+        description: field("description"),
+        visibility: field("visibility"),
+        disabled: disabled === null ? undefined : disabled === "true",
+      },
+    );
+    return toFormState(result, formData, "Product updated successfully!");
+  } catch (error) {
+    LOGGER.error("Error updating product", {
+      operation: "updateProduct",
+      context: "product update",
+      error: error,
+      metadata: { account_id, product_id },
+    });
+    return toFormState(
+      { ok: false, error: "conflict", message: "Failed to update product. Please try again." },
+      formData,
+      "",
+    );
+  }
 }
 
 export async function deleteProduct(

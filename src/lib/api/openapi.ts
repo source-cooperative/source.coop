@@ -60,6 +60,11 @@ const ERRORS: Record<number, string> = {
   [StatusCodes.CONFLICT]: "The resource isn't in a state that allows this.",
 };
 
+export const productParams = z.object({
+  account_id: z.string().openapi({ description: "The product owner's ID." }),
+  product_id: z.string().openapi({ description: "The product's ID." }),
+});
+
 export const membershipIdParams = z.object({
   membership_id: z.string().openapi({ description: "The membership's ID." }),
 });
