@@ -66,7 +66,7 @@ export async function getApiSession(
   const authorization = req.headers.get("Authorization");
 
   if (authorization) {
-    const audience = new URL(req.url).origin;
+    const audience = CONFIG.auth.oauth2.audience || new URL(req.url).origin;
     const token = authorization.toLowerCase().startsWith("bearer ")
       ? authorization.slice(7)
       : "";

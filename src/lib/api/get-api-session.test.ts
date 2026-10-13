@@ -54,6 +54,23 @@ test("an Ory access token goes to the Ory verifier, for this origin", async () =
   expect(authenticateWithOidcToken).not.toHaveBeenCalled();
 });
 
+test("a configured audience replaces the origin, as on Vercel previews", async () => {
+  const { CONFIG } = jest.requireMock("@/lib/config");
+  CONFIG.auth.oauth2.audience = "https://staging.test.source.coop";
+  try {
+    (authenticateWithOryAccessToken as jest.Mock).mockResolvedValue(alice);
+    const token = jwt("https://auth.test.source.coop");
+
+    expect(await getApiSession(request(`Bearer ${token}`))).toBe(alice);
+    expect(authenticateWithOryAccessToken).toHaveBeenCalledWith(
+      token,
+      "https://staging.test.source.coop",
+    );
+  } finally {
+    delete CONFIG.auth.oauth2.audience;
+  }
+});
+
 test("a rejected Ory token falls back to nothing, not the proxy or the cookie", async () => {
   (authenticateWithOryAccessToken as jest.Mock).mockResolvedValue(null);
   const token = jwt("https://auth.test.source.coop/");
