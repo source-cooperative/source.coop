@@ -44,8 +44,6 @@ async function denyUnlessAccountManager(
 const CONCURRENT_EDIT_MESSAGE =
   "This product was modified by someone else. Please reload and try again.";
 
-const isConcurrentEdit = isConditionalCheckFailed;
-
 export async function addProductMirror(
   _prevState: FormState<unknown>,
   formData: FormData
@@ -163,7 +161,7 @@ export async function addProductMirror(
       success: true,
     };
   } catch (error) {
-    if (isConcurrentEdit(error)) {
+    if (isConditionalCheckFailed(error)) {
       return {
         fieldErrors: {},
         data: formData,
@@ -280,7 +278,7 @@ export async function removeProductMirror(
       success: true,
     };
   } catch (error) {
-    if (isConcurrentEdit(error)) {
+    if (isConditionalCheckFailed(error)) {
       return {
         fieldErrors: {},
         data: formData,
@@ -425,7 +423,7 @@ export async function updateMirrorPrefix(
       success: true,
     };
   } catch (error) {
-    if (isConcurrentEdit(error)) {
+    if (isConditionalCheckFailed(error)) {
       return {
         fieldErrors: {},
         data: formData,
@@ -534,7 +532,7 @@ export async function setPrimaryMirror(
       success: true,
     };
   } catch (error) {
-    if (isConcurrentEdit(error)) {
+    if (isConditionalCheckFailed(error)) {
       return {
         fieldErrors: {},
         data: formData,
