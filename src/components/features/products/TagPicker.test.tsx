@@ -7,16 +7,27 @@ const submitted = (container: HTMLElement) =>
     (input) => input.value
   );
 
-function renderPicker(defaultValue: string[] = []) {
+function renderPicker(
+  defaultValue: string[] = [],
+  onSuggest?: (tag: string) => Promise<{ tag: string } | { error: string }>
+) {
   return render(
     <Theme>
       <TagPicker
         name="tags"
         options={["climate", "climate-change", "ocean"]}
         defaultValue={defaultValue}
+        onSuggest={onSuggest}
       />
     </Theme>
   );
+}
+
+function filterFor(text: string) {
+  fireEvent.click(screen.getByRole("button", { name: /tags$/ }));
+  fireEvent.change(screen.getByPlaceholderText("Filter tags"), {
+    target: { value: text },
+  });
 }
 
 test("submits each chosen tag and drops a removed one", () => {
@@ -41,4 +52,34 @@ test("the popover filters the corpus and toggles tags", () => {
 
   fireEvent.click(screen.getByRole("checkbox", { name: "climate-change" }));
   expect(submitted(container)).toEqual(["ocean"]);
+});
+
+test("a suggested tag is added and marked pending", async () => {
+  const onSuggest = jest.fn(async (tag: string) => ({ tag: tag.toLowerCase() }));
+  const { container } = renderPicker(["ocean"], onSuggest);
+  filterFor("Sea Ice");
+
+  fireEvent.click(
+    screen.getByRole("button", { name: "Suggest “sea ice” as a new tag" })
+  );
+
+  expect(await screen.findByText(/\(pending\)/)).toBeTruthy();
+  expect(onSuggest).toHaveBeenCalledWith("Sea Ice");
+  expect(submitted(container)).toEqual(["ocean", "sea ice"]);
+});
+
+test("a refused suggestion shows why and adds nothing", async () => {
+  const { container } = renderPicker([], async () => ({ error: "Too many" }));
+  filterFor("sea ice");
+
+  fireEvent.click(screen.getByRole("button", { name: /^Suggest/ }));
+
+  expect((await screen.findByRole("alert")).textContent).toBe("Too many");
+  expect(submitted(container)).toEqual([]);
+});
+
+test("an existing tag can't be suggested", () => {
+  renderPicker([], async (tag) => ({ tag }));
+  filterFor("ocean");
+  expect(screen.queryByRole("button", { name: /^Suggest/ })).toBeNull();
 });
