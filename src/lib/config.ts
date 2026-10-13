@@ -49,10 +49,9 @@ export const CONFIG = {
 
     oauth2: {
       // Ory's OAuth2 issuer, which signs the access tokens the API accepts
-      // (see src/lib/api/ory-access-token.ts). The Ory SDK URL unless the
-      // project's issuer is on another domain.
-      issuer:
-        process.env.ORY_OAUTH2_ISSUER || process.env.NEXT_PUBLIC_ORY_SDK_URL || "",
+      // (see src/lib/api/ory-access-token.ts). Each deployment's SDK URL is its
+      // project's issuer domain.
+      issuer: process.env.NEXT_PUBLIC_ORY_SDK_URL || "",
       clientId: process.env.ORY_OAUTH2_CLIENT_ID || "",
       clientSecret: process.env.ORY_OAUTH2_CLIENT_SECRET || "",
       // Virtual redirect_uri for the headless OAuth2 flow. Hydra validates it
