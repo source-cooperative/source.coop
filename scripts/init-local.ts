@@ -50,7 +50,8 @@ async function tablesExist() {
     tables.TableNames?.includes(getTableName("data-connections")) &&
     tables.TableNames?.includes(getTableName("memberships")) &&
     tables.TableNames?.includes(getTableName("account-trusts")) &&
-    tables.TableNames?.includes(getTableName("service-account-keys"))
+    tables.TableNames?.includes(getTableName("service-account-keys")) &&
+    tables.TableNames?.includes(getTableName("tags"))
   );
 }
 
@@ -79,6 +80,7 @@ async function createTables() {
   await deleteTable(getTableName("memberships"));
   await deleteTable(getTableName("account-trusts"));
   await deleteTable(getTableName("service-account-keys"));
+  await deleteTable(getTableName("tags"));
 
   // Wait for tables to be fully deleted
   await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -202,6 +204,25 @@ async function createTables() {
     console.log(`✓ Created ${getTableName("service-account-keys")} table`);
   } catch (e) {
     console.error(`✗ Error creating ${getTableName("service-account-keys")} table:`, e);
+    throw e;
+  }
+
+  // Create tags table
+  try {
+    await client.send(
+      new CreateTableCommand({
+        TableName: getTableName("tags"),
+        AttributeDefinitions: [{ AttributeName: "tag_id", AttributeType: "S" }],
+        KeySchema: [{ AttributeName: "tag_id", KeyType: "HASH" }],
+        ProvisionedThroughput: {
+          ReadCapacityUnits: 5,
+          WriteCapacityUnits: 5,
+        },
+      })
+    );
+    console.log(`✓ Created ${getTableName("tags")} table`);
+  } catch (e) {
+    console.error(`✗ Error creating ${getTableName("tags")} table:`, e);
     throw e;
   }
 
@@ -480,6 +501,15 @@ async function loadFixtureData() {
     console.log(
       `Product insertion complete! Processed ${processedProducts} products.`
     );
+
+    // Seed the tag corpus with every tag the fixture products carry
+    const tags = new Set(products.flatMap((p) => p.metadata.tags ?? []));
+    for (const tag_id of tags) {
+      await docClient.send(
+        new PutCommand({ TableName: getTableName("tags"), Item: { tag_id } })
+      );
+    }
+    console.log(`Inserted ${tags.size} tags into ${getTableName("tags")}`);
 
     // Verify the data was saved
     console.log("\nVerifying saved data...");

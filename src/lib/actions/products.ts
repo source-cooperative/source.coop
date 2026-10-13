@@ -1,6 +1,11 @@
 "use server";
 
-import { productsTable, membershipsTable, dataConnectionsTable } from "@/lib/clients/database";
+import {
+  productsTable,
+  membershipsTable,
+  dataConnectionsTable,
+  tagsTable,
+} from "@/lib/clients/database";
 import {
   Actions,
   ProductCreationRequestSchema,
@@ -98,6 +103,29 @@ export async function getPaginatedProducts(
     });
     throw new Error("Failed to fetch products");
   }
+}
+
+/**
+ * The submitted tags, or the form error naming those outside the corpus. A tag
+ * the product already carries is kept even if the corpus has since dropped it,
+ * so editing some other field isn't blocked by a tag the user didn't choose
+ * today.
+ */
+async function parseTags<T>(
+  formData: FormData,
+  current: string[] = []
+): Promise<string[] | FormState<T>> {
+  const tags = [...new Set(formData.getAll("tags").map(String))];
+  if (!tags.length) return tags;
+  const corpus = new Set([...(await tagsTable.listAll()), ...current]);
+  const unknown = tags.filter((tag) => !corpus.has(tag));
+  if (!unknown.length) return tags;
+  return {
+    fieldErrors: { tags: [`Unknown tags: ${unknown.join(", ")}`] },
+    data: formData,
+    message: "Invalid tags",
+    success: false,
+  };
 }
 
 export async function createProduct(
@@ -218,6 +246,9 @@ export async function createProduct(
     };
   }
 
+  const tags = await parseTags<ProductCreationRequest>(formData);
+  if (!Array.isArray(tags)) return tags;
+
   const product: Product = {
     ...validatedFields.data,
     created_at: new Date().toISOString(),
@@ -225,7 +256,7 @@ export async function createProduct(
     disabled: false,
     featured: 0,
     metadata: {
-      tags: [],
+      tags,
       primary_mirror: dataConnection.data_connection_id,
       mirrors: {
         [dataConnection.data_connection_id]: {
@@ -368,9 +399,16 @@ export async function updateProduct(
       }
     }
 
+    const tags = await parseTags<Partial<Product>>(
+      formData,
+      currentProduct.metadata.tags
+    );
+    if (!Array.isArray(tags)) return tags;
+
     // Build update data
     const updateData = {
       ...currentProduct,
+      metadata: { ...currentProduct.metadata, tags },
       title: title || currentProduct.title,
       description: description || currentProduct.description,
       visibility: visibility || currentProduct.visibility,

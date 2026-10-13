@@ -4,6 +4,7 @@ import {
   productsTable,
   dataConnectionsTable,
   membershipsTable,
+  tagsTable,
 } from "@/lib/clients/database";
 import { getPageSession } from "@/lib";
 import { isAuthorized, isAdmin } from "@/lib/api/authz";
@@ -21,6 +22,7 @@ jest.mock("@/lib/clients/database", () => ({
   },
   dataConnectionsTable: { fetchById: jest.fn() },
   membershipsTable: { deleteByProduct: jest.fn() },
+  tagsTable: { listAll: jest.fn() },
 }));
 
 jest.mock("@/lib", () => ({
@@ -101,6 +103,7 @@ describe("createProduct", () => {
     // resetAllMocks wipes the factory implementation, so re-establish the
     // success URL that the action returns as redirectTo.
     (productUrl as jest.Mock).mockReturnValue("/account/product");
+    (tagsTable.listAll as jest.Mock).mockResolvedValue(["acoustics", "ocean"]);
   });
 
   test("builds mirror metadata from the selected data connection", async () => {
@@ -123,6 +126,35 @@ describe("createProduct", () => {
     });
     expect(result.success).toBe(true);
     expect(result.redirectTo).toBeDefined();
+  });
+
+  test("creates a product with tags from the corpus, and rejects others", async () => {
+    (dataConnectionsTable.fetchById as jest.Mock).mockResolvedValue(
+      connection()
+    );
+    const fd = buildFormData();
+    fd.append("tags", "ocean");
+
+    await createProduct(undefined, fd);
+    expect(
+      (productsTable.create as jest.Mock).mock.calls[0][0].metadata.tags
+    ).toEqual(["ocean"]);
+
+    fd.append("tags", "made-up");
+    const rejected = await createProduct(undefined, fd);
+    expect(rejected.fieldErrors.tags).toEqual(["Unknown tags: made-up"]);
+    expect(productsTable.create).toHaveBeenCalledTimes(1);
+  });
+
+  test("a product without tags never reads the tag table", async () => {
+    (dataConnectionsTable.fetchById as jest.Mock).mockResolvedValue(
+      connection()
+    );
+
+    const result = await createProduct(undefined, buildFormData());
+
+    expect(result.success).toBe(true);
+    expect(tagsTable.listAll).not.toHaveBeenCalled();
   });
 
   test("a connection without a prefix template mirrors at the root", async () => {
@@ -287,6 +319,7 @@ describe("updateProduct", () => {
     // resetAllMocks wipes the factory implementation, so re-establish the
     // success URL that the action returns as redirectTo.
     (productUrl as jest.Mock).mockReturnValue("/account/product");
+    (tagsTable.listAll as jest.Mock).mockResolvedValue(["acoustics", "ocean"]);
   });
 
   test("rejects a visibility not allowed by the product's data connection", async () => {
@@ -375,6 +408,48 @@ describe("updateProduct", () => {
     expect(result.success).toBe(true);
     const updated = (productsTable.update as jest.Mock).mock.calls[0][0];
     expect(updated.disabled).toBe(false);
+  });
+
+  test("saves tags from the corpus", async () => {
+    (productsTable.fetchById as jest.Mock).mockResolvedValue(currentProduct());
+    const fd = buildUpdateFormData({ visibility: "public" });
+    fd.append("tags", "ocean");
+    fd.append("tags", "acoustics");
+
+    const result = await updateProduct(undefined, fd);
+
+    expect(result.success).toBe(true);
+    const updated = (productsTable.update as jest.Mock).mock.calls[0][0];
+    expect(updated.metadata.tags).toEqual(["ocean", "acoustics"]);
+    expect(updated.metadata.primary_mirror).toBe("conn-x");
+  });
+
+  test("rejects a tag outside the corpus", async () => {
+    (productsTable.fetchById as jest.Mock).mockResolvedValue(currentProduct());
+    const fd = buildUpdateFormData({ visibility: "public" });
+    fd.append("tags", "made-up");
+
+    const result = await updateProduct(undefined, fd);
+
+    expect(result.success).toBe(false);
+    expect(result.fieldErrors.tags).toEqual(["Unknown tags: made-up"]);
+    expect(productsTable.update).not.toHaveBeenCalled();
+  });
+
+  test("keeps a tag the product already has after the corpus drops it", async () => {
+    (productsTable.fetchById as jest.Mock).mockResolvedValue(
+      currentProduct({
+        metadata: { primary_mirror: "conn-x", mirrors: {}, tags: ["legacy"] },
+      })
+    );
+    const fd = buildUpdateFormData({ visibility: "public" });
+    fd.append("tags", "legacy");
+
+    const result = await updateProduct(undefined, fd);
+
+    expect(result.success).toBe(true);
+    const updated = (productsTable.update as jest.Mock).mock.calls[0][0];
+    expect(updated.metadata.tags).toEqual(["legacy"]);
   });
 });
 
