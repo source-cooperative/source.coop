@@ -1,4 +1,5 @@
 import { isIndividualAccount, isOrganizationalAccount, isServiceAccount } from "@/types";
+import { isConditionalCheckFailed } from "./errors";
 import {
   QueryCommand,
   ScanCommand,
@@ -248,7 +249,7 @@ export class AccountsTable extends BaseTable {
         })
       );
     } catch (error) {
-      if ((error as { name?: string })?.name !== "ConditionalCheckFailedException") {
+      if (!isConditionalCheckFailed(error)) {
         this.logError("create", error, { account_id: account.account_id });
       }
       throw error;
