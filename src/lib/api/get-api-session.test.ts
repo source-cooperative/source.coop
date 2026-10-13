@@ -32,8 +32,9 @@ import { authenticateWithOryAccessToken } from "./ory-access-token";
 const jwt = (iss: string) =>
   ["e30", Buffer.from(JSON.stringify({ iss })).toString("base64url"), "sig"].join(".");
 
-const request = (authorization?: string) =>
+const request = (authorization?: string, method = "GET") =>
   new NextRequest("https://test.source.coop/api/v1/products", {
+    method,
     headers: authorization ? { Authorization: authorization } : {},
   });
 
@@ -72,4 +73,23 @@ test("a proxy-signed token still goes to the proxy verifier", async () => {
     "https://test.source.coop",
   );
   expect(authenticateWithOryAccessToken).not.toHaveBeenCalled();
+});
+
+test.each(["POST", "PUT", "PATCH", "DELETE"])(
+  "a proxy-signed token never writes, on %s, nor falls back to the cookie",
+  async (method) => {
+    (authenticateWithOidcToken as jest.Mock).mockResolvedValue(alice);
+    const authorization = `Bearer ${jwt("https://data.test.source.coop")}`;
+
+    expect(await getApiSession(request(authorization, method))).toBeNull();
+    expect(authenticateWithOidcToken).not.toHaveBeenCalled();
+    expect(getServerSession).not.toHaveBeenCalled();
+  },
+);
+
+test("an Ory access token still writes", async () => {
+  (authenticateWithOryAccessToken as jest.Mock).mockResolvedValue(alice);
+  const token = jwt("https://auth.test.source.coop");
+
+  expect(await getApiSession(request(`Bearer ${token}`, "POST"))).toBe(alice);
 });
