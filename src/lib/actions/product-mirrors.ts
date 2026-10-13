@@ -1,6 +1,7 @@
 "use server";
 
 import { LOGGER } from "@/lib/logging";
+import { isConditionalCheckFailed } from "@/lib/clients/database/errors";
 import { canManageAccount } from "../api/authz";
 import { getPageSession } from "../api/utils";
 import { accountsTable, productsTable, dataConnectionsTable } from "../clients";
@@ -42,13 +43,6 @@ async function denyUnlessAccountManager(
 // the second write fails and the action reports a conflict instead.
 const CONCURRENT_EDIT_MESSAGE =
   "This product was modified by someone else. Please reload and try again.";
-
-function isConcurrentEdit(error: unknown): boolean {
-  return (
-    error instanceof Error &&
-    error.name === "ConditionalCheckFailedException"
-  );
-}
 
 export async function addProductMirror(
   _prevState: FormState<unknown>,
@@ -167,7 +161,7 @@ export async function addProductMirror(
       success: true,
     };
   } catch (error) {
-    if (isConcurrentEdit(error)) {
+    if (isConditionalCheckFailed(error)) {
       return {
         fieldErrors: {},
         data: formData,
@@ -284,7 +278,7 @@ export async function removeProductMirror(
       success: true,
     };
   } catch (error) {
-    if (isConcurrentEdit(error)) {
+    if (isConditionalCheckFailed(error)) {
       return {
         fieldErrors: {},
         data: formData,
@@ -429,7 +423,7 @@ export async function updateMirrorPrefix(
       success: true,
     };
   } catch (error) {
-    if (isConcurrentEdit(error)) {
+    if (isConditionalCheckFailed(error)) {
       return {
         fieldErrors: {},
         data: formData,
@@ -538,7 +532,7 @@ export async function setPrimaryMirror(
       success: true,
     };
   } catch (error) {
-    if (isConcurrentEdit(error)) {
+    if (isConditionalCheckFailed(error)) {
       return {
         fieldErrors: {},
         data: formData,
