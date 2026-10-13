@@ -20,7 +20,7 @@ const bearerAuth = registry.registerComponent("securitySchemes", "bearerAuth", {
   scheme: "bearer",
   bearerFormat: "JWT",
   description:
-    "A token from `source-coop login`, or one a service account's API key was exchanged for. Requests that change something must carry one; reads also accept the source.coop session cookie.",
+    "An access token from `source-coop login` (`source-coop auth token` prints one), or a token the data proxy signs for a service account. Requests that change something must carry one; reads also accept the source.coop session cookie.",
 });
 
 /** Marks a route as one that takes a bearer token. */

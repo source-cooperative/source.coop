@@ -1,35 +1,95 @@
-/** @jest-environment node */
+/**
+ * @jest-environment node
+ */
+
 import { NextRequest } from "next/server";
-import { authenticateWithOidcToken } from "@/lib/api/oidc";
-import { getApiSession } from "@/lib/api/utils";
 
-jest.mock("@/lib/api/oidc", () => ({ authenticateWithOidcToken: jest.fn() }));
+jest.mock("@/lib/config", () => ({
+  CONFIG: {
+    storage: { endpoint: "https://data.test.source.coop" },
+    environment: { isTest: true },
+    auth: { accessToken: "", oauth2: { issuer: "https://auth.test.source.coop" } },
+  },
+}));
 jest.mock("@ory/nextjs/app", () => ({ getServerSession: jest.fn() }));
-jest.mock("@/lib/ory", () => ({ getOryId: jest.fn() }));
-jest.mock("@/lib/clients/database", () => ({}));
+jest.mock("@/lib/clients/database", () => ({
+  accountsTable: {},
+  membershipsTable: {},
+  isIndividualAccount: jest.fn(),
+}));
+jest.mock("./oidc", () => ({ authenticateWithOidcToken: jest.fn() }));
+jest.mock("./ory-access-token", () => ({
+  ...jest.requireActual("./ory-access-token"),
+  authenticateWithOryAccessToken: jest.fn(),
+}));
 
-const SESSION = { account: { account_id: "someone" } };
-const request = (method: string) =>
-  new NextRequest("http://localhost/api/v1/products/someone", {
+import { getServerSession } from "@ory/nextjs/app";
+import { getApiSession } from "./utils";
+import { authenticateWithOidcToken } from "./oidc";
+import { authenticateWithOryAccessToken } from "./ory-access-token";
+
+/** An unsigned JWT naming `iss`; routing reads the claim, the verifiers check it. */
+const jwt = (iss: string) =>
+  ["e30", Buffer.from(JSON.stringify({ iss })).toString("base64url"), "sig"].join(".");
+
+const request = (authorization?: string, method = "GET") =>
+  new NextRequest("https://test.source.coop/api/v1/products", {
     method,
-    headers: { Authorization: "Bearer proxy-assertion" },
+    headers: authorization ? { Authorization: authorization } : {},
   });
 
-describe("getApiSession with a proxy assertion", () => {
-  beforeEach(() => {
-    jest.resetAllMocks();
-    (authenticateWithOidcToken as jest.Mock).mockResolvedValue(SESSION);
-  });
+const alice = { account: { account_id: "alice" } };
 
-  test.each(["GET", "HEAD"])("reads with it on %s", async (method) => {
-    await expect(getApiSession(request(method))).resolves.toBe(SESSION);
-  });
+beforeEach(() => jest.clearAllMocks());
 
-  test.each(["POST", "PUT", "PATCH", "DELETE"])(
-    "never writes with it on %s, nor falls back to the cookie",
-    async (method) => {
-      await expect(getApiSession(request(method))).resolves.toBeNull();
-      expect(authenticateWithOidcToken).not.toHaveBeenCalled();
-    }
+test("an Ory access token goes to the Ory verifier, for this origin", async () => {
+  (authenticateWithOryAccessToken as jest.Mock).mockResolvedValue(alice);
+  const token = jwt("https://auth.test.source.coop");
+
+  expect(await getApiSession(request(`Bearer ${token}`))).toBe(alice);
+  expect(authenticateWithOryAccessToken).toHaveBeenCalledWith(
+    token,
+    "https://test.source.coop",
   );
+  expect(authenticateWithOidcToken).not.toHaveBeenCalled();
+});
+
+test("a rejected Ory token falls back to nothing, not the proxy or the cookie", async () => {
+  (authenticateWithOryAccessToken as jest.Mock).mockResolvedValue(null);
+  const token = jwt("https://auth.test.source.coop/");
+
+  expect(await getApiSession(request(`Bearer ${token}`))).toBeNull();
+  expect(authenticateWithOidcToken).not.toHaveBeenCalled();
+  expect(getServerSession).not.toHaveBeenCalled();
+});
+
+test("a proxy-signed token still goes to the proxy verifier", async () => {
+  (authenticateWithOidcToken as jest.Mock).mockResolvedValue(alice);
+  const authorization = `Bearer ${jwt("https://data.test.source.coop")}`;
+
+  expect(await getApiSession(request(authorization))).toBe(alice);
+  expect(authenticateWithOidcToken).toHaveBeenCalledWith(
+    authorization,
+    "https://test.source.coop",
+  );
+  expect(authenticateWithOryAccessToken).not.toHaveBeenCalled();
+});
+
+test.each(["POST", "PUT", "PATCH", "DELETE"])(
+  "a proxy-signed token never writes, on %s, nor falls back to the cookie",
+  async (method) => {
+    (authenticateWithOidcToken as jest.Mock).mockResolvedValue(alice);
+    const authorization = `Bearer ${jwt("https://data.test.source.coop")}`;
+
+    expect(await getApiSession(request(authorization, method))).toBeNull();
+    expect(authenticateWithOidcToken).not.toHaveBeenCalled();
+    expect(getServerSession).not.toHaveBeenCalled();
+  },
+);
+
+test("an Ory access token still writes", async () => {
+  (authenticateWithOryAccessToken as jest.Mock).mockResolvedValue(alice);
+  const token = jwt("https://auth.test.source.coop");
+
+  expect(await getApiSession(request(`Bearer ${token}`, "POST"))).toBe(alice);
 });

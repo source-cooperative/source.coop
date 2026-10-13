@@ -40,6 +40,10 @@ import { NextRequest } from "next/server";
 import { getOryId } from "../ory";
 import md5 from "md5";
 import { authenticateWithOidcToken } from "./oidc";
+import {
+  authenticateWithOryAccessToken,
+  isOryToken,
+} from "./ory-access-token";
 import { CONFIG } from "@/lib/config";
 import { LOGGER } from "@/lib/logging";
 
@@ -47,7 +51,11 @@ const READS = new Set(["GET", "HEAD"]);
 
 /**
  * Retrieves the current user session from the request context.
- * Attempts OIDC token authentication first, then falls back to cookie-based authentication.
+ *
+ * A bearer token is either an Ory access token (from `source-coop login`) or
+ * an assertion the data proxy signed on a caller's behalf; its issuer says
+ * which, and only that verifier sees it. Without an Authorization header, the
+ * session cookie is used.
  *
  * @param req - The Next.js API request object.
  * @returns A Promise that resolves to a UserSession object if a valid session exists, or null if not authenticated.
@@ -58,6 +66,13 @@ export async function getApiSession(
   const authorization = req.headers.get("Authorization");
 
   if (authorization) {
+    const audience = new URL(req.url).origin;
+    const token = authorization.toLowerCase().startsWith("bearer ")
+      ? authorization.slice(7)
+      : "";
+    if (isOryToken(token)) {
+      return authenticateWithOryAccessToken(token, audience);
+    }
     // The data proxy's assertions only read: the proxy can sign any subject,
     // so its key must not be able to change anything as anyone.
     if (!READS.has(req.method)) {
@@ -67,11 +82,10 @@ export async function getApiSession(
       });
       return null;
     }
-    LOGGER.debug("Attempting OIDC token authentication", {
+    LOGGER.debug("Attempting proxy assertion authentication", {
       operation: "getApiSession",
-      metadata: { method: "OIDC token" },
+      metadata: { method: "proxy assertion" },
     });
-    const audience = new URL(req.url).origin;
     const oidcSession = await authenticateWithOidcToken(
       authorization,
       audience,
