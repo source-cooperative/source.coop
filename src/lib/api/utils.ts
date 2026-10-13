@@ -66,10 +66,6 @@ export async function getApiSession(
   const authorization = req.headers.get("Authorization");
 
   if (authorization) {
-    LOGGER.debug("Attempting OIDC token authentication", {
-      operation: "getApiSession",
-      metadata: { method: "OIDC token" },
-    });
     const audience = new URL(req.url).origin;
     const token = authorization.toLowerCase().startsWith("bearer ")
       ? authorization.slice(7)
@@ -86,6 +82,10 @@ export async function getApiSession(
       });
       return null;
     }
+    LOGGER.debug("Attempting proxy assertion authentication", {
+      operation: "getApiSession",
+      metadata: { method: "proxy assertion" },
+    });
     const oidcSession = await authenticateWithOidcToken(
       authorization,
       audience,

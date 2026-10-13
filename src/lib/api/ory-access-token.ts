@@ -38,7 +38,7 @@ export function _setOryJwks(fn: ReturnType<typeof createRemoteJWKSet> | null) {
  * project's domain is set up, and `iss` must match it exactly.
  */
 export function oryIssuers(): string[] {
-  const issuer = CONFIG.auth?.oauth2?.issuer;
+  const issuer = CONFIG.auth.oauth2.issuer;
   if (!issuer) return [];
   const bare = issuer.replace(/\/+$/, "");
   return [bare, `${bare}/`];
