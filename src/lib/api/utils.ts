@@ -43,6 +43,8 @@ import { authenticateWithOidcToken } from "./oidc";
 import { CONFIG } from "@/lib/config";
 import { LOGGER } from "@/lib/logging";
 
+const READS = new Set(["GET", "HEAD"]);
+
 /**
  * Retrieves the current user session from the request context.
  * Attempts OIDC token authentication first, then falls back to cookie-based authentication.
@@ -56,6 +58,15 @@ export async function getApiSession(
   const authorization = req.headers.get("Authorization");
 
   if (authorization) {
+    // The data proxy's assertions only read: the proxy can sign any subject,
+    // so its key must not be able to change anything as anyone.
+    if (!READS.has(req.method)) {
+      LOGGER.warn("Refusing a proxy assertion for a write", {
+        operation: "getApiSession",
+        metadata: { method: req.method },
+      });
+      return null;
+    }
     LOGGER.debug("Attempting OIDC token authentication", {
       operation: "getApiSession",
       metadata: { method: "OIDC token" },
