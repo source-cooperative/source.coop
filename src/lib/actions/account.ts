@@ -1,6 +1,7 @@
 "use server";
 
 import { LOGGER } from "@/lib/logging";
+import { isConditionalCheckFailed } from "@/lib/clients/database/errors";
 import {
   Account,
   AccountCreationRequestSchema,
@@ -123,7 +124,7 @@ export async function createAccount(
   try {
     account = await accountsTable.create(newAccount);
   } catch (error) {
-    if ((error as { name?: string })?.name === "ConditionalCheckFailedException") {
+    if (isConditionalCheckFailed(error)) {
       LOGGER.warn("Account creation rejected: account_id already taken", {
         operation: "createAccount",
         context: "account creation",

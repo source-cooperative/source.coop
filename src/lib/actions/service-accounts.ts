@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { LOGGER } from "@/lib/logging";
+import { isConditionalCheckFailed } from "@/lib/clients/database/errors";
 import {
   AccountType,
   GITHUB_ACTIONS_ISSUER,
@@ -148,7 +149,7 @@ export async function createServiceAccount(
   try {
     await accountsTable.create(account);
   } catch (error) {
-    if ((error as { name?: string })?.name === "ConditionalCheckFailedException") {
+    if (isConditionalCheckFailed(error)) {
       return fail("That account ID is already taken", {
         local_id: [`${owner_account_id} already has a service account called ${local_id}.`],
       });
