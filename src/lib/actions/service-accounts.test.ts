@@ -94,7 +94,11 @@ beforeEach(() => {
   mocks.session.mockResolvedValue({ identity_id: "an-identity", account: { account_id: "acme-owner" } } as UserSession);
   mocks.trusts.create.mockImplementation(async (t) => t);
   mocks.canManageAccountServiceAccounts.mockReturnValue(true);
-  mocks.accounts.fetchById.mockImplementation(async (id) => (id === "acme" ? org : null));
+  mocks.accounts.fetchById.mockImplementation(async (id) =>
+    id === "acme" ? org : id === "acme--nightly-sync" ? bot : null
+  );
+  mocks.memberships.listByAccount.mockResolvedValue([]);
+  mocks.memberships.create.mockImplementation(async (m) => m);
   mocks.accounts.create.mockImplementation(async (a) => a);
   mocks.products.fetchById.mockImplementation(async (owner, id) =>
     owner === "acme" && ["climate-data", "reference-data"].includes(id) ? ({ product_id: id } as never) : null
@@ -298,13 +302,8 @@ describe("setProductAccess", () => {
   beforeEach(() => {
     mocks.managed.mockResolvedValue(bot as never);
     mocks.memberships.listByUser.mockResolvedValue([grant as never]);
-    mocks.memberships.listByAccount.mockResolvedValue([]);
     mocks.memberships.fetchById.mockResolvedValue(grant as never);
     mocks.memberships.update.mockImplementation(async (m) => m);
-    mocks.memberships.create.mockImplementation(async (m) => m);
-    mocks.accounts.fetchById.mockImplementation(async (id) =>
-      id === "acme" ? org : id === "acme--nightly-sync" ? bot : null
-    );
   });
 
   it("grants a product it does not reach, as a member of the owner", async () => {

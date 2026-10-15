@@ -1,4 +1,3 @@
-import { randomUUID } from "crypto";
 import { z } from "zod";
 import {
   AccountTrust,
@@ -8,7 +7,6 @@ import {
   GITHUB_ACTIONS_SUBJECT_REGEX,
   isServiceAccount,
   MembershipRole,
-  MembershipState,
   ServiceAccount,
   ServiceAccountCreationRequestSchema,
   ServiceAccountSchema,
@@ -37,6 +35,7 @@ import {
   OperationResult,
   unauthenticated,
 } from "./result";
+import { inviteMember } from "./memberships";
 
 const GithubSubjectSchema = z
   .string()
@@ -198,18 +197,16 @@ export async function createServiceAccount(
     throw error;
   }
 
-  // Its owner grants a service account access directly — nobody is at the
-  // keyboard to accept an invitation.
+  // As a member of each product, the way any grant is made; a service account
+  // becomes one at once, with nobody at its keyboard to accept.
   for (const { product_id, role } of grants) {
-    await membershipsTable.create({
-      membership_id: randomUUID(),
+    const granted = await inviteMember(session, {
       account_id: account.account_id,
       membership_account_id: owner_account_id,
       repository_id: product_id,
       role,
-      state: MembershipState.Member,
-      state_changed: now,
     });
+    if (!granted.ok) return granted;
   }
   for (const subject of subjects) {
     await trustGithub(account.account_id, subject, session.account.account_id);

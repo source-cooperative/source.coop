@@ -2,7 +2,6 @@ import { AccountType, MembershipRole, type Account, type UserSession } from "@/t
 import {
   accountsTable,
   accountTrustsTable,
-  membershipsTable,
   productsTable,
 } from "@/lib/clients/database";
 import { canManageAccountServiceAccounts } from "@/lib/api/authz";
@@ -13,15 +12,17 @@ import {
   listTrusts,
   removeTrust,
 } from "./service-accounts";
+import { inviteMember } from "./memberships";
+import { ok } from "./result";
 
 jest.mock("@/lib/clients/database", () => ({
   accountsTable: { fetchById: jest.fn(), create: jest.fn(), listByOwner: jest.fn() },
-  membershipsTable: { create: jest.fn() },
   productsTable: { fetchById: jest.fn() },
   accountTrustsTable: { create: jest.fn(), delete: jest.fn(), listByAccount: jest.fn() },
 }));
 jest.mock("@/lib/api/authz", () => ({ canManageAccountServiceAccounts: jest.fn() }));
 jest.mock("@/lib/accounts/service-accounts", () => ({ managedServiceAccount: jest.fn() }));
+jest.mock("./memberships");
 
 const accounts = accountsTable as jest.Mocked<typeof accountsTable>;
 const trusts = accountTrustsTable as jest.Mocked<typeof accountTrustsTable>;
@@ -40,6 +41,7 @@ beforeEach(() => {
   accounts.create.mockImplementation(async (a) => a);
   (productsTable.fetchById as jest.Mock).mockResolvedValue({ product_id: "p" });
   trusts.create.mockImplementation(async (t) => t);
+  (inviteMember as jest.Mock).mockResolvedValue(ok({}));
 });
 
 describe("listServiceAccounts", () => {
@@ -71,7 +73,13 @@ describe("createServiceAccount", () => {
       grants: [grant, grant],
     });
     expect(created).toMatchObject({ ok: true, value: { account_id: "acme--sync" } });
-    expect(membershipsTable.create).toHaveBeenCalledTimes(1);
+    expect(inviteMember).toHaveBeenCalledTimes(1);
+    expect(inviteMember).toHaveBeenCalledWith(session, {
+      account_id: "acme--sync",
+      membership_account_id: "acme",
+      repository_id: "p",
+      role: MembershipRole.ReadData,
+    });
     expect(trusts.create).toHaveBeenCalledTimes(1);
   });
 
