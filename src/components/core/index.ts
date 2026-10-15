@@ -3,7 +3,7 @@ export { SectionHeader } from "./SectionHeader";
 export { Field } from "./Field";
 export type { FieldProps } from "./Field";
 export { FormActions } from "./FormActions";
-export { DangerZone } from "./DangerZone";
+export { DangerZone, DangerZoneItem } from "./DangerZone";
 export { ConditionalGroup } from "./ConditionalGroup";
 export { SecretField } from "./SecretField";
 export { Skeleton } from "./Skeleton";

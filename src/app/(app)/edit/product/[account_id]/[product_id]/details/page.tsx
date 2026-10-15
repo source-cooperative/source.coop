@@ -2,19 +2,20 @@ import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ProductCreationForm } from "@/components/features/products/ProductCreationForm";
 import { DeleteProductModal } from "@/components/features/products/DeleteProductModal";
+import { DeleteAllObjectsModal } from "@/components/features/products/DeleteAllObjectsModal";
 import {
   productsTable,
   accountsTable,
   dataConnectionsTable,
 } from "@/lib/clients/database";
 import { getPageSession } from "@/lib";
-import { isAuthorized, isAdmin } from "@/lib/api/authz";
+import { isAuthorized } from "@/lib/api/authz";
 import {
   Actions,
   DataConnection,
   DataConnectionObjectSchema,
 } from "@/types";
-import { DangerZone } from "@/components/core";
+import { DangerZone, DangerZoneItem } from "@/components/core";
 
 export async function generateMetadata({
   params,
@@ -60,10 +61,13 @@ export default async function DetailsPage({ params }: PageProps) {
     : [];
 
   const canDelete = isAuthorized(session, product, Actions.DeleteRepository);
-  // Keeping the underlying data on delete is allowed for non-system
-  // (account-owned) connections, or for admins on any connection. The server
-  // re-checks this; this only decides whether to offer the option in the UI.
-  const canPreserveData = !!connection?.owner || isAdmin(session);
+  // Emptying is for those who run the product (its owners and maintainers),
+  // and never on a read-only connection, whose objects Source doesn't delete.
+  // The proxy still authorizes every object delete on its own.
+  const canEmpty =
+    !!connection &&
+    !connection.read_only &&
+    isAuthorized(session, product, Actions.PutRepository);
 
   return (
     <>
@@ -74,19 +78,37 @@ export default async function DetailsPage({ params }: PageProps) {
         mode="edit"
       />
 
-      {canDelete && (
-        <DangerZone
-          title="Delete this product"
-          description="Permanent. Removes the product record, its memberships and its access records. Whether the underlying objects go too depends on the data connection."
-          action={
-            <DeleteProductModal
-              accountId={account_id}
-              productId={product_id}
-              canPreserveData={canPreserveData}
-              dataReadOnly={!!connection?.read_only}
+      {(canEmpty || canDelete) && (
+        <DangerZone>
+          {canEmpty && (
+            <DangerZoneItem
+              title="Delete all objects"
+              description="Permanently deletes every object stored in this product. The product, its page and its memberships stay."
+              action={
+                <DeleteAllObjectsModal
+                  accountId={account_id}
+                  productId={product_id}
+                />
+              }
             />
-          }
-        />
+          )}
+          {canDelete && (
+            <DangerZoneItem
+              title="Delete this product"
+              description={
+                connection?.read_only
+                  ? "Permanent. Removes the product record and its memberships. Its objects are on a read-only connection, so they stay where they are."
+                  : "Permanent. Removes the product record and its memberships."
+              }
+              action={
+                <DeleteProductModal
+                  accountId={account_id}
+                  productId={product_id}
+                />
+              }
+            />
+          )}
+        </DangerZone>
       )}
     </>
   );

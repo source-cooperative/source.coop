@@ -8,7 +8,7 @@ import {
   resolveMirrorPrefix,
   UserSession,
 } from "@/types";
-import { canListOnProfile, isAdmin, isAuthorized } from "@/lib/api/authz";
+import { canListOnProfile, isAuthorized } from "@/lib/api/authz";
 import { denyDataConnectionFor } from "@/lib/data-connections";
 import { LOGGER } from "@/lib/logging";
 import { getProxyCredentials } from "@/lib/actions/proxy-credentials";
@@ -84,13 +84,6 @@ export const UpdateProductSchema = ProductSchema.pick({
   .extend({ title: ProductSchema.shape.title.trim().min(1, "A title is required") })
   .partial()
   .openapi("UpdateProduct");
-
-export const DeleteProductQuerySchema = z.object({
-  preserve_data: z.enum(["true", "false"]).default("false").openapi({
-    description:
-      "Keep the product's objects in storage. Allowed when the storage is read-only or belongs to an account; on Source-managed storage, only an admin may.",
-  }),
-});
 
 type ProductPage = z.infer<typeof ProductPageSchema>;
 
@@ -381,20 +374,18 @@ export async function updateProduct(
 }
 
 /**
- * Deletes a product, its memberships and, unless asked to keep them, its
- * objects. The objects are deleted through the data proxy with the caller's
- * own credentials, so the proxy enforces per-object authorization.
+ * Deletes a product and its memberships, but only once nothing is stored under
+ * it: a product's data goes by emptying it first, so deleting a product can't
+ * take data with it by accident. A read-only connection's data is never ours,
+ * so it doesn't count; neither does storage that can't be reached, so a dead
+ * backend can't strand the product.
  */
 export async function deleteProduct(
   session: UserSession | null,
   account_id: string,
-  product_id: string,
-  query: unknown
+  product_id: string
 ): Promise<OperationResult<Product>> {
   if (!session) return unauthenticated();
-  const parsed = DeleteProductQuerySchema.safeParse(query);
-  if (!parsed.success) return fromZodError(parsed.error);
-  const preserveData = parsed.data.preserve_data === "true";
   const product = await productsTable.fetchById(account_id, product_id);
   if (!product) return notFound(`Product ${account_id}/${product_id} not found`);
   if (!isAuthorized(session, product, Actions.DeleteRepository)) {
@@ -405,23 +396,12 @@ export async function deleteProduct(
   const connection = mirror
     ? await dataConnectionsTable.fetchById(mirror.connection_id)
     : undefined;
-  // A read-only connection's data is never ours to delete, and an account's
-  // own connection is its business; on Source-managed storage only an admin
-  // may leave objects behind, so the platform doesn't collect orphans.
-  if (preserveData && !connection?.read_only && !connection?.owner && !isAdmin(session)) {
-    return forbidden("You are not permitted to keep this product's data when deleting it.");
-  }
-
-  // The proxy addresses every backend as bucket=account_id, key=product_id/….
-  // The credentials are minted for this session's identity rather than read
-  // from the cookie cache, which belongs to whoever's browser sent the
-  // request, not necessarily to the bearer token it carries.
-  if (!preserveData && connection && !connection.read_only) {
-    if (!session.identity_id) {
-      return forbidden("Only a person can delete a product's stored objects.");
+  if (connection && !connection.read_only) {
+    if ((await isProductEmpty(session, account_id, product_id)) === false) {
+      return conflict(
+        "This product still holds data. Delete its objects before deleting the product."
+      );
     }
-    const storage = await getStorageClient(await getProxyCredentials(session.identity_id));
-    await storage.deleteByPrefix(account_id, `${product_id}/`);
   }
   await membershipsTable.deleteByProduct(account_id, product_id);
   await productsTable.delete(account_id, product_id);
@@ -429,7 +409,39 @@ export async function deleteProduct(
 
   LOGGER.info("Product deleted", {
     operation: "deleteProduct",
-    metadata: { account_id, product_id, by: session.account?.account_id, preserveData },
+    metadata: { account_id, product_id, by: session.account?.account_id },
   });
   return ok(shown(session, product));
+}
+
+/**
+ * Whether anything is stored under the product, listed through the proxy as the
+ * caller (anonymously for a caller with no identity, which the proxy answers
+ * for public products only). `undefined` when the backend can't be reached; a
+ * refusal or any other client error is thrown, since the data may well be there.
+ */
+async function isProductEmpty(
+  session: UserSession,
+  account_id: string,
+  product_id: string
+): Promise<boolean | undefined> {
+  // Minted for this session's identity rather than read from the cookie cache,
+  // which belongs to whoever's browser sent the request, not necessarily to the
+  // bearer token it carries.
+  const credentials = session.identity_id
+    ? await getProxyCredentials(session.identity_id)
+    : null;
+  const storage = await getStorageClient(credentials);
+  try {
+    return await storage.isEmpty(account_id, `${product_id}/`);
+  } catch (error) {
+    const status = (error as { $metadata?: { httpStatusCode?: number } })
+      .$metadata?.httpStatusCode;
+    if (status !== undefined && status < 500) throw error;
+    LOGGER.warn("Couldn't check a product is empty; deleting it anyway", {
+      operation: "deleteProduct",
+      metadata: { account_id, product_id, reason: String(error) },
+    });
+    return undefined;
+  }
 }

@@ -83,3 +83,13 @@ export const SingleFile: Story = {
     },
   },
 };
+
+/**
+ * Every object in the product, started from **Delete all objects** in its
+ * settings. Runs like any folder delete; the product stays.
+ */
+export const WholeProduct: Story = {
+  args: {
+    job: { ...job, path: "", counting: false, deleted: 900, total: 4_210 },
+  },
+};
