@@ -15,6 +15,7 @@ import "../v1/memberships/[membership_id]/accept/route";
 import "../v1/memberships/[membership_id]/reject/route";
 import "../v1/memberships/[membership_id]/revoke/route";
 import "../v1/products/route";
+import "../v1/products/featured/route";
 import "../v1/products/[account_id]/route";
 import "../v1/products/[account_id]/[product_id]/route";
 import "../v1/products/[account_id]/[product_id]/members/route";
