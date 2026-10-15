@@ -5,7 +5,6 @@ import { redirect } from "next/navigation";
 import {
   MembershipState,
   publicKey,
-  serviceAccountId,
   type ServiceAccountActionState,
   type ServiceAccountFormState,
 } from "@/types";
@@ -63,7 +62,6 @@ export async function createServiceAccount(
   const session = await getPageSession();
   if (!session?.account) return fail("Unauthenticated");
   const owner_account_id = String(formData.get("owner_account_id") ?? "");
-  const local_id = String(formData.get("local_id") ?? "");
 
   // Minted before anything is written, so a bad label or expiry leaves nothing behind.
   let minted: ReturnType<typeof mintApiKey> = null;
@@ -71,7 +69,8 @@ export async function createServiceAccount(
     const expires_at = expiryFrom(formData);
     if (expires_at === undefined) return fail("Expiry must be between 1 and 3650 days");
     minted = mintApiKey({
-      account_id: serviceAccountId(owner_account_id, local_id.toLowerCase()),
+      // The operation settles the id; the record takes it once the account exists.
+      account_id: "",
       label: String(formData.get("key_label")),
       created_by: session.account.account_id,
       expires_at,
@@ -82,7 +81,7 @@ export async function createServiceAccount(
   }
 
   const result = await operations.createServiceAccount(session, owner_account_id, {
-    local_id,
+    local_id: formData.get("local_id"),
     name: formData.get("name"),
     github_subjects: formData.getAll("github_subject").map(String).filter(Boolean),
     grants: [...formData.keys()]
