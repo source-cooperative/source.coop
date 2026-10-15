@@ -49,6 +49,17 @@ describe("/api/openapi", () => {
     expect(GET().headers.get("Access-Control-Allow-Origin")).toBe("*");
   });
 
+  test("declares every tag, with Internal last", () => {
+    const used = new Set(
+      Object.values(document.paths).flatMap((path) =>
+        Object.values(path).flatMap((op) => (op as { tags?: string[] }).tags ?? [])
+      )
+    );
+    const declared = (document as { tags?: { name: string }[] }).tags!.map((t) => t.name);
+    expect(new Set(declared)).toEqual(used);
+    expect(declared.at(-1)).toBe("Internal");
+  });
+
   test("is a valid OpenAPI 3 document", async () => {
     await expect(
       SwaggerParser.validate(structuredClone(document) as never)

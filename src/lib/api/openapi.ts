@@ -95,21 +95,30 @@ export const errors = (...statuses: (keyof typeof ERRORS)[]) =>
   Object.fromEntries(statuses.map((s) => [s, json(ERRORS[s], ErrorSchema)]));
 
 export function generateDocument() {
-  return new OpenApiGeneratorV3(registry.definitions).generateDocument({
+  const document = new OpenApiGeneratorV3(registry.definitions).generateDocument({
     openapi: "3.0.3",
     info: {
       title: "Source Cooperative API",
       version: "1.0.0",
-      description:
-        "Everything you can do on source.coop, over HTTP. Errors share one shape: `{ \"error\": { \"code\", \"message\", \"field_errors\"? } }`.",
+      description: "Everything you can do on source.coop, over HTTP.",
     },
     servers: [{ url: "/api/v1" }],
-    tags: [
-      {
-        name: INTERNAL,
-        description:
-          "**Not for public use.** Called by Source's data proxy or by GitHub, authenticated in ways no client can be. Listed so this reference matches what is deployed; they may change without notice.",
-      },
-    ],
   });
+  // Swagger UI and Redoc list the declared tags first, in declared order, so
+  // every tag is declared, in the order routes register, and Internal last.
+  const tags = new Set(
+    Object.values(document.paths).flatMap((path) =>
+      Object.values(path).flatMap((op) => (op as { tags?: string[] }).tags ?? [])
+    )
+  );
+  tags.delete(INTERNAL);
+  document.tags = [
+    ...[...tags].map((name) => ({ name })),
+    {
+      name: INTERNAL,
+      description:
+        "**Not for public use.** Called by Source's data proxy or by GitHub, authenticated in ways no client can be. Listed so this reference matches what is deployed; they may change without notice.",
+    },
+  ];
+  return document;
 }
