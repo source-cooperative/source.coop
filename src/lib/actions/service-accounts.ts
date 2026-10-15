@@ -84,9 +84,9 @@ export async function createServiceAccount(
     local_id: formData.get("local_id"),
     name: formData.get("name"),
     github_subjects: formData.getAll("github_subject").map(String).filter(Boolean),
-    grants: [...formData.keys()]
-      .filter((key) => key.startsWith("grant:"))
-      .map((key) => ({ product_id: key.slice("grant:".length), role: formData.get(key) })),
+    grants: [...formData].flatMap(([key, role]) =>
+      key.startsWith("grant:") ? [{ product_id: key.slice("grant:".length), role }] : []
+    ),
   });
   if (!result.ok) return fail(result.message, result.fieldErrors);
   const { account_id } = result.value;
