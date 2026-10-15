@@ -12,23 +12,10 @@ jest.mock("@/lib/clients/database", () => ({}));
 const UNREGISTERED = new Set([
   "DELETE /accounts/{account_id}",
   "DELETE /data-connections/{data_connection_id}",
-  "GET /accounts/{account_id}",
-  "GET /accounts/{account_id}/flags",
-  "GET /accounts/{account_id}/profile",
   "GET /data-connections",
   "GET /data-connections/{data_connection_id}",
-  "GET /products/{account_id}/{product_id}/permissions",
-  "GET /products/featured",
-  "GET /whoami",
-  "POST /accounts/{account_id}/trusts/exchanges",
   "POST /data-connections",
-  "POST /secret-scanning/github",
-  "POST /service-account-keys/exchanges",
-  "POST /service-account-keys/revocations",
-  "PUT /accounts/{account_id}/flags",
-  "PUT /accounts/{account_id}/profile",
   "PUT /data-connections/{data_connection_id}",
-  "PUT /products/{account_id}/{product_id}/featured",
 ]);
 
 const V1 = path.join(__dirname, "../v1");
@@ -42,7 +29,7 @@ const endpoints = readdirSync(V1, { recursive: true })
     const source = readFileSync(path.join(V1, file), "utf8");
     return [
       ...source.matchAll(
-        /export (?:async function|const|function) (GET|POST|PUT|PATCH|DELETE)\b/g
+        /export (?:async function|const|function) (GET|HEAD|POST|PUT|PATCH|DELETE)\b/g
       ),
     ].map(([, method]) => `${method} ${route.replace(/\[(\w+)\]/g, "{$1}")}`);
   });

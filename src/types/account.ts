@@ -186,12 +186,14 @@ export type AccountProfile = z.infer<typeof AccountProfileSchema>;
 export const AccountProfileResponseSchema = z
   .union([
     IndividualAccountProfileSchema.extend({
+      name: z.string(),
       profile_image: z.optional(z.string()),
-      type: z.optional(z.nativeEnum(AccountType)),
+      type: z.nativeEnum(AccountType),
     }),
     OrganizationalAccountProfileSchema.extend({
+      name: z.string(),
       profile_image: z.optional(z.string()),
-      type: z.optional(z.nativeEnum(AccountType)),
+      type: z.nativeEnum(AccountType),
     }),
   ])
   .openapi("AccountProfileResponse");

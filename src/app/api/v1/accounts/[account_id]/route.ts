@@ -2,110 +2,58 @@ import { NextRequest, NextResponse } from "next/server";
 import { StatusCodes } from "http-status-codes";
 import { isAuthorized } from "@/lib/api/authz";
 import { getApiSession } from "@/lib/api/utils";
+import { withApiSession, toResponse } from "@/lib/api/handler";
+import { accountParams, errors, json, registry } from "@/lib/api/openapi";
 import { accountsTable } from "@/lib/clients/database";
-import { Actions } from "@/types";
+import { accountExists, getAccount } from "@/lib/operations/accounts";
+import { AccountSchema, Actions } from "@/types";
 
-/**
- * @openapi
- * /accounts/{account_id}:
- *   get:
- *     tags: [Accounts]
- *     summary: Get account details
- *     description: Retrieves the details of a specific account.
- *       For a User account, you must be authenticated as the user you are retrieving the account details for.
- *       For an Organization account, you must be authenticated as either an `owners` or `maintainers` member of the organization you are retrieving the account details for.
- *       Users with the `admin` flag may retrieve the account details for any account.
- *     parameters:
- *       - in: path
- *         name: account_id
- *         required: true
- *         schema:
- *           type: string
- *         description: The ID of the account to retrieve
- *     responses:
- *       200:
- *         description: Successfully retrieved account details
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Account'
- *       401:
- *         description: Unauthorized - No valid session found or insufficient permissions
- *       404:
- *         description: Not Found - Account with the specified ID does not exist
- *       500:
- *         description: Internal server error
- */
+type Params = { account_id: string };
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ account_id: string }> }
-) {
-  try {
-    const { account_id } = await params;
-    const session = await getApiSession(request);
-    const account = await accountsTable.fetchById(account_id);
-    if (!account) {
-      return NextResponse.json(
-        { error: `Account ${account_id} not found` },
-        { status: StatusCodes.NOT_FOUND }
-      );
-    }
-    if (!isAuthorized(session, account, Actions.GetAccount)) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: StatusCodes.UNAUTHORIZED }
-      );
-    }
-    return NextResponse.json(account, { status: StatusCodes.OK });
-  } catch (err: any) {
-    return NextResponse.json(
-      { error: err.message || "Internal server error" },
-      { status: StatusCodes.INTERNAL_SERVER_ERROR }
-    );
-  }
-}
+const params = accountParams;
 
-/**
- * @openapi
- * /accounts/{account_id}:
- *   head:
- *     tags: [Accounts]
- *     summary: Check if an account exists
- *     description: Checks if an account exists.
- *     parameters:
- *       - in: path
- *         name: account_id
- *         required: true
- *         schema:
- *           type: string
- *         description: The ID of the account to retrieve
- *     responses:
- *       200:
- *         description: Account exists
- *       404:
- *         description: Account does not exist
- *       500:
- *         description: Internal server error
- */
+registry.registerPath({
+  method: "get",
+  path: "/accounts/{account_id}",
+  tags: ["Accounts"],
+  summary: "Get an account",
+  description:
+    "The whole account record, emails and flags included. A person may read their own; an organization's owners and maintainers may read it; an admin may read any. Everyone else reads the public profile instead.",
+  request: { params },
+  responses: {
+    200: json("The account.", AccountSchema),
+    ...errors(401, 403, 404),
+  },
+});
+
+export const GET = withApiSession<Params>(async ({ session, params }) =>
+  toResponse(await getAccount(session, params.account_id))
+);
+
+registry.registerPath({
+  method: "head",
+  path: "/accounts/{account_id}",
+  tags: ["Accounts"],
+  summary: "Check that an account exists",
+  description:
+    "Answers 200 if an account, of any kind and in any state, holds this ID, and 404 if none does. Needs no credentials. A free ID is not necessarily one you may take.",
+  request: { params },
+  responses: {
+    200: { description: "An account holds this ID." },
+    404: { description: "No account holds this ID." },
+  },
+});
 
 export async function HEAD(
-  request: NextRequest,
-  { params }: { params: Promise<{ account_id: string }> }
+  _request: NextRequest,
+  { params }: { params: Promise<Params> }
 ) {
-  try {
-    const { account_id } = await params;
-    const account = await accountsTable.fetchById(account_id);
-    if (!account) {
-      return new NextResponse(null, { status: StatusCodes.NOT_FOUND });
-    }
-    return new NextResponse(null, { status: StatusCodes.OK });
-  } catch (err: any) {
-    return NextResponse.json(
-      { error: err.message || "Internal server error" },
-      { status: StatusCodes.INTERNAL_SERVER_ERROR }
-    );
-  }
+  const { account_id } = await params;
+  return new NextResponse(null, {
+    status: (await accountExists(account_id))
+      ? StatusCodes.OK
+      : StatusCodes.NOT_FOUND,
+  });
 }
 
 /**

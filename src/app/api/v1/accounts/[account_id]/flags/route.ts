@@ -1,152 +1,49 @@
-import { NextRequest, NextResponse } from "next/server";
-import {
-  AccountFlagsSchema,
-  Actions,
-  isServiceAccount,
-  AccountFlags,
-} from "@/types";
-import { StatusCodes } from "http-status-codes";
-import { isAuthorized } from "@/lib/api/authz";
-import { getApiSession } from "@/lib/api/utils";
-import { accountsTable } from "@/lib/clients/database";
+import { AccountFlagsSchema } from "@/types";
+import { withApiSession, toResponse } from "@/lib/api/handler";
+import { accountParams, bearer, errors, json, registry } from "@/lib/api/openapi";
+import { getAccountFlags, updateAccountFlags } from "@/lib/operations/accounts";
 
-/**
- * @openapi
- * /accounts/{account_id}/flags:
- *   get:
- *     tags: [Accounts]
- *     summary: Get account flags
- *     description: Retrieves the flags of a specific account.
- *       For a User account, users may only get the flags for their own account.
- *       For an Organization account, only users who are `owners` or `maintainers` of the organization may get the flags.
- *       Users with the `admin` flag may get the flags for any account.
- *     parameters:
- *       - in: path
- *         name: account_id
- *         required: true
- *         schema:
- *           type: string
- *         description: The ID of the account whose flags to retrieve
- *     responses:
- *       200:
- *         description: Successfully retrieved account flags
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/AccountFlags'
- *       401:
- *         description: Unauthorized - No valid session found or insufficient permissions
- *       404:
- *         description: Not Found - Account with the specified ID does not exist
- *       500:
- *         description: Internal server error
- */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ account_id: string }> }
-) {
-  try {
-    const { account_id } = await params;
-    const session = await getApiSession(request);
-    const account = session?.account;
-    if (!account) {
-      return NextResponse.json(
-        { error: `Account ${account_id} not found` },
-        { status: StatusCodes.NOT_FOUND }
-      );
-    }
-    if (!isAuthorized(session, account, Actions.GetAccountFlags)) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: StatusCodes.UNAUTHORIZED }
-      );
-    }
-    return NextResponse.json(account.flags, { status: StatusCodes.OK });
-  } catch (err: unknown) {
-    const errorMessage =
-      err instanceof Error ? err.message : "Internal server error";
-    return NextResponse.json(
-      { error: errorMessage },
-      { status: StatusCodes.INTERNAL_SERVER_ERROR }
-    );
-  }
-}
+type Params = { account_id: string };
 
-/**
- * @openapi
- * /accounts/{account_id}/flags:
- *   put:
- *     tags: [Accounts]
- *     summary: Update account flags
- *     description: Updates the flags of a specific account. You must have the `admin` flag to update the flags for an account.
- *     parameters:
- *       - in: path
- *         name: account_id
- *         required: true
- *         schema:
- *           type: string
- *         description: The ID of the account whose flags to update
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/AccountFlags'
- *     responses:
- *       200:
- *         description: Successfully updated the account flags
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/AccountFlags'
- *       400:
- *         description: Bad Request - Invalid flags data
- *       401:
- *         description: Unauthorized - No valid session found or insufficient permissions
- *       404:
- *         description: Not Found - Account with the specified ID does not exist
- *       500:
- *         description: Internal server error
- */
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ account_id: string }> }
-) {
-  try {
-    const session = await getApiSession(request);
-    const { account_id } = await params;
-    const accountToUpdate = await accountsTable.fetchById(account_id);
-    if (!accountToUpdate) {
-      return NextResponse.json(
-        { error: `Account ${account_id} not found` },
-        { status: StatusCodes.NOT_FOUND }
-      );
-    }
-    if (!isAuthorized(session, accountToUpdate, Actions.PutAccountFlags)) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: StatusCodes.UNAUTHORIZED }
-      );
-    }
-    const flagsRequest = AccountFlagsSchema.parse(await request.json());
-    if (
-      isServiceAccount(accountToUpdate) &&
-      flagsRequest.includes(AccountFlags.ADMIN)
-    ) {
-      return NextResponse.json(
-        { error: "A service account cannot hold the admin flag" },
-        { status: StatusCodes.BAD_REQUEST }
-      );
-    }
-    accountToUpdate.flags = flagsRequest;
-    const updatedAccount = await accountsTable.update(accountToUpdate);
-    return NextResponse.json(updatedAccount.flags, { status: StatusCodes.OK });
-  } catch (err: unknown) {
-    const errorMessage =
-      err instanceof Error ? err.message : "Internal server error";
-    return NextResponse.json(
-      { error: errorMessage },
-      { status: StatusCodes.INTERNAL_SERVER_ERROR }
-    );
-  }
-}
+const params = accountParams;
+
+registry.registerPath({
+  method: "get",
+  path: "/accounts/{account_id}/flags",
+  tags: ["Accounts"],
+  summary: "Get an account's flags",
+  description:
+    "What the account may do beyond the basics, such as create products or administer the platform. A person may read their own, an organization's owners and maintainers theirs, and an admin anyone's.",
+  security: bearer,
+  request: { params },
+  responses: {
+    200: json("The flags.", AccountFlagsSchema),
+    ...errors(401, 403, 404),
+  },
+});
+
+export const GET = withApiSession<Params>(async ({ session, params }) =>
+  toResponse(await getAccountFlags(session, params.account_id))
+);
+
+registry.registerPath({
+  method: "put",
+  path: "/accounts/{account_id}/flags",
+  tags: ["Accounts"],
+  summary: "Set an account's flags",
+  description:
+    "Replaces the account's flags with the ones given. Only an admin may, and a service account may never hold `admin`.",
+  security: bearer,
+  request: {
+    params,
+    body: { content: { "application/json": { schema: AccountFlagsSchema } } },
+  },
+  responses: {
+    200: json("The flags as set.", AccountFlagsSchema),
+    ...errors(400, 401, 403, 404),
+  },
+});
+
+export const PUT = withApiSession<Params>(async ({ session, params, body }) =>
+  toResponse(await updateAccountFlags(session, params.account_id, body))
+);
