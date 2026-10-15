@@ -1,4 +1,3 @@
-import md5 from "md5";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import {
@@ -18,6 +17,8 @@ import {
   UserSession,
 } from "@/types";
 import { isAuthorized } from "@/lib/api/authz";
+import { avatarUrl } from "@/lib/avatar";
+import { LOGGER } from "@/lib/logging";
 import { accountsTable } from "@/lib/clients/database";
 import {
   accountUrl,
@@ -76,7 +77,7 @@ export const UpdateAccountProfileSchema = z
   .openapi("UpdateAccountProfile");
 
 async function fetchAccount(account_id: string) {
-  return (await accountsTable.fetchById(account_id)) ?? null;
+  return account_id ? ((await accountsTable.fetchById(account_id)) ?? null) : null;
 }
 
 const missing = (account_id: string) => notFound(`Account ${account_id} not found`);
@@ -107,14 +108,12 @@ export async function accountExists(account_id: string): Promise<boolean> {
 }
 
 function profileOf(account: Account): AccountProfileResponse {
-  // The avatar the profile page shows: an uploaded image, else a person's Gravatar.
-  const email = account.emails?.find((e) => e.is_primary)?.address;
-  const profile_image =
-    account.metadata_public.profile_image ??
-    (account.type === AccountType.INDIVIDUAL && email
-      ? `https://www.gravatar.com/avatar/${md5(email.trim().toLowerCase())}`
-      : undefined);
-  return { ...account.metadata_public, name: account.name, type: account.type, profile_image };
+  return {
+    ...account.metadata_public,
+    name: account.name,
+    type: account.type,
+    profile_image: avatarUrl(account),
+  };
 }
 
 export async function getAccountProfile(
@@ -140,13 +139,20 @@ export async function updateAccountProfile(
 ): Promise<OperationResult<AccountProfileResponse>> {
   if (!session) return unauthenticated();
   const account = await fetchAccount(account_id);
-  if (!account) return missing(account_id);
+  // A service account has no profile to edit, as it has none to read.
+  if (!account || isServiceAccount(account)) return missing(account_id);
   if (!isAuthorized(session, account, Actions.PutAccountProfile)) {
     return deny(session, "You may not edit this profile");
   }
   const parsed = UpdateAccountProfileSchema.safeParse(input);
   if (!parsed.success) return fromZodError(parsed.error);
   const { name, websites, email, ...fields } = parsed.data;
+  if (fields.orcid !== undefined && account.type !== AccountType.INDIVIDUAL) {
+    return invalid("Only a person has an ORCID iD", "orcid");
+  }
+  if (fields.ror_id !== undefined && account.type !== AccountType.ORGANIZATION) {
+    return invalid("Only an organization has a ROR ID", "ror_id");
+  }
   const now = new Date().toISOString();
 
   let domains = account.metadata_public.domains;
@@ -188,13 +194,19 @@ export async function updateAccountProfile(
   for (const [key, value] of Object.entries(fields)) {
     (metadata_public as Record<string, unknown>)[key] = value || undefined;
   }
+  // Only the fields edited here, so a concurrent change to flags or `disabled`
+  // isn't written back over.
   const updated = await accountsTable.update({
-    ...account,
+    account_id,
+    type: account.type,
     name: name ?? account.name,
     emails,
     metadata_public,
-    updated_at: now,
   } as Account);
+  LOGGER.info("Updated account profile", {
+    operation: "updateAccountProfile",
+    metadata: { account_id, by: session.account?.account_id },
+  });
   revalidatePath(accountUrl(account_id));
   revalidatePath(editAccountProfileUrl(account_id));
   return ok(profileOf(updated));
@@ -230,9 +242,14 @@ export async function updateAccountFlags(
     return invalid("A service account cannot hold the admin flag");
   }
   const updated = await accountsTable.update({
-    ...account,
+    account_id,
+    type: account.type,
+    name: account.name,
     flags: parsed.data,
-    updated_at: new Date().toISOString(),
+  } as Account);
+  LOGGER.info("Updated account flags", {
+    operation: "updateAccountFlags",
+    metadata: { account_id, flags: parsed.data, by: session.account?.account_id },
   });
   revalidatePath(editAccountPermissionsUrl(account_id));
   return ok(updated.flags);

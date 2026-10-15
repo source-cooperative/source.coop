@@ -71,7 +71,9 @@ describe("getAccountProfile", () => {
     const emails = [{ address: "p@example.test", is_primary: true }];
     fetchById.mockResolvedValue(account({ emails }));
     const gravatar = await getAccountProfile(null, "an-account");
-    expect(gravatar.ok && gravatar.value.profile_image).toMatch(/^https:\/\/www\.gravatar\.com\/avatar\//);
+    expect(gravatar.ok && gravatar.value.profile_image).toMatch(
+      /^https:\/\/www\.gravatar\.com\/avatar\/\w+\?d=identicon/
+    );
 
     fetchById.mockResolvedValue(
       account({ emails, metadata_public: { profile_image: "https://img.test/a.png" } })
@@ -169,6 +171,41 @@ describe("updateAccountProfile", () => {
     expect(written().emails).toEqual(emails);
   });
 
+  it("writes only the fields it edits, never flags or disabled", async () => {
+    fetchById.mockResolvedValue(account({ flags: [AccountFlags.ADMIN], disabled: false }));
+    await updateAccountProfile(SESSION, "an-account", { bio: "New" });
+    expect(written()).not.toHaveProperty("flags");
+    expect(written()).not.toHaveProperty("disabled");
+  });
+
+  it("refuses an identifier that belongs to the other kind of account", async () => {
+    org();
+    expect(await updateAccountProfile(SESSION, "an-account", { orcid: "0000" })).toMatchObject({
+      error: "invalid",
+      fieldErrors: { orcid: expect.any(Array) },
+    });
+    fetchById.mockResolvedValue(account());
+    expect(await updateAccountProfile(SESSION, "an-account", { ror_id: "x" })).toMatchObject({
+      error: "invalid",
+      fieldErrors: { ror_id: expect.any(Array) },
+    });
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it("finds no profile to edit on a service account", async () => {
+    fetchById.mockResolvedValue(account({ type: AccountType.SERVICE }));
+    expect(await updateAccountProfile(SESSION, "an-account", { bio: "x" })).toMatchObject({
+      error: "not_found",
+    });
+  });
+
+  it("treats an empty account ID as missing, without a lookup", async () => {
+    expect(await updateAccountProfile(SESSION, "", { bio: "x" })).toMatchObject({
+      error: "not_found",
+    });
+    expect(fetchById).not.toHaveBeenCalled();
+  });
+
   it("needs a session, then authorization, before reading the input", async () => {
     fetchById.mockResolvedValue(account());
     expect(await updateAccountProfile(null, "an-account", {})).toMatchObject({
@@ -197,6 +234,16 @@ describe("account flags", () => {
     const result = await updateAccountFlags(SESSION, "an-account", [AccountFlags.ADMIN]);
     expect(result).toMatchObject({ error: "invalid" });
     expect(update).not.toHaveBeenCalled();
+  });
+
+  it("writes only the flags, so a concurrent profile edit survives", async () => {
+    fetchById.mockResolvedValue(account({ metadata_public: { bio: "Old" } }));
+    await updateAccountFlags(SESSION, "an-account", [AccountFlags.CREATE_REPOSITORIES]);
+    expect(written()).toEqual(
+      expect.objectContaining({ account_id: "an-account", flags: [AccountFlags.CREATE_REPOSITORIES] })
+    );
+    expect(written()).not.toHaveProperty("metadata_public");
+    expect(written()).not.toHaveProperty("disabled");
   });
 
   it("refuses a flag that doesn't exist", async () => {

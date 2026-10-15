@@ -1,10 +1,9 @@
 /**
  * @fileoverview Utility functions for API operations in the Source Cooperative application.
  *
- * This module provides utility functions for handling API requests, user sessions, and generating gravatar URLs. It includes functionality for:
+ * This module provides utility functions for handling API requests and user sessions. It includes functionality for:
  * - Retrieving and validating user sessions
  * - Checking admin status
- * - Generating gravatar URLs
  *
  * The module interacts with Ory for session management and uses custom database
  * operations for retrieving user and membership information.

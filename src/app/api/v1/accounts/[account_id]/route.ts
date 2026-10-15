@@ -3,7 +3,7 @@ import { StatusCodes } from "http-status-codes";
 import { isAuthorized } from "@/lib/api/authz";
 import { getApiSession } from "@/lib/api/utils";
 import { withApiSession, toResponse } from "@/lib/api/handler";
-import { accountParams, errors, json, registry } from "@/lib/api/openapi";
+import { accountParams, bearer, errors, json, registry } from "@/lib/api/openapi";
 import { accountsTable } from "@/lib/clients/database";
 import { accountExists, getAccount } from "@/lib/operations/accounts";
 import { AccountSchema, Actions } from "@/types";
@@ -19,6 +19,7 @@ registry.registerPath({
   summary: "Get an account",
   description:
     "The whole account record, emails and flags included. A person may read their own; an organization's owners and maintainers may read it; an admin may read any. Everyone else reads the public profile instead.",
+  security: bearer,
   request: { params },
   responses: {
     200: json("The account.", AccountSchema),

@@ -26,6 +26,9 @@ const bearerAuth = registry.registerComponent("securitySchemes", "bearerAuth", {
 /** Marks a route as one that takes a bearer token. */
 export const bearer = [{ [bearerAuth.name]: [] }];
 
+/** Marks a route whose answer depends on a bearer token, but that needs none. */
+export const optionalBearer = [{}, ...bearer];
+
 const INTERNAL = "Internal";
 
 /**
