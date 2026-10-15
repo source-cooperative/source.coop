@@ -2,14 +2,7 @@ import { after, NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { PROXY_SELF_SUBJECT, verifyProxyAssertion } from "@/lib/api/oidc";
 import { toResponse } from "@/lib/api/handler";
-import {
-  bearer,
-  errors,
-  forDataProxy,
-  internal,
-  json,
-  registry,
-} from "@/lib/api/openapi";
+import { bearer, errors, internal, json, registry } from "@/lib/api/openapi";
 import { invalid, unauthenticated } from "@/lib/operations/result";
 import { accountsTable, serviceAccountKeysTable } from "@/lib/clients/database";
 import { LOGGER } from "@/lib/logging";
@@ -36,9 +29,8 @@ registry.registerPath({
   path: "/service-account-keys/exchanges",
   ...internal,
   summary: "Whether an API key may be exchanged, and for which service account",
-  ...forDataProxy(
-    "Called by the data proxy at `/.sts`, as itself, when an API key is presented: the key is opaque, so nothing names an account before this lookup. A key is active when it is known, not revoked, not expired, and its service account is not disabled; an unknown hash is answered as inactive, indistinguishable from a revoked one. Records the key's last use. The proxy caches the answer briefly, so a revocation stops new exchanges within that time."
-  ),
+  description:
+    "Called by the data proxy at `/.sts`, as itself, when an API key is presented: the key is opaque, so nothing names an account before this lookup. A key is active when it is known, not revoked, not expired, and its service account is not disabled; an unknown hash is answered as inactive, indistinguishable from a revoked one. Records the key's last use. The proxy caches the answer briefly, so a revocation stops new exchanges within that time.",
   security: bearer,
   request: { body: { content: { "application/json": { schema: BodySchema } } } },
   responses: {

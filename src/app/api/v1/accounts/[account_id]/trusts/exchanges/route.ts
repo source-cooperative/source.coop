@@ -8,7 +8,6 @@ import {
   accountParams,
   bearer,
   errors,
-  forDataProxy,
   internal,
   json,
   registry,
@@ -28,9 +27,8 @@ registry.registerPath({
   path: "/accounts/{account_id}/trusts/exchanges",
   ...internal,
   summary: "Whether an account trusts a subject to act as it",
-  ...forDataProxy(
-    "Called by the data proxy at `/.sts`, as the account itself, once it has verified a platform IdP's token (GitHub Actions, say) and read the account the caller named in `RoleArn`. Answers the trust-policy half of an assume-role call; the account's memberships decide what the credentials then carry."
-  ),
+  description:
+    "Called by the data proxy at `/.sts`, as the account itself, once it has verified a platform IdP's token (GitHub Actions, say) and read the account the caller named in `RoleArn`. Answers the trust-policy half of an assume-role call; the account's memberships decide what the credentials then carry.",
   security: bearer,
   request: {
     params: accountParams,

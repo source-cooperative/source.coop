@@ -29,18 +29,6 @@ export const bearer = [{ [bearerAuth.name]: [] }];
 /** Marks a route whose answer depends on a bearer token, but that needs none. */
 export const optionalBearer = [{}, ...bearer];
 
-export const DATA_PROXY = "data-proxy";
-
-/**
- * Marks a route the data proxy calls (data.source.coop's
- * `src/source_api/cache.rs`), whose request and responses
- * `data-proxy-contract.test.ts` holds fixed. Takes the route's description.
- */
-export const forDataProxy = (description: string) => ({
-  description: `**The data proxy depends on this endpoint**; change its request or responses only together with data.source.coop.\n\n${description}`,
-  "x-consumers": [DATA_PROXY],
-});
-
 const INTERNAL = "Internal";
 
 /**

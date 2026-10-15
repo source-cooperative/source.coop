@@ -1,6 +1,5 @@
 /** @jest-environment node */
 import SwaggerParser from "@apidevtools/swagger-parser";
-import { DATA_PROXY } from "@/lib/api/openapi";
 import { GET } from "./route";
 
 jest.mock("@/lib/api/utils", () => ({ getApiSession: jest.fn() }));
@@ -20,7 +19,6 @@ const PROXY_CALLS = [
 ];
 
 type Operation = {
-  "x-consumers"?: string[];
   parameters?: unknown;
   requestBody?: unknown;
   responses: Record<string, { content?: unknown }>;
@@ -39,29 +37,21 @@ const shape = (value: unknown): unknown =>
       : value;
 
 describe("the endpoints the data proxy calls", () => {
-  let operations: Record<string, Operation>;
+  let paths: Record<string, Record<string, Operation>>;
   beforeAll(async () => {
-    const document = (await SwaggerParser.dereference(
+    ({ paths } = (await SwaggerParser.dereference(
       structuredClone(await GET().json())
-    )) as unknown as { paths: Record<string, Record<string, Operation>> };
-    operations = Object.fromEntries(
-      Object.entries(document.paths).flatMap(([path, item]) =>
-        Object.entries(item)
-          .filter(([, op]) => op["x-consumers"]?.includes(DATA_PROXY))
-          .map(([method, op]) => [`${method.toUpperCase()} ${path}`, op])
-      )
-    );
-  });
-
-  test("are exactly the ones marked with forDataProxy", () => {
-    expect(Object.keys(operations).sort()).toEqual([...PROXY_CALLS].sort());
+    )) as unknown as { paths: Record<string, Record<string, Operation>> });
   });
 
   // A failure here is a change the proxy may not survive. Check cache.rs: an
   // added optional field is safe, and `jest -u` accepts it; a removed or
   // retyped one, or a different status, needs a data.source.coop change first.
   test.each(PROXY_CALLS)("%s keeps its request and responses", (call) => {
-    const { parameters, requestBody, responses } = operations[call];
+    const [method, path] = call.split(" ");
+    const operation = paths[path]?.[method.toLowerCase()];
+    expect(operation).toBeDefined();
+    const { parameters, requestBody, responses } = operation;
     expect(
       shape({
         parameters,
