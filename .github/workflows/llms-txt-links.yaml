@@ -1,0 +1,26 @@
+name: llms.txt links
+
+# Every link in public/llms.txt should resolve in production without auth.
+# Runs on a schedule rather than on push: a PR adds the llms.txt line for its
+# own feature, which isn't in production until the next release.
+on:
+  schedule:
+    - cron: "0 14 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          fail=0
+          for u in $(grep -oE '\]\(https?://[^)]+\)' public/llms.txt | sed -E 's/^\]\(|\)$//g'); do
+            code=$(curl -sSL -o /dev/null -w '%{http_code}' --max-time 20 "$u" || true)
+            echo "$code $u"
+            [ "${code:0:1}" = 2 ] || { echo "::error::$u returned $code"; fail=1; }
+          done
+          exit $fail
