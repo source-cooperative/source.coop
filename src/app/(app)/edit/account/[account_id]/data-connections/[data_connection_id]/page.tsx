@@ -1,4 +1,5 @@
 import { Metadata } from "next";
+import { CONFIG } from "@/lib/config";
 import { Suspense } from "react";
 import Link from "next/link";
 import { Box, Button, Text } from "@radix-ui/themes";
@@ -52,6 +53,7 @@ export default async function AccountEditDataConnectionPage({
       </Button>
       <DataConnectionForm
         mode="edit"
+        proxyOrigin={CONFIG.storage.endpoint}
         ownerAccountId={account_id}
         dataConnection={toEditableDataConnection(dataConnection)}
       />

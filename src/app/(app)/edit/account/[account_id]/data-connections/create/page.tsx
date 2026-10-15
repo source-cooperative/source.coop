@@ -1,4 +1,5 @@
 import { Metadata } from "next";
+import { CONFIG } from "@/lib/config";
 import { notFound } from "next/navigation";
 import { Box } from "@radix-ui/themes";
 import { DataConnectionForm } from "@/components/features/data-connections";
@@ -31,7 +32,11 @@ export default async function AccountCreateDataConnectionPage({
         title="Create Data Connection"
         description="Connect external storage this account's products can mirror to."
       />
-      <DataConnectionForm mode="create" ownerAccountId={account_id} />
+      <DataConnectionForm
+        mode="create"
+        ownerAccountId={account_id}
+        proxyOrigin={CONFIG.storage.endpoint}
+      />
     </Box>
   );
 }
