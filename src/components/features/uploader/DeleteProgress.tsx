@@ -31,7 +31,8 @@ interface DeleteProgressProps {
 export function DeleteProgress({ job, onDismiss }: DeleteProgressProps) {
   const product = productUrl(job.scope.accountId, job.scope.productId);
   const parent = job.path.replace(/\/$/, "").split("/").slice(0, -1).join("/");
-  const name = job.path.replace(/\/$/, "").split("/").pop();
+  // The empty path is the whole product, emptied from its settings.
+  const name = job.path.replace(/\/$/, "").split("/").pop() || "All objects";
   return (
     <Flex
       direction="column"
@@ -46,7 +47,7 @@ export function DeleteProgress({ job, onDismiss }: DeleteProgressProps) {
         <Flex direction="column" style={{ flex: 1, minWidth: 0 }}>
           <Text size="2" weight="medium" truncate>
             {name}
-            {job.isDirectory ? "/" : ""}
+            {job.isDirectory && job.path ? "/" : ""}
           </Text>
           <Link size="1" color="gray" asChild>
             <NextLink href={`${product}/${parent}`}>

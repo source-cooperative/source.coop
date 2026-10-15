@@ -10,7 +10,10 @@ import {
   useRef,
 } from "react";
 import { S3UploadService, type DeleteProgress } from "@/lib/services/s3-upload";
-import { getTemporaryCredentials } from "@/lib/actions/credentials";
+import {
+  getTemporaryCredentials,
+  type TemporaryCredentials,
+} from "@/lib/actions/credentials";
 import { useS3Credentials } from "./CredentialsProvider";
 import type { CredentialsScope } from "./CredentialsProvider";
 import { useBeforeUnload } from "@/hooks/useBeforeUnload";
@@ -22,6 +25,34 @@ import {
 
 export type { UploadStatus, CredentialsScope };
 export type ScopedUploadItem = QueuedUpload;
+
+/**
+ * A browser S3 client for one product, through the data proxy. The endpoint,
+ * bucket, region and prefix are stable per scope (taken from the first mint);
+ * only the STS token rotates, so the client gets a provider that re-mints via
+ * the server action and the SDK refreshes it before expiry, keeping long jobs
+ * alive (#401).
+ */
+export function createS3Service(
+  scope: CredentialsScope,
+  credentials: TemporaryCredentials
+): S3UploadService {
+  return new S3UploadService({
+    endpoint: credentials.endpoint,
+    bucket: credentials.bucket,
+    region: credentials.region,
+    prefix: credentials.prefix,
+    credentials: async () => {
+      const c = await getTemporaryCredentials(scope);
+      return {
+        accessKeyId: c.accessKeyId,
+        secretAccessKey: c.secretAccessKey,
+        sessionToken: c.sessionToken,
+        expiration: new Date(c.expiration),
+      };
+    },
+  });
+}
 
 /** A file or folder delete running in the background. */
 export interface DeleteJob extends DeleteProgress {
@@ -110,28 +141,7 @@ export function UploadProvider({ children }: UploadProviderProps) {
       for (const [scope, credentials] of getAllCredentials()) {
         const key = s3ServiceKey(scope);
         if (!next.has(key)) {
-          // endpoint/bucket/region/prefix are stable per scope (taken from the
-          // first mint); only the STS token rotates. Hand the client a provider
-          // that re-mints via the server action so the SDK refreshes it before
-          // expiry, keeping long uploads alive (#401).
-          next.set(
-            key,
-            new S3UploadService({
-              endpoint: credentials.endpoint,
-              bucket: credentials.bucket,
-              region: credentials.region,
-              prefix: credentials.prefix,
-              credentials: async () => {
-                const c = await getTemporaryCredentials(scope);
-                return {
-                  accessKeyId: c.accessKeyId,
-                  secretAccessKey: c.secretAccessKey,
-                  sessionToken: c.sessionToken,
-                  expiration: new Date(c.expiration),
-                };
-              },
-            })
-          );
+          next.set(key, createS3Service(scope, credentials));
         }
       }
       return next;
@@ -174,11 +184,11 @@ export function UploadProvider({ children }: UploadProviderProps) {
 
   const deletePath = useCallback(
     async (path: string, isDirectory: boolean, scope: CredentialsScope) => {
-      const s3Service = getS3Service(scope);
-      if (!s3Service)
-        throw new Error(
-          `No S3 service available for scope ${s3ServiceKey(scope)}`
-        );
+      // A delete started outside edit mode (emptying a product from its
+      // settings) has no service yet, so it mints its own.
+      const s3Service =
+        getS3Service(scope) ??
+        createS3Service(scope, await getTemporaryCredentials(scope));
       const id = crypto.randomUUID();
       const update = (patch: Partial<DeleteJob>) =>
         setDeletions((prev) =>

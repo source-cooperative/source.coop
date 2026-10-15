@@ -1,3 +1,4 @@
+export * from "./DeleteAllObjectsModal";
 export * from "./DeleteProductModal";
 export * from "./ProductListItem";
 export * from "./ProductSummaryCard";

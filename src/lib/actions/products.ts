@@ -84,16 +84,10 @@ export async function updateProduct(
 
 export async function deleteProduct(
   account_id: string,
-  product_id: string,
-  preserveData: boolean = false
+  product_id: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const result = await ops.deleteProduct(
-      await getPageSession(),
-      account_id,
-      product_id,
-      { preserve_data: String(preserveData) },
-    );
+    const result = await ops.deleteProduct(await getPageSession(), account_id, product_id);
     if (!result.ok) return { success: false, error: result.message };
   } catch (error) {
     LOGGER.error("Error deleting product", {

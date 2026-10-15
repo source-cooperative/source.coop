@@ -75,12 +75,10 @@ describe("updateProduct", () => {
 });
 
 describe("deleteProduct", () => {
-  test("passes whether to keep the data", async () => {
+  test("deletes as the page's session", async () => {
     operations.deleteProduct.mockResolvedValue(ok(product));
-    expect(await deleteProduct("alice", "my-product", true)).toEqual({ success: true });
-    expect(operations.deleteProduct).toHaveBeenCalledWith(session, "alice", "my-product", {
-      preserve_data: "true",
-    });
+    expect(await deleteProduct("alice", "my-product")).toEqual({ success: true });
+    expect(operations.deleteProduct).toHaveBeenCalledWith(session, "alice", "my-product");
   });
 
   test("reports a refusal", async () => {

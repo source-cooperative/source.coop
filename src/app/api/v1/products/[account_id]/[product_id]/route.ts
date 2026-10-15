@@ -3,7 +3,6 @@ import { withApiSession, toResponse } from "@/lib/api/handler";
 import { bearer, errors, json, productParams, registry } from "@/lib/api/openapi";
 import {
   deleteProduct,
-  DeleteProductQuerySchema,
   getProduct,
   updateProduct,
   UpdateProductSchema,
@@ -61,22 +60,15 @@ registry.registerPath({
   tags: ["Products"],
   summary: "Delete a product",
   description:
-    "Deletes the product, its memberships and, unless `preserve_data` is set, its objects. Objects on a read-only data connection are never deleted. Only the owning account or an owner of the product may delete it.",
+    "Deletes the product and its memberships. A product that still holds objects is refused with a 409: delete its objects first, through the data proxy's S3 API. Objects on a read-only data connection don't count, since Source never deletes them, and neither does storage that can't be reached. Only the owning account or an owner of the product may delete it.",
   security: bearer,
-  request: { params, query: DeleteProductQuerySchema },
+  request: { params },
   responses: {
     200: json("The product as it was.", ProductSchema),
-    ...errors(400, 401, 403, 404),
+    ...errors(401, 403, 404, 409),
   },
 });
 
-export const DELETE = withApiSession<Params>(async ({ request, session, params }) =>
-  toResponse(
-    await deleteProduct(
-      session,
-      params.account_id,
-      params.product_id,
-      Object.fromEntries(request.nextUrl.searchParams)
-    )
-  )
+export const DELETE = withApiSession<Params>(async ({ session, params }) =>
+  toResponse(await deleteProduct(session, params.account_id, params.product_id))
 );

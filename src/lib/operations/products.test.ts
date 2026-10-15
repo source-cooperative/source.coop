@@ -6,7 +6,7 @@ import {
   membershipsTable,
   productsTable,
 } from "@/lib/clients/database";
-import { canListOnProfile, isAdmin, isAuthorized } from "@/lib/api/authz";
+import { canListOnProfile, isAuthorized } from "@/lib/api/authz";
 import { getProxyCredentials } from "@/lib/actions/proxy-credentials";
 import { getStorageClient } from "@/lib/clients/storage";
 import { revalidatePath } from "next/cache";
@@ -444,86 +444,77 @@ describe("deleteProduct", () => {
         mirrors: { "conn-1": { connection_id: "conn-1", prefix: "alice/my-product/" } },
       },
     });
-  const keep = { preserve_data: "true" };
-  let deleteByPrefix: jest.Mock;
+  const httpError = (httpStatusCode: number) =>
+    Object.assign(new Error(`HTTP ${httpStatusCode}`), { $metadata: { httpStatusCode } });
+  let isEmpty: jest.Mock;
 
   beforeEach(() => {
     (productsTable.fetchById as jest.Mock).mockResolvedValue(withMirror());
+    (dataConnectionsTable.fetchById as jest.Mock).mockResolvedValue({ read_only: false });
     (getProxyCredentials as jest.Mock).mockResolvedValue({ accessKeyId: "AK" });
-    deleteByPrefix = jest.fn();
-    (getStorageClient as jest.Mock).mockResolvedValue({ deleteByPrefix });
+    isEmpty = jest.fn().mockResolvedValue(true);
+    (getStorageClient as jest.Mock).mockResolvedValue({ isEmpty });
   });
 
-  test("deletes product data through the proxy with the caller's credentials", async () => {
-    (dataConnectionsTable.fetchById as jest.Mock).mockResolvedValue({ read_only: false });
-
-    expect(await deleteProduct(SESSION, "alice", "my-product", {})).toMatchObject({ ok: true });
+  test("deletes an empty product, checked through the proxy as the caller", async () => {
+    expect(await deleteProduct(SESSION, "alice", "my-product")).toMatchObject({ ok: true });
 
     // Minted for the verified session identity, not request params.
     expect(getProxyCredentials).toHaveBeenCalledWith("user-1");
-    expect(deleteByPrefix).toHaveBeenCalledWith("alice", "my-product/");
+    expect(isEmpty).toHaveBeenCalledWith("alice", "my-product/");
     expect(membershipsTable.deleteByProduct).toHaveBeenCalledWith("alice", "my-product");
     expect(productsTable.delete).toHaveBeenCalledWith("alice", "my-product");
     expect(revalidatePath).toHaveBeenCalledWith("/alice");
   });
 
-  test("deletes a product with no metadata, which has no objects to delete", async () => {
-    (productsTable.fetchById as jest.Mock).mockResolvedValue(product({ metadata: undefined }));
-    expect(await deleteProduct(SESSION, "alice", "my-product", {})).toMatchObject({ ok: true });
-    expect(getStorageClient).not.toHaveBeenCalled();
-  });
-
-  test("does not touch storage for a read-only data connection, even to keep it", async () => {
-    (dataConnectionsTable.fetchById as jest.Mock).mockResolvedValue({ read_only: true });
-    for (const query of [{}, keep]) {
-      expect(await deleteProduct(SESSION, "alice", "my-product", query)).toMatchObject({
-        ok: true,
-      });
-    }
-    expect(getStorageClient).not.toHaveBeenCalled();
-  });
-
-  test("refuses to keep data on a system connection for a non-admin", async () => {
-    (dataConnectionsTable.fetchById as jest.Mock).mockResolvedValue({ read_only: false });
-    expect(await deleteProduct(SESSION, "alice", "my-product", keep)).toMatchObject({
-      error: "forbidden",
-      message: expect.stringMatching(/not permitted to keep/),
+  test("refuses a product that still holds objects", async () => {
+    isEmpty.mockResolvedValue(false);
+    expect(await deleteProduct(SESSION, "alice", "my-product")).toMatchObject({
+      error: "conflict",
+      message: expect.stringMatching(/still holds data/),
     });
+    expect(membershipsTable.deleteByProduct).not.toHaveBeenCalled();
     expect(productsTable.delete).not.toHaveBeenCalled();
+  });
+
+  test("deletes a product on a read-only connection without looking at its objects", async () => {
+    (dataConnectionsTable.fetchById as jest.Mock).mockResolvedValue({ read_only: true });
+    expect(await deleteProduct(SESSION, "alice", "my-product")).toMatchObject({ ok: true });
+    expect(getStorageClient).not.toHaveBeenCalled();
+  });
+
+  test("deletes a product with no metadata, which has no objects", async () => {
+    (productsTable.fetchById as jest.Mock).mockResolvedValue(product({ metadata: undefined }));
+    expect(await deleteProduct(SESSION, "alice", "my-product")).toMatchObject({ ok: true });
+    expect(getStorageClient).not.toHaveBeenCalled();
   });
 
   test.each([
-    ["an owned connection", { read_only: false, owner: "someone-else" }, false],
-    ["a system connection, for an admin", { read_only: false }, true],
-  ])("keeps data on %s when asked", async (_, conn, admin) => {
-    (dataConnectionsTable.fetchById as jest.Mock).mockResolvedValue(conn);
-    (isAdmin as jest.Mock).mockReturnValue(admin);
-    expect(await deleteProduct(SESSION, "alice", "my-product", keep)).toMatchObject({
-      ok: true,
-    });
-    expect(deleteByPrefix).not.toHaveBeenCalled();
+    ["a network failure", new Error("getaddrinfo ENOTFOUND")],
+    ["a server error", httpError(502)],
+  ])("deletes the product when storage can't be checked (%s)", async (_, error) => {
+    isEmpty.mockRejectedValue(error);
+    expect(await deleteProduct(SESSION, "alice", "my-product")).toMatchObject({ ok: true });
     expect(productsTable.delete).toHaveBeenCalled();
   });
 
-  test("refuses to delete stored objects for a caller with no identity", async () => {
-    (dataConnectionsTable.fetchById as jest.Mock).mockResolvedValue({ read_only: false });
-    const bot = { identity_id: null, account: { account_id: "alice--bot" } } as never;
-    expect(await deleteProduct(bot, "alice", "my-product", {})).toMatchObject({
-      error: "forbidden",
-    });
+  test("keeps the product when the proxy refuses the check", async () => {
+    isEmpty.mockRejectedValue(httpError(403));
+    await expect(deleteProduct(SESSION, "alice", "my-product")).rejects.toThrow("HTTP 403");
     expect(productsTable.delete).not.toHaveBeenCalled();
+  });
+
+  test("checks anonymously for a caller with no identity", async () => {
+    const bot = { identity_id: null, account: { account_id: "alice--bot" } } as never;
+    expect(await deleteProduct(bot, "alice", "my-product")).toMatchObject({ ok: true });
+    expect(getProxyCredentials).not.toHaveBeenCalled();
+    expect(getStorageClient).toHaveBeenCalledWith(null);
   });
 
   test("refuses whoever may not delete the product", async () => {
     allowExcept(Actions.DeleteRepository);
-    expect(await deleteProduct(SESSION, "alice", "my-product", {})).toMatchObject({
+    expect(await deleteProduct(SESSION, "alice", "my-product")).toMatchObject({
       error: "forbidden",
     });
-  });
-
-  test("refuses a preserve_data that isn't true or false", async () => {
-    expect(
-      await deleteProduct(SESSION, "alice", "my-product", { preserve_data: "1" })
-    ).toMatchObject({ error: "invalid" });
   });
 });

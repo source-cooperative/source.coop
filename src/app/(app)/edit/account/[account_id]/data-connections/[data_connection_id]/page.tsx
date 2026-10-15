@@ -15,7 +15,7 @@ import {
 } from "@/components/features/data-connections";
 import { ConnectionUsage } from "@/components/features/data-connections/ConnectionUsage";
 import { toEditableDataConnection } from "@/components/features/data-connections/redact";
-import { DangerZone } from "@/components/core";
+import { DangerZone, DangerZoneItem } from "@/components/core";
 import { accountDataConnectionsUrl } from "@/lib/urls";
 
 export const metadata: Metadata = {
@@ -71,20 +71,22 @@ export default async function AccountEditDataConnectionPage({
       </Box>
 
       {/* Below the usage list, which is what answers "can I delete this?" */}
-      <DangerZone
-        title="Delete this connection"
-        description="Removes the connection record and its stored credentials. The bucket and its objects are not touched."
-        action={
-          <DeleteConnectionControl
-            connectionId={dataConnection.data_connection_id}
-          />
-        }
-        note={
-          <DeleteConnectionNote
-            connectionId={dataConnection.data_connection_id}
-          />
-        }
-      />
+      <DangerZone>
+        <DangerZoneItem
+          title="Delete this connection"
+          description="Removes the connection record and its stored credentials. The bucket and its objects are not touched."
+          action={
+            <DeleteConnectionControl
+              connectionId={dataConnection.data_connection_id}
+            />
+          }
+          note={
+            <DeleteConnectionNote
+              connectionId={dataConnection.data_connection_id}
+            />
+          }
+        />
+      </DangerZone>
     </Box>
   );
 }
