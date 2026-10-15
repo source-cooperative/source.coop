@@ -100,9 +100,24 @@ describe("trusts", () => {
     expect(trusts.listByAccount).not.toHaveBeenCalled();
   });
 
+  const trust = {
+    account_id: "acme--sync",
+    issuer: "i",
+    subject: "s",
+    created_at: "2026-01-01T00:00:00.000Z",
+    created_by: "a-person",
+  };
+
+  it("lists trusts without the table's own key", async () => {
+    trusts.listByAccount.mockResolvedValue([{ ...trust, identity: "i s" } as never]);
+    expect(await listTrusts(session, "acme--sync")).toEqual({
+      ok: true,
+      value: { items: [trust], next_cursor: null },
+    });
+  });
+
   it("removes only a trust the account has, and returns it", async () => {
-    const trust = { account_id: "acme--sync", issuer: "i", subject: "s" };
-    trusts.listByAccount.mockResolvedValue([trust as never]);
+    trusts.listByAccount.mockResolvedValue([{ ...trust, identity: "i s" } as never]);
     expect(await removeTrust(session, "acme--sync", { issuer: "i", subject: "other" })).toMatchObject({
       error: "not_found",
     });

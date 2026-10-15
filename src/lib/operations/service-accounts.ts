@@ -275,8 +275,12 @@ export async function listTrusts(
 ): Promise<OperationResult<Page<AccountTrust>>> {
   const found = await managed(session, account_id);
   if (!found.ok) return found;
-  return ok({ items: await accountTrustsTable.listByAccount(account_id), next_cursor: null });
+  const trusts = await accountTrustsTable.listByAccount(account_id);
+  return ok({ items: trusts.map(publicTrust), next_cursor: null });
 }
+
+/** A trust as the API shows it, without the key the table stores it under. */
+const publicTrust = (trust: AccountTrust) => AccountTrustSchema.parse(trust);
 
 const trustGithub = (account_id: string, subject: string, created_by: string) =>
   accountTrustsTable.create({
@@ -306,7 +310,7 @@ export async function addGithubTrust(
       session!.account!.account_id
     );
     audit("addGithubTrust", session!, { account_id, subject: trust.subject });
-    return ok(trust);
+    return ok(publicTrust(trust));
   } catch (error) {
     if (error instanceof AlreadyTrustedError) return conflict("Already trusted");
     throw error;
@@ -330,5 +334,5 @@ export async function removeTrust(
   // Keyed by the account, so this can only ever touch its own trusts.
   await accountTrustsTable.delete(account_id, issuer, subject);
   audit("removeTrust", session!, { account_id, issuer, subject });
-  return ok(trust);
+  return ok(publicTrust(trust));
 }

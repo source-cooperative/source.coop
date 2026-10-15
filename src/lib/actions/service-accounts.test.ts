@@ -245,7 +245,9 @@ describe("lifecycle", () => {
   });
 
   it("removes a trust by the account's own key, so no other account's can be touched", async () => {
-    mocks.trusts.listByAccount.mockResolvedValue([{ issuer: "i", subject: "s" } as never]);
+    mocks.trusts.listByAccount.mockResolvedValue([
+      { account_id: "acme--nightly-sync", issuer: "i", subject: "s", created_at: "2026-01-01T00:00:00.000Z", created_by: "acme-owner" } as never,
+    ]);
     expect((await removeTrust(IDLE, form({ account_id: "acme--nightly-sync", issuer: "i", subject: "s" }))).success).toBe(true);
     expect(mocks.trusts.delete).toHaveBeenCalledWith("acme--nightly-sync", "i", "s");
   });
