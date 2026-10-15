@@ -1,9 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { StatusCodes } from "http-status-codes";
+import { z } from "zod";
 import { isAuthorized } from "@/lib/api/authz";
 import { getApiSession } from "@/lib/api/utils";
+import { withApiSession, toResponse } from "@/lib/api/handler";
+import { bearer, errors, json, registry } from "@/lib/api/openapi";
 import { accountsTable } from "@/lib/clients/database";
-import { Actions } from "@/types";
+import { deny, notFound, ok } from "@/lib/operations/result";
+import {
+  deleteServiceAccount,
+  updateServiceAccount,
+  UpdateServiceAccountSchema,
+} from "@/lib/operations/service-accounts";
+import { AccountSchema, Actions, isServiceAccount, ServiceAccountSchema } from "@/types";
+
+type Params = { account_id: string };
 
 /**
  * @openapi
@@ -108,63 +119,56 @@ export async function HEAD(
   }
 }
 
-/**
- * @openapi
- * /accounts/{account_id}:
- *   delete:
- *     tags: [Accounts]
- *     summary: Disable an account
- *     description: Disables a specific account.
- *       User accounts may not be disabled unless you are authenticated as a user with the `admin` flag.
- *       Organization accounts require that you are authenticated as an `owners` or `maintainers` member of the organization.
- *     parameters:
- *       - in: path
- *         name: account_id
- *         required: true
- *         schema:
- *           type: string
- *         description: The ID of the account to disable
- *     responses:
- *       200:
- *         description: Successfully disabled the account
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Account'
- *       401:
- *         description: Unauthorized - No valid session found or insufficient permissions
- *       404:
- *         description: Not Found - Account with the specified ID does not exist
- *       500:
- *         description: Internal server error
- */
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ account_id: string }> }
-) {
-  try {
-    const { account_id } = await params;
-    const session = await getApiSession(request);
-    const disableAccount = await accountsTable.fetchById(account_id);
-    if (!disableAccount) {
-      return NextResponse.json(
-        { error: `Account ${account_id} not found` },
-        { status: StatusCodes.NOT_FOUND }
-      );
-    }
-    if (!isAuthorized(session, disableAccount, Actions.DisableAccount)) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: StatusCodes.UNAUTHORIZED }
-      );
-    }
-    disableAccount.disabled = true;
-    const account = await accountsTable.update(disableAccount);
-    return NextResponse.json(account, { status: StatusCodes.OK });
-  } catch (err: any) {
-    return NextResponse.json(
-      { error: err.message || "Internal server error" },
-      { status: StatusCodes.INTERNAL_SERVER_ERROR }
-    );
+
+const params = z.object({
+  account_id: z.string().openapi({ description: "The account's ID." }),
+});
+
+registry.registerPath({
+  method: "patch",
+  path: "/accounts/{account_id}",
+  tags: ["Service accounts"],
+  summary: "Edit a service account",
+  description:
+    "Renames, disables or enables a service account. Its id, which software signs in as, stays. Open to whoever manages it.",
+  security: bearer,
+  request: {
+    params,
+    body: { content: { "application/json": { schema: UpdateServiceAccountSchema } } },
+  },
+  responses: {
+    200: json("The service account as edited.", ServiceAccountSchema),
+    ...errors(400, 401, 404),
+  },
+});
+
+export const PATCH = withApiSession<Params>(async ({ session, params, body }) =>
+  toResponse(await updateServiceAccount(session, params.account_id, body))
+);
+
+registry.registerPath({
+  method: "delete",
+  path: "/accounts/{account_id}",
+  tags: ["Accounts", "Service accounts"],
+  summary: "Delete a service account, or disable any other account",
+  description:
+    "A service account is deleted, with every grant it held and every way it could sign in, by whoever manages it. Any other account is disabled instead: an organization by its owners and maintainers, a person only by an admin.",
+  security: bearer,
+  request: { params },
+  responses: {
+    200: json("The service account as it was, or the account as disabled.", AccountSchema),
+    ...errors(401, 403, 404),
+  },
+});
+
+export const DELETE = withApiSession<Params>(async ({ session, params }) => {
+  const account = params.account_id && (await accountsTable.fetchById(params.account_id));
+  if (!account) return toResponse(notFound(`Account ${params.account_id} not found`));
+  if (isServiceAccount(account)) {
+    return toResponse(await deleteServiceAccount(session, account.account_id));
   }
-}
+  if (!isAuthorized(session, account, Actions.DisableAccount)) {
+    return toResponse(deny(session, "You may not disable this account"));
+  }
+  return toResponse(ok(await accountsTable.update({ ...account, disabled: true })));
+});

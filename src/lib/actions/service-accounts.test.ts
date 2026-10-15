@@ -13,7 +13,7 @@ import {
   membershipsTable,
   productsTable,
   serviceAccountKeysTable,
-} from "../clients";
+} from "@/lib/clients/database";
 import { getPageSession } from "../api/utils";
 import { redirect } from "next/navigation";
 import { canManageAccountServiceAccounts } from "../api/authz";
@@ -29,25 +29,29 @@ import {
   type UserSession,
 } from "@/types";
 
-jest.mock("../clients", () => ({
+jest.mock("@/lib/clients/database", () => ({
   accountsTable: { fetchById: jest.fn(), create: jest.fn(), update: jest.fn(), delete: jest.fn() },
   membershipsTable: {
     create: jest.fn(),
     listByUser: jest.fn(),
+    listByAccount: jest.fn(),
     delete: jest.fn(),
     fetchById: jest.fn(),
     update: jest.fn(),
   },
   productsTable: { fetchById: jest.fn() },
-  accountTrustsTable: { create: jest.fn(), delete: jest.fn() },
+  accountTrustsTable: { create: jest.fn(), delete: jest.fn(), listByAccount: jest.fn() },
   serviceAccountKeysTable: { create: jest.fn() },
 }));
 jest.mock("../api/utils", () => ({ getPageSession: jest.fn() }));
-jest.mock("../api/authz", () => ({ canManageAccountServiceAccounts: jest.fn() }));
+jest.mock("../api/authz", () => ({
+  canManageAccountServiceAccounts: jest.fn(),
+  // Product grants go through the membership operations, which ask this.
+  isAuthorized: jest.fn(() => true),
+}));
 jest.mock("@/lib/accounts/service-accounts", () => ({
+  ...jest.requireActual("@/lib/accounts/service-accounts"),
   managedServiceAccount: jest.fn(),
-  serviceAccountGrantProblem: jest.requireActual("@/lib/accounts/service-accounts")
-    .serviceAccountGrantProblem,
 }));
 jest.mock("next/cache", () => ({ revalidatePath: jest.fn() }));
 jest.mock("next/navigation", () => ({ redirect: jest.fn() }));
@@ -234,6 +238,7 @@ describe("lifecycle", () => {
   });
 
   it("removes a trust by the account's own key, so no other account's can be touched", async () => {
+    mocks.trusts.listByAccount.mockResolvedValue([{ issuer: "i", subject: "s" } as never]);
     expect((await removeTrust(IDLE, form({ account_id: "acme--nightly-sync", issuer: "i", subject: "s" }))).success).toBe(true);
     expect(mocks.trusts.delete).toHaveBeenCalledWith("acme--nightly-sync", "i", "s");
   });
@@ -284,6 +289,13 @@ describe("setProductAccess", () => {
   beforeEach(() => {
     mocks.managed.mockResolvedValue(bot as never);
     mocks.memberships.listByUser.mockResolvedValue([grant as never]);
+    mocks.memberships.listByAccount.mockResolvedValue([]);
+    mocks.memberships.fetchById.mockResolvedValue(grant as never);
+    mocks.memberships.update.mockImplementation(async (m) => m);
+    mocks.memberships.create.mockImplementation(async (m) => m);
+    mocks.accounts.fetchById.mockImplementation(async (id) =>
+      id === "acme" ? org : id === "acme--nightly-sync" ? bot : null
+    );
   });
 
   it("grants a product it does not reach, as a member of the owner", async () => {

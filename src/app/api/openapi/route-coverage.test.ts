@@ -10,7 +10,6 @@ jest.mock("@/lib/clients/database", () => ({}));
 // The endpoints not yet in the reference. Each API sub-issue of #588 removes
 // its own; adding to this list needs a reason in the PR.
 const UNREGISTERED = new Set([
-  "DELETE /accounts/{account_id}",
   "DELETE /data-connections/{data_connection_id}",
   "GET /accounts/{account_id}",
   "GET /accounts/{account_id}/flags",
