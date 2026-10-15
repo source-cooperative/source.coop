@@ -98,7 +98,7 @@ export default async function DetailsPage({ params }: PageProps) {
               description={
                 connection?.read_only
                   ? "Permanent. Removes the product record and its memberships. Its objects are on a read-only connection, so they stay where they are."
-                  : "Permanent. Removes the product record and its memberships. A product that still holds objects can't be deleted: delete its objects first."
+                  : "Permanent. Removes the product record and its memberships."
               }
               action={
                 <DeleteProductModal

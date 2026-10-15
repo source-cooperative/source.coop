@@ -56,10 +56,6 @@ export function DeleteProductModal({
                 <Text size="2">Remove all of its memberships</Text>
               </li>
             </ul>
-            <Text as="p" size="2" mt="2">
-              A product that still holds objects can&apos;t be deleted: delete
-              its objects first.
-            </Text>
             <Text as="p" size="2" weight="medium" color="red" mt="2">
               This cannot be undone.
             </Text>

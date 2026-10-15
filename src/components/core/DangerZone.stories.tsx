@@ -78,7 +78,7 @@ export const SeveralActions: Story = {
         />
         <DangerZoneItem
           title="Delete this product"
-          description="Permanently removes the product and its memberships. A product that still holds objects can't be deleted."
+          description="Permanently removes the product and its memberships."
           action={
             <Button size="2" color="red" variant="outline">
               Delete product
