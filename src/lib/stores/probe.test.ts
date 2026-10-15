@@ -241,7 +241,7 @@ describe("probeStore — OME-NGFF detection", () => {
     expect(r).toMatchObject({ renderable: true, format: "ome-ngff" });
   });
 
-  it("detects OME-NGFF via channel axis in v3 zarr.json attributes", async () => {
+  it("detects OME-NGFF via channel axis in v3 zarr.json attributes (v0.4 style)", async () => {
     const s3 = fakeS3({
       "o.zarr/zarr.json": json({
         zarr_format: 3,
@@ -253,6 +253,41 @@ describe("probeStore — OME-NGFF detection", () => {
         attributes: { multiscales: [{ axes: channelAxes }] },
       }),
     });
+    const r = await probeStore({ ...base, s3, storePath: "o.zarr", extension: "zarr" });
+    expect(r).toMatchObject({ renderable: true, format: "ome-ngff" });
+  });
+
+  it("detects OME-NGFF via the 'ome' namespace key in v3 zarr.json attributes (v0.5+)", async () => {
+    // Spatial-only annotation volume — no channel axis — but the 'ome' namespace
+    // key identifies it as OME-NGFF regardless.
+    const spatialAxes = [
+      { name: "z", type: "space", unit: "millimeter" },
+      { name: "y", type: "space", unit: "millimeter" },
+      { name: "x", type: "space", unit: "millimeter" },
+    ];
+    const s3 = fakeS3(
+      {
+        "o.zarr/zarr.json": json({
+          zarr_format: 3,
+          node_type: "group",
+          attributes: {
+            ome: {
+              version: "0.6",
+              multiscales: [{ datasets: [{ path: "s0" }], axes: spatialAxes }],
+            },
+          },
+        }),
+        "o.zarr/s0/zarr.json": json({
+          zarr_format: 3,
+          node_type: "array",
+          shape: [100, 200, 200],
+          data_type: "uint32",
+          chunk_grid: { name: "regular", configuration: { chunk_shape: [32, 64, 64] } },
+          chunk_key_encoding: { name: "default", configuration: { separator: "/" } },
+        }),
+      },
+      { "prod/o.zarr/": ["prod/o.zarr/s0/"] },
+    );
     const r = await probeStore({ ...base, s3, storePath: "o.zarr", extension: "zarr" });
     expect(r).toMatchObject({ renderable: true, format: "ome-ngff" });
   });

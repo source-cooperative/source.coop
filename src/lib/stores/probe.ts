@@ -218,7 +218,7 @@ async function finishZarr(
     ? rootAttrs
     : format === "zarr2" ? await getJson(io, ".zattrs") : null;
   const finalFormat: StoreFormat =
-    isObject(attrs) && hasChannelAxis(attrs) ? "ome-ngff" : format;
+    isObject(attrs) && isOmeNgff(attrs) ? "ome-ngff" : format;
   return { renderable: true, format: finalFormat, chunkCanary };
 }
 
@@ -412,12 +412,19 @@ function asObject(v: unknown): Record<string, unknown> | null {
 }
 
 /**
- * OME-NGFF stores declare a channel axis with `type: "channel"` (or the legacy
- * short name `"c"`) in `multiscales[0].axes`. Geospatial zarr stores also use
- * `multiscales` but only have spatial/temporal axes, so this is a reliable
- * discriminator between the two conventions.
+ * Returns true when the store's root attributes look like OME-NGFF rather than
+ * a geospatial zarr store. Two conventions are handled:
+ *
+ * - v0.5+: the `ome` namespace key is present with a `multiscales` array. The
+ *   key is OME-specific and not used by geospatial stores, so its presence alone
+ *   is a reliable signal.
+ * - v0.4 and earlier: `multiscales` sits at the top level (shared with some
+ *   geospatial conventions). A channel axis (`type: "channel"` or name `"c"`)
+ *   distinguishes it from spatial-only geospatial multiscales.
  */
-function hasChannelAxis(attrs: Record<string, unknown>): boolean {
+function isOmeNgff(attrs: Record<string, unknown>): boolean {
+  const ome = asObject(attrs.ome);
+  if (ome && Array.isArray(ome.multiscales)) return true;
   const multiscales = attrs.multiscales;
   if (!Array.isArray(multiscales) || multiscales.length === 0) return false;
   const ms = asObject(multiscales[0]);
