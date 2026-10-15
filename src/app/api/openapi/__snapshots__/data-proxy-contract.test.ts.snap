@@ -1,0 +1,1452 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`the endpoints the data proxy calls GET /products/{account_id} keeps its request and responses 1`] = `
+{
+  "ok": {
+    "application/json": {
+      "schema": {
+        "properties": {
+          "items": {
+            "items": {
+              "properties": {
+                "account": {
+                  "discriminator": {
+                    "mapping": {
+                      "individual": "#/components/schemas/IndividualAccount",
+                      "organization": "#/components/schemas/OrganizationalAccount",
+                      "service": "#/components/schemas/ServiceAccount",
+                    },
+                    "propertyName": "type",
+                  },
+                  "oneOf": [
+                    {
+                      "properties": {
+                        "account_id": {
+                          "maxLength": 40,
+                          "minLength": 3,
+                          "pattern": "^[a-z0-9](?:(?!--)[a-z0-9-])*[a-z0-9]$",
+                          "type": "string",
+                        },
+                        "created_at": {
+                          "format": "date-time",
+                          "type": "string",
+                        },
+                        "disabled": {
+                          "type": "boolean",
+                        },
+                        "emails": {
+                          "items": {
+                            "properties": {
+                              "added_at": {
+                                "format": "date-time",
+                                "type": "string",
+                              },
+                              "address": {
+                                "format": "email",
+                                "type": "string",
+                              },
+                              "is_primary": {
+                                "type": "boolean",
+                              },
+                              "verified": {
+                                "type": "boolean",
+                              },
+                              "verified_at": {
+                                "format": "date-time",
+                                "type": "string",
+                              },
+                            },
+                            "required": [
+                              "address",
+                              "verified",
+                              "is_primary",
+                              "added_at",
+                            ],
+                            "type": "object",
+                          },
+                          "type": "array",
+                        },
+                        "flags": {
+                          "items": {
+                            "enum": [
+                              "admin",
+                              "create_repositories",
+                              "create_organizations",
+                              "create_data_connections",
+                              "create_service_accounts",
+                            ],
+                            "type": "string",
+                          },
+                          "type": "array",
+                        },
+                        "identity_id": {
+                          "type": "string",
+                        },
+                        "metadata_private": {
+                          "additionalProperties": {
+                            "nullable": true,
+                          },
+                          "type": "object",
+                        },
+                        "metadata_public": {
+                          "properties": {
+                            "bio": {
+                              "maxLength": 1024,
+                              "nullable": true,
+                              "type": "string",
+                            },
+                            "domains": {
+                              "items": {
+                                "properties": {
+                                  "created_at": {
+                                    "format": "date-time",
+                                    "type": "string",
+                                  },
+                                  "domain": {
+                                    "type": "string",
+                                  },
+                                  "expires_at": {
+                                    "format": "date-time",
+                                    "type": "string",
+                                  },
+                                  "status": {
+                                    "enum": [
+                                      "unverified",
+                                      "pending",
+                                      "verified",
+                                    ],
+                                    "type": "string",
+                                  },
+                                  "verification_method": {
+                                    "enum": [
+                                      "dns",
+                                      "html",
+                                      "file",
+                                    ],
+                                    "type": "string",
+                                  },
+                                  "verification_token": {
+                                    "type": "string",
+                                  },
+                                  "verified_at": {
+                                    "format": "date-time",
+                                    "type": "string",
+                                  },
+                                },
+                                "required": [
+                                  "domain",
+                                  "status",
+                                  "created_at",
+                                ],
+                                "type": "object",
+                              },
+                              "type": "array",
+                            },
+                            "location": {
+                              "maxLength": 128,
+                              "nullable": true,
+                              "type": "string",
+                            },
+                            "orcid": {
+                              "type": "string",
+                            },
+                            "profile_image": {
+                              "format": "uri",
+                              "type": "string",
+                            },
+                          },
+                          "type": "object",
+                        },
+                        "name": {
+                          "type": "string",
+                        },
+                        "type": {
+                          "enum": [
+                            "individual",
+                          ],
+                          "type": "string",
+                        },
+                        "updated_at": {
+                          "format": "date-time",
+                          "type": "string",
+                        },
+                      },
+                      "required": [
+                        "account_id",
+                        "type",
+                        "name",
+                        "created_at",
+                        "updated_at",
+                        "disabled",
+                        "flags",
+                        "identity_id",
+                        "metadata_public",
+                      ],
+                      "type": "object",
+                    },
+                    {
+                      "properties": {
+                        "account_id": {
+                          "maxLength": 40,
+                          "minLength": 3,
+                          "pattern": "^[a-z0-9](?:(?!--)[a-z0-9-])*[a-z0-9]$",
+                          "type": "string",
+                        },
+                        "created_at": {
+                          "format": "date-time",
+                          "type": "string",
+                        },
+                        "disabled": {
+                          "type": "boolean",
+                        },
+                        "emails": {
+                          "items": {
+                            "properties": {
+                              "added_at": {
+                                "format": "date-time",
+                                "type": "string",
+                              },
+                              "address": {
+                                "format": "email",
+                                "type": "string",
+                              },
+                              "is_primary": {
+                                "type": "boolean",
+                              },
+                              "verified": {
+                                "type": "boolean",
+                              },
+                              "verified_at": {
+                                "format": "date-time",
+                                "type": "string",
+                              },
+                            },
+                            "required": [
+                              "address",
+                              "verified",
+                              "is_primary",
+                              "added_at",
+                            ],
+                            "type": "object",
+                          },
+                          "type": "array",
+                        },
+                        "flags": {
+                          "items": {
+                            "enum": [
+                              "admin",
+                              "create_repositories",
+                              "create_organizations",
+                              "create_data_connections",
+                              "create_service_accounts",
+                            ],
+                            "type": "string",
+                          },
+                          "type": "array",
+                        },
+                        "identity_id": {
+                          "not": {},
+                          "type": "string",
+                        },
+                        "metadata_private": {
+                          "additionalProperties": {
+                            "nullable": true,
+                          },
+                          "type": "object",
+                        },
+                        "metadata_public": {
+                          "properties": {
+                            "bio": {
+                              "maxLength": 1024,
+                              "nullable": true,
+                              "type": "string",
+                            },
+                            "domains": {
+                              "items": {
+                                "properties": {
+                                  "created_at": {
+                                    "format": "date-time",
+                                    "type": "string",
+                                  },
+                                  "domain": {
+                                    "type": "string",
+                                  },
+                                  "expires_at": {
+                                    "format": "date-time",
+                                    "type": "string",
+                                  },
+                                  "status": {
+                                    "enum": [
+                                      "unverified",
+                                      "pending",
+                                      "verified",
+                                    ],
+                                    "type": "string",
+                                  },
+                                  "verification_method": {
+                                    "enum": [
+                                      "dns",
+                                      "html",
+                                      "file",
+                                    ],
+                                    "type": "string",
+                                  },
+                                  "verification_token": {
+                                    "type": "string",
+                                  },
+                                  "verified_at": {
+                                    "format": "date-time",
+                                    "type": "string",
+                                  },
+                                },
+                                "required": [
+                                  "domain",
+                                  "status",
+                                  "created_at",
+                                ],
+                                "type": "object",
+                              },
+                              "type": "array",
+                            },
+                            "location": {
+                              "maxLength": 128,
+                              "nullable": true,
+                              "type": "string",
+                            },
+                            "profile_image": {
+                              "format": "uri",
+                              "type": "string",
+                            },
+                            "ror_id": {
+                              "type": "string",
+                            },
+                          },
+                          "type": "object",
+                        },
+                        "name": {
+                          "type": "string",
+                        },
+                        "type": {
+                          "enum": [
+                            "organization",
+                          ],
+                          "type": "string",
+                        },
+                        "updated_at": {
+                          "format": "date-time",
+                          "type": "string",
+                        },
+                      },
+                      "required": [
+                        "account_id",
+                        "type",
+                        "name",
+                        "created_at",
+                        "updated_at",
+                        "disabled",
+                        "flags",
+                        "metadata_public",
+                      ],
+                      "type": "object",
+                    },
+                    {
+                      "properties": {
+                        "account_id": {
+                          "maxLength": 82,
+                          "pattern": "^[a-z0-9](?:(?!--)[a-z0-9-])*[a-z0-9]--[a-z0-9](?:(?!--)[a-z0-9-])*[a-z0-9]$",
+                          "type": "string",
+                        },
+                        "created_at": {
+                          "format": "date-time",
+                          "type": "string",
+                        },
+                        "disabled": {
+                          "type": "boolean",
+                        },
+                        "emails": {
+                          "items": {
+                            "properties": {
+                              "added_at": {
+                                "format": "date-time",
+                                "type": "string",
+                              },
+                              "address": {
+                                "format": "email",
+                                "type": "string",
+                              },
+                              "is_primary": {
+                                "type": "boolean",
+                              },
+                              "verified": {
+                                "type": "boolean",
+                              },
+                              "verified_at": {
+                                "format": "date-time",
+                                "type": "string",
+                              },
+                            },
+                            "required": [
+                              "address",
+                              "verified",
+                              "is_primary",
+                              "added_at",
+                            ],
+                            "type": "object",
+                          },
+                          "type": "array",
+                        },
+                        "flags": {
+                          "items": {
+                            "enum": [
+                              "admin",
+                              "create_repositories",
+                              "create_organizations",
+                              "create_data_connections",
+                              "create_service_accounts",
+                            ],
+                            "type": "string",
+                          },
+                          "type": "array",
+                        },
+                        "identity_id": {
+                          "not": {},
+                          "type": "string",
+                        },
+                        "metadata_private": {
+                          "additionalProperties": {
+                            "nullable": true,
+                          },
+                          "type": "object",
+                        },
+                        "metadata_public": {
+                          "properties": {
+                            "bio": {
+                              "maxLength": 1024,
+                              "nullable": true,
+                              "type": "string",
+                            },
+                            "domains": {
+                              "items": {
+                                "properties": {
+                                  "created_at": {
+                                    "format": "date-time",
+                                    "type": "string",
+                                  },
+                                  "domain": {
+                                    "type": "string",
+                                  },
+                                  "expires_at": {
+                                    "format": "date-time",
+                                    "type": "string",
+                                  },
+                                  "status": {
+                                    "enum": [
+                                      "unverified",
+                                      "pending",
+                                      "verified",
+                                    ],
+                                    "type": "string",
+                                  },
+                                  "verification_method": {
+                                    "enum": [
+                                      "dns",
+                                      "html",
+                                      "file",
+                                    ],
+                                    "type": "string",
+                                  },
+                                  "verification_token": {
+                                    "type": "string",
+                                  },
+                                  "verified_at": {
+                                    "format": "date-time",
+                                    "type": "string",
+                                  },
+                                },
+                                "required": [
+                                  "domain",
+                                  "status",
+                                  "created_at",
+                                ],
+                                "type": "object",
+                              },
+                              "type": "array",
+                            },
+                            "location": {
+                              "maxLength": 128,
+                              "nullable": true,
+                              "type": "string",
+                            },
+                            "profile_image": {
+                              "format": "uri",
+                              "type": "string",
+                            },
+                          },
+                          "type": "object",
+                        },
+                        "name": {
+                          "type": "string",
+                        },
+                        "owner_account_id": {
+                          "type": "string",
+                        },
+                        "type": {
+                          "enum": [
+                            "service",
+                          ],
+                          "type": "string",
+                        },
+                        "updated_at": {
+                          "format": "date-time",
+                          "type": "string",
+                        },
+                      },
+                      "required": [
+                        "account_id",
+                        "type",
+                        "name",
+                        "created_at",
+                        "updated_at",
+                        "disabled",
+                        "flags",
+                        "owner_account_id",
+                        "metadata_public",
+                      ],
+                      "type": "object",
+                    },
+                  ],
+                },
+                "account_id": {
+                  "type": "string",
+                },
+                "created_at": {
+                  "type": "string",
+                },
+                "disabled": {
+                  "type": "boolean",
+                },
+                "featured": {
+                  "type": "number",
+                },
+                "metadata": {
+                  "properties": {
+                    "doi": {
+                      "pattern": "^10\\.\\d{4,9}\\/[-._;()/:A-Za-z0-9]+$",
+                      "type": "string",
+                    },
+                    "mirrors": {
+                      "additionalProperties": {
+                        "properties": {
+                          "connection_id": {
+                            "type": "string",
+                          },
+                          "is_primary": {
+                            "type": "boolean",
+                          },
+                          "prefix": {
+                            "type": "string",
+                          },
+                        },
+                        "required": [
+                          "connection_id",
+                          "prefix",
+                          "is_primary",
+                        ],
+                        "type": "object",
+                      },
+                      "type": "object",
+                    },
+                    "primary_mirror": {
+                      "type": "string",
+                    },
+                    "tags": {
+                      "items": {
+                        "type": "string",
+                      },
+                      "type": "array",
+                    },
+                  },
+                  "required": [
+                    "mirrors",
+                    "primary_mirror",
+                  ],
+                  "type": "object",
+                },
+                "product_id": {
+                  "maxLength": 40,
+                  "minLength": 3,
+                  "pattern": "^[a-z0-9](?:(?!--)[a-z0-9-])*[a-z0-9]$",
+                  "type": "string",
+                },
+                "search_text": {
+                  "type": "string",
+                },
+                "title": {
+                  "type": "string",
+                },
+                "updated_at": {
+                  "type": "string",
+                },
+                "visibility": {
+                  "enum": [
+                    "public",
+                    "unlisted",
+                    "restricted",
+                  ],
+                  "type": "string",
+                },
+              },
+              "required": [
+                "product_id",
+                "account_id",
+                "title",
+                "description",
+                "created_at",
+                "updated_at",
+                "visibility",
+                "metadata",
+                "disabled",
+                "featured",
+              ],
+              "type": "object",
+            },
+            "type": "array",
+          },
+          "next_cursor": {
+            "nullable": true,
+            "type": "string",
+          },
+        },
+        "required": [
+          "items",
+          "next_cursor",
+        ],
+        "type": "object",
+      },
+    },
+  },
+  "parameters": [
+    {
+      "in": "path",
+      "name": "account_id",
+      "required": true,
+      "schema": {
+        "type": "string",
+      },
+    },
+    {
+      "in": "query",
+      "name": "cursor",
+      "required": false,
+      "schema": {
+        "type": "string",
+      },
+    },
+    {
+      "in": "query",
+      "name": "limit",
+      "required": false,
+      "schema": {
+        "default": 20,
+        "maximum": 100,
+        "minimum": 1,
+        "type": "integer",
+      },
+    },
+  ],
+  "requestBody": undefined,
+  "statuses": [
+    "200",
+    "400",
+    "404",
+  ],
+}
+`;
+
+exports[`the endpoints the data proxy calls GET /products/{account_id}/{product_id} keeps its request and responses 1`] = `
+{
+  "ok": {
+    "application/json": {
+      "schema": {
+        "properties": {
+          "account": {
+            "discriminator": {
+              "mapping": {
+                "individual": "#/components/schemas/IndividualAccount",
+                "organization": "#/components/schemas/OrganizationalAccount",
+                "service": "#/components/schemas/ServiceAccount",
+              },
+              "propertyName": "type",
+            },
+            "oneOf": [
+              {
+                "properties": {
+                  "account_id": {
+                    "maxLength": 40,
+                    "minLength": 3,
+                    "pattern": "^[a-z0-9](?:(?!--)[a-z0-9-])*[a-z0-9]$",
+                    "type": "string",
+                  },
+                  "created_at": {
+                    "format": "date-time",
+                    "type": "string",
+                  },
+                  "disabled": {
+                    "type": "boolean",
+                  },
+                  "emails": {
+                    "items": {
+                      "properties": {
+                        "added_at": {
+                          "format": "date-time",
+                          "type": "string",
+                        },
+                        "address": {
+                          "format": "email",
+                          "type": "string",
+                        },
+                        "is_primary": {
+                          "type": "boolean",
+                        },
+                        "verified": {
+                          "type": "boolean",
+                        },
+                        "verified_at": {
+                          "format": "date-time",
+                          "type": "string",
+                        },
+                      },
+                      "required": [
+                        "address",
+                        "verified",
+                        "is_primary",
+                        "added_at",
+                      ],
+                      "type": "object",
+                    },
+                    "type": "array",
+                  },
+                  "flags": {
+                    "items": {
+                      "enum": [
+                        "admin",
+                        "create_repositories",
+                        "create_organizations",
+                        "create_data_connections",
+                        "create_service_accounts",
+                      ],
+                      "type": "string",
+                    },
+                    "type": "array",
+                  },
+                  "identity_id": {
+                    "type": "string",
+                  },
+                  "metadata_private": {
+                    "additionalProperties": {
+                      "nullable": true,
+                    },
+                    "type": "object",
+                  },
+                  "metadata_public": {
+                    "properties": {
+                      "bio": {
+                        "maxLength": 1024,
+                        "nullable": true,
+                        "type": "string",
+                      },
+                      "domains": {
+                        "items": {
+                          "properties": {
+                            "created_at": {
+                              "format": "date-time",
+                              "type": "string",
+                            },
+                            "domain": {
+                              "type": "string",
+                            },
+                            "expires_at": {
+                              "format": "date-time",
+                              "type": "string",
+                            },
+                            "status": {
+                              "enum": [
+                                "unverified",
+                                "pending",
+                                "verified",
+                              ],
+                              "type": "string",
+                            },
+                            "verification_method": {
+                              "enum": [
+                                "dns",
+                                "html",
+                                "file",
+                              ],
+                              "type": "string",
+                            },
+                            "verification_token": {
+                              "type": "string",
+                            },
+                            "verified_at": {
+                              "format": "date-time",
+                              "type": "string",
+                            },
+                          },
+                          "required": [
+                            "domain",
+                            "status",
+                            "created_at",
+                          ],
+                          "type": "object",
+                        },
+                        "type": "array",
+                      },
+                      "location": {
+                        "maxLength": 128,
+                        "nullable": true,
+                        "type": "string",
+                      },
+                      "orcid": {
+                        "type": "string",
+                      },
+                      "profile_image": {
+                        "format": "uri",
+                        "type": "string",
+                      },
+                    },
+                    "type": "object",
+                  },
+                  "name": {
+                    "type": "string",
+                  },
+                  "type": {
+                    "enum": [
+                      "individual",
+                    ],
+                    "type": "string",
+                  },
+                  "updated_at": {
+                    "format": "date-time",
+                    "type": "string",
+                  },
+                },
+                "required": [
+                  "account_id",
+                  "type",
+                  "name",
+                  "created_at",
+                  "updated_at",
+                  "disabled",
+                  "flags",
+                  "identity_id",
+                  "metadata_public",
+                ],
+                "type": "object",
+              },
+              {
+                "properties": {
+                  "account_id": {
+                    "maxLength": 40,
+                    "minLength": 3,
+                    "pattern": "^[a-z0-9](?:(?!--)[a-z0-9-])*[a-z0-9]$",
+                    "type": "string",
+                  },
+                  "created_at": {
+                    "format": "date-time",
+                    "type": "string",
+                  },
+                  "disabled": {
+                    "type": "boolean",
+                  },
+                  "emails": {
+                    "items": {
+                      "properties": {
+                        "added_at": {
+                          "format": "date-time",
+                          "type": "string",
+                        },
+                        "address": {
+                          "format": "email",
+                          "type": "string",
+                        },
+                        "is_primary": {
+                          "type": "boolean",
+                        },
+                        "verified": {
+                          "type": "boolean",
+                        },
+                        "verified_at": {
+                          "format": "date-time",
+                          "type": "string",
+                        },
+                      },
+                      "required": [
+                        "address",
+                        "verified",
+                        "is_primary",
+                        "added_at",
+                      ],
+                      "type": "object",
+                    },
+                    "type": "array",
+                  },
+                  "flags": {
+                    "items": {
+                      "enum": [
+                        "admin",
+                        "create_repositories",
+                        "create_organizations",
+                        "create_data_connections",
+                        "create_service_accounts",
+                      ],
+                      "type": "string",
+                    },
+                    "type": "array",
+                  },
+                  "identity_id": {
+                    "not": {},
+                    "type": "string",
+                  },
+                  "metadata_private": {
+                    "additionalProperties": {
+                      "nullable": true,
+                    },
+                    "type": "object",
+                  },
+                  "metadata_public": {
+                    "properties": {
+                      "bio": {
+                        "maxLength": 1024,
+                        "nullable": true,
+                        "type": "string",
+                      },
+                      "domains": {
+                        "items": {
+                          "properties": {
+                            "created_at": {
+                              "format": "date-time",
+                              "type": "string",
+                            },
+                            "domain": {
+                              "type": "string",
+                            },
+                            "expires_at": {
+                              "format": "date-time",
+                              "type": "string",
+                            },
+                            "status": {
+                              "enum": [
+                                "unverified",
+                                "pending",
+                                "verified",
+                              ],
+                              "type": "string",
+                            },
+                            "verification_method": {
+                              "enum": [
+                                "dns",
+                                "html",
+                                "file",
+                              ],
+                              "type": "string",
+                            },
+                            "verification_token": {
+                              "type": "string",
+                            },
+                            "verified_at": {
+                              "format": "date-time",
+                              "type": "string",
+                            },
+                          },
+                          "required": [
+                            "domain",
+                            "status",
+                            "created_at",
+                          ],
+                          "type": "object",
+                        },
+                        "type": "array",
+                      },
+                      "location": {
+                        "maxLength": 128,
+                        "nullable": true,
+                        "type": "string",
+                      },
+                      "profile_image": {
+                        "format": "uri",
+                        "type": "string",
+                      },
+                      "ror_id": {
+                        "type": "string",
+                      },
+                    },
+                    "type": "object",
+                  },
+                  "name": {
+                    "type": "string",
+                  },
+                  "type": {
+                    "enum": [
+                      "organization",
+                    ],
+                    "type": "string",
+                  },
+                  "updated_at": {
+                    "format": "date-time",
+                    "type": "string",
+                  },
+                },
+                "required": [
+                  "account_id",
+                  "type",
+                  "name",
+                  "created_at",
+                  "updated_at",
+                  "disabled",
+                  "flags",
+                  "metadata_public",
+                ],
+                "type": "object",
+              },
+              {
+                "properties": {
+                  "account_id": {
+                    "maxLength": 82,
+                    "pattern": "^[a-z0-9](?:(?!--)[a-z0-9-])*[a-z0-9]--[a-z0-9](?:(?!--)[a-z0-9-])*[a-z0-9]$",
+                    "type": "string",
+                  },
+                  "created_at": {
+                    "format": "date-time",
+                    "type": "string",
+                  },
+                  "disabled": {
+                    "type": "boolean",
+                  },
+                  "emails": {
+                    "items": {
+                      "properties": {
+                        "added_at": {
+                          "format": "date-time",
+                          "type": "string",
+                        },
+                        "address": {
+                          "format": "email",
+                          "type": "string",
+                        },
+                        "is_primary": {
+                          "type": "boolean",
+                        },
+                        "verified": {
+                          "type": "boolean",
+                        },
+                        "verified_at": {
+                          "format": "date-time",
+                          "type": "string",
+                        },
+                      },
+                      "required": [
+                        "address",
+                        "verified",
+                        "is_primary",
+                        "added_at",
+                      ],
+                      "type": "object",
+                    },
+                    "type": "array",
+                  },
+                  "flags": {
+                    "items": {
+                      "enum": [
+                        "admin",
+                        "create_repositories",
+                        "create_organizations",
+                        "create_data_connections",
+                        "create_service_accounts",
+                      ],
+                      "type": "string",
+                    },
+                    "type": "array",
+                  },
+                  "identity_id": {
+                    "not": {},
+                    "type": "string",
+                  },
+                  "metadata_private": {
+                    "additionalProperties": {
+                      "nullable": true,
+                    },
+                    "type": "object",
+                  },
+                  "metadata_public": {
+                    "properties": {
+                      "bio": {
+                        "maxLength": 1024,
+                        "nullable": true,
+                        "type": "string",
+                      },
+                      "domains": {
+                        "items": {
+                          "properties": {
+                            "created_at": {
+                              "format": "date-time",
+                              "type": "string",
+                            },
+                            "domain": {
+                              "type": "string",
+                            },
+                            "expires_at": {
+                              "format": "date-time",
+                              "type": "string",
+                            },
+                            "status": {
+                              "enum": [
+                                "unverified",
+                                "pending",
+                                "verified",
+                              ],
+                              "type": "string",
+                            },
+                            "verification_method": {
+                              "enum": [
+                                "dns",
+                                "html",
+                                "file",
+                              ],
+                              "type": "string",
+                            },
+                            "verification_token": {
+                              "type": "string",
+                            },
+                            "verified_at": {
+                              "format": "date-time",
+                              "type": "string",
+                            },
+                          },
+                          "required": [
+                            "domain",
+                            "status",
+                            "created_at",
+                          ],
+                          "type": "object",
+                        },
+                        "type": "array",
+                      },
+                      "location": {
+                        "maxLength": 128,
+                        "nullable": true,
+                        "type": "string",
+                      },
+                      "profile_image": {
+                        "format": "uri",
+                        "type": "string",
+                      },
+                    },
+                    "type": "object",
+                  },
+                  "name": {
+                    "type": "string",
+                  },
+                  "owner_account_id": {
+                    "type": "string",
+                  },
+                  "type": {
+                    "enum": [
+                      "service",
+                    ],
+                    "type": "string",
+                  },
+                  "updated_at": {
+                    "format": "date-time",
+                    "type": "string",
+                  },
+                },
+                "required": [
+                  "account_id",
+                  "type",
+                  "name",
+                  "created_at",
+                  "updated_at",
+                  "disabled",
+                  "flags",
+                  "owner_account_id",
+                  "metadata_public",
+                ],
+                "type": "object",
+              },
+            ],
+          },
+          "account_id": {
+            "type": "string",
+          },
+          "created_at": {
+            "type": "string",
+          },
+          "disabled": {
+            "type": "boolean",
+          },
+          "featured": {
+            "type": "number",
+          },
+          "metadata": {
+            "properties": {
+              "doi": {
+                "pattern": "^10\\.\\d{4,9}\\/[-._;()/:A-Za-z0-9]+$",
+                "type": "string",
+              },
+              "mirrors": {
+                "additionalProperties": {
+                  "properties": {
+                    "connection_id": {
+                      "type": "string",
+                    },
+                    "is_primary": {
+                      "type": "boolean",
+                    },
+                    "prefix": {
+                      "type": "string",
+                    },
+                  },
+                  "required": [
+                    "connection_id",
+                    "prefix",
+                    "is_primary",
+                  ],
+                  "type": "object",
+                },
+                "type": "object",
+              },
+              "primary_mirror": {
+                "type": "string",
+              },
+              "tags": {
+                "items": {
+                  "type": "string",
+                },
+                "type": "array",
+              },
+            },
+            "required": [
+              "mirrors",
+              "primary_mirror",
+            ],
+            "type": "object",
+          },
+          "product_id": {
+            "maxLength": 40,
+            "minLength": 3,
+            "pattern": "^[a-z0-9](?:(?!--)[a-z0-9-])*[a-z0-9]$",
+            "type": "string",
+          },
+          "search_text": {
+            "type": "string",
+          },
+          "title": {
+            "type": "string",
+          },
+          "updated_at": {
+            "type": "string",
+          },
+          "visibility": {
+            "enum": [
+              "public",
+              "unlisted",
+              "restricted",
+            ],
+            "type": "string",
+          },
+        },
+        "required": [
+          "product_id",
+          "account_id",
+          "title",
+          "description",
+          "created_at",
+          "updated_at",
+          "visibility",
+          "metadata",
+          "disabled",
+          "featured",
+        ],
+        "type": "object",
+      },
+    },
+  },
+  "parameters": [
+    {
+      "in": "path",
+      "name": "account_id",
+      "required": true,
+      "schema": {
+        "type": "string",
+      },
+    },
+    {
+      "in": "path",
+      "name": "product_id",
+      "required": true,
+      "schema": {
+        "type": "string",
+      },
+    },
+  ],
+  "requestBody": undefined,
+  "statuses": [
+    "200",
+    "401",
+    "403",
+    "404",
+  ],
+}
+`;
+
+exports[`the endpoints the data proxy calls GET /products/{account_id}/{product_id}/permissions keeps its request and responses 1`] = `
+{
+  "ok": {
+    "application/json": {
+      "schema": {
+        "items": {
+          "enum": [
+            "write",
+            "read",
+          ],
+          "type": "string",
+        },
+        "type": "array",
+      },
+    },
+  },
+  "parameters": [
+    {
+      "in": "path",
+      "name": "account_id",
+      "required": true,
+      "schema": {
+        "type": "string",
+      },
+    },
+    {
+      "in": "path",
+      "name": "product_id",
+      "required": true,
+      "schema": {
+        "type": "string",
+      },
+    },
+  ],
+  "requestBody": undefined,
+  "statuses": [
+    "200",
+    "404",
+  ],
+}
+`;
+
+exports[`the endpoints the data proxy calls POST /accounts/{account_id}/trusts/exchanges keeps its request and responses 1`] = `
+{
+  "ok": {
+    "application/json": {
+      "schema": {
+        "properties": {
+          "trusted": {
+            "type": "boolean",
+          },
+        },
+        "required": [
+          "trusted",
+        ],
+        "type": "object",
+      },
+    },
+  },
+  "parameters": [
+    {
+      "in": "path",
+      "name": "account_id",
+      "required": true,
+      "schema": {
+        "type": "string",
+      },
+    },
+  ],
+  "requestBody": {
+    "content": {
+      "application/json": {
+        "schema": {
+          "properties": {
+            "issuer": {
+              "minLength": 1,
+              "type": "string",
+            },
+            "subject": {
+              "minLength": 1,
+              "type": "string",
+            },
+          },
+          "required": [
+            "issuer",
+            "subject",
+          ],
+          "type": "object",
+        },
+      },
+    },
+  },
+  "statuses": [
+    "200",
+    "400",
+    "401",
+    "403",
+  ],
+}
+`;
+
+exports[`the endpoints the data proxy calls POST /service-account-keys/exchanges keeps its request and responses 1`] = `
+{
+  "ok": {
+    "application/json": {
+      "schema": {
+        "properties": {
+          "account_id": {
+            "type": "string",
+          },
+          "active": {
+            "type": "boolean",
+          },
+          "key_id": {
+            "type": "string",
+          },
+        },
+        "required": [
+          "active",
+        ],
+        "type": "object",
+      },
+    },
+  },
+  "parameters": undefined,
+  "requestBody": {
+    "content": {
+      "application/json": {
+        "schema": {
+          "properties": {
+            "key_hash": {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string",
+            },
+          },
+          "required": [
+            "key_hash",
+          ],
+          "type": "object",
+        },
+      },
+    },
+  },
+  "statuses": [
+    "200",
+    "400",
+    "401",
+  ],
+}
+`;

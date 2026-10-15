@@ -1,6 +1,13 @@
 import { ProductSchema } from "@/types";
 import { withApiSession, toResponse } from "@/lib/api/handler";
-import { bearer, errors, json, productParams, registry } from "@/lib/api/openapi";
+import {
+  bearer,
+  errors,
+  forDataProxy,
+  json,
+  productParams,
+  registry,
+} from "@/lib/api/openapi";
 import {
   deleteProduct,
   DeleteProductQuerySchema,
@@ -18,8 +25,9 @@ registry.registerPath({
   path: "/products/{account_id}/{product_id}",
   tags: ["Products"],
   summary: "Get a product",
-  description:
-    "Anyone may read a public or unlisted product; a restricted one needs a member's credentials. A deactivated product is not found, except by its owners and maintainers.",
+  ...forDataProxy(
+    "Anyone may read a public or unlisted product; a restricted one needs a member's credentials. A deactivated product is not found, except by its owners and maintainers."
+  ),
   request: { params },
   responses: {
     200: json("The product.", ProductSchema),
