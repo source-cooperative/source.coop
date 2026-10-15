@@ -36,16 +36,18 @@ function revalidate(owner_account_id: string, account_id: string) {
 
 const accountId = (formData: FormData) => String(formData.get("account_id") ?? "");
 
-/** An operation's result as action state, revalidating what it changed. */
-async function outcome(
+/**
+ * An operation's result as action state, revalidating what it changed. A
+ * service account's id starts with its owner's, up to the `--`.
+ */
+function outcome(
   formData: FormData,
   result: OperationResult<unknown>,
   message: string
-): Promise<ServiceAccountActionState> {
+): ServiceAccountActionState {
   if (!result.ok) return { message: result.message, success: false };
   const account_id = accountId(formData);
-  const account = await managedServiceAccount(await getPageSession(), account_id);
-  if (account) revalidate(account.owner_account_id, account_id);
+  revalidate(account_id.split("--")[0], account_id);
   return { message, success: true };
 }
 
