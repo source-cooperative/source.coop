@@ -25,7 +25,7 @@ import type { S3StorageClient } from "@/lib/storage/s3";
  * caller still shows the normal directory listing.
  */
 
-export type StoreFormat = "zarr2" | "zarr3" | "icechunk";
+export type StoreFormat = "zarr2" | "zarr3" | "icechunk" | "ome-ngff";
 
 export interface StoreProbe {
   renderable: boolean;
@@ -169,14 +169,17 @@ async function probeZarr(args: ProbeStoreArgs): Promise<StoreProbe> {
     ? findArrayInConsolidated(consolidated)
     : null;
   if (fromConsolidated) {
-    return finishZarr(io, "zarr2", fromConsolidated);
+    const meta = isObject(consolidated) && isObject(consolidated.metadata)
+      ? consolidated.metadata
+      : (isObject(consolidated) ? consolidated : null);
+    return finishZarr(io, "zarr2", fromConsolidated, meta ? (meta[".zattrs"] ?? null) : null);
   }
 
   // Tier 1/2b: Zarr v3 root.
   const rootV3 = await getJson(io, "zarr.json");
   if (rootV3 && isObject(rootV3) && rootV3.zarr_format === 3) {
     const hit = await findArrayV3(io, rootV3);
-    if (hit) return finishZarr(io, "zarr3", hit);
+    if (hit) return finishZarr(io, "zarr3", hit, asObject(rootV3.attributes));
     return { renderable: false, format: "zarr3", reason: "v3 store has no arrays" };
   }
 
@@ -203,9 +206,20 @@ async function finishZarr(
   io: Io,
   format: "zarr2" | "zarr3",
   hit: ArrayHit,
+  /**
+   * Root-level store attributes. Pass the already-fetched value (even `null`
+   * when absent) to avoid an extra request. Omit (`undefined`) for
+   * non-consolidated v2 stores — the function will then fetch `.zattrs`.
+   */
+  rootAttrs?: unknown,
 ): Promise<StoreProbe> {
   const chunkCanary = await zarrChunkCanary(io, hit);
-  return { renderable: true, format, chunkCanary };
+  const attrs = rootAttrs !== undefined
+    ? rootAttrs
+    : format === "zarr2" ? await getJson(io, ".zattrs") : null;
+  const finalFormat: StoreFormat =
+    isObject(attrs) && hasChannelAxis(attrs) ? "ome-ngff" : format;
+  return { renderable: true, format: finalFormat, chunkCanary };
 }
 
 function findArrayInConsolidated(consolidated: unknown): ArrayHit | null {
@@ -395,6 +409,25 @@ function asObject(v: unknown): Record<string, unknown> | null {
     }
   }
   return null;
+}
+
+/**
+ * OME-NGFF stores declare a channel axis with `type: "channel"` (or the legacy
+ * short name `"c"`) in `multiscales[0].axes`. Geospatial zarr stores also use
+ * `multiscales` but only have spatial/temporal axes, so this is a reliable
+ * discriminator between the two conventions.
+ */
+function hasChannelAxis(attrs: Record<string, unknown>): boolean {
+  const multiscales = attrs.multiscales;
+  if (!Array.isArray(multiscales) || multiscales.length === 0) return false;
+  const ms = asObject(multiscales[0]);
+  if (!ms) return false;
+  const axes = ms.axes;
+  if (!Array.isArray(axes)) return false;
+  return axes.some((axis) => {
+    const a = asObject(axis);
+    return !!a && (a.type === "channel" || a.name === "c");
+  });
 }
 
 const pick = (a: ProbeStoreArgs) => ({
