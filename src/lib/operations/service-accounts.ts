@@ -23,6 +23,7 @@ import {
   accountTrustsTable,
   membershipsTable,
   productsTable,
+  serviceAccountKeysTable,
 } from "@/lib/clients/database";
 import { AlreadyTrustedError } from "@/lib/clients/database/account-trusts";
 import { isConditionalCheckFailed } from "@/lib/clients/database/errors";
@@ -251,6 +252,13 @@ export async function deleteServiceAccount(
   if (!found.ok) return found;
   for (const membership of await membershipsTable.listByUser(account_id)) {
     await membershipsTable.delete(membership.membership_id);
+  }
+  // Revoked rather than left behind: the id can be taken again, and a key
+  // still live would sign in as whatever account takes it.
+  for (const key of await serviceAccountKeysTable.listByAccount(account_id)) {
+    if (!key.revoked_at) {
+      await serviceAccountKeysTable.revoke(key.key_hash, "owner", session!.account!.account_id);
+    }
   }
   // Its trusts go with the account row.
   await accountsTable.delete(account_id);

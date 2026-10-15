@@ -41,7 +41,7 @@ jest.mock("@/lib/clients/database", () => ({
   },
   productsTable: { fetchById: jest.fn() },
   accountTrustsTable: { create: jest.fn(), delete: jest.fn(), listByAccount: jest.fn() },
-  serviceAccountKeysTable: { create: jest.fn() },
+  serviceAccountKeysTable: { create: jest.fn(), listByAccount: jest.fn(), revoke: jest.fn() },
 }));
 jest.mock("../api/utils", () => ({ getPageSession: jest.fn() }));
 jest.mock("../api/authz", () => ({
@@ -213,14 +213,21 @@ describe("lifecycle", () => {
     mocks.managed.mockResolvedValue(bot as never);
   });
 
-  it("deletes grants, then the account (whose trusts go with it), and returns to the list", async () => {
+  it("deletes grants, revokes live keys, then deletes the account (whose trusts go with it), and returns to the list", async () => {
     mocks.memberships.listByUser.mockResolvedValue([
       { membership_id: "m1" } as never,
       { membership_id: "m2" } as never,
     ]);
+    (serviceAccountKeysTable.listByAccount as jest.Mock).mockResolvedValue([
+      { key_hash: "live" },
+      { key_hash: "gone", revoked_at: "2026-01-01T00:00:00.000Z" },
+    ]);
     await deleteServiceAccount(IDLE, form({ account_id: "acme--nightly-sync" }));
     expect(redirect).toHaveBeenCalledWith("/edit/account/acme/service-accounts");
     expect(mocks.memberships.delete).toHaveBeenCalledTimes(2);
+    // An id can be taken again; a key left live would sign in as its next holder.
+    expect(serviceAccountKeysTable.revoke).toHaveBeenCalledTimes(1);
+    expect(serviceAccountKeysTable.revoke).toHaveBeenCalledWith("live", "owner", "acme-owner");
     expect(mocks.accounts.delete).toHaveBeenCalledWith("acme--nightly-sync");
   });
 
