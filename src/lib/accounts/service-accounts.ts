@@ -13,7 +13,8 @@ export const SERVICE_ACCOUNT_ROLES = [MembershipRole.ReadData, MembershipRole.Wr
 /**
  * Why `account` may not hold `role` on `target`, or null if it may. Only a
  * service account is constrained: it reads or writes products its owner
- * holds, and nothing else. Every other account passes.
+ * holds, and nothing else, and takes no new access while it is disabled.
+ * Every other account passes.
  */
 export function serviceAccountGrantProblem(
   account: Account,
@@ -22,6 +23,10 @@ export function serviceAccountGrantProblem(
 ): string | null {
   if (!isServiceAccount(account)) {
     return null;
+  }
+  // Disabled means frozen: enabling it must not bring access granted meanwhile.
+  if (account.disabled) {
+    return "That service account is disabled";
   }
   if (!SERVICE_ACCOUNT_ROLES.includes(role)) {
     return "A service account can only be granted read_data or write_data";
