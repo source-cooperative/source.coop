@@ -375,13 +375,6 @@ describe("updateProduct", () => {
     expect(result.ok && result.value.disabled).toBe(disabled);
   });
 
-  test("refuses whoever may not edit the product before reading the body", async () => {
-    allowExcept(Actions.PutRepository);
-    expect(
-      await updateProduct(SESSION, "alice", "my-product", { visibility: "nope" })
-    ).toMatchObject({ error: "forbidden" });
-  });
-
   test("leaves a field given as undefined, as an empty form field is, as it is", async () => {
     await updateProduct(SESSION, "alice", "my-product", { description: undefined });
     expect((productsTable.update as jest.Mock).mock.calls[0][0].description).toBe(
@@ -390,7 +383,9 @@ describe("updateProduct", () => {
   });
 
   test("a product with no ID is not found, without asking DynamoDB", async () => {
-    expect(await updateProduct(SESSION, "alice", "", {})).toMatchObject({ error: "not_found" });
+    expect(
+      await updateProduct(SESSION, "alice", "", { visibility: "nope" })
+    ).toMatchObject({ error: "not_found" });
     expect(productsTable.fetchById).not.toHaveBeenCalled();
   });
 
@@ -430,11 +425,11 @@ describe("updateProduct", () => {
     });
   });
 
-  test("refuses whoever may not edit the product", async () => {
+  test("refuses whoever may not edit the product before reading the body", async () => {
     allowExcept(Actions.PutRepository);
-    expect(await updateProduct(SESSION, "alice", "my-product", {})).toMatchObject({
-      error: "forbidden",
-    });
+    expect(
+      await updateProduct(SESSION, "alice", "my-product", { visibility: "nope" })
+    ).toMatchObject({ error: "forbidden" });
   });
 
   test("refuses a field of the wrong type", async () => {
@@ -522,11 +517,11 @@ describe("deleteProduct", () => {
     expect(productsTable.delete).not.toHaveBeenCalled();
   });
 
-  test("refuses whoever may not delete the product", async () => {
-    allowExcept(Actions.DeleteRepository);
-    expect(await deleteProduct(SESSION, "alice", "my-product", {})).toMatchObject({
-      error: "forbidden",
+  test("a product with no ID is not found, without asking DynamoDB", async () => {
+    expect(await deleteProduct(SESSION, "alice", "", { preserve_data: "1" })).toMatchObject({
+      error: "not_found",
     });
+    expect(productsTable.fetchById).not.toHaveBeenCalled();
   });
 
   test("refuses whoever may not delete the product before reading the query", async () => {

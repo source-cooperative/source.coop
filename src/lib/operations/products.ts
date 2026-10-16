@@ -393,7 +393,9 @@ export async function deleteProduct(
   query: unknown
 ): Promise<OperationResult<Product>> {
   if (!session) return unauthenticated();
-  const product = await productsTable.fetchById(account_id, product_id);
+  // DynamoDB rejects an empty key outright.
+  const product =
+    account_id && product_id && (await productsTable.fetchById(account_id, product_id));
   if (!product) return notFound(`Product ${account_id}/${product_id} not found`);
   if (!isAuthorized(session, product, Actions.DeleteRepository)) {
     return refuse(session, product, "You may not delete this product");

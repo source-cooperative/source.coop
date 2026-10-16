@@ -303,6 +303,11 @@ describe("updateMembership", () => {
     expect(await updateMembership(session, "m-1", {})).toMatchObject({ error: "forbidden" });
   });
 
+  it("answers an unknown membership as not found before reading the body", async () => {
+    memberships.fetchById.mockResolvedValue(undefined);
+    expect(await updateMembership(session, "m-2", {})).toMatchObject({ error: "not_found" });
+  });
+
   it("requires a valid role", async () => {
     expect(await updateMembership(session, "m-1", {})).toMatchObject({ error: "invalid" });
     expect(await updateMembership(session, "m-1", { role: "members" })).toMatchObject({ error: "invalid" });
