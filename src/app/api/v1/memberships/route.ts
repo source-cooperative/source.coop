@@ -1,10 +1,9 @@
-import { z } from "zod";
-import { MembershipSchema } from "@/types";
 import { withApiSession, toResponse } from "@/lib/api/handler";
 import { bearer, errors, json, registry } from "@/lib/api/openapi";
 import {
   listMemberships,
   ListMembershipsQuerySchema,
+  MembershipPageSchema,
 } from "@/lib/operations/memberships";
 
 registry.registerPath({
@@ -17,7 +16,7 @@ registry.registerPath({
   security: bearer,
   request: { query: ListMembershipsQuerySchema },
   responses: {
-    200: json("The memberships.", z.array(MembershipSchema)),
+    200: json("The memberships, all on one page for now.", MembershipPageSchema),
     ...errors(400, 401),
   },
 });

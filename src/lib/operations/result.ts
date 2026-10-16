@@ -1,5 +1,8 @@
-import type { ZodError } from "zod";
+import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
+import { z, type ZodError, type ZodTypeAny } from "zod";
 import type { FormState } from "@/components/core/DynamicForm";
+
+extendZodWithOpenApi(z);
 
 /**
  * What an operation returns. Operations decide everything about whether a
@@ -24,6 +27,27 @@ export type OperationResult<T> =
     };
 
 export const ok = <T>(value: T): OperationResult<T> => ({ ok: true, value });
+
+/** What every list answers: a page of items, and where the next one starts. */
+export type Page<T> = { items: T[]; next_cursor: string | null };
+
+/** The schema of a `Page` of `item`, registered in the reference as `name`. */
+export const pageSchema = <T extends ZodTypeAny>(name: string, item: T) =>
+  z
+    .object({
+      items: z.array(item),
+      next_cursor: z
+        .string()
+        .nullable()
+        .openapi({ description: "Pass as `cursor` for the next page; null on the last." }),
+    })
+    .openapi(name);
+
+/**
+ * A list read whole, as its only page. The shape lets a client follow
+ * `next_cursor` now, so real pages can come later without breaking it.
+ */
+export const onePage = <T>(items: T[]): Page<T> => ({ items, next_cursor: null });
 
 const fail =
   (error: OperationError) =>

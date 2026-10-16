@@ -81,7 +81,7 @@ export async function getPendingInvitation(
     });
   if (!result?.ok) return null;
   return (
-    result.value.find(
+    result.value.items.find(
       (m) =>
         m.membership_account_id === membershipAccountId &&
         (repositoryId ? m.repository_id === repositoryId : !m.repository_id)

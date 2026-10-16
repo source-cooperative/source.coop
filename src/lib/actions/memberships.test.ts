@@ -83,7 +83,7 @@ describe("getPendingInvitation", () => {
   const toOrg = membership();
   const toProduct = membership({ membership_id: "m-2", repository_id: "a-product" });
 
-  beforeEach(() => operations.listMemberships.mockResolvedValue(ok([toOrg, toProduct])));
+  beforeEach(() => operations.listMemberships.mockResolvedValue(ok({ items: [toOrg, toProduct], next_cursor: null })));
 
   it("finds the invitation to an account, or to one of its products", async () => {
     expect(await getPendingInvitation("an-org")).toBe(toOrg);

@@ -29,7 +29,10 @@ import {
   invalid,
   notFound,
   ok,
+  onePage,
   OperationResult,
+  Page,
+  pageSchema,
   unauthenticated,
 } from "./result";
 
@@ -46,6 +49,8 @@ export const InviteMemberSchema = MembershipSchema.pick({
 export const UpdateMembershipSchema = MembershipSchema.pick({
   role: true,
 }).openapi("UpdateMembership");
+
+export const MembershipPageSchema = pageSchema("MembershipPage", MembershipSchema);
 
 // Revoked memberships aren't offered: GetMembership hides them from everyone
 // but admins, the member included.
@@ -152,7 +157,7 @@ export async function inviteMember(
 export async function listMembers(
   session: UserSession | null,
   scope: { account_id: string; product_id?: string }
-): Promise<OperationResult<Membership[]>> {
+): Promise<OperationResult<Page<Membership>>> {
   const { account_id, product_id } = scope;
   if (product_id) {
     const product = await productsTable.fetchById(account_id, product_id);
@@ -169,7 +174,7 @@ export async function listMembers(
   }
   const memberships = await membershipsTable.listByAccount(account_id, product_id);
   return ok(
-    memberships.filter((m) => isAuthorized(session, m, Actions.GetMembership))
+    onePage(memberships.filter((m) => isAuthorized(session, m, Actions.GetMembership)))
   );
 }
 
@@ -177,19 +182,21 @@ export async function listMembers(
 export async function listMemberships(
   session: UserSession | null,
   query: unknown
-): Promise<OperationResult<Membership[]>> {
+): Promise<OperationResult<Page<Membership>>> {
   if (!session) return unauthenticated();
   const parsed = ListMembershipsQuerySchema.safeParse(query);
   if (!parsed.success) return fromZodError(parsed.error);
-  if (!session.account) return ok([]);
+  if (!session.account) return ok(onePage([]));
   const memberships = await membershipsTable.listByUser(
     session.account.account_id
   );
   return ok(
-    memberships.filter(
-      (m) =>
-        (!parsed.data.state || m.state === parsed.data.state) &&
-        isAuthorized(session, m, Actions.GetMembership)
+    onePage(
+      memberships.filter(
+        (m) =>
+          (!parsed.data.state || m.state === parsed.data.state) &&
+          isAuthorized(session, m, Actions.GetMembership)
+      )
     )
   );
 }
