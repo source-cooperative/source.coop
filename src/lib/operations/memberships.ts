@@ -309,14 +309,12 @@ export async function updateMembership(
   if (!session) return unauthenticated();
   const parsed = UpdateMembershipSchema.safeParse(input);
   if (!parsed.success) return fromZodError(parsed.error);
-  const { state } = parsed.data;
-  if (state) {
+  const { role, state } = parsed.data;
+  if (!role) {
     const change =
-      state === MembershipState.Member ? acceptInvitation : revokeMembership;
+      state === MembershipState.Revoked ? revokeMembership : acceptInvitation;
     return change(session, membership_id);
   }
-  // The schema's refine leaves `role` set whenever `state` isn't.
-  const role = parsed.data.role!;
   return changeMembership(
     session,
     membership_id,
