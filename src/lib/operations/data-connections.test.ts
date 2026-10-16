@@ -20,6 +20,7 @@ import {
   createDataConnection,
   deleteDataConnection,
   getDataConnection,
+  listAllDataConnections,
   listDataConnections,
   updateDataConnection,
 } from "./data-connections";
@@ -27,7 +28,7 @@ import {
 jest.mock("@/lib/clients/database", () => ({
   dataConnectionsTable: {
     fetchById: jest.fn(),
-    listAll: jest.fn(),
+    listPage: jest.fn(),
     create: jest.fn(async (c) => c),
     update: jest.fn(async (c) => c),
     delete: jest.fn(),
@@ -75,18 +76,42 @@ beforeEach(() => {
   jest.clearAllMocks();
   (isAuthorized as jest.Mock).mockReturnValue(true);
   (isAdmin as jest.Mock).mockReturnValue(false);
-  (dataConnectionsTable.listAll as jest.Mock).mockResolvedValue([shared, acme, other]);
+  (dataConnectionsTable.listPage as jest.Mock).mockImplementation(scan([shared, acme, other]));
   (accountsTable.fetchById as jest.Mock).mockImplementation(async (id) => ({ account_id: id }));
   (canManageAccountDataConnections as jest.Mock).mockImplementation(managesAcme);
   (productsTable.listProductsByConnectionId as jest.Mock).mockResolvedValue([]);
 });
+
+/** A Scan of `table`: Limit counts what's read, before the owner filter. */
+const scan =
+  (table: DataConnection[]) =>
+  async (
+    limit: number,
+    start?: { data_connection_id: string },
+    owner?: string,
+    withUnowned = false
+  ) => {
+    const from = start
+      ? table.findIndex((c) => c.data_connection_id === start.data_connection_id) + 1
+      : 0;
+    const read = table.slice(from, from + limit);
+    return {
+      connections: read.filter(
+        (c) => !owner || c.owner === owner || (withUnowned && !c.owner)
+      ),
+      lastEvaluatedKey:
+        from + limit < table.length
+          ? { data_connection_id: read[read.length - 1].data_connection_id }
+          : undefined,
+    };
+  };
 
 const ids = (result: Awaited<ReturnType<typeof listDataConnections>>) =>
   result.ok ? result.value.items.map((c) => c.data_connection_id) : result;
 
 describe("listDataConnections", () => {
   test("shows the platform's connections and the owned ones the caller manages", async () => {
-    expect(ids(await listDataConnections(session, {}))).toEqual(["acme--own", "shared"]);
+    expect(ids(await listDataConnections(session, {}))).toEqual(["shared", "acme--own"]);
     expect(ids(await listDataConnections(null, {}))).toEqual(["shared"]);
   });
 
@@ -103,9 +128,16 @@ describe("listDataConnections", () => {
   test("usable_for offers the platform's connections and the account's own, not another's", async () => {
     (canCreateProductForAccount as jest.Mock).mockReturnValue(true);
     expect(ids(await listDataConnections(session, { usable_for: "acme" }))).toEqual([
-      "acme--own",
       "shared",
+      "acme--own",
     ]);
+  });
+
+  test("owner narrows usable_for to that account's own", async () => {
+    (canCreateProductForAccount as jest.Mock).mockReturnValue(true);
+    expect(
+      ids(await listDataConnections(session, { usable_for: "acme", owner: "acme" }))
+    ).toEqual(["acme--own"]);
   });
 
   test("usable_for refuses an account the caller can't create products under", async () => {
@@ -115,10 +147,48 @@ describe("listDataConnections", () => {
     });
   });
 
-  test("is one page, and never returns a secret", async () => {
+  test("never returns a secret", async () => {
     const result = await listDataConnections(session, {});
     expect(result).toMatchObject({ ok: true, value: { next_cursor: null } });
     expect(result.ok && result.value.items.every((c) => !c.authentication)).toBe(true);
+  });
+
+  test("pages through the table, a page short when the filter drops what it read", async () => {
+    const first = await listDataConnections(session, { owner: "acme", limit: "1" });
+    expect(ids(first)).toEqual([]);
+    const cursor = first.ok ? first.value.next_cursor : null;
+    expect(cursor).toEqual(expect.any(String));
+    const second = await listDataConnections(session, { owner: "acme", limit: "1", cursor });
+    expect(ids(second)).toEqual(["acme--own"]);
+  });
+
+  test("refuses a cursor that isn't a connection's key", async () => {
+    const forged = Buffer.from(JSON.stringify({ account_id: "x" })).toString("base64url");
+    for (const cursor of [forged, "not base64 json"]) {
+      expect(await listDataConnections(session, { cursor })).toMatchObject({
+        error: "invalid",
+        fieldErrors: { cursor: ["Invalid cursor"] },
+      });
+    }
+  });
+});
+
+describe("listAllDataConnections", () => {
+  test("follows every page and sorts by provider, then name", async () => {
+    const many = Array.from({ length: 150 }, (_, i) =>
+      connection({ data_connection_id: `conn-${i}`, name: `C${String(149 - i).padStart(3, "0")}` })
+    );
+    (dataConnectionsTable.listPage as jest.Mock).mockImplementation(scan(many));
+    const result = await listAllDataConnections(session, {});
+    expect(result.ok && result.value.length).toBe(150);
+    expect(result.ok && result.value[0].name).toBe("C000");
+    expect(dataConnectionsTable.listPage).toHaveBeenCalledTimes(2);
+  });
+
+  test("passes a refusal through", async () => {
+    expect(await listAllDataConnections(session, { owner: "other" })).toMatchObject({
+      error: "forbidden",
+    });
   });
 });
 

@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 import { accountsTable } from "@/lib/clients";
 import { getPageSession } from "@/lib/api/utils";
-import { listDataConnections } from "@/lib/operations/data-connections";
+import { listAllDataConnections } from "@/lib/operations/data-connections";
 import { Flex, Button, Heading } from "@radix-ui/themes";
 import Link from "next/link";
 import { DataConnectionsList } from "@/components/features/data-connections";
@@ -17,8 +17,8 @@ export const metadata: Metadata = {
 export default async function DataConnectionsPage() {
   // The admin layout has already turned away everyone else, and an admin is
   // shown every connection.
-  const result = await listDataConnections(await getPageSession(), {});
-  const connections = result.ok ? result.value.items : [];
+  const result = await listAllDataConnections(await getPageSession(), {});
+  const connections = result.ok ? result.value : [];
 
   const ownerIds = connections
     .map((conn) => conn.owner)
