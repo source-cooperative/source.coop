@@ -540,15 +540,36 @@ describe("deleteProduct", () => {
 
 // The data proxy reads this as a bare list, and gates writes on "write".
 describe("getProductPermissions", () => {
-  test("lists what the caller may do, and never refuses", async () => {
+  test("lists what the caller may do", async () => {
     (productsTable.fetchById as jest.Mock).mockResolvedValue(product());
+    expect(await getProductPermissions(SESSION, "alice", "my-product")).toEqual({
+      ok: true,
+      value: ["write", "read"],
+    });
     allowExcept(Actions.WriteRepositoryData);
     expect(await getProductPermissions(null, "alice", "my-product")).toEqual({
       ok: true,
       value: ["read"],
     });
+  });
+
+  test("refuses a caller who may not read the product, as viewing it would", async () => {
+    (productsTable.fetchById as jest.Mock).mockResolvedValue(product({ visibility: "restricted" }));
     (isAuthorized as jest.Mock).mockReturnValue(false);
-    expect(await getProductPermissions(null, "alice", "my-product")).toEqual({ ok: true, value: [] });
+    expect(await getProductPermissions(null, "alice", "my-product")).toMatchObject({
+      error: "unauthenticated",
+    });
+    expect(await getProductPermissions(SESSION, "alice", "my-product")).toMatchObject({
+      error: "forbidden",
+    });
+  });
+
+  test("hides a deactivated product from a caller who may not see it", async () => {
+    (productsTable.fetchById as jest.Mock).mockResolvedValue(product({ disabled: true }));
+    (isAuthorized as jest.Mock).mockReturnValue(false);
+    expect(await getProductPermissions(SESSION, "alice", "my-product")).toMatchObject({
+      error: "not_found",
+    });
   });
 
   test("reports a missing product", async () => {

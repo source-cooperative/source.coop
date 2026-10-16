@@ -1,6 +1,13 @@
 import { RepositoryPermissionsResponseSchema } from "@/types";
 import { withApiSession, toResponse } from "@/lib/api/handler";
-import { errors, json, optionalBearer, productParams, registry } from "@/lib/api/openapi";
+import {
+  errors,
+  internal,
+  json,
+  optionalBearer,
+  productParams,
+  registry,
+} from "@/lib/api/openapi";
 import { getProductPermissions } from "@/lib/operations/products";
 
 type Params = { account_id: string; product_id: string };
@@ -8,15 +15,15 @@ type Params = { account_id: string; product_id: string };
 registry.registerPath({
   method: "get",
   path: "/products/{account_id}/{product_id}/permissions",
-  tags: ["Products"],
-  summary: "What you may do with a product's data",
+  ...internal,
+  summary: "What a caller may do with a product's data",
   description:
-    "`read`, `write`, both or neither, for whoever the credentials belong to, or for anyone when there are none. Never refused: a caller with no access gets an empty list.",
+    "Called by the data proxy before a write, on behalf of the person or service account behind the request. Returns `read`, or `read` and `write`, from the caller's role on the product. It does not include the data connection's `read_only` mode; the proxy checks that separately. A caller who may not read the product is refused, as when they view it.",
   security: optionalBearer,
   request: { params: productParams },
   responses: {
     200: json("The permissions.", RepositoryPermissionsResponseSchema),
-    ...errors(404),
+    ...errors(401, 403, 404),
   },
 });
 
