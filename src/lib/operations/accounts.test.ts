@@ -6,7 +6,7 @@ import {
   getAccountFlags,
   getAccountProfile,
   updateAccountFlags,
-  updateAccountProfile,
+  updateAccount,
   whoami,
 } from "./accounts";
 
@@ -89,7 +89,7 @@ describe("getAccountProfile", () => {
   });
 });
 
-describe("updateAccountProfile", () => {
+describe("updateAccount", () => {
   const org = (emails: unknown[] = []) =>
     fetchById.mockResolvedValue(account({ type: AccountType.ORGANIZATION, emails }));
 
@@ -97,7 +97,7 @@ describe("updateAccountProfile", () => {
     fetchById.mockResolvedValue(
       account({ metadata_public: { bio: "Old", location: "Augsburg", orcid: "0000" } })
     );
-    const result = await updateAccountProfile(SESSION, "an-account", { bio: "New", orcid: "" });
+    const result = await updateAccount(SESSION, "an-account", { bio: "New", orcid: "" });
     expect(result.ok).toBe(true);
     expect(written()).toMatchObject({
       name: "An Account",
@@ -108,7 +108,7 @@ describe("updateAccountProfile", () => {
   it("takes a website without a scheme as https, and keeps an unchanged one's record", async () => {
     const kept = { domain: "https://kept.test", status: "verified", created_at: "2020-01-01T00:00:00.000Z" };
     fetchById.mockResolvedValue(account({ metadata_public: { domains: [kept] } }));
-    await updateAccountProfile(SESSION, "an-account", {
+    await updateAccount(SESSION, "an-account", {
       websites: ["https://kept.test", "new.test", " "],
     });
     expect(written().metadata_public.domains).toEqual([
@@ -119,14 +119,14 @@ describe("updateAccountProfile", () => {
 
   it("refuses a website that isn't a URL", async () => {
     fetchById.mockResolvedValue(account());
-    const result = await updateAccountProfile(SESSION, "an-account", { websites: ["http://"] });
+    const result = await updateAccount(SESSION, "an-account", { websites: ["http://"] });
     expect(result).toMatchObject({ error: "invalid", fieldErrors: { websites: expect.any(Array) } });
     expect(update).not.toHaveBeenCalled();
   });
 
   it("stores an organization's submitted email as its unverified primary", async () => {
     org();
-    const result = await updateAccountProfile(SESSION, "an-account", {
+    const result = await updateAccount(SESSION, "an-account", {
       email: " contact@example.test ",
     });
     expect(result.ok).toBe(true);
@@ -142,20 +142,20 @@ describe("updateAccountProfile", () => {
       { address: "contact@example.test", is_primary: true, verified: true, added_at: "2020-05-05T00:00:00.000Z" },
     ];
     org(emails);
-    await updateAccountProfile(SESSION, "an-account", { email: "contact@example.test" });
-    expect(written().emails).toEqual(emails);
+    await updateAccount(SESSION, "an-account", { email: "contact@example.test" });
+    expect(written()).not.toHaveProperty("emails");
   });
 
   it("rejects a malformed organization email without writing", async () => {
     org();
-    const result = await updateAccountProfile(SESSION, "an-account", { email: "not-an-email" });
+    const result = await updateAccount(SESSION, "an-account", { email: "not-an-email" });
     expect(result).toMatchObject({ ok: false, fieldErrors: { email: ["Invalid email address"] } });
     expect(update).not.toHaveBeenCalled();
   });
 
   it("clears an organization's email when the field is submitted empty", async () => {
     org([{ address: "old@example.test", is_primary: true, verified: true }]);
-    await updateAccountProfile(SESSION, "an-account", { email: "   " });
+    await updateAccount(SESSION, "an-account", { email: "   " });
     expect(written().emails).toEqual([]);
   });
 
@@ -164,43 +164,80 @@ describe("updateAccountProfile", () => {
   it("ignores an email submitted for an individual account", async () => {
     const emails = [{ address: "person@example.test", is_primary: true, verified: true }];
     fetchById.mockResolvedValue(account({ emails }));
-    const result = await updateAccountProfile(SESSION, "an-account", {
+    const result = await updateAccount(SESSION, "an-account", {
       email: "attacker@example.test",
     });
     expect(result.ok).toBe(true);
-    expect(written().emails).toEqual(emails);
+    expect(written()).not.toHaveProperty("emails");
   });
 
   it("writes only the fields it edits, never flags or disabled", async () => {
     fetchById.mockResolvedValue(account({ flags: [AccountFlags.ADMIN], disabled: false }));
-    await updateAccountProfile(SESSION, "an-account", { bio: "New" });
+    await updateAccount(SESSION, "an-account", { bio: "New" });
     expect(written()).not.toHaveProperty("flags");
     expect(written()).not.toHaveProperty("disabled");
   });
 
   it("refuses an identifier that belongs to the other kind of account", async () => {
     org();
-    expect(await updateAccountProfile(SESSION, "an-account", { orcid: "0000" })).toMatchObject({
+    expect(await updateAccount(SESSION, "an-account", { orcid: "0000" })).toMatchObject({
       error: "invalid",
       fieldErrors: { orcid: expect.any(Array) },
     });
     fetchById.mockResolvedValue(account());
-    expect(await updateAccountProfile(SESSION, "an-account", { ror_id: "x" })).toMatchObject({
+    expect(await updateAccount(SESSION, "an-account", { ror_id: "x" })).toMatchObject({
       error: "invalid",
       fieldErrors: { ror_id: expect.any(Array) },
     });
     expect(update).not.toHaveBeenCalled();
   });
 
-  it("finds no profile to edit on a service account", async () => {
+  it("renames a service account, which has nothing else to edit", async () => {
     fetchById.mockResolvedValue(account({ type: AccountType.SERVICE }));
-    expect(await updateAccountProfile(SESSION, "an-account", { bio: "x" })).toMatchObject({
-      error: "not_found",
+    expect(await updateAccount(SESSION, "an-account", { name: "Nightly sync" })).toMatchObject({
+      ok: true,
+    });
+    expect(written()).toMatchObject({ name: "Nightly sync" });
+    expect(written().metadata_public).toBeUndefined();
+    update.mockClear();
+    expect(await updateAccount(SESSION, "an-account", { bio: "x" })).toMatchObject({
+      error: "invalid",
+      fieldErrors: { bio: expect.any(Array) },
+    });
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  // Editing and disabling are separate permissions: an organization's
+  // maintainers may edit it, and only its owners may disable it.
+  const allow = (...actions: Actions[]) =>
+    (isAuthorized as jest.Mock).mockImplementation((_s, _r, action) => actions.includes(action));
+
+  it("disables and enables with DisableAccount alone", async () => {
+    fetchById.mockResolvedValue(account());
+    allow(Actions.DisableAccount);
+    expect(await updateAccount(SESSION, "an-account", { disabled: true })).toMatchObject({ ok: true });
+    expect(written()).toMatchObject({ disabled: true });
+    expect(written().metadata_public).toBeUndefined();
+    expect(await updateAccount(SESSION, "an-account", { bio: "x" })).toMatchObject({
+      error: "forbidden",
+    });
+  });
+
+  it("edits without DisableAccount, but refuses to change `disabled`", async () => {
+    fetchById.mockResolvedValue(account());
+    allow(Actions.PutAccountProfile);
+    expect(await updateAccount(SESSION, "an-account", { bio: "x" })).toMatchObject({ ok: true });
+    expect(await updateAccount(SESSION, "an-account", { disabled: true })).toMatchObject({
+      error: "forbidden",
+    });
+    // Resubmitting the current state changes nothing, so it needs nothing.
+    expect(await updateAccount(SESSION, "an-account", { bio: "y", disabled: false })).toMatchObject({
+      ok: true,
     });
   });
 
   it("treats an empty account ID as missing, without a lookup", async () => {
-    expect(await updateAccountProfile(SESSION, "", { bio: "x" })).toMatchObject({
+    expect(await updateAccount(SESSION, "", { bio: "x" })).toMatchObject({
       error: "not_found",
     });
     expect(fetchById).not.toHaveBeenCalled();
@@ -208,11 +245,11 @@ describe("updateAccountProfile", () => {
 
   it("needs a session, then authorization, before reading the input", async () => {
     fetchById.mockResolvedValue(account());
-    expect(await updateAccountProfile(null, "an-account", {})).toMatchObject({
+    expect(await updateAccount(null, "an-account", {})).toMatchObject({
       error: "unauthenticated",
     });
     (isAuthorized as jest.Mock).mockReturnValue(false);
-    expect(await updateAccountProfile(SESSION, "an-account", { name: 5 })).toMatchObject({
+    expect(await updateAccount(SESSION, "an-account", { name: 5 })).toMatchObject({
       error: "forbidden",
     });
   });

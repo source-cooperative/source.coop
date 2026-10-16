@@ -177,7 +177,7 @@ export async function updateAccountProfile(
   const account_id = String(formData.get("account_id") ?? "");
   const field = (name: string) => (formData.get(name) as string | null) ?? undefined;
   return adapt("updateAccountProfile", formData, "Profile updated successfully!", async () =>
-    ops.updateAccountProfile(await getPageSession(), account_id, {
+    ops.updateAccount(await getPageSession(), account_id, {
       name: field("name"),
       bio: field("description"),
       orcid: field("orcid"),
