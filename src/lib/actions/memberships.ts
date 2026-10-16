@@ -70,7 +70,12 @@ export async function getPendingInvitation(
   // A banner isn't worth failing the page it sits on.
   const result = await getPageSession()
     .then((session) =>
-      ops.listMemberships(session, { state: MembershipState.Invited })
+      session?.account
+        ? ops.listMemberships(session, {
+            member: session.account.account_id,
+            state: MembershipState.Invited,
+          })
+        : null
     )
     .catch((error) => {
       LOGGER.error("Error fetching pending invitation", {

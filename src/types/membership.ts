@@ -98,9 +98,3 @@ export const MembershipSchema = z
 
 export type Membership = z.infer<typeof MembershipSchema>;
 
-export const MembershipInvitationSchema = MembershipSchema.pick({
-  account_id: true,
-  role: true,
-}).openapi("MembershipInvitation");
-
-export type MembershipInvitation = z.infer<typeof MembershipInvitationSchema>;

@@ -79,7 +79,7 @@ responses use the same snake_case field names as the stored records.
 | `GET` | read | the resource, or a page of them |
 | `HEAD` | does it exist | 200 or 404, no body. Usually `GET`'s access, but its description says who may ask: `HEAD /accounts/{id}` answers anyone, for checking an ID is taken |
 | `POST` on a collection | create | 201 and the new resource |
-| `POST` on a named action | do something that isn't an edit (`/memberships/{id}/accept`, `/service-account-keys/revocations`) | the resource as it now is, or 204 |
+| `POST` on a named action | do something that isn't an edit (`/service-account-keys/revocations`) | the resource as it now is, or 204 |
 | `PATCH` | change the fields given, leave the rest; `""` clears a clearable field | the resource as edited |
 | `PUT` | replace a whole resource at once (`/data-connections/{id}`) | the resource as set |
 | `DELETE` | delete | the resource as it was |
@@ -101,6 +101,15 @@ A list small enough to read whole still answers a page, as its only one
 (`onePage(items)`, schema `pageSchema("ThingPage", ThingSchema)`), and takes no
 `cursor` or `limit` yet. Never answer a bare array: it can't grow a cursor
 later without breaking whoever reads it.
+
+A query parameter that filters a list is named for what it picks, in plain
+words, not for the record field it matches: `/memberships` takes `?member=`,
+`?account=` and `?product=`, not `?account_id=` or `?membership_account_id=`.
+An ID needs no `_id` suffix, and the parameter's description names the field
+it matches. A product is two parameters, `?account=…&product=…`, as it is two
+path segments, never one `account/product` value. A list that can only be read
+through one of its table's indexes answers 400 to a request that names none,
+rather than scanning the table.
 
 ## Errors
 
