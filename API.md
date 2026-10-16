@@ -86,6 +86,15 @@ A list small enough to read whole still answers a page, as its only one
 `cursor` or `limit` yet. Never answer a bare array: it can't grow a cursor
 later without breaking whoever reads it.
 
+A query parameter that filters a list is named for what it picks, in plain
+words, not for the record field it matches: `/memberships` takes `?member=`,
+`?account=` and `?product=`, not `?account_id=` or `?membership_account_id=`.
+An ID needs no `_id` suffix, and the parameter's description names the field
+it matches. A product is two parameters, `?account=…&product=…`, as it is two
+path segments, never one `account/product` value. A list that can only be read
+through one of its table's indexes answers 400 to a request that names none,
+rather than scanning the table.
+
 ## Errors
 
 Every error from `toResponse` or `withApiSession` is

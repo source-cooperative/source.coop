@@ -44,7 +44,7 @@ export const InviteMemberSchema = MembershipSchema.pick({
   repository_id: true,
   account_id: true,
   role: true,
-});
+}).openapi("MembershipInvitation");
 
 // One change per request: a role change and a change of state are authorized
 // for different callers (a manager, the member).
@@ -67,11 +67,30 @@ export const UpdateMembershipSchema = MembershipSchema.pick({ role: true })
 
 export const MembershipPageSchema = pageSchema("MembershipPage", MembershipSchema);
 
-// Revoked memberships aren't offered: GetMembership hides them from everyone
-// but admins, the member included.
-export const ListMembershipsQuerySchema = z.object({
-  state: z.enum([MembershipState.Invited, MembershipState.Member]).optional(),
-});
+// Every list goes through one of the table's indexes: by member, by account,
+// or by product. Revoked memberships aren't offered: GetMembership hides them
+// from everyone but admins, the member included.
+export const ListMembershipsQuerySchema = z
+  .object({
+    member: z.string().min(1).optional().openapi({
+      description: "Only the memberships this account holds (a membership's `account_id`).",
+    }),
+    account: z.string().min(1).optional().openapi({
+      description:
+        "Only the memberships of this account (`membership_account_id`). Without `product`, only those of the account itself, not of its products.",
+    }),
+    product: z.string().min(1).optional().openapi({
+      description: "Only the memberships of this product of `account` (`repository_id`).",
+    }),
+    state: z.enum([MembershipState.Invited, MembershipState.Member]).optional(),
+  })
+  .refine((q) => q.member || q.account, {
+    message: "Pass `member`, `account`, or both",
+  })
+  .refine((q) => !q.product || q.account, {
+    message: "`product` needs `account`",
+    path: ["product"],
+  });
 
 /** Every membership change leaves a log line saying who made it. */
 function audit(operation: string, session: UserSession, m: Membership) {
@@ -168,48 +187,43 @@ export async function inviteMember(
   return ok(audit("inviteMember", session, await membershipsTable.create(membership)));
 }
 
-/** The memberships of an account, or of one of its products. */
-export async function listMembers(
-  session: UserSession | null,
-  scope: { account_id: string; product_id?: string }
-): Promise<OperationResult<Page<Membership>>> {
-  const { account_id, product_id } = scope;
-  if (product_id) {
-    const product = await productsTable.fetchById(account_id, product_id);
-    if (!product) return notFound(`Product ${account_id}/${product_id} not found`);
-    if (!isAuthorized(session, product, Actions.ListRepositoryMemberships)) {
-      return deny(session, "You may not list this product's members");
-    }
-  } else {
-    const account = await accountsTable.fetchById(account_id);
-    if (!account) return notFound(`Account ${account_id} not found`);
-    if (!isAuthorized(session, account, Actions.ListAccountMemberships)) {
-      return deny(session, "You may not list this account's members");
-    }
-  }
-  const memberships = await membershipsTable.listByAccount(account_id, product_id);
-  return ok(
-    onePage(memberships.filter((m) => isAuthorized(session, m, Actions.GetMembership)))
-  );
-}
-
-/** The caller's own memberships, optionally only those in one state. */
+/**
+ * The memberships the caller may see, of one member, one account or one
+ * product, optionally only those in one state.
+ */
 export async function listMemberships(
   session: UserSession | null,
   query: unknown
 ): Promise<OperationResult<Page<Membership>>> {
-  if (!session) return unauthenticated();
   const parsed = ListMembershipsQuerySchema.safeParse(query);
   if (!parsed.success) return fromZodError(parsed.error);
-  if (!session.account) return ok(onePage([]));
-  const memberships = await membershipsTable.listByUser(
-    session.account.account_id
-  );
+  const { member, account, product, state } = parsed.data;
+  let memberships: Membership[];
+  if (account && product) {
+    const found = await productsTable.fetchById(account, product);
+    if (!found) return notFound(`Product ${account}/${product} not found`);
+    if (!isAuthorized(session, found, Actions.ListRepositoryMemberships)) {
+      return deny(session, "You may not list this product's members");
+    }
+    memberships = await membershipsTable.listByAccount(account, product);
+  } else if (account) {
+    const found = await accountsTable.fetchById(account);
+    if (!found) return notFound(`Account ${account} not found`);
+    if (!isAuthorized(session, found, Actions.ListAccountMemberships)) {
+      return deny(session, "You may not list this account's members");
+    }
+    memberships = await membershipsTable.listByAccount(account);
+  } else {
+    // Each row is checked below: anyone may see an active membership, and
+    // only the member and its managers an invitation.
+    memberships = await membershipsTable.listByUser(member!);
+  }
   return ok(
     onePage(
       memberships.filter(
         (m) =>
-          (!parsed.data.state || m.state === parsed.data.state) &&
+          (!member || m.account_id === member) &&
+          (!state || m.state === state) &&
           isAuthorized(session, m, Actions.GetMembership)
       )
     )
