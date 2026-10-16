@@ -197,13 +197,11 @@ export async function updateAccountFlags(
 ): Promise<FormState<any>> {
   const account_id = String(formData.get("account_id") ?? "");
   return adapt("updateAccountFlags", formData, "Account flags updated successfully!", async () =>
-    ops.updateAccountFlags(
-      await getPageSession(),
-      account_id,
-      [...formData.entries()]
+    ops.updateAccount(await getPageSession(), account_id, {
+      flags: [...formData.entries()]
         .filter(([key, value]) => key !== "account_id" && value === "on")
-        .map(([key]) => key)
-    )
+        .map(([key]) => key),
+    })
   );
 }
 

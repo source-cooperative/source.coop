@@ -30,7 +30,7 @@ registry.registerPath({
   ...internal,
   summary: "Whether an API key may be exchanged, and for which service account",
   description:
-    "Called by the data proxy at `/.sts`, as itself, when an API key is presented: the key is opaque, so nothing names an account before this lookup. A key is active when it is known, not revoked, not expired, and its service account is not disabled; an unknown hash is answered as inactive, indistinguishable from a revoked one. Records the key's last use. The proxy caches the answer briefly, so a revocation stops new exchanges within that time.",
+    "Called by the data proxy at `/.sts`, as itself, when an API key is presented: the key is opaque, so nothing names an account before this lookup. A key is active when it is known, not revoked, not expired, no older than its service account, and that account is not disabled; an unknown hash is answered as inactive, indistinguishable from a revoked one. Records the key's last use. The proxy caches the answer briefly, so a revocation stops new exchanges within that time.",
   security: bearer,
   request: { body: { content: { "application/json": { schema: BodySchema } } } },
   responses: {
@@ -65,7 +65,10 @@ export async function POST(request: NextRequest) {
         ? "expired"
         : !account || account.disabled
           ? "disabled"
-          : null;
+          : // Issued to an earlier account that held this id.
+            Date.parse(key.created_at) < Date.parse(account.created_at)
+            ? "predates account"
+            : null;
   const meta = { request_id, key_id: key?.key_id, account_id: key?.account_id, reason };
   if (!key || reason) {
     LOGGER.warn("API key not exchangeable", { operation: "serviceAccountKeyExchange", metadata: meta });

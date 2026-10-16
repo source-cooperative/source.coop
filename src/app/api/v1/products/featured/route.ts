@@ -1,5 +1,5 @@
+import { ProductResponseSchema } from "@/types";
 import { z } from "zod";
-import { ProductSchema } from "@/types";
 import { withApiSession, toResponse } from "@/lib/api/handler";
 import { errors, json, registry } from "@/lib/api/openapi";
 import { listProducts } from "@/lib/operations/products";
@@ -14,7 +14,7 @@ registry.registerPath({
     "Up to ten featured products, as `{ \"products\": [...] }`. Kept for the clients that already call it; use `GET /products?featured=true`, which pages.",
   deprecated: true,
   responses: {
-    200: json("The featured products.", z.object({ products: z.array(ProductSchema) })),
+    200: json("The featured products.", z.object({ products: z.array(ProductResponseSchema) })),
     ...errors(400),
   },
 });
