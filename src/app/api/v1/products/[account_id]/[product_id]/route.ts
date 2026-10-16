@@ -32,6 +32,26 @@ export const GET = withApiSession<Params>(async ({ session, params }) =>
 );
 
 registry.registerPath({
+  method: "head",
+  path: "/products/{account_id}/{product_id}",
+  tags: ["Products"],
+  summary: "Check that a product exists",
+  description:
+    "`GET` without the body, so it answers with the same status: 404 only when no product holds this ID, or when it is deactivated and hidden from the caller. A 401 or 403 means the product exists but the caller may not read it.",
+  request: { params },
+  responses: {
+    200: { description: "The product exists and the caller may read it." },
+    401: { description: "The product exists; reading it needs credentials." },
+    403: { description: "The product exists; the caller may not read it." },
+    404: { description: "No product holds this ID that the caller may know of." },
+  },
+});
+
+// Declared rather than left to Next's GET fallback, so the reference and the
+// coverage test both see it: the web app's ID check calls it.
+export const HEAD = GET;
+
+registry.registerPath({
   method: "patch",
   path: "/products/{account_id}/{product_id}",
   tags: ["Products"],
