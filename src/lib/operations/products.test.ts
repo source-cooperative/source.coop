@@ -375,6 +375,13 @@ describe("updateProduct", () => {
     expect(result.ok && result.value.disabled).toBe(disabled);
   });
 
+  test("refuses whoever may not edit the product before reading the body", async () => {
+    allowExcept(Actions.PutRepository);
+    expect(
+      await updateProduct(SESSION, "alice", "my-product", { visibility: "nope" })
+    ).toMatchObject({ error: "forbidden" });
+  });
+
   test("leaves a field given as undefined, as an empty form field is, as it is", async () => {
     await updateProduct(SESSION, "alice", "my-product", { description: undefined });
     expect((productsTable.update as jest.Mock).mock.calls[0][0].description).toBe(
@@ -520,6 +527,13 @@ describe("deleteProduct", () => {
     expect(await deleteProduct(SESSION, "alice", "my-product", {})).toMatchObject({
       error: "forbidden",
     });
+  });
+
+  test("refuses whoever may not delete the product before reading the query", async () => {
+    allowExcept(Actions.DeleteRepository);
+    expect(
+      await deleteProduct(SESSION, "alice", "my-product", { preserve_data: "1" })
+    ).toMatchObject({ error: "forbidden" });
   });
 
   test("refuses a preserve_data that isn't true or false", async () => {

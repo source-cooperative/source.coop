@@ -298,6 +298,11 @@ describe("updateMembership", () => {
     expect(memberships.update).not.toHaveBeenCalled();
   });
 
+  it("refuses whoever may not change the membership before reading the body", async () => {
+    authorized.mockReturnValue(false);
+    expect(await updateMembership(session, "m-1", {})).toMatchObject({ error: "forbidden" });
+  });
+
   it("requires a valid role", async () => {
     expect(await updateMembership(session, "m-1", {})).toMatchObject({ error: "invalid" });
     expect(await updateMembership(session, "m-1", { role: "members" })).toMatchObject({ error: "invalid" });

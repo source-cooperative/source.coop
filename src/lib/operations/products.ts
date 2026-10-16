@@ -331,8 +331,6 @@ export async function updateProduct(
   input: unknown
 ): Promise<OperationResult<Product>> {
   if (!session) return unauthenticated();
-  const parsed = UpdateProductSchema.safeParse(input);
-  if (!parsed.success) return fromZodError(parsed.error);
   // DynamoDB rejects an empty key outright.
   const product =
     account_id && product_id && (await productsTable.fetchById(account_id, product_id));
@@ -342,6 +340,8 @@ export async function updateProduct(
   if (!isAuthorized(session, product, Actions.PutRepository)) {
     return refuse(session, product, "You may not edit this product");
   }
+  const parsed = UpdateProductSchema.safeParse(input);
+  if (!parsed.success) return fromZodError(parsed.error);
 
   // Zod keeps a key given as undefined, which would blank the stored value.
   const changes = Object.fromEntries(
@@ -393,14 +393,14 @@ export async function deleteProduct(
   query: unknown
 ): Promise<OperationResult<Product>> {
   if (!session) return unauthenticated();
-  const parsed = DeleteProductQuerySchema.safeParse(query);
-  if (!parsed.success) return fromZodError(parsed.error);
-  const preserveData = parsed.data.preserve_data === "true";
   const product = await productsTable.fetchById(account_id, product_id);
   if (!product) return notFound(`Product ${account_id}/${product_id} not found`);
   if (!isAuthorized(session, product, Actions.DeleteRepository)) {
     return refuse(session, product, "You may not delete this product");
   }
+  const parsed = DeleteProductQuerySchema.safeParse(query);
+  if (!parsed.success) return fromZodError(parsed.error);
+  const preserveData = parsed.data.preserve_data === "true";
 
   const mirror = product.metadata?.mirrors?.[product.metadata.primary_mirror];
   const connection = mirror
