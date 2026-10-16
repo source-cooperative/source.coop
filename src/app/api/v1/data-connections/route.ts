@@ -1,4 +1,3 @@
-import { z } from "zod";
 import { StatusCodes } from "http-status-codes";
 import { DataConnectionObjectSchema } from "@/types";
 import { withApiSession, toResponse } from "@/lib/api/handler";
@@ -9,6 +8,7 @@ import {
   listDataConnections,
   ListDataConnectionsQuerySchema,
 } from "@/lib/operations/data-connections";
+import { pageSchema } from "@/lib/operations/result";
 
 registry.registerPath({
   method: "get",
@@ -21,13 +21,7 @@ registry.registerPath({
   responses: {
     200: json(
       "The connections.",
-      z.object({
-        items: z.array(DataConnectionObjectSchema),
-        next_cursor: z
-          .string()
-          .nullable()
-          .openapi({ description: "Always null: every connection fits on one page." }),
-      })
+      pageSchema("DataConnectionPage", DataConnectionObjectSchema)
     ),
     ...errors(400, 401, 403, 404),
   },

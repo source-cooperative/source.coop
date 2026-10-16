@@ -190,6 +190,17 @@ describe("updateDataConnection", () => {
     expect(dataConnectionsTable.update).not.toHaveBeenCalled();
   });
 
+  test("moves the destination when the authentication is cleared with it", async () => {
+    const details = { ...acme.details, bucket: "elsewhere" };
+    const result = await updateDataConnection(session, "acme--own", {
+      details,
+      authentication: undefined,
+      read_only: true,
+    });
+    expect(result.ok).toBe(true);
+    expect(written()).toMatchObject({ details, authentication: undefined });
+  });
+
   test("leaves out fields it isn't given, and clears those sent as null", async () => {
     await updateDataConnection(session, "acme--own", { prefix_template: "x/" });
     (dataConnectionsTable.update as jest.Mock).mockClear();

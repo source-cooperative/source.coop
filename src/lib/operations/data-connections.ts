@@ -25,6 +25,7 @@ import {
   dataConnectionsTable,
   productsTable,
 } from "@/lib/clients/database";
+import { isConditionalCheckFailed } from "@/lib/clients/database/errors";
 import {
   conflict,
   deny,
@@ -33,7 +34,9 @@ import {
   invalid,
   notFound,
   ok,
+  onePage,
   OperationResult,
+  Page,
   unauthenticated,
 } from "./result";
 
@@ -59,7 +62,7 @@ export const UpdateDataConnectionSchema = UpdateFields.extend({
 }).openapi("UpdateDataConnection");
 
 export const ListDataConnectionsQuerySchema = z.object({
-  owner: z.string().optional().openapi({
+  owner: DataConnectionObjectSchema.shape.owner.openapi({
     description:
       "Only the connections this account owns: the management view, open to those who manage the account's connections.",
   }),
@@ -68,15 +71,6 @@ export const ListDataConnectionsQuerySchema = z.object({
       "Only the connections the caller may create a product on under this account, the platform's own included.",
   }),
 });
-
-export interface DataConnectionPage {
-  items: DataConnection[];
-  /** Always null: every connection fits on one page. */
-  next_cursor: string | null;
-}
-
-const raced = (error: unknown) =>
-  error instanceof Error && error.name === "ConditionalCheckFailedException";
 
 function audit(operation: string, session: UserSession, c: DataConnection) {
   LOGGER.info("Data connection changed", {
@@ -144,7 +138,7 @@ async function visible(session: UserSession | null, c: DataConnection) {
 export async function listDataConnections(
   session: UserSession | null,
   query: unknown
-): Promise<OperationResult<DataConnectionPage>> {
+): Promise<OperationResult<Page<DataConnection>>> {
   const parsed = ListDataConnectionsQuerySchema.safeParse(query);
   if (!parsed.success) return fromZodError(parsed.error);
   const { owner, usable_for } = parsed.data;
@@ -166,22 +160,26 @@ export async function listDataConnections(
   let connections: DataConnection[];
   if (usable_for) {
     connections = await listUsableDataConnections(session, [usable_for]);
+  } else if (owner) {
+    // The account check above already covers every connection it owns.
+    connections = await dataConnectionsTable.listAll();
   } else {
     const all = await dataConnectionsTable.listAll();
     const shown = await Promise.all(all.map((c) => visible(session, c)));
     connections = all.filter((_, i) => shown[i]);
   }
-  return ok({
-    items: connections
-      .filter((c) => !owner || c.owner === owner)
-      .sort(
-        (a, b) =>
-          a.details.provider.localeCompare(b.details.provider) ||
-          a.name.localeCompare(b.name)
-      )
-      .map(sanitizeDataConnection),
-    next_cursor: null,
-  });
+  return ok(
+    onePage(
+      connections
+        .filter((c) => !owner || c.owner === owner)
+        .sort(
+          (a, b) =>
+            a.details.provider.localeCompare(b.details.provider) ||
+            a.name.localeCompare(b.name)
+        )
+        .map(sanitizeDataConnection)
+    )
+  );
 }
 
 /** DynamoDB rejects an empty key outright, so an empty id is simply not found. */
@@ -236,7 +234,7 @@ export async function createDataConnection(
   try {
     await dataConnectionsTable.create(full.data);
   } catch (error) {
-    if (!raced(error)) throw error;
+    if (!isConditionalCheckFailed(error)) throw error;
     const message = `That name is already taken — it would produce the ID "${full.data.data_connection_id}".`;
     return conflict(message, { name: [message] });
   }
@@ -273,8 +271,10 @@ export async function updateDataConnection(
   if (!parsed.success) return fromZodError(parsed.error);
   // A credential is given for one destination; moving the destination without
   // giving it again would aim the stored key somewhere its owner never chose.
+  // A form posting no authentication type sends it as undefined, which clears
+  // it like null; only leaving the key out keeps the stored one.
   if (
-    parsed.data.authentication === undefined &&
+    !("authentication" in parsed.data) &&
     existing.authentication &&
     parsed.data.details !== undefined &&
     !isDeepStrictEqual(parsed.data.details, existing.details)
@@ -295,7 +295,7 @@ export async function updateDataConnection(
     // undone by this write.
     await dataConnectionsTable.update(full.data);
   } catch (error) {
-    if (!raced(error)) throw error;
+    if (!isConditionalCheckFailed(error)) throw error;
     return notFound(`Data connection ${data_connection_id} was deleted`);
   }
   return audit("updateDataConnection", session!, full.data);
