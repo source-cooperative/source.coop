@@ -16,7 +16,10 @@ Everything else only adapts it:
 
 - **A route** in `src/app/api/v1/` wraps its handler in `withApiSession` and
   answers `toResponse(await operation(...))`. It never reads a table or calls
-  `isAuthorized` itself.
+  `isAuthorized` itself. The `/data-connections` routes, and some actions
+  (data connections, credentials, profile images, account creation), predate
+  this and still do; #588 moves them onto operations, so check them too when
+  changing a permission rule.
 - **A server action** in `src/lib/actions/` maps form fields to the operation's
   input and answers `toFormState(result, ...)`.
 
@@ -25,23 +28,25 @@ tested once, in `src/lib/operations/*.test.ts`. Adapter tests only check the
 mapping.
 
 The exceptions are routes no session can call: the data proxy's exchanges,
-which verify the proxy's own assertion, and GitHub's secret-scanning callback,
-which verifies GitHub's signature. They do their own authentication, but still
-answer errors with `toResponse`.
+which verify the proxy's own assertion; GitHub's secret-scanning callback,
+which verifies GitHub's signature; and `POST /service-account-keys/revocations`,
+where holding the key is the proof. They do their own authentication.
 
 ## Documented where it's defined
 
 Every route registers itself with `registry.registerPath` right above its
 handler, using the same Zod schemas the operation parses, so the reference
 can't describe a body the code doesn't accept. Import the route module in
-`src/app/api/openapi/route.ts`; `route-coverage.test.ts` fails for any exported
-handler that isn't in the document.
+`src/app/api/openapi/route.ts`; `route-coverage.test.ts` fails for any handler
+exported as `export const|function METHOD` that isn't in the document, other
+than those on its `UNREGISTERED` list, which only shrinks.
 
 - **`summary` and `description` are published.** Write them for someone
   calling the endpoint: who may, what it answers, and what each status means.
 - **Declare every method you serve.** Next answers `HEAD` from `GET` when no
-  `HEAD` is exported; export `HEAD` (as `GET`, if that is what it is) so the
-  coverage test and the reference both see it.
+  `HEAD` is exported; export `HEAD` as its own `export const HEAD = ...` so
+  the coverage test and the reference both see it (`export { GET as HEAD }`
+  slips past the test).
 - **`security: bearer`** when the endpoint needs credentials, and
   **`optionalBearer`** when it answers anyone but answers differently with them.
 - **`...internal`** marks an endpoint only Source's own services or a partner
@@ -59,7 +64,7 @@ responses use the same snake_case field names as the stored records.
 | Method | Means | Answers |
 |---|---|---|
 | `GET` | read | the resource, or a page of them |
-| `HEAD` | does it exist, for this caller | `GET`'s status, no body |
+| `HEAD` | does it exist | 200 or 404, no body. Usually `GET`'s access, but its description says who may ask: `HEAD /accounts/{id}` answers anyone, for checking an ID is taken |
 | `POST` on a collection | create | 201 and the new resource |
 | `POST` on a named action | do something that isn't an edit (`/memberships/{id}/accept`, `/service-account-keys/revocations`) | the resource as it now is, or 204 |
 | `PATCH` | change the fields given, leave the rest; `""` clears a clearable field | the resource as edited |
@@ -86,7 +91,8 @@ later without breaking whoever reads it.
 
 ## Errors
 
-Every error is `{ "error": { "code", "message", "field_errors"? } }`:
+Every error from `toResponse` or `withApiSession` is
+`{ "error": { "code", "message", "field_errors"? } }`:
 
 | Status | `code` | When |
 |---|---|---|
@@ -95,17 +101,27 @@ Every error is `{ "error": { "code", "message", "field_errors"? } }`:
 | 403 | `forbidden` | credentials that may not do this |
 | 404 | `not_found` | nothing by that ID, or nothing the caller may know of |
 | 409 | `conflict` | the resource's state doesn't allow it |
+| 500 | `internal` | anything thrown; the message says nothing more |
 
-Refuse with `deny(session, message)`, which picks 401 or 403 for you. Authorize
-before reading the body, so a caller who may not act learns nothing from its
-validation errors. Answer 404 rather than 403 for a thing the caller may not
-know exists, such as a deactivated product.
+The data proxy's trust exchange is the exception: it answers 403 as
+`{ "trusted": false }`, which the proxy reads.
+
+Refuse with `deny(session, message)`, which picks 401 or 403 for you. Where
+the permission doesn't depend on the input, authorize before validating it, so
+a caller who may not act learns nothing from its validation errors. Several
+operations don't yet (`updateProduct`, `deleteProduct`, `updateMembership`),
+and some can't: `createProduct` and `inviteMember` authorize against the
+parsed input, and `withApiSession` rejects malformed JSON with 400 before any
+operation runs. Answer 404 rather than 403 for a thing the caller may not know
+exists, such as a deactivated product.
 
 ## Writes
 
-Write only the fields the request changes. `accountsTable.update` and its kin
-set every field they are given, so writing back a whole record read a moment
-ago can undo a change someone else made in between.
+Write only the fields the request changes where the table helper allows it;
+writing back a whole record read a moment ago can undo a change someone else
+made in between. `accountsTable.update` doesn't yet: it always writes `name`
+and `type`, and writes `metadata_public` and `metadata_private` whole, so
+`updateAccount` carries that race until the helper takes a partial update.
 
 ## Compatibility
 
@@ -116,5 +132,5 @@ ago can undo a change someone else made in between.
 - **The CLI** (source-coop-cli) is built against this API and follows the
   reference as it changes.
 - **Everyone else** is unknown. Before removing or reshaping an endpoint, check
-  production traffic for it (`vercel metrics --since 24h --group-by route`); if
-  something still calls it, deprecate it instead.
+  production traffic for it in Vercel's logs for the path; if something still
+  calls it, deprecate it instead.
