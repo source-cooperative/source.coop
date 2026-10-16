@@ -192,7 +192,7 @@ export async function updateAccount(
     );
   }
 
-  let emails;
+  let emails: Account["emails"];
   if (email !== undefined && account.type === AccountType.ORGANIZATION) {
     const current = account.emails?.find((e) => e.is_primary);
     if (!email) {
