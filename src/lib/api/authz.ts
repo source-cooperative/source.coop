@@ -405,30 +405,15 @@ function disableDataConnection(
 }
 
 // Models what the *connection* permits, not whether the caller is
-// authenticated. A connection carrying no required_flag is usable by anyone —
-// including an anonymous principal — so callers (e.g. createProduct,
+// authenticated. Any connection is usable by anyone but a disabled account —
+// an anonymous principal included — so callers (e.g. createProduct,
 // listUsableDataConnections) must apply their own auth guard before relying on
 // this result.
 function useDataConnection(
   principal: UserSession | null,
-  dataConnection: DataConnection
+  _dataConnection: DataConnection
 ): boolean {
-  if (principal?.account?.disabled) {
-    return false;
-  }
-
-  if (isAdmin(principal)) {
-    return true;
-  }
-
-  if (dataConnection.required_flag) {
-    if (principal?.account?.flags?.includes(dataConnection.required_flag)) {
-      return true;
-    }
-    return false;
-  } else {
-    return true;
-  }
+  return !principal?.account?.disabled;
 }
 
 function putDataConnection(

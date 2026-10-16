@@ -59,7 +59,6 @@ const UpdateFields = DataConnectionObjectSchema.omit({
  */
 export const UpdateDataConnectionSchema = UpdateFields.extend({
   prefix_template: UpdateFields.shape.prefix_template.nullable(),
-  required_flag: UpdateFields.shape.required_flag.nullable(),
   authentication: UpdateFields.shape.authentication.nullable(),
 }).openapi("UpdateDataConnection");
 
@@ -92,16 +91,6 @@ function audit(operation: string, session: UserSession, c: DataConnection) {
   });
   return ok(sanitizeDataConnection(c));
 }
-
-/**
- * The whole connection, checked across fields. An owned connection is already
- * confined to its owner's products, so it never carries a platform flag.
- */
-const complete = (c: Record<string, unknown>) =>
-  DataConnectionSchema.safeParse({
-    ...c,
-    required_flag: c.owner ? undefined : c.required_flag,
-  });
 
 /**
  * Secrets never leave the database, so a client editing a connection can't
@@ -260,7 +249,7 @@ export async function createDataConnection(
   // Namespaced so two accounts can't collide or probe each other's ids.
   // slugifyToId collapses runs of separators, so the only `--` is this one.
   const { owner } = parsed.data;
-  const full = complete({
+  const full = DataConnectionSchema.safeParse({
     ...parsed.data,
     data_connection_id: owner ? `${owner}--${slug}` : slug,
   });
@@ -325,7 +314,7 @@ export async function updateDataConnection(
   const changes = Object.fromEntries(
     Object.entries(parsed.data).map(([k, v]) => [k, v ?? undefined])
   );
-  const full = complete({ ...existing, ...changes });
+  const full = DataConnectionSchema.safeParse({ ...existing, ...changes });
   if (!full.success) return fromZodError(full.error);
 
   try {

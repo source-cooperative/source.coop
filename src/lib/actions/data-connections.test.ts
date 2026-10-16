@@ -558,18 +558,6 @@ describe("account-owned connections", () => {
     );
   });
 
-  test("ignores a required_flag injected via a crafted POST on an owned connection", async () => {
-    mockIsAdmin.mockReturnValue(false);
-
-    const result = await createDataConnection(
-      FORM_STATE,
-      formDataFor({ ...ownedFields, required_flag: "admin" })
-    );
-
-    expect(result.success).toBe(true);
-    expect(mockTable.create.mock.calls[0][0].required_flag).toBeUndefined();
-  });
-
   test("rejects a caller who is not an admin of the owner account", async () => {
     mockIsAdmin.mockReturnValue(false);
     mockCanManage.mockReturnValue(false);
