@@ -84,7 +84,7 @@ between the two, so nothing above it sees the stored name.
 | `POST` on a collection | create | 201 and the new resource |
 | `POST` on a named action | do something that isn't an edit (`/service-account-keys/revocations`) | the resource as it now is, or 204 |
 | `PATCH` | change the fields given, leave the rest; `""` clears a clearable field | the resource as edited |
-| `PUT` | replace a whole resource at once (`/data-connections/{id}`) | the resource as set |
+| `PUT` | replace a whole resource at once (no endpoint uses it yet) | the resource as set |
 | `DELETE` | delete | the resource as it was |
 
 Deactivating is not deleting: it is `PATCH { "disabled": true }`, for products
