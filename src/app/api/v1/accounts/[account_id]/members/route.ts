@@ -3,7 +3,11 @@ import { StatusCodes } from "http-status-codes";
 import { MembershipInvitationSchema, MembershipSchema } from "@/types";
 import { withApiSession, toResponse } from "@/lib/api/handler";
 import { bearer, errors, json, registry } from "@/lib/api/openapi";
-import { inviteMember, listMembers } from "@/lib/operations/memberships";
+import {
+  inviteMember,
+  listMembers,
+  MembershipPageSchema,
+} from "@/lib/operations/memberships";
 
 type Params = { account_id: string };
 
@@ -21,7 +25,7 @@ registry.registerPath({
   security: bearer,
   request: { params },
   responses: {
-    200: json("The memberships.", z.array(MembershipSchema)),
+    200: json("The memberships, all on one page for now.", MembershipPageSchema),
     ...errors(401, 403, 404),
   },
 });

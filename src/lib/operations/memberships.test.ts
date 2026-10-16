@@ -184,7 +184,7 @@ describe("listMembers", () => {
     memberships.listByAccount.mockResolvedValue([membership(), hidden]);
     authorized.mockImplementation((_, resource) => resource !== hidden);
     const result = await listMembers(session, { account_id: "an-org" });
-    expect(result).toEqual({ ok: true, value: [membership()] });
+    expect(result).toEqual({ ok: true, value: { items: [membership()], next_cursor: null } });
   });
 
   it("scopes to a product", async () => {
@@ -208,7 +208,7 @@ describe("listMemberships", () => {
       membership({ membership_id: "m-2", state: MembershipState.Member }),
     ]);
     const result = await listMemberships(session, { state: "invited" });
-    expect(result).toEqual({ ok: true, value: [membership()] });
+    expect(result).toEqual({ ok: true, value: { items: [membership()], next_cursor: null } });
     expect(memberships.listByUser).toHaveBeenCalledWith("a-person");
   });
 
