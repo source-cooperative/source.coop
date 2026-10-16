@@ -9,7 +9,8 @@ import {
   updateAccount,
   UpdateAccountSchema,
 } from "@/lib/operations/accounts";
-import { AccountSchema } from "@/types";
+import { z } from "zod";
+import { AccountProfileResponseSchema, AccountSchema } from "@/types";
 
 type Params = { account_id: string };
 
@@ -21,11 +22,14 @@ registry.registerPath({
   tags: ["Accounts"],
   summary: "Get an account",
   description:
-    "The whole account record, emails and flags included. A person may read their own; an organization's owners and maintainers may read it; an admin may read any. Everyone else reads the public profile instead.",
+    "The whole account record, emails and flags included, to whoever may read it: a person their own, an organization's owners and maintainers theirs, an admin any. Everyone else, signed in or not, gets the public profile of a person or organization. A disabled account is not found, except by whoever may read its record; a service account is not found by whoever does not manage it.",
   security: bearer,
   request: { params },
   responses: {
-    200: json("The account.", AccountSchema),
+    200: json(
+      "The account record, or its public profile.",
+      z.union([AccountSchema, AccountProfileResponseSchema])
+    ),
     ...errors(401, 403, 404),
   },
 });
@@ -66,7 +70,7 @@ registry.registerPath({
   tags: ["Accounts"],
   summary: "Edit an account",
   description:
-    "Changes the fields given and leaves the rest; an empty string clears a profile field. A person may edit their own account, an organization's owners and maintainers theirs, and whoever manages a service account's owner may rename it; an admin may edit any. `disabled` takes more: an organization's owners, a service account's managers, or an admin. A service account has only a `name`. A disabled account can be re-enabled, but not otherwise edited until it is, except by an admin.",
+    "Changes the fields given and leaves the rest; an empty string clears a profile field. A person may edit their own account, an organization's owners and maintainers theirs, and whoever manages a service account's owner may rename it; an admin may edit any. `disabled` takes more: an organization's owners, a service account's managers, or an admin. `flags` takes an admin. A service account has only a `name`. A disabled account can be re-enabled, but not otherwise edited until it is, except by an admin.",
   security: bearer,
   request: {
     params,

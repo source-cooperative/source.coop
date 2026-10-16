@@ -65,7 +65,6 @@ responses use the same snake_case field names as the stored records.
 | `POST` on a collection | create | 201 and the new resource |
 | `POST` on a named action | do something that isn't an edit (`/memberships/{id}/accept`, `/service-account-keys/revocations`) | the resource as it now is, or 204 |
 | `PATCH` | change the fields given, leave the rest; `""` clears a clearable field | the resource as edited |
-| `PUT` | replace a whole value at once (`/accounts/{id}/flags`) | the value as set |
 | `DELETE` | delete | the resource as it was |
 
 Deactivating is not deleting: it is `PATCH { "disabled": true }`, for products

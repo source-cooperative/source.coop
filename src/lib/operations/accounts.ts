@@ -85,6 +85,10 @@ export const UpdateAccountSchema = z
       description:
         "A disabled account can't sign in, and nothing new may be attached to it until it is enabled again.",
     }),
+    flags: AccountFlagsSchema.openapi({
+      description:
+        "Replaces what the account may do beyond the basics, such as create products or administer the platform. Only an admin may change them, and a service account may never hold `admin`.",
+    }),
   })
   .partial()
   .openapi("UpdateAccount");
@@ -106,16 +110,24 @@ export function whoami(
   return ok({ identity_id, account, memberships });
 }
 
+/**
+ * The whole record to whoever may read it, and the public profile to everyone
+ * else.
+ */
 export async function getAccount(
   session: UserSession | null,
   account_id: string
-): Promise<OperationResult<Account>> {
+): Promise<OperationResult<Account | AccountProfileResponse>> {
   const account = await fetchAccount(account_id);
   if (!account) return missing(account_id);
-  if (!isAuthorized(session, account, Actions.GetAccount)) {
-    return deny(session, "You may not view this account");
+  if (isAuthorized(session, account, Actions.GetAccount)) return ok(account);
+  if (!isAuthorized(session, account, Actions.GetAccountProfile)) {
+    // A service account has no profile, and a disabled one is hidden.
+    return account.disabled || isServiceAccount(account)
+      ? missing(account_id)
+      : deny(session, "You may not view this account");
   }
-  return ok(account);
+  return ok(profileOf(account));
 }
 
 /** Whether an account by this ID exists, which anyone may ask. */
@@ -132,24 +144,10 @@ function profileOf(account: Account): AccountProfileResponse {
   };
 }
 
-export async function getAccountProfile(
-  session: UserSession | null,
-  account_id: string
-): Promise<OperationResult<AccountProfileResponse>> {
-  const account = await fetchAccount(account_id);
-  if (!account) return missing(account_id);
-  if (!isAuthorized(session, account, Actions.GetAccountProfile)) {
-    // A service account has no profile, and a disabled one is hidden.
-    return account.disabled || isServiceAccount(account)
-      ? missing(account_id)
-      : deny(session, "You may not view this profile");
-  }
-  return ok(profileOf(account));
-}
-
 /**
- * Changes the fields given and leaves the rest. Editing takes PutAccountProfile
- * and `disabled` takes DisableAccount, so a caller may hold either alone.
+ * Changes the fields given and leaves the rest. Editing takes PutAccountProfile,
+ * `disabled` takes DisableAccount and `flags` takes PutAccountFlags, so a
+ * caller may hold any one alone.
  */
 export async function updateAccount(
   session: UserSession | null,
@@ -161,15 +159,20 @@ export async function updateAccount(
   if (!account) return missing(account_id);
   const mayEdit = isAuthorized(session, account, Actions.PutAccountProfile);
   const mayDisable = isAuthorized(session, account, Actions.DisableAccount);
-  if (!mayEdit && !mayDisable) return deny(session, "You may not edit this account");
+  const mayFlag = isAuthorized(session, account, Actions.PutAccountFlags);
+  if (!mayEdit && !mayDisable && !mayFlag) return deny(session, "You may not edit this account");
   const parsed = UpdateAccountSchema.safeParse(input);
   if (!parsed.success) return fromZodError(parsed.error);
-  const { name, disabled, websites, email, ...fields } = parsed.data;
+  const { name, disabled, flags, websites, email, ...fields } = parsed.data;
 
   const edits = name !== undefined || PROFILE_FIELDS.some((f) => parsed.data[f] !== undefined);
   if (edits && !mayEdit) return deny(session, "You may not edit this account");
   if (disabled !== undefined && disabled !== account.disabled && !mayDisable) {
     return deny(session, `You may not ${disabled ? "disable" : "enable"} this account`);
+  }
+  if (flags && !mayFlag) return deny(session, "You may not change this account's flags");
+  if (flags && isServiceAccount(account) && flags.includes(AccountFlags.ADMIN)) {
+    return invalid("A service account cannot hold the admin flag", "flags");
   }
   const extra = isServiceAccount(account) && PROFILE_FIELDS.find((f) => parsed.data[f] !== undefined);
   if (extra) return invalid("A service account has only a name", extra);
@@ -234,6 +237,7 @@ export async function updateAccount(
     // A resubmitted `disabled` isn't written, so one read before a concurrent
     // disable can't undo it.
     ...(disabled !== undefined && disabled !== account.disabled && { disabled }),
+    ...(flags && { flags }),
   } as Account);
   LOGGER.info("Updated account", {
     operation: "updateAccount",
@@ -241,55 +245,14 @@ export async function updateAccount(
       account_id,
       fields: Object.keys(parsed.data),
       disabled,
+      flags,
       by: session.account?.account_id,
     },
   });
   revalidatePath(accountUrl(account_id));
   revalidatePath(editAccountProfileUrl(account_id));
+  if (flags) revalidatePath(editAccountPermissionsUrl(account_id));
   return ok(updated);
-}
-
-export async function getAccountFlags(
-  session: UserSession | null,
-  account_id: string
-): Promise<OperationResult<AccountFlags[]>> {
-  const account = await fetchAccount(account_id);
-  if (!account) return missing(account_id);
-  if (!isAuthorized(session, account, Actions.GetAccountFlags)) {
-    return deny(session, "You may not view this account's flags");
-  }
-  return ok(account.flags);
-}
-
-/** Replaces an account's flags. */
-export async function updateAccountFlags(
-  session: UserSession | null,
-  account_id: string,
-  input: unknown
-): Promise<OperationResult<AccountFlags[]>> {
-  if (!session) return unauthenticated();
-  const account = await fetchAccount(account_id);
-  if (!account) return missing(account_id);
-  if (!isAuthorized(session, account, Actions.PutAccountFlags)) {
-    return deny(session, "You may not change this account's flags");
-  }
-  const parsed = AccountFlagsSchema.safeParse(input);
-  if (!parsed.success) return fromZodError(parsed.error);
-  if (isServiceAccount(account) && parsed.data.includes(AccountFlags.ADMIN)) {
-    return invalid("A service account cannot hold the admin flag");
-  }
-  const updated = await accountsTable.update({
-    account_id,
-    type: account.type,
-    name: account.name,
-    flags: parsed.data,
-  } as Account);
-  LOGGER.info("Updated account flags", {
-    operation: "updateAccountFlags",
-    metadata: { account_id, flags: parsed.data, by: session.account?.account_id },
-  });
-  revalidatePath(editAccountPermissionsUrl(account_id));
-  return ok(updated.flags);
 }
 
 /**
@@ -313,7 +276,7 @@ export async function deleteAccount(
         )
       : deny(session, "You may not delete this account");
   }
-  // Hidden from whoever may not manage it, as in getAccountProfile.
+  // Hidden from whoever may not manage it, as getAccount hides it.
   if (!(await managedServiceAccount(session, account_id))) return missing(account_id);
   // Disabled first: nothing new is granted, issued or trusted while the rest
   // is torn down, and no key exchanges in the meantime.
