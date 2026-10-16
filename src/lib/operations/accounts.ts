@@ -219,10 +219,12 @@ export async function updateAccount(
   const updated = await accountsTable.update({
     account_id,
     type: account.type,
-    name: name ?? account.name,
+    ...(name !== undefined && { name }),
     ...(emails && { emails }),
     ...(metadata_public && { metadata_public }),
-    ...(disabled !== undefined && { disabled }),
+    // A resubmitted `disabled` isn't written, so one read before a concurrent
+    // disable can't undo it.
+    ...(disabled !== undefined && disabled !== account.disabled && { disabled }),
   } as Account);
   LOGGER.info("Updated account", {
     operation: "updateAccount",

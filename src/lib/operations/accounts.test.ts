@@ -100,9 +100,9 @@ describe("updateAccount", () => {
     const result = await updateAccount(SESSION, "an-account", { bio: "New", orcid: "" });
     expect(result.ok).toBe(true);
     expect(written()).toMatchObject({
-      name: "An Account",
       metadata_public: { bio: "New", location: "Augsburg", orcid: undefined },
     });
+    expect(written()).not.toHaveProperty("name");
   });
 
   it("takes a website without a scheme as https, and keeps an unchanged one's record", async () => {
@@ -176,6 +176,7 @@ describe("updateAccount", () => {
     await updateAccount(SESSION, "an-account", { bio: "New" });
     expect(written()).not.toHaveProperty("flags");
     expect(written()).not.toHaveProperty("disabled");
+    expect(written()).not.toHaveProperty("name");
   });
 
   it("refuses an identifier that belongs to the other kind of account", async () => {
@@ -230,10 +231,13 @@ describe("updateAccount", () => {
     expect(await updateAccount(SESSION, "an-account", { disabled: true })).toMatchObject({
       error: "forbidden",
     });
-    // Resubmitting the current state changes nothing, so it needs nothing.
+    // Resubmitting the current state changes nothing, so it needs nothing,
+    // and isn't written back over a concurrent change.
+    update.mockClear();
     expect(await updateAccount(SESSION, "an-account", { bio: "y", disabled: false })).toMatchObject({
       ok: true,
     });
+    expect(written()).not.toHaveProperty("disabled");
   });
 
   it("treats an empty account ID as missing, without a lookup", async () => {
