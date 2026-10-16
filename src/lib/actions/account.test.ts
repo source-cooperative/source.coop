@@ -22,7 +22,7 @@ jest.mock("../api/authz", () => ({
 }));
 
 jest.mock("@/lib/operations/accounts", () => ({
-  updateAccountProfile: jest.fn(),
+  updateAccount: jest.fn(),
 }));
 
 jest.mock("next/cache", () => ({
@@ -53,7 +53,7 @@ const account = (overrides: Partial<Account>): Account =>
 describe("updateAccountProfile", () => {
   it("hands the form's fields to the operation", async () => {
     mockGetPageSession.mockResolvedValue(null);
-    (ops.updateAccountProfile as jest.Mock).mockResolvedValue({ ok: true, value: {} });
+    (ops.updateAccount as jest.Mock).mockResolvedValue({ ok: true, value: {} });
     const formData = new FormData();
     for (const [key, value] of Object.entries({
       account_id: "an-account",
@@ -69,7 +69,7 @@ describe("updateAccountProfile", () => {
     const result = await updateAccountProfile(null, formData);
 
     expect(result.success).toBe(true);
-    expect(ops.updateAccountProfile).toHaveBeenCalledWith(null, "an-account", {
+    expect(ops.updateAccount).toHaveBeenCalledWith(null, "an-account", {
       name: "An Account",
       bio: "A bio",
       orcid: undefined,

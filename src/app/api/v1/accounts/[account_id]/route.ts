@@ -5,7 +5,12 @@ import { getApiSession } from "@/lib/api/utils";
 import { withApiSession, toResponse } from "@/lib/api/handler";
 import { accountParams, bearer, errors, json, registry } from "@/lib/api/openapi";
 import { accountsTable } from "@/lib/clients/database";
-import { accountExists, getAccount } from "@/lib/operations/accounts";
+import {
+  accountExists,
+  getAccount,
+  updateAccount,
+  UpdateAccountSchema,
+} from "@/lib/operations/accounts";
 import { AccountSchema, Actions } from "@/types";
 
 type Params = { account_id: string };
@@ -56,6 +61,28 @@ export async function HEAD(
       : StatusCodes.NOT_FOUND,
   });
 }
+
+registry.registerPath({
+  method: "patch",
+  path: "/accounts/{account_id}",
+  tags: ["Accounts"],
+  summary: "Edit an account",
+  description:
+    "Changes the fields given and leaves the rest; an empty string clears a profile field. A person may edit their own account, an organization's owners and maintainers theirs, and whoever manages a service account's owner may rename it; an admin may edit any. `disabled` takes more: an organization's owners, a service account's managers, or an admin. A service account has only a `name`. A disabled account can be re-enabled, but not otherwise edited until it is, except by an admin.",
+  security: bearer,
+  request: {
+    params,
+    body: { content: { "application/json": { schema: UpdateAccountSchema } } },
+  },
+  responses: {
+    200: json("The account as edited.", AccountSchema),
+    ...errors(400, 401, 403, 404),
+  },
+});
+
+export const PATCH = withApiSession<Params>(async ({ session, params, body }) =>
+  toResponse(await updateAccount(session, params.account_id, body))
+);
 
 /**
  * @openapi
