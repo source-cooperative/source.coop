@@ -298,8 +298,6 @@ export async function setProductAccess(
 ): Promise<ServiceAccountActionState> {
   const account = await managedFrom(formData);
   if (!account) return outcome("You do not manage that service account", false);
-  // Disabled means frozen: no new grant until it is enabled again.
-  if (account.disabled) return outcome("That service account is disabled", false);
   const repository_id = String(formData.get("product_id") ?? "");
   const access = String(formData.get("access") ?? "");
   const held = (await membershipsTable.listByUser(account.account_id)).find(

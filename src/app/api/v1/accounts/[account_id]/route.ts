@@ -22,7 +22,7 @@ registry.registerPath({
   tags: ["Accounts"],
   summary: "Get an account",
   description:
-    "Returns the full account record, including emails and flags, if you may read it. People may read their own record, organization owners and maintainers may read their organization's, and admins may read any. Everyone else, including anonymous callers, gets the account's public profile.\n\nReturns 404 for a disabled account unless you may read its full record, and for a service account unless you manage it.",
+    "Returns the full account record, including emails and flags, if you may read it. People may read their own record, organization owners and maintainers may read their organization's, and admins may read any. Everyone else, including anonymous callers, gets the account's public profile.\n\nReturns 404 for a disabled account unless you may read its full record. Returns 404 for a service account unless you are an admin.",
   security: optionalBearer,
   request: { params },
   responses: {
@@ -85,7 +85,6 @@ registry.registerPath({
 export const PATCH = withApiSession<Params>(async ({ session, params, body }) =>
   toResponse(await updateAccount(session, params.account_id, body))
 );
-
 
 registry.registerPath({
   method: "delete",

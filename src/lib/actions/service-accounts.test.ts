@@ -300,6 +300,14 @@ describe("setProductAccess", () => {
     expect(mocks.memberships.create).not.toHaveBeenCalled();
   });
 
+  it("still revokes a disabled service account's grant", async () => {
+    mocks.managed.mockResolvedValue({ ...bot, disabled: true } as never);
+    expect((await set("climate-data", "none")).success).toBe(true);
+    expect(mocks.memberships.update).toHaveBeenCalledWith(
+      expect.objectContaining({ membership_id: "m1", state: MembershipState.Revoked })
+    );
+  });
+
   it("grants a product it does not reach, as a member of the owner", async () => {
     expect((await set("reference-data", MembershipRole.WriteData)).success).toBe(true);
     expect(mocks.memberships.create).toHaveBeenCalledWith(

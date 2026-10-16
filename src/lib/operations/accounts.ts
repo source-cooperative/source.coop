@@ -276,11 +276,12 @@ export async function deleteAccount(
         )
       : deny(session, "You may not delete this account");
   }
-  // Hidden from whoever may not manage it, as getAccount hides it.
+  // Hidden from whoever may not manage it, so a refusal doesn't confirm it exists.
   if (!(await managedServiceAccount(session, account_id))) return missing(account_id);
   // Disabled first: nothing new is granted, issued or trusted while the rest
-  // is torn down, and no key exchanges in the meantime.
-  await accountsTable.update({ ...account, disabled: true, updated_at: new Date().toISOString() });
+  // is torn down, and no key exchanges in the meantime. Only `disabled` is
+  // written, as updateAccount writes only what it changes.
+  await accountsTable.update({ account_id, type: account.type, disabled: true } as Account);
   const [memberships, keys] = await Promise.all([
     membershipsTable.listByUser(account_id),
     serviceAccountKeysTable.listByAccount(account_id),
