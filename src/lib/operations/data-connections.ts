@@ -271,6 +271,19 @@ export async function updateDataConnection(
     withStoredSecrets(input, existing)
   );
   if (!parsed.success) return fromZodError(parsed.error);
+  // A credential is given for one destination; moving the destination without
+  // giving it again would aim the stored key somewhere its owner never chose.
+  if (
+    parsed.data.authentication === undefined &&
+    existing.authentication &&
+    parsed.data.details !== undefined &&
+    !isDeepStrictEqual(parsed.data.details, existing.details)
+  ) {
+    return invalid(
+      "Give the authentication again to change where this connection points",
+      "authentication"
+    );
+  }
   const changes = Object.fromEntries(
     Object.entries(parsed.data).map(([k, v]) => [k, v ?? undefined])
   );

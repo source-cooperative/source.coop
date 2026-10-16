@@ -182,6 +182,14 @@ describe("updateDataConnection", () => {
     expect(dataConnectionsTable.update).not.toHaveBeenCalled();
   });
 
+  test("won't keep stored authentication when the destination moves without it", async () => {
+    const result = await updateDataConnection(session, "acme--own", {
+      details: { ...acme.details, bucket: "elsewhere" },
+    });
+    expect(result.ok || result.fieldErrors).toHaveProperty(["authentication"]);
+    expect(dataConnectionsTable.update).not.toHaveBeenCalled();
+  });
+
   test("leaves out fields it isn't given, and clears those sent as null", async () => {
     await updateDataConnection(session, "acme--own", { prefix_template: "x/" });
     (dataConnectionsTable.update as jest.Mock).mockClear();
