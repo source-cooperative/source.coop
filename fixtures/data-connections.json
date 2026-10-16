@@ -72,7 +72,6 @@
     "prefix_template": "{account_id}/{repository_id}/",
     "read_only": false,
     "allowed_visibilities": ["restricted"],
-    "required_flag": "admin",
     "details": {
       "provider": "s3",
       "bucket": "source-coop-subscription",

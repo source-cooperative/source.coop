@@ -22,7 +22,6 @@ import {
   S3Regions,
   AzureRegions,
   ProductVisibility,
-  AccountFlags,
 } from "@/types";
 import {
   ConditionalGroup,
@@ -43,8 +42,8 @@ interface DataConnectionFormProps {
   dataConnection?: EditableDataConnection;
   mode: "create" | "edit";
   // When set, the form is account-scoped: the connection is owned by this
-  // account. Posts a hidden `owner`, hides the platform-only Required Flag, and
-  // (on create) shows the ID namespacing prefix.
+  // account. Posts a hidden `owner` and (on create) shows the ID namespacing
+  // prefix.
   ownerAccountId?: string;
   // The data proxy's origin, which is also its OIDC issuer. When set, a Web
   // Identity Role connection shows the trust policy to give its role.
@@ -196,9 +195,6 @@ export function DataConnectionForm({
   // Controlled for the same reason as the checkboxes below: a Radix Select is
   // not a native form control that re-seeds itself from `state.data` after a
   // failed submit, so the user's choice lives in state.
-  const [requiredFlag, setRequiredFlag] = useState<string>(
-    dataConnection?.required_flag ?? ""
-  );
   const [s3Region, setS3Region] = useState<string>(
     dataConnection?.details.provider === DataProvider.S3
       ? dataConnection.details.region
@@ -1009,44 +1005,6 @@ export function DataConnectionForm({
                 </CheckboxCards.Root>
               </>
             </Field>
-
-            {/* Required Flag is a platform-only gate; hidden on owned connections. */}
-            {!ownerAccountId && (
-              <Field
-                label="Required Flag"
-                help="Account flag an owner must hold before this connection can back their products. Choose None for no restriction."
-                errors={state.fieldErrors?.required_flag}
-              >
-                {(props) => (
-                  <>
-                    {/* The Select is UI only; the hidden input carries "" for None,
-                        which Radix cannot express as an item value. */}
-                    <input type="hidden" name="required_flag" value={requiredFlag} />
-                    <Select.Root
-                      size="3"
-                      value={requiredFlag || NONE}
-                      onValueChange={(value) =>
-                        setRequiredFlag(value === NONE ? "" : value)
-                      }
-                    >
-                      <Select.Trigger
-                        {...props}
-                        style={{ width: "100%" }}
-                      />
-                      <Select.Content>
-                        <Select.Item value={NONE}>None</Select.Item>
-                        {Object.values(AccountFlags).map((flag) => (
-                          <Select.Item key={flag} value={flag}>
-                            {flag}
-                          </Select.Item>
-                        ))}
-                      </Select.Content>
-                    </Select.Root>
-                  </>
-                )}
-              </Field>
-            )}
-
           </Flex>
         </SectionHeader>
 

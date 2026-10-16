@@ -17,7 +17,6 @@ import {
   MAX_DATA_CONNECTION_ID_LENGTH,
   ID_REGEX,
   DATA_CONNECTION_ID_REGEX,
-  AccountFlags,
 } from "./shared";
 import { ProductVisibility } from "./product";
 
@@ -310,7 +309,6 @@ export const DataConnectionObjectSchema = z
     // Visibilities a product may use on this connection; enforced at product
     // creation (see createProduct in src/lib/actions/products.ts).
     allowed_visibilities: z.array(z.nativeEnum(ProductVisibility)),
-    required_flag: z.optional(z.nativeEnum(AccountFlags)),
     /**
      * Account (individual or organization) that owns this connection. Absent =
      * unowned (e.g. Source Cooperative-managed), usable by any account; set ⇒

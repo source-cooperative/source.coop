@@ -2725,20 +2725,6 @@ describe("Authorization Tests", () => {
     expect(isAuthorized(sessions["regular-user"], dataConnection, action)).toBe(
       true
     );
-
-    // Test with required_flag
-    dataConnection.read_only = false;
-    dataConnection.required_flag = AccountFlags.CREATE_REPOSITORIES;
-    expect(isAuthorized(sessions["admin"], dataConnection, action)).toBe(true);
-    expect(
-      isAuthorized(sessions["organization-owner-user"], dataConnection, action)
-    ).toBe(true);
-    expect(
-      isAuthorized(sessions["create-repositories-user"], dataConnection, action)
-    ).toBe(true);
-    expect(isAuthorized(sessions["regular-user"], dataConnection, action)).toBe(
-      false
-    );
   });
 
   test("Action: data_connection:put", () => {

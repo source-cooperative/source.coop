@@ -170,7 +170,6 @@ function buildDataConnectionFromForm(
     prefix_template: (formData.get("prefix_template") as string) || undefined,
     read_only: formData.get("read_only") === "on",
     allowed_visibilities: allowedVisibilities,
-    required_flag: (formData.get("required_flag") as string) || undefined,
     // The account-scoped create page posts its account here. The id is built
     // from it and the schema only accepts a lowercase one, so "ACME" from an
     // admin's hand still lands in the "acme" account's list.
