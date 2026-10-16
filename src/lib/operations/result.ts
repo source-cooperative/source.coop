@@ -1,5 +1,8 @@
+import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
 import { z, type ZodError, type ZodTypeAny } from "zod";
 import type { FormState } from "@/components/core/DynamicForm";
+
+extendZodWithOpenApi(z);
 
 /**
  * What an operation returns. Operations decide everything about whether a

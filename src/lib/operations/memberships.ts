@@ -50,10 +50,10 @@ export const UpdateMembershipSchema = MembershipSchema.pick({
   role: true,
 }).openapi("UpdateMembership");
 
-// Revoked memberships aren't offered: GetMembership hides them from everyone
-// but admins, the member included.
 export const MembershipPageSchema = pageSchema("MembershipPage", MembershipSchema);
 
+// Revoked memberships aren't offered: GetMembership hides them from everyone
+// but admins, the member included.
 export const ListMembershipsQuerySchema = z.object({
   state: z.enum([MembershipState.Invited, MembershipState.Member]).optional(),
 });

@@ -30,6 +30,8 @@ import {
   notFound,
   ok,
   OperationResult,
+  type Page,
+  pageSchema,
   unauthenticated,
 } from "./result";
 
@@ -56,15 +58,7 @@ export const ListProductsQuerySchema = PageQuerySchema.extend({
   }),
 });
 
-export const ProductPageSchema = z
-  .object({
-    items: z.array(ProductSchema),
-    next_cursor: z
-      .string()
-      .nullable()
-      .openapi({ description: "Pass as `cursor` for the next page; null on the last." }),
-  })
-  .openapi("ProductPage");
+export const ProductPageSchema = pageSchema("ProductPage", ProductSchema);
 
 export const CreateProductSchema = ProductCreationRequestSchema.omit({
   search_text: true,
@@ -91,8 +85,6 @@ export const DeleteProductQuerySchema = z.object({
       "Keep the product's objects in storage. Allowed when the storage is read-only or belongs to an account; on Source-managed storage, only an admin may.",
   }),
 });
-
-type ProductPage = z.infer<typeof ProductPageSchema>;
 
 // A cursor is DynamoDB's LastEvaluatedKey, base64url'd so it survives a query
 // string unescaped: the key attributes of the table, plus the index's for the
@@ -147,7 +139,7 @@ const page = (
   session: UserSession | null,
   items: Product[],
   lastEvaluatedKey: unknown
-): ProductPage => ({
+): Page<Product> => ({
   items: items.map((p) => shown(session, p)),
   next_cursor: encodeCursor(lastEvaluatedKey),
 });
@@ -181,7 +173,7 @@ export async function listProducts(
   session: UserSession | null,
   query: unknown,
   account_id?: string
-): Promise<OperationResult<ProductPage>> {
+): Promise<OperationResult<Page<Product>>> {
   const parsed = (account_id ? PageQuerySchema : ListProductsQuerySchema).safeParse(query);
   if (!parsed.success) return fromZodError(parsed.error);
   const { cursor, limit } = parsed.data;
