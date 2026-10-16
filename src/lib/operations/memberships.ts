@@ -41,7 +41,7 @@ type Failure = Extract<OperationResult<never>, { ok: false }>;
 /** Who to invite, and to what: an account, or one of its products. */
 export const InviteMemberSchema = MembershipSchema.pick({
   membership_account_id: true,
-  repository_id: true,
+  product_id: true,
   account_id: true,
   role: true,
 }).openapi("MembershipInvitation");
@@ -67,29 +67,25 @@ export const UpdateMembershipSchema = MembershipSchema.pick({ role: true })
 
 export const MembershipPageSchema = pageSchema("MembershipPage", MembershipSchema);
 
-// Every list goes through one of the table's indexes: by member, by account,
-// or by product. Revoked memberships aren't offered: GetMembership hides them
-// from everyone but admins, the member included.
-export const ListMembershipsQuerySchema = z
-  .object({
-    member: z.string().min(1).optional().openapi({
-      description: "Only the memberships this account holds (a membership's `account_id`).",
-    }),
-    account: z.string().min(1).optional().openapi({
-      description:
-        "Only the memberships of this account (`membership_account_id`). Without `product`, only those of the account itself, not of its products.",
-    }),
-    product: z.string().min(1).optional().openapi({
-      description: "Only the memberships of this product of `account` (`repository_id`).",
-    }),
+// Filters are the fields they match. Every list goes through one of the
+// table's indexes: by member, by account, or by product. Revoked memberships
+// aren't offered: GetMembership hides them from everyone but admins, the
+// member included.
+export const ListMembershipsQuerySchema = MembershipSchema.pick({
+  account_id: true,
+  membership_account_id: true,
+  product_id: true,
+})
+  .partial()
+  .extend({
     state: z.enum([MembershipState.Invited, MembershipState.Member]).optional(),
   })
-  .refine((q) => q.member || q.account, {
-    message: "Pass `member`, `account`, or both",
+  .refine((q) => q.account_id || q.membership_account_id, {
+    message: "Pass `account_id`, `membership_account_id`, or both",
   })
-  .refine((q) => !q.product || q.account, {
-    message: "`product` needs `account`",
-    path: ["product"],
+  .refine((q) => !q.product_id || q.membership_account_id, {
+    message: "`product_id` needs `membership_account_id`",
+    path: ["product_id"],
   });
 
 /** Every membership change leaves a log line saying who made it. */
@@ -102,7 +98,7 @@ function audit(operation: string, session: UserSession, m: Membership) {
       membership_id: m.membership_id,
       account_id: m.account_id,
       membership_account_id: m.membership_account_id,
-      repository_id: m.repository_id,
+      product_id: m.product_id,
       role: m.role,
       state: m.state,
     },
@@ -121,7 +117,7 @@ export async function inviteMember(
   if (!session) return unauthenticated();
   const parsed = InviteMemberSchema.safeParse(input);
   if (!parsed.success) return fromZodError(parsed.error);
-  const { membership_account_id, repository_id, account_id, role } =
+  const { membership_account_id, product_id, account_id, role } =
     parsed.data;
   // Before any lookup, so a caller who may not invite here learns nothing
   // about which accounts and products exist.
@@ -133,14 +129,14 @@ export async function inviteMember(
     );
   }
 
-  if (repository_id) {
+  if (product_id) {
     const product = await productsTable.fetchById(
       membership_account_id,
-      repository_id
+      product_id
     );
     if (!product) {
       return notFound(
-        `Product ${membership_account_id}/${repository_id} not found`
+        `Product ${membership_account_id}/${product_id} not found`
       );
     }
   } else {
@@ -177,7 +173,7 @@ export async function inviteMember(
 
   const existing = await membershipsTable.listByAccount(
     membership_account_id,
-    repository_id
+    product_id
   );
   if (existing.some((m) => m.account_id === account_id && m.state !== MembershipState.Revoked)) {
     return conflict(
@@ -197,32 +193,32 @@ export async function listMemberships(
 ): Promise<OperationResult<Page<Membership>>> {
   const parsed = ListMembershipsQuerySchema.safeParse(query);
   if (!parsed.success) return fromZodError(parsed.error);
-  const { member, account, product, state } = parsed.data;
+  const { account_id, membership_account_id, product_id, state } = parsed.data;
   let memberships: Membership[];
-  if (account && product) {
-    const found = await productsTable.fetchById(account, product);
-    if (!found) return notFound(`Product ${account}/${product} not found`);
+  if (membership_account_id && product_id) {
+    const found = await productsTable.fetchById(membership_account_id, product_id);
+    if (!found) return notFound(`Product ${membership_account_id}/${product_id} not found`);
     if (!isAuthorized(session, found, Actions.ListRepositoryMemberships)) {
       return deny(session, "You may not list this product's members");
     }
-    memberships = await membershipsTable.listByAccount(account, product);
-  } else if (account) {
-    const found = await accountsTable.fetchById(account);
-    if (!found) return notFound(`Account ${account} not found`);
+    memberships = await membershipsTable.listByAccount(membership_account_id, product_id);
+  } else if (membership_account_id) {
+    const found = await accountsTable.fetchById(membership_account_id);
+    if (!found) return notFound(`Account ${membership_account_id} not found`);
     if (!isAuthorized(session, found, Actions.ListAccountMemberships)) {
       return deny(session, "You may not list this account's members");
     }
-    memberships = await membershipsTable.listByAccount(account);
+    memberships = await membershipsTable.listByAccount(membership_account_id);
   } else {
     // Each row is checked below: anyone may see an active membership, and
     // only the member and its managers an invitation.
-    memberships = await membershipsTable.listByUser(member!);
+    memberships = await membershipsTable.listByUser(account_id!);
   }
   return ok(
     onePage(
       memberships.filter(
         (m) =>
-          (!member || m.account_id === member) &&
+          (!account_id || m.account_id === account_id) &&
           (!state || m.state === state) &&
           isAuthorized(session, m, Actions.GetMembership)
       )

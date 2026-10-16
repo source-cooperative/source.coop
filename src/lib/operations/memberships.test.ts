@@ -101,16 +101,16 @@ describe("inviteMember", () => {
   });
 
   it("grants a service account read_data on its owner's product at once", async () => {
-    const result = await invite({ account_id: "an-org--bot", repository_id: "a-product" });
+    const result = await invite({ account_id: "an-org--bot", product_id: "a-product" });
     expect(result).toMatchObject({
       ok: true,
-      value: { repository_id: "a-product", state: MembershipState.Member },
+      value: { product_id: "a-product", state: MembershipState.Member },
     });
   });
 
   it.each([
-    ["an owner role", { repository_id: "a-product", role: "owners" }],
-    ["another account's product", { membership_account_id: "other-org", repository_id: "a-product" }],
+    ["an owner role", { product_id: "a-product", role: "owners" }],
+    ["another account's product", { membership_account_id: "other-org", product_id: "a-product" }],
     ["a whole organization", {}],
   ])("refuses a service account %s", async (_, fields) => {
     const result = await invite({ account_id: "an-org--bot", ...fields });
@@ -132,7 +132,7 @@ describe("inviteMember", () => {
 
   it("reports a missing account, member or product", async () => {
     expect(await invite({ membership_account_id: "nobody", account_id: "a-person" })).toMatchObject({ error: "not_found" });
-    expect(await invite({ repository_id: "no-product", account_id: "a-person" })).toMatchObject({ error: "not_found" });
+    expect(await invite({ product_id: "no-product", account_id: "a-person" })).toMatchObject({ error: "not_found" });
     expect(await invite({ account_id: "nobody" })).toMatchObject({
       error: "invalid",
       fieldErrors: { account_id: ["Account nobody not found"] },
@@ -166,7 +166,7 @@ describe("inviteMember", () => {
   it("refuses an unauthorized caller before revealing whether anything exists", async () => {
     authorized.mockReturnValue(false);
     expect(
-      await invite({ repository_id: "secret", account_id: "nobody" })
+      await invite({ product_id: "secret", account_id: "nobody" })
     ).toMatchObject({ error: "forbidden" });
     expect(products.fetchById).not.toHaveBeenCalled();
     expect(accounts.fetchById).not.toHaveBeenCalled();
@@ -183,16 +183,16 @@ describe("listMemberships", () => {
     const hidden = membership({ membership_id: "hidden" });
     memberships.listByAccount.mockResolvedValue([membership(), hidden]);
     authorized.mockImplementation((_, resource) => resource !== hidden);
-    const result = await listMemberships(session, { account: "an-org" });
+    const result = await listMemberships(session, { membership_account_id: "an-org" });
     expect(result).toEqual({ ok: true, value: { items: [membership()], next_cursor: null } });
   });
 
   it("lists by member, account or product", async () => {
-    await listMemberships(session, { member: "a-person" });
+    await listMemberships(session, { account_id: "a-person" });
     expect(memberships.listByUser).toHaveBeenCalledWith("a-person");
-    await listMemberships(session, { account: "an-org" });
+    await listMemberships(session, { membership_account_id: "an-org" });
     expect(memberships.listByAccount).toHaveBeenCalledWith("an-org");
-    await listMemberships(session, { account: "an-org", product: "a-product" });
+    await listMemberships(session, { membership_account_id: "an-org", product_id: "a-product" });
     expect(memberships.listByAccount).toHaveBeenCalledWith("an-org", "a-product");
   });
 
@@ -203,39 +203,39 @@ describe("listMemberships", () => {
       membership({ membership_id: "m-3", account_id: "someone-else" }),
     ]);
     const result = await listMemberships(session, {
-      member: "a-person",
-      account: "an-org",
+      account_id: "a-person",
+      membership_account_id: "an-org",
       state: "invited",
     });
     expect(result).toEqual({ ok: true, value: { items: [membership()], next_cursor: null } });
   });
 
-  it("needs a member or an account, and an account for a product", async () => {
+  it("needs account_id or membership_account_id, and membership_account_id for a product", async () => {
     expect(await listMemberships(session, {})).toMatchObject({ error: "invalid" });
     expect(await listMemberships(session, { state: "invited" })).toMatchObject({ error: "invalid" });
-    expect(await listMemberships(session, { member: "a-person", product: "a-product" })).toMatchObject({
+    expect(await listMemberships(session, { account_id: "a-person", product_id: "a-product" })).toMatchObject({
       error: "invalid",
     });
   });
 
   it("rejects an unknown state", async () => {
-    expect(await listMemberships(session, { member: "a-person", state: "pending" })).toMatchObject({
+    expect(await listMemberships(session, { account_id: "a-person", state: "pending" })).toMatchObject({
       error: "invalid",
     });
     // Nobody but an admin may see a revoked membership, so it isn't offered.
-    expect(await listMemberships(session, { member: "a-person", state: "revoked" })).toMatchObject({
+    expect(await listMemberships(session, { account_id: "a-person", state: "revoked" })).toMatchObject({
       error: "invalid",
     });
   });
 
   it("reports a missing account or product, and refusal", async () => {
-    expect(await listMemberships(session, { account: "nobody" })).toMatchObject({ error: "not_found" });
-    expect(await listMemberships(session, { account: "an-org", product: "nope" })).toMatchObject({
+    expect(await listMemberships(session, { membership_account_id: "nobody" })).toMatchObject({ error: "not_found" });
+    expect(await listMemberships(session, { membership_account_id: "an-org", product_id: "nope" })).toMatchObject({
       error: "not_found",
     });
     authorized.mockReturnValue(false);
-    expect(await listMemberships(session, { account: "an-org" })).toMatchObject({ error: "forbidden" });
-    expect(await listMemberships(null, { account: "an-org" })).toMatchObject({ error: "unauthenticated" });
+    expect(await listMemberships(session, { membership_account_id: "an-org" })).toMatchObject({ error: "forbidden" });
+    expect(await listMemberships(null, { membership_account_id: "an-org" })).toMatchObject({ error: "unauthenticated" });
   });
 });
 
@@ -353,7 +353,7 @@ describe("updateMembership", () => {
 
   it("refuses a service account a role it can't hold", async () => {
     memberships.fetchById.mockResolvedValue(
-      membership({ account_id: "an-org--bot", repository_id: "a-product", state: MembershipState.Member })
+      membership({ account_id: "an-org--bot", product_id: "a-product", state: MembershipState.Member })
     );
     expect(await updateMembership(session, "m-1", { role: "owners" })).toMatchObject({
       error: "invalid",

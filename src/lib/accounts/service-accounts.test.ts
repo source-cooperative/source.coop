@@ -37,7 +37,7 @@ test("hands back nothing for a missing account, a person, an orphan, a stranger,
 });
 
 test("a disabled service account takes no new access, whatever the role", () => {
-  const product = { membership_account_id: "acme", repository_id: "climate-data" };
+  const product = { membership_account_id: "acme", product_id: "climate-data" };
   expect(serviceAccountGrantProblem(bot, product, MembershipRole.ReadData)).toBeNull();
   const disabled = { ...bot, disabled: true } as Account;
   for (const role of [MembershipRole.ReadData, MembershipRole.WriteData]) {

@@ -24,7 +24,7 @@ export async function inviteMember(
   const result = await ops.inviteMember(await getPageSession(), {
     membership_account_id: formData.get("organization_id"),
     // An unset hidden field submits "", which means no product.
-    repository_id: formData.get("product_id") || undefined,
+    product_id: formData.get("product_id") || undefined,
     account_id: formData.get("account_id"),
     role: formData.get("role"),
   });
@@ -72,7 +72,7 @@ export async function getPendingInvitation(
     .then((session) =>
       session?.account
         ? ops.listMemberships(session, {
-            member: session.account.account_id,
+            account_id: session.account.account_id,
             state: MembershipState.Invited,
           })
         : null
@@ -89,7 +89,7 @@ export async function getPendingInvitation(
     result.value.items.find(
       (m) =>
         m.membership_account_id === membershipAccountId &&
-        (repositoryId ? m.repository_id === repositoryId : !m.repository_id)
+        (repositoryId ? m.product_id === repositoryId : !m.product_id)
     ) ?? null
   );
 }

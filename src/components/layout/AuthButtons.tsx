@@ -31,7 +31,7 @@ export async function AuthButtons() {
           .filter(
             (m) =>
               m.state === MembershipState.Member &&
-              m.repository_id === undefined
+              m.product_id === undefined
           )
           .map((m) => m.membership_account_id)
       ),
@@ -58,9 +58,9 @@ export async function AuthButtons() {
       ),
       Promise.all(
         invited
-          .filter((m) => m.repository_id)
+          .filter((m) => m.product_id)
           .map((m) =>
-            productsTable.fetchById(m.membership_account_id, m.repository_id!)
+            productsTable.fetchById(m.membership_account_id, m.product_id!)
           )
       ),
     ]);
@@ -98,8 +98,8 @@ export async function AuthButtons() {
     const pendingInvitations = invited.map((m) =>
       invitationLink(m, {
         organizationName: accountsById.get(m.membership_account_id)?.name,
-        productTitle: m.repository_id
-          ? productTitleByKey.get(`${m.membership_account_id}/${m.repository_id}`)
+        productTitle: m.product_id
+          ? productTitleByKey.get(`${m.membership_account_id}/${m.product_id}`)
           : undefined,
       })
     );
