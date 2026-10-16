@@ -35,6 +35,7 @@ import { AlreadyTrustedError } from "../clients/database/account-trusts";
 import { redirect } from "next/navigation";
 import { editAccountServiceAccountsUrl, editServiceAccountUrl } from "@/lib/urls";
 import { randomUUID } from "crypto";
+import * as ops from "@/lib/operations/accounts";
 
 const fail = (message: string, fieldErrors = {}): ServiceAccountFormState => ({
   fieldErrors,
@@ -273,23 +274,14 @@ export async function deleteServiceAccount(
   _prev: ServiceAccountActionState,
   formData: FormData
 ): Promise<ServiceAccountActionState> {
-  const account = await managedServiceAccount(
+  const result = await ops.deleteAccount(
     await getPageSession(),
     String(formData.get("account_id") ?? "")
   );
-  if (!account) return outcome("You do not manage that service account", false);
-  for (const membership of await membershipsTable.listByUser(account.account_id)) {
-    await membershipsTable.delete(membership.membership_id);
-  }
-  // Its trusts go with the account row.
-  await accountsTable.delete(account.account_id);
-  LOGGER.info("Deleted service account", {
-    operation: "deleteServiceAccount",
-    metadata: { account_id: account.account_id, owner_account_id: account.owner_account_id },
-  });
-  revalidatePath(editAccountServiceAccountsUrl(account.owner_account_id));
+  if (!result.ok) return outcome(result.message, false);
+  if (!isServiceAccount(result.value)) return outcome("Not a service account", false);
   // Its own page is gone; the list is where the user goes next.
-  redirect(editAccountServiceAccountsUrl(account.owner_account_id));
+  redirect(editAccountServiceAccountsUrl(result.value.owner_account_id));
 }
 
 const managedFrom = async (formData: FormData) =>

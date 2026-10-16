@@ -19,13 +19,20 @@ import {
 import { isAuthorized } from "@/lib/api/authz";
 import { avatarUrl } from "@/lib/avatar";
 import { LOGGER } from "@/lib/logging";
-import { accountsTable } from "@/lib/clients/database";
+import {
+  accountsTable,
+  membershipsTable,
+  serviceAccountKeysTable,
+} from "@/lib/clients/database";
+import { managedServiceAccount } from "@/lib/accounts/service-accounts";
 import {
   accountUrl,
   editAccountPermissionsUrl,
   editAccountProfileUrl,
+  editAccountServiceAccountsUrl,
 } from "@/lib/urls";
 import {
+  conflict,
   deny,
   fromZodError,
   invalid,
@@ -281,4 +288,48 @@ export async function updateAccountFlags(
   });
   revalidatePath(editAccountPermissionsUrl(account_id));
   return ok(updated.flags);
+}
+
+/**
+ * Deletes a service account, with every grant it held and every way it could
+ * sign in. A person or an organization is never deleted, only disabled, which
+ * `updateAccount` does.
+ */
+export async function deleteAccount(
+  session: UserSession | null,
+  account_id: string
+): Promise<OperationResult<Account>> {
+  if (!session) return unauthenticated();
+  const account = await fetchAccount(account_id);
+  if (!account) return missing(account_id);
+  if (!isServiceAccount(account)) {
+    return conflict(
+      'Only a service account can be deleted; disable this account with PATCH { "disabled": true }'
+    );
+  }
+  if (!(await managedServiceAccount(session, account_id))) {
+    return deny(session, "You may not delete this service account");
+  }
+  for (const membership of await membershipsTable.listByUser(account_id)) {
+    await membershipsTable.delete(membership.membership_id);
+  }
+  // Revoked rather than left behind: the id can be taken again, and a key
+  // still live would sign in as whatever account takes it.
+  for (const key of await serviceAccountKeysTable.listByAccount(account_id)) {
+    if (!key.revoked_at) {
+      await serviceAccountKeysTable.revoke(key.key_hash, "owner", session.account?.account_id);
+    }
+  }
+  // Its trusts go with the account row.
+  await accountsTable.delete(account_id);
+  LOGGER.info("Deleted service account", {
+    operation: "deleteAccount",
+    metadata: {
+      account_id,
+      owner_account_id: account.owner_account_id,
+      by: session.account?.account_id,
+    },
+  });
+  revalidatePath(editAccountServiceAccountsUrl(account.owner_account_id));
+  return ok(account);
 }

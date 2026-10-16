@@ -1,8 +1,14 @@
 /** @jest-environment node */
 import { Account, AccountFlags, AccountType, Actions } from "@/types";
-import { accountsTable } from "@/lib/clients/database";
+import {
+  accountsTable,
+  membershipsTable,
+  serviceAccountKeysTable,
+} from "@/lib/clients/database";
+import { managedServiceAccount } from "@/lib/accounts/service-accounts";
 import { isAuthorized } from "@/lib/api/authz";
 import {
+  deleteAccount,
   getAccountFlags,
   getAccountProfile,
   updateAccountFlags,
@@ -11,8 +17,11 @@ import {
 } from "./accounts";
 
 jest.mock("@/lib/clients/database", () => ({
-  accountsTable: { fetchById: jest.fn(), update: jest.fn() },
+  accountsTable: { fetchById: jest.fn(), update: jest.fn(), delete: jest.fn() },
+  membershipsTable: { listByUser: jest.fn(), delete: jest.fn() },
+  serviceAccountKeysTable: { listByAccount: jest.fn(), revoke: jest.fn() },
 }));
+jest.mock("@/lib/accounts/service-accounts", () => ({ managedServiceAccount: jest.fn() }));
 jest.mock("@/lib/api/authz", () => ({ isAuthorized: jest.fn() }));
 jest.mock("next/cache", () => ({ revalidatePath: jest.fn() }));
 
@@ -292,5 +301,43 @@ describe("account flags", () => {
     expect(await updateAccountFlags(SESSION, "an-account", ["root"])).toMatchObject({
       error: "invalid",
     });
+  });
+});
+
+describe("deleteAccount", () => {
+  const bot = () => account({ type: AccountType.SERVICE, owner_account_id: "acme" });
+
+  it("deletes a service account's grants, revokes its live keys, then deletes it", async () => {
+    fetchById.mockResolvedValue(bot());
+    (managedServiceAccount as jest.Mock).mockResolvedValue(bot());
+    (membershipsTable.listByUser as jest.Mock).mockResolvedValue([
+      { membership_id: "m1" },
+      { membership_id: "m2" },
+    ]);
+    (serviceAccountKeysTable.listByAccount as jest.Mock).mockResolvedValue([
+      { key_hash: "live" },
+      { key_hash: "gone", revoked_at: "2026-01-01T00:00:00.000Z" },
+    ]);
+    expect(await deleteAccount(SESSION, "an-account")).toMatchObject({ ok: true });
+    expect(membershipsTable.delete).toHaveBeenCalledTimes(2);
+    expect(serviceAccountKeysTable.revoke).toHaveBeenCalledTimes(1);
+    expect(serviceAccountKeysTable.revoke).toHaveBeenCalledWith("live", "owner", "alice");
+    expect(accountsTable.delete).toHaveBeenCalledWith("an-account");
+  });
+
+  it("never deletes a person or an organization", async () => {
+    for (const type of [AccountType.INDIVIDUAL, AccountType.ORGANIZATION]) {
+      fetchById.mockResolvedValue(account({ type }));
+      expect(await deleteAccount(SESSION, "an-account")).toMatchObject({ error: "conflict" });
+    }
+    expect(accountsTable.delete).not.toHaveBeenCalled();
+  });
+
+  it("refuses whoever may not manage the service account", async () => {
+    fetchById.mockResolvedValue(bot());
+    (managedServiceAccount as jest.Mock).mockResolvedValue(null);
+    expect(await deleteAccount(SESSION, "an-account")).toMatchObject({ error: "forbidden" });
+    expect(await deleteAccount(null, "an-account")).toMatchObject({ error: "unauthenticated" });
+    expect(accountsTable.delete).not.toHaveBeenCalled();
   });
 });
