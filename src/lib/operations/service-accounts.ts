@@ -12,8 +12,9 @@ import {
   ServiceAccountSchema,
   serviceAccountId,
   UserSession,
+  Actions,
 } from "@/types";
-import { canManageAccountServiceAccounts } from "@/lib/api/authz";
+import { canManageAccountServiceAccounts, isAuthorized } from "@/lib/api/authz";
 import { managedServiceAccount } from "@/lib/accounts/service-accounts";
 import { LOGGER } from "@/lib/logging";
 import {
@@ -30,7 +31,10 @@ import {
   invalid,
   notFound,
   ok,
+  onePage,
   OperationResult,
+  Page,
+  pageSchema,
   unauthenticated,
 } from "./result";
 import { inviteMember } from "./memberships";
@@ -75,19 +79,8 @@ export const RemoveTrustQuerySchema = z.object({
   subject: z.string().min(1).openapi({ example: "repo:acme/data:ref:refs/heads/main" }),
 });
 
-/** Every item fits on one page; the cursor leaves room for that to change. */
-const page = <T extends z.ZodTypeAny>(name: string, item: T) =>
-  z
-    .object({
-      items: z.array(item),
-      next_cursor: z.string().nullable(),
-    })
-    .openapi(name);
-
-export const ServiceAccountPageSchema = page("ServiceAccountPage", ServiceAccountSchema);
-export const AccountTrustPageSchema = page("AccountTrustPage", AccountTrustSchema);
-
-type Page<T> = { items: T[]; next_cursor: null };
+export const ServiceAccountPageSchema = pageSchema("ServiceAccountPage", ServiceAccountSchema);
+export const AccountTrustPageSchema = pageSchema("AccountTrustPage", AccountTrustSchema);
 
 /**
  * The service account `account_id` names, if the caller manages it. Missing,
@@ -120,13 +113,13 @@ export async function listServiceAccounts(
   if (!canManageAccountServiceAccounts(session, owner)) {
     return deny(session, "You do not manage service accounts for this account");
   }
-  return ok({ items: await accountsTable.listByOwner(owner_account_id), next_cursor: null });
+  return ok(onePage(await accountsTable.listByOwner(owner_account_id)));
 }
 
 /**
  * Creates a service account under an owner, grants it the owner's products
- * named, and trusts each GitHub workflow named. Nothing is written until all
- * of it checks out.
+ * named, and trusts each GitHub workflow named. Each grant is authorized
+ * before the account is written, so a refused one leaves nothing behind.
  */
 export async function createServiceAccount(
   session: UserSession | null,
@@ -151,10 +144,16 @@ export async function createServiceAccount(
     return invalid("A service account cannot own another");
   }
 
-  // A subject or product named twice is one trust, one grant.
+  // A subject or product named twice is one trust, one grant; a second
+  // grant would be refused as a duplicate after the account exists.
   const subjects = [...new Set(parsed.data.github_subjects)];
   const grants = [...new Map(parsed.data.grants.map((g) => [g.product_id, g])).values()];
-  for (const { product_id } of grants) {
+  for (const { product_id, role } of grants) {
+    // inviteMember's own check, asked here while nothing is written yet.
+    const target = { membership_account_id: owner_account_id, product_id, role };
+    if (!isAuthorized(session, target, Actions.InviteMembership)) {
+      return deny(session, `You may not grant access to ${product_id}`);
+    }
     if (!(await productsTable.fetchById(owner_account_id, product_id))) {
       return invalid(`${owner_account_id} has no product ${product_id}`, "grants");
     }
@@ -216,7 +215,7 @@ export async function listTrusts(
   const found = await managed(session, account_id);
   if (!found.ok) return found;
   const trusts = await accountTrustsTable.listByAccount(account_id);
-  return ok({ items: trusts.map(publicTrust), next_cursor: null });
+  return ok(onePage(trusts.map(publicTrust)));
 }
 
 /** A trust as the API shows it, without the key the table stores it under. */

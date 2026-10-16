@@ -4,7 +4,7 @@ import {
   accountTrustsTable,
   productsTable,
 } from "@/lib/clients/database";
-import { canManageAccountServiceAccounts } from "@/lib/api/authz";
+import { canManageAccountServiceAccounts, isAuthorized } from "@/lib/api/authz";
 import { managedServiceAccount } from "@/lib/accounts/service-accounts";
 import {
   createServiceAccount,
@@ -20,7 +20,10 @@ jest.mock("@/lib/clients/database", () => ({
   productsTable: { fetchById: jest.fn() },
   accountTrustsTable: { create: jest.fn(), delete: jest.fn(), listByAccount: jest.fn() },
 }));
-jest.mock("@/lib/api/authz", () => ({ canManageAccountServiceAccounts: jest.fn() }));
+jest.mock("@/lib/api/authz", () => ({
+  canManageAccountServiceAccounts: jest.fn(),
+  isAuthorized: jest.fn(),
+}));
 jest.mock("@/lib/accounts/service-accounts", () => ({ managedServiceAccount: jest.fn() }));
 jest.mock("./memberships");
 
@@ -36,6 +39,7 @@ const session = { identity_id: "id", account: { account_id: "a-person" } } as Us
 beforeEach(() => {
   jest.resetAllMocks();
   canManage.mockReturnValue(true);
+  (isAuthorized as jest.Mock).mockReturnValue(true);
   managed.mockResolvedValue(bot);
   accounts.fetchById.mockImplementation(async (id) => (id === "acme" ? org : null));
   accounts.create.mockImplementation(async (a) => a);
@@ -81,6 +85,19 @@ describe("createServiceAccount", () => {
       role: MembershipRole.ReadData,
     });
     expect(trusts.create).toHaveBeenCalledTimes(1);
+  });
+
+  it("writes nothing when a grant would be refused", async () => {
+    (isAuthorized as jest.Mock).mockReturnValueOnce(false);
+    expect(
+      await createServiceAccount(session, "acme", {
+        local_id: "sync",
+        name: "Sync",
+        grants: [{ product_id: "p", role: MembershipRole.ReadData }],
+      })
+    ).toMatchObject({ error: "forbidden" });
+    expect(accounts.create).not.toHaveBeenCalled();
+    expect(inviteMember).not.toHaveBeenCalled();
   });
 
   it("refuses a role beyond read or write, and an id that's taken", async () => {
