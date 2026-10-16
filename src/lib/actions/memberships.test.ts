@@ -83,15 +83,27 @@ describe("getPendingInvitation", () => {
   const toOrg = membership();
   const toProduct = membership({ membership_id: "m-2", repository_id: "a-product" });
 
-  beforeEach(() => operations.listMemberships.mockResolvedValue(ok([toOrg, toProduct])));
+  const signedIn = { ...session, account: { account_id: "a-person" } };
+
+  beforeEach(() => {
+    (getPageSession as jest.Mock).mockResolvedValue(signedIn);
+    operations.listMemberships.mockResolvedValue(ok({ items: [toOrg, toProduct], next_cursor: null }));
+  });
 
   it("finds the invitation to an account, or to one of its products", async () => {
     expect(await getPendingInvitation("an-org")).toBe(toOrg);
     expect(await getPendingInvitation("an-org", "a-product")).toBe(toProduct);
     expect(await getPendingInvitation("other-org")).toBeNull();
-    expect(operations.listMemberships).toHaveBeenCalledWith(session, {
+    expect(operations.listMemberships).toHaveBeenCalledWith(signedIn, {
+      member: "a-person",
       state: MembershipState.Invited,
     });
+  });
+
+  it("is null for a visitor without an account", async () => {
+    (getPageSession as jest.Mock).mockResolvedValue(session);
+    expect(await getPendingInvitation("an-org")).toBeNull();
+    expect(operations.listMemberships).not.toHaveBeenCalled();
   });
 
   it("is null when the operation refuses or fails", async () => {

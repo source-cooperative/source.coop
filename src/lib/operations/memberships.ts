@@ -29,7 +29,10 @@ import {
   invalid,
   notFound,
   ok,
+  onePage,
   OperationResult,
+  Page,
+  pageSchema,
   unauthenticated,
 } from "./result";
 
@@ -39,17 +42,53 @@ export const InviteMemberSchema = MembershipSchema.pick({
   repository_id: true,
   account_id: true,
   role: true,
-});
+}).openapi("MembershipInvitation");
 
-export const UpdateMembershipSchema = MembershipSchema.pick({
-  role: true,
-}).openapi("UpdateMembership");
+// One change per request: a role change and a change of state are authorized
+// for different callers (a manager, the member).
+export const UpdateMembershipSchema = MembershipSchema.pick({ role: true })
+  .partial()
+  .extend({
+    state: z
+      .enum([MembershipState.Member, MembershipState.Revoked])
+      .optional()
+      .openapi({
+        description:
+          "`member` accepts a pending invitation; `revoked` ends a membership or withdraws or declines an invitation.",
+      }),
+  })
+  .strict()
+  .refine((b) => (b.role === undefined) !== (b.state === undefined), {
+    message: "Send either `role` or `state`",
+  })
+  .openapi("UpdateMembership");
 
-// Revoked memberships aren't offered: GetMembership hides them from everyone
-// but admins, the member included.
-export const ListMembershipsQuerySchema = z.object({
-  state: z.enum([MembershipState.Invited, MembershipState.Member]).optional(),
-});
+export const MembershipPageSchema = pageSchema("MembershipPage", MembershipSchema);
+
+// Every list goes through one of the table's indexes: by member, by account,
+// or by product. Revoked memberships aren't offered: GetMembership hides them
+// from everyone but admins, the member included.
+export const ListMembershipsQuerySchema = z
+  .object({
+    member: z.string().min(1).optional().openapi({
+      description: "Only the memberships this account holds (a membership's `account_id`).",
+    }),
+    account: z.string().min(1).optional().openapi({
+      description:
+        "Only the memberships of this account (`membership_account_id`). Without `product`, only those of the account itself, not of its products.",
+    }),
+    product: z.string().min(1).optional().openapi({
+      description: "Only the memberships of this product of `account` (`repository_id`).",
+    }),
+    state: z.enum([MembershipState.Invited, MembershipState.Member]).optional(),
+  })
+  .refine((q) => q.member || q.account, {
+    message: "Pass `member`, `account`, or both",
+  })
+  .refine((q) => !q.product || q.account, {
+    message: "`product` needs `account`",
+    path: ["product"],
+  });
 
 /** Every membership change leaves a log line saying who made it. */
 function audit(operation: string, session: UserSession, m: Membership) {
@@ -146,48 +185,45 @@ export async function inviteMember(
   return ok(audit("inviteMember", session, await membershipsTable.create(membership)));
 }
 
-/** The memberships of an account, or of one of its products. */
-export async function listMembers(
-  session: UserSession | null,
-  scope: { account_id: string; product_id?: string }
-): Promise<OperationResult<Membership[]>> {
-  const { account_id, product_id } = scope;
-  if (product_id) {
-    const product = await productsTable.fetchById(account_id, product_id);
-    if (!product) return notFound(`Product ${account_id}/${product_id} not found`);
-    if (!isAuthorized(session, product, Actions.ListRepositoryMemberships)) {
-      return deny(session, "You may not list this product's members");
-    }
-  } else {
-    const account = await accountsTable.fetchById(account_id);
-    if (!account) return notFound(`Account ${account_id} not found`);
-    if (!isAuthorized(session, account, Actions.ListAccountMemberships)) {
-      return deny(session, "You may not list this account's members");
-    }
-  }
-  const memberships = await membershipsTable.listByAccount(account_id, product_id);
-  return ok(
-    memberships.filter((m) => isAuthorized(session, m, Actions.GetMembership))
-  );
-}
-
-/** The caller's own memberships, optionally only those in one state. */
+/**
+ * The memberships the caller may see, of one member, one account or one
+ * product, optionally only those in one state.
+ */
 export async function listMemberships(
   session: UserSession | null,
   query: unknown
-): Promise<OperationResult<Membership[]>> {
-  if (!session) return unauthenticated();
+): Promise<OperationResult<Page<Membership>>> {
   const parsed = ListMembershipsQuerySchema.safeParse(query);
   if (!parsed.success) return fromZodError(parsed.error);
-  if (!session.account) return ok([]);
-  const memberships = await membershipsTable.listByUser(
-    session.account.account_id
-  );
+  const { member, account, product, state } = parsed.data;
+  let memberships: Membership[];
+  if (account && product) {
+    const found = await productsTable.fetchById(account, product);
+    if (!found) return notFound(`Product ${account}/${product} not found`);
+    if (!isAuthorized(session, found, Actions.ListRepositoryMemberships)) {
+      return deny(session, "You may not list this product's members");
+    }
+    memberships = await membershipsTable.listByAccount(account, product);
+  } else if (account) {
+    const found = await accountsTable.fetchById(account);
+    if (!found) return notFound(`Account ${account} not found`);
+    if (!isAuthorized(session, found, Actions.ListAccountMemberships)) {
+      return deny(session, "You may not list this account's members");
+    }
+    memberships = await membershipsTable.listByAccount(account);
+  } else {
+    // Each row is checked below: anyone may see an active membership, and
+    // only the member and its managers an invitation.
+    memberships = await membershipsTable.listByUser(member!);
+  }
   return ok(
-    memberships.filter(
-      (m) =>
-        (!parsed.data.state || m.state === parsed.data.state) &&
-        isAuthorized(session, m, Actions.GetMembership)
+    onePage(
+      memberships.filter(
+        (m) =>
+          (!member || m.account_id === member) &&
+          (!state || m.state === state) &&
+          isAuthorized(session, m, Actions.GetMembership)
+      )
     )
   );
 }
@@ -222,10 +258,20 @@ async function changeMembership(
 
 const resolved = () => ({ state_changed: new Date().toISOString() });
 
+const refused = () => forbidden("You may not change this membership");
+
 const ifInvited = (m: Membership, change: Partial<Membership>) =>
   m.state === MembershipState.Invited
     ? ok(change)
     : conflict("Membership is not a pending invitation");
+
+const accept = (m: Membership) =>
+  ifInvited(m, { state: MembershipState.Member, ...resolved() });
+
+const revoke = (m: Membership) =>
+  m.state === MembershipState.Revoked
+    ? conflict("Membership is already revoked")
+    : ok({ state: MembershipState.Revoked, ...resolved() });
 
 export const acceptInvitation = (
   session: UserSession | null,
@@ -235,7 +281,7 @@ export const acceptInvitation = (
     session,
     membership_id,
     (m) => isAuthorized(session, m, Actions.AcceptMembership),
-    (m) => ifInvited(m, { state: MembershipState.Member, ...resolved() })
+    accept
   );
 
 export const rejectInvitation = (
@@ -257,10 +303,7 @@ export const revokeMembership = (
     session,
     membership_id,
     (m) => isAuthorized(session, m, Actions.RevokeMembership),
-    (m) =>
-      m.state === MembershipState.Revoked
-        ? conflict("Membership is already revoked")
-        : ok({ state: MembershipState.Revoked, ...resolved() })
+    revoke
   );
 
 export async function updateMembership(
@@ -271,15 +314,30 @@ export async function updateMembership(
   return changeMembership(
     session,
     membership_id,
-    (m) => isAuthorized(session, m, Actions.UpdateMembershipRole),
+    // Any change this caller could make, so a caller who may make none is
+    // refused before the body is read. The change the body asks for is
+    // checked once it has been parsed.
+    (m) =>
+      isAuthorized(session, m, Actions.UpdateMembershipRole) ||
+      isAuthorized(session, m, Actions.AcceptMembership) ||
+      isAuthorized(session, m, Actions.RevokeMembership),
     async (m) => {
       const parsed = UpdateMembershipSchema.safeParse(input);
       if (!parsed.success) return fromZodError(parsed.error);
-      const { role } = parsed.data;
+      const { role, state } = parsed.data;
+      if (state === MembershipState.Revoked) {
+        return isAuthorized(session, m, Actions.RevokeMembership) ? revoke(m) : refused();
+      }
+      if (!role) {
+        return isAuthorized(session, m, Actions.AcceptMembership) ? accept(m) : refused();
+      }
       // The role it gets as well as the role it has, so no one without the
       // right to hold the higher of the two can grant or take it away.
-      if (!isAuthorized(session, { ...m, role }, Actions.UpdateMembershipRole)) {
-        return forbidden("You may not change this membership");
+      if (
+        !isAuthorized(session, m, Actions.UpdateMembershipRole) ||
+        !isAuthorized(session, { ...m, role }, Actions.UpdateMembershipRole)
+      ) {
+        return refused();
       }
       if (m.state !== MembershipState.Member) {
         return conflict("Membership is not active");

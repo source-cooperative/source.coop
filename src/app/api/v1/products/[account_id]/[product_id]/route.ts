@@ -1,4 +1,4 @@
-import { ProductSchema } from "@/types";
+import { ProductResponseSchema } from "@/types";
 import { withApiSession, toResponse } from "@/lib/api/handler";
 import { bearer, errors, json, productParams, registry } from "@/lib/api/openapi";
 import {
@@ -22,7 +22,7 @@ registry.registerPath({
     "Anyone may read a public or unlisted product; a restricted one needs a member's credentials. A deactivated product is not found, except by its owners and maintainers.",
   request: { params },
   responses: {
-    200: json("The product.", ProductSchema),
+    200: json("The product.", ProductResponseSchema),
     ...errors(401, 403, 404),
   },
 });
@@ -30,6 +30,26 @@ registry.registerPath({
 export const GET = withApiSession<Params>(async ({ session, params }) =>
   toResponse(await getProduct(session, params.account_id, params.product_id))
 );
+
+registry.registerPath({
+  method: "head",
+  path: "/products/{account_id}/{product_id}",
+  tags: ["Products"],
+  summary: "Check that a product exists",
+  description:
+    "`GET` without the body, so it answers with the same status: 404 only when no product holds this ID, or when it is deactivated and hidden from the caller. A 401 or 403 means the product exists but the caller may not read it.",
+  request: { params },
+  responses: {
+    200: { description: "The product exists and the caller may read it." },
+    401: { description: "The product exists; reading it needs credentials." },
+    403: { description: "The product exists; the caller may not read it." },
+    404: { description: "No product holds this ID that the caller may know of." },
+  },
+});
+
+// Declared rather than left to Next's GET fallback, so the reference and the
+// coverage test both see it: the web app's ID check calls it.
+export const HEAD = GET;
 
 registry.registerPath({
   method: "patch",
@@ -44,7 +64,7 @@ registry.registerPath({
     body: { content: { "application/json": { schema: UpdateProductSchema } } },
   },
   responses: {
-    200: json("The product as edited.", ProductSchema),
+    200: json("The product as edited.", ProductResponseSchema),
     ...errors(400, 401, 403, 404),
   },
 });
@@ -65,7 +85,7 @@ registry.registerPath({
   security: bearer,
   request: { params, query: DeleteProductQuerySchema },
   responses: {
-    200: json("The product as it was.", ProductSchema),
+    200: json("The product as it was.", ProductResponseSchema),
     ...errors(400, 401, 403, 404),
   },
 });

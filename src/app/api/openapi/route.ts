@@ -5,20 +5,13 @@ import { generateDocument } from "@/lib/api/openapi";
 // from this list is missing from the document, which route-coverage.test.ts
 // catches.
 import "../v1/accounts/[account_id]/route";
-import "../v1/accounts/[account_id]/flags/route";
-import "../v1/accounts/[account_id]/members/route";
-import "../v1/accounts/[account_id]/profile/route";
 import "../v1/accounts/[account_id]/trusts/exchanges/route";
 import "../v1/memberships/route";
 import "../v1/memberships/[membership_id]/route";
-import "../v1/memberships/[membership_id]/accept/route";
-import "../v1/memberships/[membership_id]/reject/route";
-import "../v1/memberships/[membership_id]/revoke/route";
 import "../v1/products/route";
 import "../v1/products/featured/route";
 import "../v1/products/[account_id]/route";
 import "../v1/products/[account_id]/[product_id]/route";
-import "../v1/products/[account_id]/[product_id]/members/route";
 import "../v1/products/[account_id]/[product_id]/permissions/route";
 import "../v1/secret-scanning/github/route";
 import "../v1/service-account-keys/exchanges/route";

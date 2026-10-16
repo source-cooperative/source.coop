@@ -1,6 +1,6 @@
 import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
 import { z } from "zod";
-import { AccountSchema } from "@/types/account";
+import { AccountSchema, PublicAccountSchema } from "@/types/account";
 import { MIN_ID_LENGTH, MAX_ID_LENGTH, ID_REGEX } from "@/types/shared";
 
 extendZodWithOpenApi(z);
@@ -74,10 +74,16 @@ export const ProductSchema = z
     disabled: z.boolean(),
     featured: z.number(),
     search_text: z.string().optional(),
-  })
-  .openapi("Product");
+  });
 
 export type Product = z.infer<typeof ProductSchema>;
+
+/** A product as the API answers it, its account cut to what the caller may read. */
+export const ProductResponseSchema = ProductSchema.extend({
+  account: z.union([AccountSchema, PublicAccountSchema]).optional(),
+}).openapi("Product");
+
+export type ProductResponse = z.infer<typeof ProductResponseSchema>;
 
 export const ProductCreationRequestSchema = ProductSchema.omit({
   created_at: true,

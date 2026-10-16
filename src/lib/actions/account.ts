@@ -177,7 +177,7 @@ export async function updateAccountProfile(
   const account_id = String(formData.get("account_id") ?? "");
   const field = (name: string) => (formData.get(name) as string | null) ?? undefined;
   return adapt("updateAccountProfile", formData, "Profile updated successfully!", async () =>
-    ops.updateAccountProfile(await getPageSession(), account_id, {
+    ops.updateAccount(await getPageSession(), account_id, {
       name: field("name"),
       bio: field("description"),
       orcid: field("orcid"),
@@ -197,13 +197,11 @@ export async function updateAccountFlags(
 ): Promise<FormState<any>> {
   const account_id = String(formData.get("account_id") ?? "");
   return adapt("updateAccountFlags", formData, "Account flags updated successfully!", async () =>
-    ops.updateAccountFlags(
-      await getPageSession(),
-      account_id,
-      [...formData.entries()]
+    ops.updateAccount(await getPageSession(), account_id, {
+      flags: [...formData.entries()]
         .filter(([key, value]) => key !== "account_id" && value === "on")
-        .map(([key]) => key)
-    )
+        .map(([key]) => key),
+    })
   );
 }
 
