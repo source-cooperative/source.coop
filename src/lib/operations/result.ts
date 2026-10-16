@@ -49,6 +49,32 @@ export const pageSchema = <T extends ZodTypeAny>(name: string, item: T) =>
  */
 export const onePage = <T>(items: T[]): Page<T> => ({ items, next_cursor: null });
 
+/** `?cursor=` and `?limit=`, as every paged list takes them. */
+export const PageQuerySchema = z.object({
+  cursor: z
+    .string()
+    .optional()
+    .openapi({ description: "The `next_cursor` of the previous page." }),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+});
+
+/**
+ * A cursor is DynamoDB's LastEvaluatedKey, base64url'd so it survives a query
+ * string unescaped. `schema` names the key a list may resume from; anything
+ * else decodes to null, for the list to refuse rather than DynamoDB.
+ */
+export function decodeCursor(cursor: string, schema: z.ZodTypeAny) {
+  try {
+    const key = schema.safeParse(JSON.parse(Buffer.from(cursor, "base64url").toString()));
+    return key.success ? (key.data as Record<string, unknown>) : null;
+  } catch {
+    return null;
+  }
+}
+
+export const encodeCursor = (key: unknown) =>
+  key ? Buffer.from(JSON.stringify(key)).toString("base64url") : null;
+
 const fail =
   (error: OperationError) =>
   (message: string, fieldErrors?: Record<string, string[]>) =>

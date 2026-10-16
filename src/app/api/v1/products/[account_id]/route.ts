@@ -7,9 +7,9 @@ import {
   CreateProductSchema,
   createProduct,
   listProducts,
-  PageQuerySchema,
   ProductPageSchema,
 } from "@/lib/operations/products";
+import { PageQuerySchema } from "@/lib/operations/result";
 
 type Params = { account_id: string };
 

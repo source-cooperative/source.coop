@@ -34,17 +34,12 @@ import {
   OperationResult,
   type Page,
   pageSchema,
+  PageQuerySchema,
+  decodeCursor,
+  encodeCursor,
   unauthenticated,
 } from "./result";
 import { publicView } from "./accounts";
-
-export const PageQuerySchema = z.object({
-  cursor: z
-    .string()
-    .optional()
-    .openapi({ description: "The `next_cursor` of the previous page." }),
-  limit: z.coerce.number().int().min(1).max(100).default(20),
-});
 
 export const ListProductsQuerySchema = PageQuerySchema.extend({
   q: z
@@ -105,18 +100,6 @@ const publicCursor = (featuredOnly: boolean) =>
       featured: featuredOnly ? z.number().positive() : z.number(),
     })
     .strict();
-
-function decodeCursor(cursor: string, schema: z.ZodTypeAny) {
-  try {
-    const key = schema.safeParse(JSON.parse(Buffer.from(cursor, "base64url").toString()));
-    return key.success ? (key.data as Record<string, unknown>) : null;
-  } catch {
-    return null;
-  }
-}
-
-const encodeCursor = (key: unknown) =>
-  key ? Buffer.from(JSON.stringify(key)).toString("base64url") : null;
 
 /**
  * `product` with as much of its account as the caller may read: the whole

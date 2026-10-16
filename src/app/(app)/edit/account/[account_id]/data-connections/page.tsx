@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { Box, Flex, Button } from "@radix-ui/themes";
 import Link from "next/link";
 import { getPageSession } from "@/lib/api/utils";
-import { listDataConnections } from "@/lib/operations/data-connections";
+import { listAllDataConnections } from "@/lib/operations/data-connections";
 import { FormTitle } from "@/components/core/FormTitle";
 import { DataConnectionsList } from "@/components/features/data-connections";
 import {
@@ -22,11 +22,11 @@ interface PageProps {
 export default async function AccountDataConnectionsPage({ params }: PageProps) {
   const { account_id } = await params;
   // Refused unless the visitor manages this account's connections.
-  const result = await listDataConnections(await getPageSession(), {
+  const result = await listAllDataConnections(await getPageSession(), {
     owner: account_id,
   });
   if (!result.ok) notFound();
-  const connections = result.value.items;
+  const connections = result.value;
 
   return (
     <Box>
