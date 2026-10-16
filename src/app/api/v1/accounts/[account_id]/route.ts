@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { StatusCodes } from "http-status-codes";
 import { withApiSession, toResponse } from "@/lib/api/handler";
-import { accountParams, bearer, errors, json, registry } from "@/lib/api/openapi";
+import { accountParams, bearer, errors, json, optionalBearer, registry } from "@/lib/api/openapi";
 import {
   accountExists,
   deleteAccount,
@@ -22,8 +22,8 @@ registry.registerPath({
   tags: ["Accounts"],
   summary: "Get an account",
   description:
-    "The whole account record, emails and flags included, to whoever may read it: a person their own, an organization's owners and maintainers theirs, an admin any. Everyone else, signed in or not, gets the public profile of a person or organization. A disabled account is not found, except by whoever may read its record; a service account is not found by whoever does not manage it.",
-  security: bearer,
+    "Returns the full account record, including emails and flags, if you may read it. People may read their own record, organization owners and maintainers may read their organization's, and admins may read any. Everyone else, including anonymous callers, gets the account's public profile.\n\nReturns 404 for a disabled account unless you may read its full record, and for a service account unless you manage it.",
+  security: optionalBearer,
   request: { params },
   responses: {
     200: json(
@@ -70,7 +70,7 @@ registry.registerPath({
   tags: ["Accounts"],
   summary: "Edit an account",
   description:
-    "Changes the fields given and leaves the rest; an empty string clears a profile field. A person may edit their own account, an organization's owners and maintainers theirs, and whoever manages a service account's owner may rename it; an admin may edit any. `disabled` takes more: an organization's owners, a service account's managers, or an admin. `flags` takes an admin. A service account has only a `name`. A disabled account can be re-enabled, but not otherwise edited until it is, except by an admin.",
+    "Changes the fields you send and leaves the rest unchanged. An empty string clears a profile field.\n\nPeople may edit their own account, and organization owners and maintainers may edit their organization's. If you manage a service account's owner, you may rename the service account. Admins may edit any account.\n\nSome fields need more. Only organization owners, service-account managers and admins may change `disabled`, and only admins may change `flags`. A service account accepts only `name`, `disabled` and `flags`.\n\nA disabled account can be re-enabled, but only an admin may edit anything else on it until it is.",
   security: bearer,
   request: {
     params,
@@ -93,7 +93,7 @@ registry.registerPath({
   tags: ["Accounts"],
   summary: "Delete a service account",
   description:
-    "Deletes a service account, with every grant it held, its trusts, and every API key it had, which is revoked. Open to whoever manages its owner. A person's or organization's account is never deleted: this answers 409, and `PATCH /accounts/{account_id}` with `{ \"disabled\": true }` disables it.",
+    "Deletes a service account, along with its product access, its trusts and its API keys. You may delete a service account if you manage its owner; otherwise this returns 404.\n\nPeople and organizations are never deleted. If you may disable the account, this returns 409; disable it instead with `PATCH /accounts/{account_id}` and `{ \"disabled\": true }`. Otherwise it returns 403.",
   security: bearer,
   request: { params },
   responses: {
