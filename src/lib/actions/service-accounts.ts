@@ -165,7 +165,7 @@ export async function createServiceAccount(
       membership_id: randomUUID(),
       account_id,
       membership_account_id: owner_account_id,
-      repository_id: grant.product_id,
+      product_id: grant.product_id,
       role: grant.role,
       state: MembershipState.Member,
       state_changed: now,
@@ -298,10 +298,10 @@ export async function setProductAccess(
 ): Promise<ServiceAccountActionState> {
   const account = await managedFrom(formData);
   if (!account) return outcome("You do not manage that service account", false);
-  const repository_id = String(formData.get("product_id") ?? "");
+  const product_id = String(formData.get("product_id") ?? "");
   const access = String(formData.get("access") ?? "");
   const held = (await membershipsTable.listByUser(account.account_id)).find(
-    (m) => m.repository_id === repository_id && m.state === MembershipState.Member
+    (m) => m.product_id === product_id && m.state === MembershipState.Member
   );
   const now = new Date().toISOString();
 
@@ -313,21 +313,21 @@ export async function setProductAccess(
     const role = access as MembershipRole;
     const problem = serviceAccountGrantProblem(
       account,
-      { membership_account_id: account.owner_account_id, repository_id },
+      { membership_account_id: account.owner_account_id, product_id },
       role
     );
     if (problem) return outcome(problem, false);
     if (held) {
       await membershipsTable.update({ ...held, role, state_changed: now });
     } else {
-      if (!(await productsTable.fetchById(account.owner_account_id, repository_id))) {
-        return outcome(`${account.owner_account_id} has no product ${repository_id}`, false);
+      if (!(await productsTable.fetchById(account.owner_account_id, product_id))) {
+        return outcome(`${account.owner_account_id} has no product ${product_id}`, false);
       }
       await membershipsTable.create({
         membership_id: randomUUID(),
         account_id: account.account_id,
         membership_account_id: account.owner_account_id,
-        repository_id,
+        product_id,
         role,
         state: MembershipState.Member,
         state_changed: now,

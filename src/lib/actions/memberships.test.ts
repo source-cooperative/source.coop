@@ -50,7 +50,7 @@ describe("inviteMember", () => {
     const state = await inviteMember({} as never, data);
     expect(operations.inviteMember).toHaveBeenCalledWith(session, {
       membership_account_id: "an-org",
-      repository_id: undefined,
+      product_id: undefined,
       account_id: "a-person",
       role: "read_data",
     });
@@ -81,7 +81,7 @@ it("acceptInvitation reports success or the refusal", async () => {
 
 describe("getPendingInvitation", () => {
   const toOrg = membership();
-  const toProduct = membership({ membership_id: "m-2", repository_id: "a-product" });
+  const toProduct = membership({ membership_id: "m-2", product_id: "a-product" });
 
   const signedIn = { ...session, account: { account_id: "a-person" } };
 
@@ -95,7 +95,7 @@ describe("getPendingInvitation", () => {
     expect(await getPendingInvitation("an-org", "a-product")).toBe(toProduct);
     expect(await getPendingInvitation("other-org")).toBeNull();
     expect(operations.listMemberships).toHaveBeenCalledWith(signedIn, {
-      member: "a-person",
+      account_id: "a-person",
       state: MembershipState.Invited,
     });
   });

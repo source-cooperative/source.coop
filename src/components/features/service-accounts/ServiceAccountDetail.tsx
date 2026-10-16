@@ -141,7 +141,7 @@ export function ServiceAccountDetail({
   // Shown as chosen at once; the page's revalidation then confirms it, or the
   // failure below explains why it went back.
   const [access, chooseAccess] = useOptimistic(
-    Object.fromEntries(grants.map((g) => [g.repository_id ?? "", g.role as ProductAccess])),
+    Object.fromEntries(grants.map((g) => [g.product_id ?? "", g.role as ProductAccess])),
     (current, [product_id, next]: [string, ProductAccess | null]) => {
       const { [product_id]: _dropped, ...rest } = current;
       return next ? { ...rest, [product_id]: next } : rest;

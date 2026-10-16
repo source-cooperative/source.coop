@@ -122,7 +122,7 @@ describe("createServiceAccount", () => {
       expect.objectContaining({
         account_id: "acme--nightly-sync",
         membership_account_id: "acme",
-        repository_id: "climate-data",
+        product_id: "climate-data",
         role: MembershipRole.WriteData,
         state: MembershipState.Member,
       })
@@ -282,7 +282,7 @@ describe("setProductAccess", () => {
     membership_id: "m1",
     account_id: "acme--nightly-sync",
     membership_account_id: "acme",
-    repository_id: "climate-data",
+    product_id: "climate-data",
     role: MembershipRole.ReadData,
     state: MembershipState.Member,
     state_changed: "2026-01-01T00:00:00.000Z",
@@ -314,7 +314,7 @@ describe("setProductAccess", () => {
       expect.objectContaining({
         account_id: "acme--nightly-sync",
         membership_account_id: "acme",
-        repository_id: "reference-data",
+        product_id: "reference-data",
         role: MembershipRole.WriteData,
         state: MembershipState.Member,
       })

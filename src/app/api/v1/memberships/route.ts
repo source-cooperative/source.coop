@@ -16,7 +16,7 @@ registry.registerPath({
   tags: ["Memberships"],
   summary: "List memberships",
   description:
-    "Lists the memberships of a `member`, an `account`, or a `product` of an account. Anyone sees active memberships. Invitations are visible to the invitee and the account's managers.",
+    "Lists the memberships that match the filters. Pass `account_id` (the member), `membership_account_id` (the account), or both. `membership_account_id` alone excludes the account's products; add `product_id` for one product. Anyone sees active memberships. Invitations are visible to the invitee and the account's managers.",
   security: optionalBearer,
   request: { query: ListMembershipsQuerySchema },
   responses: {
@@ -40,7 +40,7 @@ registry.registerPath({
   tags: ["Memberships"],
   summary: "Invite a member",
   description:
-    "Invites an account to an account or, with `repository_id`, to one of its products. A person becomes a member after accepting. A service account becomes a member at once. It can only join its owner's products, as `read_data` or `write_data`. Organizations can't be members.",
+    "Invites an account to an account or, with `product_id`, to one of its products. A person becomes a member after accepting. A service account becomes a member at once. It can only join its owner's products, as `read_data` or `write_data`. Organizations can't be members.",
   security: bearer,
   request: {
     body: { content: { "application/json": { schema: InviteMemberSchema } } },

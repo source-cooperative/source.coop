@@ -80,16 +80,16 @@ export const MembershipSchema = z
       .toLowerCase()
       .regex(ID_REGEX, "Invalid membership account ID format")
       .openapi({ example: "organization-id" }),
-    repository_id: z
+    product_id: z
       .optional(
         z
           .string()
           .min(MIN_ID_LENGTH)
           .max(MAX_ID_LENGTH)
           .toLowerCase()
-          .regex(ID_REGEX, "Invalid repository ID format")
+          .regex(ID_REGEX, "Invalid product ID format")
       )
-      .openapi({ example: "repository-id" }),
+      .openapi({ example: "product-id" }),
     role: MembershipRoleSchema,
     state: MembershipStateSchema,
     state_changed: z.string().datetime("Invalid date format for state changed"),

@@ -2277,7 +2277,7 @@ describe("Authorization Tests", () => {
       return (
         membership.account_id == "repo-member-owner" &&
         membership.membership_account_id == "organization" &&
-        membership.repository_id == "org-repo-id"
+        membership.product_id == "org-repo-id"
       );
     });
     expect(isAuthorized(sessions["admin"], membership, action)).toBe(true);

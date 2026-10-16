@@ -72,7 +72,10 @@ than those on its `UNREGISTERED` list.
 
 URLs name resources with plural nouns and snake_case path parameters:
 `/accounts/{account_id}`, `/products/{account_id}/{product_id}`. Bodies and
-responses use the same snake_case field names as the stored records.
+responses use the same snake_case field names as the stored records, except
+where a stored name predates the API's: a membership's `product_id` is stored
+as `repository_id`, and its table module (`fromItem`/`toItem`) translates
+between the two, so nothing above it sees the stored name.
 
 | Method | Means | Answers |
 |---|---|---|
@@ -102,14 +105,12 @@ A list small enough to read whole still answers a page, as its only one
 `cursor` or `limit` yet. Never answer a bare array: it can't grow a cursor
 later without breaking whoever reads it.
 
-A query parameter that filters a list is named for what it picks, in plain
-words, not for the record field it matches: `/memberships` takes `?member=`,
-`?account=` and `?product=`, not `?account_id=` or `?membership_account_id=`.
-An ID needs no `_id` suffix, and the parameter's description names the field
-it matches. A product is two parameters, `?account=…&product=…`, as it is two
-path segments, never one `account/product` value. A list that can only be read
-through one of its table's indexes answers 400 to a request that names none,
-rather than scanning the table.
+A query parameter that filters a list on a field takes that field's name,
+with the field's own validation (`Schema.pick({...}).partial()`):
+`/memberships` takes `?account_id=`, `?membership_account_id=` and
+`?product_id=`. A parameter that isn't a field, such as `q` or `cursor`, is
+named for what it does. A list that can only be read through one of its table's indexes answers
+400 to a request that names none, rather than scanning the table.
 
 ## Errors
 
