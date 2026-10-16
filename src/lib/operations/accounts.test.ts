@@ -19,7 +19,7 @@ import {
 jest.mock("@/lib/clients/database", () => ({
   accountsTable: { fetchById: jest.fn(), update: jest.fn(), delete: jest.fn() },
   membershipsTable: { listByUser: jest.fn(), delete: jest.fn() },
-  serviceAccountKeysTable: { listByAccount: jest.fn(), revoke: jest.fn() },
+  serviceAccountKeysTable: { listByAccount: jest.fn(), delete: jest.fn() },
 }));
 jest.mock("@/lib/accounts/service-accounts", () => ({ managedServiceAccount: jest.fn() }));
 jest.mock("@/lib/api/authz", () => ({ isAuthorized: jest.fn() }));
@@ -307,7 +307,7 @@ describe("account flags", () => {
 describe("deleteAccount", () => {
   const bot = () => account({ type: AccountType.SERVICE, owner_account_id: "acme" });
 
-  it("deletes a service account's grants, revokes its live keys, then deletes it", async () => {
+  it("disables a service account, deletes its grants and keys, then deletes it", async () => {
     fetchById.mockResolvedValue(bot());
     (managedServiceAccount as jest.Mock).mockResolvedValue(bot());
     (membershipsTable.listByUser as jest.Mock).mockResolvedValue([
@@ -319,9 +319,10 @@ describe("deleteAccount", () => {
       { key_hash: "gone", revoked_at: "2026-01-01T00:00:00.000Z" },
     ]);
     expect(await deleteAccount(SESSION, "an-account")).toMatchObject({ ok: true });
+    expect(written()).toMatchObject({ account_id: "an-account", disabled: true });
     expect(membershipsTable.delete).toHaveBeenCalledTimes(2);
-    expect(serviceAccountKeysTable.revoke).toHaveBeenCalledTimes(1);
-    expect(serviceAccountKeysTable.revoke).toHaveBeenCalledWith("live", "owner", "alice");
+    expect(serviceAccountKeysTable.delete).toHaveBeenCalledTimes(2);
+    expect(serviceAccountKeysTable.delete).toHaveBeenCalledWith("live");
     expect(accountsTable.delete).toHaveBeenCalledWith("an-account");
   });
 
@@ -333,10 +334,18 @@ describe("deleteAccount", () => {
     expect(accountsTable.delete).not.toHaveBeenCalled();
   });
 
-  it("refuses whoever may not manage the service account", async () => {
+  it("tells only a caller who may disable a person how to", async () => {
+    fetchById.mockResolvedValue(account());
+    (isAuthorized as jest.Mock).mockReturnValue(false);
+    expect(await deleteAccount(SESSION, "an-account")).toMatchObject({ error: "forbidden" });
+    expect(isAuthorized).toHaveBeenCalledWith(SESSION, account(), Actions.DisableAccount);
+  });
+
+  it("hides a service account from whoever may not manage it", async () => {
     fetchById.mockResolvedValue(bot());
     (managedServiceAccount as jest.Mock).mockResolvedValue(null);
-    expect(await deleteAccount(SESSION, "an-account")).toMatchObject({ error: "forbidden" });
+    expect(await deleteAccount(SESSION, "an-account")).toMatchObject({ error: "not_found" });
+    expect(update).not.toHaveBeenCalled();
     expect(await deleteAccount(null, "an-account")).toMatchObject({ error: "unauthenticated" });
     expect(accountsTable.delete).not.toHaveBeenCalled();
   });

@@ -278,8 +278,7 @@ export async function deleteServiceAccount(
     await getPageSession(),
     String(formData.get("account_id") ?? "")
   );
-  if (!result.ok) return outcome(result.message, false);
-  if (!isServiceAccount(result.value)) return outcome("Not a service account", false);
+  if (!result.ok) return outcome("You do not manage that service account", false);
   // Its own page is gone; the list is where the user goes next.
   redirect(editAccountServiceAccountsUrl(result.value.owner_account_id));
 }
@@ -299,6 +298,8 @@ export async function setProductAccess(
 ): Promise<ServiceAccountActionState> {
   const account = await managedFrom(formData);
   if (!account) return outcome("You do not manage that service account", false);
+  // Disabled means frozen: no new grant until it is enabled again.
+  if (account.disabled) return outcome("That service account is disabled", false);
   const repository_id = String(formData.get("product_id") ?? "");
   const access = String(formData.get("access") ?? "");
   const held = (await membershipsTable.listByUser(account.account_id)).find(

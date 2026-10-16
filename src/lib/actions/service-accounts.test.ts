@@ -218,14 +218,14 @@ describe("lifecycle", () => {
     expect(redirect).toHaveBeenCalledWith("/edit/account/acme/service-accounts");
   });
 
-  it("shows why deleteAccount refused", async () => {
+  it("refuses, in the page's words, when deleteAccount does", async () => {
     (deleteAccount as jest.Mock).mockResolvedValue({
       ok: false,
-      error: "forbidden",
-      message: "You may not delete this service account",
+      error: "conflict",
+      message: 'Only a service account can be deleted; disable this account with PATCH { "disabled": true }',
     });
     const state = await deleteServiceAccount(IDLE, form({ account_id: "acme--nightly-sync" }));
-    expect(state).toMatchObject({ success: false, message: "You may not delete this service account" });
+    expect(state).toMatchObject({ success: false, message: "You do not manage that service account" });
     expect(redirect).not.toHaveBeenCalled();
   });
 
@@ -292,6 +292,12 @@ describe("setProductAccess", () => {
   beforeEach(() => {
     mocks.managed.mockResolvedValue(bot as never);
     mocks.memberships.listByUser.mockResolvedValue([grant as never]);
+  });
+
+  it("grants nothing to a disabled service account", async () => {
+    mocks.managed.mockResolvedValue({ ...bot, disabled: true } as never);
+    expect((await set("reference-data", MembershipRole.WriteData)).success).toBe(false);
+    expect(mocks.memberships.create).not.toHaveBeenCalled();
   });
 
   it("grants a product it does not reach, as a member of the owner", async () => {

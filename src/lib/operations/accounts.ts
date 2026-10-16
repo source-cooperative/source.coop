@@ -14,6 +14,7 @@ import {
   MAX_NAME_LENGTH,
   MembershipSchema,
   MIN_NAME_LENGTH,
+  ServiceAccount,
   UserSession,
 } from "@/types";
 import { isAuthorized } from "@/lib/api/authz";
@@ -30,6 +31,7 @@ import {
   editAccountPermissionsUrl,
   editAccountProfileUrl,
   editAccountServiceAccountsUrl,
+  editServiceAccountUrl,
 } from "@/lib/urls";
 import {
   conflict,
@@ -298,28 +300,35 @@ export async function updateAccountFlags(
 export async function deleteAccount(
   session: UserSession | null,
   account_id: string
-): Promise<OperationResult<Account>> {
+): Promise<OperationResult<ServiceAccount>> {
   if (!session) return unauthenticated();
   const account = await fetchAccount(account_id);
   if (!account) return missing(account_id);
   if (!isServiceAccount(account)) {
-    return conflict(
-      'Only a service account can be deleted; disable this account with PATCH { "disabled": true }'
-    );
+    // A person's or an organization's existence is public; only a caller who
+    // may disable it is told how.
+    return isAuthorized(session, account, Actions.DisableAccount)
+      ? conflict(
+          'Only a service account can be deleted; disable this account with PATCH { "disabled": true }'
+        )
+      : deny(session, "You may not delete this account");
   }
-  if (!(await managedServiceAccount(session, account_id))) {
-    return deny(session, "You may not delete this service account");
-  }
-  for (const membership of await membershipsTable.listByUser(account_id)) {
-    await membershipsTable.delete(membership.membership_id);
-  }
-  // Revoked rather than left behind: the id can be taken again, and a key
-  // still live would sign in as whatever account takes it.
-  for (const key of await serviceAccountKeysTable.listByAccount(account_id)) {
-    if (!key.revoked_at) {
-      await serviceAccountKeysTable.revoke(key.key_hash, "owner", session.account?.account_id);
-    }
-  }
+  // Hidden from whoever may not manage it, as in getAccountProfile.
+  if (!(await managedServiceAccount(session, account_id))) return missing(account_id);
+  // Disabled first: nothing new is granted, issued or trusted while the rest
+  // is torn down, and no key exchanges in the meantime.
+  await accountsTable.update({ ...account, disabled: true, updated_at: new Date().toISOString() });
+  const [memberships, keys] = await Promise.all([
+    membershipsTable.listByUser(account_id),
+    serviceAccountKeysTable.listByAccount(account_id),
+  ]);
+  // Keys are deleted rather than revoked, so an account that later takes the
+  // id starts with none; the exchange also refuses a key older than its
+  // account, which covers any key this misses.
+  await Promise.all([
+    ...memberships.map((m) => membershipsTable.delete(m.membership_id)),
+    ...keys.map((k) => serviceAccountKeysTable.delete(k.key_hash)),
+  ]);
   // Its trusts go with the account row.
   await accountsTable.delete(account_id);
   LOGGER.info("Deleted service account", {
@@ -331,5 +340,6 @@ export async function deleteAccount(
     },
   });
   revalidatePath(editAccountServiceAccountsUrl(account.owner_account_id));
+  revalidatePath(editServiceAccountUrl(account.owner_account_id, account_id));
   return ok(account);
 }
