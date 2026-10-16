@@ -10,7 +10,7 @@ import {
   UpdateAccountSchema,
 } from "@/lib/operations/accounts";
 import { z } from "zod";
-import { AccountProfileResponseSchema, AccountSchema } from "@/types";
+import { AccountSchema, PublicAccountSchema } from "@/types";
 
 type Params = { account_id: string };
 
@@ -22,13 +22,13 @@ registry.registerPath({
   tags: ["Accounts"],
   summary: "Get an account",
   description:
-    "Returns the full account record, including emails and flags, if you may read it. People may read their own record, organization owners and maintainers may read their organization's, and admins may read any. Everyone else, including anonymous callers, gets the account's public profile.\n\nReturns 404 for a disabled account unless you may read its full record. Returns 404 for a service account unless you are an admin.",
+    "Returns the full account record, including emails and flags, if you may read it. People may read their own record, organization owners and maintainers may read their organization's, and admins may read any. Everyone else, including anonymous callers, gets the account's `PublicAccount` view, without its emails, flags or private metadata.\n\nReturns 404 for a disabled account unless you may read its full record. Returns 404 for a service account unless you are an admin.",
   security: optionalBearer,
   request: { params },
   responses: {
     200: json(
-      "The account record, or its public profile.",
-      z.union([AccountSchema, AccountProfileResponseSchema])
+      "The account record, or its public view.",
+      z.union([AccountSchema, PublicAccountSchema])
     ),
     ...errors(401, 403, 404),
   },

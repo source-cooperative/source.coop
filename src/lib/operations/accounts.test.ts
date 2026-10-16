@@ -76,14 +76,27 @@ describe("getAccount", () => {
     });
   });
 
-  it("serves an organization's profile with its name", async () => {
+  it("serves anyone else the public view, without emails, flags or private metadata", async () => {
     fetchById.mockResolvedValue(
-      account({ type: AccountType.ORGANIZATION, metadata_public: { bio: "Hi" } })
+      account({
+        type: AccountType.ORGANIZATION,
+        metadata_public: { bio: "Hi" },
+        flags: [AccountFlags.ADMIN],
+        emails: [{ address: "o@example.test", is_primary: true }],
+        metadata_private: { secret: 1 },
+      })
     );
     const result = await getAccount(null, "an-account");
     expect(result).toEqual({
       ok: true,
-      value: { bio: "Hi", name: "An Account", type: "organization", profile_image: undefined },
+      value: {
+        account_id: "an-account",
+        type: "organization",
+        name: "An Account",
+        disabled: false,
+        metadata_public: { bio: "Hi" },
+        profile_image: undefined,
+      },
     });
   });
 
@@ -102,9 +115,11 @@ describe("getAccount", () => {
     });
   });
 
-  it("finds no profile for a service account", async () => {
-    fetchById.mockResolvedValue(account({ type: AccountType.SERVICE }));
+  it("finds neither a service account nor a disabled account for anyone else", async () => {
     (isAuthorized as jest.Mock).mockReturnValue(false);
+    fetchById.mockResolvedValue(account({ type: AccountType.SERVICE }));
+    expect(await getAccount(null, "an-account")).toMatchObject({ error: "not_found" });
+    fetchById.mockResolvedValue(account({ disabled: true }));
     expect(await getAccount(null, "an-account")).toMatchObject({ error: "not_found" });
   });
 });

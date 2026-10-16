@@ -5,7 +5,6 @@ import {
   AccountEmailSchema,
   AccountFlags,
   AccountFlagsSchema,
-  AccountProfileResponse,
   AccountSchema,
   AccountType,
   Actions,
@@ -15,6 +14,7 @@ import {
   MembershipSchema,
   MIN_NAME_LENGTH,
   ServiceAccount,
+  PublicAccount,
   UserSession,
 } from "@/types";
 import { isAuthorized } from "@/lib/api/authz";
@@ -111,23 +111,21 @@ export function whoami(
 }
 
 /**
- * The whole record to whoever may read it, and the public profile to everyone
- * else.
+ * The whole record for whoever GetAccount allows, and the public view for
+ * whoever may only see the profile. A service account has no profile, and a
+ * disabled account's is hidden, so either is not found.
  */
 export async function getAccount(
   session: UserSession | null,
   account_id: string
-): Promise<OperationResult<Account | AccountProfileResponse>> {
+): Promise<OperationResult<Account | PublicAccount>> {
   const account = await fetchAccount(account_id);
   if (!account) return missing(account_id);
   if (isAuthorized(session, account, Actions.GetAccount)) return ok(account);
-  if (!isAuthorized(session, account, Actions.GetAccountProfile)) {
-    // A service account has no profile, and a disabled one is hidden.
-    return account.disabled || isServiceAccount(account)
-      ? missing(account_id)
-      : deny(session, "You may not view this account");
-  }
-  return ok(profileOf(account));
+  if (isAuthorized(session, account, Actions.GetAccountProfile)) return ok(publicView(account));
+  return account.disabled || isServiceAccount(account)
+    ? missing(account_id)
+    : deny(session, "You may not view this account");
 }
 
 /** Whether an account by this ID exists, which anyone may ask. */
@@ -135,13 +133,10 @@ export async function accountExists(account_id: string): Promise<boolean> {
   return !!(await fetchAccount(account_id));
 }
 
-function profileOf(account: Account): AccountProfileResponse {
-  return {
-    ...account.metadata_public,
-    name: account.name,
-    type: account.type,
-    profile_image: avatarUrl(account),
-  };
+/** The part of an account anyone may read. */
+export function publicView(account: Account): PublicAccount {
+  const { account_id, type, name, disabled, metadata_public } = account;
+  return { account_id, type, name, disabled, metadata_public, profile_image: avatarUrl(account) };
 }
 
 /**
