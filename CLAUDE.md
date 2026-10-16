@@ -81,6 +81,13 @@ you checked and say why they still hold. "Checked the data-proxy ADRs; 005 still
 describes the model" is worth writing, because silence reads the same whether
 the docs were checked or forgotten.
 
+## API
+
+Read [API.md](API.md) before adding or changing an endpoint under `/api/v1`. It
+covers the operations layer every route goes through, how a route documents
+itself, the shapes of lists, errors and methods, and which consumers a change
+has to stay compatible with.
+
 ## Pull requests
 
 A PR that touches the UI links the stories it affects, on that branch's Storybook
