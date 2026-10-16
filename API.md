@@ -63,7 +63,7 @@ responses use the same snake_case field names as the stored records.
 | `GET` | read | the resource, or a page of them |
 | `HEAD` | does it exist | 200 or 404, no body. Usually `GET`'s access, but its description says who may ask: `HEAD /accounts/{id}` answers anyone, for checking an ID is taken |
 | `POST` on a collection | create | 201 and the new resource |
-| `POST` on a named action | do something that isn't an edit (`/memberships/{id}/accept`, `/service-account-keys/revocations`) | the resource as it now is, or 204 |
+| `POST` on a named action | do something that isn't an edit (`/service-account-keys/revocations`) | the resource as it now is, or 204 |
 | `PATCH` | change the fields given, leave the rest; `""` clears a clearable field | the resource as edited |
 | `PUT` | replace a whole value at once (`/accounts/{id}/flags`) | the value as set |
 | `DELETE` | delete | the resource as it was |

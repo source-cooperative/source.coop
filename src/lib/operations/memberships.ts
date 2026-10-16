@@ -46,9 +46,24 @@ export const InviteMemberSchema = MembershipSchema.pick({
   role: true,
 });
 
-export const UpdateMembershipSchema = MembershipSchema.pick({
-  role: true,
-}).openapi("UpdateMembership");
+// One change per request: a role change and a change of state are authorized
+// for different callers (a manager, the member).
+export const UpdateMembershipSchema = MembershipSchema.pick({ role: true })
+  .partial()
+  .extend({
+    state: z
+      .enum([MembershipState.Member, MembershipState.Revoked])
+      .optional()
+      .openapi({
+        description:
+          "`member` accepts a pending invitation; `revoked` ends a membership or withdraws or declines an invitation.",
+      }),
+  })
+  .strict()
+  .refine((b) => (b.role === undefined) !== (b.state === undefined), {
+    message: "Send either `role` or `state`",
+  })
+  .openapi("UpdateMembership");
 
 export const MembershipPageSchema = pageSchema("MembershipPage", MembershipSchema);
 
@@ -280,7 +295,14 @@ export async function updateMembership(
   if (!session) return unauthenticated();
   const parsed = UpdateMembershipSchema.safeParse(input);
   if (!parsed.success) return fromZodError(parsed.error);
-  const { role } = parsed.data;
+  const { state } = parsed.data;
+  if (state) {
+    const change =
+      state === MembershipState.Member ? acceptInvitation : revokeMembership;
+    return change(session, membership_id);
+  }
+  // The schema's refine leaves `role` set whenever `state` isn't.
+  const role = parsed.data.role!;
   return changeMembership(
     session,
     membership_id,

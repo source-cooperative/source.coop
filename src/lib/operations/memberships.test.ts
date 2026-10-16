@@ -303,6 +303,30 @@ describe("updateMembership", () => {
     expect(await updateMembership(session, "m-1", { role: "members" })).toMatchObject({ error: "invalid" });
   });
 
+  it("takes a role or a state, not both", async () => {
+    expect(
+      await updateMembership(session, "m-1", { role: "owners", state: "revoked" })
+    ).toMatchObject({ error: "invalid" });
+    expect(await updateMembership(session, "m-1", { state: "invited" })).toMatchObject({
+      error: "invalid",
+    });
+  });
+
+  it("accepts an invitation with state member", async () => {
+    memberships.fetchById.mockResolvedValue(membership());
+    expect(await updateMembership(session, "m-1", { state: "member" })).toMatchObject({
+      ok: true,
+      value: { state: MembershipState.Member },
+    });
+  });
+
+  it("revokes with state revoked", async () => {
+    expect(await updateMembership(session, "m-1", { state: "revoked" })).toMatchObject({
+      ok: true,
+      value: { state: MembershipState.Revoked },
+    });
+  });
+
   it("refuses an inactive membership", async () => {
     memberships.fetchById.mockResolvedValue(membership());
     expect(await updateMembership(session, "m-1", { role: "owners" })).toMatchObject({ error: "conflict" });
