@@ -26,6 +26,18 @@ const bearerAuth = registry.registerComponent("securitySchemes", "bearerAuth", {
 /** Marks a route as one that takes a bearer token. */
 export const bearer = [{ [bearerAuth.name]: [] }];
 
+/** Marks a route whose answer depends on a bearer token, but that needs none. */
+export const optionalBearer = [{}, ...bearer];
+
+const INTERNAL = "Internal";
+
+/**
+ * Marks a route that only Source's own services, or a partner such as GitHub,
+ * call. It is listed so the reference describes everything deployed, and
+ * flagged so no client builds on it.
+ */
+export const internal = { tags: [INTERNAL], "x-internal": true };
+
 const ErrorSchema = registry.register(
   "Error",
   z.object({
@@ -60,6 +72,10 @@ const ERRORS: Record<number, string> = {
   [StatusCodes.CONFLICT]: "The resource isn't in a state that allows this.",
 };
 
+export const accountParams = z.object({
+  account_id: z.string().openapi({ description: "The account's ID." }),
+});
+
 export const productParams = z.object({
   account_id: z.string().openapi({ description: "The product owner's ID." }),
   product_id: z.string().openapi({ description: "The product's ID." }),
@@ -79,14 +95,30 @@ export const errors = (...statuses: (keyof typeof ERRORS)[]) =>
   Object.fromEntries(statuses.map((s) => [s, json(ERRORS[s], ErrorSchema)]));
 
 export function generateDocument() {
-  return new OpenApiGeneratorV3(registry.definitions).generateDocument({
+  const document = new OpenApiGeneratorV3(registry.definitions).generateDocument({
     openapi: "3.0.3",
     info: {
       title: "Source Cooperative API",
       version: "1.0.0",
-      description:
-        "Everything you can do on source.coop, over HTTP. Errors share one shape: `{ \"error\": { \"code\", \"message\", \"field_errors\"? } }`.",
+      description: "Everything you can do on source.coop, over HTTP.",
     },
     servers: [{ url: "/api/v1" }],
   });
+  // Swagger UI and Redoc list the declared tags first, in declared order, so
+  // every tag is declared, in the order routes register, and Internal last.
+  const tags = new Set(
+    Object.values(document.paths).flatMap((path) =>
+      Object.values(path).flatMap((op) => (op as { tags?: string[] }).tags ?? [])
+    )
+  );
+  tags.delete(INTERNAL);
+  document.tags = [
+    ...[...tags].map((name) => ({ name })),
+    {
+      name: INTERNAL,
+      description:
+        "**Not for public use.** Called by Source's data proxy or by GitHub, authenticated in ways no client can be. Listed so this reference matches what is deployed; they may change without notice.",
+    },
+  ];
+  return document;
 }

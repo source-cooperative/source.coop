@@ -24,7 +24,7 @@ export async function inviteMember(
   const result = await ops.inviteMember(await getPageSession(), {
     membership_account_id: formData.get("organization_id"),
     // An unset hidden field submits "", which means no product.
-    repository_id: formData.get("product_id") || undefined,
+    product_id: formData.get("product_id") || undefined,
     account_id: formData.get("account_id"),
     role: formData.get("role"),
   });
@@ -70,7 +70,12 @@ export async function getPendingInvitation(
   // A banner isn't worth failing the page it sits on.
   const result = await getPageSession()
     .then((session) =>
-      ops.listMemberships(session, { state: MembershipState.Invited })
+      session?.account
+        ? ops.listMemberships(session, {
+            account_id: session.account.account_id,
+            state: MembershipState.Invited,
+          })
+        : null
     )
     .catch((error) => {
       LOGGER.error("Error fetching pending invitation", {
@@ -81,10 +86,10 @@ export async function getPendingInvitation(
     });
   if (!result?.ok) return null;
   return (
-    result.value.find(
+    result.value.items.find(
       (m) =>
         m.membership_account_id === membershipAccountId &&
-        (repositoryId ? m.repository_id === repositoryId : !m.repository_id)
+        (repositoryId ? m.product_id === repositoryId : !m.product_id)
     ) ?? null
   );
 }

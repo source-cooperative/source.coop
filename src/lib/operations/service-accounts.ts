@@ -19,9 +19,7 @@ import { LOGGER } from "@/lib/logging";
 import {
   accountsTable,
   accountTrustsTable,
-  membershipsTable,
   productsTable,
-  serviceAccountKeysTable,
 } from "@/lib/clients/database";
 import { AlreadyTrustedError } from "@/lib/clients/database/account-trusts";
 import { isConditionalCheckFailed } from "@/lib/clients/database/errors";
@@ -67,16 +65,6 @@ export const CreateServiceAccountSchema = ServiceAccountCreationRequestSchema.om
       .openapi({ description: "The owner's products the account may read or write." }),
   })
   .openapi("ServiceAccountCreationRequest");
-
-export const UpdateServiceAccountSchema = z
-  .object({
-    name: ServiceAccountCreationRequestSchema.shape.name.optional(),
-    disabled: z.boolean().optional().openapi({
-      description:
-        "A disabled account can't sign in, and nothing new may be attached to it until it is enabled.",
-    }),
-  })
-  .openapi("UpdateServiceAccount");
 
 export const AddGithubTrustSchema = z
   .object({ subject: GithubSubjectSchema })
@@ -203,7 +191,7 @@ export async function createServiceAccount(
     const granted = await inviteMember(session, {
       account_id: account.account_id,
       membership_account_id: owner_account_id,
-      repository_id: product_id,
+      product_id,
       role,
     });
     if (!granted.ok) return granted;
@@ -219,51 +207,6 @@ export async function createServiceAccount(
     trusts: subjects.length,
   });
   return ok(account);
-}
-
-/** Renames, disables or enables. The id, which software signs in as, stays. */
-export async function updateServiceAccount(
-  session: UserSession | null,
-  account_id: string,
-  input: unknown
-): Promise<OperationResult<ServiceAccount>> {
-  const found = await managed(session, account_id);
-  if (!found.ok) return found;
-  const parsed = UpdateServiceAccountSchema.safeParse(input);
-  if (!parsed.success) return fromZodError(parsed.error);
-  const updated = await accountsTable.update({
-    ...found.value,
-    ...parsed.data,
-    updated_at: new Date().toISOString(),
-  });
-  audit("updateServiceAccount", session!, { account_id, ...parsed.data });
-  return ok(updated as ServiceAccount);
-}
-
-/** Removes the account, every grant it held, and every way it could sign in. */
-export async function deleteServiceAccount(
-  session: UserSession | null,
-  account_id: string
-): Promise<OperationResult<ServiceAccount>> {
-  const found = await managed(session, account_id);
-  if (!found.ok) return found;
-  for (const membership of await membershipsTable.listByUser(account_id)) {
-    await membershipsTable.delete(membership.membership_id);
-  }
-  // Revoked rather than left behind: the id can be taken again, and a key
-  // still live would sign in as whatever account takes it.
-  for (const key of await serviceAccountKeysTable.listByAccount(account_id)) {
-    if (!key.revoked_at) {
-      await serviceAccountKeysTable.revoke(key.key_hash, "owner", session!.account!.account_id);
-    }
-  }
-  // Its trusts go with the account row.
-  await accountsTable.delete(account_id);
-  audit("deleteServiceAccount", session!, {
-    account_id,
-    owner_account_id: found.value.owner_account_id,
-  });
-  return ok(found.value);
 }
 
 export async function listTrusts(

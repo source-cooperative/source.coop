@@ -18,7 +18,7 @@ export const SERVICE_ACCOUNT_ROLES = [MembershipRole.ReadData, MembershipRole.Wr
  */
 export function serviceAccountGrantProblem(
   account: Account,
-  target: { membership_account_id: string; repository_id?: string },
+  target: { membership_account_id: string; product_id?: string },
   role: MembershipRole
 ): string | null {
   if (!isServiceAccount(account)) {
@@ -33,7 +33,7 @@ export function serviceAccountGrantProblem(
   }
   if (
     target.membership_account_id !== account.owner_account_id ||
-    !target.repository_id
+    !target.product_id
   ) {
     return "A service account can only be granted access to products owned by its owner";
   }

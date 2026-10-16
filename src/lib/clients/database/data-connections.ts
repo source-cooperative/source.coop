@@ -40,21 +40,56 @@ export class DataConnectionsTable extends BaseTable {
     }
   }
 
-  async listAll(): Promise<DataConnection[]> {
+  /**
+   * One page of the table, in its own order. With `owner`, only that account's
+   * connections, and the unowned ones too when `withUnowned`. DynamoDB applies
+   * `limit` before the filter, so a page can hold fewer, even none, while
+   * `lastEvaluatedKey` still says where the next one starts.
+   */
+  async listPage(
+    limit: number,
+    start?: Record<string, unknown>,
+    owner?: string,
+    withUnowned = false
+  ): Promise<{ connections: DataConnection[]; lastEvaluatedKey?: Record<string, unknown> }> {
     try {
       const result = await this.cachedSend(
         new ScanCommand({
           TableName: this.table,
           ConsistentRead: true,
+          Limit: limit,
+          ExclusiveStartKey: start,
+          // OWNER is a DynamoDB reserved word.
+          ...(owner && {
+            FilterExpression: withUnowned
+              ? "attribute_not_exists(#owner) OR #owner = :owner"
+              : "#owner = :owner",
+            ExpressionAttributeNames: { "#owner": "owner" },
+            ExpressionAttributeValues: { ":owner": owner },
+          }),
         })
       );
-      // Unsorted: callers order as they need (e.g. the admin page sorts by
-      // provider then name). Sorting here would express no useful intent.
-      return (result.Items ?? []) as DataConnection[];
+      return {
+        connections: (result.Items ?? []) as DataConnection[],
+        lastEvaluatedKey: result.LastEvaluatedKey,
+      };
     } catch (error) {
-      this.logError("listAll", error);
+      this.logError("listPage", error);
       throw error;
     }
+  }
+
+  // Unsorted: callers order as they need (e.g. the admin page sorts by
+  // provider then name). Sorting here would express no useful intent.
+  async listAll(): Promise<DataConnection[]> {
+    const all: DataConnection[] = [];
+    let start: Record<string, unknown> | undefined;
+    do {
+      const page = await this.listPage(1000, start);
+      all.push(...page.connections);
+      start = page.lastEvaluatedKey;
+    } while (start);
+    return all;
   }
 
   async create(dataConnection: DataConnection): Promise<DataConnection> {

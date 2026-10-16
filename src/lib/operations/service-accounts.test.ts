@@ -77,7 +77,7 @@ describe("createServiceAccount", () => {
     expect(inviteMember).toHaveBeenCalledWith(session, {
       account_id: "acme--sync",
       membership_account_id: "acme",
-      repository_id: "p",
+      product_id: "p",
       role: MembershipRole.ReadData,
     });
     expect(trusts.create).toHaveBeenCalledTimes(1);

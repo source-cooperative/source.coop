@@ -183,22 +183,23 @@ export type Account = z.infer<typeof AccountSchema>;
 
 export type AccountProfile = z.infer<typeof AccountProfileSchema>;
 
-export const AccountProfileResponseSchema = z
-  .union([
-    IndividualAccountProfileSchema.extend({
-      profile_image: z.optional(z.string()),
-      type: z.optional(z.nativeEnum(AccountType)),
+export const PublicAccountSchema = z
+  .object({
+    account_id: z.string(),
+    type: z.nativeEnum(AccountType),
+    name: z.string(),
+    disabled: z.boolean(),
+    metadata_public: AccountProfileSchema,
+    profile_image: z.optional(z.string()).openapi({
+      description: "The uploaded profile image, or else a Gravatar.",
     }),
-    OrganizationalAccountProfileSchema.extend({
-      profile_image: z.optional(z.string()),
-      type: z.optional(z.nativeEnum(AccountType)),
-    }),
-  ])
-  .openapi("AccountProfileResponse");
+  })
+  .openapi("PublicAccount", {
+    description:
+      "The part of an account anyone may read: no emails, flags, sign-in identity or private metadata.",
+  });
 
-export type AccountProfileResponse = z.infer<
-  typeof AccountProfileResponseSchema
->;
+export type PublicAccount = z.infer<typeof PublicAccountSchema>;
 
 export const AccountCreationRequestSchema = z
   .object({

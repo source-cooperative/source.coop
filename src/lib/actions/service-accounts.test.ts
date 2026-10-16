@@ -16,6 +16,7 @@ import {
 } from "@/lib/clients/database";
 import { getPageSession } from "../api/utils";
 import { redirect } from "next/navigation";
+import { deleteAccount } from "@/lib/operations/accounts";
 import { canManageAccountServiceAccounts } from "../api/authz";
 import { managedServiceAccount } from "@/lib/accounts/service-accounts";
 import { AlreadyTrustedError } from "../clients/database/account-trusts";
@@ -55,6 +56,10 @@ jest.mock("@/lib/accounts/service-accounts", () => ({
 }));
 jest.mock("next/cache", () => ({ revalidatePath: jest.fn() }));
 jest.mock("next/navigation", () => ({ redirect: jest.fn() }));
+jest.mock("@/lib/operations/accounts", () => ({
+  ...jest.requireActual("@/lib/operations/accounts"),
+  deleteAccount: jest.fn(),
+}));
 
 const mocks = {
   accounts: accountsTable as jest.Mocked<typeof accountsTable>,
@@ -128,7 +133,7 @@ describe("createServiceAccount", () => {
       expect.objectContaining({
         account_id: "acme--nightly-sync",
         membership_account_id: "acme",
-        repository_id: "climate-data",
+        product_id: "climate-data",
         role: MembershipRole.WriteData,
         state: MembershipState.Member,
       })
@@ -217,22 +222,22 @@ describe("lifecycle", () => {
     mocks.managed.mockResolvedValue(bot as never);
   });
 
-  it("deletes grants, revokes live keys, then deletes the account (whose trusts go with it), and returns to the list", async () => {
-    mocks.memberships.listByUser.mockResolvedValue([
-      { membership_id: "m1" } as never,
-      { membership_id: "m2" } as never,
-    ]);
-    (serviceAccountKeysTable.listByAccount as jest.Mock).mockResolvedValue([
-      { key_hash: "live" },
-      { key_hash: "gone", revoked_at: "2026-01-01T00:00:00.000Z" },
-    ]);
+  it("deletes through deleteAccount, and returns to the list", async () => {
+    (deleteAccount as jest.Mock).mockResolvedValue({ ok: true, value: bot });
     await deleteServiceAccount(IDLE, form({ account_id: "acme--nightly-sync" }));
+    expect(deleteAccount).toHaveBeenCalledWith(expect.anything(), "acme--nightly-sync");
     expect(redirect).toHaveBeenCalledWith("/edit/account/acme/service-accounts");
-    expect(mocks.memberships.delete).toHaveBeenCalledTimes(2);
-    // An id can be taken again; a key left live would sign in as its next holder.
-    expect(serviceAccountKeysTable.revoke).toHaveBeenCalledTimes(1);
-    expect(serviceAccountKeysTable.revoke).toHaveBeenCalledWith("live", "owner", "acme-owner");
-    expect(mocks.accounts.delete).toHaveBeenCalledWith("acme--nightly-sync");
+  });
+
+  it("refuses, in the page's words, when deleteAccount does", async () => {
+    (deleteAccount as jest.Mock).mockResolvedValue({
+      ok: false,
+      error: "conflict",
+      message: 'Only a service account can be deleted; disable this account with PATCH { "disabled": true }',
+    });
+    const state = await deleteServiceAccount(IDLE, form({ account_id: "acme--nightly-sync" }));
+    expect(state).toMatchObject({ success: false, message: "You do not manage that service account" });
+    expect(redirect).not.toHaveBeenCalled();
   });
 
   it("disables and enables", async () => {
@@ -280,7 +285,6 @@ describe("lifecycle", () => {
 
   it("refuses whatever managedServiceAccount does not hand back", async () => {
     mocks.managed.mockResolvedValue(null);
-    expect((await deleteServiceAccount(IDLE, form({ account_id: "acme--nightly-sync" }))).success).toBe(false);
     expect((await addGithubTrust(IDLE, form({ account_id: "acme--nightly-sync", subject: "repo:acme/data:ref:refs/heads/main" }))).success).toBe(false);
     expect(mocks.accounts.delete).not.toHaveBeenCalled();
     expect(mocks.trusts.create).not.toHaveBeenCalled();
@@ -292,7 +296,7 @@ describe("setProductAccess", () => {
     membership_id: "m1",
     account_id: "acme--nightly-sync",
     membership_account_id: "acme",
-    repository_id: "climate-data",
+    product_id: "climate-data",
     role: MembershipRole.ReadData,
     state: MembershipState.Member,
     state_changed: "2026-01-01T00:00:00.000Z",
@@ -306,13 +310,29 @@ describe("setProductAccess", () => {
     mocks.memberships.update.mockImplementation(async (m) => m);
   });
 
+  it("grants nothing to a disabled service account", async () => {
+    const disabled = { ...bot, disabled: true };
+    mocks.managed.mockResolvedValue(disabled as never);
+    mocks.accounts.fetchById.mockImplementation(async (id) => (id === "acme" ? org : disabled));
+    expect((await set("reference-data", MembershipRole.WriteData)).success).toBe(false);
+    expect(mocks.memberships.create).not.toHaveBeenCalled();
+  });
+
+  it("still revokes a disabled service account's grant", async () => {
+    mocks.managed.mockResolvedValue({ ...bot, disabled: true } as never);
+    expect((await set("climate-data", "none")).success).toBe(true);
+    expect(mocks.memberships.update).toHaveBeenCalledWith(
+      expect.objectContaining({ membership_id: "m1", state: MembershipState.Revoked })
+    );
+  });
+
   it("grants a product it does not reach, as a member of the owner", async () => {
     expect((await set("reference-data", MembershipRole.WriteData)).success).toBe(true);
     expect(mocks.memberships.create).toHaveBeenCalledWith(
       expect.objectContaining({
         account_id: "acme--nightly-sync",
         membership_account_id: "acme",
-        repository_id: "reference-data",
+        product_id: "reference-data",
         role: MembershipRole.WriteData,
         state: MembershipState.Member,
       })

@@ -11,12 +11,8 @@ import { accountsTable, dataConnectionsTable } from "@/lib/clients/database";
  * can manage any; a system-owned (unowned) connection is admin-only; an
  * account-owned connection is managed by that account's owners/maintainers
  * (canManageAccountDataConnections, which also requires the account's
- * CREATE_DATA_CONNECTIONS flag).
- *
- * This mirrors the rule the private `canManageConnection` in
- * actions/data-connections.ts applies to connection CRUD, but computes the
- * admin decision itself instead of taking it as a param, so non-action callers
- * (e.g. the product mirror-prefix action) can reuse it.
+ * CREATE_DATA_CONNECTIONS flag). Connection CRUD and the product mirror-prefix
+ * action both apply it.
  */
 export async function canManageDataConnection(
   session: UserSession | null,

@@ -1,10 +1,12 @@
 import { z } from "zod";
 import {
-  Account,
   Actions,
   Product,
   ProductCreationRequestSchema,
   ProductSchema,
+  ProductResponse,
+  ProductResponseSchema,
+  RepositoryPermissions,
   resolveMirrorPrefix,
   UserSession,
 } from "@/types";
@@ -30,16 +32,14 @@ import {
   notFound,
   ok,
   OperationResult,
+  type Page,
+  pageSchema,
+  PageQuerySchema,
+  decodeCursor,
+  encodeCursor,
   unauthenticated,
 } from "./result";
-
-export const PageQuerySchema = z.object({
-  cursor: z
-    .string()
-    .optional()
-    .openapi({ description: "The `next_cursor` of the previous page." }),
-  limit: z.coerce.number().int().min(1).max(100).default(20),
-});
+import { publicView } from "./accounts";
 
 export const ListProductsQuerySchema = PageQuerySchema.extend({
   q: z
@@ -56,15 +56,7 @@ export const ListProductsQuerySchema = PageQuerySchema.extend({
   }),
 });
 
-export const ProductPageSchema = z
-  .object({
-    items: z.array(ProductSchema),
-    next_cursor: z
-      .string()
-      .nullable()
-      .openapi({ description: "Pass as `cursor` for the next page; null on the last." }),
-  })
-  .openapi("ProductPage");
+export const ProductPageSchema = pageSchema("ProductPage", ProductResponseSchema);
 
 export const CreateProductSchema = ProductCreationRequestSchema.omit({
   search_text: true,
@@ -92,8 +84,6 @@ export const DeleteProductQuerySchema = z.object({
   }),
 });
 
-type ProductPage = z.infer<typeof ProductPageSchema>;
-
 // A cursor is DynamoDB's LastEvaluatedKey, base64url'd so it survives a query
 // string unescaped: the key attributes of the table, plus the index's for the
 // public listing. One that names other attributes, another partition, or a
@@ -111,34 +101,16 @@ const publicCursor = (featuredOnly: boolean) =>
     })
     .strict();
 
-function decodeCursor(cursor: string, schema: z.ZodTypeAny) {
-  try {
-    const key = schema.safeParse(JSON.parse(Buffer.from(cursor, "base64url").toString()));
-    return key.success ? (key.data as Record<string, unknown>) : null;
-  } catch {
-    return null;
-  }
-}
-
-const encodeCursor = (key: unknown) =>
-  key ? Buffer.from(JSON.stringify(key)).toString("base64url") : null;
-
 /**
  * `product` with as much of its account as the caller may read: the whole
- * record for whoever GetAccount allows, and otherwise its public profile. The
+ * record for whoever GetAccount allows, and otherwise its public view. The
  * record also holds its people's emails, Ory identity, flags and private
  * metadata.
  */
-// ponytail: field by field, because Account is a union of three schemas that
-// zod can't .pick() across.
-function shown(session: UserSession | null, product: Product): Product {
+function shown(session: UserSession | null, product: Product): ProductResponse {
   const { account } = product;
   if (!account || isAuthorized(session, account, Actions.GetAccount)) return product;
-  const { account_id, type, name, disabled, metadata_public } = account;
-  return {
-    ...product,
-    account: { account_id, type, name, disabled, metadata_public } as Account,
-  };
+  return { ...product, account: publicView(account) };
 }
 
 // ponytail: filtering after the read can leave a page short of `limit`; the
@@ -147,7 +119,7 @@ const page = (
   session: UserSession | null,
   items: Product[],
   lastEvaluatedKey: unknown
-): ProductPage => ({
+): Page<ProductResponse> => ({
   items: items.map((p) => shown(session, p)),
   next_cursor: encodeCursor(lastEvaluatedKey),
 });
@@ -181,7 +153,7 @@ export async function listProducts(
   session: UserSession | null,
   query: unknown,
   account_id?: string
-): Promise<OperationResult<ProductPage>> {
+): Promise<OperationResult<Page<ProductResponse>>> {
   const parsed = (account_id ? PageQuerySchema : ListProductsQuerySchema).safeParse(query);
   if (!parsed.success) return fromZodError(parsed.error);
   const { cursor, limit } = parsed.data;
@@ -229,7 +201,7 @@ export async function getProduct(
   session: UserSession | null,
   account_id: string,
   product_id: string
-): Promise<OperationResult<Product>> {
+): Promise<OperationResult<ProductResponse>> {
   const product = await productsTable.fetchById(account_id, product_id);
   if (!product) return notFound(`Product ${account_id}/${product_id} not found`);
   if (!isAuthorized(session, product, Actions.GetRepository)) {
@@ -328,10 +300,8 @@ export async function updateProduct(
   account_id: string,
   product_id: string,
   input: unknown
-): Promise<OperationResult<Product>> {
+): Promise<OperationResult<ProductResponse>> {
   if (!session) return unauthenticated();
-  const parsed = UpdateProductSchema.safeParse(input);
-  if (!parsed.success) return fromZodError(parsed.error);
   // DynamoDB rejects an empty key outright.
   const product =
     account_id && product_id && (await productsTable.fetchById(account_id, product_id));
@@ -341,6 +311,8 @@ export async function updateProduct(
   if (!isAuthorized(session, product, Actions.PutRepository)) {
     return refuse(session, product, "You may not edit this product");
   }
+  const parsed = UpdateProductSchema.safeParse(input);
+  if (!parsed.success) return fromZodError(parsed.error);
 
   // Zod keeps a key given as undefined, which would blank the stored value.
   const changes = Object.fromEntries(
@@ -390,16 +362,18 @@ export async function deleteProduct(
   account_id: string,
   product_id: string,
   query: unknown
-): Promise<OperationResult<Product>> {
+): Promise<OperationResult<ProductResponse>> {
   if (!session) return unauthenticated();
-  const parsed = DeleteProductQuerySchema.safeParse(query);
-  if (!parsed.success) return fromZodError(parsed.error);
-  const preserveData = parsed.data.preserve_data === "true";
-  const product = await productsTable.fetchById(account_id, product_id);
+  // DynamoDB rejects an empty key outright.
+  const product =
+    account_id && product_id && (await productsTable.fetchById(account_id, product_id));
   if (!product) return notFound(`Product ${account_id}/${product_id} not found`);
   if (!isAuthorized(session, product, Actions.DeleteRepository)) {
     return refuse(session, product, "You may not delete this product");
   }
+  const parsed = DeleteProductQuerySchema.safeParse(query);
+  if (!parsed.success) return fromZodError(parsed.error);
+  const preserveData = parsed.data.preserve_data === "true";
 
   const mirror = product.metadata?.mirrors?.[product.metadata.primary_mirror];
   const connection = mirror
@@ -432,4 +406,27 @@ export async function deleteProduct(
     metadata: { account_id, product_id, by: session.account?.account_id, preserveData },
   });
   return ok(shown(session, product));
+}
+
+/**
+ * What the caller may do with a product's data: `read`, `write` or both. A
+ * caller who may read none of it is refused as `getProduct` refuses them, so
+ * this reveals no more about a product than viewing it does.
+ */
+export async function getProductPermissions(
+  session: UserSession | null,
+  account_id: string,
+  product_id: string
+): Promise<OperationResult<RepositoryPermissions[]>> {
+  const product = await productsTable.fetchById(account_id, product_id);
+  if (!product) return notFound(`Product ${account_id}/${product_id} not found`);
+  if (!isAuthorized(session, product, Actions.ReadRepositoryData)) {
+    return refuse(session, product, "You may not read this product's data");
+  }
+  const permissions: RepositoryPermissions[] = [];
+  if (isAuthorized(session, product, Actions.WriteRepositoryData)) {
+    permissions.push(RepositoryPermissions.Write);
+  }
+  permissions.push(RepositoryPermissions.Read);
+  return ok(permissions);
 }

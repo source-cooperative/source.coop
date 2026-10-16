@@ -1,95 +1,34 @@
-import { NextRequest, NextResponse } from "next/server";
+import { RepositoryPermissionsResponseSchema } from "@/types";
+import { withApiSession, toResponse } from "@/lib/api/handler";
 import {
-  Actions,
-  RepositoryPermissions,
-  RepositoryPermissionsResponse,
-} from "@/types";
-import { getApiSession } from "@/lib/api/utils";
-import { productsTable } from "@/lib/clients/database/products";
-import { isAuthorized } from "@/lib/api/authz";
-import { StatusCodes } from "http-status-codes";
-import { LOGGER } from "@/lib";
+  errors,
+  internal,
+  json,
+  optionalBearer,
+  productParams,
+  registry,
+} from "@/lib/api/openapi";
+import { getProductPermissions } from "@/lib/operations/products";
 
-/**
- * @openapi
- * /products/{account_id}/{product_id}/permissions:
- *   get:
- *     tags: [Products]
- *     summary: Get repository permissions
- *     description: Retrieves the current user's permissions for a specific repository.
- *     parameters:
- *       - in: path
- *         name: account_id
- *         required: true
- *         schema:
- *           type: string
- *         description: The ID of the account that owns the repository
- *       - in: path
- *         name: product_id
- *         required: true
- *         schema:
- *           type: string
- *         description: The ID of the repository to get permissions for
- *     responses:
- *       200:
- *         description: Successfully retrieved repository permissions
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/RepositoryPermissions'
- *       401:
- *         description: Unauthorized - No valid session found
- *       404:
- *         description: Not Found - Repository not found
- *       500:
- *         description: Internal server error
- */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ account_id: string; product_id: string }> }
-) {
-  try {
-    const session = await getApiSession(request);
-    const { account_id, product_id } = await params;
+type Params = { account_id: string; product_id: string };
 
-    const product = await productsTable.fetchById(account_id, product_id);
+registry.registerPath({
+  method: "get",
+  path: "/products/{account_id}/{product_id}/permissions",
+  ...internal,
+  summary: "What a caller may do with a product's data",
+  description:
+    "Called by the data proxy before a write, on behalf of the person or service account behind the request. Returns `read`, or `read` and `write`, from the caller's role on the product. It does not include the data connection's `read_only` mode; the proxy checks that separately. A caller who may not read the product is refused, as when they view it.",
+  security: optionalBearer,
+  request: { params: productParams },
+  responses: {
+    200: json("The permissions.", RepositoryPermissionsResponseSchema),
+    ...errors(401, 403, 404),
+  },
+});
 
-    if (!product) {
-      return NextResponse.json(
-        {
-          error: `Repository with ID ${account_id}/${product_id} not found`,
-        },
-        { status: StatusCodes.NOT_FOUND }
-      );
-    }
-
-    const permissions: RepositoryPermissionsResponse = [];
-
-    if (isAuthorized(session, product, Actions.WriteRepositoryData)) {
-      permissions.push(RepositoryPermissions.Write);
-    }
-
-    LOGGER.debug("Session and product for permissions check", {
-      operation: "products.permissions.GET",
-      context: "permissions check",
-      metadata: {
-        account_id,
-        product_id,
-        hasSession: !!session,
-        hasProduct: !!product,
-      },
-    });
-    if (isAuthorized(session, product, Actions.ReadRepositoryData)) {
-      permissions.push(RepositoryPermissions.Read);
-    }
-
-    return NextResponse.json(permissions, { status: StatusCodes.OK });
-  } catch (err: any) {
-    return NextResponse.json(
-      { error: err.message || "Internal server error" },
-      { status: StatusCodes.INTERNAL_SERVER_ERROR }
-    );
-  }
-}
+export const GET = withApiSession<Params>(async ({ session, params }) =>
+  toResponse(
+    await getProductPermissions(session, params.account_id, params.product_id)
+  )
+);

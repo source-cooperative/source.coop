@@ -14,6 +14,7 @@ import {
   createProduct,
   deleteProduct,
   getProduct,
+  getProductPermissions,
   listProducts,
   updateProduct,
 } from "./products";
@@ -382,7 +383,9 @@ describe("updateProduct", () => {
   });
 
   test("a product with no ID is not found, without asking DynamoDB", async () => {
-    expect(await updateProduct(SESSION, "alice", "", {})).toMatchObject({ error: "not_found" });
+    expect(
+      await updateProduct(SESSION, "alice", "", { visibility: "nope" })
+    ).toMatchObject({ error: "not_found" });
     expect(productsTable.fetchById).not.toHaveBeenCalled();
   });
 
@@ -422,11 +425,11 @@ describe("updateProduct", () => {
     });
   });
 
-  test("refuses whoever may not edit the product", async () => {
+  test("refuses whoever may not edit the product before reading the body", async () => {
     allowExcept(Actions.PutRepository);
-    expect(await updateProduct(SESSION, "alice", "my-product", {})).toMatchObject({
-      error: "forbidden",
-    });
+    expect(
+      await updateProduct(SESSION, "alice", "my-product", { visibility: "nope" })
+    ).toMatchObject({ error: "forbidden" });
   });
 
   test("refuses a field of the wrong type", async () => {
@@ -514,16 +517,65 @@ describe("deleteProduct", () => {
     expect(productsTable.delete).not.toHaveBeenCalled();
   });
 
-  test("refuses whoever may not delete the product", async () => {
-    allowExcept(Actions.DeleteRepository);
-    expect(await deleteProduct(SESSION, "alice", "my-product", {})).toMatchObject({
-      error: "forbidden",
+  test("a product with no ID is not found, without asking DynamoDB", async () => {
+    expect(await deleteProduct(SESSION, "alice", "", { preserve_data: "1" })).toMatchObject({
+      error: "not_found",
     });
+    expect(productsTable.fetchById).not.toHaveBeenCalled();
+  });
+
+  test("refuses whoever may not delete the product before reading the query", async () => {
+    allowExcept(Actions.DeleteRepository);
+    expect(
+      await deleteProduct(SESSION, "alice", "my-product", { preserve_data: "1" })
+    ).toMatchObject({ error: "forbidden" });
   });
 
   test("refuses a preserve_data that isn't true or false", async () => {
     expect(
       await deleteProduct(SESSION, "alice", "my-product", { preserve_data: "1" })
     ).toMatchObject({ error: "invalid" });
+  });
+});
+
+// The data proxy reads this as a bare list, and gates writes on "write".
+describe("getProductPermissions", () => {
+  test("lists what the caller may do", async () => {
+    (productsTable.fetchById as jest.Mock).mockResolvedValue(product());
+    expect(await getProductPermissions(SESSION, "alice", "my-product")).toEqual({
+      ok: true,
+      value: ["write", "read"],
+    });
+    allowExcept(Actions.WriteRepositoryData);
+    expect(await getProductPermissions(null, "alice", "my-product")).toEqual({
+      ok: true,
+      value: ["read"],
+    });
+  });
+
+  test("refuses a caller who may not read the product, as viewing it would", async () => {
+    (productsTable.fetchById as jest.Mock).mockResolvedValue(product({ visibility: "restricted" }));
+    (isAuthorized as jest.Mock).mockReturnValue(false);
+    expect(await getProductPermissions(null, "alice", "my-product")).toMatchObject({
+      error: "unauthenticated",
+    });
+    expect(await getProductPermissions(SESSION, "alice", "my-product")).toMatchObject({
+      error: "forbidden",
+    });
+  });
+
+  test("hides a deactivated product from a caller who may not see it", async () => {
+    (productsTable.fetchById as jest.Mock).mockResolvedValue(product({ disabled: true }));
+    (isAuthorized as jest.Mock).mockReturnValue(false);
+    expect(await getProductPermissions(SESSION, "alice", "my-product")).toMatchObject({
+      error: "not_found",
+    });
+  });
+
+  test("reports a missing product", async () => {
+    (productsTable.fetchById as jest.Mock).mockResolvedValue(null);
+    expect(await getProductPermissions(null, "alice", "gone")).toMatchObject({
+      error: "not_found",
+    });
   });
 });

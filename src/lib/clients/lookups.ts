@@ -19,7 +19,7 @@ export async function getManageableAccounts(account: Account) {
           [MembershipRole.Owners, MembershipRole.Maintainers].includes(role)
         )
         // Filter for organization-level memberships (not product-specific)
-        .filter(({ repository_id }) => repository_id === undefined)
+        .filter(({ product_id }) => product_id === undefined)
         // Get the account IDs
         .map((membership) => membership.membership_account_id)
     )),

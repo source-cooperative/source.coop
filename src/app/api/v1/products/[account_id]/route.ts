@@ -1,15 +1,15 @@
+import { ProductResponseSchema } from "@/types";
 import { z } from "zod";
 import { StatusCodes } from "http-status-codes";
-import { ProductSchema } from "@/types";
 import { withApiSession, toResponse } from "@/lib/api/handler";
 import { bearer, errors, json, registry } from "@/lib/api/openapi";
 import {
   CreateProductSchema,
   createProduct,
   listProducts,
-  PageQuerySchema,
   ProductPageSchema,
 } from "@/lib/operations/products";
+import { PageQuerySchema } from "@/lib/operations/result";
 
 type Params = { account_id: string };
 
@@ -58,7 +58,7 @@ registry.registerPath({
     },
   },
   responses: {
-    201: json("The new product.", ProductSchema),
+    201: json("The new product.", ProductResponseSchema),
     ...errors(400, 401, 403, 404, 409),
   },
 });

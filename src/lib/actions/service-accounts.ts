@@ -19,6 +19,7 @@ import {
   revokeMembership,
   updateMembership,
 } from "@/lib/operations/memberships";
+import { deleteAccount, updateAccount } from "@/lib/operations/accounts";
 import * as operations from "@/lib/operations/service-accounts";
 
 const fail = (message: string, fieldErrors = {}): ServiceAccountFormState => ({
@@ -144,7 +145,7 @@ export async function setServiceAccountDisabled(
   const disabled = formData.get("disabled") === "true";
   return outcome(
     formData,
-    await operations.updateServiceAccount(await getPageSession(), accountId(formData), {
+    await updateAccount(await getPageSession(), accountId(formData), {
       disabled,
     }),
     disabled ? "Service account disabled" : "Service account enabled"
@@ -157,7 +158,7 @@ export async function renameServiceAccount(
 ): Promise<ServiceAccountActionState> {
   return outcome(
     formData,
-    await operations.updateServiceAccount(await getPageSession(), accountId(formData), {
+    await updateAccount(await getPageSession(), accountId(formData), {
       name: formData.get("name"),
     }),
     "Name saved"
@@ -168,15 +169,13 @@ export async function deleteServiceAccount(
   _prev: ServiceAccountActionState,
   formData: FormData
 ): Promise<ServiceAccountActionState> {
-  const result = await operations.deleteServiceAccount(
+  const result = await deleteAccount(
     await getPageSession(),
     accountId(formData)
   );
-  if (!result.ok) return { message: result.message, success: false };
-  const owner = result.value.owner_account_id;
-  revalidatePath(editAccountServiceAccountsUrl(owner));
+  if (!result.ok) return { message: "You do not manage that service account", success: false };
   // Its own page is gone; the list is where the user goes next.
-  redirect(editAccountServiceAccountsUrl(owner));
+  redirect(editAccountServiceAccountsUrl(result.value.owner_account_id));
 }
 
 /**
@@ -191,10 +190,10 @@ export async function setProductAccess(
   const session = await getPageSession();
   const account = await managedServiceAccount(session, accountId(formData));
   if (!account) return { message: "You do not manage that service account", success: false };
-  const repository_id = String(formData.get("product_id") ?? "");
+  const product_id = String(formData.get("product_id") ?? "");
   const access = String(formData.get("access") ?? "");
   const held = (await membershipsTable.listByUser(account.account_id)).find(
-    (m) => m.repository_id === repository_id && m.state === MembershipState.Member
+    (m) => m.product_id === product_id && m.state === MembershipState.Member
   );
 
   const result =
@@ -207,7 +206,7 @@ export async function setProductAccess(
         : await inviteMember(session, {
             account_id: account.account_id,
             membership_account_id: account.owner_account_id,
-            repository_id,
+            product_id,
             role: access,
           });
   if (result && !result.ok) return { message: result.message, success: false };
