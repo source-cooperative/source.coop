@@ -36,8 +36,6 @@ import {
   unauthenticated,
 } from "./result";
 
-type Failure = Extract<OperationResult<never>, { ok: false }>;
-
 /** Who to invite, and to what: an account, or one of its products. */
 export const InviteMemberSchema = MembershipSchema.pick({
   membership_account_id: true,
@@ -227,15 +225,18 @@ export async function listMemberships(
 }
 
 /**
- * Applies `change` to a membership, once the caller is `allowed` to and the
- * membership's current state doesn't `refuse` it.
+ * Applies the change `decide` answers to a membership, once the caller is
+ * `allowed` to change it. `decide` sees the membership as it is and refuses
+ * by answering a failure; anything it reads from the request, it reads only
+ * after `allowed`, so a caller who may not act learns nothing from it.
  */
 async function changeMembership(
   session: UserSession | null,
   membership_id: string,
   allowed: (m: Membership) => boolean,
-  refuse: (m: Membership) => Failure | null | Promise<Failure | null>,
-  change: Partial<Membership>
+  decide: (
+    m: Membership
+  ) => OperationResult<Partial<Membership>> | Promise<OperationResult<Partial<Membership>>>
 ): Promise<OperationResult<Membership>> {
   if (!session) return unauthenticated();
   // DynamoDB rejects an empty key outright.
@@ -245,18 +246,28 @@ async function changeMembership(
   if (!allowed(membership)) {
     return forbidden("You may not change this membership");
   }
-  const refusal = await refuse(membership);
-  if (refusal) return refusal;
-  const updated = await membershipsTable.update({ ...membership, ...change });
+  const change = await decide(membership);
+  if (!change.ok) return change;
+  const updated = await membershipsTable.update({ ...membership, ...change.value });
   return ok(audit("changeMembership", session, updated));
 }
 
 const resolved = () => ({ state_changed: new Date().toISOString() });
 
-const unlessInvited = (m: Membership) =>
+const refused = () => forbidden("You may not change this membership");
+
+const ifInvited = (m: Membership, change: Partial<Membership>) =>
   m.state === MembershipState.Invited
-    ? null
+    ? ok(change)
     : conflict("Membership is not a pending invitation");
+
+const accept = (m: Membership) =>
+  ifInvited(m, { state: MembershipState.Member, ...resolved() });
+
+const revoke = (m: Membership) =>
+  m.state === MembershipState.Revoked
+    ? conflict("Membership is already revoked")
+    : ok({ state: MembershipState.Revoked, ...resolved() });
 
 export const acceptInvitation = (
   session: UserSession | null,
@@ -266,8 +277,7 @@ export const acceptInvitation = (
     session,
     membership_id,
     (m) => isAuthorized(session, m, Actions.AcceptMembership),
-    unlessInvited,
-    { state: MembershipState.Member, ...resolved() }
+    accept
   );
 
 export const rejectInvitation = (
@@ -278,8 +288,7 @@ export const rejectInvitation = (
     session,
     membership_id,
     (m) => isAuthorized(session, m, Actions.RejectMembership),
-    unlessInvited,
-    { state: MembershipState.Revoked, ...resolved() }
+    (m) => ifInvited(m, { state: MembershipState.Revoked, ...resolved() })
   );
 
 export const revokeMembership = (
@@ -290,11 +299,7 @@ export const revokeMembership = (
     session,
     membership_id,
     (m) => isAuthorized(session, m, Actions.RevokeMembership),
-    (m) =>
-      m.state === MembershipState.Revoked
-        ? conflict("Membership is already revoked")
-        : null,
-    { state: MembershipState.Revoked, ...resolved() }
+    revoke
   );
 
 export async function updateMembership(
@@ -302,31 +307,40 @@ export async function updateMembership(
   membership_id: string,
   input: unknown
 ): Promise<OperationResult<Membership>> {
-  if (!session) return unauthenticated();
-  const parsed = UpdateMembershipSchema.safeParse(input);
-  if (!parsed.success) return fromZodError(parsed.error);
-  const { role, state } = parsed.data;
-  if (!role) {
-    const change =
-      state === MembershipState.Revoked ? revokeMembership : acceptInvitation;
-    return change(session, membership_id);
-  }
   return changeMembership(
     session,
     membership_id,
-    // Both the role it has and the role it gets, so no one without the right
-    // to hold the higher of the two can grant or take it away.
+    // Any change this caller could make, so a caller who may make none is
+    // refused before the body is read. The change the body asks for is
+    // checked once it has been parsed.
     (m) =>
-      isAuthorized(session, m, Actions.UpdateMembershipRole) &&
-      isAuthorized(session, { ...m, role }, Actions.UpdateMembershipRole),
+      isAuthorized(session, m, Actions.UpdateMembershipRole) ||
+      isAuthorized(session, m, Actions.AcceptMembership) ||
+      isAuthorized(session, m, Actions.RevokeMembership),
     async (m) => {
+      const parsed = UpdateMembershipSchema.safeParse(input);
+      if (!parsed.success) return fromZodError(parsed.error);
+      const { role, state } = parsed.data;
+      if (state === MembershipState.Revoked) {
+        return isAuthorized(session, m, Actions.RevokeMembership) ? revoke(m) : refused();
+      }
+      if (!role) {
+        return isAuthorized(session, m, Actions.AcceptMembership) ? accept(m) : refused();
+      }
+      // The role it gets as well as the role it has, so no one without the
+      // right to hold the higher of the two can grant or take it away.
+      if (
+        !isAuthorized(session, m, Actions.UpdateMembershipRole) ||
+        !isAuthorized(session, { ...m, role }, Actions.UpdateMembershipRole)
+      ) {
+        return refused();
+      }
       if (m.state !== MembershipState.Member) {
         return conflict("Membership is not active");
       }
       const member = await accountsTable.fetchById(m.account_id);
       const problem = member && serviceAccountGrantProblem(member, m, role);
-      return problem ? invalid(problem, "role") : null;
-    },
-    { role }
+      return problem ? invalid(problem, "role") : ok({ role });
+    }
   );
 }
