@@ -409,8 +409,9 @@ export async function deleteProduct(
 }
 
 /**
- * What the caller may do with a product's data: `read`, `write`, both or
- * neither. Never refused, so the data proxy can ask on anyone's behalf.
+ * What the caller may do with a product's data: `read`, `write` or both. A
+ * caller who may read none of it is refused as `getProduct` refuses them, so
+ * this reveals no more about a product than viewing it does.
  */
 export async function getProductPermissions(
   session: UserSession | null,
@@ -419,12 +420,13 @@ export async function getProductPermissions(
 ): Promise<OperationResult<RepositoryPermissions[]>> {
   const product = await productsTable.fetchById(account_id, product_id);
   if (!product) return notFound(`Product ${account_id}/${product_id} not found`);
+  if (!isAuthorized(session, product, Actions.ReadRepositoryData)) {
+    return refuse(session, product, "You may not read this product's data");
+  }
   const permissions: RepositoryPermissions[] = [];
   if (isAuthorized(session, product, Actions.WriteRepositoryData)) {
     permissions.push(RepositoryPermissions.Write);
   }
-  if (isAuthorized(session, product, Actions.ReadRepositoryData)) {
-    permissions.push(RepositoryPermissions.Read);
-  }
+  permissions.push(RepositoryPermissions.Read);
   return ok(permissions);
 }
