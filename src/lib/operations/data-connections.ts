@@ -17,7 +17,7 @@ import {
 import { sanitizeDataConnection } from "@/lib/api/sanitize-data-connection";
 import {
   canManageDataConnection,
-  listUsableDataConnections,
+  canUseDataConnectionFor,
 } from "@/lib/data-connections";
 import { LOGGER } from "@/lib/logging";
 import {
@@ -28,15 +28,17 @@ import {
 import { isConditionalCheckFailed } from "@/lib/clients/database/errors";
 import {
   conflict,
+  decodeCursor,
   deny,
+  encodeCursor,
   forbidden,
   fromZodError,
   invalid,
   notFound,
   ok,
-  onePage,
   OperationResult,
   Page,
+  PageQuerySchema,
   unauthenticated,
 } from "./result";
 
@@ -60,7 +62,7 @@ export const UpdateDataConnectionSchema = UpdateFields.extend({
   authentication: UpdateFields.shape.authentication.nullable(),
 }).openapi("UpdateDataConnection");
 
-export const ListDataConnectionsQuerySchema = z.object({
+export const ListDataConnectionsQuerySchema = PageQuerySchema.extend({
   owner: DataConnectionObjectSchema.shape.owner.openapi({
     description:
       "Only the connections this account owns: the management view, open to those who manage the account's connections.",
@@ -69,7 +71,13 @@ export const ListDataConnectionsQuerySchema = z.object({
     description:
       "Only the connections the caller may create a product on under this account, the platform's own included.",
   }),
+  limit: PageQuerySchema.shape.limit.openapi({
+    description:
+      "At most this many. A page can hold fewer, or none, before the last one. Follow `next_cursor` until it is null.",
+  }),
 });
+
+const CursorSchema = z.object({ data_connection_id: z.string() }).strict();
 
 function audit(operation: string, session: UserSession, c: DataConnection) {
   LOGGER.info("Data connection changed", {
@@ -130,7 +138,9 @@ export async function listDataConnections(
 ): Promise<OperationResult<Page<DataConnection>>> {
   const parsed = ListDataConnectionsQuerySchema.safeParse(query);
   if (!parsed.success) return fromZodError(parsed.error);
-  const { owner, usable_for } = parsed.data;
+  const { owner, usable_for, cursor, limit } = parsed.data;
+  const start = cursor ? decodeCursor(cursor, CursorSchema) : undefined;
+  if (start === null) return invalid("Invalid cursor", "cursor");
 
   for (const [id, may, what] of [
     [owner, canManageAccountDataConnections, "manage"],
@@ -146,27 +156,55 @@ export async function listDataConnections(
     }
   }
 
-  let connections: DataConnection[];
+  const { connections, lastEvaluatedKey } = await dataConnectionsTable.listPage(
+    limit,
+    start,
+    usable_for ?? owner,
+    Boolean(usable_for)
+  );
+  let items: DataConnection[];
   if (usable_for) {
-    connections = await listUsableDataConnections(session, [usable_for]);
+    items = connections.filter(
+      (c) =>
+        isAuthorized(session, c, Actions.GetDataConnection) &&
+        canUseDataConnectionFor(session, c, usable_for)
+    );
   } else if (owner) {
     // The account check above already covers every connection it owns.
-    connections = await dataConnectionsTable.listAll();
+    items = connections;
   } else {
-    const all = await dataConnectionsTable.listAll();
-    const shown = await Promise.all(all.map((c) => visible(session, c)));
-    connections = all.filter((_, i) => shown[i]);
+    const shown = await Promise.all(connections.map((c) => visible(session, c)));
+    items = connections.filter((_, i) => shown[i]);
   }
+  // ponytail: filtering after the read can leave a page short of `limit`; the
+  // cursor still moves on correctly.
+  return ok({
+    items: items.filter((c) => !owner || c.owner === owner).map(sanitizeDataConnection),
+    next_cursor: encodeCursor(lastEvaluatedKey),
+  });
+}
+
+/**
+ * Every page of {@link listDataConnections}, sorted by provider then name, for
+ * the pages that show a whole list.
+ */
+export async function listAllDataConnections(
+  session: UserSession | null,
+  query: { owner?: string }
+): Promise<OperationResult<DataConnection[]>> {
+  const all: DataConnection[] = [];
+  let cursor: string | undefined;
+  do {
+    const result = await listDataConnections(session, { ...query, cursor, limit: 100 });
+    if (!result.ok) return result;
+    all.push(...result.value.items);
+    cursor = result.value.next_cursor ?? undefined;
+  } while (cursor);
   return ok(
-    onePage(
-      connections
-        .filter((c) => !owner || c.owner === owner)
-        .sort(
-          (a, b) =>
-            a.details.provider.localeCompare(b.details.provider) ||
-            a.name.localeCompare(b.name)
-        )
-        .map(sanitizeDataConnection)
+    all.sort(
+      (a, b) =>
+        a.details.provider.localeCompare(b.details.provider) ||
+        a.name.localeCompare(b.name)
     )
   );
 }
