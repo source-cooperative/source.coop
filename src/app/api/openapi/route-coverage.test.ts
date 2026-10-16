@@ -12,23 +12,10 @@ jest.mock("@/lib/clients/database", () => ({}));
 const UNREGISTERED = new Set([
   "DELETE /accounts/{account_id}",
   "DELETE /data-connections/{data_connection_id}",
-  "GET /accounts/{account_id}",
-  "GET /accounts/{account_id}/flags",
-  "GET /accounts/{account_id}/profile",
   "GET /data-connections",
   "GET /data-connections/{data_connection_id}",
-  "GET /products/{account_id}/{product_id}/permissions",
-  "GET /products/featured",
-  "GET /whoami",
-  "POST /accounts/{account_id}/trusts/exchanges",
   "POST /data-connections",
-  "POST /secret-scanning/github",
-  "POST /service-account-keys/exchanges",
-  "POST /service-account-keys/revocations",
-  "PUT /accounts/{account_id}/flags",
-  "PUT /accounts/{account_id}/profile",
   "PUT /data-connections/{data_connection_id}",
-  "PUT /products/{account_id}/{product_id}/featured",
 ]);
 
 const V1 = path.join(__dirname, "../v1");
@@ -42,7 +29,7 @@ const endpoints = readdirSync(V1, { recursive: true })
     const source = readFileSync(path.join(V1, file), "utf8");
     return [
       ...source.matchAll(
-        /export (?:async function|const|function) (GET|POST|PUT|PATCH|DELETE)\b/g
+        /export (?:async function|const|function) (GET|HEAD|POST|PUT|PATCH|DELETE)\b/g
       ),
     ].map(([, method]) => `${method} ${route.replace(/\[(\w+)\]/g, "{$1}")}`);
   });
@@ -60,6 +47,17 @@ describe("/api/openapi", () => {
 
   test("can be fetched from api.docs.source.coop", () => {
     expect(GET().headers.get("Access-Control-Allow-Origin")).toBe("*");
+  });
+
+  test("declares every tag, with Internal last", () => {
+    const used = new Set(
+      Object.values(document.paths).flatMap((path) =>
+        Object.values(path).flatMap((op) => (op as { tags?: string[] }).tags ?? [])
+      )
+    );
+    const declared = (document as { tags?: { name: string }[] }).tags!.map((t) => t.name);
+    expect(new Set(declared)).toEqual(used);
+    expect(declared.at(-1)).toBe("Internal");
   });
 
   test("is a valid OpenAPI 3 document", async () => {

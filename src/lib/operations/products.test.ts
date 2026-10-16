@@ -14,6 +14,7 @@ import {
   createProduct,
   deleteProduct,
   getProduct,
+  getProductPermissions,
   listProducts,
   updateProduct,
 } from "./products";
@@ -525,5 +526,26 @@ describe("deleteProduct", () => {
     expect(
       await deleteProduct(SESSION, "alice", "my-product", { preserve_data: "1" })
     ).toMatchObject({ error: "invalid" });
+  });
+});
+
+// The data proxy reads this as a bare list, and gates writes on "write".
+describe("getProductPermissions", () => {
+  test("lists what the caller may do, and never refuses", async () => {
+    (productsTable.fetchById as jest.Mock).mockResolvedValue(product());
+    allowExcept(Actions.WriteRepositoryData);
+    expect(await getProductPermissions(null, "alice", "my-product")).toEqual({
+      ok: true,
+      value: ["read"],
+    });
+    (isAuthorized as jest.Mock).mockReturnValue(false);
+    expect(await getProductPermissions(null, "alice", "my-product")).toEqual({ ok: true, value: [] });
+  });
+
+  test("reports a missing product", async () => {
+    (productsTable.fetchById as jest.Mock).mockResolvedValue(null);
+    expect(await getProductPermissions(null, "alice", "gone")).toMatchObject({
+      error: "not_found",
+    });
   });
 });

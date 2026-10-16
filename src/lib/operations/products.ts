@@ -5,6 +5,7 @@ import {
   Product,
   ProductCreationRequestSchema,
   ProductSchema,
+  RepositoryPermissions,
   resolveMirrorPrefix,
   UserSession,
 } from "@/types";
@@ -432,4 +433,25 @@ export async function deleteProduct(
     metadata: { account_id, product_id, by: session.account?.account_id, preserveData },
   });
   return ok(shown(session, product));
+}
+
+/**
+ * What the caller may do with a product's data: `read`, `write`, both or
+ * neither. Never refused, so the data proxy can ask on anyone's behalf.
+ */
+export async function getProductPermissions(
+  session: UserSession | null,
+  account_id: string,
+  product_id: string
+): Promise<OperationResult<RepositoryPermissions[]>> {
+  const product = await productsTable.fetchById(account_id, product_id);
+  if (!product) return notFound(`Product ${account_id}/${product_id} not found`);
+  const permissions: RepositoryPermissions[] = [];
+  if (isAuthorized(session, product, Actions.WriteRepositoryData)) {
+    permissions.push(RepositoryPermissions.Write);
+  }
+  if (isAuthorized(session, product, Actions.ReadRepositoryData)) {
+    permissions.push(RepositoryPermissions.Read);
+  }
+  return ok(permissions);
 }
