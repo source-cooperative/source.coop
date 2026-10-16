@@ -64,6 +64,16 @@ describe("POST /api/v1/service-account-keys/exchanges", () => {
     expect(serviceAccountKeysTable.set).not.toHaveBeenCalled();
   });
 
+  test("answers inactive for a key issued before its account, to an earlier holder of the id", async () => {
+    (serviceAccountKeysTable.fetchByHash as jest.Mock).mockResolvedValue({ ...key, created_at: "2026-01-01T00:00:00.000Z" });
+    (accountsTable.fetchById as jest.Mock).mockResolvedValue({
+      account_id: "acme--nightly-sync",
+      disabled: false,
+      created_at: "2026-02-01T00:00:00.000Z",
+    });
+    await expect((await POST(req())).json()).resolves.toEqual({ active: false });
+  });
+
   test("is 401 for any subject but the proxy's own, or no assertion", async () => {
     (verifyProxyAssertion as jest.Mock).mockResolvedValue({ sub: "acme--nightly-sync" });
     expect((await POST(req())).status).toBe(401);

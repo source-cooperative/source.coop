@@ -1,18 +1,25 @@
 /** @jest-environment node */
 import { Account, AccountFlags, AccountType, Actions } from "@/types";
-import { accountsTable } from "@/lib/clients/database";
+import {
+  accountsTable,
+  membershipsTable,
+  serviceAccountKeysTable,
+} from "@/lib/clients/database";
+import { managedServiceAccount } from "@/lib/accounts/service-accounts";
 import { isAuthorized } from "@/lib/api/authz";
 import {
-  getAccountFlags,
-  getAccountProfile,
-  updateAccountFlags,
+  deleteAccount,
+  getAccount,
   updateAccount,
   whoami,
 } from "./accounts";
 
 jest.mock("@/lib/clients/database", () => ({
-  accountsTable: { fetchById: jest.fn(), update: jest.fn() },
+  accountsTable: { fetchById: jest.fn(), update: jest.fn(), delete: jest.fn() },
+  membershipsTable: { listByUser: jest.fn(), delete: jest.fn() },
+  serviceAccountKeysTable: { listByAccount: jest.fn(), delete: jest.fn() },
 }));
+jest.mock("@/lib/accounts/service-accounts", () => ({ managedServiceAccount: jest.fn() }));
 jest.mock("@/lib/api/authz", () => ({ isAuthorized: jest.fn() }));
 jest.mock("next/cache", () => ({ revalidatePath: jest.fn() }));
 
@@ -55,37 +62,65 @@ describe("whoami", () => {
   });
 });
 
-describe("getAccountProfile", () => {
-  it("serves an organization's profile with its name", async () => {
+describe("getAccount", () => {
+  beforeEach(() => {
+    (isAuthorized as jest.Mock).mockImplementation((_s, _a, action) => action !== Actions.GetAccount);
+  });
+
+  it("serves the whole record to whoever may read it", async () => {
+    (isAuthorized as jest.Mock).mockReturnValue(true);
+    fetchById.mockResolvedValue(account({ flags: [AccountFlags.ADMIN] }));
+    expect(await getAccount(SESSION, "an-account")).toEqual({
+      ok: true,
+      value: account({ flags: [AccountFlags.ADMIN] }),
+    });
+  });
+
+  it("serves anyone else the public view, without emails, flags or private metadata", async () => {
     fetchById.mockResolvedValue(
-      account({ type: AccountType.ORGANIZATION, metadata_public: { bio: "Hi" } })
+      account({
+        type: AccountType.ORGANIZATION,
+        metadata_public: { bio: "Hi" },
+        flags: [AccountFlags.ADMIN],
+        emails: [{ address: "o@example.test", is_primary: true }],
+        metadata_private: { secret: 1 },
+      })
     );
-    const result = await getAccountProfile(null, "an-account");
+    const result = await getAccount(null, "an-account");
     expect(result).toEqual({
       ok: true,
-      value: { bio: "Hi", name: "An Account", type: "organization", profile_image: undefined },
+      value: {
+        account_id: "an-account",
+        type: "organization",
+        name: "An Account",
+        disabled: false,
+        metadata_public: { bio: "Hi" },
+        profile_image: undefined,
+      },
     });
   });
 
   it("prefers an uploaded image to a person's Gravatar", async () => {
     const emails = [{ address: "p@example.test", is_primary: true }];
     fetchById.mockResolvedValue(account({ emails }));
-    const gravatar = await getAccountProfile(null, "an-account");
-    expect(gravatar.ok && gravatar.value.profile_image).toMatch(
-      /^https:\/\/www\.gravatar\.com\/avatar\/\w+\?d=identicon/
-    );
+    expect(await getAccount(null, "an-account")).toMatchObject({
+      value: { profile_image: expect.stringMatching(/^https:\/\/www\.gravatar\.com\/avatar\/\w+\?d=identicon/) },
+    });
 
     fetchById.mockResolvedValue(
       account({ emails, metadata_public: { profile_image: "https://img.test/a.png" } })
     );
-    const uploaded = await getAccountProfile(null, "an-account");
-    expect(uploaded.ok && uploaded.value.profile_image).toBe("https://img.test/a.png");
+    expect(await getAccount(null, "an-account")).toMatchObject({
+      value: { profile_image: "https://img.test/a.png" },
+    });
   });
 
-  it("finds no profile for a service account", async () => {
-    fetchById.mockResolvedValue(account({ type: AccountType.SERVICE }));
+  it("finds neither a service account nor a disabled account for anyone else", async () => {
     (isAuthorized as jest.Mock).mockReturnValue(false);
-    expect(await getAccountProfile(null, "an-account")).toMatchObject({ error: "not_found" });
+    fetchById.mockResolvedValue(account({ type: AccountType.SERVICE }));
+    expect(await getAccount(null, "an-account")).toMatchObject({ error: "not_found" });
+    fetchById.mockResolvedValue(account({ disabled: true }));
+    expect(await getAccount(null, "an-account")).toMatchObject({ error: "not_found" });
   });
 });
 
@@ -259,27 +294,25 @@ describe("updateAccount", () => {
   });
 });
 
-describe("account flags", () => {
-  it("reads the flags of the account named, not the caller's", async () => {
-    fetchById.mockResolvedValue(account({ flags: [AccountFlags.CREATE_REPOSITORIES] }));
-    expect(await getAccountFlags(SESSION, "an-account")).toEqual({
-      ok: true,
-      value: [AccountFlags.CREATE_REPOSITORIES],
-    });
-    expect(fetchById).toHaveBeenCalledWith("an-account");
-    expect(isAuthorized).toHaveBeenCalledWith(SESSION, expect.anything(), Actions.GetAccountFlags);
+describe("updateAccount's flags", () => {
+  const setFlags = (flags: unknown) => updateAccount(SESSION, "an-account", { flags });
+
+  it("takes PutAccountFlags", async () => {
+    fetchById.mockResolvedValue(account());
+    (isAuthorized as jest.Mock).mockImplementation((_s, _a, action) => action !== Actions.PutAccountFlags);
+    expect(await setFlags([AccountFlags.CREATE_REPOSITORIES])).toMatchObject({ error: "forbidden" });
+    expect(update).not.toHaveBeenCalled();
   });
 
   it("refuses the admin flag to a service account", async () => {
     fetchById.mockResolvedValue(account({ type: AccountType.SERVICE }));
-    const result = await updateAccountFlags(SESSION, "an-account", [AccountFlags.ADMIN]);
-    expect(result).toMatchObject({ error: "invalid" });
+    expect(await setFlags([AccountFlags.ADMIN])).toMatchObject({ error: "invalid" });
     expect(update).not.toHaveBeenCalled();
   });
 
   it("writes only the flags, so a concurrent profile edit survives", async () => {
     fetchById.mockResolvedValue(account({ metadata_public: { bio: "Old" } }));
-    await updateAccountFlags(SESSION, "an-account", [AccountFlags.CREATE_REPOSITORIES]);
+    await setFlags([AccountFlags.CREATE_REPOSITORIES]);
     expect(written()).toEqual(
       expect.objectContaining({ account_id: "an-account", flags: [AccountFlags.CREATE_REPOSITORIES] })
     );
@@ -289,8 +322,53 @@ describe("account flags", () => {
 
   it("refuses a flag that doesn't exist", async () => {
     fetchById.mockResolvedValue(account());
-    expect(await updateAccountFlags(SESSION, "an-account", ["root"])).toMatchObject({
-      error: "invalid",
-    });
+    expect(await setFlags(["root"])).toMatchObject({ error: "invalid" });
+  });
+});
+
+describe("deleteAccount", () => {
+  const bot = () => account({ type: AccountType.SERVICE, owner_account_id: "acme" });
+
+  it("disables a service account, deletes its grants and keys, then deletes it", async () => {
+    fetchById.mockResolvedValue(bot());
+    (managedServiceAccount as jest.Mock).mockResolvedValue(bot());
+    (membershipsTable.listByUser as jest.Mock).mockResolvedValue([
+      { membership_id: "m1" },
+      { membership_id: "m2" },
+    ]);
+    (serviceAccountKeysTable.listByAccount as jest.Mock).mockResolvedValue([
+      { key_hash: "live" },
+      { key_hash: "gone", revoked_at: "2026-01-01T00:00:00.000Z" },
+    ]);
+    expect(await deleteAccount(SESSION, "an-account")).toMatchObject({ ok: true });
+    expect(written()).toMatchObject({ account_id: "an-account", disabled: true });
+    expect(membershipsTable.delete).toHaveBeenCalledTimes(2);
+    expect(serviceAccountKeysTable.delete).toHaveBeenCalledTimes(2);
+    expect(serviceAccountKeysTable.delete).toHaveBeenCalledWith("live");
+    expect(accountsTable.delete).toHaveBeenCalledWith("an-account");
+  });
+
+  it("never deletes a person or an organization", async () => {
+    for (const type of [AccountType.INDIVIDUAL, AccountType.ORGANIZATION]) {
+      fetchById.mockResolvedValue(account({ type }));
+      expect(await deleteAccount(SESSION, "an-account")).toMatchObject({ error: "conflict" });
+    }
+    expect(accountsTable.delete).not.toHaveBeenCalled();
+  });
+
+  it("tells only a caller who may disable a person how to", async () => {
+    fetchById.mockResolvedValue(account());
+    (isAuthorized as jest.Mock).mockReturnValue(false);
+    expect(await deleteAccount(SESSION, "an-account")).toMatchObject({ error: "forbidden" });
+    expect(isAuthorized).toHaveBeenCalledWith(SESSION, account(), Actions.DisableAccount);
+  });
+
+  it("hides a service account from whoever may not manage it", async () => {
+    fetchById.mockResolvedValue(bot());
+    (managedServiceAccount as jest.Mock).mockResolvedValue(null);
+    expect(await deleteAccount(SESSION, "an-account")).toMatchObject({ error: "not_found" });
+    expect(update).not.toHaveBeenCalled();
+    expect(await deleteAccount(null, "an-account")).toMatchObject({ error: "unauthenticated" });
+    expect(accountsTable.delete).not.toHaveBeenCalled();
   });
 });

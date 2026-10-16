@@ -5,9 +5,7 @@ import { generateDocument } from "@/lib/api/openapi";
 // from this list is missing from the document, which route-coverage.test.ts
 // catches.
 import "../v1/accounts/[account_id]/route";
-import "../v1/accounts/[account_id]/flags/route";
 import "../v1/accounts/[account_id]/members/route";
-import "../v1/accounts/[account_id]/profile/route";
 import "../v1/accounts/[account_id]/trusts/exchanges/route";
 import "../v1/memberships/route";
 import "../v1/memberships/[membership_id]/route";

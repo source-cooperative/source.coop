@@ -40,6 +40,22 @@ than those on its `UNREGISTERED` list.
 
 - **`summary` and `description` are published.** Write them for someone
   calling the endpoint: who may, what it answers, and what each status means.
+  Write them the way a reference manual reads, not as compressed prose. These
+  rules are borrowed from ASD-STE100 (Simplified Technical English), without its
+  controlled vocabulary:
+  - Lead with what the endpoint returns or does, in a full sentence with a
+    verb ("Returns the full account record…").
+  - Don't drop words. "A person their own, an admin any" makes the reader
+    supply the missing verb; write "People may read their own record, and
+    admins may read any."
+  - One rule per sentence. When the answer branches by caller or by state, put
+    each case in its own sentence, or its own paragraph for a status code,
+    rather than chaining them with colons and semicolons.
+  - Name who gets what, actively: "Returns 404 for a service account unless
+    you manage it", not "a service account is not found by whoever does not
+    manage it".
+  - Keep each sentence to 25 words or fewer.
+  - Address the caller as "you".
 - **Declare every method you serve.** Next answers `HEAD` from `GET` when no
   `HEAD` is exported; export `HEAD` as its own `export const HEAD = ...` so
   the coverage test and the reference both see it (`export { GET as HEAD }`
@@ -65,7 +81,7 @@ responses use the same snake_case field names as the stored records.
 | `POST` on a collection | create | 201 and the new resource |
 | `POST` on a named action | do something that isn't an edit (`/memberships/{id}/accept`, `/service-account-keys/revocations`) | the resource as it now is, or 204 |
 | `PATCH` | change the fields given, leave the rest; `""` clears a clearable field | the resource as edited |
-| `PUT` | replace a whole value at once (`/accounts/{id}/flags`) | the value as set |
+| `PUT` | replace a whole resource at once (`/data-connections/{id}`) | the resource as set |
 | `DELETE` | delete | the resource as it was |
 
 Deactivating is not deleting: it is `PATCH { "disabled": true }`, for products

@@ -1,10 +1,11 @@
 import { z } from "zod";
 import {
-  Account,
   Actions,
   Product,
   ProductCreationRequestSchema,
   ProductSchema,
+  ProductResponse,
+  ProductResponseSchema,
   RepositoryPermissions,
   resolveMirrorPrefix,
   UserSession,
@@ -35,6 +36,7 @@ import {
   pageSchema,
   unauthenticated,
 } from "./result";
+import { publicView } from "./accounts";
 
 export const PageQuerySchema = z.object({
   cursor: z
@@ -59,7 +61,7 @@ export const ListProductsQuerySchema = PageQuerySchema.extend({
   }),
 });
 
-export const ProductPageSchema = pageSchema("ProductPage", ProductSchema);
+export const ProductPageSchema = pageSchema("ProductPage", ProductResponseSchema);
 
 export const CreateProductSchema = ProductCreationRequestSchema.omit({
   search_text: true,
@@ -118,20 +120,14 @@ const encodeCursor = (key: unknown) =>
 
 /**
  * `product` with as much of its account as the caller may read: the whole
- * record for whoever GetAccount allows, and otherwise its public profile. The
+ * record for whoever GetAccount allows, and otherwise its public view. The
  * record also holds its people's emails, Ory identity, flags and private
  * metadata.
  */
-// ponytail: field by field, because Account is a union of three schemas that
-// zod can't .pick() across.
-function shown(session: UserSession | null, product: Product): Product {
+function shown(session: UserSession | null, product: Product): ProductResponse {
   const { account } = product;
   if (!account || isAuthorized(session, account, Actions.GetAccount)) return product;
-  const { account_id, type, name, disabled, metadata_public } = account;
-  return {
-    ...product,
-    account: { account_id, type, name, disabled, metadata_public } as Account,
-  };
+  return { ...product, account: publicView(account) };
 }
 
 // ponytail: filtering after the read can leave a page short of `limit`; the
@@ -140,7 +136,7 @@ const page = (
   session: UserSession | null,
   items: Product[],
   lastEvaluatedKey: unknown
-): Page<Product> => ({
+): Page<ProductResponse> => ({
   items: items.map((p) => shown(session, p)),
   next_cursor: encodeCursor(lastEvaluatedKey),
 });
@@ -174,7 +170,7 @@ export async function listProducts(
   session: UserSession | null,
   query: unknown,
   account_id?: string
-): Promise<OperationResult<Page<Product>>> {
+): Promise<OperationResult<Page<ProductResponse>>> {
   const parsed = (account_id ? PageQuerySchema : ListProductsQuerySchema).safeParse(query);
   if (!parsed.success) return fromZodError(parsed.error);
   const { cursor, limit } = parsed.data;
@@ -222,7 +218,7 @@ export async function getProduct(
   session: UserSession | null,
   account_id: string,
   product_id: string
-): Promise<OperationResult<Product>> {
+): Promise<OperationResult<ProductResponse>> {
   const product = await productsTable.fetchById(account_id, product_id);
   if (!product) return notFound(`Product ${account_id}/${product_id} not found`);
   if (!isAuthorized(session, product, Actions.GetRepository)) {
@@ -321,7 +317,7 @@ export async function updateProduct(
   account_id: string,
   product_id: string,
   input: unknown
-): Promise<OperationResult<Product>> {
+): Promise<OperationResult<ProductResponse>> {
   if (!session) return unauthenticated();
   const parsed = UpdateProductSchema.safeParse(input);
   if (!parsed.success) return fromZodError(parsed.error);
@@ -383,7 +379,7 @@ export async function deleteProduct(
   account_id: string,
   product_id: string,
   query: unknown
-): Promise<OperationResult<Product>> {
+): Promise<OperationResult<ProductResponse>> {
   if (!session) return unauthenticated();
   const parsed = DeleteProductQuerySchema.safeParse(query);
   if (!parsed.success) return fromZodError(parsed.error);

@@ -1,4 +1,4 @@
-import { ProductSchema } from "@/types";
+import { ProductResponseSchema } from "@/types";
 import { withApiSession, toResponse } from "@/lib/api/handler";
 import { bearer, errors, json, productParams, registry } from "@/lib/api/openapi";
 import {
@@ -22,7 +22,7 @@ registry.registerPath({
     "Anyone may read a public or unlisted product; a restricted one needs a member's credentials. A deactivated product is not found, except by its owners and maintainers.",
   request: { params },
   responses: {
-    200: json("The product.", ProductSchema),
+    200: json("The product.", ProductResponseSchema),
     ...errors(401, 403, 404),
   },
 });
@@ -64,7 +64,7 @@ registry.registerPath({
     body: { content: { "application/json": { schema: UpdateProductSchema } } },
   },
   responses: {
-    200: json("The product as edited.", ProductSchema),
+    200: json("The product as edited.", ProductResponseSchema),
     ...errors(400, 401, 403, 404),
   },
 });
@@ -85,7 +85,7 @@ registry.registerPath({
   security: bearer,
   request: { params, query: DeleteProductQuerySchema },
   responses: {
-    200: json("The product as it was.", ProductSchema),
+    200: json("The product as it was.", ProductResponseSchema),
     ...errors(400, 401, 403, 404),
   },
 });
