@@ -147,4 +147,31 @@ describe("/api/v1/data-connections", () => {
     expect(res.status).toBe(400);
     expect(dataConnectionsTable.create).not.toHaveBeenCalled();
   });
+
+  test("POST rejects an owned id outside its owner's namespace", async () => {
+    (getApiSession as jest.Mock).mockResolvedValue({ identity_id: "admin" });
+    (isAuthorized as jest.Mock).mockReturnValue(true);
+
+    const req = new NextRequest("http://localhost/api/v1/data-connections", {
+      method: "POST",
+      body: JSON.stringify({
+        data_connection_id: "acme--slug",
+        owner: "evil",
+        name: "X",
+        read_only: true,
+        allowed_visibilities: ["public"],
+        details: {
+          provider: "s3",
+          bucket: "b",
+          base_prefix: "",
+          region: "us-east-1",
+        },
+      }),
+      headers: { "content-type": "application/json" },
+    });
+    const res = await POST(req);
+
+    expect(res.status).toBe(400);
+    expect(dataConnectionsTable.create).not.toHaveBeenCalled();
+  });
 });

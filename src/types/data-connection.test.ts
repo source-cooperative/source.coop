@@ -5,6 +5,7 @@ import {
   DataConnectionSchema,
   DataConnnectionDetailsSchema,
   DataProvider,
+  connectionNamespaceError,
   isSecretBearingAuth,
 } from "./data-connection";
 
@@ -441,5 +442,28 @@ describe("DataConnection provider ↔ authentication cross-validation", () => {
       details: s3Details,
     });
     expect(dc.read_only).toBe(true);
+  });
+});
+
+describe("connectionNamespaceError", () => {
+  test.each([
+    ["acme--bucket", "acme"],
+    ["acme--my-bucket", "acme"],
+    ["shared-bucket", undefined],
+  ])("accepts %s owned by %s", (data_connection_id, owner) => {
+    expect(connectionNamespaceError({ data_connection_id, owner })).toBeNull();
+  });
+
+  test.each([
+    // An admin could otherwise give another account the subject acme trusts.
+    ["acme--bucket", "evil"],
+    // A prefix of the id isn't the owner unless the delimiter follows it.
+    ["acme-co--bucket", "acme"],
+    ["acme--bucket--x", "acme"],
+    ["acme-bucket", "acme"],
+    ["acme--", "acme"],
+    ["acme--bucket", undefined],
+  ])("rejects %s owned by %s", (data_connection_id, owner) => {
+    expect(connectionNamespaceError({ data_connection_id, owner })).not.toBeNull();
   });
 });

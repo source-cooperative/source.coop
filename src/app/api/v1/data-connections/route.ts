@@ -18,7 +18,11 @@
  *         description: Internal server error
  */
 import { NextRequest, NextResponse } from "next/server";
-import { Actions, DataConnectionSchema } from "@/types";
+import {
+  Actions,
+  DataConnectionSchema,
+  connectionNamespaceError,
+} from "@/types";
 import { StatusCodes } from "http-status-codes";
 import { isAuthorized } from "@/lib/api/authz";
 import { sanitizeDataConnection } from "@/lib/api/sanitize-data-connection";
@@ -88,15 +92,10 @@ export async function POST(request: NextRequest) {
         { status: StatusCodes.UNAUTHORIZED }
       );
     }
-    // `--` is reserved as the account-namespacing delimiter (`owner--slug`).
-    // The schema regex permits it for namespaced ids; reject it on unowned
-    // (admin-created) ids so an admin can't squat an account's slug namespace.
-    if (
-      !dataConnection.owner &&
-      dataConnection.data_connection_id.includes("--")
-    ) {
+    const namespaceError = connectionNamespaceError(dataConnection);
+    if (namespaceError) {
       return NextResponse.json(
-        { error: "ID may not contain consecutive hyphens (--)" },
+        { error: namespaceError },
         { status: StatusCodes.BAD_REQUEST }
       );
     }

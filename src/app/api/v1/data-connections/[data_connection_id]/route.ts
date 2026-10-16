@@ -27,7 +27,11 @@
  *         description: Internal server error
  */
 import { NextRequest, NextResponse } from "next/server";
-import { Actions, DataConnectionSchema } from "@/types";
+import {
+  Actions,
+  DataConnectionSchema,
+  connectionNamespaceError,
+} from "@/types";
 import { StatusCodes } from "http-status-codes";
 import { isAdmin, isAuthorized } from "@/lib/api/authz";
 import { sanitizeDataConnection } from "@/lib/api/sanitize-data-connection";
@@ -136,13 +140,21 @@ export async function PUT(
         { status: StatusCodes.UNAUTHORIZED }
       );
     }
-    // Admin-only route: the spread lets the body overwrite any field, including
-    // `owner` (now load-bearing for account-scoped authz). Acceptable since only
-    // platform admins reach here; the account-scoped server actions preserve it.
+    // Admin-only route, so the body may overwrite any field but the id, which
+    // is the path's. `owner` may change only to the account the id names: the
+    // id is the subject owners trust, so it can't move to another account.
     const updatedDataConnection = {
       ...existingDataConnection,
       ...dataConnectionUpdate,
+      data_connection_id,
     };
+    const namespaceError = connectionNamespaceError(updatedDataConnection);
+    if (namespaceError) {
+      return NextResponse.json(
+        { error: namespaceError },
+        { status: StatusCodes.BAD_REQUEST }
+      );
+    }
     // update() (attribute_exists guard), not create() (attribute_not_exists):
     // the connection already exists, so create() would fail its condition → 500.
     const dataConnection = await dataConnectionsTable.update(
