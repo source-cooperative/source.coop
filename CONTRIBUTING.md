@@ -84,4 +84,4 @@ UI changes carry their stories with them — a new component gets stories, a cha
 
 ### Server Actions & API Routes
 
-Both are meant to be adapters over one operation in `src/lib/operations/`, which parses the input, applies the rules and checks permissions with `isAuthorized()`. Not all are yet: data connections, credentials, profile images and account creation still call `isAuthorized()` themselves. Server actions (`src/lib/actions/`) handle form submissions and return `FormState` objects; API routes (`src/app/api/v1/`) return JSON and document themselves in the generated reference at `/api/docs`. See [API.md](API.md) for the conventions an endpoint follows.
+Both are adapters over one operation in `src/lib/operations/`, which parses the input, applies the rules and checks permissions with `isAuthorized()`. Server actions (`src/lib/actions/`) handle form submissions and return `FormState` objects; API routes (`src/app/api/v1/`) return JSON and document themselves in the generated reference at `/api/docs`. See [API.md](API.md) for the conventions an endpoint follows.

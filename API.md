@@ -16,10 +16,7 @@ Everything else only adapts it:
 
 - **A route** in `src/app/api/v1/` wraps its handler in `withApiSession` and
   answers `toResponse(await operation(...))`. It never reads a table or calls
-  `isAuthorized` itself. The `/data-connections` routes, and some actions
-  (data connections, credentials, profile images, account creation), predate
-  this and still do; #588 moves them onto operations, so check them too when
-  changing a permission rule.
+  `isAuthorized` itself.
 - **A server action** in `src/lib/actions/` maps form fields to the operation's
   input and answers `toFormState(result, ...)`.
 
@@ -39,7 +36,7 @@ handler, using the same Zod schemas the operation parses, so the reference
 can't describe a body the code doesn't accept. Import the route module in
 `src/app/api/openapi/route.ts`; `route-coverage.test.ts` fails for any handler
 exported as `export const|function METHOD` that isn't in the document, other
-than those on its `UNREGISTERED` list, which only shrinks.
+than those on its `UNREGISTERED` list.
 
 - **`summary` and `description` are published.** Write them for someone
   calling the endpoint: who may, what it answers, and what each status means.
@@ -108,20 +105,19 @@ The data proxy's trust exchange is the exception: it answers 403 as
 
 Refuse with `deny(session, message)`, which picks 401 or 403 for you. Where
 the permission doesn't depend on the input, authorize before validating it, so
-a caller who may not act learns nothing from its validation errors. Several
-operations don't yet (`updateProduct`, `deleteProduct`, `updateMembership`),
-and some can't: `createProduct` and `inviteMember` authorize against the
-parsed input, and `withApiSession` rejects malformed JSON with 400 before any
-operation runs. Answer 404 rather than 403 for a thing the caller may not know
-exists, such as a deactivated product.
+a caller who may not act learns nothing from its validation errors; where it
+does, as for `createProduct` and `inviteMember`, parse first. `withApiSession`
+rejects malformed JSON with 400 before any operation runs. Answer 404 rather
+than 403 for a thing the caller may not know exists, such as a deactivated
+product.
 
 ## Writes
 
-Write only the fields the request changes where the table helper allows it;
-writing back a whole record read a moment ago can undo a change someone else
-made in between. `accountsTable.update` doesn't yet: it always writes `name`
-and `type`, and writes `metadata_public` and `metadata_private` whole, so
-`updateAccount` carries that race until the helper takes a partial update.
+Write only the fields the request changes; writing back a whole record read a
+moment ago can undo a change someone else made in between.
+`accountsTable.update` always writes `name` and `type`, and writes
+`metadata_public` and `metadata_private` whole, so it can't make a partial
+edit of those.
 
 ## Compatibility
 
