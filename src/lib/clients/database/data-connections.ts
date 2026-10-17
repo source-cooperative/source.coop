@@ -135,7 +135,6 @@ export class DataConnectionsTable extends BaseTable {
 
       const optionalFields: Array<[string, unknown]> = [
         ["prefix_template", dataConnection.prefix_template],
-        ["required_flag", dataConnection.required_flag],
         ["authentication", dataConnection.authentication],
       ];
       for (const [field, value] of optionalFields) {

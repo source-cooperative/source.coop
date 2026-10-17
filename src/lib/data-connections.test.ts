@@ -220,26 +220,17 @@ describe("denyDataConnectionFor", () => {
     ).toBeNull();
   });
 
-  test("reports not-usable for a flag-gated connection the caller lacks the flag for", () => {
-    expect(
-      denyDataConnectionFor(
-        user,
-        connection({ required_flag: AccountFlags.CREATE_DATA_CONNECTIONS }),
-        "acme"
-      )
-    ).toBe("not-usable");
+  test("reports not-usable to a disabled account", () => {
+    const disabled = { account: { disabled: true } } as UserSession;
+    expect(denyDataConnectionFor(disabled, connection({}), "acme")).toBe(
+      "not-usable"
+    );
   });
 
   test("reports not-usable ahead of wrong-account when both apply", () => {
+    const disabled = { account: { disabled: true } } as UserSession;
     expect(
-      denyDataConnectionFor(
-        user,
-        connection({
-          owner: "rival",
-          required_flag: AccountFlags.CREATE_DATA_CONNECTIONS,
-        }),
-        "acme"
-      )
+      denyDataConnectionFor(disabled, connection({ owner: "rival" }), "acme")
     ).toBe("not-usable");
   });
 });
@@ -285,15 +276,5 @@ describe("canUseDataConnectionFor", () => {
         "acme"
       )
     ).toBe(true);
-  });
-
-  test("rejects a flag-gated system connection the caller lacks the flag for", () => {
-    expect(
-      canUseDataConnectionFor(
-        user,
-        connection({ required_flag: AccountFlags.CREATE_DATA_CONNECTIONS }),
-        "acme"
-      )
-    ).toBe(false);
   });
 });

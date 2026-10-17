@@ -42,7 +42,7 @@ registry.registerPath({
   tags: ["Data Connections"],
   summary: "Create a data connection",
   description:
-    "Its ID is made from `name`, and from `owner` when an account owns it (`owner--name`). An account's owners and maintainers may create its connections once the platform has given it the `create_data_connections` flag; only platform admins create connections without an owner. An owned connection never carries a `required_flag`.",
+    "Its ID is made from `name`, and from `owner` when an account owns it (`owner--name`). An account's owners and maintainers may create its connections once the platform has given it the `create_data_connections` flag; only platform admins create connections without an owner.",
   security: bearer,
   request: {
     body: {

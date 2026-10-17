@@ -115,8 +115,8 @@ export const Azure: Story = {
 };
 
 /**
- * Scoped to an account rather than the platform. The owner is posted as a
- * hidden field and the platform-only Required Flag disappears from Policy.
+ * Scoped to an account rather than the platform: the owner is posted as a
+ * hidden field.
  */
 export const AccountOwned: Story = {
   args: {
