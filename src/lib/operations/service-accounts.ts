@@ -19,7 +19,7 @@ import {
 } from "@/types";
 import { canManageAccountServiceAccounts, isAuthorized } from "@/lib/api/authz";
 import { managedServiceAccount } from "@/lib/accounts/service-accounts";
-import { mintApiKey } from "@/lib/accounts/service-account-keys";
+import { MAX_EXPIRY_DAYS, mintApiKey } from "@/lib/accounts/service-account-keys";
 import { LOGGER } from "@/lib/logging";
 import {
   accountsTable,
@@ -56,8 +56,6 @@ const GithubSubjectSchema = z
     example: "repo:acme/data:ref:refs/heads/main",
   });
 
-const MAX_EXPIRY_DAYS = 3650;
-
 const ExpiresAtSchema = z
   .string()
   .datetime()
@@ -92,6 +90,7 @@ export const UpdateKeySchema = z
       description: "Set to `true` to revoke the key. A revoked key can't be restored.",
     }),
   })
+  .refine((update) => update.expires_at !== undefined || update.revoked, "Send expires_at, revoked, or both")
   .openapi("ServiceAccountKeyUpdate");
 
 export const IssuedKeySchema = ServiceAccountKeySchema.extend({

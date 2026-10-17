@@ -10,7 +10,7 @@ import {
 import { managedServiceAccount } from "@/lib/accounts/service-accounts";
 import { getPageSession } from "../api/utils";
 import { membershipsTable } from "@/lib/clients/database";
-import { expiryFrom } from "@/lib/accounts/service-account-keys";
+import { EXPIRY_DAYS_RANGE, expiryFrom } from "@/lib/accounts/service-account-keys";
 import { editAccountServiceAccountsUrl, editServiceAccountUrl } from "@/lib/urls";
 import type { OperationResult } from "@/lib/operations/result";
 import {
@@ -66,7 +66,7 @@ export async function createServiceAccount(
   let key;
   if (formData.has("key_label")) {
     const expires_at = expiryFrom(formData);
-    if (expires_at === undefined) return fail("Expiry must be between 1 and 3650 days");
+    if (expires_at === undefined) return fail(EXPIRY_DAYS_RANGE);
     key = { label: String(formData.get("key_label")), expires_at };
   }
 

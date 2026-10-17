@@ -3,12 +3,10 @@
 import { revalidatePath } from "next/cache";
 import type { ApiKeyActionState } from "@/types";
 import { getPageSession } from "../api/utils";
-import { expiryFrom } from "@/lib/accounts/service-account-keys";
+import { EXPIRY_DAYS_RANGE, expiryFrom } from "@/lib/accounts/service-account-keys";
 import { issueKey, updateKey } from "@/lib/operations/service-accounts";
 import type { OperationResult } from "@/lib/operations/result";
 import { editAccountServiceAccountsUrl, editServiceAccountUrl } from "@/lib/urls";
-
-const EXPIRY_RANGE = "Expiry must be between 1 and 3650 days";
 
 const accountId = (formData: FormData) => String(formData.get("account_id") ?? "");
 
@@ -31,7 +29,7 @@ export async function issueApiKey(
   formData: FormData
 ): Promise<ApiKeyActionState> {
   const expires_at = expiryFrom(formData);
-  if (expires_at === undefined) return { message: EXPIRY_RANGE, success: false };
+  if (expires_at === undefined) return { message: EXPIRY_DAYS_RANGE, success: false };
   const result = await issueKey(await getPageSession(), accountId(formData), {
     label: String(formData.get("label") ?? ""),
     expires_at,
@@ -60,7 +58,7 @@ export async function setApiKeyExpiry(
   formData: FormData
 ): Promise<ApiKeyActionState> {
   const expires_at = expiryFrom(formData);
-  if (expires_at === undefined) return { message: EXPIRY_RANGE, success: false };
+  if (expires_at === undefined) return { message: EXPIRY_DAYS_RANGE, success: false };
   return outcome(
     formData,
     await updateKey(await getPageSession(), accountId(formData), String(formData.get("key_id") ?? ""), {

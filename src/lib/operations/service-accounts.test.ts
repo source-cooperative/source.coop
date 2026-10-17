@@ -241,9 +241,11 @@ describe("keys", () => {
     expect(
       await updateKey(session, "acme--sync", "6f1c2a3b-4d5e-4f60-8a9b-0c1d2e3f4a5b", { revoked: true })
     ).toMatchObject({ error: "conflict" });
-    expect(await updateKey(session, "acme--sync", "6f1c2a3b-4d5e-4f60-8a9b-0c1d2e3f4a5b", { revoked: false })).toMatchObject({
-      error: "invalid",
-    });
+    for (const input of [{ revoked: false }, {}]) {
+      expect(await updateKey(session, "acme--sync", "6f1c2a3b-4d5e-4f60-8a9b-0c1d2e3f4a5b", input)).toMatchObject({
+        error: "invalid",
+      });
+    }
   });
 
   it("changes expiry, including to never, and finds only the account's own keys", async () => {
