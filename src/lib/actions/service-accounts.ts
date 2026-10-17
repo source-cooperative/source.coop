@@ -4,14 +4,13 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
   MembershipState,
-  publicKey,
   type ServiceAccountActionState,
   type ServiceAccountFormState,
 } from "@/types";
 import { managedServiceAccount } from "@/lib/accounts/service-accounts";
 import { getPageSession } from "../api/utils";
-import { membershipsTable, serviceAccountKeysTable } from "@/lib/clients/database";
-import { expiryFrom, mintApiKey } from "@/lib/accounts/service-account-keys";
+import { membershipsTable } from "@/lib/clients/database";
+import { expiryFrom } from "@/lib/accounts/service-account-keys";
 import { editAccountServiceAccountsUrl, editServiceAccountUrl } from "@/lib/urls";
 import type { OperationResult } from "@/lib/operations/result";
 import {
@@ -64,21 +63,11 @@ export async function createServiceAccount(
   if (!session?.account) return fail("Unauthenticated");
   const owner_account_id = String(formData.get("owner_account_id") ?? "");
 
-  // Minted before anything is written, so a bad label or expiry leaves nothing behind.
-  let minted: ReturnType<typeof mintApiKey> = null;
+  let key;
   if (formData.has("key_label")) {
     const expires_at = expiryFrom(formData);
     if (expires_at === undefined) return fail("Expiry must be between 1 and 3650 days");
-    minted = mintApiKey({
-      // The operation settles the id; the record takes it once the account exists.
-      account_id: "",
-      label: String(formData.get("key_label")),
-      created_by: session.account.account_id,
-      expires_at,
-    });
-    if (!minted) {
-      return fail("Check the highlighted fields", { key_label: ["Up to 64 characters."] });
-    }
+    key = { label: String(formData.get("key_label")), expires_at };
   }
 
   const result = await operations.createServiceAccount(session, owner_account_id, {
@@ -88,25 +77,21 @@ export async function createServiceAccount(
     grants: [...formData].flatMap(([key, role]) =>
       key.startsWith("grant:") ? [{ product_id: key.slice("grant:".length), role }] : []
     ),
+    key,
   });
-  if (!result.ok) return fail(result.message, result.fieldErrors);
-  const { account_id } = result.value;
+  if (!result.ok) {
+    // The form names the key's label field `key_label`.
+    const { "key.label": key_label, ...fieldErrors } = result.fieldErrors ?? {};
+    return fail(result.message, key_label ? { ...fieldErrors, key_label } : fieldErrors);
+  }
+  const { account_id, key: issued } = result.value;
 
-  if (minted) await serviceAccountKeysTable.create({ ...minted.record, account_id });
   revalidatePath(editAccountServiceAccountsUrl(owner_account_id));
   const account_url = editServiceAccountUrl(owner_account_id, account_id);
   // The key is in this response and nowhere else; a redirect would lose it.
-  if (minted) {
-    return {
-      fieldErrors: {},
-      message: "",
-      success: true,
-      issued: {
-        key: minted.key,
-        record: publicKey({ ...minted.record, account_id }),
-        account_url,
-      },
-    };
+  if (issued) {
+    const { key, ...record } = issued;
+    return { fieldErrors: {}, message: "", success: true, issued: { key, record, account_url } };
   }
   redirect(account_url);
 }

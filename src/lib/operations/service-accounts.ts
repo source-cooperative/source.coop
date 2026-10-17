@@ -8,7 +8,10 @@ import {
   isServiceAccount,
   MembershipRole,
   ServiceAccount,
+  publicKey,
   ServiceAccountCreationRequestSchema,
+  ServiceAccountKey,
+  ServiceAccountKeySchema,
   ServiceAccountSchema,
   serviceAccountId,
   UserSession,
@@ -16,11 +19,13 @@ import {
 } from "@/types";
 import { canManageAccountServiceAccounts, isAuthorized } from "@/lib/api/authz";
 import { managedServiceAccount } from "@/lib/accounts/service-accounts";
+import { mintApiKey } from "@/lib/accounts/service-account-keys";
 import { LOGGER } from "@/lib/logging";
 import {
   accountsTable,
   accountTrustsTable,
   productsTable,
+  serviceAccountKeysTable,
 } from "@/lib/clients/database";
 import { AlreadyTrustedError } from "@/lib/clients/database/account-trusts";
 import { isConditionalCheckFailed } from "@/lib/clients/database/errors";
@@ -51,6 +56,53 @@ const GithubSubjectSchema = z
     example: "repo:acme/data:ref:refs/heads/main",
   });
 
+const MAX_EXPIRY_DAYS = 3650;
+
+const ExpiresAtSchema = z
+  .string()
+  .datetime()
+  .nullable()
+  .refine(
+    (at) =>
+      at === null ||
+      (Date.parse(at) > Date.now() && Date.parse(at) <= Date.now() + MAX_EXPIRY_DAYS * 86_400_000),
+    `Expiry must be in the future and at most ${MAX_EXPIRY_DAYS} days away`
+  )
+  .openapi({
+    description: `When the key stops working, at most ${MAX_EXPIRY_DAYS} days away. Null for a key that works until it is revoked.`,
+    example: "2027-01-01T00:00:00.000Z",
+  });
+
+export const IssueKeySchema = z
+  .object({
+    label: z
+      .string()
+      .trim()
+      .min(1, "Give the key a label")
+      .max(64, "Give the key a label of up to 64 characters")
+      .openapi({ description: "What the key is for, to tell it apart from the others.", example: "HPC cron job" }),
+    expires_at: ExpiresAtSchema,
+  })
+  .openapi("ServiceAccountKeyRequest");
+
+export const UpdateKeySchema = z
+  .object({
+    expires_at: ExpiresAtSchema.optional(),
+    revoked: z.literal(true).optional().openapi({
+      description: "Set to `true` to revoke the key. A revoked key can't be restored.",
+    }),
+  })
+  .openapi("ServiceAccountKeyUpdate");
+
+export const IssuedKeySchema = ServiceAccountKeySchema.extend({
+  key: z.string().openapi({
+    description: "The key itself. This response is the only place it appears.",
+    example: "sck_…",
+  }),
+}).openapi("IssuedServiceAccountKey");
+
+type IssuedKey = z.infer<typeof IssuedKeySchema>;
+
 export const CreateServiceAccountSchema = ServiceAccountCreationRequestSchema.omit({
   owner_account_id: true,
 })
@@ -67,8 +119,13 @@ export const CreateServiceAccountSchema = ServiceAccountCreationRequestSchema.om
       )
       .default([])
       .openapi({ description: "The owner's products the account may read or write." }),
+    key: IssueKeySchema.optional().openapi({ description: "An API key to issue with the account." }),
   })
   .openapi("ServiceAccountCreationRequest");
+
+export const CreatedServiceAccountSchema = ServiceAccountSchema.extend({
+  key: IssuedKeySchema.optional(),
+}).openapi("CreatedServiceAccount");
 
 export const AddGithubTrustSchema = z
   .object({ subject: GithubSubjectSchema })
@@ -81,6 +138,7 @@ export const RemoveTrustQuerySchema = z.object({
 
 export const ServiceAccountPageSchema = pageSchema("ServiceAccountPage", ServiceAccountSchema);
 export const AccountTrustPageSchema = pageSchema("AccountTrustPage", AccountTrustSchema);
+export const ServiceAccountKeyPageSchema = pageSchema("ServiceAccountKeyPage", ServiceAccountKeySchema);
 
 /**
  * The service account `account_id` names, if the caller manages it. Missing,
@@ -118,14 +176,15 @@ export async function listServiceAccounts(
 
 /**
  * Creates a service account under an owner, grants it the owner's products
- * named, and trusts each GitHub workflow named. Each grant is authorized
- * before the account is written, so a refused one leaves nothing behind.
+ * named, trusts each GitHub workflow named, and issues an API key if one is
+ * asked for. Each grant is authorized before the account is written, so a
+ * refused one leaves nothing behind.
  */
 export async function createServiceAccount(
   session: UserSession | null,
   owner_account_id: string,
   input: unknown
-): Promise<OperationResult<ServiceAccount>> {
+): Promise<OperationResult<ServiceAccount & { key?: IssuedKey }>> {
   if (!session?.account) {
     return deny(session, "You do not manage service accounts for that account");
   }
@@ -198,14 +257,16 @@ export async function createServiceAccount(
   for (const subject of subjects) {
     await trustGithub(account.account_id, subject, session.account.account_id);
   }
+  const key = parsed.data.key && (await storeKey(account.account_id, parsed.data.key, session.account.account_id));
 
   audit("createServiceAccount", session, {
     account_id: account.account_id,
     owner_account_id,
     grants: grants.length,
     trusts: subjects.length,
+    key_id: key?.key_id,
   });
-  return ok(account);
+  return ok(key ? { ...account, key } : account);
 }
 
 export async function listTrusts(
@@ -274,4 +335,80 @@ export async function removeTrust(
   await accountTrustsTable.delete(account_id, issuer, subject);
   audit("removeTrust", session!, { account_id, issuer, subject });
   return ok(publicTrust(trust));
+}
+
+export async function listKeys(
+  session: UserSession | null,
+  account_id: string
+): Promise<OperationResult<Page<ServiceAccountKey>>> {
+  const found = await managed(session, account_id);
+  if (!found.ok) return found;
+  return ok(onePage((await serviceAccountKeysTable.listByAccount(account_id)).map(publicKey)));
+}
+
+/**
+ * Mints a key (ADR-013) and stores the record that stands for it, keyed by
+ * its hash. The key is in the result and nowhere else.
+ */
+async function storeKey(
+  account_id: string,
+  input: z.infer<typeof IssueKeySchema>,
+  created_by: string
+): Promise<IssuedKey> {
+  // IssueKeySchema has checked everything mintApiKey refuses.
+  const { key, record } = mintApiKey({ account_id, created_by, ...input })!;
+  await serviceAccountKeysTable.create(record);
+  return { ...publicKey(record), key };
+}
+
+/** Issues an API key for an existing service account. */
+export async function issueKey(
+  session: UserSession | null,
+  account_id: string,
+  input: unknown
+): Promise<OperationResult<IssuedKey>> {
+  const found = await managed(session, account_id);
+  if (!found.ok) return found;
+  // Disabled means frozen: no new key until it is enabled again.
+  if (found.value.disabled) return conflict("That service account is disabled");
+  const parsed = IssueKeySchema.safeParse(input);
+  if (!parsed.success) return fromZodError(parsed.error);
+  const issued = await storeKey(account_id, parsed.data, session!.account!.account_id);
+  audit("issueKey", session!, { account_id, key_id: issued.key_id, expires_at: issued.expires_at });
+  return ok(issued);
+}
+
+/**
+ * Changes a key's expiry, or revokes it. Expiry may be extended for a
+ * workload that needs longer, or shortened during an incident. Revocation
+ * takes effect for new exchanges within the proxy's cache TTL.
+ */
+export async function updateKey(
+  session: UserSession | null,
+  account_id: string,
+  key_id: string,
+  input: unknown
+): Promise<OperationResult<ServiceAccountKey>> {
+  const found = await managed(session, account_id);
+  if (!found.ok) return found;
+  const parsed = UpdateKeySchema.safeParse(input);
+  if (!parsed.success) return fromZodError(parsed.error);
+  const { expires_at, revoked } = parsed.data;
+  const key = (await serviceAccountKeysTable.listByAccount(account_id)).find(
+    (k) => k.key_id === key_id
+  );
+  if (!key) return notFound("No such key on this service account");
+  if (revoked && key.revoked_at) return conflict("Already revoked");
+  const by = session!.account!.account_id;
+  // One field at a time, so a concurrent revocation isn't written back over.
+  if (expires_at !== undefined) await serviceAccountKeysTable.set(key.key_hash, "expires_at", expires_at);
+  if (revoked) await serviceAccountKeysTable.revoke(key.key_hash, "owner", by);
+  audit("updateKey", session!, { account_id, key_id, expires_at, revoked });
+  return ok(
+    publicKey({
+      ...key,
+      ...(expires_at !== undefined && { expires_at }),
+      ...(revoked && { revoked_at: new Date().toISOString(), revoked_via: "owner" as const, revoked_by: by }),
+    })
+  );
 }

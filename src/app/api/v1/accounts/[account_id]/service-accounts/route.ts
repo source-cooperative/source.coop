@@ -1,9 +1,9 @@
 import { z } from "zod";
 import { StatusCodes } from "http-status-codes";
-import { ServiceAccountSchema } from "@/types";
 import { withApiSession, toResponse } from "@/lib/api/handler";
 import { bearer, errors, json, registry } from "@/lib/api/openapi";
 import {
+  CreatedServiceAccountSchema,
   createServiceAccount,
   CreateServiceAccountSchema,
   listServiceAccounts,
@@ -41,14 +41,14 @@ registry.registerPath({
   tags: ["Service accounts"],
   summary: "Create a service account",
   description:
-    "Creates a service account owned by this account, with the id `{account_id}--{local_id}`. It can be granted read or write access to its owner's products, here or later as a member of the product, and trusted by GitHub Actions workflows, here or later through its trusts. A service account can't own another.",
+    "Creates a service account owned by this account, with the id `{account_id}--{local_id}`. It can be granted read or write access to its owner's products, here or later as a member of the product, and trusted by GitHub Actions workflows, here or later through its trusts. A service account can't own another.\n\nIf you send `key`, the response also holds an API key for the account. Nothing shows that key again.",
   security: bearer,
   request: {
     params,
     body: { content: { "application/json": { schema: CreateServiceAccountSchema } } },
   },
   responses: {
-    201: json("The service account.", ServiceAccountSchema),
+    201: json("The service account, with its API key if you asked for one.", CreatedServiceAccountSchema),
     ...errors(400, 401, 403, 404, 409),
   },
 });
