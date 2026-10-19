@@ -12,7 +12,7 @@ import { DeleteProductModal } from "./DeleteProductModal";
  * `deleteProduct` is an `fn()` stub here, so confirming does nothing.
  */
 const meta = {
-  title: "Features/Settings/Details/DeleteProductModal",
+  title: "Features/Settings/Products/DeleteProductModal",
   component: DeleteProductModal,
   parameters: { layout: "padded", docs: { story: { inline: false, iframeHeight: 560 } } },
   args: {
