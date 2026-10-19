@@ -41,7 +41,7 @@ const ALIASES: Record<string, string[]> = {
   public: [], "public-data": [], aws: [], "2024": [], rgb: [], aois: [],
   tabaqat: [], cbam: [], euhvd: [], analysis: [], metadata: [], land: [],
   earth: [], field: [], polygon: [], image: [], state: [], county: [],
-  countries: [], arc: [], amx: [], sfer: [], sax: [], hcat: [], ome: [],
+  countries: [], arc: [], amx: [], sfer: [], sax: [], hcat: [],
   lowcoder: [], lacuna: [], wadhwaniai: [], pacificspatial: [],
 
   // Spelling, plurals and synonyms.
