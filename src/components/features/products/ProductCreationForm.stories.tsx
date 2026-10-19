@@ -20,7 +20,7 @@ import {
  * nothing.
  */
 const meta = {
-  title: "Features/Settings/Details/ProductCreationForm",
+  title: "Features/Settings/Products/ProductCreationForm",
   component: ProductCreationForm,
   parameters: { layout: "padded" },
 } satisfies Meta<typeof ProductCreationForm>;
