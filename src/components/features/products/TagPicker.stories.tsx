@@ -75,7 +75,10 @@ export const RetiredTag: Story = {
   args: { defaultValue: ["field-boundaries", "deep-sea-legacy"] },
 };
 
-/** The list open, with every tag under its category. */
+/**
+ * The list open, with every tag under its category, and a line under each
+ * heading saying what the category covers.
+ */
 export const Grouped: Story = {
   args: { defaultValue: ["field-boundaries"] },
   play: async ({ canvasElement }) => {

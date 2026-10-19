@@ -96,7 +96,15 @@ test("the list groups tags under their categories, in category order", () => {
     "Format",
     "Other",
   ]);
-  expect(groups[0].textContent).toBe("Domainoceanclimate");
+  expect(groups[0].textContent).toBe(
+    "DomainThe subject the data is about.oceanclimate"
+  );
+  expect(
+    screen.getByRole("group", {
+      name: "Format",
+      description: "How the files are stored.",
+    })
+  ).toBeTruthy();
 });
 
 test("a filter with spaces matches hyphenated tags", () => {

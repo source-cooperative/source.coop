@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useId, useState, useTransition } from "react";
 import {
   Badge,
   Button,
@@ -48,16 +48,22 @@ export function TagPicker({
   const [filter, setFilter] = useState("");
   const [error, setError] = useState("");
   const [suggesting, startSuggesting] = useTransition();
+  const listId = useId();
 
   // Tags are hyphenated; people type spaces. Match either way.
   const query = filter.trim().toLowerCase().replace(/\s+/g, "-");
   const matches = options.filter((tag) => tag.toLowerCase().includes(query));
   const groups = [
-    ...TAG_CATEGORIES.map(({ id, label }) => ({
+    ...TAG_CATEGORIES.map(({ id, label, description }) => ({
       label,
+      description,
       tags: matches.filter((tag) => categories[tag] === id),
     })),
-    { label: "Other", tags: matches.filter((tag) => !categories[tag]) },
+    {
+      label: "Other",
+      description: "Tags not given a category yet.",
+      tags: matches.filter((tag) => !categories[tag]),
+    },
   ].filter((group) => group.tags.length);
   // A list with no categories at all reads better without an "Other" heading.
   const headed = groups.length > 1 || groups[0]?.label !== "Other";
@@ -136,17 +142,23 @@ export function TagPicker({
               gap="1"
               style={{ maxHeight: 240, overflowY: "auto" }}
             >
-              {groups.map((group) => (
+              {groups.map((group, i) => (
                 <Flex
                   key={group.label}
                   direction="column"
                   role="group"
                   aria-label={headed ? group.label : undefined}
+                  aria-describedby={headed ? `${listId}-${i}` : undefined}
                 >
                   {headed && (
-                    <Text size="1" weight="bold" color="gray" mt="1">
-                      {group.label}
-                    </Text>
+                    <>
+                      <Text size="1" weight="bold" color="gray" mt="1">
+                        {group.label}
+                      </Text>
+                      <Text size="1" color="gray" id={`${listId}-${i}`}>
+                        {group.description}
+                      </Text>
+                    </>
                   )}
                   {group.tags.map((tag) => (
                     <Text as="label" size="2" key={tag}>
