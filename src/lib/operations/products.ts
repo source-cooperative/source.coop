@@ -23,6 +23,7 @@ import {
   membershipsTable,
   productsTable,
   tagsTable,
+  hidePendingTags,
 } from "@/lib/clients/database";
 import {
   conflict,
@@ -148,6 +149,13 @@ const publicCursor = (featuredOnly: boolean) =>
  * record also holds its people's emails, Ory identity, flags and private
  * metadata.
  */
+/**
+ * Whether a caller sees a product's pending tags: those who may edit it do,
+ * so a tags list they send back doesn't drop them unseen.
+ */
+const editsTags = (session: UserSession | null) => (product: Product) =>
+  isAuthorized(session, product, Actions.PutRepository);
+
 function shown(session: UserSession | null, product: Product): ProductResponse {
   const { account } = product;
   if (!account || isAuthorized(session, account, Actions.GetAccount)) return product;
@@ -214,9 +222,12 @@ export async function listProducts(
     return ok(
       page(
         session,
-        result.products
-          .filter((p) => canListOnProfile(session, p))
-          .map((p) => ({ ...p, account })),
+        await hidePendingTags(
+          result.products
+            .filter((p) => canListOnProfile(session, p))
+            .map((p) => ({ ...p, account })),
+          editsTags(session)
+        ),
         result.lastEvaluatedKey
       )
     );
@@ -231,8 +242,11 @@ export async function listProducts(
   return ok(
     page(
       session,
-      await productsTable.attachAccounts(
-        result.products.filter((p) => isAuthorized(session, p, Actions.ListRepository))
+      await hidePendingTags(
+        await productsTable.attachAccounts(
+          result.products.filter((p) => isAuthorized(session, p, Actions.ListRepository))
+        ),
+        editsTags(session)
       ),
       result.lastEvaluatedKey
     )
@@ -261,7 +275,8 @@ export async function getProduct(
     });
     return refuse(session, product, "You may not view this product");
   }
-  return ok(shown(session, product));
+  const [visible] = await hidePendingTags([product], editsTags(session));
+  return ok(shown(session, visible));
 }
 
 /**

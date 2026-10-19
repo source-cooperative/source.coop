@@ -6,6 +6,7 @@ import {
   membershipsTable,
   productsTable,
   tagsTable,
+  hidePendingTags,
 } from "@/lib/clients/database";
 import { canListOnProfile, isAdmin, isAuthorized } from "@/lib/api/authz";
 import { getProxyCredentials } from "@/lib/actions/proxy-credentials";
@@ -34,6 +35,7 @@ jest.mock("@/lib/clients/database", () => ({
   dataConnectionsTable: { fetchById: jest.fn() },
   membershipsTable: { deleteByProduct: jest.fn() },
   tagsTable: { listAll: jest.fn() },
+  hidePendingTags: jest.fn(),
 }));
 jest.mock("@/lib/api/authz", () => ({
   canListOnProfile: jest.fn(),
@@ -79,6 +81,7 @@ beforeEach(() => {
   (productsTable.attachAccounts as jest.Mock).mockImplementation(async (p) => p);
   (productsTable.create as jest.Mock).mockImplementation(async (p) => p);
   (productsTable.update as jest.Mock).mockImplementation(async (p) => p);
+  (hidePendingTags as jest.Mock).mockImplementation(async (products) => products);
   (tagsTable.listAll as jest.Mock).mockResolvedValue([
     { tag_id: "acoustics" },
     { tag_id: "ocean" },
@@ -222,6 +225,16 @@ describe("getProduct", () => {
     expect(await getProduct(SESSION, "alice", "my-product")).toMatchObject({
       error: "forbidden",
     });
+  });
+
+  test("hides pending tags from anyone who may not edit the product", async () => {
+    (productsTable.fetchById as jest.Mock).mockResolvedValue(product());
+    await getProduct(SESSION, "alice", "my-product");
+    const keep = (hidePendingTags as jest.Mock).mock.calls[0][1];
+
+    expect(keep(product())).toBe(true);
+    allowExcept(Actions.PutRepository);
+    expect(keep(product())).toBe(false);
   });
 
   test("a deactivated product is not found by anyone who may not see it", async () => {

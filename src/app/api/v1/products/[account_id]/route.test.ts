@@ -32,6 +32,8 @@ jest.mock("@/lib/clients/database", () => ({
     listByUser: jest.fn(),
   },
   isIndividualAccount: jest.fn(),
+  // No product here has tags awaiting review.
+  hidePendingTags: async (products: unknown[]) => products,
 }));
 
 jest.mock("@/lib/clients/database/accounts", () => ({
