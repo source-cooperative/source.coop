@@ -6,6 +6,7 @@ import { productsTable, tagsTable } from "@/lib/clients/database";
 import { TAG_CATEGORY_IDS } from "@/lib/tags/categories";
 import { adminTagsUrl } from "@/lib/urls";
 import {
+  conflict,
   deny,
   fromZodError,
   invalid,
@@ -107,15 +108,19 @@ export async function reviewTag(
   if (!parsed.success) return fromZodError(parsed.error);
   const review = parsed.data;
 
+  // Another admin may have decided already; merging or rejecting an approved
+  // tag would strip it from every product.
+  const corpus = await tagsTable.listAll();
+  if (!corpus.find((t) => t.tag_id === review.tag)?.pending) {
+    return conflict(`"${review.tag}" is not awaiting review`);
+  }
+
   if (review.decision === "approve") {
     await tagsTable.approve(review.tag, review.category);
   } else {
     const into = review.decision === "merge" ? review.into : undefined;
-    if (into) {
-      const corpus = await tagsTable.listAll();
-      if (!corpus.some((t) => t.tag_id === into && !t.pending)) {
-        return invalid(`Can't merge into "${into}": it isn't an approved tag`, "into");
-      }
+    if (into && !corpus.some((t) => t.tag_id === into && !t.pending)) {
+      return invalid(`Can't merge into "${into}": it isn't an approved tag`, "into");
     }
     for (const product of await productsTable.listByTag(review.tag)) {
       const replaced = product.metadata.tags!.flatMap((t) =>

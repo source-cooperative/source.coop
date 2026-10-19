@@ -84,6 +84,11 @@ describe("suggestTag", () => {
 describe("reviewTag", () => {
   beforeEach(() => {
     (isAdmin as jest.Mock).mockReturnValue(true);
+    (tagsTable.listAll as jest.Mock).mockResolvedValue([
+      { tag_id: "ocean", category: "domain" },
+      { tag_id: "climate", category: "domain" },
+      pending("sst"),
+    ]);
     (productsTable.listByTag as jest.Mock).mockResolvedValue([
       { account_id: "a", product_id: "p1", metadata: { tags: ["sst", "ocean"] } },
       { account_id: "b", product_id: "p2", metadata: { tags: ["climate", "sst"] } },
@@ -96,6 +101,19 @@ describe("reviewTag", () => {
       await reviewTag(SESSION, { tag: "sst", decision: "approve", category: "domain" })
     ).toMatchObject({ error: "forbidden" });
     expect(tagsTable.approve).not.toHaveBeenCalled();
+  });
+
+  test.each([
+    { decision: "approve", category: "domain" },
+    { decision: "merge", into: "climate" },
+    { decision: "reject" },
+  ])("$decision refuses a tag that's no longer pending, as from a stale form", async (fields) => {
+    expect(await reviewTag(SESSION, { tag: "ocean", ...fields })).toMatchObject({
+      error: "conflict",
+    });
+    expect(tagsTable.approve).not.toHaveBeenCalled();
+    expect(productsTable.setTags).not.toHaveBeenCalled();
+    expect(tagsTable.delete).not.toHaveBeenCalled();
   });
 
   test("approve puts the tag in its category and keeps it on its products", async () => {
