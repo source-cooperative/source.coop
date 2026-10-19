@@ -1,6 +1,6 @@
 /** @jest-environment node */
 import type { Product } from "@/types";
-import { hidePendingTags, tagsTable } from "./tags";
+import { hidePendingTags, tagProps, tagsTable } from "./tags";
 
 const product = (tags?: string[]) =>
   ({ account_id: "a", product_id: "p", metadata: { mirrors: {}, tags } }) as unknown as Product;
@@ -20,6 +20,19 @@ test("takes pending tags off, leaving the rest of the product", async () => {
 test("keeps them on a product `keep` picks", async () => {
   const stored = product(["ocean", "sea ice"]);
   expect(await hidePendingTags([stored], () => true)).toEqual([stored]);
+});
+
+test("the form gets approved tags, and only the product's own pending ones", () => {
+  const tags = [
+    { tag_id: "ocean" },
+    { tag_id: "sea ice", pending: true },
+    { tag_id: "someone else's", pending: true },
+  ];
+  expect(tagProps(tags, ["ocean", "sea ice"])).toEqual({
+    tagOptions: ["ocean"],
+    pendingTags: ["sea ice"],
+  });
+  expect(tagProps(tags).pendingTags).toEqual([]);
 });
 
 test("shows products as they are when the tag table can't be read", async () => {

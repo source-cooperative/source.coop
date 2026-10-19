@@ -137,18 +137,18 @@ const publicCursor = (featuredOnly: boolean) =>
     .strict();
 
 /**
- * `product` with as much of its account as the caller may read: the whole
- * record for whoever GetAccount allows, and otherwise its public view. The
- * record also holds its people's emails, Ory identity, flags and private
- * metadata.
- */
-/**
  * Whether a caller sees a product's pending tags: those who may edit it do,
  * so a tags list they send back doesn't drop them unseen.
  */
 const editsTags = (session: UserSession | null) => (product: Product) =>
   isAuthorized(session, product, Actions.PutRepository);
 
+/**
+ * `product` with as much of its account as the caller may read: the whole
+ * record for whoever GetAccount allows, and otherwise its public view. The
+ * record also holds its people's emails, Ory identity, flags and private
+ * metadata.
+ */
 function shown(session: UserSession | null, product: Product): ProductResponse {
   const { account } = product;
   if (!account || isAuthorized(session, account, Actions.GetAccount)) return product;
