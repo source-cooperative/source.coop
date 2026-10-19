@@ -75,7 +75,7 @@ export default async function DetailsPage({ params }: PageProps) {
         product={product}
         dataConnections={dataConnections}
         mode="edit"
-        {...tagProps(tags)}
+        {...tagProps(tags, product.metadata.tags)}
       />
 
       {canDelete && (

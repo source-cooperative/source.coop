@@ -19,11 +19,17 @@ export interface Tag {
   suggested_at?: string;
 }
 
-/** The product form's tag props: approved tags to pick, and pending ones. */
-export function tagProps(tags: Tag[]) {
+/**
+ * The product form's tag props: approved tags to pick, and which of the
+ * product's own tags are pending. Other products' pending tags aren't
+ * public, so they stay on the server.
+ */
+export function tagProps(tags: Tag[], current: string[] = []) {
   return {
     tagOptions: tags.filter((t) => !t.pending).map((t) => t.tag_id),
-    pendingTags: tags.filter((t) => t.pending).map((t) => t.tag_id),
+    pendingTags: tags
+      .filter((t) => t.pending && current.includes(t.tag_id))
+      .map((t) => t.tag_id),
   };
 }
 
