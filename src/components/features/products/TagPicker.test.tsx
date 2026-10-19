@@ -1,0 +1,44 @@
+import { fireEvent, render, screen } from "@testing-library/react";
+import { Theme } from "@radix-ui/themes";
+import { TagPicker } from "./TagPicker";
+
+const submitted = (container: HTMLElement) =>
+  [...container.querySelectorAll<HTMLInputElement>('input[name="tags"]')].map(
+    (input) => input.value
+  );
+
+function renderPicker(defaultValue: string[] = []) {
+  return render(
+    <Theme>
+      <TagPicker
+        name="tags"
+        options={["climate", "climate-change", "ocean"]}
+        defaultValue={defaultValue}
+      />
+    </Theme>
+  );
+}
+
+test("submits each chosen tag and drops a removed one", () => {
+  const { container } = renderPicker(["ocean", "legacy"]);
+  expect(submitted(container)).toEqual(["ocean", "legacy"]);
+
+  fireEvent.click(screen.getByRole("button", { name: "Remove legacy" }));
+  expect(submitted(container)).toEqual(["ocean"]);
+});
+
+test("the popover filters the corpus and toggles tags", () => {
+  const { container } = renderPicker(["ocean"]);
+  fireEvent.click(screen.getByRole("button", { name: "Edit tags" }));
+
+  fireEvent.change(screen.getByPlaceholderText("Filter tags"), {
+    target: { value: "CLIM" },
+  });
+  expect(screen.queryByRole("checkbox", { name: "ocean" })).toBeNull();
+
+  fireEvent.click(screen.getByRole("checkbox", { name: "climate-change" }));
+  expect(submitted(container)).toEqual(["ocean", "climate-change"]);
+
+  fireEvent.click(screen.getByRole("checkbox", { name: "climate-change" }));
+  expect(submitted(container)).toEqual(["ocean"]);
+});
