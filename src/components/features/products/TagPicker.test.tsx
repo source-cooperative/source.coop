@@ -38,6 +38,12 @@ test("submits each chosen tag and drops a removed one", () => {
   expect(submitted(container)).toEqual(["ocean"]);
 });
 
+test("leaves out an empty tag a product carries", () => {
+  const { container } = renderPicker(["", "ocean"]);
+  expect(submitted(container)).toEqual(["ocean"]);
+  expect(screen.queryByRole("button", { name: "Remove " })).toBeNull();
+});
+
 test("the popover filters the corpus and toggles tags", () => {
   const { container } = renderPicker(["ocean"]);
   fireEvent.click(screen.getByRole("button", { name: "Edit tags" }));

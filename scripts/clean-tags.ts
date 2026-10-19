@@ -5,11 +5,13 @@
  * Each tag is lowercased, stripped of `#`, split if it holds several tags, and
  * mapped through ALIASES to its canonical form (or dropped). A canonical tag
  * joins the corpus when at least MIN_USES products carry it, or when it is in
- * KEEP. Each product then keeps only its cleaned tags that made the corpus.
+ * KEEP. Each product then keeps only its cleaned tags that made the corpus,
+ * plus any tags still pending review, which it leaves alone. Applying also
+ * deletes approved tags the corpus no longer has from the tags table.
  *
  * Usage:
  *   npx tsx scripts/clean-tags.ts <stage>               # preview from DynamoDB
- *   APPLY=1 npx tsx scripts/clean-tags.ts <stage>       # rewrite products, write corpus
+ *   APPLY=1 npx tsx scripts/clean-tags.ts <stage>       # rewrite products, sync the tags table
  *   npx tsx scripts/clean-tags.ts --counts <file>       # preview from `uniq -c` output
  *   TABLE=1 npx tsx scripts/clean-tags.ts --counts <file>  # ...plus a before/after table
  *
@@ -24,6 +26,7 @@ import { TAG_CATEGORIES, type TagCategory } from "../src/lib/tags/categories";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import {
   DynamoDBDocumentClient,
+  DeleteCommand,
   PutCommand,
   ScanCommand,
   UpdateCommand,
@@ -377,19 +380,51 @@ async function fromTable(stage: string) {
     ExclusiveStartKey = page.LastEvaluatedKey;
   } while (ExclusiveStartKey);
 
+  // Tags awaiting review are an admin's to decide on /admin/tags, so products
+  // keep them as they are and they stay out of the corpus.
+  const stored: { tag_id: string; pending?: boolean }[] = [];
+  let tagsKey: Record<string, unknown> | undefined;
+  do {
+    const page = await client.send(
+      new ScanCommand({ TableName: `sc-${stage}-tags`, ExclusiveStartKey: tagsKey })
+    );
+    stored.push(...((page.Items ?? []) as typeof stored));
+    tagsKey = page.LastEvaluatedKey;
+  } while (tagsKey);
+  const pending = new Set(stored.filter((t) => t.pending).map((t) => t.tag_id));
+
   const uses = new Map<string, number>();
   for (const p of products) {
-    for (const tag of cleanAll(p.tags)) uses.set(tag, (uses.get(tag) ?? 0) + 1);
+    const tags = cleanAll(p.tags.filter((t) => !pending.has(t)));
+    for (const tag of tags) uses.set(tag, (uses.get(tag) ?? 0) + 1);
   }
   const corpus = report(uses, new Set(products.flatMap((p) => p.tags)).size);
 
   const changes = products
-    .map((p) => ({ ...p, next: cleanAll(p.tags).filter((t) => corpus.has(t)) }))
-    .filter((p) => p.next.join("\0") !== p.tags.join("\0"));
+    .map((p) => ({
+      ...p,
+      next: [
+        ...new Set(
+          p.tags.flatMap((t) =>
+            pending.has(t) ? [t] : clean(t).filter((c) => corpus.has(c))
+          )
+        ),
+      ],
+    }))
+    // Compared as JSON: joined, [""] and [] are the same empty string.
+    .filter((p) => JSON.stringify(p.next) !== JSON.stringify(p.tags));
   console.log(`\n${changes.length} of ${products.length} tagged products change:`);
   for (const p of changes) {
-    console.log(`  ${p.account_id}/${p.product_id}: [${p.tags.join(", ")}] → [${p.next.join(", ")}]`);
+    console.log(`  ${p.account_id}/${p.product_id}: ${JSON.stringify(p.tags)} → ${JSON.stringify(p.next)}`);
   }
+
+  // Approved tags the corpus no longer has, such as ones an earlier run wrote
+  // before tags were hyphenated. Products no longer carry them once applied.
+  const stale = stored
+    .filter((t) => !t.pending && !corpus.has(t.tag_id))
+    .map((t) => t.tag_id)
+    .sort();
+  console.log(`\n${stale.length} tags to delete from sc-${stage}-tags: ${stale.join(", ")}`);
 
   if (!process.env.APPLY) return console.log("\nPreview only. Set APPLY=1 to write.");
   if (uncategorizedIn(corpus).length) {
@@ -414,7 +449,14 @@ async function fromTable(stage: string) {
       })
     );
   }
-  console.log(`\nRewrote ${changes.length} products; wrote ${corpus.size} tags to sc-${stage}-tags`);
+  for (const tag_id of stale) {
+    await client.send(
+      new DeleteCommand({ TableName: `sc-${stage}-tags`, Key: { tag_id } })
+    );
+  }
+  console.log(
+    `\nRewrote ${changes.length} products; wrote ${corpus.size} tags to sc-${stage}-tags and deleted ${stale.length}`
+  );
 }
 
 const [arg, file] = process.argv.slice(2);

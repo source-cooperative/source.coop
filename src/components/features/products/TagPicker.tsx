@@ -43,7 +43,9 @@ export function TagPicker({
   onSuggest,
   ...controlProps
 }: TagPickerProps) {
-  const [tags, setTags] = useState(defaultValue);
+  // Some products carry an empty tag from before tags were picked from a list.
+  // It isn't a tag, and submitting it would fail the corpus check.
+  const [tags, setTags] = useState(() => defaultValue.filter(Boolean));
   const [pending, setPending] = useState(initialPending);
   const [filter, setFilter] = useState("");
   const [error, setError] = useState("");
