@@ -1,6 +1,6 @@
 "use server";
 
-import { productsTable } from "@/lib/clients/database";
+import { hidePendingTags, productsTable } from "@/lib/clients/database";
 import type { Product, ProductCreationRequest } from "@/types";
 import { getPageSession, LOGGER } from "@/lib";
 import { FormState } from "@/components/core/DynamicForm";
@@ -13,7 +13,7 @@ export async function getFeaturedProducts(limit = 10): Promise<Product[]> {
     const result = await productsTable.listPublic(limit, undefined, {
       featuredOnly: true,
     });
-    return productsTable.attachAccounts(result.products);
+    return hidePendingTags(await productsTable.attachAccounts(result.products));
   } catch (error) {
     LOGGER.error("Failed to fetch featured products", {
       operation: "getFeaturedProducts",

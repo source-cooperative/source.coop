@@ -53,14 +53,21 @@ export async function reviewTag(formData: FormData): Promise<void> {
   const decision = formData.get("decision");
   const into = String(formData.get("into") ?? "");
 
+  // Another admin may have decided already; merging or rejecting an approved
+  // tag would strip it from every product.
+  const corpus = await tagsTable.listAll();
+  if (!corpus.find((t) => t.tag_id === tag)?.pending) {
+    throw new Error(`"${tag}" is not awaiting review`);
+  }
+
   if (decision === "approve") {
     await tagsTable.approve(tag);
   } else if (decision === "merge" || decision === "reject") {
-    if (decision === "merge") {
-      const corpus = await tagsTable.listAll();
-      if (!corpus.some((t) => t.tag_id === into && !t.pending)) {
-        throw new Error(`Can't merge into "${into}": not an approved tag`);
-      }
+    if (
+      decision === "merge" &&
+      !corpus.some((t) => t.tag_id === into && !t.pending)
+    ) {
+      throw new Error(`Can't merge into "${into}": not an approved tag`);
     }
     for (const product of await productsTable.listByTag(tag)) {
       const replaced = product.metadata.tags!.flatMap((t) =>

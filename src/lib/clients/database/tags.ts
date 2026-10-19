@@ -4,6 +4,7 @@ import {
   ScanCommand,
   UpdateCommand,
 } from "@aws-sdk/lib-dynamodb";
+import type { Product } from "@/types";
 import { BaseTable } from "./base";
 
 /**
@@ -24,6 +25,29 @@ export function tagProps(tags: Tag[]) {
     tagOptions: tags.filter((t) => !t.pending).map((t) => t.tag_id),
     pendingTags: tags.filter((t) => t.pending).map((t) => t.tag_id),
   };
+}
+
+/**
+ * The products with tags still pending review taken out, for showing them to
+ * anyone outside the product's settings. A product `keep` returns true for
+ * keeps its pending tags, so someone who edits its tags sees them all.
+ */
+export async function hidePendingTags<T extends Product>(
+  products: T[],
+  keep: (product: T) => boolean = () => false
+): Promise<T[]> {
+  const pending = new Set(
+    (await tagsTable.listAll()).filter((t) => t.pending).map((t) => t.tag_id)
+  );
+  if (!pending.size) return products;
+  return products.map((product) => {
+    const tags = product.metadata?.tags;
+    if (!tags?.some((t) => pending.has(t)) || keep(product)) return product;
+    return {
+      ...product,
+      metadata: { ...product.metadata, tags: tags.filter((t) => !pending.has(t)) },
+    };
+  });
 }
 
 export class TagsTable extends BaseTable {
