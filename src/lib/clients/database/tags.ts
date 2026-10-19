@@ -36,9 +36,16 @@ export async function hidePendingTags<T extends Product>(
   products: T[],
   keep: (product: T) => boolean = () => false
 ): Promise<T[]> {
-  const pending = new Set(
-    (await tagsTable.listAll()).filter((t) => t.pending).map((t) => t.tag_id)
-  );
+  let tags: Tag[];
+  try {
+    tags = await tagsTable.listAll();
+  } catch {
+    // Public pages, the prerendered homepage among them, mustn't fail on
+    // this table: it may not be deployed yet, and then nothing is pending.
+    // listAll has logged the error.
+    return products;
+  }
+  const pending = new Set(tags.filter((t) => t.pending).map((t) => t.tag_id));
   if (!pending.size) return products;
   return products.map((product) => {
     const tags = product.metadata?.tags;
