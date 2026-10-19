@@ -212,14 +212,28 @@ const ALIASES: Record<string, string[]> = {
 
 /** Kept in the corpus however few products carry them. */
 const KEEP = new Set([
+  /** domain */
+  "elevation", "forests", "hydrology",
+  /** feature type */
+  /** place */
   "africa", "antarctica", "austria", "belgium", "brazil", "cambodia",
   "canada", "croatia", "czechia", "denmark", "estonia", "europe", "finland",
   "france", "germany", "india", "ireland", "japan", "latvia", "luxembourg",
   "netherlands", "new zealand", "portugal", "rwanda", "saudi arabia",
   "slovakia", "slovenia", "spain", "sweden", "switzerland", "tanzania",
   "united kingdom", "united states", "vietnam",
-  "elevation", "machine learning", "time series", "forests", "hydrology",
+  /** methodology */
+  "machine learning",
+  /** sensor or platform */
+  "goes", "metop",
+  /** source or project */
+  "copernicus", "epa", "esa", "jpss", "nasa", "nsta", "neon", "usgs",
+  /** format */
+  "csv", "iceberg", "png",
+  /** temporal frequency */
+  "time series",
 ]);
+
 
 /** One raw tag as typed → its canonical tags. */
 function clean(raw: string): string[] {
