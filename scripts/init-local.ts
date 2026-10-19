@@ -15,6 +15,7 @@ import {
 
 // Import mock data
 import { accounts, memberships, products, dataConnections } from "../src/lib/api/utils.mock";
+import { toItem } from "../src/lib/clients/database/memberships";
 
 const DYNAMODB_ENDPOINT =
   process.env.DYNAMODB_ENDPOINT || "http://localhost:8000";
@@ -450,7 +451,7 @@ async function loadFixtureData() {
         await docClient.send(
           new PutCommand({
             TableName: getTableName("memberships"),
-            Item: membership,
+            Item: toItem(membership),
           })
         );
 

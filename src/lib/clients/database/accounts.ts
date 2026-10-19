@@ -1,4 +1,5 @@
 import { isIndividualAccount, isOrganizationalAccount, isServiceAccount } from "@/types";
+import { isConditionalCheckFailed } from "./errors";
 import {
   QueryCommand,
   ScanCommand,
@@ -248,7 +249,7 @@ export class AccountsTable extends BaseTable {
         })
       );
     } catch (error) {
-      if ((error as { name?: string })?.name !== "ConditionalCheckFailedException") {
+      if (!isConditionalCheckFailed(error)) {
         this.logError("create", error, { account_id: account.account_id });
       }
       throw error;
@@ -262,12 +263,20 @@ export class AccountsTable extends BaseTable {
     const expressionAttributeValues: Record<string, any> = {};
 
     // Always update these core fields
-    updateParts.push("#name = :name", "#type = :type", "updated_at = :updated_at");
+    updateParts.push("#type = :type", "updated_at = :updated_at");
     expressionAttributeValues[":type"] = account.type;
-    expressionAttributeValues[":name"] = account.name;
     expressionAttributeValues[":updated_at"] = new Date().toISOString();
+    const expressionAttributeNames: Record<string, string> = {
+      "#type": "type", // type is a reserved word in DynamoDB
+    };
 
     // Conditionally add fields that might be undefined
+    if (account.name !== undefined) {
+      updateParts.push("#name = :name");
+      expressionAttributeValues[":name"] = account.name;
+      expressionAttributeNames["#name"] = "name"; // name is a reserved word in DynamoDB
+    }
+
     if (account.emails !== undefined) {
       updateParts.push("emails = :emails");
       expressionAttributeValues[":emails"] = account.emails;
@@ -308,10 +317,7 @@ export class AccountsTable extends BaseTable {
           account_id: account.account_id,
         },
         UpdateExpression: `SET ${updateParts.join(", ")}`,
-        ExpressionAttributeNames: {
-          "#name": "name", // name is a reserved word in DynamoDB
-          "#type": "type", // type is also a reserved word in DynamoDB
-        },
+        ExpressionAttributeNames: expressionAttributeNames,
         ExpressionAttributeValues: expressionAttributeValues,
         ReturnValues: "ALL_NEW",
       })
