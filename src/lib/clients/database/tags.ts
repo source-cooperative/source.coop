@@ -6,27 +6,34 @@ import {
 } from "@aws-sdk/lib-dynamodb";
 import type { Product } from "@/types";
 import { BaseTable } from "./base";
+import type { TagCategory } from "@/lib/tags/categories";
 
 /**
  * A tag a product may carry. The id is the tag itself, the same string stored
- * in `product.metadata.tags`. A tag someone suggested is `pending` until an
- * admin approves, merges or rejects it; products may carry it meanwhile.
+ * in `product.metadata.tags`. An approved tag has a category. A tag someone
+ * suggested is `pending`, with no category, until an admin approves, merges or
+ * rejects it; products may carry it meanwhile.
  */
 export interface Tag {
   tag_id: string;
+  category?: TagCategory;
   pending?: boolean;
   suggested_by?: string;
   suggested_at?: string;
 }
 
 /**
- * The product form's tag props: approved tags to pick, and which of the
- * product's own tags are pending. Other products' pending tags aren't
- * public, so they stay on the server.
+ * The product form's tag props: approved tags to pick, the category of each,
+ * and which of the product's own tags are pending. Other products' pending
+ * tags aren't public, so they stay on the server.
  */
 export function tagProps(tags: Tag[], current: string[] = []) {
+  const approved = tags.filter((t) => !t.pending);
   return {
-    tagOptions: tags.filter((t) => !t.pending).map((t) => t.tag_id),
+    tagOptions: approved.map((t) => t.tag_id),
+    tagCategories: Object.fromEntries(
+      approved.flatMap((t) => (t.category ? [[t.tag_id, t.category]] : []))
+    ) as Record<string, TagCategory>,
     pendingTags: tags
       .filter((t) => t.pending && current.includes(t.tag_id))
       .map((t) => t.tag_id),
@@ -107,13 +114,16 @@ export class TagsTable extends BaseTable {
     }
   }
 
-  async approve(tag_id: string): Promise<void> {
+  /** Makes a pending tag an approved one, in the given category. */
+  async approve(tag_id: string, category: TagCategory): Promise<void> {
     try {
       await this.client.send(
         new UpdateCommand({
           TableName: this.table,
           Key: { tag_id },
-          UpdateExpression: "REMOVE pending, suggested_by, suggested_at",
+          UpdateExpression:
+            "SET category = :category REMOVE pending, suggested_by, suggested_at",
+          ExpressionAttributeValues: { ":category": category },
           ConditionExpression: "attribute_exists(tag_id)",
         })
       );

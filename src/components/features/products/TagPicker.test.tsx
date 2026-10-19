@@ -38,6 +38,12 @@ test("submits each chosen tag and drops a removed one", () => {
   expect(submitted(container)).toEqual(["ocean"]);
 });
 
+test("leaves out an empty tag a product carries", () => {
+  const { container } = renderPicker(["", "ocean"]);
+  expect(submitted(container)).toEqual(["ocean"]);
+  expect(screen.queryByRole("button", { name: "Remove " })).toBeNull();
+});
+
 test("the popover filters the corpus and toggles tags", () => {
   const { container } = renderPicker(["ocean"]);
   fireEvent.click(screen.getByRole("button", { name: "Edit tags" }));
@@ -55,17 +61,17 @@ test("the popover filters the corpus and toggles tags", () => {
 });
 
 test("a suggested tag is added and marked pending", async () => {
-  const onSuggest = jest.fn(async (tag: string) => ({ tag: tag.toLowerCase() }));
+  const onSuggest = jest.fn(async () => ({ tag: "sea-ice" }));
   const { container } = renderPicker(["ocean"], onSuggest);
   filterFor("Sea Ice");
 
   fireEvent.click(
-    screen.getByRole("button", { name: "Suggest “sea ice” as a new tag" })
+    screen.getByRole("button", { name: "Suggest “sea-ice” as a new tag" })
   );
 
   expect(await screen.findByText(/\(pending\)/)).toBeTruthy();
   expect(onSuggest).toHaveBeenCalledWith("Sea Ice");
-  expect(submitted(container)).toEqual(["ocean", "sea ice"]);
+  expect(submitted(container)).toEqual(["ocean", "sea-ice"]);
 });
 
 test("a refused suggestion shows why and adds nothing", async () => {
@@ -76,6 +82,46 @@ test("a refused suggestion shows why and adds nothing", async () => {
 
   expect((await screen.findByRole("alert")).textContent).toBe("Too many");
   expect(submitted(container)).toEqual([]);
+});
+
+test("the list groups tags under their categories, in category order", () => {
+  render(
+    <Theme>
+      <TagPicker
+        name="tags"
+        options={["cog", "ocean", "climate", "misc"]}
+        categories={{ cog: "format", ocean: "domain", climate: "domain" }}
+      />
+    </Theme>
+  );
+  filterFor("");
+
+  const groups = screen.getAllByRole("group");
+  expect(groups.map((g) => g.getAttribute("aria-label"))).toEqual([
+    "Domain",
+    "Format",
+    "Other",
+  ]);
+  expect(groups[0].textContent).toBe(
+    "DomainThe subject the data is about.oceanclimate"
+  );
+  expect(
+    screen.getByRole("group", {
+      name: "Format",
+      description: "How the files are stored.",
+    })
+  ).toBeTruthy();
+});
+
+test("a filter with spaces matches hyphenated tags", () => {
+  render(
+    <Theme>
+      <TagPicker name="tags" options={["field-boundaries", "ocean"]} />
+    </Theme>
+  );
+  filterFor("Field Bound");
+  expect(screen.getByRole("checkbox", { name: "field-boundaries" })).toBeTruthy();
+  expect(screen.queryByRole("checkbox", { name: "ocean" })).toBeNull();
 });
 
 test("an existing tag can't be suggested", () => {

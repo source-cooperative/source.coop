@@ -8,6 +8,7 @@ import { Product, ProductVisibility } from "@/types/product";
 import { useProductIdValidation } from "@/hooks/useIdValidation";
 import { createProduct, updateProduct } from "@/lib/actions/products";
 import { suggestTag } from "@/lib/actions/tags";
+import type { TagCategory } from "@/lib/tags/categories";
 import { TagPicker } from "./TagPicker";
 
 const VISIBILITY_LABELS: Record<ProductVisibility, string> = {
@@ -82,6 +83,7 @@ interface ProductCreationFormProps {
   mode?: "create" | "edit"; // Mode of operation
   defaultOwnerId?: string; // Preselected owner (e.g. from ?owner=…), create mode
   tagOptions?: string[]; // The approved tag corpus a product may draw from
+  tagCategories?: Record<string, TagCategory>; // Each approved tag's category
   pendingTags?: string[]; // Suggested tags awaiting review
 }
 
@@ -92,6 +94,7 @@ export function ProductCreationForm({
   mode = "create",
   defaultOwnerId,
   tagOptions = [],
+  tagCategories = {},
   pendingTags = [],
 }: ProductCreationFormProps) {
   const isEditMode = mode === "edit" && product;
@@ -270,6 +273,7 @@ export function ProductCreationForm({
           {...controlProps}
           name="tags"
           options={tagOptions}
+          categories={tagCategories}
           pending={pendingTags}
           onSuggest={suggestTag}
           defaultValue={isEditMode ? product.metadata.tags : []}

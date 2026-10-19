@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useId, useState, useTransition } from "react";
 import {
   Badge,
   Button,
@@ -13,12 +13,15 @@ import {
 } from "@radix-ui/themes";
 import { Cross2Icon } from "@radix-ui/react-icons";
 import type { ControlProps } from "@/components/core/DynamicForm";
+import { TAG_CATEGORIES, type TagCategory } from "@/lib/tags/categories";
 
 interface TagPickerProps extends Partial<ControlProps> {
   /** The form field each chosen tag is submitted under, once per tag. */
   name: string;
   /** The approved corpus, listed for picking. */
   options: string[];
+  /** Each option's category, which the list groups by. */
+  categories?: Record<string, TagCategory>;
   /** Tags already on the product, kept even when the corpus no longer has them. */
   defaultValue?: string[];
   /** Tags someone suggested that an admin hasn't reviewed yet. */
@@ -34,19 +37,38 @@ interface TagPickerProps extends Partial<ControlProps> {
 export function TagPicker({
   name,
   options,
+  categories = {},
   defaultValue = [],
   pending: initialPending = [],
   onSuggest,
   ...controlProps
 }: TagPickerProps) {
-  const [tags, setTags] = useState(defaultValue);
+  // Some products carry an empty tag from before tags were picked from a list.
+  // It isn't a tag, and submitting it would fail the corpus check.
+  const [tags, setTags] = useState(() => defaultValue.filter(Boolean));
   const [pending, setPending] = useState(initialPending);
   const [filter, setFilter] = useState("");
   const [error, setError] = useState("");
   const [suggesting, startSuggesting] = useTransition();
+  const listId = useId();
 
-  const query = filter.trim().toLowerCase();
+  // Tags are hyphenated; people type spaces. Match either way.
+  const query = filter.trim().toLowerCase().replace(/\s+/g, "-");
   const matches = options.filter((tag) => tag.toLowerCase().includes(query));
+  const groups = [
+    ...TAG_CATEGORIES.map(({ id, label, description }) => ({
+      label,
+      description,
+      tags: matches.filter((tag) => categories[tag] === id),
+    })),
+    {
+      label: "Other",
+      description: "Tags not given a category yet.",
+      tags: matches.filter((tag) => !categories[tag]),
+    },
+  ].filter((group) => group.tags.length);
+  // A list with no categories at all reads better without an "Other" heading.
+  const headed = groups.length > 1 || groups[0]?.label !== "Other";
   // Offered even when other tags partly match: someone after "ocean
   // acidification" shouldn't have to settle for "ocean".
   const canSuggest = onSuggest && query && !options.includes(query);
@@ -122,16 +144,36 @@ export function TagPicker({
               gap="1"
               style={{ maxHeight: 240, overflowY: "auto" }}
             >
-              {matches.map((tag) => (
-                <Text as="label" size="2" key={tag}>
-                  <Flex gap="2" align="center" py="1">
-                    <Checkbox
-                      checked={tags.includes(tag)}
-                      onCheckedChange={(on) => toggle(tag, on === true)}
-                    />
-                    {tag}
-                  </Flex>
-                </Text>
+              {groups.map((group, i) => (
+                <Flex
+                  key={group.label}
+                  direction="column"
+                  role="group"
+                  aria-label={headed ? group.label : undefined}
+                  aria-describedby={headed ? `${listId}-${i}` : undefined}
+                >
+                  {headed && (
+                    <>
+                      <Text size="1" weight="bold" color="gray" mt="1">
+                        {group.label}
+                      </Text>
+                      <Text size="1" color="gray" id={`${listId}-${i}`}>
+                        {group.description}
+                      </Text>
+                    </>
+                  )}
+                  {group.tags.map((tag) => (
+                    <Text as="label" size="2" key={tag}>
+                      <Flex gap="2" align="center" py="1">
+                        <Checkbox
+                          checked={tags.includes(tag)}
+                          onCheckedChange={(on) => toggle(tag, on === true)}
+                        />
+                        {tag}
+                      </Flex>
+                    </Text>
+                  ))}
+                </Flex>
               ))}
               {!matches.length && (
                 <Text size="2" color="gray">

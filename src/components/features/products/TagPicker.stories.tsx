@@ -1,15 +1,25 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { userEvent, within } from "storybook/test";
+import type { TagCategory } from "@/lib/tags/categories";
 import { TagPicker } from "./TagPicker";
 
-const options = [
-  "acoustics",
-  "bathymetry",
-  "cetaceans",
-  "climate",
-  "hydrophone",
-  "remote-sensing",
-];
+const categories: Record<string, TagCategory> = {
+  agriculture: "domain",
+  climate: "domain",
+  ocean: "domain",
+  "field-boundaries": "feature-type",
+  "land-cover": "feature-type",
+  spain: "place",
+  global: "place",
+  "remote-sensing": "methodology",
+  "machine-learning": "methodology",
+  "sentinel-2": "sensor",
+  fiboa: "source",
+  geoparquet: "format",
+  pmtiles: "format",
+  daily: "temporal-frequency",
+};
+const options = Object.keys(categories).sort();
 
 const openAndFilter = async (canvasElement: HTMLElement, text: string) => {
   await userEvent.click(
@@ -24,10 +34,11 @@ const openAndFilter = async (canvasElement: HTMLElement, text: string) => {
 
 /**
  * Choosing a product's tags. Chosen tags show as chips; "Edit tags" opens a
- * list of every approved tag, with a box to filter it, and ticking one adds it.
- * When no tag fits, the filter text can be suggested as a new tag: it goes on
- * the product straight away, marked pending until an admin reviews it. Each
- * chosen tag is submitted as its own `tags` form value.
+ * list of every approved tag, grouped by category, with a box to filter it,
+ * and ticking one adds it. The filter matches with spaces or hyphens. When no
+ * tag fits, the filter text can be suggested as a new tag: it goes on the
+ * product straight away, marked pending until an admin reviews it and gives
+ * it a category. Each chosen tag is submitted as its own `tags` form value.
  */
 const meta = {
   title: "Features/Settings/Details/TagPicker",
@@ -36,10 +47,11 @@ const meta = {
   args: {
     name: "tags",
     options,
+    categories,
     onSuggest: async (
       tag: string
     ): Promise<{ tag: string } | { error: string }> => ({
-      tag: tag.trim().toLowerCase(),
+      tag: tag.trim().toLowerCase().replace(/\s+/g, "-"),
     }),
   },
 } satisfies Meta<typeof TagPicker>;
@@ -52,7 +64,7 @@ export const Empty: Story = {};
 
 /** An existing product's tags show as chips that can be removed. */
 export const WithTags: Story = {
-  args: { defaultValue: ["acoustics", "cetaceans"] },
+  args: { defaultValue: ["field-boundaries", "spain", "geoparquet"] },
 };
 
 /**
@@ -60,27 +72,41 @@ export const WithTags: Story = {
  * it, so editing other details never forces it off.
  */
 export const RetiredTag: Story = {
-  args: { defaultValue: ["acoustics", "deep-sea-legacy"] },
+  args: { defaultValue: ["field-boundaries", "deep-sea-legacy"] },
 };
 
-/** The list open, narrowed by the filter box. */
+/**
+ * The list open, with every tag under its category, and a line under each
+ * heading saying what the category covers.
+ */
+export const Grouped: Story = {
+  args: { defaultValue: ["field-boundaries"] },
+  play: async ({ canvasElement }) => {
+    await userEvent.click(
+      within(canvasElement).getByRole("button", { name: "Edit tags" })
+    );
+  },
+};
+
+/** The list narrowed by the filter box, which matches across categories. */
 export const Filtering: Story = {
-  args: { defaultValue: ["acoustics"] },
+  args: { defaultValue: ["field-boundaries"] },
   play: ({ canvasElement }) => openAndFilter(canvasElement, "c"),
 };
 
 /**
- * No tag fits, so the list offers to suggest the filter text as a new one.
- * The offer also appears when other tags only partly match.
+ * No tag fits, so the list offers to suggest the filter text as a new one,
+ * hyphenated as tags are stored. The offer also appears when other tags only
+ * partly match.
  */
 export const Suggesting: Story = {
-  args: { defaultValue: ["acoustics"] },
+  args: { defaultValue: ["field-boundaries"] },
   play: ({ canvasElement }) => openAndFilter(canvasElement, "sea ice"),
 };
 
 /** A suggested tag is on the product but hasn't been reviewed yet. */
 export const PendingTag: Story = {
-  args: { defaultValue: ["acoustics", "sea ice"], pending: ["sea ice"] },
+  args: { defaultValue: ["ocean", "sea-ice"], pending: ["sea-ice"] },
 };
 
 /** A suggestion the server refused, with its reason. */
