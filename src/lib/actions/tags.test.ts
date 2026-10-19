@@ -78,6 +78,11 @@ describe("reviewTag", () => {
 
   beforeEach(() => {
     (isAdmin as jest.Mock).mockReturnValue(true);
+    (tagsTable.listAll as jest.Mock).mockResolvedValue([
+      { tag_id: "ocean" },
+      { tag_id: "climate" },
+      pending("sst"),
+    ]);
     (productsTable.listByTag as jest.Mock).mockResolvedValue([
       { account_id: "a", product_id: "p1", metadata: { tags: ["sst", "ocean"] } },
       { account_id: "b", product_id: "p2", metadata: { tags: ["climate", "sst"] } },
@@ -89,6 +94,17 @@ describe("reviewTag", () => {
     await expect(review({ tag: "sst", decision: "approve" })).rejects.toThrow();
     expect(tagsTable.approve).not.toHaveBeenCalled();
   });
+
+  test.each(["merge", "reject"])(
+    "%s refuses a tag that's no longer pending, as from a stale form",
+    async (decision) => {
+      await expect(
+        review({ tag: "ocean", decision, into: "climate" })
+      ).rejects.toThrow("not awaiting review");
+      expect(productsTable.setTags).not.toHaveBeenCalled();
+      expect(tagsTable.delete).not.toHaveBeenCalled();
+    }
+  );
 
   test("approve keeps the tag on its products", async () => {
     await review({ tag: "sst", decision: "approve" });

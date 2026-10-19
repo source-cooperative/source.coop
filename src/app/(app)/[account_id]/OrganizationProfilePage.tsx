@@ -3,6 +3,7 @@ import { OrganizationProfile } from "@/components/features/profiles/Organization
 import { PendingInvitationBanner } from "@/components/features/memberships/PendingInvitationBanner";
 import {
   accountsTable,
+  hidePendingTags,
   isIndividualAccount,
   membershipsTable,
   productsTable,
@@ -74,7 +75,9 @@ export async function OrganizationProfilePage({
         !!account && isIndividualAccount(account)
     );
 
-  products = products.filter((product) => canListOnProfile(session, product));
+  products = await hidePendingTags(
+    products.filter((product) => canListOnProfile(session, product))
+  );
 
   // Check for pending invitation
   const pendingInvitation = await getPendingInvitation(account.account_id);
