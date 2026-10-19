@@ -6,6 +6,7 @@ import {
   membershipsTable,
   productsTable,
   tagsTable,
+  hidePendingTags,
 } from "@/lib/clients/database";
 import { canListOnProfile, isAdmin, isAuthorized } from "@/lib/api/authz";
 import { getProxyCredentials } from "@/lib/actions/proxy-credentials";
@@ -34,6 +35,7 @@ jest.mock("@/lib/clients/database", () => ({
   dataConnectionsTable: { fetchById: jest.fn() },
   membershipsTable: { deleteByProduct: jest.fn() },
   tagsTable: { listAll: jest.fn() },
+  hidePendingTags: jest.fn(),
 }));
 jest.mock("@/lib/api/authz", () => ({
   canListOnProfile: jest.fn(),
@@ -76,7 +78,12 @@ beforeEach(() => {
   (productsTable.attachAccounts as jest.Mock).mockImplementation(async (p) => p);
   (productsTable.create as jest.Mock).mockImplementation(async (p) => p);
   (productsTable.update as jest.Mock).mockImplementation(async (p) => p);
-  (tagsTable.listAll as jest.Mock).mockResolvedValue(["acoustics", "ocean"]);
+  (hidePendingTags as jest.Mock).mockImplementation(async (products) => products);
+  (tagsTable.listAll as jest.Mock).mockResolvedValue([
+    { tag_id: "acoustics" },
+    { tag_id: "ocean" },
+    { tag_id: "sea-ice", pending: true },
+  ]);
 });
 
 describe("listProducts", () => {
@@ -205,6 +212,16 @@ describe("getProduct", () => {
     expect(await getProduct(SESSION, "alice", "my-product")).toMatchObject({
       error: "forbidden",
     });
+  });
+
+  test("hides pending tags from anyone who may not edit the product", async () => {
+    (productsTable.fetchById as jest.Mock).mockResolvedValue(product());
+    await getProduct(SESSION, "alice", "my-product");
+    const keep = (hidePendingTags as jest.Mock).mock.calls[0][1];
+
+    expect(keep(product())).toBe(true);
+    allowExcept(Actions.PutRepository);
+    expect(keep(product())).toBe(false);
   });
 
   test("a deactivated product is not found by anyone who may not see it", async () => {
@@ -390,6 +407,16 @@ describe("updateProduct", () => {
       mirrors: {},
       tags: ["ocean", "acoustics"],
     });
+  });
+
+  test("accepts a tag that is still pending review", async () => {
+    const result = await updateProduct(SESSION, "alice", "my-product", {
+      tags: ["sea-ice"],
+    });
+    expect(result.ok).toBe(true);
+    expect((productsTable.update as jest.Mock).mock.calls[0][0].metadata.tags).toEqual([
+      "sea-ice",
+    ]);
   });
 
   test("keeps a tag the product already has after the corpus drops it", async () => {
