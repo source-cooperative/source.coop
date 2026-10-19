@@ -30,7 +30,7 @@ export default async function AdminTagsPage() {
     <Box>
       <FormTitle
         title="Tags"
-        description="Review tags people have suggested. Approving adds a tag to the list everyone picks from; merging or rejecting rewrites the products that carry it."
+        description="Review tags people have suggested. Approving adds a tag, in the category you choose, to the list everyone picks from; merging or rejecting rewrites the products that carry it."
       />
       <AdminTagSuggestions
         suggestions={suggestions}

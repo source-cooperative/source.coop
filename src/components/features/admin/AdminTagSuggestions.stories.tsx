@@ -3,16 +3,17 @@ import { AdminTagSuggestions } from "./AdminTagSuggestions";
 
 /**
  * The admin queue of suggested tags. Each suggestion shows who suggested it
- * and the products carrying it. Approve adds it to the list everyone picks
- * from. Merge replaces it with an approved tag on every one of those products.
- * Reject takes it off them.
+ * and the products carrying it. Approve adds it, in the category chosen, to
+ * the list everyone picks from; it can't be approved without one. Merge
+ * replaces it with an approved tag on every one of those products. Reject
+ * takes it off them.
  */
 const meta = {
   title: "Features/Admin/AdminTagSuggestions",
   component: AdminTagSuggestions,
   parameters: { layout: "padded" },
   args: {
-    approved: ["climate", "ocean", "remote sensing", "sentinel-2"],
+    approved: ["climate", "ocean", "remote-sensing", "sentinel-2"],
     action: async () => {},
   },
 } satisfies Meta<typeof AdminTagSuggestions>;
@@ -25,7 +26,7 @@ export const Pending: Story = {
   args: {
     suggestions: [
       {
-        tag: "sea ice",
+        tag: "sea-ice",
         suggested_by: "polar-lab",
         suggested_at: "2026-10-06T14:12:00Z",
         products: [
@@ -47,7 +48,7 @@ export const Pending: Story = {
 export const Unused: Story = {
   args: {
     suggestions: [
-      { tag: "ocean heatwaves", suggested_by: "alice", products: [] },
+      { tag: "ocean-heatwaves", suggested_by: "alice", products: [] },
     ],
   },
 };

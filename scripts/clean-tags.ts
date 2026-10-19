@@ -20,6 +20,7 @@
  */
 
 import { readFileSync } from "node:fs";
+import { TAG_CATEGORIES, type TagCategory } from "../src/lib/tags/categories";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import {
   DynamoDBDocumentClient,
@@ -210,23 +211,84 @@ const ALIASES: Record<string, string[]> = {
   "boundary vector agriculture": ["field boundaries", "vector", "agriculture"],
 };
 
+/** The tags of each category. Applying refuses while a corpus tag has none. */
+const BY_CATEGORY: Record<TagCategory, string[]> = {
+  domain: [
+    "agriculture", "climate", "weather", "conservation", "biodiversity",
+    "ecology", "wildlife", "forests", "vegetation", "crops", "hydrology",
+    "ocean", "fisheries", "marine-debris", "atmosphere", "aerosols",
+    "precipitation", "wildfire", "energy", "solar", "natural-gas", "carbon",
+    "carbon-dioxide-removal", "cloud", "exports", "imports",
+  ],
+  "feature-type": [
+    "field-boundaries", "building-footprints", "admin-boundaries", "places",
+    "land-cover", "land-use", "crop-type", "transportation", "wetlands",
+    "elevation", "bathymetry", "satellite-imagery", "imagery", "labels",
+    "embeddings",
+  ],
+  place: [
+    "global", "africa", "europe", "antarctica", "austria", "belgium",
+    "brazil", "cambodia", "canada", "croatia", "czechia", "denmark",
+    "estonia", "finland", "france", "germany", "india", "ireland", "japan",
+    "latvia", "luxembourg", "netherlands", "new-zealand", "portugal",
+    "rwanda", "saudi-arabia", "slovakia", "slovenia", "spain", "sweden",
+    "switzerland", "tanzania", "united-kingdom", "united-states", "vietnam",
+  ],
+  methodology: [
+    "remote-sensing", "machine-learning", "foundation-models", "ai",
+    "computer-vision", "segmentation", "image-classification",
+    "object-detection", "regression", "flood-detection", "forecasting",
+    "reanalysis", "gapfilled", "monitoring", "observations",
+  ],
+  sensor: [
+    "sentinel-1", "sentinel-2", "landsat", "modis", "planetscope", "naip",
+    "hls", "sar", "radar", "lidar", "geostationary",
+  ],
+  source: [
+    "fiboa", "fields-of-the-world", "fieldscapes", "eurocrops", "invekos",
+    "sigpac", "overture-maps", "openstreetmap", "youthmappers", "nhd",
+    "noaa", "usda", "cer", "neb", "census", "microsoft", "google", "clay",
+  ],
+  format: [
+    "geoparquet", "parquet", "pmtiles", "zarr", "icechunk", "cog",
+    "flatgeobuf", "geopackage", "stac", "h3", "tiles", "duckdb",
+    "cloud-native", "vector", "raster",
+  ],
+  "temporal-frequency": [
+    "hourly", "daily", "weekly", "monthly", "yearly", "time-series",
+  ],
+};
+const CATEGORY: Record<string, TagCategory> = Object.fromEntries(
+  Object.entries(BY_CATEGORY).flatMap(([category, tags]) =>
+    tags.map((tag) => [tag, category as TagCategory])
+  )
+);
+
+/** Tags are stored hyphenated, so they read cleanly in a `?tags=` URL. */
+const slug = (tag: string) => tag.trim().replace(/\s+/g, "-");
+
 /** Kept in the corpus however few products carry them. */
-const KEEP = new Set([
-  "africa", "antarctica", "austria", "belgium", "brazil", "cambodia",
-  "canada", "croatia", "czechia", "denmark", "estonia", "europe", "finland",
-  "france", "germany", "india", "ireland", "japan", "latvia", "luxembourg",
-  "netherlands", "new zealand", "portugal", "rwanda", "saudi arabia",
-  "slovakia", "slovenia", "spain", "sweden", "switzerland", "tanzania",
-  "united kingdom", "united states", "vietnam",
-  "elevation", "machine learning", "time series", "forests", "hydrology",
-]);
+const KEEP = new Set(
+  [
+    "africa", "antarctica", "austria", "belgium", "brazil", "cambodia",
+    "canada", "croatia", "czechia", "denmark", "estonia", "europe", "finland",
+    "france", "germany", "india", "ireland", "japan", "latvia", "luxembourg",
+    "netherlands", "new zealand", "portugal", "rwanda", "saudi arabia",
+    "slovakia", "slovenia", "spain", "sweden", "switzerland", "tanzania",
+    "united kingdom", "united states", "vietnam",
+    "elevation", "machine learning", "time series", "forests", "hydrology",
+  ].map(slug)
+);
+
+/** In the corpus before any product carries them, so owners can pick one. */
+const SEEDED = ["hourly", "daily", "weekly", "monthly", "yearly"];
 
 /** One raw tag as typed → its canonical tags. */
 function clean(raw: string): string[] {
   const parts = raw.includes("#") ? raw.split("#") : [raw];
   return parts.flatMap((part) => {
     const tag = part.trim().toLowerCase();
-    return ALIASES[tag] ?? [tag];
+    return (ALIASES[tag] ?? [tag]).map(slug).filter(Boolean);
   });
 }
 
@@ -234,21 +296,27 @@ function clean(raw: string): string[] {
 const cleanAll = (tags: string[]) => [...new Set(tags.flatMap(clean))];
 
 function corpusOf(uses: Map<string, number>): Map<string, number> {
-  return new Map(
-    [...uses]
-      .filter(([tag, n]) => n >= MIN_USES || KEEP.has(tag))
-      .sort(([a, x], [b, y]) => y - x || a.localeCompare(b))
-  );
+  const kept = [...uses].filter(([tag, n]) => n >= MIN_USES || KEEP.has(tag));
+  for (const tag of SEEDED) if (!uses.has(tag)) kept.push([tag, 0]);
+  return new Map(kept.sort(([a, x], [b, y]) => y - x || a.localeCompare(b)));
 }
 
 function report(uses: Map<string, number>, rawCount: number) {
   const corpus = corpusOf(uses);
   console.log(`${rawCount} raw tags → ${uses.size} cleaned → ${corpus.size} in corpus\n`);
-  for (const [tag, n] of corpus) console.log(`${String(n).padStart(4)} ${tag}`);
+  for (const { id, label } of TAG_CATEGORIES) {
+    const tags = [...corpus].filter(([tag]) => CATEGORY[tag] === id);
+    console.log(`${label} (${tags.length}): ${tags.map(([t, n]) => `${t} (${n})`).join(", ")}`);
+  }
+  const uncategorized = uncategorizedIn(corpus);
+  if (uncategorized.length) console.log(`\nNo category yet: ${uncategorized.join(", ")}`);
   const dropped = [...uses.keys()].filter((tag) => !corpus.has(tag)).sort();
   console.log(`\nDropped (used once, not in KEEP): ${dropped.join(", ")}`);
   return corpus;
 }
+
+const uncategorizedIn = (corpus: Map<string, number>) =>
+  [...corpus.keys()].filter((tag) => !CATEGORY[tag]);
 
 async function fromCounts(file: string) {
   // Lines as `sort | uniq -c` prints them. Two raw tags on one product that
@@ -279,11 +347,11 @@ async function fromCounts(file: string) {
 
 /** Why a raw tag became what it did, for the preview table. */
 function note(raw: string, cleaned: string[], after: string[]): string {
-  const tag = raw.replace(/#/g, "").trim().toLowerCase();
+  const tag = slug(raw.replace(/#/g, "").toLowerCase());
   if (!cleaned.length) return "Dropped: noise";
   if (!after.length) return "Dropped: on one product only";
   if (cleaned.length > 1) return "Split into several tags";
-  if (after[0] === tag) return raw === tag ? "" : "Normalized (case, #)";
+  if (after[0] === tag) return raw === tag ? "" : "Normalized (case, #, spaces)";
   return "Merged";
 }
 
@@ -324,6 +392,9 @@ async function fromTable(stage: string) {
   }
 
   if (!process.env.APPLY) return console.log("\nPreview only. Set APPLY=1 to write.");
+  if (uncategorizedIn(corpus).length) {
+    throw new Error("Give every corpus tag a category in CATEGORY before applying");
+  }
   for (const p of changes) {
     await client.send(
       new UpdateCommand({
@@ -336,7 +407,12 @@ async function fromTable(stage: string) {
     );
   }
   for (const tag_id of corpus.keys()) {
-    await client.send(new PutCommand({ TableName: `sc-${stage}-tags`, Item: { tag_id } }));
+    await client.send(
+      new PutCommand({
+        TableName: `sc-${stage}-tags`,
+        Item: { tag_id, category: CATEGORY[tag_id] },
+      })
+    );
   }
   console.log(`\nRewrote ${changes.length} products; wrote ${corpus.size} tags to sc-${stage}-tags`);
 }
