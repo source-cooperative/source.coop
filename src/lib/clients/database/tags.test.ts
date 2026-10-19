@@ -22,6 +22,12 @@ test("keeps them on a product `keep` picks", async () => {
   expect(await hidePendingTags([stored], () => true)).toEqual([stored]);
 });
 
+test("shows products as they are when the tag table can't be read", async () => {
+  jest.spyOn(tagsTable, "listAll").mockRejectedValue(new Error("AccessDenied"));
+  const stored = [product(["ocean", "sea ice"])];
+  expect(await hidePendingTags(stored)).toBe(stored);
+});
+
 test("returns products without pending tags as they are", async () => {
   const stored = [product(["ocean"]), product()];
   const shown = await hidePendingTags(stored);
