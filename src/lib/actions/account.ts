@@ -1,6 +1,7 @@
 "use server";
 
 import { LOGGER } from "@/lib/logging";
+import { isConditionalCheckFailed } from "@/lib/clients/database/errors";
 import {
   Account,
   AccountCreationRequestSchema,
@@ -16,22 +17,16 @@ import {
   OrganizationCreationRequest,
   IndividualAccount,
   OrganizationalAccount,
-  AccountFlags,
-  AccountFlagsSchema,
-  AccountEmailSchema,
 } from "@/types";
 import { isAuthorized } from "../api/authz";
 import { getPageSession } from "../api/utils";
 import { accountsTable, membershipsTable } from "../clients";
 import type { AccountSuggestion } from "../clients/database/accounts";
 import { FormState } from "@/components/core/DynamicForm";
-import { revalidatePath } from "next/cache";
-import {
-  accountUrl,
-  editAccountPermissionsUrl,
-  editAccountProfileUrl,
-} from "@/lib/urls";
+import { accountUrl } from "@/lib/urls";
 import { randomUUID } from "crypto";
+import * as ops from "@/lib/operations/accounts";
+import { OperationResult, toFormState } from "@/lib/operations/result";
 
 /**
  * Creates a new account.
@@ -123,7 +118,7 @@ export async function createAccount(
   try {
     account = await accountsTable.create(newAccount);
   } catch (error) {
-    if ((error as { name?: string })?.name === "ConditionalCheckFailedException") {
+    if (isConditionalCheckFailed(error)) {
       LOGGER.warn("Account creation rejected: account_id already taken", {
         operation: "createAccount",
         context: "account creation",
@@ -174,287 +169,57 @@ export async function createAccount(
   };
 }
 
-/**
- * Updates an existing account profile.
- *
- * @param initialState - The initial state of the form.
- * @param formData - The form data containing the account updates.
- */
+/** Updates an account's profile from the edit-profile form. */
 export async function updateAccountProfile(
   initialState: any,
   formData: FormData
 ): Promise<FormState<any>> {
-  const session = await getPageSession();
-
-  if (!session?.identity_id) {
-    return {
-      fieldErrors: {},
-      data: formData,
-      message: "Unauthenticated",
-      success: false,
-    };
-  }
-
-  const accountId = formData.get("account_id") as string;
-  if (!accountId) {
-    return {
-      fieldErrors: {},
-      data: formData,
-      message: "Account ID is required",
-      success: false,
-    };
-  }
-
-  try {
-    // Get the current account
-    const currentAccount = await accountsTable.fetchById(accountId);
-    if (!currentAccount) {
-      return {
-        fieldErrors: {},
-        data: formData,
-        message: "Account not found",
-        success: false,
-      };
-    }
-
-    // Check authorization
-    if (!isAuthorized(session, currentAccount, Actions.PutAccountProfile)) {
-      return {
-        fieldErrors: {},
-        data: formData,
-        message: "Unauthorized to update this account",
-        success: false,
-      };
-    }
-
-    // Extract and process form data
-    const name = formData.get("name") as string;
-    const description = formData.get("description") as string;
-    const orcid = formData.get("orcid") as string;
-    const ror_id = formData.get("ror_id") as string;
-
-    // Extract websites from form data (handle both indexed and direct approaches)
-    const websites: string[] = [];
-    for (const [key, value] of formData.entries()) {
-      if (
-        key.startsWith("websites_") &&
-        typeof value === "string" &&
-        value.trim()
-      ) {
-        websites.push(value);
-      }
-    }
-
-    // Process websites: add https:// prefix if needed and filter out empty ones
-    const validWebsites = websites
-      .filter((url) => url && url.trim() !== "")
-      .map((url) => {
-        let processedUrl = url;
-        if (
-          !processedUrl.startsWith("http://") &&
-          !processedUrl.startsWith("https://")
-        ) {
-          processedUrl = `https://${processedUrl}`;
-        }
-        // Validate the URL by parsing it, but store the full URL to preserve paths
-        new URL(processedUrl);
-        return {
-          domain: processedUrl,
-          status: "unverified" as const,
-          created_at: new Date().toISOString(),
-        };
-      });
-
-    // For organizations, process the contact email. An individual's email is
-    // their sign-in address, owned by the identity provider, so the field is
-    // read-only for them and anything submitted under it is ignored.
-    let updatedEmails = currentAccount.emails;
-    if (currentAccount.type === AccountType.ORGANIZATION) {
-      const email = ((formData.get("email") as string) || "").trim();
-      const currentPrimary = currentAccount.emails?.find((e) => e.is_primary);
-      if (!email) {
-        updatedEmails = [];
-      } else if (email !== currentPrimary?.address) {
-        // Only a changed address is rewritten: the form seeds the field with
-        // the current email, so every save resubmits it, and rebuilding the
-        // record each time would throw away the address's verified state.
-        if (!AccountEmailSchema.shape.address.safeParse(email).success) {
-          return {
-            fieldErrors: { email: ["Invalid email address"] },
-            data: formData,
-            message: "Invalid form data",
-            success: false,
-          };
-        }
-        updatedEmails = [
-          {
-            address: email,
-            verified: false,
-            is_primary: true,
-            added_at: new Date().toISOString(),
-          },
-        ];
-      }
-    }
-
-    // Build update data
-    const updateData = {
-      ...currentAccount,
-      name,
-      emails: updatedEmails,
-      metadata_public: {
-        ...currentAccount.metadata_public,
-        bio: description || undefined,
-        orcid: orcid || undefined,
-        ror_id: ror_id || undefined,
-        domains: validWebsites,
-      },
-      updated_at: new Date().toISOString(),
-    };
-
-    // Update the account
-    await accountsTable.update(updateData);
-
-    LOGGER.info("Successfully updated account profile", {
-      operation: "updateAccountProfile",
-      context: "profile update",
-      metadata: { account_id: accountId },
-    });
-
-    // Revalidate the profile page to show updated data
-    revalidatePath(accountUrl(accountId));
-    revalidatePath(editAccountProfileUrl(accountId));
-
-    return {
-      fieldErrors: {},
-      data: formData,
-      message: "Profile updated successfully!",
-      success: true,
-    };
-  } catch (error) {
-    LOGGER.error("Error updating account profile", {
-      operation: "updateAccountProfile",
-      context: "profile update",
-      error: error,
-    });
-
-    return {
-      fieldErrors: {},
-      data: formData,
-      message: "Failed to update profile. Please try again.",
-      success: false,
-    };
-  }
+  const account_id = String(formData.get("account_id") ?? "");
+  const field = (name: string) => (formData.get(name) as string | null) ?? undefined;
+  return adapt("updateAccountProfile", formData, "Profile updated successfully!", async () =>
+    ops.updateAccount(await getPageSession(), account_id, {
+      name: field("name"),
+      bio: field("description"),
+      orcid: field("orcid"),
+      ror_id: field("ror_id"),
+      email: field("email"),
+      websites: [...formData.entries()]
+        .filter(([key]) => key.startsWith("websites_"))
+        .map(([, value]) => String(value)),
+    })
+  );
 }
 
-/**
- * Updates an account's flags.
- *
- * @param initialState - The initial state of the form.
- * @param formData - The form data containing the flags to update.
- */
+/** Updates an account's flags from the permissions form's checkboxes. */
 export async function updateAccountFlags(
   initialState: any,
   formData: FormData
 ): Promise<FormState<any>> {
-  const session = await getPageSession();
+  const account_id = String(formData.get("account_id") ?? "");
+  return adapt("updateAccountFlags", formData, "Account flags updated successfully!", async () =>
+    ops.updateAccount(await getPageSession(), account_id, {
+      flags: [...formData.entries()]
+        .filter(([key, value]) => key !== "account_id" && value === "on")
+        .map(([key]) => key),
+    })
+  );
+}
 
-  if (!session?.identity_id) {
-    return {
-      fieldErrors: {},
-      data: formData,
-      message: "Unauthenticated",
-      success: false,
-    };
-  }
-
-  const accountId = formData.get("account_id") as string;
-  if (!accountId) {
-    return {
-      fieldErrors: {},
-      data: formData,
-      message: "Account ID is required",
-      success: false,
-    };
-  }
-
+async function adapt<T>(
+  operation: string,
+  formData: FormData,
+  successMessage: string,
+  run: () => Promise<OperationResult<T>>
+): Promise<FormState<any>> {
   try {
-    // Get the current account
-    const currentAccount = await accountsTable.fetchById(accountId);
-    if (!currentAccount) {
-      return {
-        fieldErrors: {},
-        data: formData,
-        message: "Account not found",
-        success: false,
-      };
-    }
-
-    // Check authorization
-    if (!isAuthorized(session, currentAccount, Actions.PutAccountFlags)) {
-      return {
-        fieldErrors: {},
-        data: formData,
-        message: "Unauthorized to update this account's flags",
-        success: false,
-      };
-    }
-
-    // Extract flags from form data - now using boolean values
-    const flags = Array.from(formData.entries())
-      .filter(([key]) => key !== "account_id")
-      .filter(([key, value]) => value === "on")
-      .map(([key]) => key as AccountFlags);
-
-    // Validate flags
-    const validatedFlags = AccountFlagsSchema.parse(flags);
-    if (
-      isServiceAccount(currentAccount) &&
-      validatedFlags.includes(AccountFlags.ADMIN)
-    ) {
-      return {
-        fieldErrors: {},
-        data: formData,
-        message: "A service account cannot hold the admin flag",
-        success: false,
-      };
-    }
-
-    // Update the account
-    await accountsTable.update({
-      ...currentAccount,
-      flags: validatedFlags,
-      updated_at: new Date().toISOString(),
-    });
-
-    LOGGER.info("Successfully updated account flags", {
-      operation: "updateAccountFlags",
-      context: "flags update",
-      metadata: { account_id: accountId, flags: validatedFlags },
-    });
-
-    // Revalidate the permissions page to show updated data
-    revalidatePath(editAccountPermissionsUrl(accountId));
-
-    return {
-      fieldErrors: {},
-      data: formData,
-      message: "Account flags updated successfully!",
-      success: true,
-    };
+    return toFormState(await run(), formData, successMessage);
   } catch (error) {
-    LOGGER.error("Error updating account flags", {
-      operation: "updateAccountFlags",
-      context: "flags update",
-      error: error,
-    });
-
-    return {
-      fieldErrors: {},
-      data: formData,
-      message: "Failed to update account flags. Please try again.",
-      success: false,
-    };
+    LOGGER.error("Account update failed", { operation, error });
+    return toFormState(
+      { ok: false, error: "conflict", message: "Failed to save. Please try again." },
+      formData,
+      ""
+    );
   }
 }
 

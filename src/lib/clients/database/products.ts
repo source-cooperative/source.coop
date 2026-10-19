@@ -1,4 +1,5 @@
 import type { Product, ProductMirror } from "@/types";
+import { isConditionalCheckFailed } from "./errors";
 import {
   PutItemCommand,
   ResourceNotFoundException,
@@ -311,10 +312,7 @@ export class ProductsTable extends BaseTable {
       await this.client.send(command);
       return [product, true];
     } catch (error) {
-      if (
-        error instanceof Error &&
-        error.name === "ConditionalCheckFailedException"
-      ) {
+      if (isConditionalCheckFailed(error)) {
         return [product, false];
       }
       this.logError("upsert", error, {

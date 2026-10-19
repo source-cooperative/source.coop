@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Box, Text } from "@radix-ui/themes";
-import type { Product } from "@/types";
+import type { ProductResponse } from "@/types";
 import { ProductListItem } from "./ProductListItem";
 import { ShortcutHelp } from "@/components/features/keyboard/ShortcutHelp";
 import { useProductListKeyboardShortcuts } from "@/hooks/useProductListKeyboardShortcuts";
@@ -18,7 +18,7 @@ export interface PaginationProps {
 }
 
 interface ProductsListProps {
-  products: Product[];
+  products: ProductResponse[];
   grid?: boolean;
   pagination?: PaginationProps;
 }

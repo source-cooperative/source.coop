@@ -6,6 +6,7 @@ import {
 } from "@aws-sdk/lib-dynamodb";
 import { AccountTrustSchema, type AccountTrust } from "@/types";
 import { BaseTable } from "./base";
+import { isConditionalCheckFailed } from "./errors";
 
 /** The account already trusts this subject from this issuer. */
 export class AlreadyTrustedError extends Error {
@@ -86,7 +87,7 @@ export class AccountTrustsTable extends BaseTable {
         })
       );
     } catch (error) {
-      if ((error as { name?: string })?.name === "ConditionalCheckFailedException") {
+      if (isConditionalCheckFailed(error)) {
         throw new AlreadyTrustedError(row.account_id, row.issuer, row.subject);
       }
       this.logError("create", error, { account_id: row.account_id });

@@ -1,7 +1,7 @@
-import { managedServiceAccount } from "./service-accounts";
+import { managedServiceAccount, serviceAccountGrantProblem } from "./service-accounts";
 import { accountsTable } from "@/lib/clients";
 import { canManageServiceAccount } from "@/lib/api/authz";
-import { AccountType, type Account, type UserSession } from "@/types";
+import { AccountType, MembershipRole, type Account, type UserSession } from "@/types";
 
 jest.mock("@/lib/clients", () => ({ accountsTable: { fetchById: jest.fn() } }));
 jest.mock("@/lib/api/authz", () => ({ canManageServiceAccount: jest.fn() }));
@@ -34,4 +34,15 @@ test("hands back nothing for a missing account, a person, an orphan, a stranger,
   expect(await managedServiceAccount(session, "nightly-sync")).toBeNull();
   canManage.mockReturnValue(true);
   expect(await managedServiceAccount(null, "nightly-sync")).toBeNull();
+});
+
+test("a disabled service account takes no new access, whatever the role", () => {
+  const product = { membership_account_id: "acme", product_id: "climate-data" };
+  expect(serviceAccountGrantProblem(bot, product, MembershipRole.ReadData)).toBeNull();
+  const disabled = { ...bot, disabled: true } as Account;
+  for (const role of [MembershipRole.ReadData, MembershipRole.WriteData]) {
+    expect(serviceAccountGrantProblem(disabled, product, role)).toMatch(/disabled/);
+  }
+  // Only a service account is held to it.
+  expect(serviceAccountGrantProblem({ ...org, disabled: true }, product, MembershipRole.ReadData)).toBeNull();
 });

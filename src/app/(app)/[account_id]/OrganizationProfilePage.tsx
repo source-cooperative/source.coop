@@ -40,7 +40,7 @@ export async function OrganizationProfilePage({
     // Only consider active memberships
     .filter((membership) => membership.state === MembershipState.Member)
     // Only consider memberships that are not product-specific
-    .filter((membership) => membership.repository_id === undefined);
+    .filter((membership) => membership.product_id === undefined);
 
   const relatedUserAccounts = new Map(
     (

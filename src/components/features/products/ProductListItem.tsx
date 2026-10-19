@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import type { Product } from "@/types";
+import type { ProductResponse } from "@/types";
 import { DateText } from "@/components/display";
 import { Box, Text, Badge, Heading } from "@radix-ui/themes";
 import { TagList } from "./TagList";
@@ -12,7 +12,7 @@ import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 
 interface ProductListItemProps {
-  product: Product;
+  product: ProductResponse;
   isSelected?: boolean;
 }
 
