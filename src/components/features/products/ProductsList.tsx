@@ -29,7 +29,7 @@ export function ProductsList({
   products,
   grid = false,
   pagination,
-  showCatalog = false,
+  showCatalog = true,
 }: ProductsListProps) {
   const [showHelp, setShowHelp] = useState(false);
   const catalog = useCatalog(showCatalog && products.length > 0);

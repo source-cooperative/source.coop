@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { loadCatalog } from "@/lib/catalog";
+import { loadCatalog, peekCatalog } from "@/lib/catalog";
 import type { CatalogEntry } from "@/types/catalog";
 
 export function useCatalog(enabled: boolean) {
-  const [catalog, setCatalog] = useState<Map<string, CatalogEntry>>();
+  const [catalog, setCatalog] = useState(peekCatalog);
 
   useEffect(() => {
     if (!enabled) return;

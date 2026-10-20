@@ -23,13 +23,23 @@ export function parseCatalog(text: string): Map<string, CatalogEntry> {
 }
 
 let catalogRequest: Promise<Map<string, CatalogEntry>> | undefined;
+let loadedCatalog: Map<string, CatalogEntry> | undefined;
+
+/**
+ * The catalog if it has already loaded. Components that remount on every
+ * navigation (the product layout re-renders per path) start from this so they
+ * don't blank for a frame while the cached promise resolves.
+ */
+export function peekCatalog() {
+  return loadedCatalog;
+}
 
 export function loadCatalog(): Promise<Map<string, CatalogEntry>> {
   if (!catalogRequest) {
     catalogRequest = fetch(CATALOG_URL)
       .then(async (response) => {
         if (!response.ok) throw new Error(`Catalog request: ${response.status}`);
-        return parseCatalog(await response.text());
+        return (loadedCatalog = parseCatalog(await response.text()));
       })
       .catch((error: unknown) => {
         catalogRequest = undefined;
