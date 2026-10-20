@@ -15,8 +15,8 @@ import { canCreateProductForAccount, isAdmin, isAuthorized } from "@/lib/api/aut
 import { ADMIN_TOOLS } from "@/components/features/admin/tools";
 import { Account, Actions, UserSession } from "@/types";
 import { ProfileAvatar } from "@/components/features/profiles/ProfileAvatar";
-import { UploadBadge } from "@/components/features/uploader/UploadBadge";
-import { UploadsSubmenu } from "@/components/features/uploader/UploadsSubmenu";
+import { ActivityBadge } from "@/components/features/uploader/ActivityBadge";
+import { ActivitySubmenu } from "@/components/features/uploader/ActivitySubmenu";
 import { Skeleton } from "@/components/core/Skeleton";
 
 export function AccountDropdownSkeleton() {
@@ -75,7 +75,7 @@ export function AccountDropdown({
         <Flex align="center" gap="2" style={{ cursor: "pointer" }}>
           <Box style={{ position: "relative" }}>
             <ProfileAvatar account={session.account!} size="2" />
-            <UploadBadge />
+            <ActivityBadge />
             {hasInvitations && (
               <Box
                 aria-label="You have pending invitations"
@@ -233,7 +233,7 @@ export function AccountDropdown({
             children: tool.name,
           }))}
         />
-        <UploadsSubmenu />
+        <ActivitySubmenu />
         <DropdownMenu.Separator />
         <DropdownSection
           items={[

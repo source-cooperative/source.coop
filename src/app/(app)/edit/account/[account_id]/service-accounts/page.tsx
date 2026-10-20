@@ -6,14 +6,14 @@ import { PlusIcon } from "@radix-ui/react-icons";
 import { FormTitle } from "@/components/core/FormTitle";
 import { ServiceAccountList } from "@/components/features/service-accounts";
 import {
-  accountsTable,
   accountTrustsTable,
   membershipsTable,
+  serviceAccountKeysTable,
 } from "@/lib/clients/database";
 import { getPageSession } from "@/lib/api/utils";
-import { canManageAccount } from "@/lib/api/authz";
+import { listServiceAccounts } from "@/lib/operations/service-accounts";
 import { createServiceAccountUrl } from "@/lib/urls";
-import { MembershipState, type ServiceAccountSummary } from "@/types";
+import { MembershipState, publicKey, type ServiceAccountSummary } from "@/types";
 
 export const metadata: Metadata = { title: "Service accounts" };
 
@@ -23,20 +23,17 @@ interface PageProps {
 
 export default async function ServiceAccountsPage({ params }: PageProps) {
   const { account_id } = await params;
-  const session = await getPageSession();
-  const owner = await accountsTable.fetchById(account_id);
-  if (!owner || !canManageAccount(session, owner)) {
-    notFound();
-  }
+  const listed = await listServiceAccounts(await getPageSession(), account_id);
+  if (!listed.ok) notFound();
 
-  const accounts = await accountsTable.listByOwner(account_id);
   const summaries: ServiceAccountSummary[] = await Promise.all(
-    accounts.map(async (account) => ({
+    listed.value.items.map(async (account) => ({
       account,
       trusts: await accountTrustsTable.listByAccount(account.account_id),
       grants: (await membershipsTable.listByUser(account.account_id)).filter(
         (m) => m.state === MembershipState.Member
       ),
+      keys: (await serviceAccountKeysTable.listByAccount(account.account_id)).map(publicKey),
     }))
   );
 
@@ -47,7 +44,7 @@ export default async function ServiceAccountsPage({ params }: PageProps) {
           title="Service Accounts"
           description="Logins for software — a nightly sync, a publishing pipeline, an instrument — granted and revoked without sharing anyone's account."
         />
-        <Button asChild size="2">
+        <Button asChild size="2" highContrast>
           <Link href={createServiceAccountUrl(account_id)}>
             <PlusIcon width="16" height="16" /> New service account
           </Link>

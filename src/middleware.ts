@@ -104,6 +104,26 @@ export const handleProductAnalyticsTab = (
   return null;
 };
 
+/**
+ * Undoes Next.js's percent-encoding of Ory's session cookie.
+ *
+ * A server action that calls `redirect()` renders its target with an internal
+ * fetch whose cookie header Next rebuilds with `encodeURIComponent`, turning
+ * the base64 padding in Ory's session cookie into `%3D`. Ory rejects that
+ * cookie, so the page it lands on renders signed out. Ory's cookie values are
+ * base64url, which never contains `%`, so decoding them restores the original.
+ *
+ * Exported for tests; returns the repaired header, or null when nothing changed.
+ */
+export const restoreOryCookies = (cookie: string | null): string | null => {
+  if (!cookie?.includes("%")) return null;
+  const restored = cookie.replace(
+    /(\bory_\w*session\w*=)([^;]*)/gi,
+    (_, name: string, value: string) => name + decodeURIComponent(value),
+  );
+  return restored === cookie ? null : restored;
+};
+
 const ory = createOryMiddleware({});
 
 // Paths the Ory middleware proxies (self-service flows, session checks). For
@@ -137,6 +157,13 @@ export const middleware = async (request: NextRequest) => {
 
   const analyticsRewrite = handleProductAnalyticsTab(request);
   if (analyticsRewrite) return analyticsRewrite;
+
+  const cookie = restoreOryCookies(request.headers.get("cookie"));
+  if (cookie) {
+    const headers = new Headers(request.headers);
+    headers.set("cookie", cookie);
+    return NextResponse.next({ request: { headers } });
+  }
 
   return NextResponse.next();
 };

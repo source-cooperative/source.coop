@@ -1,16 +1,18 @@
 "use client";
 
-import React, { useActionState, useState } from "react";
+import React, { useActionState, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Button,
-  Card,
   Code,
   Flex,
   IconButton,
+  Text,
   TextField,
 } from "@radix-ui/themes";
-import { PlusIcon, TrashIcon } from "@radix-ui/react-icons";
+import { TrashIcon } from "@radix-ui/react-icons";
 import { Field, FormActions, SectionHeader } from "@/components/core";
+import { ItemList } from "@/components/core/ItemList";
 import { createServiceAccount } from "@/lib/actions/service-accounts";
 import {
   IDLE_SERVICE_ACCOUNT_FORM_STATE,
@@ -18,24 +20,39 @@ import {
   type Product,
 } from "@/types";
 import { ProductAccessList, type ProductAccess } from "./ProductAccessList";
-import {
-  GithubWorkflowFields,
-  NEW_GITHUB_WORKFLOW,
-  githubSubject,
-  type GithubWorkflow,
-} from "./GithubWorkflowFields";
+import { GrantProductDialog } from "./GrantProductDialog";
+import { AddSignInMenu, SIGN_IN_DESCRIPTION } from "./AddSignInMenu";
+import type { ApiKeyDraft } from "./IssueApiKeyDialog";
+import { handOffIssuedKey } from "./IssuedApiKeyDialog";
+
+/** Drops a sign-in the form holds; nothing is saved yet, so there is nothing else to do with it. */
+function RemoveButton({ label, onRemove }: { label: string; onRemove: () => void }) {
+  return (
+    <IconButton type="button" size="1" variant="ghost" color="red" aria-label={`Remove ${label}`} onClick={onRemove}>
+      <TrashIcon />
+    </IconButton>
+  );
+}
 
 interface ServiceAccountFormProps {
   ownerAccountId: string;
   products: Pick<Product, "product_id" | "title">[];
+  /** The data proxy's origin, shown as the audience a trusted workflow's token must carry. */
+  proxyOrigin?: string;
 }
 
 /**
- * Creates a service account: who it is, how software signs in as it, and
- * what it may reach. Sign-in and reach are both optional at creation, and
- * both can be changed on the account's page, where submitting lands.
+ * Creates a service account: who it is, how software signs in as it — by
+ * GitHub workflow or API key — and what it may reach. Sign-in and reach are
+ * both optional at creation, and both can be changed on the account's page,
+ * where submitting lands. A key issued here is shown there, over the page,
+ * the one time it can be.
  */
-export function ServiceAccountForm({ ownerAccountId, products }: ServiceAccountFormProps) {
+export function ServiceAccountForm({
+  ownerAccountId,
+  products,
+  proxyOrigin,
+}: ServiceAccountFormProps) {
   const [state, formAction, pending] = useActionState(
     createServiceAccount,
     IDLE_SERVICE_ACCOUNT_FORM_STATE
@@ -43,12 +60,27 @@ export function ServiceAccountForm({ ownerAccountId, products }: ServiceAccountF
   const [name, setName] = useState("");
   const [localId, setLocalId] = useState("");
   const [editingId, setEditingId] = useState(false);
-  const [workflows, setWorkflows] = useState<GithubWorkflow[]>([]);
+  const [subjects, setSubjects] = useState<string[]>([]);
   const [grants, setGrants] = useState<Record<string, ProductAccess>>({});
+  const setGrant = (product_id: string, access: ProductAccess | null) =>
+    setGrants((all) => {
+      const { [product_id]: _dropped, ...rest } = all;
+      return access ? { ...rest, [product_id]: access } : rest;
+    });
+  const [apiKey, setApiKey] = useState<ApiKeyDraft | null>(null);
 
   // A rejected id opens the field, so the error sits beside something to fix.
   const showIdField = editingId || !!state.fieldErrors.local_id;
   const prefix = `${ownerAccountId}--`;
+
+  // With a key there was no redirect, since it would lose the key: hand it
+  // to the account's page, which shows it over itself, and go there.
+  const router = useRouter();
+  useEffect(() => {
+    if (!state.issued) return;
+    handOffIssuedKey(state.issued);
+    router.push(state.issued.account_url);
+  }, [state.issued, router]);
 
   return (
     <form action={formAction}>
@@ -113,49 +145,98 @@ export function ServiceAccountForm({ ownerAccountId, products }: ServiceAccountF
         </SectionHeader>
 
         <SectionHeader
-          title="How software signs in"
-          description="GitHub Actions workflows, each pinned to one repository and one ref or environment. GitHub vouches for every run, so there is no secret to store."
+          title="Signs in with"
+          description={SIGN_IN_DESCRIPTION}
+          rightButton={
+            <AddSignInMenu
+              proxyOrigin={proxyOrigin}
+              // One key at creation; the account's page issues more.
+              keyDisabled={!!apiKey}
+              onAddGithub={(subject) =>
+                setSubjects((all) => (all.includes(subject) ? all : [...all, subject]))
+              }
+              onAddKey={setApiKey}
+            />
+          }
         >
-          <Flex direction="column" gap="3">
-            {workflows.map((workflow, index) => (
-              <Card key={index}>
-                <input type="hidden" name="github_subject" value={githubSubject(workflow)} />
-                <GithubWorkflowFields
-                  id={`wf-${index}`}
-                  workflow={workflow}
-                  onChange={(next) =>
-                    setWorkflows((all) => all.map((w, i) => (i === index ? next : w)))
-                  }
-                  trailing={
-                    <IconButton
-                      type="button"
-                      size="2"
-                      variant="soft"
-                      color="red"
-                      aria-label={`Remove workflow ${index + 1}`}
-                      onClick={() => setWorkflows((all) => all.filter((_, i) => i !== index))}
-                    >
-                      <TrashIcon />
-                    </IconButton>
-                  }
-                />
-              </Card>
-            ))}
-            <Flex>
-              <Button
-                type="button"
-                variant="soft"
-                onClick={() => setWorkflows((all) => [...all, NEW_GITHUB_WORKFLOW])}
-              >
-                <PlusIcon /> Add a GitHub workflow
-              </Button>
+          {subjects.map((subject) => (
+            <input key={subject} type="hidden" name="github_subject" value={subject} />
+          ))}
+          {apiKey && (
+            <>
+              <input type="hidden" name="key_label" value={apiKey.label} />
+              <input type="hidden" name="expires_in_days" value={apiKey.expires_in_days} />
+            </>
+          )}
+          {subjects.length === 0 && !apiKey ? (
+            <Text size="2" color="gray">
+              Nothing yet. Add a workflow or key to grant access from an external environment.
+            </Text>
+          ) : (
+            <Flex direction="column" gap="4">
+              {subjects.length > 0 && (
+                <Flex direction="column" gap="2">
+                  <Text size="1" weight="medium" color="gray">
+                    GitHub workflows
+                  </Text>
+                  <ItemList.Root>
+                    {subjects.map((subject) => (
+                      <ItemList.Row
+                        key={subject}
+                        title={
+                          <Text size="2" style={{ fontFamily: "var(--code-font-family)", wordBreak: "break-all" }}>
+                            {subject}
+                          </Text>
+                        }
+                        meta="GitHub Actions"
+                        actions={
+                          <RemoveButton
+                            label={subject}
+                            onRemove={() => setSubjects((all) => all.filter((s) => s !== subject))}
+                          />
+                        }
+                      />
+                    ))}
+                  </ItemList.Root>
+                </Flex>
+              )}
+              {apiKey && (
+                <Flex direction="column" gap="2">
+                  <Text size="1" weight="medium" color="gray">
+                    API keys
+                  </Text>
+                  <ItemList.Root>
+                    <ItemList.Row
+                      title={<Text size="2" weight="medium">{apiKey.label}</Text>}
+                      meta={
+                        apiKey.expires_in_days
+                          ? `Expires ${apiKey.expires_in_days} days after it is issued`
+                          : "Never expires"
+                      }
+                      actions={<RemoveButton label={apiKey.label} onRemove={() => setApiKey(null)} />}
+                    />
+                  </ItemList.Root>
+                </Flex>
+              )}
             </Flex>
-          </Flex>
+          )}
+          {state.fieldErrors.key_label && (
+            <Text as="p" size="1" color="red" mt="2">
+              {state.fieldErrors.key_label.join(" ")}
+            </Text>
+          )}
         </SectionHeader>
 
         <SectionHeader
-          title="What it can reach"
+          title="Can reach"
           description={`Products ${ownerAccountId} owns that it may read or write. Each grant is an ordinary membership, revoked the same way as a person's.`}
+          rightButton={
+            <GrantProductDialog
+              ownerAccountId={ownerAccountId}
+              available={products.filter((p) => !grants[p.product_id])}
+              onGrant={setGrant}
+            />
+          }
         >
           {Object.entries(grants).map(([product_id, role]) => (
             <input key={product_id} type="hidden" name={`grant:${product_id}`} value={role} />
@@ -164,12 +245,7 @@ export function ServiceAccountForm({ ownerAccountId, products }: ServiceAccountF
             ownerAccountId={ownerAccountId}
             products={products}
             access={grants}
-            onChange={(product_id, access) =>
-              setGrants((all) => {
-                const { [product_id]: _dropped, ...rest } = all;
-                return access ? { ...rest, [product_id]: access } : rest;
-              })
-            }
+            onChange={setGrant}
           />
         </SectionHeader>
 

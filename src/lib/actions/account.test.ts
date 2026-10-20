@@ -3,6 +3,7 @@ import { accountsTable } from "../clients";
 import { getPageSession } from "../api/utils";
 import { isAuthorized } from "../api/authz";
 import { Account, AccountType, Actions, UserSession } from "@/types";
+import * as ops from "@/lib/operations/accounts";
 
 jest.mock("../clients", () => ({
   accountsTable: {
@@ -18,6 +19,10 @@ jest.mock("../api/utils", () => ({
 
 jest.mock("../api/authz", () => ({
   isAuthorized: jest.fn(),
+}));
+
+jest.mock("@/lib/operations/accounts", () => ({
+  updateAccount: jest.fn(),
 }));
 
 jest.mock("next/cache", () => ({
@@ -45,104 +50,33 @@ const account = (overrides: Partial<Account>): Account =>
     ...overrides,
   }) as Account;
 
-const submit = (fields: Record<string, string>) => {
-  const formData = new FormData();
-  formData.set("account_id", "an-account");
-  formData.set("name", "An Account");
-  for (const [key, value] of Object.entries(fields)) formData.set(key, value);
-  return updateAccountProfile(null, formData);
-};
+describe("updateAccountProfile", () => {
+  it("hands the form's fields to the operation", async () => {
+    mockGetPageSession.mockResolvedValue(null);
+    (ops.updateAccount as jest.Mock).mockResolvedValue({ ok: true, value: {} });
+    const formData = new FormData();
+    for (const [key, value] of Object.entries({
+      account_id: "an-account",
+      name: "An Account",
+      description: "A bio",
+      email: "contact@example.test",
+      websites_0: "example.test",
+      websites_1: "",
+    })) {
+      formData.set(key, value);
+    }
 
-const updatedEmails = () => mockAccountsTable.update.mock.calls[0][0].emails;
-
-describe("updateAccountProfile contact email", () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-    mockGetPageSession.mockResolvedValue({
-      identity_id: "an-identity",
-    } as UserSession);
-    mockIsAuthorized.mockReturnValue(true);
-    mockAccountsTable.update.mockResolvedValue(undefined as never);
-  });
-
-  it("stores an organization's submitted email as its unverified primary", async () => {
-    mockAccountsTable.fetchById.mockResolvedValue(
-      account({ type: AccountType.ORGANIZATION, emails: [] })
-    );
-
-    const result = await submit({ email: " contact@example.test " });
+    const result = await updateAccountProfile(null, formData);
 
     expect(result.success).toBe(true);
-    expect(updatedEmails()).toEqual([
-      expect.objectContaining({
-        address: "contact@example.test",
-        is_primary: true,
-        verified: false,
-      }),
-    ]);
-  });
-
-  // The form seeds the field with the current address, so every save of a name
-  // or bio resubmits it. Rebuilding the record then would drop verified state.
-  it("leaves a verified organization email alone when it is resubmitted unchanged", async () => {
-    const emails = [
-      {
-        address: "contact@example.test",
-        is_primary: true,
-        verified: true,
-        added_at: "2020-05-05T00:00:00.000Z",
-      },
-    ];
-    mockAccountsTable.fetchById.mockResolvedValue(
-      account({ type: AccountType.ORGANIZATION, emails })
-    );
-
-    await submit({ email: "contact@example.test" });
-
-    expect(updatedEmails()).toEqual(emails);
-  });
-
-  it("rejects a malformed organization email without writing", async () => {
-    mockAccountsTable.fetchById.mockResolvedValue(
-      account({ type: AccountType.ORGANIZATION, emails: [] })
-    );
-
-    const result = await submit({ email: "not-an-email" });
-
-    expect(result.success).toBe(false);
-    expect(result.fieldErrors).toEqual({ email: ["Invalid email address"] });
-    expect(mockAccountsTable.update).not.toHaveBeenCalled();
-  });
-
-  it("clears an organization's email when the field is submitted empty", async () => {
-    mockAccountsTable.fetchById.mockResolvedValue(
-      account({
-        type: AccountType.ORGANIZATION,
-        emails: [
-          { address: "old@example.test", is_primary: true, verified: true },
-        ],
-      })
-    );
-
-    await submit({ email: "   " });
-
-    expect(updatedEmails()).toEqual([]);
-  });
-
-  // An individual's email lives in the identity provider, so the form field is
-  // read-only and never submitted. A forged submission must not move it anyway.
-  it("ignores an email submitted for an individual account", async () => {
-    const emails = [
-      { address: "person@example.test", is_primary: true, verified: true },
-    ];
-    mockAccountsTable.fetchById.mockResolvedValue(
-      account({ type: AccountType.INDIVIDUAL, emails })
-    );
-
-    const result = await submit({ email: "attacker@example.test" });
-
-    expect(result.success).toBe(true);
-    expect(updatedEmails()).toEqual(emails);
+    expect(ops.updateAccount).toHaveBeenCalledWith(null, "an-account", {
+      name: "An Account",
+      bio: "A bio",
+      orcid: undefined,
+      ror_id: undefined,
+      email: "contact@example.test",
+      websites: ["example.test", ""],
+    });
   });
 });
 

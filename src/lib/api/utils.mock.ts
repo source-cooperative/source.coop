@@ -3,8 +3,6 @@ import {
   UserSession,
   Membership,
   MembershipSchema,
-  APIKey,
-  APIKeySchema,
   Product,
   ProductSchema,
   DataConnection,
@@ -14,6 +12,7 @@ import { AccountType } from "@/types/account";
 import { Account } from "@/types/account";
 import { AccountSchema } from "@/types/account";
 import * as fs from "fs";
+import { fromItem } from "@/lib/clients/database/memberships";
 import { z } from "zod";
 
 function loadAndValidateJson<T extends z.ZodType>(
@@ -55,14 +54,11 @@ export const accounts: Account[] = loadAndValidateJson(
   z.array(AccountSchema)
 );
 
-export const apiKeys: APIKey[] = loadAndValidateJson(
-  path.join("fixtures", "api-keys.json"),
-  z.array(APIKeySchema)
-);
-
+// The fixtures are table records, which name a membership's product
+// `repository_id`.
 export const memberships: Membership[] = loadAndValidateJson(
   path.join("fixtures", "memberships.json"),
-  z.array(MembershipSchema)
+  z.array(z.preprocess((item) => fromItem(item as Record<string, unknown>), MembershipSchema))
 );
 
 export const products: Product[] = loadAndValidateJson(
@@ -109,9 +105,4 @@ for (const product of products) {
     mappedProducts[product.account_id] = {};
   }
   mappedProducts[product.account_id][product.product_id] = product;
-}
-
-export const mappedAPIKeys: Record<string, APIKey> = {};
-for (const apiKey of apiKeys) {
-  mappedAPIKeys[apiKey.access_key_id] = apiKey;
 }

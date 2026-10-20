@@ -25,6 +25,10 @@ jest.mock("../UploadProvider", () => ({
         scope: { accountId: "test", productId: "test" },
       },
     ],
+    deletions: [
+      { id: "d1", status: "deleting" },
+      { id: "d2", status: "error" },
+    ],
     cancelUpload: jest.fn(),
     retryUpload: jest.fn(),
     clearUploads: jest.fn(),
@@ -87,18 +91,18 @@ describe("GlobalUploadNotification", () => {
   });
 });
 
-describe("UploadBadge", () => {
-  const { UploadBadge } = require("../UploadBadge");
+describe("ActivityBadge", () => {
+  const { ActivityBadge } = require("../ActivityBadge");
 
-  it("renders badge with count when there are active uploads", () => {
-    // Uses the default mock with 2 active uploads (queued and uploading)
+  it("counts active uploads and running deletes", () => {
+    // Default mock: 2 active uploads (queued, uploading) and 1 running delete;
+    // the failed delete isn't active.
     render(
       <TestWrapper>
-        <UploadBadge />
+        <ActivityBadge />
       </TestWrapper>
     );
 
-    // Should show count of 2 for the active uploads from the default mock
-    expect(screen.getByText("2")).toBeInTheDocument();
+    expect(screen.getByText("3")).toBeInTheDocument();
   });
 });

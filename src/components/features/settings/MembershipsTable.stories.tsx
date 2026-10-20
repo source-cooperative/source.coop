@@ -18,7 +18,7 @@ import {
  * `revokeMembership` is an `fn()` stub, so the row actions do nothing.
  */
 const meta = {
-  title: "Features/Memberships/MembershipsTable",
+  title: "Features/Settings/Memberships/MembershipsTable",
   component: MembershipsTable,
   parameters: { layout: "padded" },
 } satisfies Meta<typeof MembershipsTable>;

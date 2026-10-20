@@ -24,7 +24,7 @@ import { ProductAnalyticsView } from "./ProductAnalyticsView";
  */
 const meta = {
   component: ProductAnalyticsView,
-  title: "Features/Analytics/ProductAnalyticsView",
+  title: "Features/Product page/Analytics/ProductAnalyticsView",
   parameters: { layout: "padded" },
   args: { accountId: "miskatonic", productId: "abyssal-acoustics" },
 } satisfies Meta<typeof ProductAnalyticsView>;

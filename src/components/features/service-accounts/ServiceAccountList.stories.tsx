@@ -11,11 +11,12 @@ import {
 /**
  * An owner's service accounts, one row each, in the same bordered list the
  * data connections use: the name linking to the account's own page, its id,
- * a marker when it is disabled, and how many workflows it trusts and products
- * it reaches. The controls live on that page, `ServiceAccountDetail`.
+ * a marker when it is disabled, and a count of each: trusted workflows, live
+ * API keys (revoked and expired ones are left out) and products it reaches.
+ * The controls live on that page, `ServiceAccountDetail`.
  */
 const meta = {
-  title: "Features/Service accounts/ServiceAccountList",
+  title: "Features/Settings/Service accounts/List/ServiceAccountList",
   component: ServiceAccountList,
   parameters: { layout: "padded" },
 } satisfies Meta<typeof ServiceAccountList>;
@@ -54,10 +55,32 @@ const summary = (
       membership_id: `m-${account_id}`,
       account_id,
       membership_account_id: "miskatonic",
-      repository_id: "climate-data",
+      product_id: "climate-data",
       role: MembershipRole.WriteData,
       state: MembershipState.Member,
       state_changed: "2026-03-12T00:00:00Z",
+    },
+  ],
+  keys: [
+    {
+      key_id: `k1-${account_id}`,
+      account_id,
+      label: "HPC cron job",
+      hint: "Xy9QeT",
+      created_at: "2026-03-12T00:00:00Z",
+      created_by: "acoltrane",
+      expires_at: "2027-03-12T00:00:00Z",
+      last_used_at: "2026-03-20T00:00:00Z",
+    },
+    {
+      key_id: `k2-${account_id}`,
+      account_id,
+      label: "Old laptop",
+      hint: "a07kT2",
+      created_at: "2025-03-12T00:00:00Z",
+      created_by: "acoltrane",
+      expires_at: null,
+      revoked_at: "2026-01-01T00:00:00Z",
     },
   ],
   ...overrides,
@@ -70,6 +93,7 @@ export const Default: Story = {
       summary("miskatonic--archive-mirror", "Archive Mirror", {
         trusts: [],
         grants: [],
+        keys: [],
       }),
     ],
   },

@@ -11,7 +11,7 @@
  * authorization functions based on the action being performed.
  *
  * Key features:
- * - Granular permission checks for accounts, repositories, API keys, and memberships
+ * - Granular permission checks for accounts, repositories, and memberships
  * - Support for different account types (user, organization, service)
  * - Handling of various membership roles and states
  * - Special handling for admin users
@@ -37,7 +37,6 @@ import {
   AccountFlags,
   AccountType,
   Actions,
-  APIKey,
   DataConnection,
   isServiceAccount,
   Membership,
@@ -58,7 +57,6 @@ type ActionResourceMap = {
   [Actions.PutAccountFlags]: Account;
   [Actions.ListAccount]: Account;
   [Actions.DisableAccount]: Account;
-  [Actions.ListAccountAPIKeys]: Account;
   [Actions.ListAccountMemberships]: Account;
   [Actions.CreateAccount]: Account | "*";
 
@@ -70,14 +68,8 @@ type ActionResourceMap = {
   [Actions.DisableRepository]: Product;
   [Actions.ReadRepositoryData]: Product;
   [Actions.WriteRepositoryData]: Product;
-  [Actions.ListRepositoryAPIKeys]: Product;
   [Actions.ListRepositoryMemberships]: Product;
   [Actions.CreateRepository]: Product | "*";
-
-  // API Key actions
-  [Actions.GetAPIKey]: APIKey;
-  [Actions.CreateAPIKey]: APIKey;
-  [Actions.RevokeAPIKey]: APIKey;
 
   // Membership actions
   [Actions.GetMembership]: Membership;
@@ -87,8 +79,9 @@ type ActionResourceMap = {
   [Actions.UpdateMembershipRole]: Membership;
   [Actions.InviteMembership]: Pick<
     Membership,
-    "membership_account_id" | "repository_id"
-  >;
+    "membership_account_id" | "product_id"
+  > &
+    Partial<Pick<Membership, "role">>;
 
   // Data Connection actions
   [Actions.GetDataConnection]: DataConnection;
@@ -142,11 +135,6 @@ export function isAuthorized(
 export function isAuthorized(
   principal: UserSession | null,
   resource: Account,
-  action: Actions.ListAccountAPIKeys
-): boolean;
-export function isAuthorized(
-  principal: UserSession | null,
-  resource: Account,
   action: Actions.ListAccountMemberships
 ): boolean;
 export function isAuthorized(
@@ -194,34 +182,12 @@ export function isAuthorized(
 export function isAuthorized(
   principal: UserSession | null,
   resource: Product,
-  action: Actions.ListRepositoryAPIKeys
-): boolean;
-export function isAuthorized(
-  principal: UserSession | null,
-  resource: Product,
   action: Actions.ListRepositoryMemberships
 ): boolean;
 export function isAuthorized(
   principal: UserSession | null,
   resource: Product | "*",
   action: Actions.CreateRepository
-): boolean;
-
-// API Key action overloads
-export function isAuthorized(
-  principal: UserSession | null,
-  resource: APIKey,
-  action: Actions.GetAPIKey
-): boolean;
-export function isAuthorized(
-  principal: UserSession | null,
-  resource: APIKey,
-  action: Actions.CreateAPIKey
-): boolean;
-export function isAuthorized(
-  principal: UserSession | null,
-  resource: APIKey,
-  action: Actions.RevokeAPIKey
 ): boolean;
 
 // Membership action overloads
@@ -252,7 +218,8 @@ export function isAuthorized(
 ): boolean;
 export function isAuthorized(
   principal: UserSession | null,
-  resource: Pick<Membership, "membership_account_id" | "repository_id">,
+  resource: Pick<Membership, "membership_account_id" | "product_id"> &
+    Partial<Pick<Membership, "role">>,
   action: Actions.InviteMembership
 ): boolean;
 
@@ -350,18 +317,6 @@ export function isAuthorized(
       .with(Actions.PutAccountFlags, () =>
         putAccountFlags(principal, resource as ResourceForAction<Actions.PutAccountFlags>)
       )
-      .with(Actions.ListAccountAPIKeys, () =>
-        listAccountAPIKeys(principal, resource as ResourceForAction<Actions.ListAccountAPIKeys>)
-      )
-      .with(Actions.GetAPIKey, () =>
-        getAPIKey(principal, resource as ResourceForAction<Actions.GetAPIKey>)
-      )
-      .with(Actions.CreateAPIKey, () =>
-        createAPIKey(principal, resource as ResourceForAction<Actions.CreateAPIKey>)
-      )
-      .with(Actions.RevokeAPIKey, () =>
-        revokeAPIKey(principal, resource as ResourceForAction<Actions.RevokeAPIKey>)
-      )
       .with(Actions.GetMembership, () =>
         getMembership(principal, resource as ResourceForAction<Actions.GetMembership>)
       )
@@ -376,9 +331,6 @@ export function isAuthorized(
       )
       .with(Actions.InviteMembership, () =>
         inviteMembership(principal, resource as ResourceForAction<Actions.InviteMembership>)
-      )
-      .with(Actions.ListRepositoryAPIKeys, () =>
-        listRepositoryAPIKeys(principal, resource as ResourceForAction<Actions.ListRepositoryAPIKeys>)
       )
       .with(Actions.ListRepositoryMemberships, () =>
         listRepositoryMemberships(principal, resource as ResourceForAction<Actions.ListRepositoryMemberships>)
@@ -553,7 +505,9 @@ export function canManageAccount(
  * A disabled service account is still managed this way, so it can be
  * re-enabled or deleted; what may not happen to it while disabled (a new
  * trust, a new key) is refused where that thing is attached. A disabled owner
- * takes its service accounts out of reach with it, admins aside.
+ * takes its service accounts out of reach with it, admins aside, and so does
+ * an owner without the CREATE_SERVICE_ACCOUNTS flag (see
+ * canManageAccountServiceAccounts).
  */
 export function canManageServiceAccount(
   session: UserSession | null,
@@ -563,7 +517,26 @@ export function canManageServiceAccount(
   return (
     isServiceAccount(account) &&
     owner.account_id === account.owner_account_id &&
-    canManageAccount(session, owner)
+    canManageAccountServiceAccounts(session, owner)
+  );
+}
+
+/**
+ * Whether `session` may create and manage service accounts *owned by*
+ * `account`. On top of managing the account, the account (individual or org)
+ * must hold the platform-granted CREATE_SERVICE_ACCOUNTS flag, which limits
+ * service accounts to the accounts an admin has opted in. Admins bypass the
+ * flag. The owner's flag is read, never the session's: a person with the flag
+ * does not carry it into an organization that lacks it.
+ */
+export function canManageAccountServiceAccounts(
+  session: UserSession | null,
+  account: Account
+): boolean {
+  return canManageWithFlag(
+    session,
+    account,
+    AccountFlags.CREATE_SERVICE_ACCOUNTS
   );
 }
 
@@ -582,17 +555,33 @@ export function canManageAccountDataConnections(
   session: UserSession | null,
   account: Account
 ): boolean {
+  return canManageWithFlag(
+    session,
+    account,
+    AccountFlags.CREATE_DATA_CONNECTIONS
+  );
+}
+
+/**
+ * Whether `session` manages `account` and `account` holds the platform-granted
+ * capability `flag`. The flag is read from the account being managed, never
+ * the session's own, and admins bypass it.
+ */
+function canManageWithFlag(
+  session: UserSession | null,
+  account: Account,
+  flag: AccountFlags
+): boolean {
   // canManageAccount already denies a disabled session or owner account.
   if (!canManageAccount(session, account)) {
     return false;
   }
 
-  // Admins bypass the platform-granted flag.
   if (isAdmin(session)) {
     return true;
   }
 
-  return !!account.flags?.includes(AccountFlags.CREATE_DATA_CONNECTIONS);
+  return !!account.flags?.includes(flag);
 }
 
 /**
@@ -612,6 +601,22 @@ export function canCreateProductForAccount(
     session,
     { account_id: account.account_id } as Product,
     Actions.CreateRepository
+  );
+}
+
+/**
+ * Whether a product appears in its account's profile listing. ListRepository
+ * keeps unlisted products out of strangers' view; a deactivated product stays
+ * listed for whoever can still open it, since the profile is where its owners
+ * go to find it.
+ */
+export function canListOnProfile(
+  session: UserSession | null,
+  product: Product
+): boolean {
+  return (
+    isAuthorized(session, product, Actions.ListRepository) ||
+    (product.disabled && isAuthorized(session, product, Actions.GetRepository))
   );
 }
 
@@ -1189,7 +1194,7 @@ function createRepository(
     const hasOrgRole = principal?.memberships?.some(
       (m) =>
         m.state === MembershipState.Member &&
-        !m.repository_id &&
+        !m.product_id &&
         (m.role === MembershipRole.Owners ||
           m.role === MembershipRole.Maintainers)
     );
@@ -1288,68 +1293,6 @@ function createAccount(
   return false;
 }
 
-function createAPIKey(principal: UserSession | null, api_key: APIKey): boolean {
-  // If the user does not have an account, they are not authorized
-  if (!principal?.account) {
-    return false;
-  }
-
-  // If the user is disabled, they are not authorized
-  if (principal?.account?.disabled) {
-    return false;
-  }
-
-  // If the user is an admin, they are authorized
-  if (isAdmin(principal)) {
-    return true;
-  }
-
-  // If the user is the owner of the API key, they are authorized
-  if (api_key.account_id === principal.account.account_id) {
-    return true;
-  }
-
-  // If the user is an owner or maintainer of the organization, they are authorized
-  return hasRole(
-    principal,
-    [MembershipRole.Owners, MembershipRole.Maintainers],
-    api_key.account_id,
-    api_key.repository_id
-  );
-}
-
-function listAccountAPIKeys(
-  principal: UserSession | null,
-  account: Account
-): boolean {
-  // If the user does not have an account, they are not authorized
-  if (!principal?.account) {
-    return false;
-  }
-
-  // If the user is disabled, they are not authorized
-  if (principal?.account?.disabled) {
-    return false;
-  }
-
-  // If the user is an admin, they are authorized
-  if (isAdmin(principal)) {
-    return true;
-  }
-
-  // If the user is the owner of the API key, they are authorized
-  if (account.account_id === principal.account.account_id) {
-    return true;
-  }
-
-  // If the user is an owner or maintainer of the organization, they are authorized
-  return hasRole(
-    principal,
-    [MembershipRole.Owners, MembershipRole.Maintainers],
-    account.account_id
-  );
-}
-
 function listAccountMemberships(
   principal: UserSession | null,
   _account: Account
@@ -1360,39 +1303,6 @@ function listAccountMemberships(
   }
 
   return true;
-}
-
-function listRepositoryAPIKeys(
-  principal: UserSession | null,
-  product: Product
-): boolean {
-  // If the user does not have an account, they are not authorized
-  if (!principal?.account) {
-    return false;
-  }
-
-  // If the user is disabled, they are not authorized
-  if (principal?.account?.disabled) {
-    return false;
-  }
-
-  // If the user is an admin, they are authorized
-  if (isAdmin(principal)) {
-    return true;
-  }
-
-  // If the user is the owner of the API key, they are authorized
-  if (product.account_id === principal.account.account_id) {
-    return true;
-  }
-
-  // If the user is an owner or maintainer of the organization, they are authorized
-  return hasRole(
-    principal,
-    [MembershipRole.Owners, MembershipRole.Maintainers],
-    product.account_id,
-    product.product_id
-  );
 }
 
 function listRepositoryMemberships(
@@ -1414,7 +1324,7 @@ function listRepositoryMemberships(
     return true;
   }
 
-  // If the user is the owner of the API key, they are authorized
+  // If the repository is under the user's account, they are authorized
   if (product.account_id === principal.account.account_id) {
     return true;
   }
@@ -1425,76 +1335,6 @@ function listRepositoryMemberships(
     [MembershipRole.Owners, MembershipRole.Maintainers],
     product.account_id,
     product.product_id
-  );
-}
-
-function revokeAPIKey(principal: UserSession | null, api_key: APIKey): boolean {
-  // If the user does not have an account, they are not authorized
-  if (!principal?.account) {
-    return false;
-  }
-
-  // If the user is disabled, they are not authorized
-  if (principal?.account?.disabled) {
-    return false;
-  }
-
-  // If the user is an admin, they are authorized
-  if (isAdmin(principal)) {
-    return true;
-  }
-
-  // If the API key is disabled, the user is not authorized
-  if (api_key.disabled) {
-    return false;
-  }
-
-  // If the user is the owner of the API key, they are authorized
-  if (api_key.account_id === principal.account.account_id) {
-    return true;
-  }
-
-  // If the user is an owner or maintainer of the organization, they are authorized
-  return hasRole(
-    principal,
-    [MembershipRole.Owners, MembershipRole.Maintainers],
-    api_key.account_id,
-    api_key.repository_id
-  );
-}
-
-function getAPIKey(principal: UserSession | null, api_key: APIKey): boolean {
-  // If the user does not have an account, they are not authorized
-  if (!principal?.account) {
-    return false;
-  }
-
-  // If the user is disabled, they are not authorized
-  if (principal?.account?.disabled) {
-    return false;
-  }
-
-  // If the user is an admin, they are authorized
-  if (isAdmin(principal)) {
-    return true;
-  }
-
-  // If the API key is disabled, the user is not authorized
-  if (api_key.disabled) {
-    return false;
-  }
-
-  // If the user is the owner of the API key, they are authorized
-  if (api_key.account_id === principal?.account?.account_id) {
-    return true;
-  }
-
-  // If the user is an owner or maintainer of the organization, they are authorized
-  return hasRole(
-    principal,
-    [MembershipRole.Owners, MembershipRole.Maintainers],
-    api_key.account_id,
-    api_key.repository_id
   );
 }
 
@@ -1536,7 +1376,7 @@ function getMembership(
     principal,
     [MembershipRole.Owners, MembershipRole.Maintainers],
     membership.membership_account_id,
-    membership.repository_id
+    membership.product_id
   );
 }
 
@@ -1603,12 +1443,13 @@ function revokeMembership(
     return true;
   }
 
-  // If the user is an owner or maintainer of the organization or repository, they are authorized
+  // Owners and maintainers of the organization or product manage its
+  // memberships, but only an owner manages an owner's.
   return hasRole(
     principal,
-    [MembershipRole.Owners, MembershipRole.Maintainers],
+    grantors(membership.role),
     membership.membership_account_id,
-    membership.repository_id
+    membership.product_id
   );
 }
 
@@ -1626,18 +1467,20 @@ function updateMembershipRole(
     return true;
   }
 
-  // If the user is an owner or maintainer of the organization or repository, they are authorized
+  // Owners and maintainers of the organization or product manage its
+  // memberships, but only an owner manages an owner's.
   return hasRole(
     principal,
-    [MembershipRole.Owners, MembershipRole.Maintainers],
+    grantors(membership.role),
     membership.membership_account_id,
-    membership.repository_id
+    membership.product_id
   );
 }
 
 function inviteMembership(
   principal: UserSession | null,
-  membership: Pick<Membership, "membership_account_id" | "repository_id">
+  membership: Pick<Membership, "membership_account_id" | "product_id"> &
+    Partial<Pick<Membership, "role">>
 ): boolean {
   // If the user is disabled, they are not authorized
   if (principal?.account?.disabled) {
@@ -1649,12 +1492,13 @@ function inviteMembership(
     return true;
   }
 
-  // If the user is an owner or maintainer of the organization or repository, they are authorized
+  // Owners and maintainers of the organization or product manage its
+  // memberships, but only an owner manages an owner's.
   return hasRole(
     principal,
-    [MembershipRole.Owners, MembershipRole.Maintainers],
+    grantors(membership.role),
     membership.membership_account_id,
-    membership.repository_id
+    membership.product_id
   );
 }
 
@@ -1671,11 +1515,18 @@ function isSelf(principal: UserSession | null, account_id: string): boolean {
   );
 }
 
+/** Who may grant or take away `role`: only an owner may make or unmake one. */
+function grantors(role?: MembershipRole): MembershipRole[] {
+  return role === MembershipRole.Owners
+    ? [MembershipRole.Owners]
+    : [MembershipRole.Owners, MembershipRole.Maintainers];
+}
+
 function hasRole(
   principal: UserSession | null,
   roles: MembershipRole[],
   account_id: string,
-  repository_id?: string
+  product_id?: string
 ): boolean {
   // A person is authorized on their own account
   if (isSelf(principal, account_id)) {
@@ -1701,17 +1552,17 @@ function hasRole(
 
     // If the membership is organizationship-wide, return true
     if (
-      !membership.repository_id &&
+      !membership.product_id &&
       membership.membership_account_id === account_id
     ) {
       return true;
     }
 
-    // If the membership is repository-specific, check the repository_id
+    // If the membership is repository-specific, check the product_id
     if (
-      membership.repository_id &&
+      membership.product_id &&
       membership.membership_account_id === account_id &&
-      membership.repository_id === repository_id
+      membership.product_id === product_id
     ) {
       return true;
     }

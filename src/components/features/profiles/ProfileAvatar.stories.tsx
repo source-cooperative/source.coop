@@ -12,7 +12,7 @@ import type { Account } from "@/types";
  * squared — which is the only thing distinguishing them in a mixed list.
  */
 const meta = {
-  title: "Features/Profiles/ProfileAvatar",
+  title: "Components/Accounts/ProfileAvatar",
   component: ProfileAvatar,
   parameters: { layout: "padded" },
 } satisfies Meta<typeof ProfileAvatar>;
@@ -31,11 +31,6 @@ const organization = {
   name: "Miskatonic University",
   type: "organization",
 } as unknown as Account;
-
-/** No image and no email: the initial. */
-export const Initial: Story = {
-  args: { account: individual },
-};
 
 /** Round for a person, squared for an organization. */
 export const Shapes: Story = {

@@ -64,12 +64,3 @@ export const ServiceAccount: Story = {
     children: <Text size="2">Nightly Sync</Text>,
   },
 };
-
-/** Suppressed entirely — used where the surrounding row is already the account. */
-export const Disabled: Story = {
-  args: {
-    account,
-    showHoverCard: false,
-    children: <Text size="2">Alice Coltrane (no card on hover)</Text>,
-  },
-};

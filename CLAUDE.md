@@ -68,11 +68,25 @@ a decision, not the code that implements it, so a change that merely implements
 one leaves it alone. A change that moves the decision needs a new ADR, or an
 amendment to the one it supersedes, in that repository.
 
-The PR description says which way it went: name the doc or ADR the change
-affects and link the PR carrying that update, or name the ones you checked and
-say why they still hold. "Checked the data-proxy ADRs; 005 still describes the
-model" is worth writing, because silence reads the same whether the docs were
-checked or forgotten.
+[`public/llms.txt`](public/llms.txt) is the same documentation written for AI
+agents, and it lives in this repository, so it ships in the same PR as the
+change that dates it. A new feature an agent could use — a public endpoint, a
+new way to read or publish data, a new docs page worth pointing at — gets a line
+there, and a renamed docs slug, moved endpoint or removed feature gets its line
+fixed. Every URL in the file should resolve in production without auth.
+
+The PR description says which way it went: name the doc, ADR or `llms.txt`
+line the change affects and link the PR carrying that update, or name the ones
+you checked and say why they still hold. "Checked the data-proxy ADRs; 005 still
+describes the model" is worth writing, because silence reads the same whether
+the docs were checked or forgotten.
+
+## API
+
+Read [API.md](API.md) before adding or changing an endpoint under `/api/v1`. It
+covers the operations layer every route goes through, how a route documents
+itself, the shapes of lists, errors and methods, and which consumers a change
+has to stay compatible with.
 
 ## Pull requests
 
@@ -80,8 +94,25 @@ A PR that touches the UI links the stories it affects, on that branch's Storyboo
 deploy:
 
 ```
-https://source-coop-ui-git-<branch-name-with-dashes>-radiantearth.vercel.app/?path=/story/<story-id>
+https://<deploy-host>/?path=/story/<story-id>
 ```
+
+Vercel caps a hostname label at 63 characters, so a long branch name is cut short
+and given a hash (`source-coop-ui-git-feat-github-immutable-re-82950d-radiantearth.vercel.app`),
+and a hostname pasted together from the full branch name doesn't resolve. The
+deploy doesn't exist yet when the description is first written, so compute the
+host from the branch:
+
+```sh
+b=$(git branch --show-current) p=source-coop-ui t=radiantearth
+l="$p-git-$(printf %s "$b" | tr -c 'a-zA-Z0-9' - | tr A-Z a-z)-$t"
+[ ${#l} -gt 63 ] && l="${l:0:$((55 - ${#t}))}-$(printf %s "git-$b$p" | shasum -a 256 | cut -c1-6)-$t"
+echo "https://$l.vercel.app"
+```
+
+Once the PR is open, the `source-coop-ui` row of the Vercel bot's comment
+(`gh pr view <n> --comments`) has the host Vercel actually assigned; check the
+links against it.
 
 Link the specific stories rather than the root, and include a screenshot of
 anything visual — it shows the change in the review itself, and it outlives the

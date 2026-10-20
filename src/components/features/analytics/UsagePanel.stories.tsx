@@ -23,7 +23,7 @@ import { UsagePanel } from "./UsagePanel";
  */
 const meta = {
   component: UsagePanel,
-  title: "Features/Analytics/UsagePanel",
+  title: "Features/Product page/Analytics/UsagePanel",
   parameters: { layout: "padded" },
   decorators: [
     (Story, context) => (
@@ -135,17 +135,6 @@ const petabyte = makeDays(
  */
 export const HighVolume: Story = {
   args: { days: petabyte, totals: totalsOf(petabyte, 148) },
-};
-
-const week = makeDays(7, (i) => 210 + wobble(i, 3) * 140);
-
-/**
- * Seven days rather than 28. The card is pinned to `USAGE_DAYS` in the app,
- * so this window is only reachable through the full analytics page — but the
- * panel is the same one, and it has to hold up with a quarter of the bars.
- */
-export const ShortWindow: Story = {
-  args: { days: week, totals: totalsOf(week, 19) },
 };
 
 /**

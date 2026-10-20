@@ -23,8 +23,8 @@ import { AdminBreakdownChart } from "./AdminBreakdownChart";
  */
 const meta = {
   component: AdminBreakdownChart,
-  title: "Features/Analytics/AdminBreakdownChart",
-  parameters: { layout: "padded" },
+  title: "Features/Admin/AdminBreakdownChart",
+  parameters: { layout: "padded", docs: { story: { inline: false, iframeHeight: 640 } } },
   args: { otherKey: OTHER_KEY, initialMetric: "bytes" },
 } satisfies Meta<typeof AdminBreakdownChart>;
 
@@ -192,23 +192,6 @@ export const WeeklyBuckets: Story = {
     points: weeklyPoints,
     totals: totalsOf(weeklyPoints, 214_660, 171),
     elapsedSeconds: elapsed(13, 10080),
-  },
-};
-
-/**
- * Opened from a URL carrying `?metric=requests`, so the toggle starts on
- * requests. Ranking is by bytes either way, which is why the tall band is not
- * always the one on top here.
- */
-export const RankedByRequests: Story = {
-  args: {
-    buckets: dailyBuckets,
-    bucketMinutes: 1440,
-    series: products,
-    points: dailyPoints,
-    totals: totalsOf(dailyPoints, 41_882, 96),
-    elapsedSeconds: elapsed(28, 1440),
-    initialMetric: "requests",
   },
 };
 

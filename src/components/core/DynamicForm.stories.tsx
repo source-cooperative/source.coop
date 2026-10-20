@@ -158,34 +158,3 @@ export const RadioCardsAndSwitch: Story = {
     );
   },
 };
-
-/** A dialog's Cancel belongs in the form's own action row, not under it. */
-export const WithSecondaryAction: Story = {
-  args: {
-    submitButtonText: "Send invitation",
-    action: noop,
-    secondaryAction: undefined,
-    fields: [
-      {
-        label: "Account ID",
-        name: "account_id",
-        type: "text",
-        required: true,
-        mono: true,
-        placeholder: "jane-doe",
-      },
-      {
-        label: "Role",
-        name: "role",
-        type: "select",
-        required: true,
-        placeholder: "Select a role",
-        options: [
-          { value: "read", label: "Reader" },
-          { value: "write", label: "Writer" },
-          { value: "maintain", label: "Maintainer" },
-        ],
-      },
-    ],
-  },
-};

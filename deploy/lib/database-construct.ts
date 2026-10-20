@@ -24,9 +24,9 @@ export class DatabaseConstruct extends Construct {
   public readonly accountsTable: dynamodb.Table;
   public readonly productsTable: dynamodb.Table;
   public readonly dataConnectionsTable: dynamodb.Table;
-  public readonly apiKeysTable: dynamodb.Table;
   public readonly membershipsTable: dynamodb.Table;
   public readonly accountTrustsTable: dynamodb.Table;
+  public readonly serviceAccountKeysTable: dynamodb.Table;
 
   constructor(
     scope: Construct,
@@ -73,13 +73,15 @@ export class DatabaseConstruct extends Construct {
       removalPolicy,
     });
 
-    this.apiKeysTable = this.createTable({
-      name: "api-keys",
+    this.serviceAccountKeysTable = this.createTable({
+      name: "service-account-keys",
       stage,
-      partitionKey: "access_key_id",
+      // SHA-256 of the key, which the proxy presents to look it up; the key
+      // itself is never stored.
+      partitionKey: "key_hash",
       indexes: [
         {
-          // fetch all API keys for a given account
+          // fetch the keys of a service account
           name: "account_id",
           partitionKey: "account_id",
         },

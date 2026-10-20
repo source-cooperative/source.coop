@@ -32,7 +32,8 @@ export const GITHUB_ACTIONS_ISSUER = "https://token.actions.githubusercontent.co
  * A GitHub Actions subject pinned to one repository and one ref or one
  * environment: `repo:{owner}/{repo}:ref:{ref}` or
  * `repo:{owner}/{repo}:environment:{name}`. Nothing organization-wide. A ref
- * has no whitespace, by git's rules; an environment name may.
+ * has no whitespace and doesn't end in `/`, by git's rules, so `refs/heads/`
+ * with no branch is refused; an environment name may have whitespace.
  *
  * The repository is named either the mutable way, `octocat/my-repo`, or the
  * immutable way GitHub mints for repositories created after July 2026 and
@@ -42,4 +43,4 @@ export const GITHUB_ACTIONS_ISSUER = "https://token.actions.githubusercontent.co
  * the repository's tokens carry.
  */
 export const GITHUB_ACTIONS_SUBJECT_REGEX =
-  /^repo:(?:[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+|[A-Za-z0-9_.-]+@\d+\/[A-Za-z0-9_.-]+@\d+):(?:ref:refs\/[^\s:]+|environment:[^:]+)$/;
+  /^repo:(?:[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+|[A-Za-z0-9_.-]+@\d+\/[A-Za-z0-9_.-]+@\d+):(?:ref:refs\/[^\s:]*[^\s:/]|environment:[^:]+)$/;

@@ -32,7 +32,6 @@
 }
 
 .item {
-  container-type: inline-size;
   text-decoration: none;
   color: inherit;
   display: flex;
@@ -53,35 +52,31 @@
   flex: 1;
 }
 
-.productDetails {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  flex: 1;
-}
-
-.catalogSummary {
-  min-width: 0;
-  margin-top: var(--space-4);
-  padding-top: var(--space-4);
-  border-top: 1px solid var(--gray-5);
+.description {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow: hidden;
   overflow-wrap: anywhere;
 }
 
-@container (min-width: 36rem) {
-  .item > .splitCard {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: var(--space-4);
-  }
+.description p,
+.description ul,
+.description ol {
+  margin: 0 0 var(--space-1);
+}
 
-  .catalogSummary {
-    margin-top: 0;
-    padding-top: 0;
-    padding-left: var(--space-4);
-    border-top: 0;
-    border-left: 1px solid var(--gray-5);
-  }
+.description ul,
+.description ol {
+  padding-left: var(--space-5);
+}
+
+.description code {
+  background-color: var(--gray-a3);
+  border-radius: var(--radius-1);
+  padding: 0 0.3em;
+  font-size: 0.9em;
 }
 
 .itemSpacer {
@@ -115,7 +110,6 @@
 
 .metadata {
   display: flex;
-  flex-wrap: wrap;
   gap: 1rem;
   align-items: center;
   font-size: 0.875rem;

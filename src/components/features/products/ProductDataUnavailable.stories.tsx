@@ -10,7 +10,7 @@ import { ProductDataUnavailable } from "./ProductDataUnavailable";
  * it is hard to see: reproducing it in the app means breaking the data proxy.
  */
 const meta = {
-  title: "Features/Products/ProductDataUnavailable",
+  title: "Features/Product page/Contents/ProductDataUnavailable",
   component: ProductDataUnavailable,
   parameters: { layout: "padded" },
 } satisfies Meta<typeof ProductDataUnavailable>;
@@ -20,14 +20,6 @@ type Story = StoryObj<typeof meta>;
 
 /** The proxy returned AccessDenied — usually credentials still propagating. */
 export const AccessDenied: Story = {};
-
-/** The backend was unreachable, so the contents could not be loaded at all. */
-export const BackendUnreachable: Story = {
-  args: {
-    message:
-      "We couldn't reach the storage backend for this product. Try again in a moment.",
-  },
-};
 
 /**
  * `details` is passed only for viewers who can edit the product — the gating

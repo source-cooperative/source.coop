@@ -140,10 +140,14 @@ export const IndividualAccountSchema = BaseAccountSchema.extend({
 
 export type IndividualAccount = z.infer<typeof IndividualAccountSchema>;
 
+// Only a person signs in. `not: {}` is OpenAPI for a property that is never
+// present (the generator insists on a `type`, which `not` makes moot).
+const NoIdentitySchema = z.undefined().openapi({ type: "string", not: {} });
+
 // Organizational account schema
 export const OrganizationalAccountSchema = BaseAccountSchema.extend({
   type: z.literal(AccountType.ORGANIZATION),
-  identity_id: z.undefined(),
+  identity_id: NoIdentitySchema,
   metadata_public: OrganizationalAccountProfileSchema,
 }).openapi("OrganizationalAccount");
 
@@ -160,7 +164,7 @@ export const ServiceAccountSchema = BaseAccountSchema.extend({
     .regex(SERVICE_ACCOUNT_ID_REGEX, "A service account id is `{owner}--{id}`")
     .openapi({ example: "acme--nightly-sync" }),
   type: z.literal(AccountType.SERVICE),
-  identity_id: z.undefined(),
+  identity_id: NoIdentitySchema,
   owner_account_id: z.string().openapi({ example: "owner-account-id" }),
   metadata_public: BaseAccountProfileSchema,
 }).openapi("ServiceAccount");
@@ -179,22 +183,23 @@ export type Account = z.infer<typeof AccountSchema>;
 
 export type AccountProfile = z.infer<typeof AccountProfileSchema>;
 
-export const AccountProfileResponseSchema = z
-  .union([
-    IndividualAccountProfileSchema.extend({
-      profile_image: z.optional(z.string()),
-      type: z.optional(z.nativeEnum(AccountType)),
+export const PublicAccountSchema = z
+  .object({
+    account_id: z.string(),
+    type: z.nativeEnum(AccountType),
+    name: z.string(),
+    disabled: z.boolean(),
+    metadata_public: AccountProfileSchema,
+    profile_image: z.optional(z.string()).openapi({
+      description: "The uploaded profile image, or else a Gravatar.",
     }),
-    OrganizationalAccountProfileSchema.extend({
-      profile_image: z.optional(z.string()),
-      type: z.optional(z.nativeEnum(AccountType)),
-    }),
-  ])
-  .openapi("AccountProfileResponse");
+  })
+  .openapi("PublicAccount", {
+    description:
+      "The part of an account anyone may read: no emails, flags, sign-in identity or private metadata.",
+  });
 
-export type AccountProfileResponse = z.infer<
-  typeof AccountProfileResponseSchema
->;
+export type PublicAccount = z.infer<typeof PublicAccountSchema>;
 
 export const AccountCreationRequestSchema = z
   .object({

@@ -3,11 +3,12 @@ import {
   createRemoteJWKSet,
   decodeJwt,
   decodeProtectedHeader,
+  type JWTPayload,
 } from "jose";
 import { CONFIG } from "@/lib/config";
 import { accountsTable, membershipsTable } from "@/lib/clients/database";
 import { isAuthorized } from "@/lib/api/authz";
-import { Actions, isServiceAccount, UserSession } from "@/types";
+import { Account, Actions, isServiceAccount, UserSession } from "@/types";
 import { LOGGER } from "../logging";
 
 let jwks: ReturnType<typeof createRemoteJWKSet> | null = null;
@@ -59,31 +60,37 @@ async function serviceAccountById(account_id: string) {
 }
 
 /**
- * Authenticates using a signed JWT from the data proxy's OIDC provider.
- * Validates the token signature, issuer, audience, and expiry, then
- * resolves the subject claim to a UserSession.
+ * The subject the data proxy signs with when it calls as itself rather than
+ * on behalf of an account (ADR-013, amending ADR-005): only the API-key
+ * standing lookup accepts it. A URN, so no account id can ever equal it.
  */
-export async function authenticateWithOidcToken(
+export const PROXY_SELF_SUBJECT = "urn:source:data-proxy";
+
+/**
+ * Verifies a proxy-signed assertion — signature against the proxy's JWKS,
+ * issuer, audience, RS256, expiry — and returns its claims, or null. Says
+ * nothing about who the subject is; callers decide what a subject may do.
+ */
+export async function verifyProxyAssertion(
   authorization: string | null,
   audience: string,
-): Promise<UserSession | null> {
+): Promise<JWTPayload | null> {
   if (!authorization || !authorization.toLowerCase().startsWith("bearer ")) {
     // A missing or non-Bearer Authorization header is an expected, normal input
-    // (e.g. legacy clients still sending an API key), not an anomaly — log at
-    // debug so it doesn't flood warn-level logs on every such request.
+    // (e.g. anonymous or legacy clients), not an anomaly — log at debug so it
+    // doesn't flood warn-level logs on every such request.
     LOGGER.debug("No Bearer token for OIDC authentication, skipping", {
-      operation: "authenticateWithOidcToken",
+      operation: "verifyProxyAssertion",
     });
     return null;
   }
 
   LOGGER.debug("Authenticating with OIDC token", {
-    operation: "authenticateWithOidcToken",
+    operation: "verifyProxyAssertion",
     metadata: { audience },
   });
   const token = authorization.slice(7);
 
-  let payload;
   try {
     const result = await jwtVerify(token, getJwks(), {
       // We assume that the data proxy is going to be hosting the JWKS
@@ -95,7 +102,7 @@ export async function authenticateWithOidcToken(
       algorithms: ["RS256"],
       clockTolerance: 30,
     });
-    payload = result.payload;
+    return result.payload;
   } catch (error) {
     // `Error` objects serialize to `{}`, hiding the cause. jose attaches a
     // machine-readable `code` (e.g. ERR_JWT_CLAIM_VALIDATION_FAILED,
@@ -125,7 +132,7 @@ export async function authenticateWithOidcToken(
       // Leave the failure marker.
     }
     const logPayload = {
-      operation: "authenticateWithOidcToken",
+      operation: "verifyProxyAssertion",
       metadata: {
         error_name: e?.name,
         error_code: e?.code,
@@ -145,6 +152,19 @@ export async function authenticateWithOidcToken(
     }
     return null;
   }
+}
+
+/**
+ * Authenticates using a signed JWT from the data proxy's OIDC provider.
+ * Validates the token signature, issuer, audience, and expiry, then
+ * resolves the subject claim to a UserSession.
+ */
+export async function authenticateWithOidcToken(
+  authorization: string | null,
+  audience: string,
+): Promise<UserSession | null> {
+  const payload = await verifyProxyAssertion(authorization, audience);
+  if (!payload) return null;
 
   const oryId = payload.sub;
   if (!oryId) {
@@ -154,8 +174,17 @@ export async function authenticateWithOidcToken(
     return null;
   }
 
+  // The proxy calling as itself is not a session anywhere; the one route that
+  // takes it checks the subject directly.
+  if (oryId === PROXY_SELF_SUBJECT) {
+    LOGGER.warn("OIDC token carries the proxy's own subject; no session for it", {
+      operation: "authenticateWithOidcToken",
+    });
+    return null;
+  }
+
   // The token subject is whatever the data proxy authenticated: a person's Ory
-  // identity id, or a service account's own id — for an API key it signed
+  // identity id, or a service account's own id — for an API key it resolved
   // (ADR-013), or a workload the account trusts (ADR-014), which names the
   // account it wants when it exchanges its token. The two namespaces are read
   // together; should a subject ever name both a person and a service account,
@@ -182,10 +211,23 @@ export async function authenticateWithOidcToken(
     });
     return null;
   }
+  return sessionForAccount(account, oryId, "authenticateWithOidcToken");
+}
+
+/**
+ * The session a verified token's subject acts as: the account and the
+ * memberships it may see. Null for a disabled account. Shared by every kind of
+ * bearer token the API accepts, so they all act with exactly the same rights.
+ */
+export async function sessionForAccount(
+  account: Account,
+  sub: string,
+  operation: string,
+): Promise<UserSession | null> {
   if (account.disabled) {
-    LOGGER.warn("OIDC token subject resolves to a disabled account", {
-      operation: "authenticateWithOidcToken",
-      metadata: { sub: oryId, account_id: account.account_id },
+    LOGGER.warn("Token subject resolves to a disabled account", {
+      operation,
+      metadata: { sub, account_id: account.account_id },
     });
     return null;
   }
@@ -198,8 +240,8 @@ export async function authenticateWithOidcToken(
     isAuthorized({ account, identity_id }, membership, Actions.GetMembership),
   );
 
-  LOGGER.debug("OIDC authentication resolved a session", {
-    operation: "authenticateWithOidcToken",
+  LOGGER.debug("Token authentication resolved a session", {
+    operation,
     metadata: {
       account_id: account.account_id,
       memberships: filteredMemberships.length,

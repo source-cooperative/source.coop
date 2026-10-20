@@ -5,21 +5,26 @@ import { ServiceAccountForm } from "./ServiceAccountForm";
  * Creating a service account: who it is, how software signs in as it, and what
  * it may reach.
  *
- * The id fills itself in from the name until it is edited by hand. A GitHub
- * workflow is pinned to one repository and one ref or environment, and the
- * exact subject it binds is shown beneath it as you type. Products come from
- * the owner: "Grant a product" adds one with read or read-and-write, the same
- * list the account's page uses, held here until the form is submitted.
+ * The id fills itself in from the name until it is edited by hand. "Signs in
+ * with" and "Can reach" are the sections the account's page has, with the
+ * same buttons in their corners. "Add sign-in" opens the same modals too — a
+ * GitHub workflow pinned to one repository and one branch, tag or environment, or an
+ * API key's label and expiry — but what they collect is held here, as rows
+ * that can be removed, until the form is submitted. One key can be issued
+ * with the account; more are issued from its page. "Grant a product" adds one
+ * of the owner's products with read or read-and-write, held the same way.
  *
- * Submitting goes to the new account's page, where each workflow's example
- * usage is a click away. Storybook cannot follow that redirect, so
- * `createServiceAccount` is mocked in `.storybook/preview.tsx` to resolve
- * without it.
+ * Submitting goes to the new account's page. With a key, the key goes along
+ * in memory and opens over that page, the only time it can be seen — see
+ * `ServiceAccountDetail`'s "Created with a key".
+ * Storybook cannot follow either way there, so `createServiceAccount` is
+ * mocked in `.storybook/preview.tsx` to resolve without redirecting, and the
+ * router's push does nothing.
  */
 const meta = {
-  title: "Features/Service accounts/ServiceAccountForm",
+  title: "Features/Settings/Service accounts/Create/ServiceAccountForm",
   component: ServiceAccountForm,
-  parameters: { layout: "padded" },
+  parameters: { layout: "padded", docs: { story: { inline: false, iframeHeight: 640 } } },
 } satisfies Meta<typeof ServiceAccountForm>;
 
 export default meta;

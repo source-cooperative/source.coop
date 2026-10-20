@@ -19,7 +19,3 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
-
-export const CustomLabel: Story = {
-  args: { children: "Sign in" },
-};

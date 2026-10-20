@@ -7,8 +7,8 @@ import {
 import { getPageSession } from "@/lib/api/utils";
 import {
   isAuthorized,
-  canManageAccount,
   canManageAccountDataConnections,
+  canManageAccountServiceAccounts,
 } from "@/lib/api/authz";
 import { Actions } from "@/types";
 import { accountsTable } from "@/lib/clients/database";
@@ -128,13 +128,14 @@ export default async function AccountLayout({
         Actions.GetAccountFlags,
       ),
     },
-    // Individuals and organizations alike can own service accounts.
+    // Individuals and organizations alike can own service accounts, once
+    // granted the CREATE_SERVICE_ACCOUNTS flag.
     {
       id: "service-accounts",
       label: "Service Accounts",
       href: editAccountServiceAccountsUrl(account_id),
       icon: <CubeIcon width="16" height="16" />,
-      condition: canManageAccount(userSession, accountToEdit),
+      condition: canManageAccountServiceAccounts(userSession, accountToEdit),
     },
     ...(accountToEdit.type === "organization"
       ? [

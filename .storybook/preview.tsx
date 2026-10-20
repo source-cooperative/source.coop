@@ -39,6 +39,7 @@ sb.mock("../src/lib/actions/product-mirrors.ts");
 sb.mock("../src/lib/actions/products.ts");
 sb.mock("../src/lib/actions/memberships.ts");
 sb.mock("../src/lib/actions/service-accounts.ts");
+sb.mock("../src/lib/actions/service-account-keys.ts");
 
 // Mirrors src/styles/theme.tsx. Without it every Radix control renders
 // unstyled, and a story would tell you nothing about how the app looks.
@@ -58,6 +59,36 @@ const preview: Preview = {
     // router mock is never mounted and the story throws
     // "invariant expected app router to be mounted".
     nextjs: { appDirectory: true },
+    // Features are grouped by where they appear in the app, and ordered the
+    // way a visitor meets them: a product, the catalog, an account, then the
+    // settings, admin and site-wide chrome. Settings follow the sidebar.
+    options: {
+      storySort: {
+        order: [
+          "Components",
+          "Features",
+          [
+            "Product page",
+            ["Summary", "Contents", "Analytics"],
+            "Product listing",
+            "Account page",
+            "Settings",
+            [
+              "Profiles",
+              "Products",
+              "Data connections",
+              "Permissions",
+              "Service accounts",
+              ["List", "Create", "Detail", "Sign-in methods"],
+              "Memberships",
+            ],
+            "Admin",
+            "App shell",
+            "Home",
+          ],
+        ],
+      },
+    },
     controls: {
       matchers: {
         color: /(background|color)$/i,

@@ -15,7 +15,11 @@ import {
   MembershipState,
 } from "@/types";
 import { getPageSession } from "@/lib/api/utils";
-import { canCreateProductForAccount, isAuthorized } from "@/lib/api/authz";
+import {
+  canCreateProductForAccount,
+  canListOnProfile,
+  isAuthorized,
+} from "@/lib/api/authz";
 import { getPendingInvitation } from "@/lib/actions/memberships";
 
 interface OrganizationProfilePageProps {
@@ -25,9 +29,7 @@ interface OrganizationProfilePageProps {
 export async function OrganizationProfilePage({
   account,
 }: OrganizationProfilePageProps) {
-  // Get session to check authentication status
   const session = await getPageSession();
-  const isAuthenticated = session?.account && !session.account.disabled;
 
   let [memberships, { products }] = await Promise.all([
     membershipsTable.listByAccount(account.account_id),
@@ -38,7 +40,7 @@ export async function OrganizationProfilePage({
     // Only consider active memberships
     .filter((membership) => membership.state === MembershipState.Member)
     // Only consider memberships that are not product-specific
-    .filter((membership) => membership.repository_id === undefined);
+    .filter((membership) => membership.product_id === undefined);
 
   const relatedUserAccounts = new Map(
     (
@@ -72,18 +74,7 @@ export async function OrganizationProfilePage({
         !!account && isIndividualAccount(account)
     );
 
-  // Check if the authenticated user is a member of this organization
-  const isMember =
-    isAuthenticated &&
-    session?.account &&
-    memberships
-      .map((membership) => membership.account_id)
-      .includes(session.account.account_id);
-
-  // Filter products based on authentication status
-  if (!isAuthenticated || !isMember) {
-    products = products.filter((product) => product.visibility === "public");
-  }
+  products = products.filter((product) => canListOnProfile(session, product));
 
   // Check for pending invitation
   const pendingInvitation = await getPendingInvitation(account.account_id);

@@ -11,7 +11,7 @@ import { DataProvider } from "@/types";
  * it is slugified from the name directly above it.
  */
 const meta = {
-  title: "Features/Data connections/DataConnectionsList",
+  title: "Features/Settings/Data connections/DataConnectionsList",
   component: DataConnectionsList,
   parameters: { layout: "padded" },
   args: { editHref: (id: string) => `/admin/data-connections/${id}` },
@@ -104,16 +104,6 @@ export const AccountScoped: Story = {
  */
 export const AdminWithOwners: Story = {
   args: { connections, ownerAccounts },
-};
-
-/** An owner id that no longer resolves to an account falls back to the raw id. */
-export const UnresolvableOwner: Story = {
-  args: {
-    connections: [
-      { ...connections[0], owner: "deleted-account" } as DataConnection,
-    ],
-    ownerAccounts: {},
-  },
 };
 
 export const Empty: Story = {

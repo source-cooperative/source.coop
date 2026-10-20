@@ -8,16 +8,18 @@ jest.mock("@/lib/api/utils", () => ({
 
 const { GET } = require("./route");
 
+const ctx = { params: Promise.resolve({}) };
+
 describe("/api/v1/whoami", () => {
   afterEach(() => {
     jest.resetAllMocks();
   });
 
-  test("returns session when authenticated", async () => {
-    const session = { identity_id: "foo" };
-    (getApiSession as jest.Mock).mockResolvedValue(session);
+  test("returns the session, without the Ory session, when authenticated", async () => {
+    const session = { identity_id: "foo", account: { account_id: "foo" }, memberships: [] };
+    (getApiSession as jest.Mock).mockResolvedValue({ ...session, orySession: { id: "x" } });
     const req = new NextRequest("http://localhost/api/v1/whoami");
-    const res = await GET(req);
+    const res = await GET(req, ctx);
     expect(res.status).toBe(200);
     await expect(res.json()).resolves.toEqual(session);
   });
@@ -25,7 +27,8 @@ describe("/api/v1/whoami", () => {
   test("returns 401 when not authenticated", async () => {
     (getApiSession as jest.Mock).mockResolvedValue(null);
     const req = new NextRequest("http://localhost/api/v1/whoami");
-    const res = await GET(req);
+    const res = await GET(req, ctx);
     expect(res.status).toBe(401);
+    await expect(res.json()).resolves.toMatchObject({ error: { code: "unauthenticated" } });
   });
 });

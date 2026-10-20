@@ -2,7 +2,7 @@ export * from "./shared";
 export * from "./account";
 export * from "./account-trust";
 export * from "./service-account";
-export * from "./api-key";
+export * from "./service-account-key";
 export * from "./data-connection";
 export * from "./membership";
 export * from "./product";
