@@ -1,6 +1,6 @@
 /** @jest-environment node */
 import type { Product } from "@/types";
-import { hidePendingTags, tagProps, tagsTable } from "./tags";
+import { anyPendingTags, hidePendingTags, tagProps, tagsTable } from "./tags";
 
 const product = (tags?: string[]) =>
   ({ account_id: "a", product_id: "p", metadata: { mirrors: {}, tags } }) as unknown as Product;
@@ -46,4 +46,12 @@ test("returns products without pending tags as they are", async () => {
   const shown = await hidePendingTags(stored);
   expect(shown[0]).toBe(stored[0]);
   expect(shown[1]).toBe(stored[1]);
+});
+
+test("says whether any tag is pending, and no when the table can't be read", async () => {
+  expect(await anyPendingTags()).toBe(true);
+  jest.spyOn(tagsTable, "listAll").mockResolvedValue([{ tag_id: "ocean" }]);
+  expect(await anyPendingTags()).toBe(false);
+  jest.spyOn(tagsTable, "listAll").mockRejectedValue(new Error("AccessDenied"));
+  expect(await anyPendingTags()).toBe(false);
 });

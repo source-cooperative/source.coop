@@ -8,7 +8,7 @@ import styles from "./SettingsLayout.module.css";
 
 export interface SettingsMenuItem {
   id: string;
-  label: string;
+  label: ReactNode;
   href: string;
   icon?: ReactNode;
   condition?: boolean;

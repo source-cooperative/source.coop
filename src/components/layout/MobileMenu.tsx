@@ -16,6 +16,7 @@ import {
   newProductUrl,
   newOrganizationUrl,
   docsUrl,
+  adminTagsUrl,
 } from "@/lib";
 import { LoginButton } from "@/components/core";
 import { canCreateProductForAccount, isAdmin, isAuthorized } from "@/lib/api/authz";
@@ -71,10 +72,13 @@ export function MobileMenu({
   session,
   accounts,
   pendingInvitations,
+  hasPendingTags = false,
 }: {
   session: UserSession;
   accounts: DropdownAccount[];
   pendingInvitations: DropdownInvitation[];
+  /** There are suggested tags for an admin to review. */
+  hasPendingTags?: boolean;
 }) {
   // Single-open accordion: one expanded section at a time (account id / "…").
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -193,11 +197,19 @@ export function MobileMenu({
             <Section
               expanded={expanded === "admin"}
               onToggle={() => toggle("admin")}
-              label={<Text>Admin</Text>}
+              label={
+                <Flex align="center" gap="2">
+                  <Text>Admin</Text>
+                  {hasPendingTags && <span className={styles.mobileDot} />}
+                </Flex>
+              }
             >
               {ADMIN_TOOLS.map((tool) => (
                 <Row key={tool.href} href={tool.href} onNavigate={close} indent>
                   {tool.name}
+                  {hasPendingTags && tool.href === adminTagsUrl() && (
+                    <span className={styles.mobileDot} />
+                  )}
                 </Row>
               ))}
             </Section>
