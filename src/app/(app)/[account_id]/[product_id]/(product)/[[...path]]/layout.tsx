@@ -140,7 +140,7 @@ export default async function ProductLayout({
 
         <Flex width="100%" className="product-meta" direction="column" gap="4">
           <ProductMetaCard product={product} />
-          {/* Public downloads summary, the same for every viewer (managers
+          {/* Public requests summary, the same for every viewer (managers
               reach /-/analytics via the ANALYTICS tab). Streams in after
               the page shell; hidden when analytics is off. The skeleton
               reserves the card's space so warm-cache data fills in instead
