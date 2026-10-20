@@ -171,9 +171,9 @@ const ALIASES: Record<string, string[]> = {
   insolation: ["solar"],
   "solar maps": ["solar"],
   "eatch monitoring": ["monitoring"],
-  "ground-truth": ["labels"],
-  groundtruthed: ["labels"],
-  "ground-truthed": ["labels"],
+  "ground-truth": ["ground truth"],
+  groundtruthed: ["ground truth"],
+  "ground-truthed": ["ground truth"],
   youthmasppers: ["youthmappers"],
   sixpac: ["sigpac"],
 
