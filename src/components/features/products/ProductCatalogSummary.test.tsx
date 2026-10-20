@@ -40,6 +40,31 @@ it("switches the breakdown to file counts", () => {
   expect(screen.getByRole("img")).toHaveAccessibleName("File types by file count: json 75%, tif 25%");
 });
 
+it("highlights a type in both the bar and the legend when either is hovered", () => {
+  catalogHook.mockReturnValue(new Map([
+    ["org/data", {
+      account_id: "org", product_id: "data", total_bytes: 2048, object_count: 4,
+      exts: { tif: 1, json: 3 }, ext_bytes: { tif: 1536, json: 512 },
+    }],
+  ]));
+  renderSummary();
+  const segments = [...screen.getByRole("img").children];
+  const label = screen.getByText("json");
+  const row = label.parentElement!;
+
+  fireEvent.mouseEnter(row);
+  expect(segments[1]).toHaveClass("hovered");
+  expect(row.querySelector("[aria-hidden]")).toHaveClass("hovered");
+  expect(segments[0]).not.toHaveClass("hovered");
+  fireEvent.mouseLeave(row.parentElement!);
+  expect(segments[1]).not.toHaveClass("hovered");
+
+  fireEvent.mouseEnter(segments[1]);
+  expect(label).toHaveAttribute("data-accent-color", "green");
+  fireEvent.mouseLeave(screen.getByRole("img"));
+  expect(label).not.toHaveAttribute("data-accent-color", "green");
+});
+
 it("renders nothing while loading, on failure, or without a matching entry", () => {
   const { container, rerender } = render(<ProductCatalogSummary accountId="org" productId="data" />);
   expect(container).toBeEmptyDOMElement();

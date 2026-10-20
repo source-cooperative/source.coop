@@ -78,18 +78,33 @@ export function formatMeasure(value: number, measure: CatalogMeasure) {
     : value.toLocaleString("en-US");
 }
 
-export function FileTypeSwatch({ index }: { index: number }) {
-  return <span className={`${styles.swatch} ${FILLS[index]}`} aria-hidden />;
+/** A segment's fill, or the Analytics card's green while it is hovered. */
+function fill(index: number, hovered?: number | null) {
+  return index === hovered ? styles.hovered : FILLS[index];
+}
+
+export function FileTypeSwatch({
+  index,
+  hovered,
+}: {
+  index: number;
+  hovered?: number | null;
+}) {
+  return <span className={`${styles.swatch} ${fill(index, hovered)}`} aria-hidden />;
 }
 
 export function FileTypeBar({
   segments,
   measure,
   height = 8,
+  hovered,
+  onHover,
 }: {
   segments: FileTypeSegment[];
   measure: CatalogMeasure;
   height?: number;
+  hovered?: number | null;
+  onHover?: (index: number | null) => void;
 }) {
   const by = measure === "bytes" ? "size" : "file count";
   return (
@@ -97,6 +112,7 @@ export function FileTypeBar({
       className={styles.bar}
       style={{ height }}
       role="img"
+      onMouseLeave={() => onHover?.(null)}
       aria-label={`File types by ${by}: ${segments
         .map(({ label, share }) => `${label} ${formatShare(share)}`)
         .join(", ")}`}
@@ -104,8 +120,9 @@ export function FileTypeBar({
       {segments.map(({ label, value, share }, index) => (
         <span
           key={label}
-          className={FILLS[index]}
+          className={fill(index, hovered)}
           style={{ flexGrow: share }}
+          onMouseEnter={() => onHover?.(index)}
           // ponytail: native title as the hover detail; a Radix Tooltip if
           // people need it on touch.
           title={`${label}: ${formatMeasure(value, measure)} (${formatShare(share)})`}

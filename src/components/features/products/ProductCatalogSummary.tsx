@@ -27,6 +27,8 @@ const HELP = {
 /** Sidebar card breaking a product's files down by type, by size or by count. */
 export function ProductFileTypesCard({ entry }: { entry?: CatalogEntry }) {
   const [measure, setMeasure] = useState<CatalogMeasure>();
+  // One index for the bar and the legend, so hovering either lights both.
+  const [hovered, setHovered] = useState<number | null>(null);
   if (!hasCatalogStats(entry)) return null;
   const active = measure ?? defaultMeasure(entry);
   const segments = fileTypeSegments(entry, active);
@@ -66,13 +68,24 @@ export function ProductFileTypesCard({ entry }: { entry?: CatalogEntry }) {
           <Box mt="3">
             <MonoLabel>By {active === "bytes" ? "size" : "file count"}</MonoLabel>
             <Box mt="2">
-              <FileTypeBar segments={segments} measure={active} height={14} />
+              <FileTypeBar
+                segments={segments}
+                measure={active}
+                height={14}
+                hovered={hovered}
+                onHover={setHovered}
+              />
             </Box>
-            <Flex direction="column" gap="1" mt="3">
+            <Flex direction="column" gap="1" mt="3" onMouseLeave={() => setHovered(null)}>
               {segments.map(({ label, value, share }, index) => (
-                <Flex key={label} align="center" gap="2">
-                  <FileTypeSwatch index={index} />
-                  <Text size="1" className={styles.mono} style={{ flex: 1, overflowWrap: "anywhere" }}>
+                <Flex key={label} align="center" gap="2" onMouseEnter={() => setHovered(index)}>
+                  <FileTypeSwatch index={index} hovered={hovered} />
+                  <Text
+                    size="1"
+                    color={index === hovered ? "green" : undefined}
+                    className={styles.mono}
+                    style={{ flex: 1, overflowWrap: "anywhere" }}
+                  >
                     {label}
                   </Text>
                   <Text size="1" color="gray" className={styles.mono}>

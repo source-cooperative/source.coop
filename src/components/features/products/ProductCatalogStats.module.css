@@ -39,6 +39,11 @@
   background: var(--gray-9);
 }
 
+/* Hover highlight, matching the Analytics card's hovered bar. */
+.hovered {
+  background: var(--green-9);
+}
+
 .fill3 {
   background:
     radial-gradient(circle, var(--gray-12) 0.9px, transparent 1.3px) 0 0 / 4px 4px,
