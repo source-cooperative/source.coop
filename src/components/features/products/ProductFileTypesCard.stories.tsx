@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { expect, userEvent, within } from "storybook/test";
+import { ProductFileTypesCardSkeleton } from "./ProductCatalogStats";
 import { ProductFileTypesCard } from "./ProductCatalogSummary";
 
 /**
@@ -79,6 +80,14 @@ export const TotalsOnly: Story = {
   args: {
     entry: { account_id: "example", product_id: "land-cover", total_bytes: 52_428_800, object_count: 3 },
   },
+};
+
+/**
+ * What the sidebar shows in the card's place while the product page loads,
+ * so the Analytics card below doesn't jump when it arrives.
+ */
+export const Loading: Story = {
+  render: () => <ProductFileTypesCardSkeleton />,
 };
 
 /** The product page's sidebar is dark for many viewers. */

@@ -1,4 +1,5 @@
 import { Box, Skeleton, Flex } from "@radix-ui/themes";
+import { ProductCatalogStatsSkeleton } from "./ProductCatalogStats";
 import styles from "./ProductList.module.css";
 
 interface ProductsSkeletonProps {
@@ -51,6 +52,8 @@ export function ProductsSkeleton({
                     <Skeleton style={{ width: "100px", height: "0.875rem" }} />
                     <Skeleton style={{ width: "60px", height: "1.5rem" }} />
                   </div>
+
+                  <ProductCatalogStatsSkeleton />
                 </div>
               </li>
             ))}

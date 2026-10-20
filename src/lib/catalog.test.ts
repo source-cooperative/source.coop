@@ -69,10 +69,11 @@ it("shares successful requests and retries after HTTP failures", async () => {
   const originalFetch = global.fetch;
   const fetchMock = jest.fn()
     .mockResolvedValueOnce({ ok: false, status: 503 })
-    .mockResolvedValueOnce({ ok: true, text: async () => JSON.stringify(entry) });
+    .mockResolvedValueOnce({ ok: true, json: async () => [entry] });
   global.fetch = fetchMock;
   try {
-    const { loadCatalog, CATALOG_URL } = await import("./catalog");
+    const { loadCatalog, peekCatalog, CATALOG_API } = await import("./catalog");
+    expect(peekCatalog()).toBeUndefined();
     const failed = loadCatalog();
     expect(loadCatalog()).toBe(failed);
     await expect(failed).rejects.toThrow("503");
@@ -81,7 +82,8 @@ it("shares successful requests and retries after HTTP failures", async () => {
     expect((await successful).get("org/data")).toEqual(entry);
     await loadCatalog();
     expect(fetchMock).toHaveBeenCalledTimes(2);
-    expect(fetchMock).toHaveBeenCalledWith(CATALOG_URL);
+    expect(fetchMock).toHaveBeenCalledWith(CATALOG_API);
+    expect(peekCatalog()?.get("org/data")).toEqual(entry);
   } finally {
     global.fetch = originalFetch;
   }

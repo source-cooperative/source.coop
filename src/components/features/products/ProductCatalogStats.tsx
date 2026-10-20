@@ -1,4 +1,5 @@
-import { Box, Flex, Text } from "@radix-ui/themes";
+import { Box, Card, Flex, Skeleton, Text } from "@radix-ui/themes";
+import { SectionHeader } from "@/components/core/SectionHeader";
 import { formatBytes } from "@/lib/format";
 import type { CatalogEntry } from "@/types/catalog";
 import styles from "./ProductCatalogStats.module.css";
@@ -165,5 +166,51 @@ export function ProductCatalogStats({ entry }: { entry?: CatalogEntry }) {
         ))}
       </Flex>
     </Box>
+  );
+}
+
+// Skeletons live here rather than beside their "use client" components so
+// the server loading.tsx files can render them.
+
+/** Loading stand-in for ProductCatalogStats on a product list card. */
+export function ProductCatalogStatsSkeleton() {
+  return (
+    <Box mt="3">
+      <Skeleton width="100%" height="8px" />
+      <Flex mt="2" gapX="4" align="center">
+        <Skeleton width="130px" height="12px" />
+        <Skeleton width="70px" height="12px" />
+        <Skeleton width="70px" height="12px" />
+        <Skeleton width="60px" height="12px" />
+      </Flex>
+    </Box>
+  );
+}
+
+/** Loading stand-in for the File types card in the product page sidebar. */
+export function ProductFileTypesCardSkeleton() {
+  return (
+    <Card size={{ initial: "2", sm: "1" }} style={{ flexShrink: 0 }}>
+      <SectionHeader
+        title="File types"
+        rightButton={<Skeleton width="96px" height="24px" />}
+      >
+        <Flex gap="3" pb="3" style={{ borderBottom: "1px solid var(--gray-4)" }}>
+          <Skeleton width="80px" height="40px" />
+          <Skeleton width="80px" height="40px" />
+        </Flex>
+        <Box mt="3">
+          <Skeleton width="60px" height="12px" />
+          <Box mt="2">
+            <Skeleton width="100%" height="14px" />
+          </Box>
+          <Flex direction="column" gap="2" mt="3">
+            {Array.from({ length: 4 }, (_, index) => (
+              <Skeleton key={index} width="100%" height="12px" />
+            ))}
+          </Flex>
+        </Box>
+      </SectionHeader>
+    </Card>
   );
 }
