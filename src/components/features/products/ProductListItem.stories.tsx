@@ -53,6 +53,39 @@ export const Narrow: Story = {
   globals: { viewport: { value: "mobile1", isRotated: false } },
 };
 
+/**
+ * On an organization's profile, a product the metadata catalog knows about
+ * ends with its total size, file count and largest file types.
+ */
+export const WithFileTypes: Story = {
+  args: {
+    catalogEntry: {
+      account_id: product.account_id,
+      product_id: product.product_id,
+      total_bytes: 2_650_000_000_000,
+      object_count: 18_302,
+      exts: { tif: 9_880, parquet: 214, pmtiles: 88, json: 8_120 },
+      ext_bytes: {
+        tif: 1_880_000_000_000,
+        parquet: 583_000_000_000,
+        pmtiles: 105_000_000_000,
+        json: 82_000_000_000,
+      },
+    },
+  },
+  play: async ({ canvasElement }) => {
+    await expect(within(canvasElement).getByRole("img")).toHaveAccessibleName(
+      "File types by size: tif 71%, parquet 22%, pmtiles 4%, other 3%",
+    );
+  },
+};
+
+/** The legend wraps under the bar at phone width. */
+export const WithFileTypesNarrow: Story = {
+  ...WithFileTypes,
+  globals: { viewport: { value: "mobile1", isRotated: false } },
+};
+
 /** Products can omit their description. */
 export const WithoutDescription: Story = {
   args: { product: { ...product, description: "" } },

@@ -1,47 +1,46 @@
-.card {
-  width: 22rem;
-  max-width: 100%;
-  padding: var(--space-2);
+.bar {
+  display: flex;
+  gap: 2px;
+  overflow: hidden;
+  border-radius: var(--radius-1);
 }
 
-.table table {
-  font-size: var(--font-size-1);
-  line-height: var(--line-height-1);
-  font-variant-numeric: tabular-nums;
+.bar > span {
+  flex-basis: 0;
+  min-width: 3px;
 }
 
-.table th,
-.table td {
-  height: auto;
-  padding: var(--space-1) calc(var(--space-1) / 2);
-  box-shadow: none;
+.swatch {
+  display: inline-block;
+  flex-shrink: 0;
+  width: 10px;
+  height: 10px;
+  box-shadow: inset 0 0 0 1px var(--gray-a6);
 }
 
-.table td {
-  white-space: nowrap;
+.mono {
+  font-family: var(--code-font-family);
 }
 
-.table .share {
-  width: 1%;
-  padding-left: var(--space-1);
+/* Shade + pattern, from Radix grays so they follow the light/dark theme. */
+.fill0 {
+  background: var(--gray-12);
 }
 
-.table tr > :first-child {
-  width: 1%;
-  white-space: nowrap;
+.fill1 {
+  background: repeating-linear-gradient(
+    135deg,
+    var(--gray-10) 0 1.5px,
+    var(--gray-4) 1.5px 4px
+  );
 }
 
-.table thead th:first-child {
-  overflow-wrap: normal;
-  word-break: normal;
+.fill2 {
+  background: var(--gray-9);
 }
 
-.table tbody tr:nth-child(even) > * {
-  background-color: var(--gray-a3);
-}
-
-.table thead th,
-.table tfoot th,
-.table tfoot td {
-  background-color: var(--blue-3);
+.fill3 {
+  background:
+    radial-gradient(circle, var(--gray-12) 0.9px, transparent 1.3px) 0 0 / 4px 4px,
+    var(--gray-4);
 }

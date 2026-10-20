@@ -1,7 +1,22 @@
-import { Card, Table, Text } from "@radix-ui/themes";
+import { Box, Flex, Text } from "@radix-ui/themes";
 import { formatBytes } from "@/lib/format";
 import type { CatalogEntry } from "@/types/catalog";
 import styles from "./ProductCatalogStats.module.css";
+
+export type CatalogMeasure = "bytes" | "files";
+
+export interface FileTypeSegment {
+  /** Lowercase extension, "no extension", or "other". */
+  label: string;
+  value: number;
+  /** Fraction of the measure's total, 0–1. */
+  share: number;
+}
+
+// Four fills, told apart by shade and pattern rather than hue: neighbours
+// always differ in both. Segments take them by rank, so a fill means "second
+// largest", not a particular extension.
+const FILLS = [styles.fill0, styles.fill1, styles.fill2, styles.fill3];
 
 export function hasCatalogStats(entry?: CatalogEntry): entry is CatalogEntry {
   return !!entry && (
@@ -12,81 +27,126 @@ export function hasCatalogStats(entry?: CatalogEntry): entry is CatalogEntry {
   );
 }
 
-function Share({ value, total }: { value?: number; total?: number }) {
-  if (value === undefined || total === undefined || total <= 0) return null;
+/** Bytes when the entry has a per-extension byte breakdown, else file counts. */
+export function defaultMeasure(entry: CatalogEntry): CatalogMeasure {
+  return Object.values(entry.ext_bytes ?? {}).some((bytes) => bytes > 0)
+    ? "bytes"
+    : "files";
+}
+
+/**
+ * The three largest extensions by the given measure, then everything else as
+ * "other" — never more than the four fills. Shares are of the whole-product
+ * total when the catalog has one, so "other" also covers extensions the
+ * breakdown leaves out.
+ */
+export function fileTypeSegments(
+  entry: CatalogEntry,
+  measure: CatalogMeasure,
+): FileTypeSegment[] {
+  const values = (measure === "bytes" ? entry.ext_bytes : entry.exts) ?? {};
+  const sorted = Object.entries(values)
+    .filter(([, value]) => value > 0)
+    .sort(([a, x], [b, y]) => y - x || a.localeCompare(b));
+  // Without a breakdown the whole bar would be one "other" segment.
+  if (sorted.length === 0) return [];
+  const listed = sorted.reduce((sum, [, value]) => sum + value, 0);
+  const total = Math.max(
+    (measure === "bytes" ? entry.total_bytes : entry.object_count) ?? 0,
+    listed,
+  );
+  if (total === 0) return [];
+
+  const top = sorted.slice(0, 3);
+  const rest = total - top.reduce((sum, [, value]) => sum + value, 0);
+  const segments = top.map(([extension, value]) => ({
+    label: extension ? extension.toLowerCase() : "no extension",
+    value,
+    share: value / total,
+  }));
+  if (rest > 0) segments.push({ label: "other", value: rest, share: rest / total });
+  return segments;
+}
+
+export function formatShare(share: number) {
+  return share > 0 && share < 0.01 ? "<1%" : `${Math.round(share * 100)}%`;
+}
+
+export function formatMeasure(value: number, measure: CatalogMeasure) {
+  return measure === "bytes"
+    ? formatBytes(value)
+    : value.toLocaleString("en-US");
+}
+
+export function FileTypeSwatch({ index }: { index: number }) {
+  return <span className={`${styles.swatch} ${FILLS[index]}`} aria-hidden />;
+}
+
+export function FileTypeBar({
+  segments,
+  measure,
+  height = 8,
+}: {
+  segments: FileTypeSegment[];
+  measure: CatalogMeasure;
+  height?: number;
+}) {
+  const by = measure === "bytes" ? "size" : "file count";
   return (
-    <Text as="span" size="1" color="gray" title="Share of whole-product total">
-      ({((value / total) * 100).toLocaleString("en-US", { maximumFractionDigits: 1 })}%)
-    </Text>
+    <div
+      className={styles.bar}
+      style={{ height }}
+      role="img"
+      aria-label={`File types by ${by}: ${segments
+        .map(({ label, share }) => `${label} ${formatShare(share)}`)
+        .join(", ")}`}
+    >
+      {segments.map(({ label, value, share }, index) => (
+        <span
+          key={label}
+          className={FILLS[index]}
+          style={{ flexGrow: share }}
+          // ponytail: native title as the hover detail; a Radix Tooltip if
+          // people need it on touch.
+          title={`${label}: ${formatMeasure(value, measure)} (${formatShare(share)})`}
+        />
+      ))}
+    </div>
   );
 }
 
+/**
+ * Totals, a slim file-type bar and its legend, for a product list card.
+ * Renders nothing when the catalog has no statistics for the product.
+ */
 export function ProductCatalogStats({ entry }: { entry?: CatalogEntry }) {
   if (!hasCatalogStats(entry)) return null;
-  const extensions = [...new Set([
-    ...Object.keys(entry.exts ?? {}),
-    ...Object.keys(entry.ext_bytes ?? {}),
-  ])]
-    .filter((extension) =>
-      (entry.exts?.[extension] ?? 0) > 0 || (entry.ext_bytes?.[extension] ?? 0) > 0
-    )
-    .sort((a, b) =>
-      (entry.exts?.[b] ?? 0) - (entry.exts?.[a] ?? 0) || a.localeCompare(b)
-    )
-    .slice(0, 3);
-  const files = (count?: number) =>
-    count === undefined ? "—" : count.toLocaleString("en-US");
-  const bytes = (size?: number) => size === undefined ? "—" : formatBytes(size);
-  const exactBytes = (size?: number) =>
-    size === undefined ? undefined : `${size.toLocaleString("en-US")} bytes`;
+  const measure = defaultMeasure(entry);
+  const segments = fileTypeSegments(entry, measure);
+  const totals = [
+    entry.total_bytes !== undefined && formatBytes(entry.total_bytes),
+    entry.object_count !== undefined &&
+      `${entry.object_count.toLocaleString("en-US")} files`,
+  ].filter(Boolean);
 
   return (
-    <Card aria-label="Catalog summary" className={styles.card}>
-      <Table.Root size="1" className={styles.table}>
-        <Table.Header>
-          <Table.Row>
-            <Table.ColumnHeaderCell>Extension</Table.ColumnHeaderCell>
-            <Table.ColumnHeaderCell justify="end">Files</Table.ColumnHeaderCell>
-            <Table.ColumnHeaderCell aria-label="Percentage of all files" />
-            <Table.ColumnHeaderCell justify="end">Bytes</Table.ColumnHeaderCell>
-            <Table.ColumnHeaderCell aria-label="Percentage of total bytes" />
-          </Table.Row>
-        </Table.Header>
-        <Table.Body>
-          {extensions.map((extension) => (
-            <Table.Row key={extension}>
-              <Table.RowHeaderCell style={{ overflowWrap: "anywhere" }}>
-                {extension ? extension.toLowerCase() : "No extension"}
-              </Table.RowHeaderCell>
-              <Table.Cell justify="end">
-                {files(entry.exts?.[extension])}
-              </Table.Cell>
-              <Table.Cell className={styles.share}>
-                <Share value={entry.exts?.[extension]} total={entry.object_count} />
-              </Table.Cell>
-              <Table.Cell justify="end" title={exactBytes(entry.ext_bytes?.[extension])}>
-                {bytes(entry.ext_bytes?.[extension])}
-              </Table.Cell>
-              <Table.Cell className={styles.share}>
-                <Share value={entry.ext_bytes?.[extension]} total={entry.total_bytes} />
-              </Table.Cell>
-            </Table.Row>
-          ))}
-        </Table.Body>
-        <tfoot>
-          <Table.Row style={{ fontWeight: "bold" }}>
-            <Table.RowHeaderCell title="All files">Total</Table.RowHeaderCell>
-            <Table.Cell justify="end">
-              {files(entry.object_count)}
-            </Table.Cell>
-            <Table.Cell className={styles.share} />
-            <Table.Cell justify="end" title={exactBytes(entry.total_bytes)}>
-              {bytes(entry.total_bytes)}
-            </Table.Cell>
-            <Table.Cell className={styles.share} />
-          </Table.Row>
-        </tfoot>
-      </Table.Root>
-    </Card>
+    <Box mt="3" aria-label="File types">
+      {segments.length > 0 && <FileTypeBar segments={segments} measure={measure} />}
+      <Flex mt="2" gapX="4" gapY="1" wrap="wrap" align="center">
+        {totals.length > 0 && (
+          <Text size="1" weight="medium" className={styles.mono}>
+            {totals.join(" · ")}
+          </Text>
+        )}
+        {segments.map(({ label, share }, index) => (
+          <Flex key={label} align="center" gap="1">
+            <FileTypeSwatch index={index} />
+            <Text size="1" color="gray">
+              {label} {formatShare(share)}
+            </Text>
+          </Flex>
+        ))}
+      </Flex>
+    </Box>
   );
 }

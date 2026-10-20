@@ -1,72 +1,99 @@
-import { render, screen, within } from "@testing-library/react";
-import { ProductCatalogStats } from "./ProductCatalogStats";
+import { render, screen } from "@testing-library/react";
+import {
+  defaultMeasure,
+  fileTypeSegments,
+  formatShare,
+  ProductCatalogStats,
+} from "./ProductCatalogStats";
 
 const identity = { account_id: "org", product_id: "data" };
 
-it("renders no card for missing or unusable statistics", () => {
-  const { container, rerender } = render(<ProductCatalogStats />);
-  expect(container).toBeEmptyDOMElement();
-  rerender(<ProductCatalogStats entry={identity} />);
-  expect(container).toBeEmptyDOMElement();
-  rerender(<ProductCatalogStats entry={{ ...identity, exts: { tif: 0 } }} />);
-  expect(container).toBeEmptyDOMElement();
+const entry = {
+  ...identity,
+  total_bytes: 10240,
+  object_count: 100,
+  exts: { csv: 5, TIF: 50, parquet: 25, json: 10 },
+  ext_bytes: { csv: 100, TIF: 4096, parquet: 2048, json: 1024 },
+};
+
+describe("fileTypeSegments", () => {
+  it("keeps the three largest lowercase extensions and folds the rest into other", () => {
+    expect(fileTypeSegments(entry, "bytes")).toEqual([
+      { label: "tif", value: 4096, share: 0.4 },
+      { label: "parquet", value: 2048, share: 0.2 },
+      { label: "json", value: 1024, share: 0.1 },
+      // csv plus the 2,972 bytes the breakdown doesn't list
+      { label: "other", value: 3072, share: 0.3 },
+    ]);
+    expect(fileTypeSegments(entry, "files").map((s) => [s.label, s.value]))
+      .toEqual([["tif", 50], ["parquet", 25], ["json", 10], ["other", 15]]);
+  });
+
+  it("omits other when the top three account for everything", () => {
+    expect(fileTypeSegments({ ...identity, object_count: 3, exts: { tif: 2, "": 1 } }, "files"))
+      .toEqual([
+        { label: "tif", value: 2, share: 2 / 3 },
+        { label: "no extension", value: 1, share: 1 / 3 },
+      ]);
+  });
+
+  it("breaks ties alphabetically", () => {
+    expect(fileTypeSegments({ ...identity, exts: { tif: 2, json: 2, csv: 2 } }, "files")
+      .map((s) => s.label)).toEqual(["csv", "json", "tif"]);
+  });
+
+  it("uses the breakdown's sum when the total is missing or smaller", () => {
+    expect(fileTypeSegments({ ...identity, exts: { tif: 3, json: 1 } }, "files")
+      .map((s) => s.share)).toEqual([0.75, 0.25]);
+    expect(fileTypeSegments({ ...identity, object_count: 1, exts: { tif: 2 } }, "files")
+      .map((s) => s.share)).toEqual([1]);
+  });
+
+  it("returns nothing without a breakdown or with zero totals", () => {
+    expect(fileTypeSegments({ ...identity, total_bytes: 0 }, "bytes")).toEqual([]);
+    expect(fileTypeSegments({ ...identity, exts: { tif: 0 } }, "files")).toEqual([]);
+    expect(fileTypeSegments({ ...identity, object_count: 5 }, "files")).toEqual([]);
+  });
 });
 
-it("shows the top three lowercase extensions with whole-product totals and percentages", () => {
-  render(<ProductCatalogStats entry={{
-    ...identity,
-    total_bytes: 10240,
-    object_count: 100,
-    exts: { csv: 5, TIF: 50, parquet: 25, json: 10 },
-    ext_bytes: { csv: 100, TIF: 4096, parquet: 2048, json: 1024 },
-  }} />);
-  const rows = screen.getAllByRole("row");
-  expect(rows).toHaveLength(5);
-  expect(rows.slice(1).map((row) => within(row).getByRole("rowheader").textContent))
-    .toEqual(["tif", "parquet", "json", "Total"]);
-  expect(within(rows[1]).getAllByRole("cell").map((cell) => cell.textContent))
-    .toEqual(["50", "(50%)", "4 KB", "(40%)"]);
-  expect(within(rows[4]).getAllByRole("cell").map((cell) => cell.textContent))
-    .toEqual(["100", "", "10 KB", ""]);
-  expect(screen.getByRole("columnheader", { name: "Extension" })).toBeInTheDocument();
-  expect(within(rows[0]).getAllByRole("columnheader").map((cell) => cell.textContent))
-    .toEqual(["Extension", "Files", "", "Bytes", ""]);
-  expect(screen.getByText("4 KB").closest("td")).toHaveAttribute("title", "4,096 bytes");
-  expect(screen.queryByText("csv")).not.toBeInTheDocument();
-  expect(screen.queryByText("Percentages use whole-product totals.")).not.toBeInTheDocument();
-  expect(screen.getByText("(40%)").tagName).toBe("SPAN");
+it("measures by bytes only when there is a byte breakdown", () => {
+  expect(defaultMeasure(entry)).toBe("bytes");
+  expect(defaultMeasure({ ...entry, ext_bytes: undefined })).toBe("files");
+  expect(defaultMeasure({ ...entry, ext_bytes: { tif: 0 } })).toBe("files");
 });
 
-it("uses an alphabetical tie-break for equal file counts", () => {
-  render(<ProductCatalogStats entry={{ ...identity, exts: { tif: 2, json: 2, csv: 2, parquet: 2 } }} />);
-  expect(screen.getAllByRole("rowheader").map((cell) => cell.textContent))
-    .toEqual(["csv", "json", "parquet", "Total"]);
+it("rounds shares and marks slivers as under one percent", () => {
+  expect(formatShare(0.333)).toBe("33%");
+  expect(formatShare(0.004)).toBe("<1%");
+  expect(formatShare(0)).toBe("0%");
 });
 
-it("shows missing values as unknown without deriving totals from partial extension maps", () => {
-  render(<ProductCatalogStats entry={{ ...identity, exts: { tif: 2 }, ext_bytes: { csv: 1024 } }} />);
-  const tif = screen.getByRole("rowheader", { name: "tif" }).closest("tr")!;
-  const csv = screen.getByRole("rowheader", { name: "csv" }).closest("tr")!;
-  const total = screen.getByRole("rowheader", { name: "Total" }).closest("tr")!;
-  expect(within(tif).getAllByRole("cell").map((cell) => cell.textContent)).toEqual(["2", "", "—", ""]);
-  expect(within(csv).getAllByRole("cell").map((cell) => cell.textContent)).toEqual(["—", "", "1 KB", ""]);
-  expect(within(total).getAllByRole("cell").map((cell) => cell.textContent)).toEqual(["—", "", "—", ""]);
-});
+describe("ProductCatalogStats", () => {
+  it("renders nothing for missing or unusable statistics", () => {
+    const { container, rerender } = render(<ProductCatalogStats />);
+    expect(container).toBeEmptyDOMElement();
+    rerender(<ProductCatalogStats entry={identity} />);
+    expect(container).toBeEmptyDOMElement();
+    rerender(<ProductCatalogStats entry={{ ...identity, exts: { tif: 0 } }} />);
+    expect(container).toBeEmptyDOMElement();
+  });
 
-it("includes extensionless files", () => {
-  render(<ProductCatalogStats entry={{ ...identity, object_count: 4, total_bytes: 1024, exts: { "": 2 }, ext_bytes: { "": 512 } }} />);
-  expect(screen.getByRole("rowheader", { name: "No extension" })).toBeInTheDocument();
-  expect(screen.getAllByText("(50%)")).toHaveLength(2);
-});
+  it("shows totals, a labelled bar and a legend measured by size", () => {
+    render(<ProductCatalogStats entry={entry} />);
+    expect(screen.getByText("10 KB · 100 files")).toBeInTheDocument();
+    expect(screen.getByRole("img")).toHaveAccessibleName(
+      "File types by size: tif 40%, parquet 20%, json 10%, other 30%",
+    );
+    expect(screen.getByText("tif 40%")).toBeInTheDocument();
+    expect(screen.getByText("other 30%")).toBeInTheDocument();
+  });
 
-it("preserves zero totals without dividing by zero", () => {
-  const { container } = render(<ProductCatalogStats entry={{ ...identity, total_bytes: 0, object_count: 0 }} />);
-  expect(screen.getByText("0 B")).toBeInTheDocument();
-  expect(screen.getByText("0")).toBeInTheDocument();
-  expect(container).not.toHaveTextContent(/NaN|Infinity|100%/);
-});
-
-it("rounds percentage shares to one decimal place", () => {
-  render(<ProductCatalogStats entry={{ ...identity, object_count: 3, exts: { tif: 1 } }} />);
-  expect(screen.getByText("(33.3%)")).toBeInTheDocument();
+  it("shows totals alone when there is no breakdown", () => {
+    const { container } = render(
+      <ProductCatalogStats entry={{ ...identity, total_bytes: 0, object_count: 0 }} />,
+    );
+    expect(screen.getByText("0 B · 0 files")).toBeInTheDocument();
+    expect(screen.queryByRole("img")).not.toBeInTheDocument();
+    expect(container).not.toHaveTextContent(/NaN|Infinity/);
+  });
 });
