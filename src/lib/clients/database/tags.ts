@@ -63,6 +63,18 @@ export async function hidePendingTags<T extends Product>(
   });
 }
 
+/**
+ * Whether any tag awaits an admin's review. False when the table can't be
+ * read, because the nav calls this on every page and a missing dot is better
+ * than a broken page. listAll has logged the error.
+ */
+export function anyPendingTags(): Promise<boolean> {
+  return tagsTable.listAll().then(
+    (tags) => tags.some((t) => t.pending),
+    () => false
+  );
+}
+
 export class TagsTable extends BaseTable {
   model = "tags";
 
