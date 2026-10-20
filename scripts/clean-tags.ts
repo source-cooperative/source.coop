@@ -207,6 +207,7 @@ const ALIASES: Record<string, string[]> = {
   "ireland fiboa field boundarie geoparquet vector pmtiles": ["ireland", ...FIBOA],
   "belgium wallonia fiboa field boundaries geoparquet vector pmtiles": ["belgium", ...FIBOA],
   "boundary vector agriculture": ["field boundaries", "vector", "agriculture"],
+  "geozarr": ["zarr"],
 };
 
 /** Kept in the corpus however few products carry them. */
