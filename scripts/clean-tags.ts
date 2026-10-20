@@ -119,7 +119,6 @@ const ALIASES: Record<string, string[]> = {
   fish: ["fisheries"],
   fishbase: ["fisheries"],
   "southern ocean": ["ocean"],
-  sst: ["ocean"],
   aquatics: ["ocean"],
   hydrography: ["hydrology"],
   "national hydrology dataset": ["nhd", "hydrology"],
