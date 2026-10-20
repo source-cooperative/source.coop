@@ -141,7 +141,7 @@ export function OrganizationProfile({
           )}
         </Flex>
         {products.length > 0 ? (
-          <ProductsList products={products} />
+          <ProductsList products={products} showCatalog />
         ) : (
           <Text as="p" size="2">
             No products available.
