@@ -111,7 +111,6 @@ const ALIASES: Record<string, string[]> = {
   forest: ["forests"],
   trees: ["forests"],
   deforestation: ["forests"],
-  biomass: ["forests"],
   fire: ["wildfire"],
   "live fuel moisture": ["wildfire"],
   "species distribution model": ["biodiversity"],
