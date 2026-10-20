@@ -133,7 +133,6 @@ const ALIASES: Record<string, string[]> = {
   topography: ["elevation"],
   "topographic map": ["elevation"],
   contour: ["elevation"],
-  "3d tiles": ["lidar"],
   "lidar 3dtiles mago": ["lidar"],
   "building footprint": ["building footprints"],
   buildings: ["building footprints"],
