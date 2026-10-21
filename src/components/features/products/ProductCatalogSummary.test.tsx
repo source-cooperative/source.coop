@@ -53,8 +53,9 @@ it("highlights a type in both the bar and the legend when either is hovered", ()
   const row = label.parentElement!;
 
   fireEvent.mouseEnter(row);
-  expect(segments[1]).toHaveClass("hovered");
-  expect(row.querySelector("[aria-hidden]")).toHaveClass("hovered");
+  // Recolored, not replaced: the segment keeps its own fill's pattern.
+  expect(segments[1]).toHaveClass("fill1", "hovered");
+  expect(row.querySelector("[aria-hidden]")).toHaveClass("fill1", "hovered");
   expect(segments[0]).not.toHaveClass("hovered");
   fireEvent.mouseLeave(row.parentElement!);
   expect(segments[1]).not.toHaveClass("hovered");

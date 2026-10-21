@@ -79,9 +79,9 @@ export function formatMeasure(value: number, measure: CatalogMeasure) {
     : value.toLocaleString("en-US");
 }
 
-/** A segment's fill, or the Analytics card's green while it is hovered. */
+/** A segment's fill, recolored green while it is hovered. */
 function fill(index: number, hovered?: number | null) {
-  return index === hovered ? styles.hovered : FILLS[index];
+  return index === hovered ? `${FILLS[index]} ${styles.hovered}` : FILLS[index];
 }
 
 export function ObjectTypeSwatch({

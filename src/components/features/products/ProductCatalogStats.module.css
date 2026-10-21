@@ -30,30 +30,33 @@
   white-space: nowrap;
 }
 
-/* Shade + pattern, from Radix grays so they follow the light/dark theme. */
+/* Shade + pattern, from Radix grays so they follow the light/dark theme. Each
+   fill paints with --ink over --ground, so .hovered recolors the pattern
+   without replacing it. */
 .fill0 {
-  background: var(--gray-12);
+  background: var(--ink, var(--gray-12));
 }
 
 .fill1 {
   background: repeating-linear-gradient(
     135deg,
-    var(--gray-10) 0 1.5px,
-    var(--gray-4) 1.5px 4px
+    var(--ink, var(--gray-10)) 0 1.5px,
+    var(--ground, var(--gray-4)) 1.5px 4px
   );
 }
 
 .fill2 {
-  background: var(--gray-9);
-}
-
-/* Hover highlight, matching the Analytics card's hovered bar. */
-.hovered {
-  background: var(--green-9);
+  background: var(--ink, var(--gray-9));
 }
 
 .fill3 {
   background:
-    radial-gradient(circle, var(--gray-12) 0.9px, transparent 1.3px) 0 0 / 4px 4px,
-    var(--gray-4);
+    radial-gradient(circle, var(--ink, var(--gray-12)) 0.9px, transparent 1.3px) 0 0 / 4px 4px,
+    var(--ground, var(--gray-4));
+}
+
+/* Hover highlight in the Analytics card's green, keeping the fill's pattern. */
+.hovered {
+  --ink: var(--green-9);
+  --ground: var(--green-4);
 }
