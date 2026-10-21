@@ -1,6 +1,5 @@
 import { Suspense, type ReactNode } from "react";
-import { Box, Card, Flex, Link, Text } from "@radix-ui/themes";
-import { SectionHeader } from "@/components/core/SectionHeader";
+import { Box, Card, Flex, Grid, Link, Separator, Text } from "@radix-ui/themes";
 import { getStorageClient } from "@/lib/clients/storage";
 import { readProxyCredentials } from "@/lib/services/proxy-credentials-read";
 import type { ProxyCredentials } from "@/lib/actions/proxy-credentials";
@@ -28,35 +27,39 @@ function previewCard(
 ) {
   return (
     <Card mt="4">
-      <SectionHeader
-        title="Object Preview"
-        rightButton={
-          (label || viewerUrl) && (
-            <Flex align="center" gap="3">
-              {label && (
-                <Text size="1" color="gray">
-                  {label}
-                </Text>
-              )}
-              {viewerUrl && (
-                <Link
-                  href={viewerUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  size="1"
-                >
-                  <Flex align="center" gap="1">
-                    Open in new tab
-                    <ExternalLinkIcon width="14" height="14" />
-                  </Flex>
-                </Link>
-              )}
-            </Flex>
-          )
-        }
-      >
+      <Box>
+        <Grid columns="3" align="center">
+          <Text size="2" weight="bold">
+            Object Preview
+          </Text>
+          <Flex justify="center">
+            {label && (
+              <Text size="1" color="gray">
+                {label}
+              </Text>
+            )}
+          </Flex>
+          <Flex justify="end">
+            {viewerUrl && (
+              <Link
+                href={viewerUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                size="1"
+              >
+                <Flex align="center" gap="1">
+                  Open in new tab
+                  <ExternalLinkIcon width="14" height="14" />
+                </Flex>
+              </Link>
+            )}
+          </Flex>
+        </Grid>
+        <Box my="3">
+          <Separator size="4" />
+        </Box>
         <Box mt="4">{children}</Box>
-      </SectionHeader>
+      </Box>
     </Card>
   );
 }
