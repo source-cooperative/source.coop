@@ -14,8 +14,8 @@ export interface ObjectTypeSegment {
   share: number;
 }
 
-// Four fills, told apart by shade and pattern rather than hue: hollow, hatched,
-// mid gray, dotted, so neighbours always differ in both. Segments take them by rank, so a fill means "second
+// Four fills, told apart by shade and pattern rather than hue: hatched, mid
+// gray, dotted, dark, so neighbours always differ in both. Segments take them by rank, so a fill means "second
 // largest", not a particular extension.
 const FILLS = [styles.fill0, styles.fill1, styles.fill2, styles.fill3];
 
