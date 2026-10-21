@@ -5,6 +5,7 @@ import type { Product, ProductCreationRequest } from "@/types";
 import { getPageSession, LOGGER } from "@/lib";
 import { FormState } from "@/components/core/DynamicForm";
 import { productUrl } from "@/lib/urls";
+import { isProductDisabled } from "@/lib/api/authz";
 import * as ops from "@/lib/operations/products";
 import { toFormState } from "@/lib/operations/result";
 
@@ -13,7 +14,9 @@ export async function getFeaturedProducts(limit = 10): Promise<Product[]> {
     const result = await productsTable.listPublic(limit, undefined, {
       featuredOnly: true,
     });
-    return productsTable.attachAccounts(result.products);
+    return (await productsTable.attachAccounts(result.products)).filter(
+      (product) => !isProductDisabled(product)
+    );
   } catch (error) {
     LOGGER.error("Failed to fetch featured products", {
       operation: "getFeaturedProducts",

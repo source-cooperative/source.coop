@@ -74,7 +74,9 @@ export async function OrganizationProfilePage({
         !!account && isIndividualAccount(account)
     );
 
-  products = products.filter((product) => canListOnProfile(session, product));
+  products = products
+    .map((product) => ({ ...product, account }))
+    .filter((product) => canListOnProfile(session, product));
 
   // Check for pending invitation
   const pendingInvitation = await getPendingInvitation(account.account_id);

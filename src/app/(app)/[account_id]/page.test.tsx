@@ -11,6 +11,10 @@ jest.mock("@/lib/clients/database", () => ({
   isOrganizationalAccount: jest.fn(),
 }));
 
+jest.mock("@/lib/api/utils", () => ({
+  getPageSession: jest.fn().mockResolvedValue(null),
+}));
+
 jest.mock("@/lib/baseUrl", () => ({
   getBaseUrl: jest.fn().mockResolvedValue("https://source.coop"),
 }));

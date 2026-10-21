@@ -59,6 +59,7 @@ export default async function DetailsPage({ params }: PageProps) {
       ]
     : [];
 
+  const canEdit = isAuthorized(session, product, Actions.PutRepository);
   const canDelete = isAuthorized(session, product, Actions.DeleteRepository);
   // Keeping the underlying data on delete is allowed for non-system
   // (account-owned) connections, or for admins on any connection. The server
@@ -67,12 +68,14 @@ export default async function DetailsPage({ params }: PageProps) {
 
   return (
     <>
-      <ProductCreationForm
-        potentialOwnerAccounts={[account]}
-        product={product}
-        dataConnections={dataConnections}
-        mode="edit"
-      />
+      {canEdit && (
+        <ProductCreationForm
+          potentialOwnerAccounts={[account]}
+          product={product}
+          dataConnections={dataConnections}
+          mode="edit"
+        />
+      )}
 
       {canDelete && (
         <DangerZone
