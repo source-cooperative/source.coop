@@ -156,6 +156,13 @@ export function ProductCatalogStats({ entry }: { entry?: CatalogEntry }) {
             {totals.join(" · ")}
           </Text>
         )}
+        {/* Names the measure the percentages share, in the sidebar card's
+            label style. */}
+        {segments.length > 0 && (
+          <Text size="1" className={`${styles.mono} ${styles.measureLabel}`}>
+            By {measure === "bytes" ? "size" : "object count"}
+          </Text>
+        )}
         {segments.map(({ label, share }, index) => (
           <Flex key={label} align="center" gap="1">
             <ObjectTypeSwatch index={index} />
@@ -179,6 +186,7 @@ export function ProductCatalogStatsSkeleton() {
       <Skeleton width="100%" height="8px" />
       <Flex mt="2" gapX="4" align="center">
         <Skeleton width="130px" height="12px" />
+        <Skeleton width="50px" height="12px" />
         <Skeleton width="70px" height="12px" />
         <Skeleton width="70px" height="12px" />
         <Skeleton width="60px" height="12px" />

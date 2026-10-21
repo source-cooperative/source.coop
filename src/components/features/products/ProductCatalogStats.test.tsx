@@ -86,6 +86,13 @@ describe("ProductCatalogStats", () => {
     );
     expect(screen.getByText("tif 40%")).toBeInTheDocument();
     expect(screen.getByText("other 30%")).toBeInTheDocument();
+    expect(screen.getByText("By size")).toBeInTheDocument();
+  });
+
+  it("names object count as the measure when there is no byte breakdown", () => {
+    render(<ProductCatalogStats entry={{ ...entry, ext_bytes: undefined }} />);
+    expect(screen.getByText("By object count")).toBeInTheDocument();
+    expect(screen.getByText("tif 50%")).toBeInTheDocument();
   });
 
   it("shows totals alone when there is no breakdown", () => {
@@ -94,6 +101,7 @@ describe("ProductCatalogStats", () => {
     );
     expect(screen.getByText("0 B · 0 objects")).toBeInTheDocument();
     expect(screen.queryByRole("img")).not.toBeInTheDocument();
+    expect(screen.queryByText(/^By /)).not.toBeInTheDocument();
     expect(container).not.toHaveTextContent(/NaN|Infinity/);
   });
 });

@@ -22,6 +22,13 @@
   font-family: var(--code-font-family);
 }
 
+/* Matches the analytics MonoLabel, without importing its client module. */
+.measureLabel {
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--gray-10);
+}
+
 /* Shade + pattern, from Radix grays so they follow the light/dark theme. */
 .fill0 {
   background: var(--gray-12);
