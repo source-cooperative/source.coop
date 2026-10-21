@@ -17,6 +17,16 @@ down are not the state someone may be in the middle of debugging. When a local
 lookup comes back empty, the cause is in the code far more often than in the
 data.
 
+## Glossary
+
+When communicating about the system, use these terms:
+
+* objects (not files) - the system is object storage based, as such data is stored
+  as objects rather than files.
+* requests (not downloads) - the system is built to work with cloud native formats
+  meaning that clients will send many byte requests rather than download the entire
+  object. As such, we shouldn't assume that a request downloads the entire file.
+
 ## Storybook
 
 Stories are published at [ui.source.coop](https://ui.source.coop). Run it locally
