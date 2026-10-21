@@ -61,5 +61,8 @@ export async function storeViewerUrl({
   const url = encodeURIComponent(
     fileSourceUrl({ account_id, product_id, object_path }),
   );
+  if (probe.format === "ome-ngff") {
+    return `https://vole.allencell.org/?url=${url}`;
+  }
   return `https://source-cooperative.github.io/zarr-viewer/?url=${url}`;
 }
