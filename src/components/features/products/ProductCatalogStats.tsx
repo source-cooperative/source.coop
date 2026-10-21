@@ -107,7 +107,7 @@ export function ObjectTypeBar({
   hovered?: number | null;
   onHover?: (index: number | null) => void;
 }) {
-  const by = measure === "bytes" ? "size" : "object count";
+  const by = measure === "bytes" ? "bytesize" : "object count";
   return (
     <div
       className={styles.bar}
@@ -151,18 +151,18 @@ export function ProductCatalogStats({ entry }: { entry?: CatalogEntry }) {
     <Box mt="3" aria-label="Object types">
       {segments.length > 0 && <ObjectTypeBar segments={segments} measure={measure} />}
       <Flex mt="2" gapX="4" gapY="1" wrap="wrap" align="center">
-        {totals.length > 0 && (
-          <Text size="1" weight="medium" className={styles.mono}>
-            {totals.join(" · ")}
-          </Text>
-        )}
-        {/* Names the measure the percentages share, in the sidebar card's
-            label style. */}
-        {segments.length > 0 && (
-          <Text size="1" className={`${styles.mono} ${styles.measureLabel}`}>
-            By {measure === "bytes" ? "size" : "object count"}
-          </Text>
-        )}
+        {/* Totals and the measure label wrap as one unit; the label, in the
+            sidebar card's style, ends in a colon to lead into the
+            percentages it describes. */}
+        <Text size="1" className={styles.mono}>
+          {totals.length > 0 && <Text weight="medium">{totals.join(" · ")}</Text>}
+          {totals.length > 0 && segments.length > 0 && " · "}
+          {segments.length > 0 && (
+            <Text className={styles.measureLabel}>
+              By {measure === "bytes" ? "bytesize" : "object count"}:
+            </Text>
+          )}
+        </Text>
         {segments.map(({ label, share }, index) => (
           <Flex key={label} align="center" gap="1">
             <ObjectTypeSwatch index={index} />

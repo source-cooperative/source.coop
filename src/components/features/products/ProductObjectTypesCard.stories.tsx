@@ -5,8 +5,8 @@ import { ProductObjectTypesCard } from "./ProductCatalogSummary";
 
 /**
  * The Object types card in a product page's sidebar, between Details and
- * Analytics. It gives the product's total size and object count, then breaks
- * the objects down by type — by size, or by object count with the toggle.
+ * Analytics. It gives the product's total bytesize and object count, then breaks
+ * the objects down by type — by bytesize, or by object count with the toggle.
  *
  * The three largest types each get a segment and a row, and everything else
  * is "other", so the card never needs more than four fills. Types are told
@@ -26,7 +26,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 /**
- * Most of the size is GeoTIFF, but most of the objects are small JSON
+ * Most of the bytesize is GeoTIFF, but most of the objects are small JSON
  * sidecars — switch to Count to see the order change.
  */
 export const Default: Story = {
@@ -43,13 +43,13 @@ export const Default: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByRole("img")).toHaveAccessibleName(
-      expect.stringMatching(/^Object types by size: tif/),
+      expect.stringMatching(/^Object types by bytesize: tif/),
     );
     await userEvent.click(canvas.getByRole("radio", { name: "Count" }));
     await expect(canvas.getByRole("img")).toHaveAccessibleName(
       expect.stringMatching(/^Object types by object count: json/),
     );
-    await userEvent.click(canvas.getByRole("radio", { name: "Size" }));
+    await userEvent.click(canvas.getByRole("radio", { name: "Bytesize" }));
   },
 };
 
@@ -68,7 +68,7 @@ export const NoExtension: Story = {
 };
 
 /**
- * Without a byte breakdown the card opens on object counts. Size still works,
+ * Without a byte breakdown the card opens on object counts. Bytesize still works,
  * but has nothing to show beyond the total.
  */
 export const CountsOnly: Story = {

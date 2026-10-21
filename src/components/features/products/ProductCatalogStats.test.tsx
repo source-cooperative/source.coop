@@ -78,20 +78,20 @@ describe("ProductCatalogStats", () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it("shows totals, a labelled bar and a legend measured by size", () => {
+  it("shows totals, a labelled bar and a legend measured by bytesize", () => {
     render(<ProductCatalogStats entry={entry} />);
     expect(screen.getByText("10 KB · 100 objects")).toBeInTheDocument();
     expect(screen.getByRole("img")).toHaveAccessibleName(
-      "Object types by size: tif 40%, parquet 20%, json 10%, other 30%",
+      "Object types by bytesize: tif 40%, parquet 20%, json 10%, other 30%",
     );
     expect(screen.getByText("tif 40%")).toBeInTheDocument();
     expect(screen.getByText("other 30%")).toBeInTheDocument();
-    expect(screen.getByText("By size")).toBeInTheDocument();
+    expect(screen.getByText("By bytesize:")).toBeInTheDocument();
   });
 
   it("names object count as the measure when there is no byte breakdown", () => {
     render(<ProductCatalogStats entry={{ ...entry, ext_bytes: undefined }} />);
-    expect(screen.getByText("By object count")).toBeInTheDocument();
+    expect(screen.getByText("By object count:")).toBeInTheDocument();
     expect(screen.getByText("tif 50%")).toBeInTheDocument();
   });
 

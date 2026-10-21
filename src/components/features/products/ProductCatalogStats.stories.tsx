@@ -3,12 +3,12 @@ import { ProductCatalogStats } from "./ProductCatalogStats";
 
 /**
  * The object-type row at the foot of a product's card in an organization's
- * product list: total size and object count, a slim bar of the product's
- * largest object types by size, and a legend.
+ * product list: total bytesize and object count, a slim bar of the product's
+ * largest object types by bytesize, and a legend.
  *
  * Object types are told apart by shade and pattern, not color. The bar shows
  * the three largest types and folds the rest into "other", so it never needs
- * more than four fills. Hovering a segment names its type and size.
+ * more than four fills. Hovering a segment names its type and bytesize.
  *
  * The numbers come from the metadata catalog and cover the whole product, in
  * every folder. A product the catalog has no statistics for shows no row.

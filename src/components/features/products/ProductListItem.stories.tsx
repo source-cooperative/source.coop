@@ -55,7 +55,7 @@ export const Narrow: Story = {
 
 /**
  * On an organization's profile, a product the metadata catalog knows about
- * ends with its total size, object count and largest object types.
+ * ends with its total bytesize, object count and largest object types.
  */
 export const WithObjectTypes: Story = {
   args: {
@@ -75,7 +75,7 @@ export const WithObjectTypes: Story = {
   },
   play: async ({ canvasElement }) => {
     await expect(within(canvasElement).getByRole("img")).toHaveAccessibleName(
-      "Object types by size: tif 71%, parquet 22%, pmtiles 4%, other 3%",
+      "Object types by bytesize: tif 71%, parquet 22%, pmtiles 4%, other 3%",
     );
   },
 };

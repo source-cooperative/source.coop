@@ -20,11 +20,11 @@ import {
 import styles from "./ProductCatalogStats.module.css";
 
 const HELP = {
-  size: "Total size of every object in the product.",
+  size: "Total bytesize of every object in the product.",
   objects: "Number of objects in the product, in every folder.",
 };
 
-/** Sidebar card breaking a product's objects down by type, by size or by count. */
+/** Sidebar card breaking a product's objects down by type, by bytesize or by count. */
 export function ProductObjectTypesCard({ entry }: { entry?: CatalogEntry }) {
   const [measure, setMeasure] = useState<CatalogMeasure>();
   // One index for the bar and the legend, so hovering either lights both.
@@ -46,14 +46,14 @@ export function ProductObjectTypesCard({ entry }: { entry?: CatalogEntry }) {
             onValueChange={(value) => setMeasure(value as CatalogMeasure)}
             aria-label="Measure object types by"
           >
-            <SegmentedControl.Item value="bytes">Size</SegmentedControl.Item>
+            <SegmentedControl.Item value="bytes">Bytesize</SegmentedControl.Item>
             <SegmentedControl.Item value="objects">Count</SegmentedControl.Item>
           </SegmentedControl.Root>
         }
       >
         <StatRow pb="3" style={{ borderBottom: "1px solid var(--gray-4)" }}>
           <Stat
-            label="Total size"
+            label="Total bytesize"
             help={HELP.size}
             value={entry.total_bytes === undefined ? "—" : formatBytes(entry.total_bytes)}
           />
@@ -66,7 +66,7 @@ export function ProductObjectTypesCard({ entry }: { entry?: CatalogEntry }) {
 
         {segments.length > 0 && (
           <Box mt="3">
-            <MonoLabel>By {active === "bytes" ? "size" : "object count"}</MonoLabel>
+            <MonoLabel>By {active === "bytes" ? "bytesize" : "object count"}</MonoLabel>
             <Box mt="2">
               <ObjectTypeBar
                 segments={segments}

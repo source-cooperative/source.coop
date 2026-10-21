@@ -27,6 +27,7 @@
   text-transform: uppercase;
   letter-spacing: 0.03em;
   color: var(--gray-10);
+  white-space: nowrap;
 }
 
 /* Shade + pattern, from Radix grays so they follow the light/dark theme. */

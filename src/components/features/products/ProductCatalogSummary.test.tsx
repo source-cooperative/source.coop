@@ -24,7 +24,7 @@ it("renders the current product's statistics without including other products", 
   expect(screen.getByText("2 KB")).toBeInTheDocument();
   expect(screen.getByText("4")).toBeInTheDocument();
   expect(screen.queryByText("99")).not.toBeInTheDocument();
-  expect(screen.getByRole("img")).toHaveAccessibleName("Object types by size: tif 75%, json 25%");
+  expect(screen.getByRole("img")).toHaveAccessibleName("Object types by bytesize: tif 75%, json 25%");
 });
 
 it("switches the breakdown to object counts", () => {
