@@ -48,8 +48,11 @@
 /* Shade + pattern, from Radix grays so they follow the light/dark theme. Each
    fill paints with --ink over --ground, so .hovered recolors the pattern
    without replacing it. */
+/* Hollow: the largest type is usually most of the bar, so it takes the card's
+   own background inside an outline, and the smaller types carry the ink. */
 .fill0 {
-  background: var(--ink, var(--gray-12));
+  background: var(--wash, transparent);
+  box-shadow: inset 0 0 0 1px var(--ink, var(--gray-12));
 }
 
 .fill1 {
@@ -74,4 +77,5 @@
 .hovered {
   --ink: var(--green-9);
   --ground: var(--green-4);
+  --wash: var(--green-4);
 }
