@@ -11,6 +11,7 @@
 import { Suspense } from "react";
 import { PendingInvitationBanner } from "@/components/features/memberships/PendingInvitationBanner";
 import { ProductSummaryCard } from "@/components/features/products/ProductSummaryCard";
+import { ProductCatalogSummary } from "@/components/features/products/ProductCatalogSummary";
 import { ProductMetaCard } from "@/components/features/products/ProductMetaCard";
 import { ProductContentsCard } from "@/components/features/products/object-browser/ProductContentsCard";
 import {
@@ -125,6 +126,7 @@ export default async function ProductLayout({
           <Box px={{ initial: "4", md: "0" }}>
             <ProductSummaryCard product={product} />
           </Box>
+          <ProductCatalogSummary accountId={account_id} productId={product_id} />
           <Dropzone product={product} prefix={prefix}>
             <ProductContentsCard
               accountId={account_id}
