@@ -57,9 +57,9 @@ export const Narrow: Story = {
 const threeDaysAgo = new Date(Date.now() - 3 * 86_400_000).toISOString();
 
 /**
- * A product the metadata catalog knows about. The metadata row adds how many
- * objects it holds and when they last changed; the card ends with its total
- * bytesize leading a bar of its largest object types, half the card wide.
+ * A product the metadata catalog knows about ends with its bytesize, object
+ * count and when its objects last changed, then a bar of its largest object
+ * types half the card wide, then their shares.
  */
 export const WithObjectTypes: Story = {
   args: {
@@ -83,9 +83,8 @@ export const WithObjectTypes: Story = {
     await expect(canvas.getByRole("img")).toHaveAccessibleName(
       "Object types by bytesize: tif 71%, parquet 22%, pmtiles 4%, other 3%",
     );
-    await expect(canvas.getByText(/^18,302 objects, updated 3 days ago$/))
+    await expect(canvas.getByText(/^2\.41 TB • 18,302 objects • updated 3 days ago$/))
       .toBeInTheDocument();
-    await expect(canvas.getByText("2.41 TB")).toBeInTheDocument();
   },
 };
 
@@ -112,7 +111,7 @@ export const WithStoreFormat: Story = {
   },
 };
 
-/** The metadata row wraps, and the bar takes the card's full width, on a phone. */
+/** On a phone the bar takes the card's full width. */
 export const WithObjectTypesNarrow: Story = {
   ...WithStoreFormat,
   globals: { viewport: { value: "mobile1", isRotated: false } },

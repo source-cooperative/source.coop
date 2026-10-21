@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import {
-  catalogObjectsPhrase,
+  catalogSummary,
   defaultMeasure,
   objectTypeSegments,
   formatShare,
@@ -82,49 +82,47 @@ describe("ProductCatalogStats", () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it("leads the bar with the total bytesize, with the legend beneath", () => {
-    const { container } = render(<ProductCatalogStats entry={entry} />);
-    expect(screen.getByText("10 KB")).toBeInTheDocument();
-    expect(screen.getByRole("img")).toHaveAccessibleName(
+  it("puts the totals above the bar and the shares below it", () => {
+    render(<ProductCatalogStats entry={entry} />);
+    const summary = screen.getByText("10 KB • 100 objects");
+    const bar = screen.getByRole("img");
+    const share = screen.getByText("tif 40%");
+    expect(bar).toHaveAccessibleName(
       "Object types by bytesize: tif 40%, parquet 20%, json 10%, other 30%",
     );
-    expect(screen.getByText("tif 40%")).toBeInTheDocument();
+    expect(summary.compareDocumentPosition(bar) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(bar.compareDocumentPosition(share) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(screen.getByText("other 30%")).toBeInTheDocument();
-    // The object count belongs to the card's metadata row, not the footer.
-    expect(container).not.toHaveTextContent("objects");
   });
 
-  it("leads with the object count when there is no byte breakdown", () => {
+  it("measures the bar by object count when there is no byte breakdown", () => {
     render(<ProductCatalogStats entry={{ ...entry, ext_bytes: undefined }} />);
-    expect(screen.getByText("100 objects")).toBeInTheDocument();
     expect(screen.getByText("tif 50%")).toBeInTheDocument();
   });
 
-  it("shows the total alone when there is no breakdown", () => {
+  it("shows the totals alone when there is no breakdown", () => {
     const { container } = render(
       <ProductCatalogStats entry={{ ...identity, total_bytes: 0, object_count: 1 }} />,
     );
-    expect(screen.getByText("1 object")).toBeInTheDocument();
+    expect(screen.getByText("0 B • 1 object")).toBeInTheDocument();
     expect(screen.queryByRole("img")).not.toBeInTheDocument();
     expect(container).not.toHaveTextContent(/NaN|Infinity/);
   });
 });
 
-describe("catalogObjectsPhrase", () => {
-  const now = Date.now();
-  const daysAgo = (days: number) => new Date(now - days * 86_400_000).toISOString();
+describe("catalogSummary", () => {
+  const daysAgo = (days: number) => new Date(Date.now() - days * 86_400_000).toISOString();
 
-  it("pairs the object count with when the objects last changed", () => {
-    expect(catalogObjectsPhrase({ ...entry, objects_updated_at: daysAgo(3) }))
-      .toMatch(/^100 objects, updated 3 days ago$/);
+  it("joins bytesize, object count and update time", () => {
+    expect(catalogSummary({ ...entry, objects_updated_at: daysAgo(3) }))
+      .toMatch(/^10 KB • 100 objects • updated 3 days ago$/);
   });
 
   it("says as much as the catalog knows", () => {
-    expect(catalogObjectsPhrase(entry)).toBe("100 objects");
-    expect(catalogObjectsPhrase({ ...identity, objects_updated_at: daysAgo(3) }))
-      .toMatch(/^Objects updated 3 days ago$/);
-    expect(catalogObjectsPhrase(identity)).toBeUndefined();
-    expect(catalogObjectsPhrase(undefined)).toBeUndefined();
+    expect(catalogSummary(entry)).toBe("10 KB • 100 objects");
+    expect(catalogSummary({ ...identity, objects_updated_at: daysAgo(3) }))
+      .toMatch(/^updated 3 days ago$/);
+    expect(catalogSummary(identity)).toBe("");
   });
 });
 

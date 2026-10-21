@@ -1,6 +1,6 @@
 import { Badge, Box, Card, Flex, Skeleton, Text } from "@radix-ui/themes";
 import { SectionHeader } from "@/components/core/SectionHeader";
-import { formatBytes, formatRelative } from "@/lib/format";
+import { formatBytes, formatDate, formatRelative } from "@/lib/format";
 import type { CatalogEntry } from "@/types/catalog";
 import styles from "./ProductCatalogStats.module.css";
 
@@ -140,15 +140,16 @@ const objects = (count: number) =>
   `${count.toLocaleString("en-US")} ${count === 1 ? "object" : "objects"}`;
 
 /**
- * "18,302 objects, updated 3 days ago" for a product list card's metadata
- * row, or as much of it as the catalog knows. The update time is relative to
- * now, which is safe because the catalog only loads client-side.
+ * "2.41 TB • 18,302 objects • updated 3 days ago", or as much of it as the
+ * catalog knows. The update time is relative to now, which is safe because
+ * the catalog only loads client-side.
  */
-export function catalogObjectsPhrase(entry?: CatalogEntry): string | undefined {
-  if (!entry) return undefined;
-  const updated = entry.objects_updated_at && formatRelative(entry.objects_updated_at);
-  if (entry.object_count === undefined) return updated && `Objects updated ${updated}`;
-  return objects(entry.object_count) + (updated ? `, updated ${updated}` : "");
+export function catalogSummary(entry: CatalogEntry): string {
+  return [
+    entry.total_bytes !== undefined && formatBytes(entry.total_bytes),
+    entry.object_count !== undefined && objects(entry.object_count),
+    entry.objects_updated_at && `updated ${formatRelative(entry.objects_updated_at)}`,
+  ].filter(Boolean).join(" • ");
 }
 
 /** The product's store format (zarr, icechunk, …) as a pill, if it has one. */
@@ -162,46 +163,45 @@ export function StoreFormatPill({ entry }: { entry?: CatalogEntry }) {
 }
 
 /**
- * The footer of a product list card: the product's total, leading a slim bar
- * of its object types, with the legend beneath. The total names what the bar
- * and its percentages measure, so no label is needed. Renders nothing when
- * the catalog has no statistics for the product.
+ * The footer of a product list card: its bytesize, object count and update
+ * time, then a slim bar of its object types half the card wide, then their
+ * shares. Renders nothing when the catalog has no statistics for the product.
  */
 export function ProductCatalogStats({ entry }: { entry?: CatalogEntry }) {
   if (!hasCatalogStats(entry)) return null;
   const measure = defaultMeasure(entry);
   const segments = objectTypeSegments(entry, measure);
-  const total = measure === "bytes"
-    ? entry.total_bytes !== undefined && formatBytes(entry.total_bytes)
-    : entry.object_count !== undefined && objects(entry.object_count);
-  if (!total && segments.length === 0) return null;
+  const summary = catalogSummary(entry);
+  if (!summary && segments.length === 0) return null;
 
   return (
-    <Flex mt="3" gapX="4" gapY="2" wrap="wrap" align="center" aria-label="Object types">
-      <Flex align="center" gap="2" className={segments.length > 0 ? styles.lead : undefined}>
-        {total && (
-          <Text size="1" weight="medium" className={`${styles.mono} ${styles.total}`}>
-            {total}
-          </Text>
-        )}
-        {segments.length > 0 && (
-          <Box flexGrow="1">
+    <Flex mt="3" direction="column" gap="1" aria-label="Object types">
+      {summary && (
+        <Text
+          size="1"
+          color="gray"
+          className={styles.mono}
+          title={entry.objects_updated_at && `Objects updated ${formatDate(entry.objects_updated_at, true)}`}
+        >
+          {summary}
+        </Text>
+      )}
+      {segments.length > 0 && (
+        <>
+          <Box className={styles.lead}>
             <ObjectTypeBar segments={segments} measure={measure} />
           </Box>
-        )}
-      </Flex>
-      {/* Beside the bar while the card has room, under it when it doesn't. */}
-      {segments.length > 0 && (
-        <Flex gapX="3" gapY="1" wrap="wrap" align="center" className={styles.legend}>
-          {segments.map(({ label, share }, index) => (
-            <Flex key={label} align="center" gap="1">
-              <ObjectTypeSwatch index={index} />
-              <Text size="1" color="gray">
-                {label} {formatShare(share)}
-              </Text>
-            </Flex>
-          ))}
-        </Flex>
+          <Flex gapX="3" gapY="1" wrap="wrap" align="center">
+            {segments.map(({ label, share }, index) => (
+              <Flex key={label} align="center" gap="1">
+                <ObjectTypeSwatch index={index} />
+                <Text size="1" color="gray" className={styles.mono}>
+                  {label} {formatShare(share)}
+                </Text>
+              </Flex>
+            ))}
+          </Flex>
+        </>
       )}
     </Flex>
   );
@@ -213,12 +213,10 @@ export function ProductCatalogStats({ entry }: { entry?: CatalogEntry }) {
 /** Loading stand-in for ProductCatalogStats on a product list card. */
 export function ProductCatalogStatsSkeleton() {
   return (
-    <Flex mt="3" gapX="4" gapY="2" wrap="wrap" align="center">
-      <Flex align="center" gap="2" className={styles.lead}>
-        <Skeleton width="56px" height="12px" />
-        <Skeleton height="8px" style={{ flexGrow: 1 }} />
-      </Flex>
-      <Flex gapX="3" align="center" className={styles.legend}>
+    <Flex mt="3" direction="column" gap="1">
+      <Skeleton width="200px" height="12px" />
+      <Skeleton height="8px" className={styles.lead} />
+      <Flex gapX="3" align="center">
         <Skeleton width="60px" height="12px" />
         <Skeleton width="70px" height="12px" />
         <Skeleton width="60px" height="12px" />

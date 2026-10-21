@@ -22,22 +22,10 @@
   font-family: var(--code-font-family);
 }
 
-/* The legend sits beside the bar at its natural width, and the total and bar
-   grow into the rest of the line: from 20rem, so the bar stays readable, up
-   to half the card. When the two can't share a line the legend wraps beneath
-   as a whole, and the bar takes the card's width. */
+/* The list card's bar: half the card, at least 20rem so it stays readable,
+   and the full width of a narrower card. */
 .lead {
-  flex: 1 1 min(100%, 20rem);
-  max-width: min(100%, max(50%, 20rem));
-}
-
-.legend {
-  flex: 0 1 auto;
-  min-width: max-content;
-}
-
-.total {
-  white-space: nowrap;
+  width: min(100%, max(50%, 20rem));
 }
 
 /* The store-format pill beside a list card's visibility badge. */

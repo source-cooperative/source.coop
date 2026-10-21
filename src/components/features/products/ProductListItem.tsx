@@ -3,12 +3,7 @@
 import Link from "next/link";
 import type { ProductResponse } from "@/types";
 import type { CatalogEntry } from "@/types/catalog";
-import {
-  catalogObjectsPhrase,
-  ProductCatalogStats,
-  StoreFormatPill,
-} from "./ProductCatalogStats";
-import { formatDate } from "@/lib/format";
+import { ProductCatalogStats, StoreFormatPill } from "./ProductCatalogStats";
 import { DateText } from "@/components/display";
 import { Box, Text, Badge, Heading } from "@radix-ui/themes";
 import { TagList } from "./TagList";
@@ -50,7 +45,6 @@ export function ProductListItem({
 }: ProductListItemProps) {
   const visibility =
     VISIBILITY_CONFIG[product.visibility] || VISIBILITY_CONFIG.restricted;
-  const objectsPhrase = catalogObjectsPhrase(catalogEntry);
 
   return (
     <Box
@@ -98,21 +92,6 @@ export function ProductListItem({
           <Text size="1" color="gray">
             Published on <DateText date={product.created_at} />
           </Text>
-          {objectsPhrase && (
-            <>
-              {" • "}
-              <Text
-                size="1"
-                color="gray"
-                title={
-                  catalogEntry?.objects_updated_at &&
-                  `Objects updated ${formatDate(catalogEntry.objects_updated_at, true)}`
-                }
-              >
-                {objectsPhrase}
-              </Text>
-            </>
-          )}
           <Badge
             size="1"
             color={visibility.color}
