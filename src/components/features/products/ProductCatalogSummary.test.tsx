@@ -24,10 +24,10 @@ it("renders the current product's statistics without including other products", 
   expect(screen.getByText("2 KB")).toBeInTheDocument();
   expect(screen.getByText("4")).toBeInTheDocument();
   expect(screen.queryByText("99")).not.toBeInTheDocument();
-  expect(screen.getByRole("img")).toHaveAccessibleName("File types by size: tif 75%, json 25%");
+  expect(screen.getByRole("img")).toHaveAccessibleName("Object types by size: tif 75%, json 25%");
 });
 
-it("switches the breakdown to file counts", () => {
+it("switches the breakdown to object counts", () => {
   catalogHook.mockReturnValue(new Map([
     ["org/data", {
       account_id: "org", product_id: "data", total_bytes: 2048, object_count: 4,
@@ -36,8 +36,8 @@ it("switches the breakdown to file counts", () => {
   ]));
   renderSummary();
   fireEvent.click(screen.getByRole("radio", { name: "Count" }));
-  expect(screen.getByText("By file count")).toBeInTheDocument();
-  expect(screen.getByRole("img")).toHaveAccessibleName("File types by file count: json 75%, tif 25%");
+  expect(screen.getByText("By object count")).toBeInTheDocument();
+  expect(screen.getByRole("img")).toHaveAccessibleName("Object types by object count: json 75%, tif 25%");
 });
 
 it("highlights a type in both the bar and the legend when either is hovered", () => {

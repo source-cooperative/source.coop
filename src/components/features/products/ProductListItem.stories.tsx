@@ -55,9 +55,9 @@ export const Narrow: Story = {
 
 /**
  * On an organization's profile, a product the metadata catalog knows about
- * ends with its total size, file count and largest file types.
+ * ends with its total size, object count and largest object types.
  */
-export const WithFileTypes: Story = {
+export const WithObjectTypes: Story = {
   args: {
     catalogEntry: {
       account_id: product.account_id,
@@ -75,14 +75,14 @@ export const WithFileTypes: Story = {
   },
   play: async ({ canvasElement }) => {
     await expect(within(canvasElement).getByRole("img")).toHaveAccessibleName(
-      "File types by size: tif 71%, parquet 22%, pmtiles 4%, other 3%",
+      "Object types by size: tif 71%, parquet 22%, pmtiles 4%, other 3%",
     );
   },
 };
 
 /** The legend wraps under the bar at phone width. */
-export const WithFileTypesNarrow: Story = {
-  ...WithFileTypes,
+export const WithObjectTypesNarrow: Story = {
+  ...WithObjectTypes,
   globals: { viewport: { value: "mobile1", isRotated: false } },
 };
 

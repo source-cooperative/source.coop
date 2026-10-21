@@ -10,9 +10,9 @@ import type { CatalogEntry } from "@/types/catalog";
 import {
   type CatalogMeasure,
   defaultMeasure,
-  FileTypeBar,
-  FileTypeSwatch,
-  fileTypeSegments,
+  ObjectTypeBar,
+  ObjectTypeSwatch,
+  objectTypeSegments,
   formatMeasure,
   formatShare,
   hasCatalogStats,
@@ -20,34 +20,34 @@ import {
 import styles from "./ProductCatalogStats.module.css";
 
 const HELP = {
-  size: "Total size of every file in the product.",
-  files: "Number of files in the product, in every folder.",
+  size: "Total size of every object in the product.",
+  objects: "Number of objects in the product, in every folder.",
 };
 
-/** Sidebar card breaking a product's files down by type, by size or by count. */
-export function ProductFileTypesCard({ entry }: { entry?: CatalogEntry }) {
+/** Sidebar card breaking a product's objects down by type, by size or by count. */
+export function ProductObjectTypesCard({ entry }: { entry?: CatalogEntry }) {
   const [measure, setMeasure] = useState<CatalogMeasure>();
   // One index for the bar and the legend, so hovering either lights both.
   const [hovered, setHovered] = useState<number | null>(null);
   if (!hasCatalogStats(entry)) return null;
   const active = measure ?? defaultMeasure(entry);
-  const segments = fileTypeSegments(entry, active);
+  const segments = objectTypeSegments(entry, active);
 
   return (
     // flexShrink 0 for the same reason as UsageCard: the stretched meta
     // column would otherwise crush the card.
     <Card size={{ initial: "2", sm: "1" }} style={{ flexShrink: 0 }}>
       <SectionHeader
-        title="File types"
+        title="Object types"
         rightButton={
           <SegmentedControl.Root
             size="1"
             value={active}
             onValueChange={(value) => setMeasure(value as CatalogMeasure)}
-            aria-label="Measure file types by"
+            aria-label="Measure object types by"
           >
             <SegmentedControl.Item value="bytes">Size</SegmentedControl.Item>
-            <SegmentedControl.Item value="files">Count</SegmentedControl.Item>
+            <SegmentedControl.Item value="objects">Count</SegmentedControl.Item>
           </SegmentedControl.Root>
         }
       >
@@ -58,17 +58,17 @@ export function ProductFileTypesCard({ entry }: { entry?: CatalogEntry }) {
             value={entry.total_bytes === undefined ? "—" : formatBytes(entry.total_bytes)}
           />
           <Stat
-            label="Files"
-            help={HELP.files}
+            label="Objects"
+            help={HELP.objects}
             value={entry.object_count?.toLocaleString("en-US") ?? "—"}
           />
         </StatRow>
 
         {segments.length > 0 && (
           <Box mt="3">
-            <MonoLabel>By {active === "bytes" ? "size" : "file count"}</MonoLabel>
+            <MonoLabel>By {active === "bytes" ? "size" : "object count"}</MonoLabel>
             <Box mt="2">
-              <FileTypeBar
+              <ObjectTypeBar
                 segments={segments}
                 measure={active}
                 height={14}
@@ -79,7 +79,7 @@ export function ProductFileTypesCard({ entry }: { entry?: CatalogEntry }) {
             <Flex direction="column" gap="1" mt="3" onMouseLeave={() => setHovered(null)}>
               {segments.map(({ label, value, share }, index) => (
                 <Flex key={label} align="center" gap="2" onMouseEnter={() => setHovered(index)}>
-                  <FileTypeSwatch index={index} hovered={hovered} />
+                  <ObjectTypeSwatch index={index} hovered={hovered} />
                   <Text
                     size="1"
                     color={index === hovered ? "green" : undefined}
@@ -112,5 +112,5 @@ export function ProductCatalogSummary({
   productId: string;
 }) {
   const catalog = useCatalog(true);
-  return <ProductFileTypesCard entry={catalog?.get(`${accountId}/${productId}`)} />;
+  return <ProductObjectTypesCard entry={catalog?.get(`${accountId}/${productId}`)} />;
 }

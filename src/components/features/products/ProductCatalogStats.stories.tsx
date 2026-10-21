@@ -2,11 +2,11 @@ import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { ProductCatalogStats } from "./ProductCatalogStats";
 
 /**
- * The file-type row at the foot of a product's card in an organization's
- * product list: total size and file count, a slim bar of the product's
- * largest file types by size, and a legend.
+ * The object-type row at the foot of a product's card in an organization's
+ * product list: total size and object count, a slim bar of the product's
+ * largest object types by size, and a legend.
  *
- * File types are told apart by shade and pattern, not color. The bar shows
+ * Object types are told apart by shade and pattern, not color. The bar shows
  * the three largest types and folds the rest into "other", so it never needs
  * more than four fills. Hovering a segment names its type and size.
  *
@@ -22,7 +22,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** A product with more file types than the bar shows. */
+/** A product with more object types than the bar shows. */
 export const Default: Story = {
   args: {
     entry: {
@@ -37,7 +37,7 @@ export const Default: Story = {
 };
 
 /**
- * A Zarr store: nearly every file is a chunk with no extension, so one
+ * A Zarr store: nearly every object is a chunk with no extension, so one
  * segment fills most of the bar.
  */
 export const NoExtension: Story = {
@@ -53,7 +53,7 @@ export const NoExtension: Story = {
   },
 };
 
-/** Without a byte breakdown, the bar measures file counts instead. */
+/** Without a byte breakdown, the bar measures object counts instead. */
 export const CountsOnly: Story = {
   args: { entry: { ...Default.args!.entry!, ext_bytes: undefined } },
 };

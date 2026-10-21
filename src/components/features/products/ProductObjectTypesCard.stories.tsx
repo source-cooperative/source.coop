@@ -1,12 +1,12 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { expect, userEvent, within } from "storybook/test";
-import { ProductFileTypesCardSkeleton } from "./ProductCatalogStats";
-import { ProductFileTypesCard } from "./ProductCatalogSummary";
+import { ProductObjectTypesCardSkeleton } from "./ProductCatalogStats";
+import { ProductObjectTypesCard } from "./ProductCatalogSummary";
 
 /**
- * The File types card in a product page's sidebar, between Details and
- * Analytics. It gives the product's total size and file count, then breaks
- * the files down by type — by size, or by file count with the toggle.
+ * The Object types card in a product page's sidebar, between Details and
+ * Analytics. It gives the product's total size and object count, then breaks
+ * the objects down by type — by size, or by object count with the toggle.
  *
  * The three largest types each get a segment and a row, and everything else
  * is "other", so the card never needs more than four fills. Types are told
@@ -17,16 +17,16 @@ import { ProductFileTypesCard } from "./ProductCatalogSummary";
  * no card.
  */
 const meta = {
-  title: "Features/Product page/File types/ProductFileTypesCard",
-  component: ProductFileTypesCard,
+  title: "Features/Product page/Object types/ProductObjectTypesCard",
+  component: ProductObjectTypesCard,
   parameters: { layout: "padded" },
-} satisfies Meta<typeof ProductFileTypesCard>;
+} satisfies Meta<typeof ProductObjectTypesCard>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
 /**
- * Most of the size is GeoTIFF, but most of the files are small JSON
+ * Most of the size is GeoTIFF, but most of the objects are small JSON
  * sidecars — switch to Count to see the order change.
  */
 export const Default: Story = {
@@ -43,17 +43,17 @@ export const Default: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByRole("img")).toHaveAccessibleName(
-      expect.stringMatching(/^File types by size: tif/),
+      expect.stringMatching(/^Object types by size: tif/),
     );
     await userEvent.click(canvas.getByRole("radio", { name: "Count" }));
     await expect(canvas.getByRole("img")).toHaveAccessibleName(
-      expect.stringMatching(/^File types by file count: json/),
+      expect.stringMatching(/^Object types by object count: json/),
     );
     await userEvent.click(canvas.getByRole("radio", { name: "Size" }));
   },
 };
 
-/** A Zarr store, whose chunk files have no extension. */
+/** A Zarr store, whose chunk objects have no extension. */
 export const NoExtension: Story = {
   args: {
     entry: {
@@ -68,7 +68,7 @@ export const NoExtension: Story = {
 };
 
 /**
- * Without a byte breakdown the card opens on file counts. Size still works,
+ * Without a byte breakdown the card opens on object counts. Size still works,
  * but has nothing to show beyond the total.
  */
 export const CountsOnly: Story = {
@@ -87,7 +87,7 @@ export const TotalsOnly: Story = {
  * so the Analytics card below doesn't jump when it arrives.
  */
 export const Loading: Story = {
-  render: () => <ProductFileTypesCardSkeleton />,
+  render: () => <ProductObjectTypesCardSkeleton />,
 };
 
 /** The product page's sidebar is dark for many viewers. */

@@ -4,9 +4,9 @@ import { formatBytes } from "@/lib/format";
 import type { CatalogEntry } from "@/types/catalog";
 import styles from "./ProductCatalogStats.module.css";
 
-export type CatalogMeasure = "bytes" | "files";
+export type CatalogMeasure = "bytes" | "objects";
 
-export interface FileTypeSegment {
+export interface ObjectTypeSegment {
   /** Lowercase extension, "no extension", or "other". */
   label: string;
   value: number;
@@ -28,11 +28,11 @@ export function hasCatalogStats(entry?: CatalogEntry): entry is CatalogEntry {
   );
 }
 
-/** Bytes when the entry has a per-extension byte breakdown, else file counts. */
+/** Bytes when the entry has a per-extension byte breakdown, else object counts. */
 export function defaultMeasure(entry: CatalogEntry): CatalogMeasure {
   return Object.values(entry.ext_bytes ?? {}).some((bytes) => bytes > 0)
     ? "bytes"
-    : "files";
+    : "objects";
 }
 
 /**
@@ -41,10 +41,10 @@ export function defaultMeasure(entry: CatalogEntry): CatalogMeasure {
  * total when the catalog has one, so "other" also covers extensions the
  * breakdown leaves out.
  */
-export function fileTypeSegments(
+export function objectTypeSegments(
   entry: CatalogEntry,
   measure: CatalogMeasure,
-): FileTypeSegment[] {
+): ObjectTypeSegment[] {
   const values = (measure === "bytes" ? entry.ext_bytes : entry.exts) ?? {};
   const sorted = Object.entries(values)
     .filter(([, value]) => value > 0)
@@ -84,7 +84,7 @@ function fill(index: number, hovered?: number | null) {
   return index === hovered ? styles.hovered : FILLS[index];
 }
 
-export function FileTypeSwatch({
+export function ObjectTypeSwatch({
   index,
   hovered,
 }: {
@@ -94,27 +94,27 @@ export function FileTypeSwatch({
   return <span className={`${styles.swatch} ${fill(index, hovered)}`} aria-hidden />;
 }
 
-export function FileTypeBar({
+export function ObjectTypeBar({
   segments,
   measure,
   height = 8,
   hovered,
   onHover,
 }: {
-  segments: FileTypeSegment[];
+  segments: ObjectTypeSegment[];
   measure: CatalogMeasure;
   height?: number;
   hovered?: number | null;
   onHover?: (index: number | null) => void;
 }) {
-  const by = measure === "bytes" ? "size" : "file count";
+  const by = measure === "bytes" ? "size" : "object count";
   return (
     <div
       className={styles.bar}
       style={{ height }}
       role="img"
       onMouseLeave={() => onHover?.(null)}
-      aria-label={`File types by ${by}: ${segments
+      aria-label={`Object types by ${by}: ${segments
         .map(({ label, share }) => `${label} ${formatShare(share)}`)
         .join(", ")}`}
     >
@@ -134,22 +134,22 @@ export function FileTypeBar({
 }
 
 /**
- * Totals, a slim file-type bar and its legend, for a product list card.
+ * Totals, a slim object-type bar and its legend, for a product list card.
  * Renders nothing when the catalog has no statistics for the product.
  */
 export function ProductCatalogStats({ entry }: { entry?: CatalogEntry }) {
   if (!hasCatalogStats(entry)) return null;
   const measure = defaultMeasure(entry);
-  const segments = fileTypeSegments(entry, measure);
+  const segments = objectTypeSegments(entry, measure);
   const totals = [
     entry.total_bytes !== undefined && formatBytes(entry.total_bytes),
     entry.object_count !== undefined &&
-      `${entry.object_count.toLocaleString("en-US")} files`,
+      `${entry.object_count.toLocaleString("en-US")} objects`,
   ].filter(Boolean);
 
   return (
-    <Box mt="3" aria-label="File types">
-      {segments.length > 0 && <FileTypeBar segments={segments} measure={measure} />}
+    <Box mt="3" aria-label="Object types">
+      {segments.length > 0 && <ObjectTypeBar segments={segments} measure={measure} />}
       <Flex mt="2" gapX="4" gapY="1" wrap="wrap" align="center">
         {totals.length > 0 && (
           <Text size="1" weight="medium" className={styles.mono}>
@@ -158,7 +158,7 @@ export function ProductCatalogStats({ entry }: { entry?: CatalogEntry }) {
         )}
         {segments.map(({ label, share }, index) => (
           <Flex key={label} align="center" gap="1">
-            <FileTypeSwatch index={index} />
+            <ObjectTypeSwatch index={index} />
             <Text size="1" color="gray">
               {label} {formatShare(share)}
             </Text>
@@ -187,12 +187,12 @@ export function ProductCatalogStatsSkeleton() {
   );
 }
 
-/** Loading stand-in for the File types card in the product page sidebar. */
-export function ProductFileTypesCardSkeleton() {
+/** Loading stand-in for the Object types card in the product page sidebar. */
+export function ProductObjectTypesCardSkeleton() {
   return (
     <Card size={{ initial: "2", sm: "1" }} style={{ flexShrink: 0 }}>
       <SectionHeader
-        title="File types"
+        title="Object types"
         rightButton={<Skeleton width="96px" height="24px" />}
       >
         <Flex gap="3" pb="3" style={{ borderBottom: "1px solid var(--gray-4)" }}>

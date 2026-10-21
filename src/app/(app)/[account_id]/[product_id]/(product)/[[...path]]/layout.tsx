@@ -142,7 +142,7 @@ export default async function ProductLayout({
         <Flex width="100%" className="product-meta" direction="column" gap="4">
           <ProductMetaCard product={product} />
 
-          {/* Whole-product file types from the metadata catalog, fetched
+          {/* Whole-product object types from the metadata catalog, fetched
               client-side; absent until it loads or when the product has no
               entry. */}
           <ProductCatalogSummary accountId={account_id} productId={product_id} />

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { StatusCodes } from "http-status-codes";
 import { CATALOG_URL, parseCatalog } from "@/lib/catalog";
 
-// The stats-only catalog the file-type cards read. The upstream file is
+// The stats-only catalog the object-type cards read. The upstream file is
 // several MB of STAC records; this keeps the few fields the cards use and
 // lets Vercel's edge cache hold the result, so each region fetches upstream
 // at most once an hour. Edge caching rather than revalidate: the upstream

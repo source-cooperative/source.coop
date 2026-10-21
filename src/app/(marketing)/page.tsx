@@ -114,7 +114,7 @@ export default async function Landing() {
                   Featured Products
                 </Heading>
                 {/* The landing page skips the catalog download (several MB)
-                    that the file-type rows need. */}
+                    that the object-type rows need. */}
                 <ProductsList products={products} grid showCatalog={false} />
               </Container>
             </Section>
