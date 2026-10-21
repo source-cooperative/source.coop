@@ -3453,3 +3453,39 @@ describe("only an owner manages an owner's membership", () => {
     expect(isAuthorized(owner, own, Actions.RevokeMembership)).toBe(true);
   });
 });
+
+describe("a disabled organization", () => {
+  const org = {
+    ...accounts.find((a) => a.account_id === "organization")!,
+    disabled: true,
+  };
+  const product = { ...mappedProducts["organization"]["org-repo-id"], account: org };
+  const owner = sessions["organization-owner-user"];
+
+  test("looks missing to everyone but its members and admins", () => {
+    expect(isAuthorized(sessions["anonymous"], org, Actions.GetAccountProfile)).toBe(false);
+    expect(isAuthorized(sessions["regular-user"], org, Actions.GetAccountProfile)).toBe(false);
+    expect(isAuthorized(sessions["organization-read-data-user"], org, Actions.GetAccountProfile)).toBe(true);
+    expect(isAuthorized(owner, org, Actions.GetAccountProfile)).toBe(true);
+    expect(isAuthorized(sessions["admin"], org, Actions.GetAccountProfile)).toBe(true);
+  });
+
+  test("takes no new products, admins included", () => {
+    expect(canCreateProductForAccount(owner, org)).toBe(false);
+    expect(canCreateProductForAccount(sessions["admin"], org)).toBe(false);
+  });
+
+  test("disables its products: hidden, read-only, and deletable by owners", () => {
+    expect(product.disabled).toBe(false);
+    expect(isAuthorized(sessions["anonymous"], product, Actions.GetRepository)).toBe(false);
+    expect(isAuthorized(sessions["anonymous"], product, Actions.ListRepository)).toBe(false);
+    expect(isAuthorized(sessions["organization-read-data-user"], product, Actions.GetRepository)).toBe(false);
+    expect(isAuthorized(owner, product, Actions.GetRepository)).toBe(true);
+    expect(canListOnProfile(owner, product)).toBe(true);
+    expect(isAuthorized(owner, product, Actions.PutRepository)).toBe(false);
+    expect(isAuthorized(owner, product, Actions.WriteRepositoryData)).toBe(false);
+    expect(isAuthorized(owner, product, Actions.DisableRepository)).toBe(false);
+    expect(isAuthorized(owner, product, Actions.DeleteRepository)).toBe(true);
+    expect(isAuthorized(sessions["organization-maintainer-user"], product, Actions.DeleteRepository)).toBe(false);
+  });
+});

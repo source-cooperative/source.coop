@@ -174,8 +174,8 @@ export async function listProducts(
       page(
         session,
         result.products
-          .filter((p) => canListOnProfile(session, p))
-          .map((p) => ({ ...p, account })),
+          .map((p) => ({ ...p, account }))
+          .filter((p) => canListOnProfile(session, p)),
         result.lastEvaluatedKey
       )
     );
@@ -189,8 +189,8 @@ export async function listProducts(
   return ok(
     page(
       session,
-      await productsTable.attachAccounts(
-        result.products.filter((p) => isAuthorized(session, p, Actions.ListRepository))
+      (await productsTable.attachAccounts(result.products)).filter((p) =>
+        isAuthorized(session, p, Actions.ListRepository)
       ),
       result.lastEvaluatedKey
     )
@@ -249,6 +249,7 @@ export async function createProduct(
     dataConnectionsTable.fetchById(data_connection_id),
   ]);
   if (!account) return notFound(`Account ${account_id} not found`);
+  if (account.disabled) return forbidden("This account is disabled and takes no new products");
   // ponytail: check-then-put, so two simultaneous creates can still race;
   // a conditional put in productsTable.create closes it if that ever matters.
   if (existing) return conflict(`Product ${account_id}/${product_id} already exists`);

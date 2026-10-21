@@ -13,7 +13,9 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { OrganizationProfilePage } from "@/app/(app)/[account_id]/OrganizationProfilePage";
-import { isServiceAccount } from "@/types";
+import { Actions, isServiceAccount } from "@/types";
+import { isAuthorized } from "@/lib/api/authz";
+import { getPageSession } from "@/lib/api/utils";
 import { accountsTable, isOrganizationalAccount } from "@/lib/clients/database";
 import { IndividualProfilePage } from "./IndividualProfilePage";
 import {
@@ -31,8 +33,11 @@ export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
   const { account_id } = await params;
-  const account = await accountsTable.fetchById(account_id);
-  if (!account || isServiceAccount(account)) {
+  const [account, session] = await Promise.all([
+    accountsTable.fetchById(account_id),
+    getPageSession(),
+  ]);
+  if (!account || !isAuthorized(session, account, Actions.GetAccountProfile)) {
     return generateNotFoundMetadata();
   }
   return generateAccountMetadata({ account });
@@ -42,9 +47,17 @@ export default async function AccountPage({ params, searchParams }: PageProps) {
   const { account_id } = await params;
   const showWelcome = Object.hasOwn(await searchParams, "welcome");
 
-  const account = await accountsTable.fetchById(account_id);
-  // A service account has no public profile.
-  if (!account || isServiceAccount(account)) {
+  const [account, session] = await Promise.all([
+    accountsTable.fetchById(account_id),
+    getPageSession(),
+  ]);
+  // A service account has no public profile, and a disabled account shows
+  // only to its members.
+  if (
+    !account ||
+    isServiceAccount(account) ||
+    !isAuthorized(session, account, Actions.GetAccountProfile)
+  ) {
     notFound();
   }
 

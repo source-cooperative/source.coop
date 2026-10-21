@@ -87,7 +87,9 @@ describe("listProducts", () => {
       products: [shown, hidden],
       lastEvaluatedKey: key,
     });
-    (canListOnProfile as jest.Mock).mockImplementation((_s, p) => p === shown);
+    (canListOnProfile as jest.Mock).mockImplementation(
+      (_s, p) => p.product_id === shown.product_id && p.account?.account_id === "alice"
+    );
 
     const result = await listProducts(SESSION, { limit: "10", cursor }, "alice");
 
@@ -240,6 +242,16 @@ describe("createProduct", () => {
       prefix: "alice/my-product/",
       is_primary: true,
     });
+  });
+
+  test("refuses a disabled account", async () => {
+    (accountsTable.fetchById as jest.Mock).mockResolvedValue({ account_id: "alice", disabled: true });
+    (dataConnectionsTable.fetchById as jest.Mock).mockResolvedValue(connection());
+
+    const result = await createProduct(SESSION, input());
+
+    expect(result).toMatchObject({ ok: false, error: "forbidden" });
+    expect(productsTable.create).not.toHaveBeenCalled();
   });
 
   test("a connection without a prefix template mirrors at the root", async () => {

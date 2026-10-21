@@ -44,8 +44,12 @@ export default async function ProductLayout({
     notFound();
   }
 
-  // Check if user is authorized for the required permission
-  if (!isAuthorized(session, product, Actions.PutRepository)) {
+  // Whoever may delete a product reaches its settings, even where they may
+  // no longer edit it, as under a disabled account.
+  if (
+    !isAuthorized(session, product, Actions.PutRepository) &&
+    !isAuthorized(session, product, Actions.DeleteRepository)
+  ) {
     notFound();
   }
 
@@ -73,7 +77,9 @@ export default async function ProductLayout({
       label: "Details",
       href: editProductDetailsUrl(account_id, product_id),
       icon: <Pencil1Icon width="16" height="16" />,
-      condition: canEditProduct,
+      condition:
+        canEditProduct ||
+        isAuthorized(session, product, Actions.DeleteRepository),
     },
     {
       id: "memberships",

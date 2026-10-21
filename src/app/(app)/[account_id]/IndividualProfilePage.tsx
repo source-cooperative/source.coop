@@ -29,7 +29,9 @@ export async function IndividualProfilePage({
     1000
   );
 
-  products = products.filter((product) => canListOnProfile(session, product));
+  products = products
+    .map((product) => ({ ...product, account }))
+    .filter((product) => canListOnProfile(session, product));
 
   const memberships = (
     await membershipsTable.listByUser(account.account_id)

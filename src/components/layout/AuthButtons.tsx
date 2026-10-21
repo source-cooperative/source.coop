@@ -74,6 +74,7 @@ export async function AuthButtons() {
     // IndividualProfilePage's GetRepository filter).
     const toProducts = (id: string) =>
       (productsByAccount.get(id) ?? [])
+        .map((p) => ({ ...p, account: accountsById.get(id) ?? self }))
         .filter((p) => isAuthorized(session, p, Actions.GetRepository))
         .slice(0, 20)
         .map((p) => ({ product_id: p.product_id, title: p.title }));
