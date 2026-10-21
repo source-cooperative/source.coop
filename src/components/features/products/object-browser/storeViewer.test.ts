@@ -46,10 +46,12 @@ describe("storeViewerUrl", () => {
       format: "icechunk",
     });
 
-    await expect(storeViewerUrl(args)).resolves.toBe(
-      "https://source-cooperative.github.io/zarr-viewer/?url=" +
+    await expect(storeViewerUrl(args)).resolves.toEqual({
+      url:
+        "https://source-cooperative.github.io/zarr-viewer/?url=" +
         encodeURIComponent("https://data.source.coop/bkr/gfs/gfs.icechunk"),
-    );
+      format: "icechunk",
+    });
     // Reuses the request's already-resolved creds instead of re-reading the cookie.
     expect(getStorageClient).toHaveBeenCalledWith(creds);
   });

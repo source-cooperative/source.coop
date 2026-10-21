@@ -89,6 +89,59 @@ export const getIframeSrc = async (
   }
 };
 
+export async function fileTypeLabel(
+  sourceUrl: string,
+  extension: string,
+): Promise<string> {
+  switch (extension) {
+    case "tif":
+    case "tiff":
+      return "COG";
+    case "parquet":
+      return (await isStacGeoParquet(sourceUrl)) ? "STAC GeoParquet" : "Parquet";
+    case "pmtiles":
+      return "PMTiles";
+    case "csv":
+      return "CSV";
+    case "tsv":
+      return "TSV";
+    case "json":
+      return "JSON";
+    case "jsonl":
+    case "ndjson":
+      return "NDJSON";
+    case "pdf":
+      return "PDF";
+    case "glb":
+    case "gltf":
+      return "GLTF";
+    case "obj":
+      return "OBJ";
+    case "stl":
+      return "STL";
+    case "zip":
+      return "ZIP";
+    case "avif":
+    case "bmp":
+    case "gif":
+    case "svg":
+    case "webp":
+      return extension.toUpperCase();
+    case "jpg":
+    case "jpeg":
+      return "JPEG";
+    case "png":
+      return "PNG";
+    case "md":
+    case "markdown":
+      return "Markdown";
+    case "txt":
+      return "Text";
+    default:
+      return extension.toUpperCase();
+  }
+}
+
 export async function ObjectPreviewExternal(props: ObjectPreviewExternalProps) {
   const cloudUri = fileSourceUrl(props);
   const extension = getExtension(props.object_path);
