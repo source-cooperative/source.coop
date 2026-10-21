@@ -22,10 +22,18 @@
   font-family: var(--code-font-family);
 }
 
-/* Half the card, but never narrower than the legend needs; full width on a
-   narrow card. */
-.footer {
-  width: min(100%, max(50%, 20rem));
+/* The legend sits beside the bar at its natural width, and the total and bar
+   grow into the rest of the line: from 20rem, so the bar stays readable, up
+   to half the card. When the two can't share a line the legend wraps beneath
+   as a whole, and the bar takes the card's width. */
+.lead {
+  flex: 1 1 min(100%, 20rem);
+  max-width: min(100%, max(50%, 20rem));
+}
+
+.legend {
+  flex: 0 1 auto;
+  min-width: max-content;
 }
 
 .total {

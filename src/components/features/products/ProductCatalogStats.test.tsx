@@ -68,6 +68,8 @@ it("rounds shares and marks slivers as under one percent", () => {
   expect(formatShare(0.333)).toBe("33%");
   expect(formatShare(0.004)).toBe("<1%");
   expect(formatShare(0)).toBe("0%");
+  expect(formatShare(0.996)).toBe(">99%");
+  expect(formatShare(1)).toBe("100%");
 });
 
 describe("ProductCatalogStats", () => {

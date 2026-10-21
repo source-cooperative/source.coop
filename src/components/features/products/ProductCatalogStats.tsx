@@ -69,8 +69,11 @@ export function objectTypeSegments(
   return segments;
 }
 
+/** A whole percentage, with "<1%" and ">99%" so slivers never read as 0% or 100%. */
 export function formatShare(share: number) {
-  return share > 0 && share < 0.01 ? "<1%" : `${Math.round(share * 100)}%`;
+  if (share > 0 && share < 0.01) return "<1%";
+  if (share > 0.99 && share < 1) return ">99%";
+  return `${Math.round(share * 100)}%`;
 }
 
 export function formatMeasure(value: number, measure: CatalogMeasure) {
@@ -174,8 +177,8 @@ export function ProductCatalogStats({ entry }: { entry?: CatalogEntry }) {
   if (!total && segments.length === 0) return null;
 
   return (
-    <Box mt="3" className={styles.footer} aria-label="Object types">
-      <Flex align="center" gap="2">
+    <Flex mt="3" gapX="4" gapY="2" wrap="wrap" align="center" aria-label="Object types">
+      <Flex align="center" gap="2" className={segments.length > 0 ? styles.lead : undefined}>
         {total && (
           <Text size="1" weight="medium" className={`${styles.mono} ${styles.total}`}>
             {total}
@@ -187,8 +190,9 @@ export function ProductCatalogStats({ entry }: { entry?: CatalogEntry }) {
           </Box>
         )}
       </Flex>
+      {/* Beside the bar while the card has room, under it when it doesn't. */}
       {segments.length > 0 && (
-        <Flex mt="2" gapX="3" gapY="1" wrap="wrap" align="center">
+        <Flex gapX="3" gapY="1" wrap="wrap" align="center" className={styles.legend}>
           {segments.map(({ label, share }, index) => (
             <Flex key={label} align="center" gap="1">
               <ObjectTypeSwatch index={index} />
@@ -199,7 +203,7 @@ export function ProductCatalogStats({ entry }: { entry?: CatalogEntry }) {
           ))}
         </Flex>
       )}
-    </Box>
+    </Flex>
   );
 }
 
@@ -209,17 +213,17 @@ export function ProductCatalogStats({ entry }: { entry?: CatalogEntry }) {
 /** Loading stand-in for ProductCatalogStats on a product list card. */
 export function ProductCatalogStatsSkeleton() {
   return (
-    <Box mt="3" className={styles.footer}>
-      <Flex align="center" gap="2">
+    <Flex mt="3" gapX="4" gapY="2" wrap="wrap" align="center">
+      <Flex align="center" gap="2" className={styles.lead}>
         <Skeleton width="56px" height="12px" />
         <Skeleton height="8px" style={{ flexGrow: 1 }} />
       </Flex>
-      <Flex mt="2" gapX="3" align="center">
+      <Flex gapX="3" align="center" className={styles.legend}>
         <Skeleton width="60px" height="12px" />
         <Skeleton width="70px" height="12px" />
         <Skeleton width="60px" height="12px" />
       </Flex>
-    </Box>
+    </Flex>
   );
 }
 
