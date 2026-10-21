@@ -22,12 +22,19 @@
   font-family: var(--code-font-family);
 }
 
-/* Matches the analytics MonoLabel, without importing its client module. */
-.measureLabel {
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  color: var(--gray-10);
+/* Half the card, but never narrower than the legend needs; full width on a
+   narrow card. */
+.footer {
+  width: min(100%, max(50%, 20rem));
+}
+
+.total {
   white-space: nowrap;
+}
+
+/* The store-format pill beside a list card's visibility badge. */
+.formatPill {
+  font-family: var(--code-font-family);
 }
 
 /* Shade + pattern, from Radix grays so they follow the light/dark theme. Each

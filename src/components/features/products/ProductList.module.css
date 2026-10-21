@@ -110,7 +110,8 @@
 
 .metadata {
   display: flex;
-  gap: 1rem;
+  flex-wrap: wrap;
+  gap: var(--space-1) 1rem;
   align-items: center;
   font-size: 0.875rem;
   color: var(--gray-11);

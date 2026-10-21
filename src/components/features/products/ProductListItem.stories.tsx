@@ -53,9 +53,13 @@ export const Narrow: Story = {
   globals: { viewport: { value: "mobile1", isRotated: false } },
 };
 
+// Relative to now, so the cards always read "3 days ago".
+const threeDaysAgo = new Date(Date.now() - 3 * 86_400_000).toISOString();
+
 /**
- * On an organization's profile, a product the metadata catalog knows about
- * ends with its total bytesize, object count and largest object types.
+ * A product the metadata catalog knows about. The metadata row adds how many
+ * objects it holds and when they last changed; the card ends with its total
+ * bytesize leading a bar of its largest object types, half the card wide.
  */
 export const WithObjectTypes: Story = {
   args: {
@@ -64,6 +68,7 @@ export const WithObjectTypes: Story = {
       product_id: product.product_id,
       total_bytes: 2_650_000_000_000,
       object_count: 18_302,
+      objects_updated_at: threeDaysAgo,
       exts: { tif: 9_880, parquet: 214, pmtiles: 88, json: 8_120 },
       ext_bytes: {
         tif: 1_880_000_000_000,
@@ -74,15 +79,42 @@ export const WithObjectTypes: Story = {
     },
   },
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByRole("img")).toHaveAccessibleName(
+    const canvas = within(canvasElement);
+    await expect(canvas.getByRole("img")).toHaveAccessibleName(
       "Object types by bytesize: tif 71%, parquet 22%, pmtiles 4%, other 3%",
     );
+    await expect(canvas.getByText(/^18,302 objects, updated 3 days ago$/))
+      .toBeInTheDocument();
+    await expect(canvas.getByText("2.41 TB")).toBeInTheDocument();
   },
 };
 
-/** The legend wraps under the bar at phone width. */
+/**
+ * A product stored in a convention such as Zarr shows it as a pill beside its
+ * visibility. Nearly all of a Zarr store's objects are chunks without an
+ * extension.
+ */
+export const WithStoreFormat: Story = {
+  args: {
+    catalogEntry: {
+      account_id: product.account_id,
+      product_id: product.product_id,
+      total_bytes: 687_194_767_360,
+      object_count: 1_204_557,
+      objects_updated_at: threeDaysAgo,
+      store_format: "zarr",
+      exts: { "": 1_204_100, json: 450, md: 7 },
+      ext_bytes: { "": 666_000_000_000, json: 14_000_000_000, md: 7_194_767_360 },
+    },
+  },
+  play: async ({ canvasElement }) => {
+    await expect(within(canvasElement).getByText("zarr")).toBeInTheDocument();
+  },
+};
+
+/** The metadata row wraps, and the bar takes the card's full width, on a phone. */
 export const WithObjectTypesNarrow: Story = {
-  ...WithObjectTypes,
+  ...WithStoreFormat,
   globals: { viewport: { value: "mobile1", isRotated: false } },
 };
 

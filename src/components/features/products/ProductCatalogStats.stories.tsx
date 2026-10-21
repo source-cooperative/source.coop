@@ -2,9 +2,10 @@ import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { ProductCatalogStats } from "./ProductCatalogStats";
 
 /**
- * The object-type row at the foot of a product's card in an organization's
- * product list: total bytesize and object count, a slim bar of the product's
- * largest object types by bytesize, and a legend.
+ * The footer of a product's card in a product list: the product's total
+ * bytesize, leading a slim bar of its largest object types, with a legend
+ * beneath. The total says what the bar measures, so it needs no label. It
+ * takes half the card, or the full width of a narrow one.
  *
  * Object types are told apart by shade and pattern, not color. The bar shows
  * the three largest types and folds the rest into "other", so it never needs
@@ -53,12 +54,12 @@ export const NoExtension: Story = {
   },
 };
 
-/** Without a byte breakdown, the bar measures object counts instead. */
+/** Without a byte breakdown, the bar measures object counts, and the object count leads it. */
 export const CountsOnly: Story = {
   args: { entry: { ...Default.args!.entry!, ext_bytes: undefined } },
 };
 
-/** The catalog has totals but no breakdown by type: no bar, totals only. */
+/** The catalog has totals but no breakdown by type: the total alone, no bar. */
 export const TotalsOnly: Story = {
   args: {
     entry: { account_id: "example", product_id: "empty", object_count: 0, total_bytes: 0 },

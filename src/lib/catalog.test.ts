@@ -44,6 +44,13 @@ it("omits invalid per-extension byte totals without dropping file counts", () =>
   expect(parseCatalog(JSON.stringify(record)).get("org/data")).toEqual(entry);
 });
 
+it("keeps the objects' update time and store format, dropping invalid ones", () => {
+  const record = { ...entry, objects_updated_at: "2026-10-17T20:16:01+00:00", store_format: "zarr" };
+  expect(parseCatalog(JSON.stringify(record)).get("org/data")).toEqual(record);
+  const invalid = { ...entry, objects_updated_at: "last week", store_format: "" };
+  expect(parseCatalog(JSON.stringify(invalid)).get("org/data")).toEqual(entry);
+});
+
 it("uses the last valid whole-product record for duplicate product keys", () => {
   const replacement = { ...entry, object_count: 3 };
   const catalog = parseCatalog([
