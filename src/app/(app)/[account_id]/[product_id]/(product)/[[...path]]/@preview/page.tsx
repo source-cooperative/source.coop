@@ -119,14 +119,18 @@ export default async function ObjectPreviewSlot({ params }: PageProps) {
       creds: creds ?? null,
     });
     if (!store) return null;
-    const storeLabels: Record<string, string> = {
-      zarr2: "Zarr v2",
-      zarr3: "Zarr v3",
-      icechunk: "Icechunk",
-    };
+    let storeLabel: string;
+    if (store.format === "icechunk") {
+      const prefix = store.icechunkVersion
+        ? `Icechunk v${store.icechunkVersion}`
+        : "Icechunk";
+      storeLabel = `${prefix} · Zarr v3`;
+    } else {
+      storeLabel = store.format === "zarr2" ? "Zarr v2" : "Zarr v3";
+    }
     return previewCard(
       store.url,
-      storeLabels[store.format] ?? null,
+      storeLabel,
       <PreviewIframe src={store.url} title={`Preview of ${object_path}`} />,
     );
   }

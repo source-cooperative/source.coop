@@ -24,6 +24,7 @@ interface StoreViewerArgs {
 export interface StoreViewerResult {
   url: string;
   format: StoreFormat;
+  icechunkVersion?: 1 | 2;
 }
 
 /**
@@ -69,5 +70,6 @@ export async function storeViewerUrl({
   return {
     url: `https://source-cooperative.github.io/zarr-viewer/?url=${url}`,
     format: probe.format!,
+    icechunkVersion: probe.icechunkVersion,
   };
 }
