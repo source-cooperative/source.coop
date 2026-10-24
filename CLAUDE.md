@@ -100,10 +100,18 @@ has to stay compatible with.
 
 New functionality ships with its endpoint. Anything a user or an admin can do
 in the UI — a settings action, an admin action, a new kind of record — gets an
-`/api/v1` route in the same PR, calling the same operation the UI calls. A
-feature that exists only behind a form is one that scripts, the CLI and agents
-can't use, and the API falls a little further behind the app with each one.
-An issue that plans such a feature names its endpoint.
+`/api/v1` route in the same PR. A feature that exists only behind a form is one
+that scripts, the CLI and agents can't use, and the API falls a little further
+behind the app with each one. An issue that plans such a feature names its
+endpoint.
+
+The UI and the API share one operation, so they can't disagree about a rule.
+Validation, business rules and authorization live in the operation in
+`src/lib/operations/`, and the route, the server action and the page that
+renders the record are adapters over it, as API.md's "One operation, thin
+adapters" describes. None of them parses input, reads a table or calls
+`isAuthorized` on its own: a rule written into an adapter holds on one side
+only. A page that reads a table directly shows the web what the API hides.
 
 ## Pull requests
 
