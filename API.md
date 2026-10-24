@@ -19,6 +19,8 @@ Everything else only adapts it:
   `isAuthorized` itself.
 - **A server action** in `src/lib/actions/` maps form fields to the operation's
   input and answers `toFormState(result, ...)`.
+- **A page** under `src/app/(app)/` reads the records it renders through an
+  operation too. A page that reads a table itself can show what the API hides.
 
 So the web app and the API can't disagree about a rule, and an operation is
 tested once, in `src/lib/operations/*.test.ts`. Adapter tests only check the
