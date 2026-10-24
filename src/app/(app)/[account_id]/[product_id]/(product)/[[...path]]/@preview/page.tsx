@@ -1,6 +1,5 @@
 import { Suspense, type ReactNode } from "react";
-import { Box, Card, Flex, Link } from "@radix-ui/themes";
-import { SectionHeader } from "@/components/core/SectionHeader";
+import { Box, Card, Flex, Grid, Link, Separator, Text } from "@radix-ui/themes";
 import { getStorageClient } from "@/lib/clients/storage";
 import { readProxyCredentials } from "@/lib/services/proxy-credentials-read";
 import type { ProxyCredentials } from "@/lib/actions/proxy-credentials";
@@ -11,7 +10,7 @@ import { getAuthorizedProduct } from "../data";
 import { fileSourceUrl } from "@/lib/urls";
 import { ExternalLinkIcon } from "@radix-ui/react-icons";
 import { getExtension, isStoreExtension } from "@/lib/files";
-import { getIframeSrc } from "@/components/features/products/object-browser/ObjectPreviewExternal";
+import { getIframeSrc, fileTypeLabel } from "@/components/features/products/object-browser/ObjectPreviewExternal";
 
 interface PageProps {
   params: Promise<{
@@ -21,29 +20,46 @@ interface PageProps {
   }>;
 }
 
-function previewCard(viewerUrl: string | null, children: ReactNode) {
+function previewCard(
+  viewerUrl: string | null,
+  label: string | null,
+  children: ReactNode,
+) {
   return (
     <Card mt="4">
-      <SectionHeader
-        title="Object Preview"
-        rightButton={
-          viewerUrl && (
-            <Link
-              href={viewerUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              size="1"
-            >
-              <Flex align="center" gap="1">
-                Open in new tab
-                <ExternalLinkIcon width="14" height="14" />
-              </Flex>
-            </Link>
-          )
-        }
-      >
+      <Box>
+        <Grid columns="3" align="center">
+          <Text size="2" weight="bold">
+            Object Preview
+          </Text>
+          <Flex justify="center">
+            {label && (
+              <Text size="1" color="gray">
+                {label}
+              </Text>
+            )}
+          </Flex>
+          <Flex justify="end">
+            {viewerUrl && (
+              <Link
+                href={viewerUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                size="1"
+              >
+                <Flex align="center" gap="1">
+                  Open in new tab
+                  <ExternalLinkIcon width="14" height="14" />
+                </Flex>
+              </Link>
+            )}
+          </Flex>
+        </Grid>
+        <Box my="3">
+          <Separator size="4" />
+        </Box>
         <Box mt="4">{children}</Box>
-      </SectionHeader>
+      </Box>
     </Card>
   );
 }
@@ -98,37 +114,45 @@ export default async function ObjectPreviewSlot({ params }: PageProps) {
   // A store is a key prefix, not a single object, so it's gated on the store
   // probe rather than a HEAD. The main slot still lists its contents.
   if (isStoreExtension(extension)) {
-    const viewerUrl = await storeViewerUrl({
+    const store = await storeViewerUrl({
       account_id,
       product_id,
       object_path,
       extension,
       creds: creds ?? null,
     });
-    return viewerUrl
-      ? previewCard(
-          viewerUrl,
-          <PreviewIframe
-            src={viewerUrl}
-            title={`Preview of ${object_path}`}
-          />,
-        )
-      : null;
+    if (!store) return null;
+    let storeLabel: string;
+    if (store.format === "icechunk") {
+      const prefix = store.icechunkVersion
+        ? `Icechunk v${store.icechunkVersion}`
+        : "Icechunk";
+      storeLabel = `${prefix} · Zarr v3`;
+    } else {
+      storeLabel = store.format === "zarr2" ? "Zarr v2" : "Zarr v3";
+    }
+    return previewCard(
+      store.url,
+      storeLabel,
+      <PreviewIframe src={store.url} title={`Preview of ${object_path}`} />,
+    );
   }
 
   if (!(await isFile(account_id, product_id, object_path, creds ?? null))) {
     return null;
   }
 
-  const viewerUrl = extension
-    ? await getIframeSrc(
-        fileSourceUrl({ account_id, product_id, object_path }),
-        extension,
-      )
-    : null;
+  const sourceUrl = fileSourceUrl({ account_id, product_id, object_path });
+  const [viewerUrl, label] = extension
+    ? await Promise.all([
+        getIframeSrc(sourceUrl, extension),
+        fileTypeLabel(sourceUrl, extension),
+      ])
+    : [null, null];
 
   return previewCard(
     viewerUrl,
+    label,
     <Suspense fallback={null}>
       <ObjectPreview
         account_id={account_id}
