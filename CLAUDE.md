@@ -98,6 +98,12 @@ covers the operations layer every route goes through, how a route documents
 itself, the shapes of lists, errors and methods, and which consumers a change
 has to stay compatible with.
 
+New functionality ships with its `/api/v1` endpoint in the same PR, and an
+issue that plans it names the endpoint. A feature only the UI can reach is one
+that scripts, the CLI and agents can't use. The UI and the endpoint go through
+one operation, so the two can't disagree about a rule — see API.md's "One
+operation, thin adapters".
+
 ## Pull requests
 
 A PR that touches the UI links the stories it affects, on that branch's Storybook
