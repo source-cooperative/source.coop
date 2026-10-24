@@ -2,10 +2,10 @@ import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { ProductCatalogStats } from "./ProductCatalogStats";
 
 /**
- * The footer of a product's card in a product list: the product's bytesize,
- * object count and when its objects last changed, then a slim bar of its
- * largest object types by bytesize, then their shares. The bar takes half
- * the card, or the full width of a narrow one.
+ * The footer of a product's card in a product list: the product's bytesize
+ * and object count, then a slim bar of its largest object types by bytesize,
+ * then their shares. The bar takes half the card, or the full width of a
+ * narrow one.
  *
  * Object types are told apart by shade and pattern, not color. The bar shows
  * the three largest types and folds the rest into "other", so it never needs

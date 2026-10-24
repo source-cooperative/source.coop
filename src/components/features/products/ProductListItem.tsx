@@ -3,7 +3,11 @@
 import Link from "next/link";
 import type { ProductResponse } from "@/types";
 import type { CatalogEntry } from "@/types/catalog";
-import { ProductCatalogStats, StoreFormatPill } from "./ProductCatalogStats";
+import {
+  ObjectsUpdated,
+  ProductCatalogStats,
+  StoreFormatPill,
+} from "./ProductCatalogStats";
 import { DateText } from "@/components/display";
 import { Box, Text, Badge, Heading } from "@radix-ui/themes";
 import { TagList } from "./TagList";
@@ -92,6 +96,12 @@ export function ProductListItem({
           <Text size="1" color="gray">
             Published on <DateText date={product.created_at} />
           </Text>
+          {catalogEntry?.objects_updated_at && (
+            <>
+              {" • "}
+              <ObjectsUpdated entry={catalogEntry} />
+            </>
+          )}
           <Badge
             size="1"
             color={visibility.color}

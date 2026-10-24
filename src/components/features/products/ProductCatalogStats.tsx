@@ -14,8 +14,8 @@ export interface ObjectTypeSegment {
   share: number;
 }
 
-// Four fills, told apart by shade and pattern rather than hue: hatched, mid
-// gray, dotted, dark, so neighbours always differ in both. Segments take them by rank, so a fill means "second
+// Four fills, told apart by shade and pattern rather than hue: mid gray,
+// hatched, dotted, dark, so neighbours always differ in both. Segments take them by rank, so a fill means "second
 // largest", not a particular extension.
 const FILLS = [styles.fill0, styles.fill1, styles.fill2, styles.fill3];
 
@@ -139,17 +139,26 @@ export function ObjectTypeBar({
 const objects = (count: number) =>
   `${count.toLocaleString("en-US")} ${count === 1 ? "object" : "objects"}`;
 
-/**
- * "2.41 TB • 18,302 objects • updated 3 days ago", or as much of it as the
- * catalog knows. The update time is relative to now, which is safe because
- * the catalog only loads client-side.
- */
+/** "2.41 TB • 18,302 objects", or as much of it as the catalog knows. */
 export function catalogSummary(entry: CatalogEntry): string {
   return [
     entry.total_bytes !== undefined && formatBytes(entry.total_bytes),
     entry.object_count !== undefined && objects(entry.object_count),
-    entry.objects_updated_at && `updated ${formatRelative(entry.objects_updated_at)}`,
   ].filter(Boolean).join(" • ");
+}
+
+/**
+ * "Objects updated 3 days ago" for a list card's metadata row, with the exact
+ * time in its tooltip. Relative to now, which is safe because the catalog only
+ * loads client-side.
+ */
+export function ObjectsUpdated({ entry }: { entry?: CatalogEntry }) {
+  if (!entry?.objects_updated_at) return null;
+  return (
+    <Text size="1" color="gray" title={formatDate(entry.objects_updated_at, true)}>
+      Objects updated {formatRelative(entry.objects_updated_at)}
+    </Text>
+  );
 }
 
 /** The product's store format (zarr, icechunk, …) as a pill, if it has one. */
@@ -163,8 +172,8 @@ export function StoreFormatPill({ entry }: { entry?: CatalogEntry }) {
 }
 
 /**
- * The footer of a product list card: its bytesize, object count and update
- * time, then a slim bar of its object types half the card wide, then their
+ * The footer of a product list card: its bytesize and object count, then a
+ * slim bar of its object types half the card wide, then their
  * shares. Renders nothing when the catalog has no statistics for the product.
  */
 export function ProductCatalogStats({ entry }: { entry?: CatalogEntry }) {
@@ -177,12 +186,7 @@ export function ProductCatalogStats({ entry }: { entry?: CatalogEntry }) {
   return (
     <Flex mt="3" direction="column" gap="1" aria-label="Object types">
       {summary && (
-        <Text
-          size="1"
-          color="gray"
-          className={styles.mono}
-          title={entry.objects_updated_at && `Objects updated ${formatDate(entry.objects_updated_at, true)}`}
-        >
+        <Text size="1" color="gray" className={styles.mono}>
           {summary}
         </Text>
       )}

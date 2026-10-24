@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import {
   catalogSummary,
+  ObjectsUpdated,
   defaultMeasure,
   objectTypeSegments,
   formatShare,
@@ -110,20 +111,19 @@ describe("ProductCatalogStats", () => {
   });
 });
 
-describe("catalogSummary", () => {
-  const daysAgo = (days: number) => new Date(Date.now() - days * 86_400_000).toISOString();
+const daysAgo = (days: number) => new Date(Date.now() - days * 86_400_000).toISOString();
 
-  it("joins bytesize, object count and update time", () => {
-    expect(catalogSummary({ ...entry, objects_updated_at: daysAgo(3) }))
-      .toMatch(/^10 KB • 100 objects • updated 3 days ago$/);
-  });
+it("summarizes bytesize and object count, as much as the catalog knows", () => {
+  expect(catalogSummary({ ...entry, objects_updated_at: daysAgo(3) })).toBe("10 KB • 100 objects");
+  expect(catalogSummary({ ...identity, object_count: 1 })).toBe("1 object");
+  expect(catalogSummary(identity)).toBe("");
+});
 
-  it("says as much as the catalog knows", () => {
-    expect(catalogSummary(entry)).toBe("10 KB • 100 objects");
-    expect(catalogSummary({ ...identity, objects_updated_at: daysAgo(3) }))
-      .toMatch(/^updated 3 days ago$/);
-    expect(catalogSummary(identity)).toBe("");
-  });
+it("says when the objects last changed, only when the catalog knows", () => {
+  const { container, rerender } = render(<ObjectsUpdated entry={entry} />);
+  expect(container).toBeEmptyDOMElement();
+  rerender(<ObjectsUpdated entry={{ ...entry, objects_updated_at: daysAgo(3) }} />);
+  expect(screen.getByText(/^Objects updated 3 days ago$/)).toHaveAttribute("title");
 });
 
 it("shows the store format as a pill only when there is one", () => {

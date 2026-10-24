@@ -35,20 +35,19 @@
 
 /* Shade + pattern, from Radix grays so they follow the light/dark theme. Each
    fill paints with --ink over --ground, so .hovered recolors the pattern
-   without replacing it.
-
-   The largest type is usually most of the bar, so it gets the lightest fill, a
-   hatch; solid dark goes to the smallest, where it makes slivers easy to see. */
+   without replacing it. The largest type is usually most of the bar, so it is
+   a quiet mid gray; solid dark goes to the smallest, where it makes slivers
+   easy to see. */
 .fill0 {
+  background: var(--ink, var(--gray-9));
+}
+
+.fill1 {
   background: repeating-linear-gradient(
     135deg,
     var(--ink, var(--gray-10)) 0 1.5px,
     var(--ground, var(--gray-4)) 1.5px 4px
   );
-}
-
-.fill1 {
-  background: var(--ink, var(--gray-9));
 }
 
 .fill2 {
