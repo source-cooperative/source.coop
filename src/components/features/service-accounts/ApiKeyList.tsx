@@ -13,6 +13,7 @@ import {
   type RevokedVia,
   type ServiceAccountKey,
 } from "@/types";
+import { formatRelative } from "@/lib/format";
 import { ApiKeyExpiryField } from "./ApiKeyExpiryField";
 import { ExampleUsage } from "./ExampleUsage";
 import { apiKeyEnvironment } from "@/lib/services/service-account-usage";
@@ -28,15 +29,6 @@ function Status({ state }: { state: ApiKeyActionState }) {
 const date = (iso: string) =>
   new Date(iso).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
 
-const RELATIVE = new Intl.RelativeTimeFormat(undefined, { numeric: "auto" });
-const DAY_MS = 86_400_000;
-/** "3 days ago", "in 5 months": the row's reading; the exact date is in its tooltip. */
-const relative = (iso: string, now = Date.now()) => {
-  const days = Math.round((Date.parse(iso) - now) / DAY_MS);
-  if (Math.abs(days) < 30) return RELATIVE.format(days, "day");
-  if (Math.abs(days) < 365) return RELATIVE.format(Math.round(days / 30), "month");
-  return RELATIVE.format(Math.round(days / 365), "year");
-};
 
 const REVOKED_VIA: Record<RevokedVia, string> = {
   owner: " in settings",
@@ -50,14 +42,14 @@ const revoker = (key: ServiceAccountKey) =>
 
 /** What a key's row says of it, in two short lines: its use, then its end. */
 const keyStanding = (key: ServiceAccountKey) => ({
-  used: key.last_used_at ? `Used ${relative(key.last_used_at)}` : "Never used",
+  used: key.last_used_at ? `Used ${formatRelative(key.last_used_at)}` : "Never used",
   ends: key.revoked_at
-    ? `Revoked ${relative(key.revoked_at)}${revoker(key)}`
+    ? `Revoked ${formatRelative(key.revoked_at)}${revoker(key)}`
     : key.expires_at === null
       ? "Never expires"
       : Date.parse(key.expires_at) > Date.now()
-        ? `Expires ${relative(key.expires_at)}`
-        : `Expired ${relative(key.expires_at)}`,
+        ? `Expires ${formatRelative(key.expires_at)}`
+        : `Expired ${formatRelative(key.expires_at)}`,
 });
 
 /** The row's exact dates, and who revoked it, for its tooltip. */
