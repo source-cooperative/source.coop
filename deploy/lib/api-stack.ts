@@ -56,11 +56,10 @@ export class ApiStack extends cdk.Stack {
       database.membershipsTable,
       database.accountTrustsTable,
       database.serviceAccountKeysTable,
+      database.tagsTable,
     ]) {
       table.grantReadWriteData(vercel.vercelRole);
     }
-    // The tag corpus is curated outside the app, which only reads it.
-    database.tagsTable.grantReadData(vercel.vercelRole);
 
     // Grant Vercel role write access to assets bucket (for profile image uploads)
     assets.bucket.grantPut(vercel.vercelRole);
