@@ -98,6 +98,13 @@ covers the operations layer every route goes through, how a route documents
 itself, the shapes of lists, errors and methods, and which consumers a change
 has to stay compatible with.
 
+New functionality ships with its endpoint. Anything a user or an admin can do
+in the UI — a settings action, an admin action, a new kind of record — gets an
+`/api/v1` route in the same PR, calling the same operation the UI calls. A
+feature that exists only behind a form is one that scripts, the CLI and agents
+can't use, and the API falls a little further behind the app with each one.
+An issue that plans such a feature names its endpoint.
+
 ## Pull requests
 
 A PR that touches the UI links the stories it affects, on that branch's Storybook
