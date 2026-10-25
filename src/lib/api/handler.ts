@@ -3,37 +3,51 @@ import { StatusCodes } from "http-status-codes";
 import { UserSession } from "@/types";
 import { LOGGER } from "@/lib/logging";
 import { getApiSession } from "./utils";
-import { OperationError, OperationResult } from "@/lib/operations/result";
+import { OperationResult } from "@/lib/operations/result";
+import {
+  InputSource,
+  isProblemResponse,
+  Problem,
+  problem,
+  problemResponse,
+  toFieldProblems,
+} from "./problems";
 
-const STATUS: Record<OperationError, number> = {
-  invalid: StatusCodes.BAD_REQUEST,
-  unauthenticated: StatusCodes.UNAUTHORIZED,
-  forbidden: StatusCodes.FORBIDDEN,
-  not_found: StatusCodes.NOT_FOUND,
-  conflict: StatusCodes.CONFLICT,
-};
-
-const errorResponse = (
-  code: string,
-  message: string,
-  status: number,
-  field_errors?: Record<string, string[]>
-) => NextResponse.json({ error: { code, message, field_errors } }, { status });
-
-/** The route adapter: an operation's result as an HTTP response. */
+/**
+ * The route adapter: an operation's result as an HTTP response. A failure is
+ * an RFC 9457 problem; `input` says whether the operation was given the body
+ * or the query string, so its field errors name the fields the right way.
+ */
 export function toResponse<T>(
   result: OperationResult<T>,
-  status: number = StatusCodes.OK
+  status: number = StatusCodes.OK,
+  input: InputSource = "body"
 ): Response {
   if (!result.ok) {
-    return errorResponse(
-      result.error,
-      result.message,
-      STATUS[result.error],
-      result.fieldErrors
-    );
+    const errors =
+      result.fieldErrors && Object.keys(result.fieldErrors).length
+        ? toFieldProblems(result.fieldErrors, input)
+        : undefined;
+    return problemResponse(problem(result.error, result.message, { errors }));
   }
   return NextResponse.json(result.value, { status });
+}
+
+/**
+ * Where a problem happened: the request's path, and the platform's request ID
+ * when it gives one (Vercel's `x-vercel-id`, which finds the request in its
+ * logs).
+ */
+function occurrence(request: NextRequest): Partial<Problem> {
+  const request_id = request.headers.get("x-vercel-id") ?? undefined;
+  return { instance: request.nextUrl.pathname, ...(request_id && { request_id }) };
+}
+
+/** `response`, with where it happened added if it is a problem. */
+async function withOccurrence(response: Response, request: NextRequest) {
+  if (!isProblemResponse(response)) return response;
+  const body = (await response.json()) as Problem;
+  return problemResponse({ ...body, ...occurrence(request) }, response.headers);
 }
 
 interface ApiContext<P> {
@@ -48,8 +62,8 @@ const READS = new Set(["GET", "HEAD"]);
 
 /**
  * Wraps a route handler with the parts every API route shares: the session,
- * the awaited path params, the parsed JSON body, and a logged 500 for
- * anything thrown.
+ * the awaited path params, the parsed JSON body, a logged 500 for anything
+ * thrown, and the `instance` and `request_id` of any problem it answers.
  *
  * A request that changes something must carry a bearer token. The cookie
  * fallback in `getApiSession` exists for the app's own reads; a browser
@@ -74,22 +88,21 @@ export function withApiSession<P = Record<string, never>>(
       try {
         body = text ? JSON.parse(text) : undefined;
       } catch {
-        return errorResponse(
-          "invalid",
-          "Request body is not valid JSON",
-          StatusCodes.BAD_REQUEST
+        return problemResponse(
+          problem("invalid", "Request body is not valid JSON", occurrence(request))
         );
       }
-      return await handler({ request, session, params: await params, body });
+      return await withOccurrence(
+        await handler({ request, session, params: await params, body }),
+        request
+      );
     } catch (error) {
       LOGGER.error("Unhandled API error", {
         operation: `${request.method} ${request.nextUrl.pathname}`,
         error,
       });
-      return errorResponse(
-        "internal",
-        "Internal server error",
-        StatusCodes.INTERNAL_SERVER_ERROR
+      return problemResponse(
+        problem("internal", "Internal server error", occurrence(request))
       );
     }
   };

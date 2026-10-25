@@ -98,6 +98,11 @@ covers the operations layer every route goes through, how a route documents
 itself, the shapes of lists, errors and methods, and which consumers a change
 has to stay compatible with.
 
+Every error the API answers is an RFC 9457 problem, served as
+`application/problem+json` and built from the table in
+`src/lib/api/problems.ts`. Answer one through `toResponse` or
+`problemResponse`, never a hand-built error body. API.md's "Errors" says why.
+
 New functionality ships with its `/api/v1` endpoint in the same PR, and an
 issue that plans it names the endpoint. A feature only the UI can reach is one
 that scripts, the CLI and agents can't use. The UI and the endpoint go through

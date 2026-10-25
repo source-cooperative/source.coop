@@ -40,7 +40,13 @@ describe("POST /api/v1/accounts/[account_id]/trusts/exchanges", () => {
     (accountTrustsTable.isTrusted as jest.Mock).mockResolvedValue(false);
     const res = await POST(post({ issuer: ISSUER, subject: SUBJECT }), params);
     expect(res.status).toBe(403);
-    await expect(res.json()).resolves.toEqual({ trusted: false });
+    expect(res.headers.get("content-type")).toBe("application/problem+json");
+    await expect(res.json()).resolves.toMatchObject({
+      type: "https://source.coop/api/problems/forbidden",
+      status: 403,
+      code: "forbidden",
+      trusted: false,
+    });
   });
 
   test("answers an admin asking about any account", async () => {

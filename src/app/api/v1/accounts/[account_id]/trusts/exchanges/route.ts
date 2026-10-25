@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { StatusCodes } from "http-status-codes";
 import { z } from "zod";
 import { authenticateWithOidcToken } from "@/lib/api/oidc";
 import { isAdmin } from "@/lib/api/authz";
@@ -10,8 +9,11 @@ import {
   errors,
   internal,
   json,
+  problemJson,
+  ProblemSchema,
   registry,
 } from "@/lib/api/openapi";
+import { problem, problemResponse } from "@/lib/api/problems";
 import { accountTrustsTable } from "@/lib/clients/database";
 import { invalid, unauthenticated } from "@/lib/operations/result";
 
@@ -21,6 +23,13 @@ const BodySchema = z.object({
 });
 
 const AnswerSchema = z.object({ trusted: z.boolean() });
+
+// The refusal is a `forbidden` problem that still says `trusted: false`, so
+// either half of it is enough to read the answer.
+const RefusalSchema = ProblemSchema.extend({ trusted: z.literal(false) }).openapi(
+  "TrustRefusal",
+  { description: "A `forbidden` problem that also says `trusted: false`." }
+);
 
 registry.registerPath({
   method: "post",
@@ -36,7 +45,7 @@ registry.registerPath({
   },
   responses: {
     200: json("The account trusts this subject.", AnswerSchema),
-    403: json("The account does not trust this subject.", AnswerSchema),
+    403: problemJson("The account does not trust this subject.", RefusalSchema),
     ...errors(400, 401),
   },
 });
@@ -60,5 +69,13 @@ export async function POST(
   if (!parsed.success) return toResponse(invalid("issuer and subject are required"));
   const { issuer, subject } = parsed.data;
   const trusted = await accountTrustsTable.isTrusted(account_id, issuer, subject);
-  return NextResponse.json({ trusted }, { status: trusted ? StatusCodes.OK : StatusCodes.FORBIDDEN });
+  if (!trusted) {
+    return problemResponse(
+      problem("forbidden", `${account_id} does not trust this subject`, {
+        instance: request.nextUrl.pathname,
+        trusted: false,
+      })
+    );
+  }
+  return NextResponse.json({ trusted });
 }

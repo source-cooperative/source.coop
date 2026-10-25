@@ -116,20 +116,66 @@ named for what it does. A list that can only be read through one of its table's 
 
 ## Errors
 
-Every error from `toResponse` or `withApiSession` is
-`{ "error": { "code", "message", "field_errors"? } }`:
+Every error is an [RFC 9457](https://www.rfc-editor.org/rfc/rfc9457) problem,
+served as `application/problem+json`:
+
+```json
+{
+  "type": "https://source.coop/api/problems/invalid",
+  "title": "Invalid request",
+  "status": 400,
+  "detail": "Product ID may not contain consecutive hyphens",
+  "instance": "/api/v1/products/example",
+  "code": "invalid",
+  "errors": [
+    { "detail": "Product ID may not contain consecutive hyphens", "pointer": "#/product_id" }
+  ],
+  "request_id": "iad1::abcde-1234567890"
+}
+```
 
 | Status | `code` | When |
 |---|---|---|
-| 400 | `invalid` | the input fails its schema or a rule; `field_errors` names the fields |
+| 400 | `invalid` | the input fails its schema or a rule; `errors` names the fields |
 | 401 | `unauthenticated` | no credentials, and the endpoint needs some |
 | 403 | `forbidden` | credentials that may not do this |
 | 404 | `not_found` | nothing by that ID, or nothing the caller may know of |
 | 409 | `conflict` | the resource's state doesn't allow it |
-| 500 | `internal` | anything thrown; the message says nothing more |
+| 500 | `internal` | anything thrown; the detail says nothing more |
 
-The data proxy's trust exchange is the exception: it answers 403 as
-`{ "trusted": false }`, which the proxy reads.
+The members, and who sets them:
+
+- **`type`** is `https://source.coop/api/problems/{code}`, the same in every
+  environment, because clients compare it to a constant. It resolves to a page
+  that explains the problem and what to do about it, and `/api/problems` lists
+  them all.
+- **`title`** and **`status`** come with the type. A title never varies
+  between occurrences; anything about this occurrence goes in `detail`.
+- **`detail`** is the operation's message: a sentence for a person, which says
+  what to do instead where there is something to do.
+- **`code`** is the type's last segment, an extension member for clients that
+  switch on a short string.
+- **`errors`** lists each problem with a field, for `invalid` only. A body field
+  is named by `pointer`, a JSON Pointer as a URI fragment (`#/metadata/title`);
+  a query parameter by `parameter`. Operations keep keying `fieldErrors` by
+  dotted path, and `toResponse` translates; pass it `"query"` as its third
+  argument when the operation was given the query string, so the fields come
+  out as parameters.
+- **`instance`** (the request path) and **`request_id`** (Vercel's
+  `x-vercel-id`, which finds the request in its logs) are added by
+  `withApiSession`. A route outside it sets `instance` itself if it can.
+
+Each type is defined once, in `src/lib/api/problems.ts`: its status, title, and
+the prose its page publishes. The handler, the reference's `Problem` schema and
+the pages all read that table. A new kind of failure is a new entry there, with
+an `OperationError` to raise it, not a new status picked in a route.
+
+Answer problems through `toResponse` or `problemResponse(problem(...))`, never
+by building an error body by hand: a hand-built body misses the media type and
+the members clients rely on. A problem may carry an extension member that only
+its endpoint answers. Declare it by extending `ProblemSchema`, and document it
+with `problemJson` rather than `json`. The data proxy's trust exchange is the
+one so far: its 403 is a `forbidden` problem that also says `trusted: false`.
 
 Refuse with `deny(session, message)`, which picks 401 or 403 for you. Where
 the permission doesn't depend on the input, authorize before validating it, so
@@ -154,7 +200,8 @@ edit of those.
   the request, statuses and success body of every endpoint it calls; a change
   there needs the matching data.source.coop change first.
 - **The CLI** (source-coop-cli) is built against this API and follows the
-  reference as it changes.
+  reference as it changes. It reads problems into its own `--json` error
+  output, so a change to a problem's members needs the matching CLI change.
 - **Everyone else** is unknown. Before removing or reshaping an endpoint, check
   production traffic for it in Vercel's logs for the path; if something still
   calls it, deprecate it instead.

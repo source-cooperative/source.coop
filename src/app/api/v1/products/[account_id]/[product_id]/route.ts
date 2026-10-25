@@ -1,3 +1,4 @@
+import { StatusCodes } from "http-status-codes";
 import { ProductResponseSchema } from "@/types";
 import { withApiSession, toResponse } from "@/lib/api/handler";
 import { bearer, errors, json, productParams, registry } from "@/lib/api/openapi";
@@ -97,6 +98,8 @@ export const DELETE = withApiSession<Params>(async ({ request, session, params }
       params.account_id,
       params.product_id,
       Object.fromEntries(request.nextUrl.searchParams)
-    )
+    ),
+    StatusCodes.OK,
+    "query"
   )
 );
