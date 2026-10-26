@@ -109,8 +109,10 @@ export interface Problem {
 /** Where an operation's input came from, so a field is named the right way. */
 export type InputSource = "body" | "query";
 
+// RFC 6901 escapes `~` and `/` in a segment, and its URI-fragment form
+// (section 6) then percent-encodes what a fragment can't hold.
 const escapePointerSegment = (segment: string) =>
-  segment.replace(/~/g, "~0").replace(/\//g, "~1");
+  encodeURIComponent(segment.replace(/~/g, "~0").replace(/\//g, "~1"));
 
 /**
  * Operations key field errors by dotted path (`metadata.tags.0`). A body field

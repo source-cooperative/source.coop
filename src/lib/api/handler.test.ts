@@ -43,12 +43,12 @@ describe("toResponse", () => {
   });
 
   it("points at each invalid body field", async () => {
-    const schema = z.object({ a: z.string(), b: z.object({ "c/d": z.number() }) });
+    const schema = z.object({ a: z.string(), b: z.object({ "c/d e": z.number() }) });
     const res = toResponse(fromZodError(schema.safeParse({ b: {} }).error!));
     const body = await res.json();
     expect(body.errors).toEqual([
       { detail: "Required", pointer: "#/a" },
-      { detail: "Required", pointer: "#/b/c~1d" },
+      { detail: "Required", pointer: "#/b/c~1d%20e" },
     ]);
   });
 
