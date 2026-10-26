@@ -28,10 +28,11 @@ export async function createProduct(
   initialState: any,
   formData: FormData,
 ): Promise<FormState<ProductCreationRequest>> {
-  const result = await ops.createProduct(
-    await getPageSession(),
-    Object.fromEntries(formData),
-  );
+  const result = await ops.createProduct(await getPageSession(), {
+    ...Object.fromEntries(formData),
+    // One form value per tag, which fromEntries would cut to the last.
+    tags: formData.getAll("tags").map(String),
+  });
   // Navigate on the client (see FormState.redirectTo) rather than redirect()
   // here, so the shared layout's auth UI re-renders with the current session.
   return toFormState(
@@ -64,6 +65,9 @@ export async function updateProduct(
         description: field("description"),
         visibility: field("visibility"),
         disabled: disabled === null ? undefined : disabled === "true",
+        // Always sent: the picker submits nothing when every chip is
+        // removed, and that has to clear the tags.
+        tags: formData.getAll("tags").map(String),
       },
     );
     return toFormState(result, formData, "Product updated successfully!");
