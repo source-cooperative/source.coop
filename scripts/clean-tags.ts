@@ -45,10 +45,10 @@ const ALIASES: Record<string, string[]> = {
   lowcoder: [], lacuna: [], wadhwaniai: [], pacificspatial: [],
 
   // Spelling, plurals and synonyms.
-  "field boundary": ["field boundaries"],
-  fieldboundaries: ["field boundaries"],
-  "field boundarie": ["field boundaries"],
-  boundary: ["field boundaries"],
+  "field boundary": ["field", "boundaries"],
+  fieldboundaries: ["field", "boundaries"],
+  "field boundarie": ["field", "boundaries"],
+  boundary: ["field", "boundaries"],
   ftw: ["fields of the world"],
   fieldsoftheworld: ["fields of the world"],
   sentinel: ["sentinel-2"],
@@ -145,9 +145,9 @@ const ALIASES: Record<string, string[]> = {
   businesses: ["places"],
   roads: ["transportation"],
   "taxi zones": ["transportation"],
-  "political boundaries": ["admin boundaries"],
-  admin: ["admin boundaries"],
-  boundaries: ["admin boundaries"],
+  "political boundaries": ["admin", "boundaries"],
+  admin: ["admin", "boundaries"],
+  boundaries: ["admin", "boundaries"],
   timeseries: ["time series"],
   multitemporal: ["time series"],
   observation: ["observations"],
@@ -203,7 +203,7 @@ const ALIASES: Record<string, string[]> = {
   "luxembourg fiboa field flik boundaries geoparquet vector pmtiles": ["luxembourg", ...FIBOA],
   "ireland fiboa field boundarie geoparquet vector pmtiles": ["ireland", ...FIBOA],
   "belgium wallonia fiboa field boundaries geoparquet vector pmtiles": ["belgium", ...FIBOA],
-  "boundary vector agriculture": ["field boundaries", "vector", "agriculture"],
+  "boundary vector agriculture": ["field", "boundaries", "vector", "agriculture"],
   "geozarr": ["zarr"],
 };
 
