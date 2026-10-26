@@ -1,7 +1,7 @@
 import { after, NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { PROXY_SELF_SUBJECT, verifyProxyAssertion } from "@/lib/api/oidc";
-import { toResponse } from "@/lib/api/handler";
+import { toResponse, withProblems } from "@/lib/api/handler";
 import { bearer, errors, internal, json, registry } from "@/lib/api/openapi";
 import { invalid, unauthenticated } from "@/lib/operations/result";
 import { accountsTable, serviceAccountKeysTable } from "@/lib/clients/database";
@@ -39,7 +39,7 @@ registry.registerPath({
   },
 });
 
-export async function POST(request: NextRequest) {
+async function exchangeKey(request: NextRequest) {
   // Only the proxy, as itself. Never a session: the sentinel subject resolves
   // to no account, and a cookie must not reach this route.
   const assertion = await verifyProxyAssertion(
@@ -90,3 +90,5 @@ export async function POST(request: NextRequest) {
   LOGGER.info("API key exchanged", { operation: "serviceAccountKeyExchange", metadata: meta });
   return NextResponse.json({ account_id: key.account_id, key_id: key.key_id, active: true });
 }
+
+export const POST = withProblems(exchangeKey);

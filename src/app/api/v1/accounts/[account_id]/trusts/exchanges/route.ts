@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { authenticateWithOidcToken } from "@/lib/api/oidc";
 import { isAdmin } from "@/lib/api/authz";
-import { toResponse, withOccurrence } from "@/lib/api/handler";
+import { toResponse, withProblems } from "@/lib/api/handler";
 import {
   accountParams,
   bearer,
@@ -52,11 +52,6 @@ registry.registerPath({
 
 type Context = { params: Promise<{ account_id: string }> };
 
-// Outside `withApiSession`, so it places each problem at the request itself.
-export async function POST(request: NextRequest, context: Context) {
-  return withOccurrence(await exchange(request, context), request);
-}
-
 async function exchange(request: NextRequest, { params }: Context) {
   // A read sent as a POST, so it authenticates the proxy's assertion itself:
   // `getApiSession` refuses those for anything but GET and HEAD.
@@ -82,3 +77,7 @@ async function exchange(request: NextRequest, { params }: Context) {
   }
   return NextResponse.json({ trusted });
 }
+
+// It authenticates the proxy's assertion itself, so `withProblems` rather than
+// `withApiSession`.
+export const POST = withProblems(exchange);

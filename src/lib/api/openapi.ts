@@ -80,9 +80,9 @@ export const ProblemSchema = registry.register(
         description: "A sentence for a person about this occurrence.",
         example: "Product example/missing not found",
       }),
-      instance: z.string().optional().openapi({
-        description: "The request path the problem occurred at.",
-        example: "/api/v1/products/example/missing",
+      instance: z.string().url().optional().openapi({
+        description: "The URL of the request the problem occurred at, without its query.",
+        example: "https://source.coop/api/v1/products/example/missing",
       }),
       code: z.enum(PROBLEM_CODES).openapi({
         description:

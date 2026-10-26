@@ -4,7 +4,7 @@ import { z } from "zod";
 import { revokeLeakedKey } from "@/lib/accounts/service-account-keys";
 import { LOGGER } from "@/lib/logging";
 import { isApiKey } from "@/types";
-import { toResponse } from "@/lib/api/handler";
+import { toResponse, withProblems } from "@/lib/api/handler";
 import { errors, internal, json, registry } from "@/lib/api/openapi";
 import { invalid, unauthenticated } from "@/lib/operations/result";
 
@@ -104,7 +104,7 @@ async function signedByGitHub(
   return false;
 }
 
-export async function POST(request: NextRequest) {
+async function receiveMatches(request: NextRequest) {
   // The signature covers the bytes as sent, not the JSON they parse to.
   const body = Buffer.from(await request.clone().arrayBuffer());
   const signed = await signedByGitHub(
@@ -132,3 +132,5 @@ export async function POST(request: NextRequest) {
   );
   return NextResponse.json(feedback);
 }
+
+export const POST = withProblems(receiveMatches);

@@ -4,7 +4,7 @@ import { GET, POST } from "./route";
 
 describe("/api/[...path]", () => {
   test.each([GET, POST])("returns a not_found problem", async (handler) => {
-    const res = handler(new NextRequest("http://localhost/api/v1/nope"));
+    const res = await handler(new NextRequest("http://localhost/api/v1/nope"), {});
     expect(res.status).toBe(404);
     expect(res.headers.get("content-type")).toBe("application/problem+json");
     await expect(res.json()).resolves.toEqual({

@@ -163,9 +163,10 @@ The members, and who sets them:
   out as parameters.
 - **`instance`** (the request's URL, without its query) and **`request_id`**
   (Vercel's `x-vercel-id`, which finds the request in its logs) are added by
-  `withApiSession`, which also makes `type` absolute. A route outside it
-  answers through `problemAt(request, problem(...))` or `withOccurrence`, so
-  every problem carries them.
+  `withProblems`, which also makes `type` absolute and answers anything thrown
+  as an `internal` problem. `withApiSession` is built on it, and a route that
+  authenticates its caller itself is wrapped in it directly, so every problem
+  carries them.
 
 Each type is defined once, in `src/lib/api/problems.ts`: its status, title, and
 the prose its page publishes. The handler, the reference's `Problem` schema and
@@ -173,8 +174,7 @@ the pages all read that table. A new kind of failure is a new entry there, with
 an `OperationError` to raise it, not a new status picked in a route.
 
 Answer problems through `toResponse` or `problemResponse(problem(...))` inside
-`withApiSession`, and `problemAt` outside it, never by building an error body
-by hand: a hand-built body misses the media type and the members clients rely
+`withProblems`, never by building an error body by hand: a hand-built body misses the media type and the members clients rely
 on. A problem may carry an extension member that only
 its endpoint answers. Declare it by extending `ProblemSchema`, and document it
 with `problemJson` rather than `json`. The data proxy's trust exchange is the
