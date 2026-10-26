@@ -1,3 +1,4 @@
+import { StatusCodes } from "http-status-codes";
 import { withApiSession, toResponse } from "@/lib/api/handler";
 import { errors, json, registry } from "@/lib/api/openapi";
 import {
@@ -22,6 +23,8 @@ registry.registerPath({
 
 export const GET = withApiSession(async ({ request, session }) =>
   toResponse(
-    await listProducts(session, Object.fromEntries(request.nextUrl.searchParams))
+    await listProducts(session, Object.fromEntries(request.nextUrl.searchParams)),
+    StatusCodes.OK,
+    "query"
   )
 );

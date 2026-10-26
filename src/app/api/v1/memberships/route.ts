@@ -30,7 +30,9 @@ export const GET = withApiSession(async ({ session, request }) =>
     await listMemberships(
       session,
       Object.fromEntries(request.nextUrl.searchParams)
-    )
+    ),
+    StatusCodes.OK,
+    "query"
   )
 );
 

@@ -37,7 +37,9 @@ export const GET = withApiSession<Params>(async ({ request, session, params }) =
       session,
       Object.fromEntries(request.nextUrl.searchParams),
       params.account_id
-    )
+    ),
+    StatusCodes.OK,
+    "query"
   )
 );
 

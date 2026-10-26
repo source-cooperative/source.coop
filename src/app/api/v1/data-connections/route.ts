@@ -32,7 +32,9 @@ export const GET = withApiSession(async ({ session, request }) =>
     await listDataConnections(
       session,
       Object.fromEntries(request.nextUrl.searchParams)
-    )
+    ),
+    StatusCodes.OK,
+    "query"
   )
 );
 
