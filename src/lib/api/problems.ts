@@ -149,6 +149,8 @@ export function problem(
 export function problemResponse(body: Problem, headers?: HeadersInit): Response {
   const h = new Headers(headers);
   h.set("Content-Type", PROBLEM_CONTENT_TYPE);
+  // Headers may come from a response whose body this one replaces.
+  h.delete("Content-Length");
   return new Response(JSON.stringify(body), { status: body.status, headers: h });
 }
 
