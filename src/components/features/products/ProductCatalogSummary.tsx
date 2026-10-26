@@ -13,6 +13,7 @@ import {
   ObjectTypeSwatch,
   objectTypeRows,
   objectTypeSegments,
+  formatCount,
   formatShare,
   hasCatalogStats,
 } from "./ProductCatalogStats";
@@ -23,7 +24,8 @@ const HELP = {
   objects: "Number of objects in the product, in every folder.",
 };
 
-const count = (value?: number) => value?.toLocaleString("en-US") ?? "—";
+const count = (value?: number) => (value === undefined ? "—" : formatCount(value));
+const exact = (value?: number) => value?.toLocaleString("en-US");
 const bytes = (value?: number) => (value === undefined ? "—" : formatBytes(value));
 const share = (value?: number) => (value === undefined ? "" : formatShare(value));
 
@@ -46,7 +48,11 @@ export function ProductObjectTypesCard({ entry }: { entry?: CatalogEntry }) {
       <SectionHeader title="Object types">
         <StatRow pb="3" style={{ borderBottom: "1px solid var(--gray-4)" }}>
           <Stat label="Byte volume" help={HELP.bytes} value={bytes(entry.total_bytes)} />
-          <Stat label="Objects" help={HELP.objects} value={count(entry.object_count)} />
+          <Stat
+            label="Objects"
+            help={exact(entry.object_count) ? `${HELP.objects} Exactly ${exact(entry.object_count)}.` : HELP.objects}
+            value={count(entry.object_count)}
+          />
         </StatRow>
 
         {segments.length > 0 && (
@@ -61,29 +67,33 @@ export function ProductObjectTypesCard({ entry }: { entry?: CatalogEntry }) {
                 onHover={setHovered}
               />
             </Box>
-            <table className={styles.table} onMouseLeave={() => setHovered(null)}>
-              <thead>
-                <tr>
-                  <th scope="col"><MonoLabel>Extension</MonoLabel></th>
-                  <th scope="col" colSpan={2}><MonoLabel>Objects</MonoLabel></th>
-                  <th scope="col" colSpan={2}><MonoLabel>Bytes</MonoLabel></th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((row, index) => (
-                  <tr key={row.label} onMouseEnter={() => setHovered(index)}>
-                    <th scope="row">
-                      <ObjectTypeSwatch index={index} hovered={hovered} />
-                      <Text color={index === hovered ? "green" : undefined}>{row.label}</Text>
-                    </th>
-                    <td>{count(row.objects)}</td>
-                    <td className={styles.share}>{share(row.objectShare)}</td>
-                    <td>{bytes(row.bytes)}</td>
-                    <td className={styles.share}>{share(row.byteShare)}</td>
+            {/* Scrolls sideways rather than spilling out of a narrow sidebar
+                (three columns start at the md breakpoint). */}
+            <Box className={styles.tableWrap}>
+              <table className={styles.table} onMouseLeave={() => setHovered(null)}>
+                <thead>
+                  <tr>
+                    <th scope="col"><MonoLabel>Extension</MonoLabel></th>
+                    <th scope="col" colSpan={2}><MonoLabel>Objects</MonoLabel></th>
+                    <th scope="col" colSpan={2}><MonoLabel>Bytes</MonoLabel></th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {rows.map((row, index) => (
+                    <tr key={row.label} onMouseEnter={() => setHovered(index)}>
+                      <th scope="row">
+                        <ObjectTypeSwatch index={index} hovered={hovered} />
+                        <Text color={index === hovered ? "green" : undefined}>{row.label}</Text>
+                      </th>
+                      <td title={exact(row.objects)}>{count(row.objects)}</td>
+                      <td className={styles.share}>{share(row.objectShare)}</td>
+                      <td>{bytes(row.bytes)}</td>
+                      <td className={styles.share}>{share(row.byteShare)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </Box>
           </Box>
         )}
       </SectionHeader>

@@ -30,9 +30,13 @@
 
 /* The sidebar card's table: extension, then object count and byte volume,
    each followed by its share in a narrow gray column. */
+.tableWrap {
+  margin-top: var(--space-3);
+  overflow-x: auto;
+}
+
 .table {
   width: 100%;
-  margin-top: var(--space-3);
   border-collapse: collapse;
   font-family: var(--code-font-family);
   font-size: var(--font-size-1);

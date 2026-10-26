@@ -176,7 +176,6 @@ export function ObjectTypeBar({
   );
 }
 
-// "8", "18.3K", "346K", "1.2M": at most one decimal and three digits.
 const COMPACT = new Intl.NumberFormat("en-US", {
   notation: "compact",
   maximumSignificantDigits: 3,
@@ -184,8 +183,15 @@ const COMPACT = new Intl.NumberFormat("en-US", {
   roundingPriority: "lessPrecision",
 });
 
+/**
+ * An object count as "8", "18.3K", "346K" or "1.2M": at most one decimal and
+ * three digits, so large products don't crowd the cards. Pair it with the
+ * exact count in a tooltip.
+ */
+export const formatCount = (count: number) => COMPACT.format(count);
+
 const objects = (count: number) =>
-  `${COMPACT.format(count)} ${count === 1 ? "object" : "objects"}`;
+  `${formatCount(count)} ${count === 1 ? "object" : "objects"}`;
 
 /**
  * "2.41 TB • 18.3K objects", or as much of it as the catalog knows. The
@@ -241,9 +247,9 @@ export function ProductCatalogStats({ entry }: { entry?: CatalogEntry }) {
           size="1"
           color="gray"
           className={styles.mono}
-          title={entry.object_count !== undefined
-            ? `${entry.object_count.toLocaleString("en-US")} objects`
-            : undefined}
+          title={entry.object_count === undefined
+            ? undefined
+            : `${entry.object_count.toLocaleString("en-US")} objects`}
         >
           {summary}
         </Text>

@@ -48,7 +48,7 @@ export const Default: Story = {
       expect.stringMatching(/^Object types by byte volume: tif/),
     );
     const json = canvas.getByRole("rowheader", { name: "json" }).closest("tr")!;
-    await expect(json).toHaveTextContent("10,000");
+    await expect(json).toHaveTextContent("10K");
     await expect(json).toHaveTextContent("80%");
   },
 };
@@ -64,6 +64,30 @@ export const NoExtension: Story = {
       exts: { "": 1_204_100, json: 450, md: 7 },
       ext_bytes: { "": 666_000_000_000, json: 14_000_000_000, md: 7_194_767_360 },
     },
+  },
+};
+
+/**
+ * A product with tens of millions of objects. Counts are compact (22.9M) so
+ * the table stays readable in a narrow sidebar; hovering a count shows the
+ * exact figure.
+ */
+export const ManyObjects: Story = {
+  args: {
+    entry: {
+      account_id: "example",
+      product_id: "archive",
+      total_bytes: 39_098_406_243_164,
+      object_count: 22_862_797,
+      exts: { "": 22_862_795, json: 2 },
+      ext_bytes: { "": 39_098_406_243_094, json: 70 },
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const row = canvas.getByRole("rowheader", { name: "no extension" }).closest("tr")!;
+    await expect(row).toHaveTextContent("22.9M");
+    await expect(canvas.getByTitle("22,862,795")).toBeInTheDocument();
   },
 };
 
