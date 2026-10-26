@@ -24,10 +24,10 @@ it("renders the current product's statistics without including other products", 
   expect(screen.getByText("2 KB")).toBeInTheDocument();
   expect(screen.getByText("4")).toBeInTheDocument();
   expect(screen.queryByText("99")).not.toBeInTheDocument();
-  expect(screen.getByRole("img")).toHaveAccessibleName("Object types by bytesize: tif 75%, json 25%");
+  expect(screen.getByRole("img")).toHaveAccessibleName("Object types by byte volume: tif 75%, json 25%");
 });
 
-it("switches the breakdown to object counts", () => {
+it("tables each type's object count and byte volume, ordered by byte volume", () => {
   catalogHook.mockReturnValue(new Map([
     ["org/data", {
       account_id: "org", product_id: "data", total_bytes: 2048, object_count: 4,
@@ -35,12 +35,14 @@ it("switches the breakdown to object counts", () => {
     }],
   ]));
   renderSummary();
-  fireEvent.click(screen.getByRole("radio", { name: "Count" }));
-  expect(screen.getByText("By object count")).toBeInTheDocument();
-  expect(screen.getByRole("img")).toHaveAccessibleName("Object types by object count: json 75%, tif 25%");
+  const rows = screen.getAllByRole("row").slice(1);
+  expect(rows.map((row) => [...row.children].map((cell) => cell.textContent)))
+    .toEqual([["tif", "1", "25%", "1.5 KB", "75%"], ["json", "3", "75%", "512 B", "25%"]]);
+  expect(screen.getByRole("columnheader", { name: "Objects" })).toBeInTheDocument();
+  expect(screen.getByRole("columnheader", { name: "Bytes" })).toBeInTheDocument();
 });
 
-it("highlights a type in both the bar and the legend when either is hovered", () => {
+it("highlights a type in both the bar and the table when either is hovered", () => {
   catalogHook.mockReturnValue(new Map([
     ["org/data", {
       account_id: "org", product_id: "data", total_bytes: 2048, object_count: 4,
@@ -50,14 +52,14 @@ it("highlights a type in both the bar and the legend when either is hovered", ()
   renderSummary();
   const segments = [...screen.getByRole("img").children];
   const label = screen.getByText("json");
-  const row = label.parentElement!;
+  const row = label.closest("tr")!;
 
   fireEvent.mouseEnter(row);
   // Recolored, not replaced: the segment keeps its own fill's pattern.
   expect(segments[1]).toHaveClass("fill1", "hovered");
   expect(row.querySelector("[aria-hidden]")).toHaveClass("fill1", "hovered");
   expect(segments[0]).not.toHaveClass("hovered");
-  fireEvent.mouseLeave(row.parentElement!);
+  fireEvent.mouseLeave(row.closest("table")!);
   expect(segments[1]).not.toHaveClass("hovered");
 
   fireEvent.mouseEnter(segments[1]);

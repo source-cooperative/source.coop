@@ -9,14 +9,16 @@ export type CatalogMeasure = "bytes" | "objects";
 export interface ObjectTypeSegment {
   /** Lowercase extension, "no extension", or "other". */
   label: string;
+  /** The catalog's extension key; absent for "other". */
+  extension?: string;
   value: number;
   /** Fraction of the measure's total, 0–1. */
   share: number;
 }
 
 // Four fills, told apart by shade and pattern rather than hue: mid gray,
-// hatched, dotted, dark, so neighbours always differ in both. Segments take them by rank, so a fill means "second
-// largest", not a particular extension.
+// hatched, dotted, dark, so neighbours always differ in both. Segments take
+// them by rank, so a fill means "second largest", not a particular extension.
 const FILLS = [styles.fill0, styles.fill1, styles.fill2, styles.fill3];
 
 export function hasCatalogStats(entry?: CatalogEntry): entry is CatalogEntry {
@@ -60,13 +62,51 @@ export function objectTypeSegments(
 
   const top = sorted.slice(0, 3);
   const rest = total - top.reduce((sum, [, value]) => sum + value, 0);
-  const segments = top.map(([extension, value]) => ({
+  const segments: ObjectTypeSegment[] = top.map(([extension, value]) => ({
     label: extension ? extension.toLowerCase() : "no extension",
+    extension,
     value,
     share: value / total,
   }));
   if (rest > 0) segments.push({ label: "other", value: rest, share: rest / total });
   return segments;
+}
+
+export interface ObjectTypeRow {
+  label: string;
+  objects?: number;
+  bytes?: number;
+  objectShare?: number;
+  byteShare?: number;
+}
+
+/**
+ * Both measures for each of the bar's segments, for the sidebar card's table.
+ * "other" is whatever the listed extensions leave of each total. A value the
+ * catalog doesn't have is left undefined rather than guessed.
+ */
+export function objectTypeRows(
+  entry: CatalogEntry,
+  segments: ObjectTypeSegment[],
+): ObjectTypeRow[] {
+  const listed = segments.flatMap(({ extension }) => extension === undefined ? [] : [extension]);
+  const column = (values: Record<string, number> | undefined, catalogTotal?: number) => {
+    const total = catalogTotal ?? (values && Object.values(values).reduce((a, b) => a + b, 0));
+    const rest = values && total !== undefined
+      ? Math.max(0, total - listed.reduce((sum, ext) => sum + (values[ext] ?? 0), 0))
+      : undefined;
+    return (extension?: string) => {
+      const value = extension === undefined ? rest : values?.[extension];
+      return { value, share: value !== undefined && total ? value / total : undefined };
+    };
+  };
+  const objectsOf = column(entry.exts, entry.object_count);
+  const bytesOf = column(entry.ext_bytes, entry.total_bytes);
+  return segments.map(({ label, extension }) => {
+    const o = objectsOf(extension);
+    const b = bytesOf(extension);
+    return { label, objects: o.value, bytes: b.value, objectShare: o.share, byteShare: b.share };
+  });
 }
 
 /** A whole percentage, with "<1%" and ">99%" so slivers never read as 0% or 100%. */
@@ -110,7 +150,7 @@ export function ObjectTypeBar({
   hovered?: number | null;
   onHover?: (index: number | null) => void;
 }) {
-  const by = measure === "bytes" ? "bytesize" : "object count";
+  const by = measure === "bytes" ? "byte volume" : "object count";
   return (
     <div
       className={styles.bar}
@@ -136,10 +176,21 @@ export function ObjectTypeBar({
   );
 }
 
-const objects = (count: number) =>
-  `${count.toLocaleString("en-US")} ${count === 1 ? "object" : "objects"}`;
+// "8", "18.3K", "346K", "1.2M": at most one decimal and three digits.
+const COMPACT = new Intl.NumberFormat("en-US", {
+  notation: "compact",
+  maximumSignificantDigits: 3,
+  maximumFractionDigits: 1,
+  roundingPriority: "lessPrecision",
+});
 
-/** "2.41 TB • 18,302 objects", or as much of it as the catalog knows. */
+const objects = (count: number) =>
+  `${COMPACT.format(count)} ${count === 1 ? "object" : "objects"}`;
+
+/**
+ * "2.41 TB • 18.3K objects", or as much of it as the catalog knows. The
+ * object count is compact; the card's tooltip carries the exact figure.
+ */
 export function catalogSummary(entry: CatalogEntry): string {
   return [
     entry.total_bytes !== undefined && formatBytes(entry.total_bytes),
@@ -172,9 +223,9 @@ export function StoreFormatPill({ entry }: { entry?: CatalogEntry }) {
 }
 
 /**
- * The footer of a product list card: its bytesize and object count, then a
- * slim bar of its object types half the card wide, then their
- * shares. Renders nothing when the catalog has no statistics for the product.
+ * The footer of a product list card: its byte volume and object count, then a
+ * slim bar of its object types half the card wide, then their shares.
+ * Renders nothing when the catalog has no statistics for the product.
  */
 export function ProductCatalogStats({ entry }: { entry?: CatalogEntry }) {
   if (!hasCatalogStats(entry)) return null;
@@ -186,7 +237,14 @@ export function ProductCatalogStats({ entry }: { entry?: CatalogEntry }) {
   return (
     <Flex mt="3" direction="column" gap="1" aria-label="Object types">
       {summary && (
-        <Text size="1" color="gray" className={styles.mono}>
+        <Text
+          size="1"
+          color="gray"
+          className={styles.mono}
+          title={entry.object_count !== undefined
+            ? `${entry.object_count.toLocaleString("en-US")} objects`
+            : undefined}
+        >
           {summary}
         </Text>
       )}
@@ -233,10 +291,7 @@ export function ProductCatalogStatsSkeleton() {
 export function ProductObjectTypesCardSkeleton() {
   return (
     <Card size={{ initial: "2", sm: "1" }} style={{ flexShrink: 0 }}>
-      <SectionHeader
-        title="Object types"
-        rightButton={<Skeleton width="96px" height="24px" />}
-      >
+      <SectionHeader title="Object types">
         <Flex gap="3" pb="3" style={{ borderBottom: "1px solid var(--gray-4)" }}>
           <Skeleton width="80px" height="40px" />
           <Skeleton width="80px" height="40px" />

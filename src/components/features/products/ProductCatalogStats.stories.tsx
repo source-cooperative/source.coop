@@ -2,14 +2,15 @@ import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { ProductCatalogStats } from "./ProductCatalogStats";
 
 /**
- * The footer of a product's card in a product list: the product's bytesize
- * and object count, then a slim bar of its largest object types by bytesize,
- * then their shares. The bar takes half the card, or the full width of a
- * narrow one.
+ * The footer of a product's card in a product list: the product's byte
+ * volume and object count, then a slim bar of its largest object types by
+ * byte volume, then their shares. The bar takes half the card, or the full
+ * width of a narrow one. Object counts are compact (18.3K); the exact figure
+ * is in the tooltip.
  *
  * Object types are told apart by shade and pattern, not color. The bar shows
  * the three largest types and folds the rest into "other", so it never needs
- * more than four fills. Hovering a segment names its type and bytesize.
+ * more than four fills. Hovering a segment names its type and byte volume.
  *
  * The numbers come from the metadata catalog and cover the whole product, in
  * every folder. A product the catalog has no statistics for shows no row.

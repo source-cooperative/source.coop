@@ -3,6 +3,7 @@ import {
   catalogSummary,
   ObjectsUpdated,
   defaultMeasure,
+  objectTypeRows,
   objectTypeSegments,
   formatShare,
   ProductCatalogStats,
@@ -22,9 +23,9 @@ const entry = {
 describe("objectTypeSegments", () => {
   it("keeps the three largest lowercase extensions and folds the rest into other", () => {
     expect(objectTypeSegments(entry, "bytes")).toEqual([
-      { label: "tif", value: 4096, share: 0.4 },
-      { label: "parquet", value: 2048, share: 0.2 },
-      { label: "json", value: 1024, share: 0.1 },
+      { label: "tif", extension: "TIF", value: 4096, share: 0.4 },
+      { label: "parquet", extension: "parquet", value: 2048, share: 0.2 },
+      { label: "json", extension: "json", value: 1024, share: 0.1 },
       // csv plus the 2,972 bytes the breakdown doesn't list
       { label: "other", value: 3072, share: 0.3 },
     ]);
@@ -35,8 +36,8 @@ describe("objectTypeSegments", () => {
   it("omits other when the top three account for everything", () => {
     expect(objectTypeSegments({ ...identity, object_count: 3, exts: { tif: 2, "": 1 } }, "objects"))
       .toEqual([
-        { label: "tif", value: 2, share: 2 / 3 },
-        { label: "no extension", value: 1, share: 1 / 3 },
+        { label: "tif", extension: "tif", value: 2, share: 2 / 3 },
+        { label: "no extension", extension: "", value: 1, share: 1 / 3 },
       ]);
   });
 
@@ -89,7 +90,7 @@ describe("ProductCatalogStats", () => {
     const bar = screen.getByRole("img");
     const share = screen.getByText("tif 40%");
     expect(bar).toHaveAccessibleName(
-      "Object types by bytesize: tif 40%, parquet 20%, json 10%, other 30%",
+      "Object types by byte volume: tif 40%, parquet 20%, json 10%, other 30%",
     );
     expect(summary.compareDocumentPosition(bar) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(bar.compareDocumentPosition(share) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
@@ -113,10 +114,33 @@ describe("ProductCatalogStats", () => {
 
 const daysAgo = (days: number) => new Date(Date.now() - days * 86_400_000).toISOString();
 
-it("summarizes bytesize and object count, as much as the catalog knows", () => {
+it("summarizes byte volume and object count, as much as the catalog knows", () => {
   expect(catalogSummary({ ...entry, objects_updated_at: daysAgo(3) })).toBe("10 KB • 100 objects");
   expect(catalogSummary({ ...identity, object_count: 1 })).toBe("1 object");
   expect(catalogSummary(identity)).toBe("");
+});
+
+it("compacts object counts to one decimal and three digits at most", () => {
+  const summary = (object_count: number) => catalogSummary({ ...identity, object_count });
+  expect(summary(8)).toBe("8 objects");
+  expect(summary(18_302)).toBe("18.3K objects");
+  expect(summary(346_342)).toBe("346K objects");
+  expect(summary(1_230_885)).toBe("1.2M objects");
+});
+
+describe("objectTypeRows", () => {
+  it("gives each segment both measures, with shares of each total", () => {
+    const rows = objectTypeRows(entry, objectTypeSegments(entry, "bytes"));
+    expect(rows[0]).toEqual({ label: "tif", objects: 50, bytes: 4096, objectShare: 0.5, byteShare: 0.4 });
+    // other: what tif, parquet and json leave of each total
+    expect(rows[3]).toEqual({ label: "other", objects: 15, bytes: 3072, objectShare: 0.15, byteShare: 0.3 });
+  });
+
+  it("leaves a measure the catalog lacks undefined", () => {
+    const counts = { ...entry, ext_bytes: undefined, total_bytes: undefined };
+    const [tif] = objectTypeRows(counts, objectTypeSegments(counts, "objects"));
+    expect(tif).toEqual({ label: "tif", objects: 50, bytes: undefined, objectShare: 0.5, byteShare: undefined });
+  });
 });
 
 it("says when the objects last changed, only when the catalog knows", () => {

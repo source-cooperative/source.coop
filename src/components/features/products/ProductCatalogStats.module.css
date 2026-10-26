@@ -28,6 +28,53 @@
   width: min(100%, max(50%, 20rem));
 }
 
+/* The sidebar card's table: extension, then object count and byte volume,
+   each followed by its share in a narrow gray column. */
+.table {
+  width: 100%;
+  margin-top: var(--space-3);
+  border-collapse: collapse;
+  font-family: var(--code-font-family);
+  font-size: var(--font-size-1);
+  font-variant-numeric: tabular-nums;
+}
+
+.table th,
+.table td {
+  padding: var(--space-1) 0;
+  text-align: right;
+  white-space: nowrap;
+  font-weight: normal;
+}
+
+.table td {
+  padding-left: var(--space-2);
+}
+
+.table th:first-child {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  text-align: left;
+  /* break-word, not anywhere: a long extension may wrap, but the column keeps
+     the width of its longest word instead of collapsing to one letter. */
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+
+.table thead th:first-child {
+  display: table-cell;
+}
+
+.table thead th > div {
+  display: inline-block;
+}
+
+.table .share {
+  padding-left: var(--space-1);
+  color: var(--gray-10);
+}
+
 /* The store-format pill beside a list card's visibility badge. */
 .formatPill {
   font-family: var(--code-font-family);

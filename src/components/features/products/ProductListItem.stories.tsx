@@ -58,7 +58,7 @@ const threeDaysAgo = new Date(Date.now() - 3 * 86_400_000).toISOString();
 
 /**
  * A product the metadata catalog knows about says when its objects last
- * changed, beside its publication date, and ends with its bytesize and object
+ * changed, beside its publication date, and ends with its byte volume and object
  * count, a bar of its largest object types half the card wide, and their
  * shares.
  */
@@ -82,9 +82,9 @@ export const WithObjectTypes: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByRole("img")).toHaveAccessibleName(
-      "Object types by bytesize: tif 71%, parquet 22%, pmtiles 4%, other 3%",
+      "Object types by byte volume: tif 71%, parquet 22%, pmtiles 4%, other 3%",
     );
-    await expect(canvas.getByText("2.41 TB • 18,302 objects")).toBeInTheDocument();
+    await expect(canvas.getByText("2.41 TB • 18.3K objects")).toBeInTheDocument();
     await expect(canvas.getByText(/^Objects updated 3 days ago$/)).toBeInTheDocument();
   },
 };
