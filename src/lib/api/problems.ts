@@ -103,8 +103,6 @@ export interface Problem {
   errors?: FieldProblem[];
   /** The platform's ID for the request, which finds it in our logs. */
   request_id?: string;
-  /** Extension members that only one endpoint answers. */
-  [extension: string]: unknown;
 }
 
 /** Where an operation's input came from, so a field is named the right way. */

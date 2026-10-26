@@ -38,13 +38,13 @@ export function toResponse<T>(
  * when it gives one (Vercel's `x-vercel-id`, which finds the request in its
  * logs).
  */
-function occurrence(request: NextRequest): Partial<Problem> {
+export function occurrence(request: NextRequest): Partial<Problem> {
   const request_id = request.headers.get("x-vercel-id") ?? undefined;
   return { instance: request.nextUrl.pathname, ...(request_id && { request_id }) };
 }
 
 /** `response`, with where it happened added if it is a problem. */
-async function withOccurrence(response: Response, request: NextRequest) {
+export async function withOccurrence(response: Response, request: NextRequest) {
   if (!isProblemResponse(response)) return response;
   const body = (await response.json()) as Problem;
   return problemResponse({ ...body, ...occurrence(request) }, response.headers);

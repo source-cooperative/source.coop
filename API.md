@@ -163,7 +163,8 @@ The members, and who sets them:
   out as parameters.
 - **`instance`** (the request path) and **`request_id`** (Vercel's
   `x-vercel-id`, which finds the request in its logs) are added by
-  `withApiSession`. A route outside it sets `instance` itself if it can.
+  `withApiSession`. A route outside it gets them from `withOccurrence` or
+  `occurrence(request)`, so every problem carries both.
 
 Each type is defined once, in `src/lib/api/problems.ts`: its status, title, and
 the prose its page publishes. The handler, the reference's `Problem` schema and

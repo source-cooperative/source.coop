@@ -18,6 +18,7 @@ const params = { params: { account_id: "nightly-sync" } };
 const post = (body: unknown) =>
   new NextRequest("http://localhost/api/v1/accounts/nightly-sync/trusts/exchanges", {
     method: "POST",
+    headers: { "x-vercel-id": "iad1::req-1" },
     body: JSON.stringify(body),
   });
 
@@ -46,6 +47,8 @@ describe("POST /api/v1/accounts/[account_id]/trusts/exchanges", () => {
       status: 403,
       code: "forbidden",
       trusted: false,
+      instance: "/api/v1/accounts/nightly-sync/trusts/exchanges",
+      request_id: "iad1::req-1",
     });
   });
 

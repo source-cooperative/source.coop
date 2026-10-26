@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { authenticateWithOidcToken } from "@/lib/api/oidc";
 import { isAdmin } from "@/lib/api/authz";
-import { toResponse } from "@/lib/api/handler";
+import { toResponse, withOccurrence } from "@/lib/api/handler";
 import {
   accountParams,
   bearer,
@@ -13,7 +13,7 @@ import {
   ProblemSchema,
   registry,
 } from "@/lib/api/openapi";
-import { problem, problemResponse } from "@/lib/api/problems";
+import { Problem, problem, problemResponse } from "@/lib/api/problems";
 import { accountTrustsTable } from "@/lib/clients/database";
 import { invalid, unauthenticated } from "@/lib/operations/result";
 
@@ -50,10 +50,15 @@ registry.registerPath({
   },
 });
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ account_id: string }> }
-) {
+type Context = { params: Promise<{ account_id: string }> };
+
+// Outside `withApiSession`, so it adds each problem's `instance` and
+// `request_id` itself.
+export async function POST(request: NextRequest, context: Context) {
+  return withOccurrence(await exchange(request, context), request);
+}
+
+async function exchange(request: NextRequest, { params }: Context) {
   // A read sent as a POST, so it authenticates the proxy's assertion itself:
   // `getApiSession` refuses those for anything but GET and HEAD.
   const session = await authenticateWithOidcToken(
@@ -70,12 +75,11 @@ export async function POST(
   const { issuer, subject } = parsed.data;
   const trusted = await accountTrustsTable.isTrusted(account_id, issuer, subject);
   if (!trusted) {
-    return problemResponse(
-      problem("forbidden", `${account_id} does not trust this subject`, {
-        instance: request.nextUrl.pathname,
-        trusted: false,
-      })
-    );
+    const refusal: Problem & { trusted: false } = {
+      ...problem("forbidden", `${account_id} does not trust this subject`),
+      trusted: false,
+    };
+    return problemResponse(refusal);
   }
   return NextResponse.json({ trusted });
 }
