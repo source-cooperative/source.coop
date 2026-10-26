@@ -30,7 +30,7 @@ const openAndFilter = async (canvasElement: HTMLElement, text: string) => {
  * chosen tag is submitted as its own `tags` form value.
  */
 const meta = {
-  title: "Features/Settings/Details/TagPicker",
+  title: "Features/Settings/Products/TagPicker",
   component: TagPicker,
   parameters: { layout: "padded" },
   args: {
