@@ -98,22 +98,27 @@ export class TagsTable extends BaseTable {
   }
 
   /** Adds a pending tag. A tag that already exists is left as it is. */
-  async suggest(tag_id: string, suggested_by: string): Promise<void> {
+  async suggest(tag_id: string, suggested_by: string): Promise<Tag> {
+    const tag: Tag = {
+      tag_id,
+      pending: true,
+      suggested_by,
+      suggested_at: new Date().toISOString(),
+    };
     try {
       await this.client.send(
         new PutCommand({
           TableName: this.table,
-          Item: {
-            tag_id,
-            pending: true,
-            suggested_by,
-            suggested_at: new Date().toISOString(),
-          },
+          Item: tag,
           ConditionExpression: "attribute_not_exists(tag_id)",
         })
       );
+      return tag;
     } catch (error) {
-      if ((error as Error).name === "ConditionalCheckFailedException") return;
+      // Someone else's suggestion landed first; the tag exists either way.
+      if ((error as Error).name === "ConditionalCheckFailedException") {
+        return { tag_id };
+      }
       this.logError("suggest", error, { tag_id });
       throw error;
     }
