@@ -13,13 +13,13 @@ describe("/api/problems", () => {
   test.each(Object.keys(PROBLEMS) as ProblemCode[])(
     "explains %s at its type URL",
     async (code) => {
-      expect(problemType(code)).toBe(`https://source.coop/api/problems/${code}`);
+      expect(problemType(code)).toBe(`/api/problems/${code}`);
       const res = await get(code);
       expect(res.status).toBe(200);
       expect(res.headers.get("content-type")).toContain("text/html");
       const html = await res.text();
       expect(html).toContain(PROBLEMS[code].title);
-      expect(html).toContain(problemType(code));
+      expect(html).toContain(`http://localhost/api/problems/${code}`);
     }
   );
 

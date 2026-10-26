@@ -36,12 +36,12 @@ ${body}
 export const isProblemCode = (code: string): code is ProblemCode =>
   Object.prototype.hasOwnProperty.call(PROBLEMS, code);
 
-export function problemPage(code: ProblemCode) {
+export function problemPage(code: ProblemCode, origin: string) {
   const { status, title, description, remedy } = PROBLEMS[code];
   return page(
     title,
     `    <h1>${escape(title)} <span class="status">${status}</span></h1>
-    <p><code>${problemType(code)}</code></p>
+    <p><code>${escape(new URL(problemType(code), origin).href)}</code></p>
     <h2>When the API answers it</h2>
     <p>${prose(description)}</p>
     <h2>What to do</h2>

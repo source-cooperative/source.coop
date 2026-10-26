@@ -12,13 +12,14 @@ export type ProblemCode = OperationError | "internal";
 export const PROBLEM_CONTENT_TYPE = "application/problem+json";
 
 /**
- * Types are identifiers, so they are the same absolute URL in every
- * environment: a client compares `type` to a constant, and a preview deploy
- * must not answer a different one.
+ * Where the problem pages live. `problem` gives a type as this path plus its
+ * code, and `problemAt` makes it absolute on the origin that answered, so a
+ * type resolves on the deployment that raised it, even one that adds a type
+ * production doesn't have yet.
  */
-export const PROBLEM_TYPE_BASE = "https://source.coop/api/problems/";
+export const PROBLEM_TYPE_PATH = "/api/problems/";
 
-export const problemType = (code: ProblemCode) => `${PROBLEM_TYPE_BASE}${code}`;
+export const problemType = (code: ProblemCode) => `${PROBLEM_TYPE_PATH}${code}`;
 
 interface ProblemDefinition {
   status: number;
@@ -96,7 +97,7 @@ export interface Problem {
   title: string;
   status: number;
   detail: string;
-  /** The request path the problem occurred at. */
+  /** The URL the problem occurred at, without its query. */
   instance?: string;
   /** The type's last path segment, for clients that switch on a short string. */
   code: ProblemCode;

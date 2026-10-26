@@ -8,12 +8,12 @@ describe("/api/[...path]", () => {
     expect(res.status).toBe(404);
     expect(res.headers.get("content-type")).toBe("application/problem+json");
     await expect(res.json()).resolves.toEqual({
-      type: "https://source.coop/api/problems/not_found",
+      type: "http://localhost/api/problems/not_found",
       title: "Not found",
       status: 404,
       detail: "No API route at /api/v1/nope",
       code: "not_found",
-      instance: "/api/v1/nope",
+      instance: "http://localhost/api/v1/nope",
     });
   });
 });

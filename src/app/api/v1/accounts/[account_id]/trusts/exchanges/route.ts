@@ -52,8 +52,7 @@ registry.registerPath({
 
 type Context = { params: Promise<{ account_id: string }> };
 
-// Outside `withApiSession`, so it adds each problem's `instance` and
-// `request_id` itself.
+// Outside `withApiSession`, so it places each problem at the request itself.
 export async function POST(request: NextRequest, context: Context) {
   return withOccurrence(await exchange(request, context), request);
 }

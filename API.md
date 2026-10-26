@@ -125,7 +125,7 @@ served as `application/problem+json`:
   "title": "Invalid request",
   "status": 400,
   "detail": "Product ID may not contain consecutive hyphens",
-  "instance": "/api/v1/products/example",
+  "instance": "https://source.coop/api/v1/products/example",
   "code": "invalid",
   "errors": [
     { "detail": "Product ID may not contain consecutive hyphens", "pointer": "#/product_id" }
@@ -145,35 +145,37 @@ served as `application/problem+json`:
 
 The members, and who sets them:
 
-- **`type`** is `https://source.coop/api/problems/{code}`, the same in every
-  environment, because clients compare it to a constant. It resolves to a page
-  that explains the problem and what to do about it, and `/api/problems` lists
-  them all.
+- **`type`** is `/api/problems/{code}` on the host that answered
+  (`https://source.coop/api/problems/{code}` in production), so it resolves on
+  the deployment that raised it, to a page that explains the problem and what
+  to do about it. `/api/problems` lists them all.
 - **`title`** and **`status`** come with the type. A title never varies
   between occurrences; anything about this occurrence goes in `detail`.
 - **`detail`** is the operation's message: a sentence for a person, which says
   what to do instead where there is something to do.
-- **`code`** is the type's last segment, an extension member for clients that
-  switch on a short string.
+- **`code`** is the type's last segment. Clients switch on it rather than on
+  `type`, whose host differs between deployments.
 - **`errors`** lists each problem with a field, for `invalid` only. A body field
   is named by `pointer`, a JSON Pointer as a URI fragment (`#/metadata/title`);
   a query parameter by `parameter`. Operations keep keying `fieldErrors` by
   dotted path, and `toResponse` translates; pass it `"query"` as its third
   argument when the operation was given the query string, so the fields come
   out as parameters.
-- **`instance`** (the request path) and **`request_id`** (Vercel's
-  `x-vercel-id`, which finds the request in its logs) are added by
-  `withApiSession`. A route outside it gets them from `withOccurrence` or
-  `occurrence(request)`, so every problem carries both.
+- **`instance`** (the request's URL, without its query) and **`request_id`**
+  (Vercel's `x-vercel-id`, which finds the request in its logs) are added by
+  `withApiSession`, which also makes `type` absolute. A route outside it
+  answers through `problemAt(request, problem(...))` or `withOccurrence`, so
+  every problem carries them.
 
 Each type is defined once, in `src/lib/api/problems.ts`: its status, title, and
 the prose its page publishes. The handler, the reference's `Problem` schema and
 the pages all read that table. A new kind of failure is a new entry there, with
 an `OperationError` to raise it, not a new status picked in a route.
 
-Answer problems through `toResponse` or `problemResponse(problem(...))`, never
-by building an error body by hand: a hand-built body misses the media type and
-the members clients rely on. A problem may carry an extension member that only
+Answer problems through `toResponse` or `problemResponse(problem(...))` inside
+`withApiSession`, and `problemAt` outside it, never by building an error body
+by hand: a hand-built body misses the media type and the members clients rely
+on. A problem may carry an extension member that only
 its endpoint answers. Declare it by extending `ProblemSchema`, and document it
 with `problemJson` rather than `json`. The data proxy's trust exchange is the
 one so far: its 403 is a `forbidden` problem that also says `trusted: false`.

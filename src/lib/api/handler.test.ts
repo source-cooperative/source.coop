@@ -34,7 +34,7 @@ describe("toResponse", () => {
     expect(res.status).toBe(status);
     expect(res.headers.get("content-type")).toBe(PROBLEM_CONTENT_TYPE);
     await expect(res.json()).resolves.toMatchObject({
-      type: `https://source.coop/api/problems/${result.error}`,
+      type: `/api/problems/${result.error}`,
       title: expect.any(String),
       status,
       detail: result.message,
@@ -102,7 +102,7 @@ describe("withApiSession", () => {
   it("refuses a body that isn't JSON", async () => {
     const res = await call({ method: "PATCH", body: "{", headers: { Authorization: "Bearer t" } });
     expect(res.status).toBe(400);
-    await expect(res.json()).resolves.toMatchObject({ code: "invalid", instance: "/api/v1/x" });
+    await expect(res.json()).resolves.toMatchObject({ code: "invalid", instance: "http://localhost/api/v1/x" });
     expect(handler).not.toHaveBeenCalled();
   });
 
@@ -114,7 +114,7 @@ describe("withApiSession", () => {
     await expect(res.json()).resolves.toMatchObject({
       code: "not_found",
       detail: "Gone",
-      instance: "/api/v1/x",
+      instance: "http://localhost/api/v1/x",
       request_id: "iad1::abc",
     });
   });
@@ -129,12 +129,12 @@ describe("withApiSession", () => {
     const res = await call();
     expect(res.status).toBe(500);
     await expect(res.json()).resolves.toEqual({
-      type: "https://source.coop/api/problems/internal",
+      type: "http://localhost/api/problems/internal",
       title: "Internal server error",
       status: 500,
       detail: "Internal server error",
       code: "internal",
-      instance: "/api/v1/x",
+      instance: "http://localhost/api/v1/x",
     });
   });
 });

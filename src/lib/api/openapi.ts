@@ -5,13 +5,7 @@ import {
 } from "@asteasolutions/zod-to-openapi";
 import { StatusCodes } from "http-status-codes";
 import { z, ZodTypeAny } from "zod";
-import {
-  PROBLEM_CONTENT_TYPE,
-  PROBLEM_TYPE_BASE,
-  PROBLEMS,
-  ProblemCode,
-  problemType,
-} from "./problems";
+import { PROBLEM_CONTENT_TYPE, PROBLEMS, ProblemCode } from "./problems";
 
 extendZodWithOpenApi(z);
 
@@ -70,8 +64,9 @@ export const ProblemSchema = registry.register(
   z
     .object({
       type: z.string().url().openapi({
-        description: `Identifies the kind of problem. It is a URL under ${PROBLEM_TYPE_BASE}, the same in every environment, and its page explains the problem and what to do about it.`,
-        example: problemType("not_found"),
+        description:
+          "Identifies the kind of problem. It is the URL of a page that explains the problem and what to do about it, on the host that answered.",
+        example: "https://source.coop/api/problems/not_found",
       }),
       title: z.string().openapi({
         description: "A short summary of the type, the same for every occurrence of it.",

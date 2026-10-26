@@ -43,11 +43,11 @@ describe("POST /api/v1/accounts/[account_id]/trusts/exchanges", () => {
     expect(res.status).toBe(403);
     expect(res.headers.get("content-type")).toBe("application/problem+json");
     await expect(res.json()).resolves.toMatchObject({
-      type: "https://source.coop/api/problems/forbidden",
+      type: "http://localhost/api/problems/forbidden",
       status: 403,
       code: "forbidden",
       trusted: false,
-      instance: "/api/v1/accounts/nightly-sync/trusts/exchanges",
+      instance: "http://localhost/api/v1/accounts/nightly-sync/trusts/exchanges",
       request_id: "iad1::req-1",
     });
   });

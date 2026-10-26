@@ -34,20 +34,28 @@ export function toResponse<T>(
 }
 
 /**
- * Where a problem happened: the request's path, and the platform's request ID
- * when it gives one (Vercel's `x-vercel-id`, which finds the request in its
- * logs).
+ * `body` as it happened at `request`: its `type` and `instance` as absolute
+ * URLs on the request's own origin, and the platform's request ID when it
+ * gives one (Vercel's `x-vercel-id`, which finds the request in its logs).
  */
-export function occurrence(request: NextRequest): Partial<Problem> {
+export function problemAt(request: NextRequest, body: Problem, headers?: HeadersInit) {
+  const { origin, pathname } = request.nextUrl;
   const request_id = request.headers.get("x-vercel-id") ?? undefined;
-  return { instance: request.nextUrl.pathname, ...(request_id && { request_id }) };
+  return problemResponse(
+    {
+      ...body,
+      type: new URL(body.type, origin).href,
+      instance: origin + pathname,
+      ...(request_id && { request_id }),
+    },
+    headers
+  );
 }
 
-/** `response`, with where it happened added if it is a problem. */
+/** `response`, as it happened at `request` if it is a problem. */
 export async function withOccurrence(response: Response, request: NextRequest) {
   if (!isProblemResponse(response)) return response;
-  const body = (await response.json()) as Problem;
-  return problemResponse({ ...body, ...occurrence(request) }, response.headers);
+  return problemAt(request, (await response.json()) as Problem, response.headers);
 }
 
 interface ApiContext<P> {
@@ -88,9 +96,7 @@ export function withApiSession<P = Record<string, never>>(
       try {
         body = text ? JSON.parse(text) : undefined;
       } catch {
-        return problemResponse(
-          problem("invalid", "Request body is not valid JSON", occurrence(request))
-        );
+        return problemAt(request, problem("invalid", "Request body is not valid JSON"));
       }
       return await withOccurrence(
         await handler({ request, session, params: await params, body }),
@@ -101,9 +107,7 @@ export function withApiSession<P = Record<string, never>>(
         operation: `${request.method} ${request.nextUrl.pathname}`,
         error,
       });
-      return problemResponse(
-        problem("internal", "Internal server error", occurrence(request))
-      );
+      return problemAt(request, problem("internal", "Internal server error"));
     }
   };
 }
