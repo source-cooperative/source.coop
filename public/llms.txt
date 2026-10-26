@@ -26,7 +26,7 @@ Read files through `data.source.coop` rather than by following the file browser 
 - [Source CLI](https://github.com/source-cooperative/source-coop-cli): logs in and supplies temporary S3 credentials for private products and uploads
 - [Upload with the CLI](https://docs.source.coop/upload-with-the-cli): one-time setup and upload commands
 - [API reference](https://source.coop/api/openapi): OpenAPI document for `https://source.coop/api/v1`, generated from the API's own routes; reading public products needs no credentials, while anything else needs `Authorization: Bearer` with a token from the CLI's login or a service account
-- [API problem types](https://source.coop/api/problems): every API error is an RFC 9457 problem (`application/problem+json`) whose `type` URL explains the failure and what to do about it; `errors` names each rejected field, by JSON Pointer into the body or by query parameter
+- [API problem types](https://source.coop/api/problems): every API error is an RFC 9457 problem (`application/problem+json`) whose `type` URL explains the failure and what to do about it; `errors` names each rejected field, by JSON Pointer into the body or by query parameter; a 401's `WWW-Authenticate` is `Bearer error="invalid_token"` when the token sent was refused, and plain `Bearer` when none was sent
 - [Automated access](https://docs.source.coop/automated-access): service accounts for software that runs with nobody there to log in
 
 ## Optional

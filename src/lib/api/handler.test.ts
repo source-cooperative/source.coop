@@ -119,6 +119,22 @@ describe("withApiSession", () => {
     });
   });
 
+  it("challenges every 401, and says when a bearer token was refused", async () => {
+    const challenge = async (headers: HeadersInit = {}) => {
+      handler.mockResolvedValueOnce(toResponse(unauthenticated()) as never);
+      const res = await call({ headers });
+      expect(res.status).toBe(401);
+      return res.headers.get("WWW-Authenticate");
+    };
+    await expect(challenge()).resolves.toBe("Bearer");
+    await expect(challenge({ Authorization: "Basic dTpw" })).resolves.toBe("Bearer");
+    await expect(challenge({ Authorization: "Bearer t" })).resolves.toBe(
+      'Bearer error="invalid_token"'
+    );
+    handler.mockResolvedValueOnce(toResponse(forbidden("No")) as never);
+    expect((await call()).headers.has("WWW-Authenticate")).toBe(false);
+  });
+
   it("leaves a success alone", async () => {
     handler.mockResolvedValueOnce(toResponse(ok({ a: 1 })) as never);
     await expect((await call()).json()).resolves.toEqual({ a: 1 });

@@ -133,9 +133,23 @@ export const problemJson = (description: string, schema: ZodTypeAny) => ({
   content: { [PROBLEM_CONTENT_TYPE]: { schema } },
 });
 
-/** The error responses a route can return, each an RFC 9457 `Problem`. */
+const challenge = {
+  description:
+    '`Bearer` when the request sent no bearer token; `Bearer error="invalid_token"` (RFC 6750) when it sent one that was refused.',
+  schema: { type: "string" as const },
+};
+
+/** The error responses a route can return, each an RFC 9457 `Problem`; a 401 also states its challenge. */
 export const errors = (...statuses: (keyof typeof ERRORS)[]) =>
-  Object.fromEntries(statuses.map((s) => [s, problemJson(ERRORS[s], ProblemSchema)]));
+  Object.fromEntries(
+    statuses.map((s) => [
+      s,
+      {
+        ...problemJson(ERRORS[s], ProblemSchema),
+        ...(s === 401 && { headers: { "WWW-Authenticate": challenge } }),
+      },
+    ])
+  );
 
 export function generateDocument() {
   const document = new OpenApiGeneratorV3(registry.definitions).generateDocument({

@@ -168,6 +168,16 @@ The members, and who sets them:
   authenticates its caller itself is wrapped in it directly, so every problem
   carries them.
 
+Every 401 also carries `WWW-Authenticate`
+([RFC 9110 §11.6.1](https://www.rfc-editor.org/rfc/rfc9110#section-11.6.1)):
+`Bearer` when the request sent no bearer token, and
+`Bearer error="invalid_token"`
+([RFC 6750 §3.1](https://www.rfc-editor.org/rfc/rfc6750#section-3.1)) when it
+sent one that was refused, so a client knows to get a new token rather than add
+one. `withProblems` sets it from the request, so a route never does. It names no
+`resource_metadata` yet: that waits on deciding which service is the API's
+authorization server.
+
 Each type is defined once, in `src/lib/api/problems.ts`: its status, title, and
 the prose its page publishes. The handler, the reference's `Problem` schema and
 the pages all read that table. A new kind of failure is a new entry there, with
