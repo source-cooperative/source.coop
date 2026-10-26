@@ -40,6 +40,11 @@ can't describe a body the code doesn't accept. Import the route module in
 exported as `export const|function METHOD` that isn't in the document, other
 than those on its `UNREGISTERED` list.
 
+The reference is OpenAPI 3.1, so its schemas are JSON Schema 2020-12 that
+validators and code generators can use as they stand: a nullable field is
+`type: ["string", "null"]`, not 3.0's `nullable: true`. Move to 3.2 once
+Swagger UI, Redoc and zod-to-openapi support it.
+
 - **`summary` and `description` are published.** Write them for someone
   calling the endpoint: who may, what it answers, and what each status means.
   Write them the way a reference manual reads, not as compressed prose. These

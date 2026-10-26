@@ -1,7 +1,7 @@
 import {
   extendZodWithOpenApi,
   OpenAPIRegistry,
-  OpenApiGeneratorV3,
+  OpenApiGeneratorV31,
 } from "@asteasolutions/zod-to-openapi";
 import { StatusCodes } from "http-status-codes";
 import { z, ZodTypeAny } from "zod";
@@ -138,8 +138,8 @@ export const errors = (...statuses: (keyof typeof ERRORS)[]) =>
   Object.fromEntries(statuses.map((s) => [s, problemJson(ERRORS[s], ProblemSchema)]));
 
 export function generateDocument() {
-  const document = new OpenApiGeneratorV3(registry.definitions).generateDocument({
-    openapi: "3.0.3",
+  const document = new OpenApiGeneratorV31(registry.definitions).generateDocument({
+    openapi: "3.1.0",
     info: {
       title: "Source Cooperative API",
       version: "1.0.0",
@@ -150,7 +150,7 @@ export function generateDocument() {
   // Swagger UI and Redoc list the declared tags first, in declared order, so
   // every tag is declared, in the order routes register, and Internal last.
   const tags = new Set(
-    Object.values(document.paths).flatMap((path) =>
+    Object.values(document.paths ?? {}).flatMap((path) =>
       Object.values(path).flatMap((op) => (op as { tags?: string[] }).tags ?? [])
     )
   );
