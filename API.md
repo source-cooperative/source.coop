@@ -40,6 +40,11 @@ can't describe a body the code doesn't accept. Import the route module in
 exported as `export const|function METHOD` that isn't in the document, other
 than those on its `UNREGISTERED` list.
 
+The reference is OpenAPI 3.1, so its schemas are JSON Schema 2020-12 that
+validators and code generators can use as they stand: a nullable field is
+`type: ["string", "null"]`, not 3.0's `nullable: true`. Move to 3.2 once
+Swagger UI, Redoc and zod-to-openapi support it.
+
 - **`summary` and `description` are published.** Write them for someone
   calling the endpoint: who may, what it answers, and what each status means.
   Write them the way a reference manual reads, not as compressed prose. These
@@ -199,9 +204,12 @@ edit of those.
 ## Compatibility
 
 - **The data proxy** (data.source.coop) is the consumer the API has to stay
-  compatible with. `src/app/api/openapi/data-proxy-contract.test.ts` snapshots
-  the request, statuses and success body of every endpoint it calls; a change
-  there needs the matching data.source.coop change first.
+  compatible with. The endpoints it calls are listed in its
+  `src/source_api/cache.rs`, and the fields it reads in
+  `src/source_api/types.rs`. The proxy owns the check that this API still
+  serves them: its `tests/test_contract.py` compares them nightly against
+  production. A change to the request, statuses or success body of one of
+  those endpoints needs the matching data.source.coop change first.
 - **The CLI** (source-coop-cli) is built against this API and follows the
   reference as it changes. It reads problems into its own `--json` error
   output, so a change to a problem's members needs the matching CLI change.
