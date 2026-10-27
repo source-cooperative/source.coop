@@ -29,7 +29,9 @@ import {
   invalid,
   notFound,
   ok,
+  onePage,
   OperationResult,
+  Page,
   unauthenticated,
 } from "./result";
 
@@ -164,11 +166,13 @@ export async function listMirrors(
   session: UserSession | null,
   account_id: string,
   product_id: string
-): Promise<OperationResult<Mirror[]>> {
+): Promise<OperationResult<Page<Mirror>>> {
   const result = await getProduct(session, account_id, product_id);
   if (!result.ok) return result;
   return ok(
-    Object.entries(result.value.metadata.mirrors).map(([key, m]) => toMirror(key, m))
+    onePage(
+      Object.entries(result.value.metadata.mirrors).map(([key, m]) => toMirror(key, m))
+    )
   );
 }
 
@@ -182,10 +186,10 @@ export async function addMirror(
   product_id: string,
   input: unknown
 ): Promise<OperationResult<Mirror>> {
-  const parsed = AddMirrorSchema.safeParse(input);
-  if (!parsed.success) return fromZodError(parsed.error);
   const found = await managedProduct(session, account_id, product_id);
   if (!found.ok) return found;
+  const parsed = AddMirrorSchema.safeParse(input);
+  if (!parsed.success) return fromZodError(parsed.error);
   const product = found.value;
   const { connection_id } = parsed.data;
 
@@ -237,10 +241,10 @@ export async function updateMirror(
   key: string,
   input: unknown
 ): Promise<OperationResult<Mirror>> {
-  const parsed = UpdateMirrorSchema.safeParse(input);
-  if (!parsed.success) return fromZodError(parsed.error);
   const found = await managedProduct(session, account_id, product_id);
   if (!found.ok) return found;
+  const parsed = UpdateMirrorSchema.safeParse(input);
+  if (!parsed.success) return fromZodError(parsed.error);
   const product = found.value;
   const { prefix, is_primary } = parsed.data;
   const existing = mirrorAt(product, key);

@@ -47,7 +47,7 @@ registry.registerPath({
   tags: ["Mirrors"],
   summary: "Remove a mirror",
   description:
-    "Stops serving the product from this data connection; its objects there are not deleted. Removing the primary promotes another mirror, if there is one.",
+    "Stops serving the product from this data connection; its objects there are not deleted. Removing the primary promotes another mirror, if there is one. Only owners and maintainers of the owning account may manage its mirrors.",
   security: bearer,
   request: { params },
   responses: {

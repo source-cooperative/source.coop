@@ -90,6 +90,14 @@ describe("account gate", () => {
     });
   });
 
+  test("refuses before validating, so a refused caller learns nothing from the body", async () => {
+    (canManageAccount as jest.Mock).mockReturnValue(false);
+    expect(await addMirror(SESSION, "acct", "prod", {})).toMatchObject({ error: "forbidden" });
+    expect(await updateMirror(null, "acct", "prod", "a", {})).toMatchObject({
+      error: "unauthenticated",
+    });
+  });
+
   test("a missing product is a 404 to an account manager", async () => {
     expect(await removeMirror(SESSION, "acct", "prod", "a")).toMatchObject({
       error: "not_found",
@@ -102,10 +110,13 @@ describe("listMirrors", () => {
     (getProduct as jest.Mock).mockResolvedValue({ ok: true, value: TWO() });
     expect(await listMirrors(null, "acct", "prod")).toEqual({
       ok: true,
-      value: [
-        { key: "a", ...mirror("a", true) },
-        { key: "b", ...mirror("b") },
-      ],
+      value: {
+        items: [
+          { key: "a", ...mirror("a", true) },
+          { key: "b", ...mirror("b") },
+        ],
+        next_cursor: null,
+      },
     });
   });
 

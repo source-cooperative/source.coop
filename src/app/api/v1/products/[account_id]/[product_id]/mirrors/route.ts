@@ -1,7 +1,14 @@
-import { z } from "zod";
 import { StatusCodes } from "http-status-codes";
 import { withApiSession, toResponse } from "@/lib/api/handler";
-import { bearer, errors, json, productParams, registry } from "@/lib/api/openapi";
+import {
+  bearer,
+  errors,
+  json,
+  optionalBearer,
+  productParams,
+  registry,
+} from "@/lib/api/openapi";
+import { pageSchema } from "@/lib/operations/result";
 import {
   addMirror,
   AddMirrorSchema,
@@ -19,10 +26,11 @@ registry.registerPath({
   tags: ["Mirrors"],
   summary: "List a product's mirrors",
   description:
-    "The data connections a product's objects are stored on, and where in each. Anyone who may read the product may read its mirrors.",
+    "Returns the data connections that store a product's objects, and the prefix in each. Anyone who may read the product may read its mirrors.",
+  security: optionalBearer,
   request: { params },
   responses: {
-    200: json("The mirrors.", z.array(MirrorSchema)),
+    200: json("The mirrors.", pageSchema("MirrorPage", MirrorSchema)),
     ...errors(401, 403, 404),
   },
 });
