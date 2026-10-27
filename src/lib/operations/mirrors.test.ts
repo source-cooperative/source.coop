@@ -23,7 +23,11 @@ jest.mock("@/lib/data-connections", () => ({
   canManageDataConnection: jest.fn(),
   denyDataConnectionFor: jest.fn(),
 }));
-jest.mock("./products", () => ({ getProduct: jest.fn(), revalidate: jest.fn() }));
+jest.mock("./products", () => ({
+  ...jest.requireActual("./products"),
+  getProduct: jest.fn(),
+  revalidate: jest.fn(),
+}));
 jest.mock("next/cache", () => ({ revalidatePath: jest.fn() }));
 
 const SESSION = { identity_id: "user-1", account: { account_id: "alice" } } as never;
@@ -277,6 +281,13 @@ describe("updateMirror", () => {
       await updateMirror(SESSION, "acct", "prod", "b", { is_primary: true })
     ).toMatchObject({ error: "invalid", fieldErrors: { is_primary: [expect.any(String)] } });
     expect(productsTable.update).not.toHaveBeenCalled();
+  });
+
+  test("re-asserting the current primary doesn't check its connection", async () => {
+    (dataConnectionsTable.fetchById as jest.Mock).mockResolvedValue(null);
+    expect(
+      await updateMirror(SESSION, "acct", "prod", "a", { is_primary: true })
+    ).toMatchObject({ ok: true });
   });
 
   test("refuses a prefix on a mirror whose connection is gone", async () => {
