@@ -41,7 +41,7 @@ export const ADMIN_TOOLS: AdminTool[] = [
   },
   {
     name: "Tags",
-    description: "Approve, merge or reject the tags people suggest.",
+    description: "Review suggested tags, and see every tag and where it came from.",
     href: adminTagsUrl(),
     Icon: BookmarkIcon,
   },

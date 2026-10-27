@@ -4,6 +4,7 @@ import { UserSession } from "@/types";
 import { isAdmin } from "@/lib/api/authz";
 import { productsTable, tagsTable, type Tag } from "@/lib/clients/database";
 import { adminTagsUrl } from "@/lib/urls";
+import { LOGGER } from "@/lib/logging";
 import {
   conflict,
   deny,
@@ -27,10 +28,17 @@ export const TagSchema = z
       description: "True while the tag awaits review. Approved tags leave it out.",
     }),
     suggested_by: z.string().optional().openapi({
-      description: "The account that suggested the tag, while it awaits review.",
+      description:
+        "The account that suggested the tag. Only admins see it. Tags from the original cleanup have none.",
     }),
     suggested_at: z.string().datetime().optional().openapi({
-      description: "When the tag was suggested, while it awaits review.",
+      description: "When the tag was suggested. Only admins see it.",
+    }),
+    approved_by: z.string().optional().openapi({
+      description: "The admin who approved the tag. Only admins see it.",
+    }),
+    approved_at: z.string().datetime().optional().openapi({
+      description: "When the tag was approved. Only admins see it.",
     }),
   })
   .openapi("Tag");
@@ -78,7 +86,10 @@ export const DeleteTagQuerySchema = z.object({
   }),
 });
 
-/** Approved tags for anyone; pending ones for admins who ask. */
+/**
+ * Approved tags for anyone; pending ones for admins who ask. Admins also see
+ * who suggested and approved each tag, and when.
+ */
 export async function listTags(
   session: UserSession | null,
   query: unknown
@@ -89,13 +100,9 @@ export async function listTags(
   if (pending && !isAdmin(session)) {
     return deny(session, "Only admins may list the tags awaiting review");
   }
-  const tags = await tagsTable.listAll();
+  const tags = (await tagsTable.listAll()).filter((t) => !!t.pending === pending);
   return ok(
-    onePage(
-      pending
-        ? tags.filter((t) => t.pending)
-        : tags.filter((t) => !t.pending).map(({ tag_id }) => ({ tag_id }))
-    )
+    onePage(isAdmin(session) ? tags : tags.map(({ tag_id }) => ({ tag_id })))
   );
 }
 
@@ -142,9 +149,12 @@ export async function updateTag(
   if (!parsed.success) return fromZodError(parsed.error);
   const tag = (await tagsTable.listAll()).find((t) => t.tag_id === tag_id);
   if (!tag) return notFound(`Tag "${tag_id}" not found`);
-  if (tag.pending) await tagsTable.approve(tag_id);
+  if (!tag.pending) return ok(tag);
+  const approved_by = session!.account!.account_id;
+  await tagsTable.approve(tag_id, approved_by);
   revalidatePath(adminTagsUrl());
-  return ok({ tag_id });
+  const { pending: _pending, ...rest } = tag;
+  return ok({ ...rest, approved_by, approved_at: new Date().toISOString() });
 }
 
 /**
@@ -173,7 +183,8 @@ export async function deleteTag(
 
   // ponytail: one write per product and no transaction; a failure partway
   // leaves the tag pending, and deleting it again finishes the job.
-  for (const product of await productsTable.listByTag(tag_id)) {
+  const carrying = await productsTable.listByTag(tag_id);
+  for (const product of carrying) {
     const replaced = product.metadata.tags!.flatMap((t) =>
       t !== tag_id ? [t] : replace_with ? [replace_with] : []
     );
@@ -182,6 +193,17 @@ export async function deleteTag(
     ]);
   }
   await tagsTable.delete(tag_id);
+  // The row is gone, so the log is the record of who decided.
+  LOGGER.info(replace_with ? "Tag merged" : "Tag rejected", {
+    operation: "deleteTag",
+    metadata: {
+      tag_id,
+      replace_with,
+      by: session!.account!.account_id,
+      suggested_by: tag.suggested_by,
+      products: carrying.length,
+    },
+  });
   revalidatePath(adminTagsUrl());
   return ok(tag);
 }
