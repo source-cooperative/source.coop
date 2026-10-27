@@ -36,9 +36,9 @@ import {
 } from "./result";
 
 export const MirrorSchema = ProductMirrorSchema.extend({
-  key: z.string().openapi({
+  connection_id: z.string().openapi({
     description:
-      "The mirror's key on the product: its data connection's ID, except on some older products.",
+      "The data connection the mirror stores the product's objects on. A product has at most one mirror on each connection, so this also names the mirror.",
   }),
 }).openapi("Mirror");
 
@@ -93,16 +93,16 @@ const NOT_ACCOUNT_MANAGER =
 const CONCURRENT_EDIT =
   "This product was modified by someone else. Please reload and try again.";
 
-const toMirror = (key: string, mirror: ProductMirror): Mirror => ({
-  key,
-  ...mirror,
-});
-
-/** The mirror at `key`; a key from a URL may name a property of every object. */
-const mirrorAt = (product: Product, key: string) =>
-  Object.hasOwn(product.metadata.mirrors, key)
-    ? product.metadata.mirrors[key]
-    : undefined;
+/**
+ * The mirror on `connection_id`, with the key it's stored under. That key is
+ * the connection's ID except on some older products, so it stays internal.
+ */
+// ponytail: first match; an older product with two keys on one connection
+// can't be told apart. Refuse with a 409 if any turn up.
+const mirrorOn = (product: Product, connection_id: string) =>
+  Object.entries(product.metadata.mirrors).find(
+    ([, m]) => m.connection_id === connection_id
+  );
 
 /**
  * The product, when `session` administers its owning account. A product's
@@ -169,11 +169,7 @@ export async function listMirrors(
 ): Promise<OperationResult<Page<Mirror>>> {
   const result = await getProduct(session, account_id, product_id);
   if (!result.ok) return result;
-  return ok(
-    onePage(
-      Object.entries(result.value.metadata.mirrors).map(([key, m]) => toMirror(key, m))
-    )
-  );
+  return ok(onePage(Object.values(result.value.metadata.mirrors)));
 }
 
 /**
@@ -209,10 +205,7 @@ export async function addMirror(
   const { mirrors, primary_mirror } = product.metadata;
   // Older products key mirrors by other names, and the new mirror's key must
   // not overwrite one of those either.
-  if (
-    Object.hasOwn(mirrors, connection_id) ||
-    Object.values(mirrors).some((m) => m.connection_id === connection_id)
-  ) {
+  if (mirrorOn(product, connection_id) || Object.hasOwn(mirrors, connection_id)) {
     return conflict("This data connection is already associated with this product");
   }
 
@@ -228,7 +221,7 @@ export async function addMirror(
     isFirst ? connection_id : primary_mirror,
     "addMirror"
   );
-  return saved.ok ? ok(toMirror(connection_id, mirror)) : saved;
+  return saved.ok ? ok(mirror) : saved;
 }
 
 /**
@@ -238,7 +231,7 @@ export async function updateMirror(
   session: UserSession | null,
   account_id: string,
   product_id: string,
-  key: string,
+  connection_id: string,
   input: unknown
 ): Promise<OperationResult<Mirror>> {
   const found = await managedProduct(session, account_id, product_id);
@@ -247,15 +240,16 @@ export async function updateMirror(
   if (!parsed.success) return fromZodError(parsed.error);
   const product = found.value;
   const { prefix, is_primary } = parsed.data;
-  const existing = mirrorAt(product, key);
-  if (!existing) return notFound("Mirror not found");
+  const entry = mirrorOn(product, connection_id);
+  if (!entry) return notFound("Mirror not found");
+  const [key] = entry;
 
   // A prefix says where in the bucket this product's data lives, so on a
   // shared Source-managed connection a free choice of it would let one account
   // point its product at another's objects. Only someone who also controls the
   // connection may re-point a mirror on it.
   if (prefix !== undefined) {
-    const connection = await dataConnectionsTable.fetchById(existing.connection_id);
+    const connection = await dataConnectionsTable.fetchById(connection_id);
     if (!connection || !(await canManageDataConnection(session, connection))) {
       return forbidden(
         "You must be able to manage both this account and the data connection to edit its prefix"
@@ -279,7 +273,7 @@ export async function updateMirror(
     is_primary ? key : product.metadata.primary_mirror,
     "updateMirror"
   );
-  return saved.ok ? ok(toMirror(key, mirrors[key])) : saved;
+  return saved.ok ? ok(mirrors[key]) : saved;
 }
 
 /**
@@ -290,13 +284,14 @@ export async function removeMirror(
   session: UserSession | null,
   account_id: string,
   product_id: string,
-  key: string
+  connection_id: string
 ): Promise<OperationResult<Mirror>> {
   const found = await managedProduct(session, account_id, product_id);
   if (!found.ok) return found;
   const product = found.value;
-  const removed = mirrorAt(product, key);
-  if (!removed) return notFound("Mirror not found");
+  const entry = mirrorOn(product, connection_id);
+  if (!entry) return notFound("Mirror not found");
+  const [key, removed] = entry;
   const { [key]: _, ...remaining } = product.metadata.mirrors;
 
   let primary = product.metadata.primary_mirror;
@@ -305,5 +300,5 @@ export async function removeMirror(
     if (primary) remaining[primary] = { ...remaining[primary], is_primary: true };
   }
   const saved = await saveMirrors(product, remaining, primary, "removeMirror");
-  return saved.ok ? ok(toMirror(key, removed)) : saved;
+  return saved.ok ? ok(removed) : saved;
 }

@@ -7,13 +7,15 @@ import {
   UpdateMirrorSchema,
 } from "@/lib/operations/mirrors";
 
-type Params = { account_id: string; product_id: string; key: string };
+type Params = { account_id: string; product_id: string; connection_id: string };
 
-const params = productParams.extend({ key: MirrorSchema.shape.key });
+const params = productParams.extend({
+  connection_id: MirrorSchema.shape.connection_id,
+});
 
 registry.registerPath({
   method: "patch",
-  path: "/products/{account_id}/{product_id}/mirrors/{key}",
+  path: "/products/{account_id}/{product_id}/mirrors/{connection_id}",
   tags: ["Mirrors"],
   summary: "Edit a mirror",
   description:
@@ -35,7 +37,7 @@ export const PATCH = withApiSession<Params>(async ({ session, params, body }) =>
       session,
       params.account_id,
       params.product_id,
-      params.key,
+      params.connection_id,
       body
     )
   )
@@ -43,7 +45,7 @@ export const PATCH = withApiSession<Params>(async ({ session, params, body }) =>
 
 registry.registerPath({
   method: "delete",
-  path: "/products/{account_id}/{product_id}/mirrors/{key}",
+  path: "/products/{account_id}/{product_id}/mirrors/{connection_id}",
   tags: ["Mirrors"],
   summary: "Remove a mirror",
   description:
@@ -58,6 +60,6 @@ registry.registerPath({
 
 export const DELETE = withApiSession<Params>(async ({ session, params }) =>
   toResponse(
-    await removeMirror(session, params.account_id, params.product_id, params.key)
+    await removeMirror(session, params.account_id, params.product_id, params.connection_id)
   )
 );

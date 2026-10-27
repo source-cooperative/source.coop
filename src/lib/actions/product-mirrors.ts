@@ -12,7 +12,7 @@ const fields = (formData: FormData) => {
   return {
     account_id: field("account_id"),
     product_id: field("product_id"),
-    mirror_key: field("mirror_key"),
+    connection_id: field("connection_id"),
     field,
   };
 };
@@ -29,11 +29,11 @@ async function run(
   try {
     return toFormState(await operation(), formData, successMessage);
   } catch (error) {
-    const { account_id, product_id, mirror_key } = fields(formData);
+    const { account_id, product_id, connection_id } = fields(formData);
     LOGGER.error("Error changing product mirrors", {
       operation: "product-mirrors",
       error,
-      metadata: { account_id, product_id, mirror_key },
+      metadata: { account_id, product_id, connection_id },
     });
     return toFormState(
       { ok: false, error: "conflict", message: "Failed to save. Please try again." },
@@ -47,10 +47,10 @@ export async function addProductMirror(
   _prevState: FormState<unknown>,
   formData: FormData
 ): Promise<FormState<unknown>> {
-  const { account_id, product_id, field } = fields(formData);
+  const { account_id, product_id, connection_id } = fields(formData);
   return run(formData, "Data connection added successfully!", async () =>
     ops.addMirror(await getPageSession(), account_id, product_id, {
-      connection_id: field("connection_id"),
+      connection_id,
     })
   );
 }
@@ -59,9 +59,9 @@ export async function removeProductMirror(
   _prevState: FormState<unknown>,
   formData: FormData
 ): Promise<FormState<unknown>> {
-  const { account_id, product_id, mirror_key } = fields(formData);
+  const { account_id, product_id, connection_id } = fields(formData);
   return run(formData, "Data connection removed successfully!", async () =>
-    ops.removeMirror(await getPageSession(), account_id, product_id, mirror_key)
+    ops.removeMirror(await getPageSession(), account_id, product_id, connection_id)
   );
 }
 
@@ -69,9 +69,9 @@ export async function updateMirrorPrefix(
   _prevState: FormState<unknown>,
   formData: FormData
 ): Promise<FormState<unknown>> {
-  const { account_id, product_id, mirror_key, field } = fields(formData);
+  const { account_id, product_id, connection_id, field } = fields(formData);
   return run(formData, "Prefix updated successfully!", async () =>
-    ops.updateMirror(await getPageSession(), account_id, product_id, mirror_key, {
+    ops.updateMirror(await getPageSession(), account_id, product_id, connection_id, {
       prefix: field("prefix"),
     })
   );
@@ -81,9 +81,9 @@ export async function setPrimaryMirror(
   _prevState: FormState<unknown>,
   formData: FormData
 ): Promise<FormState<unknown>> {
-  const { account_id, product_id, mirror_key } = fields(formData);
+  const { account_id, product_id, connection_id } = fields(formData);
   return run(formData, "Primary mirror updated successfully!", async () =>
-    ops.updateMirror(await getPageSession(), account_id, product_id, mirror_key, {
+    ops.updateMirror(await getPageSession(), account_id, product_id, connection_id, {
       is_primary: true,
     })
   );

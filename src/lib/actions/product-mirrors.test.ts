@@ -38,18 +38,18 @@ test("addProductMirror passes the connection", async () => {
   expect(result).toMatchObject({ success: true, message: "Data connection added successfully!" });
 });
 
-test("removeProductMirror passes the mirror key", async () => {
-  await removeProductMirror(STATE, form({ ...IDS, mirror_key: "a" }));
+test("removeProductMirror passes the connection", async () => {
+  await removeProductMirror(STATE, form({ ...IDS, connection_id: "a" }));
   expect(ops.removeMirror).toHaveBeenCalledWith(SESSION, "acct", "prod", "a");
 });
 
 test("updateMirrorPrefix sends an absent prefix as the connection root", async () => {
-  await updateMirrorPrefix(STATE, form({ ...IDS, mirror_key: "a" }));
+  await updateMirrorPrefix(STATE, form({ ...IDS, connection_id: "a" }));
   expect(ops.updateMirror).toHaveBeenCalledWith(SESSION, "acct", "prod", "a", { prefix: "" });
 });
 
 test("setPrimaryMirror promotes the mirror", async () => {
-  await setPrimaryMirror(STATE, form({ ...IDS, mirror_key: "a" }));
+  await setPrimaryMirror(STATE, form({ ...IDS, connection_id: "a" }));
   expect(ops.updateMirror).toHaveBeenCalledWith(SESSION, "acct", "prod", "a", {
     is_primary: true,
   });
@@ -69,7 +69,7 @@ test("a refusal becomes the form's message", async () => {
     error: "conflict",
     message: "This product was modified by someone else.",
   });
-  expect(await removeProductMirror(STATE, form({ ...IDS, mirror_key: "a" }))).toMatchObject({
+  expect(await removeProductMirror(STATE, form({ ...IDS, connection_id: "a" }))).toMatchObject({
     success: false,
     message: "This product was modified by someone else.",
   });

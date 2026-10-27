@@ -106,14 +106,14 @@ describe("account gate", () => {
 });
 
 describe("listMirrors", () => {
-  test("lists the mirrors, with their keys, of a product the caller may read", async () => {
+  test("lists the mirrors of a product the caller may read", async () => {
     (getProduct as jest.Mock).mockResolvedValue({ ok: true, value: TWO() });
     expect(await listMirrors(null, "acct", "prod")).toEqual({
       ok: true,
       value: {
         items: [
-          { key: "a", ...mirror("a", true) },
-          { key: "b", ...mirror("b") },
+          mirror("a", true),
+          mirror("b"),
         ],
         next_cursor: null,
       },
@@ -133,7 +133,7 @@ describe("addMirror", () => {
     const result = await addMirror(SESSION, "acct", "prod", { connection_id: "c" });
     expect(result).toEqual({
       ok: true,
-      value: { key: "c", connection_id: "c", prefix: "acct/prod/", is_primary: true },
+      value: { connection_id: "c", prefix: "acct/prod/", is_primary: true },
     });
     expect(written().metadata.primary_mirror).toBe("c");
     expect(productsTable.update).toHaveBeenCalledWith(expect.anything(), {
@@ -202,7 +202,7 @@ describe("updateMirror", () => {
 
   test("promoting a mirror moves is_primary to it alone", async () => {
     const result = await updateMirror(SESSION, "acct", "prod", "b", { is_primary: true });
-    expect(result).toMatchObject({ ok: true, value: { key: "b", is_primary: true } });
+    expect(result).toMatchObject({ ok: true, value: { connection_id: "b", is_primary: true } });
     expect(written().metadata.primary_mirror).toBe("b");
     expect(written().metadata.mirrors.a.is_primary).toBe(false);
   });
@@ -256,10 +256,20 @@ describe("updateMirror", () => {
     });
   });
 
-  test.each(["missing", "constructor", "__proto__"])("%s is not a mirror", async (key) => {
+  test.each(["missing", "constructor", "__proto__"])("%s is not a mirror", async (id) => {
     expect(
-      await updateMirror(SESSION, "acct", "prod", key, { is_primary: true })
+      await updateMirror(SESSION, "acct", "prod", id, { is_primary: true })
     ).toMatchObject({ error: "not_found" });
+  });
+
+  test("finds a mirror an older product keys by another name, and keeps the key", async () => {
+    (productsTable.fetchById as jest.Mock).mockResolvedValue(
+      productWith({ a: mirror("a", true), "aws-us-east-1": mirror("old") }, "a")
+    );
+    await updateMirror(SESSION, "acct", "prod", "old", { is_primary: true });
+    expect(written().metadata.primary_mirror).toBe("aws-us-east-1");
+    expect(written().metadata.mirrors["aws-us-east-1"].is_primary).toBe(true);
+    expect(written().metadata.mirrors.old).toBeUndefined();
   });
 });
 
@@ -267,7 +277,7 @@ describe("removeMirror", () => {
   test("removing the primary promotes the next", async () => {
     (productsTable.fetchById as jest.Mock).mockResolvedValue(TWO());
     const result = await removeMirror(SESSION, "acct", "prod", "a");
-    expect(result).toEqual({ ok: true, value: { key: "a", ...mirror("a", true) } });
+    expect(result).toEqual({ ok: true, value: mirror("a", true) });
     expect(written().metadata).toEqual({
       mirrors: { b: { ...mirror("b"), is_primary: true } },
       primary_mirror: "b",
@@ -288,6 +298,17 @@ describe("removeMirror", () => {
     expect(written().metadata).toEqual({
       mirrors: { a: mirror("a", true) },
       primary_mirror: "a",
+    });
+  });
+
+  test("removes a mirror an older product keys by another name", async () => {
+    (productsTable.fetchById as jest.Mock).mockResolvedValue(
+      productWith({ "aws-us-east-1": mirror("old", true), b: mirror("b") }, "aws-us-east-1")
+    );
+    await removeMirror(SESSION, "acct", "prod", "old");
+    expect(written().metadata).toEqual({
+      mirrors: { b: { ...mirror("b"), is_primary: true } },
+      primary_mirror: "b",
     });
   });
 
