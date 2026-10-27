@@ -98,67 +98,59 @@ export function TagPicker({
   };
 
   return (
-    <Flex direction="column" gap="2">
-      <Flex gap="2" wrap="wrap" align="center">
-        {tags.map((tag) => chip(tag, false))}
-        {fresh.map((tag) => chip(tag, true))}
-        <Popover.Root onOpenChange={() => setFilter("")}>
-          <Popover.Trigger>
-            <Button {...controlProps} type="button" size="1" variant="soft">
-              {tags.length || fresh.length ? "Edit tags" : "Add tags"}
-            </Button>
-          </Popover.Trigger>
-          <Popover.Content width="280px" aria-label="Choose tags">
-            <Flex direction="column" gap="2">
-              <TextField.Root
-                size="2"
-                placeholder="Filter tags"
-                value={filter}
-                onChange={(e) => setFilter(e.target.value)}
-                // Enter would submit the form behind the popover.
-                onKeyDown={(e) => e.key === "Enter" && e.preventDefault()}
-              />
-              {/* ponytail: renders every tag; fine to a few hundred, virtualise
+    <Flex gap="2" wrap="wrap" align="center">
+      {tags.map((tag) => chip(tag, false))}
+      {fresh.map((tag) => chip(tag, true))}
+      <Popover.Root onOpenChange={() => setFilter("")}>
+        <Popover.Trigger>
+          <Button {...controlProps} type="button" size="1" variant="soft">
+            {tags.length || fresh.length ? "Edit tags" : "Add tags"}
+          </Button>
+        </Popover.Trigger>
+        <Popover.Content width="280px" aria-label="Choose tags">
+          <Flex direction="column" gap="2">
+            <TextField.Root
+              size="2"
+              placeholder="Filter tags"
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+              // Enter would submit the form behind the popover.
+              onKeyDown={(e) => e.key === "Enter" && e.preventDefault()}
+            />
+            {/* ponytail: renders every tag; fine to a few hundred, virtualise
                   the list if the corpus grows past that. */}
-              <Flex
-                direction="column"
-                gap="1"
-                style={{ maxHeight: 240, overflowY: "auto" }}
-              >
-                {matches.map((tag) => (
-                  <Text as="label" size="2" key={tag}>
-                    <Flex gap="2" align="center" py="1">
-                      <Checkbox
-                        checked={tags.includes(tag)}
-                        onCheckedChange={(on) => toggle(tag, on === true)}
-                      />
-                      {tag}
-                    </Flex>
-                  </Text>
-                ))}
-                {!matches.length && (
-                  <Text size="2" color="gray">
-                    {options.length
-                      ? `No tag matches “${filter}”.`
-                      : "No tags to choose from yet."}
-                  </Text>
-                )}
-              </Flex>
-              {canSuggest && (
-                <Button type="button" size="1" variant="ghost" onClick={suggest}>
-                  Suggest “{query}” as a new tag
-                </Button>
+            <Flex
+              direction="column"
+              gap="1"
+              style={{ maxHeight: 240, overflowY: "auto" }}
+            >
+              {matches.map((tag) => (
+                <Text as="label" size="2" key={tag}>
+                  <Flex gap="2" align="center" py="1">
+                    <Checkbox
+                      checked={tags.includes(tag)}
+                      onCheckedChange={(on) => toggle(tag, on === true)}
+                    />
+                    {tag}
+                  </Flex>
+                </Text>
+              ))}
+              {!matches.length && (
+                <Text size="2" color="gray">
+                  {options.length
+                    ? `No tag matches “${filter}”.`
+                    : "No tags to choose from yet."}
+                </Text>
               )}
             </Flex>
-          </Popover.Content>
-        </Popover.Root>
-      </Flex>
-      {fresh.length > 0 && (
-        <Text size="1" color="gray">
-          New tags are suggested for review when you save the product. They
-          aren&apos;t kept until then.
-        </Text>
-      )}
+            {canSuggest && (
+              <Button type="button" size="1" variant="ghost" onClick={suggest}>
+                Suggest “{query}” as a new tag
+              </Button>
+            )}
+          </Flex>
+        </Popover.Content>
+      </Popover.Root>
     </Flex>
   );
 }
