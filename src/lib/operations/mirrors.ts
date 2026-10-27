@@ -278,7 +278,8 @@ export async function updateMirror(
 
 /**
  * Stops mirroring a product to a data connection; the objects stay where they
- * are. Removing the primary promotes the first mirror left, if any.
+ * are. Removing the primary promotes the first mirror left. The last mirror
+ * can't be removed.
  */
 export async function removeMirror(
   session: UserSession | null,
@@ -293,11 +294,19 @@ export async function removeMirror(
   if (!entry) return notFound("Mirror not found");
   const [key, removed] = entry;
   const { [key]: _, ...remaining } = product.metadata.mirrors;
+  // A product's pages and the data proxy both serve from the primary, so a
+  // product without a mirror has nothing to serve.
+  const [next] = Object.keys(remaining);
+  if (!next) {
+    return conflict(
+      "A product needs at least one mirror. Add another mirror first, or delete the product."
+    );
+  }
 
   let primary = product.metadata.primary_mirror;
   if (primary === key) {
-    primary = Object.keys(remaining)[0] ?? "";
-    if (primary) remaining[primary] = { ...remaining[primary], is_primary: true };
+    primary = next;
+    remaining[primary] = { ...remaining[primary], is_primary: true };
   }
   const saved = await saveMirrors(product, remaining, primary, "removeMirror");
   return saved.ok ? ok(removed) : saved;

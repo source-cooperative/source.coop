@@ -49,7 +49,7 @@ registry.registerPath({
   tags: ["Mirrors"],
   summary: "Remove a mirror",
   description:
-    "Stops serving the product from this data connection. Its objects there are not deleted. Removing the primary promotes another mirror, if there is one. You must be an owner or maintainer of the owning account.",
+    "Stops serving the product from this data connection. Its objects there are not deleted. Removing the primary promotes another mirror. A 409 means this is the product's last mirror. Add another mirror first, or delete the product. You must be an owner or maintainer of the owning account.",
   security: bearer,
   request: { params },
   responses: {

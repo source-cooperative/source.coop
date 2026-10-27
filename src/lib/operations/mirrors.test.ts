@@ -284,12 +284,15 @@ describe("removeMirror", () => {
     });
   });
 
-  test("removing the last mirror clears the primary", async () => {
+  test("refuses to remove the last mirror", async () => {
     (productsTable.fetchById as jest.Mock).mockResolvedValue(
       productWith({ a: mirror("a", true) }, "a")
     );
-    await removeMirror(SESSION, "acct", "prod", "a");
-    expect(written().metadata).toEqual({ mirrors: {}, primary_mirror: "" });
+    expect(await removeMirror(SESSION, "acct", "prod", "a")).toMatchObject({
+      error: "conflict",
+      message: expect.stringContaining("at least one mirror"),
+    });
+    expect(productsTable.update).not.toHaveBeenCalled();
   });
 
   test("removing another leaves the primary", async () => {
