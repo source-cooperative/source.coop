@@ -50,17 +50,43 @@ export function useFormChanges(lastSave: unknown) {
     const form = formRef.current;
     if (!form) return;
     saved.current = snapshot(form);
+    // Some controls finish mounting a render or two late (a Radix Select adds
+    // its native <select> once it knows it sits in a form), so until someone
+    // touches the form, a change to it is the form settling, not an edit.
+    let touched = false;
+    const touch = () => (touched = true);
     const check = () => setDirty(isDirty());
+    const edit = () => {
+      touch();
+      check();
+    };
+    const settle = () => {
+      if (!touched) saved.current = snapshot(form);
+      check();
+    };
     const onSubmit = () => (submitted.current = snapshot(form));
-    form.addEventListener("input", check);
-    form.addEventListener("change", check);
-    form.addEventListener("submit", onSubmit);
-    const observer = new MutationObserver(check);
-    observer.observe(form, { subtree: true, childList: true, attributes: true });
+    // Click too: a Radix checkbox or switch sets its hidden input's `checked`,
+    // which no attribute reflects, and announces it with a click.
+    const listeners: [string, () => void][] = [
+      ["pointerdown", touch],
+      ["keydown", touch],
+      ["input", edit],
+      ["change", edit],
+      ["click", edit],
+      ["submit", onSubmit],
+    ];
+    for (const [type, fn] of listeners) form.addEventListener(type, fn, true);
+    const observer = new MutationObserver(settle);
+    // Only the attributes that change what the form submits, so hover and
+    // focus states elsewhere in the form don't each re-read it.
+    observer.observe(form, {
+      subtree: true,
+      childList: true,
+      attributes: true,
+      attributeFilter: ["value", "name", "disabled", "checked"],
+    });
     return () => {
-      form.removeEventListener("input", check);
-      form.removeEventListener("change", check);
-      form.removeEventListener("submit", onSubmit);
+      for (const [type, fn] of listeners) form.removeEventListener(type, fn, true);
       observer.disconnect();
     };
   }, [isDirty]);

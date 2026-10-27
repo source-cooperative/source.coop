@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { useState } from "react";
+import { useLayoutEffect, useState } from "react";
 import { useFormChanges } from "./useFormChanges";
 
 function Form({ lastSave }: { lastSave?: unknown }) {
@@ -39,6 +39,29 @@ test("notices hidden inputs that change without an input event", async () => {
   render(<Form />);
   fireEvent.click(screen.getByText("Add tag"));
   await waitFor(() => expect(status()).toBe("unsaved"));
+});
+
+test("a control that mounts its input a render late is not an edit", async () => {
+  // As a Radix Select does: its native <select> appears once it knows it's
+  // inside a form, which it learns after its first render.
+  function Late() {
+    const [ready, setReady] = useState(false);
+    useLayoutEffect(() => setReady(true), []);
+    return ready ? <input type="hidden" name="role" value="reader" /> : null;
+  }
+  function LateForm() {
+    const { formRef, dirty } = useFormChanges(undefined);
+    return (
+      <form ref={formRef}>
+        <Late />
+        <output>{dirty ? "unsaved" : "clean"}</output>
+      </form>
+    );
+  }
+  render(<LateForm />);
+  // Let the mutation observer report the late input.
+  await act(async () => {});
+  expect(status()).toBe("clean");
 });
 
 test("a successful save makes what the form holds the saved state", () => {
