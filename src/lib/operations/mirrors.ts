@@ -8,6 +8,7 @@ import {
   UserSession,
 } from "@/types";
 import { canManageAccount } from "@/lib/api/authz";
+import { isConditionalCheckFailed } from "@/lib/clients/database/errors";
 import {
   canManageDataConnection,
   denyDataConnectionFor,
@@ -142,7 +143,7 @@ async function saveMirrors(
       { expectedUpdatedAt: product.updated_at }
     );
   } catch (error) {
-    if ((error as Error)?.name === "ConditionalCheckFailedException") {
+    if (isConditionalCheckFailed(error)) {
       return conflict(CONCURRENT_EDIT);
     }
     throw error;
