@@ -2,7 +2,7 @@ import "server-only";
 
 import { LOGGER } from "@/lib/logging";
 import { fileSourceUrl } from "@/lib/urls";
-import { Code } from "@radix-ui/themes";
+import { Text } from "@radix-ui/themes";
 import { getExtension } from "@/lib/files";
 import { DuckDBConnection } from "@duckdb/node-api";
 import { cache } from "react";
@@ -166,19 +166,19 @@ export async function ObjectPreviewExternal(props: ObjectPreviewExternalProps) {
   const extension = getExtension(props.object_path);
 
   if (!extension) {
-    return null;
+    return (
+      <Text size="2" color="gray">
+        No preview available
+      </Text>
+    );
   }
 
   const src = await getIframeSrc(cloudUri, extension);
   if (!src) {
     return (
-      <p>
-        No preview available for file type <Code>.{extension}</Code>.{" "}
-        <a href="https://github.com/source-cooperative/source.coop/issues">
-          Open an issue
-        </a>{" "}
-        if you would like support for this file type.
-      </p>
+      <Text size="2" color="gray">
+        No preview available
+      </Text>
     );
   }
 
