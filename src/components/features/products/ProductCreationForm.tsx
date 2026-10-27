@@ -364,7 +364,6 @@ export function ProductCreationForm({
       fields={fields}
       action={isEditMode ? updateProduct : createProduct}
       submitButtonText={isEditMode ? "Save" : "Create"}
-      warnOnUnsavedChanges
       hiddenFields={
         isEditMode
           ? {
