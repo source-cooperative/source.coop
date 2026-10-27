@@ -27,8 +27,12 @@ test("the form gets approved tags, and only the product's own pending ones", () 
     { tag_id: "ocean" },
     { tag_id: "sea-ice", pending: true },
     { tag_id: "someone else's", pending: true },
+    { tag_id: "sea", outcome: "rejected" as const },
+    { tag_id: "seas", outcome: "merged" as const },
+    { tag_id: "climate", outcome: "approved" as const },
   ];
-  expect(tagProps(tags, ["ocean", "sea-ice"])).toEqual({
+  expect(tagProps(tags, ["ocean", "sea-ice"]).tagOptions).toEqual(["ocean", "climate"]);
+  expect(tagProps(tags.slice(0, 3), ["ocean", "sea-ice"])).toEqual({
     tagOptions: ["ocean"],
     pendingTags: ["sea-ice"],
   });

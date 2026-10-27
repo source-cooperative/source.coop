@@ -191,7 +191,8 @@ function SuggestionCard({
             <Button
               type="button"
               size="1"
-              variant={matches.length || split ? "soft" : "solid"}
+              // Soft on every card, so Save merge is the one solid button.
+              variant="soft"
               loading={busy}
               onClick={() => decide("approve")}
             >

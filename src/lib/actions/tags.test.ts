@@ -30,12 +30,16 @@ describe("reviewTag", () => {
     await reviewTag(form({ tag: "sst", decision: "approve" }));
     await reviewTag(form({ tag: "sst", decision: "merge", into: "ocean" }));
     await reviewTag(form({ tag: "sst", decision: "reject" }));
+    await reviewTag(form({ tag: "sst", decision: "undo" }));
 
     expect(operations.updateTag).toHaveBeenCalledWith(session, "sst", { pending: false });
     expect(operations.deleteTag).toHaveBeenNthCalledWith(1, session, "sst", {
       replace_with: ["ocean"],
     });
     expect(operations.deleteTag).toHaveBeenNthCalledWith(2, session, "sst", {});
+    expect(operations.updateTag).toHaveBeenLastCalledWith(session, "sst", {
+      pending: true,
+    });
   });
 
   test("answers the refusal, so the page shows it", async () => {

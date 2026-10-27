@@ -5,7 +5,8 @@ import * as ops from "@/lib/operations/tags";
 
 /**
  * An admin's decision from the review page: approve the tag, merge it into
- * the approved tags chosen (one `into` value each), or reject it. Resolves to
+ * the approved tags chosen (one `into` value each), reject it, or undo an
+ * earlier decision, putting it back awaiting review. Resolves to
  * why it was refused, if it was, so the page can say so; a thrown error's
  * message is hidden in production.
  */
@@ -26,7 +27,9 @@ export async function reviewTag(
           })
         : decision === "reject"
           ? await ops.deleteTag(session, tag, {})
-          : null;
+          : decision === "undo"
+            ? await ops.updateTag(session, tag, { pending: true })
+            : null;
   if (!result) return { error: `Unknown decision: ${decision}` };
   return result.ok ? {} : { error: result.message };
 }

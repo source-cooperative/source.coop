@@ -1,16 +1,20 @@
-import {
-  DeleteCommand,
-  PutCommand,
-  ScanCommand,
-  UpdateCommand,
-} from "@aws-sdk/lib-dynamodb";
+import { PutCommand, ScanCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import type { Product } from "@/types";
 import { BaseTable } from "./base";
+
+/** A product a review decision rewrote, and the tags it gained by it. */
+export interface TagChange {
+  account_id: string;
+  product_id: string;
+  added: string[];
+}
 
 /**
  * A tag a product may carry. The id is the tag itself, the same string stored
  * in `product.metadata.tags`. A tag someone suggested is `pending` until an
- * admin approves, merges or rejects it; products may carry it meanwhile.
+ * admin decides: approved, it joins the list everyone picks from; merged or
+ * rejected, it leaves products and the list but stays on record, with what
+ * the decision changed, so the decision can be undone.
  */
 export interface Tag {
   tag_id: string;
@@ -18,10 +22,22 @@ export interface Tag {
   /** Who suggested it and when. Tags from the initial import have neither. */
   suggested_by?: string;
   suggested_at?: string;
-  /** Which admin approved it and when, once one has. */
-  approved_by?: string;
-  approved_at?: string;
+  /** An admin's decision on a suggestion, who made it and when. */
+  outcome?: "approved" | "merged" | "rejected";
+  reviewed_by?: string;
+  reviewed_at?: string;
+  /** The approved tags a merged suggestion was replaced with. */
+  merged_into?: string[];
+  /** What a merge or rejection did to products, for undoing it. */
+  changed?: TagChange[];
 }
+
+/** On the list everyone picks from: approved, or from the initial import. */
+export const isListed = (tag: Tag) =>
+  !tag.pending && tag.outcome !== "merged" && tag.outcome !== "rejected";
+
+/** A tag a product may carry: listed, or still awaiting review. */
+export const isUsable = (tag: Tag) => isListed(tag) || !!tag.pending;
 
 /**
  * The product form's tag props: approved tags to pick, and which of the
@@ -30,7 +46,7 @@ export interface Tag {
  */
 export function tagProps(tags: Tag[], current: string[] = []) {
   return {
-    tagOptions: tags.filter((t) => !t.pending).map((t) => t.tag_id),
+    tagOptions: tags.filter(isListed).map((t) => t.tag_id),
     pendingTags: tags
       .filter((t) => t.pending && current.includes(t.tag_id))
       .map((t) => t.tag_id),
@@ -79,10 +95,13 @@ export function anyPendingTags(): Promise<boolean> {
   );
 }
 
+const isConditionFailed = (error: unknown) =>
+  (error as Error).name === "ConditionalCheckFailedException";
+
 export class TagsTable extends BaseTable {
   model = "tags";
 
-  /** Every tag, approved and pending, sorted by id. */
+  /** Every tag, whatever its state, sorted by id. */
   async listAll(): Promise<Tag[]> {
     const tags: Tag[] = [];
     let ExclusiveStartKey: Record<string, unknown> | undefined;
@@ -101,7 +120,10 @@ export class TagsTable extends BaseTable {
     return tags.sort((a, b) => a.tag_id.localeCompare(b.tag_id));
   }
 
-  /** Adds a pending tag. A tag that already exists is left as it is. */
+  /**
+   * Adds a pending tag. One merged or rejected before is suggested afresh,
+   * replacing its record; any other tag that already exists is left as it is.
+   */
   async suggest(tag_id: string, suggested_by: string): Promise<Tag> {
     const tag: Tag = {
       tag_id,
@@ -114,49 +136,72 @@ export class TagsTable extends BaseTable {
         new PutCommand({
           TableName: this.table,
           Item: tag,
-          ConditionExpression: "attribute_not_exists(tag_id)",
+          ConditionExpression:
+            "attribute_not_exists(tag_id) OR outcome = :merged OR outcome = :rejected",
+          ExpressionAttributeValues: { ":merged": "merged", ":rejected": "rejected" },
         })
       );
       return tag;
     } catch (error) {
       // Someone else's suggestion landed first; the tag exists either way.
-      if ((error as Error).name === "ConditionalCheckFailedException") {
-        return { tag_id };
-      }
+      if (isConditionFailed(error)) return { tag_id };
       this.logError("suggest", error, { tag_id });
       throw error;
     }
   }
 
-  /** Approves a tag, keeping who suggested it and recording who approved it. */
-  async approve(tag_id: string, approved_by: string): Promise<void> {
+  /**
+   * Records an admin's decision on a pending tag. Answers false, writing
+   * nothing, when the tag isn't pending: another admin decided first.
+   */
+  async decide(
+    tag_id: string,
+    decision: Required<Pick<Tag, "outcome" | "reviewed_by">> &
+      Pick<Tag, "merged_into" | "changed">
+  ): Promise<boolean> {
+    const fields = { ...decision, reviewed_at: new Date().toISOString() };
+    const names = Object.keys(fields);
+    try {
+      await this.client.send(
+        new UpdateCommand({
+          TableName: this.table,
+          Key: { tag_id },
+          UpdateExpression: `REMOVE pending SET ${names.map((n) => `${n} = :${n}`).join(", ")}`,
+          ConditionExpression: "pending = :true",
+          ExpressionAttributeValues: {
+            ":true": true,
+            ...Object.fromEntries(names.map((n) => [`:${n}`, fields[n as keyof typeof fields]])),
+          },
+        })
+      );
+      return true;
+    } catch (error) {
+      if (isConditionFailed(error)) return false;
+      this.logError("decide", error, { tag_id });
+      throw error;
+    }
+  }
+
+  /**
+   * Puts a decided tag back in the queue, forgetting the decision. Answers
+   * false, writing nothing, when the tag has no decision to undo.
+   */
+  async reopen(tag_id: string): Promise<boolean> {
     try {
       await this.client.send(
         new UpdateCommand({
           TableName: this.table,
           Key: { tag_id },
           UpdateExpression:
-            "REMOVE pending SET approved_by = :by, approved_at = :at",
-          ConditionExpression: "attribute_exists(tag_id)",
-          ExpressionAttributeValues: {
-            ":by": approved_by,
-            ":at": new Date().toISOString(),
-          },
+            "SET pending = :true REMOVE outcome, reviewed_by, reviewed_at, merged_into, changed",
+          ConditionExpression: "attribute_exists(outcome)",
+          ExpressionAttributeValues: { ":true": true },
         })
       );
+      return true;
     } catch (error) {
-      this.logError("approve", error, { tag_id });
-      throw error;
-    }
-  }
-
-  async delete(tag_id: string): Promise<void> {
-    try {
-      await this.client.send(
-        new DeleteCommand({ TableName: this.table, Key: { tag_id } })
-      );
-    } catch (error) {
-      this.logError("delete", error, { tag_id });
+      if (isConditionFailed(error)) return false;
+      this.logError("reopen", error, { tag_id });
       throw error;
     }
   }
