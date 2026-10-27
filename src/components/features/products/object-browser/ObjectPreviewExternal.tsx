@@ -8,6 +8,115 @@ import { DuckDBConnection } from "@duckdb/node-api";
 import { cache } from "react";
 import { PreviewIframe } from "./PreviewIframe";
 
+// ── COG tiling probe ─────────────────────────────────────────────────────────
+
+type CogTilingInfo = "single-tile" | "striped" | "tiff";
+
+/**
+ * Parse the first IFD of a TIFF buffer and return tiling structure.
+ * Returns "tiff" when the IFD lies beyond the probe — the file has its index
+ * at the end rather than the beginning, which is incompatible with COG.
+ * Returns null for multi-tile COGs and for anything that can't be parsed.
+ */
+export function parseCogTiling(buf: Buffer): CogTilingInfo | null {
+  if (buf.length < 8) return null;
+
+  const mark = buf.readUInt16BE(0);
+  const littleEndian = mark === 0x4949;
+  if (!littleEndian && mark !== 0x4d4d) return null;
+
+  const read16 = (o: number) =>
+    littleEndian ? buf.readUInt16LE(o) : buf.readUInt16BE(o);
+  const read32 = (o: number) =>
+    littleEndian ? buf.readUInt32LE(o) : buf.readUInt32BE(o);
+
+  const magic = read16(2);
+  const isBigTiff = magic === 43;
+  if (magic !== 42 && !isBigTiff) return null;
+
+  const ifdOffset = isBigTiff ? read32(8) : read32(4);
+  // A COG always puts its IFD at the very start of the file. If the offset
+  // points past our probe the file wrote its IFD at the end — not a COG.
+  if (ifdOffset + 2 > buf.length) return "tiff";
+
+  // BigTIFF: 8-byte entry count; take the low 32 bits (high 32 are always 0).
+  const entryCount = isBigTiff
+    ? littleEndian
+      ? read32(ifdOffset)
+      : read32(ifdOffset + 4)
+    : read16(ifdOffset);
+  const entryStart = isBigTiff ? ifdOffset + 8 : ifdOffset + 2;
+  const entrySize = isBigTiff ? 20 : 12;
+  // BigTIFF: tag(2) + type(2) + count(8) + value(8); value starts at base+12.
+  // Standard: tag(2) + type(2) + count(4) + value(4); value starts at base+8.
+  const valStart = isBigTiff ? 12 : 8;
+
+  let imageWidth = 0,
+    imageLength = 0,
+    tileWidth = 0,
+    tileLength = 0;
+  let hasTileWidth = false,
+    hasTileLength = false,
+    hasRowsPerStrip = false;
+
+  const cap = Math.min(entryCount, 256);
+  for (let i = 0; i < cap; i++) {
+    const base = entryStart + i * entrySize;
+    if (base + entrySize > buf.length) break;
+    const tag = read16(base);
+    const type = read16(base + 2);
+    const vo = base + valStart;
+    // SHORT (type 3) stores value as 2 bytes; everything else read as 4 bytes.
+    const v = type === 3 ? read16(vo) : read32(vo);
+    switch (tag) {
+      case 256:
+        imageWidth = v;
+        break;
+      case 257:
+        imageLength = v;
+        break;
+      case 278:
+        hasRowsPerStrip = true;
+        break;
+      case 322:
+        tileWidth = v;
+        hasTileWidth = true;
+        break;
+      case 323:
+        tileLength = v;
+        hasTileLength = true;
+        break;
+    }
+  }
+
+  if (hasTileWidth && hasTileLength && tileWidth > 0 && tileLength > 0) {
+    if (
+      imageWidth > 0 &&
+      imageLength > 0 &&
+      Math.ceil(imageWidth / tileWidth) === 1 &&
+      Math.ceil(imageLength / tileLength) === 1
+    ) {
+      return "single-tile";
+    }
+    return null;
+  }
+
+  return hasRowsPerStrip ? "striped" : null;
+}
+
+const probeCogTiling = cache(async (sourceUrl: string): Promise<CogTilingInfo | null> => {
+  try {
+    const res = await fetch(sourceUrl, {
+      headers: { Range: "bytes=0-8191" },
+      signal: AbortSignal.timeout(4000),
+    });
+    if (!res.ok && res.status !== 206) return null;
+    return parseCogTiling(Buffer.from(await res.arrayBuffer()));
+  } catch {
+    return null;
+  }
+});
+
 // cache(): the remote parquet-schema probe is requested by both the
 // "Open in new tab" link and the preview iframe in one render.
 const isStacGeoParquet = cache(async (sourceUrl: string): Promise<boolean> => {
@@ -118,6 +227,13 @@ export async function fileTypeLabel(
   sourceUrl: string,
   extension: string,
 ): Promise<string> {
+  if (extension === "tif" || extension === "tiff") {
+    const tiling = await probeCogTiling(sourceUrl);
+    if (tiling === "tiff") return "TIFF";
+    if (tiling === "single-tile") return "COG · Single tile";
+    if (tiling === "striped") return "COG · Striped";
+    return "COG";
+  }
   if (extension === "parquet") {
     return (await isStacGeoParquet(sourceUrl)) ? "STAC GeoParquet" : "Parquet";
   }
