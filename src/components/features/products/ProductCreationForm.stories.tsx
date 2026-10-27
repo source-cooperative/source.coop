@@ -23,6 +23,9 @@ const meta = {
   title: "Features/Settings/Products/ProductCreationForm",
   component: ProductCreationForm,
   parameters: { layout: "padded" },
+  args: {
+    tagOptions: ["acoustics", "bathymetry", "cetaceans", "climate"],
+  },
 } satisfies Meta<typeof ProductCreationForm>;
 
 export default meta;

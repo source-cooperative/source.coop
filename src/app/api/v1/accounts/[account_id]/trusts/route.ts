@@ -83,6 +83,8 @@ export const DELETE = withApiSession<Params>(async ({ request, session, params }
       session,
       params.account_id,
       Object.fromEntries(request.nextUrl.searchParams)
-    )
+    ),
+    StatusCodes.OK,
+    "query"
   )
 );

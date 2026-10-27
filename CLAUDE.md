@@ -17,6 +17,16 @@ down are not the state someone may be in the middle of debugging. When a local
 lookup comes back empty, the cause is in the code far more often than in the
 data.
 
+## Glossary
+
+When communicating about the system, use these terms:
+
+* objects (not files) - the system is object storage based, as such data is stored
+  as objects rather than files.
+* requests (not downloads) - the system is built to work with cloud native formats
+  meaning that clients will send many byte requests rather than download the entire
+  object. As such, we shouldn't assume that a request downloads the entire file.
+
 ## Storybook
 
 Stories are published at [ui.source.coop](https://ui.source.coop). Run it locally
@@ -87,6 +97,17 @@ Read [API.md](API.md) before adding or changing an endpoint under `/api/v1`. It
 covers the operations layer every route goes through, how a route documents
 itself, the shapes of lists, errors and methods, and which consumers a change
 has to stay compatible with.
+
+Every error the API answers is an RFC 9457 problem, served as
+`application/problem+json` and built from the table in
+`src/lib/api/problems.ts`. Answer one through `toResponse` or
+`problemResponse`, never a hand-built error body. API.md's "Errors" says why.
+
+New functionality ships with its `/api/v1` endpoint in the same PR, and an
+issue that plans it names the endpoint. A feature only the UI can reach is one
+that scripts, the CLI and agents can't use. The UI and the endpoint go through
+one operation, so the two can't disagree about a rule — see API.md's "One
+operation, thin adapters".
 
 ## Pull requests
 

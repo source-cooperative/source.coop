@@ -141,7 +141,7 @@ export function ProductMirrorsManager({
     const formData = new FormData();
     formData.set("account_id", product.account_id);
     formData.set("product_id", product.product_id);
-    formData.set("mirror_key", mirrorKey);
+    formData.set("connection_id", product.metadata.mirrors[mirrorKey].connection_id);
     setActedOn({ key: mirrorKey, action: kind });
     startTransition(() => action(formData));
   };
@@ -326,7 +326,11 @@ export function ProductMirrorsManager({
                         name="product_id"
                         value={product.product_id}
                       />
-                      <input type="hidden" name="mirror_key" value={key} />
+                      <input
+                        type="hidden"
+                        name="connection_id"
+                        value={mirror.connection_id}
+                      />
                       <Field
                         label="Prefix"
                         help="Where this product's objects sit inside the connection. You can change it because you manage both this product's account and its connection."

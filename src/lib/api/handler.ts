@@ -3,37 +3,98 @@ import { StatusCodes } from "http-status-codes";
 import { UserSession } from "@/types";
 import { LOGGER } from "@/lib/logging";
 import { getApiSession } from "./utils";
-import { OperationError, OperationResult } from "@/lib/operations/result";
+import { OperationResult } from "@/lib/operations/result";
+import {
+  InputSource,
+  isProblemResponse,
+  Problem,
+  problem,
+  problemResponse,
+  toFieldProblems,
+} from "./problems";
 
-const STATUS: Record<OperationError, number> = {
-  invalid: StatusCodes.BAD_REQUEST,
-  unauthenticated: StatusCodes.UNAUTHORIZED,
-  forbidden: StatusCodes.FORBIDDEN,
-  not_found: StatusCodes.NOT_FOUND,
-  conflict: StatusCodes.CONFLICT,
-};
-
-const errorResponse = (
-  code: string,
-  message: string,
-  status: number,
-  field_errors?: Record<string, string[]>
-) => NextResponse.json({ error: { code, message, field_errors } }, { status });
-
-/** The route adapter: an operation's result as an HTTP response. */
+/**
+ * The route adapter: an operation's result as an HTTP response. A failure is
+ * an RFC 9457 problem; `input` says whether the operation was given the body
+ * or the query string, so its field errors name the fields the right way.
+ */
 export function toResponse<T>(
   result: OperationResult<T>,
-  status: number = StatusCodes.OK
+  status: number = StatusCodes.OK,
+  input: InputSource = "body"
 ): Response {
   if (!result.ok) {
-    return errorResponse(
-      result.error,
-      result.message,
-      STATUS[result.error],
-      result.fieldErrors
-    );
+    const errors =
+      result.fieldErrors && Object.keys(result.fieldErrors).length
+        ? toFieldProblems(result.fieldErrors, input)
+        : undefined;
+    return problemResponse(problem(result.error, result.message, { errors }));
   }
   return NextResponse.json(result.value, { status });
+}
+
+/**
+ * The challenge every 401 carries (RFC 9110 §11.6.1). A request that sent a
+ * bearer token and still got a 401 had that token refused, since
+ * `getApiSession` never falls back to the cookie when one is sent; RFC 6750
+ * §3.1 says so with `invalid_token`. Any other scheme gets the bare challenge,
+ * which names the one we take.
+ */
+const challenge = (request: NextRequest) =>
+  /^bearer /i.test(request.headers.get("Authorization") ?? "")
+    ? 'Bearer error="invalid_token"'
+    : "Bearer";
+
+/**
+ * `body` as it happened at `request`: its `type` and `instance` as absolute
+ * URLs on the request's own origin, the platform's request ID when it gives
+ * one (Vercel's `x-vercel-id`, which finds the request in its logs), and the
+ * authentication challenge when it is a 401.
+ */
+function problemAt(request: NextRequest, body: Problem, headers?: HeadersInit) {
+  const { origin, pathname } = request.nextUrl;
+  const request_id = request.headers.get("x-vercel-id") ?? undefined;
+  if (body.status === StatusCodes.UNAUTHORIZED) {
+    headers = new Headers(headers);
+    headers.set("WWW-Authenticate", challenge(request));
+  }
+  return problemResponse(
+    {
+      ...body,
+      type: new URL(body.type, origin).href,
+      instance: origin + pathname,
+      ...(request_id && { request_id }),
+    },
+    headers
+  );
+}
+
+/** `response`, as it happened at `request` if it is a problem. */
+async function withOccurrence(response: Response, request: NextRequest) {
+  if (!isProblemResponse(response)) return response;
+  return problemAt(request, (await response.json()) as Problem, response.headers);
+}
+
+/**
+ * Wraps a route handler so that every problem it answers is placed at the
+ * request (`problemAt`), and anything it throws is a logged `internal`
+ * problem. `withApiSession` is built on it; a route that authenticates its
+ * caller itself wraps its handler in this directly.
+ */
+export function withProblems<C>(
+  handler: (request: NextRequest, context: C) => Promise<Response>
+) {
+  return async (request: NextRequest, context: C): Promise<Response> => {
+    try {
+      return await withOccurrence(await handler(request, context), request);
+    } catch (error) {
+      LOGGER.error("Unhandled API error", {
+        operation: `${request.method} ${request.nextUrl.pathname}`,
+        error,
+      });
+      return problemAt(request, problem("internal", "Internal server error"));
+    }
+  };
 }
 
 interface ApiContext<P> {
@@ -48,8 +109,7 @@ const READS = new Set(["GET", "HEAD"]);
 
 /**
  * Wraps a route handler with the parts every API route shares: the session,
- * the awaited path params, the parsed JSON body, and a logged 500 for
- * anything thrown.
+ * the awaited path params, the parsed JSON body, and `withProblems`.
  *
  * A request that changes something must carry a bearer token. The cookie
  * fallback in `getApiSession` exists for the app's own reads; a browser
@@ -60,37 +120,18 @@ const READS = new Set(["GET", "HEAD"]);
 export function withApiSession<P = Record<string, never>>(
   handler: (ctx: ApiContext<P>) => Promise<Response>
 ) {
-  return async (
-    request: NextRequest,
-    { params }: { params: Promise<P> }
-  ): Promise<Response> => {
+  return withProblems(async (request, { params }: { params: Promise<P> }) => {
+    const session =
+      READS.has(request.method) || request.headers.has("Authorization")
+        ? await getApiSession(request)
+        : null;
+    const text = READS.has(request.method) ? "" : await request.text();
+    let body: unknown;
     try {
-      const session =
-        READS.has(request.method) || request.headers.has("Authorization")
-          ? await getApiSession(request)
-          : null;
-      const text = READS.has(request.method) ? "" : await request.text();
-      let body: unknown;
-      try {
-        body = text ? JSON.parse(text) : undefined;
-      } catch {
-        return errorResponse(
-          "invalid",
-          "Request body is not valid JSON",
-          StatusCodes.BAD_REQUEST
-        );
-      }
-      return await handler({ request, session, params: await params, body });
-    } catch (error) {
-      LOGGER.error("Unhandled API error", {
-        operation: `${request.method} ${request.nextUrl.pathname}`,
-        error,
-      });
-      return errorResponse(
-        "internal",
-        "Internal server error",
-        StatusCodes.INTERNAL_SERVER_ERROR
-      );
+      body = text ? JSON.parse(text) : undefined;
+    } catch {
+      return problemResponse(problem("invalid", "Request body is not valid JSON"));
     }
-  };
+    return handler({ request, session, params: await params, body });
+  });
 }

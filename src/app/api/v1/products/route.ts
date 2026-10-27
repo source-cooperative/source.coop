@@ -1,5 +1,6 @@
+import { StatusCodes } from "http-status-codes";
 import { withApiSession, toResponse } from "@/lib/api/handler";
-import { errors, json, registry } from "@/lib/api/openapi";
+import { errors, json, optionalBearer, registry } from "@/lib/api/openapi";
 import {
   ListProductsQuerySchema,
   listProducts,
@@ -12,7 +13,8 @@ registry.registerPath({
   tags: ["Products"],
   summary: "List public products",
   description:
-    "Public products, most featured first, one page at a time. Needs no credentials.",
+    "Public products, most featured first, one page at a time. Credentials are optional; a token returns the full embedded account.",
+  security: optionalBearer,
   request: { query: ListProductsQuerySchema },
   responses: {
     200: json("A page of products.", ProductPageSchema),
@@ -22,6 +24,8 @@ registry.registerPath({
 
 export const GET = withApiSession(async ({ request, session }) =>
   toResponse(
-    await listProducts(session, Object.fromEntries(request.nextUrl.searchParams))
+    await listProducts(session, Object.fromEntries(request.nextUrl.searchParams)),
+    StatusCodes.OK,
+    "query"
   )
 );

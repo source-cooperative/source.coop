@@ -1,10 +1,11 @@
 import {
   extendZodWithOpenApi,
   OpenAPIRegistry,
-  OpenApiGeneratorV3,
+  OpenApiGeneratorV31,
 } from "@asteasolutions/zod-to-openapi";
 import { StatusCodes } from "http-status-codes";
 import { z, ZodTypeAny } from "zod";
+import { PROBLEM_CONTENT_TYPE, PROBLEMS, ProblemCode } from "./problems";
 
 extendZodWithOpenApi(z);
 
@@ -38,30 +39,66 @@ const INTERNAL = "Internal";
  */
 export const internal = { tags: [INTERNAL], "x-internal": true };
 
-const ErrorSchema = registry.register(
-  "Error",
-  z.object({
-    error: z.object({
-      code: z
-        .enum([
-          "invalid",
-          "unauthenticated",
-          "forbidden",
-          "not_found",
-          "conflict",
-          "internal",
-        ])
-        .openapi({ description: "What kind of failure this is." }),
-      message: z.string().openapi({ description: "A sentence for a person." }),
-      field_errors: z
-        .record(z.array(z.string()))
-        .optional()
-        .openapi({
-          description:
-            "For `invalid`: the problems with each named request field.",
-        }),
+const PROBLEM_CODES = Object.keys(PROBLEMS) as [ProblemCode, ...ProblemCode[]];
+
+const FieldProblemSchema = z
+  .object({
+    detail: z.string().openapi({ description: "What is wrong with this field." }),
+    pointer: z.string().optional().openapi({
+      description:
+        "A JSON Pointer (RFC 6901), as a URI fragment, to the field in the request body: `#/metadata/title`.",
     }),
+    parameter: z
+      .string()
+      .optional()
+      .openapi({ description: "The query parameter at fault, when the field is one." }),
   })
+  .openapi("FieldProblem");
+
+/**
+ * Every error's body: an RFC 9457 problem. Exported so an endpoint whose
+ * problem carries an extension member can extend it.
+ */
+export const ProblemSchema = registry.register(
+  "Problem",
+  z
+    .object({
+      type: z.string().url().openapi({
+        description:
+          "Identifies the kind of problem. It is the URL of a page that explains the problem and what to do about it, on the host that answered.",
+        example: "https://source.coop/api/problems/not_found",
+      }),
+      title: z.string().openapi({
+        description: "A short summary of the type, the same for every occurrence of it.",
+        example: PROBLEMS.not_found.title,
+      }),
+      status: z.number().int().openapi({
+        description: "The HTTP status code, repeated for clients that lose it.",
+        example: PROBLEMS.not_found.status,
+      }),
+      detail: z.string().openapi({
+        description: "A sentence for a person about this occurrence.",
+        example: "Product example/missing not found",
+      }),
+      instance: z.string().url().optional().openapi({
+        description: "The URL of the request the problem occurred at, without its query.",
+        example: "https://source.coop/api/v1/products/example/missing",
+      }),
+      code: z.enum(PROBLEM_CODES).openapi({
+        description:
+          "The type's last path segment, for clients that switch on a short string.",
+      }),
+      errors: z.array(FieldProblemSchema).optional().openapi({
+        description: "For `invalid`: one entry for each problem with a request field.",
+      }),
+      request_id: z.string().optional().openapi({
+        description:
+          "Our ID for the request. Quote it when you report a problem, and we can find the request in our logs.",
+      }),
+    })
+    .openapi({
+      description: `An RFC 9457 problem, served as \`${PROBLEM_CONTENT_TYPE}\`. The types are listed at https://source.coop/api/problems.`,
+    })
 );
 
 const ERRORS: Record<number, string> = {
@@ -90,24 +127,44 @@ export const json =(description: string, schema: ZodTypeAny) => ({
   content: { "application/json": { schema } },
 });
 
-/** The error responses a route can return, each in the shared `Error` shape. */
+/** A problem response, in `schema` (`ProblemSchema` or an extension of it). */
+export const problemJson = (description: string, schema: ZodTypeAny) => ({
+  description,
+  content: { [PROBLEM_CONTENT_TYPE]: { schema } },
+});
+
+const challenge = {
+  description:
+    '`Bearer` when the request sent no bearer token; `Bearer error="invalid_token"` (RFC 6750) when it sent one that was refused.',
+  schema: { type: "string" as const },
+};
+
+/** The error responses a route can return, each an RFC 9457 `Problem`; a 401 also states its challenge. */
 export const errors = (...statuses: (keyof typeof ERRORS)[]) =>
-  Object.fromEntries(statuses.map((s) => [s, json(ERRORS[s], ErrorSchema)]));
+  Object.fromEntries(
+    statuses.map((s) => [
+      s,
+      {
+        ...problemJson(ERRORS[s], ProblemSchema),
+        ...(s === 401 && { headers: { "WWW-Authenticate": challenge } }),
+      },
+    ])
+  );
 
 export function generateDocument() {
-  const document = new OpenApiGeneratorV3(registry.definitions).generateDocument({
-    openapi: "3.0.3",
+  const document = new OpenApiGeneratorV31(registry.definitions).generateDocument({
+    openapi: "3.1.0",
     info: {
       title: "Source Cooperative API",
       version: "1.0.0",
-      description: "Everything you can do on source.coop, over HTTP.",
+      description: `Everything you can do on source.coop, over HTTP.\n\nEvery error is an [RFC 9457](https://www.rfc-editor.org/rfc/rfc9457) problem, served as \`${PROBLEM_CONTENT_TYPE}\`. Its \`type\` is a URL whose page explains the problem and what to do about it; the types are listed at https://source.coop/api/problems.`,
     },
     servers: [{ url: "/api/v1" }],
   });
   // Swagger UI and Redoc list the declared tags first, in declared order, so
   // every tag is declared, in the order routes register, and Internal last.
   const tags = new Set(
-    Object.values(document.paths).flatMap((path) =>
+    Object.values(document.paths ?? {}).flatMap((path) =>
       Object.values(path).flatMap((op) => (op as { tags?: string[] }).tags ?? [])
     )
   );

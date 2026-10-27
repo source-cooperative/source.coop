@@ -19,6 +19,8 @@ Everything else only adapts it:
   `isAuthorized` itself.
 - **A server action** in `src/lib/actions/` maps form fields to the operation's
   input and answers `toFormState(result, ...)`.
+- **A page** under `src/app/(app)/` reads the records it renders through an
+  operation too. A page that reads a table itself can show what the API hides.
 
 So the web app and the API can't disagree about a rule, and an operation is
 tested once, in `src/lib/operations/*.test.ts`. Adapter tests only check the
@@ -37,6 +39,11 @@ can't describe a body the code doesn't accept. Import the route module in
 `src/app/api/openapi/route.ts`; `route-coverage.test.ts` fails for any handler
 exported as `export const|function METHOD` that isn't in the document, other
 than those on its `UNREGISTERED` list.
+
+The reference is OpenAPI 3.1, so its schemas are JSON Schema 2020-12 that
+validators and code generators can use as they stand: a nullable field is
+`type: ["string", "null"]`, not 3.0's `nullable: true`. Move to 3.2 once
+Swagger UI, Redoc and zod-to-openapi support it.
 
 - **`summary` and `description` are published.** Write them for someone
   calling the endpoint: who may, what it answers, and what each status means.
@@ -114,20 +121,79 @@ named for what it does. A list that can only be read through one of its table's 
 
 ## Errors
 
-Every error from `toResponse` or `withApiSession` is
-`{ "error": { "code", "message", "field_errors"? } }`:
+Every error is an [RFC 9457](https://www.rfc-editor.org/rfc/rfc9457) problem,
+served as `application/problem+json`:
+
+```json
+{
+  "type": "https://source.coop/api/problems/invalid",
+  "title": "Invalid request",
+  "status": 400,
+  "detail": "Product ID may not contain consecutive hyphens",
+  "instance": "https://source.coop/api/v1/products/example",
+  "code": "invalid",
+  "errors": [
+    { "detail": "Product ID may not contain consecutive hyphens", "pointer": "#/product_id" }
+  ],
+  "request_id": "iad1::abcde-1234567890"
+}
+```
 
 | Status | `code` | When |
 |---|---|---|
-| 400 | `invalid` | the input fails its schema or a rule; `field_errors` names the fields |
+| 400 | `invalid` | the input fails its schema or a rule; `errors` names the fields |
 | 401 | `unauthenticated` | no credentials, and the endpoint needs some |
 | 403 | `forbidden` | credentials that may not do this |
 | 404 | `not_found` | nothing by that ID, or nothing the caller may know of |
 | 409 | `conflict` | the resource's state doesn't allow it |
-| 500 | `internal` | anything thrown; the message says nothing more |
+| 500 | `internal` | anything thrown; the detail says nothing more |
 
-The data proxy's trust exchange is the exception: it answers 403 as
-`{ "trusted": false }`, which the proxy reads.
+The members, and who sets them:
+
+- **`type`** is `/api/problems/{code}` on the host that answered
+  (`https://source.coop/api/problems/{code}` in production), so it resolves on
+  the deployment that raised it, to a page that explains the problem and what
+  to do about it. `/api/problems` lists them all.
+- **`title`** and **`status`** come with the type. A title never varies
+  between occurrences; anything about this occurrence goes in `detail`.
+- **`detail`** is the operation's message: a sentence for a person, which says
+  what to do instead where there is something to do.
+- **`code`** is the type's last segment. Clients switch on it rather than on
+  `type`, whose host differs between deployments.
+- **`errors`** lists each problem with a field, for `invalid` only. A body field
+  is named by `pointer`, a JSON Pointer as a URI fragment (`#/metadata/title`);
+  a query parameter by `parameter`. Operations keep keying `fieldErrors` by
+  dotted path, and `toResponse` translates; pass it `"query"` as its third
+  argument when the operation was given the query string, so the fields come
+  out as parameters.
+- **`instance`** (the request's URL, without its query) and **`request_id`**
+  (Vercel's `x-vercel-id`, which finds the request in its logs) are added by
+  `withProblems`, which also makes `type` absolute and answers anything thrown
+  as an `internal` problem. `withApiSession` is built on it, and a route that
+  authenticates its caller itself is wrapped in it directly, so every problem
+  carries them.
+
+Every 401 also carries `WWW-Authenticate`
+([RFC 9110 §11.6.1](https://www.rfc-editor.org/rfc/rfc9110#section-11.6.1)):
+`Bearer` when the request sent no bearer token, and
+`Bearer error="invalid_token"`
+([RFC 6750 §3.1](https://www.rfc-editor.org/rfc/rfc6750#section-3.1)) when it
+sent one that was refused, so a client knows to get a new token rather than add
+one. `withProblems` sets it from the request, so a route never does. It names no
+`resource_metadata` yet: that waits on deciding which service is the API's
+authorization server.
+
+Each type is defined once, in `src/lib/api/problems.ts`: its status, title, and
+the prose its page publishes. The handler, the reference's `Problem` schema and
+the pages all read that table. A new kind of failure is a new entry there, with
+an `OperationError` to raise it, not a new status picked in a route.
+
+Answer problems through `toResponse` or `problemResponse(problem(...))` inside
+`withProblems`, never by building an error body by hand: a hand-built body misses the media type and the members clients rely
+on. A problem may carry an extension member that only
+its endpoint answers. Declare it by extending `ProblemSchema`, and document it
+with `problemJson` rather than `json`. The data proxy's trust exchange is the
+one so far: its 403 is a `forbidden` problem that also says `trusted: false`.
 
 Refuse with `deny(session, message)`, which picks 401 or 403 for you. Where
 the permission doesn't depend on the input, authorize before validating it, so
@@ -148,11 +214,15 @@ edit of those.
 ## Compatibility
 
 - **The data proxy** (data.source.coop) is the consumer the API has to stay
-  compatible with. `src/app/api/openapi/data-proxy-contract.test.ts` snapshots
-  the request, statuses and success body of every endpoint it calls; a change
-  there needs the matching data.source.coop change first.
+  compatible with. The endpoints it calls are listed in its
+  `src/source_api/cache.rs`, and the fields it reads in
+  `src/source_api/types.rs`. The proxy owns the check that this API still
+  serves them: its `tests/test_contract.py` compares them nightly against
+  production. A change to the request, statuses or success body of one of
+  those endpoints needs the matching data.source.coop change first.
 - **The CLI** (source-coop-cli) is built against this API and follows the
-  reference as it changes.
+  reference as it changes. It reads problems into its own `--json` error
+  output, so a change to a problem's members needs the matching CLI change.
 - **Everyone else** is unknown. Before removing or reshaping an endpoint, check
   production traffic for it in Vercel's logs for the path; if something still
   calls it, deprecate it instead.
