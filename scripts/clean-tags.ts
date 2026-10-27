@@ -28,17 +28,15 @@ import {
   ScanCommand,
   UpdateCommand,
 } from "@aws-sdk/lib-dynamodb";
+import { canonTag } from "../src/lib/tags/canon";
 
 const MIN_USES = 2;
 
 const FIBOA = ["fiboa", "field boundaries", "geoparquet", "vector", "pmtiles"];
 
-/**
- * A tag's one spelling: lowercase, with hyphens between words. The lists
- * below are written with spaces for reading, and go through this too, so a
- * tag typed either way matches them.
- */
-const canon = (tag: string) => tag.trim().toLowerCase().replace(/\s+/g, "-");
+// The lists below are written with spaces for reading, and go through the
+// same spelling as every tag, so a tag typed either way matches them.
+const canon = canonTag;
 
 /** Normalized tag → canonical tags. An empty list drops the tag. */
 const ALIASES: Record<string, string[]> = {

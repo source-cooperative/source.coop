@@ -41,6 +41,7 @@ import {
   unauthenticated,
 } from "./result";
 import { publicView } from "./accounts";
+import { canonTag } from "@/lib/tags/canon";
 
 export const ListProductsQuerySchema = PageQuerySchema.extend({
   q: z
@@ -61,7 +62,7 @@ export const ProductPageSchema = pageSchema("ProductPage", ProductResponseSchema
 
 const TagsSchema = z.array(z.string()).openapi({
   description:
-    "Topics people can filter products by. Each tag must be on Source's list of tags.",
+    "Topics people can filter products by. Each tag must be on Source's list of tags. Tags are lowercase with hyphens between words, and `New Zealand` is read as `new-zealand`.",
 });
 
 export const CreateProductSchema = ProductCreationRequestSchema.omit({
@@ -91,15 +92,18 @@ export const UpdateProductSchema = ProductSchema.pick({
   .openapi("UpdateProduct");
 
 /**
- * The tags deduplicated, or the error naming those outside the corpus. A tag
- * the product already carries is kept even if the corpus has since dropped it,
- * so editing some other field isn't blocked by a tag nobody chose today.
+ * The tags in their one spelling and deduplicated, or the error naming those
+ * outside the corpus. A tag the product already carries is kept as it is, even
+ * if the corpus has since dropped or respelled it, so editing some other field
+ * isn't blocked by a tag nobody chose today.
  */
 async function checkTags(
   tags: string[],
   current: string[] = []
 ): Promise<OperationResult<string[]>> {
-  const unique = [...new Set(tags)];
+  const unique = [
+    ...new Set(tags.map((tag) => (current.includes(tag) ? tag : canonTag(tag)))),
+  ];
   if (!unique.length) return ok(unique);
   const corpus = new Set([...(await tagsTable.listAll()), ...current]);
   const unknown = unique.filter((tag) => !corpus.has(tag));

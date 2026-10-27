@@ -408,6 +408,24 @@ describe("updateProduct", () => {
     ]);
   });
 
+  test("reads a tag in its one spelling, but keeps the product's own as they are", async () => {
+    (tagsTable.listAll as jest.Mock).mockResolvedValue(["ocean", "sea-ice"]);
+    (productsTable.fetchById as jest.Mock).mockResolvedValue(
+      product({
+        metadata: { primary_mirror: "conn-x", mirrors: {}, tags: ["field boundaries"] },
+      })
+    );
+    const result = await updateProduct(SESSION, "alice", "my-product", {
+      tags: ["Sea  Ice", " OCEAN ", "field boundaries"],
+    });
+    expect(result.ok).toBe(true);
+    expect((productsTable.update as jest.Mock).mock.calls[0][0].metadata.tags).toEqual([
+      "sea-ice",
+      "ocean",
+      "field boundaries",
+    ]);
+  });
+
   test("rejects a tag outside the corpus", async () => {
     expect(
       await updateProduct(SESSION, "alice", "my-product", { tags: ["made-up"] })
