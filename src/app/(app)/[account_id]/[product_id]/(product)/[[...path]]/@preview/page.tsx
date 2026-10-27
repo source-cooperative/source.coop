@@ -1,16 +1,16 @@
 import { Suspense, type ReactNode } from "react";
-import { Box, Card, Flex, Grid, Link, Separator, Text } from "@radix-ui/themes";
+import { Card } from "@radix-ui/themes";
 import { getStorageClient } from "@/lib/clients/storage";
 import { readProxyCredentials } from "@/lib/services/proxy-credentials-read";
 import type { ProxyCredentials } from "@/lib/actions/proxy-credentials";
 import { ObjectPreview } from "@/components/features/products/object-browser/ObjectPreview";
 import { PreviewIframe } from "@/components/features/products/object-browser/PreviewIframe";
-import { storeViewerUrl } from "@/components/features/products/object-browser/storeViewer";
+import { storeViewerUrl, storeLabelFromResult } from "@/components/features/products/object-browser/storeViewer";
 import { getAuthorizedProduct } from "../data";
 import { fileSourceUrl } from "@/lib/urls";
-import { ExternalLinkIcon } from "@radix-ui/react-icons";
 import { getExtension, isStoreExtension } from "@/lib/files";
 import { getIframeSrc, fileTypeLabel } from "@/components/features/products/object-browser/ObjectPreviewExternal";
+import { ObjectPreviewCard } from "@/components/features/products/object-browser/ObjectPreviewCard";
 
 interface PageProps {
   params: Promise<{
@@ -27,39 +27,9 @@ function previewCard(
 ) {
   return (
     <Card mt="4">
-      <Box>
-        <Grid columns="3" align="center">
-          <Text size="2" weight="bold">
-            Object Preview
-          </Text>
-          <Flex justify="center">
-            {label && (
-              <Text size="1" color="gray">
-                {label}
-              </Text>
-            )}
-          </Flex>
-          <Flex justify="end">
-            {viewerUrl && (
-              <Link
-                href={viewerUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                size="1"
-              >
-                <Flex align="center" gap="1">
-                  Open in new tab
-                  <ExternalLinkIcon width="14" height="14" />
-                </Flex>
-              </Link>
-            )}
-          </Flex>
-        </Grid>
-        <Box my="3">
-          <Separator size="4" />
-        </Box>
-        <Box mt="4">{children}</Box>
-      </Box>
+      <ObjectPreviewCard viewerUrl={viewerUrl} label={label}>
+        {children}
+      </ObjectPreviewCard>
     </Card>
   );
 }
@@ -122,18 +92,9 @@ export default async function ObjectPreviewSlot({ params }: PageProps) {
       creds: creds ?? null,
     });
     if (!store) return null;
-    let storeLabel: string;
-    if (store.format === "icechunk") {
-      const prefix = store.icechunkVersion
-        ? `Icechunk v${store.icechunkVersion}`
-        : "Icechunk";
-      storeLabel = `${prefix} · Zarr v3`;
-    } else {
-      storeLabel = store.format === "zarr2" ? "Zarr v2" : "Zarr v3";
-    }
     return previewCard(
       store.url,
-      storeLabel,
+      storeLabelFromResult(store),
       <PreviewIframe src={store.url} title={`Preview of ${object_path}`} />,
     );
   }

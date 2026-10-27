@@ -27,6 +27,17 @@ export interface StoreViewerResult {
   icechunkVersion?: 1 | 2;
 }
 
+export function storeLabelFromResult({
+  format,
+  icechunkVersion,
+}: StoreViewerResult): string {
+  if (format === "icechunk") {
+    const prefix = icechunkVersion ? `Icechunk v${icechunkVersion}` : "Icechunk";
+    return `${prefix} · Zarr v3`;
+  }
+  return format === "zarr2" ? "Zarr v2" : "Zarr v3";
+}
+
 /**
  * The external zarr-viewer URL and detected store format for a `.zarr` /
  * `.icechunk` store, or `null` when cheap server-side checks say the store

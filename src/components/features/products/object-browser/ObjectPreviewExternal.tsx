@@ -89,76 +89,39 @@ export const getIframeSrc = async (
   }
 };
 
+const FILE_TYPE_LABELS: Record<string, string> = {
+  tif: "COG",
+  tiff: "COG",
+  pmtiles: "PMTiles",
+  jsonl: "Newline-delimited JSON",
+  ndjson: "Newline-delimited JSON",
+  glb: "binary glTF",
+  gltf: "JSON glTF",
+  obj: "Wavefront OBJ",
+  stl: "STL mesh",
+  fgb: "FlatGeobuf",
+  geojson: "GeoJSON",
+  gpkg: "GeoPackage",
+  nc: "NetCDF",
+  h5: "HDF5",
+  las: "LAS point cloud",
+  laz: "LAZ point cloud",
+  copc: "Cloud-Optimized Point Cloud",
+  bmp: "Bitmap",
+  jpg: "JPEG",
+  md: "Markdown",
+  markdown: "Markdown",
+  txt: "Text",
+};
+
 export async function fileTypeLabel(
   sourceUrl: string,
   extension: string,
 ): Promise<string> {
-  switch (extension) {
-    case "tif":
-    case "tiff":
-      return "COG";
-    case "parquet":
-      return (await isStacGeoParquet(sourceUrl)) ? "STAC GeoParquet" : "Parquet";
-    case "pmtiles":
-      return "PMTiles";
-    case "csv":
-      return "CSV";
-    case "tsv":
-      return "TSV";
-    case "json":
-      return "JSON";
-    case "jsonl":
-    case "ndjson":
-      return "Newline-delimited JSON";
-    case "pdf":
-      return "PDF";
-    case "glb":
-      return "binary glTF";
-    case "gltf":
-      return "JSON glTF";
-    case "obj":
-      return "Wavefront OBJ";
-    case "stl":
-      return "STL mesh";
-    case "fgb":
-      return "FlatGeobuf";
-    case "geojson":
-      return "GeoJSON";
-    case "gpkg":
-      return "GeoPackage";
-    case "nc":
-      return "NetCDF";
-    case "h5":
-    case "hdf5":
-      return "HDF5";
-    case "las":
-      return "LAS point cloud";
-    case "laz":
-      return "LAZ point cloud";
-    case "copc":
-      return "Cloud-Optimized Point Cloud";
-    case "zip":
-      return "ZIP";
-    case "avif":
-    case "gif":
-    case "svg":
-    case "webp":
-      return extension.toUpperCase();
-    case "bmp":
-      return "Bitmap";
-    case "jpg":
-    case "jpeg":
-      return "JPEG";
-    case "png":
-      return "PNG";
-    case "md":
-    case "markdown":
-      return "Markdown";
-    case "txt":
-      return "Text";
-    default:
-      return extension.toUpperCase();
+  if (extension === "parquet") {
+    return (await isStacGeoParquet(sourceUrl)) ? "STAC GeoParquet" : "Parquet";
   }
+  return FILE_TYPE_LABELS[extension] ?? extension.toUpperCase();
 }
 
 export async function ObjectPreviewExternal(props: ObjectPreviewExternalProps) {
