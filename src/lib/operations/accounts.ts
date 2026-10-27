@@ -371,7 +371,8 @@ export async function searchAccounts(
   const parsed = SearchAccountsQuerySchema.safeParse(query);
   if (!parsed.success) return fromZodError(parsed.error);
   const { q, member_of } = parsed.data;
-  if (q.includes("@")) {
+  // Only a whole address, so a half-typed one is still an ordinary search.
+  if (z.string().email().safeParse(q).success) {
     if (!isAdmin(session)) return deny(session, "Only an admin may search by email");
     return ok(onePage((await searchUsers(q, session.account?.account_id)).results));
   }
@@ -436,14 +437,21 @@ export async function createOrganization(
     }
     throw error;
   }
-  await membershipsTable.create({
-    membership_id: randomUUID(),
-    account_id: owner_account_id,
-    membership_account_id: account_id,
-    role: MembershipRole.Owners,
-    state: MembershipState.Member,
-    state_changed: now,
-  });
+  // An organization without an owner is one nobody but an admin can manage,
+  // so it goes if its owner can't be written.
+  try {
+    await membershipsTable.create({
+      membership_id: randomUUID(),
+      account_id: owner_account_id,
+      membership_account_id: account_id,
+      role: MembershipRole.Owners,
+      state: MembershipState.Member,
+      state_changed: now,
+    });
+  } catch (error) {
+    await accountsTable.delete(account_id);
+    throw error;
+  }
   LOGGER.info("Created organization", {
     operation: "createOrganization",
     metadata: { account_id, owner_account_id, by: caller },

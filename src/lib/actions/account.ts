@@ -184,7 +184,10 @@ async function adapt<T>(
   }
 }
 
-/** The account picker's type-ahead; nothing for a query the search refuses. */
+/**
+ * The account picker's type-ahead; nothing for a query the search refuses. An
+ * admin's email search can find a disabled account, which is no one to invite.
+ */
 export async function searchAccounts(
   query: string,
   memberOf?: string
@@ -193,5 +196,5 @@ export async function searchAccounts(
     q: query,
     member_of: memberOf,
   });
-  return result.ok ? result.value.items : [];
+  return result.ok ? result.value.items.filter((s) => !s.disabled) : [];
 }

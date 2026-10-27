@@ -430,6 +430,12 @@ describe("searchAccounts", () => {
     expect(searchUsers).toHaveBeenCalledWith("bob@example.com", "alice");
     expect(search).not.toHaveBeenCalled();
   });
+
+  it("searches a half-typed address as text", async () => {
+    expect(await searchAccounts(SESSION, { q: "bob@exa" })).toMatchObject({ ok: true });
+    expect(search).toHaveBeenLastCalledWith("bob@exa", undefined);
+    expect(searchUsers).not.toHaveBeenCalled();
+  });
 });
 
 describe("createOrganization", () => {
@@ -480,5 +486,11 @@ describe("createOrganization", () => {
       fieldErrors: { account_id: ["That account ID is already taken."] },
     });
     expect(membershipsTable.create).not.toHaveBeenCalled();
+  });
+
+  it("deletes the organization if its owner can't be written", async () => {
+    (membershipsTable.create as jest.Mock).mockRejectedValue(new Error("throttled"));
+    await expect(createOrganization(SESSION, input)).rejects.toThrow("throttled");
+    expect(accountsTable.delete).toHaveBeenCalledWith("acme");
   });
 });

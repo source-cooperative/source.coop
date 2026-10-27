@@ -87,6 +87,12 @@ describe("searchAccounts", () => {
     expect(await searchAccounts("bo", "acme")).toEqual([{ account_id: "bob" }]);
     expect(ops.searchAccounts).toHaveBeenCalledWith(SESSION, { q: "bo", member_of: "acme" });
 
+    (ops.searchAccounts as jest.Mock).mockResolvedValue({
+      ok: true,
+      value: { items: [{ account_id: "gone", disabled: true }], next_cursor: null },
+    });
+    expect(await searchAccounts("gone@example.com")).toEqual([]);
+
     (ops.searchAccounts as jest.Mock).mockResolvedValue({ ok: false, error: "invalid", message: "" });
     expect(await searchAccounts("b")).toEqual([]);
   });
