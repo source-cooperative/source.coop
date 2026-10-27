@@ -30,7 +30,7 @@ export const TagSchema = z
     }),
     suggested_by: z.string().optional().openapi({
       description:
-        "The account that suggested the tag. Only admins see it. Tags from the original cleanup have none.",
+        "The account that suggested the tag. Only admins see it. Tags from the initial import have none.",
     }),
     suggested_at: z.string().datetime().optional().openapi({
       description: "When the tag was suggested. Only admins see it.",

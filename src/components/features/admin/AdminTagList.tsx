@@ -17,7 +17,7 @@ const date = (iso: string) =>
 
 /** Where an approved tag came from, in words. */
 function provenance({ suggested_by, approved_by, approved_at }: ApprovedTag) {
-  if (!suggested_by && !approved_by) return "From the original cleanup";
+  if (!suggested_by && !approved_by) return "Initial import";
   const parts = [
     suggested_by && `Suggested by ${suggested_by}`,
     approved_by && `approved by ${approved_by}`,

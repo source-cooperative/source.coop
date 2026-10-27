@@ -16,7 +16,7 @@ registry.registerPath({
   tags: ["Tags"],
   summary: "List tags",
   description:
-    "Returns the tags a product may carry, as one page. Anyone may list them.\n\nWith `?pending=true`, returns the tags awaiting review instead. Only admins may list those; everyone else gets 401 or 403.\n\nAdmins also see who suggested each tag and when, and which admin approved it and when. Tags from the original cleanup have no suggester or approver.",
+    "Returns the tags a product may carry, as one page. Anyone may list them.\n\nWith `?pending=true`, returns the tags awaiting review instead. Only admins may list those; everyone else gets 401 or 403.\n\nAdmins also see who suggested each tag and when, and which admin approved it and when. Tags from the initial import have no suggester or approver.",
   security: optionalBearer,
   request: { query: ListTagsQuerySchema },
   responses: {
