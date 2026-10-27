@@ -109,25 +109,43 @@ export async function fileTypeLabel(
       return "JSON";
     case "jsonl":
     case "ndjson":
-      return "NDJSON";
+      return "Newline-delimited JSON";
     case "pdf":
       return "PDF";
     case "glb":
-      return "GLB";
+      return "binary glTF";
     case "gltf":
-      return "GLTF";
+      return "JSON glTF";
     case "obj":
-      return "OBJ";
+      return "Wavefront OBJ";
     case "stl":
-      return "STL";
+      return "STL mesh";
+    case "fgb":
+      return "FlatGeobuf";
+    case "geojson":
+      return "GeoJSON";
+    case "gpkg":
+      return "GeoPackage";
+    case "nc":
+      return "NetCDF";
+    case "h5":
+    case "hdf5":
+      return "HDF5";
+    case "las":
+      return "LAS point cloud";
+    case "laz":
+      return "LAZ point cloud";
+    case "copc":
+      return "Cloud-Optimized Point Cloud";
     case "zip":
       return "ZIP";
     case "avif":
-    case "bmp":
     case "gif":
     case "svg":
     case "webp":
       return extension.toUpperCase();
+    case "bmp":
+      return "Bitmap";
     case "jpg":
     case "jpeg":
       return "JPEG";
