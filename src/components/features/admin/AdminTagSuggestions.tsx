@@ -11,7 +11,7 @@ import {
   Text,
   TextField,
 } from "@radix-ui/themes";
-import { ArrowRightIcon } from "@radix-ui/react-icons";
+import { ArrowRightIcon, ChevronDownIcon } from "@radix-ui/react-icons";
 import { productUrl } from "@/lib/urls";
 
 export interface TagSuggestion {
@@ -146,7 +146,7 @@ function SuggestionCard({
           )}
           <MergeTargetPicker
             approved={approved}
-            label={matches.length ? "Other…" : "Merge into…"}
+            label={matches.length ? "Other tag" : "Merge into a tag"}
             onChoose={setInto}
           />
         </Flex>
@@ -246,8 +246,11 @@ function MergeTargetPicker({
       }}
     >
       <Popover.Trigger>
-        <Button type="button" size="1" variant="ghost" color="gray">
+        {/* Outlined with a chevron, so it reads as a control that opens a
+            list, apart from the suggested tags beside it. */}
+        <Button type="button" size="1" variant="outline" color="gray">
           {label}
+          <ChevronDownIcon />
         </Button>
       </Popover.Trigger>
       <Popover.Content width="280px" aria-label="Choose a tag to merge into">
