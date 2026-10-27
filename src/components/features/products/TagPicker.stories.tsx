@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { userEvent, within } from "storybook/test";
+import { canonTag } from "@/lib/tags/canon";
 import { TagPicker } from "./TagPicker";
 
 const options = [
@@ -39,7 +40,7 @@ const meta = {
     onSuggest: async (
       tag: string
     ): Promise<{ tag: string } | { error: string }> => ({
-      tag: tag.trim().toLowerCase(),
+      tag: canonTag(tag),
     }),
   },
 } satisfies Meta<typeof TagPicker>;
@@ -75,12 +76,12 @@ export const Filtering: Story = {
  */
 export const Suggesting: Story = {
   args: { defaultValue: ["acoustics"] },
-  play: ({ canvasElement }) => openAndFilter(canvasElement, "sea ice"),
+  play: ({ canvasElement }) => openAndFilter(canvasElement, "sea-ice"),
 };
 
 /** A suggested tag is on the product but hasn't been reviewed yet. */
 export const PendingTag: Story = {
-  args: { defaultValue: ["acoustics", "sea ice"], pending: ["sea ice"] },
+  args: { defaultValue: ["acoustics", "sea-ice"], pending: ["sea-ice"] },
 };
 
 /** A suggestion the server refused, with its reason. */
@@ -92,7 +93,7 @@ export const SuggestionRefused: Story = {
     }),
   },
   play: async ({ canvasElement }) => {
-    await openAndFilter(canvasElement, "sea ice");
+    await openAndFilter(canvasElement, "sea-ice");
     await userEvent.click(
       within(document.body).getByRole("button", { name: /^Suggest/ })
     );

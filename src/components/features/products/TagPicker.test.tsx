@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { Theme } from "@radix-ui/themes";
+import { canonTag } from "@/lib/tags/canon";
 import { TagPicker } from "./TagPicker";
 
 const submitted = (container: HTMLElement) =>
@@ -55,22 +56,22 @@ test("the popover filters the corpus and toggles tags", () => {
 });
 
 test("a suggested tag is added and marked pending", async () => {
-  const onSuggest = jest.fn(async (tag: string) => ({ tag: tag.toLowerCase() }));
+  const onSuggest = jest.fn(async (tag: string) => ({ tag: canonTag(tag) }));
   const { container } = renderPicker(["ocean"], onSuggest);
   filterFor("Sea Ice");
 
   fireEvent.click(
-    screen.getByRole("button", { name: "Suggest “sea ice” as a new tag" })
+    screen.getByRole("button", { name: "Suggest “sea-ice” as a new tag" })
   );
 
   expect(await screen.findByText(/\(pending\)/)).toBeTruthy();
   expect(onSuggest).toHaveBeenCalledWith("Sea Ice");
-  expect(submitted(container)).toEqual(["ocean", "sea ice"]);
+  expect(submitted(container)).toEqual(["ocean", "sea-ice"]);
 });
 
 test("a refused suggestion shows why and adds nothing", async () => {
   const { container } = renderPicker([], async () => ({ error: "Too many" }));
-  filterFor("sea ice");
+  filterFor("sea-ice");
 
   fireEvent.click(screen.getByRole("button", { name: /^Suggest/ }));
 

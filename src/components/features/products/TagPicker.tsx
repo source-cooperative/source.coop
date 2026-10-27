@@ -13,6 +13,7 @@ import {
 } from "@radix-ui/themes";
 import { Cross2Icon } from "@radix-ui/react-icons";
 import type { ControlProps } from "@/components/core/DynamicForm";
+import { canonTag } from "@/lib/tags/canon";
 
 interface TagPickerProps extends Partial<ControlProps> {
   /** The form field each chosen tag is submitted under, once per tag. */
@@ -45,7 +46,8 @@ export function TagPicker({
   const [error, setError] = useState("");
   const [suggesting, startSuggesting] = useTransition();
 
-  const query = filter.trim().toLowerCase();
+  // In the tags' own spelling, so "sea ice" finds and suggests "sea-ice".
+  const query = canonTag(filter);
   const matches = options.filter((tag) => tag.toLowerCase().includes(query));
   // Offered even when other tags partly match: someone after "ocean
   // acidification" shouldn't have to settle for "ocean".

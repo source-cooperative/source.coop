@@ -17,10 +17,10 @@ const meta = {
   args: {
     approved: [
       { tag: "climate", products: 17 },
-      { tag: "crop type", products: 12 },
+      { tag: "crop-type", products: 12 },
       { tag: "crops", products: 12 },
       { tag: "ocean", products: 5 },
-      { tag: "remote sensing", products: 4 },
+      { tag: "remote-sensing", products: 4 },
       { tag: "sentinel-2", products: 25 },
       { tag: "weather", products: 18 },
     ],
@@ -35,12 +35,12 @@ const meta = {
           { account_id: "fiboa", product_id: "de-sh" },
         ],
         matches: [
-          { tag: "crop type", score: 0.85 },
+          { tag: "crop-type", score: 0.85 },
           { tag: "crops", score: 0.65 },
         ],
       },
       {
-        tag: "sea ice",
+        tag: "sea-ice",
         suggested_by: "polar-lab",
         suggested_at: "2026-10-06T14:12:00Z",
         products: [
@@ -66,7 +66,7 @@ export const Pending: Story = {};
 export const MergeStaged: Story = {
   play: async ({ canvasElement }) => {
     await userEvent.click(
-      within(canvasElement).getByRole("button", { name: "crop type" })
+      within(canvasElement).getByRole("button", { name: "crop-type" })
     );
   },
 };
