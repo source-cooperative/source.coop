@@ -16,9 +16,13 @@ export async function suggestTag(
 
 /**
  * An admin's decision from the review page: approve the tag, merge it into
- * the approved tag chosen, or reject it.
+ * the approved tag chosen, or reject it. Resolves to why it was refused, if
+ * it was, so the page can say so; a thrown error's message is hidden in
+ * production.
  */
-export async function reviewTag(formData: FormData): Promise<void> {
+export async function reviewTag(
+  formData: FormData
+): Promise<{ error?: string }> {
   const session = await getPageSession();
   const tag = String(formData.get("tag"));
   const decision = formData.get("decision");
@@ -32,6 +36,6 @@ export async function reviewTag(formData: FormData): Promise<void> {
         : decision === "reject"
           ? await ops.deleteTag(session, tag, {})
           : null;
-  if (!result) throw new Error(`Unknown decision: ${decision}`);
-  if (!result.ok) throw new Error(result.message);
+  if (!result) return { error: `Unknown decision: ${decision}` };
+  return result.ok ? {} : { error: result.message };
 }

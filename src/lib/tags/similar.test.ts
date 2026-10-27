@@ -1,0 +1,31 @@
+import { similarTags } from "./similar";
+
+const approved = [
+  "crop type",
+  "crops",
+  "field boundaries",
+  "land use",
+  "ocean",
+  "sentinel-2",
+  "weather",
+];
+const names = (tag: string) => similarTags(tag, approved).map((m) => m.tag);
+
+test.each([
+  ["landuse", "land use"],
+  ["sentinel2-l2a", "sentinel-2"],
+  ["crop-types", "crop type"],
+  ["field boundary polygons", "field boundaries"],
+])("%p looks most like %p", (tag, best) => {
+  expect(names(tag)[0]).toBe(best);
+});
+
+test("a tag unlike any other has no matches", () => {
+  expect(names("sea ice")).toEqual([]);
+});
+
+test("offers at most three, best first", () => {
+  const matches = similarTags("crop", ["crops", "crop type", "crop yield", "crop map"]);
+  expect(matches).toHaveLength(3);
+  expect(matches[0].score).toBeGreaterThanOrEqual(matches[2].score);
+});

@@ -49,10 +49,12 @@ describe("reviewTag", () => {
     expect(operations.deleteTag).toHaveBeenNthCalledWith(2, session, "sst", {});
   });
 
-  test("throws the refusal, so the page shows it", async () => {
+  test("answers the refusal, so the page shows it", async () => {
     operations.deleteTag.mockResolvedValue(conflict('"sst" is not awaiting review'));
-    await expect(reviewTag(form({ tag: "sst", decision: "reject" }))).rejects.toThrow(
-      "not awaiting review"
-    );
+    expect(await reviewTag(form({ tag: "sst", decision: "reject" }))).toEqual({
+      error: '"sst" is not awaiting review',
+    });
+    operations.updateTag.mockResolvedValue(ok({ tag_id: "sst" }));
+    expect(await reviewTag(form({ tag: "sst", decision: "approve" }))).toEqual({});
   });
 });
