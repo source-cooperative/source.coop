@@ -1,8 +1,6 @@
 import { searchAccounts, updateAccountProfile } from "./account";
-import { accountsTable } from "../clients";
 import { getPageSession } from "../api/utils";
-import { isAuthorized } from "../api/authz";
-import { Account, AccountType, Actions, UserSession } from "@/types";
+import { Account, AccountType, UserSession } from "@/types";
 import * as ops from "@/lib/operations/accounts";
 
 jest.mock("../clients", () => ({
@@ -23,18 +21,15 @@ jest.mock("../api/authz", () => ({
 
 jest.mock("@/lib/operations/accounts", () => ({
   updateAccount: jest.fn(),
+  searchAccounts: jest.fn(),
 }));
 
 jest.mock("next/cache", () => ({
   revalidatePath: jest.fn(),
 }));
 
-const mockAccountsTable = accountsTable as jest.Mocked<typeof accountsTable>;
 const mockGetPageSession = getPageSession as jest.MockedFunction<
   typeof getPageSession
->;
-const mockIsAuthorized = isAuthorized as jest.MockedFunction<
-  typeof isAuthorized
 >;
 
 const account = (overrides: Partial<Account>): Account =>
@@ -81,31 +76,24 @@ describe("updateAccountProfile", () => {
 });
 
 describe("searchAccounts", () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-    mockGetPageSession.mockResolvedValue({ identity_id: "an-identity" } as UserSession);
-    mockAccountsTable.searchMemberCandidates.mockResolvedValue([]);
-  });
+  const SESSION = { identity_id: "an-identity" } as UserSession;
+  beforeEach(() => mockGetPageSession.mockResolvedValue(SESSION));
 
-  it("offers an account's service accounts only to someone who may invite to it", async () => {
-    mockIsAuthorized.mockReturnValue(true);
-    await searchAccounts("bo", "acme");
-    expect(mockAccountsTable.searchMemberCandidates).toHaveBeenLastCalledWith("bo", "acme");
-    expect(mockIsAuthorized).toHaveBeenCalledWith(
-      expect.anything(),
-      { membership_account_id: "acme" },
-      Actions.InviteMembership
-    );
+  it("answers the operation's items, and nothing for a refused search", async () => {
+    (ops.searchAccounts as jest.Mock).mockResolvedValue({
+      ok: true,
+      value: { items: [{ account_id: "bob" }], next_cursor: null },
+    });
+    expect(await searchAccounts("bo", "acme")).toEqual([{ account_id: "bob" }]);
+    expect(ops.searchAccounts).toHaveBeenCalledWith(SESSION, { q: "bo", member_of: "acme" });
 
-    // Anyone else gets an ordinary search of people, not a listing of acme's bots.
-    mockIsAuthorized.mockReturnValue(false);
-    await searchAccounts("bo", "acme");
-    expect(mockAccountsTable.searchMemberCandidates).toHaveBeenLastCalledWith("bo", undefined);
-  });
+    (ops.searchAccounts as jest.Mock).mockResolvedValue({
+      ok: true,
+      value: { items: [{ account_id: "gone", disabled: true }], next_cursor: null },
+    });
+    expect(await searchAccounts("gone@example.com")).toEqual([]);
 
-  it("never consults authorization for a plain search", async () => {
-    await searchAccounts("bo");
-    expect(mockIsAuthorized).not.toHaveBeenCalled();
-    expect(mockAccountsTable.searchMemberCandidates).toHaveBeenLastCalledWith("bo", undefined);
+    (ops.searchAccounts as jest.Mock).mockResolvedValue({ ok: false, error: "invalid", message: "" });
+    expect(await searchAccounts("b")).toEqual([]);
   });
 });

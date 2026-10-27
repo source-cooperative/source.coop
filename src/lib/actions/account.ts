@@ -6,38 +6,27 @@ import {
   Account,
   AccountCreationRequestSchema,
   Actions,
-  AccountCreationRequest,
   DEFAULT_INDIVIDUAL_FLAGS,
-  DEFAULT_ORGANIZATION_FLAGS,
-  MembershipRole,
-  MembershipState,
   AccountType,
-  isServiceAccount,
-  OrganizationCreationRequestSchema,
-  OrganizationCreationRequest,
   IndividualAccount,
-  OrganizationalAccount,
 } from "@/types";
 import { isAuthorized } from "../api/authz";
 import { getPageSession } from "../api/utils";
-import { accountsTable, membershipsTable } from "../clients";
+import { accountsTable } from "../clients";
 import type { AccountSuggestion } from "../clients/database/accounts";
 import { FormState } from "@/components/core/DynamicForm";
 import { accountUrl } from "@/lib/urls";
-import { randomUUID } from "crypto";
 import * as ops from "@/lib/operations/accounts";
 import { OperationResult, toFormState } from "@/lib/operations/result";
 
 /**
- * Creates a new account.
- *
- * @param initialState - The initial state of the form.
- * @param formData - The form data containing the account_id and account_type.
+ * Creates the signed-in person's own account at onboarding, or, from the
+ * new-organization form, an organization through `createOrganization`.
  */
 export async function createAccount(
   initialState: any,
   formData: FormData
-): Promise<FormState<AccountCreationRequest>> {
+): Promise<FormState<any>> {
   const session = await getPageSession();
 
   if (!session?.identity_id) {
@@ -56,11 +45,11 @@ export async function createAccount(
   if (type === AccountType.SERVICE) {
     return { fieldErrors: {}, data: formData, message: "Invalid form data", success: false };
   }
-  const schema =
-    type === AccountType.ORGANIZATION
-      ? OrganizationCreationRequestSchema
-      : AccountCreationRequestSchema;
-  const validatedFields = schema.safeParse(Object.fromEntries(formData));
+  if (type === AccountType.ORGANIZATION) {
+    const result = await ops.createOrganization(session, Object.fromEntries(formData));
+    return toFormState(result, formData, "", result.ok ? accountUrl(result.value.account_id) : undefined);
+  }
+  const validatedFields = AccountCreationRequestSchema.safeParse(Object.fromEntries(formData));
 
   if (!validatedFields.success) {
     return {
@@ -71,9 +60,8 @@ export async function createAccount(
     };
   }
 
-  // Construct newAccount with explicit type and required fields
-  const baseAccount = {
-    type: validatedFields.data.type,
+  const newAccount: Account = {
+    type: AccountType.INDIVIDUAL,
     name: validatedFields.data.name,
     account_id: validatedFields.data.account_id,
     created_at: new Date().toISOString(),
@@ -81,19 +69,9 @@ export async function createAccount(
     disabled: false,
     metadata_public: {},
     metadata_private: {},
-  };
-  const newAccount: Account =
-    validatedFields.data.type === AccountType.INDIVIDUAL
-      ? ({
-          ...baseAccount,
-          identity_id: session?.identity_id,
-          flags: DEFAULT_INDIVIDUAL_FLAGS,
-        } as IndividualAccount)
-      : ({
-          ...baseAccount,
-          identity_id: undefined,
-          flags: DEFAULT_ORGANIZATION_FLAGS,
-        } as OrganizationalAccount);
+    identity_id: session.identity_id,
+    flags: DEFAULT_INDIVIDUAL_FLAGS,
+  } as IndividualAccount;
 
   // Check authorization
   if (!isAuthorized(session, newAccount, Actions.CreateAccount)) {
@@ -140,18 +118,6 @@ export async function createAccount(
     metadata: { account_id: account.account_id },
   });
 
-  if (account.type === AccountType.ORGANIZATION) {
-    await membershipsTable.create({
-      account_id: (validatedFields.data as OrganizationCreationRequest)
-        .owner_account_id,
-      role: MembershipRole.Owners,
-      state: MembershipState.Member,
-      state_changed: new Date().toISOString(),
-      membership_id: randomUUID(),
-      membership_account_id: account.account_id,
-    });
-  }
-
   // Navigate on the client (see FormState.redirectTo) rather than redirect()
   // here, so the shared layout's auth UI re-renders and the freshly onboarded
   // user isn't shown as logged out until a full reload.
@@ -160,12 +126,7 @@ export async function createAccount(
     data: formData,
     message: "",
     success: true,
-    redirectTo:
-      account.type === AccountType.INDIVIDUAL
-        ? accountUrl(account.account_id, "welcome=true")
-        : isServiceAccount(account)
-          ? accountUrl(account.owner_account_id)
-          : accountUrl(account.account_id),
+    redirectTo: accountUrl(account.account_id, "welcome=true"),
   };
 }
 
@@ -224,31 +185,16 @@ async function adapt<T>(
 }
 
 /**
- * Type-ahead search over individual accounts, matching either the handle
- * (`account_id`) or the display name. With `memberOf`, the service accounts
- * that account owns are offered too. Returns only the public identity fields
- * already shown on every profile page. Requires a session so it isn't an open
- * directory-scraping endpoint.
+ * The account picker's type-ahead; nothing for a query the search refuses. An
+ * admin's email search can find a disabled account, which is no one to invite.
  */
 export async function searchAccounts(
   query: string,
   memberOf?: string
 ): Promise<AccountSuggestion[]> {
-  const session = await getPageSession();
-  if (!session?.identity_id) return [];
-  if (query.trim().length < 2) return [];
-
-  // An account's service accounts are visible only to whoever may grant them
-  // access; to anyone else this is an ordinary search of people.
-  const mayInvite =
-    memberOf !== undefined &&
-    isAuthorized(
-      session,
-      { membership_account_id: memberOf },
-      Actions.InviteMembership
-    );
-  return accountsTable.searchMemberCandidates(
-    query,
-    mayInvite ? memberOf : undefined
-  );
+  const result = await ops.searchAccounts(await getPageSession(), {
+    q: query,
+    member_of: memberOf,
+  });
+  return result.ok ? result.value.items.filter((s) => !s.disabled) : [];
 }
