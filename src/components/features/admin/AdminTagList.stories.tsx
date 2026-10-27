@@ -5,7 +5,7 @@ import { AdminTagList } from "./AdminTagList";
 /**
  * Every approved tag on the admin tags page, most used first, with how many
  * products carry each and where it came from: who suggested it and which
- * admin approved it, or the original cleanup that seeded the list.
+ * admin approved it, or the initial import that seeded the list.
  */
 const meta = {
   title: "Features/Admin/AdminTagList",

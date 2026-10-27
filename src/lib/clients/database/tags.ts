@@ -15,7 +15,7 @@ import { BaseTable } from "./base";
 export interface Tag {
   tag_id: string;
   pending?: boolean;
-  /** Who suggested it and when. Tags seeded from the original cleanup have neither. */
+  /** Who suggested it and when. Tags from the initial import have neither. */
   suggested_by?: string;
   suggested_at?: string;
   /** Which admin approved it and when, once one has. */
