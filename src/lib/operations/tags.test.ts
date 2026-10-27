@@ -179,7 +179,7 @@ describe("reviewing", () => {
   });
 
   test("merging swaps the tag on each product, without duplicates", async () => {
-    expect(await deleteTag(ALICE, "sst", { replace_with: "ocean" })).toEqual({
+    expect(await deleteTag(ALICE, "sst", { replace_with: ["ocean"] })).toEqual({
       ok: true,
       value: pending("sst"),
     });
@@ -188,9 +188,16 @@ describe("reviewing", () => {
     expect(tagsTable.delete).toHaveBeenCalledWith("sst");
   });
 
-  test.each(["made-up", "sst", ""])(
-    "merging refuses %p, which isn't an approved tag",
-    async (replace_with) => {
+  test("merging into several tags puts each in its place, once", async () => {
+    await deleteTag(ALICE, "sst", { replace_with: ["ocean", "climate", "ocean"] });
+    expect(productsTable.setTags).toHaveBeenCalledWith("a", "p1", ["ocean", "climate"]);
+    expect(productsTable.setTags).toHaveBeenCalledWith("b", "p2", ["climate", "ocean"]);
+    expect(tagsTable.delete).toHaveBeenCalledWith("sst");
+  });
+
+  test.each([["made-up"], ["sst"], [""], ["ocean", "made-up"]])(
+    "merging refuses %p, which has a tag that isn't approved",
+    async (...replace_with) => {
       expect(await deleteTag(ALICE, "sst", { replace_with })).toMatchObject({
         error: "invalid",
         fieldErrors: { replace_with: expect.any(Array) },

@@ -68,3 +68,18 @@ function editDistance(a: string, b: string): number {
   }
   return previous[b.length];
 }
+
+/**
+ * The approved tags a suggestion splits into when each of its words is one,
+ * as `field-boundaries` is `field` and `boundaries`, or null when it doesn't.
+ * A word matches an approved tag in the singular or the plural, so
+ * `field-boundary` splits the same way.
+ */
+export function splitTag(tag: string, approved: string[]): string[] | null {
+  const words = tag.split("-").filter(Boolean);
+  if (words.length < 2) return null;
+  const parts = words.map((word) =>
+    approved.find((other) => !other.includes("-") && stems(other)[0] === stems(word)[0])
+  );
+  return parts.every(Boolean) ? [...new Set(parts as string[])] : null;
+}

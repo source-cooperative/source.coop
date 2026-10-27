@@ -1,4 +1,4 @@
-import { similarTags } from "./similar";
+import { similarTags, splitTag } from "./similar";
 
 const approved = [
   "boundaries",
@@ -32,4 +32,12 @@ test("offers at most three, best first", () => {
   const matches = similarTags("crop", ["crops", "crop-type", "crop yield", "crop map"]);
   expect(matches).toHaveLength(3);
   expect(matches[0].score).toBeGreaterThanOrEqual(matches[2].score);
+});
+
+test("splits a suggestion whose every word is an approved tag", () => {
+  const list = ["field", "boundaries", "crops", "field-boundaries"];
+  expect(splitTag("field-boundaries", list)).toEqual(["field", "boundaries"]);
+  expect(splitTag("field-boundary", list)).toEqual(["field", "boundaries"]);
+  expect(splitTag("field-polygons", list)).toBeNull();
+  expect(splitTag("crops", list)).toBeNull();
 });

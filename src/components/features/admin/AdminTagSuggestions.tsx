@@ -22,6 +22,11 @@ export interface TagSuggestion {
   products: { account_id: string; product_id: string }[];
   /** The approved tags it looks most like, best first. */
   matches: { tag: string; score: number }[];
+  /**
+   * The approved tags it splits into when each of its words is one, as
+   * `field-boundaries` is `field` and `boundaries`, offered as one merge.
+   */
+  split?: string[] | null;
 }
 
 interface AdminTagSuggestionsProps {
@@ -61,26 +66,38 @@ export function AdminTagSuggestions({
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
 function SuggestionCard({
-  suggestion: { tag, suggested_by, suggested_at, products, matches },
+  suggestion: { tag, suggested_by, suggested_at, products, matches, split },
   approved,
   action,
 }: { suggestion: TagSuggestion } & Omit<AdminTagSuggestionsProps, "suggestions">) {
-  // A merge rewrites other people's products, so choosing a target only
-  // stages it; nothing changes until it is saved.
-  const [into, setInto] = useState<string | null>(null);
+  // A merge rewrites other people's products, so choosing targets only stages
+  // them; nothing changes until the merge is saved.
+  const [into, setInto] = useState<string[]>([]);
   const [error, setError] = useState("");
   const [busy, startTransition] = useTransition();
 
+  const toggle = (target: string) =>
+    setInto((into) =>
+      into.includes(target) ? into.filter((t) => t !== target) : [...into, target]
+    );
+  const reset = () => {
+    setInto([]);
+    setError("");
+  };
   const decide = (decision: "approve" | "merge" | "reject") =>
     startTransition(async () => {
       const form = new FormData();
       form.set("tag", tag);
       form.set("decision", decision);
-      if (decision === "merge" && into) form.set("into", into);
+      if (decision === "merge") into.forEach((target) => form.append("into", target));
       setError((await action(form)).error ?? "");
     });
 
-  const target = approved.find((t) => t.tag === into);
+  const isSplit =
+    !!split && split.length === into.length && split.every((t) => into.includes(t));
+  // Targets staged from the picker, shown so they can be taken off again.
+  const extra = into.filter((t) => !matches.some((m) => m.tag === t));
+  const target = into.length === 1 && approved.find((t) => t.tag === into[0]);
 
   return (
     <Card>
@@ -89,12 +106,14 @@ function SuggestionCard({
           <Badge color="amber" size="2">
             {tag}
           </Badge>
-          {into && (
+          {into.length > 0 && (
             <>
               <ArrowRightIcon aria-label="merges into" />
-              <Badge color="gray" size="2">
-                {into}
-              </Badge>
+              {into.map((t) => (
+                <Badge key={t} color="gray" size="2">
+                  {t}
+                </Badge>
+              ))}
             </>
           )}
           <Text size="1" color="gray">
@@ -104,11 +123,11 @@ function SuggestionCard({
           </Text>
         </Flex>
 
-        {into ? (
+        {into.length ? (
           <Text size="2">
-            Saving replaces <b>{tag}</b> with <b>{into}</b> on{" "}
+            Saving replaces <b>{tag}</b> with {andList(into)} on{" "}
             <ProductLinks products={products} />, and removes the suggestion.
-            {target && ` ${into} is already on ${plural(target.products, "product")}.`}
+            {target && ` ${target.tag} is already on ${plural(target.products, "product")}.`}
           </Text>
         ) : (
           <Text size="2" color="gray">
@@ -124,76 +143,86 @@ function SuggestionCard({
 
         <Flex gap="2" align="center" wrap="wrap">
           <Text size="1" color="gray">
-            {into ? "Merge into" : matches.length ? "Looks like" : "No close match"}
+            {into.length
+              ? "Merge into"
+              : split || matches.length
+                ? "Looks like"
+                : "No close match"}
           </Text>
-          {matches.map((m) => (
+          {split && (
             <Button
-              key={m.tag}
               type="button"
               size="1"
-              variant={m.tag === into ? "solid" : "soft"}
+              variant={isSplit ? "solid" : "soft"}
               color="gray"
-              aria-pressed={m.tag === into}
-              onClick={() => setInto(m.tag)}
+              aria-pressed={isSplit}
+              title={`Merge into ${andText(split)}`}
+              onClick={() => (isSplit ? setInto([]) : setInto(split))}
             >
-              {m.tag}
-            </Button>
-          ))}
-          {into && !matches.some((m) => m.tag === into) && (
-            <Button type="button" size="1" variant="solid" color="gray" aria-pressed>
-              {into}
+              {split.join(" + ")}
             </Button>
           )}
+          {[...matches.map((m) => m.tag), ...extra].map((t) => (
+            <Button
+              key={t}
+              type="button"
+              size="1"
+              variant={into.includes(t) ? "solid" : "soft"}
+              color="gray"
+              aria-pressed={into.includes(t)}
+              onClick={() => toggle(t)}
+            >
+              {t}
+            </Button>
+          ))}
           <MergeTargetPicker
-            approved={approved}
-            label={matches.length ? "Other tag" : "Merge into a tag"}
-            onChoose={setInto}
+            approved={approved.filter((t) => !into.includes(t.tag))}
+            label={into.length || matches.length || split ? "Other tag" : "Merge into a tag"}
+            onChoose={(t) => setInto((into) => [...into, t])}
           />
         </Flex>
 
         <Flex gap="2" align="center" wrap="wrap">
-          {into ? (
-            <>
-              <Button type="button" size="1" loading={busy} onClick={() => decide("merge")}>
-                Save merge
-              </Button>
-              <Button
-                type="button"
-                size="1"
-                variant="soft"
-                color="gray"
-                disabled={busy}
-                onClick={() => {
-                  setInto(null);
-                  setError("");
-                }}
-              >
-                Keep “{tag}”
-              </Button>
-            </>
+          {into.length ? (
+            <Button type="button" size="1" loading={busy} onClick={() => decide("merge")}>
+              Save merge
+            </Button>
           ) : (
-            <>
-              <Button
-                type="button"
-                size="1"
-                variant={matches.length ? "soft" : "solid"}
-                loading={busy}
-                onClick={() => decide("approve")}
-              >
-                Approve as a new tag
-              </Button>
-              <Flex flexGrow="1" />
-              <Button
-                type="button"
-                size="1"
-                variant="ghost"
-                color="red"
-                disabled={busy}
-                onClick={() => decide("reject")}
-              >
-                Reject
-              </Button>
-            </>
+            <Button
+              type="button"
+              size="1"
+              variant={matches.length || split ? "soft" : "solid"}
+              loading={busy}
+              onClick={() => decide("approve")}
+            >
+              Approve as a new tag
+            </Button>
+          )}
+          <Flex flexGrow="1" />
+          {into.length ? (
+            // Undoes the staged merge, not the suggestion, so a warning colour
+            // rather than Reject's red.
+            <Button
+              type="button"
+              size="1"
+              variant="ghost"
+              color="orange"
+              disabled={busy}
+              onClick={reset}
+            >
+              Reset
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              size="1"
+              variant="ghost"
+              color="red"
+              disabled={busy}
+              onClick={() => decide("reject")}
+            >
+              Reject
+            </Button>
           )}
         </Flex>
 
@@ -205,6 +234,20 @@ function SuggestionCard({
       </Flex>
     </Card>
   );
+}
+
+/** "a", "a and b", or "a, b and c", for a sentence. */
+const andText = (tags: string[]) =>
+  tags.length > 1 ? `${tags.slice(0, -1).join(", ")} and ${tags.at(-1)}` : tags[0];
+
+/** andText, with each tag in bold. */
+function andList(tags: string[]) {
+  return tags.map((t, i) => (
+    <span key={t}>
+      {i > 0 && (i === tags.length - 1 ? " and " : ", ")}
+      <b>{t}</b>
+    </span>
+  ));
 }
 
 function ProductLinks({ products }: { products: TagSuggestion["products"] }) {

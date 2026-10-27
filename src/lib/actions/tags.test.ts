@@ -33,7 +33,7 @@ describe("reviewTag", () => {
 
     expect(operations.updateTag).toHaveBeenCalledWith(session, "sst", { pending: false });
     expect(operations.deleteTag).toHaveBeenNthCalledWith(1, session, "sst", {
-      replace_with: "ocean",
+      replace_with: ["ocean"],
     });
     expect(operations.deleteTag).toHaveBeenNthCalledWith(2, session, "sst", {});
   });

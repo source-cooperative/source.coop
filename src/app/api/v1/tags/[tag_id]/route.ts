@@ -46,7 +46,7 @@ registry.registerPath({
   tags: ["Tags"],
   summary: "Reject or merge a tag",
   description:
-    "Deletes a tag that awaits review and takes it off every product that carries it. Only admins may delete tags.\n\nWith `?replace_with=`, puts that approved tag on those products in its place. This merges the suggestion into a tag that means the same.\n\nOnly a tag awaiting review can be deleted. Deleting an approved tag returns 409.",
+    "Deletes a tag that awaits review and takes it off every product that carries it. Only admins may delete tags.\n\nWith `?replace_with=`, puts that approved tag on those products in its place. This merges the suggestion into a tag that means the same. Repeat `replace_with` to merge into several tags, such as `field` and `boundaries` for `field-boundaries`.\n\nOnly a tag awaiting review can be deleted. Deleting an approved tag returns 409.",
   security: bearer,
   request: { params, query: DeleteTagQuerySchema },
   responses: {
@@ -57,11 +57,10 @@ registry.registerPath({
 
 export const DELETE = withApiSession<Params>(async ({ session, params, request }) =>
   toResponse(
-    await deleteTag(
-      session,
-      params.tag_id,
-      Object.fromEntries(request.nextUrl.searchParams)
-    ),
+    await deleteTag(session, params.tag_id, {
+      // Every one, which Object.fromEntries would cut to the last.
+      replace_with: request.nextUrl.searchParams.getAll("replace_with"),
+    }),
     StatusCodes.OK,
     "query"
   )
