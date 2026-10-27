@@ -54,7 +54,10 @@ const product = (overrides: Record<string, unknown> = {}) =>
     description: "A description",
     visibility: "public",
     disabled: false,
-    metadata: { primary_mirror: "conn-x", mirrors: {} },
+    metadata: {
+      primary_mirror: "conn-x",
+      mirrors: { "conn-x": { connection_id: "conn-x", prefix: "", is_primary: true } },
+    },
     ...overrides,
   }) as unknown as Product;
 
@@ -386,8 +389,7 @@ describe("updateProduct", () => {
     expect(result.ok).toBe(true);
     const updated = (productsTable.update as jest.Mock).mock.calls[0][0];
     expect(updated.metadata).toEqual({
-      primary_mirror: "conn-x",
-      mirrors: {},
+      ...product().metadata,
       tags: ["ocean", "acoustics"],
     });
   });
@@ -426,6 +428,24 @@ describe("updateProduct", () => {
     expect((productsTable.update as jest.Mock).mock.calls[1][0].metadata.tags).toEqual([
       "ocean",
     ]);
+  });
+
+  test("checks the primary mirror's connection on a product that keys it by another name", async () => {
+    (productsTable.fetchById as jest.Mock).mockResolvedValue(
+      product({
+        metadata: {
+          primary_mirror: "aws-us-east-1",
+          mirrors: {
+            "aws-us-east-1": { connection_id: "conn-x", prefix: "", is_primary: true },
+          },
+        },
+      })
+    );
+    (dataConnectionsTable.fetchById as jest.Mock).mockResolvedValue(connection());
+    expect(
+      await updateProduct(SESSION, "alice", "my-product", { visibility: "restricted" })
+    ).toMatchObject({ ok: true });
+    expect(dataConnectionsTable.fetchById).toHaveBeenCalledWith("conn-x");
   });
 
   test("rejects a visibility change when the data connection no longer exists", async () => {
