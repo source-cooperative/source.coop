@@ -54,6 +54,18 @@ describe("storeViewerUrl", () => {
     expect(getStorageClient).toHaveBeenCalledWith(creds);
   });
 
+  it("returns the vole-app URL for OME-NGFF stores", async () => {
+    (probeStore as jest.Mock).mockResolvedValue({
+      renderable: true,
+      format: "ome-ngff",
+    });
+
+    await expect(storeViewerUrl(args)).resolves.toBe(
+      "https://vole.allencell.org/?url=" +
+        encodeURIComponent("https://data.source.coop/bkr/gfs/gfs.icechunk"),
+    );
+  });
+
   it("returns null when the store isn't renderable", async () => {
     (probeStore as jest.Mock).mockResolvedValue({
       renderable: false,
