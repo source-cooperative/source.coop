@@ -122,6 +122,21 @@ describe("getIframeSrc", () => {
       (global.fetch as jest.Mock).mockRejectedValueOnce(new Error("network"));
       await expect(getIframeSrc(sourceUrl, "tiff")).resolves.toMatch(/cog-viewer/);
     });
+
+    it("returns the cog-viewer URL and does not buffer body on a 200 response", async () => {
+      // Origin ignored Range header → 200 instead of 206. The probe must not
+      // read the body (which could be a multi-GB TIFF) and must return null so
+      // the viewer is still offered.
+      const cancel = jest.fn().mockResolvedValue(undefined);
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        body: { cancel },
+        arrayBuffer: jest.fn(), // must not be called
+      });
+      await expect(getIframeSrc(sourceUrl, "tif")).resolves.toMatch(/cog-viewer/);
+      expect(cancel).toHaveBeenCalled();
+    });
   });
 });
 
@@ -154,6 +169,15 @@ describe("parseCogTiling", () => {
 
   it("returns null for a non-TIFF buffer", () => {
     expect(parseCogTiling(Buffer.from("not a tiff file"))).toBeNull();
+  });
+
+  it("returns null for a BigTIFF buffer shorter than 16 bytes", () => {
+    // BigTIFF needs 16 bytes for the header (II/MM + 43 + 2 + 2 + 8-byte offset).
+    // A 12-byte buffer would throw a RangeError if not guarded.
+    const buf = Buffer.alloc(12);
+    buf.writeUInt16LE(0x4949, 0); // II
+    buf.writeUInt16LE(43, 2);     // BigTIFF magic
+    expect(parseCogTiling(buf)).toBeNull();
   });
 
   it("returns 'tiff' when the IFD offset points past the buffer (IFD at end of file)", () => {

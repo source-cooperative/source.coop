@@ -34,68 +34,64 @@ export function parseCogTiling(buf: Buffer): CogTilingInfo | null {
   const isBigTiff = magic === 43;
   if (magic !== 42 && !isBigTiff) return null;
 
-  const ifdOffset = isBigTiff ? read32(8) : read32(4);
+  // BigTIFF needs 16 header bytes (II/MM + 43 + offset-bytesize + 0 + 8-byte IFD offset).
+  if (isBigTiff && buf.length < 16) return null;
+
+  // BigTIFF: the 8-byte IFD offset sits at byte 8. Take the low 32 bits:
+  // LE → byte 8; BE → byte 12 (high 32 bits come first in big-endian).
+  const ifdOffset = isBigTiff
+    ? (littleEndian ? read32(8) : read32(12))
+    : read32(4);
+
   // A COG always puts its IFD at the very start of the file. If the offset
   // points past our probe the file wrote its IFD at the end — not a COG.
-  if (ifdOffset + 2 > buf.length) return "tiff";
+  // BigTIFF IFDs begin with an 8-byte entry count; standard TIFFs use 2.
+  const ifdCountSize = isBigTiff ? 8 : 2;
+  if (ifdOffset + ifdCountSize > buf.length) return "tiff";
 
-  // BigTIFF: 8-byte entry count; take the low 32 bits (high 32 are always 0).
+  // BigTIFF: 8-byte entry count; take the low 32 bits.
   const entryCount = isBigTiff
-    ? littleEndian
-      ? read32(ifdOffset)
-      : read32(ifdOffset + 4)
+    ? (littleEndian ? read32(ifdOffset) : read32(ifdOffset + 4))
     : read16(ifdOffset);
   const entryStart = isBigTiff ? ifdOffset + 8 : ifdOffset + 2;
   const entrySize = isBigTiff ? 20 : 12;
-  // BigTIFF: tag(2) + type(2) + count(8) + value(8); value starts at base+12.
-  // Standard: tag(2) + type(2) + count(4) + value(4); value starts at base+8.
-  const valStart = isBigTiff ? 12 : 8;
 
-  let imageWidth = 0,
-    imageLength = 0,
-    tileWidth = 0,
-    tileLength = 0;
-  let hasTileWidth = false,
-    hasTileLength = false,
-    hasRowsPerStrip = false;
+  // Value field offset within an IFD entry:
+  //   Standard: tag(2)+type(2)+count(4)+value(4) → value at +8
+  //   BigTIFF:  tag(2)+type(2)+count(8)+value(8) → value at +12
+  // For BigTIFF BE, LONG8 (type 16) values store low 32 bits at +4 within the
+  // field (+16 from base). LONG (type 4) and SHORT (type 3) start at +0 of
+  // the field for both endiannesses.
+  const vBase = isBigTiff ? 12 : 8;
 
-  const cap = Math.min(entryCount, 256);
-  for (let i = 0; i < cap; i++) {
+  let imageWidth = 0, imageLength = 0, tileWidth = 0, tileLength = 0;
+  let hasRowsPerStrip = false;
+
+  for (let i = 0; i < entryCount; i++) {
     const base = entryStart + i * entrySize;
     if (base + entrySize > buf.length) break;
     const tag = read16(base);
     const type = read16(base + 2);
-    const vo = base + valStart;
-    // SHORT (type 3) stores value as 2 bytes; everything else read as 4 bytes.
-    const v = type === 3 ? read16(vo) : read32(vo);
+    // SHORT (type 3): 2 bytes left-justified in the value field.
+    // LONG8 (type 16) in BE BigTIFF: low 32 bits are at offset +4 within field.
+    // Everything else: 32-bit value at the start of the value field.
+    const v =
+      type === 3
+        ? read16(base + vBase)
+        : isBigTiff && !littleEndian && type === 16
+          ? read32(base + vBase + 4)
+          : read32(base + vBase);
     switch (tag) {
-      case 256:
-        imageWidth = v;
-        break;
-      case 257:
-        imageLength = v;
-        break;
-      case 278:
-        hasRowsPerStrip = true;
-        break;
-      case 322:
-        tileWidth = v;
-        hasTileWidth = true;
-        break;
-      case 323:
-        tileLength = v;
-        hasTileLength = true;
-        break;
+      case 256: imageWidth = v; break;
+      case 257: imageLength = v; break;
+      case 278: hasRowsPerStrip = true; break;
+      case 322: tileWidth = v; break;
+      case 323: tileLength = v; break;
     }
   }
 
-  if (hasTileWidth && hasTileLength && tileWidth > 0 && tileLength > 0) {
-    if (
-      imageWidth > 0 &&
-      imageLength > 0 &&
-      Math.ceil(imageWidth / tileWidth) === 1 &&
-      Math.ceil(imageLength / tileLength) === 1
-    ) {
+  if (tileWidth > 0 && tileLength > 0) {
+    if (imageWidth > 0 && imageLength > 0 && imageWidth <= tileWidth && imageLength <= tileLength) {
       return "single-tile";
     }
     return null;
@@ -110,7 +106,10 @@ const probeCogTiling = cache(async (sourceUrl: string): Promise<CogTilingInfo | 
       headers: { Range: "bytes=0-8191" },
       signal: AbortSignal.timeout(4000),
     });
-    if (!res.ok && res.status !== 206) return null;
+    if (res.status !== 206) {
+      await res.body?.cancel();
+      return null;
+    }
     return parseCogTiling(Buffer.from(await res.arrayBuffer()));
   } catch {
     return null;
