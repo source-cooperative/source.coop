@@ -170,6 +170,7 @@ export const getIframeSrc = async (
       return `https://source-cooperative.github.io/csv-table/?iframe=true&url=${url}`;
     case "tif":
     case "tiff":
+      if ((await probeCogTiling(sourceUrl)) === "tiff") return null;
       return `https://source-cooperative.github.io/cog-viewer/?url=${url}`;
     case "avif":
     case "bmp":

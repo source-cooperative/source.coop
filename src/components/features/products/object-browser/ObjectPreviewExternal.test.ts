@@ -15,7 +15,7 @@ jest.mock("./PreviewIframe", () => ({}));
 // that exercise tif/tiff stay deterministic without real network calls.
 global.fetch = jest.fn().mockRejectedValue(new Error("fetch is mocked"));
 
-import { fileTypeLabel, parseCogTiling } from "./ObjectPreviewExternal";
+import { fileTypeLabel, getIframeSrc, parseCogTiling } from "./ObjectPreviewExternal";
 import { DuckDBConnection } from "@duckdb/node-api";
 
 const sourceUrl = "https://data.source.coop/account/product/file";
@@ -92,6 +92,35 @@ describe("fileTypeLabel", () => {
         new Error("connection failed"),
       );
       await expect(fileTypeLabel(sourceUrl, "parquet")).resolves.toBe("Parquet");
+    });
+  });
+});
+
+// Helper: build a mock fetch Response whose arrayBuffer() returns the given bytes.
+function mockFetchResponse(bytes: Buffer) {
+  (global.fetch as jest.Mock).mockResolvedValueOnce({
+    ok: true,
+    status: 206,
+    arrayBuffer: () => Promise.resolve(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)),
+  });
+}
+
+describe("getIframeSrc", () => {
+  describe("tif/tiff", () => {
+    it("returns null for a regular TIFF (IFD beyond probe)", async () => {
+      // Simulate a non-COG TIFF: valid header but IFD offset points past the buffer.
+      const buf = Buffer.alloc(64);
+      buf.writeUInt16LE(0x4949, 0);
+      buf.writeUInt16LE(42, 2);
+      buf.writeUInt32LE(0xffff, 4); // IFD beyond probe
+      mockFetchResponse(buf);
+      await expect(getIframeSrc(sourceUrl, "tif")).resolves.toBeNull();
+    });
+
+    it("returns the cog-viewer URL when the probe returns null (multi-tile COG)", async () => {
+      // Probe fails → null → not "tiff" → show viewer.
+      (global.fetch as jest.Mock).mockRejectedValueOnce(new Error("network"));
+      await expect(getIframeSrc(sourceUrl, "tiff")).resolves.toMatch(/cog-viewer/);
     });
   });
 });
