@@ -2,7 +2,7 @@ import "server-only";
 
 import { LOGGER } from "@/lib/logging";
 import { fileSourceUrl } from "@/lib/urls";
-import { Code } from "@radix-ui/themes";
+import { Code, Text } from "@radix-ui/themes";
 import { getExtension } from "@/lib/files";
 import { DuckDBConnection } from "@duckdb/node-api";
 import { cache } from "react";
@@ -89,12 +89,51 @@ export const getIframeSrc = async (
   }
 };
 
+const FILE_TYPE_LABELS: Record<string, string> = {
+  tif: "COG",
+  tiff: "COG",
+  pmtiles: "PMTiles",
+  jsonl: "Newline-delimited JSON",
+  ndjson: "Newline-delimited JSON",
+  glb: "binary glTF",
+  gltf: "JSON glTF",
+  obj: "Wavefront OBJ",
+  stl: "STL mesh",
+  fgb: "FlatGeobuf",
+  geojson: "GeoJSON",
+  gpkg: "GeoPackage",
+  nc: "NetCDF",
+  h5: "HDF5",
+  las: "LAS point cloud",
+  laz: "LAZ point cloud",
+  copc: "Cloud-Optimized Point Cloud",
+  bmp: "Bitmap",
+  jpg: "JPEG",
+  md: "Markdown",
+  markdown: "Markdown",
+  txt: "Text",
+};
+
+export async function fileTypeLabel(
+  sourceUrl: string,
+  extension: string,
+): Promise<string> {
+  if (extension === "parquet") {
+    return (await isStacGeoParquet(sourceUrl)) ? "STAC GeoParquet" : "Parquet";
+  }
+  return FILE_TYPE_LABELS[extension] ?? extension.toUpperCase();
+}
+
 export async function ObjectPreviewExternal(props: ObjectPreviewExternalProps) {
   const cloudUri = fileSourceUrl(props);
   const extension = getExtension(props.object_path);
 
   if (!extension) {
-    return null;
+    return (
+      <Text size="2" color="gray">
+        No preview available
+      </Text>
+    );
   }
 
   const src = await getIframeSrc(cloudUri, extension);
