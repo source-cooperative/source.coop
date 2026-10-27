@@ -19,7 +19,7 @@ registry.registerPath({
   tags: ["Mirrors"],
   summary: "Edit a mirror",
   description:
-    "Changes a mirror's prefix, makes it the primary, or both. Only owners and maintainers of the owning account may manage its mirrors. A 409 means the product changed since it was read; read it again and retry.",
+    "Changes a mirror's prefix, makes it the primary, or both. You must be an owner or maintainer of the owning account. To change the prefix, you must also manage the data connection. A 409 means the product changed since you read it. Read it again and retry.",
   security: bearer,
   request: {
     params,
@@ -49,7 +49,7 @@ registry.registerPath({
   tags: ["Mirrors"],
   summary: "Remove a mirror",
   description:
-    "Stops serving the product from this data connection; its objects there are not deleted. Removing the primary promotes another mirror, if there is one. Only owners and maintainers of the owning account may manage its mirrors.",
+    "Stops serving the product from this data connection. Its objects there are not deleted. Removing the primary promotes another mirror, if there is one. You must be an owner or maintainer of the owning account.",
   security: bearer,
   request: { params },
   responses: {

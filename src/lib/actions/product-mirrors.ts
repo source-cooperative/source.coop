@@ -35,11 +35,12 @@ async function run(
       error,
       metadata: { account_id, product_id, connection_id },
     });
-    return toFormState(
-      { ok: false, error: "conflict", message: "Failed to save. Please try again." },
-      formData,
-      ""
-    );
+    return {
+      success: false,
+      data: formData,
+      message: "Failed to save. Please try again.",
+      fieldErrors: {},
+    };
   }
 }
 

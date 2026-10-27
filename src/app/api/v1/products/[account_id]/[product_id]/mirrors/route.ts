@@ -45,7 +45,7 @@ registry.registerPath({
   tags: ["Mirrors"],
   summary: "Add a mirror",
   description:
-    "Mirrors a product to another data connection, at the prefix the connection's template gives it. A product's first mirror becomes its primary. Only owners and maintainers of the owning account may manage its mirrors.",
+    "Mirrors a product to another data connection, at the prefix the connection's template gives it. A product's first mirror becomes its primary. You must be an owner or maintainer of the owning account.",
   security: bearer,
   request: {
     params,
