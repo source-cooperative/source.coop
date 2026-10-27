@@ -35,6 +35,7 @@ jest.mock("@/lib/clients/database", () => ({
   dataConnectionsTable: { fetchById: jest.fn() },
   membershipsTable: { deleteByProduct: jest.fn() },
   tagsTable: { listAll: jest.fn(), suggest: jest.fn() },
+  isUsable: jest.requireActual("@/lib/clients/database/tags").isUsable,
   hidePendingTags: jest.fn(),
 }));
 jest.mock("@/lib/api/authz", () => ({

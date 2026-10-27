@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import { Flex, Heading } from "@radix-ui/themes";
 import { FormTitle } from "@/components/core";
+import { AdminReviewedTags } from "@/components/features/admin/AdminReviewedTags";
 import { AdminTagList } from "@/components/features/admin/AdminTagList";
 import { AdminTagSuggestions } from "@/components/features/admin/AdminTagSuggestions";
 import { productsTable } from "@/lib/clients/database";
@@ -16,13 +17,15 @@ export const metadata: Metadata = {
 // Access is gated by the /admin layout.
 export default async function AdminTagsPage() {
   const session = await getPageSession();
-  const [pending, approved, tagged] = await Promise.all([
+  const [pending, approved, reviewed, tagged] = await Promise.all([
     listTags(session, { pending: "true" }),
     listTags(session, {}),
+    listTags(session, { reviewed: "true" }),
     productsTable.listTagged(),
   ]);
   if (!pending.ok) throw new Error(pending.message);
   if (!approved.ok) throw new Error(approved.message);
+  if (!reviewed.ok) throw new Error(reviewed.message);
 
   // ponytail: one scan of every tagged product, grouped here; a per-tag count
   // on the tags table if the products table outgrows a page render.
@@ -33,8 +36,8 @@ export default async function AdminTagsPage() {
     tag: t.tag_id,
     products: carrying(t.tag_id).length,
     suggested_by: t.suggested_by,
-    approved_by: t.approved_by,
-    approved_at: t.approved_at,
+    reviewed_by: t.reviewed_by,
+    reviewed_at: t.reviewed_at,
   }));
 
   return (
@@ -60,6 +63,21 @@ export default async function AdminTagsPage() {
             split: splitTag(t.tag_id, approvedTags),
           }))}
           approved={counted}
+          action={reviewTag}
+        />
+      </Flex>
+      <Flex direction="column" gap="3">
+        <Heading size="4">Reviewed ({reviewed.value.items.length})</Heading>
+        <AdminReviewedTags
+          reviewed={reviewed.value.items.map((t) => ({
+            tag: t.tag_id,
+            outcome: t.outcome!,
+            reviewed_by: t.reviewed_by,
+            reviewed_at: t.reviewed_at,
+            suggested_by: t.suggested_by,
+            merged_into: t.merged_into,
+            products: t.changed?.length ?? carrying(t.tag_id).length,
+          }))}
           action={reviewTag}
         />
       </Flex>

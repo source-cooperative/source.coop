@@ -23,6 +23,7 @@ import {
   membershipsTable,
   productsTable,
   tagsTable,
+  isUsable,
   hidePendingTags,
 } from "@/lib/clients/database";
 import {
@@ -126,7 +127,7 @@ async function checkTags(
   if (!keys.length) return ok([]);
   const bySpelling = (list: string[]) => new Map(list.map((t) => [canonTag(t), t]));
   const corpus = bySpelling([
-    ...(await tagsTable.listAll()).map((tag) => tag.tag_id),
+    ...(await tagsTable.listAll()).filter(isUsable).map((tag) => tag.tag_id),
     ...suggested,
   ]);
   const carried = bySpelling(current);

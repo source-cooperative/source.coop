@@ -10,20 +10,20 @@ export interface ApprovedTag {
   /** How many products carry it. */
   products: number;
   suggested_by?: string;
-  approved_by?: string;
-  approved_at?: string;
+  reviewed_by?: string;
+  reviewed_at?: string;
 }
 
 const date = (iso: string) =>
   new Date(iso).toLocaleDateString("en-US", { dateStyle: "medium" });
 
 /** Where an approved tag came from, in words. */
-function provenance({ suggested_by, approved_by, approved_at }: ApprovedTag) {
-  if (!suggested_by && !approved_by) return "Initial import";
+function provenance({ suggested_by, reviewed_by, reviewed_at }: ApprovedTag) {
+  if (!suggested_by && !reviewed_by) return "Initial import";
   const parts = [
     suggested_by && `Suggested by ${suggested_by}`,
-    approved_by && `approved by ${approved_by}`,
-    approved_at && `on ${date(approved_at)}`,
+    reviewed_by && `approved by ${reviewed_by}`,
+    reviewed_at && `on ${date(reviewed_at)}`,
   ].filter(Boolean);
   const text = parts.join(", ").replace(/, on /, " on ");
   return text.charAt(0).toUpperCase() + text.slice(1);
