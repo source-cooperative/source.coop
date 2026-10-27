@@ -88,7 +88,7 @@ export function SecretField({
         }}
       >
         <Flex align="center" gap="2">
-          <CheckIcon color="var(--green-11)" />
+          <CheckIcon color="var(--grass-11)" />
           <Text size="2" weight="medium">
             Stored
           </Text>

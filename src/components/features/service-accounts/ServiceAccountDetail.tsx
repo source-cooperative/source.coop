@@ -43,7 +43,7 @@ const issuerLabel = (issuer: string) =>
 
 function Status({ state }: { state: ServiceAccountActionState }) {
   return state.message ? (
-    <Text as="p" size="1" color={state.success ? "green" : "red"} mt="2">
+    <Text as="p" size="1" color={state.success ? "grass" : "red"} mt="2">
       {state.message}
     </Text>
   ) : null;

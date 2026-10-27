@@ -237,7 +237,7 @@ export function ProductCreationForm({
                 </Text>
               </Flex>
             ) : validationState.isValid === true ? (
-              <Text size="1" color="green">
+              <Text size="1" color="grass">
                 ✓ Available: <code>{`${accountId}/${productId}`}</code>
               </Text>
             ) : validationState.isValid === false && validationState.error ? (

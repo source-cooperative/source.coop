@@ -33,7 +33,7 @@ export function FormActions({
     <Flex mt="4" direction="column" gap="2" align="end">
       <Flex align="center" gap="3">
         {message && (
-          <Text size="1" color={success ? "green" : "red"}>
+          <Text size="1" color={success ? "grass" : "red"}>
             {message}
           </Text>
         )}

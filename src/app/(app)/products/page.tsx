@@ -69,17 +69,17 @@ export default async function ProductsPage({
             Showing {products.length} products
           </Text>
           {search && (
-            <Badge variant="soft" color="blue">
+            <Badge variant="soft" color="gray">
               Search: &ldquo;{search}&rdquo;
             </Badge>
           )}
           {tags && (
-            <Badge variant="soft" color="green">
+            <Badge variant="soft" color="gray">
               Tags: {tags}
             </Badge>
           )}
           {featuredOnly && (
-            <Badge variant="soft" color="orange">
+            <Badge variant="soft" color="gray">
               Featured
             </Badge>
           )}

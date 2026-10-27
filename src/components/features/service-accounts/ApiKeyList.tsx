@@ -19,7 +19,7 @@ import { apiKeyEnvironment } from "@/lib/services/service-account-usage";
 
 function Status({ state }: { state: ApiKeyActionState }) {
   return state.message ? (
-    <Text as="p" size="1" color={state.success ? "green" : "red"} mt="2">
+    <Text as="p" size="1" color={state.success ? "grass" : "red"} mt="2">
       {state.message}
     </Text>
   ) : null;

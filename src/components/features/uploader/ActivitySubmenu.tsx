@@ -66,7 +66,7 @@ export function ActivitySubmenu() {
             <UploadIcon />
             Activity
             {activeCount > 0 && (
-              <Badge color="blue" size="1" style={{ marginLeft: "auto" }}>
+              <Badge color="gray" size="1" style={{ marginLeft: "auto" }}>
                 {activeCount}
               </Badge>
             )}
@@ -125,7 +125,7 @@ export function ActivitySubmenu() {
                           <IconButton
                             size="1"
                             variant="ghost"
-                            color="blue"
+                            color="gray"
                             onClick={() => retryUpload(upload.id)}
                           >
                             <ReloadIcon />
@@ -194,11 +194,11 @@ export function ActivitySubmenu() {
 const getStatusColor = (status: string) => {
   switch (status) {
     case "uploading":
-      return "blue";
+      return "gray";
     case "queued":
       return "gray";
     case "completed":
-      return "green";
+      return "grass";
     case "error":
       return "red";
     case "cancelled":

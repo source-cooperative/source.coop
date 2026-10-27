@@ -136,20 +136,7 @@ export function MembershipsTable({
                   )}
                 </Table.Cell>
                 <Table.Cell>
-                  <Badge
-                    size="2"
-                    // weight="medium"
-                    color={
-                      ({
-                        [MembershipRole.Owners]: "gold",
-                        [MembershipRole.Maintainers]: "blue",
-                        [MembershipRole.WriteData]: "green",
-                        [MembershipRole.ReadData]: "gray",
-                      }[membership.role] || "gray") as React.ComponentProps<
-                        typeof Text
-                      >["color"]
-                    }
-                  >
+                  <Badge size="2">
                     {{
                       [MembershipRole.Owners]: "Owner",
                       [MembershipRole.Maintainers]: "Maintainer",
@@ -164,8 +151,8 @@ export function MembershipsTable({
                       size="2"
                       color={
                         ({
-                          [MembershipState.Member]: "green",
-                          [MembershipState.Invited]: "blue",
+                          [MembershipState.Member]: "grass",
+                          [MembershipState.Invited]: "gray",
                           [MembershipState.Revoked]: "red",
                         }[membership.state] || "gray") as React.ComponentProps<
                           typeof Text
@@ -209,7 +196,7 @@ export function MembershipsTable({
 
       {/* Display form state messages */}
       {state.message && (
-        <Text size="2" color={state.success ? "green" : "red"} mt="2">
+        <Text size="2" color={state.success ? "grass" : "red"} mt="2">
           {state.message}
         </Text>
       )}

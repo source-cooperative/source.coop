@@ -129,7 +129,7 @@ export async function AuthButtons() {
 
   if (session && !session.account) {
     return (
-      <Callout.Root color="yellow">
+      <Callout.Root color="amber">
         <Callout.Icon>
           <ExclamationTriangleIcon />
         </Callout.Icon>

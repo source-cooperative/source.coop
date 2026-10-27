@@ -26,56 +26,29 @@ code.inline-code {
   margin: 1em 0;
 }
 
-/* Styles for MyST admonitions */
+/* Styles for MyST admonitions. Alpha fills tint the page in either
+   appearance. Only warnings and errors carry a hue: the brand's
+   warning and danger roles. */
 .admonition {
-  border-left: 4px solid var(--blue-9);
+  border-left: 4px solid var(--gray-9);
   padding: var(--space-3);
   margin: var(--space-3) 0;
-  background-color: var(--blue-3);
+  background-color: var(--gray-a3);
   border-radius: 0 var(--radius-3) var(--radius-3) 0;
 }
 
 .admonition.warning {
-  border-left-color: var(--orange-9);
-  background-color: var(--orange-3);
+  border-left-color: var(--amber-9);
+  background-color: var(--amber-a3);
 }
 
 .admonition.error {
   border-left-color: var(--red-9);
-  background-color: var(--red-3);
-}
-
-.admonition.hint,
-.admonition.tip {
-  border-left-color: var(--green-9);
-  background-color: var(--green-3);
+  background-color: var(--red-a3);
 }
 
 .admonition.important {
-  border-left-color: var(--purple-9);
-  background-color: var(--purple-3);
-}
-
-/* Dark mode for admonitions */
-:root[class~="dark"] .admonition {
-  background-color: var(--blue-12);
-}
-
-:root[class~="dark"] .admonition.warning {
-  background-color: var(--orange-12);
-}
-
-:root[class~="dark"] .admonition.error {
-  background-color: var(--red-12);
-}
-
-:root[class~="dark"] .admonition.hint,
-:root[class~="dark"] .admonition.tip {
-  background-color: var(--green-12);
-}
-
-:root[class~="dark"] .admonition.important {
-  background-color: var(--purple-12);
+  border-left-color: var(--gray-12);
 }
 
 /* Permalink styles - Inline approach */

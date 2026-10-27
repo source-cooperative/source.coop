@@ -9,7 +9,7 @@ export function Banner({ children }: BannerProps) {
   return (
     <Box
       style={{
-        backgroundColor: "var(--blue-3)",
+        backgroundColor: "var(--gray-3)",
         padding: "0.5rem 0",
         textAlign: "center",
       }}

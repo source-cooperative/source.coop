@@ -18,7 +18,7 @@ export function EmailVerificationCallout({
   return (
     <Box mb="6">
       {status === "unverified" ? (
-        <Callout.Root color="blue">
+        <Callout.Root color="gray">
           <Callout.Icon>
             <InfoCircledIcon />
           </Callout.Icon>
@@ -30,7 +30,7 @@ export function EmailVerificationCallout({
           </Callout.Text>
         </Callout.Root>
       ) : (
-        <Callout.Root color="green">
+        <Callout.Root color="grass">
           <Callout.Icon>
             <CheckCircledIcon />
           </Callout.Icon>

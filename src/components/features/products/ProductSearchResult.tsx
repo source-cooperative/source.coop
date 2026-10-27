@@ -39,10 +39,10 @@ export function ProductSearchResult({ product, highlight }: ProductSearchResultP
             <Text size="2" color="gray">
               Updated <DateText date={product.updated_at} />
             </Text>
-            <Text size="2" color="blue">
+            <Text size="2" color="gray">
               {product.account?.name}
             </Text>
-            <Badge color={product.visibility === "public" ? "green" : "red"}>
+            <Badge color={product.visibility === "public" ? "grass" : "red"}>
               {product.visibility === "public" ? "Public" : "Private"}
             </Badge>
           </Flex>

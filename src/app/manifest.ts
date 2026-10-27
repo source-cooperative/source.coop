@@ -7,8 +7,8 @@ export default function manifest(): MetadataRoute.Manifest {
     description: 'A data publishing utility for trusted organizations and individuals',
     start_url: '/',
     display: 'standalone',
-    background_color: '#ffffff',
-    theme_color: '#000000',
+    background_color: '#EFEBEA',
+    theme_color: '#121A1B',
     icons: [
       {
         src: '/favicon/favicon-16x16.png',

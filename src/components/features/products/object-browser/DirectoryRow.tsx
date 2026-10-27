@@ -274,7 +274,7 @@ export function DirectoryRow({
                     <IconButton
                       variant="surface"
                       size="1"
-                      color={copiedField === `url-${index}` ? "green" : "gray"}
+                      color={copiedField === `url-${index}` ? "grass" : "gray"}
                       onClick={(e) => {
                         e.stopPropagation();
                         copyToClipboard(

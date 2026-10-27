@@ -176,7 +176,7 @@ export function ProductMirrorsManager({
     });
     if (!state) return null;
     return (
-      <Text size="1" color={state.success ? "green" : "red"}>
+      <Text size="1" color={state.success ? "grass" : "red"}>
         {state.message}
       </Text>
     );
@@ -434,7 +434,7 @@ export function ProductMirrorsManager({
                 as="p"
                 size="2"
                 mt="2"
-                color={addState.success ? "green" : "red"}
+                color={addState.success ? "grass" : "red"}
               >
                 {addState.message}
               </Text>

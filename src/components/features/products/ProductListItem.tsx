@@ -30,8 +30,8 @@ const DESCRIPTION_COMPONENTS: Components = {
 };
 
 const VISIBILITY_CONFIG = {
-  public: { color: "green" as const, label: "Public" },
-  unlisted: { color: "yellow" as const, label: "Unlisted" },
+  public: { color: "grass" as const, label: "Public" },
+  unlisted: { color: "amber" as const, label: "Unlisted" },
   restricted: { color: "red" as const, label: "Restricted" },
 } as const;
 
