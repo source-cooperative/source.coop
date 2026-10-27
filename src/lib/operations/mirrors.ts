@@ -20,7 +20,7 @@ import {
   dataConnectionsTable,
   productsTable,
 } from "@/lib/clients/database";
-import { getProduct, revalidate } from "./products";
+import { getProduct, refuseVisibility, revalidate } from "./products";
 import {
   conflict,
   deny,
@@ -202,6 +202,8 @@ export async function addMirror(
         "connection_id"
       );
   }
+  const refused = refuseVisibility(connection, product.visibility, "connection_id");
+  if (refused) return refused;
   const { mirrors, primary_mirror } = product.metadata;
   // Older products key mirrors by other names, and the new mirror's key must
   // not overwrite one of those either.
@@ -243,18 +245,29 @@ export async function updateMirror(
   const entry = mirrorOn(product, connection_id);
   if (!entry) return notFound("Mirror not found");
   const [key] = entry;
+  // Re-asserting the current primary changes nothing, so it isn't checked.
+  const promoting = is_primary && key !== product.metadata.primary_mirror;
 
   // A prefix says where in the bucket this product's data lives, so on a
   // shared Source-managed connection a free choice of it would let one account
   // point its product at another's objects. Only someone who also controls the
   // connection may re-point a mirror on it.
+  const connection =
+    (prefix !== undefined || promoting) &&
+    (await dataConnectionsTable.fetchById(connection_id));
   if (prefix !== undefined) {
-    const connection = await dataConnectionsTable.fetchById(connection_id);
     if (!connection || !(await canManageDataConnection(session, connection))) {
       return forbidden(
         "You must be able to manage both this account and the data connection to edit its prefix"
       );
     }
+  }
+  // The primary is what the product is served from, so its connection must
+  // allow the product's visibility, as the one it was created on had to.
+  if (promoting) {
+    if (!connection) return invalid("Data connection not found", "is_primary");
+    const refused = refuseVisibility(connection, product.visibility, "is_primary");
+    if (refused) return refused;
   }
 
   const mirrors = Object.fromEntries(

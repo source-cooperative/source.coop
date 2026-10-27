@@ -1,11 +1,13 @@
 import { z } from "zod";
 import {
   Actions,
+  DataConnection,
   Product,
   ProductCreationRequestSchema,
   ProductSchema,
   ProductResponse,
   ProductResponseSchema,
+  ProductVisibility,
   RepositoryPermissions,
   resolveMirrorPrefix,
   UserSession,
@@ -167,6 +169,19 @@ const page = (
  * Drops the cached pages that show a product, and its account's listing of
  * it, whichever adapter changed it.
  */
+/** The refusal when `connection` doesn't allow `visibility`, or null when it does. */
+export const refuseVisibility = (
+  connection: DataConnection,
+  visibility: ProductVisibility,
+  field: string
+) =>
+  connection.allowed_visibilities.includes(visibility)
+    ? null
+    : invalid(
+        `The "${connection.name}" data connection does not allow ${visibility} products`,
+        field
+      );
+
 export function revalidate(account_id: string, product_id?: string) {
   revalidatePath(accountUrl(account_id));
   if (product_id) {
@@ -304,12 +319,8 @@ export async function createProduct(
         "data_connection_id"
       );
   }
-  if (!connection.allowed_visibilities.includes(request.visibility)) {
-    return invalid(
-      `The "${connection.name}" data connection does not allow ${request.visibility} products`,
-      "visibility"
-    );
-  }
+  const refused = refuseVisibility(connection, request.visibility, "visibility");
+  if (refused) return refused;
   const tags = await checkTags(requestedTags);
   if (!tags.ok) return tags;
 
@@ -382,12 +393,8 @@ export async function updateProduct(
         "visibility"
       );
     }
-    if (!connection.allowed_visibilities.includes(visibility)) {
-      return invalid(
-        `The "${connection.name}" data connection does not allow ${visibility} products`,
-        "visibility"
-      );
-    }
+    const refused = refuseVisibility(connection, visibility, "visibility");
+    if (refused) return refused;
   }
 
   const updated = {

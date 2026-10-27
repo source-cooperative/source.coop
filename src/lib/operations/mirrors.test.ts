@@ -23,7 +23,11 @@ jest.mock("@/lib/data-connections", () => ({
   canManageDataConnection: jest.fn(),
   denyDataConnectionFor: jest.fn(),
 }));
-jest.mock("./products", () => ({ getProduct: jest.fn(), revalidate: jest.fn() }));
+jest.mock("./products", () => ({
+  ...jest.requireActual("./products"),
+  getProduct: jest.fn(),
+  revalidate: jest.fn(),
+}));
 jest.mock("next/cache", () => ({ revalidatePath: jest.fn() }));
 
 const SESSION = { identity_id: "user-1", account: { account_id: "alice" } } as never;
@@ -42,6 +46,7 @@ const productWith = (
     account_id: "acct",
     product_id: "prod",
     updated_at: "2026-01-01T00:00:00Z",
+    visibility: "public",
     metadata: { mirrors, primary_mirror },
   }) as unknown as Product;
 
@@ -60,6 +65,8 @@ beforeEach(() => {
   (denyDataConnectionFor as jest.Mock).mockReturnValue(null);
   (dataConnectionsTable.fetchById as jest.Mock).mockImplementation(async (id) => ({
     data_connection_id: id,
+    name: id,
+    allowed_visibilities: ["public", "restricted"],
     prefix_template: "{{repository.account_id}}/{{repository.repository_id}}/",
   }));
   (productsTable.update as jest.Mock).mockImplementation(async (p) => p);
@@ -150,7 +157,10 @@ describe("addMirror", () => {
 
   test("an empty prefix template mirrors at the connection root", async () => {
     (productsTable.fetchById as jest.Mock).mockResolvedValue(productWith({}));
-    (dataConnectionsTable.fetchById as jest.Mock).mockResolvedValue({ prefix_template: "" });
+    (dataConnectionsTable.fetchById as jest.Mock).mockResolvedValue({
+      prefix_template: "",
+      allowed_visibilities: ["public"],
+    });
     await addMirror(SESSION, "acct", "prod", { connection_id: "c" });
     expect(written().metadata.mirrors.c.prefix).toBe("");
   });
@@ -174,6 +184,19 @@ describe("addMirror", () => {
       (denyDataConnectionFor as jest.Mock).mockReturnValue(denial);
     }
     expect(await addMirror(SESSION, "acct", "prod", input)).toMatchObject({ error });
+    expect(productsTable.update).not.toHaveBeenCalled();
+  });
+
+  test("refuses a connection that doesn't allow the product's visibility", async () => {
+    (productsTable.fetchById as jest.Mock).mockResolvedValue(productWith({}));
+    (dataConnectionsTable.fetchById as jest.Mock).mockResolvedValue({
+      name: "Restricted only",
+      allowed_visibilities: ["restricted"],
+    });
+    expect(await addMirror(SESSION, "acct", "prod", { connection_id: "c" })).toMatchObject({
+      error: "invalid",
+      fieldErrors: { connection_id: [expect.stringContaining("does not allow public")] },
+    });
     expect(productsTable.update).not.toHaveBeenCalled();
   });
 
@@ -246,6 +269,24 @@ describe("updateMirror", () => {
     // Promoting doesn't.
     expect(
       await updateMirror(SESSION, "acct", "prod", "b", { is_primary: true })
+    ).toMatchObject({ ok: true });
+  });
+
+  test.each([
+    ["doesn't allow the product's visibility", { allowed_visibilities: ["restricted"] }],
+    ["is gone", null],
+  ])("refuses to promote a mirror whose connection %s", async (_n, connection) => {
+    (dataConnectionsTable.fetchById as jest.Mock).mockResolvedValue(connection);
+    expect(
+      await updateMirror(SESSION, "acct", "prod", "b", { is_primary: true })
+    ).toMatchObject({ error: "invalid", fieldErrors: { is_primary: [expect.any(String)] } });
+    expect(productsTable.update).not.toHaveBeenCalled();
+  });
+
+  test("re-asserting the current primary doesn't check its connection", async () => {
+    (dataConnectionsTable.fetchById as jest.Mock).mockResolvedValue(null);
+    expect(
+      await updateMirror(SESSION, "acct", "prod", "a", { is_primary: true })
     ).toMatchObject({ ok: true });
   });
 
