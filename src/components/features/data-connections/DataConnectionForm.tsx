@@ -38,6 +38,7 @@ import {
 } from "@/lib/actions/data-connections";
 import type { EditableDataConnection } from "./redact";
 import { trustPolicy } from "./trust-policy";
+import { useFormChanges } from "@/hooks/useFormChanges";
 
 interface DataConnectionFormProps {
   dataConnection?: EditableDataConnection;
@@ -175,6 +176,7 @@ export function DataConnectionForm({
     fieldErrors: {},
     success: false,
   });
+  const { formRef, dirty } = useFormChanges(state.success && state);
 
   // Navigate client-side after a successful submission that asks for it, so the
   // shared admin layout is refetched with the current session.
@@ -362,7 +364,7 @@ export function DataConnectionForm({
   };
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form ref={formRef} onSubmit={handleSubmit}>
       {/* gap 6, not 4: this wrapper holds only whole sections, and they need to
           read as separate blocks rather than one continuous column of fields.
           Here rather than inside SectionHeader, which is also used as the sole
@@ -1055,6 +1057,7 @@ export function DataConnectionForm({
           pending={pending}
           message={state?.message}
           success={state.success}
+          unsaved={dirty}
         />
       </Flex>
     </form>
